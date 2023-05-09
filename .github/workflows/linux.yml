@@ -5,8 +5,8 @@ on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "main" ]
-  #pull_request:
-  #  branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -47,6 +47,41 @@ jobs:
         run: python buildbot/check_licencing.py
 
 
+  #make shamrock documentation
+  make_documentation:
+
+    runs-on: ubuntu-latest
+
+    needs: [pragma_check, copyright_check]
+    
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      - name: pip install packages
+        run: pip install -U jupyter-book sphinx_proof matplotlib numpy
+
+      - name : Install pck (doxygen)
+        run: |
+          sudo apt-get install -y -qq doxygen
+
+      - name: Gen doc
+        run: |
+          cd doc
+          sh make_doc.sh
+
+      - name: 'Tar doc'
+        run: tar -cvf doc.tar doc/_build
+
+      - name: Archive generated doc
+        uses: actions/upload-artifact@v3
+        with:
+          name: shamrock_documentation
+          path: documentation.tar.gz
+
+
 
   # download and cache dpcpp compiler
   cache_dpcpp:
@@ -54,7 +89,6 @@ jobs:
 
     needs: [pragma_check, copyright_check]
 
-    
     steps:
         
       - name: Cache DPCPP
@@ -74,9 +108,39 @@ jobs:
           echo "rm archive"
           rm dpcpp-compiler.tar.gz
   
+  ### build jobs
+  shamrock_dpcpp:
+
+    runs-on: self-hosted
+    
+    needs: cache_dpcpp
+    
+    steps:
+    
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+          
+      - name : Install pck (DPCPP)
+        run: |
+          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5
+          
+      - name: Cache DPCPP
+        id: cache-dpcpp
+        uses: actions/cache@v3
+        with:
+          path: dpcpp_compiler
+          key: sycl-nightly%2F20230112_dpcpp-compiler.tar.gz
+          
+      - name : Check binary
+        run: |
+          dpcpp_compiler/bin/clang++ --version
+  
+
   # download ,build and cache opensycl compiler
   cache_opensycl:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     needs: [pragma_check, copyright_check]
 
@@ -115,77 +179,13 @@ jobs:
           path: opensycl.tar  
       
 
-  #make shamrock documentation
-  make_documentation:
-
-    runs-on: ubuntu-latest
-
-    needs: [pragma_check, copyright_check]
-    
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
-
-      - name: pip install packages
-        run: pip install -U jupyter-book sphinx_proof matplotlib numpy
-
-      - name : Install pck (doxygen)
-        run: |
-          sudo apt-get install -y -qq doxygen
-
-      - name: Gen doc
-        run: |
-          cd doc
-          sh make_doc.sh
-
-      - name: 'Tar doc'
-        run: tar -cvf doc.tar doc/_build
-
-      - name: Archive generated doc
-        uses: actions/upload-artifact@v3
-        with:
-          name: shamrock_documentation
-          path: documentation.tar.gz
 
 
 
 
-
-  ### build jobs
-
-  shamrock_dpcpp:
-
-    runs-on: ubuntu-latest
-    
-    needs: cache_dpcpp
-    
-    steps:
-    
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
-          
-      - name : Install pck (DPCPP)
-        run: |
-          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5
-          
-      - name: Cache DPCPP
-        id: cache-dpcpp
-        uses: actions/cache@v3
-        with:
-          path: dpcpp_compiler
-          key: sycl-nightly%2F20230112_dpcpp-compiler.tar.gz
-          
-      - name : Check binary
-        run: |
-          dpcpp_compiler/bin/clang++ --version
-  
   shamrock_opensycl_omp_debug:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 30
     
     needs: cache_opensycl

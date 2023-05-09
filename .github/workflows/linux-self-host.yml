@@ -5,8 +5,8 @@ on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "main" ]
-  #pull_request:
-  #  branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
 
   pragma_check:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
       - uses: actions/checkout@v3
@@ -35,7 +35,7 @@ jobs:
 
   copyright_check:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     steps:
       - uses: actions/checkout@v3
@@ -50,7 +50,7 @@ jobs:
 
   # download and cache dpcpp compiler
   cache_dpcpp:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     needs: [pragma_check, copyright_check]
 
@@ -76,7 +76,7 @@ jobs:
   
   # download ,build and cache opensycl compiler
   cache_opensycl:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     needs: [pragma_check, copyright_check]
 
@@ -118,7 +118,7 @@ jobs:
   #make shamrock documentation
   make_documentation:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     needs: [pragma_check, copyright_check]
     
@@ -154,7 +154,7 @@ jobs:
 
   shamrock_dpcpp:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     needs: cache_dpcpp
     
@@ -182,7 +182,7 @@ jobs:
   
   shamrock_opensycl_omp_debug:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 30
     
     needs: cache_opensycl
@@ -281,7 +281,7 @@ jobs:
 
   publish_release:
 
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     needs: [shamrock_opensycl_omp_debug, shamrock_dpcpp, make_documentation]
 

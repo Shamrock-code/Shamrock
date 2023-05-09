@@ -140,11 +140,14 @@ jobs:
           cd doc
           sh make_doc.sh
 
+      - name: 'Tar doc'
+        run: tar -cvf doc.tar doc/_build
+
       - name: Archive generated doc
         uses: actions/upload-artifact@v3
         with:
           name: shamrock_documentation
-          path: doc/_build/
+          path: documentation.tar.gz
 
 
 
@@ -293,15 +296,12 @@ jobs:
         with:
           submodules: recursive
 
+
       - name: 'Download Doc'
         uses: actions/download-artifact@v3
         with:
           name: shamrock_documentation
-          path: documentation
-
-      
-      - name: 'Tar documentation'
-        run: tar -cvf documentation.tar.gz documentation
+          path: documentation.tar.gz
 
       - name: 'Download coverage list'
         uses: actions/download-artifact@v3

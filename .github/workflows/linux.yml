@@ -51,8 +51,6 @@ jobs:
   make_documentation:
 
     runs-on: ubuntu-latest
-
-    needs: [pragma_check, copyright_check]
     
     steps:
       - uses: actions/checkout@v3
@@ -73,7 +71,7 @@ jobs:
           sh make_doc.sh
 
       - name: 'Tar doc'
-        run: tar -cvf doc.tar doc/_build
+        run: tar -cvf documentation.tar.gz doc/_build
 
       - name: Archive generated doc
         uses: actions/upload-artifact@v3

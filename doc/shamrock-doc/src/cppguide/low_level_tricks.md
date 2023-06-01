@@ -246,7 +246,7 @@ int vardouble;
 
 It can be usefull to avoid copy-paste errors
 
-## State machien and jump table
+## State machine and jump table
 
 Jump to a function depending on an enum state
 

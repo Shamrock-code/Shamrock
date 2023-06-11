@@ -55,3 +55,8 @@ The following convention applies : `Tscal` for template scalar, `Tvec` for templ
 Morton codes and hilbert code shall be named `Tmorton`, `THilbert` since they will be templated
 
 
+## C++ style guide
+
+ - no tabs
+ - no raw pointers without wrapper or smart pointer.
+ - no inheritance

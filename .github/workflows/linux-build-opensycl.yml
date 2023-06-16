@@ -5,7 +5,7 @@ on:
     
 jobs:
   opensycl_clang:
-    name: OpenSYCL clang ${{ matrix.clang_version }}
+    name: clang ${{ matrix.clang_version }}
     runs-on: [self-hosted]
     
     strategy:

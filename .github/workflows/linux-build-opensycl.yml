@@ -70,7 +70,7 @@ jobs:
       - name: configure & install OpenSycl
         run: |
           cd OpenSYCL
-          cmake -G ninja -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} -DLLVM_DIR=/usr/lib/llvm-${{matrix.clang}}/cmake -DWITH_CUDA_BACKEND=ON -DWITH_ROCM_BACKEND=ON -DWITH_LEVEL_ZERO_BACKEND=ON -DCUDA_TOOLKIT_ROOT_DIR=~/opt/cuda -DROCM_PATH=/opt/rocm -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+          cmake -G Ninja -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} -DLLVM_DIR=/usr/lib/llvm-${{matrix.clang}}/cmake -DWITH_CUDA_BACKEND=ON -DWITH_ROCM_BACKEND=ON -DWITH_LEVEL_ZERO_BACKEND=ON -DCUDA_TOOLKIT_ROOT_DIR=~/opt/cuda -DROCM_PATH=/opt/rocm -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
           ninja install
           cp ~/opt/cuda/lib64/stubs/libcuda.so `pwd`/OpenSycl/lib/libcuda.so
           cp ~/opt/cuda/lib64/stubs/libcuda.so `pwd`/OpenSycl/lib/libcuda.so.1
@@ -116,7 +116,7 @@ jobs:
           cd OpenSYCL
           export NV_HPC_SDK_ROOT=/opt/nvidia/hpc_sdk/Linux_x86_64/${{matrix.nvhpc}}
           export NV_HPC_CUDA_ROOT=${NV_HPC_SDK_ROOT}/cuda/${{matrix.cuda}}
-          cmake -G ninja -DNVCXX_COMPILER=${NV_HPC_SDK_ROOT}/compilers/bin/nvc++ -DWITH_CUDA_BACKEND=ON -DWITH_CUDA_NVCXX_ONLY=ON -DCUDA_TOOLKIT_ROOT_DIR=${NV_HPC_CUDA_ROOT} -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+          cmake -G Ninja -DNVCXX_COMPILER=${NV_HPC_SDK_ROOT}/compilers/bin/nvc++ -DWITH_CUDA_BACKEND=ON -DWITH_CUDA_NVCXX_ONLY=ON -DCUDA_TOOLKIT_ROOT_DIR=${NV_HPC_CUDA_ROOT} -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
           ninja install
           cp ${NV_HPC_CUDA_ROOT}/lib64/stubs/libcuda.so `pwd`/OpenSYCL_comp/lib/libcuda.so
           cp ${NV_HPC_CUDA_ROOT}/lib64/stubs/libcuda.so `pwd`/OpenSYCL_comp/lib/libcuda.so.1

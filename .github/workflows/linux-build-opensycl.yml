@@ -110,7 +110,7 @@ jobs:
           MINOR_VERSION=$(echo ${{matrix.nvhpc}} | sed 's/.*\.//')
           wget https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-${MAJOR_VERSION}-${MINOR_VERSION}_${{matrix.nvhpc}}_amd64.deb
           wget https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-20${MAJOR_VERSION}_${{matrix.nvhpc}}_amd64.deb
-          sudo apt install ./nvhpc-*
+          sudo apt install -y ./nvhpc-*
       - name: build Open SYCL
         run: |
           cd OpenSYCL

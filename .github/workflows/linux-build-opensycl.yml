@@ -21,7 +21,11 @@ jobs:
 
 
       # Open SYCL requirement
-      - uses: ./.github/workflows/installs/install-level0.yml@main
+      - name: install Level Zero
+        run : |
+          wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero-devel_1.2.3+u18.04_amd64.deb
+          wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero_1.2.3+u18.04_amd64.deb
+          sudo dpkg -i ./level-zero*
 
 
       - name: install CUDA
@@ -38,14 +42,15 @@ jobs:
           wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
           echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{matrix.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
           printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
-          sudo apt update
-          sudo apt install rocm-dev
+          sudo apt update -y
+          sudo apt install -y rocm-dev
+
       - name: install LLVM
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
+          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
           if [[ "${{matrix.clang}}" == "16" ]]; then
             sudo rm -r /usr/lib/clang/16*
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16

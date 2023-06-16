@@ -77,6 +77,13 @@ jobs:
           path: documentation.tar.gz
 
 
+
+  shamrock_linux_opensycl:
+    needs: [pragma_check, copyright_check]
+    uses: ./.github/workflows/compilers/linux-opensycl.yml
+    
+
+
   ### build jobs
 
   shamrock_linux_dpcpp:

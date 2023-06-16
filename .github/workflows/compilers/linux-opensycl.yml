@@ -1,0 +1,84 @@
+name: OpenSYCL
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    
+jobs:
+  opensycl_clang:
+    name: OpenSYCL clang ${{ matrix.clang_version }}
+    runs-on: [self-hosted]
+    
+    strategy:
+      matrix:
+        clang: [15, 16]
+        cuda: [11.0.2]
+        rocm: [5.4.3]
+
+    steps:
+
+      - name: clone OpenSycl
+        run: git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
+
+
+      # Open SYCL requirement
+      - name: install Level Zero
+        run : |
+          wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero-devel_1.2.3+u18.04_amd64.deb
+          wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero_1.2.3+u18.04_amd64.deb
+          sudo dpkg -i ./level-zero*
+      - name: install CUDA
+        run: |
+          mkdir -p /opt/OpenSYCL/cuda
+          wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
+          sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=/opt/OpenSYCL/cuda || true
+          echo "CUDA Version ${{matrix.cuda}}" | sudo tee /opt/OpenSYCL/cuda/version.txt
+      - name: install ROCm
+        run: |
+          [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
+          [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal
+          sudo apt install libnuma-dev cmake unzip
+          wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
+          echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{matrix.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
+          printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
+          sudo apt update
+          sudo apt install rocm-dev
+      - name: install LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{matrix.clang}}
+          sudo apt install libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
+          if [[ "${{matrix.clang}}" == "16" ]]; then
+            sudo rm -r /usr/lib/clang/16*
+            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
+          fi
+      - name: install boost (from apt)
+        run: |
+          sudo apt install libboost-all-dev
+
+
+
+
+
+      - name: install Ninja-build
+        run: sudo apt install -y ninja-build
+
+
+      - name: configure & install OpenSycl
+        run: |
+          cd OpenSYCL
+          cmake -G ninja -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} -DLLVM_DIR=/usr/lib/llvm-${{matrix.clang}}/cmake -DWITH_CUDA_BACKEND=ON -DWITH_ROCM_BACKEND=ON -DWITH_LEVEL_ZERO_BACKEND=ON -DCUDA_TOOLKIT_ROOT_DIR=/opt/OpenSYCL/cuda -DROCM_PATH=/opt/rocm -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+          ninja install
+
+
+
+
+      - name: 'Tar opensycl'
+        run: tar -cvf opensycl.tar OpenSYCL_comp
+
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: OpenSYCL_compiler-${{ inputs.clang }}-${{ inputs.os }}-${{inputs.cuda}}-${{inputs.rocm}}
+          path: opensycl.tar  

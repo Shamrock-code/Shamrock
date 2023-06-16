@@ -5,7 +5,7 @@ on:
     
 jobs:
   opensycl_clang:
-    name: clang ${{ matrix.clang_version }}
+    name: clang ${{ matrix.clang }}
     runs-on: [self-hosted]
     
     strategy:
@@ -21,11 +21,9 @@ jobs:
 
 
       # Open SYCL requirement
-      - name: install Level Zero
-        run : |
-          wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero-devel_1.2.3+u18.04_amd64.deb
-          wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero_1.2.3+u18.04_amd64.deb
-          sudo dpkg -i ./level-zero*
+      - uses: ./.github/workflows/installs/install-level0.yml@main
+
+
       - name: install CUDA
         run: |
           mkdir -p ~/opt/cuda

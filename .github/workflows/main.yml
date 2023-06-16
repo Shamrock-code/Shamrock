@@ -15,9 +15,8 @@ jobs:
 
 
   pragma_check:
-
+    name: "Check : (Pragma once)"
     runs-on: self-hosted
-    
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -29,9 +28,8 @@ jobs:
 
 
   copyright_check:
-
+    name: "Check : (Copyright)"
     runs-on: self-hosted
-    
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4

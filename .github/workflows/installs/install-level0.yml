@@ -1,0 +1,6 @@
+steps:
+- name: install Level Zero
+  run : |
+    wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero-devel_1.2.3+u18.04_amd64.deb
+    wget https://github.com/oneapi-src/level-zero/releases/download/v1.2.3/level-zero_1.2.3+u18.04_amd64.deb
+    sudo dpkg -i ./level-zero*

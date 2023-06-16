@@ -80,7 +80,7 @@ jobs:
 
   shamrock_linux_opensycl:
     needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/compilers/linux-opensycl.yml
+    uses: ./.github/workflows/linux-build-opensycl.yml
     
 
 

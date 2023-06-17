@@ -78,6 +78,7 @@ jobs:
           ninja install
 
       - name: cp cuda libs
+        run: |
           cp ~/opt/cuda/lib64/stubs/libcuda.so OpenSYCL_comp/lib/libcuda.so
           cp ~/opt/cuda/lib64/stubs/libcuda.so OpenSYCL_comp/lib/libcuda.so.1
 

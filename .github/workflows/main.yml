@@ -49,9 +49,9 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
+      #- uses: actions/setup-python@v4
+      #  with:
+      #    python-version: '3.10' 
 
       - name: pip install packages
         run: pip install -U jupyter-book sphinx_proof matplotlib numpy
@@ -82,7 +82,7 @@ jobs:
     uses: ./.github/workflows/linux-build-opensycl.yml
 
   shamrock_linux_opensycl:
-    name: Build OpenSYCL
+    name: Shamrock Test
     needs: [pragma_check, copyright_check,linux_opensycl]
     uses: ./.github/workflows/shamrock-opensycl.yml
     

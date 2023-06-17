@@ -76,10 +76,15 @@ jobs:
 
 
 
-  shamrock_linux_opensycl:
+  linux_opensycl:
     name: Build OpenSYCL
     needs: [pragma_check, copyright_check]
     uses: ./.github/workflows/linux-build-opensycl.yml
+
+  shamrock_linux_opensycl:
+    name: Build OpenSYCL
+    needs: [pragma_check, copyright_check,linux_opensycl]
+    uses: ./.github/workflows/shamrock-opensycl.yml
     
 
 

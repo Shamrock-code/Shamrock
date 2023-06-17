@@ -34,6 +34,7 @@ jobs:
           wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
           sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=~/opt/cuda || true
           echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
+      
       - name: install ROCm
         run: |
           [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
@@ -66,14 +67,21 @@ jobs:
       - name: install Ninja-build
         run: sudo apt install -y ninja-build
 
-
-      - name: configure & install OpenSycl
+      - name: configure OpenSycl
         run: |
           cd OpenSYCL
           cmake -G Ninja -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} -DLLVM_DIR=/usr/lib/llvm-${{matrix.clang}}/cmake -DWITH_CUDA_BACKEND=ON -DWITH_ROCM_BACKEND=ON -DWITH_LEVEL_ZERO_BACKEND=ON -DCUDA_TOOLKIT_ROOT_DIR=~/opt/cuda -DROCM_PATH=/opt/rocm -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+
+
+
+      - name: compile & install OpenSycl
+        run: |
+          cd OpenSYCL
           ninja install
-          cp ~/opt/cuda/lib64/stubs/libcuda.so `pwd`/OpenSycl/lib/libcuda.so
-          cp ~/opt/cuda/lib64/stubs/libcuda.so `pwd`/OpenSycl/lib/libcuda.so.1
+
+      - name: cp cuda libs
+          cp ~/opt/cuda/lib64/stubs/libcuda.so OpenSYCL_comp/lib/libcuda.so
+          cp ~/opt/cuda/lib64/stubs/libcuda.so OpenSYCL_comp/lib/libcuda.so.1
 
 
 
@@ -118,5 +126,5 @@ jobs:
           export NV_HPC_CUDA_ROOT=${NV_HPC_SDK_ROOT}/cuda/${{matrix.cuda}}
           cmake -G Ninja -DNVCXX_COMPILER=${NV_HPC_SDK_ROOT}/compilers/bin/nvc++ -DWITH_CUDA_BACKEND=ON -DWITH_CUDA_NVCXX_ONLY=ON -DCUDA_TOOLKIT_ROOT_DIR=${NV_HPC_CUDA_ROOT} -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
           ninja install
-          cp ${NV_HPC_CUDA_ROOT}/lib64/stubs/libcuda.so `pwd`/OpenSYCL_comp/lib/libcuda.so
-          cp ${NV_HPC_CUDA_ROOT}/lib64/stubs/libcuda.so `pwd`/OpenSYCL_comp/lib/libcuda.so.1
+          cp ${NV_HPC_CUDA_ROOT}/lib64/stubs/libcuda.so ../OpenSYCL_comp/lib/libcuda.so
+          cp ${NV_HPC_CUDA_ROOT}/lib64/stubs/libcuda.so ../OpenSYCL_comp/lib/libcuda.so.1

@@ -239,7 +239,7 @@ jobs:
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
             --outdir build --cxxpath OpenSYCL_comp --compiler opensycl --profile cuda-sm70 \
-            --cxxflags="--cuda-path=~/opt/cuda"
+            --cxxflags="--opensycl-cuda-path=~/opt/cuda"
   
       - name: compile Shamrock
         run: |

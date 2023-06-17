@@ -180,3 +180,159 @@ jobs:
         run: |
           cd build
           mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+
+
+  shamrock_opensycl_cuda:
+    name: OpenSYCL cuda clang-${{ matrix.clang }}
+    runs-on: [self-hosted]
+
+    strategy:
+      matrix:
+        clang: [15,16]
+        cuda: [11.0.2]
+        rocm: [5.4.3]
+  
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+  
+      - name: 'Download Artifact'
+        uses: actions/download-artifact@v3
+        with:
+          name: OpenSYCL_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
+  
+      - name: 'unTar opensycl'
+        run: tar -xvf opensycl.tar
+  
+      - name: ls local
+        run : ls -la
+  
+      - name: install boost
+        run: sudo apt install libboost-all-dev
+  
+
+      - name: install CUDA
+        run: |
+          mkdir -p ~/opt/cuda
+          wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
+          sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=~/opt/cuda || true
+          echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
+      
+
+      - name: install LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{matrix.clang}}
+          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
+          if [[ "${{matrix.clang}}" == "16" ]]; then
+            sudo rm -r /usr/lib/clang/16*
+            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
+          fi
+
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+  
+      - name: configure Shamrock
+        run: |
+          python3 buildbot/configure.py --gen ninja --tests --build release \
+            --outdir build --cxxpath OpenSYCL_comp --compiler opensycl --profile cuda-sm70
+  
+      - name: compile Shamrock
+        run: |
+          cd build
+          ninja
+  
+      - name: run Shamrock Unittests world_size = 1
+        run: |
+          cd build
+          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+  
+      - name: run Shamrock Unittests world_size = 2
+        run: |
+          cd build
+          mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+      
+      - name: run Shamrock Unittests world_size = 3
+        run: |
+          cd build
+          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+  
+      - name: run Shamrock Unittests world_size = 4
+        run: |
+          cd build
+          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+
+
+  shamrock_opensycl_cuda_nvcxx:
+    name: OpenSYCL nvcxx ${{matrix.nvhpc}}, CUDA ${{matrix.cuda}}
+    runs-on: [self-hosted]
+
+    strategy:
+      matrix:
+        nvhpc: [22.11]
+        cuda: [11.8]
+  
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+  
+      - name: 'Download Artifact'
+        uses: actions/download-artifact@v3
+        with:
+          name: OpenSYCL_compiler-nvcxx--${{matrix.cuda}}-${{matrix.nvhpc}}
+  
+      - name: 'unTar opensycl'
+        run: tar -xvf opensycl.tar
+  
+      - name: ls local
+        run : ls -la
+  
+      - name: install boost
+        run: sudo apt install libboost-all-dev
+  
+
+      - name: install nvcxx
+        run: |
+          MAJOR_VERSION=$(echo ${{matrix.nvhpc}} | sed 's/\..*//')
+          MINOR_VERSION=$(echo ${{matrix.nvhpc}} | sed 's/.*\.//')
+          wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-${MAJOR_VERSION}-${MINOR_VERSION}_${{matrix.nvhpc}}_amd64.deb
+          wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-20${MAJOR_VERSION}_${{matrix.nvhpc}}_amd64.deb
+          sudo apt install -y ./nvhpc-*
+
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+  
+      - name: configure Shamrock
+        run: |
+          python3 buildbot/configure.py --gen ninja --tests --build release \
+            --outdir build --cxxpath OpenSYCL_comp --compiler opensycl --profile cuda-nvcxx
+  
+      - name: compile Shamrock
+        run: |
+          cd build
+          ninja
+  
+      - name: run Shamrock Unittests world_size = 1
+        run: |
+          cd build
+          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+  
+      - name: run Shamrock Unittests world_size = 2
+        run: |
+          cd build
+          mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+      
+      - name: run Shamrock Unittests world_size = 3
+        run: |
+          cd build
+          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+  
+      - name: run Shamrock Unittests world_size = 4
+        run: |
+          cd build
+          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest

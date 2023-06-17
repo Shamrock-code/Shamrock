@@ -88,7 +88,7 @@ jobs:
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
-          name: OpenSYCL_compiler-${{ inputs.clang }}-${{ inputs.os }}-${{inputs.cuda}}-${{inputs.rocm}}
+          name: OpenSYCL_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
           path: opensycl.tar  
 
 
@@ -124,3 +124,12 @@ jobs:
           ninja install
           cp ${NV_HPC_CUDA_ROOT}/lib64/stubs/libcuda.so ../OpenSYCL_comp/lib/libcuda.so
           cp ${NV_HPC_CUDA_ROOT}/lib64/stubs/libcuda.so ../OpenSYCL_comp/lib/libcuda.so.1
+
+      - name: 'Tar opensycl'
+        run: tar -cvf opensycl.tar OpenSYCL_comp
+
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: OpenSYCL_compiler-nvcxx--${{matrix.cuda}}-${{matrix.nvhpc}}
+          path: opensycl.tar  

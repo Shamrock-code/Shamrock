@@ -72,8 +72,6 @@ jobs:
           cd OpenSYCL
           cmake -G Ninja -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} -DLLVM_DIR=/usr/lib/llvm-${{matrix.clang}}/cmake -DWITH_CUDA_BACKEND=ON -DWITH_ROCM_BACKEND=ON -DWITH_LEVEL_ZERO_BACKEND=ON -DCUDA_TOOLKIT_ROOT_DIR=~/opt/cuda -DROCM_PATH=/opt/rocm -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
 
-
-
       - name: compile & install OpenSycl
         run: |
           cd OpenSYCL
@@ -82,9 +80,6 @@ jobs:
       - name: cp cuda libs
           cp ~/opt/cuda/lib64/stubs/libcuda.so OpenSYCL_comp/lib/libcuda.so
           cp ~/opt/cuda/lib64/stubs/libcuda.so OpenSYCL_comp/lib/libcuda.so.1
-
-
-
 
       - name: 'Tar opensycl'
         run: tar -cvf opensycl.tar OpenSYCL_comp

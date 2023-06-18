@@ -90,20 +90,15 @@ jobs:
 
   ### build jobs
 
-  shamrock_linux_dpcpp:
+  linux_dpcpp:
+    name: Build DPCPP
     needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/linux-dpcpp.yml
-    with:
-      clang: ${{ matrix.clang }}
-      os: ${{ matrix.os }}
-      cuda: ${{ matrix.cuda }}
-      rocm: ${{ matrix.rocm }}
-    strategy:
-      matrix:
-        clang: [15]
-        os: [self-hosted]
-        cuda: [11.0.2]
-        rocm: [5.4.3]
+    uses: ./.github/workflows/linux-build-dpcpp.yml
+
+  shamrock_linux_dpcpp:
+    name: Shamrock Test
+    needs: [pragma_check, copyright_check,linux_dpcpp]
+    uses: ./.github/workflows/shamrock-dpcpp.yml
   
 
   #shamrock_linux_opensycl_macos:

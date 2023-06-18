@@ -173,6 +173,7 @@ profile_map = {
         "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile,
         "cuda-nvcxx" : "--hipsycl-targets='cuda-nvcxx' "+ hipsyclconfigfile,
         "cuda-sm70" : "--hipsycl-targets='cuda:sm_70' "+ hipsyclconfigfile,
+        "hip-gfx906" : "--hipsycl-targets='hip:gfx906' "+ hipsyclconfigfile,
 
         #if you dare trying to develop with this profile
         "omp_insanity" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -Wall -Wextra -Werror " + hipsyclconfigfile

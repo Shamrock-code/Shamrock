@@ -1,0 +1,31 @@
+name: DPCPP
+
+
+on:
+  workflow_call:
+    
+jobs:
+  nightly_build20230112:
+    name: Cache Nightly build 2023-01-12
+    runs-on: [self-hosted]
+    
+    steps:
+        
+      - name: Cache DPCPP
+        id: cache-dpcpp
+        uses: actions/cache@v3
+        with:
+          path: dpcpp_compiler
+          key: dpcpp-compiler.tar.gz
+
+      - name: rm old version
+        run: rm -rf dpcpp_compiler
+      
+      - name : Download & Untar DPCPP
+        run: |
+          export DPCPP_URL="https://github.com/intel/llvm/releases/download/sycl-nightly%2F20230112/dpcpp-compiler.tar.gz"
+          wget -q --show-progress --progress=bar:force:noscroll "$DPCPP_URL" -O dpcpp-compiler.tar.gz
+          echo "untar : "
+          tar -xf dpcpp-compiler.tar.gz
+          echo "rm archive"
+          rm dpcpp-compiler.tar.gz

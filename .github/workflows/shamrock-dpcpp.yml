@@ -1,27 +1,13 @@
-name: shamtest DPCPP
+name: Shamrock (DPCPP)
 
 
 on:
   workflow_call:
-    inputs:
-      clang:
-        required: true
-        type: string
-      os:
-        required: true
-        type: string
-      cuda:
-        required: true
-        type: string
-      rocm:
-        required: true
-        type: string
     
 jobs:
   shamrock_dpcpp:
-    name: shamrock-test dpcpp
-
-    runs-on: ${{ inputs.os }}
+    name: Nighly DPCPP
+    runs-on: [self-hosted]
     
     steps:
     

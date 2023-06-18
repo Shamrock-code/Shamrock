@@ -3,9 +3,14 @@
    <img alt="text" src="doc/logosham_white.png" width="600">
  </picture>
 
+CI status:
 ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/main.yml/badge.svg?branch=main)
-![badge2](https://badgen.net/static/DPC++%20CUDA/yes/green)
-![badge2](https://badgen.net/static/OpenSYCL%20OpenMP/yes/green)
+
+DPC++ status :
+![badge2](https://badgen.net/static/DPC++%2FCUDA/yes/green)
+
+OpenSycl status :
+![badge2](https://badgen.net/static/OpenSYCL%2FOpenMP/yes/green)
 
 # Getting started
 

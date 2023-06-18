@@ -101,7 +101,8 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile cuda
+            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile cuda \
+            --cxxflags="--cuda-path=/home/docker/opt/cuda"
 
       - name: compile Shamrock
         run: |
@@ -120,7 +121,7 @@ jobs:
 
 
   shamrock_dpcpp_hip:
-    name: Cache ROCM ${{ matrix.rocm }}
+    name: DPCPP HIP ROCM ${{ matrix.rocm }}
     runs-on: [self-hosted]
     strategy:
       matrix:
@@ -161,7 +162,8 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile hip-gfx906
+            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile hip-gfx906 \
+            --cxxflags="--rocm-path=/opt/rocm"
 
       - name: compile Shamrock
         run: |

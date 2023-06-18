@@ -73,47 +73,47 @@ jobs:
 
     hip_build:
 
-    name: Cache HIP ROCM ${{ matrix.rocm }}
-    runs-on: [self-hosted]
+      name: Cache HIP ROCM ${{ matrix.rocm }}
+      runs-on: [self-hosted]
 
-    strategy:
-      matrix:
-        rocm: [5.4.3]
-    
-    steps:
-        
-      - name: Cache DPCPP
-        id: cache-dpcpp
-        uses: actions/cache@v3
-        with:
-          path: dpcpp_compiler
-          key: dpcpp-hip-${{ matrix.rocm }}.tar.gz
-
-      - name: Git clone 
-        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
-        run: |
-          git clone https://github.com/intel/llvm -b sycl
-
-      - name: install ROCm
-        run: |
-          [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
-          [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal
-          sudo apt install -y libnuma-dev cmake unzip
-          wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
-          echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{matrix.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
-          printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
-          sudo apt update -y
-          sudo apt install -y rocm-dev
+      strategy:
+        matrix:
+          rocm: [5.4.3]
       
-      - name: Configure
-        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
-        run: |
-          cd llvm
-          CUDA_LIB_PATH=/home/docker/opt/cuda/lib64/stubs\
-          python3 buildbot/configure.py \
-            --llvm-external-projects compiler-rt \
-            --hip \
-            --enable-esimd-emulator \
-            --cmake-opt="-DCMAKE_INSTALL_PREFIX=../dpcpp_compiler" \
-            --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/usr/local/rocm"
+      steps:
+          
+        - name: Cache DPCPP
+          id: cache-dpcpp
+          uses: actions/cache@v3
+          with:
+            path: dpcpp_compiler
+            key: dpcpp-hip-${{ matrix.rocm }}.tar.gz
+
+        - name: Git clone 
+          if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+          run: |
+            git clone https://github.com/intel/llvm -b sycl
+
+        - name: install ROCm
+          run: |
+            [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
+            [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal
+            sudo apt install -y libnuma-dev cmake unzip
+            wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
+            echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{matrix.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
+            printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
+            sudo apt update -y
+            sudo apt install -y rocm-dev
         
+        - name: Configure
+          if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+          run: |
+            cd llvm
+            CUDA_LIB_PATH=/home/docker/opt/cuda/lib64/stubs\
+            python3 buildbot/configure.py \
+              --llvm-external-projects compiler-rt \
+              --hip \
+              --enable-esimd-emulator \
+              --cmake-opt="-DCMAKE_INSTALL_PREFIX=../dpcpp_compiler" \
+              --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/usr/local/rocm"
+          

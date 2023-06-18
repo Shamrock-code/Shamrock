@@ -90,7 +90,6 @@ jobs:
           python-version: '3.10' 
           
       - name: install CUDA
-        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/opt/cuda
           wget -q -O cuda.sh https://developer.download.nvidia.com/compute/cuda/12.1.1/local_installers/cuda_12.1.1_530.30.02_linux.run
@@ -165,7 +164,6 @@ jobs:
 
       
       - name: install ROCm
-        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
           [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal

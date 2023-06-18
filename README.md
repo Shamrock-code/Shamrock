@@ -4,6 +4,8 @@
  </picture>
 
 ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/main.yml/badge.svg?branch=main)
+![badge2](https://badgen.net/static/DPC++%20CUDA/yes/green)
+![badge2](https://badgen.net/static/OpenSYCL%20OpenMP/yes/green)
 
 # Getting started
 

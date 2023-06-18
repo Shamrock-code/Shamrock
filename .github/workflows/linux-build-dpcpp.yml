@@ -52,6 +52,7 @@ jobs:
           git clone https://github.com/intel/llvm -b sycl
 
       - name: install CUDA
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/opt/cuda
           wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
@@ -62,8 +63,7 @@ jobs:
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           cd llvm
-          CUDA_LIB_PATH=/home/docker/opt/cuda/lib64/stubs\
-          python3 buildbot/configure.py \
+          CUDA_LIB_PATH=/home/docker/opt/cuda/lib64/stubs python3 buildbot/configure.py \
             --llvm-external-projects compiler-rt \
             --cuda \
             --enable-esimd-emulator \
@@ -95,6 +95,7 @@ jobs:
           git clone https://github.com/intel/llvm -b sycl
 
       - name: install ROCm
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
           [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal
@@ -109,8 +110,7 @@ jobs:
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           cd llvm
-          CUDA_LIB_PATH=/home/docker/opt/cuda/lib64/stubs\
-          python3 buildbot/configure.py \
+          CUDA_LIB_PATH=/home/docker/opt/cuda/lib64/stubs python3 buildbot/configure.py \
             --llvm-external-projects compiler-rt \
             --hip \
             --enable-esimd-emulator \

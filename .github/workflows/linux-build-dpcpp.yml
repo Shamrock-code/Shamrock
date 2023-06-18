@@ -49,21 +49,14 @@ jobs:
       - name: install latest cmake
         run: |
           sudo apt-get update
-          sudo apt-get install ca-certificates gpg wget
+          sudo apt-get install -y ca-certificates gpg wget
           wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
           echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
           sudo apt-get update
           sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
-          sudo apt-get install kitware-archive-keyring
+          sudo apt-get install -y kitware-archive-keyring
           sudo apt-get update
-          sudo apt-get install cmake
-
-
-      - name: Git clone 
-        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
-        run: |
-          git clone https://github.com/intel/llvm -b sycl
-
+          sudo apt-get install -y cmake
 
       - name: install CUDA
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
@@ -73,6 +66,13 @@ jobs:
           sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=~/opt/cuda || true
           echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
       
+
+      - name: Git clone 
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/intel/llvm -b sycl
+
+
       - name: Configure
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
@@ -106,21 +106,14 @@ jobs:
       - name: install latest cmake
         run: |
           sudo apt-get update
-          sudo apt-get install ca-certificates gpg wget
+          sudo apt-get install -y ca-certificates gpg wget
           wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
           echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
           sudo apt-get update
           sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
-          sudo apt-get install kitware-archive-keyring
+          sudo apt-get install -y kitware-archive-keyring
           sudo apt-get update
-          sudo apt-get install cmake
-
-      - name: Git clone 
-        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
-        run: |
-          git clone https://github.com/intel/llvm -b sycl
-
-      
+          sudo apt-get install -y cmake
 
       - name: install ROCm
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
@@ -133,6 +126,14 @@ jobs:
           printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
           sudo apt update -y
           sudo apt install -y rocm-dev
+
+      - name: Git clone 
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/intel/llvm -b sycl
+
+      
+
       
       - name: Configure
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'

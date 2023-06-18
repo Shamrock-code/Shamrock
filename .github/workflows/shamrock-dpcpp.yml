@@ -6,7 +6,7 @@ on:
     
 jobs:
   shamrock_dpcpp:
-    name: Nighly DPCPP
+    name: DPCPP Nighly
     runs-on: [self-hosted]
     
     steps:

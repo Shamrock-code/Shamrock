@@ -16,12 +16,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: dpcpp_compiler
-          key: dpcpp-compiler.tar.gz
-
-      - name: rm old version
-        run: rm -rf dpcpp_compiler
+          key: dpcpp-nighly20230112.tar.gz
       
       - name : Download & Untar DPCPP
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           export DPCPP_URL="https://github.com/intel/llvm/releases/download/sycl-nightly%2F20230112/dpcpp-compiler.tar.gz"
           wget -q --show-progress --progress=bar:force:noscroll "$DPCPP_URL" -O dpcpp-compiler.tar.gz

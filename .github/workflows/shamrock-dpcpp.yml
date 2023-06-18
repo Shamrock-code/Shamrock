@@ -51,7 +51,7 @@ jobs:
           cd dpcpp_bare_debug
           ninja
 
-       no device to run on
+      # no device to run on
       - name: run Shamrock
         run: |
           cd dpcpp_bare_debug

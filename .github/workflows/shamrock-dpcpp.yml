@@ -57,3 +57,120 @@ jobs:
       #    export PATH=$DPCPP_HOME/bin:$PATH
       #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
       #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+
+
+  shamrock_dpcpp_cuda:
+    name: DPCPP CUDA
+    runs-on: [self-hosted]
+
+    strategy:
+      matrix:
+        cuda: [12.1.1]
+    
+    steps:
+    
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Cache DPCPP
+        id: cache-dpcpp
+        uses: actions/cache@v3
+        with:
+          fail-on-cache-miss: true
+          path: dpcpp_compiler
+          key: dpcpp-cuda-${{ matrix.cuda }}.tar.gz
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+          
+      - name : Install pck (DPCPP)
+        run: |
+          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
+          
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+
+      - name : Check binary
+        run: |
+          dpcpp_compiler/bin/clang++ --version
+
+      
+      - name: configure Shamrock
+        run: |
+          python3 buildbot/configure.py --gen ninja --tests --build debug \
+            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile bare
+
+      - name: compile Shamrock
+        run: |
+          cd dpcpp_bare_debug
+          ninja
+
+      # no device to run on
+      #- name: run Shamrock
+      #  run: |
+      #    cd dpcpp_bare_debug
+      #    export DPCPP_HOME=../dpcpp_compiler
+      #    export PATH=$DPCPP_HOME/bin:$PATH
+      #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
+      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+
+
+  shamrock_dpcpp_hip:
+    name: DPCPP HIP
+    runs-on: [self-hosted]
+    strategy:
+      matrix:
+        rocm: [5.4.3]
+    
+    steps:
+    
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Cache DPCPP
+        id: cache-dpcpp
+        uses: actions/cache@v3
+        with:
+          fail-on-cache-miss: true
+          path: dpcpp_compiler
+          key: dpcpp-hip-${{ matrix.rocm }}.tar.gz
+
+          
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+          
+      - name : Install pck (DPCPP)
+        run: |
+          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
+          
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+
+      - name : Check binary
+        run: |
+          dpcpp_compiler/bin/clang++ --version
+
+      
+      - name: configure Shamrock
+        run: |
+          python3 buildbot/configure.py --gen ninja --tests --build debug \
+            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile bare
+
+      - name: compile Shamrock
+        run: |
+          cd dpcpp_bare_debug
+          ninja
+
+      # no device to run on
+      #- name: run Shamrock
+      #  run: |
+      #    cd dpcpp_bare_debug
+      #    export DPCPP_HOME=../dpcpp_compiler
+      #    export PATH=$DPCPP_HOME/bin:$PATH
+      #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
+      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest

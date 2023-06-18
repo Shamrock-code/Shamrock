@@ -47,6 +47,7 @@ jobs:
           key: dpcpp-cuda-${{ matrix.cuda }}.tar.gz
 
       - name: install latest cmake
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y ca-certificates gpg wget
@@ -68,6 +69,7 @@ jobs:
       
 
       - name: install Ninja-build
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: sudo apt install ninja-build
 
       - name: Git clone 
@@ -150,6 +152,7 @@ jobs:
           key: dpcpp-hip-${{ matrix.rocm }}.tar.gz
 
       - name: install latest cmake
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y ca-certificates gpg wget
@@ -175,6 +178,7 @@ jobs:
 
       
       - name: install Ninja-build
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: sudo apt install ninja-build
 
       - name: Git clone 

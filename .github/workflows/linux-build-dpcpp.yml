@@ -46,20 +46,24 @@ jobs:
           path: dpcpp_compiler
           key: dpcpp-cuda-${{ matrix.cuda }}.tar.gz
 
+      - name: install latest cmake
+          run: |
+            sudo apt-get update
+            sudo apt-get install ca-certificates gpg wget
+            wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+            echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+            sudo apt-get update
+            sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
+            sudo apt-get install kitware-archive-keyring
+            sudo apt-get update
+            sudo apt-get install cmake
+
+
       - name: Git clone 
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/intel/llvm -b sycl
 
-      
-      - name: install latest cmake
-        run: |
-          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
-          sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
-          sudo apt-get install kitware-archive-keyring
-          sudo apt-get update
-          sudo apt-get install cmake
 
       - name: install CUDA
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
@@ -99,19 +103,24 @@ jobs:
           path: dpcpp_compiler
           key: dpcpp-hip-${{ matrix.rocm }}.tar.gz
 
+      - name: install latest cmake
+          run: |
+            sudo apt-get update
+            sudo apt-get install ca-certificates gpg wget
+            wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+            echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+            sudo apt-get update
+            sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
+            sudo apt-get install kitware-archive-keyring
+            sudo apt-get update
+            sudo apt-get install cmake
+
       - name: Git clone 
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           git clone https://github.com/intel/llvm -b sycl
 
-      - name: install latest cmake
-        run: |
-          wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
-          sudo rm /usr/share/keyrings/kitware-archive-keyring.gpg
-          sudo apt-get install kitware-archive-keyring
-          sudo apt-get update
-          sudo apt-get install cmake
+      
 
       - name: install ROCm
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'

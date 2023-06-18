@@ -32,7 +32,7 @@ jobs:
           
       - name : Install pck (DPCPP esimd)
         run: |
-          sudo apt install libva-dev libffi-dev libtool
+          sudo apt install -y libva-dev libffi-dev libtool
 
       - name: install Ninja-build
         run: sudo apt install ninja-build
@@ -102,7 +102,7 @@ jobs:
           
       - name : Install pck (DPCPP esimd)
         run: |
-          sudo apt install libva-dev libffi-dev libtool
+          sudo apt install -y libva-dev libffi-dev libtool
           
       - name: install Ninja-build
         run: sudo apt install ninja-build
@@ -180,7 +180,7 @@ jobs:
           
       - name : Install pck (DPCPP esimd)
         run: |
-          sudo apt install libva-dev libffi-dev libtool
+          sudo apt install -y libva-dev libffi-dev libtool
 
       - name: install Ninja-build
         run: sudo apt install ninja-build

@@ -28,6 +28,7 @@ jobs:
           
       - name : Install pck (DPCPP)
         run: |
+          sudo apt update
           sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
           
       - name : Install pck (DPCPP esimd)
@@ -98,6 +99,7 @@ jobs:
       
       - name : Install pck (DPCPP)
         run: |
+          sudo apt update
           sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common libva-dev
           
       - name : Install pck (DPCPP esimd)
@@ -176,6 +178,7 @@ jobs:
           
       - name : Install pck (DPCPP)
         run: |
+          sudo apt update
           sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
           
       - name : Install pck (DPCPP esimd)

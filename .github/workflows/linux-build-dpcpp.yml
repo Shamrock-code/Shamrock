@@ -159,7 +159,7 @@ jobs:
             --hip \
             --enable-esimd-emulator \
             --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" \
-            --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/usr/local/rocm"
+            --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/opt/rocm"
 
       
       - name: Compile

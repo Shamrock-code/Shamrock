@@ -31,13 +31,16 @@ jobs:
         run: |
           sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
           
+      - name : Install pck (DPCPP esimd)
+        run: |
+          sudo apt install libva-dev libffi-dev libtool
+
       - name: install Ninja-build
         run: sudo apt install ninja-build
 
       - name : Check binary
         run: |
           dpcpp_compiler/bin/clang++ --version
-
       
       - name: configure Shamrock
         run: |
@@ -49,7 +52,7 @@ jobs:
           cd dpcpp_bare_debug
           ninja
 
-      # no device to run on
+       no device to run on
       - name: run Shamrock
         run: |
           cd dpcpp_bare_debug
@@ -86,9 +89,21 @@ jobs:
         with:
           python-version: '3.10' 
           
+      - name: install CUDA
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/opt/cuda
+          wget -q -O cuda.sh https://developer.download.nvidia.com/compute/cuda/12.1.1/local_installers/cuda_12.1.1_530.30.02_linux.run
+          sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=~/opt/cuda || true
+          echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
+      
       - name : Install pck (DPCPP)
         run: |
-          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
+          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common libva-dev
+          
+      - name : Install pck (DPCPP esimd)
+        run: |
+          sudo apt install libva-dev libffi-dev libtool
           
       - name: install Ninja-build
         run: sudo apt install ninja-build
@@ -146,11 +161,28 @@ jobs:
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10' 
+
+      
+      - name: install ROCm
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
+          [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
+          [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal
+          sudo apt install -y libnuma-dev cmake unzip
+          wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
+          echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{matrix.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
+          printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
+          sudo apt update -y
+          sudo apt install -y rocm-dev
           
       - name : Install pck (DPCPP)
         run: |
           sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
           
+      - name : Install pck (DPCPP esimd)
+        run: |
+          sudo apt install libva-dev libffi-dev libtool
+
       - name: install Ninja-build
         run: sudo apt install ninja-build
 

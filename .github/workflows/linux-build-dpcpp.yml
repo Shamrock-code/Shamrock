@@ -35,7 +35,7 @@ jobs:
 
     strategy:
       matrix:
-        cuda: [11.0.2]
+        cuda: [12.1.1]
     
     steps:
         
@@ -62,7 +62,7 @@ jobs:
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/opt/cuda
-          wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
+          wget -q -O cuda.sh wget https://developer.download.nvidia.com/compute/cuda/12.1.1/local_installers/cuda_12.1.1_530.30.02_linux.run
           sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=~/opt/cuda || true
           echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
       
@@ -92,7 +92,13 @@ jobs:
         run: |
           cd llvm/build
           ninja all \
-            install
+            lib/libsycl-itt-stubs.o
+
+      - name: Install
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
+          cd llvm/build
+          ninja install
 
         
 
@@ -167,5 +173,11 @@ jobs:
         run: |
           cd llvm/build
           ninja all \
-            install
+            lib/libsycl-itt-stubs.o
+
+      - name: Install
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
+          cd llvm/build
+          ninja install
         

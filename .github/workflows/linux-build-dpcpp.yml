@@ -67,6 +67,9 @@ jobs:
           echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
       
 
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+
       - name: Git clone 
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
@@ -81,8 +84,16 @@ jobs:
             --llvm-external-projects compiler-rt \
             --cuda \
             --enable-esimd-emulator \
-            --cmake-opt="-DCMAKE_INSTALL_PREFIX=../dpcpp_compiler" \
+            --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" \
             --cmake-opt="-DCUDA_TOOLKIT_ROOT_DIR=/home/docker/opt/cuda"
+
+      - name: Compile
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
+          cd llvm/build
+          ninja all \
+            install
+
         
 
   hip_build:
@@ -127,6 +138,10 @@ jobs:
           sudo apt update -y
           sudo apt install -y rocm-dev
 
+      
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+
       - name: Git clone 
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
@@ -143,6 +158,14 @@ jobs:
             --llvm-external-projects compiler-rt \
             --hip \
             --enable-esimd-emulator \
-            --cmake-opt="-DCMAKE_INSTALL_PREFIX=../dpcpp_compiler" \
+            --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" \
             --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/usr/local/rocm"
+
+      
+      - name: Compile
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
+          cd llvm/build
+          ninja all \
+            install
         

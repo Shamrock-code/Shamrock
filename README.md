@@ -8,6 +8,7 @@ CI status:
 
 DPC++ status :
 ![badge2](https://badgen.net/static/DPC++%2FCUDA/yes/green)
+![badge2](https://badgen.net/static/DPC++%2FHIP:ROCM/yes/green)
 
 OpenSycl status :
 ![badge2](https://badgen.net/static/OpenSYCL%2FOpenMP/yes/green)

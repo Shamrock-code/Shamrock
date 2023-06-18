@@ -5,7 +5,7 @@ on:
   workflow_call:
     
 jobs:
-  shamrock_dpcpp:
+  shamrock_dpcpp_nightly:
     name: DPCPP Nighly
     runs-on: [self-hosted]
     
@@ -21,7 +21,7 @@ jobs:
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler
-          key: dpcpp-compiler.tar.gz  
+          key: dpcpp-nighly20230112.tar.gz
 
       - uses: actions/setup-python@v4
         with:

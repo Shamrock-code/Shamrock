@@ -50,17 +50,18 @@ jobs:
           ninja
 
       # no device to run on
-      #- name: run Shamrock
-      #  run: |
-      #    cd dpcpp_bare_debug
-      #    export DPCPP_HOME=../dpcpp_compiler
-      #    export PATH=$DPCPP_HOME/bin:$PATH
-      #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+      - name: run Shamrock
+        run: |
+          cd dpcpp_bare_debug
+          export DPCPP_HOME=../dpcpp_compiler
+          export PATH=$DPCPP_HOME/bin:$PATH
+          export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
+          export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
+          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
 
   shamrock_dpcpp_cuda:
-    name: DPCPP CUDA
+    name: DPCPP CUDA ${{ matrix.cuda }}
     runs-on: [self-hosted]
 
     strategy:
@@ -100,7 +101,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile bare
+            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile cuda
 
       - name: compile Shamrock
         run: |
@@ -108,17 +109,18 @@ jobs:
           ninja
 
       # no device to run on
-      #- name: run Shamrock
-      #  run: |
-      #    cd dpcpp_bare_debug
-      #    export DPCPP_HOME=../dpcpp_compiler
-      #    export PATH=$DPCPP_HOME/bin:$PATH
-      #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+      - name: run Shamrock
+        run: |
+          cd dpcpp_bare_debug
+          export DPCPP_HOME=../dpcpp_compiler
+          export PATH=$DPCPP_HOME/bin:$PATH
+          export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
+          export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
+          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
 
   shamrock_dpcpp_hip:
-    name: DPCPP HIP
+    name: Cache ROCM ${{ matrix.rocm }}
     runs-on: [self-hosted]
     strategy:
       matrix:
@@ -159,7 +161,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile bare
+            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile hip-gfx906
 
       - name: compile Shamrock
         run: |
@@ -167,10 +169,11 @@ jobs:
           ninja
 
       # no device to run on
-      #- name: run Shamrock
-      #  run: |
-      #    cd dpcpp_bare_debug
-      #    export DPCPP_HOME=../dpcpp_compiler
-      #    export PATH=$DPCPP_HOME/bin:$PATH
-      #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+      - name: run Shamrock
+        run: |
+          cd dpcpp_bare_debug
+          export DPCPP_HOME=../dpcpp_compiler
+          export PATH=$DPCPP_HOME/bin:$PATH
+          export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
+          export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
+          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest

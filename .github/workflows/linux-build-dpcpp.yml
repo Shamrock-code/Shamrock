@@ -3,6 +3,7 @@ name: DPCPP
 
 on:
   workflow_call:
+  workflow_dispatch:
     
 jobs:
   nightly_build20230112:

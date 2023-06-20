@@ -22,6 +22,8 @@
 #include <variant>
 namespace shammodels {
 
+    
+
     /**
      * @brief The shamrock SPH model
      *

@@ -160,32 +160,71 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
         });
     });
 
-    sycl::range<1> range_tree{tree_struct.internal_cell_count};
-    auto ker_reduc_hmax = [&](sycl::handler &cgh) {
-        u32 offset_leaf = tree_struct.internal_cell_count;
 
-        auto h_max_cell = buf_cell_int_rad_buf->template get_access<sycl::access::mode::read_write>(cgh);
+    {
+        
+        //172827
+        //86413
+        //<<<(43207,1,1),(2,1,1)>>>
+        //gid = 86412
 
-        sycl::accessor rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
-        sycl::accessor lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
-        sycl::accessor rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
-        sycl::accessor lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
+        shamalgs::memory::print_buf(*tree_struct.buf_rchild_id, tree_struct.internal_cell_count, 16, "{} ");
+        shamalgs::memory::print_buf(*tree_struct.buf_lchild_id, tree_struct.internal_cell_count, 16, "{} ");
+        shamalgs::memory::print_buf(*tree_struct.buf_rchild_flag, tree_struct.internal_cell_count, 16, "{} ");
+        shamalgs::memory::print_buf(*tree_struct.buf_lchild_flag, tree_struct.internal_cell_count, 16, "{} ");
 
-        cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
-            u32 gid = (u32)item.get_id(0);
 
+            sycl::host_accessor rchild_id   {*tree_struct.buf_rchild_id  ,sycl::read_only};
+            sycl::host_accessor lchild_id   {*tree_struct.buf_lchild_id  ,sycl::read_only};
+            sycl::host_accessor rchild_flag {*tree_struct.buf_rchild_flag,sycl::read_only};
+            sycl::host_accessor lchild_flag {*tree_struct.buf_lchild_flag,sycl::read_only};
+
+            u32 gid = 86412;
+            u32 lid_0 = lchild_id[gid];
+            u32 rid_0 = rchild_id[gid];
+            u32 lfl_0 = lchild_flag[gid];
+            u32 rfl_0 = rchild_flag[gid];
+            u32 offset_leaf = tree_struct.internal_cell_count;
             u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
             u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
 
-            coord_t h_l = h_max_cell[lid];
-            coord_t h_r = h_max_cell[rid];
+            logger::raw_ln("gid",gid);
+            logger::raw_ln("lid_0",lid_0);
+            logger::raw_ln("rid_0",rid_0);
+            logger::raw_ln("lfl_0",lfl_0);
+            logger::raw_ln("rfl_0",rfl_0);
+            logger::raw_ln("offset_leaf",offset_leaf);
+            logger::raw_ln("lid",lid);
+            logger::raw_ln("rid",rid);
+            logger::raw_ln("sz =", buf_cell_int_rad_buf->size());
+            logger::raw_ln("offset_leaf =", tree_struct.internal_cell_count);
+    }
 
-            h_max_cell[gid] = (h_r > h_l ? h_r : h_l);
-        });
-    };
+    sycl::range<1> range_tree{tree_struct.internal_cell_count};
 
     for (u32 i = 0; i < tree_depth; i++) {
-        queue.submit(ker_reduc_hmax);
+        queue.submit([&](sycl::handler &cgh) {
+            u32 offset_leaf = tree_struct.internal_cell_count;
+
+            sycl::accessor h_max_cell {*buf_cell_int_rad_buf, cgh,sycl::read_write};
+
+            sycl::accessor rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
+            sycl::accessor lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
+            sycl::accessor rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
+            sycl::accessor lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
+
+            cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
+                u32 gid = (u32)item.get_id(0);
+
+                u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
+                u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
+
+                coord_t h_l = h_max_cell[lid];
+                coord_t h_r = h_max_cell[rid];
+
+                h_max_cell[gid] = (h_r > h_l ? h_r : h_l);
+            });
+        });
     }
 
     return std::move(buf_cell_interact_rad);

@@ -390,9 +390,12 @@ namespace shamrock::tree {
     };
 
     inline ObjectCache prepare_object_cache(sycl::buffer<u32> && counts, u32 obj_cnt){
+
+
+        logger::debug_sycl_ln("Cache", " reading last value ...");
         u32 neigh_last_val = shamalgs::memory::extract_element(shamsys::instance::get_compute_queue(), counts, obj_cnt-1);
 
-        logger::raw_ln("last_val : ",neigh_last_val);
+        logger::debug_sycl_ln("Cache", " last value =",neigh_last_val);
 
         sycl::buffer<u32> neigh_scanned_vals = shamalgs::numeric::exclusive_sum(
             shamsys::instance::get_compute_queue(), 
@@ -401,7 +404,7 @@ namespace shamrock::tree {
 
         u32 neigh_sum = neigh_last_val + shamalgs::memory::extract_element(shamsys::instance::get_compute_queue(), neigh_scanned_vals, obj_cnt-1);
 
-        logger::raw_ln("chache buf size : ",neigh_sum);
+        logger::debug_sycl_ln("Cache", " cache for N=",obj_cnt, "size() =",neigh_sum);
 
         sycl::buffer<u32> particle_neigh_map (neigh_sum);
 

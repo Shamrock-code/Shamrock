@@ -360,7 +360,7 @@ jobs:
 
   shamrock_opensycl_cuda_nvcxx:
     name: OpenSYCL nvcxx ${{matrix.nvhpc}}, CUDA ${{matrix.cuda}}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
 
     strategy:
       matrix:

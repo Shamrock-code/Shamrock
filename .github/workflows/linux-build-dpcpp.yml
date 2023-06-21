@@ -16,6 +16,7 @@ jobs:
         id: cache-dpcpp
         uses: actions/cache@v3
         with:
+          lookup-only: true
           path: dpcpp_compiler
           key: dpcpp-nighly20230112.tar.gz
       
@@ -44,6 +45,7 @@ jobs:
         id: cache-dpcpp
         uses: actions/cache@v3
         with:
+          lookup-only: true
           path: dpcpp_compiler
           key: dpcpp-cuda-${{ matrix.cuda }}.tar.gz
 
@@ -149,6 +151,7 @@ jobs:
         id: cache-dpcpp
         uses: actions/cache@v3
         with:
+          lookup-only: true
           path: dpcpp_compiler
           key: dpcpp-hip-${{ matrix.rocm }}.tar.gz
 

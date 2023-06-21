@@ -7,7 +7,7 @@ on:
 jobs:
   shamrock_opensycl_omp_debug_coverage:
     name: OpenSYCL coverage omp clang-${{ matrix.clang }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, cuda1102rocm543]
 
     strategy:
       matrix:
@@ -109,14 +109,14 @@ jobs:
 
   shamrock_opensycl_omp:
     name: OpenSYCL omp clang-${{ matrix.clang }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, cuda1102rocm543]
 
     strategy:
       matrix:
         clang: [15,16]
         cuda: [11.0.2]
         rocm: [5.4.3]
-    if: false
+    #if: false
   
     timeout-minutes: 60
     steps:
@@ -180,19 +180,19 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
 
   shamrock_opensycl_cuda:
     name: OpenSYCL cuda clang-${{ matrix.clang }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, cuda1102rocm543]
 
     strategy:
       matrix:
         clang: [15,16]
         cuda: [11.0.2]
         rocm: [5.4.3]
-    if: false
+    #if: false
   
     timeout-minutes: 60
     steps:
@@ -215,12 +215,12 @@ jobs:
         run: sudo apt install libboost-all-dev
   
 
-      - name: install CUDA
-        run: |
-          mkdir -p ~/opt/cuda
-          wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
-          sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=~/opt/cuda || true
-          echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
+      #- name: install CUDA
+      #  run: |
+      #    mkdir -p ~/opt/cuda
+      #    wget -q -O cuda.sh http://developer.download.nvidia.com/compute/cuda/11.0.2/local_installers/cuda_11.0.2_450.51.05_linux.run
+      #    sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=~/opt/cuda || true
+      #    echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
       
 
       - name: install LLVM
@@ -266,20 +266,20 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
 
 
   shamrock_opensycl_rocm:
     name: OpenSYCL rocm clang-${{ matrix.clang }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, cuda1102rocm543]
 
     strategy:
       matrix:
         clang: [15,16]
         cuda: [11.0.2]
         rocm: [5.4.3]
-    if: false
+    #if: false
   
     timeout-minutes: 60
     steps:
@@ -356,11 +356,11 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
 
   shamrock_opensycl_cuda_nvcxx:
     name: OpenSYCL nvcxx ${{matrix.nvhpc}}, CUDA ${{matrix.cuda}}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
 
     strategy:
       matrix:
@@ -429,4 +429,4 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest

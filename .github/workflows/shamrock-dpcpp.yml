@@ -7,7 +7,7 @@ on:
 jobs:
   shamrock_dpcpp_nightly:
     name: DPCPP Nighly
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
     
     steps:
       - uses: actions/checkout@v3
@@ -17,6 +17,8 @@ jobs:
       - name: Cache DPCPP
         id: cache-dpcpp
         uses: actions/cache@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler
@@ -65,7 +67,7 @@ jobs:
 
   shamrock_dpcpp_cuda:
     name: DPCPP CUDA ${{ matrix.cuda }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
 
     strategy:
       matrix:
@@ -80,6 +82,8 @@ jobs:
       - name: Cache DPCPP
         id: cache-dpcpp
         uses: actions/cache@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler
@@ -137,7 +141,7 @@ jobs:
 
   shamrock_dpcpp_hip:
     name: DPCPP HIP ROCM ${{ matrix.rocm }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
     strategy:
       matrix:
         rocm: [5.4.3]
@@ -151,6 +155,8 @@ jobs:
       - name: Cache DPCPP
         id: cache-dpcpp
         uses: actions/cache@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler

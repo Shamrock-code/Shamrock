@@ -867,7 +867,7 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
                 sycl::range<1> range_node = sycl::range<1>{ret.tree_reduced_morton_codes.tree_leaf_count + ret.tree_struct.internal_cell_count};
 
                 
-                auto out = sycl::stream(128, 128, cgh);
+                //auto out = sycl::stream(128, 128, cgh);
 
                 cgh.parallel_for(range_node, [=](sycl::item<1> item) {
 
@@ -994,7 +994,7 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
 
                                 break;
                             }else{
-                                out << "[CRASH] Tree cut had a weird behavior during old cell search : \n";
+                                //out << "[CRASH] Tree cut had a weird behavior during old cell search : \n";
                                 //throw "";
 
                                 u32 store_val = cur_id;

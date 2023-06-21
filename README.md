@@ -12,6 +12,8 @@ DPC++ status :
 
 OpenSycl status :
 ![badge2](https://badgen.net/static/OpenSYCL%2FOpenMP/yes/green)
+![badge2](https://badgen.net/static/OpenSYCL%2FROCM/yes/green)
+![badge2](https://badgen.net/static/OpenSYCL%2FCUDA/yes/green)
 
 # Getting started
 

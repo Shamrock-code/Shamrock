@@ -170,6 +170,8 @@ profile_map = {
     },
     "opensycl" : {
         "omp" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
+        "omp_O3debug" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -g " + hipsyclconfigfile,
+        "omp_O3debugasan" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -g -fsanitize=address " + hipsyclconfigfile,
         "omp_sanitizer" : "-fsanitize=address --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "omp_coverage" : "-fprofile-instr-generate -fcoverage-mapping --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile,

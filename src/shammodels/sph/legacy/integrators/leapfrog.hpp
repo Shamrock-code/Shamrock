@@ -187,7 +187,7 @@ namespace sph {
 
         //compute cfl
         auto get_cfl = [&]() -> flt {
-            GlobalVariable<min,flt> cfl_glb_var;
+            GlobalVariable<GlobalVariableType::min,flt> cfl_glb_var;
             cfl_glb_var.compute_var_patch(sched, lambda_cfl);
             cfl_glb_var.reduce_val();
             return cfl_glb_var.get_val();

@@ -7,7 +7,7 @@ on:
 jobs:
   shamrock_dpcpp_nightly:
     name: DPCPP Nighly
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
     
     steps:
       - uses: actions/checkout@v3

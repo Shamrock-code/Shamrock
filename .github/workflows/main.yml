@@ -16,7 +16,7 @@ jobs:
 
   pragma_check:
     name: "Check : (Pragma once)"
-    runs-on: self-hosted
+    runs-on: [self-hosted, raw]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -29,7 +29,7 @@ jobs:
 
   copyright_check:
     name: "Check : (Copyright)"
-    runs-on: self-hosted
+    runs-on: [self-hosted, raw]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -44,7 +44,7 @@ jobs:
   make_documentation:
     name: "Build : Documentation"
 
-    runs-on: self-hosted
+    runs-on: [self-hosted, raw]
 
     needs: [pragma_check, copyright_check]
     
@@ -113,7 +113,7 @@ jobs:
 
   publish_release:
 
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
     
     needs: [shamrock_linux_opensycl, shamrock_linux_dpcpp, make_documentation]
 

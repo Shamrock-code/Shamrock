@@ -6,7 +6,7 @@ on:
 jobs:
   opensycl_clang:
     name: clang ${{ matrix.clang }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, cuda1102rocm543]
     
     strategy:
       matrix:

@@ -67,7 +67,7 @@ jobs:
 
   shamrock_dpcpp_cuda:
     name: DPCPP CUDA ${{ matrix.cuda }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
 
     strategy:
       matrix:
@@ -141,7 +141,7 @@ jobs:
 
   shamrock_dpcpp_hip:
     name: DPCPP HIP ROCM ${{ matrix.rocm }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
     strategy:
       matrix:
         rocm: [5.4.3]

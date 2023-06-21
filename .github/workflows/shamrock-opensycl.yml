@@ -7,7 +7,7 @@ on:
 jobs:
   shamrock_opensycl_omp_debug_coverage:
     name: OpenSYCL coverage omp clang-${{ matrix.clang }}
-    runs-on: [self-hosted,raw]
+    runs-on: [self-hosted, cuda1102rocm543]
 
     strategy:
       matrix:

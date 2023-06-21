@@ -4,6 +4,7 @@ target_sources(shamrock_lib
         SPHSolverImpl.cpp
         SPHModel.cpp
         SPHModelSolver.cpp
+        SPHShockDetector.cpp
     PUBLIC
     )
 
@@ -13,3 +14,4 @@ target_sources(shamrock_lib
 #add_subdirectory(physics)
 #add_subdirectory(setup)
 add_subdirectory(legacy)
+add_subdirectory(modules)

@@ -13,7 +13,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/time.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SPHSockDetector.hpp"
+#include "shammodels/sph/SPHShockDetector.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -143,14 +143,9 @@ template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
     StackEntry stack_loc{};
 
-    if (sptree) {
-        throw shambase::throw_with_loc<std::runtime_error>(
-            "please reset the serial patch tree before");
-    }
-
     SerialPatchTree<Tvec> _sptree = SerialPatchTree<Tvec>::build(scheduler());
     _sptree.attach_buf();
-    sptree = std::make_unique<SerialPatchTree<Tvec>>(std::move(_sptree));
+    storage.serial_patch_tree.set(std::move(_sptree));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -168,7 +163,7 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary() {
     auto [bmin, bmax] = sched.get_box_volume<Tvec>();
     integrators.fields_apply_periodicity(ixyz, std::pair{bmin, bmax});
 
-    reatrib.reatribute_patch_objects(shambase::get_check_ref(sptree), "xyz");
+    reatrib.reatribute_patch_objects(storage.serial_patch_tree.get(), "xyz");
 }
 
 template<class Tvec, template<class> class Kern>
@@ -182,7 +177,7 @@ void SPHSolve<Tvec, Kern>::build_ghost_cache() {
     using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
     SPHUtils sph_utils(scheduler());
     ghost_handle_cache = sph_utils.build_interf_cache(
-        shambase::get_check_ref(ghost_handler), shambase::get_check_ref(sptree), htol_up_tol);
+        shambase::get_check_ref(ghost_handler), storage.serial_patch_tree.get(), htol_up_tol);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -703,11 +698,6 @@ void SPHSolve<Tvec, Kern>::reset_merge_ghosts_fields() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::update_artificial_viscosity_cd10(Tscal dt) {
-
-    shambase::throw_unimplemented();
-}
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
@@ -723,17 +713,7 @@ void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 
     SPHShockDetector<Tvec, Kern> shock_handler(context);
 
-    if (None *v = std::get_if<None>(&cfg_av.config)) {
-        logger::debug_ln("SPHSolver", "skipping artif viscosity update (No viscosity mode)");
-    } else if (Constant *v = std::get_if<Constant>(&cfg_av.config)) {
-        logger::debug_ln("SPHSolver", "skipping artif viscosity update (Constant mode)");
-    } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&cfg_av.config)) {
-        shock_handler.update_artificial_viscosity_mm97(dt,*v);
-    } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&cfg_av.config)) {
-        update_artificial_viscosity_cd10(dt);
-    } else {
-        shambase::throw_unimplemented();
-    }
+    shock_handler.update_artificial_viscosity(dt, cfg_av.config);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

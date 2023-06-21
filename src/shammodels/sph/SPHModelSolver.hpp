@@ -11,6 +11,7 @@
 #include "SPHModelSolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
+#include "shammodels/sph/modules/SPHSolverStorage.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -44,6 +45,8 @@ namespace shammodels {
 
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+
+        SPHSolverStorage<Tvec> storage {};
 
         Config solver_config;
 
@@ -84,9 +87,8 @@ namespace shammodels {
         }
 
         // serial patch tree control
-        std::unique_ptr<SerialPatchTree<Tvec>> sptree;
         void gen_serial_patch_tree();
-        inline void reset_serial_patch_tree() { sptree.reset(); }
+        inline void reset_serial_patch_tree() { storage.serial_patch_tree.reset(); }
 
         // interface_control
         using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;

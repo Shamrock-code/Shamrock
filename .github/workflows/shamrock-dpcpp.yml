@@ -17,6 +17,8 @@ jobs:
       - name: Cache DPCPP
         id: cache-dpcpp
         uses: actions/cache@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler
@@ -80,6 +82,8 @@ jobs:
       - name: Cache DPCPP
         id: cache-dpcpp
         uses: actions/cache@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler
@@ -151,6 +155,8 @@ jobs:
       - name: Cache DPCPP
         id: cache-dpcpp
         uses: actions/cache@v3
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler

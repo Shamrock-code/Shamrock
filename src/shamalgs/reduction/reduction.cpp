@@ -8,6 +8,7 @@
 
 #include "reduction.hpp"
 
+#include "shamalgs/memory/memory.hpp"
 #include "shamalgs/reduction/details/sycl2020reduction.hpp"
 #include "shamalgs/reduction/details/groupReduction.hpp"
 #include "shamalgs/reduction/details/fallbackReduction.hpp"
@@ -21,7 +22,7 @@ namespace shamalgs::reduction {
 
     template<class T>
     T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        return details::SYCL2020<T>::sum(q, buf1, start_id, end_id);
+        return details::FallbackReduction<T>::sum(q, buf1, start_id, end_id);
     }
 
     template<class T>
@@ -82,7 +83,7 @@ namespace shamalgs::reduction {
                 sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = shambase::has_nan(acc1[item]);
+                    out[item] = !shambase::has_nan(acc1[item]);
                 });
             });
 
@@ -103,7 +104,7 @@ namespace shamalgs::reduction {
                 sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = shambase::has_inf(acc1[item]);
+                    out[item] = !shambase::has_inf(acc1[item]);
                 });
             });
 
@@ -124,7 +125,7 @@ namespace shamalgs::reduction {
                 sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = shambase::has_nan_or_inf(acc1[item]);
+                    out[item] = !shambase::has_nan_or_inf(acc1[item]);
                 });
             });
 

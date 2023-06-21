@@ -20,6 +20,8 @@
 
 #include "RadixTreeMortonBuilder.hpp"
 #include "shamalgs/memory/memory.hpp"
+#include "shambase/floats.hpp"
+#include "shambase/integer.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 
 
@@ -160,7 +162,8 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
         });
     });
 
-
+    #if false
+    // debug code to track the DPCPP + prime number worker issue
     {
         
         //172827
@@ -197,8 +200,10 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
             logger::raw_ln("lid",lid);
             logger::raw_ln("rid",rid);
             logger::raw_ln("sz =", buf_cell_int_rad_buf->size());
-            logger::raw_ln("offset_leaf =", tree_struct.internal_cell_count);
+            logger::raw_ln("internal_cell_count =", tree_struct.internal_cell_count);
+            logger::raw_ln("tree_leaf_count =", tree_reduced_morton_codes.tree_leaf_count);
     }
+    #endif
 
     sycl::range<1> range_tree{tree_struct.internal_cell_count};
 
@@ -213,8 +218,19 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
             sycl::accessor rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
             sycl::accessor lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
 
-            cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
-                u32 gid = (u32)item.get_id(0);
+            u32 len = tree_struct.internal_cell_count;
+            constexpr u32 group_size = 64;
+            u32 max_len = len;
+            u32 group_cnt = shambase::group_count(len, group_size);
+            u32 corrected_len = group_cnt*group_size;
+            
+            cgh.parallel_for(
+                sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+                u32 local_id = id.get_local_id(0);
+                u32 group_tile_id = id.get_group_linear_id();
+                u32 gid = group_tile_id * group_size + local_id;
+
+                if(gid >= max_len) return;
 
                 u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
                 u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
@@ -225,6 +241,13 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
                 h_max_cell[gid] = (h_r > h_l ? h_r : h_l);
             });
         });
+    }
+
+    {
+        if(shamalgs::reduction::has_nan(queue, *buf_cell_int_rad_buf, tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count)){
+            shamalgs::memory::print_buf(*buf_cell_int_rad_buf, tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count, 8, "{} ");
+            throw  shambase::throw_with_loc<std::runtime_error>("the structure of the tree as issue in ids");
+        }
     }
 
     return std::move(buf_cell_interact_rad);

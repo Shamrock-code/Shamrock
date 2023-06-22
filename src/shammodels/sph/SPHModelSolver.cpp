@@ -187,13 +187,9 @@ template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::merge_position_ghost() {
     StackEntry stack_loc{};
 
-    if (!temp_fields.merged_xyzh.is_empty()) {
-        throw shambase::throw_with_loc<std::runtime_error>(
-            "please reset the temp field merged_xyz before");
-    }
 
-    temp_fields.merged_xyzh =
-        storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get());
+    storage.merged_xyzh.set(
+        storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -204,7 +200,7 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
     SPHSolverImpl solver(context);
 
     constexpr u32 reduc_level = 3;
-    auto &merged_xyzh         = temp_fields.merged_xyzh;
+    auto &merged_xyzh         = storage.merged_xyzh.get();
     storage.merged_pos_trees.set( solver.make_merge_patch_trees(merged_xyzh, reduc_level));
 }
 
@@ -256,7 +252,6 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
     shamrock::SchedulerUtility utility(scheduler());
     SPHSolverImpl solver(context);
 
-    auto &merged_xyzh                       = temp_fields.merged_xyzh;
     ComputeField<Tscal> &omega              = temp_fields.omega;
 
     PatchDataLayout &pdl = scheduler().pdl;
@@ -292,7 +287,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
                 sycl::buffer<Tscal> &hnew =
                     shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf());
                 sycl::buffer<Tvec> &merged_r =
-                    shambase::get_check_ref(merged_xyzh.get(p.id_patch).field_pos.get_buf());
+                    shambase::get_check_ref(storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf());
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -329,7 +324,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
 
             reset_ghost_handler();
             clear_ghost_cache();
-            temp_fields.merged_xyzh.reset();
+            storage.merged_xyzh.reset();
             clear_merged_pos_trees();
             reset_presteps_rint();
             reset_neighbors_cache();
@@ -354,7 +349,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
                 sycl::buffer<Tscal> &hnew =
                     shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf());
                 sycl::buffer<Tvec> &merged_r =
-                    shambase::get_check_ref(merged_xyzh.get(p.id_patch).field_pos.get_buf());
+                    shambase::get_check_ref(storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf());
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -394,7 +389,7 @@ void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
         throw shambase::throw_with_loc<std::runtime_error>("please reset the rtree_field_h before");
     }
 
-    auto &xyzh_merged = temp_fields.merged_xyzh;
+    auto &xyzh_merged = storage.merged_xyzh.get();
 
     rtree_rint_field =
         storage.merged_pos_trees.get().template map<RadixTreeField<Tscal>>([&](u64 id, RTree &rtree) {
@@ -425,7 +420,7 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
 
             NamedStackEntry cache_build_stack_loc{"build cache"};
 
-            PreStepMergedField &mfield = temp_fields.merged_xyzh.get(patch_id);
+            PreStepMergedField &mfield = storage.merged_xyzh.get().get(patch_id);
 
             sycl::buffer<Tvec> &buf_xyz    = shambase::get_check_ref(mfield.field_pos.get_buf());
             sycl::buffer<Tscal> &buf_hpart = shambase::get_check_ref(mfield.field_hpart.get_buf());
@@ -817,7 +812,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
     u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
-    auto &merged_xyzh                                 = temp_fields.merged_xyzh;
+    auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<RTree> &trees           = storage.merged_pos_trees.get();
     ComputeField<Tscal> &omega                        = temp_fields.omega;
     shambase::DistributedData<MergedPatchData> &mpdat = merged_patchdata_ghost;
@@ -1020,7 +1015,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
     u32 iomega_interf    = ghost_layout.get_field_idx<Tscal>("omega");
     u32 ialpha_AV_interf = ghost_layout.get_field_idx<Tscal>("alpha_AV");
 
-    auto &merged_xyzh                                 = temp_fields.merged_xyzh;
+    auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<RTree> &trees           = storage.merged_pos_trees.get();
     ComputeField<Tscal> &omega                        = temp_fields.omega;
     shambase::DistributedData<MergedPatchData> &mpdat = merged_patchdata_ghost;
@@ -1259,7 +1254,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
     SPHSolverImpl solver(context);
 
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
-    auto &merged_xyzh                             = temp_fields.merged_xyzh;
+    auto &merged_xyzh                             = storage.merged_xyzh.get();
     shambase::DistributedData<RTree> &trees       = storage.merged_pos_trees.get();
     ComputeField<Tscal> &omega                    = temp_fields.omega;
 
@@ -1874,6 +1869,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
     reset_serial_patch_tree();
     reset_ghost_handler();
+    storage.merged_xyzh.reset();
     temp_fields.clear();
     clear_merged_pos_trees();
     clear_ghost_cache();

@@ -104,11 +104,9 @@ namespace shammodels {
         void clear_ghost_cache();
 
         struct TempFields {
-            shambase::DistributedData<PreStepMergedField> merged_xyzh;
             shamrock::ComputeField<Tscal> omega;
 
             void clear() {
-                merged_xyzh.reset();
                 omega.reset();
             }
 

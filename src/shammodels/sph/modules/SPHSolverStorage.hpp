@@ -60,6 +60,7 @@ namespace shammodels {
 
         StorageComponent<GhostHandleCache> ghost_patch_cache;
 
+        StorageComponent<shambase::DistributedData<PreStepMergedField>> merged_xyzh;
 
         using RTree = RadixTree<Tmorton, Tvec>;
         StorageComponent<shambase::DistributedData<RTree>> merged_pos_trees;

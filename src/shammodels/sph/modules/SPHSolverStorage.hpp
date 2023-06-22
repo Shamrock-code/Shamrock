@@ -53,7 +53,11 @@ namespace shammodels {
 
 
         using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
+        using GhostHandleCache   = typename GhostHandle::CacheMap;
+        using PreStepMergedField = typename GhostHandle::PreStepMergedField;
         StorageComponent<GhostHandle> ghost_handler;
+
+        StorageComponent<GhostHandleCache> ghost_patch_cache;
 
 
     };

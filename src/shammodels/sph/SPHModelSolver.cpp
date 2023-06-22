@@ -169,21 +169,18 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary() {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::build_ghost_cache() {
     StackEntry stack_loc{};
-    if (!ghost_handle_cache.is_empty()) {
-        throw shambase::throw_with_loc<std::runtime_error>(
-            "please reset the ghost_handle_cache before");
-    }
 
     using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
     SPHUtils sph_utils(scheduler());
-    ghost_handle_cache = sph_utils.build_interf_cache(
-        storage.ghost_handler.get(), storage.serial_patch_tree.get(), htol_up_tol);
+    
+    storage.ghost_patch_cache.set( sph_utils.build_interf_cache(
+        storage.ghost_handler.get(), storage.serial_patch_tree.get(), htol_up_tol));
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::clear_ghost_cache() {
     StackEntry stack_loc{};
-    ghost_handle_cache.reset();
+    storage.ghost_patch_cache.reset();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -196,7 +193,7 @@ void SPHSolve<Tvec, Kern>::merge_position_ghost() {
     }
 
     temp_fields.merged_xyzh =
-        storage.ghost_handler.get().build_comm_merge_positions(ghost_handle_cache);
+        storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get());
 }
 
 template<class Tvec, template<class> class Kern>
@@ -627,7 +624,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     ComputeField<Tscal> &omega                    = temp_fields.omega;
 
     auto pdat_interf = ghost_handle.template build_interface_native<PatchData>(
-        ghost_handle_cache,
+        storage.ghost_patch_cache.get(),
         [&](u64 sender,
             u64 /*receiver*/,
             InterfaceBuildInfos binfo,

@@ -100,7 +100,6 @@ namespace shammodels {
         }
         inline void reset_ghost_handler() { storage.ghost_handler.reset(); }
 
-        GhostHandleCache ghost_handle_cache;
         void build_ghost_cache();
         void clear_ghost_cache();
 

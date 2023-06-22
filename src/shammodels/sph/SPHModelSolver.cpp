@@ -177,7 +177,7 @@ void SPHSolve<Tvec, Kern>::build_ghost_cache() {
     using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
     SPHUtils sph_utils(scheduler());
     ghost_handle_cache = sph_utils.build_interf_cache(
-        shambase::get_check_ref(ghost_handler), storage.serial_patch_tree.get(), htol_up_tol);
+        storage.ghost_handler.get(), storage.serial_patch_tree.get(), htol_up_tol);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -196,7 +196,7 @@ void SPHSolve<Tvec, Kern>::merge_position_ghost() {
     }
 
     temp_fields.merged_xyzh =
-        shambase::get_check_ref(ghost_handler).build_comm_merge_positions(ghost_handle_cache);
+        storage.ghost_handler.get().build_comm_merge_positions(ghost_handle_cache);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -623,7 +623,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
-    sph::BasicSPHGhostHandler<Tvec> &ghost_handle = shambase::get_check_ref(ghost_handler);
+    sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
     ComputeField<Tscal> &omega                    = temp_fields.omega;
 
     auto pdat_interf = ghost_handle.template build_interface_native<PatchData>(
@@ -1265,7 +1265,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
     SPHSolverImpl solver(context);
 
-    sph::BasicSPHGhostHandler<Tvec> &ghost_handle = shambase::get_check_ref(ghost_handler);
+    sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
     auto &merged_xyzh                             = temp_fields.merged_xyzh;
     shambase::DistributedData<RTree> &trees       = merged_pos_trees;
     ComputeField<Tscal> &omega                    = temp_fields.omega;

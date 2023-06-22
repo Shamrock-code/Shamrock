@@ -95,15 +95,10 @@ namespace shammodels {
         using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
 
-        std::unique_ptr<GhostHandle> ghost_handler;
         inline void gen_ghost_handler() {
-            if (ghost_handler) {
-                throw shambase::throw_with_loc<std::runtime_error>(
-                    "please reset the ghost_handler before");
-            }
-            ghost_handler = std::make_unique<GhostHandle>(scheduler());
+            storage.ghost_handler.set(GhostHandle{scheduler()});
         }
-        inline void reset_ghost_handler() { ghost_handler.reset(); }
+        inline void reset_ghost_handler() { storage.ghost_handler.reset(); }
 
         GhostHandleCache ghost_handle_cache;
         void build_ghost_cache();

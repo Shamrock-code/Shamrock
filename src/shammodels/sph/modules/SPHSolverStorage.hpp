@@ -10,6 +10,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHModelSolverConfig.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -49,6 +50,12 @@ namespace shammodels {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         StorageComponent<SerialPatchTree<Tvec>> serial_patch_tree;
+
+
+        using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
+        StorageComponent<GhostHandle> ghost_handler;
+
+
     };
 
 } // namespace shammodels

@@ -14,6 +14,7 @@
 #include "shammodels/sph/SPHModelSolverConfig.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/tree/RadixTree.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shammodels {
@@ -43,7 +44,7 @@ namespace shammodels {
         }
     };
 
-    template<class Tvec>
+    template<class Tvec, class Tmorton>
     class SPHSolverStorage {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
@@ -60,6 +61,8 @@ namespace shammodels {
         StorageComponent<GhostHandleCache> ghost_patch_cache;
 
 
+        using RTree = RadixTree<Tmorton, Tvec>;
+        StorageComponent<shambase::DistributedData<RTree>> merged_pos_trees;
     };
 
 } // namespace shammodels

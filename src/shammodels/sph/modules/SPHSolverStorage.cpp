@@ -8,8 +8,3 @@
 
 #include "SPHSolverStorage.hpp"
 
-template<class Tvec>
-using Storage = shammodels::SPHSolverStorage<Tvec>;
-
-
-template class shammodels::SPHSolverStorage<f64_3>;

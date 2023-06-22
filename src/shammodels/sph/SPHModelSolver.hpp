@@ -46,7 +46,7 @@ namespace shammodels {
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
-        SPHSolverStorage<Tvec> storage {};
+        SPHSolverStorage<Tvec, u_morton> storage {};
 
         Config solver_config;
 
@@ -118,7 +118,6 @@ namespace shammodels {
 
         // trees
         using RTree = RadixTree<u_morton, Tvec>;
-        shambase::DistributedData<RTree> merged_pos_trees;
         void build_merged_pos_trees();
         void clear_merged_pos_trees();
 

@@ -72,6 +72,9 @@ namespace shammodels {
         StorageComponent<shambase::DistributedData<RadixTreeField<Tscal>>> rtree_rint_field;
 
         StorageComponent<shamrock::tree::ObjectCacheHandler> neighbors_cache;
+
+
+        StorageComponent<shamrock::ComputeField<Tscal>> omega;
     };
 
 } // namespace shammodels

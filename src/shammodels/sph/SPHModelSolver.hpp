@@ -103,14 +103,6 @@ namespace shammodels {
         void build_ghost_cache();
         void clear_ghost_cache();
 
-        struct TempFields {
-            shamrock::ComputeField<Tscal> omega;
-
-            void clear() {
-                omega.reset();
-            }
-
-        } temp_fields;
 
         void merge_position_ghost();
 

@@ -671,15 +671,6 @@ void SPHSolve<Tvec, Kern>::reset_merge_ghosts_fields() {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 
-    using Cfg_AV = typename Config::AVConfig;
-
-    using None        = typename Cfg_AV::None;
-    using Constant    = typename Cfg_AV::Constant;
-    using VaryingMM97 = typename Cfg_AV::VaryingMM97;
-    using VaryingCD10 = typename Cfg_AV::VaryingCD10;
-
-    Cfg_AV cfg_av = solver_config.artif_viscosity;
-
     sph::modules::UpdateViscosity<Tvec, Kern>(context, solver_config, storage)
         .update_artificial_viscosity(dt);
 }

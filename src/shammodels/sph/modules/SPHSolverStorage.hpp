@@ -75,6 +75,16 @@ namespace shammodels {
 
 
         StorageComponent<shamrock::ComputeField<Tscal>> omega;
+
+
+        StorageComponent<shamrock::patch::PatchDataLayout> ghost_layout;
+
+        StorageComponent<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
+
+        StorageComponent<shamrock::ComputeField<Tscal>> pressure;
+
+        StorageComponent<shamrock::ComputeField<Tvec>> old_axyz;
+        StorageComponent<shamrock::ComputeField<Tscal>> old_duint;
     };
 
 } // namespace shammodels

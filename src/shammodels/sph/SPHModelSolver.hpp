@@ -130,10 +130,8 @@ namespace shammodels {
 
         void update_artificial_viscosity(Tscal dt);
 
-        shamrock::patch::PatchDataLayout ghost_layout;
         void init_ghost_layout();
 
-        shambase::DistributedData<shamrock::MergedPatchData> merged_patchdata_ghost;
         void communicate_merge_ghosts_fields();
         void reset_merge_ghosts_fields();
 

@@ -366,6 +366,11 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::init_ghost_layout() {
+
+    storage.ghost_layout.set(shamrock::patch::PatchDataLayout{});
+
+    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
+
     ghost_layout.add_field<Tscal>("hpart", 1);
     ghost_layout.add_field<Tscal>("uint", 1);
     ghost_layout.add_field<Tvec>("vxyz", 1);
@@ -571,10 +576,7 @@ void SPHSolve<Tvec, Kern>::reset_neighbors_cache() {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     StackEntry stack_loc{};
-    if (!merged_patchdata_ghost.is_empty()) {
-        throw shambase::throw_with_loc<std::runtime_error>(
-            "please reset the merged_patchdata_ghost before");
-    }
+
     using namespace shamrock;
     using namespace shamrock::patch;
 
@@ -590,6 +592,8 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 ialpha_AV = (has_alphaAV_field) ? pdl.get_field_idx<Tscal>("alpha_AV") : 0;
 
+
+    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
@@ -635,7 +639,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     shambase::DistributedDataShared<PatchData> interf_pdat =
         ghost_handle.communicate_pdat(ghost_layout, std::move(pdat_interf));
 
-    merged_patchdata_ghost = ghost_handle.template merge_native<PatchData, MergedPatchData>(
+    storage.merged_patchdata_ghost.set(ghost_handle.template merge_native<PatchData, MergedPatchData>(
         std::move(interf_pdat),
         [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
             PatchData pdat_new(ghost_layout);
@@ -662,12 +666,12 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
         [](MergedPatchData &mpdat, PatchData &pdat_interf) {
             mpdat.total_elements += pdat_interf.get_obj_cnt();
             mpdat.pdat.insert_elements(pdat_interf);
-        });
+        }));
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::reset_merge_ghosts_fields() {
-    merged_patchdata_ghost.reset();
+    storage.merged_patchdata_ghost.reset();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -707,15 +711,17 @@ void SPHSolve<Tvec, Kern>::compute_eos_fields() {
 
     using namespace shamrock;
 
+
+    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
 
     shamrock::SchedulerUtility utility(scheduler());
 
     pressure = utility.make_compute_field<Tscal>(
-        "pressure", 1, [&](u64 id) { return merged_patchdata_ghost.get(id).total_elements; });
+        "pressure", 1, [&](u64 id) { return storage.merged_patchdata_ghost.get().get(id).total_elements; });
 
-    merged_patchdata_ghost.for_each([&](u64 id, MergedPatchData &mpdat) {
+    storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             sycl::accessor P{pressure.get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
             sycl::accessor U{
@@ -796,6 +802,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
     const u32 iduint = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
+
+    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
@@ -804,7 +812,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<RTree> &trees           = storage.merged_pos_trees.get();
     ComputeField<Tscal> &omega                        = storage.omega.get();
-    shambase::DistributedData<MergedPatchData> &mpdat = merged_patchdata_ghost;
+    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
     using ConfigCstAv = typename Config::AVConfig::Constant;
     ConfigCstAv *constant_av_config =
@@ -998,6 +1006,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
     const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
 
+
+    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf    = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf     = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf     = ghost_layout.get_field_idx<Tvec>("vxyz");
@@ -1007,7 +1017,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<RTree> &trees           = storage.merged_pos_trees.get();
     ComputeField<Tscal> &omega                        = storage.omega.get();
-    shambase::DistributedData<MergedPatchData> &mpdat = merged_patchdata_ghost;
+    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
     using VarAVMM97               = typename Config::AVConfig::VaryingMM97;
     VarAVMM97 *constant_av_config = std::get_if<VarAVMM97>(&solver_config.artif_viscosity.config);
@@ -1247,6 +1257,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
     shambase::DistributedData<RTree> &trees       = storage.merged_pos_trees.get();
     ComputeField<Tscal> &omega                    = storage.omega.get();
 
+
+    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
@@ -1255,7 +1267,6 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
     using RTreeField = RadixTreeField<Tscal>;
     shambase::DistributedData<RTreeField> rtree_field_h;
 
-    shambase::DistributedData<MergedPatchData> &mpdat = merged_patchdata_ghost;
 
     Tscal next_cfl = 0;
 
@@ -1394,6 +1405,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
             logger::info_ln("BasicGas", "computing next CFL");
 
             ComputeField<Tscal> vsig_max_dt = utility.make_compute_field<Tscal>("vsig_a", 1);
+    
+    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);

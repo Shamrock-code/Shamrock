@@ -135,13 +135,9 @@ namespace shammodels {
         void communicate_merge_ghosts_fields();
         void reset_merge_ghosts_fields();
 
-        shamrock::ComputeField<Tscal> pressure;
         void compute_eos_fields();
         void reset_eos_fields();
 
-
-        shamrock::ComputeField<Tvec> old_axyz;
-        shamrock::ComputeField<Tscal> old_duint;
         void prepare_corrector();
         void update_derivs();
         void update_derivs_mm97();

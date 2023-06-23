@@ -705,10 +705,6 @@ template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_eos_fields() {
     NamedStackEntry stack_loc{"compute eos"};
 
-    if (!pressure.field_data.is_empty()) {
-        throw shambase::throw_with_loc<std::runtime_error>("please reset the eos_fields before");
-    }
-
     using namespace shamrock;
 
 
@@ -718,12 +714,12 @@ void SPHSolve<Tvec, Kern>::compute_eos_fields() {
 
     shamrock::SchedulerUtility utility(scheduler());
 
-    pressure = utility.make_compute_field<Tscal>(
-        "pressure", 1, [&](u64 id) { return storage.merged_patchdata_ghost.get().get(id).total_elements; });
+    storage.pressure.set(utility.make_compute_field<Tscal>(
+        "pressure", 1, [&](u64 id) { return storage.merged_patchdata_ghost.get().get(id).total_elements; }));
 
     storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor P{pressure.get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor P{storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
             sycl::accessor U{
                 mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf), cgh, sycl::read_only};
             sycl::accessor h{
@@ -742,7 +738,7 @@ void SPHSolve<Tvec, Kern>::compute_eos_fields() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::reset_eos_fields() {
-    pressure.reset();
+    storage.pressure.reset();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -757,8 +753,8 @@ void SPHSolve<Tvec, Kern>::prepare_corrector() {
     const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
     const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
     logger::info_ln("sph::BasicGas", "save old fields");
-    old_axyz  = utility.save_field<Tvec>(iaxyz, "axyz_old");
-    old_duint = utility.save_field<Tscal>(iduint, "duint_old");
+    storage.old_axyz.set( utility.save_field<Tvec>(iaxyz, "axyz_old"));
+    storage.old_duint.set( utility.save_field<Tscal>(iduint, "duint_old"));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -835,7 +831,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
         sycl::buffer<Tscal> &buf_hpart    = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sycl::buffer<Tscal> &buf_omega    = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-        sycl::buffer<Tscal> &buf_pressure = pressure.get_buf_check(cur_p.id_patch);
+        sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -1038,7 +1034,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
         sycl::buffer<Tscal> &buf_hpart    = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sycl::buffer<Tscal> &buf_omega    = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-        sycl::buffer<Tscal> &buf_pressure = pressure.get_buf_check(cur_p.id_patch);
+        sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
         sycl::buffer<Tscal> &buf_alpha_AV = mpdat.get_field_buf_ref<Tscal>(ialpha_AV_interf);
 
         sycl::range range_npart{pdat.get_obj_cnt()};
@@ -1368,8 +1364,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
         // corrector
         logger::info_ln("sph::BasicGas", "leapfrog corrector");
-        utility.fields_leapfrog_corrector<Tvec>(ivxyz, iaxyz, old_axyz, vepsilon_v_sq, dt / 2);
-        utility.fields_leapfrog_corrector<Tscal>(iuint, iduint, old_duint, uepsilon_u_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tvec>(ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tscal>(iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
+
+        storage.old_axyz.reset();
+        storage.old_duint.reset();
 
         Tscal rank_veps_v = sycl::sqrt(vepsilon_v_sq.compute_rank_max());
         ///////////////////////////////////////////
@@ -1417,7 +1416,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
                 sycl::buffer<Tvec> &buf_vxyz      = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
                 sycl::buffer<Tscal> &buf_hpart    = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
                 sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-                sycl::buffer<Tscal> &buf_pressure = pressure.get_buf_check(cur_p.id_patch);
+                sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
                 sycl::buffer<Tscal> &vsig_buf     = vsig_max_dt.get_buf_check(cur_p.id_patch);
 
                 sycl::range range_npart{pdat.get_obj_cnt()};

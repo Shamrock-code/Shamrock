@@ -383,24 +383,22 @@ template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
 
     StackEntry stack_loc{};
-    if (!rtree_rint_field.is_empty()) {
-        throw shambase::throw_with_loc<std::runtime_error>("please reset the rtree_field_h before");
-    }
+    
 
     auto &xyzh_merged = storage.merged_xyzh.get();
 
-    rtree_rint_field =
+    storage.rtree_rint_field.set( 
         storage.merged_pos_trees.get().template map<RadixTreeField<Tscal>>([&](u64 id, RTree &rtree) {
             PreStepMergedField &tmp = xyzh_merged.get(id);
 
             return rtree.compute_int_boxes(
                 shamsys::instance::get_compute_queue(), tmp.field_hpart.get_buf(), htol_up_tol);
-        });
+        }));
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::reset_presteps_rint() {
-    rtree_rint_field.reset();
+    storage.rtree_rint_field.reset();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -419,7 +417,7 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
             sycl::buffer<Tvec> &buf_xyz    = shambase::get_check_ref(mfield.field_pos.get_buf());
             sycl::buffer<Tscal> &buf_hpart = shambase::get_check_ref(mfield.field_hpart.get_buf());
             sycl::buffer<Tscal> &tree_field_rint =
-                shambase::get_check_ref(rtree_rint_field.get(patch_id).radix_tree_field_buf);
+                shambase::get_check_ref(storage.rtree_rint_field.get().get(patch_id).radix_tree_field_buf);
 
             sycl::range range_npart{mfield.original_elements};
 

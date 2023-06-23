@@ -119,7 +119,6 @@ namespace shammodels {
         void build_merged_pos_trees();
         void clear_merged_pos_trees();
 
-        shambase::DistributedData<RadixTreeField<Tscal>> rtree_rint_field;
         void compute_presteps_rint();
         void reset_presteps_rint();
 
@@ -137,10 +136,6 @@ namespace shammodels {
 
         void do_predictor_leapfrog(Tscal dt);
 
-
-
-        void update_artificial_viscosity_mm97(Tscal dt);
-        void update_artificial_viscosity_cd10(Tscal dt);
         void update_artificial_viscosity(Tscal dt);
 
         shamrock::patch::PatchDataLayout ghost_layout;

@@ -68,6 +68,9 @@ namespace shammodels {
 
         StorageComponent<shambase::DistributedData<RTree>> merged_pos_trees;
 
+
+        StorageComponent<shambase::DistributedData<RadixTreeField<Tscal>>> rtree_rint_field;
+
         StorageComponent<shamrock::tree::ObjectCacheHandler> neighbors_cache;
     };
 

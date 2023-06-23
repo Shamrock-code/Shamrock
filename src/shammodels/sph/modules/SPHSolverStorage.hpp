@@ -15,6 +15,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
+#include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shammodels {
@@ -50,20 +51,24 @@ namespace shammodels {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        StorageComponent<SerialPatchTree<Tvec>> serial_patch_tree;
-
 
         using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
         using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
+
+        using RTree = RadixTree<Tmorton, Tvec>;
+
+        StorageComponent<SerialPatchTree<Tvec>> serial_patch_tree;
+
         StorageComponent<GhostHandle> ghost_handler;
 
         StorageComponent<GhostHandleCache> ghost_patch_cache;
 
         StorageComponent<shambase::DistributedData<PreStepMergedField>> merged_xyzh;
 
-        using RTree = RadixTree<Tmorton, Tvec>;
         StorageComponent<shambase::DistributedData<RTree>> merged_pos_trees;
+
+        StorageComponent<shamrock::tree::ObjectCacheHandler> neighbors_cache;
     };
 
 } // namespace shammodels

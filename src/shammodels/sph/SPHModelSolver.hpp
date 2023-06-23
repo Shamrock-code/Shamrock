@@ -123,7 +123,6 @@ namespace shammodels {
         void compute_presteps_rint();
         void reset_presteps_rint();
 
-        std::unique_ptr<shamrock::tree::ObjectCacheHandler> neighbors_cache;
         void start_neighbors_cache();
         void reset_neighbors_cache();
 

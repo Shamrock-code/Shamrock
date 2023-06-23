@@ -293,8 +293,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
 
                 RTree &tree = storage.merged_pos_trees.get().get(p.id_patch);
 
-                tree::ObjectCache &neigh_cache =
-                    shambase::get_check_ref(neighbors_cache).get_cache(p.id_patch);
+                tree::ObjectCache &neigh_cache = storage.neighbors_cache.get().get_cache(p.id_patch);
 
                 sph_utils.iterate_smoothing_lenght_cache(merged_r,
                                                          hnew,
@@ -355,8 +354,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
 
                 RTree &tree = storage.merged_pos_trees.get().get(p.id_patch);
 
-                tree::ObjectCache &neigh_cache =
-                    shambase::get_check_ref(neighbors_cache).get_cache(p.id_patch);
+                tree::ObjectCache &neigh_cache = storage.neighbors_cache.get().get_cache(p.id_patch);
                 ;
 
                 sph_utils.compute_omega(
@@ -408,14 +406,10 @@ void SPHSolve<Tvec, Kern>::reset_presteps_rint() {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
     StackEntry stack_loc{};
-    if (bool(neighbors_cache)) {
-        throw shambase::throw_with_loc<std::runtime_error>(
-            "please reset the neighbors_cache before");
-    }
 
     // do cache
-    neighbors_cache =
-        std::make_unique<shamrock::tree::ObjectCacheHandler>(u64(10e9), [&](u64 patch_id) {
+    storage.neighbors_cache.set(
+        shamrock::tree::ObjectCacheHandler(u64(10e9), [&](u64 patch_id) {
             logger::debug_ln("BasicSPH", "build particle cache id =", patch_id);
 
             NamedStackEntry cache_build_stack_loc{"build cache"};
@@ -567,16 +561,16 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
             });
 
             return pcache;
-        });
+        }));
 
     using namespace shamrock::patch;
     scheduler().for_each_patchdata_nonempty(
-        [&](Patch cur_p, PatchData &pdat) { neighbors_cache->preload(cur_p.id_patch); });
+        [&](Patch cur_p, PatchData &pdat) { storage.neighbors_cache.get().preload(cur_p.id_patch); });
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::reset_neighbors_cache() {
-    neighbors_cache.reset();
+    storage.neighbors_cache.reset();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -844,7 +838,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
 
         RTree &tree = trees.get(cur_p.id_patch);
 
-        tree::ObjectCache &pcache = neighbors_cache->get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -1044,7 +1038,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = neighbors_cache->get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -1420,7 +1414,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
-                tree::ObjectCache &pcache = neighbors_cache->get_cache(cur_p.id_patch);
+                tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
                 /////////////////////////////////////////////
 
@@ -1570,7 +1564,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
                     sycl::range range_npart{pdat.get_obj_cnt()};
 
-                    tree::ObjectCache &pcache = neighbors_cache->get_cache(cur_p.id_patch);
+                    tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
                     /////////////////////////////////////////////
 
@@ -1657,7 +1651,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
                     sycl::range range_npart{pdat.get_obj_cnt()};
 
-                    tree::ObjectCache &pcache = neighbors_cache->get_cache(cur_p.id_patch);
+                    tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
                     /////////////////////////////////////////////
 

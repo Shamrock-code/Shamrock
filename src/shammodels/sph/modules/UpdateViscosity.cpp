@@ -6,12 +6,13 @@
 //
 // -------------------------------------------------------//
 
-#include "SPHShockDetector.hpp"
+#include "UpdateViscosity.hpp"
 #include "shamrock/sph/kernels.hpp"
+#include <variant>
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::SPHShockDetector<Tvec, SPHKernel>::update_artificial_viscosity(
-    Tscal dt, typename Config::AVConfig::Variant cfg) {
+void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artificial_viscosity(
+    Tscal dt) {
 
     using Cfg_AV = typename Config::AVConfig;
 
@@ -19,13 +20,13 @@ void shammodels::SPHShockDetector<Tvec, SPHKernel>::update_artificial_viscosity(
     using Constant    = typename Cfg_AV::Constant;
     using VaryingMM97 = typename Cfg_AV::VaryingMM97;
     using VaryingCD10 = typename Cfg_AV::VaryingCD10;
-    if (None *v = std::get_if<None>(&cfg)) {
+    if (None *v = std::get_if<None>(&solver_config.artif_viscosity.config)) {
         logger::debug_ln("SPHSolver", "skipping artif viscosity update (No viscosity mode)");
-    } else if (Constant *v = std::get_if<Constant>(&cfg)) {
+    } else if (Constant *v = std::get_if<Constant>(&solver_config.artif_viscosity.config)) {
         logger::debug_ln("SPHSolver", "skipping artif viscosity update (Constant mode)");
-    } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&cfg)) {
+    } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&solver_config.artif_viscosity.config)) {
         update_artificial_viscosity_mm97(dt, *v);
-    } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&cfg)) {
+    } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&solver_config.artif_viscosity.config)) {
         update_artificial_viscosity_cd10(dt, *v);
     } else {
         shambase::throw_unimplemented();
@@ -33,7 +34,7 @@ void shammodels::SPHShockDetector<Tvec, SPHKernel>::update_artificial_viscosity(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::SPHShockDetector<Tvec, SPHKernel>::update_artificial_viscosity_mm97(
+void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artificial_viscosity_mm97(
     Tscal dt, typename Config::AVConfig::VaryingMM97 cfg) {
     StackEntry stack_loc{};
     logger::info_ln("SPHShockDetector", "Updating alpha viscosity (Morris & Monaghan 1997)");
@@ -87,12 +88,12 @@ void shammodels::SPHShockDetector<Tvec, SPHKernel>::update_artificial_viscosity_
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::SPHShockDetector<Tvec, SPHKernel>::update_artificial_viscosity_cd10(
+void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artificial_viscosity_cd10(
     Tscal dt, typename Config::AVConfig::VaryingCD10 cfg) {
 
     shambase::throw_unimplemented();
 }
 
 using namespace shamrock::sph::kernels;
-template class shammodels::SPHShockDetector<f64_3, M4>;
-template class shammodels::SPHShockDetector<f64_3, M6>;
+template class shammodels::sph::modules::UpdateViscosity<f64_3, M4>;
+template class shammodels::sph::modules::UpdateViscosity<f64_3, M6>;

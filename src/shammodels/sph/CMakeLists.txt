@@ -4,7 +4,6 @@ target_sources(shamrock_lib
         SPHSolverImpl.cpp
         SPHModel.cpp
         SPHModelSolver.cpp
-        SPHShockDetector.cpp
     PUBLIC
     )
 

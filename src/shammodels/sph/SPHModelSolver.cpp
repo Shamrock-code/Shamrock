@@ -13,7 +13,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/time.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SPHShockDetector.hpp"
+#include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -692,9 +692,9 @@ void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 
     Cfg_AV cfg_av = solver_config.artif_viscosity;
 
-    SPHShockDetector<Tvec, Kern> shock_handler(context);
+    sph::modules::UpdateViscosity<Tvec, Kern> shock_handler(context,solver_config,storage);
 
-    shock_handler.update_artificial_viscosity(dt, cfg_av.config);
+    shock_handler.update_artificial_viscosity(dt);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

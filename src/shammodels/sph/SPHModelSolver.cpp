@@ -13,8 +13,8 @@
 #include "shambase/memory.hpp"
 #include "shambase/time.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
+#include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -172,8 +172,8 @@ void SPHSolve<Tvec, Kern>::build_ghost_cache() {
 
     using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
     SPHUtils sph_utils(scheduler());
-    
-    storage.ghost_patch_cache.set( sph_utils.build_interf_cache(
+
+    storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
         storage.ghost_handler.get(), storage.serial_patch_tree.get(), htol_up_tol));
 }
 
@@ -187,7 +187,6 @@ template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::merge_position_ghost() {
     StackEntry stack_loc{};
 
-
     storage.merged_xyzh.set(
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
 }
@@ -195,13 +194,12 @@ void SPHSolve<Tvec, Kern>::merge_position_ghost() {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
     StackEntry stack_loc{};
-    
 
     SPHSolverImpl solver(context);
 
     constexpr u32 reduc_level = 3;
     auto &merged_xyzh         = storage.merged_xyzh.get();
-    storage.merged_pos_trees.set( solver.make_merge_patch_trees(merged_xyzh, reduc_level));
+    storage.merged_pos_trees.set(solver.make_merge_patch_trees(merged_xyzh, reduc_level));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -252,7 +250,6 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
     shamrock::SchedulerUtility utility(scheduler());
     SPHSolverImpl solver(context);
 
-
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
 
@@ -285,14 +282,15 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
 
                 sycl::buffer<Tscal> &hnew =
                     shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf());
-                sycl::buffer<Tvec> &merged_r =
-                    shambase::get_check_ref(storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf());
+                sycl::buffer<Tvec> &merged_r = shambase::get_check_ref(
+                    storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf());
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
                 RTree &tree = storage.merged_pos_trees.get().get(p.id_patch);
 
-                tree::ObjectCache &neigh_cache = storage.neighbors_cache.get().get_cache(p.id_patch);
+                tree::ObjectCache &neigh_cache =
+                    storage.neighbors_cache.get().get_cache(p.id_patch);
 
                 sph_utils.iterate_smoothing_lenght_cache(merged_r,
                                                          hnew,
@@ -334,7 +332,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
         storage.omega.set(utility.make_compute_field<Tscal>("omega", 1));
         {
 
-    ComputeField<Tscal> &omega              = storage.omega.get();
+            ComputeField<Tscal> &omega = storage.omega.get();
             NamedStackEntry stack_loc2{"compute omega"};
 
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
@@ -344,14 +342,15 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
 
                 sycl::buffer<Tscal> &hnew =
                     shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf());
-                sycl::buffer<Tvec> &merged_r =
-                    shambase::get_check_ref(storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf());
+                sycl::buffer<Tvec> &merged_r = shambase::get_check_ref(
+                    storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf());
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
                 RTree &tree = storage.merged_pos_trees.get().get(p.id_patch);
 
-                tree::ObjectCache &neigh_cache = storage.neighbors_cache.get().get_cache(p.id_patch);
+                tree::ObjectCache &neigh_cache =
+                    storage.neighbors_cache.get().get_cache(p.id_patch);
                 ;
 
                 sph_utils.compute_omega(
@@ -369,7 +368,7 @@ void SPHSolve<Tvec, Kern>::init_ghost_layout() {
 
     storage.ghost_layout.set(shamrock::patch::PatchDataLayout{});
 
-    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
 
     ghost_layout.add_field<Tscal>("hpart", 1);
     ghost_layout.add_field<Tscal>("uint", 1);
@@ -385,12 +384,11 @@ template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
 
     StackEntry stack_loc{};
-    
 
     auto &xyzh_merged = storage.merged_xyzh.get();
 
-    storage.rtree_rint_field.set( 
-        storage.merged_pos_trees.get().template map<RadixTreeField<Tscal>>([&](u64 id, RTree &rtree) {
+    storage.rtree_rint_field.set(storage.merged_pos_trees.get().template map<RadixTreeField<Tscal>>(
+        [&](u64 id, RTree &rtree) {
             PreStepMergedField &tmp = xyzh_merged.get(id);
 
             return rtree.compute_int_boxes(
@@ -408,164 +406,156 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
     StackEntry stack_loc{};
 
     // do cache
-    storage.neighbors_cache.set(
-        shamrock::tree::ObjectCacheHandler(u64(10e9), [&](u64 patch_id) {
-            logger::debug_ln("BasicSPH", "build particle cache id =", patch_id);
+    storage.neighbors_cache.set(shamrock::tree::ObjectCacheHandler(u64(10e9), [&](u64 patch_id) {
+        logger::debug_ln("BasicSPH", "build particle cache id =", patch_id);
 
-            NamedStackEntry cache_build_stack_loc{"build cache"};
+        NamedStackEntry cache_build_stack_loc{"build cache"};
 
-            PreStepMergedField &mfield = storage.merged_xyzh.get().get(patch_id);
+        PreStepMergedField &mfield = storage.merged_xyzh.get().get(patch_id);
 
-            sycl::buffer<Tvec> &buf_xyz    = shambase::get_check_ref(mfield.field_pos.get_buf());
-            sycl::buffer<Tscal> &buf_hpart = shambase::get_check_ref(mfield.field_hpart.get_buf());
-            sycl::buffer<Tscal> &tree_field_rint =
-                shambase::get_check_ref(storage.rtree_rint_field.get().get(patch_id).radix_tree_field_buf);
+        sycl::buffer<Tvec> &buf_xyz    = shambase::get_check_ref(mfield.field_pos.get_buf());
+        sycl::buffer<Tscal> &buf_hpart = shambase::get_check_ref(mfield.field_hpart.get_buf());
+        sycl::buffer<Tscal> &tree_field_rint = shambase::get_check_ref(
+            storage.rtree_rint_field.get().get(patch_id).radix_tree_field_buf);
 
-            sycl::range range_npart{mfield.original_elements};
+        sycl::range range_npart{mfield.original_elements};
 
-            RTree &tree = storage.merged_pos_trees.get().get(patch_id);
+        RTree &tree = storage.merged_pos_trees.get().get(patch_id);
 
-            u32 obj_cnt       = mfield.original_elements;
-            Tscal h_tolerance = htol_up_tol;
+        u32 obj_cnt       = mfield.original_elements;
+        Tscal h_tolerance = htol_up_tol;
 
-            NamedStackEntry stack_loc1{"init cache"};
+        NamedStackEntry stack_loc1{"init cache"};
 
-            using namespace shamrock;
+        using namespace shamrock;
 
-            sycl::buffer<u32> neigh_count(obj_cnt);
+        sycl::buffer<u32> neigh_count(obj_cnt);
 
-            shamsys::instance::get_compute_queue().wait_and_throw();
+        shamsys::instance::get_compute_queue().wait_and_throw();
 
-            logger::debug_sycl_ln("Cache", "generate cache for N=",obj_cnt);
+        logger::debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
 
-            shamsys::instance::get_compute_queue().submit([&, h_tolerance](sycl::handler &cgh) {
-                tree::ObjectIterator particle_looper(tree, cgh);
+        shamsys::instance::get_compute_queue().submit([&, h_tolerance](sycl::handler &cgh) {
+            tree::ObjectIterator particle_looper(tree, cgh);
 
-                // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+            // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
+            sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
+            sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
 
-                sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
+            sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
 
-                sycl::accessor neigh_cnt{neigh_count, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor neigh_cnt{neigh_count, cgh, sycl::write_only, sycl::no_init};
 
-                // sycl::stream out {4096,1024,cgh};
+            // sycl::stream out {4096,1024,cgh};
 
-                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-                    u32 id_a = (u32)item.get_id(0);
+            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
+                u32 id_a = (u32)item.get_id(0);
 
-                    Tscal rint_a = hpart[id_a] * h_tolerance;
+                Tscal rint_a = hpart[id_a] * h_tolerance;
 
-                    Tvec xyz_a = xyz[id_a];
+                Tvec xyz_a = xyz[id_a];
 
-                    Tvec inter_box_a_min = xyz_a - rint_a * Kernel::Rkern;
-                    Tvec inter_box_a_max = xyz_a + rint_a * Kernel::Rkern;
+                Tvec inter_box_a_min = xyz_a - rint_a * Kernel::Rkern;
+                Tvec inter_box_a_max = xyz_a + rint_a * Kernel::Rkern;
 
-                    u32 cnt = 0;
+                u32 cnt = 0;
 
-                    particle_looper.rtree_for(
-                        [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
-                            Tscal int_r_max_cell = rint_tree[node_id] * Kernel::Rkern;
+                particle_looper.rtree_for(
+                    [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
+                        Tscal int_r_max_cell = rint_tree[node_id] * Kernel::Rkern;
 
-                            using namespace walker::interaction_crit;
+                        using namespace walker::interaction_crit;
 
-                            return sph_radix_cell_crit(xyz_a,
-                                                       inter_box_a_min,
-                                                       inter_box_a_max,
-                                                       bmin,
-                                                       bmax,
-                                                       int_r_max_cell);
-                        },
-                        [&](u32 id_b) {
-                            // particle_looper.for_each_object(id_a,[&](u32 id_b){
-                            //  compute only omega_a
-                            Tvec dr      = xyz_a - xyz[id_b];
-                            Tscal rab2   = sycl::dot(dr, dr);
-                            Tscal rint_b = hpart[id_b] * h_tolerance;
+                        return sph_radix_cell_crit(
+                            xyz_a, inter_box_a_min, inter_box_a_max, bmin, bmax, int_r_max_cell);
+                    },
+                    [&](u32 id_b) {
+                        // particle_looper.for_each_object(id_a,[&](u32 id_b){
+                        //  compute only omega_a
+                        Tvec dr      = xyz_a - xyz[id_b];
+                        Tscal rab2   = sycl::dot(dr, dr);
+                        Tscal rint_b = hpart[id_b] * h_tolerance;
 
-                            bool no_interact =
-                                rab2 > rint_a * rint_a * Rker2 && rab2 > rint_b * rint_b * Rker2;
+                        bool no_interact =
+                            rab2 > rint_a * rint_a * Rker2 && rab2 > rint_b * rint_b * Rker2;
 
-                            cnt += (no_interact) ? 0 : 1;
-                        });
+                        cnt += (no_interact) ? 0 : 1;
+                    });
 
-                    neigh_cnt[id_a] = cnt;
-                });
+                neigh_cnt[id_a] = cnt;
             });
+        });
 
-            tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
+        tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
 
-            NamedStackEntry stack_loc2{"fill cache"};
+        NamedStackEntry stack_loc2{"fill cache"};
 
-            shamsys::instance::get_compute_queue().submit([&, h_tolerance](sycl::handler &cgh) {
-                tree::ObjectIterator particle_looper(tree, cgh);
+        shamsys::instance::get_compute_queue().submit([&, h_tolerance](sycl::handler &cgh) {
+            tree::ObjectIterator particle_looper(tree, cgh);
 
-                // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+            // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
+            sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
+            sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
 
-                sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
+            sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
 
-                sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
-                sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
+            sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
 
-                // sycl::stream out {4096,1024,cgh};
+            // sycl::stream out {4096,1024,cgh};
 
-                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-                    u32 id_a = (u32)item.get_id(0);
+            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
+                u32 id_a = (u32)item.get_id(0);
 
-                    Tscal rint_a = hpart[id_a] * h_tolerance;
+                Tscal rint_a = hpart[id_a] * h_tolerance;
 
-                    Tvec xyz_a = xyz[id_a];
+                Tvec xyz_a = xyz[id_a];
 
-                    Tvec inter_box_a_min = xyz_a - rint_a * Kernel::Rkern;
-                    Tvec inter_box_a_max = xyz_a + rint_a * Kernel::Rkern;
+                Tvec inter_box_a_min = xyz_a - rint_a * Kernel::Rkern;
+                Tvec inter_box_a_max = xyz_a + rint_a * Kernel::Rkern;
 
-                    u32 cnt = scanned_neigh_cnt[id_a];
+                u32 cnt = scanned_neigh_cnt[id_a];
 
-                    particle_looper.rtree_for(
-                        [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
-                            Tscal int_r_max_cell = rint_tree[node_id] * Kernel::Rkern;
+                particle_looper.rtree_for(
+                    [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
+                        Tscal int_r_max_cell = rint_tree[node_id] * Kernel::Rkern;
 
-                            using namespace walker::interaction_crit;
+                        using namespace walker::interaction_crit;
 
-                            return sph_radix_cell_crit(xyz_a,
-                                                       inter_box_a_min,
-                                                       inter_box_a_max,
-                                                       bmin,
-                                                       bmax,
-                                                       int_r_max_cell);
-                        },
-                        [&](u32 id_b) {
-                            // particle_looper.for_each_object(id_a,[&](u32 id_b){
-                            //  compute only omega_a
-                            Tvec dr      = xyz_a - xyz[id_b];
-                            Tscal rab2   = sycl::dot(dr, dr);
-                            Tscal rint_b = hpart[id_b] * h_tolerance;
+                        return sph_radix_cell_crit(
+                            xyz_a, inter_box_a_min, inter_box_a_max, bmin, bmax, int_r_max_cell);
+                    },
+                    [&](u32 id_b) {
+                        // particle_looper.for_each_object(id_a,[&](u32 id_b){
+                        //  compute only omega_a
+                        Tvec dr      = xyz_a - xyz[id_b];
+                        Tscal rab2   = sycl::dot(dr, dr);
+                        Tscal rint_b = hpart[id_b] * h_tolerance;
 
-                            bool no_interact =
-                                rab2 > rint_a * rint_a * Rker2 && rab2 > rint_b * rint_b * Rker2;
+                        bool no_interact =
+                            rab2 > rint_a * rint_a * Rker2 && rab2 > rint_b * rint_b * Rker2;
 
-                            if (!no_interact) {
-                                neigh[cnt] = id_b;
-                            }
-                            cnt += (no_interact) ? 0 : 1;
-                        });
-                });
+                        if (!no_interact) {
+                            neigh[cnt] = id_b;
+                        }
+                        cnt += (no_interact) ? 0 : 1;
+                    });
             });
+        });
 
-            return pcache;
-        }));
+        return pcache;
+    }));
 
     using namespace shamrock::patch;
-    scheduler().for_each_patchdata_nonempty(
-        [&](Patch cur_p, PatchData &pdat) { storage.neighbors_cache.get().preload(cur_p.id_patch); });
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        storage.neighbors_cache.get().preload(cur_p.id_patch);
+    });
 }
 
 template<class Tvec, template<class> class Kern>
@@ -592,12 +582,11 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 ialpha_AV = (has_alphaAV_field) ? pdl.get_field_idx<Tscal>("alpha_AV") : 0;
 
-
-    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 ialpha_AV_interf =
         (has_alphaAV_field) ? ghost_layout.get_field_idx<Tscal>("alpha_AV") : 0;
@@ -639,34 +628,35 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     shambase::DistributedDataShared<PatchData> interf_pdat =
         ghost_handle.communicate_pdat(ghost_layout, std::move(pdat_interf));
 
-    storage.merged_patchdata_ghost.set(ghost_handle.template merge_native<PatchData, MergedPatchData>(
-        std::move(interf_pdat),
-        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
-            PatchData pdat_new(ghost_layout);
+    storage.merged_patchdata_ghost.set(
+        ghost_handle.template merge_native<PatchData, MergedPatchData>(
+            std::move(interf_pdat),
+            [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+                PatchData pdat_new(ghost_layout);
 
-            u32 or_elem        = pdat.get_obj_cnt();
-            u32 total_elements = or_elem;
+                u32 or_elem        = pdat.get_obj_cnt();
+                u32 total_elements = or_elem;
 
-            PatchDataField<Tscal> &cur_omega = omega.get_field(p.id_patch);
+                PatchDataField<Tscal> &cur_omega = omega.get_field(p.id_patch);
 
-            pdat_new.get_field<Tscal>(ihpart_interf).insert(pdat.get_field<Tscal>(ihpart));
-            pdat_new.get_field<Tscal>(iuint_interf).insert(pdat.get_field<Tscal>(iuint));
-            pdat_new.get_field<Tvec>(ivxyz_interf).insert(pdat.get_field<Tvec>(ivxyz));
-            pdat_new.get_field<Tscal>(iomega_interf).insert(cur_omega);
+                pdat_new.get_field<Tscal>(ihpart_interf).insert(pdat.get_field<Tscal>(ihpart));
+                pdat_new.get_field<Tscal>(iuint_interf).insert(pdat.get_field<Tscal>(iuint));
+                pdat_new.get_field<Tvec>(ivxyz_interf).insert(pdat.get_field<Tvec>(ivxyz));
+                pdat_new.get_field<Tscal>(iomega_interf).insert(cur_omega);
 
-            if (has_alphaAV_field) {
-                pdat_new.get_field<Tscal>(ialpha_AV_interf)
-                    .insert(pdat.get_field<Tscal>(ialpha_AV));
-            }
+                if (has_alphaAV_field) {
+                    pdat_new.get_field<Tscal>(ialpha_AV_interf)
+                        .insert(pdat.get_field<Tscal>(ialpha_AV));
+                }
 
-            pdat_new.check_field_obj_cnt_match();
+                pdat_new.check_field_obj_cnt_match();
 
-            return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
-        },
-        [](MergedPatchData &mpdat, PatchData &pdat_interf) {
-            mpdat.total_elements += pdat_interf.get_obj_cnt();
-            mpdat.pdat.insert_elements(pdat_interf);
-        }));
+                return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
+            },
+            [](MergedPatchData &mpdat, PatchData &pdat_interf) {
+                mpdat.total_elements += pdat_interf.get_obj_cnt();
+                mpdat.pdat.insert_elements(pdat_interf);
+            }));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -677,8 +667,6 @@ void SPHSolve<Tvec, Kern>::reset_merge_ghosts_fields() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // start artificial viscosity section //////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
@@ -692,9 +680,8 @@ void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 
     Cfg_AV cfg_av = solver_config.artif_viscosity;
 
-    sph::modules::UpdateViscosity<Tvec, Kern> shock_handler(context,solver_config,storage);
-
-    shock_handler.update_artificial_viscosity(dt);
+    sph::modules::UpdateViscosity<Tvec, Kern>(context, solver_config, storage)
+        .update_artificial_viscosity(dt);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -707,19 +694,20 @@ void SPHSolve<Tvec, Kern>::compute_eos_fields() {
 
     using namespace shamrock;
 
-
-    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
 
     shamrock::SchedulerUtility utility(scheduler());
 
-    storage.pressure.set(utility.make_compute_field<Tscal>(
-        "pressure", 1, [&](u64 id) { return storage.merged_patchdata_ghost.get().get(id).total_elements; }));
+    storage.pressure.set(utility.make_compute_field<Tscal>("pressure", 1, [&](u64 id) {
+        return storage.merged_patchdata_ghost.get().get(id).total_elements;
+    }));
 
     storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor P{storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor P{
+                storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
             sycl::accessor U{
                 mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf), cgh, sycl::read_only};
             sycl::accessor h{
@@ -753,8 +741,8 @@ void SPHSolve<Tvec, Kern>::prepare_corrector() {
     const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
     const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
     logger::info_ln("sph::BasicGas", "save old fields");
-    storage.old_axyz.set( utility.save_field<Tvec>(iaxyz, "axyz_old"));
-    storage.old_duint.set( utility.save_field<Tscal>(iduint, "duint_old"));
+    storage.old_axyz.set(utility.save_field<Tvec>(iaxyz, "axyz_old"));
+    storage.old_duint.set(utility.save_field<Tscal>(iduint, "duint_old"));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -798,12 +786,11 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
     const u32 iduint = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
-
-    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<RTree> &trees           = storage.merged_pos_trees.get();
@@ -906,7 +893,6 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
                 Tvec inter_box_a_min = xyz_a - h_a * Kernel::Rkern;
                 Tvec inter_box_a_max = xyz_a + h_a * Kernel::Rkern;
 
-
                 Tvec force_pressure{0, 0, 0};
                 Tscal tmpdU_pressure = 0;
 
@@ -1002,13 +988,12 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
     const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
 
-
-    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf    = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf     = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf     = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf    = ghost_layout.get_field_idx<Tscal>("omega");
-    u32 ialpha_AV_interf = ghost_layout.get_field_idx<Tscal>("alpha_AV");
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 ialpha_AV_interf                           = ghost_layout.get_field_idx<Tscal>("alpha_AV");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<RTree> &trees           = storage.merged_pos_trees.get();
@@ -1253,16 +1238,14 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
     shambase::DistributedData<RTree> &trees       = storage.merged_pos_trees.get();
     ComputeField<Tscal> &omega                    = storage.omega.get();
 
-
-    shamrock::patch::PatchDataLayout & ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     using RTreeField = RadixTreeField<Tscal>;
     shambase::DistributedData<RTreeField> rtree_field_h;
-
 
     Tscal next_cfl = 0;
 
@@ -1364,8 +1347,10 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
         // corrector
         logger::info_ln("sph::BasicGas", "leapfrog corrector");
-        utility.fields_leapfrog_corrector<Tvec>(ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
-        utility.fields_leapfrog_corrector<Tscal>(iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tvec>(
+            ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tscal>(
+            iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
 
         storage.old_axyz.reset();
         storage.old_duint.reset();
@@ -1404,8 +1389,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
             logger::info_ln("BasicGas", "computing next CFL");
 
             ComputeField<Tscal> vsig_max_dt = utility.make_compute_field<Tscal>("vsig_a", 1);
-    
-    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
+
+            shambase::DistributedData<MergedPatchData> &mpdat =
+                storage.merged_patchdata_ghost.get();
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
@@ -1413,11 +1399,12 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
                 sycl::buffer<Tvec> &buf_xyz =
                     shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-                sycl::buffer<Tvec> &buf_vxyz      = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-                sycl::buffer<Tscal> &buf_hpart    = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-                sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-                sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
-                sycl::buffer<Tscal> &vsig_buf     = vsig_max_dt.get_buf_check(cur_p.id_patch);
+                sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+                sycl::buffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+                sycl::buffer<Tscal> &buf_pressure =
+                    storage.pressure.get().get_buf_check(cur_p.id_patch);
+                sycl::buffer<Tscal> &vsig_buf = vsig_max_dt.get_buf_check(cur_p.id_patch);
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -1571,7 +1558,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
                     sycl::range range_npart{pdat.get_obj_cnt()};
 
-                    tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+                    tree::ObjectCache &pcache =
+                        storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
                     /////////////////////////////////////////////
 
@@ -1658,7 +1646,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
                     sycl::range range_npart{pdat.get_obj_cnt()};
 
-                    tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+                    tree::ObjectCache &pcache =
+                        storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
                     /////////////////////////////////////////////
 

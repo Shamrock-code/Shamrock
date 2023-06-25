@@ -21,9 +21,9 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     using VaryingMM97 = typename Cfg_AV::VaryingMM97;
     using VaryingCD10 = typename Cfg_AV::VaryingCD10;
     if (None *v = std::get_if<None>(&solver_config.artif_viscosity.config)) {
-        logger::debug_ln("SPHSolver", "skipping artif viscosity update (No viscosity mode)");
+        logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (No viscosity mode)");
     } else if (Constant *v = std::get_if<Constant>(&solver_config.artif_viscosity.config)) {
-        logger::debug_ln("SPHSolver", "skipping artif viscosity update (Constant mode)");
+        logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (Constant mode)");
     } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&solver_config.artif_viscosity.config)) {
         update_artificial_viscosity_mm97(dt, *v);
     } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&solver_config.artif_viscosity.config)) {
@@ -37,7 +37,7 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artificial_viscosity_mm97(
     Tscal dt, typename Config::AVConfig::VaryingMM97 cfg) {
     StackEntry stack_loc{};
-    logger::info_ln("SPHShockDetector", "Updating alpha viscosity (Morris & Monaghan 1997)");
+    logger::info_ln("UpdateViscosity", "Updating alpha viscosity (Morris & Monaghan 1997)");
 
     using namespace shamrock::patch;
     PatchDataLayout &pdl  = scheduler().pdl;
@@ -90,6 +90,17 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artificial_viscosity_cd10(
     Tscal dt, typename Config::AVConfig::VaryingCD10 cfg) {
+
+    StackEntry stack_loc{};
+    logger::info_ln("UpdateViscosity", "Updating alpha viscosity (Cullen & Dehnen 2010)");
+
+    using namespace shamrock::patch;
+    PatchDataLayout &pdl  = scheduler().pdl;
+    const u32 ialpha_AV   = pdl.get_field_idx<Tscal>("alpha_AV");
+    const u32 idivv       = pdl.get_field_idx<Tscal>("divv");
+    const u32 icurlv       = pdl.get_field_idx<Tvec>("curlv");
+    const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
+    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
 
     shambase::throw_unimplemented();
 }

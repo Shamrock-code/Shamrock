@@ -33,8 +33,8 @@ namespace shammodels::sph::modules {
         DiffOperators(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        inline void update_divv(Tscal gpart_mass);
-        inline void update_curlv();
+        void update_divv(Tscal gpart_mass);
+        void update_curlv(Tscal gpart_mass);
         
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

@@ -10,6 +10,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
@@ -252,6 +253,38 @@ namespace shammodels::sph {
                     //exchange the buffer held by the distrib data and give it to the serializer
                     shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
                     return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
+                }
+            );
+
+            return recv_dat;
+        }
+
+
+        template<class T>
+        inline shambase::DistributedDataShared<PatchDataField<T>>
+        communicate_pdatfield(
+        shambase::DistributedDataShared<PatchDataField<T>> && interf,u32 nvar) {
+            StackEntry stack_loc{};
+
+            shambase::DistributedDataShared<PatchDataField<T>> recv_dat;
+
+            shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
+                std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf),
+                recv_dat,
+                shamsys::DirectGPU, 
+                [&](u64 id){
+                    return sched.get_patch_rank_owner(id);
+                }, 
+                [](PatchDataField<T> & pdat){
+                    shamalgs::SerializeHelper ser;
+                    ser.allocate(pdat.serialize_buf_byte_size());
+                    pdat.serialize_full(ser);
+                    return ser.finalize();
+                }, 
+                [&](std::unique_ptr<sycl::buffer<u8>> && buf){
+                    //exchange the buffer held by the distrib data and give it to the serializer
+                    shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                    return PatchDataField<T>::deserialize_full(ser);
                 }
             );
 

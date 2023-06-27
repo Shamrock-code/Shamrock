@@ -77,6 +77,10 @@ namespace shammodels {
                 context.pdata_layout_add_field<Tscal>("divv", 1);
             }
 
+            if (solver_config.has_field_dtdivv()) {
+                context.pdata_layout_add_field<Tscal>("dtdivv", 1);
+            }
+
             if (solver_config.has_field_curlv()) {
                 context.pdata_layout_add_field<Tvec>("curlv", 1);
             }

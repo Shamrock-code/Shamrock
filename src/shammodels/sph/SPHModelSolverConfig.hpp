@@ -76,6 +76,22 @@ struct shammodels::SPHModelSolverConfig {
             return is_varying_alpha;
         }
 
+        inline bool has_divv_field() {
+            bool is_varying_alpha =
+                bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
+            return is_varying_alpha;
+        }
+        inline bool has_curlv_field() {
+            bool is_varying_alpha =
+                bool(std::get_if<VaryingCD10>(&config));
+            return is_varying_alpha;
+        }
+        inline bool has_dtdivv_field() {
+            bool is_varying_alpha =
+                bool(std::get_if<VaryingCD10>(&config));
+            return is_varying_alpha;
+        }
+
         inline bool has_field_soundspeed() {
             bool is_varying_alpha =
                 bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
@@ -141,7 +157,8 @@ struct shammodels::SPHModelSolverConfig {
     inline bool has_field_alphaAV() { return artif_viscosity.has_alphaAV_field(); }
 
     inline bool has_field_divv() { return artif_viscosity.has_alphaAV_field(); }
-    inline bool has_field_curlv() { return artif_viscosity.has_alphaAV_field() && (dim == 3); }
+    inline bool has_field_dtdivv() { return artif_viscosity.has_dtdivv_field(); }
+    inline bool has_field_curlv() { return artif_viscosity.has_curlv_field() && (dim == 3); }
 
     inline bool has_field_soundspeed() { return artif_viscosity.has_field_soundspeed(); }
 

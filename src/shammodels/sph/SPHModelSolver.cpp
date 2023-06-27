@@ -15,6 +15,7 @@
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
+#include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -1544,6 +1545,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
                     .update_curlv(gpart_mass);
             }
 
+            if (solver_config.has_field_dtdivv()) {
+                sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+                    .update_dtdivv(gpart_mass);
+            }
+
             if (solver_config.has_field_soundspeed()) {
                 const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
@@ -1641,6 +1647,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
             fnum++;
         }
 
+
+            if (solver_config.has_field_dtdivv()) {
+                fnum++;
+            }
+
         writter.add_field_data_section(fnum);
 
         if (dump_opt.vtk_dump_patch_id) {
@@ -1662,6 +1673,12 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
             const u32 idivv = pdl.get_field_idx<Tscal>("divv");
             vtk_dump_add_field<Tscal>(scheduler(), writter, idivv, "divv");
         }
+
+
+            if (solver_config.has_field_dtdivv()) {
+            const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, idtdivv, "dtdivv");
+            }
 
         if (solver_config.has_field_curlv()) {
             const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");

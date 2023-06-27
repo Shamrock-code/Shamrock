@@ -1,4 +1,3 @@
-
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
@@ -19,7 +18,7 @@ namespace shammath {
     compute_inv_33(std::array<sycl::vec<T, 3>, 3> mat) -> std::array<sycl::vec<T, 3>, 3> {
 
         using vec = sycl::vec<T, 3>;
-        
+
         T a00 = mat[0].x();
         T a10 = mat[1].x();
         T a20 = mat[2].x();

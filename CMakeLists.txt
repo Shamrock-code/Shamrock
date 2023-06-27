@@ -126,7 +126,7 @@ if("${BUILD_SIM}")
 
 
     if("${BUILD_PYLIB}")
-    pybind11_add_module(shamrock src/main.cpp )
+    pybind11_add_module(shamrock  )
     target_compile_definitions(shamrock PUBLIC LIB_BUILD)
     target_link_libraries(shamrock PUBLIC pybind11::module)
     else()

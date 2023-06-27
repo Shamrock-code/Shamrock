@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "UpdateViscosity.hpp"
+#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include <variant>
 
@@ -98,11 +99,80 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     PatchDataLayout &pdl  = scheduler().pdl;
     const u32 ialpha_AV   = pdl.get_field_idx<Tscal>("alpha_AV");
     const u32 idivv       = pdl.get_field_idx<Tscal>("divv");
+    const u32 idtdivv       = pdl.get_field_idx<Tscal>("dtdivv");
     const u32 icurlv       = pdl.get_field_idx<Tvec>("curlv");
     const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
     const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
 
-    shambase::throw_unimplemented();
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        sycl::buffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
+        sycl::buffer<Tscal> &buf_dtdivv     = pdat.get_field_buf_ref<Tscal>(idtdivv);
+        sycl::buffer<Tvec> &buf_curlv     = pdat.get_field_buf_ref<Tvec>(icurlv);
+        sycl::buffer<Tscal> &buf_cs       = pdat.get_field_buf_ref<Tscal>(isoundspeed);
+        sycl::buffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
+        sycl::buffer<Tscal> &buf_alpha_AV = pdat.get_field_buf_ref<Tscal>(ialpha_AV);
+
+        u32 obj_cnt = pdat.get_obj_cnt();
+
+        shamsys::instance::get_compute_queue().submit([&, dt](sycl::handler &cgh) {
+            sycl::accessor divv{buf_divv, cgh, sycl::read_only};
+            sycl::accessor curlv{buf_curlv, cgh, sycl::read_only};
+            sycl::accessor dtdivv{buf_dtdivv, cgh, sycl::read_only};
+            sycl::accessor cs{buf_cs, cgh, sycl::read_only};
+            sycl::accessor h{buf_h, cgh, sycl::read_only};
+            sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_write};
+
+            Tscal sigma_decay = cfg.sigma_decay;
+            Tscal alpha_min   = cfg.alpha_min;
+            Tscal alpha_max   = cfg.alpha_max;
+
+            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
+                using namespace shambase::sycl_utils;
+
+                Tscal cs_a    = cs[item];
+                Tscal h_a     = h[item];
+                Tscal alpha_a = alpha_AV[item];
+                Tscal divv_a  = divv[item];
+                Tvec curlv_a  = curlv[item];
+                Tscal dtdivv_a  = dtdivv[item];
+
+                Tscal vsig            = cs_a;
+                Tscal inv_tau_a       = vsig * sigma_decay / h_a;
+                Tscal fact_t          = dt * inv_tau_a;
+                Tscal euler_impl_fact = 1 / (1 + fact_t);
+
+                Tscal div_corec = g_sycl_max<Tscal>(-divv_a, 0);
+                Tscal divv_a_sq = div_corec*div_corec;
+                //Tscal divv_a_sq_corec = g_sycl_max(-divv_a, 0);
+                Tscal curlv_a_sq = sycl::dot(curlv_a,curlv_a);
+
+                Tscal denom = (curlv_a_sq + divv_a_sq);
+
+                Tscal balsara_corec = (denom <= 0) ? 1 : divv_a_sq / (curlv_a_sq + divv_a_sq);
+
+
+
+
+                Tscal A_a = balsara_corec*g_sycl_max<Tscal>(-dtdivv_a, 0);
+
+
+
+
+                Tscal alpha_loc_a = g_sycl_min(
+                        (cs_a > 0) ? 10*h_a*h_a*A_a/(cs_a*cs_a) : alpha_min
+                    ,alpha_max);
+
+                //implicit euler
+                Tscal new_alpha = (alpha_a + alpha_loc_a * fact_t) * euler_impl_fact;
+
+                if(alpha_loc_a > alpha_a){
+                    new_alpha = alpha_loc_a;
+                }
+
+                alpha_AV[item] = new_alpha;
+            });
+        });
+    });
 }
 
 using namespace shamrock::sph::kernels;

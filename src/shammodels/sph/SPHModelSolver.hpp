@@ -145,6 +145,7 @@ namespace shammodels {
         void prepare_corrector();
         void update_derivs();
         void update_derivs_mm97();
+        void update_derivs_cd10();
         void update_derivs_constantAV();
         /**
          * @brief 

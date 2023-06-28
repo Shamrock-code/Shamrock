@@ -302,6 +302,10 @@ template <class T> class PatchDataField {
     T compute_sum();
 
     shambase::VecComponent<T> compute_dot_sum();
+
+    bool has_nan();
+    bool has_inf();
+    bool has_nan_or_inf();
 };
 
 // TODO add overflow check

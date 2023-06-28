@@ -8,11 +8,16 @@
 
 #include "avoidCopyMemory.hpp"
 #include "aliases.hpp"
+#include "shambase/exception.hpp"
 
 namespace shamalgs::memory::details {
 
     template<class T>
     T AvoidCopy<T>::extract_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx) {
+
+        if(!(idx < buf.size())){
+            throw shambase::throw_with_loc<std::runtime_error>("you are trying to access out of bounds");
+        }
 
         sycl::buffer<T> len_value{1};
         q.submit([&](sycl::handler &cgh) {

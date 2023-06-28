@@ -21,7 +21,7 @@ using namespace shamalgs::random;
 template<class T,class Fct> void unit_test_reduc(std::string name, Fct && red_fct){
     std::vector<T> vals;
 
-    constexpr u32 size_test = 2048;
+    constexpr u32 size_test = 1e6;
 
     std::mt19937 eng(0x1111);
     std::uniform_real_distribution<f64> distf(0, 1);

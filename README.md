@@ -1,9 +1,19 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="doc/shamrock-doc/src/images/no_background_nocolor.png"  width="600">
-  <img alt="text" src="doc/logosham_white.png" width="600">
-</picture>
+   <source media="(prefers-color-scheme: dark)" srcset="doc/shamrock-doc/src/images/no_background_nocolor.png"  width="600">
+   <img alt="text" src="doc/logosham_white.png" width="600">
+ </picture>
 
-![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/linux.yml/badge.svg?branch=main)
+CI status:
+![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/main.yml/badge.svg?branch=main)
+
+DPC++ status :
+![badge2](https://badgen.net/static/DPC++%2FCUDA/yes/green)
+![badge2](https://badgen.net/static/DPC++%2FHIP:ROCM/yes/green)
+
+OpenSycl status :
+![badge2](https://badgen.net/static/OpenSYCL%2FOpenMP/yes/green)
+![badge2](https://badgen.net/static/OpenSYCL%2FROCM/yes/green)
+![badge2](https://badgen.net/static/OpenSYCL%2FCUDA/yes/green)
 
 # Getting started
 

@@ -15,9 +15,8 @@ jobs:
 
 
   pragma_check:
-
-    runs-on: self-hosted
-    
+    name: "Check : (Pragma once)"
+    runs-on: [self-hosted, raw]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -29,9 +28,8 @@ jobs:
 
 
   copyright_check:
-
-    runs-on: self-hosted
-    
+    name: "Check : (Copyright)"
+    runs-on: [self-hosted, raw]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -44,16 +42,17 @@ jobs:
   
   #make shamrock documentation
   make_documentation:
+    name: "Build : Documentation"
 
-    runs-on: self-hosted
+    runs-on: [self-hosted, raw]
 
     needs: [pragma_check, copyright_check]
     
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
+      #- uses: actions/setup-python@v4
+      #  with:
+      #    python-version: '3.10' 
 
       - name: pip install packages
         run: pip install -U jupyter-book sphinx_proof matplotlib numpy
@@ -77,37 +76,31 @@ jobs:
           path: documentation.tar.gz
 
 
+
+  linux_opensycl:
+    name: Build OpenSYCL
+    needs: [pragma_check, copyright_check]
+    uses: ./.github/workflows/linux-build-opensycl.yml
+
+  shamrock_linux_opensycl:
+    name: Shamrock Test
+    needs: [pragma_check, copyright_check,linux_opensycl]
+    uses: ./.github/workflows/shamrock-opensycl.yml
+    
+
+
   ### build jobs
 
+  linux_dpcpp:
+    name: Build DPCPP
+    needs: [pragma_check, copyright_check]
+    uses: ./.github/workflows/linux-build-dpcpp.yml
+
   shamrock_linux_dpcpp:
-    needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/linux-dpcpp.yml
-    with:
-      clang: ${{ matrix.clang }}
-      os: ${{ matrix.os }}
-      cuda: ${{ matrix.cuda }}
-      rocm: ${{ matrix.rocm }}
-    strategy:
-      matrix:
-        clang: [15]
-        os: [self-hosted]
-        cuda: [11.0.2]
-        rocm: [5.4.3]
+    name: Shamrock Test
+    needs: [pragma_check, copyright_check,linux_dpcpp]
+    uses: ./.github/workflows/shamrock-dpcpp.yml
   
-  shamrock_linux_opensycl:
-    needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/linux-opensycl.yml
-    with:
-      clang: ${{ matrix.clang }}
-      os: ${{ matrix.os }}
-      cuda: ${{ matrix.cuda }}
-      rocm: ${{ matrix.rocm }}
-    strategy:
-      matrix:
-        clang: [15]
-        os: [self-hosted]
-        cuda: [11.0.2]
-        rocm: [5.4.3]
 
   #shamrock_linux_opensycl_macos:
   #  needs: [pragma_check, copyright_check]
@@ -120,7 +113,7 @@ jobs:
 
   publish_release:
 
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, raw]
     
     needs: [shamrock_linux_opensycl, shamrock_linux_dpcpp, make_documentation]
 

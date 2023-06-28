@@ -10,6 +10,8 @@
 
 #include "shambase/type_aliases.hpp"
 #include "shambase/type_traits.hpp"
+#include "shambase/sycl.hpp"
+#include "shambase/vectors.hpp"
 
 namespace shambase {
 
@@ -29,5 +31,69 @@ namespace shambase {
         }
 
     }
+
+    template<class T>
+    inline bool has_nan(T v){
+        auto tmp = ! sycl::isnan(v);
+        return !(tmp);
+    }
+
+    template<class T>
+    inline bool has_inf(T v){
+        auto tmp = ! sycl::isinf(v);
+        return !(tmp);
+    }
+
+    template<class T>
+    inline bool has_nan_or_inf(T v){
+        auto tmp = ! (sycl::isnan(v) || sycl::isinf(v));
+        return !(tmp);
+    }
+
+    /**
+     * @brief return true if vector has a nan
+     * 
+     * @tparam T 
+     * @tparam n 
+     * @param v 
+     * @return true 
+     * @return false 
+     */
+    template<class T, int n>
+    inline bool has_nan(sycl::vec<T,n> v){
+        auto tmp = ! sycl::isnan(v);
+        return component_have_a_zero(tmp);
+    }
+
+    /**
+     * @brief return true if vector has a inf
+     * 
+     * @tparam T 
+     * @tparam n 
+     * @param v 
+     * @return true 
+     * @return false 
+     */
+    template<class T, int n>
+    inline bool has_inf(sycl::vec<T,n> v){
+        auto tmp = ! sycl::isinf(v);
+        return component_have_a_zero(tmp);
+    }
+
+    /**
+     * @brief return true if vector has a nan or a inf
+     * 
+     * @tparam T 
+     * @tparam n 
+     * @param v 
+     * @return true 
+     * @return false 
+     */
+    template<class T, int n>
+    inline bool has_nan_or_inf(sycl::vec<T,n> v){
+        auto tmp = ! (sycl::isnan(v) || sycl::isinf(v));
+        return component_have_a_zero(tmp);
+    }
+
 
 }

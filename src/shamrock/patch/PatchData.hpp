@@ -16,8 +16,8 @@
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shammath/intervals.hpp"
 #include "shambase/sycl_utils.hpp"
+#include "shammath/intervals.hpp"
 #include <variant>
 
 namespace shamrock::patch {
@@ -28,17 +28,12 @@ namespace shamrock::patch {
 
         void init_fields();
 
-
         using var_t = FieldVariant<PatchDataField>;
 
         std::vector<var_t> fields;
 
-        
-
         public:
-
         using field_variant_t = var_t;
-
 
         PatchDataLayout &pdl;
 
@@ -57,23 +52,20 @@ namespace shamrock::patch {
 
             for (auto &field_var : other.fields) {
 
-                field_var.visit(
-                    [&](auto &field) {
-                        using base_t =
-                            typename std::remove_reference<decltype(field)>::type::Field_type;
-                        fields.emplace_back(PatchDataField<base_t>(field));
-                    }
-                );
+                field_var.visit([&](auto &field) {
+                    using base_t =
+                        typename std::remove_reference<decltype(field)>::type::Field_type;
+                    fields.emplace_back(PatchDataField<base_t>(field));
+                });
             };
         }
 
         template<class Func>
-        inline PatchData(PatchDataLayout & pdl, Func && fct_init) : pdl(pdl){
+        inline PatchData(PatchDataLayout &pdl, Func &&fct_init) : pdl(pdl) {
 
             u32 cnt = 0;
 
             fct_init(fields);
-
         }
 
         inline PatchData duplicate() {
@@ -96,7 +88,7 @@ namespace shamrock::patch {
          */
         void extract_element(u32 pidx, PatchData &out_pdat);
 
-        void keep_ids(sycl::buffer<u32> & index_map, u32 len);
+        void keep_ids(sycl::buffer<u32> &index_map, u32 len);
 
         void insert_elements(PatchData &pdat);
 
@@ -116,24 +108,24 @@ namespace shamrock::patch {
         void expand(u32 obj_cnt);
 
         /**
-        * @brief this function remaps the patchdatafield like so
-        *   val[id] = val[index_map[id]]
-        * This function can be used to apply the result of a sort to the field
-        * 
-        * @param index_map 
-        * @param len the lenght of the map (must match with the current count)
-        */
-        void index_remap(sycl::buffer<u32> & index_map, u32 len);
+         * @brief this function remaps the patchdatafield like so
+         *   val[id] = val[index_map[id]]
+         * This function can be used to apply the result of a sort to the field
+         *
+         * @param index_map
+         * @param len the lenght of the map (must match with the current count)
+         */
+        void index_remap(sycl::buffer<u32> &index_map, u32 len);
 
         /**
-        * @brief this function remaps the patchdatafield like so
-        *   val[id] = val[index_map[id]]
-        * This function can be used to apply the result of a sort to the field
-        * 
-        * @param index_map 
-        * @param len the lenght of the map
-        */
-        void index_remap_resize(sycl::buffer<u32> & index_map, u32 len);
+         * @brief this function remaps the patchdatafield like so
+         *   val[id] = val[index_map[id]]
+         * This function can be used to apply the result of a sort to the field
+         *
+         * @param index_map
+         * @param len the lenght of the map
+         */
+        void index_remap_resize(sycl::buffer<u32> &index_map, u32 len);
 
         // template<class Tvecbox>
         // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &
@@ -144,11 +136,9 @@ namespace shamrock::patch {
         //     bmax_p6,Tvecbox bmax_p7);
 
         template<class Tvecbox>
-        void split_patchdata(
-            std::array<std::reference_wrapper<PatchData>, 8> pdats,
-            std::array<Tvecbox, 8> min_box,
-            std::array<Tvecbox, 8> max_box
-        );
+        void split_patchdata(std::array<std::reference_wrapper<PatchData>, 8> pdats,
+                             std::array<Tvecbox, 8> min_box,
+                             std::array<Tvecbox, 8> max_box);
 
         void append_subset_to(std::vector<u32> &idxs, PatchData &pdat) const;
         void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat) const;
@@ -158,12 +148,11 @@ namespace shamrock::patch {
             bool is_empty = fields.empty();
 
             if (!is_empty) {
-                return fields[0].visit_return(
-                    [](auto &field) { return field.get_obj_cnt(); }
-                    );
+                return fields[0].visit_return([](auto &field) { return field.get_obj_cnt(); });
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>("this patchdata does not contains any fields");
+            throw shambase::throw_with_loc<std::runtime_error>(
+                "this patchdata does not contains any fields");
         }
 
         inline u64 memsize() {
@@ -211,8 +200,7 @@ namespace shamrock::patch {
                 pdl.get_description_str() +
                 "\n"
                 "    arg : idx = " +
-                std::to_string(idx)
-            );
+                std::to_string(idx));
         }
 
         template<class T>
@@ -232,19 +220,18 @@ namespace shamrock::patch {
                 pdl.get_description_str() +
                 "\n"
                 "    arg : idx = " +
-                std::to_string(idx)
-            );
+                std::to_string(idx));
         }
 
         /**
          * @brief check that all contained field have the same obj cnt
-         * 
+         *
          */
-        inline void check_field_obj_cnt_match(){
+        inline void check_field_obj_cnt_match() {
             u32 cnt = get_obj_cnt();
             for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) { 
-                    if(field.get_obj_cnt() != cnt){
+                field_var.visit([&](auto &field) {
+                    if (field.get_obj_cnt() != cnt) {
                         throw shambase::throw_with_loc<std::runtime_error>("mismatch in obj cnt");
                     }
                 });
@@ -289,8 +276,7 @@ namespace shamrock::patch {
                         }
                     },
                     p1.fields[idx].value,
-                    p2.fields[idx].value
-                );
+                    p2.fields[idx].value);
 
                 check = check && ret;
             }
@@ -298,13 +284,57 @@ namespace shamrock::patch {
             return check;
         }
 
-        void serialize_buf(shamalgs::SerializeHelper & serializer);
+        void serialize_buf(shamalgs::SerializeHelper &serializer);
 
         u64 serialize_buf_byte_size();
 
-        static PatchData deserialize_buf(shamalgs::SerializeHelper & serializer, PatchDataLayout & pdl);
+        static PatchData
+        deserialize_buf(shamalgs::SerializeHelper &serializer, PatchDataLayout &pdl);
 
         void fields_raz();
+
+        bool has_nan() {
+            StackEntry stack_loc{};
+
+            bool ret = false;
+
+            for (auto &field_var : fields) {
+                field_var.visit([&](auto &field) {
+                    if (field.has_nan()) {
+                        ret = true;
+                    }
+                });
+            }
+            return ret;
+        }
+        bool has_inf() {
+            StackEntry stack_loc{};
+
+            bool ret = false;
+
+            for (auto &field_var : fields) {
+                field_var.visit([&](auto &field) {
+                    if (field.has_inf()) {
+                        ret = true;
+                    }
+                });
+            }
+            return ret;
+        }
+        bool has_nan_or_inf() {
+            StackEntry stack_loc{};
+
+            bool ret = false;
+
+            for (auto &field_var : fields) {
+                field_var.visit([&](auto &field) {
+                    if (field.has_nan_or_inf()) {
+                        ret = true;
+                    }
+                });
+            }
+            return ret;
+        }
     };
 
     template<class T>
@@ -315,33 +345,30 @@ namespace shamrock::patch {
         if (!pdl.check_main_field_type<T>()) {
 
             throw shambase::throw_with_loc<std::invalid_argument>(
-                "the chosen type for the main field does not match the required template type"
-            );
+                "the chosen type for the main field does not match the required template type");
         }
 
-        PatchDataField<T> & main_field = pdat.get_field<T>(0);
+        PatchDataField<T> &main_field = pdat.get_field<T>(0);
 
         auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
             return main_field.get_elements_with_range(
-                [&](T val,T vmin, T vmax){
-
-                    if(shambase::VectorProperties<T>::dimension == 3){
-                        return shammath::is_in_half_open(val, vmin,vmax);
-                    }else{
-                        throw shambase::throw_with_loc<std::runtime_error>("dimension != 3 is not handled");
+                [&](T val, T vmin, T vmax) {
+                    if (shambase::VectorProperties<T>::dimension == 3) {
+                        return shammath::is_in_half_open(val, vmin, vmax);
+                    } else {
+                        throw shambase::throw_with_loc<std::runtime_error>(
+                            "dimension != 3 is not handled");
                     }
-
                 },
-                vmin,vmax
-            );
+                vmin,
+                vmax);
         };
 
-        std::vector<u32> idx_lst = get_vec_idx(bmin,bmax);
+        std::vector<u32> idx_lst = get_vec_idx(bmin, bmax);
 
         logger::debug_sycl_ln("PatchData", "inserting element cnt =", idx_lst.size());
 
-        pdat.append_subset_to(idx_lst,*this);
-
+        pdat.append_subset_to(idx_lst, *this);
     }
 
 } // namespace shamrock::patch

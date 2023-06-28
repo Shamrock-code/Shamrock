@@ -10,7 +10,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shammodels/sph/setup/sph_setup.hpp"
+#include "shammodels/sph/legacy/setup/sph_setup.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <variant>
 

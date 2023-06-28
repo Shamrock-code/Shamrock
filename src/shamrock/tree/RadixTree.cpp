@@ -20,6 +20,8 @@
 
 #include "RadixTreeMortonBuilder.hpp"
 #include "shamalgs/memory/memory.hpp"
+#include "shambase/floats.hpp"
+#include "shambase/integer.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 
 
@@ -160,32 +162,92 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
         });
     });
 
-    sycl::range<1> range_tree{tree_struct.internal_cell_count};
-    auto ker_reduc_hmax = [&](sycl::handler &cgh) {
-        u32 offset_leaf = tree_struct.internal_cell_count;
+    #if false
+    // debug code to track the DPCPP + prime number worker issue
+    {
+        
+        //172827
+        //86413
+        //<<<(43207,1,1),(2,1,1)>>>
+        //gid = 86412
 
-        auto h_max_cell = buf_cell_int_rad_buf->template get_access<sycl::access::mode::read_write>(cgh);
+        shamalgs::memory::print_buf(*tree_struct.buf_rchild_id, tree_struct.internal_cell_count, 16, "{} ");
+        shamalgs::memory::print_buf(*tree_struct.buf_lchild_id, tree_struct.internal_cell_count, 16, "{} ");
+        shamalgs::memory::print_buf(*tree_struct.buf_rchild_flag, tree_struct.internal_cell_count, 16, "{} ");
+        shamalgs::memory::print_buf(*tree_struct.buf_lchild_flag, tree_struct.internal_cell_count, 16, "{} ");
 
-        sycl::accessor rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
-        sycl::accessor lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
-        sycl::accessor rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
-        sycl::accessor lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
 
-        cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
-            u32 gid = (u32)item.get_id(0);
+            sycl::host_accessor rchild_id   {*tree_struct.buf_rchild_id  ,sycl::read_only};
+            sycl::host_accessor lchild_id   {*tree_struct.buf_lchild_id  ,sycl::read_only};
+            sycl::host_accessor rchild_flag {*tree_struct.buf_rchild_flag,sycl::read_only};
+            sycl::host_accessor lchild_flag {*tree_struct.buf_lchild_flag,sycl::read_only};
 
+            u32 gid = 86412;
+            u32 lid_0 = lchild_id[gid];
+            u32 rid_0 = rchild_id[gid];
+            u32 lfl_0 = lchild_flag[gid];
+            u32 rfl_0 = rchild_flag[gid];
+            u32 offset_leaf = tree_struct.internal_cell_count;
             u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
             u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
 
-            coord_t h_l = h_max_cell[lid];
-            coord_t h_r = h_max_cell[rid];
+            logger::raw_ln("gid",gid);
+            logger::raw_ln("lid_0",lid_0);
+            logger::raw_ln("rid_0",rid_0);
+            logger::raw_ln("lfl_0",lfl_0);
+            logger::raw_ln("rfl_0",rfl_0);
+            logger::raw_ln("offset_leaf",offset_leaf);
+            logger::raw_ln("lid",lid);
+            logger::raw_ln("rid",rid);
+            logger::raw_ln("sz =", buf_cell_int_rad_buf->size());
+            logger::raw_ln("internal_cell_count =", tree_struct.internal_cell_count);
+            logger::raw_ln("tree_leaf_count =", tree_reduced_morton_codes.tree_leaf_count);
+    }
+    #endif
 
-            h_max_cell[gid] = (h_r > h_l ? h_r : h_l);
-        });
-    };
+    sycl::range<1> range_tree{tree_struct.internal_cell_count};
 
     for (u32 i = 0; i < tree_depth; i++) {
-        queue.submit(ker_reduc_hmax);
+        queue.submit([&](sycl::handler &cgh) {
+            u32 offset_leaf = tree_struct.internal_cell_count;
+
+            sycl::accessor h_max_cell {*buf_cell_int_rad_buf, cgh,sycl::read_write};
+
+            sycl::accessor rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
+            sycl::accessor lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
+            sycl::accessor rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
+            sycl::accessor lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
+
+            u32 len = tree_struct.internal_cell_count;
+            constexpr u32 group_size = 64;
+            u32 max_len = len;
+            u32 group_cnt = shambase::group_count(len, group_size);
+            u32 corrected_len = group_cnt*group_size;
+            
+            cgh.parallel_for(
+                sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+                u32 local_id = id.get_local_id(0);
+                u32 group_tile_id = id.get_group_linear_id();
+                u32 gid = group_tile_id * group_size + local_id;
+
+                if(gid >= max_len) return;
+
+                u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
+                u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
+
+                coord_t h_l = h_max_cell[lid];
+                coord_t h_r = h_max_cell[rid];
+
+                h_max_cell[gid] = (h_r > h_l ? h_r : h_l);
+            });
+        });
+    }
+
+    {
+        if(shamalgs::reduction::has_nan(queue, *buf_cell_int_rad_buf, tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count)){
+            shamalgs::memory::print_buf(*buf_cell_int_rad_buf, tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count, 8, "{} ");
+            throw  shambase::throw_with_loc<std::runtime_error>("the structure of the tree as issue in ids");
+        }
     }
 
     return std::move(buf_cell_interact_rad);
@@ -805,7 +867,7 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
                 sycl::range<1> range_node = sycl::range<1>{ret.tree_reduced_morton_codes.tree_leaf_count + ret.tree_struct.internal_cell_count};
 
                 
-                auto out = sycl::stream(128, 128, cgh);
+                //auto out = sycl::stream(128, 128, cgh);
 
                 cgh.parallel_for(range_node, [=](sycl::item<1> item) {
 
@@ -932,7 +994,7 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
 
                                 break;
                             }else{
-                                out << "[CRASH] Tree cut had a weird behavior during old cell search : \n";
+                                //out << "[CRASH] Tree cut had a weird behavior during old cell search : \n";
                                 //throw "";
 
                                 u32 store_val = cur_id;

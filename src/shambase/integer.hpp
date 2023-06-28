@@ -131,4 +131,17 @@ namespace shambase {
     };
 
 
+    
+    template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0> 
+    inline constexpr T most_sig_bit_mask() noexcept {
+        return T(std::make_unsigned_t<T>(1) << (sizeof(T) * 8 - 1));
+    }
+
+    
+    template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0> 
+    inline constexpr bool is_most_sig_bit_set(const T x)noexcept{
+        return (x & most_sig_bit_mask<T>());
+    }
+
+
 } // namespace shambase

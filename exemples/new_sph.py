@@ -78,7 +78,7 @@ del setup
 
 
 
-sim.set_cfl_cour(1e-1)
+sim.set_cfl_cour(0.25)
 sim.set_cfl_force(0.3)
 
 
@@ -87,8 +87,25 @@ print("Current part mass :", pmass)
 
 sim.set_particle_mass(pmass)
 
-for i in range(7):
-    sim.evolve(1e-3, False, False, "", False)
 
-for i in range(200):
-    sim.evolve(1e-3, True, True, "dump_"+str(i)+".vtk", True)
+t_sum = 0
+t_target = 0.2
+current_dt = 1e-7
+i = 0
+i_dump = 0
+while t_sum < t_target:
+
+    print("step : t=",t_sum)
+    
+    next_dt = model.evolve(current_dt, True, "dump_"+str(i_dump)+".vtk", True)
+
+    if i % 1 == 0:
+        i_dump += 1
+
+    t_sum += current_dt
+    current_dt = next_dt
+
+    if (t_target - t_sum) < next_dt:
+        current_dt = t_target - t_sum
+
+    i+= 1

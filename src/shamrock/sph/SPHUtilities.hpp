@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shammodels/BasicSPHGhosts.hpp"
+#include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/sph/sphpart.hpp"
 #include "shamrock/tree/RadixTree.hpp"

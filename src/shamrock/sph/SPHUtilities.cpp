@@ -81,7 +81,7 @@ namespace shammodels::sph {
 
                     using namespace shamrock::sph;
 
-                    flt rho_ha = rho_h(part_mass, h_a);
+                    flt rho_ha = rho_h(part_mass, h_a,SPHKernel::hfactd);
                     flt new_h  = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                     if (new_h < h_a * h_max_evol_m)
@@ -169,7 +169,7 @@ namespace shammodels::sph {
 
                     using namespace shamrock::sph;
 
-                    flt rho_ha = rho_h(part_mass, h_a);
+                    flt rho_ha = rho_h(part_mass, h_a,SPHKernel::hfactd);
                     flt new_h  = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                     if (new_h < h_a * h_max_evol_m)
@@ -245,7 +245,7 @@ namespace shammodels::sph {
 
                 using namespace shamrock::sph;
 
-                flt rho_ha  = rho_h(part_mass, h_a);
+                flt rho_ha  = rho_h(part_mass, h_a,SPHKernel::hfactd);
                 flt omega_a = 1 + (h_a / (3 * rho_ha)) * part_omega_sum;
                 omega[id_a] = omega_a;
 

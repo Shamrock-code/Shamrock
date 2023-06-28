@@ -20,7 +20,6 @@
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/generic/setup/modifiers.hpp"
 
-#include "shammodels/sph/algs/smoothing_lenght.hpp"
 #include <tuple>
 
 namespace models::nbody {

@@ -153,6 +153,7 @@ profile_map = {
     "dpcpp" : {
         "bare" : "-fsycl",
         "cuda" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda",
+        "cuda-gdb" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -g --cuda-noopt-device-debug",
         "cuda_sm86" : "-fsycl -fsycl-targets=nvidia_gpu_sm_86",
         "cuda_sm80" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend --cuda-gpu-arch=sm_80",
         "cuda_sm75" : "-fsycl -fsycl-targets=nvidia_gpu_sm_75",
@@ -164,15 +165,19 @@ profile_map = {
         "cuda_sm53" : "-fsycl -fsycl-targets=nvidia_gpu_sm_53",
         "cuda-profiling" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -g",
         "cuda-no-rdc" : "-fsycl -fno-sycl-rdc -fsycl-targets=nvptx64-nvidia-cuda",
-        "cuda-index32bit" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -fsycl-id-queries-fit-in-int"
+        "cuda-index32bit" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -fsycl-id-queries-fit-in-int",
+        "hip-gfx906" : "-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx906",
     },
     "opensycl" : {
         "omp" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
+        "omp_O3debug" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -g " + hipsyclconfigfile,
+        "omp_O3debugasan" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -g -fsanitize=address " + hipsyclconfigfile,
         "omp_sanitizer" : "-fsanitize=address --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "omp_coverage" : "-fprofile-instr-generate -fcoverage-mapping --hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' " + hipsyclconfigfile,
         "generic" : "--hipsycl-targets=generic "+ hipsyclconfigfile,
         "cuda-nvcxx" : "--hipsycl-targets='cuda-nvcxx' "+ hipsyclconfigfile,
         "cuda-sm70" : "--hipsycl-targets='cuda:sm_70' "+ hipsyclconfigfile,
+        "hip-gfx906" : "--hipsycl-targets='hip:gfx906' "+ hipsyclconfigfile,
 
         #if you dare trying to develop with this profile
         "omp_insanity" : "--hipsycl-cpu-cxx=g++ --hipsycl-targets='omp' -Wall -Wextra -Werror " + hipsyclconfigfile

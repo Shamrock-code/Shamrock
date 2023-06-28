@@ -1,13 +1,3 @@
-target_sources(shamrock_lib
-    PRIVATE
-        BasicSPHGhosts.cpp
-        SPHSolverImpl.cpp
-        SPHModel.cpp
-        SPHModelSolver.cpp
-    PUBLIC
-    )
-
-
 
 #add_subdirectory(algs)
 #add_subdirectory(physics)

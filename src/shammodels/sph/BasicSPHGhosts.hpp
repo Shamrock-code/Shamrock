@@ -14,13 +14,37 @@
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
+#include <variant>
 
 namespace shammodels::sph {
 
     template<class vec>
+    struct BasicSPHGhostHandlerConfig{
+        struct Free{
+
+        };
+        struct Periodic{
+
+        };
+        struct ShearingPeriodic{
+
+        };
+
+        using Variant = std::variant<Free,Periodic,ShearingPeriodic>;
+
+
+    };
+    
+
+    template<class vec>
     class BasicSPHGhostHandler {
 
+        using CfgClass = BasicSPHGhostHandlerConfig<vec>;
+        using Config = typename CfgClass::Variant;
+
         PatchScheduler &sched;
+        Config ghost_config;
+
 
         public:
         using flt                = shambase::VecComponent<vec>;
@@ -42,7 +66,7 @@ namespace shammodels::sph {
 
         using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
 
-        BasicSPHGhostHandler(PatchScheduler &sched) : sched(sched) {}
+        BasicSPHGhostHandler(PatchScheduler &sched, Config ghost_config) : sched(sched),ghost_config(ghost_config) {}
 
         /**
          * @brief Find interfaces and their metadata

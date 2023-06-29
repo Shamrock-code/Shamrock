@@ -100,7 +100,15 @@ namespace shammodels {
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
 
         inline void gen_ghost_handler() {
-            storage.ghost_handler.set(GhostHandle{scheduler()});
+
+            using CfgClass = sph::BasicSPHGhostHandlerConfig<Tvec>;
+            using BCConfig = typename CfgClass::Variant;
+
+            using BCFree = typename CfgClass::Free;
+            using BCPeriodic = typename CfgClass::Periodic;
+            using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
+
+            storage.ghost_handler.set(GhostHandle{scheduler(),BCPeriodic{}});
         }
         inline void reset_ghost_handler() { storage.ghost_handler.reset(); }
 

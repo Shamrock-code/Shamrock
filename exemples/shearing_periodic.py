@@ -7,15 +7,9 @@ target_tot_u = 1
 
 
 dr = 0.01
-bmin = (-0.6,-0.6,-0.6)
-bmax = ( 0.6, 0.6, 0.6)
+bmin = (-0.6,-0.1,-0.6)
+bmax = ( 0.6, 0.1, 0.6)
 pmass = -1
-
-
-xm,ym,zm = bmin
-xM,yM,zM = bmax
-
-xc,yc,zc = 0,0,0
 
 
 ctx = shamrock.Context()
@@ -34,6 +28,9 @@ model.set_solver_config(cfg)
 model.init_scheduler(int(1e7),1)
 
 
+bmin,bmax = model.get_ideal_fcc_box(dr,bmin,bmax)
+xm,ym,zm = bmin
+xM,yM,zM = bmax
 model.resize_simulation_box(bmin,bmax)
 model.add_cube_fcc_3d(dr, bmin,bmax)
 
@@ -45,11 +42,12 @@ print("Total mass :", totmass)
 pmass = model.total_mass_to_part_mass(totmass)
 
 model.set_value_in_a_box("uint","f64", 1 , bmin,bmax)
+#model.set_value_in_a_box("vxyz","f64_3", (-10,0,0) , bmin,bmax)
 
-pen_sz = 0.05
+pen_sz = 0.1
 
-model.set_value_in_a_box("uint","f64", 2 , (xm,-pen_sz,-pen_sz),(-0.2,pen_sz,pen_sz))
-model.set_value_in_a_box("uint","f64", 2 , (0.2,-pen_sz,-pen_sz),(xM,pen_sz,pen_sz))
+model.set_value_in_a_box("uint","f64", 3 , (xm,-pen_sz,-pen_sz),(-0.2,pen_sz,pen_sz))
+model.set_value_in_a_box("uint","f64", 3 , (0.2,-pen_sz,-pen_sz),(xM,pen_sz,pen_sz))
 
 print("Current part mass :", pmass)
 

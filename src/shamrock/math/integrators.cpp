@@ -198,10 +198,14 @@ void util::sycl_position_sheared_modulo(sycl::queue &queue,
             T r = xyz[gid] - box_min;
 
             T roff = r / delt;
+
+            auto cnt_per = [](shambase::VecComponent<T> v) -> int {
+                return (v > 0) ? int(v) : (int(v) - 1);
+            };
             
-            i32 xoff = int(roff.x());
-            i32 yoff = int(roff.y());
-            i32 zoff = int(roff.z());
+            i32 xoff = cnt_per(roff.x());
+            i32 yoff = cnt_per(roff.y());
+            i32 zoff = cnt_per(roff.z());
 
             i32 dx = xoff*shear_base.x();
             i32 dy = yoff*shear_base.y();
@@ -211,11 +215,10 @@ void util::sycl_position_sheared_modulo(sycl::queue &queue,
 
 
             T shift = {
-                (d*shear_dir.x())*shear_value + delt.x()*xoff,
-                (d*shear_dir.y())*shear_value + delt.y()*yoff ,
-                (d*shear_dir.z())*shear_value + delt.z()*zoff
+                (d*shear_dir.x())*shear_value,
+                (d*shear_dir.y())*shear_value,
+                (d*shear_dir.z())*shear_value
             };
-
 
             T shift_speed = {
                 (d*shear_dir.x())*shear_speed,
@@ -224,12 +227,11 @@ void util::sycl_position_sheared_modulo(sycl::queue &queue,
             };
 
             vxyz[gid] -= shift_speed;
-
             r -= shift;
 
-            //r = sycl::fmod(r, delt);
-            //r += delt;
-            //r = sycl::fmod(r, delt);
+            r = sycl::fmod(r, delt);
+            r += delt;
+            r = sycl::fmod(r, delt);
             r += box_min;
 
             xyz[gid] = r;

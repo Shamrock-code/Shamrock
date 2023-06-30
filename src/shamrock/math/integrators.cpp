@@ -82,7 +82,7 @@ void integ::leapfrog_corrector(sycl::queue &queue,
         sycl::accessor acc_u{buf_val, cgh, sycl::read_write};
         sycl::accessor acc_du{buf_der, cgh, sycl::read_only};
         sycl::accessor acc_du_old{buf_der_old, cgh, sycl::read_only};
-        sycl::accessor acc_epsilon_sq{buf_eps_sq, cgh,sycl::write_only, sycl::no_init};
+        sycl::accessor acc_epsilon_sq{buf_eps_sq, cgh, sycl::write_only, sycl::no_init};
 
         cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
             u32 gid = (u32)item.get_id();
@@ -168,6 +168,78 @@ template void util::sycl_position_modulo(sycl::queue &queue,
                                          sycl::buffer<f64_3> &buf_xyz,
                                          sycl::range<1> elem_range,
                                          std::pair<f64_3, f64_3> box);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<class T>
+void util::sycl_position_sheared_modulo(sycl::queue &queue,
+                                        sycl::buffer<T> &buf_xyz,
+                                        sycl::range<1> elem_range,
+                                        std::pair<T, T> box,
+                                        i32_3 shear_base,
+                                        i32_3 shear_dir,
+                                        shambase::VecComponent<T> shear_value) {
+
+    queue.submit([&,shear_base,shear_value](sycl::handler &cgh) {
+        sycl::accessor xyz{buf_xyz, cgh, sycl::read_write};
+
+        T box_min = std::get<0>(box);
+        T box_max = std::get<1>(box);
+        T delt    = box_max - box_min;
+
+        cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
+            u32 gid = (u32)item.get_id();
+
+            T r = xyz[gid] - box_min;
+
+            T roff = r / delt;
+            
+            i32 xoff = int(roff.x());
+            i32 yoff = int(roff.y());
+            i32 zoff = int(roff.z());
+
+            i32 dx = xoff*shear_base.x();
+            i32 dy = yoff*shear_base.y();
+            i32 dz = zoff*shear_base.z();
+
+            i32 d = dx + dy + dz;
+
+
+            T shift = {
+                (d*shear_dir.x())*shear_value + delt.x()*xoff,
+                (d*shear_dir.y())*shear_value + delt.y()*yoff ,
+                (d*shear_dir.z())*shear_value + delt.z()*zoff
+            };
+
+            r += shift;
+
+            r = sycl::fmod(r, delt);
+            r += delt;
+            r = sycl::fmod(r, delt);
+            r += box_min;
+
+            xyz[gid] = r;
+        });
+    });
+}
+
+template void util::sycl_position_sheared_modulo(sycl::queue &queue,
+                                                 sycl::buffer<f32_3> &buf_xyz,
+                                                 sycl::range<1> elem_range,
+                                                 std::pair<f32_3, f32_3> box,
+                                                 i32_3 shear_base,
+                                                 i32_3 shear_dir,
+                                                 f32 shear_value);
+
+template void util::sycl_position_sheared_modulo(sycl::queue &queue,
+                                                 sycl::buffer<f64_3> &buf_xyz,
+                                                 sycl::range<1> elem_range,
+                                                 std::pair<f64_3, f64_3> box,
+                                                 i32_3 shear_base,
+                                                 i32_3 shear_dir,
+                                                 f64 shear_value);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////

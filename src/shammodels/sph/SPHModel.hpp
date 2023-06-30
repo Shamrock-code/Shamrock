@@ -383,7 +383,7 @@ namespace shammodels {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         f64
-        evolve_once(f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
+        evolve_once(f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
     };
 
 } // namespace shammodels

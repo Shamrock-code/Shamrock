@@ -130,6 +130,58 @@ struct shammodels::SPHModelSolverConfig {
         }
     };
 
+
+    struct BCConfig{
+        struct Free{
+            Tscal expand_tolerance = 1.2;
+        };
+        struct Periodic{
+
+        };
+        struct ShearingPeriodic{
+            i32_3 shear_base; 
+            i32_3 shear_dir; 
+            Tscal shear_speed;
+        };
+
+        using Variant = std::variant<Free,Periodic,ShearingPeriodic>;
+
+        Variant config = Free{};
+
+        inline void set_free(){
+            config = Free{};
+        }
+
+        inline void set_periodic(){
+            config = Periodic{};
+        }
+
+        inline void set_shearing_periodic(
+            i32_3 shear_base,
+            i32_3 shear_dir, Tscal speed){
+            config = ShearingPeriodic{
+                shear_base,shear_dir,speed
+            };
+        }
+    };  
+
+    BCConfig boundary_config;
+
+    inline void set_boundary_free(){
+       boundary_config.set_free();
+    }
+
+    inline void set_boundary_periodic(){
+        boundary_config.set_periodic();
+    }
+
+    inline void set_boundary_shearing_periodic(
+            i32_3 shear_base,
+            i32_3 shear_dir, Tscal speed){
+        boundary_config.set_shearing_periodic(shear_base,shear_dir, speed);
+    }
+
+
     AVConfig artif_viscosity;
 
     inline void set_artif_viscosity_None() {

@@ -99,7 +99,7 @@ namespace shammodels {
         using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
 
-        inline void gen_ghost_handler() {
+        inline void gen_ghost_handler(Tscal time_val) {
 
             using CfgClass = sph::BasicSPHGhostHandlerConfig<Tvec>;
             using BCConfig = typename CfgClass::Variant;
@@ -108,7 +108,23 @@ namespace shammodels {
             using BCPeriodic = typename CfgClass::Periodic;
             using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
 
-            storage.ghost_handler.set(GhostHandle{scheduler(),BCPeriodic{}});
+            using SolverConfigBC = typename Config::BCConfig;
+            using SolverBCFree = typename SolverConfigBC::Free;
+            using SolverBCPeriodic = typename SolverConfigBC::Periodic;
+            using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
+
+            //boundary condition selections
+            if(SolverBCFree* c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)){
+                storage.ghost_handler.set(GhostHandle{scheduler(),BCFree{}});
+            }else if(SolverBCPeriodic* c = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)){
+                storage.ghost_handler.set(GhostHandle{scheduler(),BCPeriodic{}});
+            }else if(SolverBCShearingPeriodic* c = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)){
+                storage.ghost_handler.set(GhostHandle{scheduler(),BCShearingPeriodic{
+                    c->shear_base, c->shear_dir, c->shear_speed*time_val, c->shear_speed
+                }});
+            }
+
+            
         }
         inline void reset_ghost_handler() { storage.ghost_handler.reset(); }
 
@@ -134,9 +150,9 @@ namespace shammodels {
         
 
 
-        void sph_prestep();
+        void sph_prestep(Tscal time_val);
 
-        void apply_position_boundary();
+        void apply_position_boundary(Tscal time_val);
 
         void do_predictor_leapfrog(Tscal dt);
 
@@ -167,7 +183,7 @@ namespace shammodels {
 
         SPHModelSolver(ShamrockCtx &context) : context(context) {}
 
-        Tscal evolve_once(Tscal dt_input,
+        Tscal evolve_once(Tscal t_current,Tscal dt_input,
                           bool do_dump,
                           std::string vtk_dump_name,
                           bool vtk_dump_patch_id);

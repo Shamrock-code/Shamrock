@@ -20,6 +20,10 @@ namespace shammodels::sph {
 
     template<class vec>
     struct BasicSPHGhostHandlerConfig{
+
+
+        using Tscal              = shambase::VecComponent<vec>;
+
         struct Free{
 
         };
@@ -27,7 +31,10 @@ namespace shammodels::sph {
 
         };
         struct ShearingPeriodic{
-
+            i32_3 shear_base; 
+            i32_3 shear_dir; 
+            Tscal shear_value; 
+            Tscal shear_speed;
         };
 
         using Variant = std::variant<Free,Periodic,ShearingPeriodic>;
@@ -53,6 +60,7 @@ namespace shammodels::sph {
 
         struct InterfaceBuildInfos {
             vec offset;
+            vec offset_speed;
             per_index periodicity_index;
             shammath::CoordRange<vec> cut_volume;
             flt volume_ratio;

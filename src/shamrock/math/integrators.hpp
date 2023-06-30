@@ -42,12 +42,14 @@ namespace shamrock {
 
         template<class T>
         void sycl_position_sheared_modulo(sycl::queue &queue,
-                                          sycl::buffer<T> &buf_xyz,
-                                          sycl::range<1> elem_range,
-                                          std::pair<T, T> box,
-                                          i32_3 shear_base,
-                                          i32_3 shear_dir,
-                                          shambase::VecComponent<T> shear_value);
+                                        sycl::buffer<T> &buf_xyz,
+                                        sycl::buffer<T> &buf_vxyz,
+                                        sycl::range<1> elem_range,
+                                        std::pair<T, T> box,
+                                        i32_3 shear_base,
+                                        i32_3 shear_dir,
+                                        shambase::VecComponent<T> shear_value,
+                                        shambase::VecComponent<T> shear_speed);
 
         template<class T>
         void swap_fields(sycl::queue &queue, sycl::buffer<T> &b1, sycl::buffer<T> &b2, u32 cnt);

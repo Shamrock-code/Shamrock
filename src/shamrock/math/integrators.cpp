@@ -176,14 +176,17 @@ template void util::sycl_position_modulo(sycl::queue &queue,
 template<class T>
 void util::sycl_position_sheared_modulo(sycl::queue &queue,
                                         sycl::buffer<T> &buf_xyz,
+                                        sycl::buffer<T> &buf_vxyz,
                                         sycl::range<1> elem_range,
                                         std::pair<T, T> box,
                                         i32_3 shear_base,
                                         i32_3 shear_dir,
-                                        shambase::VecComponent<T> shear_value) {
+                                        shambase::VecComponent<T> shear_value,
+                                        shambase::VecComponent<T> shear_speed) {
 
-    queue.submit([&,shear_base,shear_value](sycl::handler &cgh) {
+    queue.submit([&,shear_base,shear_value,shear_speed](sycl::handler &cgh) {
         sycl::accessor xyz{buf_xyz, cgh, sycl::read_write};
+        sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_write};
 
         T box_min = std::get<0>(box);
         T box_max = std::get<1>(box);
@@ -213,11 +216,20 @@ void util::sycl_position_sheared_modulo(sycl::queue &queue,
                 (d*shear_dir.z())*shear_value + delt.z()*zoff
             };
 
-            r += shift;
 
-            r = sycl::fmod(r, delt);
-            r += delt;
-            r = sycl::fmod(r, delt);
+            T shift_speed = {
+                (d*shear_dir.x())*shear_speed,
+                (d*shear_dir.y())*shear_speed,
+                (d*shear_dir.z())*shear_speed
+            };
+
+            vxyz[gid] -= shift_speed;
+
+            r -= shift;
+
+            //r = sycl::fmod(r, delt);
+            //r += delt;
+            //r = sycl::fmod(r, delt);
             r += box_min;
 
             xyz[gid] = r;
@@ -227,19 +239,23 @@ void util::sycl_position_sheared_modulo(sycl::queue &queue,
 
 template void util::sycl_position_sheared_modulo(sycl::queue &queue,
                                                  sycl::buffer<f32_3> &buf_xyz,
+                                                 sycl::buffer<f32_3> &buf_vxyz,
                                                  sycl::range<1> elem_range,
                                                  std::pair<f32_3, f32_3> box,
                                                  i32_3 shear_base,
                                                  i32_3 shear_dir,
-                                                 f32 shear_value);
+                                                 f32 shear_value,
+                                                 f32 shear_speed);
 
 template void util::sycl_position_sheared_modulo(sycl::queue &queue,
                                                  sycl::buffer<f64_3> &buf_xyz,
+                                                 sycl::buffer<f64_3> &buf_vxyz,
                                                  sycl::range<1> elem_range,
                                                  std::pair<f64_3, f64_3> box,
                                                  i32_3 shear_base,
                                                  i32_3 shear_dir,
-                                                 f64 shear_value);
+                                                 f64 shear_value,
+                                                 f64 shear_speed);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////

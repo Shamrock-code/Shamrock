@@ -48,7 +48,8 @@ model.set_value_in_a_box("uint","f64", 1 , bmin,bmax)
 
 pen_sz = 0.05
 
-model.set_value_in_a_box("uint","f64", 2 , (xm,-pen_sz,-pen_sz),(xM,pen_sz,pen_sz))
+model.set_value_in_a_box("uint","f64", 2 , (xm,-pen_sz,-pen_sz),(-0.2,pen_sz,pen_sz))
+model.set_value_in_a_box("uint","f64", 2 , (0.2,-pen_sz,-pen_sz),(xM,pen_sz,pen_sz))
 
 print("Current part mass :", pmass)
 

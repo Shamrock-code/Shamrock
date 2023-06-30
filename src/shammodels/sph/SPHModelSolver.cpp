@@ -32,7 +32,6 @@
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
 #include <memory>
 #include <stdexcept>
 
@@ -163,6 +162,7 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
     shamrock::ReattributeDataUtility reatrib(sched);
 
     const u32 ixyz    = sched.pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz    = sched.pdl.get_field_idx<Tvec>("vxyz");
     auto [bmin, bmax] = sched.get_box_volume<Tvec>();
 
 
@@ -175,8 +175,8 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
     }else if(SolverBCPeriodic* c = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)){
         integrators.fields_apply_periodicity(ixyz, std::pair{bmin, bmax});
     }else if(SolverBCShearingPeriodic* c = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)){
-        integrators.fields_apply_shearing_periodicity(ixyz, std::pair{bmin, bmax},
-            c->shear_base, c->shear_dir, c->shear_speed*time_val
+        integrators.fields_apply_shearing_periodicity(ixyz,ivxyz, std::pair{bmin, bmax},
+            c->shear_base, c->shear_dir, c->shear_speed*time_val, c->shear_speed
         );
     }
 

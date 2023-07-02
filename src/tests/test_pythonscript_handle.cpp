@@ -13,7 +13,7 @@
 
 #include "shamtest/PyScriptHandle.hpp"
 
-TestStart(Unittest, "testpostscript", testpostscript, 2) {
+TestStart(Unittest, "shamtest/PyScriptHandle", shamtestpyscript, 1) {
 
     std::vector<f64> x = {0, 1, 2, 4, 5};
     std::vector<f64> y = {1, 2, 4, 6, 1};
@@ -24,9 +24,8 @@ TestStart(Unittest, "testpostscript", testpostscript, 2) {
     hdnl.data()["y"] = y;
 
     hdnl.exec(R"(
-        print("startpy")
         import matplotlib.pyplot as plt
         plt.plot(x,y)
-        plt.show()
+        plt.savefig("tests/figures/test.pdf")
     )");
 }

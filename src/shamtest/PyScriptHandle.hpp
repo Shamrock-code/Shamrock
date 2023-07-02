@@ -34,24 +34,13 @@
  * ~~~~~
  */
 struct PyScriptHandle {
-    std::unique_ptr<pybind11::dict> locals;
+    pybind11::dict locals;
 
     PyScriptHandle() {
-        py::initialize_interpreter();
-        locals = std::make_unique<pybind11::dict>();
+        std::make_unique<pybind11::dict>();
     }
 
-    PyScriptHandle(const PyScriptHandle &)            = delete;
-    PyScriptHandle(PyScriptHandle &&)                 = delete;
-    PyScriptHandle &operator=(const PyScriptHandle &) = delete;
-    PyScriptHandle &operator=(PyScriptHandle &&)      = delete;
-
-    ~PyScriptHandle() {
-        locals.reset();
-        py::finalize_interpreter();
-    }
-
-    pybind11::dict &data() { return *locals; }
+    pybind11::dict &data() { return locals; }
 
     template<class T>
     inline void register_array(std::string name, std::vector<T> & arr){
@@ -66,7 +55,7 @@ struct PyScriptHandle {
     template <size_t N>
     inline void exec(const char (&expr)[N], pybind11::object &&global = pybind11::globals()) {
         try{
-            py::exec(expr, std::forward<pybind11::object>(global), *locals);
+            py::exec(expr, std::forward<pybind11::object>(global), locals);
         } catch (const std::exception &e) {
             std::cout << e.what() << std::endl;
         }

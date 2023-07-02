@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "SPHModelSolver.hpp"
+#include "Solver.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/reduction/reduction.hpp"
 #include "shambase/exception.hpp"
@@ -36,7 +36,7 @@
 #include <stdexcept>
 
 template<class Tvec, template<class> class Kern>
-using SPHSolve = shammodels::SPHModelSolver<Tvec, Kern>;
+using SPHSolve = shammodels::sph::Solver<Tvec, Kern>;
 
 template<class vec>
 shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
@@ -1950,5 +1950,5 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
 using namespace shamrock::sph::kernels;
 
-template class shammodels::SPHModelSolver<f64_3, M4>;
-template class shammodels::SPHModelSolver<f64_3, M6>;
+template class shammodels::sph::Solver<f64_3, M4>;
+template class shammodels::sph::Solver<f64_3, M6>;

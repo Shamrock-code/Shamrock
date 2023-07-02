@@ -1,6 +1,6 @@
 target_sources(shamrock_lib
     PRIVATE
-        SPHSolverStorage.cpp
+        SolverStorage.cpp
         UpdateViscosity.cpp
         DiffOperator.cpp
         DiffOperatorDtDivv.cpp

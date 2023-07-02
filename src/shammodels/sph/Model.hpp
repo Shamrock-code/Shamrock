@@ -10,12 +10,12 @@
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/generic/setup/generators.hpp"
-#include "shammodels/sph/SPHModelSolver.hpp"
+#include "shammodels/sph/Solver.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
-namespace shammodels {
+namespace shammodels::sph {
 
     /**
      * @brief The shamrock SPH model
@@ -24,13 +24,13 @@ namespace shammodels {
      * @tparam SPHKernel
      */
     template<class Tvec, template<class> class SPHKernel>
-    class SPHModel {
+    class Model {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Solver = SPHModelSolver<Tvec, SPHKernel>;
+        using Solver = Solver<Tvec, SPHKernel>;
         // using SolverConfig = typename Solver::Config;
 
         ShamrockCtx &ctx;
@@ -39,7 +39,7 @@ namespace shammodels {
 
         // SolverConfig sconfig;
 
-        SPHModel(ShamrockCtx &ctx) : ctx(ctx), solver(ctx){};
+        Model(ShamrockCtx &ctx) : ctx(ctx), solver(ctx){};
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// setup function

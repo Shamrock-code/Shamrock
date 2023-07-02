@@ -6,5 +6,5 @@
 //
 // -------------------------------------------------------//
 
-#include "SPHSolverStorage.hpp"
+#include "SolverStorage.hpp"
 

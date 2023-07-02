@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "SPHModelSolverConfig.hpp"
+#include "SolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/modules/SPHSolverStorage.hpp"
+#include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -21,7 +21,7 @@
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include <memory>
 #include <variant>
-namespace shammodels {
+namespace shammodels::sph {
 
     
 
@@ -32,7 +32,7 @@ namespace shammodels {
      * @tparam SPHKernel
      */
     template<class Tvec, template<class> class SPHKernel>
-    class SPHModelSolver {
+    class Solver {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
@@ -41,12 +41,12 @@ namespace shammodels {
 
         static constexpr Tscal Rkern = Kernel::Rkern;
 
-        using Config = SPHModelSolverConfig<Tvec, SPHKernel>;
+        using Config = SolverConfig<Tvec, SPHKernel>;
 
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
-        SPHSolverStorage<Tvec, u_morton> storage {};
+        SolverStorage<Tvec, u_morton> storage {};
 
         Config solver_config;
 
@@ -181,7 +181,7 @@ namespace shammodels {
 
 
 
-        SPHModelSolver(ShamrockCtx &context) : context(context) {}
+        Solver(ShamrockCtx &context) : context(context) {}
 
         Tscal evolve_once(Tscal t_current,Tscal dt_input,
                           bool do_dump,

@@ -2,8 +2,8 @@ target_sources(shamrock_lib
     PRIVATE
         BasicSPHGhosts.cpp
         SPHSolverImpl.cpp
-        SPHModel.cpp
-        SPHModelSolver.cpp
+        Model.cpp
+        Solver.cpp
     PUBLIC
     )
 

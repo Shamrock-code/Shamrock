@@ -10,8 +10,8 @@
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/type_aliases.hpp"
-#include "shammodels/sph/SPHModelSolverConfig.hpp"
-#include "shammodels/sph/modules/SPHSolverStorage.hpp"
+#include "shammodels/sph/SolverConfig.hpp"
+#include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::sph::modules {
 
@@ -22,8 +22,8 @@ namespace shammodels::sph::modules {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Config  = SPHModelSolverConfig<Tvec, SPHKernel>;
-        using Storage = SPHSolverStorage<Tvec, u32>;
+        using Config  = SolverConfig<Tvec, SPHKernel>;
+        using Storage = SolverStorage<Tvec, u32>;
 
         ShamrockCtx &context;
         Config &solver_config;

@@ -6,11 +6,14 @@
 //
 // -------------------------------------------------------//
 
-#include "SPHModel.hpp"
+#include "Model.hpp"
 #include "shamrock/sph/kernels.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-f64 shammodels::SPHModel<Tvec, SPHKernel>::evolve_once(f64 t_curr, f64 dt_input,
+using Model = shammodels::sph::Model<Tvec, SPHKernel>;
+
+template<class Tvec, template<class> class SPHKernel>
+f64 Model<Tvec, SPHKernel>::evolve_once(f64 t_curr, f64 dt_input,
                                                        bool do_dump,
                                                        std::string vtk_dump_name,
                                                        bool vtk_dump_patch_id) {
@@ -18,7 +21,7 @@ f64 shammodels::SPHModel<Tvec, SPHKernel>::evolve_once(f64 t_curr, f64 dt_input,
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::SPHModel<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
+void Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
     solver.init_required_fields();
     solver.init_ghost_layout();
     ctx.init_sched(crit_split, crit_merge);
@@ -37,18 +40,18 @@ void shammodels::SPHModel<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 c
 }
 
 template<class Tvec, template<class> class SPHKernel>
-u64 shammodels::SPHModel<Tvec, SPHKernel>::get_total_part_count() {
+u64 Model<Tvec, SPHKernel>::get_total_part_count() {
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
     return shamalgs::collective::allreduce_sum(sched.get_rank_count());
 }
 
 template<class Tvec, template<class> class SPHKernel>
-f64 shammodels::SPHModel<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmass) {
+f64 Model<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmass) {
     return totmass / get_total_part_count();
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::SPHModel<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec{
+auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec{
 
     using namespace shamrock::patch;
 
@@ -95,5 +98,5 @@ auto shammodels::SPHModel<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tve
 
 using namespace shamrock::sph::kernels;
 
-template class shammodels::SPHModel<f64_3, M4>;
-template class shammodels::SPHModel<f64_3, M6>;
+template class shammodels::sph::Model<f64_3, M4>;
+template class shammodels::sph::Model<f64_3, M6>;

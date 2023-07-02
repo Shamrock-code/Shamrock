@@ -13,13 +13,13 @@
 #include "shamsys/legacy/log.hpp"
 #include <variant>
 
-namespace shammodels {
+namespace shammodels::sph {
     template<class Tvec, template<class> class SPHKernel>
-    struct SPHModelSolverConfig;
+    struct SolverConfig;
 }
 
 template<class Tvec, template<class> class SPHKernel>
-struct shammodels::SPHModelSolverConfig {
+struct shammodels::sph::SolverConfig {
 
     using Tscal              = shambase::VecComponent<Tvec>;
     static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;

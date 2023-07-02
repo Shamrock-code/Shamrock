@@ -10,16 +10,16 @@
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
-#include "shammodels/sph/SPHModel.hpp"
+#include "shammodels/sph/Model.hpp"
 #include "shamrock/sph/kernels.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void add_instance(py::module &m, std::string name_config, std::string name_model) {
-    using namespace shammodels;
+    using namespace shammodels::sph;
 
     using Tscal = shambase::VecComponent<Tvec>;
 
-    using T       = SPHModel<Tvec, SPHKernel>;
+    using T       = Model<Tvec, SPHKernel>;
     using TConfig = typename T::Solver::Config;
 
     py::class_<TConfig>(m, name_config.c_str())
@@ -180,7 +180,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
 Register_pymod(pysphmodel) {
 
-    using namespace shammodels;
+    using namespace shammodels::sph;
 
     add_instance<f64_3, shamrock::sph::kernels::M4>(
         m, "SPHModel_f64_3_M4_SolverConfig", "SPHModel_f64_3_M4");
@@ -188,8 +188,8 @@ Register_pymod(pysphmodel) {
         m, "SPHModel_f64_3_M6_SolverConfig", "SPHModel_f64_3_M6");
 
     using VariantSPHModelBind =
-        std::variant<std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M4>>,
-                     std::unique_ptr<SPHModel<f64_3, shamrock::sph::kernels::M6>>>;
+        std::variant<std::unique_ptr<Model<f64_3, shamrock::sph::kernels::M4>>,
+                     std::unique_ptr<Model<f64_3, shamrock::sph::kernels::M6>>>;
 
     m.def(
         "get_SPHModel",
@@ -197,9 +197,9 @@ Register_pymod(pysphmodel) {
             VariantSPHModelBind ret;
 
             if (vector_type == "f64_3" && kernel == "M4") {
-                ret = std::make_unique<SPHModel<f64_3, shamrock::sph::kernels::M4>>(ctx);
+                ret = std::make_unique<Model<f64_3, shamrock::sph::kernels::M4>>(ctx);
             } else if (vector_type == "f64_3" && kernel == "M6") {
-                ret = std::make_unique<SPHModel<f64_3, shamrock::sph::kernels::M6>>(ctx);
+                ret = std::make_unique<Model<f64_3, shamrock::sph::kernels::M6>>(ctx);
             } else {
                 throw shambase::throw_with_loc<std::invalid_argument>(
                     "unknown combination of representation and kernel");

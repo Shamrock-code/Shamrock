@@ -11,14 +11,14 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SPHModelSolverConfig.hpp"
+#include "shammodels/sph/SolverConfig.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamsys/legacy/log.hpp"
 
-namespace shammodels {
+namespace shammodels::sph {
 
     template<class T>
     class StorageComponent {
@@ -46,13 +46,13 @@ namespace shammodels {
     };
 
     template<class Tvec, class Tmorton>
-    class SPHSolverStorage {
+    class SolverStorage {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
 
-        using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
+        using GhostHandle        = BasicSPHGhostHandler<Tvec>;
         using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
 

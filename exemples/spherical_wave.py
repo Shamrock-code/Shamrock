@@ -37,6 +37,7 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+cfg.set_boundary_periodic()
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -106,7 +107,7 @@ while t_sum < t_target:
 
     print("step : t=",t_sum)
     
-    next_dt = model.evolve(current_dt, True, "dump_"+str(i_dump)+".vtk", True)
+    next_dt = model.evolve(t_sum,current_dt, True, "dump_"+str(i_dump)+".vtk", True)
 
     if i % 1 == 0:
         i_dump += 1
@@ -118,4 +119,48 @@ while t_sum < t_target:
         current_dt = t_target - t_sum
 
     i+= 1
+
+
+import numpy as np
+dic = ctx.collect_data()
+
+r = np.sqrt(dic['xyz'][:,0]**2 + dic['xyz'][:,1]**2 +dic['xyz'][:,2]**2)
+vr = np.sqrt(dic['vxyz'][:,0]**2 + dic['vxyz'][:,1]**2 +dic['vxyz'][:,2]**2)
+
+
+hpart = dic["hpart"]
+uint = dic["uint"]
+
+gamma = 5./3.
+
+rho = pmass*(1.2/hpart)**3
+P = (gamma-1) * rho *uint
+
+
+plt.style.use('custom_style.mplstyle')
+fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
+
+axs[0,0].scatter(r, vr,c = 'black',s=1,label = "v")
+axs[1,0].scatter(r, uint,c = 'black',s=1,label = "u")
+axs[0,1].scatter(r, rho,c = 'black',s=1,label = "rho")
+axs[1,1].scatter(r, P,c = 'black',s=1,label = "P")
+
+
+axs[0,0].set_ylabel(r"$v$")
+axs[1,0].set_ylabel(r"$u$")
+axs[0,1].set_ylabel(r"$\rho$")
+axs[1,1].set_ylabel(r"$P$")
+
+axs[0,0].set_xlabel("$r$")
+axs[1,0].set_xlabel("$r$")
+axs[0,1].set_xlabel("$r$")
+axs[1,1].set_xlabel("$r$")
+
+axs[0,0].set_xlim(0,0.5)
+axs[1,0].set_xlim(0,0.5)
+axs[0,1].set_xlim(0,0.5)
+axs[1,1].set_xlim(0,0.5)
+
+plt.tight_layout()
+plt.show()
 

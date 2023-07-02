@@ -67,7 +67,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("alpha_max"),
             py::arg("sigma_decay"),
             py::arg("alpha_u"),
-            py::arg("beta_AV"));
+            py::arg("beta_AV"))
+        .def("set_boundary_free",&TConfig::set_boundary_free)
+        .def("set_boundary_periodic",&TConfig::set_boundary_periodic)
+        .def("set_boundary_shearing_periodic",&TConfig::set_boundary_shearing_periodic);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) { return std::make_unique<T>(ctx); }))

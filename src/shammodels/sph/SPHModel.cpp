@@ -10,11 +10,11 @@
 #include "shamrock/sph/kernels.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-f64 shammodels::SPHModel<Tvec, SPHKernel>::evolve_once(f64 dt_input,
+f64 shammodels::SPHModel<Tvec, SPHKernel>::evolve_once(f64 t_curr, f64 dt_input,
                                                        bool do_dump,
                                                        std::string vtk_dump_name,
                                                        bool vtk_dump_patch_id) {
-    return solver.evolve_once(dt_input, do_dump, vtk_dump_name, vtk_dump_patch_id);
+    return solver.evolve_once(t_curr,dt_input, do_dump, vtk_dump_name, vtk_dump_patch_id);
 }
 
 template<class Tvec, template<class> class SPHKernel>

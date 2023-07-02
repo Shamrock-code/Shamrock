@@ -88,6 +88,26 @@ namespace shamrock {
         }
 
         template<class T>
+        inline void fields_apply_shearing_periodicity(u32 field_idx, u32 field_velocity, std::pair<T, T> box, 
+            i32_3 shear_base, 
+            i32_3 shear_dir,
+            shambase::VecComponent<T> shear_value ,
+            shambase::VecComponent<T> shear_speed) {
+
+            StackEntry stack_loc{};
+            using namespace shamrock::patch;
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                utilities::sycl_position_sheared_modulo(
+                    shamsys::instance::get_compute_queue(),
+                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
+                    shambase::get_check_ref(pdat.get_field<T>(field_velocity).get_buf()),
+                    pdat.get_obj_cnt(),
+                    box,shear_base,shear_dir,shear_value,shear_speed);
+            });
+
+        }
+
+        template<class T>
         inline void fields_swap(u32 field_idx1, u32 field_idx2) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;

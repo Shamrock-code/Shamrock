@@ -151,7 +151,7 @@ void SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::apply_position_boundary() {
+void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
     StackEntry stack_loc{};
 
     logger::info_ln("SphSolver", "apply position boundary");
@@ -162,8 +162,26 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary() {
     shamrock::ReattributeDataUtility reatrib(sched);
 
     const u32 ixyz    = sched.pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz    = sched.pdl.get_field_idx<Tvec>("vxyz");
     auto [bmin, bmax] = sched.get_box_volume<Tvec>();
-    integrators.fields_apply_periodicity(ixyz, std::pair{bmin, bmax});
+
+
+    using SolverConfigBC = typename Config::BCConfig;
+    using SolverBCFree = typename SolverConfigBC::Free;
+    using SolverBCPeriodic = typename SolverConfigBC::Periodic;
+    using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
+    if(SolverBCFree* c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)){
+        logger::info_ln("PositionUpdated", "free boundaries skipping geometry update");
+    }else if(SolverBCPeriodic* c = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)){
+        integrators.fields_apply_periodicity(ixyz, std::pair{bmin, bmax});
+    }else if(SolverBCShearingPeriodic* c = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)){
+        integrators.fields_apply_shearing_periodicity(ixyz,ivxyz, std::pair{bmin, bmax},
+            c->shear_base, c->shear_dir, c->shear_speed*time_val, c->shear_speed
+        );
+    }
+
+
+    
 
     reatrib.reatribute_patch_objects(storage.serial_patch_tree.get(), "xyz");
 }
@@ -239,7 +257,7 @@ void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::sph_prestep() {
+void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -260,7 +278,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep() {
     u32 hstep_cnt = 0;
     for (; hstep_cnt < 50; hstep_cnt++) {
 
-        gen_ghost_handler();
+        gen_ghost_handler(time_val);
         build_ghost_cache();
         merge_position_ghost();
         build_merged_pos_trees();
@@ -616,6 +634,11 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 buf_idx, cnt, pdat.get_field<Tscal>(iuint_interf));
             sender_patch.get_field<Tvec>(ivxyz).append_subset_to(
                 buf_idx, cnt, pdat.get_field<Tvec>(ivxyz_interf));
+
+            if(sycl::length(binfo.offset_speed) > 0){
+                pdat.get_field<Tvec>(ivxyz_interf).apply_offset(binfo.offset_speed);
+            }
+
             sender_omega.append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(iomega_interf));
 
             if (has_alphaAV_field) {
@@ -1386,7 +1409,7 @@ bool SPHSolve<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
 }
 
 template<class Tvec, template<class> class Kern>
-auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
+auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
                                        bool do_dump,
                                        std::string vtk_dump_name,
                                        bool vtk_dump_patch_id) -> Tscal {
@@ -1425,11 +1448,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
 
     gen_serial_patch_tree();
 
-    apply_position_boundary();
+    apply_position_boundary(t_current);
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
-    sph_prestep();
+    sph_prestep(t_current);
 
     using RTree = RadixTree<u_morton, Tvec>;
 
@@ -1569,6 +1592,10 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal dt,
         Tscal vmean = sycl::sqrt(vmean_sq);
 
         Tscal rank_eps_v = rank_veps_v / vmean;
+
+        if(vmean <= 0){
+            rank_eps_v = 0;
+        }
 
         Tscal eps_v = shamalgs::collective::allreduce_max(rank_eps_v);
 

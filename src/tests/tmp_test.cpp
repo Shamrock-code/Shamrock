@@ -8,47 +8,17 @@
 
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
-
-#include "shambindings/pytypealias.hpp"
-
 #include <memory>
-#include <pybind11/embed.h>
-#include <pybind11/eval.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
 #include <vector>
 
-struct PyscriptHandle {
-    std::unique_ptr<pybind11::dict> locals;
+#include "shamtest/PyScriptHandle.hpp"
 
-    PyscriptHandle() {
-        py::initialize_interpreter();
-        locals = std::make_unique<pybind11::dict>();
-    }
-
-    ~PyscriptHandle() {
-        locals.reset();
-        py::finalize_interpreter();
-    }
-
-    pybind11::dict &data() { return *locals; }
-
-    template <size_t N>
-    inline void exec(const char (&expr)[N], pybind11::object &&global = pybind11::globals()) {
-        try{
-            py::exec(expr, std::forward<pybind11::object>(global), *locals);
-        } catch (const std::exception &e) {
-            std::cout << e.what() << std::endl;
-        }
-    }
-};
-
-TestStart(Unittest, "testpostscript", testpostscript, 1) {
+TestStart(Unittest, "testpostscript", testpostscript, 2) {
 
     std::vector<f64> x = {0, 1, 2, 4, 5};
     std::vector<f64> y = {1, 2, 4, 6, 1};
 
-    PyscriptHandle hdnl{};
+    PyScriptHandle hdnl{};
 
     hdnl.data()["x"] = x;
     hdnl.data()["y"] = y;

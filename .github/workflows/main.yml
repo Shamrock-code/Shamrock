@@ -12,6 +12,7 @@ on:
   workflow_dispatch:
 
 
+
 jobs:
 
 
@@ -124,6 +125,7 @@ jobs:
       pages: write
       id-token: write
 
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -139,6 +141,7 @@ jobs:
 
       - name: ls local
         run : ls -la
+
 
       - name: 'Extract Doc'
         run: |
@@ -199,7 +202,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: shamrock_documentation
-          path: documentation.tar.gz
 
       - name: 'Download coverage list'
         uses: actions/download-artifact@v3

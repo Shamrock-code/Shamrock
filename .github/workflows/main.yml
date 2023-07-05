@@ -18,7 +18,7 @@ jobs:
 
   pragma_check:
     name: "Check : (Pragma once)"
-    runs-on: [self-hosted, raw]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -31,7 +31,7 @@ jobs:
 
   copyright_check:
     name: "Check : (Copyright)"
-    runs-on: [self-hosted, raw]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -46,15 +46,15 @@ jobs:
   make_documentation:
     name: "Build : Documentation"
 
-    runs-on: [self-hosted, raw]
+    runs-on: ubuntu-latest
 
     needs: [pragma_check, copyright_check]
     
     steps:
       - uses: actions/checkout@v3
-      #- uses: actions/setup-python@v4
-      #  with:
-      #    python-version: '3.10' 
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
 
       - name: pip install packages
         run: pip install -U jupyter-book sphinx_proof matplotlib numpy
@@ -128,12 +128,9 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
       - name: Setup Pages
         uses: actions/configure-pages@v3
         
-
       - name: 'Download Doc'
         uses: actions/download-artifact@v3
         with:
@@ -142,10 +139,15 @@ jobs:
       - name: ls local
         run : ls -la
 
-
       - name: 'Extract Doc'
         run: |
           tar -xvf documentation.tar.gz
+
+      - name: ls local
+        run : ls -la
+
+      - name: 'Clean Files'
+        run: |
           rm documentation.tar.gz
           mv doc/_build/* .
           rm -r doc
@@ -158,6 +160,7 @@ jobs:
         with:
           source: ./
           destination: ./_site
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
 
@@ -182,6 +185,9 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
+
+
+
 
   publish_release:
 

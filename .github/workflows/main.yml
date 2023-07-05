@@ -189,7 +189,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: shamrock_documentation
-          path: documentation.tar.gz
 
       - name: 'Download coverage list'
         uses: actions/download-artifact@v3

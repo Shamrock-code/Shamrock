@@ -120,6 +120,7 @@ jobs:
 
   upload_doc:
 
+    if: github.ref == 'refs/heads/main'
     needs: [shamrock_linux_opensycl, shamrock_linux_dpcpp, make_documentation]
 
     runs-on: ubuntu-latest
@@ -157,6 +158,8 @@ jobs:
 
 
   deploy_page:
+
+    if: github.ref == 'refs/heads/main'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

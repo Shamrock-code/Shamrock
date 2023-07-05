@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/integer.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/PyScriptHandle.hpp"
@@ -32,6 +33,8 @@ TestStart(Analysis, "sycl/loop_perfs", syclloopperfs, 1){
         }).wait();
     };
 
+    f64 exp_test = 1.2;
+
     shambase::BenchmarkResult res_parfor = shambase::benchmark_pow_len([&](u32 sz){
         sycl::buffer<f32> buf{sz};
 
@@ -50,16 +53,63 @@ TestStart(Analysis, "sycl/loop_perfs", syclloopperfs, 1){
         }).wait();
 
         },5);
-    }, 10, 1e9, 1.1);
+    }, 10, 1e9, exp_test);
+
+
+    shambase::BenchmarkResult res_ndrange = shambase::benchmark_pow_len([&](u32 sz){
+        sycl::buffer<f32> buf{sz};
+
+        fill_buf(sz, buf);
+
+        constexpr u32 gsize = 8;
+        u32 group_cnt = shambase::group_count(sz, gsize);
+
+        u32 len =group_cnt*gsize;
+
+        return shambase::timeit([&](){
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor acc {buf, cgh, sycl::read_write};
+            cgh.parallel_for(sycl::nd_range<1>{len, gsize}, [=](sycl::nd_item<1> id){
+
+                u32 gid = id.get_global_linear_id();
+
+                if(gid >= sz) return;
+
+                auto tmp = acc[gid];
+                acc[gid] = tmp*tmp;
+            });
+
+        }).wait();
+
+        },5);
+    }, 10, 1e9, exp_test);
 
     PyScriptHandle hdnl{};
 
     hdnl.data()["x"] = res_parfor.counts;
-    hdnl.data()["y"] = res_parfor.times;
+    hdnl.data()["yparforbuf"] = res_parfor.times;
+    hdnl.data()["yndrangeforbuf"] = res_ndrange.times;
 
     hdnl.exec(R"(
         import matplotlib.pyplot as plt
-        plt.plot(x,y)
+        import numpy as np
+
+        X = np.array(x)
+
+        Y = np.array(yparforbuf)
+        plt.plot(X,Y/X,label = "parralel for (buffer) ")
+
+        Y = np.array(yndrangeforbuf)
+        plt.plot(X,Y/X,label = "ndrange for (buffer) ")
+
+        plt.xlabel("s")
+        plt.ylabel("N/t")
+
+        plt.xscale('log')
+        plt.yscale('log')
+
         plt.savefig("tests/figures/perfparfor.pdf")
     )");
 

@@ -12,8 +12,6 @@
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shambase/sycl.hpp"
-#include <hipSYCL/sycl/buffer.hpp>
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <vector>
 
 

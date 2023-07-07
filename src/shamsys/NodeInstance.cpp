@@ -11,6 +11,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils.hpp"
+#include "shambase/type_aliases.hpp"
 #include "shamsys/EnvVariables.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -22,9 +23,71 @@
 #include <stdexcept>
 #include <string>
 
+
+namespace shamsys::instance::tmpmpi{
+    /**
+     * @brief allgatherv on vector with size query (size querrying variant of vector_allgatherv_ks)
+     * //TODO add fault tolerance
+     * @tparam T 
+     * @param send_vec 
+     * @param send_type 
+     * @param recv_vec 
+     * @param recv_type 
+     */
+    inline void gather_str(const std::string & send_vec ,std::string & recv_vec){
+        StackEntry stack_loc{};
+
+        u32 local_count = send_vec.size();
+
+        //querry global size and resize the receiving vector
+        u32 global_len;
+        mpi::allreduce(&local_count, &global_len, 1, MPI_INT , MPI_SUM, MPI_COMM_WORLD);
+        recv_vec.resize(global_len);
+
+        int* table_data_count = new int[shamsys::instance::world_size];
+
+        mpi::allgather(
+            &local_count, 
+            1, 
+            MPI_INT, 
+            &table_data_count[0], 
+            1, 
+            MPI_INT, 
+            MPI_COMM_WORLD);
+
+        //printf("table_data_count = [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
+
+
+
+        int* node_displacments_data_table = new int[shamsys::instance::world_size];
+
+        node_displacments_data_table[0] = 0;
+
+        for(u32 i = 1 ; i < shamsys::instance::world_size; i++){
+            node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
+        }
+        
+        //printf("node_displacments_data_table = [%d,%d,%d,%d]\n",node_displacments_data_table[0],node_displacments_data_table[1],node_displacments_data_table[2],node_displacments_data_table[3]);
+        
+        mpi::allgatherv(
+            send_vec.data(), 
+            send_vec.size(),
+            MPI_CHAR, 
+            recv_vec.data(), 
+            table_data_count, 
+            node_displacments_data_table, 
+            MPI_CHAR, 
+            MPI_COMM_WORLD);
+
+
+        delete [] table_data_count;
+        delete [] node_displacments_data_table;
+    } 
+}
+
 namespace shamsys::instance::details {
 
-
+    
     /**
      * @brief detect mpi cuda aware support
      * 
@@ -34,11 +97,16 @@ namespace shamsys::instance::details {
     bool check_mpi_cuda_aware(){
         #if defined(MPIX_CUDA_AWARE_SUPPORT)
         if (1 == MPIX_Query_cuda_support()) {
-            logger::raw_ln("MPI CUDA-aware support : Yes");return true;
+            if(world_rank == 0) logger::raw_ln("MPI CUDA-aware support : Yes");
+            return true;
         } 
-        logger::raw_ln("MPI CUDA-aware support : No");return false;
+        if(world_rank == 0)logger::raw_ln("MPI CUDA-aware support : No");
+        return false;
         #else  /* !defined(MPIX_CUDA_AWARE_SUPPORT) */
-        logger::raw_ln("MPI CUDA-aware support : Unknown");
+        if(world_rank == 0){
+            logger::raw_ln("MPI CUDA-aware support : Unknown");
+        }
+        return false;
         #endif /* MPIX_CUDA_AWARE_SUPPORT */ 
     }
 
@@ -51,11 +119,14 @@ namespace shamsys::instance::details {
     bool check_mpi_rocm_aware(){
         #if defined(MPIX_ROCM_AWARE_SUPPORT)
         if (1 == MPIX_Query_rocm_support()) {
-            logger::raw_ln("MPI ROCM-aware support : Yes");return true;
+            if(world_rank == 0)logger::raw_ln("MPI ROCM-aware support : Yes");
+            return true;
         }
-        logger::raw_ln("MPI ROCM-aware support : No");return false;
+        if(world_rank == 0)logger::raw_ln("MPI ROCM-aware support : No");
+        return false;
         #else  /* !defined(MPIX_ROCM_AWARE_SUPPORT) */
-        logger::raw_ln("MPI ROCM-aware support : Unknown");return false;
+        if(world_rank == 0)logger::raw_ln("MPI ROCM-aware support : Unknown");
+        return false;
         #endif /* MPIX_ROCM_AWARE_SUPPORT */ 
     }
 
@@ -103,6 +174,62 @@ namespace shamsys::instance::details {
 
 
     }
+
+    /**
+     * @brief for each SYCL device
+     * 
+     * @param fct 
+     * @return u32 the number of devices
+     */
+    u32 for_each_device(std::function<void(u32, const sycl::platform &, const sycl::device &)> fct){
+
+        u32 key_global = 0;
+        const auto &Platforms = sycl::platform::get_platforms();    
+        for (const auto &Platform : Platforms) {
+            const auto &Devices = Platform.get_devices();
+            for (const auto &Device : Devices) {
+                fct(key_global, Platform, Device);   
+                key_global ++;
+            }
+        }
+        return key_global;
+    }
+
+    void print_device_list(){
+        u32 rank = world_rank;
+
+        std::string print_buf = "";
+
+        for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
+
+            auto PlatformName = plat.get_info<sycl::info::platform::name>();
+            auto DeviceName = dev.get_info<sycl::info::device::name>();
+
+            std::string devname = shambase::trunc_str(DeviceName,29);
+            std::string platname = shambase::trunc_str(PlatformName,24);
+            std::string devtype = shambase::trunc_str(shambase::getDevice_type(dev),6);
+
+            print_buf += shambase::format("| {:>4} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
+                rank,key_global,devname.c_str(),platname.c_str(),devtype.c_str()
+            ) + "\n";
+
+        });
+
+        std::string recv;
+        tmpmpi::gather_str(print_buf, recv);
+    
+        if(rank == 0){
+            std::string print = "Cluster SYCL Info : \n";
+            print+=("--------------------------------------------------------------------------------\n");
+            print+=("| rank | id |        Device name            |       Platform name      |  Type  |\n");
+            print+=("--------------------------------------------------------------------------------\n");
+            print+=(recv);
+            print+=("--------------------------------------------------------------------------------");
+            printf("%s\n",print.data());
+        }
+    }
+
+
 
 
 } // namespace shamsys::instance::details
@@ -233,201 +360,45 @@ namespace shamsys::instance {
 
     }
 
-    /**
-     * @brief for each SYCL device
-     * 
-     * @param fct 
-     * @return u32 the number of devices
-     */
-    u32 for_each_device(std::function<void(u32, const sycl::platform &, const sycl::device &)> fct){
-
-        u32 key_global = 0;
-        const auto &Platforms = sycl::platform::get_platforms();    
-        for (const auto &Platform : Platforms) {
-            const auto &Devices = Platform.get_devices();
-            for (const auto &Device : Devices) {
-                fct(key_global, Platform, Device);   
-                key_global ++;
-            }
-        }
-        return key_global;
-    }
+    
 
 
 
 
 
-    /**
-     * @brief allgatherv on vector with size query (size querrying variant of vector_allgatherv_ks)
-     * //TODO add fault tolerance
-     * @tparam T 
-     * @param send_vec 
-     * @param send_type 
-     * @param recv_vec 
-     * @param recv_type 
-     */
-    inline void gather_str(const std::string & send_vec ,std::string & recv_vec){
-        StackEntry stack_loc{};
-
-        u32 local_count = send_vec.size();
-
-        //querry global size and resize the receiving vector
-        u32 global_len;
-        mpi::allreduce(&local_count, &global_len, 1, MPI_INT , MPI_SUM, MPI_COMM_WORLD);
-        recv_vec.resize(global_len);
-
-        int* table_data_count = new int[shamsys::instance::world_size];
-
-        mpi::allgather(
-            &local_count, 
-            1, 
-            MPI_INT, 
-            &table_data_count[0], 
-            1, 
-            MPI_INT, 
-            MPI_COMM_WORLD);
-
-        //printf("table_data_count = [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
-
-
-
-        int* node_displacments_data_table = new int[shamsys::instance::world_size];
-
-        node_displacments_data_table[0] = 0;
-
-        for(u32 i = 1 ; i < shamsys::instance::world_size; i++){
-            node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
-        }
-        
-        //printf("node_displacments_data_table = [%d,%d,%d,%d]\n",node_displacments_data_table[0],node_displacments_data_table[1],node_displacments_data_table[2],node_displacments_data_table[3]);
-        
-        mpi::allgatherv(
-            send_vec.data(), 
-            send_vec.size(),
-            MPI_CHAR, 
-            recv_vec.data(), 
-            table_data_count, 
-            node_displacments_data_table, 
-            MPI_CHAR, 
-            MPI_COMM_WORLD);
-
-
-        delete [] table_data_count;
-        delete [] node_displacments_data_table;
-    } 
+    
 
 
 
     void print_device_list(){
-        u32 rank = world_rank;
-
-        std::string print_buf = "";
-
-        for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
-
-            auto PlatformName = plat.get_info<sycl::info::platform::name>();
-            auto DeviceName = dev.get_info<sycl::info::device::name>();
-
-            std::string devname = shambase::trunc_str(DeviceName,29);
-            std::string platname = shambase::trunc_str(PlatformName,24);
-            std::string devtype = shambase::trunc_str(shambase::getDevice_type(dev),6);
-
-            print_buf += shambase::format("| {:>4} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
-                rank,key_global,devname.c_str(),platname.c_str(),devtype.c_str()
-            ) + "\n";
-
-        });
-
-        std::string recv;
-        gather_str(print_buf, recv);
-    
-        if(rank == 0){
-            std::string print = "Cluster SYCL Info";
-            print+=("--------------------------------------------------------------------------------\n");
-            print+=("| rank | id |        Device name            |       Platform name      |  Type  |\n");
-            print+=("--------------------------------------------------------------------------------\n");
-            print+=(recv);
-            print+=("--------------------------------------------------------------------------------");
-            printf("%s\n",print.data());
-        }
+        details::print_device_list();
     }
 
-
-    void start_sycl(SyclInitInfo sycl_info){
-
-
-        //start sycl
-
-        if(bool(compute_queue) && bool(alt_queue)){
-            throw ShamsysInstanceException("Sycl is already initialized");
-        }
-
-        logger::raw_ln(terminal_effects::colors_foreground_8b::cyan + " >>> init SYCL instances <<< " + terminal_effects::reset);
+    void init_queues(u32 alt_id, u32 compute_id){
 
 
+        u32 cnt_dev = details::for_each_device(
+            [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){});
 
-        const auto &Platforms = sycl::platform::get_platforms();
-
-        logger::raw_ln("--------------------------------------------------------------------------------");
-        logger::raw_ln("| sel | id |        Device name            |       Platform name      |  Type  |");
-        logger::raw_ln("--------------------------------------------------------------------------------");
-
-
-        u32 cnt_dev = for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
-
-            auto PlatformName = plat.get_info<sycl::info::platform::name>();
-            auto DeviceName = dev.get_info<sycl::info::device::name>();
-
-
-            auto selected_k = [&](i32 k){
-
-                std::string ret = "";
-
-                if (k == sycl_info.alt_queue_id) {
-                    ret += "a";
-                }
-
-                if (k == sycl_info.compute_queue_id) {
-                    ret += "c";
-                }
-
-                return ret;
-            };
-
-            std::string selected = selected_k(key_global);
-
-            std::string devname = shambase::trunc_str(DeviceName,29);
-            std::string platname = shambase::trunc_str(PlatformName,24);
-            std::string devtype = shambase::trunc_str(shambase::getDevice_type(dev),6);
-
-            logger::raw_ln(shambase::format("| {:>3} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
-                selected.c_str(),key_global,devname.c_str(),platname.c_str(),devtype.c_str()
-            ));
-
-        });
-        
-        logger::raw_ln("--------------------------------------------------------------------------------");
-
-        if(sycl_info.alt_queue_id >= cnt_dev){
+        if(alt_id >= cnt_dev){
             throw shambase::throw_with_loc<std::invalid_argument>("the alt queue id is larger than the number of queue");
         }
 
-        if(sycl_info.compute_queue_id >= cnt_dev){
+        if(compute_id >= cnt_dev){
             throw shambase::throw_with_loc<std::invalid_argument>("the compute queue id is larger than the number of queue");
         }
 
-
-        for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
+        details::for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
 
             auto PlatformName = plat.get_info<sycl::info::platform::name>();
             auto DeviceName = dev.get_info<sycl::info::device::name>();
 
-            if(key_global == sycl_info.alt_queue_id){
+            if(key_global == alt_id){
                 logger::info_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                 alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
             }
 
-            if(key_global == sycl_info.compute_queue_id){
+            if(key_global == compute_id){
                 logger::info_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                 compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
             }
@@ -436,16 +407,31 @@ namespace shamsys::instance {
 
         details::check_queue_is_valid(*compute_queue);
         details::check_queue_is_valid(*alt_queue);
+    }
 
 
-        logger::info_ln("NodeInstance", "init done");
+    void start_sycl(u32 alt_id, u32 compute_id){
+        //start sycl
+
+        if(bool(compute_queue) && bool(alt_queue)){
+            throw ShamsysInstanceException("Sycl is already initialized");
+        }
+
+        if(world_rank == 0){
+            logger::raw_ln(terminal_effects::colors_foreground_8b::cyan + " >>> init SYCL instances <<< " + terminal_effects::reset);
+        }
+
+        init_queues(alt_id, compute_id);
+
+        if(world_rank == 0){
+            logger::info_ln("NodeInstance", "init done");
+        }
 
     }
 
     void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info){
 
-
-        start_sycl(sycl_info);
+        start_sycl(sycl_info.alt_queue_id, sycl_info.compute_queue_id);
 
         #ifdef MPI_LOGGER_ENABLED
         std::cout << "%MPI_DEFINE:MPI_COMM_WORLD="<<MPI_COMM_WORLD<<"\n";

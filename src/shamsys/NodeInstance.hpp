@@ -87,6 +87,14 @@ namespace shamsys::instance {
     void init(int argc, char *argv[]);
 
     /**
+     * @brief select & start the sycl queues
+     * 
+     * @param alt_id 
+     * @param compute_id 
+     */
+    void start_sycl(u32 alt_id, u32 compute_id);
+
+    /**
      * @brief initialize the NodeInstance from user inputs
      * ```
      * int main(int argc, char *argv[]){

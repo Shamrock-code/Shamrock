@@ -247,46 +247,26 @@ namespace shamsys::instance {
         }
     };
 
-    
-    void print_device_info(const sycl::device &Device){
-        std::cout 
-            << "   - " 
-            << Device.get_info<sycl::info::device::name>()
-            << " " 
-            << shambase::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
-    }
-
-
-    std::string get_process_name(){
-
-        // Get the name of the processor
-        char processor_name[MPI_MAX_PROCESSOR_NAME];
-        int name_len;
-
-        int err_code = mpi::get_processor_name(processor_name, &name_len);
-
-        if(err_code != MPI_SUCCESS){
-            throw ShamsysInstanceException("failed getting the process name");
-        }
-        
-        return std::string(processor_name);
-    }
-
-
-
-
-
-
-
-
-
-
-
-    
-
 
     std::unique_ptr<sycl::queue> compute_queue;
     std::unique_ptr<sycl::queue> alt_queue;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
 
 
 
@@ -370,64 +350,6 @@ namespace shamsys::instance {
 
 
 
-    void print_device_list(){
-        details::print_device_list();
-    }
-
-    void init_queues(u32 alt_id, u32 compute_id){
-
-
-        u32 cnt_dev = details::for_each_device(
-            [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){});
-
-        if(alt_id >= cnt_dev){
-            throw shambase::throw_with_loc<std::invalid_argument>("the alt queue id is larger than the number of queue");
-        }
-
-        if(compute_id >= cnt_dev){
-            throw shambase::throw_with_loc<std::invalid_argument>("the compute queue id is larger than the number of queue");
-        }
-
-        details::for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
-
-            auto PlatformName = plat.get_info<sycl::info::platform::name>();
-            auto DeviceName = dev.get_info<sycl::info::device::name>();
-
-            if(key_global == alt_id){
-                logger::info_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
-                alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
-            }
-
-            if(key_global == compute_id){
-                logger::info_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
-                compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
-            }
-
-        });
-
-        details::check_queue_is_valid(*compute_queue);
-        details::check_queue_is_valid(*alt_queue);
-    }
-
-
-    void start_sycl(u32 alt_id, u32 compute_id){
-        //start sycl
-
-        if(bool(compute_queue) && bool(alt_queue)){
-            throw ShamsysInstanceException("Sycl is already initialized");
-        }
-
-        if(world_rank == 0){
-            logger::raw_ln(terminal_effects::colors_foreground_8b::cyan + " >>> init SYCL instances <<< " + terminal_effects::reset);
-        }
-
-        init_queues(alt_id, compute_id);
-
-        if(world_rank == 0){
-            logger::info_ln("NodeInstance", "init done");
-        }
-
-    }
 
     void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info){
 
@@ -520,9 +442,6 @@ namespace shamsys::instance {
     // sycl related routines
     ////////////////////////////
 
-
-
-
     sycl::queue & get_compute_queue(u32  /*id*/){
         if(!compute_queue){ throw ShamsysInstanceException("sycl handler is not initialized");}
         return * compute_queue;
@@ -533,9 +452,72 @@ namespace shamsys::instance {
         return * alt_queue;
     }
 
+    void print_device_info(const sycl::device &Device){
+        std::cout 
+            << "   - " 
+            << Device.get_info<sycl::info::device::name>()
+            << " " 
+            << shambase::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
+    }
+
+    void print_device_list(){
+        details::print_device_list();
+    }
+
+    void init_queues(u32 alt_id, u32 compute_id){
 
 
+        u32 cnt_dev = details::for_each_device(
+            [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){});
 
+        if(alt_id >= cnt_dev){
+            throw shambase::throw_with_loc<std::invalid_argument>("the alt queue id is larger than the number of queue");
+        }
+
+        if(compute_id >= cnt_dev){
+            throw shambase::throw_with_loc<std::invalid_argument>("the compute queue id is larger than the number of queue");
+        }
+
+        details::for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
+
+            auto PlatformName = plat.get_info<sycl::info::platform::name>();
+            auto DeviceName = dev.get_info<sycl::info::device::name>();
+
+            if(key_global == alt_id){
+                logger::info_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+            }
+
+            if(key_global == compute_id){
+                logger::info_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+            }
+
+        });
+
+        details::check_queue_is_valid(*compute_queue);
+        details::check_queue_is_valid(*alt_queue);
+    }
+
+
+    void start_sycl(u32 alt_id, u32 compute_id){
+        //start sycl
+
+        if(bool(compute_queue) && bool(alt_queue)){
+            throw ShamsysInstanceException("Sycl is already initialized");
+        }
+
+        if(world_rank == 0){
+            logger::raw_ln(terminal_effects::colors_foreground_8b::cyan + " >>> init SYCL instances <<< " + terminal_effects::reset);
+        }
+
+        init_queues(alt_id, compute_id);
+
+        if(world_rank == 0){
+            logger::info_ln("NodeInstance", "init done");
+        }
+
+    }
 
 
     ////////////////////////////
@@ -543,5 +525,19 @@ namespace shamsys::instance {
     ////////////////////////////
 
 
+    std::string get_process_name(){
+
+        // Get the name of the processor
+        char processor_name[MPI_MAX_PROCESSOR_NAME];
+        int name_len;
+
+        int err_code = mpi::get_processor_name(processor_name, &name_len);
+
+        if(err_code != MPI_SUCCESS){
+            throw ShamsysInstanceException("failed getting the process name");
+        }
+        
+        return std::string(processor_name);
+    }
 
 }

@@ -77,6 +77,8 @@ int main(int argc, char *argv[]) {
 
     std::cout << shamrock_title_bar_big << std::endl;
 
+    opts::register_opt("--sycl-ls",{}, "list available devices");
+
     opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
     opts::register_opt("--loglevel","(logvalue)", "specify a log level");
 
@@ -118,12 +120,15 @@ int main(int argc, char *argv[]) {
         logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
     }
 
-
-
-
     if(opts::has_option("--sycl-cfg")){
         shamsys::instance::init(argc,argv);
     }
+
+    if(opts::has_option("--sycl-ls")){
+        shamsys::instance::print_device_list();
+    }
+
+    
 
     
 

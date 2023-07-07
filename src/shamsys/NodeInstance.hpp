@@ -104,6 +104,8 @@ namespace shamsys::instance {
      */
     void close();
 
+    void print_device_list();
+
     ////////////////////////////
     // sycl related routines
     ////////////////////////////

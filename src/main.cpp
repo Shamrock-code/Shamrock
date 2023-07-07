@@ -75,7 +75,6 @@ int main(int argc, char *argv[]) {
 
 
 
-    std::cout << shamrock_title_bar_big << std::endl;
 
     opts::register_opt("--sycl-ls",{}, "list available devices");
 
@@ -108,24 +107,49 @@ int main(int argc, char *argv[]) {
             logger::err_ln("Cmd OPT", "you must select a loglevel in a 8bit integer range");
         }
 
-        logger::loglevel = a;
-
-        if(a == i8_max){
-            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
-        }
-
-        logger::raw_ln("-> modified loglevel to",logger::loglevel,"enabled log types : ");
-        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
-        logger::print_active_level();
-        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
     }
 
     if(opts::has_option("--sycl-cfg")){
         shamsys::instance::init(argc,argv);
     }
 
+    if(shamsys::instance::world_rank == 0){
+        std::cout << shamrock_title_bar_big << std::endl;
+        logger::print_faint_row();
+
+        logger::raw_ln("MPI status : ");
+
+        logger::raw_ln(" - MPI & SYCL init :",terminal_effects::colors_foreground_8b::green + "Ok"+ terminal_effects::reset);
+
+        shamsys::instance::print_mpi_capabilities();
+
+        shamsys::instance::check_dgpu_available();
+        
+    }
+
+    shamsys::instance::validate_comm();
+
+    if(shamsys::instance::world_rank == 0){
+        logger::print_faint_row();
+        logger::raw_ln("log status : ");
+        if(logger::loglevel == i8_max){
+            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
+        }
+
+        logger::raw_ln(" - Loglevel :",u32(logger::loglevel),", enabled log types : ");
+        logger::print_active_level();
+    
+    } 
+
+    
+
     if(opts::has_option("--sycl-ls")){
+
+        if(shamsys::instance::world_rank == 0){
+            logger::print_faint_row();
+        }
         shamsys::instance::print_device_list();
+        
     }
 
     
@@ -133,8 +157,12 @@ int main(int argc, char *argv[]) {
     
 
 
-
-
+    if(shamsys::instance::world_rank == 0){
+        logger::print_faint_row();
+        logger::raw_ln(" - Code init",terminal_effects::colors_foreground_8b::green + "DONE"+ terminal_effects::reset, "now it's time to",
+        terminal_effects::colors_foreground_8b::cyan + terminal_effects::blink + "ROCK"+ terminal_effects::reset);
+        logger::print_faint_row();
+    }
 
     shamsys::register_signals();
     //*

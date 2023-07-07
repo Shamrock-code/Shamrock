@@ -160,4 +160,12 @@ namespace shamsys::instance {
      */
     std::string get_process_name();
 
+    void print_mpi_capabilities();
+
+    void check_dgpu_available();
+    
+    void force_direct_gpu_mode(bool force);
+    void validate_comm();
+    bool is_direct_gpu_selected();
+
 } // namespace shamsys::instance

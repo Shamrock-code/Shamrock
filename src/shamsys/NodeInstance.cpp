@@ -10,16 +10,22 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/EnvVariables.hpp"
+#include "shamsys/comm/CommunicationBuffer.hpp"
+#include "shamsys/comm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
+#include <hipSYCL/sycl/info/platform.hpp>
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <mpi-ext.h>
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 #include "MpiDataTypeHandler.hpp"
+#include <mpi.h>
 #include <stdexcept>
 #include <string>
 
@@ -85,50 +91,63 @@ namespace shamsys::instance::tmpmpi{
     } 
 }
 
+namespace shamsys::mpi_features{
+
+    enum StateMPI_Aware{
+        Unknown, Yes, No
+    };
+
+    StateMPI_Aware mpi_cuda_aware;
+    StateMPI_Aware mpi_rocm_aware;
+
+    void fetch_mpi_capabilities(){
+        //detect MPI cuda aware
+        #if defined(MPIX_CUDA_AWARE_SUPPORT)
+        if (1 == MPIX_Query_cuda_support()) {
+            mpi_cuda_aware = Yes;
+        } else{
+            mpi_cuda_aware = No;
+        }
+        #else  /* !defined(MPIX_CUDA_AWARE_SUPPORT) */
+        mpi_cuda_aware = Unknown;
+        #endif /* MPIX_CUDA_AWARE_SUPPORT */ 
+
+        //detect MPI rocm aware
+        #if defined(MPIX_ROCM_AWARE_SUPPORT)
+        if (1 == MPIX_Query_rocm_support()) {
+            mpi_rocm_aware = Yes;
+        }else{
+            mpi_rocm_aware = No;
+        }
+        #else  /* !defined(MPIX_ROCM_AWARE_SUPPORT) */
+        mpi_rocm_aware = Unknown;
+        #endif /* MPIX_ROCM_AWARE_SUPPORT */ 
+    }
+    
+    void print_mpi_capabilities(){
+        using namespace terminal_effects::colors_foreground_8b;
+        if (mpi_cuda_aware == Yes) {
+            logger::raw_ln(" - MPI CUDA-AWARE :",green + "Yes"+ terminal_effects::reset);
+        }else if (mpi_cuda_aware == No) {
+            logger::raw_ln(" - MPI CUDA-AWARE :",red + "No"+ terminal_effects::reset);
+        }else if (mpi_cuda_aware == Unknown) {
+            logger::raw_ln(" - MPI CUDA-AWARE :",yellow + "Unknown"+ terminal_effects::reset);
+        }
+
+        if (mpi_rocm_aware == Yes) {
+            logger::raw_ln(" - MPI ROCM-AWARE :",green + "Yes"+ terminal_effects::reset);
+        }else if (mpi_rocm_aware == No) {
+            logger::raw_ln(" - MPI ROCM-AWARE :",red + "No"+ terminal_effects::reset);
+        }else if (mpi_rocm_aware == Unknown) {
+            logger::raw_ln(" - MPI ROCM-AWARE :",yellow + "Unknown"+ terminal_effects::reset);
+        }
+    }
+
+}
+
 namespace shamsys::instance::details {
 
     
-    /**
-     * @brief detect mpi cuda aware support
-     * 
-     * @return true 
-     * @return false 
-     */
-    bool check_mpi_cuda_aware(){
-        #if defined(MPIX_CUDA_AWARE_SUPPORT)
-        if (1 == MPIX_Query_cuda_support()) {
-            if(world_rank == 0) logger::raw_ln("MPI CUDA-aware support : Yes");
-            return true;
-        } 
-        if(world_rank == 0)logger::raw_ln("MPI CUDA-aware support : No");
-        return false;
-        #else  /* !defined(MPIX_CUDA_AWARE_SUPPORT) */
-        if(world_rank == 0){
-            logger::raw_ln("MPI CUDA-aware support : Unknown");
-        }
-        return false;
-        #endif /* MPIX_CUDA_AWARE_SUPPORT */ 
-    }
-
-    /**
-     * @brief detect mpi rocm aware support
-     * 
-     * @return true 
-     * @return false 
-     */
-    bool check_mpi_rocm_aware(){
-        #if defined(MPIX_ROCM_AWARE_SUPPORT)
-        if (1 == MPIX_Query_rocm_support()) {
-            if(world_rank == 0)logger::raw_ln("MPI ROCM-aware support : Yes");
-            return true;
-        }
-        if(world_rank == 0)logger::raw_ln("MPI ROCM-aware support : No");
-        return false;
-        #else  /* !defined(MPIX_ROCM_AWARE_SUPPORT) */
-        if(world_rank == 0)logger::raw_ln("MPI ROCM-aware support : Unknown");
-        return false;
-        #endif /* MPIX_ROCM_AWARE_SUPPORT */ 
-    }
 
     /**
      * @brief validate a sycl queue
@@ -162,13 +181,13 @@ namespace shamsys::instance::details {
         std::exception_ptr eptr;
         try {
             test_kernel(q);
-            logger::info_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>()," working !");
+            //logger::info_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>()," working !");
         } catch(...) {
             eptr = std::current_exception(); // capture
         }
 
         if (eptr) {
-            logger::err_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>(),"does not function properly");
+            //logger::err_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>(),"does not function properly");
             std::rethrow_exception(eptr);
         }
 
@@ -231,7 +250,6 @@ namespace shamsys::instance::details {
 
 
 
-
 } // namespace shamsys::instance::details
 
 
@@ -290,7 +308,7 @@ namespace shamsys::instance {
         if(opts::has_option("--sycl-cfg")){
             std::string sycl_cfg = std::string(opts::get_option("--sycl-cfg"));
 
-            logger::normal_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
+            //logger::debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
             size_t split_alt_comp = 0;
             split_alt_comp = sycl_cfg.find(":");
@@ -348,19 +366,13 @@ namespace shamsys::instance {
 
     
 
-
-
-
-    void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info){
-
-        start_sycl(sycl_info.alt_queue_id, sycl_info.compute_queue_id);
+    void start_mpi( MPIInitInfo mpi_info){
 
         #ifdef MPI_LOGGER_ENABLED
         std::cout << "%MPI_DEFINE:MPI_COMM_WORLD="<<MPI_COMM_WORLD<<"\n";
         #endif
 
-        details::check_mpi_cuda_aware();
-        details::check_mpi_rocm_aware();
+        shamsys::mpi_features::fetch_mpi_capabilities();
         
         mpi::init(&mpi_info.argc, &mpi_info.argv);
 
@@ -394,19 +406,28 @@ namespace shamsys::instance {
             throw ShamsysInstanceException("failed setting the MPI error mode");
         }
 
-        logger::raw_ln(shambase::format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m\n",world_rank,world_rank,world_size,get_process_name().c_str()));
+        logger::debug_ln("Sys",shambase::format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m",world_rank,world_rank,world_size,get_process_name().c_str()));
 
         mpi::barrier(MPI_COMM_WORLD);
         //if(world_rank == 0){
-        logger::raw_ln("------------ MPI init ok ------------ \n");
-
-        logger::info_ln("NodeInstance", "creating MPI type for interop");
+        if(world_rank == 0){
+            logger::debug_ln("------------ MPI init ok ------------ \n");
+            logger::debug_ln("NodeInstance", "creating MPI type for interop");
+        }
         create_sycl_mpi_types();
-        logger::info_ln("NodeInstance", "MPI type for interop created");
-
-        logger::raw_ln("------------ MPI / SYCL init ok ------------ \n");
-
+        if(world_rank == 0){
+            logger::debug_ln("NodeInstance", "MPI type for interop created");
+            logger::debug_ln("------------ MPI / SYCL init ok ------------ \n");
+        }
         mpidtypehandler::init_mpidtype();
+    }
+
+
+    void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info){
+
+        start_sycl(sycl_info.alt_queue_id, sycl_info.compute_queue_id);
+
+        start_mpi(mpi_info);
 
     }
 
@@ -414,7 +435,11 @@ namespace shamsys::instance {
 
         mpidtypehandler::free_mpidtype();
 
-        logger::raw_ln("------------ MPI_Finalize ------------\n");
+        if(world_rank == 0){
+            logger::print_faint_row();
+            logger::raw_ln(" - MPI finalize \nExiting ...\n");
+            logger::raw_ln(" Hopefully it was quick :')\n");
+        }
         mpi::finalize(); 
 
         alt_queue.reset();
@@ -484,12 +509,12 @@ namespace shamsys::instance {
             auto DeviceName = dev.get_info<sycl::info::device::name>();
 
             if(key_global == alt_id){
-                logger::info_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                logger::debug_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                 alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
             }
 
             if(key_global == compute_id){
-                logger::info_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                logger::debug_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                 compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
             }
 
@@ -508,14 +533,10 @@ namespace shamsys::instance {
         }
 
         if(world_rank == 0){
-            logger::raw_ln(terminal_effects::colors_foreground_8b::cyan + " >>> init SYCL instances <<< " + terminal_effects::reset);
+            logger::debug_ln("Sys", "start sycl queues ...");
         }
 
         init_queues(alt_id, compute_id);
-
-        if(world_rank == 0){
-            logger::info_ln("NodeInstance", "init done");
-        }
 
     }
 
@@ -539,5 +560,159 @@ namespace shamsys::instance {
         
         return std::string(processor_name);
     }
+
+
+    void print_mpi_capabilities(){
+        shamsys::mpi_features::print_mpi_capabilities();
+    }
+
+
+    bool dgpu_mode = false;
+    bool dgpu_capable = false;
+    void check_dgpu_available(){
+
+        dgpu_capable = false;
+
+        enum backenddevice{
+            CUDA, ROCM, Unknown, OpenMP
+        } backend = Unknown;
+
+        std::string pname = get_compute_queue()
+            .get_device()
+            .get_platform()
+            .get_info<sycl::info::platform::name>();
+
+        if(shambase::contain_substr(pname, "CUDA")){backend = CUDA;}
+        if(shambase::contain_substr(pname, "NVIDIA")){backend = CUDA;}
+        if(shambase::contain_substr(pname, "ROCM")){backend = ROCM;}
+        if(shambase::contain_substr(pname, "AMD")){backend = ROCM;}
+        if(shambase::contain_substr(pname, "OpenMP")){backend = OpenMP;}
+
+        if((shamsys::mpi_features::mpi_cuda_aware == mpi_features::Yes) && backend == CUDA){
+            dgpu_capable = true;
+        }
+
+        if((shamsys::mpi_features::mpi_rocm_aware == mpi_features::Yes) && backend == ROCM){
+            dgpu_capable = true;
+        }
+
+        if(backend == OpenMP){
+            dgpu_capable = true;
+        }
+
+        using namespace terminal_effects::colors_foreground_8b;
+        if(dgpu_capable){
+            logger::raw_ln(" - MPI use Direct Comm :",green + "Yes"+ terminal_effects::reset);
+        }else{
+            logger::raw_ln(" - MPI use Direct Comm :",red + "No"+ terminal_effects::reset);
+        }
+        dgpu_mode = dgpu_capable;
+    }
+
+    void force_direct_gpu_mode(bool force){
+        if(force != dgpu_capable){
+            if(world_rank == 0){
+                logger::warn_ln("Sys", "you are forcing the Direct comm mode to :", force, "it might no work");
+            }
+            dgpu_mode = dgpu_capable;
+        }
+    }
+
+    bool is_direct_gpu_selected(){
+        return dgpu_mode;
+    }
+
+
+
+    bool validate_comm(shamsys::CommunicationProtocol prot){
+
+        u32 nbytes = 1e5;
+        sycl::buffer<u8> buf_comp (nbytes);
+
+        {
+            sycl::host_accessor acc1 {buf_comp, sycl::write_only, sycl::no_init};
+            for(u32 i = 0; i < nbytes; i++){
+                acc1[i] = i%100;
+            }
+        }
+
+        shamsys::CommunicationBuffer cbuf {buf_comp, prot};
+        shamsys::CommunicationBuffer cbuf_recv {nbytes, prot};
+
+        MPI_Request rq1, rq2;
+        if(world_rank == world_size -1){
+            MPI_Isend(cbuf.get_ptr(), nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, &rq1);
+        }
+
+        if(world_rank == 0){
+            MPI_Irecv(cbuf_recv.get_ptr(), nbytes, MPI_BYTE, world_size -1, 0, MPI_COMM_WORLD, &rq2);
+        }
+
+        if(world_rank == world_size -1){
+            MPI_Wait(&rq1, MPI_STATUS_IGNORE);
+        }
+
+        if(world_rank == 0){
+            MPI_Wait(&rq2, MPI_STATUS_IGNORE);
+        }
+
+        sycl::buffer<u8> recv = shamsys::CommunicationBuffer::convert(std::move(cbuf_recv));
+
+
+        bool valid = true;
+
+        if(world_rank == 0){
+            sycl::host_accessor acc1 {buf_comp};
+            sycl::host_accessor acc2 {recv};
+
+            std::string id_err_list = "errors in id : ";
+
+            bool eq = true;
+            for(u32 i = 0; i < recv.size(); i++){
+                if(!shambase::vec_equals(acc1[i] , acc2[i])){
+                    eq = false;
+                    //id_err_list += std::to_string(i) + " ";
+                }
+            }
+
+            valid = eq;
+        }
+
+
+        return valid;
+    }
+
+    void validate_comm(){
+        u32 nbytes = 1e5;
+        sycl::buffer<u8> buf_comp (nbytes);
+
+        bool call_abort = false;
+
+        using namespace terminal_effects::colors_foreground_8b;
+        if(dgpu_mode){
+            if(validate_comm(shamsys::DirectGPU)){
+                if(world_rank == 0) logger::raw_ln(" - MPI ues Direct Comm :",green + "Working"+ terminal_effects::reset);
+            }else{
+                if(world_rank == 0)logger::raw_ln(" - MPI use Direct Comm :",red + "Fail"+ terminal_effects::reset);
+                if(world_rank == 0)logger::err_ln("Sys", "the select comm mode failed, try forcing dgpu mode off");
+                call_abort = true;
+            }
+        }else{
+            if(validate_comm(shamsys::CopyToHost)){
+                if(world_rank == 0)logger::raw_ln(" - MPI ues Copy to Host :",green + "Working"+ terminal_effects::reset);
+            }else{
+                if(world_rank == 0)logger::raw_ln(" - MPI use Copy to Host :",red + "Fail"+ terminal_effects::reset);
+                call_abort = true;
+            }
+        }
+
+        mpi::barrier(MPI_COMM_WORLD);
+
+        if(call_abort){
+            MPI_Abort(MPI_COMM_WORLD, 26);
+        }
+    }
+
+    
 
 }

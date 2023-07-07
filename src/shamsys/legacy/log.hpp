@@ -231,6 +231,10 @@ namespace logger {
     }
 
 
+    inline void print_faint_row(){
+        raw_ln(terminal_effects::faint + "-----------------------------------------------------" + terminal_effects::reset);
+    }
+
     inline i8 loglevel = 0;
 
     #define LIST_LEVEL                                                                                                      \
@@ -279,15 +283,15 @@ namespace logger {
 
 
     #define IsActivePrint(_name, color, loginf, logval) \
-        _name##_ln("xxx", "xxx","(","logger::" #_name,")");
+        if (loglevel >= log_##_name) {logger::raw("    ");} _name##_ln("xxx", "xxx","(","logger::" #_name,")");
 
     inline void print_active_level(){
 
-        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+        //logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
         #define X IsActivePrint
         LIST_LEVEL
         #undef X
-        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+        //logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
 
     }
 

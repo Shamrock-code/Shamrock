@@ -691,7 +691,7 @@ namespace shamsys::instance {
         using namespace terminal_effects::colors_foreground_8b;
         if(dgpu_mode){
             if(validate_comm(shamsys::DirectGPU)){
-                if(world_rank == 0) logger::raw_ln(" - MPI ues Direct Comm :",green + "Working"+ terminal_effects::reset);
+                if(world_rank == 0) logger::raw_ln(" - MPI use Direct Comm :",green + "Working"+ terminal_effects::reset);
             }else{
                 if(world_rank == 0)logger::raw_ln(" - MPI use Direct Comm :",red + "Fail"+ terminal_effects::reset);
                 if(world_rank == 0)logger::err_ln("Sys", "the select comm mode failed, try forcing dgpu mode off");
@@ -699,7 +699,7 @@ namespace shamsys::instance {
             }
         }else{
             if(validate_comm(shamsys::CopyToHost)){
-                if(world_rank == 0)logger::raw_ln(" - MPI ues Copy to Host :",green + "Working"+ terminal_effects::reset);
+                if(world_rank == 0)logger::raw_ln(" - MPI use Copy to Host :",green + "Working"+ terminal_effects::reset);
             }else{
                 if(world_rank == 0)logger::raw_ln(" - MPI use Copy to Host :",red + "Fail"+ terminal_effects::reset);
                 call_abort = true;

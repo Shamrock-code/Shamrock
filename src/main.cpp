@@ -117,6 +117,11 @@ int main(int argc, char *argv[]) {
         std::cout << shamrock_title_bar_big << std::endl;
         logger::print_faint_row();
 
+        std::cout <<"\n"<< terminal_effects::colors_foreground_8b::cyan + "Git infos "+ terminal_effects::reset+":\n";
+        std::cout << git_info_str <<std::endl;
+
+        logger::print_faint_row();
+
         logger::raw_ln("MPI status : ");
 
         logger::raw_ln(" - MPI & SYCL init :",terminal_effects::colors_foreground_8b::green + "Ok"+ terminal_effects::reset);

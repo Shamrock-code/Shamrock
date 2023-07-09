@@ -18,7 +18,6 @@
 #include "shamrock/patch/ResizableBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <memory>
 
 template<class T> class Kernel_Extract_element;
@@ -250,7 +249,7 @@ template<class T> void PatchDataField<T>::insert(PatchDataField<T> &f2){
         //This is triggering a warning in OpenSycl when the buffer was just allocated
         // TODO fix the warning
         sycl::accessor acc {*get_buf(), cgh, sycl::write_only}; 
-        
+
         sycl::accessor acc_f2 {*f2.get_buf(), cgh, sycl::read_only};
 
         cgh.parallel_for<PdatField_insert<T>>(sycl::range<1>{f2.size()}, [=](sycl::id<1> idx){

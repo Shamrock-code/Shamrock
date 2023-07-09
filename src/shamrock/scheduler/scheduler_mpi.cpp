@@ -327,30 +327,30 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
                 f64 total = global_timer.nanosec;
                 std::string str = "";
                 str += "Scheduler step timings : ";
-                str += shambase::format("\n   metadata sync : {} ({:2.f}%)", 
+                str += shambase::format("\n   metadata sync     : {:<10} ({:2.f}%)", 
                     metadata_sync.get_time_str(), 100*(metadata_sync.nanosec/total));
                 if(gen_merge_split_rq){
-                    str += shambase::format("\n   gen split merge : {} ({:2.f}%)", 
+                    str += shambase::format("\n   gen split merge   : {:<10} ({:2.f}%)", 
                         gen_merge_split_rq->get_time_str(), 100*(gen_merge_split_rq->nanosec/total));
                 }
                 if(split_merge_cnt){
-                    str += shambase::format("\n   split / merge op : {}/{}", 
+                    str += shambase::format("\n   split / merge op  : {}/{}", 
                         split_merge_cnt->x(),split_merge_cnt->y());
                 }
                 if(apply_splits){
-                    str += shambase::format("\n   apply split merge : {} ({:2.f}%)", 
+                    str += shambase::format("\n   apply split merge : {:<10} ({:2.f}%)", 
                         apply_splits->get_time_str(), 100*(apply_splits->nanosec/total));
                 }
                 if(load_balance_compute){
-                    str += shambase::format("\n   LB compute: {} ({:2.f}%)", 
+                    str += shambase::format("\n   LB compute        : {:<10} ({:2.f}%)", 
                         load_balance_compute->get_time_str(), 100*(load_balance_compute->nanosec/total));
                 }
                 if(load_balance_move_op_cnt){
-                    str += shambase::format("\n   LB move op cnt: {}", 
+                    str += shambase::format("\n   LB move op cnt    : {}", 
                         *load_balance_move_op_cnt);
                 }
                 if(load_balance_apply){
-                    str += shambase::format("\n   LB apply: {} ({:2.f}%)", 
+                    str += shambase::format("\n   LB apply          : {:<10} ({:2.f}%)", 
                         load_balance_apply->get_time_str(), 100*(load_balance_apply->nanosec/total));
                 }
                 logger::info_ln("Scheduler", str);

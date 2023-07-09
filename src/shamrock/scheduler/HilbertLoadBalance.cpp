@@ -20,6 +20,8 @@
 #include "HilbertLoadBalance.hpp"
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
+#include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
@@ -170,9 +172,35 @@ namespace shamrock::scheduler {
                 load_per_node[new_owner_table[i]] += global_patch_list[i].load_value;
             }
 
-            logger::debug_ln("HilbertLoadBalance", "loads after balancing");
+            //logger::debug_ln("HilbertLoadBalance", "loads after balancing");
+            f64 min = shambase::VectorProperties<f64>::get_inf();
+            f64 max = -shambase::VectorProperties<f64>::get_inf();
+            f64 avg = 0;
+            f64 var = 0;
+
             for (i32 nid = 0; nid < shamsys::instance::world_size; nid++) {
+                f64 val = load_per_node[nid];
+                min = sycl::fmin(min, val);
+                max = sycl::fmax(max, val);
+                avg += val;
+                
                 logger::debug_ln("HilbertLoadBalance", nid, load_per_node[nid]);
+            }
+            avg /= shamsys::instance::world_size;
+            for (i32 nid = 0; nid < shamsys::instance::world_size; nid++) {
+                f64 val = load_per_node[nid];
+                var += (val - avg)*(val - avg);
+            }
+            var /= shamsys::instance::world_size;
+
+            if(shamsys::instance::world_rank == 0){
+                std::string str = "Loadbalance stats : \n";
+                str += shambase::format("    npatch = {}\n", global_patch_list.size() );
+                str += shambase::format("    min = {}\n", min);
+                str += shambase::format("    max = {}\n", max);
+                str += shambase::format("    avg = {}\n", avg);
+                str += shambase::format("    efficiency = {:.2f}%", 100 - (100*(max - min)/max));
+                logger::info_ln("LoadBalance", str);
             }
         }
 

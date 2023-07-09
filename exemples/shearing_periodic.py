@@ -37,7 +37,7 @@ model.add_cube_fcc_3d(dr, bmin,bmax)
 vol_b = (xM - xm)*(yM - ym)*(zM - zm)
 
 totmass = (rho_g*vol_b)
-print("Total mass :", totmass)
+#print("Total mass :", totmass)
 
 pmass = model.total_mass_to_part_mass(totmass)
 
@@ -49,19 +49,19 @@ pen_sz = 0.1
 model.set_value_in_a_box("uint","f64", 3 , (xm,-pen_sz,-pen_sz),(-0.2,pen_sz,pen_sz))
 model.set_value_in_a_box("uint","f64", 3 , (0.2,-pen_sz,-pen_sz),(xM,pen_sz,pen_sz))
 
-print("Current part mass :", pmass)
+#print("Current part mass :", pmass)
 
 #for it in range(5):
 #    setup.update_smoothing_lenght(ctx)
 
 
 
-print("Current part mass :", pmass)
+#print("Current part mass :", pmass)
 model.set_particle_mass(pmass)
 
 
 tot_u = pmass*model.get_sum("uint","f64")
-print("total u :",tot_u)
+#print("total u :",tot_u)
 
 a = input("continue ?")
 

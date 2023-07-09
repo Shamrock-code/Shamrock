@@ -33,7 +33,7 @@
 
 namespace shamsys::instance::tmpmpi{
     /**
-     * @brief allgatherv on vector with size query (size querrying variant of vector_allgatherv_ks)
+     * @brief gather a string
      * //TODO add fault tolerance
      * @tparam T 
      * @param send_vec 

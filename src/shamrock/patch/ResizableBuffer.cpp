@@ -85,8 +85,8 @@ void ResizableBuffer<T>::overwrite(ResizableBuffer<T> &f2, u32 cnt) {
     }
 
     {
-        sycl::host_accessor acc{*buf};
-        sycl::host_accessor acc_f2{*f2.get_buf()};
+        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+        sycl::host_accessor acc_f2{*f2.get_buf(), sycl::read_only};
 
         for (u32 i = 0; i < cnt; i++) {
             // field_data[idx_st + i] = f2.field_data[i];
@@ -106,7 +106,7 @@ void ResizableBuffer<T>::override(sycl::buffer<T> &data, u32 cnt) {
     if (val_cnt > 0) {
 
         {
-            sycl::host_accessor acc_cur{*buf};
+            sycl::host_accessor acc_cur{*buf, sycl::write_only, sycl::no_init};
             sycl::host_accessor acc{data, sycl::read_only};
 
             for (u32 i = 0; i < val_cnt; i++) {
@@ -123,7 +123,7 @@ void ResizableBuffer<T>::override(const T val) {
     if (val_cnt > 0) {
 
         {
-            sycl::host_accessor acc{*buf};
+            sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
             for (u32 i = 0; i < val_cnt; i++) {
                 // field_data[i] = val;
                 acc[i] = val;

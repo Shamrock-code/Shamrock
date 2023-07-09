@@ -8,6 +8,7 @@
 
 #include "Model.hpp"
 #include "shamrock/sph/kernels.hpp"
+#include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 using Model = shammodels::sph::Model<Tvec, SPHKernel>;
@@ -32,7 +33,7 @@ void Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
 
     sched.add_root_patch();
 
-    std::cout << "build local" << std::endl;
+    logger::debug_ln("Sys", "build local scheduler tables");
     sched.owned_patch_id = sched.patch_list.build_local();
     sched.patch_list.build_local_idx_map();
     sched.update_local_dtcnt_value();

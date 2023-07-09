@@ -20,6 +20,7 @@
 
 
 #include "aliases.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
@@ -35,6 +36,7 @@
 #include <iterator>
 #include <memory>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -77,7 +79,7 @@ int main(int argc, char *argv[]) {
 
 
     opts::register_opt("--sycl-ls",{}, "list available devices");
-    opts::register_opt("--sycl-ls-map",{}, "list available devices & list of queue bindings");
+            opts::register_opt("--sycl-ls-map",{}, "list available devices & list of queue bindings");
 
     opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
     opts::register_opt("--loglevel","(logvalue)", "specify a log level");
@@ -191,6 +193,10 @@ int main(int argc, char *argv[]) {
         if(opts::has_option("--ipython")){
             StackEntry stack_loc{};
 
+            if(shamsys::instance::world_size > 1){
+                throw shambase::throw_with_loc<std::runtime_error>("cannot run ipython mode with > 1 processes");
+            }
+
             py::scoped_interpreter guard{};
             
             
@@ -211,13 +217,17 @@ int main(int argc, char *argv[]) {
 
             py::scoped_interpreter guard{};
 
+            if(shamsys::instance::world_rank == 0){
             std::cout << "-----------------------------------" << std::endl;
             std::cout << "running pyscript : " << fname << std::endl;
             std::cout << "-----------------------------------" << std::endl;
+            }
             py::eval_file(fname);
+            if(shamsys::instance::world_rank == 0){
             std::cout << "-----------------------------------" << std::endl;
             std::cout << "pyscript end" << std::endl;
             std::cout << "-----------------------------------" << std::endl;
+            }
 
 
         }else{

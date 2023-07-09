@@ -10,6 +10,7 @@
 
 #include <ctime>
 #include <memory>
+#include <optional>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -21,6 +22,7 @@
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shambase/time.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
@@ -306,17 +308,63 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
     if(!is_mpi_sycl_interop_active()) throw shambase::throw_with_loc<std::runtime_error>("sycl mpi interop not initialized");
 
     shambase::Timer timer;
+    logger::debug_ln("Scheduler", "running scheduler step");
 
-    std::cout << " -> running scheduler step\n";
+    struct SchedulerStepTimers{
+        shambase::Timer global_timer;
+        shambase::Timer metadata_sync;
+        std::optional<shambase::Timer> global_idx_map_build = {};
+        std::optional<shambase::Timer> patch_tree_count_reduce = {};
+        std::optional<shambase::Timer> gen_merge_split_rq = {};
+        std::optional<u32_2> split_merge_cnt = {};
+        std::optional<shambase::Timer> apply_splits = {};
+        std::optional<shambase::Timer> load_balance_compute = {};
+        std::optional<u32> load_balance_move_op_cnt = {};
+        std::optional<shambase::Timer> load_balance_apply = {};
 
-    //std::cout << "sync global" <<std::endl;
+        void print_stats(){
+            if(shamsys::instance::world_rank == 0){
+                f64 total = global_timer.nanosec;
+                std::string str = "";
+                str += "Scheduler step timings : ";
+                str += shambase::format("\n   metadata sync : {} ({:2.f}%)", 
+                    metadata_sync.get_time_str(), 100*(metadata_sync.nanosec/total));
+                if(gen_merge_split_rq){
+                    str += shambase::format("\n   gen split merge : {} ({:2.f}%)", 
+                        gen_merge_split_rq->get_time_str(), 100*(gen_merge_split_rq->nanosec/total));
+                }
+                if(split_merge_cnt){
+                    str += shambase::format("\n   split / merge op : {}/{}", 
+                        split_merge_cnt->x(),split_merge_cnt->y());
+                }
+                if(apply_splits){
+                    str += shambase::format("\n   apply split merge : {} ({:2.f}%)", 
+                        apply_splits->get_time_str(), 100*(apply_splits->nanosec/total));
+                }
+                if(load_balance_compute){
+                    str += shambase::format("\n   LB compute: {} ({:2.f}%)", 
+                        load_balance_compute->get_time_str(), 100*(load_balance_compute->nanosec/total));
+                }
+                if(load_balance_move_op_cnt){
+                    str += shambase::format("\n   LB move op cnt: {}", 
+                        *load_balance_move_op_cnt);
+                }
+                if(load_balance_apply){
+                    str += shambase::format("\n   LB apply: {} ({:2.f}%)", 
+                        load_balance_apply->get_time_str(), 100*(load_balance_apply->nanosec/total));
+                }
+                logger::info_ln("Scheduler", str);
+            }
+        }
+    } timers;
 
-    
-    timer.start();
+    timers.global_timer.start();
+
+    timers.metadata_sync.start();
     patch_list.build_global();
-    timer.end();
-    std::cout << " | sync global : " << timer.get_time_str() << std::endl;
-
+    timers.metadata_sync.end();
+    
+    
     //std::cout << dump_status();
 
     std::unordered_set<u64> split_rq;
@@ -326,39 +374,34 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         //std::cout << dump_status() << std::endl;
 
         //std::cout << "build_global_idx_map" <<std::endl;
-        
-        timer.start();//TODO check if it it used outside of split merge -> maybe need to be put before the if
+        timers.global_idx_map_build = shambase::Timer{};
+        timers.global_idx_map_build->start();//TODO check if it it used outside of split merge -> maybe need to be put before the if
         patch_list.build_global_idx_map();
-        timer.end();
-        std::cout << " | build_global_idx_map : " << timer.get_time_str() << std::endl;
+        timers.global_idx_map_build->end();
 
         //std::cout << dump_status() << std::endl;
 
 
 
         //std::cout << "tree partial_values_reduction" <<std::endl;
-        timer.start();
+        timers.patch_tree_count_reduce = shambase::Timer{};
+        timers.patch_tree_count_reduce->start();
         patch_tree.partial_values_reduction(
                 patch_list.global, 
                 patch_list.id_patch_to_global_idx);
-        timer.end();
-        std::cout << " | partial_values_reduction : " << timer.get_time_str() << std::endl;
+        timers.patch_tree_count_reduce->end();
 
 
         //std::cout << dump_status() << std::endl;
 
         // Generate merge and split request  
-        timer.start();
+        timers.gen_merge_split_rq = shambase::Timer{};
+        timers.gen_merge_split_rq->start();
         split_rq = patch_tree.get_split_request(crit_patch_split);
         merge_rq = patch_tree.get_merge_request(crit_patch_merge);
-        timer.end();
-        std::cout << " | gen split/merge op : " << timer.get_time_str() << std::endl;
+        timers.gen_merge_split_rq->end();
 
-
-
-        std::cout <<        "   | ---- patch operation requests ---- \n";
-        std::cout << shambase::format_printf("      split : %-6d   | merge : %-6d",split_rq.size(), merge_rq.size()) << std::endl;
-
+        timers.split_merge_cnt = u32_2{split_rq.size(),merge_rq.size()};
         /*
         std::cout << "     |-> split rq : ";
         for(u64 i : split_rq){
@@ -376,44 +419,36 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         //std::cout << dump_status() << std::endl;
 
         //std::cout << "split_patches" <<std::endl;
-        timer.start();
+        timers.apply_splits = shambase::Timer{};
+        timers.apply_splits->start();
         split_patches(split_rq);
-        timer.end();
-        std::cout << " | apply splits : " << timer.get_time_str() << std::endl;
+        timers.apply_splits->end();
 
         //std::cout << dump_status() << std::endl;
 
         //check not necessary if no splits
-        timer.start();
         patch_list.build_global_idx_map();
-        timer.end();
-        std::cout << " | build_global_idx_map : " << timer.get_time_str() << std::endl;
 
-
-
-        timer.start();
         set_patch_pack_values(merge_rq);
-        timer.end();
-        std::cout << " | set_patch_pack_values : " << timer.get_time_str() << std::endl;
     }
 
 
     if(do_load_balancing){StackEntry stack_loc{};
-        timer.start();
+        timers.load_balance_compute = shambase::Timer{};
+        timers.load_balance_compute->start();
         // generate LB change list 
         shamrock::scheduler::LoadBalancingChangeList change_list = 
             LoadBalancer::make_change_list(patch_list.global);
-        timer.end();
+        timers.load_balance_compute->end();
 
-        logger::info_ln("Scheduler", "load balancing gen op",timer.get_time_str());
-        logger::debug_ln("Scheduler", " move operations",change_list.change_ops.size());
-
-        timer.start();
+        timers.load_balance_move_op_cnt = change_list.change_ops.size();
+        
+        timers.load_balance_apply = shambase::Timer{};
+        timers.load_balance_apply->start();
         // apply LB change list
         patch_data.apply_change_list(change_list, patch_list);
-        timer.end();
+        timers.load_balance_apply->end();
 
-        logger::info_ln("Scheduler", "apply balancing time",timer.get_time_str());
         
     }
 
@@ -437,6 +472,9 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
 
     //std::cout << dump_status();
+
+    timers.global_timer.end();
+    timers.print_stats();
 
 }
 

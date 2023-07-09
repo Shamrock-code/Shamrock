@@ -8,12 +8,16 @@
 
 #pragma once
 
+#include "shamalgs/collective/exchanges.hpp"
+#include "shambase/string.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 
 namespace shammodels::sph {
 
@@ -80,6 +84,8 @@ namespace shammodels::sph {
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
+            std::string log = "";            
+
             sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
@@ -92,7 +98,7 @@ namespace shammodels::sph {
                     [&](Tvec r) { return box.contain_pos(r) && patch_coord.contain_pos(r); },
                     [&](Tvec r, Tscal h) { vec_acc.push_back(r); });
 
-                std::cout << ">>> adding : " << vec_acc.size() << " objects" << std::endl;
+                log += shambase::format("\n    patch id={}, add N={} particles", p.id_patch, vec_acc.size());
 
                 PatchData tmp(sched.pdl);
                 tmp.resize(vec_acc.size());
@@ -115,21 +121,20 @@ namespace shammodels::sph {
                 pdat.insert_elements(tmp);
             });
 
-            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
-                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-            });
+            std::string log_gathered = "";
+            shamalgs::collective::gather_str(log, log_gathered);
+
+            if(shamsys::instance::world_rank == 0) {
+                logger::info_ln("Model", "Push particles : ", log_gathered);
+            }
 
             sched.scheduler_step(false, false);
-
-            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
-                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-            });
 
             {
                 auto [m, M] = sched.get_box_tranform<Tvec>();
 
-                std::cout << "box transf" << m.x() << " " << m.y() << " " << m.z() << " | " << M.x()
-                          << " " << M.y() << " " << M.z() << std::endl;
+               // std::cout << "box transf" << m.x() << " " << m.y() << " " << m.z() << " | " << M.x()
+                 //         << " " << M.y() << " " << M.z() << std::endl;
 
                 SerialPatchTree<Tvec> sptree(sched.patch_tree,
                                              sched.get_sim_box().get_patch_transform<Tvec>());
@@ -146,15 +151,19 @@ namespace shammodels::sph {
 
             sched.check_patchdata_locality_corectness();
 
-            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
-                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-            });
 
             sched.scheduler_step(true, true);
 
-            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
-                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+            log = "";            
+            sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+                log += shambase::format("\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
+
+            log_gathered = "";
+            shamalgs::collective::gather_str(log, log_gathered);
+
+            if(shamsys::instance::world_rank == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
+
         }
 
         template<std::enable_if_t<dim == 3, int> = 0>
@@ -171,6 +180,8 @@ namespace shammodels::sph {
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
+            std::string log = "";  
+
             sched.for_each_local_patchdata([&](const Patch ptch, PatchData &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
@@ -182,7 +193,7 @@ namespace shammodels::sph {
                         vec_acc.push_back(r + center);
                     });
 
-                std::cout << ">>> adding : " << vec_acc.size() << " objects" << std::endl;
+                log += shambase::format("\n    patch id={}, add N={} particles", ptch.id_patch, vec_acc.size());
 
                 PatchData tmp(sched.pdl);
                 tmp.resize(vec_acc.size());
@@ -205,21 +216,19 @@ namespace shammodels::sph {
                 pdat.insert_elements(tmp);
             });
 
-            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
-                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-            });
+            std::string log_gathered = "";
+            shamalgs::collective::gather_str(log, log_gathered);
+
+            if(shamsys::instance::world_rank == 0) {
+                logger::info_ln("Model", "Push particles : ", log_gathered);
+            }
 
             sched.scheduler_step(false, false);
 
-            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
-                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-            });
 
             {
                 auto [m, M] = sched.get_box_tranform<Tvec>();
 
-                std::cout << "box transf" << m.x() << " " << m.y() << " " << m.z() << " | " << M.x()
-                          << " " << M.y() << " " << M.z() << std::endl;
 
                 SerialPatchTree<Tvec> sptree(sched.patch_tree,
                                              sched.get_sim_box().get_patch_transform<Tvec>());
@@ -236,15 +245,17 @@ namespace shammodels::sph {
 
             sched.check_patchdata_locality_corectness();
 
-            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
-                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
-            });
-
             sched.scheduler_step(true, true);
 
-            sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
-                std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
+            log = "";            
+            sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+                log += shambase::format("\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
+
+            log_gathered = "";
+            shamalgs::collective::gather_str(log, log_gathered);
+
+            if(shamsys::instance::world_rank == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
         }
 
         template<class T>
@@ -253,8 +264,6 @@ namespace shammodels::sph {
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
-                    std::cout << "patch id : " << patch_id << " len = " << pdat.get_obj_cnt()
-                              << std::endl;
 
                     PatchDataField<Tvec> &xyz =
                         pdat.template get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));

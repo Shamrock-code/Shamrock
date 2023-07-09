@@ -15,6 +15,8 @@
 #include "shamalgs/random/random.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shambase/sycl.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 
 namespace generic::setup::generators {
 
@@ -65,7 +67,7 @@ namespace generic::setup::generators {
         u32 j = iboc_dim.y();
         u32 k = iboc_dim.z();
 
-        std::cout << "get_ideal_box_idim :" << i << " " << j << " " << k << std::endl;
+        //std::cout << "get_ideal_box_idim :" << i << " " << j << " " << k << std::endl;
 
         i -= i%2;
         j -= j%2;
@@ -102,11 +104,13 @@ namespace generic::setup::generators {
                 2*sycl::sqrt(6.)/3
             }))/r_particle;
 
-        std::cout << "part box size : (" << iboc_dim.x() << ", " << iboc_dim.y() << ", " << iboc_dim.z() << ")" << std::endl;
+        //std::cout << "part box size : (" << iboc_dim.x() << ", " << iboc_dim.y() << ", " << iboc_dim.z() << ")" << std::endl;
         u32 ix = std::ceil(iboc_dim.x());
         u32 iy = std::ceil(iboc_dim.y());
         u32 iz = std::ceil(iboc_dim.z());
-        std::cout << "part box size : (" << ix << ", " << iy << ", " << iz << ")" << std::endl;
+
+        if(shamsys::instance::world_rank == 0) logger::info_ln("SPH", "Add fcc lattice size : (",ix,iy,iz,")");
+        //std::cout << "part box size : (" << ix << ", " << iy << ", " << iz << ")" << std::endl;
 
         if((iy % 2) != 0 && (iz % 2) != 0){
             std::cout << "Warning : particle count is odd on axis y or z -> this may lead to periodicity issues";

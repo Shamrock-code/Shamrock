@@ -85,6 +85,7 @@ namespace shamsys::instance {
      * ```
      */
     void init(int argc, char *argv[]);
+    void init_auto(std::string search_key, MPIInitInfo mpi_info);
 
     /**
      * @brief select & start the sycl queues
@@ -116,13 +117,16 @@ namespace shamsys::instance {
     void close();
 
     void print_device_list();
+    void print_queue_map();
 
     ////////////////////////////
     // sycl related routines
     ////////////////////////////
 
     /**
-     * @brief Get the compute queue
+     * @brief 
+     * 
+     *
      * 
      * @param id 
      * @return sycl::queue& reference to the corresponding queue

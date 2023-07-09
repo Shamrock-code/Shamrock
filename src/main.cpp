@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
 
 
     opts::register_opt("--sycl-ls",{}, "list available devices");
+    opts::register_opt("--sycl-ls-map",{}, "list available devices & list of queue bindings");
 
     opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
     opts::register_opt("--loglevel","(logvalue)", "specify a log level");
@@ -156,6 +157,16 @@ int main(int argc, char *argv[]) {
             logger::print_faint_row();
         }
         shamsys::instance::print_device_list();
+        
+    }
+
+    if(opts::has_option("--sycl-ls-map")){
+
+        if(shamsys::instance::world_rank == 0){
+            logger::print_faint_row();
+        }
+        shamsys::instance::print_device_list();
+        shamsys::instance::print_queue_map();
         
     }
 

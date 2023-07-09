@@ -270,12 +270,41 @@ namespace shamsys::instance {
     std::unique_ptr<sycl::queue> compute_queue;
     std::unique_ptr<sycl::queue> alt_queue;
 
+    u32 compute_queue_id = 0;
+    u32 alt_queue_id = 0;
+
     bool is_initialized(){
         int flag = false;
         mpi::initialized(&flag);
         return bool(compute_queue) && bool(alt_queue) && flag;
     };
 
+    void print_queue_map(){
+        u32 rank = world_rank;
+
+        std::string print_buf = "";
+
+        std::optional<u32> loc = env::get_local_rank();
+        if(loc){
+print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,*loc,alt_queue_id,compute_queue_id);
+        }else{
+print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???",alt_queue_id,compute_queue_id);
+        }
+        
+
+        std::string recv;
+        tmpmpi::gather_str(print_buf, recv);
+    
+        if(rank == 0){
+            std::string print = "Queue map : \n";
+            print+=("----------------------------------------------------\n");
+            print+=("| rank | local id | alt queue id | compute queue id |\n");
+            print+=("----------------------------------------------------\n");
+            print+=(recv);
+            print+=("----------------------------------------------------");
+            printf("%s\n",print.data());
+        }
+    }
 
 
 

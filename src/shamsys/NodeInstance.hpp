@@ -94,6 +94,8 @@ namespace shamsys::instance {
      */
     void start_sycl(u32 alt_id, u32 compute_id);
 
+    void start_sycl_auto(std::string search_key);
+
     /**
      * @brief initialize the NodeInstance from user inputs
      * ```
@@ -105,6 +107,7 @@ namespace shamsys::instance {
      * ```
      */
     void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info);
+    void init_auto(std::string search_key, MPIInitInfo mpi_info);
 
     /**
      * @brief close the NodeInstance

@@ -8,6 +8,7 @@
 
 #include "NodeInstance.hpp"
 
+#include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
@@ -20,12 +21,12 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include <hipSYCL/sycl/info/platform.hpp>
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 #include <mpi-ext.h>
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 #include "MpiDataTypeHandler.hpp"
 #include <mpi.h>
+#include <optional>
 #include <stdexcept>
 #include <string>
 
@@ -269,32 +270,6 @@ namespace shamsys::instance {
     std::unique_ptr<sycl::queue> compute_queue;
     std::unique_ptr<sycl::queue> alt_queue;
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
     bool is_initialized(){
         int flag = false;
         mpi::initialized(&flag);
@@ -302,52 +277,88 @@ namespace shamsys::instance {
     };
 
 
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
     void init(int argc, char *argv[]){
 
-
         if(opts::has_option("--sycl-cfg")){
+
+            
             std::string sycl_cfg = std::string(opts::get_option("--sycl-cfg"));
 
             //logger::debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
-            size_t split_alt_comp = 0;
-            split_alt_comp = sycl_cfg.find(":");
+            if(shambase::contain_substr(sycl_cfg, "auto:")){
 
-            if(split_alt_comp == std::string::npos){
-                logger::err_ln("NodeInstance", "sycl-cfg layout should be x:x");
-                throw ShamsysInstanceException("sycl-cfg layout should be x:x");
-            }
+                std::string search = sycl_cfg.substr(5);
+                init_auto(search,MPIInitInfo{argc,argv});
 
-            std::string alt_cfg = sycl_cfg.substr(0, split_alt_comp);
-            std::string comp_cfg = sycl_cfg.substr(split_alt_comp+1, sycl_cfg.length());
+            }else {
+            
+                size_t split_alt_comp = 0;
+                split_alt_comp = sycl_cfg.find(":");
 
-
-            u32 ialt, icomp;
-            try {
-                try {
-                    ialt = std::stoi(alt_cfg);
-                } catch (const std::invalid_argument & a) {
-                    logger::err_ln("NodeInstance", "alt config is not an int");
-                    throw ShamsysInstanceException("alt config is not an int");
+                if(split_alt_comp == std::string::npos){
+                    logger::err_ln("NodeInstance", "sycl-cfg layout should be x:x");
+                    throw ShamsysInstanceException("sycl-cfg layout should be x:x");
                 }
-            } catch (const std::out_of_range & a) {
-                logger::err_ln("NodeInstance", "alt config is to big for an integer");
-                throw ShamsysInstanceException("alt config is to big for an integer");
-            }
 
-            try {
+                std::string alt_cfg = sycl_cfg.substr(0, split_alt_comp);
+                std::string comp_cfg = sycl_cfg.substr(split_alt_comp+1, sycl_cfg.length());
+
+
+                u32 ialt, icomp;
                 try {
-                    icomp = std::stoi(comp_cfg);
-                } catch (const std::invalid_argument & a) {
-                    logger::err_ln("NodeInstance", "compute config is not an int");
-                    throw ShamsysInstanceException("compute config is not an int");
+                    try {
+                        ialt = std::stoi(alt_cfg);
+                    } catch (const std::invalid_argument & a) {
+                        logger::err_ln("NodeInstance", "alt config is not an int");
+                        throw ShamsysInstanceException("alt config is not an int");
+                    }
+                } catch (const std::out_of_range & a) {
+                    logger::err_ln("NodeInstance", "alt config is to big for an integer");
+                    throw ShamsysInstanceException("alt config is to big for an integer");
                 }
-            } catch (const std::out_of_range & a) {
-                logger::err_ln("NodeInstance", "compute config is to big for an integer");
-                throw ShamsysInstanceException("compute config is to big for an integer");
-            }
 
-            init(SyclInitInfo{ialt,icomp}, MPIInitInfo{argc,argv});
+                try {
+                    try {
+                        icomp = std::stoi(comp_cfg);
+                    } catch (const std::invalid_argument & a) {
+                        logger::err_ln("NodeInstance", "compute config is not an int");
+                        throw ShamsysInstanceException("compute config is not an int");
+                    }
+                } catch (const std::out_of_range & a) {
+                    logger::err_ln("NodeInstance", "compute config is to big for an integer");
+                    throw ShamsysInstanceException("compute config is to big for an integer");
+                }
+
+                init(SyclInitInfo{ialt,icomp}, MPIInitInfo{argc,argv});
+
+            }
 
         }else {
 
@@ -411,13 +422,13 @@ namespace shamsys::instance {
         mpi::barrier(MPI_COMM_WORLD);
         //if(world_rank == 0){
         if(world_rank == 0){
-            logger::debug_ln("------------ MPI init ok ------------ \n");
+            logger::debug_ln("NodeInstance","------------ MPI init ok ------------");
             logger::debug_ln("NodeInstance", "creating MPI type for interop");
         }
         create_sycl_mpi_types();
         if(world_rank == 0){
             logger::debug_ln("NodeInstance", "MPI type for interop created");
-            logger::debug_ln("------------ MPI / SYCL init ok ------------ \n");
+            logger::debug_ln("NodeInstance","------------ MPI / SYCL init ok ------------");
         }
         mpidtypehandler::init_mpidtype();
     }
@@ -426,6 +437,14 @@ namespace shamsys::instance {
     void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info){
 
         start_sycl(sycl_info.alt_queue_id, sycl_info.compute_queue_id);
+
+        start_mpi(mpi_info);
+
+    }
+
+    void init_auto(std::string search_key, MPIInitInfo mpi_info){
+
+        start_sycl_auto(search_key);
 
         start_mpi(mpi_info);
 
@@ -489,8 +508,53 @@ namespace shamsys::instance {
         details::print_device_list();
     }
 
-    void init_queues(u32 alt_id, u32 compute_id){
+    void init_queues_auto(std::string search_key){
+        std::optional<u32> local_id = env::get_local_rank();
 
+        if(local_id){
+
+            u32 valid_dev_cnt= 0;
+            
+            details::for_each_device(
+            [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
+                if(shambase::contain_substr(plat.get_info<sycl::info::platform::name>(), search_key)){
+                    valid_dev_cnt ++;
+                }
+            });
+
+            
+            u32 valid_dev_id= 0;
+            
+            details::for_each_device(
+            [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
+                if(shambase::contain_substr(plat.get_info<sycl::info::platform::name>(), search_key)){
+
+                    if((*local_id)%valid_dev_cnt == valid_dev_id){
+                        logger::debug_sycl_ln("Sys", "create queue :\n","Local ID :",*local_id,"\n Queue id :",key_global);
+
+                        
+                        auto PlatformName = plat.get_info<sycl::info::platform::name>();
+                        auto DeviceName = dev.get_info<sycl::info::device::name>();
+                        logger::debug_sycl_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                        alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+                    
+                        logger::debug_sycl_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                        compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+            
+                    }
+
+                    valid_dev_id ++;
+                }
+            });
+
+
+        }else{
+            logger::err_ln("Sys", "cannot query local rank cannot use autodetect");
+            throw shambase::throw_with_loc<std::runtime_error>("cannot query local rank cannot use autodetect");
+        }
+    }
+
+    void init_queues(u32 alt_id, u32 compute_id){
 
         u32 cnt_dev = details::for_each_device(
             [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){});
@@ -509,16 +573,18 @@ namespace shamsys::instance {
             auto DeviceName = dev.get_info<sycl::info::device::name>();
 
             if(key_global == alt_id){
-                logger::debug_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                logger::debug_sycl_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                 alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
             }
 
             if(key_global == compute_id){
-                logger::debug_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                logger::debug_sycl_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                 compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
             }
 
         });
+
+        
 
         details::check_queue_is_valid(*compute_queue);
         details::check_queue_is_valid(*alt_queue);
@@ -537,6 +603,18 @@ namespace shamsys::instance {
         }
 
         init_queues(alt_id, compute_id);
+
+    }
+
+    void start_sycl_auto(std::string search_key){
+        //start sycl
+
+        if(bool(compute_queue) && bool(alt_queue)){
+            throw ShamsysInstanceException("Sycl is already initialized");
+        }
+
+
+        init_queues_auto(search_key);
 
     }
 

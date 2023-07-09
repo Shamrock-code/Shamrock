@@ -107,6 +107,8 @@ int main(int argc, char *argv[]) {
             logger::err_ln("Cmd OPT", "you must select a loglevel in a 8bit integer range");
         }
 
+        logger::loglevel = a;
+
     }
 
     if(opts::has_option("--sycl-cfg")){

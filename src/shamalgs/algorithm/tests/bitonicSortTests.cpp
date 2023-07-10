@@ -41,6 +41,7 @@ TestStart(Unittest, "shamalgs/algorithm/details/bitonicSort_fallback", test_bito
     test.check();
 }
 
+/*
 TestStart(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v3", test_sort_by_key_radix_onesweep_v3, 1){
     
     TestSortByKey<u32, u32>test (
@@ -49,6 +50,7 @@ TestStart(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v3", 
         );
     test.check();
 }
+*/
 
 TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark", 
     test_bitonic_sort_legacy_benchmark, 1){

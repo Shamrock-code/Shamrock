@@ -1,0 +1,50 @@
+name: Cache OpenSYCL
+
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+    
+jobs:
+  cache_opensycl:
+    name: cache opensycl
+    runs-on: ${{ inputs.os }}
+
+    steps:
+
+      - name: clone OpenSycl
+        run: git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
+
+
+      # see opensycl workflow for steps
+      - name: install dependencies
+        run: |
+          set +e
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          
+          brew install cmake
+          brew install libomp
+          brew install boost
+          set -e
+
+      - name: configure & install OpenSycl
+        run: |
+          cd OpenSYCL
+
+          OMP_ROOT=`brew list libomp | grep libomp.a | sed -E "s/\/lib\/.*//"`
+          echo "OMP_ROOT=${OMP_ROOT}" >> $GITHUB_ENV
+
+          cmake -DOpenMP_ROOT=$OMP_ROOT -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+          make -j 2 install
+
+      - name: 'Tar opensycl'
+        run: tar -cvf opensycl.tar OpenSYCL_comp
+
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: OpenSYCL_compiler-${{ inputs.os }}
+          path: opensycl.tar  

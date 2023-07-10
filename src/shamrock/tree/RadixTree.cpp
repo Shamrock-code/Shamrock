@@ -20,13 +20,15 @@
 
 #include "RadixTreeMortonBuilder.hpp"
 #include "shamalgs/memory/memory.hpp"
+#include "shambase/floats.hpp"
+#include "shambase/integer.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 
 
 
 
-template <class u_morton, class vec3 ,u32 dim>
-RadixTree<u_morton, vec3, dim>::RadixTree(
+template <class u_morton, class vec3 >
+RadixTree<u_morton, vec3>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, sycl::buffer<vec3> & pos_buf, u32 cnt_obj, u32 reduc_level
 ) {
     if (cnt_obj > i32_max - 1) {
@@ -53,15 +55,15 @@ RadixTree<u_morton, vec3, dim>::RadixTree(
 
 
 
-template <class u_morton, class vec3 ,u32 dim>
-RadixTree<u_morton, vec3, dim>::RadixTree(
+template <class u_morton, class vec3 >
+RadixTree<u_morton, vec3>::RadixTree(
     sycl::queue &queue, std::tuple<vec3, vec3> treebox, const std::unique_ptr<sycl::buffer<vec3>> &pos_buf, u32 cnt_obj, u32 reduc_level
 ) : RadixTree(queue,treebox,shambase::get_check_ref(pos_buf), cnt_obj, reduc_level){}
 
 
 
-template <class u_morton, class vec3 ,u32 dim>
-void RadixTree<u_morton, vec3, dim>::serialize(shamalgs::SerializeHelper &serializer) {
+template <class u_morton, class vec3 >
+void RadixTree<u_morton, vec3>::serialize(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{};
 
     serializer.write(std::get<0>(bounding_box));
@@ -72,8 +74,8 @@ void RadixTree<u_morton, vec3, dim>::serialize(shamalgs::SerializeHelper &serial
     tree_cell_ranges.serialize(serializer);
 }
 
-template <class u_morton, class pos_t ,u32 dim>
-u64 RadixTree<u_morton, pos_t, dim>::serialize_byte_size(){
+template <class u_morton, class pos_t >
+u64 RadixTree<u_morton, pos_t>::serialize_byte_size(){
     using H = shamalgs::SerializeHelper;
     return H::serialize_byte_size<pos_t>()*2 
         + tree_morton_codes.serialize_byte_size()
@@ -82,8 +84,8 @@ u64 RadixTree<u_morton, pos_t, dim>::serialize_byte_size(){
         + tree_cell_ranges.serialize_byte_size();
 }
 
-template <class u_morton, class pos_t ,u32 dim>
-RadixTree<u_morton, pos_t, dim> RadixTree<u_morton, pos_t, dim>::deserialize(shamalgs::SerializeHelper &serializer) {
+template <class u_morton, class pos_t >
+RadixTree<u_morton, pos_t> RadixTree<u_morton, pos_t>::deserialize(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{};
 
     RadixTree ret;
@@ -103,12 +105,12 @@ RadixTree<u_morton, pos_t, dim> RadixTree<u_morton, pos_t, dim>::deserialize(sha
 
 
 
-template <class u_morton, class vec3, u32 dim> void RadixTree<u_morton, vec3, dim>::compute_cell_ibounding_box(sycl::queue &queue) {
+template <class u_morton, class vec3> void RadixTree<u_morton, vec3>::compute_cell_ibounding_box(sycl::queue &queue) {
     StackEntry stack_loc{};
     tree_cell_ranges.build1(queue, tree_reduced_morton_codes, tree_struct);
 }
 
-template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, dim>::convert_bounding_box(sycl::queue &queue) {
+template <class morton_t, class pos_t> void RadixTree<morton_t, pos_t>::convert_bounding_box(sycl::queue &queue) {
     StackEntry stack_loc{};
     u32 total_count = tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count;
     tree_cell_ranges.build2(queue, total_count, bounding_box);
@@ -120,8 +122,8 @@ template <class morton_t, class pos_t, u32 dim> void RadixTree<morton_t, pos_t, 
 
 
 
-template <class u_morton, class vec,u32 dim>
-auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
+template <class u_morton, class vec>
+auto RadixTree<u_morton, vec>::compute_int_boxes(
     sycl::queue &queue, const std::unique_ptr<sycl::buffer<coord_t>> &int_rad_buf, coord_t tolerance
 ) -> RadixTreeField<coord_t>{
 
@@ -160,32 +162,92 @@ auto RadixTree<u_morton, vec, dim>::compute_int_boxes(
         });
     });
 
-    sycl::range<1> range_tree{tree_struct.internal_cell_count};
-    auto ker_reduc_hmax = [&](sycl::handler &cgh) {
-        u32 offset_leaf = tree_struct.internal_cell_count;
+    #if false
+    // debug code to track the DPCPP + prime number worker issue
+    {
+        
+        //172827
+        //86413
+        //<<<(43207,1,1),(2,1,1)>>>
+        //gid = 86412
 
-        auto h_max_cell = buf_cell_int_rad_buf->template get_access<sycl::access::mode::read_write>(cgh);
+        shamalgs::memory::print_buf(*tree_struct.buf_rchild_id, tree_struct.internal_cell_count, 16, "{} ");
+        shamalgs::memory::print_buf(*tree_struct.buf_lchild_id, tree_struct.internal_cell_count, 16, "{} ");
+        shamalgs::memory::print_buf(*tree_struct.buf_rchild_flag, tree_struct.internal_cell_count, 16, "{} ");
+        shamalgs::memory::print_buf(*tree_struct.buf_lchild_flag, tree_struct.internal_cell_count, 16, "{} ");
 
-        sycl::accessor rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
-        sycl::accessor lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
-        sycl::accessor rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
-        sycl::accessor lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
 
-        cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
-            u32 gid = (u32)item.get_id(0);
+            sycl::host_accessor rchild_id   {*tree_struct.buf_rchild_id  ,sycl::read_only};
+            sycl::host_accessor lchild_id   {*tree_struct.buf_lchild_id  ,sycl::read_only};
+            sycl::host_accessor rchild_flag {*tree_struct.buf_rchild_flag,sycl::read_only};
+            sycl::host_accessor lchild_flag {*tree_struct.buf_lchild_flag,sycl::read_only};
 
+            u32 gid = 86412;
+            u32 lid_0 = lchild_id[gid];
+            u32 rid_0 = rchild_id[gid];
+            u32 lfl_0 = lchild_flag[gid];
+            u32 rfl_0 = rchild_flag[gid];
+            u32 offset_leaf = tree_struct.internal_cell_count;
             u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
             u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
 
-            coord_t h_l = h_max_cell[lid];
-            coord_t h_r = h_max_cell[rid];
+            logger::raw_ln("gid",gid);
+            logger::raw_ln("lid_0",lid_0);
+            logger::raw_ln("rid_0",rid_0);
+            logger::raw_ln("lfl_0",lfl_0);
+            logger::raw_ln("rfl_0",rfl_0);
+            logger::raw_ln("offset_leaf",offset_leaf);
+            logger::raw_ln("lid",lid);
+            logger::raw_ln("rid",rid);
+            logger::raw_ln("sz =", buf_cell_int_rad_buf->size());
+            logger::raw_ln("internal_cell_count =", tree_struct.internal_cell_count);
+            logger::raw_ln("tree_leaf_count =", tree_reduced_morton_codes.tree_leaf_count);
+    }
+    #endif
 
-            h_max_cell[gid] = (h_r > h_l ? h_r : h_l);
-        });
-    };
+    sycl::range<1> range_tree{tree_struct.internal_cell_count};
 
     for (u32 i = 0; i < tree_depth; i++) {
-        queue.submit(ker_reduc_hmax);
+        queue.submit([&](sycl::handler &cgh) {
+            u32 offset_leaf = tree_struct.internal_cell_count;
+
+            sycl::accessor h_max_cell {*buf_cell_int_rad_buf, cgh,sycl::read_write};
+
+            sycl::accessor rchild_id   {*tree_struct.buf_rchild_id  ,cgh,sycl::read_only};
+            sycl::accessor lchild_id   {*tree_struct.buf_lchild_id  ,cgh,sycl::read_only};
+            sycl::accessor rchild_flag {*tree_struct.buf_rchild_flag,cgh,sycl::read_only};
+            sycl::accessor lchild_flag {*tree_struct.buf_lchild_flag,cgh,sycl::read_only};
+
+            u32 len = tree_struct.internal_cell_count;
+            constexpr u32 group_size = 64;
+            u32 max_len = len;
+            u32 group_cnt = shambase::group_count(len, group_size);
+            u32 corrected_len = group_cnt*group_size;
+            
+            cgh.parallel_for(
+                sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+                u32 local_id = id.get_local_id(0);
+                u32 group_tile_id = id.get_group_linear_id();
+                u32 gid = group_tile_id * group_size + local_id;
+
+                if(gid >= max_len) return;
+
+                u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
+                u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
+
+                coord_t h_l = h_max_cell[lid];
+                coord_t h_r = h_max_cell[rid];
+
+                h_max_cell[gid] = (h_r > h_l ? h_r : h_l);
+            });
+        });
+    }
+
+    {
+        if(shamalgs::reduction::has_nan(queue, *buf_cell_int_rad_buf, tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count)){
+            shamalgs::memory::print_buf(*buf_cell_int_rad_buf, tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count, 8, "{} ");
+            throw  shambase::throw_with_loc<std::runtime_error>("the structure of the tree as issue in ids");
+        }
     }
 
     return std::move(buf_cell_interact_rad);
@@ -205,8 +267,8 @@ template<> std::string print_member(const u32 & a){
 }
 
 
-template <class u_morton, class vec3, u32 dim> template<class T>
-void RadixTree<u_morton, vec3, dim>::print_tree_field(sycl::buffer<T> & buf_field){
+template <class u_morton, class vec3> template<class T>
+void RadixTree<u_morton, vec3>::print_tree_field(sycl::buffer<T> & buf_field){
 
     sycl::host_accessor acc{buf_field, sycl::read_only};
 
@@ -262,29 +324,29 @@ void RadixTree<u_morton, vec3, dim>::print_tree_field(sycl::buffer<T> & buf_fiel
 }
 
 
-template void RadixTree<u32, f64_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u32, f32_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, f64_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, f32_3,3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, f64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, f32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 
 
-template void RadixTree<u32, u32_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u32, u64_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, u32_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
-template void RadixTree<u64, u64_3, 3>::print_tree_field(sycl::buffer<u32> &buf_field);
-
-
-
-
+template void RadixTree<u32, u32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u32, u64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, u32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, u64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 
 
 
 
 
-template <class u_morton, class vec3, u32 dim>
-typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, dim>::cut_tree(
+
+
+
+
+template <class u_morton, class vec3>
+typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tree(
     sycl::queue &queue, sycl::buffer<u8> & valid_node
 ) {
 
@@ -805,7 +867,7 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
                 sycl::range<1> range_node = sycl::range<1>{ret.tree_reduced_morton_codes.tree_leaf_count + ret.tree_struct.internal_cell_count};
 
                 
-                auto out = sycl::stream(128, 128, cgh);
+                //auto out = sycl::stream(128, 128, cgh);
 
                 cgh.parallel_for(range_node, [=](sycl::item<1> item) {
 
@@ -932,7 +994,7 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
 
                                 break;
                             }else{
-                                out << "[CRASH] Tree cut had a weird behavior during old cell search : \n";
+                                //out << "[CRASH] Tree cut had a weird behavior during old cell search : \n";
                                 //throw "";
 
                                 u32 store_val = cur_id;
@@ -1002,15 +1064,15 @@ typename RadixTree<u_morton, vec3, dim>::CuttedTree RadixTree<u_morton, vec3, di
 
 
 
-template class RadixTree<u32, f32_3,3>;
-template class RadixTree<u64, f32_3,3>;
+template class RadixTree<u32, f32_3>;
+template class RadixTree<u64, f32_3>;
 
-template class RadixTree<u32, f64_3,3>;
-template class RadixTree<u64, f64_3,3>;
+template class RadixTree<u32, f64_3>;
+template class RadixTree<u64, f64_3>;
 
-template class RadixTree<u32, u32_3, 3>;
-template class RadixTree<u64, u32_3, 3>;
+template class RadixTree<u32, u32_3>;
+template class RadixTree<u64, u32_3>;
 
-template class RadixTree<u32, u64_3, 3>;
-template class RadixTree<u64, u64_3, 3>;
+template class RadixTree<u32, u64_3>;
+template class RadixTree<u64, u64_3>;
 

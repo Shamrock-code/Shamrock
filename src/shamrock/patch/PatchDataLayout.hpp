@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shamrock/patch/PatchDataAlias.hpp"
@@ -47,7 +48,7 @@ namespace shamrock::patch {
          * @param nvar number of varaible per object
          */
         template<class T>
-        void add_field(std::string field_name, u32 nvar);
+        void add_field(std::string field_name, u32 nvar, SourceLocation loc = SourceLocation{});
 
         /**
          * @brief Get the field description id if matching name & type
@@ -154,7 +155,7 @@ namespace shamrock::patch {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<class T>
-    inline void PatchDataLayout::add_field(std::string field_name, u32 nvar) {
+    inline void PatchDataLayout::add_field(std::string field_name, u32 nvar, SourceLocation loc) {
         bool found = false;
 
         for (var_t &fvar : fields) {
@@ -171,7 +172,7 @@ namespace shamrock::patch {
             throw shambase::throw_with_loc<std::invalid_argument>("add_field -> the name already exists");
         }
 
-        logger::info_ln("PatchDataLayout", "adding field :", field_name, nvar);
+        logger::debug_ln("PatchDataLayout", "adding field :", field_name, nvar, "loc :",loc.format_one_line());
 
         fields.push_back(var_t{FieldDescriptor<T>(field_name, nvar)});
     }

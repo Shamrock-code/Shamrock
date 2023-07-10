@@ -603,7 +603,7 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
     auto pos =
         shamalgs::random::mock_buffer_ptr<vec>(0x111, Npart, coord_range.lower, coord_range.upper);
 
-    RadixTree<u_morton, vec, 3> rtree = RadixTree<u_morton, vec, 3>(
+    RadixTree<u_morton, vec> rtree = RadixTree<u_morton, vec>(
         shamsys::instance::get_compute_queue(),
         {coord_range.lower, coord_range.upper},
         pos,
@@ -738,7 +738,7 @@ inline void test_tree(std::string dset_name) {
         shambase::Timer timer;
         timer.start();
 
-        RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+        RadixTree<morton_mode, vec> rtree = RadixTree<morton_mode, vec>(
             shamsys::instance::get_compute_queue(),
             {coord_range.lower, coord_range.upper},
             pos,

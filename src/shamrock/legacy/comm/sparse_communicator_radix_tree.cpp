@@ -11,13 +11,13 @@
 
 
 template <class u_morton, class vec3> 
-struct SparseCommExchanger<RadixTree<u_morton, vec3, 3>>{
+struct SparseCommExchanger<RadixTree<u_morton, vec3>>{
 
-    static SparseCommResult<RadixTree<u_morton, vec3,3 >> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<RadixTree<u_morton, vec3,3>> &send_comm_pdat){
+    static SparseCommResult<RadixTree<u_morton, vec3 >> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<RadixTree<u_morton, vec3>> &send_comm_pdat){
 StackEntry stack_loc{};
         using namespace shamrock::patch;
 
-        SparseCommResult<RadixTree<u_morton, vec3, 3>> recv_obj;
+        SparseCommResult<RadixTree<u_morton, vec3>> recv_obj;
 
         if(!send_comm_pdat.empty()){
 
@@ -57,7 +57,7 @@ StackEntry stack_loc{};
                         if (psend.node_owner_id != precv.node_owner_id) {
                             
                             recv_obj[precv.id_patch].push_back(
-                                {psend.id_patch, std::make_unique<RadixTree<u_morton, vec3,3>>(RadixTree<u_morton, vec3,3>::make_empty())}); // patchdata_irecv(recv_rq, psend.node_owner_id,
+                                {psend.id_patch, std::make_unique<RadixTree<u_morton, vec3>>(RadixTree<u_morton, vec3>::make_empty())}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                                 // global_comm_tag[i], MPI_COMM_WORLD)}
                             tree_comm::comm_irecv_probe(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                             rq_lst, psend.node_owner_id, communicator.global_comm_tag[i], MPI_COMM_WORLD);
@@ -93,7 +93,7 @@ StackEntry stack_loc{};
 
 
 
-template struct SparseCommExchanger<RadixTree<u32, f32_3,3>>;
-template struct SparseCommExchanger<RadixTree<u64, f32_3,3>>;
-template struct SparseCommExchanger<RadixTree<u32, f64_3,3>>;
-template struct SparseCommExchanger<RadixTree<u64, f64_3,3>>;
+template struct SparseCommExchanger<RadixTree<u32, f32_3>>;
+template struct SparseCommExchanger<RadixTree<u64, f32_3>>;
+template struct SparseCommExchanger<RadixTree<u32, f64_3>>;
+template struct SparseCommExchanger<RadixTree<u64, f64_3>>;

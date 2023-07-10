@@ -12,6 +12,8 @@
 
 #include "shamtest.hpp"
 #include <cstdlib>
+#include <filesystem>
+#include <pybind11/embed.h>
 #include <sstream>
 
 #include "shambase/stacktrace.hpp"
@@ -24,6 +26,8 @@
 #include "shamsys/MpiWrapper.hpp"
 
 #include "shambase/exception.hpp"
+
+#include "shambindings/pybindaliases.hpp"
 
 
 bool has_option(
@@ -224,6 +228,11 @@ namespace shamtest {
 
         bool has_error = false;
 
+        logger::info_ln("Test", "start python interpreter");
+        py::initialize_interpreter();
+
+        std::filesystem::create_directories("tests/figures");
+
         for (u32 i : selected_tests) {
 
             shamtest::details::Test & test = static_init_vec_tests[i];
@@ -306,6 +315,10 @@ namespace shamtest {
             test_loc_cnt++;
 
         }
+
+
+        logger::info_ln("Test", "close python interpreter");
+        py::finalize_interpreter();
 
 
 

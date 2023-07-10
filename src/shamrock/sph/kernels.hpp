@@ -23,6 +23,7 @@ namespace shamrock::sph::kernels {
     class M4 {
         public:
         inline static constexpr flt_type Rkern = 2;
+        inline static constexpr flt_type hfactd = 1.2;
 
         inline static constexpr flt_type norm = 1 / shambase::Constants<flt_type>::pi;
 
@@ -69,6 +70,8 @@ namespace shamrock::sph::kernels {
         public:
         using flt                              = flt_type;
         inline static constexpr flt_type Rkern = 3;
+        inline static constexpr flt_type hfactd = 1.0;
+
 
         inline static constexpr flt_type norm = 1 / (120 * shambase::Constants<flt_type>::pi);
 

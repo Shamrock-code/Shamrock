@@ -143,7 +143,7 @@ inline void test_tree_build_steps(std::string dset_name) {
 
 
             {
-                RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+                RadixTree<morton_mode, vec> rtree = RadixTree<morton_mode, vec>(
                     shamsys::instance::get_compute_queue(),
                     {coord_range.lower, coord_range.upper},
                     pos,
@@ -217,7 +217,7 @@ inline void test_tree_build_steps(std::string dset_name) {
                 shambase::Timer timer2;
                 timer2.start();
                 
-                RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+                RadixTree<morton_mode, vec> rtree = RadixTree<morton_mode, vec>(
                     shamsys::instance::get_compute_queue(),
                     {coord_range.lower, coord_range.upper},
                     pos,
@@ -294,7 +294,7 @@ class SPHTestInteractionCrit {
     using vec = sycl::vec<flt, 3>;
     public:
 
-    RadixTree<u_morton, vec, 3> &tree;
+    RadixTree<u_morton, vec> &tree;
     sycl::buffer<vec> &positions;
     u32 part_count;
     flt Rpart;
@@ -412,7 +412,7 @@ void test_sph_iter_overhead(std::string dset_name){
             sycl::buffer<u32> neighbours(len_pos);
 
             //try{
-                RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+                RadixTree<morton_mode, vec> rtree = RadixTree<morton_mode, vec>(
                     shamsys::instance::get_compute_queue(),
                     {coord_range.lower, coord_range.upper},
                     pos,
@@ -691,7 +691,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
         public:
         shammath::CoordRange<u64_3> bounds;
 
-        RadixTree<u64, u64_3, 3> &tree;
+        RadixTree<u64, u64_3> &tree;
         PatchData &pdat;
 
         class Access {
@@ -756,7 +756,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
 
     q.wait();
     shambase::Timer t_tree; t_tree.start();
-    RadixTree<u64, u64_3, 3> tree(
+    RadixTree<u64, u64_3> tree(
             q,
             grid.sched.get_sim_box().patch_coord_to_domain<u64_3>(p),
             pdat.get_field<u64_3>(0).get_buf(),
@@ -987,7 +987,7 @@ class FmmTestInteractCrit {
     using vec = sycl::vec<flt, 3>;
     public:
 
-    RadixTree<u_morton, vec, 3> &tree;
+    RadixTree<u_morton, vec> &tree;
     sycl::buffer<vec> &positions;
     u32 leaf_count;
     
@@ -1107,7 +1107,7 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta){
             sycl::buffer<u32> neighbours(len_pos);
             sycl::buffer<u32> excl_cells(len_pos);
 
-            RadixTree<morton_mode, vec, 3> rtree = RadixTree<morton_mode, vec, 3>(
+            RadixTree<morton_mode, vec> rtree = RadixTree<morton_mode, vec>(
                 shamsys::instance::get_compute_queue(),
                 {coord_range.lower, coord_range.upper},
                 pos,

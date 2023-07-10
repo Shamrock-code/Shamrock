@@ -183,7 +183,7 @@ class AMRTestModel {
         sycl::queue &q = shamsys::instance::get_compute_queue();
 
         grid.sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            RadixTree<u64, u64_3, 3> tree(
+            RadixTree<u64, u64_3> tree(
                 q,
                 grid.sched.get_sim_box().patch_coord_to_domain<u64_3>(cur_p),
                 pdat.get_field<u64_3>(0).get_buf(),
@@ -261,7 +261,7 @@ class AMRTestModel {
                 public:
                 shammath::CoordRange<u64_3> bounds;
 
-                RadixTree<u64, u64_3, 3> &tree;
+                RadixTree<u64, u64_3> &tree;
                 PatchData &pdat;
 
                 class Access {

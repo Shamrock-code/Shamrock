@@ -21,9 +21,7 @@ git_head = str_git[str_git.find("HEAD -> ")+8:str_git.find(")")]
 str_ = '''
 #include "aliases.hpp"
 
-const std::string git_info_str = R"%%(
-
-'''
+const std::string git_info_str = R"%%('''
 
 str_ += "     commit : "+git_hash+"\n"
 str_ += "     HEAD   : "+git_head+"\n"

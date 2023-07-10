@@ -32,6 +32,8 @@ namespace shambase {
         return ExcptTypes(message + exception_format(loc));
     }
 
-    
+    inline void throw_unimplemented(SourceLocation loc = SourceLocation{}) {
+        throw throw_with_loc<std::runtime_error>("unimplemented",loc);
+    }
 
 } // namespace shambase

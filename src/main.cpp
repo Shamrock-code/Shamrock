@@ -20,6 +20,7 @@
 
 
 #include "aliases.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
@@ -35,6 +36,7 @@
 #include <iterator>
 #include <memory>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -75,7 +77,9 @@ int main(int argc, char *argv[]) {
 
 
 
-    std::cout << shamrock_title_bar_big << std::endl;
+
+    opts::register_opt("--sycl-ls",{}, "list available devices");
+            opts::register_opt("--sycl-ls-map",{}, "list available devices & list of queue bindings");
 
     opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
     opts::register_opt("--loglevel","(logvalue)", "specify a log level");
@@ -108,28 +112,77 @@ int main(int argc, char *argv[]) {
 
         logger::loglevel = a;
 
-        if(a == i8_max){
-            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
-        }
-
-        logger::raw_ln("-> modified loglevel to",logger::loglevel,"enabled log types : ");
-        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
-        logger::print_active_level();
-        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
     }
-
-
-
 
     if(opts::has_option("--sycl-cfg")){
         shamsys::instance::init(argc,argv);
     }
 
+    if(shamsys::instance::world_rank == 0){
+        std::cout << shamrock_title_bar_big << std::endl;
+        logger::print_faint_row();
+
+        std::cout <<"\n"<< terminal_effects::colors_foreground_8b::cyan + "Git infos "+ terminal_effects::reset+":\n";
+        std::cout << git_info_str <<std::endl;
+
+        logger::print_faint_row();
+
+        logger::raw_ln("MPI status : ");
+
+        logger::raw_ln(" - MPI & SYCL init :",terminal_effects::colors_foreground_8b::green + "Ok"+ terminal_effects::reset);
+
+        shamsys::instance::print_mpi_capabilities();
+
+        shamsys::instance::check_dgpu_available();
+        
+    }
+
+    shamsys::instance::validate_comm();
+
+    if(shamsys::instance::world_rank == 0){
+        logger::print_faint_row();
+        logger::raw_ln("log status : ");
+        if(logger::loglevel == i8_max){
+            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
+        }
+
+        logger::raw_ln(" - Loglevel :",u32(logger::loglevel),", enabled log types : ");
+        logger::print_active_level();
+    
+    } 
+
+    
+
+    if(opts::has_option("--sycl-ls")){
+
+        if(shamsys::instance::world_rank == 0){
+            logger::print_faint_row();
+        }
+        shamsys::instance::print_device_list();
+        
+    }
+
+    if(opts::has_option("--sycl-ls-map")){
+
+        if(shamsys::instance::world_rank == 0){
+            logger::print_faint_row();
+        }
+        shamsys::instance::print_device_list();
+        shamsys::instance::print_queue_map();
+        
+    }
+
+    
+
     
 
 
-
-
+    if(shamsys::instance::world_rank == 0){
+        logger::print_faint_row();
+        logger::raw_ln(" - Code init",terminal_effects::colors_foreground_8b::green + "DONE"+ terminal_effects::reset, "now it's time to",
+        terminal_effects::colors_foreground_8b::cyan + terminal_effects::blink + "ROCK"+ terminal_effects::reset);
+        logger::print_faint_row();
+    }
 
     shamsys::register_signals();
     //*
@@ -139,6 +192,10 @@ int main(int argc, char *argv[]) {
         
         if(opts::has_option("--ipython")){
             StackEntry stack_loc{};
+
+            if(shamsys::instance::world_size > 1){
+                throw shambase::throw_with_loc<std::runtime_error>("cannot run ipython mode with > 1 processes");
+            }
 
             py::scoped_interpreter guard{};
             
@@ -160,13 +217,17 @@ int main(int argc, char *argv[]) {
 
             py::scoped_interpreter guard{};
 
+            if(shamsys::instance::world_rank == 0){
             std::cout << "-----------------------------------" << std::endl;
             std::cout << "running pyscript : " << fname << std::endl;
             std::cout << "-----------------------------------" << std::endl;
+            }
             py::eval_file(fname);
+            if(shamsys::instance::world_rank == 0){
             std::cout << "-----------------------------------" << std::endl;
             std::cout << "pyscript end" << std::endl;
             std::cout << "-----------------------------------" << std::endl;
+            }
 
 
         }else{

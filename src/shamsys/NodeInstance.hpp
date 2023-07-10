@@ -85,6 +85,17 @@ namespace shamsys::instance {
      * ```
      */
     void init(int argc, char *argv[]);
+    void init_auto(std::string search_key, MPIInitInfo mpi_info);
+
+    /**
+     * @brief select & start the sycl queues
+     * 
+     * @param alt_id 
+     * @param compute_id 
+     */
+    void start_sycl(u32 alt_id, u32 compute_id);
+
+    void start_sycl_auto(std::string search_key);
 
     /**
      * @brief initialize the NodeInstance from user inputs
@@ -97,6 +108,7 @@ namespace shamsys::instance {
      * ```
      */
     void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info);
+    void init_auto(std::string search_key, MPIInitInfo mpi_info);
 
     /**
      * @brief close the NodeInstance
@@ -104,12 +116,17 @@ namespace shamsys::instance {
      */
     void close();
 
+    void print_device_list();
+    void print_queue_map();
+
     ////////////////////////////
     // sycl related routines
     ////////////////////////////
 
     /**
-     * @brief Get the compute queue
+     * @brief 
+     * 
+     *
      * 
      * @param id 
      * @return sycl::queue& reference to the corresponding queue
@@ -149,5 +166,13 @@ namespace shamsys::instance {
      * @return std::string process name
      */
     std::string get_process_name();
+
+    void print_mpi_capabilities();
+
+    void check_dgpu_available();
+    
+    void force_direct_gpu_mode(bool force);
+    void validate_comm();
+    bool is_direct_gpu_selected();
 
 } // namespace shamsys::instance

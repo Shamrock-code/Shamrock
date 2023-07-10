@@ -16,6 +16,7 @@
 #include "shamrock/physics/fmm.hpp"
 
 
+#include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shambase/string.hpp"
@@ -211,10 +212,7 @@ TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
     };
     std::vector<Entry> vec_result;
 
-    
-
-    for(u32 i = 0; i < 1e5; i++){
-
+    for(u32 i = 0; i < 1e4; i++){
 
         f64_3 s_a = f64_3{distf64(eng), distf64(eng), distf64(eng)};
         f64_3 s_b = f64_3{distf64(eng), distf64(eng), distf64(eng)};
@@ -246,10 +244,13 @@ TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
             FMM_prec_eval<f64, 2>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
             FMM_prec_eval<f64, 1>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)
         });
+
+        if(i % 10000 == 0){
+            logger::debug_ln("Tests", "i =",i,"\\",100000);
+        }
     }
 
     std::sort(vec_result.begin(), vec_result.end(), [](const auto& i, const auto& j) { return i.angle < j.angle; } );
-
 
     std::vector<f64> vec_angle         ;
     std::vector<f64> vec_result_pot_5  ;
@@ -279,20 +280,85 @@ TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
         vec_result_force_1.push_back(f.result_force_1);
     }
 
-    auto & dataset_prec = shamtest::test_data().new_dataset("fmm_precision");
+    PyScriptHandle hdnl{};
 
-    dataset_prec.add_data("angle",          vec_angle         );
-    dataset_prec.add_data("result_pot_5",   vec_result_pot_5  );
-    dataset_prec.add_data("result_pot_4",   vec_result_pot_4  );
-    dataset_prec.add_data("result_pot_3",   vec_result_pot_3  );
-    dataset_prec.add_data("result_pot_2",   vec_result_pot_2  );
-    dataset_prec.add_data("result_pot_1",   vec_result_pot_1  );
-    dataset_prec.add_data("result_pot_0",   vec_result_pot_0  );
-    dataset_prec.add_data("result_force_5", vec_result_force_5);
-    dataset_prec.add_data("result_force_4", vec_result_force_4);
-    dataset_prec.add_data("result_force_3", vec_result_force_3);
-    dataset_prec.add_data("result_force_2", vec_result_force_2);
-    dataset_prec.add_data("result_force_1", vec_result_force_1);
+    hdnl.data()["angle"]          =vec_angle         ;
+    hdnl.data()["vec_result_pot_5"]   =vec_result_pot_5  ;
+    hdnl.data()["vec_result_pot_4"]   =vec_result_pot_4  ;
+    hdnl.data()["vec_result_pot_3"]   =vec_result_pot_3  ;
+    hdnl.data()["vec_result_pot_2"]   =vec_result_pot_2  ;
+    hdnl.data()["vec_result_pot_1"]   =vec_result_pot_1  ;
+    hdnl.data()["vec_result_pot_0"]   =vec_result_pot_0  ;
+    hdnl.data()["vec_result_force_5"] =vec_result_force_5;
+    hdnl.data()["vec_result_force_4"] =vec_result_force_4;
+    hdnl.data()["vec_result_force_3"] =vec_result_force_3;
+    hdnl.data()["vec_result_force_2"] =vec_result_force_2;
+    hdnl.data()["vec_result_force_1"] =vec_result_force_1;
+
+    hdnl.exec(R"(
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        plt.style.use('custom_style.mplstyle')
+
+        fig,axs = plt.subplots(nrows=1,ncols=2,figsize=(15,6))
+
+        def plot_curve(ax,X,Y,lab):
+            global np;
+
+            print("plotting :",lab)
+
+            ratio = 40
+            cnt = len(X)//ratio 
+            X_m = X.reshape((cnt,ratio))
+            X_m = np.max(X_m,axis=1)
+            Y_m = Y.reshape((cnt,ratio))
+            Y_m = np.max(Y_m,axis=1)
+            ax.plot(X_m,Y_m, label = lab)
+
+        plot_curve(axs[0],np.array(angle),np.abs(vec_result_pot_5  ), "fmm order = 5")
+        plot_curve(axs[0],np.array(angle),np.abs(vec_result_pot_4  ), "fmm order = 4")
+        plot_curve(axs[0],np.array(angle),np.abs(vec_result_pot_3  ), "fmm order = 3")
+        plot_curve(axs[0],np.array(angle),np.abs(vec_result_pot_2  ), "fmm order = 2")
+        plot_curve(axs[0],np.array(angle),np.abs(vec_result_pot_1  ), "fmm order = 1")
+        plot_curve(axs[0],np.array(angle),np.abs(vec_result_pot_0  ), "fmm order = 0")
+        plot_curve(axs[1],np.array(angle),np.abs(vec_result_force_5), "fmm order = 5")
+        plot_curve(axs[1],np.array(angle),np.abs(vec_result_force_4), "fmm order = 4")
+        plot_curve(axs[1],np.array(angle),np.abs(vec_result_force_3), "fmm order = 3")
+        plot_curve(axs[1],np.array(angle),np.abs(vec_result_force_2), "fmm order = 2")
+        plot_curve(axs[1],np.array(angle),np.abs(vec_result_force_1), "fmm order = 1")
+
+        axs[0].set_title('Gravitational potential ($\Phi$)')
+        axs[1].set_title('Gravitational force ($\mathbf{f}$)')
+
+        axs[0].set_xscale('log')
+        axs[0].set_yscale('log')
+        axs[1].set_xscale('log')
+        axs[1].set_yscale('log')
+
+        axs[0].set_ylim(1e-16,1)
+        axs[1].set_ylim(1e-16,1)
+
+
+        axs[1].set_xscale('log')
+        axs[1].set_yscale('log')
+
+        axs[0].set_xlabel(r"$\theta$")
+        axs[1].set_xlabel(r"$\theta$")
+
+        axs[0].set_ylabel(r"$\vert \Phi_{\rm fmm} - \Phi_{\rm th} \vert /\vert \Phi_{\rm th}\vert$")
+        axs[1].set_ylabel(r"$\vert \mathbf{f}_{\rm fmm} - \mathbf{f}_{\rm th} \vert /\vert \mathbf{f}_{\rm th}\vert$")
+
+        axs[0].legend()
+        axs[0].grid()
+        axs[1].legend()
+        axs[1].grid()
+
+        plt.tight_layout()
+
+        plt.savefig("fmm_precision.pdf")
+
+    )");
 }
 
 
@@ -416,7 +482,7 @@ struct Result_nompi_fmm_testing{
     std::unique_ptr<sycl::buffer<vec>> & pos_buf;
     std::unique_ptr<sycl::buffer<vec>> force_buf;
 
-    RadixTree<morton_mode, vec,3> rtree;
+    RadixTree<morton_mode, vec> rtree;
 
     std::unique_ptr< sycl::buffer<flt>> grav_multipoles;
 };
@@ -446,7 +512,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
     shambase::Timer timer; timer.start();
 
 
-    RadixTree<morton_mode, vec,3> rtree = RadixTree<morton_mode, vec,3>(
+    RadixTree<morton_mode, vec> rtree = RadixTree<morton_mode, vec>(
             shamsys::instance::get_compute_queue(), 
             {vec{-1,-1,-1},vec{1,1,1}},
             pos_part, 

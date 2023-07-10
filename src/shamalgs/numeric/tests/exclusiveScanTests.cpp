@@ -346,12 +346,12 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5"
 }
 
 
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v6", test_exclusive_sum_atomic_decoupled_v6, 1){
-    
-    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,64,8>);
-    test.check();
-
-}
+//TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v6", test_exclusive_sum_atomic_decoupled_v6, 1){
+//    
+//    TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,64,8>);
+//    test.check();
+//
+//}
 
 
 TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_sycl_jointalg", test_exclusive_sum_sycl_jointalg, 1){

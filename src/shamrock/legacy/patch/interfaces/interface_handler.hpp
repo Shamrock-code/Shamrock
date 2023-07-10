@@ -33,7 +33,7 @@
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-#include "shammodels/sph/sphpatch.hpp" //TODO remove sph dependancy
+#include "shammodels/sph/legacy/sphpatch.hpp" //TODO remove sph dependancy
 
 #include "interface_handler_impl.hpp"
 

@@ -29,7 +29,7 @@
 
 namespace shamrock::sfc {
 
-    template<class morton_repr, u32 dim>
+    template<class Umorton, u32 dim>
     class MortonCodes {};
 
     template<>
@@ -37,9 +37,12 @@ namespace shamrock::sfc {
         public:
         using int_vec_repr_base                      = u16;
         using int_vec_repr                           = u16_3;
+        static constexpr int_vec_repr_base dimension = 3;
         static constexpr int_vec_repr_base max_val   = 1024 - 1;
         static constexpr int_vec_repr_base val_count = 1024;
-
+        static constexpr int_vec_repr_base significant_bits_p_coord = 10;
+        static constexpr int_vec_repr_base significant_bits = dimension*significant_bits_p_coord;
+        
         static constexpr u32 err_code = 4294967295U;
 
         inline static u32 icoord_to_morton(u32 x, u32 y, u32 z) {
@@ -102,8 +105,12 @@ namespace shamrock::sfc {
         public:
         using int_vec_repr_base                      = u32;
         using int_vec_repr                           = u32_3;
+        static constexpr int_vec_repr_base dimension = 3;
         static constexpr int_vec_repr_base max_val   = 2097152 - 1;
         static constexpr int_vec_repr_base val_count = 2097152;
+        static constexpr int_vec_repr_base significant_bits_p_coord = 21;
+        static constexpr int_vec_repr_base significant_bits = dimension*significant_bits_p_coord;
+        
 
         static constexpr u64 err_code = 18446744073709551615UL;
 

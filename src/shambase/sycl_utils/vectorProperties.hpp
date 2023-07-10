@@ -32,6 +32,7 @@ namespace shambase {
 
         static constexpr T get_min() { return std::numeric_limits<T>::min(); }
         static constexpr T get_max() { return std::numeric_limits<T>::max(); }
+        static constexpr T get_inf() { return std::numeric_limits<T>::infinity(); }
         static constexpr T get_zero(){return 0;}
     };
 

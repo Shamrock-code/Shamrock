@@ -463,7 +463,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         constexpr u32 reduc_level = 2;
 
-        using RadTree = RadixTree<u_morton, vec3,3>;
+        using RadTree = RadixTree<u_morton, vec3>;
 
         //make trees
         std::unordered_map<u64, std::unique_ptr<RadTree>> radix_trees;

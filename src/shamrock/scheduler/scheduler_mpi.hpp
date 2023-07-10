@@ -31,6 +31,8 @@
 #include "aliases.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shambase/DistributedData.hpp"
+#include "shambase/stacktrace.hpp"
+#include "shambase/time.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 //#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -283,6 +285,14 @@ class PatchScheduler{
         }
     }
 
+    inline void for_each_local_patchdata(std::function<void(const shamrock::patch::Patch,shamrock::patch::PatchData &)> fct){
+        for(shamrock::patch::Patch p : patch_list.local){
+            if(!p.is_err_mode()){
+                fct(p, patch_data.get_pdat(p.id_patch));
+            }
+        }
+    }
+
 
     inline void for_each_local_patch_nonempty(std::function<void(const shamrock::patch::Patch&)> fct){
         patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){
@@ -384,6 +394,12 @@ class PatchScheduler{
         return num_obj;
     }
 
+    inline u64 get_total_obj_count(){
+        StackEntry stack_loc{};
+        u64 part_cnt = get_rank_count();
+        return shamalgs::collective::allreduce_sum(part_cnt);
+    }
+
     template<class T>
     inline std::unique_ptr<sycl::buffer<T>> rankgather_field(u32 field_idx){StackEntry stack_loc{};
         std::unique_ptr<sycl::buffer<T>> ret;
@@ -480,5 +496,8 @@ class PatchScheduler{
     void merge_patches(std::unordered_set<u64> merge_rq);
 
     void set_patch_pack_values(std::unordered_set<u64> merge_rq);
+
+
+    
 
 };

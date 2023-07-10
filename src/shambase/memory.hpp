@@ -10,6 +10,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/type_aliases.hpp"
+#include "shambase/string.hpp"
 
 namespace shambase {
 
@@ -90,11 +91,30 @@ namespace shambase {
      * @return T& 
      */
     template<class T>
-    inline T & get_check_ref(const std::unique_ptr<T> & ptr){
+    inline T & get_check_ref(const std::unique_ptr<T> & ptr,SourceLocation loc = SourceLocation()){
         if(! bool(ptr)){
-            throw throw_with_loc<std::runtime_error>("the ptr does not hold anything");
+            throw throw_with_loc<std::runtime_error>("the ptr does not hold anything",loc);
         }
         return *ptr;
+    }
+
+    template<int n,class T>
+    inline std::array<T,n> convert_to_array(std::vector<T> & in){
+        if(in.size() != n){
+            throw shambase::throw_with_loc<std::invalid_argument>(
+                shambase::format("you've input values with the wrong size, input size = {}, wanted = {}"
+                ,in.size(),n
+                )
+            );
+        }
+
+        std::array<T,n> tmp;
+
+        for (u32 i = 0; i < n ; i++) {
+            tmp[i] = in[i];
+        }
+
+        return tmp;
     }
 
 }

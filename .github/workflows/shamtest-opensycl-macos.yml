@@ -1,0 +1,84 @@
+name: shamtest OpenSYCL
+
+
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+    
+jobs:
+  shamrock_opensycl_omp_debug_coverage:
+
+    name: shamrock-test opensycl coverage
+    runs-on: ${{ inputs.os }}
+
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: 'Download Artifact'
+        uses: actions/download-artifact@v3
+        with:
+          name: OpenSYCL_compiler-${{ inputs.os }}
+
+      - name: 'unTar opensycl'
+        run: tar -xvf opensycl.tar
+
+      - name: ls local
+        run : ls -la
+
+      # see opensycl workflow for steps
+      - name: install dependencies
+        run: |
+          set +e
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          
+          brew install cmake
+          brew install libomp
+          brew install boost
+          brew install ninja
+          brew install open-mpi
+          set -e
+
+      - name: configure Shamrock
+        run: |
+
+          OMP_ROOT=`brew list libomp | grep libomp.a | sed -E "s/\/lib\/.*//"`
+          echo "OMP_ROOT=${OMP_ROOT}" >> $GITHUB_ENV
+
+          #export LDFLAGS="-L${OMP_ROOT}/lib"
+          #export CPPFLAGS="-I${OMP_ROOT}/include"
+
+          python3 buildbot/configure.py --gen ninja --tests --build debug \
+            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp --cxxflags="-I${OMP_ROOT}/include"
+
+      - name: compile Shamrock
+        run: |
+          cd opensycl_omp_debug
+          
+          ninja
+
+      - name: run Shamrock Unittests world_size = 1
+        run: |
+          cd opensycl_omp_debug
+          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+
+      - name: run Shamrock Unittests world_size = 2
+        run: |
+          cd opensycl_omp_debug
+          mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+      
+      - name: run Shamrock Unittests world_size = 3
+        run: |
+          cd opensycl_omp_debug
+          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+
+      - name: run Shamrock Unittests world_size = 4
+        run: |
+          cd opensycl_omp_debug
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest

@@ -8,9 +8,15 @@
 
 #include "NodeInstance.hpp"
 
+#include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambase/sycl_utils.hpp"
+#include "shambase/type_aliases.hpp"
 #include "shamsys/EnvVariables.hpp"
+#include "shamsys/comm/CommunicationBuffer.hpp"
+#include "shamsys/comm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
@@ -18,44 +24,130 @@
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 #include "MpiDataTypeHandler.hpp"
+#include <mpi.h>
+#include <optional>
 #include <stdexcept>
+#include <string>
+
+
+namespace shamsys::instance::tmpmpi{
+    /**
+     * @brief gather a string
+     * //TODO add fault tolerance
+     * @tparam T 
+     * @param send_vec 
+     * @param send_type 
+     * @param recv_vec 
+     * @param recv_type 
+     */
+    inline void gather_str(const std::string & send_vec ,std::string & recv_vec){
+        StackEntry stack_loc{};
+
+        u32 local_count = send_vec.size();
+
+        //querry global size and resize the receiving vector
+        u32 global_len;
+        mpi::allreduce(&local_count, &global_len, 1, MPI_INT , MPI_SUM, MPI_COMM_WORLD);
+        recv_vec.resize(global_len);
+
+        int* table_data_count = new int[shamsys::instance::world_size];
+
+        mpi::allgather(
+            &local_count, 
+            1, 
+            MPI_INT, 
+            &table_data_count[0], 
+            1, 
+            MPI_INT, 
+            MPI_COMM_WORLD);
+
+        //printf("table_data_count = [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
+
+
+
+        int* node_displacments_data_table = new int[shamsys::instance::world_size];
+
+        node_displacments_data_table[0] = 0;
+
+        for(u32 i = 1 ; i < shamsys::instance::world_size; i++){
+            node_displacments_data_table[i] = node_displacments_data_table[i-1] + table_data_count[i-1];
+        }
+        
+        //printf("node_displacments_data_table = [%d,%d,%d,%d]\n",node_displacments_data_table[0],node_displacments_data_table[1],node_displacments_data_table[2],node_displacments_data_table[3]);
+        
+        mpi::allgatherv(
+            send_vec.data(), 
+            send_vec.size(),
+            MPI_CHAR, 
+            recv_vec.data(), 
+            table_data_count, 
+            node_displacments_data_table, 
+            MPI_CHAR, 
+            MPI_COMM_WORLD);
+
+
+        delete [] table_data_count;
+        delete [] node_displacments_data_table;
+    } 
+}
+
+namespace shamsys::mpi_features{
+
+    enum StateMPI_Aware{
+        Unknown, Yes, No
+    };
+
+    StateMPI_Aware mpi_cuda_aware;
+    StateMPI_Aware mpi_rocm_aware;
+
+    void fetch_mpi_capabilities(){
+        //detect MPI cuda aware
+        #if defined(MPIX_CUDA_AWARE_SUPPORT)
+        if (1 == MPIX_Query_cuda_support()) {
+            mpi_cuda_aware = Yes;
+        } else{
+            mpi_cuda_aware = No;
+        }
+        #else  /* !defined(MPIX_CUDA_AWARE_SUPPORT) */
+        mpi_cuda_aware = Unknown;
+        #endif /* MPIX_CUDA_AWARE_SUPPORT */ 
+
+        //detect MPI rocm aware
+        #if defined(MPIX_ROCM_AWARE_SUPPORT)
+        if (1 == MPIX_Query_rocm_support()) {
+            mpi_rocm_aware = Yes;
+        }else{
+            mpi_rocm_aware = No;
+        }
+        #else  /* !defined(MPIX_ROCM_AWARE_SUPPORT) */
+        mpi_rocm_aware = Unknown;
+        #endif /* MPIX_ROCM_AWARE_SUPPORT */ 
+    }
+    
+    void print_mpi_capabilities(){
+        using namespace terminal_effects::colors_foreground_8b;
+        if (mpi_cuda_aware == Yes) {
+            logger::raw_ln(" - MPI CUDA-AWARE :",green + "Yes"+ terminal_effects::reset);
+        }else if (mpi_cuda_aware == No) {
+            logger::raw_ln(" - MPI CUDA-AWARE :",red + "No"+ terminal_effects::reset);
+        }else if (mpi_cuda_aware == Unknown) {
+            logger::raw_ln(" - MPI CUDA-AWARE :",yellow + "Unknown"+ terminal_effects::reset);
+        }
+
+        if (mpi_rocm_aware == Yes) {
+            logger::raw_ln(" - MPI ROCM-AWARE :",green + "Yes"+ terminal_effects::reset);
+        }else if (mpi_rocm_aware == No) {
+            logger::raw_ln(" - MPI ROCM-AWARE :",red + "No"+ terminal_effects::reset);
+        }else if (mpi_rocm_aware == Unknown) {
+            logger::raw_ln(" - MPI ROCM-AWARE :",yellow + "Unknown"+ terminal_effects::reset);
+        }
+    }
+
+}
 
 namespace shamsys::instance::details {
 
-
-    /**
-     * @brief detect mpi cuda aware support
-     * 
-     * @return true 
-     * @return false 
-     */
-    bool check_mpi_cuda_aware(){
-        #if defined(MPIX_CUDA_AWARE_SUPPORT)
-        if (1 == MPIX_Query_cuda_support()) {
-            logger::raw_ln("MPI CUDA-aware support : Yes");return true;
-        } 
-        logger::raw_ln("MPI CUDA-aware support : No");return false;
-        #else  /* !defined(MPIX_CUDA_AWARE_SUPPORT) */
-        logger::raw_ln("MPI CUDA-aware support : Unknown");
-        #endif /* MPIX_CUDA_AWARE_SUPPORT */ 
-    }
-
-    /**
-     * @brief detect mpi rocm aware support
-     * 
-     * @return true 
-     * @return false 
-     */
-    bool check_mpi_rocm_aware(){
-        #if defined(MPIX_ROCM_AWARE_SUPPORT)
-        if (1 == MPIX_Query_rocm_support()) {
-            logger::raw_ln("MPI ROCM-aware support : Yes");return true;
-        }
-        logger::raw_ln("MPI ROCM-aware support : No");return false;
-        #else  /* !defined(MPIX_ROCM_AWARE_SUPPORT) */
-        logger::raw_ln("MPI ROCM-aware support : Unknown");return false;
-        #endif /* MPIX_ROCM_AWARE_SUPPORT */ 
-    }
+    
 
     /**
      * @brief validate a sycl queue
@@ -89,18 +181,73 @@ namespace shamsys::instance::details {
         std::exception_ptr eptr;
         try {
             test_kernel(q);
-            logger::info_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>()," working !");
+            //logger::info_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>()," working !");
         } catch(...) {
             eptr = std::current_exception(); // capture
         }
 
         if (eptr) {
-            logger::err_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>(),"does not function properly");
+            //logger::err_ln("NodeInstance", "selected queue :",q.get_device().get_info<sycl::info::device::name>(),"does not function properly");
             std::rethrow_exception(eptr);
         }
 
 
     }
+
+    /**
+     * @brief for each SYCL device
+     * 
+     * @param fct 
+     * @return u32 the number of devices
+     */
+    u32 for_each_device(std::function<void(u32, const sycl::platform &, const sycl::device &)> fct){
+
+        u32 key_global = 0;
+        const auto &Platforms = sycl::platform::get_platforms();    
+        for (const auto &Platform : Platforms) {
+            const auto &Devices = Platform.get_devices();
+            for (const auto &Device : Devices) {
+                fct(key_global, Platform, Device);   
+                key_global ++;
+            }
+        }
+        return key_global;
+    }
+
+    void print_device_list(){
+        u32 rank = world_rank;
+
+        std::string print_buf = "";
+
+        for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
+
+            auto PlatformName = plat.get_info<sycl::info::platform::name>();
+            auto DeviceName = dev.get_info<sycl::info::device::name>();
+
+            std::string devname = shambase::trunc_str(DeviceName,29);
+            std::string platname = shambase::trunc_str(PlatformName,24);
+            std::string devtype = shambase::trunc_str(shambase::getDevice_type(dev),6);
+
+            print_buf += shambase::format("| {:>4} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
+                rank,key_global,devname.c_str(),platname.c_str(),devtype.c_str()
+            ) + "\n";
+
+        });
+
+        std::string recv;
+        tmpmpi::gather_str(print_buf, recv);
+    
+        if(rank == 0){
+            std::string print = "Cluster SYCL Info : \n";
+            print+=("--------------------------------------------------------------------------------\n");
+            print+=("| rank | id |        Device name            |       Platform name      |  Type  |\n");
+            print+=("--------------------------------------------------------------------------------\n");
+            print+=(recv);
+            print+=("--------------------------------------------------------------------------------");
+            printf("%s\n",print.data());
+        }
+    }
+
 
 
 } // namespace shamsys::instance::details
@@ -118,55 +265,12 @@ namespace shamsys::instance {
         }
     };
 
-    
-    void print_device_info(const sycl::device &Device){
-        std::cout 
-            << "   - " 
-            << Device.get_info<sycl::info::device::name>()
-            << " " 
-            << shambase::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
-    }
-
-
-    std::string get_process_name(){
-
-        // Get the name of the processor
-        char processor_name[MPI_MAX_PROCESSOR_NAME];
-        int name_len;
-
-        int err_code = mpi::get_processor_name(processor_name, &name_len);
-
-        if(err_code != MPI_SUCCESS){
-            throw ShamsysInstanceException("failed getting the process name");
-        }
-        
-        return std::string(processor_name);
-    }
-
-
-
-
-
-
-
-
-
-
-
-    
-
 
     std::unique_ptr<sycl::queue> compute_queue;
     std::unique_ptr<sycl::queue> alt_queue;
 
-
-
-
-
-
-
-
-
+    u32 compute_queue_id = 0;
+    u32 alt_queue_id = 0;
 
     bool is_initialized(){
         int flag = false;
@@ -174,53 +278,115 @@ namespace shamsys::instance {
         return bool(compute_queue) && bool(alt_queue) && flag;
     };
 
+    void print_queue_map(){
+        u32 rank = world_rank;
+
+        std::string print_buf = "";
+
+        std::optional<u32> loc = env::get_local_rank();
+        if(loc){
+print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,*loc,alt_queue_id,compute_queue_id);
+        }else{
+print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???",alt_queue_id,compute_queue_id);
+        }
+        
+
+        std::string recv;
+        tmpmpi::gather_str(print_buf, recv);
+    
+        if(rank == 0){
+            std::string print = "Queue map : \n";
+            print+=("----------------------------------------------------\n");
+            print+=("| rank | local id | alt queue id | compute queue id |\n");
+            print+=("----------------------------------------------------\n");
+            print+=(recv);
+            print+=("----------------------------------------------------");
+            printf("%s\n",print.data());
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
 
     void init(int argc, char *argv[]){
 
-
         if(opts::has_option("--sycl-cfg")){
+
+            
             std::string sycl_cfg = std::string(opts::get_option("--sycl-cfg"));
 
-            logger::normal_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
+            //logger::debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
-            size_t split_alt_comp = 0;
-            split_alt_comp = sycl_cfg.find(":");
+            if(shambase::contain_substr(sycl_cfg, "auto:")){
 
-            if(split_alt_comp == std::string::npos){
-                logger::err_ln("NodeInstance", "sycl-cfg layout should be x:x");
-                throw ShamsysInstanceException("sycl-cfg layout should be x:x");
-            }
+                std::string search = sycl_cfg.substr(5);
+                init_auto(search,MPIInitInfo{argc,argv});
 
-            std::string alt_cfg = sycl_cfg.substr(0, split_alt_comp);
-            std::string comp_cfg = sycl_cfg.substr(split_alt_comp+1, sycl_cfg.length());
+            }else {
+            
+                size_t split_alt_comp = 0;
+                split_alt_comp = sycl_cfg.find(":");
 
-
-            u32 ialt, icomp;
-            try {
-                try {
-                    ialt = std::stoi(alt_cfg);
-                } catch (const std::invalid_argument & a) {
-                    logger::err_ln("NodeInstance", "alt config is not an int");
-                    throw ShamsysInstanceException("alt config is not an int");
+                if(split_alt_comp == std::string::npos){
+                    logger::err_ln("NodeInstance", "sycl-cfg layout should be x:x");
+                    throw ShamsysInstanceException("sycl-cfg layout should be x:x");
                 }
-            } catch (const std::out_of_range & a) {
-                logger::err_ln("NodeInstance", "alt config is to big for an integer");
-                throw ShamsysInstanceException("alt config is to big for an integer");
-            }
 
-            try {
+                std::string alt_cfg = sycl_cfg.substr(0, split_alt_comp);
+                std::string comp_cfg = sycl_cfg.substr(split_alt_comp+1, sycl_cfg.length());
+
+
+                u32 ialt, icomp;
                 try {
-                    icomp = std::stoi(comp_cfg);
-                } catch (const std::invalid_argument & a) {
-                    logger::err_ln("NodeInstance", "compute config is not an int");
-                    throw ShamsysInstanceException("compute config is not an int");
+                    try {
+                        ialt = std::stoi(alt_cfg);
+                    } catch (const std::invalid_argument & a) {
+                        logger::err_ln("NodeInstance", "alt config is not an int");
+                        throw ShamsysInstanceException("alt config is not an int");
+                    }
+                } catch (const std::out_of_range & a) {
+                    logger::err_ln("NodeInstance", "alt config is to big for an integer");
+                    throw ShamsysInstanceException("alt config is to big for an integer");
                 }
-            } catch (const std::out_of_range & a) {
-                logger::err_ln("NodeInstance", "compute config is to big for an integer");
-                throw ShamsysInstanceException("compute config is to big for an integer");
-            }
 
-            init(SyclInitInfo{ialt,icomp}, MPIInitInfo{argc,argv});
+                try {
+                    try {
+                        icomp = std::stoi(comp_cfg);
+                    } catch (const std::invalid_argument & a) {
+                        logger::err_ln("NodeInstance", "compute config is not an int");
+                        throw ShamsysInstanceException("compute config is not an int");
+                    }
+                } catch (const std::out_of_range & a) {
+                    logger::err_ln("NodeInstance", "compute config is to big for an integer");
+                    throw ShamsysInstanceException("compute config is to big for an integer");
+                }
+
+                init(SyclInitInfo{ialt,icomp}, MPIInitInfo{argc,argv});
+
+            }
 
         }else {
 
@@ -231,128 +397,21 @@ namespace shamsys::instance {
 
     }
 
+    
 
 
 
-    void start_sycl(SyclInitInfo sycl_info){
 
 
-        //start sycl
+    
 
-        if(bool(compute_queue) && bool(alt_queue)){
-            throw ShamsysInstanceException("Sycl is already initialized");
-        }
-
-        logger::raw_ln(terminal_effects::colors_foreground_8b::cyan + " >>> init SYCL instances <<< " + terminal_effects::reset);
-
-
-
-        const auto &Platforms = sycl::platform::get_platforms();
-
-        logger::raw_ln("--------------------------------------------------------------------------------");
-        logger::raw_ln("| sel | id |        Device name            |       Platform name      |  Type  |");
-        logger::raw_ln("--------------------------------------------------------------------------------");
-
-        u32 key_global = 0;
-        for (const auto &Platform : Platforms) {
-            const auto &Devices = Platform.get_devices();
-
-            auto PlatformName = Platform.get_info<sycl::info::platform::name>();
-            for (const auto &Device : Devices) {
-                auto DeviceName = Device.get_info<sycl::info::device::name>();
-
-
-                auto selected_k = [&](i32 k){
-
-                    std::string ret = "";
-
-                    if (k == sycl_info.alt_queue_id) {
-                        ret += "a";
-                    }
-
-                    if (k == sycl_info.compute_queue_id) {
-                        ret += "c";
-                    }
-
-                    return ret;
-                };
-
-                std::string selected = selected_k(key_global);
-
-                std::string devname = shambase::trunc_str(DeviceName,29);
-                std::string platname = shambase::trunc_str(PlatformName,24);
-                std::string devtype = shambase::trunc_str(shambase::getDevice_type(Device),6);
-
-                logger::raw_ln(shambase::format("| {:>3} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
-                    selected.c_str(),key_global,devname.c_str(),platname.c_str(),devtype.c_str()
-                ));
-
-
-                if(key_global == sycl_info.alt_queue_id){
-                    alt_queue = std::make_unique<sycl::queue>(Device,exception_handler);
-                }
-
-                if(key_global == sycl_info.compute_queue_id){
-                    compute_queue = std::make_unique<sycl::queue>(Device,exception_handler);
-                }
-
-
-                key_global ++;
-
-            }
-
-        }
-        
-        logger::raw_ln("--------------------------------------------------------------------------------");
-
-        if(sycl_info.alt_queue_id >= key_global){
-            throw shambase::throw_with_loc<std::invalid_argument>("the alt queue id is larger than the number of queue");
-        }
-
-        if(sycl_info.compute_queue_id >= key_global){
-            throw shambase::throw_with_loc<std::invalid_argument>("the compute queue id is larger than the number of queue");
-        }
-
-
-        key_global = 0;
-        for (const auto &Platform : Platforms) {
-            auto PlatformName = Platform.get_info<sycl::info::platform::name>();
-            for (const auto &Device : Platform.get_devices()) {
-                auto DeviceName = Device.get_info<sycl::info::device::name>();
-
-                if(key_global == sycl_info.alt_queue_id){
-                    logger::info_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(Device), "|");
-                    alt_queue = std::make_unique<sycl::queue>(Device,exception_handler);
-                }
-
-                if(key_global == sycl_info.compute_queue_id){
-                    logger::info_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(Device), "|");
-                    compute_queue = std::make_unique<sycl::queue>(Device,exception_handler);
-                }
-
-                key_global++;
-            }
-        }
-
-        details::check_queue_is_valid(*compute_queue);
-        details::check_queue_is_valid(*alt_queue);
-
-
-        logger::info_ln("NodeInstance", "init done");
-
-    }
-
-    void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info){
-
-
-        start_sycl(sycl_info);
+    void start_mpi( MPIInitInfo mpi_info){
 
         #ifdef MPI_LOGGER_ENABLED
         std::cout << "%MPI_DEFINE:MPI_COMM_WORLD="<<MPI_COMM_WORLD<<"\n";
         #endif
 
-        details::check_mpi_cuda_aware();
-        details::check_mpi_rocm_aware();
+        shamsys::mpi_features::fetch_mpi_capabilities();
         
         mpi::init(&mpi_info.argc, &mpi_info.argv);
 
@@ -386,19 +445,36 @@ namespace shamsys::instance {
             throw ShamsysInstanceException("failed setting the MPI error mode");
         }
 
-        logger::raw_ln(shambase::format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m\n",world_rank,world_rank,world_size,get_process_name().c_str()));
+        logger::debug_ln("Sys",shambase::format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m",world_rank,world_rank,world_size,get_process_name().c_str()));
 
         mpi::barrier(MPI_COMM_WORLD);
         //if(world_rank == 0){
-        logger::raw_ln("------------ MPI init ok ------------ \n");
-
-        logger::info_ln("NodeInstance", "creating MPI type for interop");
+        if(world_rank == 0){
+            logger::debug_ln("NodeInstance","------------ MPI init ok ------------");
+            logger::debug_ln("NodeInstance", "creating MPI type for interop");
+        }
         create_sycl_mpi_types();
-        logger::info_ln("NodeInstance", "MPI type for interop created");
-
-        logger::raw_ln("------------ MPI / SYCL init ok ------------ \n");
-
+        if(world_rank == 0){
+            logger::debug_ln("NodeInstance", "MPI type for interop created");
+            logger::debug_ln("NodeInstance","------------ MPI / SYCL init ok ------------");
+        }
         mpidtypehandler::init_mpidtype();
+    }
+
+
+    void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info){
+
+        start_sycl(sycl_info.alt_queue_id, sycl_info.compute_queue_id);
+
+        start_mpi(mpi_info);
+
+    }
+
+    void init_auto(std::string search_key, MPIInitInfo mpi_info){
+
+        start_sycl_auto(search_key);
+
+        start_mpi(mpi_info);
 
     }
 
@@ -406,7 +482,11 @@ namespace shamsys::instance {
 
         mpidtypehandler::free_mpidtype();
 
-        logger::raw_ln("------------ MPI_Finalize ------------\n");
+        if(world_rank == 0){
+            logger::print_faint_row();
+            logger::raw_ln(" - MPI finalize \nExiting ...\n");
+            logger::raw_ln(" Hopefully it was quick :')\n");
+        }
         mpi::finalize(); 
 
         alt_queue.reset();
@@ -434,9 +514,6 @@ namespace shamsys::instance {
     // sycl related routines
     ////////////////////////////
 
-
-
-
     sycl::queue & get_compute_queue(u32  /*id*/){
         if(!compute_queue){ throw ShamsysInstanceException("sycl handler is not initialized");}
         return * compute_queue;
@@ -447,9 +524,127 @@ namespace shamsys::instance {
         return * alt_queue;
     }
 
+    void print_device_info(const sycl::device &Device){
+        std::cout 
+            << "   - " 
+            << Device.get_info<sycl::info::device::name>()
+            << " " 
+            << shambase::readable_sizeof(Device.get_info<sycl::info::device::global_mem_size>()) << "\n";
+    }
+
+    void print_device_list(){
+        details::print_device_list();
+    }
+
+    void init_queues_auto(std::string search_key){
+        std::optional<u32> local_id = env::get_local_rank();
+
+        if(local_id){
+
+            u32 valid_dev_cnt= 0;
+            
+            details::for_each_device(
+            [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
+                if(shambase::contain_substr(plat.get_info<sycl::info::platform::name>(), search_key)){
+                    valid_dev_cnt ++;
+                }
+            });
+
+            
+            u32 valid_dev_id= 0;
+            
+            details::for_each_device(
+            [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
+                if(shambase::contain_substr(plat.get_info<sycl::info::platform::name>(), search_key)){
+
+                    if((*local_id)%valid_dev_cnt == valid_dev_id){
+                        logger::debug_sycl_ln("Sys", "create queue :\n","Local ID :",*local_id,"\n Queue id :",key_global);
+
+                        
+                        auto PlatformName = plat.get_info<sycl::info::platform::name>();
+                        auto DeviceName = dev.get_info<sycl::info::device::name>();
+                        logger::debug_sycl_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                        alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+                    
+                        logger::debug_sycl_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                        compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+            
+                    }
+
+                    valid_dev_id ++;
+                }
+            });
 
 
+        }else{
+            logger::err_ln("Sys", "cannot query local rank cannot use autodetect");
+            throw shambase::throw_with_loc<std::runtime_error>("cannot query local rank cannot use autodetect");
+        }
+    }
 
+    void init_queues(u32 alt_id, u32 compute_id){
+
+        u32 cnt_dev = details::for_each_device(
+            [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){});
+
+        if(alt_id >= cnt_dev){
+            throw shambase::throw_with_loc<std::invalid_argument>("the alt queue id is larger than the number of queue");
+        }
+
+        if(compute_id >= cnt_dev){
+            throw shambase::throw_with_loc<std::invalid_argument>("the compute queue id is larger than the number of queue");
+        }
+
+        details::for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){
+
+            auto PlatformName = plat.get_info<sycl::info::platform::name>();
+            auto DeviceName = dev.get_info<sycl::info::device::name>();
+
+            if(key_global == alt_id){
+                logger::debug_sycl_ln("NodeInstance", "init alt queue  : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                alt_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+            }
+
+            if(key_global == compute_id){
+                logger::debug_sycl_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
+                compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
+            }
+
+        });
+
+        
+
+        details::check_queue_is_valid(*compute_queue);
+        details::check_queue_is_valid(*alt_queue);
+    }
+
+
+    void start_sycl(u32 alt_id, u32 compute_id){
+        //start sycl
+
+        if(bool(compute_queue) && bool(alt_queue)){
+            throw ShamsysInstanceException("Sycl is already initialized");
+        }
+
+        if(world_rank == 0){
+            logger::debug_ln("Sys", "start sycl queues ...");
+        }
+
+        init_queues(alt_id, compute_id);
+
+    }
+
+    void start_sycl_auto(std::string search_key){
+        //start sycl
+
+        if(bool(compute_queue) && bool(alt_queue)){
+            throw ShamsysInstanceException("Sycl is already initialized");
+        }
+
+
+        init_queues_auto(search_key);
+
+    }
 
 
     ////////////////////////////
@@ -457,5 +652,173 @@ namespace shamsys::instance {
     ////////////////////////////
 
 
+    std::string get_process_name(){
+
+        // Get the name of the processor
+        char processor_name[MPI_MAX_PROCESSOR_NAME];
+        int name_len;
+
+        int err_code = mpi::get_processor_name(processor_name, &name_len);
+
+        if(err_code != MPI_SUCCESS){
+            throw ShamsysInstanceException("failed getting the process name");
+        }
+        
+        return std::string(processor_name);
+    }
+
+
+    void print_mpi_capabilities(){
+        shamsys::mpi_features::print_mpi_capabilities();
+    }
+
+
+    bool dgpu_mode = false;
+    bool dgpu_capable = false;
+    void check_dgpu_available(){
+
+        dgpu_capable = false;
+
+        enum backenddevice{
+            CUDA, ROCM, Unknown, OpenMP
+        } backend = Unknown;
+
+        std::string pname = get_compute_queue()
+            .get_device()
+            .get_platform()
+            .get_info<sycl::info::platform::name>();
+
+        if(shambase::contain_substr(pname, "CUDA")){backend = CUDA;}
+        if(shambase::contain_substr(pname, "NVIDIA")){backend = CUDA;}
+        if(shambase::contain_substr(pname, "ROCM")){backend = ROCM;}
+        if(shambase::contain_substr(pname, "AMD")){backend = ROCM;}
+        if(shambase::contain_substr(pname, "OpenMP")){backend = OpenMP;}
+
+        if((shamsys::mpi_features::mpi_cuda_aware == mpi_features::Yes) && backend == CUDA){
+            dgpu_capable = true;
+        }
+
+        if((shamsys::mpi_features::mpi_rocm_aware == mpi_features::Yes) && backend == ROCM){
+            dgpu_capable = true;
+        }
+
+        if(backend == OpenMP){
+            dgpu_capable = true;
+        }
+
+        using namespace terminal_effects::colors_foreground_8b;
+        if(dgpu_capable){
+            logger::raw_ln(" - MPI use Direct Comm :",green + "Yes"+ terminal_effects::reset);
+        }else{
+            logger::raw_ln(" - MPI use Direct Comm :",red + "No"+ terminal_effects::reset);
+        }
+        dgpu_mode = dgpu_capable;
+    }
+
+    void force_direct_gpu_mode(bool force){
+        if(force != dgpu_capable){
+            if(world_rank == 0){
+                logger::warn_ln("Sys", "you are forcing the Direct comm mode to :", force, "it might no work");
+            }
+            dgpu_mode = dgpu_capable;
+        }
+    }
+
+    bool is_direct_gpu_selected(){
+        return dgpu_mode;
+    }
+
+
+
+    bool validate_comm(shamsys::CommunicationProtocol prot){
+
+        u32 nbytes = 1e5;
+        sycl::buffer<u8> buf_comp (nbytes);
+
+        {
+            sycl::host_accessor acc1 {buf_comp, sycl::write_only, sycl::no_init};
+            for(u32 i = 0; i < nbytes; i++){
+                acc1[i] = i%100;
+            }
+        }
+
+        shamsys::CommunicationBuffer cbuf {buf_comp, prot};
+        shamsys::CommunicationBuffer cbuf_recv {nbytes, prot};
+
+        MPI_Request rq1, rq2;
+        if(world_rank == world_size -1){
+            MPI_Isend(cbuf.get_ptr(), nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, &rq1);
+        }
+
+        if(world_rank == 0){
+            MPI_Irecv(cbuf_recv.get_ptr(), nbytes, MPI_BYTE, world_size -1, 0, MPI_COMM_WORLD, &rq2);
+        }
+
+        if(world_rank == world_size -1){
+            MPI_Wait(&rq1, MPI_STATUS_IGNORE);
+        }
+
+        if(world_rank == 0){
+            MPI_Wait(&rq2, MPI_STATUS_IGNORE);
+        }
+
+        sycl::buffer<u8> recv = shamsys::CommunicationBuffer::convert(std::move(cbuf_recv));
+
+
+        bool valid = true;
+
+        if(world_rank == 0){
+            sycl::host_accessor acc1 {buf_comp};
+            sycl::host_accessor acc2 {recv};
+
+            std::string id_err_list = "errors in id : ";
+
+            bool eq = true;
+            for(u32 i = 0; i < recv.size(); i++){
+                if(!shambase::vec_equals(acc1[i] , acc2[i])){
+                    eq = false;
+                    //id_err_list += std::to_string(i) + " ";
+                }
+            }
+
+            valid = eq;
+        }
+
+
+        return valid;
+    }
+
+    void validate_comm(){
+        u32 nbytes = 1e5;
+        sycl::buffer<u8> buf_comp (nbytes);
+
+        bool call_abort = false;
+
+        using namespace terminal_effects::colors_foreground_8b;
+        if(dgpu_mode){
+            if(validate_comm(shamsys::DirectGPU)){
+                if(world_rank == 0) logger::raw_ln(" - MPI use Direct Comm :",green + "Working"+ terminal_effects::reset);
+            }else{
+                if(world_rank == 0)logger::raw_ln(" - MPI use Direct Comm :",red + "Fail"+ terminal_effects::reset);
+                if(world_rank == 0)logger::err_ln("Sys", "the select comm mode failed, try forcing dgpu mode off");
+                call_abort = true;
+            }
+        }else{
+            if(validate_comm(shamsys::CopyToHost)){
+                if(world_rank == 0)logger::raw_ln(" - MPI use Copy to Host :",green + "Working"+ terminal_effects::reset);
+            }else{
+                if(world_rank == 0)logger::raw_ln(" - MPI use Copy to Host :",red + "Fail"+ terminal_effects::reset);
+                call_abort = true;
+            }
+        }
+
+        mpi::barrier(MPI_COMM_WORLD);
+
+        if(call_abort){
+            MPI_Abort(MPI_COMM_WORLD, 26);
+        }
+    }
+
+    
 
 }

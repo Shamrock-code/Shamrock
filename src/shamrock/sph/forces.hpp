@@ -54,8 +54,19 @@ namespace shamrock::sph {
         vec nabla_Wab_hb
     ) {
 
-        return sph_pressure_symetric_av<vec,flt>(
-            m_b, rho_a_sq, rho_b_sq, P_a, P_b, omega_a, omega_b, 0, 0, nabla_Wab_ha, nabla_Wab_hb);
+        flt sub_fact_a = rho_a_sq * omega_a;
+        flt sub_fact_b = rho_b_sq * omega_b;
+
+        vec acc_a = ((P_a) / (sub_fact_a)) * nabla_Wab_ha;
+        vec acc_b = ((P_b) / (sub_fact_b)) * nabla_Wab_hb;
+
+        if (sub_fact_a == 0)
+            acc_a = {0, 0, 0};
+        if (sub_fact_b == 0)
+            acc_b = {0, 0, 0};
+
+        return -m_b * (acc_a + acc_b);
     }
+
 
 } // namespace shamrock::sph

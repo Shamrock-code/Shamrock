@@ -237,14 +237,20 @@ template<class T> class PdatField_insert;
 
 template<class T> void PatchDataField<T>::insert(PatchDataField<T> &f2){
 
+    logger::debug_sycl_ln("PatchDataField", "expand field buf");
     const u32 old_val_cnt = size();//field_data.size();
     expand(f2.obj_cnt);
 
+    logger::debug_sycl_ln("PatchDataField", "write values");
     shamsys::instance::get_compute_queue().submit([&] (sycl::handler& cgh) {
         
         const u32 idx_st = old_val_cnt;
-        sycl::accessor acc {*get_buf(), cgh};
-        sycl::accessor acc_f2 {*f2.get_buf(), cgh};
+
+        //This is triggering a warning in OpenSycl when the buffer was just allocated
+        // TODO fix the warning
+        sycl::accessor acc {*get_buf(), cgh, sycl::write_only}; 
+
+        sycl::accessor acc_f2 {*f2.get_buf(), cgh, sycl::read_only};
 
         cgh.parallel_for<PdatField_insert<T>>(sycl::range<1>{f2.size()}, [=](sycl::id<1> idx){
             acc[idx_st + idx] = acc_f2[idx];
@@ -412,6 +418,22 @@ template<class T> shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum()
         shambase::get_check_ref(buf.get_buf()), 
         0, 
         obj_cnt*nvar);
+
+}
+
+template<class T> bool PatchDataField<T>::has_nan(){StackEntry stack_loc{};
+
+    return shamalgs::reduction::has_nan(shamsys::instance::get_compute_queue(),shambase::get_check_ref(get_buf()), size());
+
+}
+template<class T> bool PatchDataField<T>::has_inf(){StackEntry stack_loc{};
+
+    return shamalgs::reduction::has_inf(shamsys::instance::get_compute_queue(),shambase::get_check_ref(get_buf()), size());
+
+}
+template<class T> bool PatchDataField<T>::has_nan_or_inf(){StackEntry stack_loc{};
+
+    return shamalgs::reduction::has_nan_or_inf(shamsys::instance::get_compute_queue(),shambase::get_check_ref(get_buf()), size());
 
 }
 

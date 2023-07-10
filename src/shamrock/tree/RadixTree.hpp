@@ -41,51 +41,52 @@
 
 
 
-
-template<class morton_t,class pos_t, u32 dim>
+/**
+ * @brief The radix tree
+ * 
+ * @tparam Umorton the morton representation
+ * @tparam Tvec The position representation
+ */
+template<class Umorton,class Tvec>
 class RadixTree{
 
-    //utility lambda to get the tree depth
-    static constexpr auto get_tree_depth = []() -> u32 {
-        if constexpr (std::is_same<morton_t,u32>::value){return 32;}
-        if constexpr (std::is_same<morton_t,u64>::value){return 64;}
-        return 0;
-    };
+    static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+
+    using Morton = shamrock::sfc::MortonCodes<Umorton, 3>;
 
     static constexpr bool pos_is_int = 
-        std::is_same<pos_t, u16_3>::value ||
-        std::is_same<pos_t, u32_3>::value ||
-        std::is_same<pos_t, u64_3>::value ||
-        std::is_same<pos_t, i16_3>::value ||
-        std::is_same<pos_t, i32_3>::value ||
-        std::is_same<pos_t, i64_3>::value;
+        std::is_same<Tvec, u16_3>::value ||
+        std::is_same<Tvec, u32_3>::value ||
+        std::is_same<Tvec, u64_3>::value ||
+        std::is_same<Tvec, i16_3>::value ||
+        std::is_same<Tvec, i32_3>::value ||
+        std::is_same<Tvec, i64_3>::value;
 
     static constexpr bool pos_is_float = 
-        std::is_same<pos_t, f32_3>::value ||
-        std::is_same<pos_t, f64_3>::value;
+        std::is_same<Tvec, f32_3>::value ||
+        std::is_same<Tvec, f64_3>::value;
 
     RadixTree() = default;
 
-    using Morton = shamrock::sfc::MortonCodes<morton_t, 3>;
 
     public:
 
-    using ipos_t = typename shamrock::sfc::MortonCodes<morton_t, dim>::int_vec_repr;
-    using coord_t = typename shambase::VectorProperties<pos_t>::component_type;
+    using ipos_t = typename shamrock::sfc::MortonCodes<Umorton, dim>::int_vec_repr;
+    using coord_t = typename shambase::VectorProperties<Tvec>::component_type;
 
-    static constexpr u32 tree_depth = get_tree_depth();
+    static constexpr u32 tree_depth = Morton::significant_bits +1;
 
-    std::tuple<pos_t,pos_t> bounding_box;
+    std::tuple<Tvec,Tvec> bounding_box;
 
 
     //build by the RadixTreeMortonBuilder
-    shamrock::tree::TreeMortonCodes<morton_t> tree_morton_codes; 
-    shamrock::tree::TreeReducedMortonCodes<morton_t> tree_reduced_morton_codes;
+    shamrock::tree::TreeMortonCodes<Umorton> tree_morton_codes; 
+    shamrock::tree::TreeReducedMortonCodes<Umorton> tree_reduced_morton_codes;
 
     //Karras alg
-    shamrock::tree::TreeStructure<morton_t> tree_struct;
+    shamrock::tree::TreeStructure<Umorton> tree_struct;
 
-    shamrock::tree::TreeCellRanges<morton_t, pos_t> tree_cell_ranges;
+    shamrock::tree::TreeCellRanges<Umorton, Tvec> tree_cell_ranges;
 
     inline bool is_tree_built(){
         return tree_struct.is_built();
@@ -128,11 +129,11 @@ class RadixTree{
 
     
 
-    inline std::unique_ptr<sycl::buffer<morton_t>> build_new_morton_buf(sycl::buffer<pos_t> & pos_buf, u32 obj_cnt){
+    inline std::unique_ptr<sycl::buffer<Umorton>> build_new_morton_buf(sycl::buffer<Tvec> & pos_buf, u32 obj_cnt){
 
         return tree_morton_codes.build_raw(
             shamsys::instance::get_compute_queue(), 
-            shammath::CoordRange<pos_t>{bounding_box}, 
+            shammath::CoordRange<Tvec>{bounding_box}, 
             obj_cnt, 
             pos_buf);
     }
@@ -141,15 +142,15 @@ class RadixTree{
 
     RadixTree(
         sycl::queue & queue,
-        std::tuple<pos_t,pos_t> treebox,
-        const std::unique_ptr<sycl::buffer<pos_t>> & pos_buf, 
+        std::tuple<Tvec,Tvec> treebox,
+        const std::unique_ptr<sycl::buffer<Tvec>> & pos_buf, 
         u32 cnt_obj, 
         u32 reduc_level);
 
     RadixTree(
         sycl::queue & queue,
-        std::tuple<pos_t,pos_t> treebox,
-        sycl::buffer<pos_t> & pos_buf, 
+        std::tuple<Tvec,Tvec> treebox,
+        sycl::buffer<Tvec> & pos_buf, 
         u32 cnt_obj, 
         u32 reduc_level);
 
@@ -229,7 +230,7 @@ class RadixTree{
 
 
     struct CuttedTree{
-        RadixTree<morton_t, pos_t, dim> rtree;
+        RadixTree<Umorton, Tvec> rtree;
         std::unique_ptr<sycl::buffer<u32>> new_node_id_to_old;
 
         std::unique_ptr<sycl::buffer<u32>> pdat_extract_id;
@@ -306,9 +307,9 @@ class RadixTree{
 
 
 
-template<class u_morton,class vec3, u32 dim>
+template<class u_morton,class vec3>
 template<class T, class LambdaComputeLeaf, class LambdaCombinator>
-inline typename RadixTree<u_morton, vec3,dim>::template RadixTreeField<T> RadixTree<u_morton, vec3, dim>::compute_field(sycl::queue & queue,u32 nvar,
+inline typename RadixTree<u_morton, vec3>::template RadixTreeField<T> RadixTree<u_morton, vec3>::compute_field(sycl::queue & queue,u32 nvar,
 
     LambdaComputeLeaf && compute_leaf, LambdaCombinator && combine) const{
 
@@ -396,9 +397,9 @@ inline typename RadixTree<u_morton, vec3,dim>::template RadixTreeField<T> RadixT
 
 
 
-template<class u_morton,class vec3, u32 dim>
+template<class u_morton,class vec3>
 template<class LambdaForEachCell>
-inline std::pair<std::set<u32>, std::set<u32>> RadixTree<u_morton, vec3, dim>::get_walk_res_set(LambdaForEachCell && interact_cd) const {
+inline std::pair<std::set<u32>, std::set<u32>> RadixTree<u_morton, vec3>::get_walk_res_set(LambdaForEachCell && interact_cd) const {
 
 
     std::set<u32> leaf_list;
@@ -467,9 +468,9 @@ inline std::pair<std::set<u32>, std::set<u32>> RadixTree<u_morton, vec3, dim>::g
 
 
 
-template<class u_morton,class vec3, u32 dim>
+template<class u_morton,class vec3>
 template<class LambdaForEachCell> 
-inline void RadixTree<u_morton, vec3, dim>::for_each_leaf(sycl::queue & queue, LambdaForEachCell && par_for_each_cell) const {
+inline void RadixTree<u_morton, vec3>::for_each_leaf(sycl::queue & queue, LambdaForEachCell && par_for_each_cell) const {
 
 
     queue.submit([&](sycl::handler &cgh) {
@@ -570,8 +571,8 @@ inline void RadixTree<u_morton, vec3, dim>::for_each_leaf(sycl::queue & queue, L
 }
 
 
-template<class u_morton,class vec3, u32 dim>
-inline auto RadixTree<u_morton, vec3, dim>::get_min_max_cell_side_lenght() -> std::tuple<coord_t,coord_t>{
+template<class u_morton,class vec3>
+inline auto RadixTree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::tuple<coord_t,coord_t>{
 
     u32 len = tree_reduced_morton_codes.tree_leaf_count;
 
@@ -631,7 +632,7 @@ namespace tree_comm {
     template<class u_morton,class vec3>
     class RadixTreeMPIRequest{public:
         template<class T> using Request = mpi_sycl_interop::BufferMpiRequest<T>;
-        using RTree = RadixTree<u_morton,vec3,3>;
+        using RTree = RadixTree<u_morton,vec3>;
 
         mpi_sycl_interop::comm_type comm_mode;
         mpi_sycl_interop::op_type comm_op;
@@ -694,7 +695,7 @@ namespace tree_comm {
 
 
     template<class u_morton,class vec3>
-    inline u64 comm_isend(RadixTree<u_morton,vec3,3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_dest, 
+    inline u64 comm_isend(RadixTree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_dest, 
             i32 tag,
             MPI_Comm comm){
 
@@ -733,7 +734,7 @@ namespace tree_comm {
 
 
     template<class u_morton,class vec3>
-    inline u64 comm_irecv_probe(RadixTree<u_morton,vec3,3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_source, 
+    inline u64 comm_irecv_probe(RadixTree<u_morton,vec3> &rtree, std::vector<RadixTreeMPIRequest<u_morton,vec3>> & rqs,i32 rank_source, 
             i32 tag,
             MPI_Comm comm){
 
@@ -824,13 +825,13 @@ namespace walker {
         sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_min_cell  ;
         sycl::accessor<vec3,1,sycl::access::mode::read,sycl::target::device>  pos_max_cell  ;
 
-        static constexpr u32 tree_depth = RadixTree<u_morton,vec3,3>::tree_depth;
+        static constexpr u32 tree_depth = RadixTree<u_morton,vec3>::tree_depth;
         static constexpr u32 _nindex = 4294967295;
 
         u32 leaf_offset;
 
         
-        Radix_tree_accessor(RadixTree< u_morton,  vec3,3> & rtree,sycl::handler & cgh):
+        Radix_tree_accessor(RadixTree< u_morton,  vec3> & rtree,sycl::handler & cgh):
             particle_index_map(rtree.tree_morton_codes.buf_particle_index_map-> template get_access<sycl::access::mode::read>(cgh)),
             cell_index_map(rtree.tree_reduced_morton_codes.buf_reduc_index_map-> template get_access<sycl::access::mode::read>(cgh)),
             rchild_id     (rtree.tree_struct.buf_rchild_id  -> template get_access<sycl::access::mode::read>(cgh)),

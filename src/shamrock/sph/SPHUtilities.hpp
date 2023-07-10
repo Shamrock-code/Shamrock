@@ -8,9 +8,11 @@
 
 #pragma once
 
-#include "shammodels/BasicSPHGhosts.hpp"
+#include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/sph/sphpart.hpp"
+#include "shamrock/tree/RadixTree.hpp"
+#include "shamrock/tree/TreeTraversal.hpp"
 
 namespace shammodels::sph {
 
@@ -37,7 +39,7 @@ namespace shammodels::sph {
             sycl::buffer<flt> &hold,
             sycl::buffer<flt> &eps_h,
             sycl::range<1> update_range,
-            RadixTree<u_morton, vec, 3> &tree,
+            RadixTree<u_morton, vec> &tree,
 
             flt gpart_mass,
             flt h_evol_max,
@@ -116,7 +118,7 @@ namespace shammodels::sph {
             sycl::buffer<flt> &hold,
             sycl::buffer<flt> &eps_h,
             sycl::range<1> update_range,
-            RadixTree<u_morton, vec, 3> &tree,
+            RadixTree<u_morton, vec> &tree,
 
             flt gpart_mass,
             flt h_evol_max,

@@ -329,9 +329,9 @@ inline void patch_data_field_exchange_object(
 template<class u_morton, class vec3>
 inline void radix_tree_exchange_object(
     std::vector<shamrock::patch::Patch> & global_patch_list,
-    std::vector<std::unique_ptr<RadixTree<u_morton, vec3,3>>> &send_comm_pdat,
+    std::vector<std::unique_ptr<RadixTree<u_morton, vec3>>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
-    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<RadixTree<u_morton, vec3,3>>>>> & recv_obj
+    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<RadixTree<u_morton, vec3>>>>> & recv_obj
     ){StackEntry stack_loc{};
 
         using namespace shamrock::patch;
@@ -401,7 +401,7 @@ inline void radix_tree_exchange_object(
                     // std::cout << format("recv (%3d,%3d) : %d -> %d / %d\n", psend.id_patch, precv.id_patch,
                     //                     psend.node_owner_id, precv.node_owner_id, global_comm_tag[i]);
                     recv_obj[precv.id_patch].push_back(
-                        {psend.id_patch, std::make_unique<RadixTree<u_morton, vec3,3>>(RadixTree<u_morton, vec3,3>::make_empty())}); // patchdata_irecv(recv_rq, psend.node_owner_id,
+                        {psend.id_patch, std::make_unique<RadixTree<u_morton, vec3>>(RadixTree<u_morton, vec3>::make_empty())}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                                                           // global_comm_tag[i], MPI_COMM_WORLD)}
                     tree_comm::comm_irecv_probe(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                     rq_lst, psend.node_owner_id, global_comm_tag[i], MPI_COMM_WORLD);

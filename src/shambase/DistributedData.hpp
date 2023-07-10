@@ -145,5 +145,9 @@ namespace shambase {
         inline void reset(){
             data.clear();
         }
+
+        inline bool is_empty(){
+            return data.empty();
+        }
     };
 } // namespace shambase

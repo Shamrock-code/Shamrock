@@ -13,15 +13,13 @@
 #include "shambase/sycl.hpp"
 namespace shamrock::sph {
 
-    constexpr f64 default_hfact = 1.2;
-
     template<class flt>
-    inline flt rho_h(flt m, flt h, flt hfact = default_hfact) {
+    inline flt rho_h(flt m, flt h,flt hfact) {
         return m * (hfact / h) * (hfact / h) * (hfact / h);
     }
 
     template<class flt, i32 dim = 3>
-    inline flt h_rho(flt m, flt rho, flt hfact = default_hfact) {
+    inline flt h_rho(flt m, flt rho,flt hfact) {
         return hfact / sycl::rootn(rho / m, dim);
     }
 

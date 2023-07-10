@@ -171,4 +171,16 @@ namespace shambase {
 
     }
 
+    /**
+     * @brief check if s2 in s1
+     * 
+     * @param s1 
+     * @param s2 
+     * @return true 
+     * @return false 
+     */
+    inline bool contain_substr(std::string str, std::string what){
+        return (str.find(what) != std::string::npos);
+    }
+
 } // namespace shambase

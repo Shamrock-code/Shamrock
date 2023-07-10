@@ -24,7 +24,7 @@ TestStart(Unittest, "shamrock/tree/RadixTree::serialize", testradixtreeserialize
 
     using u_morton = u32;
 
-    RadixTree<u_morton, f32_3, 3> tree (
+    RadixTree<u_morton, f32_3> tree (
         q, 
         {range_coord.lower, range_coord.upper},
         buf, 
@@ -39,7 +39,7 @@ TestStart(Unittest, "shamrock/tree/RadixTree::serialize", testradixtreeserialize
     {
         shamalgs::SerializeHelper ser2(std::move(recov));
 
-        RadixTree<u_morton, f32_3, 3> outser = RadixTree<u_morton, f32_3, 3>::deserialize(ser2);
+        RadixTree<u_morton, f32_3> outser = RadixTree<u_morton, f32_3>::deserialize(ser2);
 
         shamtest::asserts().assert_bool("input match out", outser == tree);
     }

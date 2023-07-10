@@ -13,6 +13,7 @@
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/vectors.hpp"
+#include "intervals.hpp"
 
 #include <limits>
 
@@ -72,6 +73,10 @@ namespace shammath {
                 shambase::sycl_utils::g_sycl_min(lower, other.lower),
                 shambase::sycl_utils::g_sycl_max(upper, other.upper)
                 };
+        }
+
+        inline bool contain_pos(T pos){
+            return is_in_half_open(pos,lower,upper);
         }
 
         inline bool is_not_empty(){

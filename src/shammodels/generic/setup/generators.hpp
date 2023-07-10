@@ -12,6 +12,11 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shamalgs/random/random.hpp"
+#include "shambase/type_aliases.hpp"
+#include "shambase/sycl.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 
 namespace generic::setup::generators {
 
@@ -62,7 +67,7 @@ namespace generic::setup::generators {
         u32 j = iboc_dim.y();
         u32 k = iboc_dim.z();
 
-        std::cout << "get_ideal_box_idim :" << i << " " << j << " " << k << std::endl;
+        //std::cout << "get_ideal_box_idim :" << i << " " << j << " " << k << std::endl;
 
         i -= i%2;
         j -= j%2;
@@ -99,11 +104,13 @@ namespace generic::setup::generators {
                 2*sycl::sqrt(6.)/3
             }))/r_particle;
 
-        std::cout << "part box size : (" << iboc_dim.x() << ", " << iboc_dim.y() << ", " << iboc_dim.z() << ")" << std::endl;
+        //std::cout << "part box size : (" << iboc_dim.x() << ", " << iboc_dim.y() << ", " << iboc_dim.z() << ")" << std::endl;
         u32 ix = std::ceil(iboc_dim.x());
         u32 iy = std::ceil(iboc_dim.y());
         u32 iz = std::ceil(iboc_dim.z());
-        std::cout << "part box size : (" << ix << ", " << iy << ", " << iz << ")" << std::endl;
+
+        if(shamsys::instance::world_rank == 0) logger::info_ln("SPH", "Add fcc lattice size : (",ix,iy,iz,")");
+        //std::cout << "part box size : (" << ix << ", " << iy << ", " << iz << ")" << std::endl;
 
         if((iy % 2) != 0 && (iz % 2) != 0){
             std::cout << "Warning : particle count is odd on axis y or z -> this may lead to periodicity issues";
@@ -127,6 +134,69 @@ namespace generic::setup::generators {
                 }
             }
         }
+
+
+    }
+
+
+    /**
+     * @brief 
+     * 
+     * @tparam flt 
+     * @tparam Tpred_pusher 
+     * @param Npart number of particles
+     * @param p randial power law surface density (default = 1)  sigma prop r^-p
+     * @param rho_0 rho_0 volumic density (at r = 1)
+     * @param m mass part
+     * @param r_in inner cuttof
+     * @param r_out outer cuttof
+     * @param q T prop r^-q
+     */
+    template<class flt,class Tpred_pusher>
+    inline void add_disc(
+        u32 Npart,
+        flt p,
+        flt rho_0,
+        flt m,
+        flt r_in,
+        flt r_out,
+        flt q,
+        Tpred_pusher && part_pusher 
+    ){
+        flt _2pi = 2*M_PI;
+
+
+        flt K = _2pi*rho_0/m;
+        flt c = 2-p;
+
+        flt y = K*(r_out-r_in)/c;
+        
+
+        std::mt19937 eng(0x111);
+
+        for(u32 i = 0 ;i < Npart; i++){
+
+            flt r_1 = shamalgs::random::mock_value<flt>(eng,0, y);
+            flt r_2 = shamalgs::random::mock_value<flt>(eng,0, _2pi);
+            flt r_3 = shamalgs::random::mock_value<flt>(eng,0, 1);
+            flt r_4 = shamalgs::random::mock_value<flt>(eng,0, 1);
+
+            flt r = sycl::pow(
+                sycl::pow(r_in, c) + c*r_1/K ,
+                1/c);
+            
+            flt theta = r_2;
+
+            flt u = sycl::sqrt(-2*sycl::log(r_3))*sycl::cos(_2pi*r_4);
+
+            flt H = 0.1*sycl::pow(r,(flt)(3./2. - q/2));
+
+            part_pusher(
+                sycl::vec<flt, 3>({r*sycl::cos(theta),u*H,r*sycl::sin(theta)}), 
+                0.1);
+
+        }
+
 
 
     }

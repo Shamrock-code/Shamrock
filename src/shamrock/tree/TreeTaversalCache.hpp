@@ -201,7 +201,9 @@ namespace shamrock::tree {
         inline void reset() {
             last_device_builds.clear();
             cache.reset();
+            cache_offload.reset();
             current_device_memsize = 0;
+            current_host_memsize = 0;
         }
     };
 

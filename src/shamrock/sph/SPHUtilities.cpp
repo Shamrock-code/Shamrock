@@ -7,6 +7,8 @@
 // -------------------------------------------------------//
 
 #include "SPHUtilities.hpp"
+#include "shamrock/tree/TreeTraversal.hpp"
+#include "shamrock/sph/kernels.hpp"
 
 using namespace shamrock::sph;
 
@@ -79,7 +81,7 @@ namespace shammodels::sph {
 
                     using namespace shamrock::sph;
 
-                    flt rho_ha = rho_h(part_mass, h_a);
+                    flt rho_ha = rho_h(part_mass, h_a,SPHKernel::hfactd);
                     flt new_h  = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                     if (new_h < h_a * h_max_evol_m)
@@ -98,7 +100,7 @@ namespace shammodels::sph {
                     }
                 }
             });
-        });
+        }).wait();
     }
 
     template<class vec, class SPHKernel, class u_morton>
@@ -108,7 +110,7 @@ namespace shammodels::sph {
         sycl::buffer<flt> &hold,
         sycl::buffer<flt> &eps_h,
         sycl::range<1> update_range,
-        RadixTree<u_morton, vec, 3> &tree,
+        RadixTree<u_morton, vec> &tree,
 
         flt gpart_mass,
         flt h_evol_max,
@@ -167,7 +169,7 @@ namespace shammodels::sph {
 
                     using namespace shamrock::sph;
 
-                    flt rho_ha = rho_h(part_mass, h_a);
+                    flt rho_ha = rho_h(part_mass, h_a,SPHKernel::hfactd);
                     flt new_h  = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                     if (new_h < h_a * h_max_evol_m)
@@ -186,7 +188,7 @@ namespace shammodels::sph {
                     }
                 }
             });
-        });
+        }).wait();
     }
 
     template<class vec, class SPHKernel>
@@ -243,14 +245,14 @@ namespace shammodels::sph {
 
                 using namespace shamrock::sph;
 
-                flt rho_ha  = rho_h(part_mass, h_a);
+                flt rho_ha  = rho_h(part_mass, h_a,SPHKernel::hfactd);
                 flt omega_a = 1 + (h_a / (3 * rho_ha)) * part_omega_sum;
                 omega[id_a] = omega_a;
 
                 // logger::raw(shambase::format("pmass {}, rho_a {}, omega_a {}\n",
                 // part_mass,rho_ha, omega_a));
             });
-        });
+        }).wait();
     }
 
     template class SPHUtilities<f64_3, kernels::M4<f64>>;

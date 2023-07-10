@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shammodels/sph/models/basic_sph_gas_uint.hpp"
+#include "shammodels/sph/legacy/models/basic_sph_gas_uint.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <variant>
 

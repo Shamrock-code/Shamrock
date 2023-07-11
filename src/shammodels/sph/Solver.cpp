@@ -154,7 +154,7 @@ void SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
 
     logger::debug_ln("SphSolver", "apply position boundary");
@@ -184,12 +184,12 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
     }
 
     reatrib.reatribute_patch_objects(storage.serial_patch_tree.get(), "xyz");
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::build_ghost_cache() {
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
 
     using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
@@ -197,7 +197,7 @@ void SPHSolve<Tvec, Kern>::build_ghost_cache() {
 
     storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
         storage.ghost_handler.get(), storage.serial_patch_tree.get(), htol_up_tol));
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 template<class Tvec, template<class> class Kern>
@@ -208,17 +208,17 @@ void SPHSolve<Tvec, Kern>::clear_ghost_cache() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::merge_position_ghost() {
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
 
     storage.merged_xyzh.set(
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
 
     SPHSolverImpl solver(context);
@@ -226,7 +226,7 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
     constexpr u32 reduc_level = 3;
     auto &merged_xyzh         = storage.merged_xyzh.get();
     storage.merged_pos_trees.set(solver.make_merge_patch_trees(merged_xyzh, reduc_level));
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 template<class Tvec, template<class> class Kern>
@@ -237,7 +237,7 @@ void SPHSolve<Tvec, Kern>::clear_merged_pos_trees() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
     using namespace shamrock::patch;
     PatchDataLayout &pdl = scheduler().pdl;
@@ -262,7 +262,7 @@ void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 template<class Tvec, template<class> class Kern>
@@ -424,7 +424,7 @@ void SPHSolve<Tvec, Kern>::init_ghost_layout() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
-shamsys::instance::get_compute_queue().wait();
+
     StackEntry stack_loc{};
 
     auto &xyzh_merged = storage.merged_xyzh.get();
@@ -436,7 +436,7 @@ shamsys::instance::get_compute_queue().wait();
             return rtree.compute_int_boxes(
                 shamsys::instance::get_compute_queue(), tmp.field_hpart.get_buf(), htol_up_tol);
         }));
-        shamsys::instance::get_compute_queue().wait();
+        
 }
 
 template<class Tvec, template<class> class Kern>
@@ -446,7 +446,7 @@ void SPHSolve<Tvec, Kern>::reset_presteps_rint() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
 
     // do cache
@@ -600,7 +600,7 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         storage.neighbors_cache.get().preload(cur_p.id_patch);
     });
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 template<class Tvec, template<class> class Kern>
@@ -610,7 +610,7 @@ void SPHSolve<Tvec, Kern>::reset_neighbors_cache() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -708,7 +708,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 mpdat.total_elements += pdat_interf.get_obj_cnt();
                 mpdat.pdat.insert_elements(pdat_interf);
             }));
-            shamsys::instance::get_compute_queue().wait();
+            
 }
 
 template<class Tvec, template<class> class Kern>
@@ -722,10 +722,10 @@ void SPHSolve<Tvec, Kern>::reset_merge_ghosts_fields() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
-shamsys::instance::get_compute_queue().wait();
+
     sph::modules::UpdateViscosity<Tvec, Kern>(context, solver_config, storage)
         .update_artificial_viscosity(dt);
-        shamsys::instance::get_compute_queue().wait();
+        
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -734,7 +734,7 @@ shamsys::instance::get_compute_queue().wait();
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_eos_fields() {
-    shamsys::instance::get_compute_queue().wait();
+    
     NamedStackEntry stack_loc{"compute eos"};
 
     using namespace shamrock;
@@ -767,7 +767,7 @@ void SPHSolve<Tvec, Kern>::compute_eos_fields() {
             });
         });
     });
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 template<class Tvec, template<class> class Kern>
@@ -818,7 +818,7 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
 
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -1016,13 +1016,13 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
         });
     });
 
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -1227,14 +1227,14 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
         });
     });
 
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
 
-    shamsys::instance::get_compute_queue().wait();
+    
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -1439,7 +1439,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
         });
     });
 
-    shamsys::instance::get_compute_queue().wait();
+    
 }
 
 template<class Tvec, template<class> class Kern>

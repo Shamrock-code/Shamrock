@@ -14,7 +14,24 @@
 #include "shambase/sycl.hpp"
 #include <vector>
 
+namespace shambase {
 
+    template<class LambdaKernel>
+    inline void sycl_parralel_for(sycl::handler & cgh, u32 lenght, const u32 group_size, LambdaKernel && ker){
+
+        constexpr u32 gsize = 8;
+        u32 group_cnt = shambase::group_count(lenght, gsize);
+        u32 len =group_cnt*gsize;
+
+        cgh.parallel_for(sycl::nd_range<1>{len, gsize}, [=](sycl::nd_item<1> id){
+
+            u64 gid = id.get_global_linear_id();
+            if(gid >= lenght) return;
+
+            ker(gid);
+        });
+    }
+}
 
 TestStart(Analysis, "sycl/loop_perfs", syclloopperfs, 1){
 
@@ -84,11 +101,38 @@ TestStart(Analysis, "sycl/loop_perfs", syclloopperfs, 1){
         },5);
     }, 10, 1e9, exp_test);
 
+    shambase::BenchmarkResult res_shampar = shambase::benchmark_pow_len([&](u32 sz){
+        sycl::buffer<f32> buf{sz};
+
+        fill_buf(sz, buf);
+
+        constexpr u32 gsize = 8;
+        u32 group_cnt = shambase::group_count(sz, gsize);
+
+        u32 len =group_cnt*gsize;
+
+        return shambase::timeit([&](){
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor acc {buf, cgh, sycl::read_write};
+
+            shambase::sycl_parralel_for(cgh, sz, 256, [=](u64 gid){
+                auto tmp = acc[gid];
+                acc[gid] = tmp*tmp;
+            });
+
+        }).wait();
+
+        },5);
+    }, 10, 1e9, exp_test);
+
     PyScriptHandle hdnl{};
 
     hdnl.data()["x"] = res_parfor.counts;
     hdnl.data()["yparforbuf"] = res_parfor.times;
     hdnl.data()["yndrangeforbuf"] = res_ndrange.times;
+    hdnl.data()["yshamrockpar"] = res_shampar.times;
 
     hdnl.exec(R"(
         import matplotlib.pyplot as plt
@@ -102,11 +146,16 @@ TestStart(Analysis, "sycl/loop_perfs", syclloopperfs, 1){
         Y = np.array(yndrangeforbuf)
         plt.plot(X,Y/X,label = "ndrange for (buffer) ")
 
+        Y = np.array(yshamrockpar)
+        plt.plot(X,Y/X,label = "shamrock parralel for (buffer) ")
+
         plt.xlabel("s")
         plt.ylabel("N/t")
 
         plt.xscale('log')
         plt.yscale('log')
+
+        plt.legend()
 
         plt.savefig("tests/figures/perfparfor.pdf")
     )");

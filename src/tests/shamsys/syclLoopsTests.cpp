@@ -12,25 +12,52 @@
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shambase/sycl.hpp"
+#include "shambase/sycl_utils.hpp"
 #include <vector>
 
 namespace shambase {
 
-    template<class LambdaKernel>
-    inline void sycl_parralel_for(sycl::handler & cgh, u32 lenght, const u32 group_size, LambdaKernel && ker){
+    enum ParralelForWrapMode {
+        PARRALEL_FOR, ND_RANGE
+    };
 
-        constexpr u32 gsize = 8;
-        u32 group_cnt = shambase::group_count(lenght, gsize);
-        u32 len =group_cnt*gsize;
+    #ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR
+    constexpr ParralelForWrapMode default_loop_mode = PARRALEL_FOR;
+    #endif
 
-        cgh.parallel_for(sycl::nd_range<1>{len, gsize}, [=](sycl::nd_item<1> id){
+    #ifdef SHAMROCK_LOOP_DEFAULT_ND_RANGE
+    constexpr ParralelForWrapMode default_loop_mode = ND_RANGE;
+    #endif
 
-            u64 gid = id.get_global_linear_id();
-            if(gid >= lenght) return;
 
-            ker(gid);
-        });
+    template<ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
+    inline void parralel_for(sycl::handler & cgh, u32 lenght, const u32 group_size, LambdaKernel && ker){
+        
+        if constexpr(mode == PARRALEL_FOR){
+
+            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
+
+                u64 gid = id.get_global_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else if(mode==ND_RANGE){
+
+            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
+
+                u64 gid = id.get_global_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else{
+            throw_unimplemented();
+        }
     }
+
 }
 
 TestStart(Analysis, "sycl/loop_perfs", syclloopperfs, 1){
@@ -115,14 +142,14 @@ TestStart(Analysis, "sycl/loop_perfs", syclloopperfs, 1){
 
             shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
-            sycl::accessor acc {buf, cgh, sycl::read_write};
+                sycl::accessor acc {buf, cgh, sycl::read_write};
 
-            shambase::sycl_parralel_for(cgh, sz, 256, [=](u64 gid){
-                auto tmp = acc[gid];
-                acc[gid] = tmp*tmp;
-            });
+                shambase::parralel_for(cgh, sz, 256, [=](u64 gid){
+                    auto tmp = acc[gid];
+                    acc[gid] = tmp*tmp;
+                });
 
-        }).wait();
+            }).wait();
 
         },5);
     }, 10, 1e9, exp_test);

@@ -10,8 +10,23 @@ project(Shamrock CXX C)
 cmake_policy(SET CMP0079 NEW)
 cmake_policy(SET CMP0076 NEW)
 
+
+
+
+set(SHAMROCK_LOOP_DEFAULT "ND_RANGE" CACHE STRING "Default loop mode in shamrock")
+set_property(CACHE SHAMROCK_LOOP_DEFAULT PROPERTY STRINGS PARRALEL_FOR ND_RANGE)
+
+option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
+
+
+
+
+
+
 # Necessary for clangd to work properly
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+if(EXPORT_COMPILE_COMMANDS)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
 
 set(Default_comp "${CMAKE_CXX_COMPILER}")
 
@@ -73,7 +88,15 @@ if("${SyCL_Compiler}" STREQUAL "OPENSYCL")
 endif()
 
 
+######################
+#shamrock impl control
+######################
 
+if(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR")
+elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_ND_RANGE")
+endif()
 
 
 

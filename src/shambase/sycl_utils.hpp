@@ -9,6 +9,7 @@
 #pragma once
 
 #include "shambase/exception.hpp"
+#include "shambase/integer.hpp"
 #include "sycl_utils/sycl_utilities.hpp"
 #include "sycl_utils/vec_equals.hpp"
 #include "sycl_utils/vectorProperties.hpp"
@@ -49,6 +50,19 @@ namespace shambase {
         case sycl::info::device_type::accelerator: return "ACCELERATOR";
         default: return "UNKNOWN";
         }
+    }
+
+    /**
+     * @brief Generate a sycl nd range out of a group size and lenght
+     * 
+     * @param lenght max index value
+     * @param group_size group size
+     * @return sycl::nd_range<1> the sycl nd range
+     */
+    inline sycl::nd_range<1> make_range(u32 lenght, const u32 group_size = 32){
+        u32 group_cnt = shambase::group_count(lenght, group_size);
+        u32 len =group_cnt*group_size;
+        return sycl::nd_range<1>{len, group_size};
     }
 
 } // namespace shambase

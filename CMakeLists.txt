@@ -130,7 +130,7 @@ target_link_libraries(shamrock_lib PUBLIC fmt::fmt)
 
 
 if(SHAMROCK_USE_NVTX)
-    target_link_libraries(shamrock_lib PRIVATE nvtx3-cpp)
+    target_link_libraries(shamrock_lib PUBLIC nvtx3-cpp)
     target_compile_definitions(shamrock_lib PUBLIC SHAMROCK_USE_NVTX)
 endif()
 
@@ -160,7 +160,7 @@ if("${BUILD_SIM}")
     target_link_libraries(shamrock PUBLIC fmt::fmt)
 
     if(SHAMROCK_USE_NVTX)
-        target_link_libraries(shamrock PRIVATE nvtx3-cpp)
+        target_link_libraries(shamrock PUBLIC nvtx3-cpp)
         target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_NVTX)
     endif()
 
@@ -201,7 +201,7 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC fmt::fmt)
 
     if(SHAMROCK_USE_NVTX)
-        target_link_libraries(shamrock_test PRIVATE nvtx3-cpp)
+        target_link_libraries(shamrock_test PUBLIC nvtx3-cpp)
         target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_NVTX)
     endif()
 

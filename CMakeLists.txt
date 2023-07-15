@@ -35,6 +35,14 @@ message(STATUS "chosen compiler : ${SyCL_Compiler}")
 LIST(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
 LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 
+
+option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
+option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
+
+message("-- SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
+
+
+
 ######################
 #checking compiler flag support 
 ######################
@@ -143,6 +151,16 @@ endif()
 target_link_libraries(shamrock_lib PUBLIC MPI::MPI_C)
 target_link_libraries(shamrock_lib PUBLIC fmt::fmt)
 
+
+if(SHAMROCK_USE_NVTX)
+    target_link_libraries(shamrock_lib PUBLIC nvtx3-cpp)
+    target_compile_definitions(shamrock_lib PUBLIC SHAMROCK_USE_NVTX)
+endif()
+
+if(SHAMROCK_USE_PROFILING)
+    target_compile_definitions(shamrock_lib PUBLIC SHAMROCK_USE_PROFILING)
+endif()
+
 if("${BUILD_SIM}")
 
     message(">>> adding sph target <<<")
@@ -163,6 +181,16 @@ if("${BUILD_SIM}")
     
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
     target_link_libraries(shamrock PUBLIC fmt::fmt)
+
+    if(SHAMROCK_USE_NVTX)
+        target_link_libraries(shamrock PUBLIC nvtx3-cpp)
+        target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_NVTX)
+    endif()
+
+
+    if(SHAMROCK_USE_PROFILING)
+    target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_PROFILING)
+    endif()
 
     
 
@@ -194,6 +222,16 @@ if("${BUILD_TEST}")
 
     target_compile_definitions(shamrock_test PUBLIC EXECUTABLE_BUILD)
     target_link_libraries(shamrock_test PUBLIC fmt::fmt)
+
+    if(SHAMROCK_USE_NVTX)
+        target_link_libraries(shamrock_test PUBLIC nvtx3-cpp)
+        target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_NVTX)
+    endif()
+
+
+    if(SHAMROCK_USE_PROFILING)
+    target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_PROFILING)
+    endif()
 
     #find_package(nlohmann_json 3.2.0 REQUIRED)
     #target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)

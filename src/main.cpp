@@ -253,7 +253,9 @@ int main(int argc, char *argv[]) {
 
     }
 
+    #ifdef SHAMROCK_USE_PROFILING
     shambase::details::dump_profiling(shamsys::instance::world_rank);
+    #endif
 
     shamsys::instance::close();
 

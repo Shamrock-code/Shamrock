@@ -8,3 +8,6 @@
 [submodule "external/plf_nanotimer"]
 	path = external/plf_nanotimer
 	url = https://github.com/mattreecebentley/plf_nanotimer.git
+[submodule "external/NVTX"]
+	path = external/NVTX
+	url = https://github.com/NVIDIA/NVTX.git

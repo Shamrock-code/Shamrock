@@ -12,6 +12,10 @@
 #include "shambase/string.hpp"
 #include <stack>
 
+#ifdef SHAMROCK_USE_NVTX
+#include <nvtx3/nvtx3.hpp>
+#endif
+
 namespace shambase::details {
 
     void add_prof_entry(std::string n, bool is_start);
@@ -28,12 +32,18 @@ namespace shambase::details {
             if (do_timer)
                 add_prof_entry(loc.functionName, true);
             call_stack.emplace(loc);
+            #ifdef SHAMROCK_USE_NVTX
+            nvtxRangePush(loc.functionName);
+            #endif
         }
 
         inline ~BasicStackEntry() {
             if (do_timer)
                 add_prof_entry(call_stack.top().functionName, false);
             call_stack.pop();
+            #ifdef SHAMROCK_USE_NVTX
+            nvtxRangePop();
+            #endif
         }
     };
 
@@ -49,12 +59,18 @@ namespace shambase::details {
             if (do_timer)
                 add_prof_entry(name, true);
             call_stack.emplace(loc);
+            #ifdef SHAMROCK_USE_NVTX
+            nvtxRangePush(name.c_str());
+            #endif
         }
 
         inline ~NamedBasicStackEntry() {
             if (do_timer)
                 add_prof_entry(name, false);
             call_stack.pop();
+            #ifdef SHAMROCK_USE_NVTX
+            nvtxRangePop();
+            #endif
         }
     };
 

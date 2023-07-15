@@ -22,7 +22,9 @@ LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 
 
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
+option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
 
+message("-- SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 
 
 
@@ -132,6 +134,10 @@ if(SHAMROCK_USE_NVTX)
     target_compile_definitions(shamrock_lib PUBLIC SHAMROCK_USE_NVTX)
 endif()
 
+if(SHAMROCK_USE_PROFILING)
+    target_compile_definitions(shamrock_lib PUBLIC SHAMROCK_USE_PROFILING)
+endif()
+
 if("${BUILD_SIM}")
 
     message(">>> adding sph target <<<")
@@ -156,6 +162,11 @@ if("${BUILD_SIM}")
     if(SHAMROCK_USE_NVTX)
         target_link_libraries(shamrock PRIVATE nvtx3-cpp)
         target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_NVTX)
+    endif()
+
+
+    if(SHAMROCK_USE_PROFILING)
+    target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_PROFILING)
     endif()
 
     
@@ -192,6 +203,11 @@ if("${BUILD_TEST}")
     if(SHAMROCK_USE_NVTX)
         target_link_libraries(shamrock_test PRIVATE nvtx3-cpp)
         target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_NVTX)
+    endif()
+
+
+    if(SHAMROCK_USE_PROFILING)
+    target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_PROFILING)
     endif()
 
     #find_package(nlohmann_json 3.2.0 REQUIRED)

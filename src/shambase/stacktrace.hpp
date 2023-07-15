@@ -18,8 +18,10 @@
 
 namespace shambase::details {
 
+    #ifdef SHAMROCK_USE_PROFILING
     void add_prof_entry(std::string n, bool is_start);
     void dump_profiling(u32 world_rank);
+    #endif
 
     inline std::stack<SourceLocation> call_stack;
 
@@ -29,8 +31,10 @@ namespace shambase::details {
 
         inline BasicStackEntry(bool do_timer = true, SourceLocation &&loc = SourceLocation{})
             : loc(loc), do_timer(do_timer) {
+            #ifdef SHAMROCK_USE_PROFILING
             if (do_timer)
                 add_prof_entry(loc.functionName, true);
+            #endif
             call_stack.emplace(loc);
             #ifdef SHAMROCK_USE_NVTX
             nvtxRangePush(loc.functionName);
@@ -38,8 +42,10 @@ namespace shambase::details {
         }
 
         inline ~BasicStackEntry() {
+            #ifdef SHAMROCK_USE_PROFILING
             if (do_timer)
                 add_prof_entry(call_stack.top().functionName, false);
+            #endif
             call_stack.pop();
             #ifdef SHAMROCK_USE_NVTX
             nvtxRangePop();
@@ -56,8 +62,10 @@ namespace shambase::details {
                                     bool do_timer        = true,
                                     SourceLocation &&loc = SourceLocation{})
             : name(name), loc(loc), do_timer(do_timer) {
+            #ifdef SHAMROCK_USE_PROFILING
             if (do_timer)
                 add_prof_entry(name, true);
+            #endif
             call_stack.emplace(loc);
             #ifdef SHAMROCK_USE_NVTX
             nvtxRangePush(name.c_str());
@@ -65,8 +73,10 @@ namespace shambase::details {
         }
 
         inline ~NamedBasicStackEntry() {
+            #ifdef SHAMROCK_USE_PROFILING
             if (do_timer)
                 add_prof_entry(name, false);
+            #endif
             call_stack.pop();
             #ifdef SHAMROCK_USE_NVTX
             nvtxRangePop();

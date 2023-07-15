@@ -35,8 +35,10 @@ namespace shamsys::details {
 
         std::cout << "dump profiling : " << std::endl;
 
-
+        
+        #ifdef SHAMROCK_USE_PROFILING
         shambase::details::dump_profiling(shamsys::instance::world_rank);
+        #endif
 
 
         std::cout << "exiting ... " << std::endl;

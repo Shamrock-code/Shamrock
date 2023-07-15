@@ -10,4 +10,4 @@
 	url = https://github.com/mattreecebentley/plf_nanotimer.git
 [submodule "external/NVTX"]
 	path = external/NVTX
-	url = https://github.com/Shamrock-code/NVTX.git
+	url = git@github.com:Shamrock-code/NVTX.git

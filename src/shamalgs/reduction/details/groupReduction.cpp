@@ -11,7 +11,6 @@
 #include "shamalgs/reduction/details/fallbackReduction.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <group_algorithm.hpp>
 
 template<class T,u32 work_group_size>
 class KernelSliceReduceSum;

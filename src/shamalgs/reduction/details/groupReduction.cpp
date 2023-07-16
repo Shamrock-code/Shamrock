@@ -54,11 +54,17 @@ namespace shamalgs::reduction::details {
 
                         T val_read = (iread < max_id) ? global_mem[iread] : T{0};
 
-                        //local scan in the group 
-                        //the local sum will be in local id `group_size - 1`
-                        //T local_scan = sycl::inclusive_scan_over_group(item.get_group(), val_read, sycl::plus<T>{});
-
+                        #ifdef SYCL_COMP_DPCPP
                         T local_red = sycl::reduce_over_group(item.get_group(), val_read, sycl::plus<>{});
+                        #endif
+
+                        #ifdef SYCL_COMP_OPENSYCL
+                        T local_red = sycl::reduce_over_group(item.get_group(), val_read, sycl::plus<T>{});
+                        #endif
+
+                        #ifdef SYCL_COMP_SYCLUNKNOWN
+                        T local_red = sycl::reduce_over_group(item.get_group(), val_read, sycl::plus<T>{});
+                        #endif
 
                         //can be removed if i change the index in the look back ?
                         if(lid == 0){

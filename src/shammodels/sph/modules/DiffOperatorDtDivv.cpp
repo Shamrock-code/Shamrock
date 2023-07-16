@@ -111,8 +111,8 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                    u32 id_a = (u32)item.get_id(0);
+                
+                shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute dtdivv", [=](i32 id_a){
 
                     using namespace shamrock::sph;
 

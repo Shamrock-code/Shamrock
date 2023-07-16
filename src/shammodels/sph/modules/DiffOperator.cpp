@@ -63,8 +63,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv(Tscal
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                    u32 id_a = (u32)item.get_id(0);
+                shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute divv", [=](i32 id_a){
 
                     using namespace shamrock::sph;
 
@@ -166,8 +165,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv(Tsca
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                    u32 id_a = (u32)item.get_id(0);
+                shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute curlv", [=](i32 id_a){
 
                     using namespace shamrock::sph;
 

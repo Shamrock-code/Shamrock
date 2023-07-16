@@ -45,8 +45,7 @@ namespace shammodels::sph {
             const flt h_max_evol_p       = h_evol_iter_max;
             const flt h_max_evol_m       = 1 / h_evol_iter_max;
 
-            cgh.parallel_for(update_range, [=](sycl::item<1> item) {
-                u32 id_a = (u32)item.get_id(0);
+            shambase::parralel_for(cgh, update_range.size(),"iter h", [=](u32 id_a) {
 
                 if (eps[id_a] > 1e-6) {
 
@@ -131,8 +130,7 @@ namespace shammodels::sph {
             const flt h_max_evol_p       = h_evol_iter_max;
             const flt h_max_evol_m       = 1 / h_evol_iter_max;
 
-            cgh.parallel_for(update_range, [=](sycl::item<1> item) {
-                u32 id_a = (u32)item.get_id(0);
+            shambase::parralel_for(cgh, update_range.size(),"iter h", [=](u32 id_a) {
 
                 if (eps[id_a] > 1e-6) {
 
@@ -211,16 +209,15 @@ namespace shammodels::sph {
 
             const flt part_mass = gpart_mass;
 
-            cgh.parallel_for(part_range, [=](sycl::item<1> item) {
-                u32 id_a = (u32)item.get_id(0);
+            shambase::parralel_for(cgh, part_range.size(),"compute omega", [=](u32 id_a) {
 
                 vec xyz_a = r[id_a]; // could be recovered from lambda
 
                 flt h_a  = hpart[id_a];
                 flt dint = h_a * h_a * Rkern * Rkern;
 
-                vec inter_box_a_min = xyz_a - h_a * Rkern;
-                vec inter_box_a_max = xyz_a + h_a * Rkern;
+                //vec inter_box_a_min = xyz_a - h_a * Rkern;
+                //vec inter_box_a_max = xyz_a + h_a * Rkern;
 
                 flt rho_sum        = 0;
                 flt part_omega_sum = 0;

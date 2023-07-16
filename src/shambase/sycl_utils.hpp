@@ -13,7 +13,6 @@
 #include "sycl_utils/sycl_utilities.hpp"
 #include "sycl_utils/vec_equals.hpp"
 #include "sycl_utils/vectorProperties.hpp"
-#include <range.hpp>
 #include <stdexcept>
 #include "shambase/stacktrace.hpp"
 

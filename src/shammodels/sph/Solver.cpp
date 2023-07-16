@@ -495,8 +495,8 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-                u32 id_a = (u32)item.get_id(0);
+            shambase::parralel_for(cgh, obj_cnt,"compute neigh cache 1", [=](u64 gid){
+                u32 id_a = (u32)gid;
 
                 Tscal rint_a = hpart[id_a] * h_tolerance;
 
@@ -554,8 +554,8 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-                u32 id_a = (u32)item.get_id(0);
+            shambase::parralel_for(cgh, obj_cnt,"compute neigh cache 2", [=](u64 gid){
+                u32 id_a = (u32)gid;
 
                 Tscal rint_a = hpart[id_a] * h_tolerance;
 
@@ -908,8 +908,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                u32 id_a = (u32)item.get_id(0);
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),shamsys::instance::get_compute_queue_eu_count(),"compute force cte AV", [=](u64 gid){
+                u32 id_a = (u32)gid;
 
                 using namespace shamrock::sph;
 
@@ -1110,8 +1110,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                u32 id_a = (u32)item.get_id(0);
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),shamsys::instance::get_compute_queue_eu_count(),"compute force MM97 AV", [=](u64 gid){
+                u32 id_a = (u32)gid;
 
                 using namespace shamrock::sph;
 
@@ -1322,8 +1322,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                u32 id_a = (u32)item.get_id(0);
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),shamsys::instance::get_compute_queue_eu_count(),"compute force CD10 AV", [=](u64 gid){
+                u32 id_a = (u32)gid;
 
                 using namespace shamrock::sph;
 

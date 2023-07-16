@@ -90,18 +90,18 @@ if args.cxxcompiler :
 
 ### chose the compiler id
 if args.compiler == "dpcpp":
-    cmake_cmd += " -DSyCL_Compiler=DPCPP"
+    cmake_cmd += " -DSYCL_COMPILER=DPCPP"
     if comp_path == "":
         comp_path = abs_compiler_root_dir + "/bin/clang++"
 
 elif args.compiler == "opensycl":
-    cmake_cmd += " -DSyCL_Compiler=OPENSYCL"
+    cmake_cmd += " -DSYCL_COMPILER=OPENSYCL"
     if comp_path == "":
         comp_path = abs_compiler_root_dir + "/bin/syclcc"
 
 else:
-    cmake_cmd += " -DSyCL_Compiler=UNKNOWN"
-    print("WARNING : The compiler is unknown")
+    cmake_cmd += " -DSYCL_COMPILER=OTHER"
+    print("WARNING : The compiler is OTHER")
 
     if not (args.profile == None):
         raise "can not select a profile with a unknown compiler"

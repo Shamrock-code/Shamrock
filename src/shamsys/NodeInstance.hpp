@@ -132,6 +132,7 @@ namespace shamsys::instance {
      * @return sycl::queue& reference to the corresponding queue
      */
     sycl::queue &get_compute_queue(u32 id = 0);
+    u32 get_compute_queue_eu_count(u32 id = 0);
 
     inline sycl::device get_compute_device(){
         return get_compute_queue().get_device();

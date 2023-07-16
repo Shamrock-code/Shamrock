@@ -20,6 +20,7 @@
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
+#include <info/info_desc.hpp>
 #include <mpi-ext.h>
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
@@ -224,12 +225,13 @@ namespace shamsys::instance::details {
             auto PlatformName = plat.get_info<sycl::info::platform::name>();
             auto DeviceName = dev.get_info<sycl::info::device::name>();
 
+
             std::string devname = shambase::trunc_str(DeviceName,29);
             std::string platname = shambase::trunc_str(PlatformName,24);
             std::string devtype = shambase::trunc_str(shambase::getDevice_type(dev),6);
 
             print_buf += shambase::format("| {:>4} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
-                rank,key_global,devname.c_str(),platname.c_str(),devtype.c_str()
+                rank,key_global,devname,platname,devtype
             ) + "\n";
 
         });
@@ -271,6 +273,12 @@ namespace shamsys::instance {
 
     u32 compute_queue_id = 0;
     u32 alt_queue_id = 0;
+
+    u32 compute_queue_eu_count = 64;
+
+    u32 get_compute_queue_eu_count(u32 id){
+        return compute_queue_eu_count;
+    }
 
     bool is_initialized(){
         int flag = false;
@@ -445,7 +453,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
             throw ShamsysInstanceException("failed setting the MPI error mode");
         }
 
-        logger::debug_ln("Sys",shambase::format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m",world_rank,world_rank,world_size,get_process_name().c_str()));
+        logger::debug_ln("Sys",shambase::format("[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m",world_rank,world_rank,world_size,get_process_name()));
 
         mpi::barrier(MPI_COMM_WORLD);
         //if(world_rank == 0){
@@ -570,6 +578,8 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
                         logger::debug_sycl_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                         compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
                         compute_queue_id = key_global;
+
+                        compute_queue_eu_count = dev.get_info<sycl::info::device::max_compute_units>();
             
                     }
 
@@ -612,6 +622,10 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
                 logger::debug_sycl_ln("NodeInstance", "init comp queue : ", "|",DeviceName, "|", PlatformName, "|" , shambase::getDevice_type(dev), "|");
                 compute_queue = std::make_unique<sycl::queue>(dev,exception_handler);
                 compute_queue_id = key_global;
+
+                
+                compute_queue_eu_count = dev.get_info<sycl::info::device::max_compute_units>();
+                
             }
 
         });

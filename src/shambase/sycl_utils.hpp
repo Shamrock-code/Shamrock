@@ -14,6 +14,7 @@
 #include "sycl_utils/vec_equals.hpp"
 #include "sycl_utils/vectorProperties.hpp"
 #include <stdexcept>
+#include "shambase/stacktrace.hpp"
 
 namespace shambase {
 
@@ -63,6 +64,91 @@ namespace shambase {
         u32 group_cnt = shambase::group_count(lenght, group_size);
         u32 len =group_cnt*group_size;
         return sycl::nd_range<1>{len, group_size};
+    }
+
+    enum ParralelForWrapMode {
+        PARRALEL_FOR, ND_RANGE
+    };
+
+    #ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR
+    constexpr ParralelForWrapMode default_loop_mode = PARRALEL_FOR;
+    #endif
+
+    #ifdef SHAMROCK_LOOP_DEFAULT_ND_RANGE
+    constexpr ParralelForWrapMode default_loop_mode = ND_RANGE;
+    #endif
+
+
+    template<u32 group_size = 256, ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
+    inline void parralel_for(sycl::handler & cgh, u32 lenght, const char* name, LambdaKernel && ker){
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePush(name);
+        #endif
+        
+        if constexpr(mode == PARRALEL_FOR){
+
+            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
+
+                u64 gid = id.get_global_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else if(mode==ND_RANGE){
+
+            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
+
+                u64 gid = id.get_global_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else{
+            throw_unimplemented();
+        }
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePop();
+        #endif
+    }
+
+    template<ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
+    inline void parralel_for(sycl::handler & cgh, u32 lenght, u32 group_size, const char* name, LambdaKernel && ker){
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePush(name);
+        #endif
+        
+        if constexpr(mode == PARRALEL_FOR){
+
+            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
+
+                u64 gid = id.get_global_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else if(mode==ND_RANGE){
+
+            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
+
+                u64 gid = id.get_global_linear_id();
+                if(gid >= lenght) return;
+
+                ker(gid);
+            });
+
+        }else{
+            throw_unimplemented();
+        }
+
+        #ifdef SHAMROCK_USE_NVTX
+        nvtxRangePop();
+        #endif
     }
 
 } // namespace shambase

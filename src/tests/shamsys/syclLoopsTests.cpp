@@ -13,50 +13,12 @@
 #include "shamtest/shamtest.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils.hpp"
+#include "shambase/stacktrace.hpp"
 #include <vector>
 
 namespace shambase {
 
-    enum ParralelForWrapMode {
-        PARRALEL_FOR, ND_RANGE
-    };
-
-    #ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR
-    constexpr ParralelForWrapMode default_loop_mode = PARRALEL_FOR;
-    #endif
-
-    #ifdef SHAMROCK_LOOP_DEFAULT_ND_RANGE
-    constexpr ParralelForWrapMode default_loop_mode = ND_RANGE;
-    #endif
-
-
-    template<ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
-    inline void parralel_for(sycl::handler & cgh, u32 lenght, const u32 group_size, LambdaKernel && ker){
-        
-        if constexpr(mode == PARRALEL_FOR){
-
-            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
-
-                u64 gid = id.get_global_linear_id();
-                if(gid >= lenght) return;
-
-                ker(gid);
-            });
-
-        }else if(mode==ND_RANGE){
-
-            cgh.parallel_for(make_range(lenght,group_size), [=](sycl::nd_item<1> id){
-
-                u64 gid = id.get_global_linear_id();
-                if(gid >= lenght) return;
-
-                ker(gid);
-            });
-
-        }else{
-            throw_unimplemented();
-        }
-    }
+    
 
 }
 
@@ -144,7 +106,7 @@ TestStart(Analysis, "sycl/loop_perfs", syclloopperfs, 1){
 
                 sycl::accessor acc {buf, cgh, sycl::read_write};
 
-                shambase::parralel_for(cgh, sz, 256, [=](u64 gid){
+                shambase::parralel_for(cgh, sz,"test_kernel", [=](u64 gid){
                     auto tmp = acc[gid];
                     acc[gid] = tmp*tmp;
                 });

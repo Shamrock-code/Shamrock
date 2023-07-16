@@ -2,7 +2,7 @@ add_subdirectory(pybind11)
 
 add_subdirectory(fmt)
 
-message("-- SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
+
 if(SHAMROCK_USE_NVTX)
     #include(NVTX/c/nvtxImportedTargets.cmake)
     add_subdirectory(NVTX/c)

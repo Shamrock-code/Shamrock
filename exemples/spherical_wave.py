@@ -6,7 +6,7 @@ rho_g = 1
 target_tot_u = 1
 
 
-dr = 0.002
+dr = 0.004
 bmin = (-0.6,-0.6,-0.6)
 bmax = ( 0.6, 0.6, 0.6)
 pmass = -1

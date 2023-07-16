@@ -20,7 +20,6 @@
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
-#include <info/info_desc.hpp>
 #include <mpi-ext.h>
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 

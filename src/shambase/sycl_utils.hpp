@@ -83,8 +83,10 @@ namespace shambase {
     constexpr ParralelForWrapMode default_loop_mode = ND_RANGE;
     #endif
 
+    constexpr u32 default_gsize = SHAMROCK_LOOP_GSIZE;
 
-    template<u32 group_size = 256, ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
+
+    template<u32 group_size = default_gsize, ParralelForWrapMode mode = default_loop_mode,class LambdaKernel>
     inline void parralel_for(sycl::handler & cgh, u32 lenght, const char* name, LambdaKernel && ker){
 
         #ifdef SHAMROCK_USE_NVTX

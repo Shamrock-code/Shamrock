@@ -22,12 +22,15 @@ set_property(CACHE SYCL_COMPILER PROPERTY STRINGS DPCPP OPENSYCL OTHER)
 set(SHAMROCK_LOOP_DEFAULT "PARRALEL_FOR_ROUND" CACHE STRING "Default loop mode in shamrock")
 set_property(CACHE SHAMROCK_LOOP_DEFAULT PROPERTY STRINGS PARRALEL_FOR PARRALEL_FOR_ROUND ND_RANGE)
 
+set(SHAMROCK_LOOP_GSIZE 256 CACHE STRING "Default group size in shamrock")
+
 option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
 
 message("-- Shamrock config : ")
 message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
+message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
 message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
 message("     SYCL_COMPILER : ${SYCL_COMPILER}")
@@ -104,6 +107,8 @@ elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR_ROUND")
 elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
   add_compile_definitions("SHAMROCK_LOOP_DEFAULT_ND_RANGE")
 endif()
+
+add_compile_definitions("SHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
 
 
 

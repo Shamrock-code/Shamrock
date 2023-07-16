@@ -22,7 +22,7 @@ namespace shamalgs::reduction {
 
     template<class T>
     T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        return details::FallbackReduction<T>::sum(q, buf1, start_id, end_id);
+        return details::GroupReduction<T, 32>::sum(q, buf1, start_id, end_id);
     }
 
     template<class T>

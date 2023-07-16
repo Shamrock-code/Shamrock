@@ -8,152 +8,162 @@
 
 #include "shamalgs/memory/memory.hpp"
 #include "groupReduction.hpp"
+#include "shamalgs/reduction/details/fallbackReduction.hpp"
+#include "shambase/sycl_utils.hpp"
+#include "shamsys/legacy/log.hpp"
+#include <group_algorithm.hpp>
+
+template<class T,u32 work_group_size>
+class KernelSliceReduceSum;
 
 namespace shamalgs::reduction::details {
-
-    template<u32 work_group_size>
-    struct manual_reduce_impl {
-        template<class T, class Op>
-        inline static T
-        reduce_manual(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id, Op op) {
-
-            u32 len = end_id - start_id;
-
-            sycl::buffer<T> buf_int(len);
-
-#ifdef SYCL_COMP_OPENSYCL
-            q.wait();
-#endif
-
-            shamalgs::memory::write_with_offset_into(buf_int, buf1, start_id, len);
-
-#ifdef SYCL_COMP_OPENSYCL
-            q.wait();
-#endif
-
-            u32 part_size = work_group_size * 2;
-
-            while (len != 1) {
-                u32 n_wgroups = (len + part_size - 1) / part_size;
-
-                auto Bop = op;
-
-                q.submit([&](sycl::handler &cgh) {
-                    sycl::local_accessor<T> local_mem{sycl::range<1>(work_group_size), cgh};
-
-                    sycl::accessor global_mem{buf_int, cgh, sycl::read_write};
-
-                    cgh.parallel_for(
-                        sycl::nd_range<1>(n_wgroups * work_group_size, work_group_size),
-                        [=](sycl::nd_item<1> item) {
-                            size_t local_id     = item.get_local_id(0);
-                            size_t global_id    = item.get_global_id(0);
-                            local_mem[local_id] = 0;
-
-                            if ((2 * global_id) < len) {
-                                local_mem[local_id] =
-                                    Bop(global_mem[2 * global_id], global_mem[2 * global_id + 1]);
-                            }
-                            item.barrier(sycl::access::fence_space::local_space);
-
-                            for (size_t stride = 1; stride < work_group_size; stride *= 2) {
-                                auto idx = 2 * stride * local_id;
-                                if (idx < work_group_size) {
-                                    local_mem[idx] = Bop(local_mem[idx], local_mem[idx + stride]);
-                                }
-
-                                item.barrier(sycl::access::fence_space::local_space);
-                            }
-
-                            if (local_id == 0) {
-                                global_mem[item.get_group_linear_id()] = local_mem[0];
-                            }
-                        }
-                    );
-                });
-
-#ifdef SYCL_COMP_OPENSYCL
-                q.wait();
-#endif
-
-                len = n_wgroups;
-            }
-
-            sycl::buffer<T> recov{1};
-
-            q.submit([&](sycl::handler &cgh) {
-                sycl::accessor global_mem{buf_int, cgh, sycl::read_only};
-                sycl::accessor acc_rec{recov, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.single_task([=]() { acc_rec[0] = global_mem[0]; });
-            });
-
-#ifdef SYCL_COMP_OPENSYCL
-            q.wait();
-#endif
-
-            T rec;
-            {
-                sycl::host_accessor acc{recov, sycl::read_only};
-                rec = acc[0];
-            }
-
-            return rec;
-        }
-    };
 
 
 
     template<class T,u32 work_group_size>
     T GroupReduction<T, work_group_size>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        #ifdef SYCL_COMP_DPCPP
-        return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<>{});
-        #endif
+        u32 len = end_id - start_id;
+
+            sycl::buffer<T> buf_int(len);
+
+            shamalgs::memory::write_with_offset_into(buf_int, buf1, start_id, len);
+
+            u32 cur_slice_sz = 1;
+            u32 remaining_val = len;
+            while(len / cur_slice_sz > work_group_size*8){
+                
+                sycl::nd_range<1> exec_range = shambase::make_range(remaining_val,work_group_size);
+                
+                q.submit([&](sycl::handler &cgh) {
+
+                    sycl::accessor global_mem{buf_int, cgh, sycl::read_write};
+
+                    u32 slice_read_size = cur_slice_sz;
+                    u32 slice_write_size = cur_slice_sz * work_group_size;
+                    u32 max_id = len;
+
+                    cgh.parallel_for<KernelSliceReduceSum<T,work_group_size>>(
+                        exec_range,
+                        [=](sycl::nd_item<1> item) {
+
+                        u64 lid = item.get_local_id(0);
+                        u64 group_tile_id = item.get_group_linear_id();
+                        u64 gid = group_tile_id * work_group_size + lid;
+
+                        u64 iread = gid*slice_read_size;
+                        u64 iwrite = group_tile_id*slice_write_size;
+
+                        T val_read = (iread < max_id) ? global_mem[iread] : T{0};
+
+                        //local scan in the group 
+                        //the local sum will be in local id `group_size - 1`
+                        //T local_scan = sycl::inclusive_scan_over_group(item.get_group(), val_read, sycl::plus<T>{});
+
+                        T local_red = sycl::reduce_over_group(item.get_group(), val_read, sycl::plus<>{});
+
+                        //can be removed if i change the index in the look back ?
+                        if(lid == 0){
+                            global_mem[iwrite] = local_red;
+                        }
+
+                    });
+                });
+
+                cur_slice_sz *= work_group_size;
+                remaining_val = exec_range.get_group_range().size();
+            }
+
+            sycl::buffer<T> recov {remaining_val};
+
+            sycl::nd_range<1> exec_range = shambase::make_range(remaining_val,work_group_size);
+            q.submit([&,remaining_val](sycl::handler &cgh) {
+
+                sycl::accessor compute_buf{buf_int, cgh, sycl::read_only};
+                sycl::accessor result{recov, cgh, sycl::write_only, sycl::no_init};
+
+                u32 slice_read_size = cur_slice_sz;
+
+                cgh.parallel_for(
+                    exec_range,
+                    [=](sycl::nd_item<1> item) {
+
+                    u64 lid = item.get_local_id(0);
+                    u64 group_tile_id = item.get_group_linear_id();
+                    u64 gid = group_tile_id * work_group_size + lid;
+
+                    u64 iread = gid*slice_read_size;
+
+                    if(gid >= remaining_val){
+                        return;
+                    }
+
+                    result[gid] = compute_buf[iread];
+                    
+
+                });
+            });
 
 
-        #ifdef SYCL_COMP_OPENSYCL
-        return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::plus<T>{});
-        #endif
+            T ret {0};
+            {
+                sycl::host_accessor acc {recov, sycl::read_only};
+                for(u64 i = 0; i < remaining_val; i++){
+                    ret += acc[i];
+                }
+            }
+
+            return ret;
     }
 
-    template<class T,u32 work_group_size>
-    T GroupReduction<T, work_group_size>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        #ifdef SYCL_COMP_DPCPP
-        return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::minimum<>{});
-        #endif
+    //template<class T,u32 work_group_size>
+    //T GroupReduction<T, work_group_size>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    //    #ifdef SYCL_COMP_DPCPP
+    //    return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::minimum<>{});
+    //    #endif
+//
+//
+    //    #ifdef SYCL_COMP_OPENSYCL
+    //    return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::minimum<T>{});
+    //    #endif
+    //}
+//
+    //template<class T,u32 work_group_size>
+    //T GroupReduction<T, work_group_size>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    //    #ifdef SYCL_COMP_DPCPP
+    //    return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::maximum<>{});
+    //    #endif
+//
+//
+    //    #ifdef SYCL_COMP_OPENSYCL
+    //    return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::maximum<T>{});
+    //    #endif
+    //}
+    
 
+    #define XMAC_TYPES \
+    X(f32   ) \
+    X(f32_2 ) \
+    X(f32_3 ) \
+    X(f32_4 ) \
+    X(f32_8 ) \
+    X(f32_16) \
+    X(f64   ) \
+    X(f64_2 ) \
+    X(f64_3 ) \
+    X(f64_4 ) \
+    X(f64_8 ) \
+    X(f64_16) \
+    X(u32   ) \
+    X(u64   ) \
+    X(u32_3 ) \
+    X(u64_3 )
 
-        #ifdef SYCL_COMP_OPENSYCL
-        return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::minimum<T>{});
-        #endif
-    }
+    #define X(_arg_) \
+    template struct GroupReduction<_arg_,8>;\
+    template struct GroupReduction<_arg_,32>;\
+    template struct GroupReduction<_arg_,128>;
 
-    template<class T,u32 work_group_size>
-    T GroupReduction<T, work_group_size>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        #ifdef SYCL_COMP_DPCPP
-        return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::maximum<>{});
-        #endif
-
-
-        #ifdef SYCL_COMP_OPENSYCL
-        return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::maximum<T>{});
-        #endif
-    }
-
-    template struct GroupReduction<f32,2>;
-    template struct GroupReduction<f32,4>;
-    template struct GroupReduction<f32,8>;
-    template struct GroupReduction<f32,16>;
-    template struct GroupReduction<f32,32>;
-    template struct GroupReduction<f32,64>;
-    template struct GroupReduction<f32,128>;
-
-    template struct GroupReduction<f64,2>;
-    template struct GroupReduction<f64,4>;
-    template struct GroupReduction<f64,8>;
-    template struct GroupReduction<f64,16>;
-    template struct GroupReduction<f64,32>;
-    template struct GroupReduction<f64,64>;
-    template struct GroupReduction<f64,128>;
+    XMAC_TYPES
+    #undef X
 
 } // namespace shamalgs::reduction::details

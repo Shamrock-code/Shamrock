@@ -2,13 +2,18 @@ import shamrock
 import matplotlib.pyplot as plt
 
 
+
+si = shamrock.UnitSystem()
+sicte = shamrock.Constants(si)
+codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_lenght = sicte.au(), unit_mass = sicte.sol_mass(), )
+
+
 gamma = 5./3.
 rho_g = 1
 target_tot_u = 1
 
 
 pmass = -1
-
 
 
 
@@ -21,6 +26,7 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.print_status()
+cfg.set_units(codeu)
 model.set_solver_config(cfg)
 
 model.init_scheduler(int(1e7),1)
@@ -30,12 +36,12 @@ bmin = (-10,-10,-10)
 bmax = (10,10,10)
 model.resize_simulation_box(bmin,bmax)
 
-model.add_cube_disc_3d((0,0,0),100000,0.5,1,1,0.1,3,0.05)
+model.add_disc_3d_keplerian((0,0,0),1000000,0.5,1,1,0.3,3,0.05,1)
 model.set_value_in_a_box("uint", "f64", 1, bmin,bmax)
 
 
 
-pmass = model.total_mass_to_part_mass(1)
+pmass = model.total_mass_to_part_mass(0.1)
 
 print("Current part mass :", pmass)
 
@@ -43,8 +49,8 @@ print("Current part mass :", pmass)
 #    setup.update_smoothing_lenght(ctx)
 
 
-model.add_sink(10,(0,0,0),(0,0,0))
-model.add_sink(10,(0,1,0),(0,0,1))
+model.add_sink(1,(0,0,0),(0,0,0))
+#model.add_sink(100,(0,2,0),(0,0,1))
 
 
 

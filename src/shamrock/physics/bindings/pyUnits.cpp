@@ -11,6 +11,7 @@
 #include "shamrock/physics/units/Names.hpp"
 #include "shamrock/physics/units/UnitSystem.hpp"
 #include <memory>
+#include <pybind11/cast.h>
 
 
 Register_pymod(pyunits_init) {
@@ -33,7 +34,15 @@ Register_pymod(pyunits_init) {
                                                 unit_temperature,
                                                 unit_qte,
                                                 unit_lumint);
-        }))
+        }),
+        py::kw_only(),
+        py::arg("unit_time") = 1,
+        py::arg("unit_lenght") = 1,
+        py::arg("unit_mass") = 1,
+        py::arg("unit_current") = 1,
+        py::arg("unit_temperature") = 1,
+        py::arg("unit_qte") = 1,
+        py::arg("unit_lumint") = 1)
         .def("get",
             [](UnitSystem & self, std::string name, i32 power, std::string pref){
 
@@ -88,6 +97,18 @@ Register_pymod(pyunits_init) {
         X(k)
         X(Na)
         X(Kcd)
+
+        X(G)
+
+        X(year)
+
+
+        X(au)
+
+        X(earth_mass)
+        X(jupiter_mass)
+        X(sol_mass)
+        
 
         ;
 }

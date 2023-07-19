@@ -229,6 +229,11 @@ struct shammodels::sph::SolverConfig {
         logger::raw_ln("------------------------------------");
     }
 
+
+    inline void set_units(shamrock::UnitSystem<Tscal> new_sys){
+        unit_sys = new_sys;
+    }
+
     inline Tscal get_constant_G(){
         if(!unit_sys){
             logger::warn_ln("sph::Config", "the unit system is not set");

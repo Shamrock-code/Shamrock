@@ -38,17 +38,17 @@ namespace shamrock {
         using Uconvert = ConvertionConstants<T>;
 
         public:
-        const T s, m, kg, A, K, mol, cd;
 
-        const T s_inv, m_inv, kg_inv, A_inv, K_inv, mol_inv, cd_inv;
+        T s, m, kg, A, K, mol, cd;
+        T s_inv, m_inv, kg_inv, A_inv, K_inv, mol_inv, cd_inv;
 
-        UnitSystem(T unit_time,
-                   T unit_lenght,
-                   T unit_mass,
-                   T unit_current,
-                   T unit_temperature,
-                   T unit_qte,
-                   T unit_lumint)
+        explicit UnitSystem(T unit_time = 1 ,
+                   T unit_lenght = 1 ,
+                   T unit_mass = 1 ,
+                   T unit_current = 1 ,
+                   T unit_temperature = 1 ,
+                   T unit_qte = 1 ,
+                   T unit_lumint = 1 )
             : s(1 / unit_time), m(1 / unit_lenght), kg(1 / unit_mass), A(1 / unit_current),
               K(1 / unit_temperature), mol(1 / unit_qte), cd(1 / unit_lumint), s_inv(unit_time),
               m_inv(unit_lenght), kg_inv(unit_mass), A_inv(unit_current), K_inv(unit_temperature),

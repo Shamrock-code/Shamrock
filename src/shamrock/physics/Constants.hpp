@@ -11,6 +11,7 @@
 #include "shambase/Constants.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/type_aliases.hpp"
+#include "shamrock/physics/units/ConvertionConstants.hpp"
 #include "shamrock/physics/units/Names.hpp"
 #include "shamrock/physics/units/UnitSystem.hpp"
 #include <stdexcept>
@@ -37,6 +38,7 @@ namespace shamrock {
     struct Constants {
 
         using Dimensionless = DimlessConstants<T>;
+        using Conv = ConvertionConstants<T>;
 
         struct Si {
 
@@ -57,6 +59,15 @@ namespace shamrock {
             static constexpr T epsilon_0 = 1 / (Z_0 * c);      //
             static constexpr T ke        = 1 / (4 * Dimensionless::Math::pi * epsilon_0); //
 
+            static constexpr T hour = Conv::hr_to_s; //(s)
+            static constexpr T day = Conv::dy_to_s; //(s)
+            static constexpr T year = Conv::yr_to_s; //(s)
+
+            static constexpr T astronomical_unit = Conv::au_to_m; //(m)
+            static constexpr T light_year = Conv::ly_to_m; //(m)
+            static constexpr T parsec = Conv::pc_to_m; //(m)
+            static constexpr T planck_lenght = 1.61625518e-35; //(m)
+            
             static constexpr T proton_mass = 1.67262192e-27; //(kg)
             static constexpr T electron_mass =
                 proton_mass * Dimensionless::electron_proton_ratio; //(kg)
@@ -65,7 +76,7 @@ namespace shamrock {
             static constexpr T sol_mass     = 1.98847e30;           //(kg)
             static constexpr T planck_mass  = 2.17643424e-8;        //(kg)
 
-            static constexpr T planck_lenght = 1.61625518e-35; //(l)
+            
         };
 
 
@@ -81,8 +92,16 @@ namespace shamrock {
         addconstant(Na)          { return Cget(Si::Na,1)  * Uget(mole, -1); }
         addconstant(Kcd)         { return Cget(Si::Kcd,1) * Uget(lm, 1)    * Uget(Watt, -1); }
 
+        
+        addconstant(year)         { return Cget(Si::year,1) * Uget(s,1) ; }
+
+        addconstant(au)         { return Cget(Si::astronomical_unit,1) * Uget(s,1) ; }
 
         addconstant(G)         { return Cget(Si::G,1) * Uget(N,1) * Uget(m,2) * Uget(kg,-2)  ; }
+
+        addconstant(earth_mass)         { return Cget(Si::earth_mass,1) * Uget(kg,1) ; }
+        addconstant(jupiter_mass)         { return Cget(Si::jupiter_mass,1) * Uget(kg,1) ; }
+        addconstant(sol_mass)         { return Cget(Si::sol_mass,1) * Uget(kg,1) ; }
 
         // clang-format on
     };

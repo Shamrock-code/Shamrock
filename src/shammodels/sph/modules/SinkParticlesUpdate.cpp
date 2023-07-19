@@ -90,7 +90,7 @@ void SinkUpdate<Tvec, SPHKernel>::compute_sph_forces(Tscal gpart_mass){
 
     for (Sink & s : sink_parts) {
 
-        scheduler().for_each_patchdata_nonempty([&,G,epsilon_grav](Patch cur_p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&,G,epsilon_grav,gpart_mass](Patch cur_p, PatchData &pdat) {
 
             sycl::buffer<Tvec> &buf_xyz =pdat.get_field_buf_ref<Tvec>(ixyz);
             sycl::buffer<Tvec> &buf_axyz_ext =pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
@@ -114,9 +114,9 @@ void SinkUpdate<Tvec, SPHKernel>::compute_sph_forces(Tscal gpart_mass){
                     Tvec delta = r_a - sink_pos;
                     Tscal d = sycl::length(delta);
 
-                    Tvec force = G*sink_mass * delta/(d*d*d);
-                    axyz_sync[id_a] = force;
-                    axyz_ext[id_a] = -force;
+                    Tvec force = G * delta/(d*d*d);
+                    axyz_sync[id_a] = force*gpart_mass;
+                    axyz_ext[id_a] = -force*sink_mass;
                     
                 });
 

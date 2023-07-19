@@ -70,7 +70,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("beta_AV"))
         .def("set_boundary_free",&TConfig::set_boundary_free)
         .def("set_boundary_periodic",&TConfig::set_boundary_periodic)
-        .def("set_boundary_shearing_periodic",&TConfig::set_boundary_shearing_periodic);
+        .def("set_boundary_shearing_periodic",&TConfig::set_boundary_shearing_periodic)
+        .def("set_units", &TConfig::set_units);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) { return std::make_unique<T>(ctx); }))
@@ -96,7 +97,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
              [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
                  return self.add_cube_fcc_3d(dr, {box_min, box_max});
              })
-        .def("add_cube_disc_3d",
+        .def("add_disc_3d_keplerian",
              [](T &self,
                 Tvec center,
                 u32 Npart,
@@ -105,8 +106,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal m,
                 Tscal r_in,
                 Tscal r_out,
-                Tscal q) {
-                 return self.add_cube_disc_3d(center, Npart, p, rho_0, m, r_in, r_out, q);
+                Tscal q,
+                Tscal cmass) {
+                 return self.add_cube_disc_3d(center, Npart, p, rho_0, m, r_in, r_out, q,cmass);
              })
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
@@ -143,7 +145,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                  } else {
                      throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
                  }
-             }).def("add_kernel_value",
+             })
+        .def("add_kernel_value",
              [](T &self,
                 std::string field_name,
                 std::string field_type,
@@ -175,8 +178,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         })
         .def("gen_default_config", [](T &self) { return typename T::Solver::Config{}; })
         .def("set_solver_config", &T::set_solver_config)
-        .def("add_sink", &T::add_sink)
-        .def("set_units", &T::set_units);
+        .def("add_sink", &T::add_sink);
     ;
 }
 

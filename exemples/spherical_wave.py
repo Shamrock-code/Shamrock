@@ -17,7 +17,7 @@ pmass = -1
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
-model.init_scheduler(int(1e6),1)
+model.init_scheduler(int(1e7),1)
 bmin,bmax = model.get_ideal_fcc_box(dr,bmin,bmax)
 xm,ym,zm = bmin
 xM,yM,zM = bmax

@@ -109,6 +109,8 @@ namespace shamrock {
 
     inline const UnitPrefix unit_prefix_from_name(std::string p) {
 
+
+
         map_name_to_unit_prefix.find(p);
 
         if (auto search = map_name_to_unit_prefix.find(p); search != map_name_to_unit_prefix.end()) {
@@ -157,13 +159,13 @@ namespace shamrock {
 
         inline const UnitName unit_from_name(std::string p) {
 
-            map_name_to_unit.find(p);
+            auto search = map_name_to_unit.find(p);
 
-            if (auto search = map_name_to_unit.find(p); search != map_name_to_unit.end()) {
+            if (search != map_name_to_unit.end()) {
                 return search->second;
             }
 
-            shambase::throw_with_loc<std::invalid_argument>("this unit name is unknown");
+            throw shambase::throw_with_loc<std::invalid_argument>("this unit name is unknown");
             return s; // to silence a warning
         }
 

@@ -13,12 +13,22 @@
 
 namespace shamrock {
 
+    /**
+     * @brief Helper class for Storage Module of any solver
+     *
+     * @tparam T
+     */
     template<class T>
     class StorageComponent {
         private:
         std::unique_ptr<T> hndl;
 
         public:
+        /**
+         * @brief replace (by move) the held object
+         *
+         * @param arg
+         */
         void set(T &&arg) {
             StackEntry stack_loc{};
             if (hndl) {
@@ -28,13 +38,32 @@ namespace shamrock {
             hndl = std::make_unique<T>(std::forward<T>(arg));
         }
 
+        /**
+         * @brief Get the reference to the held object if it was allocated
+         *
+         * @return T& the reference held
+         */
         T &get() {
             StackEntry stack_loc{};
             return shambase::get_check_ref(hndl);
         }
+
+        /**
+         * @brief delete the content of the Storage
+         */
         void reset() {
             StackEntry stack_loc{};
             hndl.reset();
+        }
+
+        /**
+         * @brief return whether the storage hold an object or not
+         * 
+         * @return true the storage is empty
+         * @return false the storage hold an object
+         */
+        bool is_empty(){
+            return ! hndl;
         }
     };
 

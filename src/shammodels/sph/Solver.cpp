@@ -18,6 +18,7 @@
 #include "shammodels/sph/SPHSolverImpl.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
+#include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchData.hpp"
@@ -863,6 +864,30 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
         shambase::throw_unimplemented();
     }
 
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    PatchDataLayout &pdl = scheduler().pdl;
+
+    const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz_ext  = pdl.get_field_idx<Tvec>("axyz_ext");
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        sycl::buffer<Tvec> &buf_axyz      = pdat.get_field_buf_ref<Tvec>(iaxyz);
+        sycl::buffer<Tvec> &buf_axyz_ext      = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sycl::accessor axyz{buf_axyz, cgh, sycl::read_write};
+            sycl::accessor axyz_ext{buf_axyz_ext, cgh, sycl::read_only};
+
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(),"add ext force acc to acc", [=](u64 gid){
+                axyz[gid] += axyz_ext[gid];
+            });
+
+        });
+    });
+
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1527,15 +1552,32 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz_ext  = pdl.get_field_idx<Tvec>("axyz_ext");
     const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
+    
+
     shamrock::SchedulerUtility utility(scheduler());
+
+    modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context,solver_config,storage);
+
+
 
     do_predictor_leapfrog(dt);
 
     update_artificial_viscosity(dt);
+
+    sink_update.predictor_step(dt);
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        PatchDataField<Tvec> &field = pdat.get_field<Tvec>(iaxyz_ext);
+        field.field_raz();
+    });
+
+    sink_update.compute_ext_forces();
+    sink_update.compute_sph_forces(gpart_mass);
 
     gen_serial_patch_tree();
 
@@ -1722,6 +1764,9 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
         }
 
         if (!need_rerun_corrector) {
+
+
+            sink_update.corrector_step(dt);
 
             logger::debug_ln("BasicGas", "computing next CFL");
 

@@ -62,6 +62,7 @@ namespace shammodels::sph {
             context.pdata_layout_add_field<Tvec>("xyz", 1);
             context.pdata_layout_add_field<Tvec>("vxyz", 1);
             context.pdata_layout_add_field<Tvec>("axyz", 1);
+            context.pdata_layout_add_field<Tvec>("axyz_ext", 1);
             context.pdata_layout_add_field<Tscal>("hpart", 1);
 
             if (solver_config.has_field_uint()) {

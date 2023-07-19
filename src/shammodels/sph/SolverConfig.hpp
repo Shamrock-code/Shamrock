@@ -10,6 +10,8 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shamrock/physics/units/UnitSystem.hpp"
+#include "shamrock/physics/Constants.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <variant>
@@ -28,6 +30,8 @@ struct shammodels::sph::SolverConfig {
     using u_morton           = u32;
 
     static constexpr Tscal Rkern = Kernel::Rkern;
+
+    std::optional<shamrock::UnitSystem<Tscal>> unit_sys = {};
 
     struct AVConfig {
 
@@ -223,5 +227,15 @@ struct shammodels::sph::SolverConfig {
         
         
         logger::raw_ln("------------------------------------");
+    }
+
+    inline Tscal get_constant_G(){
+        if(!unit_sys){
+            logger::warn_ln("sph::Config", "the unit system is not set");
+            shamrock::Constants<Tscal> ctes{shamrock::UnitSystem<Tscal>{}};
+            return ctes.G();
+        }else{
+            return shamrock::Constants<Tscal>{*unit_sys}.G();
+        }
     }
 };

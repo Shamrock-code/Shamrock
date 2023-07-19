@@ -174,7 +174,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             return self.get_closest_part_to(pos);
         })
         .def("gen_default_config", [](T &self) { return typename T::Solver::Config{}; })
-        .def("set_solver_config", &T::set_solver_config);
+        .def("set_solver_config", &T::set_solver_config)
+        .def("add_sink", &T::add_sink)
+        .def("set_units", &T::set_units);
     ;
 }
 

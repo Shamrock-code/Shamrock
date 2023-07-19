@@ -4,5 +4,6 @@ target_sources(shamrock_lib
         UpdateViscosity.cpp
         DiffOperator.cpp
         DiffOperatorDtDivv.cpp
+        SinkParticlesUpdate.cpp
     PUBLIC
     )

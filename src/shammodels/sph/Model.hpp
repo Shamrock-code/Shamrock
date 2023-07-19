@@ -75,6 +75,20 @@ namespace shammodels::sph {
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
 
+        inline void add_sink(Tscal mass, Tvec pos, Tvec velocity){
+            if(solver.storage.sinks.is_empty()){
+                solver.storage.sinks.set({});
+            }
+
+            solver.storage.sinks.get().push_back({
+                pos,velocity,{},{},mass,{}
+            });
+        }
+
+        inline void set_units(shamrock::UnitSystem<Tscal> unit_sys){
+            solver.solver_config.unit_sys = unit_sys;
+        }
+
         template<std::enable_if_t<dim == 3, int> = 0>
         inline void add_cube_disc_3d(Tvec center,
                                      u32 Npart,

@@ -81,6 +81,9 @@ namespace shamrock {
         addconstant(Na)          { return Cget(Si::Na,1)  * Uget(mole, -1); }
         addconstant(Kcd)         { return Cget(Si::Kcd,1) * Uget(lm, 1)    * Uget(Watt, -1); }
 
+
+        addconstant(G)         { return Cget(Si::G,1) * Uget(N,1) * Uget(m,2) * Uget(kg,-2)  ; }
+
         // clang-format on
     };
 

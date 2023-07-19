@@ -34,15 +34,8 @@ model.add_cube_disc_3d((0,0,0),100000,0.5,1,1,0.1,3,0.05)
 model.set_value_in_a_box("uint", "f64", 1, bmin,bmax)
 
 
-vol_b =20 **3
 
-totmass = (rho_g*vol_b)
-print("Total mass :", totmass)
-
-pmass = model.total_mass_to_part_mass(totmass)
-
-
-
+pmass = model.total_mass_to_part_mass(1)
 
 print("Current part mass :", pmass)
 
@@ -50,7 +43,8 @@ print("Current part mass :", pmass)
 #    setup.update_smoothing_lenght(ctx)
 
 
-
+model.add_sink(10,(0,0,0),(0,0,0))
+model.add_sink(10,(0,1,0),(0,0,1))
 
 
 
@@ -80,7 +74,7 @@ while t_sum < t_target:
 
     print("step : t=",t_sum)
     
-    next_dt = model.evolve(current_dt, True, "dump_"+str(i_dump)+".vtk", True)
+    next_dt = model.evolve(t_sum,current_dt, True, "dump_"+str(i_dump)+".vtk", True)
 
     if i % 1 == 0:
         i_dump += 1

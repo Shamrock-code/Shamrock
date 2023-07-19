@@ -18,7 +18,6 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <builtins.hpp>
 #include <vector>
 
 namespace shammodels::sph {

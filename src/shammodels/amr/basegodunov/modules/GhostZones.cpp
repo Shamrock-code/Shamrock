@@ -7,8 +7,13 @@
 // -------------------------------------------------------//
 
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
+#include "shamalgs/numeric/numeric.hpp"
+#include "shambase/sycl_utils.hpp"
 #include "shammath/AABB.hpp"
 #include "shammath/CoordRange.hpp"
+#include "shammodels/amr/basegodunov/GhostZoneData.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 template<class Tvec, class TgridVec>
 using Module = shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>;
@@ -20,16 +25,15 @@ using Module = shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>;
  * @tparam TgridVec
  */
 template<class Tvec, class TgridVec>
-void find_interfaces(PatchScheduler &sched, SerialPatchTree<Tvec> &sptree) {
+auto find_interfaces(PatchScheduler &sched, SerialPatchTree<Tvec> &sptree) {
+
+    using GZData = shammodels::basegodunov::GhostZonesData<Tvec, TgridVec>;
+
     StackEntry stack_loc{};
 
     static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-    struct InterfaceBuildInfos {
-        Tvec offset;
-        sycl::vec<i32, dim> periodicity_index;
-        shammath::AABB<Tvec> volume_target;
-    };
+    using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
 
     using namespace shamrock::patch;
     using namespace shammath;
@@ -38,7 +42,7 @@ void find_interfaces(PatchScheduler &sched, SerialPatchTree<Tvec> &sptree) {
     i32 repetition_y = 1;
     i32 repetition_z = 1;
 
-    using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
+    using GeneratorMap = typename GZData::GeneratorMap;
     GeneratorMap results;
 
     shamrock::patch::SimulationBoxInfo &sim_box = sched.get_sim_box();
@@ -84,19 +88,62 @@ void find_interfaces(PatchScheduler &sched, SerialPatchTree<Tvec> &sptree) {
             }
         }
     }
+
+    return results;
 }
 
 template<class Tvec, class TgridVec>
 void Module<Tvec, TgridVec>::build_ghost_cache() {
 
+    
+    using GZData = GhostZonesData<Tvec, TgridVec>; 
+    GZData & gen_ghost = storage.ghost_zone_infos.get();
+
     // get ids of cells that will be on the surface of another patch.
     // for cells corresponding to fixed boundary they will be generated after the exhange
     // and appended to the interface list a poosteriori
 
-    using namespace shamrock;
-    using namespace shamrock::patch;
+    gen_ghost.ghost_gen_infos = find_interfaces<Tvec, TgridVec>(scheduler(), storage.serial_patch_tree.get());
 
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+
+
+
+
+
+    using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
+    struct InterfaceIdTable {
+        InterfaceBuildInfos build_infos;
+        std::unique_ptr<sycl::buffer<u32>> ids_interf;
+        f64 cell_count_ratio;
+    };
+
+    shambase::DistributedDataShared<InterfaceIdTable> res;
+
+    sycl::queue & q = shamsys::instance::get_compute_queue();
+
+
+    gen_ghost.ghost_gen_infos.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
+        shamrock::patch::PatchData &src = scheduler().patch_data.get_pdat(sender);
+
+        sycl::buffer<u32> is_in_interf {src.get_obj_cnt()};
+
+        q.submit([&](sycl::handler & cgh){
+            sycl::accessor cell_min {src.get_field_buf_ref<Tvec>(0), cgh, sycl::read_only};
+            sycl::accessor cell_max {src.get_field_buf_ref<Tvec>(1), cgh, sycl::read_only};
+            sycl::accessor flag{is_in_interf, cgh ,sycl::write_only, sycl::no_init};
+
+            shammath::AABB<Tvec> check_volume = build.volume_target;
+
+            shambase::parralel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a){
+                flag[id_a] = shammath::AABB<Tvec>(cell_min[id_a], cell_max[id_a]).get_intersect(check_volume).is_surface_or_volume();
+            });
+        });
+
+        auto resut = shamalgs::numeric::stream_compact(q, is_in_interf, src.get_obj_cnt());
+        f64 ratio = f64(std::get<1>(resut)) / f64(src.get_obj_cnt());
+
+        res.add_obj(sender, receiver, InterfaceIdTable{build, std::move(std::get<0>(resut)),ratio});
 
     });
+
 }

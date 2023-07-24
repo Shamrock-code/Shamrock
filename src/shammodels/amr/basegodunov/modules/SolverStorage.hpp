@@ -10,6 +10,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shammodels/amr/basegodunov/GhostZoneData.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -32,6 +33,8 @@ namespace shammodels::basegodunov {
         using RTree = RadixTree<Tmorton, Tvec>;
 
         Component<SerialPatchTree<Tvec>> serial_patch_tree;
+
+        Component<GhostZonesData<Tvec, TgridVec>> ghost_zone_infos;
     };
 
 } // namespace shammodels::basegodunov

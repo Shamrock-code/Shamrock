@@ -16,5 +16,11 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
     //ghost zone exchange
     
+    //compute bound received
 
+    //round to next pow of 2
+
+    //build radix trees
+
+    //build neigh table
 }

@@ -121,11 +121,6 @@ void SinkUpdate<Tvec, SPHKernel>::predictor_step(Tscal dt){
     std::vector<Sink> & sink_parts = storage.sinks.get();
 
     for (Sink & s : sink_parts) {
-        s.sph_acceleration = {};
-        s.ext_acceleration = {};
-    }
-
-    for (Sink & s : sink_parts) {
         s.velocity += (dt/2)*s.sph_acceleration;
     }
 
@@ -269,7 +264,7 @@ void SinkUpdate<Tvec, SPHKernel>::compute_ext_forces(){
         for (Sink & s2 : sink_parts) {
             Tvec rij = s1.pos - s2.pos;
             Tscal rij_scal = sycl::length(rij);
-            sum += G*s2.mass*rij/(rij_scal*rij_scal*rij_scal + epsilon_grav_sink);
+            sum -= G*s2.mass*rij/(rij_scal*rij_scal*rij_scal + epsilon_grav_sink);
         }
         s1.ext_acceleration = sum;
     }

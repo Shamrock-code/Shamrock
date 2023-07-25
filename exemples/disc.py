@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_lenght = sicte.au(), unit_mass = sicte.sol_mass(), )
-
+ucte = shamrock.Constants(codeu)
 
 gamma = 5./3.
 rho_g = 1
@@ -38,7 +38,7 @@ model.resize_simulation_box(bmin,bmax)
 
 model.set_eos_gamma(5/3)
 
-model.add_disc_3d_keplerian((0,0,0),100000,0.5,1,1,0.2,3,0.05,1)
+model.add_disc_3d_keplerian((0,0,0),200000,0.5,1,1,0.2,3,0.05,1)
 
 
 
@@ -51,7 +51,7 @@ print("Current part mass :", pmass)
 
 
 model.add_sink(1,(0,0,0),(0,0,0),0.05)
-model.add_sink(0.01,(1,0,0),(0,0,6.5),0.01)
+model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,6.5),0.01)
 #model.add_sink(100,(0,2,0),(0,0,1))
 
 
@@ -73,17 +73,18 @@ model.set_particle_mass(pmass)
 
 
 t_sum = 0
-t_target = 1
+t_target = 10
 current_dt = 1e-7
 i = 0
 i_dump = 0
 while t_sum < t_target:
 
     print("step : t=",t_sum)
-    
-    next_dt = model.evolve(t_sum,current_dt, True, "dump_"+str(i_dump)+".vtk", True)
 
-    if i % 1 == 0:
+    do_dump = (i % 10 == 0)  
+    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_"+str(i_dump)+".vtk", do_dump)
+
+    if i % 10 == 0:
         i_dump += 1
 
     t_sum += current_dt

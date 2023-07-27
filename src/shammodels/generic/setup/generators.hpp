@@ -18,8 +18,6 @@
 #include "shambase/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
-#include <hipSYCL/sycl/libkernel/vec.hpp>
 
 namespace generic::setup::generators {
 

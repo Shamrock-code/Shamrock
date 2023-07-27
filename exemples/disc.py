@@ -8,14 +8,6 @@ sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_lenght = sicte.au(), unit_mass = sicte.sol_mass(), )
 ucte = shamrock.Constants(codeu)
 
-gamma = 5./3.
-rho_g = 1
-target_tot_u = 1
-
-
-pmass = -1
-
-
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
@@ -38,11 +30,18 @@ model.resize_simulation_box(bmin,bmax)
 
 model.set_eos_gamma(5/3)
 
-model.add_disc_3d_keplerian((0,0,0),200000,0.5,1,1,0.2,3,0.05,1)
+disc_mass = 0.001
 
+pmass = model.add_disc_3d(
+    (0,0,0),
+    1,
+    1000000,
+    0.2,3,
+    disc_mass,
+    1.,
+    0.05,
+    1./4.)
 
-
-pmass = model.total_mass_to_part_mass(0.001)
 
 print("Current part mass :", pmass)
 

@@ -11,6 +11,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shambase/type_aliases.hpp"
+#include <optional>
 
 namespace shambase {
 
@@ -121,7 +122,7 @@ namespace shambase {
      * @return T
      */
     template<typename T>
-    auto extract_value(std::unique_ptr<T> &o, SourceLocation loc = SourceLocation()) -> T {
+    auto extract_pointer(std::unique_ptr<T> &o, SourceLocation loc = SourceLocation()) -> T {
         if (!bool(o)) {
             throw throw_with_loc<std::runtime_error>(
                 "the value cannot be extracted, as the unique_ptr is empty", loc);

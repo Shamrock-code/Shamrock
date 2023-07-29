@@ -74,6 +74,9 @@ namespace shammodels::sph {
 
         std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
 
+        Tscal rho_h(Tscal h){
+            return shamrock::sph::rho_h(solver.gpart_mass, h, Kernel::hfactd);
+        }
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
 

@@ -81,6 +81,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_cfl_force", &T::set_cfl_force)
         .def("set_particle_mass", &T::set_particle_mass)
         .def("set_eos_gamma", &T::set_eos_gamma)
+        .def("rho_h", &T::rho_h)
         .def("get_box_dim_fcc_3d",
              [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {
                  return self.get_box_dim_fcc_3d(dr, xcnt, ycnt, zcnt);

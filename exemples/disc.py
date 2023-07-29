@@ -1,6 +1,6 @@
 import shamrock
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 
 si = shamrock.UnitSystem()
@@ -35,12 +35,67 @@ disc_mass = 0.001
 pmass = model.add_disc_3d(
     (0,0,0),
     1,
-    1000000,
+    100000,
     0.2,3,
     disc_mass,
     1.,
     0.05,
     1./4.)
+
+model.set_cfl_cour(0.3)
+model.set_cfl_force(0.25)
+
+print("Current part mass :", pmass)
+
+model.set_particle_mass(pmass)
+
+
+model.add_sink(1,(0,0,0),(0,0,0),0.05)
+#model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,6.5),0.01)
+#model.add_sink(100,(0,2,0),(0,0,1))
+
+def compute_rho(h):
+    return np.array([ model.rho_h(h[i]) for i in range(len(h))])
+
+
+def plot_vertical_profile(r, rrange):
+
+    data = ctx.collect_data()
+
+    rhosel = []
+    ysel = []
+
+    for i in range(len(data["hpart"][:])):
+        rcy = data["xyz"][i,0]**2 + data["xyz"][i,2]**2
+
+        if rcy > r - rrange and rcy < r + rrange:
+            rhosel.append(model.rho_h(data["hpart"][i]))
+            ysel.append(data["xyz"][i,1])
+
+    rhosel = np.array(rhosel)
+    ysel = np.array(ysel)
+
+    rhobar = np.mean(rhosel)
+    
+    plt.scatter(ysel, rhosel/rhobar, s=1)
+
+plot_vertical_profile(0.4,0.05)
+
+print("Small timestep")
+model.evolve(0,1e-7, False, "", False)
+
+print("Plot timestep")
+
+plot_vertical_profile(0.4,0.05)
+
+
+
+#plt.xscale('log')
+#plt.yscale('log')
+
+
+
+print("Run")
 
 
 print("Current part mass :", pmass)
@@ -49,30 +104,17 @@ print("Current part mass :", pmass)
 #    setup.update_smoothing_lenght(ctx)
 
 
-model.add_sink(1,(0,0,0),(0,0,0),0.05)
-model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,6.5),0.01)
-#model.add_sink(100,(0,2,0),(0,0,1))
-
-
-
-model.set_cfl_cour(0.3)
-model.set_cfl_force(0.25)
 
 
 
 
-
-print("Current part mass :", pmass)
-
-
-model.set_particle_mass(pmass)
 
 #for i in range(9):
 #    model.evolve(5e-4, False, False, "", False)
 
 
 t_sum = 0
-t_target = 10
+t_target = 0.1
 current_dt = 1e-7
 i = 0
 i_dump = 0
@@ -93,3 +135,7 @@ while t_sum < t_target:
         current_dt = t_target - t_sum
 
     i+= 1
+
+plot_vertical_profile(0.4,0.05)
+
+plt.show()

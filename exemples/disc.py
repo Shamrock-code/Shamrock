@@ -35,7 +35,7 @@ disc_mass = 0.001
 pmass = model.add_disc_3d(
     (0,0,0),
     1,
-    100000,
+    1000000,
     0.2,3,
     disc_mass,
     1.,
@@ -51,7 +51,9 @@ model.set_particle_mass(pmass)
 
 
 model.add_sink(1,(0,0,0),(0,0,0),0.05)
-#model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,6.5),0.01)
+
+vk_p = (ucte.G() * 1 / 1)**0.5
+model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,vk_p),0.01)
 #model.add_sink(100,(0,2,0),(0,0,1))
 
 def compute_rho(h):
@@ -79,14 +81,12 @@ def plot_vertical_profile(r, rrange):
     
     plt.scatter(ysel, rhosel/rhobar, s=1)
 
-plot_vertical_profile(0.4,0.05)
 
 print("Small timestep")
 model.evolve(0,1e-7, False, "", False)
 
 print("Plot timestep")
 
-plot_vertical_profile(0.4,0.05)
 
 
 
@@ -114,7 +114,7 @@ print("Current part mass :", pmass)
 
 
 t_sum = 0
-t_target = 0.1
+t_target = 1
 current_dt = 1e-7
 i = 0
 i_dump = 0
@@ -135,7 +135,3 @@ while t_sum < t_target:
         current_dt = t_target - t_sum
 
     i+= 1
-
-plot_vertical_profile(0.4,0.05)
-
-plt.show()

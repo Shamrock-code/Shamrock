@@ -174,7 +174,12 @@ namespace shammodels::sph {
                 for(Out o : part_list){
                     vec_pos.push_back(o.pos + center);
                     vec_vel.push_back(o.velocity);
-                    vec_u.push_back(o.cs*o.cs/(solver.eos_gamma * (solver.eos_gamma - 1)));
+
+                    //for disc with P = \rho u (/gamma - 1)
+                    //the scaleheight : H = \sqrt{u (\gamma -1)}/\Omega_K
+                    //therefor the effective soundspeed is : \sqrt{(\gamma -1)u}
+                    //whereas the real one is \sqrt{(\gamma -1)\gamma u}
+                    vec_u.push_back(o.cs*o.cs/(/*solver.eos_gamma * */ (solver.eos_gamma - 1)));
                     vec_h.push_back(shamrock::sph::h_rho(part_mass, o.rho, Kernel::hfactd));
                 }
 

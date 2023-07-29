@@ -42,6 +42,8 @@ namespace shammodels::basegodunov {
 
         void dump_vtk(std::string filename);
 
+        Tscal evolve_once(Tscal t_current,Tscal dt_input);
+
         
     };
 

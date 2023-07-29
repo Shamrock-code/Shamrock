@@ -74,5 +74,9 @@ void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
 
 }
 
+template<class Tvec, class TgridVec>
+auto Model<Tvec, TgridVec>::evolve_once(Tscal t_current,Tscal dt_input)-> Tscal{
+    return solver.evolve_once(t_current, dt_input);
+}
 
 template class shammodels::basegodunov::Model<f64_3, i64_3>;

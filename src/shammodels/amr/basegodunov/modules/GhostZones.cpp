@@ -8,6 +8,7 @@
 
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shamalgs/numeric/numeric.hpp"
+#include "shambase/memory.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shammath/AABB.hpp"
 #include "shammath/CoordRange.hpp"
@@ -81,7 +82,7 @@ auto find_interfaces(PatchScheduler &sched, SerialPatchTree<Tvec> &sptree) {
                             InterfaceBuildInfos ret{
                                 periodic_offset, {xoff, yoff, zoff}, sender_bsize_off_aabb};
 
-                            results.add_obj(psender.id_patch, id_found, ret);
+                            results.add_obj(psender.id_patch, id_found, std::move(ret));
                         });
                 });
             }
@@ -141,8 +142,12 @@ void Module<Tvec, TgridVec>::build_ghost_cache() {
         auto resut = shamalgs::numeric::stream_compact(q, is_in_interf, src.get_obj_cnt());
         f64 ratio = f64(std::get<1>(resut)) / f64(src.get_obj_cnt());
 
-        res.add_obj(sender, receiver, InterfaceIdTable{build, std::move(std::get<0>(resut)),ratio});
+        std::unique_ptr<sycl::buffer<u32>> ids = std::make_unique<sycl::buffer<u32>>(shambase::extract_value(std::get<0>(resut)));
+
+        res.add_obj(sender, receiver, InterfaceIdTable{build, std::move(ids),ratio});
 
     });
 
 }
+
+template class shammodels::basegodunov::modules::GhostZones<f64_3, i64_3>;

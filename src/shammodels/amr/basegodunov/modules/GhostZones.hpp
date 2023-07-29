@@ -16,6 +16,7 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
     class GhostZones{
+        public:
         using Tscal              = shambase::VecComponent<Tvec>;
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;

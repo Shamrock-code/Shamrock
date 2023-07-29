@@ -28,9 +28,9 @@ namespace shammodels::basegodunov {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         struct InterfaceBuildInfos {
-            Tvec offset;
+            TgridVec offset;
             sycl::vec<i32, dim> periodicity_index;
-            shammath::AABB<Tvec> volume_target;
+            shammath::AABB<TgridVec> volume_target;
         };
 
         using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;

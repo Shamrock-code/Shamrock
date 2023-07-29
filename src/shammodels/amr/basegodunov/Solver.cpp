@@ -15,9 +15,16 @@ using Solver = shammodels::basegodunov::Solver<Tvec, TgridVec>;
 template<class Tvec, class TgridVec>
 auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tscal{
 
+    StackEntry stack_loc{};
+
+    SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
+    _sptree.attach_buf();
+    storage.serial_patch_tree.set(std::move(_sptree));
+
     //ghost zone exchange
     modules::GhostZones gz(context,solver_config,storage);
     gz.build_ghost_cache();
+
     
     //compute bound received
 
@@ -26,6 +33,8 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     //build radix trees
 
     //build neigh table
+
+    storage.serial_patch_tree.reset();
 
     return 0;
 }

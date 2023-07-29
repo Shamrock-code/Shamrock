@@ -9,11 +9,13 @@
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shamalgs/numeric/numeric.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/string.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shammath/AABB.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammodels/amr/basegodunov/GhostZoneData.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 
 template<class Tvec, class TgridVec>
 using Module = shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>;
@@ -25,7 +27,7 @@ using Module = shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>;
  * @tparam TgridVec
  */
 template<class Tvec, class TgridVec>
-auto find_interfaces(PatchScheduler &sched, SerialPatchTree<Tvec> &sptree) {
+auto find_interfaces(PatchScheduler &sched, SerialPatchTree<TgridVec> &sptree) {
 
     using GZData = shammodels::basegodunov::GhostZonesData<Tvec, TgridVec>;
 
@@ -47,28 +49,28 @@ auto find_interfaces(PatchScheduler &sched, SerialPatchTree<Tvec> &sptree) {
 
     shamrock::patch::SimulationBoxInfo &sim_box = sched.get_sim_box();
 
-    PatchCoordTransform<Tvec> patch_coord_transf = sim_box.get_patch_transform<Tvec>();
-    Tvec bsize                                   = sim_box.get_bounding_box_size<Tvec>();
+    PatchCoordTransform<TgridVec> patch_coord_transf = sim_box.get_patch_transform<TgridVec>();
+    TgridVec bsize                                   = sim_box.get_bounding_box_size<TgridVec>();
 
     for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
         for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
             for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
 
                 // sender translation
-                Tvec periodic_offset = Tvec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
+                TgridVec periodic_offset = TgridVec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
 
                 sched.for_each_local_patch([&](const Patch psender) {
-                    CoordRange<Tvec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
-                    CoordRange<Tvec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
+                    CoordRange<TgridVec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
+                    CoordRange<TgridVec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
 
-                    shammath::AABB<Tvec> sender_bsize_off_aabb{sender_bsize_off.lower,
+                    shammath::AABB<TgridVec> sender_bsize_off_aabb{sender_bsize_off.lower,
                                                                sender_bsize_off.upper};
 
-                    using PtNode = typename SerialPatchTree<Tvec>::PtNode;
+                    using PtNode = typename SerialPatchTree<TgridVec>::PtNode;
 
                     sptree.host_for_each_leafs(
                         [&](u64 tree_id, PtNode n) {
-                            shammath::AABB<Tvec> tree_cell{n.box_min, n.box_max};
+                            shammath::AABB<TgridVec> tree_cell{n.box_min, n.box_max};
 
                             return tree_cell.get_intersect(sender_bsize_off_aabb)
                                 .is_surface_or_volume();
@@ -97,6 +99,8 @@ void Module<Tvec, TgridVec>::build_ghost_cache() {
 
     
     using GZData = GhostZonesData<Tvec, TgridVec>; 
+
+    storage.ghost_zone_infos.set(GZData{});
     GZData & gen_ghost = storage.ghost_zone_infos.get();
 
     // get ids of cells that will be on the surface of another patch.
@@ -105,12 +109,22 @@ void Module<Tvec, TgridVec>::build_ghost_cache() {
 
     gen_ghost.ghost_gen_infos = find_interfaces<Tvec, TgridVec>(scheduler(), storage.serial_patch_tree.get());
 
-
-
-
-
-
     using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
+
+
+    //if(logger::log_debug);
+    gen_ghost.ghost_gen_infos.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
+
+        std::string log;
+
+        log = shambase::format("{} -> {} : off = {}, {} -> {}", 
+        sender,receiver,build.offset,build.volume_target.lower,build.volume_target.upper);
+
+        logger::debug_ln("AMRGodunov", log);
+    });
+
+
+    
     struct InterfaceIdTable {
         InterfaceBuildInfos build_infos;
         std::unique_ptr<sycl::buffer<u32>> ids_interf;
@@ -123,19 +137,22 @@ void Module<Tvec, TgridVec>::build_ghost_cache() {
 
 
     gen_ghost.ghost_gen_infos.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
+
+        
+
         shamrock::patch::PatchData &src = scheduler().patch_data.get_pdat(sender);
 
         sycl::buffer<u32> is_in_interf {src.get_obj_cnt()};
 
         q.submit([&](sycl::handler & cgh){
-            sycl::accessor cell_min {src.get_field_buf_ref<Tvec>(0), cgh, sycl::read_only};
-            sycl::accessor cell_max {src.get_field_buf_ref<Tvec>(1), cgh, sycl::read_only};
+            sycl::accessor cell_min {src.get_field_buf_ref<TgridVec>(0), cgh, sycl::read_only};
+            sycl::accessor cell_max {src.get_field_buf_ref<TgridVec>(1), cgh, sycl::read_only};
             sycl::accessor flag{is_in_interf, cgh ,sycl::write_only, sycl::no_init};
 
-            shammath::AABB<Tvec> check_volume = build.volume_target;
+            shammath::AABB<TgridVec> check_volume = build.volume_target;
 
             shambase::parralel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a){
-                flag[id_a] = shammath::AABB<Tvec>(cell_min[id_a], cell_max[id_a]).get_intersect(check_volume).is_surface_or_volume();
+                flag[id_a] = shammath::AABB<TgridVec>(cell_min[id_a], cell_max[id_a]).get_intersect(check_volume).is_surface_or_volume();
             });
         });
 

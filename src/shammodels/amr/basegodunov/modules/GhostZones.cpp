@@ -13,7 +13,6 @@
 #include "shammath/CoordRange.hpp"
 #include "shammodels/amr/basegodunov/GhostZoneData.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include <hipSYCL/sycl/libkernel/accessor.hpp>
 
 template<class Tvec, class TgridVec>
 using Module = shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>;

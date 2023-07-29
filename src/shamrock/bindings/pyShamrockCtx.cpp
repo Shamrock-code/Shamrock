@@ -226,6 +226,12 @@ Register_pymod(pyshamrockctxinit){
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
         .def("pdata_layout_print", &ShamrockCtx::pdata_layout_print)
         .def("dump_status", &ShamrockCtx::dump_status)
+        .def("scheduler_step", 
+            [](ShamrockCtx & self, bool do_split_merge,bool do_load_balancing){
+                self.scheduler_step(do_split_merge, do_load_balancing);
+            },
+            py::arg("do_split_merge") = true,
+            py::arg("do_load_balancing") = true)
         .def("set_coord_domain_bound",
             [](ShamrockCtx & ctx, std::array<f64, 3> min_vals, std::array<f64, 3> max_vals){
             ctx.set_coord_domain_bound({

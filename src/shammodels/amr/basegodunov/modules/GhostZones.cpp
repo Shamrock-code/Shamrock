@@ -9,6 +9,7 @@
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shamalgs/numeric/numeric.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shammath/AABB.hpp"
@@ -29,22 +30,27 @@ using Module = shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>;
 template<class Tvec, class TgridVec>
 auto find_interfaces(PatchScheduler &sched, SerialPatchTree<TgridVec> &sptree) {
 
+    using namespace shamrock::patch;
+    using namespace shammath;
+
     using GZData = shammodels::basegodunov::GhostZonesData<Tvec, TgridVec>;
+    static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+    using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
+    using GeneratorMap = typename GZData::GeneratorMap;
 
     StackEntry stack_loc{};
 
-    static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+    
 
-    using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
+    
 
-    using namespace shamrock::patch;
-    using namespace shammath;
+    
 
     i32 repetition_x = 1;
     i32 repetition_y = 1;
     i32 repetition_z = 1;
 
-    using GeneratorMap = typename GZData::GeneratorMap;
+    
     GeneratorMap results;
 
     shamrock::patch::SimulationBoxInfo &sim_box = sched.get_sim_box();
@@ -68,12 +74,26 @@ auto find_interfaces(PatchScheduler &sched, SerialPatchTree<TgridVec> &sptree) {
 
                     using PtNode = typename SerialPatchTree<TgridVec>::PtNode;
 
+                    logger::debug_sycl_ln("AMR:interf","find_interfaces -",psender.id_patch,
+                                sender_bsize_off_aabb.lower, 
+                                sender_bsize_off_aabb.upper);
+
                     sptree.host_for_each_leafs(
                         [&](u64 tree_id, PtNode n) {
                             shammath::AABB<TgridVec> tree_cell{n.box_min, n.box_max};
 
-                            return tree_cell.get_intersect(sender_bsize_off_aabb)
+                            bool result = tree_cell.get_intersect(sender_bsize_off_aabb)
                                 .is_surface_or_volume();
+
+                            logger::raw_ln(
+                                result, 
+                                sender_bsize_off_aabb.lower, 
+                                sender_bsize_off_aabb.upper,
+                                tree_cell.lower,
+                                tree_cell.upper
+                                );
+
+                            return result;
                         },
                         [&](u64 id_found, PtNode n) {
                             if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0) &&

@@ -37,6 +37,7 @@
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
 #include <array>
 #include <tuple>
+#include <vector>
 
 
 
@@ -49,6 +50,7 @@ class SerialPatchTree{public:
 
     
     //TODO use unique pointer instead
+    u32 root_count = 0;
     std::unique_ptr<sycl::buffer<PtNode>> serial_tree_buf;
     std::unique_ptr<sycl::buffer<u64>>    linked_patch_ids_buf;
 
@@ -81,6 +83,8 @@ class SerialPatchTree{public:
 
     std::vector<PtNode> serial_tree;
     std::vector<u64> linked_patch_ids;
+    std::vector<u64> roots_ids;
+    
 
     void build_from_patch_tree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<fp_prec_vec> box_transform);
 
@@ -107,7 +111,11 @@ class SerialPatchTree{public:
         sycl::host_accessor lpid {shambase::get_check_ref(linked_patch_ids_buf), sycl::read_only};
 
         std::stack<u64> id_stack;
-        id_stack.push(0);
+
+        for(u64 root : roots_ids){
+            id_stack.push(root);
+        }
+        
 
         while(!id_stack.empty()){
             u64 cur_id = id_stack.top();id_stack.pop();

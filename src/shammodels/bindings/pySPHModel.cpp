@@ -81,6 +81,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_cfl_force", &T::set_cfl_force)
         .def("set_particle_mass", &T::set_particle_mass)
         .def("set_eos_gamma", &T::set_eos_gamma)
+        .def("rho_h", &T::rho_h)
         .def("get_box_dim_fcc_3d",
              [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {
                  return self.get_box_dim_fcc_3d(dr, xcnt, ycnt, zcnt);
@@ -110,6 +111,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal cmass) {
                  return self.add_cube_disc_3d(center, Npart, p, rho_0, m, r_in, r_out, q,cmass);
              })
+        .def("add_disc_3d",[](T &self,
+                Tvec center, 
+                Tscal central_mass,
+                u32 Npart,
+                Tscal r_in,
+                Tscal r_out,
+                Tscal disc_mass,
+                Tscal p,
+                Tscal H_r_in,
+                Tscal q){
+                    return self.add_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q);
+                })
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
         .def("set_value_in_a_box",

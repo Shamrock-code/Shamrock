@@ -16,6 +16,7 @@
 #include "shambase/time.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
+#include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
@@ -288,7 +289,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
     ComputeField<Tscal> _epsilon_h, _h_old;
 
     u32 hstep_cnt = 0;
-    for (; hstep_cnt < 50; hstep_cnt++) {
+    for (; hstep_cnt < 100; hstep_cnt++) {
 
         gen_ghost_handler(time_val);
         build_ghost_cache();
@@ -405,6 +406,10 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
         _epsilon_h.reset();
         _h_old.reset();
         break;
+    }
+
+    if(hstep_cnt == 100){
+        logger::err_ln("SPH", "the h iterator is not converged after",hstep_cnt, "iterations");
     }
 }
 
@@ -1564,6 +1569,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context,solver_config,storage);
 
 
+    sink_update.accrete_particles(gpart_mass);
 
     do_predictor_leapfrog(dt);
 
@@ -1634,84 +1640,14 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
 
         update_derivs();
 
-        std::string cv_checks = "convervation infos :\n";
+        modules::ConservativeCheck<Tvec, Kern> cv_check(context,solver_config,storage);
+        cv_check.check_conservation(gpart_mass);
 
-        ///////////////////////////////////
-        // momentum check :
-        ///////////////////////////////////
-        Tvec tmpp{0, 0, 0};
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-            PatchDataField<Tvec> &field = pdat.get_field<Tvec>(ivxyz);
-            tmpp += field.compute_sum();
-        });
-        Tvec sum_v = shamalgs::collective::allreduce_sum(tmpp);
-        if(shamsys::instance::world_rank == 0){
-            cv_checks += shambase::format("    sum v = {}\n", gpart_mass * sum_v);
-        }
 
-        ///////////////////////////////////
-        // force sum check :
-        ///////////////////////////////////
-        Tvec tmpa{0, 0, 0};
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-            PatchDataField<Tvec> &field = pdat.get_field<Tvec>(iaxyz);
-            tmpa += field.compute_sum();
-        });
-        Tvec sum_a = shamalgs::collective::allreduce_sum(tmpa);
-        if(shamsys::instance::world_rank == 0){
-            cv_checks += shambase::format("    sum a = {}\n", gpart_mass * sum_a);
-        }
 
-        ///////////////////////////////////
-        // energy check :
-        ///////////////////////////////////
-        Tscal tmpe{0};
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-            PatchDataField<Tscal> &field_u = pdat.get_field<Tscal>(iuint);
-            PatchDataField<Tvec> &field_v  = pdat.get_field<Tvec>(ivxyz);
-            tmpe += field_u.compute_sum() + 0.5 * field_v.compute_dot_sum();
-        });
-        Tscal sum_e = shamalgs::collective::allreduce_sum(tmpe);
-        if(shamsys::instance::world_rank == 0){
-            cv_checks += shambase::format("    sum e = {}\n", gpart_mass * sum_e);
-        }
 
-        Tscal pmass  = gpart_mass;
-        Tscal tmp_de = 0;
-        scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchData &pdat) {
-            PatchDataField<Tscal> &field_u  = pdat.get_field<Tscal>(iuint);
-            PatchDataField<Tvec> &field_v   = pdat.get_field<Tvec>(ivxyz);
-            PatchDataField<Tscal> &field_du = pdat.get_field<Tscal>(iduint);
-            PatchDataField<Tvec> &field_a   = pdat.get_field<Tvec>(iaxyz);
 
-            sycl::buffer<Tscal> temp_de(pdat.get_obj_cnt());
 
-            shamsys::instance::get_compute_queue().submit([&, pmass](sycl::handler &cgh) {
-                sycl::accessor u{*field_u.get_buf(), cgh, sycl::read_only};
-                sycl::accessor du{*field_du.get_buf(), cgh, sycl::read_only};
-                sycl::accessor v{*field_v.get_buf(), cgh, sycl::read_only};
-                sycl::accessor a{*field_a.get_buf(), cgh, sycl::read_only};
-                sycl::accessor de{temp_de, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                    de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item]);
-                });
-            });
-
-            Tscal de_p = shamalgs::reduction::sum(
-                shamsys::instance::get_compute_queue(), temp_de, 0, pdat.get_obj_cnt());
-            tmp_de += de_p;
-        });
-
-        Tscal de = shamalgs::collective::allreduce_sum(tmp_de);
-
-        if(shamsys::instance::world_rank == 0){
-            cv_checks += shambase::format("    sum de = {}", de);
-        }
-
-        if(shamsys::instance::world_rank == 0){
-            logger::info_ln("sph::Model", cv_checks);
-        }
 
         ComputeField<Tscal> vepsilon_v_sq =
             utility.make_compute_field<Tscal>("vmean epsilon_v^2", 1);

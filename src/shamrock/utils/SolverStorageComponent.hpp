@@ -43,9 +43,9 @@ namespace shamrock {
          *
          * @return T& the reference held
          */
-        T &get() {
+        T &get(SourceLocation loc = SourceLocation()) {
             StackEntry stack_loc{};
-            return shambase::get_check_ref(hndl);
+            return shambase::get_check_ref(hndl,loc);
         }
 
         /**

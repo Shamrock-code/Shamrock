@@ -5,5 +5,6 @@ target_sources(shamrock_lib
         DiffOperator.cpp
         DiffOperatorDtDivv.cpp
         SinkParticlesUpdate.cpp
+        ConservativeCheck.cpp
     PUBLIC
     )

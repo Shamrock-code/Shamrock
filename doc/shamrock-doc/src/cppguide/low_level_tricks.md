@@ -2,6 +2,45 @@
 
 The tricks described below must only be used in last resort.
 
+## Move semantics and unique_ptr
+
+```c++
+struct Foo
+{
+    static inline int count{ 0 };
+    int id;
+
+    Foo() : id(count++) { std::cout << "(id: " << id << ") CTOR" << std::endl; }
+    Foo(const Foo& other) : id(count++) { std::cout << "(id: " << id << ") Copy CTOR From ID " << other.id << std::endl; }
+    Foo(Foo&& other) : id(count++) { std::cout << "(id: " << id << ") Move CTOR From ID " << other.id << std::endl; }
+    const Foo& operator=(const Foo& other) { std::cout << "(id: " << id << ") Copy Assignment Operator RHS ID " << other.id << std::endl; return *this; }
+    const Foo& operator=(Foo&& other) { std::cout << "(id: " << id << ") Move Assignment Operator RHS ID " << other.id << std::endl; return *this; }
+    ~Foo() { std::cout << "(id: " << id << ") DTOR" << std::endl; }
+};
+
+template<typename T>
+auto take(std::unique_ptr<T>& o) -> T {
+    if(!o) throw "";
+    std::unique_ptr<T> tmp = std::exchange(o,{});
+    return T(std::move(*tmp));
+}
+
+int main(int argc, char* argv[])
+{
+
+    std::unique_ptr<int> oi = std::make_unique<int>(1);
+    int i = take(oi);
+    assert(i == 1);
+    assert(!bool(oi));
+
+    auto x = std::make_unique<Foo>();
+    Foo f (take(x));
+    return 0;
+}
+```
+
+The take function trigger the move and not the copy
+
 ## Avoid if inclusions
 
 Let say that we have 4 checks and the following function

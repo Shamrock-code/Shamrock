@@ -53,8 +53,8 @@ model.set_particle_mass(pmass)
 
 model.add_sink(1,(0,0,0),(0,0,0),0.05)
 
-#vk_p = (ucte.G() * 1 / 1)**0.5
-#model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,vk_p),0.01)
+vk_p = (ucte.G() * 1 / 1)**0.5
+model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,vk_p),0.01)
 #model.add_sink(100,(0,2,0),(0,0,1))
 
 def compute_rho(h):

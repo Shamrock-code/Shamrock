@@ -24,6 +24,7 @@ namespace shammodels::sph {
         Tvec ext_acceleration;
         Tscal mass;
         Tvec angular_momentum;
+        Tscal accretion_radius;
     };
 
 } // namespace shammodels::sph

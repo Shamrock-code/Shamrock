@@ -16,3 +16,7 @@
 #error "mpi headers cannot be found check the output of "
 #endif
 
+#if __has_include(<mpi-ext.h>)
+#include <mpi-ext.h>
+#define FOUND_MPI_EXT
+#endif

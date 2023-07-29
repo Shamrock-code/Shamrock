@@ -13,6 +13,7 @@
 
 #include "aliases.hpp"
 #include "shamalgs/random/random.hpp"
+#include "shambase/Constants.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shambase/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -138,6 +139,94 @@ namespace generic::setup::generators {
 
     }
 
+    template<class Tscal>
+    struct DiscOutput{
+        sycl::vec<Tscal, 3> pos;
+        sycl::vec<Tscal, 3> velocity;
+        Tscal cs;
+        Tscal rho;
+    };
+
+    /**
+     * @brief 
+     * 
+     * @tparam flt 
+     * @param Npart 
+     * @param r_in 
+     * @param r_out 
+     * @param sigma_profile 
+     * @param cs_profile 
+     * @param rot_profile 
+     * @param pusher 
+     */
+    template<class flt>
+    inline void add_disc2(
+        u32 Npart,
+        flt r_in,
+        flt r_out,
+        std::function<flt(flt)> sigma_profile,
+        std::function<flt(flt)> cs_profile,
+        std::function<flt(flt)> rot_profile,
+        std::function<void(DiscOutput<flt>)> pusher
+    ){
+        constexpr flt _2pi = 2*shambase::Constants<flt>::pi;
+
+
+        auto f_func = [&](flt r){
+            return r*sigma_profile(r);
+        };
+
+        flt fmax = f_func(r_out);
+
+        std::mt19937 eng(0x111);
+
+        auto find_r = [&](){
+            while(true){
+                flt u2 = shamalgs::random::mock_value<flt>(eng,0, fmax);
+                flt r = shamalgs::random::mock_value<flt>(eng,r_in, r_out);
+                if (u2 < f_func(r)){
+                    return r;
+                }
+            }
+        };
+
+        // eq 298 phantom paper & appendix A.7
+
+        
+        for(u32 i = 0 ;i < Npart; i++){
+
+            flt theta = shamalgs::random::mock_value<flt>(eng,0, _2pi);
+            flt Gauss = shamalgs::random::mock_gaussian<flt>(eng);
+
+            flt r = find_r();
+
+            flt vk = rot_profile(r);
+            flt cs = cs_profile(r);
+            flt sigma = sigma_profile(r);
+
+            flt H_r = cs/vk;
+            flt H = H_r * r;
+            
+            flt z = H*Gauss;
+
+            auto pos = sycl::vec<flt, 3>{r*sycl::cos(theta),z,r*sycl::sin(theta)};
+
+            auto etheta = sycl::vec<flt, 3>{-pos.z(),0, pos.x()};
+            etheta /= sycl::length(etheta);
+
+            auto vel = vk*etheta;
+
+            flt rho = (sigma / (H * shambase::Constants<flt>::pi2_sqrt))*
+                sycl::exp(- z*z / (2*H*H));
+
+            DiscOutput<flt> out {
+                pos, vel, cs, rho
+            };
+
+            pusher(out);
+
+        }
+    }
 
     /**
      * @brief 
@@ -145,7 +234,7 @@ namespace generic::setup::generators {
      * @tparam flt 
      * @tparam Tpred_pusher 
      * @param Npart number of particles
-     * @param p randial power law surface density (default = 1)  sigma prop r^-p
+     * @param p radial power law surface density (default = 1)  sigma prop r^-p
      * @param rho_0 rho_0 volumic density (at r = 1)
      * @param m mass part
      * @param r_in inner cuttof
@@ -165,29 +254,25 @@ namespace generic::setup::generators {
     ){
         flt _2pi = 2*M_PI;
 
-
         flt K = _2pi*rho_0/m;
         flt c = 2-p;
 
         flt y = K*(r_out-r_in)/c;
-        
 
         std::mt19937 eng(0x111);
+
 
         for(u32 i = 0 ;i < Npart; i++){
 
             flt r_1 = shamalgs::random::mock_value<flt>(eng,0, y);
-            flt r_2 = shamalgs::random::mock_value<flt>(eng,0, _2pi);
-            flt r_3 = shamalgs::random::mock_value<flt>(eng,0, 1);
-            flt r_4 = shamalgs::random::mock_value<flt>(eng,0, 1);
 
             flt r = sycl::pow(
                 sycl::pow(r_in, c) + c*r_1/K ,
                 1/c);
             
-            flt theta = r_2;
+            flt theta = shamalgs::random::mock_value<flt>(eng,0, _2pi);
 
-            flt u = sycl::sqrt(-2*sycl::log(r_3))*sycl::cos(_2pi*r_4);
+            flt u = shamalgs::random::mock_gaussian<flt>(eng);
 
             flt H = 0.1*sycl::pow(r,(flt)(3./2. - q/2));
 

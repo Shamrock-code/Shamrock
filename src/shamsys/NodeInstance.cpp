@@ -20,11 +20,10 @@
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
-#include <mpi-ext.h>
+#include "shambase/mpi.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 #include "MpiDataTypeHandler.hpp"
-#include <mpi.h>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -101,6 +100,7 @@ namespace shamsys::mpi_features{
     StateMPI_Aware mpi_rocm_aware;
 
     void fetch_mpi_capabilities(){
+        #ifdef FOUND_MPI_EXT
         //detect MPI cuda aware
         #if defined(MPIX_CUDA_AWARE_SUPPORT)
         if (1 == MPIX_Query_cuda_support()) {
@@ -122,6 +122,10 @@ namespace shamsys::mpi_features{
         #else  /* !defined(MPIX_ROCM_AWARE_SUPPORT) */
         mpi_rocm_aware = Unknown;
         #endif /* MPIX_ROCM_AWARE_SUPPORT */ 
+        #else
+        mpi_cuda_aware = Unknown;
+        mpi_rocm_aware = Unknown;
+        #endif
     }
     
     void print_mpi_capabilities(){

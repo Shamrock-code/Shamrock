@@ -56,6 +56,11 @@ On the CBP (ENSL) the qstrm importer fails, bu it can be ran a posteriori :
 nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi /usr/bin/mpirun -n 2 ./shamrock --sycl-cfg auto:CUDA --loglevel 1 --rscript ../../exemples/spherical_wave.py
 ```
 
+Current command on the GDX : 
+```
+nsys profile -t cuda,nvtx,mpi --gpu-metrics-device=1,2,3,4 --cuda-memory-usage=true --mpi-impl=openmpi  mpirun -n 4 ./shamrock --sycl-cfg auto:CUDA --sycl-ls-map --loglevel 1 --rscript ../exemples/spherical_wave.py
+```
+
 ### NCU
 
 ```

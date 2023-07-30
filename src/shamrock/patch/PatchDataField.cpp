@@ -10,7 +10,7 @@
 #include "shamalgs/algorithm/algorithm.hpp"
 #include "shamalgs/memory/details/SerializeHelperMember.hpp"
 #include "shamalgs/random/random.hpp"
-#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"

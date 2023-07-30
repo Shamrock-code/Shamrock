@@ -8,7 +8,7 @@
 
 #include "shamalgs/memory/memory.hpp"
 #include "groupReduction.hpp"
-#include "shamalgs/reduction/details/fallbackReduction.hpp"
+#include "shamalgs/details/reduction/details/fallbackReduction.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shamsys/legacy/log.hpp"
 

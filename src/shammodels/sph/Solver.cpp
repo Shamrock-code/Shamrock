@@ -9,7 +9,7 @@
 #include "Solver.hpp"
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/reduction.hpp"
-#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/string.hpp"

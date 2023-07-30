@@ -11,7 +11,7 @@
 #include "aliases.hpp"
 #include "shamalgs/memory/memory.hpp"
 #include "shamalgs/memory/serialize.hpp"
-#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"

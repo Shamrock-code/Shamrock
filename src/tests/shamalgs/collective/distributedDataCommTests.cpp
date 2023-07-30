@@ -9,7 +9,7 @@
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamalgs/memory/memory.hpp"
 #include "shamalgs/random/random.hpp"
-#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/reduction.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shamsys/comm/details/CommunicationBufferImpl.hpp"
 #include "shamtest/details/TestResult.hpp"

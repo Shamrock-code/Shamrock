@@ -59,13 +59,13 @@ namespace shamalgs::reduction {
     }
 
     template<class T>
-    bool has_nan(sycl::queue & q,sycl::buffer<T> &buf, u64 cnt);
+    bool has_nan(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>
-    bool has_inf(sycl::queue & q,sycl::buffer<T> &buf, u64 cnt);
+    bool has_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>
-    bool has_nan_or_inf(sycl::queue & q,sycl::buffer<T> &buf, u64 cnt);
+    bool has_nan_or_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>
     bool equals(sycl::buffer<T> &buf1, sycl::buffer<T> &buf2) {

@@ -8,9 +8,9 @@
 
 #include <map>
 #include <random>
-#include "shamalgs/reduction/details/fallbackReduction.hpp"
-#include "shamalgs/reduction/reduction.hpp"
-#include "shamalgs/reduction/details/sycl2020reduction.hpp"
+#include "shamalgs/details/reduction/details/fallbackReduction.hpp"
+#include "shamalgs/reduction.hpp"
+#include "shamalgs/details/reduction/details/sycl2020reduction.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -18,7 +18,7 @@
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamalgs/random/random.hpp"
-#include "shamalgs/reduction/details/groupReduction.hpp"
+#include "shamalgs/details/reduction/details/groupReduction.hpp"
 
 using namespace shamalgs::random;
 

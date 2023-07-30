@@ -36,7 +36,7 @@
 #include "kernels/reduction_alg.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 
-#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/reduction.hpp"
 #include "shamrock/tree/RadixTreeField.hpp"
 
 

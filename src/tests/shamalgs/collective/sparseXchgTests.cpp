@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/memory/memory.hpp"
-#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shamsys/NodeInstance.hpp"

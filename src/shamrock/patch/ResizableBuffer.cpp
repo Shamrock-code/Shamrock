@@ -8,7 +8,7 @@
 
 #include "ResizableBuffer.hpp"
 #include "shamalgs/random/random.hpp"
-#include "shamalgs/reduction/reduction.hpp"
+#include "shamalgs/reduction.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/NodeInstance.hpp"

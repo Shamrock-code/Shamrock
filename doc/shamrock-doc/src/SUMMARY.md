@@ -12,6 +12,7 @@
 # Develloper Doc
 
 - [Codebase Organisation](./devdoc/codebase_org.md)
+- [Testing](./devdoc/testing.md)
 - [Conventions](./devdoc/coding_conventions.md)
 - [Code coverage](./devdoc/code_coverage.md)
 - [Profiling](./devdoc/profiling.md)

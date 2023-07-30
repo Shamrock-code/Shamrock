@@ -6,13 +6,27 @@
 //
 // -------------------------------------------------------//
 
-#include "fallbackReduction.hpp"
-#include "shambase/sycl_utils.hpp"
+#pragma once
+
+#include "aliases.hpp"
+#include "shambase/sycl.hpp"
+#include "shambase/sycl_utils/sycl_utilities.hpp"
 
 namespace shamalgs::reduction::details {
 
     template<class T>
-    T _int_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    struct FallbackReduction{
+
+        static T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+
+        static T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+
+        static T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+
+    };
+
+    template<class T>
+    inline T _int_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
         T accum;
 
         {
@@ -31,7 +45,7 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T>
-    T _int_min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T _int_min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
         T accum;
 
         {
@@ -50,7 +64,7 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T>
-    T _int_max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T _int_max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
         T accum;
 
         {
@@ -74,53 +88,24 @@ namespace shamalgs::reduction::details {
 
     
     template<class T>
-    T FallbackReduction<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T FallbackReduction<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
         
         return _int_sum(q, buf1, start_id, end_id);
         
     }
 
     template<class T>
-    T FallbackReduction<T>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T FallbackReduction<T>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
         
         return _int_min(q, buf1, start_id, end_id);
         
     }
 
     template<class T>
-    T FallbackReduction<T>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T FallbackReduction<T>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
         
         return _int_max(q, buf1, start_id, end_id);
         
     }
 
-
-
-
-    #define XMAC_TYPES \
-    X(f32   ) \
-    X(f32_2 ) \
-    X(f32_3 ) \
-    X(f32_4 ) \
-    X(f32_8 ) \
-    X(f32_16) \
-    X(f64   ) \
-    X(f64_2 ) \
-    X(f64_3 ) \
-    X(f64_4 ) \
-    X(f64_8 ) \
-    X(f64_16) \
-    X(u32   ) \
-    X(u64   ) \
-    X(u32_3 ) \
-    X(u64_3 ) \
-    X(i64_3 ) \
-    X(i64 )
-
-    #define X(_arg_)\
-    template struct FallbackReduction<_arg_>;
-
-    XMAC_TYPES
-    #undef X
-
-}
+} // namespace shamalgs::reduction::details

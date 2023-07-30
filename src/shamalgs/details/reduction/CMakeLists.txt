@@ -5,5 +5,3 @@ target_sources(shamrock_lib
     PUBLIC
        
     )
-
-add_subdirectory(details)

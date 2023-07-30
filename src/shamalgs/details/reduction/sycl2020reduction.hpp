@@ -6,11 +6,23 @@
 //
 // -------------------------------------------------------//
 
-#include "sycl2020reduction.hpp"
+#pragma once
+
 #include "shamalgs/memory.hpp"
+#include "shambase/sycl.hpp"
 
 
 namespace shamalgs::reduction::details {
+
+    template<class T>
+    struct SYCL2020 {
+        static T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+
+        //static T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+
+        //static T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+    };
+
     template<class T, class Op>
     inline T
     reduce_sycl_2020(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id, Op op) {
@@ -47,7 +59,7 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T>
-    T SYCL2020<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T SYCL2020<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
         #ifdef SYCL_COMP_DPCPP
         return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
         #endif
@@ -56,53 +68,5 @@ namespace shamalgs::reduction::details {
         return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
         #endif
     }
-
-    //template<class T>
-    //T SYCL2020<T>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-    //    #ifdef SYCL_COMP_DPCPP
-    //    return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::minimum<>{});
-    //    #endif
-//
-    //    #ifdef SYCL_COMP_OPENSYCL
-    //    return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::minimum<T>{});
-    //    #endif
-    //}
-//
-    //template<class T>
-    //T SYCL2020<T>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-    //    #ifdef SYCL_COMP_DPCPP
-    //    return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::maximum<>{});
-    //    #endif
-//
-    //    #ifdef SYCL_COMP_OPENSYCL
-    //    return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::maximum<T>{});
-    //    #endif
-    //}
-
-
-
-    #define XMAC_TYPES \
-    X(f32   ) \
-    X(f32_2 ) \
-    X(f32_3 ) \
-    X(f32_4 ) \
-    X(f32_8 ) \
-    X(f32_16) \
-    X(f64   ) \
-    X(f64_2 ) \
-    X(f64_3 ) \
-    X(f64_4 ) \
-    X(f64_8 ) \
-    X(f64_16) \
-    X(u32   ) \
-    X(u64   ) \
-    X(u32_3 ) \
-    X(u64_3 )
-
-    #define X(_arg_)\
-    template struct SYCL2020<_arg_>;
-
-    XMAC_TYPES
-    #undef X
 
 } // namespace shamalgs::reduction::details

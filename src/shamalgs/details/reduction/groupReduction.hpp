@@ -6,21 +6,31 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 #include "shamalgs/memory.hpp"
-#include "groupReduction.hpp"
-#include "shamalgs/details/reduction/details/fallbackReduction.hpp"
+#include "shambase/sycl.hpp"
 #include "shambase/sycl_utils.hpp"
-#include "shamsys/legacy/log.hpp"
 
 template<class T,u32 work_group_size>
 class KernelSliceReduceSum;
 
 namespace shamalgs::reduction::details {
 
+    template<class T,u32 work_group_size>
+    struct GroupReduction{
+
+        static T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+
+        static T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+
+        static T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+
+    };
 
 
     template<class T,u32 work_group_size>
-    T GroupReduction<T, work_group_size>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T GroupReduction<T, work_group_size>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
         u32 len = end_id - start_id;
 
             sycl::buffer<T> buf_int(len);
@@ -119,58 +129,5 @@ namespace shamalgs::reduction::details {
 
             return ret;
     }
-
-    //template<class T,u32 work_group_size>
-    //T GroupReduction<T, work_group_size>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-    //    #ifdef SYCL_COMP_DPCPP
-    //    return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::minimum<>{});
-    //    #endif
-//
-//
-    //    #ifdef SYCL_COMP_OPENSYCL
-    //    return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::minimum<T>{});
-    //    #endif
-    //}
-//
-    //template<class T,u32 work_group_size>
-    //T GroupReduction<T, work_group_size>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-    //    #ifdef SYCL_COMP_DPCPP
-    //    return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::maximum<>{});
-    //    #endif
-//
-//
-    //    #ifdef SYCL_COMP_OPENSYCL
-    //    return manual_reduce_impl<work_group_size>::reduce_manual(q, buf1, start_id, end_id, sycl::maximum<T>{});
-    //    #endif
-    //}
-    
-
-    #define XMAC_TYPES \
-    X(f32   ) \
-    X(f32_2 ) \
-    X(f32_3 ) \
-    X(f32_4 ) \
-    X(f32_8 ) \
-    X(f32_16) \
-    X(f64   ) \
-    X(f64_2 ) \
-    X(f64_3 ) \
-    X(f64_4 ) \
-    X(f64_8 ) \
-    X(f64_16) \
-    X(u32   ) \
-    X(u64   ) \
-    X(u32_3 ) \
-    X(u64_3 ) \
-    X(i64_3 ) \
-    X(i64 )
-
-    #define X(_arg_) \
-    template struct GroupReduction<_arg_,8>;\
-    template struct GroupReduction<_arg_,32>;\
-    template struct GroupReduction<_arg_,128>;
-
-    XMAC_TYPES
-    #undef X
 
 } // namespace shamalgs::reduction::details

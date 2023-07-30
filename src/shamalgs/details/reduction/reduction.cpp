@@ -9,9 +9,9 @@
 #include "reduction.hpp"
 
 #include "shamalgs/memory.hpp"
-#include "shamalgs/details/reduction/details/sycl2020reduction.hpp"
-#include "shamalgs/details/reduction/details/groupReduction.hpp"
-#include "shamalgs/details/reduction/details/fallbackReduction.hpp"
+#include "shamalgs/details/reduction/sycl2020reduction.hpp"
+#include "shamalgs/details/reduction/groupReduction.hpp"
+#include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/sycl_builtins.hpp"

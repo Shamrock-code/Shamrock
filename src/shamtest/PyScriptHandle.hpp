@@ -9,6 +9,7 @@
 #pragma once
 
 #include "shambindings/pytypealias.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <pybind11/embed.h>
 #include <pybind11/eval.h>
 #include <pybind11/pybind11.h>
@@ -53,11 +54,13 @@ struct PyScriptHandle {
     }
 
     template <size_t N>
-    inline void exec(const char (&expr)[N], pybind11::object &&global = pybind11::globals()) {
+    inline bool exec(const char (&expr)[N], pybind11::object &&global = pybind11::globals()) {
         try{
             py::exec(expr, std::forward<pybind11::object>(global), locals);
         } catch (const std::exception &e) {
-            std::cout << e.what() << std::endl;
+            logger::warn_ln("PyScriptHandle", "the script throwed an error :",e.what());
+            return false;
         }
+        return true;
     }
 };

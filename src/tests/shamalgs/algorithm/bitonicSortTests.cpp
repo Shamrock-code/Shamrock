@@ -6,9 +6,9 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/details/algorithm/details/radixSortOnesweep.hpp"
+#include "shamalgs/details/algorithm/radixSortOnesweep.hpp"
 #include "sortTests.hpp"
-#include "shamalgs/details/algorithm/details/bitonicSort.hpp"
+#include "shamalgs/details/algorithm/bitonicSort.hpp"
 
 TestStart(Unittest, "shamalgs/algorithm/details/bitonicSort_legacy", test_bitonic_sort_legacy, 1){
     

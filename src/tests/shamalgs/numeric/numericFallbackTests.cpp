@@ -8,7 +8,7 @@
 
 
 #include "shamalgs/memory.hpp"
-#include "shamalgs/details/numeric/details/numericFallback.hpp"
+#include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"

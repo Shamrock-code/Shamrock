@@ -10,10 +10,10 @@
 
 #include "numericTests.hpp"
 #include "shamalgs/memory.hpp"
-#include "shamalgs/details/numeric/details/exclusiveScanAtomic.hpp"
-#include "shamalgs/details/numeric/details/exclusiveScanGPUGems39.hpp"
-#include "shamalgs/details/numeric/details/numericFallback.hpp"
-#include "shamalgs/details/numeric/details/scanDecoupledLookback.hpp"
+#include "shamalgs/details/numeric/exclusiveScanAtomic.hpp"
+#include "shamalgs/details/numeric/exclusiveScanGPUGems39.hpp"
+#include "shamalgs/details/numeric/numericFallback.hpp"
+#include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/time.hpp"
 

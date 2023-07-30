@@ -9,8 +9,8 @@
 #include "memory.hpp"
 
 #include "aliases.hpp"
-#include "details/avoidCopyMemory.hpp"
-#include "details/fallbackMemory.hpp"
+#include "avoidCopyMemory.hpp"
+#include "fallbackMemory.hpp"
 
 namespace shamalgs::memory {
 

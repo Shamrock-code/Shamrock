@@ -6,12 +6,12 @@
 //
 // -------------------------------------------------------//
 
-#include "numeric.hpp"
-#include "details/numericFallback.hpp"
-#include "shamalgs/details/numeric/details/exclusiveScanAtomic.hpp"
-#include "shamalgs/details/numeric/details/exclusiveScanGPUGems39.hpp"
-#include "shamalgs/details/numeric/details/scanDecoupledLookback.hpp"
-#include "shamalgs/details/numeric/details/streamCompactExclScan.hpp"
+#include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/details/numeric/numericFallback.hpp"
+#include "shamalgs/details/numeric/exclusiveScanAtomic.hpp"
+#include "shamalgs/details/numeric/exclusiveScanGPUGems39.hpp"
+#include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
+#include "shamalgs/details/numeric/streamCompactExclScan.hpp"
 
 namespace shamalgs::numeric {
 

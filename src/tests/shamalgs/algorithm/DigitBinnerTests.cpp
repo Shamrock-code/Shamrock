@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/details/algorithm/details/DigitBinner.hpp"
+#include "shamalgs/details/algorithm/DigitBinner.hpp"
 
 #include "shamalgs/random.hpp"
 #include "shambase/time.hpp"

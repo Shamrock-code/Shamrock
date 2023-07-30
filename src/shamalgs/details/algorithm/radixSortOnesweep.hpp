@@ -16,7 +16,7 @@
 #include "shambase/type_traits.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "DigitBinner.hpp"
-#include "shamalgs/details/numeric/details/scanDecoupledLookback.hpp"
+#include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include <numeric>
 
 

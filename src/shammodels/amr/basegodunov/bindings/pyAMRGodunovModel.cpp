@@ -32,7 +32,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     py::class_<T>(m, name_model.c_str())
     .def("init_scheduler",&T::init_scheduler)
     .def("make_base_grid",&T::make_base_grid)
-    .def("dump_vtk",&T::dump_vtk);
+    .def("dump_vtk",&T::dump_vtk)
+    .def("evolve_once",&T::evolve_once);
 
 }
 

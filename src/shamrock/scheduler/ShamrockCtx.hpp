@@ -209,4 +209,11 @@ class ShamrockCtx{public:
         }
 
     }
+
+    inline void scheduler_step(bool do_split_merge,bool do_load_balancing){
+        if (!sched) {
+            throw ShamAPIException("scheduler is not initialized");
+        }
+        sched->scheduler_step(do_split_merge, do_load_balancing);
+    }
 };

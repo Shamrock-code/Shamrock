@@ -35,12 +35,11 @@ namespace shammodels::basegodunov {
 
         void init_scheduler(u32 crit_split, u32 crit_merge);
 
-        void make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count){
-            shamrock::amr::AMRGrid<TgridVec, 3> grid (shambase::get_check_ref(ctx.sched));
-            grid.make_base_grid(bmin, cell_size, {cell_count.x(), cell_count.y(), cell_count.z()});
-        }
+        void make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count);
 
         void dump_vtk(std::string filename);
+
+        Tscal evolve_once(Tscal t_current,Tscal dt_input);
 
         
     };

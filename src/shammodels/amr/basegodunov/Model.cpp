@@ -37,6 +37,21 @@ void Model<Tvec, TgridVec>::init_scheduler(u32 crit_split, u32 crit_merge){
 }
 
 template<class Tvec, class TgridVec>
+void Model<Tvec, TgridVec>::make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count){
+    shamrock::amr::AMRGrid<TgridVec, 3> grid (shambase::get_check_ref(ctx.sched));
+    grid.make_base_grid(bmin, cell_size, {cell_count.x(), cell_count.y(), cell_count.z()});
+
+    PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+    sched.owned_patch_id = sched.patch_list.build_local();
+    sched.patch_list.build_local_idx_map();
+    sched.update_local_dtcnt_value();
+    sched.update_local_load_value();
+    sched.scheduler_step(true, true);
+
+}
+
+template<class Tvec, class TgridVec>
 void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
 
     StackEntry stack_loc{};
@@ -74,5 +89,9 @@ void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
 
 }
 
+template<class Tvec, class TgridVec>
+auto Model<Tvec, TgridVec>::evolve_once(Tscal t_current,Tscal dt_input)-> Tscal{
+    return solver.evolve_once(t_current, dt_input);
+}
 
 template class shammodels::basegodunov::Model<f64_3, i64_3>;

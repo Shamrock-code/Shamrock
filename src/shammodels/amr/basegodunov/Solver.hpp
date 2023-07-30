@@ -9,6 +9,7 @@
 #pragma once
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::basegodunov {
@@ -31,6 +32,8 @@ namespace shammodels::basegodunov {
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
         Config solver_config;
+
+        SolverStorage<Tvec,TgridVec, u_morton> storage {};
 
         inline void init_required_fields() {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);

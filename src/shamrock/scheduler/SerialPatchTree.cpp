@@ -79,19 +79,24 @@ template void get_serial_tree(u64 root_key, PatchTree &ptree, std::vector<shamro
                           std::vector<u64> &result_tree_linked_patch_id, u64 &counter, u32 &max_level,
                           const shamrock::patch::PatchCoordTransform<f64_3> box_transform);
 
+template void get_serial_tree(u64 root_key, PatchTree &ptree, std::vector<shamrock::scheduler::SerialPatchNode<i64_3>> &result_tree,
+                          std::vector<u64> &result_tree_linked_patch_id, u64 &counter, u32 &max_level,
+                          const shamrock::patch::PatchCoordTransform<i64_3> box_transform);
 
 
 template <>
 void SerialPatchTree<f32_3>::build_from_patch_tree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<f32_3> box_transform) {
 
     u64 cnt     = 0;
-    level_count = 0;//TODO add root_id set
+    level_count = 0;
     for (u64 root_id : ptree.roots_id) {
+        root_count ++;
+        roots_ids.push_back(cnt);
         logger::debug_ln("Serial Patch Tree","get serial tree fp32 root id :" , root_id);
         get_serial_tree<f32_3>(root_id, ptree, serial_tree, linked_patch_ids, cnt, level_count, box_transform);
     }
 
-    logger::debug_ln("Serial Patch Tree","tree internal cell count = " , serial_tree.size());
+    logger::debug_ln("Serial Patch Tree","tree cell count = " , serial_tree.size());
     logger::debug_ln("Serial Patch Tree","level_count =" , level_count);
 }
 
@@ -101,6 +106,26 @@ void SerialPatchTree<f64_3>::build_from_patch_tree(PatchTree &ptree, const shamr
     u64 cnt     = 0;
     level_count = 0;
     for (u64 root_id : ptree.roots_id) {
+        root_count ++;
+        roots_ids.push_back(cnt);
         get_serial_tree<f64_3>(root_id, ptree, serial_tree, linked_patch_ids, cnt, level_count, box_transform);
     }
+    logger::debug_ln("Serial Patch Tree","tree cell count = " , serial_tree.size());
+    logger::debug_ln("Serial Patch Tree","level_count =" , level_count);
+}
+
+template <>
+void SerialPatchTree<i64_3>::build_from_patch_tree(PatchTree &ptree, const shamrock::patch::PatchCoordTransform<i64_3> box_transform) {
+
+    
+
+    u64 cnt     = 0;
+    level_count = 0;
+    for (u64 root_id : ptree.roots_id) {
+        root_count ++;
+        roots_ids.push_back(cnt);
+        get_serial_tree<i64_3>(root_id, ptree, serial_tree, linked_patch_ids, cnt, level_count, box_transform);
+    }
+    logger::debug_ln("Serial Patch Tree","tree cell count = " , serial_tree.size());
+    logger::debug_ln("Serial Patch Tree","level_count =" , level_count);
 }

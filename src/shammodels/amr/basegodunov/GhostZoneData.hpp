@@ -33,8 +33,16 @@ namespace shammodels::basegodunov {
             shammath::AABB<TgridVec> volume_target;
         };
 
+        struct InterfaceIdTable {
+            InterfaceBuildInfos build_infos;
+            std::unique_ptr<sycl::buffer<u32>> ids_interf;
+            f64 cell_count_ratio;
+        };
+
         using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
         GeneratorMap ghost_gen_infos;
+
+        shambase::DistributedDataShared<InterfaceIdTable> ghost_id_build_map;
     };
 
 } // namespace shammodels::basegodunov

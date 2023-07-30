@@ -8,7 +8,7 @@
 
 #include "distributedDataComm.hpp"
 
-#include "shamalgs/memory/serialize.hpp"
+#include "shamalgs/serialize.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"

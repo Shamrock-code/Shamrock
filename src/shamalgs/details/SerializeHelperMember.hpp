@@ -11,7 +11,6 @@
 #include "shambase/memory.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"
-#include "shamsys/NodeInstance.hpp"
 #include <memory>
 #include <type_traits>
 

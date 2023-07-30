@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shamalgs/collective/exchanges.hpp"
-#include "shamalgs/memory/serialize.hpp"
+#include "shamalgs/serialize.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/MpiWrapper.hpp"

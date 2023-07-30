@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/memory/serialize.hpp"
+#include "shamalgs/serialize.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"

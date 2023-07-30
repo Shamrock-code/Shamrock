@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
-#include "shamalgs/numeric/numeric.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shamsys/legacy/log.hpp"

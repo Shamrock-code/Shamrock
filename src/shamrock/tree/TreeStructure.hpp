@@ -12,7 +12,7 @@
 
 #include "kernels/karras_alg.hpp"
 #include "shamalgs/memory/memory.hpp"
-#include "shamalgs/memory/serialize.hpp"
+#include "shamalgs/serialize.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 

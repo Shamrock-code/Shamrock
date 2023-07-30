@@ -8,20 +8,20 @@
 
 
 #include "shamalgs/memory/memory.hpp"
+#include "shamalgs/details/numeric/details/numericFallback.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
-
-
-#include "shamalgs/numeric/numeric.hpp"
 #include <numeric>
+
 
 #include "numericTests.hpp"
 
 
-TestStart(Unittest, "shamalgs/numeric/stream_compact", streamcompactalg, 1){
-    
-    TestStreamCompact test ((TestStreamCompact::vFunctionCall)shamalgs::numeric::stream_compact);
+
+
+TestStart(Unittest, "shamalgs/numeric/details/stream_compact_fallback", streamcompactalg_fallback, 1){
+    TestStreamCompact test ((TestStreamCompact::vFunctionCall)shamalgs::numeric::details::stream_compact_fallback);
     test.check();
 
 }

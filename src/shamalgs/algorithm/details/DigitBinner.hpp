@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shamalgs/memory/memory.hpp"
-#include "shamalgs/numeric/numeric.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/type_traits.hpp"

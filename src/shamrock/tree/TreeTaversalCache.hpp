@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shamalgs/numeric/numeric.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shambase/sycl.hpp"
 #include "shamrock/tree/RadixTree.hpp"

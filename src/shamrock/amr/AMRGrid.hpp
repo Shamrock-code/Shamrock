@@ -10,7 +10,7 @@
 
 #include "AMRCell.hpp"
 #include "aliases.hpp"
-#include "shamalgs/numeric/numeric.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shamalgs/memory/memory.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"

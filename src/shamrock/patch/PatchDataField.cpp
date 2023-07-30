@@ -8,7 +8,6 @@
 
 #include "PatchDataField.hpp"
 #include "shamalgs/algorithm/algorithm.hpp"
-#include "shamalgs/memory/details/SerializeHelperMember.hpp"
 #include "shamalgs/random/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"

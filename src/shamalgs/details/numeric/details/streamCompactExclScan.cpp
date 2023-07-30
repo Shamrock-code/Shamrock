@@ -9,8 +9,8 @@
 
 #include "streamCompactExclScan.hpp"
 #include "shamalgs/memory/memory.hpp"
-#include "shamalgs/numeric/details/numericFallback.hpp"
-#include "shamalgs/numeric/numeric.hpp"
+#include "shamalgs/details/numeric/details/numericFallback.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shambase/integer.hpp"
 #include "shamsys/legacy/log.hpp"
 

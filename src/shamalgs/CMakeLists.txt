@@ -1,6 +1,5 @@
 
 set(Sources
-    reduction.cpp
 )
 set(SourcesTest
     
@@ -32,7 +31,6 @@ endif()
 
 
 add_subdirectory(details)
-add_subdirectory(numeric)
 add_subdirectory(memory)
 add_subdirectory(random)
 add_subdirectory(algorithm)

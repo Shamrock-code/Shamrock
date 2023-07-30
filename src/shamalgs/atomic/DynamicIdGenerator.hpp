@@ -21,6 +21,8 @@ namespace shamalgs::atomic {
      * The goal is to affect each worker with a unique id in growing order,
      * e.g. worker group 2 can not start if worker group 1 is not started
      * The performance overhead is minimal (10^-11 s/element on A100)
+     * 
+     * \todo add figure for overhead measurment
      *
      * Exemple :
      *
@@ -83,6 +85,12 @@ namespace shamalgs::atomic {
                                           DynamicIdGenerator<int_t, group_size> &gen)
             : group_id{gen.group_id, cgh, sycl::read_write}, local_group_id(1, cgh) {}
 
+        /**
+         * @brief compute the local ids and return the result `DynamicId`
+         * 
+         * @param it the nd_item given by SYCL
+         * @return DynamicId<int_t> the dynamic id
+         */
         inline DynamicId<int_t> compute_id(sycl::nd_item<1> it) const {
             DynamicId<int_t> ret;
 

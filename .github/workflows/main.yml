@@ -152,8 +152,8 @@ jobs:
           mv doc/_build/* .
           rm -r doc
 
-      - name: 'Delete Doxygen'
-        run: rm -rf doxygen
+      #- name: 'Delete Doxygen'
+      #  run: rm -rf doxygen
         
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1

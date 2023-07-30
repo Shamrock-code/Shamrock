@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "kernels/reduction_alg.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambase/string.hpp"
 #include "shammath/CoordRange.hpp"

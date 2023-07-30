@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shammath/intervals.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shambase/time.hpp"

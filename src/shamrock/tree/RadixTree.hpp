@@ -19,7 +19,7 @@
 #include <set>
 
 
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/tree/TreeCellRanges.hpp"

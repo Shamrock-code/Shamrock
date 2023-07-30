@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sycl.hpp"

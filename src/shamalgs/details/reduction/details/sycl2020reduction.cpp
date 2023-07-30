@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sycl2020reduction.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 
 
 namespace shamalgs::reduction::details {

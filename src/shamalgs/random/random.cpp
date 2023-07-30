@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "random.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 
 
 

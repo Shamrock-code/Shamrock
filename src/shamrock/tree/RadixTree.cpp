@@ -19,7 +19,7 @@
 
 
 #include "RadixTreeMortonBuilder.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambase/floats.hpp"
 #include "shambase/integer.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"

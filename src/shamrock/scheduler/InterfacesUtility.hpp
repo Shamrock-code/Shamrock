@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"

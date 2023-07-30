@@ -8,7 +8,7 @@
 
 
 #include "streamCompactExclScan.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shamalgs/details/numeric/details/numericFallback.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/integer.hpp"

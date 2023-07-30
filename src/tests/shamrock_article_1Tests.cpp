@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shammath/AABB.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"

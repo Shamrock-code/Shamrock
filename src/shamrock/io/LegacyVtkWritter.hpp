@@ -10,7 +10,7 @@
 
 #include "shamalgs/collective/io.hpp"
 #include "shamalgs/collective/reduction.hpp"
-#include "shamalgs/memory/bufferFlattening.hpp"
+#include "shamalgs/details/memory/bufferFlattening.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"

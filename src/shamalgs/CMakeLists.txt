@@ -31,7 +31,6 @@ endif()
 
 
 add_subdirectory(details)
-add_subdirectory(memory)
 add_subdirectory(random)
 add_subdirectory(algorithm)
 add_subdirectory(atomic)

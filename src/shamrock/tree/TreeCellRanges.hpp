@@ -10,7 +10,7 @@
 
 #include "kernels/compute_ranges.hpp"
 #include "kernels/convert_ranges.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambase/sycl.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 #include "shamrock/sfc/morton.hpp"

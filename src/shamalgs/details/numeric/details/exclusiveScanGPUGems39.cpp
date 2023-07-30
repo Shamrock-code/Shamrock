@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "exclusiveScanGPUGems39.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/integer_sycl.hpp"
 #include "shamsys/legacy/log.hpp"

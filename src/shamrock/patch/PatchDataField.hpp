@@ -11,7 +11,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/stacktrace.hpp"

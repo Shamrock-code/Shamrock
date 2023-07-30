@@ -8,7 +8,7 @@
 
 
 #include "numericFallback.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 
 namespace shamalgs::numeric::details {
 

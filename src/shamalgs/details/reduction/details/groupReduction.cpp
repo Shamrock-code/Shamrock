@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "groupReduction.hpp"
 #include "shamalgs/details/reduction/details/fallbackReduction.hpp"
 #include "shambase/sycl_utils.hpp"

@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
-#include "shamalgs/numeric/numeric.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"

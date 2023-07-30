@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shambase/stacktrace.hpp"
+#include "stacktrace.hpp"
 #include "shambase/time.hpp"
 #include <sstream>
 #include <vector>

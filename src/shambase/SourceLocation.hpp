@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shambase/type_aliases.hpp"
+#include "aliases.hpp"
 #include "fmt_bindings/fmt_defs.hpp"
 
 /**

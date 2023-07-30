@@ -105,15 +105,15 @@ endif()
 ######################
 #shamrock impl control
 ######################
-#if(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR")
-#  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR")
-#elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR_ROUND")
-#  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND")
-#elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
-#  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_ND_RANGE")
-#endif()
-#
-#add_compile_definitions("SHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
+if(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR")
+elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR_ROUND")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND")
+elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
+  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_ND_RANGE")
+endif()
+
+add_compile_definitions("SHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
 
 
 
@@ -248,14 +248,3 @@ if("${BUILD_TEST}")
 endif()
 
 add_subdirectory(src)
-
-
-target_link_libraries(shamrock_lib PUBLIC shambase)
-
-if("${BUILD_SIM}")
-target_link_libraries(shamrock PUBLIC shambase)
-endif()
-
-if("${BUILD_TEST}")
-target_link_libraries(shamrock_test PUBLIC shambase)
-endif()

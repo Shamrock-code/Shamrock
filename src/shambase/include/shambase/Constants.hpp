@@ -23,6 +23,7 @@ namespace shambase {
         
 
         add("unity",1)
+        add("half",0.5)
         add("zero",0)
         add("pi",pi)
         add("tau",2*pi)
@@ -48,6 +49,7 @@ namespace shambase {
     template<class T>
     class Constants{public:
         static constexpr T unity = 1;
+        static constexpr T half = 0.5;
         static constexpr T zero = 0;
 
         static constexpr T pi = 3.141592653589793116;
@@ -68,7 +70,6 @@ namespace shambase {
         static constexpr T gamma_1 = 1;
         static constexpr T sqrt_2 = 1.4142135623730951455;
         static constexpr T e = 2.7182818284590450908;
-
     };
 
 

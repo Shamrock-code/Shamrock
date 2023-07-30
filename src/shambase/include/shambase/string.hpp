@@ -8,9 +8,8 @@
 
 #pragma once
 
-#include "aliases.hpp"
 #include "fmt_bindings/fmt_defs.hpp"
-#include "exception.hpp"
+#include "shambase/exception.hpp"
 #include <fstream>
 #include <vector>
 #include <array>

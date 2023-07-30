@@ -10,7 +10,7 @@
 
 #include "shambase/string.hpp"
 #include "shambase/type_aliases.hpp"
-#include "shamsys/legacy/log.hpp"
+//#include "shamsys/legacy/log.hpp"
 
 #include <plf_nanotimer.h>
 
@@ -148,7 +148,7 @@ namespace shambase {
     inline BenchmarkResult benchmark_pow_len(std::function<f64(u32)> func, u32 start, u32 end, f64 pow_exp){
         BenchmarkResult res;
         for(f64 i = start; i < end; i*=pow_exp){
-            logger::debug_ln("benchmark_pow_len", "N =",i);
+            //logger::debug_ln("benchmark_pow_len", "N =",i);
             res.counts.push_back(i);
             res.times.push_back(func(u32(i)));
         }

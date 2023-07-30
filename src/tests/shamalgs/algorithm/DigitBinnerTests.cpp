@@ -6,9 +6,9 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/algorithm/details/DigitBinner.hpp"
+#include "shamalgs/details/algorithm/details/DigitBinner.hpp"
 
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"

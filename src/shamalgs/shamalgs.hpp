@@ -20,10 +20,10 @@
  * 
  */
 
-#include "numeric/numeric.hpp"
-#include "algorithm/algorithm.hpp"
-#include "memory/memory.hpp"
-#include "random/random.hpp"
+#include "numeric.hpp"
+#include "algorithm.hpp"
+#include "memory.hpp"
+#include "random.hpp"
 
 /**
  * @brief namespace to contain everything implemented by shamalgs

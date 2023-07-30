@@ -10,7 +10,7 @@
 
 #include "RadixTreeMortonBuilder.hpp"
 #include "kernels/key_morton_sort.hpp"
-#include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/algorithm.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/integer_sycl.hpp"
 #include "shambase/integer_sycl.hpp"

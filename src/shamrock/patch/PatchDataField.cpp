@@ -7,8 +7,8 @@
 // -------------------------------------------------------//
 
 #include "PatchDataField.hpp"
-#include "shamalgs/algorithm/algorithm.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/algorithm.hpp"
+#include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"

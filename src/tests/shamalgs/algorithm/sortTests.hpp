@@ -9,13 +9,13 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/algorithm.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include <numeric>
 
 template<class Tkey, class Tval>

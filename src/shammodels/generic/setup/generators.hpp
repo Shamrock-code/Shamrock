@@ -12,7 +12,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shambase/Constants.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shambase/sycl.hpp"

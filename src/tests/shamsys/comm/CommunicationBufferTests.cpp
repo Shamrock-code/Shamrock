@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamsys/comm/CommunicationBuffer.hpp"
 #include "shamsys/comm/details/CommunicationBufferImpl.hpp"

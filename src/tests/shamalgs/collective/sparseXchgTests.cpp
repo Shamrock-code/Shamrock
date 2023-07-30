@@ -17,7 +17,7 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamalgs/collective/sparseXchg.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include <algorithm>
 #include <memory>
 #include <stdexcept>

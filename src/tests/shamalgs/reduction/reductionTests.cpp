@@ -17,7 +17,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shamalgs/details/reduction/details/groupReduction.hpp"
 
 using namespace shamalgs::random;

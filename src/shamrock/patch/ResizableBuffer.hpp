@@ -11,7 +11,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/algorithm.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shambase/exception.hpp"

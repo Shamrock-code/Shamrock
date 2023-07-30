@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamrock/tree/TreeReducedMortonCodes.hpp"

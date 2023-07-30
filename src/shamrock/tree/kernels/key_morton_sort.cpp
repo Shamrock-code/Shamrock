@@ -11,7 +11,7 @@
 #include "flags.hpp"
 #include "shamsys/legacy/log.hpp"
 
-#include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/algorithm.hpp"
 
 template<>
 void sycl_sort_morton_key_pair<u32, MultiKernel>(

@@ -13,7 +13,7 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamtest/shamtest.hpp"
 
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include <vector>
 #include "TreeTests.hpp"

@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamsys/NodeInstance.hpp"

@@ -8,7 +8,7 @@
 
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamalgs/memory.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shamsys/comm/details/CommunicationBufferImpl.hpp"

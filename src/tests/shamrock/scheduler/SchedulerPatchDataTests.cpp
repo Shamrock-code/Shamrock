@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shamrock/scheduler/scheduler_patch_list.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchData.hpp"

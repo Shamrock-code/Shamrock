@@ -16,7 +16,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 
 #include "shamrock/tree/tests/TreeTests.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"

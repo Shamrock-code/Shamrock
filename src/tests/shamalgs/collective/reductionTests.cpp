@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/collective/reduction.hpp"
-#include "shamalgs/random/random.hpp"
+#include "shamalgs/random.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"

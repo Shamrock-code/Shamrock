@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "sortTests.hpp"
-#include "shamalgs/algorithm/algorithm.hpp"
+#include "shamalgs/algorithm.hpp"
 
 TestStart(Unittest, "shamalgs/algorithm/sort_by_key", test_sort_by_key_func, 1){
     

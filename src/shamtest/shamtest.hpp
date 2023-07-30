@@ -11,7 +11,7 @@
 /**
  * @file shamtest.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief main include file for testing 
+ * @brief main include file for testing
  * @date 2023-01-04
  */
 
@@ -88,7 +88,7 @@ namespace shamtest {
 /**
  * @brief Macro to declare a test
  *
- * Exemple : 
+ * Exemple :
  * \code{.cpp}
  * TestStart(Unittest, "testname", testfuncname, 1) {
  *     shamtest::asserts().assert_bool("what a reliable test", true);
@@ -102,13 +102,41 @@ namespace shamtest {
         shamtest::details::Test{type, name, node_cnt, test_func_ptr_##func_name});                 \
     void test_func_##func_name()
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Assert macros
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 // temporary maybe do something else
 // i don't want a cumbersome name, but assert is kinda taken already
 
-#define _Assert(a, b, prec) shamtest::asserts().assert_bool(#a, a);
+/**
+ * @brief Assert macro for test
+ * write the conditional, the name of the assert will be the condition
+ *
+ * Usage :
+ * \code{.cpp}
+ * _Assert(a == 0)
+ * \endcode
+ */
+#define _Assert(a) shamtest::asserts().assert_bool(#a, a);
 
+/**
+ * @brief Assert macro for test, testing equality between two variables
+ *
+ * Usage :
+ * \code{.cpp}
+ * _AssertEqual(a , b)
+ * \endcode
+ */
 #define _AssertEqual(a, b) shamtest::asserts().assert_equal(#a "==" #b, a, b);
 
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision
+ *
+ * Usage :
+ * \code{.cpp}
+ * _AssertFloatEqual(a , b, 1e-9)
+ * \endcode
+ */
 #define _AssertFloatEqual(a, b, prec)                                                              \
     shamtest::asserts().assert_float_equal(#a " ==(" #prec ") " #b, a, b, prec);

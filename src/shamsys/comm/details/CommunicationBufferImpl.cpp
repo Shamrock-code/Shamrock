@@ -7,8 +7,10 @@
 // -------------------------------------------------------//
 
 #include "CommunicationBufferImpl.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/exception.hpp"
+#include <cstring>
 #include <stdexcept>
 
 namespace shamsys::details {
@@ -21,29 +23,22 @@ namespace shamsys::details {
 
     void CommunicationBuffer<CopyToHost>::copy_to_usm(sycl::buffer<u8> & obj_ref, u64 len){   
         sycl::host_accessor acc {obj_ref, sycl::read_only};
-        for(u64 sz = 0;sz < len; sz ++){
-            usm_ptr[sz] = acc[sz];
-        }
+        const u8* tmp = acc.get_pointer();
+        shamsys::instance::get_compute_queue().memcpy(usm_ptr, tmp, len).wait();
     }
 
     sycl::buffer<u8> CommunicationBuffer<CopyToHost>::build_from_usm(u64 len){
         sycl::buffer<u8> buf_ret (len);
         {
             sycl::host_accessor acc {buf_ret, sycl::write_only, sycl::no_init};
-            for(u64 sz = 0;sz < len; sz ++){
-                acc[sz] = usm_ptr[sz];
-            }
+            u8* tmp = acc.get_pointer();
+            shamsys::instance::get_compute_queue().memcpy(tmp, usm_ptr, len).wait();
         }
         return buf_ret;
     }
 
     void CommunicationBuffer<CopyToHost>::copy_usm(u64 len, u8* new_usm){
-
-        {
-            for(u64 sz = 0;sz < len; sz ++){
-                new_usm[sz] = usm_ptr[sz];
-            }
-        }
+        shamsys::instance::get_compute_queue().memcpy(new_usm, usm_ptr, len).wait();
     }
 
 

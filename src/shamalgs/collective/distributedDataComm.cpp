@@ -32,7 +32,6 @@ namespace shamalgs::collective {
         auto serialize_group_data(std::map<std::pair<i32, i32>, std::vector<DataTmp>> &send_data)
             -> std::map<std::pair<i32, i32>, SerializeHelper> {
 
-            
             StackEntry stack_loc{};
 
             std::map<std::pair<i32, i32>, SerializeHelper> serializers;
@@ -90,16 +89,21 @@ namespace shamalgs::collective {
 
         // recover bufs from serializers
         std::map<std::pair<i32, i32>, std::unique_ptr<sycl::buffer<u8>>> send_bufs;
+        {NamedStackEntry stack_loc2{"recover bufs"};
         for (auto &[key, ser] : serializers) {
             send_bufs[key] = ser.finalize();
+        }
         }
 
         // prepare payload
         std::vector<SendPayload> send_payoad;
+        {NamedStackEntry stack_loc2{"prepare payload"};
         for (auto &[key, buf] : send_bufs) {
             send_payoad.push_back(
                 {key.second, std::make_unique<CommunicationBuffer>(get_check_ref(buf), prot)});
+        }    
         }
+        
 
         // sparse comm
         std::vector<RecvPayload> recv_payload;
@@ -118,17 +122,22 @@ namespace shamalgs::collective {
 
         std::vector<RecvPayloadSer> recv_payload_bufs;
 
-        {NamedStackEntry stack_loc2{"move payloads"};
-            for (RecvPayload & payload : recv_payload) {
-                recv_payload_bufs.push_back(
-                    RecvPayloadSer{payload.sender_ranks,
-                                SerializeHelper(std::make_unique<sycl::buffer<u8>>(
-                                    get_check_ref(payload.payload).copy_back()))});
+        {
+            NamedStackEntry stack_loc2{"move payloads"};
+            for (RecvPayload &payload : recv_payload) {
+
+                shamsys::CommunicationBuffer comm_buf = extract_pointer(payload.payload);
+
+                sycl::buffer<u8> buf = shamsys::CommunicationBuffer::convert(std::move(comm_buf));
+
+                recv_payload_bufs.push_back(RecvPayloadSer{
+                    payload.sender_ranks,
+                    SerializeHelper(std::make_unique<sycl::buffer<u8>>(std::move(buf)))});
             }
         }
 
-
-        {NamedStackEntry stack_loc2{"split recv comms"};
+        {
+            NamedStackEntry stack_loc2{"split recv comms"};
             // deserialize into the shared distributed data
             for (RecvPayloadSer &recv : recv_payload_bufs) {
                 u64 cnt_obj;

@@ -42,14 +42,13 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     });
     Tvec sum_p = gpart_mass * shamalgs::collective::allreduce_sum(tmpp);
 
-    if(!storage.sinks.is_empty()){
-        std::vector<Sink> & sink_parts = storage.sinks.get();
-        for (Sink & s : sink_parts) {
-            sum_p += s.mass*s.velocity;
-        }        
-    }
-
     if (shamsys::instance::world_rank == 0) {
+        if (!storage.sinks.is_empty()) {
+            std::vector<Sink> &sink_parts = storage.sinks.get();
+            for (Sink &s : sink_parts) {
+                sum_p += s.mass * s.velocity;
+            }
+        }
         cv_checks += shambase::format("    sum v = {}\n", sum_p);
     }
 
@@ -63,14 +62,13 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     });
     Tvec sum_a = gpart_mass * shamalgs::collective::allreduce_sum(tmpa);
 
-    if(!storage.sinks.is_empty()){
-        std::vector<Sink> & sink_parts = storage.sinks.get();
-        for (Sink & s : sink_parts) {
-            sum_a += s.mass*(s.sph_acceleration + s.ext_acceleration);
-        }        
-    }
-
     if (shamsys::instance::world_rank == 0) {
+        if (!storage.sinks.is_empty()) {
+            std::vector<Sink> &sink_parts = storage.sinks.get();
+            for (Sink &s : sink_parts) {
+                sum_a += s.mass * (s.sph_acceleration + s.ext_acceleration);
+            }
+        }
         cv_checks += shambase::format("    sum a = {}\n", sum_a);
     }
 
@@ -84,7 +82,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         tmpe += field_u.compute_sum() + 0.5 * field_v.compute_dot_sum();
     });
     Tscal sum_e = gpart_mass * shamalgs::collective::allreduce_sum(tmpe);
-    
+
     if (shamsys::instance::world_rank == 0) {
         cv_checks += shambase::format("    sum e = {}\n", sum_e);
     }

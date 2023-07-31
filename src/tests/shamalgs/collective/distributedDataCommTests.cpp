@@ -11,6 +11,7 @@
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambase/DistributedData.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/comm/details/CommunicationBufferImpl.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
@@ -92,6 +93,10 @@ void distribdata_sparse_comm_test(std::string prefix, shamsys::CommunicationProt
 
 TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributeddatacomm, -1) {
 
-    distribdata_sparse_comm_test("CopyToHost mode : ",shamsys::CopyToHost);
-    distribdata_sparse_comm_test("DirectGPU  mode : ",shamsys::DirectGPU);
+    if(shamsys::instance::is_direct_gpu_selected()){
+        distribdata_sparse_comm_test("DirectGPU  mode : ",shamsys::DirectGPU);
+    }else{
+        distribdata_sparse_comm_test("CopyToHost mode : ",shamsys::CopyToHost);
+    }
+    
 }

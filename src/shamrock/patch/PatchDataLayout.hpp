@@ -12,7 +12,7 @@
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
-#include "shamrock/patch/PatchDataAlias.hpp"
+#include "shamrock/patch/FieldVariant.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <sstream>
 #include <variant>

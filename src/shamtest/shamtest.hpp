@@ -41,6 +41,12 @@ namespace shamtest {
          *
          */
         struct TestStaticInit {
+
+            /**
+             * @brief This constructor register the given arguments into `static_init_vec_tests`
+             * 
+             * @param t the test info
+             */
             inline explicit TestStaticInit(Test t) {
                 static_init_vec_tests.push_back(std::move(t));
             }

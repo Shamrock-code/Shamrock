@@ -8,16 +8,24 @@
 
 #pragma once
 
+/**
+ * @file FieldVariant.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief Field variant object to instanciate a variant on the patch types
+ * @date 2023-07-31
+ */
+
 #include "aliases.hpp"
 #include "shambase/exception.hpp"
 #include <variant>
 
-
-
-
-
 namespace shamrock::patch {
 
+    /**
+     * @brief Field variant class
+     * \todo provide exemple
+     * @tparam Container 
+     */
     template<template<class> class Container>
     class FieldVariant {
 
@@ -42,7 +50,7 @@ namespace shamrock::patch {
             Container<i64_3>
             >;
 
-        var_t_template value;
+        var_t_template value; /*!< The held variant */
 
         template<class T>
         explicit FieldVariant(Container<T> && val) : value(std::move(val)) {}

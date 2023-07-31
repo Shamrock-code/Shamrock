@@ -8,6 +8,10 @@
 
 #pragma once
 
+/**
+ * @brief Utility header to include MPI properly
+ */
+
 #if __has_include(<mpi.h>)
 #include <mpi.h>
 #elif __has_include(<mpi/mpi.h>) // on the github CI pipeline 

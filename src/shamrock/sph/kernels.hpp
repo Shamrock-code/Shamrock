@@ -8,25 +8,47 @@
 
 #pragma once
 
+/**
+ * @file kernels.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief sph kernels
+ * @date 2023-05-10
+ */
+
 //%Impl status : Good
 
 #include "aliases.hpp"
 #include "shambase/Constants.hpp"
 
-
-
 namespace shamrock::sph::kernels {
 
     // 3d kernels only
-
+    /**
+     * @brief The M4 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
     template<class flt_type>
     class M4 {
         public:
-        inline static constexpr flt_type Rkern = 2;
-        inline static constexpr flt_type hfactd = 1.2;
+        inline static constexpr flt_type Rkern  = 2;   /*!< Radius of the support */
+        inline static constexpr flt_type hfactd = 1.2; /*!< default $h_{\rm fact}$ for this kernel*/
 
+        /**
+         * @brief norm of the kernel
+         * 
+         */
         inline static constexpr flt_type norm = 1 / shambase::Constants<flt_type>::pi;
 
+        /**
+         * @brief the base function for this SPH kernel
+         * 
+         * Such that : \f$\int f(\vert\vert q\vert\vert) {\rm d}^n \mathbf{q} = 1\f$
+         * Also : \f$ f(q > Rkern) = 0\f$
+         * @param q parameter of the function
+         * @return flt_type the value of \f$ f(q) \f$
+         */
         inline static flt_type f(flt_type q) {
 
             constexpr flt_type div3_4 = (3. / 4.);
@@ -41,6 +63,12 @@ namespace shamrock::sph::kernels {
                 return 0;
         }
 
+        /**
+         * @brief derivative of \ref M4.f
+         * 
+         * @param q parameter of the function
+         * @return flt_type the value of \f$ f'(q) \f$
+         */
         inline static flt_type df(flt_type q) {
 
             constexpr flt_type div9_4 = (9. / 4.);
@@ -54,6 +82,15 @@ namespace shamrock::sph::kernels {
                 return 0;
         }
 
+        /**
+         * @brief compute the normed & resized version of the kernel :
+         * \f[
+         *  W(r,h) = C_{\rm norm} \frac{1}{h^3} f(\frac{r}{h})
+         * \f]
+         * @param r 
+         * @param h 
+         * @return flt_type 
+         */
         inline static flt_type W(flt_type r, flt_type h) { return norm * f(r / h) / (h * h * h); }
 
         inline static flt_type dW(flt_type r, flt_type h) {
@@ -68,10 +105,9 @@ namespace shamrock::sph::kernels {
     template<class flt_type>
     class M6 {
         public:
-        using flt                              = flt_type;
-        inline static constexpr flt_type Rkern = 3;
+        using flt                               = flt_type;
+        inline static constexpr flt_type Rkern  = 3;
         inline static constexpr flt_type hfactd = 1.0;
-
 
         inline static constexpr flt_type norm = 1 / (120 * shambase::Constants<flt_type>::pi);
 

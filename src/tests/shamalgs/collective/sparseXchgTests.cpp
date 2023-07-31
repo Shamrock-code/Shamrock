@@ -144,7 +144,10 @@ void sparse_comm_test(std::string prefix, shamsys::CommunicationProtocol prot){
 
 TestStart(Unittest, "shamalgs/collective/sparseXchg", testsparsexchg, -1){
 
-    sparse_comm_test("CopyToHost mode : ",shamsys::CopyToHost);
-    sparse_comm_test("DirectGPU  mode : ",shamsys::DirectGPU);
+    if(shamsys::instance::is_direct_gpu_selected()){
+        sparse_comm_test("DirectGPU  mode : ",shamsys::DirectGPU);
+    }else{
+        sparse_comm_test("CopyToHost mode : ",shamsys::CopyToHost);
+    }
 
 }

@@ -116,7 +116,6 @@ namespace shamtest {
 
         using namespace shamsys;
 
-        instance::init(argc,argv);printf("\n");
 
         if(!run_only){
             printf("\n------------ Tests list --------------\n");

@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
 
     opts::register_opt("--sycl-ls",{}, "list available devices");
-            opts::register_opt("--sycl-ls-map",{}, "list available devices & list of queue bindings");
+    opts::register_opt("--sycl-ls-map",{}, "list available devices & list of queue bindings");
 
     opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
     opts::register_opt("--loglevel","(logvalue)", "specify a log level");

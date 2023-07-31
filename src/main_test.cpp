@@ -9,6 +9,7 @@
 
 //%Impl status : Good
 
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
@@ -17,9 +18,9 @@
 int main(int argc, char *argv[]){
 
 
-    std::cout << shamrock_title_bar_big << std::endl;
-
     opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
+    opts::register_opt("--sycl-ls",{}, "list available devices");
+    opts::register_opt("--sycl-ls-map",{}, "list available devices & list of queue bindings");
     opts::register_opt("--loglevel","(logvalue)", "specify a log level");
     opts::register_opt("--nocolor",{}, "disable colored ouput");
 
@@ -40,6 +41,7 @@ int main(int argc, char *argv[]){
         return 0;
     }
 
+
     if(opts::has_option("--loglevel")){
         std::string level = std::string(opts::get_option("--loglevel"));
 
@@ -51,15 +53,78 @@ int main(int argc, char *argv[]){
 
         logger::loglevel = a;
 
-        if(a == i8_max){
+    }
+
+    if(opts::has_option("--sycl-cfg")){
+        shamsys::instance::init(argc,argv);
+    }
+
+    if(shamsys::instance::world_rank == 0){
+        std::cout << shamrock_title_bar_big << std::endl;
+        logger::print_faint_row();
+
+        std::cout <<"\n"<< terminal_effects::colors_foreground_8b::cyan + "Git infos "+ terminal_effects::reset+":\n";
+        std::cout << git_info_str <<std::endl;
+
+        logger::print_faint_row();
+
+        logger::raw_ln("MPI status : ");
+
+        logger::raw_ln(" - MPI & SYCL init :",terminal_effects::colors_foreground_8b::green + "Ok"+ terminal_effects::reset);
+
+        shamsys::instance::print_mpi_capabilities();
+
+        shamsys::instance::check_dgpu_available();
+        
+    }
+
+    shamsys::instance::validate_comm();
+
+    if(shamsys::instance::world_rank == 0){
+        logger::print_faint_row();
+        logger::raw_ln("log status : ");
+        if(logger::loglevel == i8_max){
             logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
         }
 
-        logger::raw_ln("-> modified loglevel to",logger::loglevel,"enabled log types : ");
-        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+        logger::raw_ln(" - Loglevel :",u32(logger::loglevel),", enabled log types : ");
         logger::print_active_level();
-        logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+    
+    } 
+
+    
+
+    if(opts::has_option("--sycl-ls")){
+
+        if(shamsys::instance::world_rank == 0){
+            logger::print_faint_row();
+        }
+        shamsys::instance::print_device_list();
+        
     }
+
+    if(opts::has_option("--sycl-ls-map")){
+
+        if(shamsys::instance::world_rank == 0){
+            logger::print_faint_row();
+        }
+        shamsys::instance::print_device_list();
+        shamsys::instance::print_queue_map();
+        
+    }
+
+    
+
+    
+
+
+    if(shamsys::instance::world_rank == 0){
+        logger::print_faint_row();
+        logger::raw_ln(" - Code init",terminal_effects::colors_foreground_8b::green + "DONE"+ terminal_effects::reset, "now it's time to",
+        terminal_effects::colors_foreground_8b::cyan + terminal_effects::blink + "ROCK"+ terminal_effects::reset);
+        logger::print_faint_row();
+    }
+    
 
     bool run_bench    = opts::has_option("--benchmark") ;
     bool run_analysis = opts::has_option("--analysis") ;

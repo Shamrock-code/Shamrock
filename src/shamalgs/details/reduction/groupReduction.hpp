@@ -35,13 +35,13 @@ class KernelSliceReduceMax;
 #ifdef SYCL_COMP_OPENSYCL
 template<typename T = void>
 struct _tmp_max {
-    inline T operator()(const T &lhs, const T &rhs) const {
+    HIPSYCL_UNIVERSAL_TARGET inline T operator()(const T &lhs, const T &rhs) const {
         return shambase::sycl_utils::g_sycl_max(lhs, rhs);
     }
 };
 template<typename T = void>
 struct _tmp_min {
-    inline T operator()(const T &lhs, const T &rhs) const {
+    HIPSYCL_UNIVERSAL_TARGET inline T operator()(const T &lhs, const T &rhs) const {
         return shambase::sycl_utils::g_sycl_min(lhs, rhs);
     }
 };

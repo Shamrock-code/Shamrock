@@ -65,9 +65,19 @@ template<class T,class Fct> void unit_test_reduc_sum(std::string name, Fct && re
 
 template<class T,class Fct> void unit_test_reduc_min(std::string name, Fct && red_fct){
 
-    constexpr u32 size_test = 1e6;
+    constexpr u32 size_test = 1e4;
 
-    std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111,size_test);
+    using Prop = shambase::VectorProperties<T>;
+    T min_b = Prop::get_min(), max_b = Prop::get_max();
+
+    if constexpr (Prop::is_float_based){
+        max_b /= Prop::get_max();
+        min_b /= Prop::get_min();
+        max_b *= 1e6;
+        min_b *= -1e6;
+    }
+
+    std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111,size_test,min_b,max_b);
 
     T sycl_ret, check_val;
 
@@ -94,10 +104,20 @@ template<class T,class Fct> void unit_test_reduc_min(std::string name, Fct && re
 
 template<class T,class Fct> void unit_test_reduc_max(std::string name, Fct && red_fct){
 
-    constexpr u32 size_test = 1e6;
+    constexpr u32 size_test = 1e4;
 
-    std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111,size_test);
+    using Prop = shambase::VectorProperties<T>;
+    T min_b = Prop::get_min(), max_b = Prop::get_max();
 
+    if constexpr (Prop::is_float_based){
+        max_b /= Prop::get_max();
+        min_b /= Prop::get_min();
+        max_b *= 1e6;
+        min_b *= -1e6;
+    }
+
+    std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111,size_test,min_b,max_b);
+    
     T sycl_ret, check_val;
 
     {

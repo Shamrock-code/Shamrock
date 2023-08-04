@@ -42,7 +42,7 @@ struct _tmp_max {
 template<typename T = void>
 struct _tmp_min {
     T operator()(const T &lhs, const T &rhs) const {
-        return shambase::sycl_utils::g_sycl_max(lhs, rhs);
+        return shambase::sycl_utils::g_sycl_min(lhs, rhs);
     }
 };
     #define SYCL_SUM_OP                                                                            \

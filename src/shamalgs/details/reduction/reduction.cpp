@@ -27,12 +27,12 @@ namespace shamalgs::reduction {
 
     template<class T>
     T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        return details::FallbackReduction<T>::max(q, buf1, start_id, end_id);
+        return details::GroupReduction<T,32>::max(q, buf1, start_id, end_id);
     }
 
     template<class T>
     T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        return details::FallbackReduction<T>::min(q, buf1, start_id, end_id);
+        return details::GroupReduction<T,32>::min(q, buf1, start_id, end_id);
     }
 
     template<class T>

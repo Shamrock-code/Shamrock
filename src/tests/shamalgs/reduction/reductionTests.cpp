@@ -58,6 +58,78 @@ template<class T,class Fct> void unit_test_reduc_sum(std::string name, Fct && re
 
 }
 
+template<class T,class Fct> void unit_test_reduc_min(std::string name, Fct && red_fct){
+    std::vector<T> vals;
+
+    constexpr u32 size_test = 1e6;
+
+    std::mt19937 eng(0x1111);
+    std::uniform_real_distribution<f64> distf(0, 100);
+
+
+    for(u32 i = 0; i < size_test; i++){
+        vals.push_back(next_obj<T>(eng,distf));
+    }
+
+    T sycl_ret, check_val;
+
+    {
+        sycl::buffer<T> buf {vals.data(),vals.size()};
+
+        sycl_ret = red_fct(shamsys::instance::get_compute_queue(), buf, 0, size_test);
+
+    }
+
+    {
+        check_val = shambase::VectorProperties<T>::get_max();
+        for(auto & f : vals){
+            check_val = shambase::sycl_utils::g_sycl_min(f, check_val);
+        }
+    }
+
+    T delt = (sycl_ret - check_val)/1e8;
+    auto dot = shambase::sycl_utils::g_sycl_dot(delt, delt);
+
+    shamtest::asserts().assert_float_equal(name, dot,0,1e-9);
+
+}
+
+template<class T,class Fct> void unit_test_reduc_max(std::string name, Fct && red_fct){
+    std::vector<T> vals;
+
+    constexpr u32 size_test = 1e6;
+
+    std::mt19937 eng(0x1111);
+    std::uniform_real_distribution<f64> distf(0, 100);
+
+
+    for(u32 i = 0; i < size_test; i++){
+        vals.push_back(next_obj<T>(eng,distf));
+    }
+
+    T sycl_ret, check_val;
+
+    {
+        sycl::buffer<T> buf {vals.data(),vals.size()};
+
+        sycl_ret = red_fct(shamsys::instance::get_compute_queue(), buf, 0, size_test);
+
+    }
+
+    {
+        check_val = shambase::VectorProperties<T>::get_min();
+        for(auto & f : vals){
+            check_val = shambase::sycl_utils::g_sycl_max(f, check_val);
+        }
+    }
+
+    T delt = (sycl_ret - check_val)/1e8;
+    auto dot = shambase::sycl_utils::g_sycl_dot(delt, delt);
+
+    shamtest::asserts().assert_float_equal(name, dot,0,1e-9);
+
+}
+
 
 
 
@@ -89,13 +161,76 @@ void unit_test_reduc_sum(){
 
 }
 
-TestStart(Unittest, "shamalgs/reduction/sum", reduc_kernel_utest, 1){
+TestStart(Unittest, "shamalgs/reduction/sum", reduc_kernel_utestsum, 1){
     unit_test_reduc_sum();
 }
 
 
 
+void unit_test_reduc_min(){
 
+    unit_test_reduc_min<f64>("reduction : main (f64)",
+        [](sycl::queue & q, sycl::buffer<f64> & buf1, u32 start_id, u32 end_id) -> f64 {
+            return shamalgs::reduction::min(q, buf1, start_id, end_id);
+        }
+    );
+
+    unit_test_reduc_min<f32>("reduction : main (f32)",
+        [](sycl::queue & q, sycl::buffer<f32> & buf1, u32 start_id, u32 end_id) -> f32 {
+            return shamalgs::reduction::min(q, buf1, start_id, end_id);
+        }
+    );
+
+    unit_test_reduc_min<u32>("reduction : main (u32)",
+        [](sycl::queue & q, sycl::buffer<u32> & buf1, u32 start_id, u32 end_id) -> u32 {
+            return shamalgs::reduction::min(q, buf1, start_id, end_id);
+        }
+    );
+
+    unit_test_reduc_min<f64_3>("reduction : main (f64_3)",
+        [](sycl::queue & q, sycl::buffer<f64_3> & buf1, u32 start_id, u32 end_id) -> f64_3 {
+            return shamalgs::reduction::min(q, buf1, start_id, end_id);
+        }
+    );
+
+}
+
+TestStart(Unittest, "shamalgs/reduction/min", reduc_kernel_utestmin, 1){
+    unit_test_reduc_min();
+}
+
+
+void unit_test_reduc_max(){
+
+    unit_test_reduc_max<f64>("reduction : main (f64)",
+        [](sycl::queue & q, sycl::buffer<f64> & buf1, u32 start_id, u32 end_id) -> f64 {
+            return shamalgs::reduction::max(q, buf1, start_id, end_id);
+        }
+    );
+
+    unit_test_reduc_max<f32>("reduction : main (f32)",
+        [](sycl::queue & q, sycl::buffer<f32> & buf1, u32 start_id, u32 end_id) -> f32 {
+            return shamalgs::reduction::max(q, buf1, start_id, end_id);
+        }
+    );
+
+    unit_test_reduc_max<u32>("reduction : main (u32)",
+        [](sycl::queue & q, sycl::buffer<u32> & buf1, u32 start_id, u32 end_id) -> u32 {
+            return shamalgs::reduction::max(q, buf1, start_id, end_id);
+        }
+    );
+
+    unit_test_reduc_max<f64_3>("reduction : main (f64_3)",
+        [](sycl::queue & q, sycl::buffer<f64_3> & buf1, u32 start_id, u32 end_id) -> f64_3 {
+            return shamalgs::reduction::max(q, buf1, start_id, end_id);
+        }
+    );
+
+}
+
+TestStart(Unittest, "shamalgs/reduction/max", reduc_kernel_utestmax, 1){
+    unit_test_reduc_max();
+}
 
 //////////////////////////////////////:
 // benchmarks

@@ -35,13 +35,13 @@ class KernelSliceReduceMax;
 #ifdef SYCL_COMP_OPENSYCL
 template<typename T = void>
 struct _tmp_max {
-    T operator()(const T &lhs, const T &rhs) const {
+    inline T operator()(const T &lhs, const T &rhs) const {
         return shambase::sycl_utils::g_sycl_max(lhs, rhs);
     }
 };
 template<typename T = void>
 struct _tmp_min {
-    T operator()(const T &lhs, const T &rhs) const {
+    inline T operator()(const T &lhs, const T &rhs) const {
         return shambase::sycl_utils::g_sycl_min(lhs, rhs);
     }
 };
@@ -56,13 +56,13 @@ struct _tmp_min {
 #ifdef SYCL_COMP_SYCLUNKNOWN
 template<typename T = void>
 struct _tmp_max {
-    T operator()(const T &lhs, const T &rhs) const {
+    inline T operator()(const T &lhs, const T &rhs) const {
         return shambase::sycl_utils::g_sycl_max(lhs, rhs);
     }
 };
 template<typename T = void>
 struct _tmp_min {
-    T operator()(const T &lhs, const T &rhs) const {
+    inline T operator()(const T &lhs, const T &rhs) const {
         return shambase::sycl_utils::g_sycl_max(lhs, rhs);
     }
 };

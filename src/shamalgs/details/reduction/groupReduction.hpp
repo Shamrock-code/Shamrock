@@ -33,21 +33,45 @@ class KernelSliceReduceMax;
 #endif
 
 #ifdef SYCL_COMP_OPENSYCL
+template<typename T = void>
+struct _tmp_max {
+    T operator()(const T &lhs, const T &rhs) const {
+        return shambase::sycl_utils::g_sycl_max(lhs, rhs);
+    }
+};
+template<typename T = void>
+struct _tmp_min {
+    T operator()(const T &lhs, const T &rhs) const {
+        return shambase::sycl_utils::g_sycl_max(lhs, rhs);
+    }
+};
     #define SYCL_SUM_OP                                                                            \
         sycl::plus<T> {}
     #define SYCL_MIN_OP                                                                            \
-        sycl::minimum<T> {}
+        _tmp_min<T> {}
     #define SYCL_MAX_OP                                                                            \
-        sycl::maximum<T> {}
+        _tmp_max<T> {}
 #endif
 
 #ifdef SYCL_COMP_SYCLUNKNOWN
+template<typename T = void>
+struct _tmp_max {
+    T operator()(const T &lhs, const T &rhs) const {
+        return shambase::sycl_utils::g_sycl_max(lhs, rhs);
+    }
+};
+template<typename T = void>
+struct _tmp_min {
+    T operator()(const T &lhs, const T &rhs) const {
+        return shambase::sycl_utils::g_sycl_max(lhs, rhs);
+    }
+};
     #define SYCL_SUM_OP                                                                            \
         sycl::plus<T> {}
     #define SYCL_MIN_OP                                                                            \
-        sycl::minimum<T> {}
+        _tmp_min<T> {}
     #define SYCL_MAX_OP                                                                            \
-        sycl::maximum<T> {}
+        _tmp_max<T> {}
 #endif
 
 namespace shamalgs::reduction::details {

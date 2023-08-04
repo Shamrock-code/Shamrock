@@ -8,9 +8,11 @@
 
 #include <map>
 #include <random>
+#include "shamalgs/details/random/random.hpp"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
+#include "shambase/string.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -23,17 +25,20 @@
 using namespace shamalgs::random;
 
 template<class T,class Fct> void unit_test_reduc_sum(std::string name, Fct && red_fct){
-    std::vector<T> vals;
 
-    constexpr u32 size_test = 1e6;
+    constexpr u32 size_test = 1e4;
 
-    std::mt19937 eng(0x1111);
-    std::uniform_real_distribution<f64> distf(0, 100);
+    using Prop = shambase::VectorProperties<T>;
+    T min_b = Prop::get_min(), max_b = Prop::get_max();
 
-
-    for(u32 i = 0; i < size_test; i++){
-        vals.push_back(next_obj<T>(eng,distf));
+    if constexpr (Prop::is_float_based){
+        max_b /= Prop::get_max();
+        min_b /= Prop::get_min();
+        max_b *= 1e6;
+        min_b *= -1e6;
     }
+
+    std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111,size_test,min_b,max_b);
 
     T sycl_ret, check_val;
 
@@ -59,17 +64,10 @@ template<class T,class Fct> void unit_test_reduc_sum(std::string name, Fct && re
 }
 
 template<class T,class Fct> void unit_test_reduc_min(std::string name, Fct && red_fct){
-    std::vector<T> vals;
 
     constexpr u32 size_test = 1e6;
 
-    std::mt19937 eng(0x1111);
-    std::uniform_real_distribution<f64> distf(0, 100);
-
-
-    for(u32 i = 0; i < size_test; i++){
-        vals.push_back(next_obj<T>(eng,distf));
-    }
+    std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111,size_test);
 
     T sycl_ret, check_val;
 
@@ -95,17 +93,10 @@ template<class T,class Fct> void unit_test_reduc_min(std::string name, Fct && re
 }
 
 template<class T,class Fct> void unit_test_reduc_max(std::string name, Fct && red_fct){
-    std::vector<T> vals;
 
     constexpr u32 size_test = 1e6;
 
-    std::mt19937 eng(0x1111);
-    std::uniform_real_distribution<f64> distf(0, 100);
-
-
-    for(u32 i = 0; i < size_test; i++){
-        vals.push_back(next_obj<T>(eng,distf));
-    }
+    std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111,size_test);
 
     T sycl_ret, check_val;
 

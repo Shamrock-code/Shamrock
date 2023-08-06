@@ -14,3 +14,4 @@ target_sources(shamrock_lib
 #add_subdirectory(setup)
 add_subdirectory(legacy)
 add_subdirectory(modules)
+add_subdirectory(bindings)

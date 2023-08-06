@@ -10,6 +10,7 @@
 
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambase/string.hpp"
+#include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
@@ -19,6 +20,7 @@
 #include "shamrock/sph/sphpart.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <algorithm>
 #include <vector>
 
 namespace shammodels::sph {
@@ -70,6 +72,101 @@ namespace shammodels::sph {
         u64 get_total_part_count();
 
         f64 total_mass_to_part_mass(f64 totmass);
+
+        template<class T>
+        std::vector<T> compute_slice(std::string field_name, Tvec min_coord, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny, std::function<T(T)> modifier){
+
+            using namespace shamrock::patch;
+
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            sycl::buffer<T, 2> slice_data {{nx,ny}};
+
+            Tvec dx = delta_x/nx;
+            Tvec dy = delta_y/ny;
+            Tvec dxnorm = dx / sycl::length(dx);
+            Tvec dynorm = dy / sycl::length(dx);
+            Tscal dx_len_inv = 1/sycl::length(dx);
+            Tscal dy_len_inv = 1/sycl::length(dy);
+
+            auto coord_mapping = [=](u32 ix, u32 iy){
+                return min_coord + (Tscal(ix)*dx) + Tscal(iy)*dy;
+            };
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+                sycl::accessor acc {slice_data, cgh , sycl::write_only, sycl::no_init};
+
+                cgh.parallel_for(sycl::range<2>{nx,ny}, [=](sycl::item<2> it){
+                    acc[it] = shambase::VectorProperties<T>::get_zero();
+                });
+            });
+
+            sched.for_each_patchdata_nonempty([&](const shamrock::patch::Patch, shamrock::patch::PatchData & pdat){
+
+                u32 cnt = pdat.get_obj_cnt();
+                sycl::buffer<Tvec> &pos =
+                        pdat.get_field_buf_ref<Tvec>(0);
+                sycl::buffer<Tscal> &hpart =
+                        pdat.get_field_buf_ref<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                sycl::buffer<T> &f =
+                        pdat.get_field_buf_ref<T>(sched.pdl.get_field_idx<T>(field_name));
+
+                {
+                    sycl::host_accessor r {pos, sycl::read_only};
+                    sycl::host_accessor h {hpart, sycl::read_only};
+                    sycl::host_accessor val {f, sycl::read_only};
+
+                    sycl::host_accessor slice {slice_data, sycl::read_write};
+
+                    for(u32 a = 0; a < cnt; a ++){
+
+                        Tvec r_a = r[a];
+                        Tscal h_a = h[a];
+                        T val_a = modifier(val[a]);
+
+                        auto inv_coord_mapping = [=](Tvec pos, Tscal off){
+                            Tvec tmp = (pos - min_coord);
+                            Tscal tmp_x = (sycl::dot(tmp, dxnorm) + off)*dx_len_inv;
+                            Tscal tmp_y = (sycl::dot(tmp, dynorm) + off)*dy_len_inv;
+                            return i32_2{tmp_x, tmp_y};
+                        };
+
+
+                        i32_2 base_low = inv_coord_mapping (r_a,-h_a*Kernel::Rkern);
+                        i32_2 base_high = inv_coord_mapping (r_a,h_a*Kernel::Rkern);
+
+                        i32 lowbound_x = std::max(0,base_low.x()-1);
+                        i32 lowbound_y = std::max(0,base_low.y()-1);
+
+                        i32 highbound_x = std::max(0,std::min(i32(nx),base_high.x()+1));
+                        i32 highbound_y = std::max(0,std::min(i32(ny),base_high.y()+1)); 
+
+                        for(u32 ix = lowbound_x; ix < highbound_x; ix ++){
+                            for(u32 iy = lowbound_y; iy < highbound_y; iy ++){
+
+                                Tscal d = sycl::length(coord_mapping(ix,iy) - r_a);
+                                slice[{ix,iy}] += val_a*Kernel::W( sycl::length(coord_mapping(ix,iy) - r_a), h_a );
+                            }
+                        }
+
+                    }
+
+                }
+            });
+
+            
+            std::vector<T> result (nx*ny);
+
+            {
+                sycl::host_accessor slice {slice_data, sycl::read_only};
+                for(u32 ix = 0; ix < nx; ix ++){
+                    for(u32 iy = 0; iy < ny; iy ++){
+                        result[ix + nx*iy] = slice[{ix,iy}];
+                    }
+                }
+            }
+
+            return result;
+        }
 
 
         std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
@@ -551,5 +648,9 @@ namespace shammodels::sph {
         f64
         evolve_once(f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
     };
+
+
+
+
 
 } // namespace shammodels

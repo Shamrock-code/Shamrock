@@ -7,7 +7,12 @@
 // -------------------------------------------------------//
 
 #include <memory>
+#include <pybind11/numpy.h>
+#include <stdexcept>
+#include <variant>
+#include <vector>
 
+#include "shambase/exception.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/sph/Model.hpp"
@@ -191,7 +196,61 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         })
         .def("gen_default_config", [](T &self) { return typename T::Solver::Config{}; })
         .def("set_solver_config", &T::set_solver_config)
-        .def("add_sink", &T::add_sink);
+        .def("add_sink", &T::add_sink)
+        .def("get_sinks_pos", [](T &self){
+            std::vector<Tvec> pos;
+            auto tmp = self.solver.storage.sinks.get();
+            for(auto sink : tmp){
+                pos.push_back(sink.pos);
+            }
+            return pos;
+        })
+        .def("compute_slice", 
+            [](T &self,std::string name, Tvec min_coord, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny) -> std::variant<py::array_t<Tscal>> { 
+                
+                if(name == "rho"){
+                    py::array_t<Tscal> ret({nx,ny}); 
+
+                    std::vector<Tscal> slice = self.template compute_slice<Tscal>(
+                        "hpart", min_coord, delta_x, delta_y, nx, ny,
+                        [&](Tscal a ){
+                            return self.rho_h(a);
+                        });
+
+                    for(u32 iy = 0; iy< ny ; iy++){
+                        for(u32 ix = 0; ix < ny; ix++){
+                            ret.mutable_at(iy,ix) = slice[ix + nx*iy];
+                        }
+                    }
+
+                    return ret;
+                }     
+
+                if(name == "uint"){
+                    py::array_t<Tscal> ret({nx,ny}); 
+
+                    std::vector<Tscal> slice = self.template compute_slice<Tscal>(
+                        "uint", min_coord, delta_x, delta_y, nx, ny,[&](Tscal a ){return a;});
+
+                    for(u32 iy = 0; iy< ny ; iy++){
+                        for(u32 ix = 0; ix < ny; ix++){
+                            ret.mutable_at(iy,ix) = slice[ix + nx*iy];
+                        }
+                    }
+
+                    return ret;
+                }    
+
+
+                throw shambase::throw_with_loc<std::runtime_error>("unknown slice type");
+                return py::array_t<Tscal>({nx,ny}); 
+            },
+            py::arg("name"),
+            py::arg("min_coord"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"));
     ;
 }
 

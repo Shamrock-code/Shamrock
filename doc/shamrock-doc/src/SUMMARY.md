@@ -8,6 +8,7 @@
 
 - [QuickStart](./usermanual/quickstart.md)
 - [Running on cluster](./usermanual/cluster.md)
+- [Plotting](./usermanual/plotting.md)
 
 # Develloper Doc
 

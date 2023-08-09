@@ -158,7 +158,7 @@ target_link_libraries(shamrock_lib PUBLIC pybind11::embed)
 endif()
 
 target_link_libraries(shamrock_lib PUBLIC MPI::MPI_C)
-target_link_libraries(shamrock_lib PUBLIC fmt::fmt)
+target_link_libraries(shamrock_lib PRIVATE fmt::fmt-header-only)
 
 
 if(SHAMROCK_USE_NVTX)
@@ -189,7 +189,7 @@ if("${BUILD_SIM}")
     
     
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
-    target_link_libraries(shamrock PUBLIC fmt::fmt)
+    target_link_libraries(shamrock PRIVATE fmt::fmt-header-only)
 
     if(SHAMROCK_USE_NVTX)
         target_link_libraries(shamrock PUBLIC nvtx3-cpp)
@@ -230,7 +230,7 @@ if("${BUILD_TEST}")
     #target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
     target_compile_definitions(shamrock_test PUBLIC EXECUTABLE_BUILD)
-    target_link_libraries(shamrock_test PUBLIC fmt::fmt)
+    target_link_libraries(shamrock_test PRIVATE fmt::fmt-header-only)
 
     if(SHAMROCK_USE_NVTX)
         target_link_libraries(shamrock_test PUBLIC nvtx3-cpp)

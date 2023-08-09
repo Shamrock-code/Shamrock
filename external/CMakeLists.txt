@@ -1,6 +1,6 @@
 add_subdirectory(pybind11)
 
-add_subdirectory(fmt)
+add_subdirectory(fmt EXCLUDE_FROM_ALL)
 
 
 if(SHAMROCK_USE_NVTX)

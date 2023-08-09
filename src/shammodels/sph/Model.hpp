@@ -21,6 +21,8 @@
 #include "shamsys/legacy/log.hpp"
 #include <vector>
 
+#include <pybind11/functional.h>
+
 namespace shammodels::sph {
 
     /**
@@ -88,6 +90,38 @@ namespace shammodels::sph {
             solver.storage.sinks.get().push_back({
                 pos,velocity,{},{},mass,{},accretion_radius
             });
+        }
+
+        template<class T>
+        inline void set_field_value_lambda(std::string field_name, const std::function<T(Tvec)> pos_to_val){
+
+            StackEntry stack_loc{};
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            sched.patch_data.for_each_patchdata(
+                [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+
+                    PatchDataField<Tvec> &xyz =
+                        pdat.template get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+
+                    PatchDataField<T> &f =
+                        pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
+
+                    {
+                        auto &buf = shambase::get_check_ref(f.get_buf());
+                        sycl::host_accessor acc{buf};
+
+                        auto &buf_xyz = shambase::get_check_ref(xyz.get_buf());
+                        sycl::host_accessor acc_xyz{buf_xyz};
+
+                        for (u32 i = 0; i < f.size(); i++) {
+                            Tvec r = acc_xyz[i];
+
+                            acc[i] = pos_to_val(r);
+                            
+                        }
+                    }
+                });
+
         }
 
         /**

@@ -159,6 +159,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                      throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
+        .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>)
+        //.def("set_field_value_lambda_f64_3",[](T&self,std::string field_name, const std::function<f64_3 (Tscal, Tscal , Tscal)> pos_to_val){
+        //    self.template set_field_value_lambda<f64_3>(field_name, [=](Tvec v){
+        //        return pos_to_val(v.x(), v.y(),v.z());
+        //    });
+        //})
         .def("add_kernel_value",
              [](T &self,
                 std::string field_name,

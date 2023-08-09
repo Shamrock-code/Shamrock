@@ -367,7 +367,7 @@ jobs:
         nvhpc: [22.11]
         cuda: [11.8]
 
-    if: false
+    #if: false
   
     timeout-minutes: 60
     steps:

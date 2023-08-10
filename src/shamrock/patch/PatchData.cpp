@@ -358,6 +358,33 @@ namespace shamrock::patch{
     template void PatchData::split_patchdata(std::array<std::reference_wrapper<PatchData>,8> pdats, std::array<u64_3, 8> min_box,  std::array<u64_3, 8> max_box);
 
 
-    
+    bool operator==(const PatchData &p1, const PatchData &p2) {
+        bool check = true;
+
+        if (p1.fields.size() != p2.fields.size()) {
+            return false;
+        }
+
+        for (u32 idx = 0; idx < p1.fields.size(); idx++) {
+
+            bool ret = std::visit(
+                [&](auto &pf1, auto &pf2) -> bool {
+                    using t1 = typename std::remove_reference<decltype(pf1)>::type::Field_type;
+                    using t2 = typename std::remove_reference<decltype(pf2)>::type::Field_type;
+
+                    if constexpr (std::is_same<t1, t2>::value) {
+                        return pf1.check_field_match(pf2);
+                    } else {
+                        return false;
+                    }
+                },
+                p1.fields[idx].value,
+                p2.fields[idx].value);
+
+            check = check && ret;
+        }
+
+        return check;
+    }
 
 }

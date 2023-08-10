@@ -121,10 +121,14 @@ jobs:
           sudo apt install -y cmake libboost-all-dev wget
       - name: install nvcxx
         run: |
-          MAJOR_VERSION=$(echo ${{matrix.nvhpc}} | sed 's/\..*//')
-          MINOR_VERSION=$(echo ${{matrix.nvhpc}} | sed 's/.*\.//')
-          wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-${MAJOR_VERSION}-${MINOR_VERSION}_${{matrix.nvhpc}}_amd64.deb
-          wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc_${{matrix.nvhpc}}_amd64.deb
+          if [[ "${{matrix.nvhpc}}" == "22.11" ]]; then
+            wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-22-1_22.1_amd64.deb
+            wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-2022_22.1_amd64.deb
+          fi
+          if [[ "${{matrix.nvhpc}}" == "23.5" ]]; then
+            wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc-23-5_23.5_amd64.deb
+            wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc_23.5_amd64.deb
+          fi
           sudo apt install -y ./nvhpc-*
       - name: build Open SYCL
         run: |

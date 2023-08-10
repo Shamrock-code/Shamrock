@@ -73,11 +73,13 @@ struct PatchDataMpiRequest{
         for(auto b : mpi_rq_fields_i64_3   ){b.finalize();}
     }
 
-    template<class T> std::vector<patchdata_field::PatchDataFieldMpiRequest<T>> & get_field_list();
-    #define X(_arg) template<> inline std::vector<patchdata_field::PatchDataFieldMpiRequest<_arg>> & get_field_list(){return mpi_rq_fields_##_arg ;}
-    XMAC_LIST_ENABLED_FIELD
-    #undef X
+    template<class T> inline std::vector<patchdata_field::PatchDataFieldMpiRequest<T>> & get_field_list();
 }; 
+
+
+#define X(_arg) template<> inline std::vector<patchdata_field::PatchDataFieldMpiRequest<_arg>> & PatchDataMpiRequest::get_field_list(){return mpi_rq_fields_##_arg ;}
+XMAC_LIST_ENABLED_FIELD
+#undef X
 
 inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> & rq_lst){
     

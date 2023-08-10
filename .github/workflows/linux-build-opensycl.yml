@@ -130,6 +130,10 @@ jobs:
             wget -q https://developer.download.nvidia.com/hpc-sdk/ubuntu/amd64/nvhpc_23.5_amd64.deb
           fi
           sudo apt install -y ./nvhpc-*
+
+      - name: list cuda versions
+        run: ls ${NV_HPC_SDK_ROOT}/cuda
+        
       - name: build Open SYCL
         run: |
           cd OpenSYCL

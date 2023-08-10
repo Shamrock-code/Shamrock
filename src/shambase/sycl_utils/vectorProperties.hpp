@@ -15,6 +15,9 @@
 namespace shambase {
 
     template<class T>
+    struct VectorProperties;
+
+    template<class T>
     struct VectorProperties {
         using component_type           = T;
         static constexpr u32 dimension = 1;

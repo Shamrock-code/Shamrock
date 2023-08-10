@@ -368,7 +368,7 @@ jobs:
         cuda: [11.8]
         include:
           - nvhpc: 23.5
-            cuda: 12.1.1
+            cuda: 12.1
 
     #if: false
   

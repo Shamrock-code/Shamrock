@@ -21,7 +21,7 @@ namespace shamrock::sfc{
 
         template<class morton_t>
         struct MortonInfo{
-            static constexpr morton_t err_code;
+            static constexpr morton_t err_code = 0x0;
         };
 
         template<>

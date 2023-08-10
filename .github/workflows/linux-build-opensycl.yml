@@ -132,8 +132,10 @@ jobs:
           sudo apt install -y ./nvhpc-*
 
       - name: list cuda versions
-        run: ls ${NV_HPC_SDK_ROOT}/cuda
-        
+        run: |
+          export NV_HPC_SDK_ROOT=/opt/nvidia/hpc_sdk/Linux_x86_64/${{matrix.nvhpc}}
+          ls ${NV_HPC_SDK_ROOT}/cuda
+
       - name: build Open SYCL
         run: |
           cd OpenSYCL

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
+#include "shambase/type_traits.hpp"
 #include <limits>
 
 namespace shambase {
@@ -17,6 +18,8 @@ namespace shambase {
     struct VectorProperties {
         using component_type           = T;
         static constexpr u32 dimension = 1;
+
+        static_assert(is_valid_sycl_base_type<T>, "The selected type is not a valid base sycl type");
 
         static constexpr bool is_float_based = std::is_same<T, f16>::value ||
                                                std::is_same<T, f32>::value ||
@@ -40,6 +43,8 @@ namespace shambase {
     struct VectorProperties<sycl::vec<T, dim>> {
         using component_type           = T;
         static constexpr u32 dimension = dim;
+
+        static_assert(is_valid_sycl_base_type<T>, "The selected type is not a valid base sycl type");
 
         static constexpr bool is_float_based = std::is_same<T, f16>::value ||
                                                std::is_same<T, f32>::value ||

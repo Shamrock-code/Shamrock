@@ -29,12 +29,14 @@ set(SHAMROCK_LOOP_GSIZE 256 CACHE STRING "Default group size in shamrock")
 option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
+option(SHAMROCK_USE_PCH "use precompiled headers" Off)
 
 message("-- Shamrock config : ")
 message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
 message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
 message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
+message("     SHAMROCK_USE_PCH : ${SHAMROCK_USE_PCH}")
 message("     SYCL_COMPILER : ${SYCL_COMPILER}")
 message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
 message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
@@ -160,6 +162,9 @@ endif()
 target_link_libraries(shamrock_lib PUBLIC MPI::MPI_C)
 target_link_libraries(shamrock_lib PUBLIC fmt::fmt)
 
+if(SHAMROCK_USE_PCH)
+target_precompile_headers(shamrock_lib PRIVATE "<sycl/sycl.hpp>")
+endif()
 
 if(SHAMROCK_USE_NVTX)
     target_link_libraries(shamrock_lib PUBLIC nvtx3-cpp)
@@ -201,6 +206,10 @@ if("${BUILD_SIM}")
     target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_PROFILING)
     endif()
 
+    if(SHAMROCK_USE_PCH)
+    target_precompile_headers(shamrock REUSE_FROM shamrock_lib)
+    endif()
+
     
 
 
@@ -240,6 +249,10 @@ if("${BUILD_TEST}")
 
     if(SHAMROCK_USE_PROFILING)
     target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_PROFILING)
+    endif()
+
+    if(SHAMROCK_USE_PCH)
+    target_precompile_headers(shamrock_test REUSE_FROM shamrock_lib)
     endif()
 
     #find_package(nlohmann_json 3.2.0 REQUIRED)

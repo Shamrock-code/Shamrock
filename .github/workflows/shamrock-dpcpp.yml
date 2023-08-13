@@ -47,7 +47,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile bare --cmakeargs="-DSHAMROCK_USE_PCH=On"
+            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile bare
 
       - name: compile Shamrock
         run: |
@@ -121,7 +121,7 @@ jobs:
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
             --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile cuda \
-            --cxxflags="--cuda-path=/home/docker/opt/cuda" --cmakeargs="-DSHAMROCK_USE_PCH=On"
+            --cxxflags="--cuda-path=/home/docker/opt/cuda"
 
       - name: compile Shamrock
         run: |
@@ -201,7 +201,7 @@ jobs:
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
             --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile hip-gfx906 \
-            --cxxflags="--rocm-path=/opt/rocm" --cmakeargs="-DSHAMROCK_USE_PCH=On"
+            --cxxflags="--rocm-path=/opt/rocm"
 
       - name: compile Shamrock
         run: |

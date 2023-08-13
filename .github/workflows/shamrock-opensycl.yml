@@ -47,7 +47,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp_coverage --cmakeargs="-DSHAMROCK_USE_PCH=On"
+            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp_coverage
 
       - name: compile Shamrock
         run: |
@@ -155,7 +155,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
-            --outdir build --cxxpath OpenSYCL_comp --compiler opensycl --profile omp --cmakeargs="-DSHAMROCK_USE_PCH=On"
+            --outdir build --cxxpath OpenSYCL_comp --compiler opensycl --profile omp
   
       - name: compile Shamrock
         run: |
@@ -241,7 +241,7 @@ jobs:
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
             --outdir build --cxxpath OpenSYCL_comp --compiler opensycl --profile cuda-sm70 \
-            --cxxflags="--opensycl-cuda-path=/home/docker/opt/cuda" --cmakeargs="-DSHAMROCK_USE_PCH=On"
+            --cxxflags="--opensycl-cuda-path=/home/docker/opt/cuda"
   
       - name: compile Shamrock
         run: |

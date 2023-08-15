@@ -22,6 +22,7 @@
 #include "aliases.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -80,6 +81,7 @@ int main(int argc, char *argv[]) {
 
     opts::register_opt("--sycl-ls",{}, "list available devices");
     opts::register_opt("--sycl-ls-map",{}, "list available devices & list of queue bindings");
+    opts::register_opt("--benchmark-mpi",{}, "micro benchmark for MPI");
 
     opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
     opts::register_opt("--loglevel","(logvalue)", "specify a log level");
@@ -139,6 +141,10 @@ int main(int argc, char *argv[]) {
 
     shamsys::instance::validate_comm();
 
+    if(opts::has_option("--benchmark-mpi")){
+        shamsys::run_micro_benchmark();
+    }
+    
     if(shamsys::instance::world_rank == 0){
         logger::print_faint_row();
         logger::raw_ln("log status : ");
@@ -171,6 +177,8 @@ int main(int argc, char *argv[]) {
         shamsys::instance::print_queue_map();
         
     }
+
+    
 
     
 

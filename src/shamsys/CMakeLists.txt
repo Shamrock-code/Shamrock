@@ -5,6 +5,7 @@ set(Sources
     SyclHelper.cpp
     SignalCatch.cpp
     EnvVariables.cpp
+    MicroBenchmark.cpp
 )
 set(SourcesTest
     

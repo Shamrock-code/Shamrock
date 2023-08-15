@@ -9,6 +9,7 @@
 
 //%Impl status : Good
 
+#include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -23,6 +24,7 @@ int main(int argc, char *argv[]){
     opts::register_opt("--sycl-ls-map",{}, "list available devices & list of queue bindings");
     opts::register_opt("--loglevel","(logvalue)", "specify a log level");
     opts::register_opt("--nocolor",{}, "disable colored ouput");
+    opts::register_opt("--benchmark-mpi",{}, "micro benchmark for MPI");
 
     opts::register_opt("--test-list",{}, "print test availables");
     opts::register_opt("--run-only",{"(test name)"}, "run only this test");
@@ -79,6 +81,10 @@ int main(int argc, char *argv[]){
     }
 
     shamsys::instance::validate_comm();
+
+    if(opts::has_option("--benchmark-mpi")){
+        shamsys::run_micro_benchmark();
+    }
 
     if(shamsys::instance::world_rank == 0){
         logger::print_faint_row();

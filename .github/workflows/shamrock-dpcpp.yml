@@ -136,7 +136,7 @@ jobs:
       #    export PATH=$DPCPP_HOME/bin:$PATH
       #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
       #    export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
-      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
 
   shamrock_dpcpp_hip:
@@ -216,4 +216,4 @@ jobs:
       #    export PATH=$DPCPP_HOME/bin:$PATH
       #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
       #    export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
-      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
+      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest

@@ -55,6 +55,7 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv){
 
     f64 t = 0;
     u64 loops = 0;
+    bool is_used = false;
     do{
         loops ++;
 
@@ -66,10 +67,16 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv){
             u32 rq_index = rqs.size() - 1;
             auto & rq = rqs[rq_index]; 
             mpi::isend(buf_send.get_ptr(), lenght, MPI_BYTE, wr_receiv, 0, MPI_COMM_WORLD, &rq);
-        }else if(wr == wr_receiv){
+            is_used = true;
+        }
+        
+        if(wr == wr_receiv){
             MPI_Status s;
             mpi::recv(buf_recv.get_ptr(), lenght, MPI_BYTE, wr_sender, 0, MPI_COMM_WORLD, &s);
-        }else{
+            is_used = true;
+        }
+        
+        if(!is_used){
             t = 1;
         }
         std::vector<MPI_Status> st_lst(rqs.size());
@@ -105,6 +112,7 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2){
 
     f64 t = 0;
     u64 loops = 0;
+    bool is_used = false;
     do{
         loops ++;
 
@@ -115,12 +123,17 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2){
             MPI_Status s;
             mpi::send(buf_send.get_ptr(), lenght, MPI_BYTE, wr2, 0, MPI_COMM_WORLD); 
             mpi::recv(buf_recv.get_ptr(), lenght, MPI_BYTE, wr2, 1, MPI_COMM_WORLD, &s);
-        }else if(wr == wr2){
+            is_used = true;
+        }
+        
+        if(wr == wr2){
             MPI_Status s;
             mpi::recv(buf_recv.get_ptr(), lenght, MPI_BYTE, wr1, 0, MPI_COMM_WORLD, &s);
             mpi::send(buf_send.get_ptr(), lenght, MPI_BYTE, wr1, 1, MPI_COMM_WORLD); 
-            
-        }else{
+            is_used = true;
+        }
+        
+        if(!is_used){
             t = 1;
         }
         f64 t_end = MPI_Wtime();

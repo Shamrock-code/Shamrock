@@ -66,10 +66,11 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv){
             u32 rq_index = rqs.size() - 1;
             auto & rq = rqs[rq_index]; 
             mpi::isend(buf_send.get_ptr(), lenght, MPI_BYTE, wr_receiv, 0, MPI_COMM_WORLD, &rq);
-        }
-        if(wr == wr_receiv){
+        }else if(wr == wr_receiv){
             MPI_Status s;
             mpi::recv(buf_recv.get_ptr(), lenght, MPI_BYTE, wr_sender, 0, MPI_COMM_WORLD, &s);
+        }else{
+            t = 1;
         }
         std::vector<MPI_Status> st_lst(rqs.size());
         if(rqs.size() > 0){
@@ -114,12 +115,13 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2){
             MPI_Status s;
             mpi::send(buf_send.get_ptr(), lenght, MPI_BYTE, wr2, 0, MPI_COMM_WORLD); 
             mpi::recv(buf_recv.get_ptr(), lenght, MPI_BYTE, wr2, 1, MPI_COMM_WORLD, &s);
-        }
-        if(wr == wr2){
+        }else if(wr == wr2){
             MPI_Status s;
             mpi::recv(buf_recv.get_ptr(), lenght, MPI_BYTE, wr1, 0, MPI_COMM_WORLD, &s);
             mpi::send(buf_send.get_ptr(), lenght, MPI_BYTE, wr1, 1, MPI_COMM_WORLD); 
             
+        }else{
+            t = 1;
         }
         f64 t_end = MPI_Wtime();
         t += t_end - t_start;

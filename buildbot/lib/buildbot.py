@@ -98,8 +98,10 @@ def run_cmd(str):
 
     print("\033[1;34mRunning \033[0;0m: " + str)
     print("\033[1;90mcmd out "+"-"*(col_cnt-8)+"\033[0;0m")
-    os.system(str)
+    ret = os.system(str)
     print("\033[1;90m"+"-"*col_cnt+"\033[0;0m")
+    if not (ret == 0):
+        exit(ret)
 
 
 

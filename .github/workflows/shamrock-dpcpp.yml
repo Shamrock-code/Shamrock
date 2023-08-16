@@ -31,7 +31,7 @@ jobs:
       - name : Install pck (DPCPP)
         run: |
           sudo apt update
-          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
+          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common glibc
           
       - name : Install pck (DPCPP esimd)
         run: |

@@ -75,9 +75,14 @@ jobs:
         run: |
           sudo apt install -y libva-dev libffi-dev libtool
 
+      
       - name : Install pck (opencl)
         run: |
           sudo apt install -y clinfo intel-opencl-icd opencl-headers
+
+      - name : run clinfo
+        run: |
+          clinfo
 
       - name: Git clone 
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'

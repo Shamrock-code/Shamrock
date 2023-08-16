@@ -18,17 +18,17 @@ jobs:
         with:
           lookup-only: true
           path: dpcpp_compiler
-          key: dpcpp-nighly20230112.tar.gz
+          key: dpcpp-daily20230815.tar.gz
       
       - name : Download & Untar DPCPP
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
-          export DPCPP_URL="https://github.com/intel/llvm/releases/download/sycl-nightly%2F20230112/dpcpp-compiler.tar.gz"
-          wget -q --show-progress --progress=bar:force:noscroll "$DPCPP_URL" -O dpcpp-compiler.tar.gz
+          export DPCPP_URL="https://github.com/intel/llvm/releases/download/nightly-2023-08-15/sycl_linux.tar.gz"
+          wget -q --show-progress --progress=bar:force:noscroll "$DPCPP_URL" -O sycl_linux.tar.gz
           echo "untar : "
-          tar -xf dpcpp-compiler.tar.gz
+          tar -xf sycl_linux.tar.gz
           echo "rm archive"
-          rm dpcpp-compiler.tar.gz
+          rm sycl_linux.tar.gz
 
   cuda_build:
 

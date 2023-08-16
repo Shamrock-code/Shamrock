@@ -22,7 +22,7 @@ jobs:
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler
-          key: dpcpp-nighly20230112.tar.gz
+          key: dpcpp-daily20230815
 
       - uses: actions/setup-python@v4
         with:

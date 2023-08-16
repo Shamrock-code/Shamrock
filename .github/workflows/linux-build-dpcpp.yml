@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
     
 jobs:
-  nightly_build20230112:
-    name: Cache Nightly build 2023-01-12
+  daily_build20230112:
+    name: Cache Daily build 2023-08-15
     runs-on: [self-hosted, raw]
     
     steps:

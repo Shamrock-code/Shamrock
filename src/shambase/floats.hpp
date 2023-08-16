@@ -61,8 +61,12 @@ namespace shambase {
      */
     template<class T, int n>
     inline bool has_nan(sycl::vec<T,n> v){
-        auto tmp = ! sycl::isnan(v);
-        return component_have_a_zero(tmp);
+        bool has = false;
+        #pragma unroll 
+        for(i32 i = 0 ; i < n; i ++){
+            has = has || (sycl::isnan(v[i]));
+        }
+        return has;
     }
 
     /**
@@ -76,8 +80,12 @@ namespace shambase {
      */
     template<class T, int n>
     inline bool has_inf(sycl::vec<T,n> v){
-        auto tmp = ! sycl::isinf(v);
-        return component_have_a_zero(tmp);
+        bool has = false;
+        #pragma unroll 
+        for(i32 i = 0 ; i < n; i ++){
+            has = has || (sycl::isinf(v[i]));
+        }
+        return has;
     }
 
     /**
@@ -91,8 +99,12 @@ namespace shambase {
      */
     template<class T, int n>
     inline bool has_nan_or_inf(sycl::vec<T,n> v){
-        auto tmp = ! (sycl::isnan(v) || sycl::isinf(v));
-        return component_have_a_zero(tmp);
+        bool has = false;
+        #pragma unroll 
+        for(i32 i = 0 ; i < n; i ++){
+            has = has || (sycl::isnan(v[i]) || sycl::isinf(v[i]));
+        }
+        return has;
     }
 
 

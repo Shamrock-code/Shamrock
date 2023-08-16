@@ -6,7 +6,7 @@ on:
     
 jobs:
   shamrock_dpcpp_nativecpu:
-    name: DPCPP Nighly
+    name: DPCPP Native CPU
     runs-on: [self-hosted, raw]
 
     #for now this is quite buggy

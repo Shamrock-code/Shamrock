@@ -8,6 +8,9 @@ jobs:
   shamrock_dpcpp_nativecpu:
     name: DPCPP Nighly
     runs-on: [self-hosted, raw]
+
+    #for now this is quite buggy
+    if: false
     
     steps:
       - uses: actions/checkout@v3

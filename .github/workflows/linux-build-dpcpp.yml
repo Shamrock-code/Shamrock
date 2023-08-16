@@ -6,38 +6,38 @@ on:
   workflow_dispatch:
     
 jobs:
-  daily_build20230112:
-    name: Cache Daily build 2023-08-15
-    runs-on: [self-hosted, raw]
-    
-    steps:
-        
-      - name: Cache DPCPP
-        id: cache-dpcpp
-        uses: actions/cache@v3
-        with:
-          lookup-only: true
-          path: dpcpp_compiler
-          key: dpcpp-daily20230815.tar.gz
-      
-      - name : Download DPCPP
-        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
-        run: |
-          export DPCPP_URL="https://github.com/intel/llvm/releases/download/nightly-2023-08-15/sycl_linux.tar.gz"
-          wget -q --show-progress --progress=bar:force:noscroll "$DPCPP_URL" -O sycl_linux.tar.gz
-      
-      - name : Untar DPCPP
-        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
-        run: |
-          echo "untar : "
-          mkdir dpcpp_compiler
-          tar -xvf sycl_linux.tar.gz -C dpcpp_compiler
-
-      - name : remove tar DPCPP
-        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
-        run: |
-          echo "rm archive"
-          rm sycl_linux.tar.gz
+  #daily_build20230112:
+  #  name: Cache Daily build 2023-08-15
+  #  runs-on: [self-hosted, raw]
+  #  
+  #  steps:
+  #      
+  #    - name: Cache DPCPP
+  #      id: cache-dpcpp
+  #      uses: actions/cache@v3
+  #      with:
+  #        lookup-only: true
+  #        path: dpcpp_compiler
+  #        key: dpcpp-daily20230815.tar.gz
+  #    
+  #    - name : Download DPCPP
+  #      if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+  #      run: |
+  #        export DPCPP_URL="https://github.com/intel/llvm/releases/download/nightly-2023-08-15/sycl_linux.tar.gz"
+  #        wget -q --show-progress --progress=bar:force:noscroll "$DPCPP_URL" -O sycl_linux.tar.gz
+  #    
+  #    - name : Untar DPCPP
+  #      if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+  #      run: |
+  #        echo "untar : "
+  #        mkdir dpcpp_compiler
+  #        tar -xvf sycl_linux.tar.gz -C dpcpp_compiler
+  #
+  #    - name : remove tar DPCPP
+  #      if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+  #      run: |
+  #        echo "rm archive"
+  #        rm sycl_linux.tar.gz
 
   cuda_build:
 

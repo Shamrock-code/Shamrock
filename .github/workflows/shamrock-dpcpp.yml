@@ -22,21 +22,21 @@ jobs:
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler
-          key: dpcpp-daily20230815
+          key: dpcpp-cuda-12.1.1.tar.gz
 
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10' 
-          
+      
       - name : Install pck (DPCPP)
         run: |
           sudo apt update
-          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common libc6
+          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common libva-dev
           
       - name : Install pck (DPCPP esimd)
         run: |
           sudo apt install -y libva-dev libffi-dev libtool
-
+          
       - name: install Ninja-build
         run: sudo apt install ninja-build
 

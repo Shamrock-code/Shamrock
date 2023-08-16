@@ -152,6 +152,7 @@ hipsyclconfigfile = "--hipsycl-config-file="+abs_compiler_root_dir+"/etc/hipSYCL
 profile_map = {
     "dpcpp" : {
         "bare" : "-fsycl",
+        "native_cpu" : "-fsycl -fsycl-targets=native_cpu",
         "cuda" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda",
         "cuda-gdb" : "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -g --cuda-noopt-device-debug",
         "cuda_sm86" : "-fsycl -fsycl-targets=nvidia_gpu_sm_86",

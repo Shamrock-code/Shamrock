@@ -30,7 +30,8 @@ jobs:
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           echo "untar : "
-          tar -xvf sycl_linux.tar.gz
+          mkdir dpcpp_compiler
+          tar -xvf sycl_linux.tar.gz -C dpcpp_compiler
 
       - name : remove tar DPCPP
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'

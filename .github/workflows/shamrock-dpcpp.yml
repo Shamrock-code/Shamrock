@@ -5,7 +5,7 @@ on:
   workflow_call:
     
 jobs:
-  shamrock_dpcpp_nightly:
+  shamrock_dpcpp_nativecpu:
     name: DPCPP Nighly
     runs-on: [self-hosted, raw]
     
@@ -22,7 +22,7 @@ jobs:
         with:
           fail-on-cache-miss: true
           path: dpcpp_compiler
-          key: dpcpp-cuda-12.1.1.tar.gz
+          key: dpcpp-nativecpu.tar.gz
 
       - uses: actions/setup-python@v4
         with:

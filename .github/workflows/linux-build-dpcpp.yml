@@ -20,13 +20,21 @@ jobs:
           path: dpcpp_compiler
           key: dpcpp-daily20230815.tar.gz
       
-      - name : Download & Untar DPCPP
+      - name : Download DPCPP
         if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           export DPCPP_URL="https://github.com/intel/llvm/releases/download/nightly-2023-08-15/sycl_linux.tar.gz"
           wget -q --show-progress --progress=bar:force:noscroll "$DPCPP_URL" -O sycl_linux.tar.gz
+      
+      - name : Untar DPCPP
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
           echo "untar : "
-          tar -xf sycl_linux.tar.gz
+          tar -xvf sycl_linux.tar.gz
+
+      - name : remove tar DPCPP
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
+        run: |
           echo "rm archive"
           rm sycl_linux.tar.gz
 

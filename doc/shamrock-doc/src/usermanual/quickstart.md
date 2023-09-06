@@ -3,6 +3,9 @@
 
 ## Download and compile 
 
+To get started since we use SYCL we use specific compilers that can compile SYCL c++ code to any SYCL backend. 
+If you already have a SYCL compiler skip this step and move to [Compile shamrock](#compile-shamrock) section.
+
 First make a directory to work in and move in it: 
 
 ```bash
@@ -19,7 +22,7 @@ Install requirements :
 </tr>
 <tr>
 <td valign="top">
-Install llvm and other requirements
+If you don't have llvm (...) : 
 
 ```bash
 wget --progress=bar:force https://apt.llvm.org/llvm.sh
@@ -28,7 +31,10 @@ sudo ./llvm.sh 16
 sudo apt install -y libclang-16-dev clang-tools-16 libomp-16-dev
 sudo rm -r /usr/lib/clang/16*
 sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
+```
 
+for the other requirements :
+```bash
 sudo apt install cmake libboost-all-dev
 ```
 </td>
@@ -43,8 +49,7 @@ brew install boost
 </tr>
 </table>
 
-Dowload OpenSYCL : 
-
+Clone the OpenSYCL repository: 
 ```bash
 git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
 cd OpenSYCL
@@ -66,6 +71,8 @@ cmake \
     -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-16 \
     -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
 ```
+
+if your
 </td>
 <td valign="top">
 
@@ -88,7 +95,11 @@ Compile OpenSYCL :
 make -j install
 ```
 
-now move out of the main directory, you should see a `OpenSYCL_comp` folder
+now move out of OpenSYCL direcotry
+```sh
+cd ..
+```
+, you should see a `OpenSYCL_comp` folder.
 
 ## Compile Shamrock
 
@@ -96,6 +107,11 @@ First go on [Shamrock repo](https://github.com/tdavidcl/Shamrock) and fork the c
 
 ```bash
 git clone --recurse-submodules git@github.com:github_username/Shamrock.git
+```
+
+move in the Shamrock folder
+
+```sh
 cd Shamrock
 ```
 
@@ -103,12 +119,12 @@ For configuration since cmake arguments can become quite complex
 I wrote a configuration utility to avoid dealing with that madness 
 
 ```
-python3 buildbot/configure.py 
-  --gen make 
-  --build release 
-  --tests 
-  --outdir build 
-  --cxxpath ../OpenSYCL_comp 
+python3 buildbot/configure.py \
+  --gen make \
+  --build release \
+  --tests \
+  --outdir build \
+  --cxxpath ../OpenSYCL_comp \
   --compiler opensycl
 ```
 

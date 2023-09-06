@@ -19,9 +19,17 @@ Install requirements :
 </tr>
 <tr>
 <td valign="top">
+Install llvm and other requirements
 
 ```bash
-sudo apt-get install cmake libboost-all-dev
+wget --progress=bar:force https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 16
+sudo apt install -y libclang-16-dev clang-tools-16 libomp-16-dev
+sudo rm -r /usr/lib/clang/16*
+sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
+
+sudo apt install cmake libboost-all-dev
 ```
 </td>
 <td valign="top">
@@ -38,7 +46,7 @@ brew install boost
 Dowload OpenSYCL : 
 
 ```bash
-git clone --recurse-submodules git@github.com:OpenSYCL/OpenSYCL.git
+git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
 cd OpenSYCL
 ```
 
@@ -53,20 +61,22 @@ Configure OpenSYCL :
 <td valign="top">
 
 ```bash
-cmake 
-  -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+cmake \
+    -DCMAKE_CXX_COMPILER=/usr/bin/clang++-16 \
+    -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-16 \
+    -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
 ```
 </td>
 <td valign="top">
 
 ```bash
 OMP_ROOT=` brew list libomp | 
-  grep libomp.a | 
-  sed -E "s/\/lib\/.*//"`
+    grep libomp.a | 
+    sed -E "s/\/lib\/.*//"`
 
-cmake 
-  -DOpenMP_ROOT=$OMP_ROOT 
-  -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+cmake \
+    -DOpenMP_ROOT=$OMP_ROOT \
+    -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
 ```
 </td>
 </tr>

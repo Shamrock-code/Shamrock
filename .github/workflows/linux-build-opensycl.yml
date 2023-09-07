@@ -70,7 +70,7 @@ jobs:
       - name: configure OpenSycl
         run: |
           cd OpenSYCL
-          cmake -G Ninja \
+          cmake \
             -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} \
             -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} \
             -DLLVM_DIR=/usr/lib/llvm-${{matrix.clang}}/cmake \
@@ -83,7 +83,7 @@ jobs:
       - name: compile & install OpenSycl
         run: |
           cd OpenSYCL
-          ninja install
+          make -j install
 
       - name: cp cuda libs
         run: |

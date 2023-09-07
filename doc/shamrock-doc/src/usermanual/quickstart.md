@@ -35,7 +35,7 @@ sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
 
 for the other requirements :
 ```bash
-sudo apt install cmake libboost-all-dev
+sudo apt install cmake libboost-all-dev python3-ipython
 ```
 </td>
 <td valign="top">
@@ -145,98 +145,3 @@ make -j 4
 Here we compile with only 4 process by default since the compiler can take up to 1 Gb per instance. If you have enough ram you can increse the number, or remove it to use the maximum number of threads.
 
 
-
-
-
-
-
-## Old tuto
-
-
-
-## Supported backends
-
-
-
-| Support Matrix |                 |                |         
-|--------------|-----------------|----------------|
-|              | DPCPP           | HipSYCL        |         
-|--------------|-----------------|----------------|
-| Host         | V               |      X         | 
-| OpenMP       | X               |       V        |      
-| CUDA         |       V         |       V        |  
-
-## SYCL Setup
-
-```bash
-wget https://raw.githubusercontent.com/tdavidcl/sycl-setup-script/main/setup_sycl.sh
-sh setup_sycl.sh
-```
-
-if you plan on using dpcpp run in terminal : 
-```bash
-export DPCPP_HOME=$(pwd)/sycl_cpl/dpcpp 
-export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-export PATH=$DPCPP_HOME/bin:$PATH
-```
-
-
-## Configuration & Compilation
-
-Download the repo : 
-```bash
-git clone git@github.com:tdavidcl/Shamrock.git
-```
-
-We provide a configuration utility to help dealing with the wide variety of configuration to compile sycl code.
-```bash
-python buildbot/configure.py
-```
-
-```
-usage: configure.py [-h] [--gen GEN] [--build BUILD] [--nocode] [--lib] [--tests] [--outdir OUTDIR] [--cxxpath CXXPATH] [--cxxcompiler CXXCOMPILER] [--compiler COMPILER] [--profile PROFILE]
-                    [--cppflags CPPFLAGS] [--cmakeargs CMAKEARGS]
-
-Configure utility for the code
-
-options:
-  -h, --help            show this help message and exit
-  --gen GEN             use NINJA build system instead of Make
-  --build BUILD         change the build type
-  --nocode              disable the build of the main executable
-  --lib                 build the lib instead of the executable
-  --tests               enable the build of the tests
-  --outdir OUTDIR       output directory
-  --cxxpath CXXPATH     select the compiler path
-  --cxxcompiler CXXCOMPILER
-                        select the compiler
-  --compiler COMPILER   id of the compiler
-  --profile PROFILE     select the compilation profile
-  --cppflags CPPFLAGS   c++ compilation flags
-  --cmakeargs CMAKEARGS
-                        cmake configuration flags
-
-```
-
-Essentially for each compiler we define several profiles, which holds corresponding compilation flags. 
-One exemple could be :
-```bash
-python buildbot/configure.py 
-    --gen ninja                     #to compile with ninja instead of make
-    --build debug                   #to compile the code in debug mode
-    --tests                         #compile also the test
-    --outdir build_hipsycl_debug    #directory where the build files will be held
-    --cxxpath ../sycl_cpl/hipSYCL   #path to the cxx compiler
-    --compiler hipsycl              #id of the compiler (hipsycl or dpcpp)
-    --profile omp                   #selected profile
-```
-
-After this command ran, you can `cd` into the build directory and type `ninja` or `make -J` depending on the build system selected.
-
-
-## Installing the code as a python module
-
-By running this command you can pip install the code into you local python installation, and open shamrock in your prefered environment.
-```bash
-BUILDBOT_ARGS="--cxxpath <PATH TO COMPILER> --compiler <COMPILER id> --profile <PROFILE>" pip install -e .
-```

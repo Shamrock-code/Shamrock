@@ -7,6 +7,7 @@
 # User Documentation
 
 - [QuickStart](./usermanual/quickstart.md)
+- [Configuration](./usermanual/configuration.md)
 - [Running on cluster](./usermanual/cluster.md)
 
 # Develloper Doc

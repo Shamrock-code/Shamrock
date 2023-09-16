@@ -183,7 +183,7 @@ jobs:
           mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
   shamrock_opensycl_omp_asan:
-    name: OpenSYCL omp clang-${{ matrix.clang }}
+    name: OpenSYCL omp asan clang-${{ matrix.clang }}
     runs-on: [self-hosted, cuda1102rocm543]
 
     strategy:

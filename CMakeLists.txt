@@ -30,6 +30,7 @@ option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
 option(SHAMROCK_USE_PCH "use precompiled headers" Off)
+option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
 
 message("-- Shamrock config : ")
 message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
@@ -37,6 +38,7 @@ message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
 message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
 message("     SHAMROCK_USE_PCH : ${SHAMROCK_USE_PCH}")
+message("     SHAMROCK_USE_SHARED_LIB : ${SHAMROCK_USE_SHARED_LIB}")
 message("     SYCL_COMPILER : ${SYCL_COMPILER}")
 message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
 message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
@@ -156,7 +158,12 @@ add_custom_command(
 ######################
 # Shamalgs
 ######################
-add_library(shamalgs SHARED src/version.cpp)
+if(SHAMROCK_USE_SHARED_LIB)
+add_library(shamalgs SHARED "")
+else()
+add_library(shamalgs OBJECT "")
+endif()
+
 target_include_directories(shamalgs PUBLIC "${CMAKE_SOURCE_DIR}/src")
 
 target_link_libraries(shamalgs PUBLIC MPI::MPI_C)

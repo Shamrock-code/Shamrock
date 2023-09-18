@@ -163,4 +163,6 @@ namespace shamrock::sfc {
     template class MortonKernels<u64, u32_3, 3>;
     template class MortonKernels<u32, u64_3, 3>;
     template class MortonKernels<u64, u64_3, 3>;
+    template class MortonKernels<u32, i64_3, 3>;
+    template class MortonKernels<u64, i64_3, 3>;
 } // namespace shamrock::sfc

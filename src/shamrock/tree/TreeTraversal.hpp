@@ -447,6 +447,19 @@ namespace shamrock::tree {
             }
 
         }
+
+        template<class Functor_iter>
+        inline void for_each_object_with_id(u32 idx, Functor_iter &&func_it) const {
+
+            u32 cnt = neigh_cnt[idx];
+            u32 offset_start = table_neigh_offset[idx];
+            u32 last_idx = offset_start + cnt;
+
+            for(u32 i = offset_start; i < last_idx; i++){
+                func_it(table_neigh[i],i);
+            }
+
+        }
     };
 
 

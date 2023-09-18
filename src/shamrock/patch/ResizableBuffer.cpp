@@ -147,13 +147,11 @@ void ResizableBuffer<T>::override(const T val) {
 
     if (val_cnt > 0) {
 
-        {
-            sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
-            for (u32 i = 0; i < val_cnt; i++) {
-                // field_data[i] = val;
-                acc[i] = val;
-            }
-        }
+        shamalgs::memory::buf_fill_discard(
+            shamsys::instance::get_compute_queue(), 
+            shambase::get_check_ref(buf), 
+            val);
+
     }
 }
 

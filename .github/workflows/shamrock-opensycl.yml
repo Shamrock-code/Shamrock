@@ -182,8 +182,10 @@ jobs:
           cd build
           mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
+
   shamrock_opensycl_SSCP:
     name: OpenSYCL sscp clang-${{ matrix.clang }}
+
     runs-on: [self-hosted, cuda1102rocm543]
 
     strategy:
@@ -229,6 +231,7 @@ jobs:
   
       - name: configure Shamrock
         run: |
+
           python3 buildbot/configure.py --gen ninja --tests --build release \
             --outdir build --cxxpath OpenSYCL_comp --compiler opensycl --profile generic
   
@@ -256,6 +259,99 @@ jobs:
         run: |
           cd build
           mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+
+
+
+
+
+
+
+  shamrock_opensycl_omp_asan:
+    name: OpenSYCL omp asan clang-${{ matrix.clang }}
+    runs-on: [self-hosted, cuda1102rocm543]
+
+    strategy:
+      matrix:
+        clang: [15,16]
+        cuda: [11.0.2]
+        rocm: [5.4.3]
+    #if: false
+  
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+  
+      - name: 'Download Artifact'
+        uses: actions/download-artifact@v3
+        with:
+          name: OpenSYCL_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
+  
+      - name: 'unTar opensycl'
+        run: tar -xvf opensycl.tar
+  
+      - name: ls local
+        run : ls -la
+  
+      - name: install boost
+        run: sudo apt install libboost-all-dev
+  
+      - name: install LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{matrix.clang}}
+          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
+          if [[ "${{matrix.clang}}" == "16" ]]; then
+            sudo rm -r /usr/lib/clang/16*
+            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
+          fi
+
+      - name: install Ninja-build
+        run: sudo apt install ninja-build
+  
+      - name: configure Shamrock
+        run: |
+          python3 buildbot/configure.py --gen ninja --tests --build debug \
+            --outdir build --cxxpath OpenSYCL_comp --compiler opensycl --profile omp_sanitizer
+  
+      - name: compile Shamrock
+        run: |
+          cd build
+          ninja
+  
+      - name: run Shamrock Unittests world_size = 1
+        run: |
+          cd build
+          ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+  
+      - name: run Shamrock Unittests world_size = 2
+        run: |
+          cd build
+          ASAN_OPTIONS=detect_leaks=0 mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+      
+      - name: run Shamrock Unittests world_size = 3
+        run: |
+          cd build
+          ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+  
+      - name: run Shamrock Unittests world_size = 4
+        run: |
+          cd build
+          ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   shamrock_opensycl_cuda:

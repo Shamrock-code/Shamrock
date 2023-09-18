@@ -11,45 +11,43 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/amr/basegodunov/Model.hpp"
+namespace shammodels::basegodunov {
+    template<class Tvec, class TgridVec>
+    void add_instance(py::module &m, std::string name_config, std::string name_model) {
 
+        using Tscal     = shambase::VecComponent<Tvec>;
+        using Tgridscal = shambase::VecComponent<TgridVec>;
 
-const std::string base_name = "AMRGodunov";
+        using T       = Model<Tvec, TgridVec>;
+        using TConfig = typename T::Solver::Config;
 
-template<class Tvec, class TgridVec>
-void add_instance(py::module &m, std::string name_config, std::string name_model){
+        logger::debug_ln("[Py]", "registering class :",name_config,typeid(T).name());
+        logger::debug_ln("[Py]", "registering class :",name_model,typeid(T).name());
 
-    using namespace shammodels::basegodunov;
+        py::class_<TConfig>(m, name_config.c_str());
 
-    using Tscal              = shambase::VecComponent<Tvec>;
-    using Tgridscal          = shambase::VecComponent<TgridVec>;
-
-    using T       = Model<Tvec, TgridVec>;
-    using TConfig = typename T::Solver::Config;
-
-
-    py::class_<TConfig>(m, name_config.c_str());
-
-    py::class_<T>(m, name_model.c_str())
-    .def("init_scheduler",&T::init_scheduler)
-    .def("make_base_grid",&T::make_base_grid)
-    .def("dump_vtk",&T::dump_vtk)
-    .def("evolve_once",&T::evolve_once);
-
+        py::class_<T>(m, name_model.c_str())
+            .def("init_scheduler", &T::init_scheduler)
+            .def("make_base_grid", &T::make_base_grid)
+            .def("dump_vtk", &T::dump_vtk)
+            .def("evolve_once", &T::evolve_once);
+    }
 }
 
 Register_pymod(pybasegodunovmodel) {
-
+    std::string base_name = "AMRGodunov";
     using namespace shammodels::basegodunov;
 
     add_instance<f64_3, i64_3>(
         m, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");
 
-    using VariantAMRGodunovBind =
-        std::variant<std::unique_ptr<Model<f64_3, i64_3>>>;
+    using VariantAMRGodunovBind = std::variant<std::unique_ptr<Model<f64_3, i64_3>>>;
 
     m.def(
         "get_AMRGodunov",
-        [](ShamrockCtx &ctx, std::string vector_type, std::string grid_repr) -> VariantAMRGodunovBind {
+        [](ShamrockCtx &ctx,
+           std::string vector_type,
+           std::string grid_repr) -> VariantAMRGodunovBind {
             VariantAMRGodunovBind ret;
 
             if (vector_type == "f64_3" && grid_repr == "i64_3") {

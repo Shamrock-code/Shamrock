@@ -8,10 +8,21 @@
 
 #pragma once
 
+/**
+ * @file memory.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief main include file for memory algorithms
+ * @date 2023-08-05
+ * 
+ */
+
 #include <shamalgs/details/memory/memory.hpp>
 
+/**
+ * @brief memory manipulation algorithms
+ */
+namespace shamalgs::memory {};
+
 namespace shamalgs {
-
     using namespace shamalgs::memory;
-
 } // namespace shamalgs

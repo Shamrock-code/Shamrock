@@ -21,89 +21,91 @@
 template<class Tvec, class TgridVec>
 using Module = shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>;
 
-/**
- * @brief find interfaces corresponding to shared surface between domains
- *
- * @tparam Tvec
- * @tparam TgridVec
- */
-template<class Tvec, class TgridVec>
-auto find_interfaces(PatchScheduler &sched, SerialPatchTree<TgridVec> &sptree) {
+namespace shammodels::basegodunov::modules{
+    /**
+    * @brief find interfaces corresponding to shared surface between domains
+    *
+    * @tparam Tvec
+    * @tparam TgridVec
+    */
+    template<class Tvec, class TgridVec>
+    auto find_interfaces(PatchScheduler &sched, SerialPatchTree<TgridVec> &sptree) {
 
-    using namespace shamrock::patch;
-    using namespace shammath;
+        using namespace shamrock::patch;
+        using namespace shammath;
 
-    using GZData              = shammodels::basegodunov::GhostZonesData<Tvec, TgridVec>;
-    static constexpr u32 dim  = shambase::VectorProperties<Tvec>::dimension;
-    using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
-    using GeneratorMap        = typename GZData::GeneratorMap;
+        using GZData              = shammodels::basegodunov::GhostZonesData<Tvec, TgridVec>;
+        static constexpr u32 dim  = shambase::VectorProperties<Tvec>::dimension;
+        using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
+        using GeneratorMap        = typename GZData::GeneratorMap;
 
-    StackEntry stack_loc{};
+        StackEntry stack_loc{};
 
-    i32 repetition_x = 1;
-    i32 repetition_y = 1;
-    i32 repetition_z = 1;
+        i32 repetition_x = 1;
+        i32 repetition_y = 1;
+        i32 repetition_z = 1;
 
-    GeneratorMap results;
+        GeneratorMap results;
 
-    shamrock::patch::SimulationBoxInfo &sim_box = sched.get_sim_box();
+        shamrock::patch::SimulationBoxInfo &sim_box = sched.get_sim_box();
 
-    PatchCoordTransform<TgridVec> patch_coord_transf = sim_box.get_patch_transform<TgridVec>();
-    TgridVec bsize                                   = sim_box.get_bounding_box_size<TgridVec>();
+        PatchCoordTransform<TgridVec> patch_coord_transf = sim_box.get_patch_transform<TgridVec>();
+        TgridVec bsize                                   = sim_box.get_bounding_box_size<TgridVec>();
 
-    for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
-        for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
-            for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
+        for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
+            for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
+                for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
 
-                // sender translation
-                TgridVec periodic_offset =
-                    TgridVec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
+                    // sender translation
+                    TgridVec periodic_offset =
+                        TgridVec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
 
-                sched.for_each_local_patch([&](const Patch psender) {
-                    CoordRange<TgridVec> sender_bsize = patch_coord_transf.to_obj_coord(psender);
-                    CoordRange<TgridVec> sender_bsize_off =
-                        sender_bsize.add_offset(periodic_offset);
+                    sched.for_each_local_patch([&](const Patch psender) {
+                        CoordRange<TgridVec> sender_bsize = patch_coord_transf.to_obj_coord(psender);
+                        CoordRange<TgridVec> sender_bsize_off =
+                            sender_bsize.add_offset(periodic_offset);
 
-                    shammath::AABB<TgridVec> sender_bsize_off_aabb{sender_bsize_off.lower,
-                                                                   sender_bsize_off.upper};
+                        shammath::AABB<TgridVec> sender_bsize_off_aabb{sender_bsize_off.lower,
+                                                                    sender_bsize_off.upper};
 
-                    using PtNode = typename SerialPatchTree<TgridVec>::PtNode;
+                        using PtNode = typename SerialPatchTree<TgridVec>::PtNode;
 
-                    logger::debug_sycl_ln("AMR:interf",
-                                          "find_interfaces -",
-                                          psender.id_patch,
-                                          sender_bsize_off_aabb.lower,
-                                          sender_bsize_off_aabb.upper);
+                        logger::debug_sycl_ln("AMR:interf",
+                                            "find_interfaces -",
+                                            psender.id_patch,
+                                            sender_bsize_off_aabb.lower,
+                                            sender_bsize_off_aabb.upper);
 
-                    sptree.host_for_each_leafs(
-                        [&](u64 tree_id, PtNode n) {
-                            shammath::AABB<TgridVec> tree_cell{n.box_min, n.box_max};
+                        sptree.host_for_each_leafs(
+                            [&](u64 tree_id, PtNode n) {
+                                shammath::AABB<TgridVec> tree_cell{n.box_min, n.box_max};
 
-                            bool result = tree_cell.get_intersect(sender_bsize_off_aabb)
-                                              .is_surface_or_volume();
+                                bool result = tree_cell.get_intersect(sender_bsize_off_aabb)
+                                                .is_surface_or_volume();
 
-                            return result;
-                        },
-                        [&](u64 id_found, PtNode n) {
-                            if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0) &&
-                                (zoff == 0)) {
-                                return;
-                            }
+                                return result;
+                            },
+                            [&](u64 id_found, PtNode n) {
+                                if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0) &&
+                                    (zoff == 0)) {
+                                    return;
+                                }
 
-                            InterfaceBuildInfos ret{
-                                periodic_offset,
-                                {xoff, yoff, zoff},
-                                shammath::AABB<TgridVec>{n.box_min - periodic_offset,
-                                                         n.box_max - periodic_offset}};
+                                InterfaceBuildInfos ret{
+                                    periodic_offset,
+                                    {xoff, yoff, zoff},
+                                    shammath::AABB<TgridVec>{n.box_min - periodic_offset,
+                                                            n.box_max - periodic_offset}};
 
-                            results.add_obj(psender.id_patch, id_found, std::move(ret));
-                        });
-                });
+                                results.add_obj(psender.id_patch, id_found, std::move(ret));
+                            });
+                    });
+                }
             }
         }
-    }
 
-    return results;
+        return results;
+    }
 }
 
 template<class Tvec, class TgridVec>

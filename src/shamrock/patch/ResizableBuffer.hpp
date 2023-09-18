@@ -87,6 +87,11 @@ class ResizableBuffer {
 
     void override(sycl::buffer<T> &data, u32 cnt);
 
+    /**
+     * @brief override the field data with the value specified in `val`
+     * \todo missing test
+     * @param val 
+     */
     void override(const T val);
 
     void index_remap_resize(sycl::buffer<u32> &index_map, u32 len, u32 nvar = 1);

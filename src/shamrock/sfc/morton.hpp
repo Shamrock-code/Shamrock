@@ -184,7 +184,7 @@ namespace shamrock::sfc {
 
         private:
         static constexpr bool implemented_int =
-            std::is_same<pos_t, u32_3>::value || std::is_same<pos_t, u64_3>::value;
+            std::is_same<pos_t, u32_3>::value || std::is_same<pos_t, u64_3>::value || std::is_same<pos_t, i64_3>::value;
 
         static constexpr bool implemented_float =
             std::is_same<pos_t, f32_3>::value || std::is_same<pos_t, f64_3>::value;

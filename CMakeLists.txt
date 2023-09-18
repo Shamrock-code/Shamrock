@@ -30,6 +30,7 @@ option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
 option(SHAMROCK_USE_PCH "use precompiled headers" Off)
+option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
 
 message("-- Shamrock config : ")
 message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
@@ -37,6 +38,7 @@ message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
 message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
 message("     SHAMROCK_USE_PCH : ${SHAMROCK_USE_PCH}")
+message("     SHAMROCK_USE_SHARED_LIB : ${SHAMROCK_USE_SHARED_LIB}")
 message("     SYCL_COMPILER : ${SYCL_COMPILER}")
 message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
 message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
@@ -72,8 +74,6 @@ set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection")  # or 11, 14, 17
 set(CMAKE_CXX_STANDARD_REQUIRED ON)  # optional, ensure standard is supported
 set(CMAKE_CXX_EXTENSIONS OFF)  # optional, keep compiler extensions off
 
-
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type") 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
@@ -103,21 +103,30 @@ elseif(${SYCL_COMPILER} STREQUAL "OTHER")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_SYCLUNKNOWN")
 endif()
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include/sycl")
 
 ######################
 #shamrock impl control
 ######################
 if(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR")
-  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARRALEL_FOR")
 elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR_ROUND")
-  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND")
 elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
-  add_compile_definitions("SHAMROCK_LOOP_DEFAULT_ND_RANGE")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_DEFAULT_ND_RANGE")
 endif()
 
-add_compile_definitions("SHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
 
 
+if(SHAMROCK_USE_PROFILING)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_USE_PROFILING")
+endif()
+
+if(SHAMROCK_USE_NVTX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_USE_NVTX")
+endif()
 
 ######################
 # Add external libraries
@@ -126,20 +135,22 @@ set(MPI_CXX_SKIP_MPICXX true)
 find_package(MPI REQUIRED COMPONENTS C)
 
 message(STATUS "MPI include dir : ${MPI_C_INCLUDE_DIRS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOMPI_SKIP_MPICXX")
 
 set(PYBIND11_FINDPYTHON ON)
 add_subdirectory(external)
 
-
-#for some reason it doesn't work with target_include_directories
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include -isystem ${COMP_ROOT_DIR}/include/sycl -DOMPI_SKIP_MPICXX")
+if("${BUILD_PYLIB}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LIB_BUILD")
+else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_EXECUTABLE_BUILD")
+endif()
 
 include_directories(Before System external/plf_nanotimer)
 
 ######################
-# Add subdirectories
+# generate version.cpp
 ######################
-
 #hack to rerun the version generator if ninja/make all
 #cf https://stackoverflow.com/questions/13920072/how-to-always-run-command-when-building-regardless-of-any-dependency
 add_custom_command(
@@ -148,32 +159,69 @@ add_custom_command(
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp "${CMAKE_CXX_FLAGS}"
   )
 
-add_library(shamrock_lib OBJECT src/version.cpp)
-target_include_directories(shamrock_lib PUBLIC "${CMAKE_SOURCE_DIR}/src")
 
-if("${BUILD_PYLIB}")
-target_compile_definitions(shamrock_lib PUBLIC LIB_BUILD)
-target_link_libraries(shamrock_lib PUBLIC pybind11::module)
+
+########################################################################################
+# Targets ##############################################################################
+########################################################################################
+
+######################
+# Shamalgs
+######################
+if(SHAMROCK_USE_SHARED_LIB)
+add_library(shamalgs SHARED "")
 else()
-target_compile_definitions(shamrock_lib PUBLIC EXECUTABLE_BUILD)
-target_link_libraries(shamrock_lib PUBLIC pybind11::embed)
+add_library(shamalgs OBJECT "")
 endif()
 
-target_link_libraries(shamrock_lib PUBLIC MPI::MPI_C)
-target_link_libraries(shamrock_lib PUBLIC fmt::fmt)
+target_include_directories(shamalgs PUBLIC "${CMAKE_SOURCE_DIR}/src")
+
+if(SHAMROCK_USE_PCH)
+    target_precompile_headers(shamalgs PRIVATE "<sycl/sycl.hpp>")
+endif()
+
+target_link_libraries(shamalgs PUBLIC MPI::MPI_C)
+target_link_libraries(shamalgs PUBLIC fmt::fmt-header-only)
+
+if(SHAMROCK_USE_NVTX)
+    target_link_libraries(shamalgs PUBLIC nvtx3-cpp)
+endif()
+
+
+
+
+
+
+
+
+######################
+# Shamrock Lib
+######################
+
+add_library(shamrock_lib OBJECT src/version.cpp)
+target_include_directories(shamrock_lib PUBLIC "${CMAKE_SOURCE_DIR}/src")
 
 if(SHAMROCK_USE_PCH)
 target_precompile_headers(shamrock_lib PRIVATE "<sycl/sycl.hpp>")
 endif()
 
+target_link_libraries(shamrock_lib PUBLIC MPI::MPI_C)
+target_link_libraries(shamrock_lib PUBLIC fmt::fmt)
+
 if(SHAMROCK_USE_NVTX)
     target_link_libraries(shamrock_lib PUBLIC nvtx3-cpp)
-    target_compile_definitions(shamrock_lib PUBLIC SHAMROCK_USE_NVTX)
 endif()
 
-if(SHAMROCK_USE_PROFILING)
-    target_compile_definitions(shamrock_lib PUBLIC SHAMROCK_USE_PROFILING)
+if("${BUILD_PYLIB}")
+    target_link_libraries(shamrock_lib PUBLIC pybind11::module)
+else()
+    target_link_libraries(shamrock_lib PUBLIC pybind11::embed)
 endif()
+
+
+
+
+
 
 if("${BUILD_SIM}")
 
@@ -182,15 +230,14 @@ if("${BUILD_SIM}")
 
     if("${BUILD_PYLIB}")
     pybind11_add_module(shamrock  )
-    target_compile_definitions(shamrock PUBLIC LIB_BUILD)
     target_link_libraries(shamrock PUBLIC pybind11::module)
     else()
     add_executable(shamrock src/main.cpp )
-    target_compile_definitions(shamrock PUBLIC EXECUTABLE_BUILD)
     target_link_libraries(shamrock PUBLIC pybind11::embed)
     endif()
     
     target_link_libraries(shamrock PUBLIC shamrock_lib)
+    target_link_libraries(shamrock PUBLIC shamalgs)
     
     
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
@@ -198,13 +245,9 @@ if("${BUILD_SIM}")
 
     if(SHAMROCK_USE_NVTX)
         target_link_libraries(shamrock PUBLIC nvtx3-cpp)
-        target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_NVTX)
     endif()
 
 
-    if(SHAMROCK_USE_PROFILING)
-    target_compile_definitions(shamrock PUBLIC SHAMROCK_USE_PROFILING)
-    endif()
 
     if(SHAMROCK_USE_PCH)
     target_precompile_headers(shamrock REUSE_FROM shamrock_lib)
@@ -233,23 +276,19 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC pybind11::embed)
 
     target_link_libraries(shamrock_test PUBLIC shamrock_lib)
+    target_link_libraries(shamrock_test PUBLIC shamalgs)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")
     #target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
-    target_compile_definitions(shamrock_test PUBLIC EXECUTABLE_BUILD)
     target_link_libraries(shamrock_test PUBLIC fmt::fmt)
 
     if(SHAMROCK_USE_NVTX)
         target_link_libraries(shamrock_test PUBLIC nvtx3-cpp)
-        target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_NVTX)
     endif()
 
 
-    if(SHAMROCK_USE_PROFILING)
-    target_compile_definitions(shamrock_test PUBLIC SHAMROCK_USE_PROFILING)
-    endif()
 
     if(SHAMROCK_USE_PCH)
     target_precompile_headers(shamrock_test REUSE_FROM shamrock_lib)

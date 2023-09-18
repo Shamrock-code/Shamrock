@@ -107,6 +107,8 @@ jobs:
       matrix:
         nvhpc: [22.11]
         cuda: [11.8]
+
+    if: false
     steps:
     
       - name: clone OpenSycl

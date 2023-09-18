@@ -44,6 +44,30 @@ namespace shambase::sycl_utils {
     }
 
     template<class T>
+    inline T g_sycl_abs(T a) {
+
+        static_assert(VectorProperties<T>::has_info, "no info about this type");
+
+        if constexpr (VectorProperties<T>::is_float_based) {
+            return sycl::fabs(a);
+        } else if constexpr (VectorProperties<T>::is_int_based) {
+            return sycl::abs(a);
+        } else if constexpr (VectorProperties<T>::is_uint_based) {
+            return sycl::abs(a);
+        }
+    }
+
+    template<class T>
+    inline T positive_part(T a){
+        return (g_sycl_abs(a) + a)/2;
+    }
+
+    template<class T>
+    inline T negative_part(T a){
+        return (g_sycl_abs(a) - a)/2;
+    }
+
+    template<class T>
     inline VecComponent<T> g_sycl_dot(T a, T b) {
 
         static_assert(VectorProperties<T>::has_info, "no info about this type");

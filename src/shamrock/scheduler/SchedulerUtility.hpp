@@ -192,6 +192,18 @@ namespace shamrock {
             return cfield;
         }
 
+        template<class T>
+        inline ComputeField<T> save_field_custom(std::string new_name, std::function<PatchDataField<T> & (u64)> field_getter){
+            StackEntry stack_loc{};
+            ComputeField<T> cfield;
+            using namespace shamrock::patch;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                PatchDataField<T> &pdat_field = field_getter(id_patch);
+                cfield.field_data.add_obj(id_patch, pdat_field.duplicate(new_name));
+            });
+            return cfield;
+        }
+
         /**
          * @brief create a compute field and init it to zeros
          * 

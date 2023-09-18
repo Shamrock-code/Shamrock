@@ -106,15 +106,23 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include/sycl")
 
+message("-- SYCL feature test --")
+try_compile(SYCL_feature_reduc2020 ${CMAKE_BINARY_DIR}/compile_tests ${CMAKE_SOURCE_DIR}/cmake/feature_test/sycl_include.cpp)
+if(SYCL_feature_reduc2020)
+    message("    - sycl header : Yes")
+else()
+    message("    - sycl header : No")
+    message( SEND_ERROR "Shamrock cannot be compiled without sycl headers" )
+endif()
 
 try_compile(SYCL_feature_reduc2020 ${CMAKE_BINARY_DIR}/compile_tests ${CMAKE_SOURCE_DIR}/cmake/feature_test/sycl2020_reduc.cpp)
 if(SYCL_feature_reduc2020)
-    message("-- feature test : sycl 2020 reduction : Yes")
+    message("    - sycl 2020 reduction : Yes")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL2020_FEATURE_REDUCTION")
 else()
-    message("-- feature test : sycl 2020 reduction : No")
+    message("    - sycl 2020 reduction : No")
 endif()
-
+message("-- SYCL feature test (Done) --")
 
 
 ######################

@@ -178,7 +178,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     auto vanleer = [](Tscal8 f, Tscal8 g) -> Tscal8 {
                         Tscal8 tmp = f * g;
                         tmp        = tmp + shambase::sycl_utils::g_sycl_abs(tmp);
-                        return tmp / (f + g);
+                        return tmp / (f + g + 1.e-9);
                     };
                     a_x[cell_gid] = vanleer(dqm, dqp);
                 });
@@ -211,7 +211,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     auto vanleer = [](Tscal8 f, Tscal8 g) -> Tscal8 {
                         Tscal8 tmp = f * g;
                         tmp        = tmp + shambase::sycl_utils::g_sycl_abs(tmp);
-                        return tmp / (f + g);
+                        return tmp / (f + g + 1.e-9);
                     };
                     a_y[cell_gid] = vanleer(dqm, dqp);
                 });
@@ -244,11 +244,29 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     auto vanleer = [](Tscal8 f, Tscal8 g) -> Tscal8 {
                         Tscal8 tmp = f * g;
                         tmp        = tmp + shambase::sycl_utils::g_sycl_abs(tmp);
-                        return tmp / (f + g);
+                        return tmp / (f + g + 1.e-9);
                     };
                     a_z[cell_gid] = vanleer(dqm, dqp);
                 });
         });
+
+
+        /*
+        if (a_x.get_field(p.id_patch).has_nan()) {
+            logger::err_ln("[Zeus]", "nan detected in a_x");
+            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+        }
+
+        if (a_y.get_field(p.id_patch).has_nan()) {
+            logger::err_ln("[Zeus]", "nan detected in a_y");
+            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+        }
+
+        if (a_z.get_field(p.id_patch).has_nan()) {
+            logger::err_ln("[Zeus]", "nan detected in a_z");
+            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+        }
+        */
     });
 }
 

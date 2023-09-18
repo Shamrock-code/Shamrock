@@ -57,31 +57,31 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd opensycl_omp_debug
-          LLVM_PROFILE_FILE="utests_0_0.profraw" ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          LLVM_PROFILE_FILE="utests_0_0.profraw" ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd opensycl_omp_debug
           mpirun \
-            -n 1 -x LLVM_PROFILE_FILE=utests_2_0.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_2_1.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+            -n 1 -x LLVM_PROFILE_FILE=utests_2_0.profraw ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_2_1.profraw ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
       
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd opensycl_omp_debug
           mpirun --oversubscribe \
-            -n 1 -x LLVM_PROFILE_FILE=utests_3_0.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_3_1.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_3_2.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+            -n 1 -x LLVM_PROFILE_FILE=utests_3_0.profraw ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_3_1.profraw ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_3_2.profraw ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd opensycl_omp_debug
           mpirun --oversubscribe \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_0.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_1.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_2.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_3.profraw ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+            -n 1 -x LLVM_PROFILE_FILE=utests_4_0.profraw ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_4_1.profraw ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_4_2.profraw ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_4_3.profraw ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
       - name: merge coverage reports
         run: |
@@ -165,22 +165,22 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
       
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
 
 
@@ -244,22 +244,22 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          ASAN_OPTIONS=detect_leaks=0 mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          ASAN_OPTIONS=detect_leaks=0 mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
       
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
 
 
@@ -325,22 +325,22 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
       
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
 
 
@@ -427,22 +427,22 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
       
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
 
 
@@ -517,22 +517,22 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
       
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
 
   shamrock_opensycl_cuda_nvcxx:
     name: OpenSYCL nvcxx ${{matrix.nvhpc}}, CUDA ${{matrix.cuda}}
@@ -590,19 +590,19 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
       
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
   
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest

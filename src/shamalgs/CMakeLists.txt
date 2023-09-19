@@ -24,4 +24,5 @@ endif()
 add_subdirectory(details)
 add_subdirectory(atomic)
 add_subdirectory(collective)
+add_subdirectory(container)
 

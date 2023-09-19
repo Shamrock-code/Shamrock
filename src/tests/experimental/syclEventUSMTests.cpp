@@ -59,13 +59,11 @@ enum BufferType{
 
 
 template<class T>
-class ResizableBuffer {
+class ResizableUSMBuffer {
     T* usm_ptr = nullptr;
 
     u32 buf_size;
     u32 val_count;
-
-    static constexpr u32 alignment = 128;
 
     BufferType type;
 
@@ -90,7 +88,10 @@ class ResizableBuffer {
 
 };
 
-template class ResizableBuffer<u32>;
+
+
+
+template class ResizableUSMBuffer<u32>;
 
 
 

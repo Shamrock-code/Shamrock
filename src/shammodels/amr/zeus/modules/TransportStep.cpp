@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shammath/slopeLimiter.hpp"
 #include "shammodels/amr/zeus/modules/TransportStep.hpp"
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
 #include "shammodels/amr/zeus/modules/ValueLoader.hpp"
@@ -175,12 +176,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    auto vanleer = [](Tscal8 f, Tscal8 g) -> Tscal8 {
-                        Tscal8 tmp = f * g;
-                        tmp        = tmp + shambase::sycl_utils::g_sycl_abs(tmp);
-                        return tmp / (f + g + 1.e-9);
-                    };
-                    a_x[cell_gid] = vanleer(dqm, dqp);
+                    a_x[cell_gid] = shammath::van_leer_slope(dqm, dqp);
                 });
         });
 
@@ -208,12 +204,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    auto vanleer = [](Tscal8 f, Tscal8 g) -> Tscal8 {
-                        Tscal8 tmp = f * g;
-                        tmp        = tmp + shambase::sycl_utils::g_sycl_abs(tmp);
-                        return tmp / (f + g + 1.e-9);
-                    };
-                    a_y[cell_gid] = vanleer(dqm, dqp);
+                    a_y[cell_gid] = shammath::van_leer_slope(dqm, dqp);
                 });
         });
 
@@ -241,15 +232,9 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    auto vanleer = [](Tscal8 f, Tscal8 g) -> Tscal8 {
-                        Tscal8 tmp = f * g;
-                        tmp        = tmp + shambase::sycl_utils::g_sycl_abs(tmp);
-                        return tmp / (f + g + 1.e-9);
-                    };
-                    a_z[cell_gid] = vanleer(dqm, dqp);
+                    a_z[cell_gid] = shammath::van_leer_slope(dqm, dqp);
                 });
         });
-
 
         /*
         if (a_x.get_field(p.id_patch).has_nan()) {
@@ -800,10 +785,9 @@ void Module<Tvec, TgridVec>::compute_new_qte() {
 
                     Tscal e = Q_i_j_k.s7();
 
-                    rrho[cell_gid] = rho;
+                    rrho[cell_gid]  = rho;
                     reint[cell_gid] = e;
-                    rvel[cell_gid] = {vx,vy,vz};
-                    
+                    rvel[cell_gid]  = {vx, vy, vz};
                 });
         });
     });

@@ -55,6 +55,7 @@ namespace shambase::sycl_utils {
         } else if constexpr (VectorProperties<T>::is_uint_based) {
             return sycl::abs(a);
         }
+
     }
 
     template<class T>

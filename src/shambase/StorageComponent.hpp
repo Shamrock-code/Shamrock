@@ -12,7 +12,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 
-namespace shamrock {
+namespace shambase {
 
     /**
      * @brief Helper class for Storage Module of any solver
@@ -34,7 +34,7 @@ namespace shamrock {
             StackEntry stack_loc{};
             if (hndl) {
                 throw shambase::throw_with_loc<std::runtime_error>(
-                    "please reset the storage component before",loc);
+                    "please reset the storage component before", loc);
             }
             hndl = std::make_unique<T>(std::forward<T>(arg));
         }
@@ -46,7 +46,7 @@ namespace shamrock {
          */
         T &get(SourceLocation loc = SourceLocation()) {
             StackEntry stack_loc{};
-            return shambase::get_check_ref(hndl,loc);
+            return shambase::get_check_ref(hndl, loc);
         }
 
         /**
@@ -59,13 +59,11 @@ namespace shamrock {
 
         /**
          * @brief return whether the storage hold an object or not
-         * 
+         *
          * @return true the storage is empty
          * @return false the storage hold an object
          */
-        bool is_empty(){
-            return ! hndl;
-        }
+        bool is_empty() { return !hndl; }
     };
 
-} // namespace shamrock
+} // namespace shambase

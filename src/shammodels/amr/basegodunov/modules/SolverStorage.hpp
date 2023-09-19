@@ -16,11 +16,11 @@
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamrock/utils/SolverStorageComponent.hpp"
+#include "shambase/StorageComponent.hpp"
 namespace shammodels::basegodunov {
 
     template<class T>
-    using Component = shamrock::StorageComponent<T>;
+    using Component = shambase::StorageComponent<T>;
 
     template<class Tvec, class TgridVec, class Tmorton>
     class SolverStorage {

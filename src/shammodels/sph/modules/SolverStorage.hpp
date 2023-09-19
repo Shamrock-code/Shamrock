@@ -17,13 +17,13 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
-#include "shamrock/utils/SolverStorageComponent.hpp"
+#include "shambase/StorageComponent.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shammodels::sph {
 
     template<class T>
-    using Component = shamrock::StorageComponent<T>;
+    using Component = shambase::StorageComponent<T>;
 
     template<class Tvec, class Tmorton>
     class SolverStorage {

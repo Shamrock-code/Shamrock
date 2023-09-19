@@ -114,7 +114,7 @@ QueueEvent sub_func(QueueEvent & e, u32* ptr){
     QueueEvent e2 = q.submit([&,ptr](sycl::handler & cgh){
         cgh.depends_on(e1);
 
-        cgh.parallel_for<ker1test>(100, [=](sycl::id<1> idx) {
+        cgh.parallel_for<ker1test>(sycl::range<1>{100}, [=](sycl::id<1> idx) {
             // Initialize each buffer element with its own rank number starting at 0
             ptr[idx] = idx;
         }); // End of the kernel function
@@ -153,7 +153,7 @@ TestStart(Analysis, "test-usm-event-arch", usm_event_test, 1){
     QueueEvent e5 = q.submit([&,ptr1,ptr2,ptr3](sycl::handler & cgh){
         cgh.depends_on({e3,e4});
 
-        cgh.parallel_for<ker2test>(100, [=](sycl::id<1> idx) {
+        cgh.parallel_for<ker2test>(sycl::range<1>{100}, [=](sycl::id<1> idx) {
             
             ptr3[idx] = ptr1[idx] + ptr2[idx];
 

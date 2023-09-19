@@ -14,7 +14,6 @@
 #include "shambase/memory.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
-#include "shamrock/patch/ResizableBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <memory>
@@ -295,7 +294,7 @@ PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::stri
     using Prop = shambase::VectorProperties<T>;
 
     return PatchDataField<T>(
-        ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, Prop::get_min(), Prop::get_max()),
+        shamalgs::ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, Prop::get_min(), Prop::get_max()),
         obj_cnt, name, nvar
     );
 }
@@ -328,7 +327,7 @@ template<class T>
 PatchDataField<T> PatchDataField<T>::deserialize_buf(shamalgs::SerializeHelper &serializer, std::string field_name, u32 nvar){
     u32 cnt;
     serializer.load(cnt);
-    ResizableBuffer<T> rbuf = ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
+    shamalgs::ResizableBuffer<T> rbuf = shamalgs::ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
     return PatchDataField<T>(std::move(rbuf), cnt, field_name, nvar);
 }
 
@@ -365,7 +364,7 @@ PatchDataField<T> PatchDataField<T>::deserialize_full(shamalgs::SerializeHelper 
     std::string field_name;
     serializer.load(field_name);
 
-    ResizableBuffer<T> rbuf = ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
+    shamalgs::ResizableBuffer<T> rbuf = shamalgs::ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
     return PatchDataField<T>(std::move(rbuf), cnt, field_name, nvar);
 }
 

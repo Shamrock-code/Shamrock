@@ -4,7 +4,6 @@ Patch.cpp
 PatchData.cpp
 PatchDataLayout.cpp
 PatchDataField.cpp
-ResizableBuffer.cpp
 )
 set(SourcesTest
     

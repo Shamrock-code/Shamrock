@@ -19,14 +19,14 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class T>
-void ResizableBuffer<T>::alloc() {
+void shamalgs::ResizableBuffer<T>::alloc() {
     buf = std::make_unique<sycl::buffer<T>>(capacity);
 
     logger::debug_alloc_ln("PatchDataField", "allocate field :", "len =", capacity);
 }
 
 template<class T>
-void ResizableBuffer<T>::free() {
+void shamalgs::ResizableBuffer<T>::free() {
 
     if (buf) {
         logger::debug_alloc_ln("PatchDataField", "free field :", "len =", capacity);
@@ -36,7 +36,7 @@ void ResizableBuffer<T>::free() {
 }
 
 template<class T>
-void ResizableBuffer<T>::change_capacity(u32 new_capa) {
+void shamalgs::ResizableBuffer<T>::change_capacity(u32 new_capa) {
 
     logger::debug_alloc_ln(
         "ResizableBuffer", "change capacity from : ", capacity, "to :", new_capa);
@@ -76,7 +76,7 @@ void ResizableBuffer<T>::change_capacity(u32 new_capa) {
 
 
 template<class T>
-void ResizableBuffer<T>::reserve(u32 add_size) {
+void shamalgs::ResizableBuffer<T>::reserve(u32 add_size) {
     StackEntry stack_loc{false};
 
     u32 wanted_sz = val_cnt + add_size;
@@ -87,7 +87,7 @@ void ResizableBuffer<T>::reserve(u32 add_size) {
 }
 
 template<class T>
-void ResizableBuffer<T>::resize(u32 new_size) {
+void shamalgs::ResizableBuffer<T>::resize(u32 new_size) {
     StackEntry stack_loc{false};
 
     logger::debug_alloc_ln("ResizableBuffer", "resize from : ", val_cnt, "to :", new_size);
@@ -104,7 +104,7 @@ void ResizableBuffer<T>::resize(u32 new_size) {
 ////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class T>
-void ResizableBuffer<T>::overwrite(ResizableBuffer<T> &f2, u32 cnt) {
+void shamalgs::ResizableBuffer<T>::overwrite(ResizableBuffer<T> &f2, u32 cnt) {
     if (val_cnt < cnt) {
         throw shambase::throw_with_loc<std::invalid_argument>(
             "to overwrite you need more element in the field");
@@ -122,7 +122,7 @@ void ResizableBuffer<T>::overwrite(ResizableBuffer<T> &f2, u32 cnt) {
 }
 
 template<class T>
-void ResizableBuffer<T>::override(sycl::buffer<T> &data, u32 cnt) {
+void shamalgs::ResizableBuffer<T>::override(sycl::buffer<T> &data, u32 cnt) {
 
     if (cnt != val_cnt)
         throw shambase::throw_with_loc<std::invalid_argument>(
@@ -143,7 +143,7 @@ void ResizableBuffer<T>::override(sycl::buffer<T> &data, u32 cnt) {
 }
 
 template<class T>
-void ResizableBuffer<T>::override(const T val) {
+void shamalgs::ResizableBuffer<T>::override(const T val) {
 
     if (val_cnt > 0) {
 
@@ -156,7 +156,7 @@ void ResizableBuffer<T>::override(const T val) {
 }
 
 template<class T>
-void ResizableBuffer<T>::index_remap_resize(sycl::buffer<u32> &index_map, u32 len, u32 nvar) {
+void shamalgs::ResizableBuffer<T>::index_remap_resize(sycl::buffer<u32> &index_map, u32 len, u32 nvar) {
     if (get_buf()) {
 
         auto get_new_buf = [&]() {
@@ -178,15 +178,15 @@ void ResizableBuffer<T>::index_remap_resize(sycl::buffer<u32> &index_map, u32 le
 }
 
 template<class T>
-void ResizableBuffer<T>::serialize_buf(shamalgs::SerializeHelper &serializer) {
+void shamalgs::ResizableBuffer<T>::serialize_buf(shamalgs::SerializeHelper &serializer) {
     if (buf) {
         serializer.write_buf(*buf, val_cnt);
     }
 }
 
 template<class T>
-ResizableBuffer<T>
-ResizableBuffer<T>::deserialize_buf(shamalgs::SerializeHelper &serializer, u32 val_cnt) {
+shamalgs::ResizableBuffer<T>
+shamalgs::ResizableBuffer<T>::deserialize_buf(shamalgs::SerializeHelper &serializer, u32 val_cnt) {
     if (val_cnt == 0) {
         return ResizableBuffer();
     } else {
@@ -197,7 +197,7 @@ ResizableBuffer<T>::deserialize_buf(shamalgs::SerializeHelper &serializer, u32 v
 }
 
 template<class T>
-bool ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2) const {
+bool shamalgs::ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2) const {
     bool match = true;
 
     match = match && (val_cnt == f2.val_cnt);
@@ -229,14 +229,14 @@ bool ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2) const {
 }
 
 template<class T>
-u64 ResizableBuffer<T>::serialize_buf_byte_size() {
+u64 shamalgs::ResizableBuffer<T>::serialize_buf_byte_size() {
     using H = shamalgs::SerializeHelper;
     return H::serialize_byte_size<T>(val_cnt);
 }
 
 template<class T>
-ResizableBuffer<T>
-ResizableBuffer<T>::mock_buffer(u64 seed, u32 val_cnt, T min_bound, T max_bound) {
+shamalgs::ResizableBuffer<T>
+shamalgs::ResizableBuffer<T>::mock_buffer(u64 seed, u32 val_cnt, T min_bound, T max_bound) {
     sycl::buffer<T> buf_mocked = shamalgs::random::mock_buffer(seed, val_cnt, min_bound, max_bound);
     return ResizableBuffer<T>(std::move(buf_mocked), val_cnt);
 }
@@ -245,7 +245,7 @@ ResizableBuffer<T>::mock_buffer(u64 seed, u32 val_cnt, T min_bound, T max_bound)
 // Define the patchdata field for all classes in XMAC_LIST_ENABLED_FIELD
 //////////////////////////////////////////////////////////////////////////
 
-#define X(a) template class ResizableBuffer<a>;
+#define X(a) template class shamalgs::ResizableBuffer<a>;
 XMAC_LIST_ENABLED_FIELD
 #undef X
 

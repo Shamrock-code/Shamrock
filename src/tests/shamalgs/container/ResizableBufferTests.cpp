@@ -7,13 +7,15 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/serialize.hpp"
-#include "shamrock/patch/ResizableBuffer.hpp"
+#include "shamalgs/container/ResizableBuffer.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamrock/patch/ResizableBuffer", resizebuftestserialize, 1) {
+TestStart(Unittest, "shamalgs/container/ResizableBuffer", resizebuftestserialize, 1) {
 
     u32 len = 1000;
+
+    using namespace shamalgs;
 
     ResizableBuffer<u32_3> buf =
         ResizableBuffer<u32_3>::mock_buffer(0x111, len, u32_3{0, 0, 0}, u32_3{100, 100, 100});

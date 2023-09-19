@@ -25,7 +25,7 @@
 #include <random>
 #include <string>
 #include <utility>
-#include "ResizableBuffer.hpp"
+#include "shamalgs/container/ResizableBuffer.hpp"
 
 
 template <class T> class PatchDataField {
@@ -64,7 +64,7 @@ template <class T> class PatchDataField {
     // member fields
     ///////////////////////////////////
 
-    ResizableBuffer<T> buf;
+    shamalgs::ResizableBuffer<T> buf;
 
     std::string field_name;
 
@@ -108,9 +108,9 @@ template <class T> class PatchDataField {
         : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {
     }
 
-    inline PatchDataField(ResizableBuffer<T> && moved_buf, u32 obj_cnt, 
+    inline PatchDataField(shamalgs::ResizableBuffer<T> && moved_buf, u32 obj_cnt, 
     std::string name, u32 nvar) : 
-        obj_cnt(obj_cnt), field_name(name),nvar(nvar), buf(std::forward<ResizableBuffer<T>>(moved_buf))
+        obj_cnt(obj_cnt), field_name(name),nvar(nvar), buf(std::forward<shamalgs::ResizableBuffer<T>>(moved_buf))
     {}
 
     inline PatchDataField(sycl::buffer<T> && moved_buf, u32 obj_cnt, 

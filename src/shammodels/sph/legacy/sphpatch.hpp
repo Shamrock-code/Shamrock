@@ -22,7 +22,6 @@
 #include <stdexcept>
 #include <type_traits>
 
-#include "sph_aliases.hpp"
 
 namespace patchdata {
     namespace sph {
@@ -39,11 +38,11 @@ namespace patchdata {
 
             if constexpr (std::is_same<htype, f32>::value){
 
-                u32 ihpart = pdl.get_field_idx<f32>(::sph::field_names::field_hpart);
+                u32 ihpart = pdl.get_field_idx<f32>("hpart");
                 tmp = syclalg::get_max<f32>(queue, pdat.get_field<f32>(ihpart).get_buf(),nobj);
 
             } else if constexpr (std::is_same<htype, f64>::value){
-                u32 ihpart = pdl.get_field_idx<f64>(::sph::field_names::field_hpart);
+                u32 ihpart = pdl.get_field_idx<f64>("hpart");
                 tmp = syclalg::get_max<f64>(queue, pdat.get_field<f64>(ihpart).get_buf(),nobj);
                 
             }else{

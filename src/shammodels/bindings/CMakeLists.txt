@@ -1,7 +1,5 @@
 
 set(Sources
-pySetupSPH.cpp
-pyModelsSPH.cpp
 pySPHModel.cpp
 )
 set(SourcesTest

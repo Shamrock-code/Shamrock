@@ -2,6 +2,8 @@
 
 # LLVM local install on cluster
 ```
+mkdir build
+cd build
 cmake -DLLVM_ENABLE_PROJECTS=clang -DCMAKE_INSTALL_PREFIX=...instal loc.../llvm-17.0.1-local -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
 ```
 

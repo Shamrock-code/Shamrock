@@ -15,7 +15,6 @@
 #include "shamsys/legacy/log.hpp"
 #include <cstddef>
 #include <stdexcept>
-#include <usm.hpp>
 #include <utility>
 
 #define XMAC_LIST_ENABLED_ResizableUSMBuffer                                                       \

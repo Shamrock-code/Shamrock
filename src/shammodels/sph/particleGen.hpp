@@ -11,7 +11,6 @@
 #include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <functional>
-#include <hipSYCL/sycl/libkernel/vec.hpp>
 #include <vector>
 
 namespace shamrock::sph {

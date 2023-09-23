@@ -17,7 +17,7 @@
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/sph/SPHUtilities.hpp"
+#include "shammodels/sph/SPHUtilities.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include <memory>
 #include <variant>

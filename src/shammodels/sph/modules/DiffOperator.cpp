@@ -9,7 +9,7 @@
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shamrock/sph/sphpart.hpp"
+#include "shammodels/sph/sphpart.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv(Tscal gpart_mass) {

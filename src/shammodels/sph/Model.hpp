@@ -16,7 +16,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/sph/sphpart.hpp"
+#include "shammodels/sph/sphpart.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>

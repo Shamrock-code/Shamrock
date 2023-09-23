@@ -12,7 +12,7 @@
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shamrock/sph/sphpart.hpp"
+#include "shammodels/sph/sphpart.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdivv(

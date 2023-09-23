@@ -10,7 +10,7 @@
 
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sph/sphpart.hpp"
+#include "shammodels/sph/sphpart.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 

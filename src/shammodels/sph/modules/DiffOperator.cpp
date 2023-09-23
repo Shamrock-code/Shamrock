@@ -8,7 +8,7 @@
 
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
-#include "shamrock/sph/kernels.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
@@ -215,6 +215,6 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv(Tsca
     });
 }
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 template class shammodels::sph::modules::DiffOperators<f64_3, M4>;
 template class shammodels::sph::modules::DiffOperators<f64_3, M6>;

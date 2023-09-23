@@ -32,7 +32,7 @@
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/sph/SPHUtilities.hpp"
 #include "shamrock/sph/forces.hpp"
-#include "shamrock/sph/kernels.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
 #include "shamrock/tree/TreeTaversalCache.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -2073,7 +2073,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(Tscal t_current,Tscal dt,
     return next_cfl;
 }
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 
 template class shammodels::sph::Solver<f64_3, M4>;
 template class shammodels::sph::Solver<f64_3, M6>;

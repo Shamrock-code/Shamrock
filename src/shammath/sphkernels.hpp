@@ -20,7 +20,7 @@
 #include "aliases.hpp"
 #include "shambase/Constants.hpp"
 
-namespace shamrock::sph::kernels {
+namespace shammath {
 
     // 3d kernels only
     /**
@@ -181,4 +181,4 @@ namespace shamrock::sph::kernels {
         }
     };
 
-} // namespace shamrock::sph::kernels
+} // namespace shammath

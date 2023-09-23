@@ -9,7 +9,7 @@
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shamalgs/reduction.hpp"
-#include "shamrock/sph/kernels.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
@@ -272,6 +272,6 @@ void SinkUpdate<Tvec, SPHKernel>::compute_ext_forces(){
 }
 
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, M4>;
 template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, M6>;

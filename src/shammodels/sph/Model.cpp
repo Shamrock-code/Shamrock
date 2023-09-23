@@ -9,7 +9,7 @@
 #include "Model.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sph/kernels.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <utility>
@@ -274,7 +274,7 @@ StackEntry stack_loc{};
 
 }
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 
 template class shammodels::sph::Model<f64_3, M4>;
 template class shammodels::sph::Model<f64_3, M6>;

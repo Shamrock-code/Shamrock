@@ -207,6 +207,181 @@ namespace shammath::details {
                 return 0;
         }
     };
+
+
+
+
+    template<class Tscal>
+    class KernelDefC2 {
+        public:
+        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal hfactd = 1.0;
+
+        inline static constexpr Tscal norm_1d = 3./4.;
+        inline static constexpr Tscal norm_2d = 7. / (4 * shambase::Constants<Tscal>::pi);
+        inline static constexpr Tscal norm_3d = 21 / (16 * shambase::Constants<Tscal>::pi);
+
+        inline static Tscal f(Tscal q) {
+
+            constexpr Tscal div1_2 = (1. / 2.);
+
+            Tscal p1 = (1 - q*div1_2);
+            Tscal p2 = (1 + q*2);
+
+            p1*= p1;
+            p1*= p1;
+
+            if (q < 2.) {
+                return p1*p2;
+            } else
+                return 0;
+        }
+
+        inline static Tscal df(Tscal q) {
+
+            Tscal t1 = 3 - q;
+            Tscal t2 = 2 - q;
+            Tscal t3 = 1 - q;
+
+            Tscal t1_2 = t1 * t1;
+            Tscal t2_2 = t2 * t2;
+            Tscal t3_2 = t3 * t3;
+
+            t1 = t1_2 * t1_2;
+            t2 = t2_2 * t2_2;
+            t3 = t3_2 * t3_2;
+
+            t1 *= (1) * (-5);
+            t2 *= (-6) * (-5);
+            t3 *= (15) * (-5);
+
+            if (q < 1.) {
+                return t1 + t2 + t3;
+            } else if (q < 2.) {
+                return t1 + t2;
+            } else if (q < 3.) {
+                return t1;
+            } else
+                return 0;
+        }
+    };
+
+
+    template<class Tscal>
+    class KernelDefC4 {
+        public:
+        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal hfactd = 1.0;
+
+        inline static constexpr Tscal norm_1d = 27. / 32.;
+        inline static constexpr Tscal norm_2d = 9. / (4 * shambase::Constants<Tscal>::pi);
+        inline static constexpr Tscal norm_3d = 495. / (256. * shambase::Constants<Tscal>::pi);
+
+        inline static Tscal f(Tscal q) {
+
+            constexpr Tscal div1_2 = (1. / 2.);
+            constexpr Tscal div35_12 = (35. / 12.);
+
+            Tscal p1 = (1 - q*div1_2);
+            Tscal p2 = (1 + q*3 + div35_12*q*q);
+
+            p1*= p1;
+            p1 = p1*p1*p1;
+
+            if (q < 2.) {
+                return p1*p2;
+            } else
+                return 0;
+        }
+
+        inline static Tscal df(Tscal q) {
+
+            Tscal t1 = 3 - q;
+            Tscal t2 = 2 - q;
+            Tscal t3 = 1 - q;
+
+            Tscal t1_2 = t1 * t1;
+            Tscal t2_2 = t2 * t2;
+            Tscal t3_2 = t3 * t3;
+
+            t1 = t1_2 * t1_2;
+            t2 = t2_2 * t2_2;
+            t3 = t3_2 * t3_2;
+
+            t1 *= (1) * (-5);
+            t2 *= (-6) * (-5);
+            t3 *= (15) * (-5);
+
+            if (q < 1.) {
+                return t1 + t2 + t3;
+            } else if (q < 2.) {
+                return t1 + t2;
+            } else if (q < 3.) {
+                return t1;
+            } else
+                return 0;
+        }
+    };
+
+
+
+
+    template<class Tscal>
+    class KernelDefC6 {
+        public:
+        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal hfactd = 1.0;
+
+        inline static constexpr Tscal norm_1d = 15. / 16.;
+        inline static constexpr Tscal norm_2d = 39. / (14. * shambase::Constants<Tscal>::pi);
+        inline static constexpr Tscal norm_3d = 1365. / (512. * shambase::Constants<Tscal>::pi);
+
+        inline static Tscal f(Tscal q) {
+
+            constexpr Tscal div1_2 = (1. / 2.);
+            constexpr Tscal div25_4 = (25. / 4.);
+
+            Tscal p1 = (1 - q*div1_2);
+            Tscal p2 = (1 + q*3 + div25_4*q*q+ 4*q*q*q);
+
+            p1*= p1;
+            p1*= p1;
+            p1*= p1;
+
+            if (q < 2.) {
+                return p1*p2;
+            } else
+                return 0;
+        }
+
+        inline static Tscal df(Tscal q) {
+
+            Tscal t1 = 3 - q;
+            Tscal t2 = 2 - q;
+            Tscal t3 = 1 - q;
+
+            Tscal t1_2 = t1 * t1;
+            Tscal t2_2 = t2 * t2;
+            Tscal t3_2 = t3 * t3;
+
+            t1 = t1_2 * t1_2;
+            t2 = t2_2 * t2_2;
+            t3 = t3_2 * t3_2;
+
+            t1 *= (1) * (-5);
+            t2 *= (-6) * (-5);
+            t3 *= (15) * (-5);
+
+            if (q < 1.) {
+                return t1 + t2 + t3;
+            } else if (q < 2.) {
+                return t1 + t2;
+            } else if (q < 3.) {
+                return t1;
+            } else
+                return 0;
+        }
+    };
 } // namespace shammath::details
 
 namespace shammath {
@@ -292,5 +467,33 @@ namespace shammath {
      */
     template<class flt_type>
     using M6 = SPHKernelGen<flt_type, details::KernelDefM6<flt_type>>;
+
+
+    /**
+     * @brief The C2 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
+    template<class flt_type>
+    using C2 = SPHKernelGen<flt_type, details::KernelDefC2<flt_type>>;
+
+    /**
+     * @brief The C4 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
+    template<class flt_type>
+    using C4 = SPHKernelGen<flt_type, details::KernelDefC4<flt_type>>;
+
+    /**
+     * @brief The C6 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
+    template<class flt_type>
+    using C6 = SPHKernelGen<flt_type, details::KernelDefC6<flt_type>>;
 
 } // namespace shammath

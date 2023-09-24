@@ -108,6 +108,21 @@ TestStart(Unittest, "shammath/sphkernels/M6", validateM6kernel, 1){
     validate_kernel_3d<shammath::M6<f64>>(1e-5,1e-5,1e-5);
 }
 
+TestStart(Unittest, "shammath/sphkernels/C2", validateC2kernel, 1){
+    validate_kernel_3d<shammath::C2<f32>>(1e-3,1e-4,1e-3);
+    validate_kernel_3d<shammath::C2<f64>>(1e-5,1e-5,1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/C4", validateC4kernel, 1){
+    validate_kernel_3d<shammath::C4<f32>>(1e-3,1e-4,1e-3);
+    validate_kernel_3d<shammath::C4<f64>>(1e-5,1e-5,1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/C6", validateC6kernel, 1){
+    validate_kernel_3d<shammath::C6<f32>>(1e-3,1e-3,1e-3);
+    validate_kernel_3d<shammath::C6<f64>>(1e-5,1e-5,1e-5);
+}
+
 
 
 struct Outplot{
@@ -148,6 +163,10 @@ TestStart(Analysis, "shammath/sphkernels_plotall", plotkernels, 1){
     Outplot m5 = gen_plot<shammath::M5<f64>>(X);
     Outplot m6 = gen_plot<shammath::M6<f64>>(X);
 
+    Outplot c2 = gen_plot<shammath::C2<f64>>(X);
+    Outplot c4 = gen_plot<shammath::C4<f64>>(X);
+    Outplot c6 = gen_plot<shammath::C6<f64>>(X);
+
     PyScriptHandle hdnl{};
 
     hdnl.data()["X"] = X;
@@ -163,6 +182,18 @@ TestStart(Analysis, "shammath/sphkernels_plotall", plotkernels, 1){
     hdnl.data()["m6"] = m6.val_W1;
     hdnl.data()["m6_d"] = m6.val_dW1;
     hdnl.data()["m6_dnum"] = m6.val_dW1_num;
+
+    hdnl.data()["c2"] = c2.val_W1;
+    hdnl.data()["c2_d"] = c2.val_dW1;
+    hdnl.data()["c2_dnum"] = c2.val_dW1_num;
+
+    hdnl.data()["c4"] = c4.val_W1;
+    hdnl.data()["c4_d"] = c4.val_dW1;
+    hdnl.data()["c4_dnum"] = c4.val_dW1_num;
+
+    hdnl.data()["c6"] = c6.val_W1;
+    hdnl.data()["c6_d"] = c6.val_dW1;
+    hdnl.data()["c6_dnum"] = c6.val_dW1_num;
 
 
     hdnl.exec(R"(
@@ -181,6 +212,16 @@ TestStart(Analysis, "shammath/sphkernels_plotall", plotkernels, 1){
 
         axs[0,2].plot(X,m6,c = 'black',label = "W")
         axs[0,2].plot(X,m6_d,'--',c = 'black',label = "dW")
+
+        axs[1,0].plot(X,c2,c = 'black',label = "W")
+        axs[1,0].plot(X,c2_d,'--',c = 'black',label = "dW")
+
+        axs[1,1].plot(X,c4,c = 'black',label = "W")
+        axs[1,1].plot(X,c4_d,'--',c = 'black',label = "dW")
+
+        axs[1,2].plot(X,c6,c = 'black',label = "W")
+        axs[1,2].plot(X,c6_d,'--',c = 'black',label = "dW")
+
 
         axs[0,0].set_title('M4')
         axs[0,1].set_title('M5')
@@ -240,20 +281,42 @@ f64 benchmark_sph_kernel(u32 N){
 TestStart(Benchmark, "shammath/sphkernels_performance", kernelperf, 1){
     f64 m6_f32 = benchmark_sph_kernel<shammath::M6<f32>>(10000000);
     f64 m6_f64 = benchmark_sph_kernel<shammath::M6<f64>>(10000000);
-    f64 m4_f32 = benchmark_sph_kernel<shammath::M4<f32>>(10000000);
-    f64 m4_f64 = benchmark_sph_kernel<shammath::M4<f64>>(10000000);
+
     f64 m5_f32 = benchmark_sph_kernel<shammath::M5<f32>>(10000000);
     f64 m5_f64 = benchmark_sph_kernel<shammath::M5<f64>>(10000000);
+
+    f64 m4_f32 = benchmark_sph_kernel<shammath::M4<f32>>(10000000);
+    f64 m4_f64 = benchmark_sph_kernel<shammath::M4<f64>>(10000000);
+
+    f64 c2_f32 = benchmark_sph_kernel<shammath::C2<f32>>(10000000);
+    f64 c2_f64 = benchmark_sph_kernel<shammath::C2<f64>>(10000000);
+
+    f64 c4_f32 = benchmark_sph_kernel<shammath::C4<f32>>(10000000);
+    f64 c4_f64 = benchmark_sph_kernel<shammath::C4<f64>>(10000000);
+
+    f64 c6_f32 = benchmark_sph_kernel<shammath::C6<f32>>(10000000);
+    f64 c6_f64 = benchmark_sph_kernel<shammath::C6<f64>>(10000000);
 
     
     PyScriptHandle hdnl{};
 
     hdnl.data()["m6_f32"]   = m6_f32 ;
     hdnl.data()["m6_f64"]   = m6_f64 ;
+
     hdnl.data()["m5_f32"]   = m5_f32 ;
     hdnl.data()["m5_f64"]   = m5_f64 ;
+    
     hdnl.data()["m4_f32"]   = m4_f32 ;
     hdnl.data()["m4_f64"]   = m4_f64 ;
+
+    hdnl.data()["c2_f32"]   = c2_f32 ;
+    hdnl.data()["c2_f64"]   = c2_f64 ;
+
+    hdnl.data()["c4_f32"]   = c4_f32 ;
+    hdnl.data()["c4_f64"]   = c4_f64 ;
+    
+    hdnl.data()["c6_f32"]   = c6_f32 ;
+    hdnl.data()["c6_f64"]   = c6_f64 ;
 
 
     hdnl.exec(R"(
@@ -262,9 +325,9 @@ TestStart(Benchmark, "shammath/sphkernels_performance", kernelperf, 1){
 
         plt.style.use('custom_style.mplstyle')
 
-        data_f32 = [m4_f32,m6_f32]
-        data_f64 = [m4_f64,m6_f64]
-        labels = ['M4','M6']
+        data_f32 = [m4_f32,m5_f32,m6_f32,c2_f32,c4_f32,c6_f32]
+        data_f64 = [m4_f64,m5_f64,m6_f64,c2_f64,c4_f64,c6_f64]
+        labels = ['M4','M5','M6','C2','C4','C6']
 
         plt.xticks(range(len(labels)), labels)
         plt.xlabel('Kernel')

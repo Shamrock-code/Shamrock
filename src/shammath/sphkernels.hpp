@@ -28,6 +28,8 @@ namespace shammath::details {
         inline static constexpr Tscal Rkern  = 2;   
         inline static constexpr Tscal hfactd = 1.2; 
 
+        inline static constexpr Tscal norm_1d = 2./3.;
+        inline static constexpr Tscal norm_2d = 10./(7.*shambase::Constants<Tscal>::pi);
         inline static constexpr Tscal norm_3d = 1 / shambase::Constants<Tscal>::pi;
 
         inline static Tscal f(Tscal q) {
@@ -64,6 +66,8 @@ namespace shammath::details {
         inline static constexpr Tscal Rkern  = 3;  
         inline static constexpr Tscal hfactd = 1.0; 
 
+        inline static constexpr Tscal norm_1d = 1./120.;
+        inline static constexpr Tscal norm_2d = 7./(478*shambase::Constants<Tscal>::pi);
         inline static constexpr Tscal norm_3d = 1 / (120 * shambase::Constants<Tscal>::pi);
 
         inline static Tscal f(Tscal q) {
@@ -123,6 +127,15 @@ namespace shammath {
          */
         inline static Tscal df(Tscal q) { return BaseKernel::df(q); }
 
+        
+        inline static Tscal W_1d(Tscal r, Tscal h) {
+            return BaseKernel::norm_1d * f(r / h) / (h );
+        }
+
+        inline static Tscal W_2d(Tscal r, Tscal h) {
+            return BaseKernel::norm_2d * f(r / h) / (h * h );
+        }
+
         /**
          * @brief compute the normed & resized version of the kernel :
          * \f[
@@ -135,6 +148,7 @@ namespace shammath {
         inline static Tscal W_3d(Tscal r, Tscal h) {
             return BaseKernel::norm_3d * f(r / h) / (h * h * h);
         }
+
 
         inline static Tscal dW_3d(Tscal r, Tscal h) {
             return BaseKernel::norm_3d * df(r / h) / (h * h * h * h);

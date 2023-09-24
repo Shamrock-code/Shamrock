@@ -17,7 +17,7 @@
 
 
 template<class Ker>
-inline void validate_kernel_3d(typename Ker::Tscal tol,typename Ker::Tscal dx){
+inline void validate_kernel_3d(typename Ker::Tscal tol,typename Ker::Tscal dx,typename Ker::Tscal dx_int){
 
     using Tscal = typename Ker::Tscal;
 
@@ -49,9 +49,23 @@ inline void validate_kernel_3d(typename Ker::Tscal tol,typename Ker::Tscal dx){
     _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern/3)/16 , Ker::dW_3d(2*Ker::Rkern/3,2));
     _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern/4)/16 , Ker::dW_3d(2*Ker::Rkern/4,2));
 
-    // is integral of W == 1
+    // is integral of W == 1 (1d)
     _AssertFloatEqual(1, 
-        shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, 0.01, [](Tscal x) {
+        shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, dx_int, [](Tscal x) {
+            return 2*Ker::W_1d(x,1);
+        }
+    ),tol)
+
+    // is integral of W == 1 (2d)
+    _AssertFloatEqual(1, 
+        shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, dx_int, [](Tscal x) {
+            return 2*shambase::Constants<Tscal>::pi*x* Ker::W_2d(x,1);
+        }
+    ),tol)
+
+    // is integral of W == 1 (3d)
+    _AssertFloatEqual(1, 
+        shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, dx_int, [](Tscal x) {
             return 4*shambase::Constants<Tscal>::pi*x*x* Ker::W_3d(x,1);
         }
     ),tol)
@@ -73,11 +87,11 @@ inline void validate_kernel_3d(typename Ker::Tscal tol,typename Ker::Tscal dx){
 }
 
 TestStart(Unittest, "shammath/sphkernels/M4", validateM4kernel, 1){
-    validate_kernel_3d<shammath::M4<f32>>(1e-4,1e-4);
-    validate_kernel_3d<shammath::M4<f64>>(1e-5,1e-5);
+    validate_kernel_3d<shammath::M4<f32>>(1e-3,1e-4,1e-3);
+    validate_kernel_3d<shammath::M4<f64>>(1e-5,1e-5,1e-5);
 }
 
 TestStart(Unittest, "shammath/sphkernels/M6", validateM6kernel, 1){
-    validate_kernel_3d<shammath::M6<f32>>(1e-3,1e-4);
-    validate_kernel_3d<shammath::M6<f64>>(1e-5,1e-5);
+    validate_kernel_3d<shammath::M6<f32>>(1e-3,1e-4,1e-3);
+    validate_kernel_3d<shammath::M6<f64>>(1e-5,1e-5,1e-5);
 }

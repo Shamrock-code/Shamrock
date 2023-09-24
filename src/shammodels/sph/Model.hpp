@@ -76,6 +76,10 @@ namespace shammodels::sph {
 
         std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
 
+        Tscal get_hfact(){
+            return Kernel::hfactd;
+        }
+        
         Tscal rho_h(Tscal h){
             return shamrock::sph::rho_h(solver.gpart_mass, h, Kernel::hfactd);
         }
@@ -535,7 +539,7 @@ namespace shammodels::sph {
 
                             Tscal r = sycl::length(dr);
 
-                            acc[i] += val*Kernel::W(r,h_ker);
+                            acc[i] += val*Kernel::W_3d(r,h_ker);
                         }
                     }
                 });

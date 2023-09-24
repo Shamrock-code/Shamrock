@@ -74,8 +74,8 @@ namespace shammodels::sph {
 
                         flt rab = sycl::sqrt(rab2);
 
-                        rho_sum += part_mass * SPHKernel::W(rab, h_a);
-                        sumdWdh += part_mass * SPHKernel::dhW(rab, h_a);
+                        rho_sum += part_mass * SPHKernel::W_3d(rab, h_a);
+                        sumdWdh += part_mass * SPHKernel::dhW_3d(rab, h_a);
                     });
 
                     using namespace shamrock::sph;
@@ -161,8 +161,8 @@ namespace shammodels::sph {
 
                             flt rab = sycl::sqrt(rab2);
 
-                            rho_sum += part_mass * SPHKernel::W(rab, h_a);
-                            sumdWdh += part_mass * SPHKernel::dhW(rab, h_a);
+                            rho_sum += part_mass * SPHKernel::W_3d(rab, h_a);
+                            sumdWdh += part_mass * SPHKernel::dhW_3d(rab, h_a);
                         });
 
                     using namespace shamrock::sph;
@@ -236,8 +236,8 @@ namespace shammodels::sph {
 
                     flt rab = sycl::sqrt(rab2);
 
-                    rho_sum += part_mass * SPHKernel::W(rab, h_a);
-                    part_omega_sum += part_mass * SPHKernel::dhW(rab, h_a);
+                    rho_sum += part_mass * SPHKernel::W_3d(rab, h_a);
+                    part_omega_sum += part_mass * SPHKernel::dhW_3d(rab, h_a);
                 });
 
                 using namespace shamrock::sph;

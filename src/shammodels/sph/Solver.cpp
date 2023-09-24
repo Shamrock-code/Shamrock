@@ -1061,8 +1061,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
                     Tscal vsig_b        = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_u        = abs_v_ab_r_ab;
 
-                    Tscal dWab_a = Kernel::dW(rab, h_a);
-                    Tscal dWab_b = Kernel::dW(rab, h_b);
+                    Tscal dWab_a = Kernel::dW_3d(rab, h_a);
+                    Tscal dWab_b = Kernel::dW_3d(rab, h_b);
 
                     Tscal qa_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_a * vsig_a * v_ab_r_ab, Tscal(0));
@@ -1264,8 +1264,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
                     Tscal vsig_b        = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_u        = abs_v_ab_r_ab;
 
-                    Tscal dWab_a = Kernel::dW(rab, h_a);
-                    Tscal dWab_b = Kernel::dW(rab, h_b);
+                    Tscal dWab_a = Kernel::dW_3d(rab, h_a);
+                    Tscal dWab_b = Kernel::dW_3d(rab, h_b);
 
                     Tscal qa_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_a * vsig_a * v_ab_r_ab, Tscal(0));
@@ -1476,8 +1476,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
                     Tscal vsig_b        = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_u        = abs_v_ab_r_ab;
 
-                    Tscal dWab_a = Kernel::dW(rab, h_a);
-                    Tscal dWab_b = Kernel::dW(rab, h_b);
+                    Tscal dWab_a = Kernel::dW_3d(rab, h_a);
+                    Tscal dWab_b = Kernel::dW_3d(rab, h_b);
 
                     Tscal qa_ab = shambase::sycl_utils::g_sycl_max(
                         -Tscal(0.5) * rho_a * vsig_a * v_ab_r_ab, Tscal(0));

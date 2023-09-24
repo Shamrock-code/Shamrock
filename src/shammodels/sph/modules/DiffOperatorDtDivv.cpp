@@ -167,7 +167,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
                             r_ab_unit = {0, 0, 0};
                         }
 
-                        Tvec dWab_a = Kernel::dW(rab, h_a) * r_ab_unit;
+                        Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;
 
                         Tvec mdWab_b = dWab_a * pmass;
 

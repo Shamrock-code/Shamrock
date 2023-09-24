@@ -6,7 +6,7 @@ rho_g = 1
 target_tot_u = 1
 
 
-dr = 0.004
+dr = 0.01
 bmin = (-0.6,-0.6,-0.6)
 bmax = ( 0.6, 0.6, 0.6)
 pmass = -1
@@ -134,7 +134,7 @@ uint = dic["uint"]
 
 gamma = 5./3.
 
-rho = pmass*(1.2/hpart)**3
+rho = pmass*(model.get_hfact()/hpart)**3
 P = (gamma-1) * rho *uint
 
 
@@ -157,10 +157,10 @@ axs[1,0].set_xlabel("$r$")
 axs[0,1].set_xlabel("$r$")
 axs[1,1].set_xlabel("$r$")
 
-axs[0,0].set_xlim(0,0.5)
-axs[1,0].set_xlim(0,0.5)
-axs[0,1].set_xlim(0,0.5)
-axs[1,1].set_xlim(0,0.5)
+axs[0,0].set_xlim(0,0.55)
+axs[1,0].set_xlim(0,0.55)
+axs[0,1].set_xlim(0,0.55)
+axs[1,1].set_xlim(0,0.55)
 
 plt.tight_layout()
 plt.show()

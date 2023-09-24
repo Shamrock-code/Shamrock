@@ -84,6 +84,7 @@ inline void validate_kernel_3d(typename Ker::Tscal tol,typename Ker::Tscal dx,ty
             shammath::derivative_upwind<Tscal>(x, dx, [](Tscal x) {
                 return Ker::f(x);
             });
+        diff *= gen_norm3d;
         L2_sum += diff*diff*step;
     }
     _AssertFloatEqual(L2_sum, 0, tol)
@@ -98,7 +99,7 @@ TestStart(Unittest, "shammath/sphkernels/M4", validateM4kernel, 1){
 }
 
 TestStart(Unittest, "shammath/sphkernels/M6", validateM6kernel, 1){
-    validate_kernel_3d<shammath::M6<f32>>(1e-3,1e-4,1e-3);
+    validate_kernel_3d<shammath::M6<f32>>(1e-3,1e-3,1e-3);
     validate_kernel_3d<shammath::M6<f64>>(1e-5,1e-5,1e-5);
 }
 

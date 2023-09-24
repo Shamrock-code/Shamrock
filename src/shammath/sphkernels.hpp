@@ -72,28 +72,58 @@ namespace shammath::details {
 
         inline static Tscal f(Tscal q) {
 
+            Tscal t1 = 3-q;
+            Tscal t2 = 2-q;
+            Tscal t3 = 1-q;
+
+            Tscal t1_2 = t1*t1;
+            Tscal t2_2 = t2*t2;
+            Tscal t3_2 = t3*t3;
+
+            t1 = t1*t1_2*t1_2;
+            t2 = t2*t2_2*t2_2;
+            t3 = t3*t3_2*t3_2;
+
+            t1 *= 1;
+            t2 *= -6;
+            t3 *= 15;
+
             if (q < 1.) {
-                return -10. * q * q * q * q * q + 30. * q * q * q * q - 60. * q * q + 66.;
+                return t1 + t2 + t3;
             } else if (q < 2.) {
-                return -(q - 3.) * (q - 3.) * (q - 3.) * (q - 3.) * (q - 3.) +
-                       6. * (q - 2.) * (q - 2.) * (q - 2.) * (q - 2.) * (q - 2.);
+                return t1 + t2 ;
             } else if (q < 3.) {
-                return -(q - 3.) * (q - 3.) * (q - 3.) * (q - 3.) * (q - 3.);
+                return t1 ;
             } else
                 return 0;
         }
 
         inline static Tscal df(Tscal q) {
 
+            Tscal t1 = 3-q;
+            Tscal t2 = 2-q;
+            Tscal t3 = 1-q;
+
+            Tscal t1_2 = t1*t1;
+            Tscal t2_2 = t2*t2;
+            Tscal t3_2 = t3*t3;
+
+            t1 = t1_2*t1_2;
+            t2 = t2_2*t2_2;
+            t3 = t3_2*t3_2;
+
+            t1 *= (1 )*(-5);
+            t2 *= (-6)*(-5);
+            t3 *= (15)*(-5);
+
             if (q < 1.) {
-                return q * (-50. * q * q * q + 120. * q * q - 120.);
+                return t1 + t2 + t3;
             } else if (q < 2.) {
-                return -5. * (q - 3.) * (q - 3.) * (q - 3.) * (q - 3.) +
-                       30. * (q - 2.) * (q - 2.) * (q - 2.) * (q - 2.);
+                return t1 + t2 ;
             } else if (q < 3.) {
-                return -5. * (q - 3.) * (q - 3.) * (q - 3.) * (q - 3.);
+                return t1 ;
             } else
-                return 0.;
+                return 0;
         }
     };
 } // namespace shammath::details

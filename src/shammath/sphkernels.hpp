@@ -34,14 +34,22 @@ namespace shammath::details {
 
         inline static Tscal f(Tscal q) {
 
-            constexpr Tscal div3_4 = (3. / 4.);
-            constexpr Tscal div3_2 = (3. / 2.);
+
+            Tscal t1 = 2-q;
+            Tscal t2 = 1-q;
+
+            t1 = t1*t1*t1;
+            t2 = t2*t2*t2;
+
             constexpr Tscal div1_4 = (1. / 4.);
+            t1 *= div1_4;
+            t2 *= -1;
+
 
             if (q < 1) {
-                return 1 + q * q * (div3_4 * q - div3_2);
+                return t1 + t2;
             } else if (q < 2) {
-                return div1_4 * (2 - q) * (2 - q) * (2 - q);
+                return t1;
             } else
                 return 0;
         }

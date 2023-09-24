@@ -32,6 +32,7 @@ namespace shammath {
     template<class flt_type>
     class M4 {
         public:
+        using Tscal = flt_type;
         inline static constexpr flt_type Rkern  = 2;   /*!< Radius of the support */
         inline static constexpr flt_type hfactd = 1.2; /*!< default $h_{\rm fact}$ for this kernel*/
 
@@ -111,6 +112,7 @@ namespace shammath {
     template<class flt_type>
     class M6 {
         public:
+        using Tscal = flt_type;
         using flt                               = flt_type;
         inline static constexpr flt_type Rkern  = 3;/*!< Radius of the support */
         inline static constexpr flt_type hfactd = 1.0;/*!< default $h_{\rm fact}$ for this kernel*/

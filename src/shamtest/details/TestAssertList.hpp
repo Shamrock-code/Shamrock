@@ -33,9 +33,9 @@ namespace shamtest::details {
             asserts.push_back(TestAssert{v, std::move(assert_name), gen_comment("", loc)});
         }
 
-        template<class T>
+        template<class T1, class T2>
         inline void
-        assert_equal(std::string assert_name, T a, T b, SourceLocation loc = SourceLocation{}) {
+        assert_equal(std::string assert_name, T1 a, T2 b, SourceLocation loc = SourceLocation{}) {
 
             bool t              = a == b;
             std::string comment = "";

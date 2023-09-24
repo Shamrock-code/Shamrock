@@ -21,16 +21,40 @@ inline void validate_kernel_3d(typename Ker::Tscal tol,typename Ker::Tscal dx){
 
     using Tscal = typename Ker::Tscal;
 
+    // test finite support
     _AssertEqual(Ker::f(Ker::Rkern) , 0);
     _AssertEqual(Ker::W(Ker::Rkern,1) , 0);
 
+    // test f <-> W scale relations
+    _AssertEqual(Ker::norm*Ker::f(Ker::Rkern) , Ker::W(Ker::Rkern,1));
+    _AssertEqual(Ker::norm*Ker::f(Ker::Rkern/2) , Ker::W(Ker::Rkern/2,1));
+    _AssertEqual(Ker::norm*Ker::f(Ker::Rkern/3) , Ker::W(Ker::Rkern/3,1));
+    _AssertEqual(Ker::norm*Ker::f(Ker::Rkern/4) , Ker::W(Ker::Rkern/4,1));
+
+    _AssertEqual(Ker::norm*Ker::f(Ker::Rkern)/8 , Ker::W(2*Ker::Rkern,2));
+    _AssertEqual(Ker::norm*Ker::f(Ker::Rkern/2)/8 , Ker::W(2*Ker::Rkern/2,2));
+    _AssertEqual(Ker::norm*Ker::f(Ker::Rkern/3)/8 , Ker::W(2*Ker::Rkern/3,2));
+    _AssertEqual(Ker::norm*Ker::f(Ker::Rkern/4)/8 , Ker::W(2*Ker::Rkern/4,2));
+
+    // test df <-> dW scale relations
+    _AssertEqual(Ker::norm*Ker::df(Ker::Rkern) , Ker::dW(Ker::Rkern,1));
+    _AssertEqual(Ker::norm*Ker::df(Ker::Rkern/2) , Ker::dW(Ker::Rkern/2,1));
+    _AssertEqual(Ker::norm*Ker::df(Ker::Rkern/3) , Ker::dW(Ker::Rkern/3,1));
+    _AssertEqual(Ker::norm*Ker::df(Ker::Rkern/4) , Ker::dW(Ker::Rkern/4,1));
+
+    _AssertEqual(Ker::norm*Ker::df(Ker::Rkern)/16 , Ker::dW(2*Ker::Rkern,2));
+    _AssertEqual(Ker::norm*Ker::df(Ker::Rkern/2)/16 , Ker::dW(2*Ker::Rkern/2,2));
+    _AssertEqual(Ker::norm*Ker::df(Ker::Rkern/3)/16 , Ker::dW(2*Ker::Rkern/3,2));
+    _AssertEqual(Ker::norm*Ker::df(Ker::Rkern/4)/16 , Ker::dW(2*Ker::Rkern/4,2));
+
+    // is integral of W == 1
     _AssertFloatEqual(1, 
         shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, 0.01, [](Tscal x) {
             return 4*shambase::Constants<Tscal>::pi*x*x* Ker::W(x,1);
         }
     ),tol)
 
-
+    // is df = f' ?
     Tscal L2_sum = 0;
     Tscal step = 0.01;
     for (Tscal x = 0; x < Ker::Rkern; x += step) {
@@ -41,6 +65,8 @@ inline void validate_kernel_3d(typename Ker::Tscal tol,typename Ker::Tscal dx){
         L2_sum += diff*diff*step;
     }
     _AssertFloatEqual(L2_sum, 0, tol)
+
+
 
 }
 

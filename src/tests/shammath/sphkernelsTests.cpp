@@ -7,9 +7,15 @@
 // -------------------------------------------------------//
 
 
+#include "shamalgs/details/random/random.hpp"
 #include "shambase/Constants.hpp"
+#include "shambase/sycl_utils.hpp"
+#include "shambase/time.hpp"
 #include "shammath/derivatives.hpp"
 #include "shammath/integrator.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
+#include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
 
 #include "shammath/sphkernels.hpp"
@@ -94,4 +100,72 @@ TestStart(Unittest, "shammath/sphkernels/M4", validateM4kernel, 1){
 TestStart(Unittest, "shammath/sphkernels/M6", validateM6kernel, 1){
     validate_kernel_3d<shammath::M6<f32>>(1e-3,1e-4,1e-3);
     validate_kernel_3d<shammath::M6<f64>>(1e-5,1e-5,1e-5);
+}
+
+
+template<class Ker>
+f64 benchmark_sph_kernel(u32 N){
+
+    using Tscal = typename Ker::Tscal;
+
+    sycl::buffer<Tscal> dist = shamalgs::random::mock_buffer<Tscal>(0x111,N,0,Ker::Rkern);
+    sycl::buffer<Tscal> result (N);
+
+    shamsys::instance::get_compute_queue().wait_and_throw();
+
+    return shambase::timeit([&](){
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+            sycl::accessor x {dist, cgh, sycl::read_only};
+            sycl::accessor f {result, cgh, sycl::write_only, sycl::no_init};
+
+            shambase::parralel_for(cgh, N, "test sph kernel", [=](u32 i){
+                f[i] = Ker::W_3d(x[i],1);
+            });
+
+        }).wait();
+
+    }, 4);
+
+}
+
+TestStart(Benchmark, "shammath/sphkernels_performance", kernelperf, 1){
+    f64 m6_f32 = benchmark_sph_kernel<shammath::M6<f32>>(10000000);
+    f64 m6_f64 = benchmark_sph_kernel<shammath::M6<f64>>(10000000);
+    f64 m4_f32 = benchmark_sph_kernel<shammath::M4<f32>>(10000000);
+    f64 m4_f64 = benchmark_sph_kernel<shammath::M4<f64>>(10000000);
+
+    
+    PyScriptHandle hdnl{};
+
+    hdnl.data()["m6_f32"]   = m6_f32 ;
+    hdnl.data()["m6_f64"]   = m6_f64 ;
+    hdnl.data()["m4_f32"]   = m4_f32 ;
+    hdnl.data()["m4_f64"]   = m4_f64 ;
+
+
+    hdnl.exec(R"(
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        plt.style.use('custom_style.mplstyle')
+
+        data_f32 = [m4_f32,m6_f32]
+        data_f64 = [m4_f64,m6_f64]
+        labels = ['M4','M6']
+
+        plt.xticks(range(len(labels)), labels)
+        plt.xlabel('Kernel')
+        plt.ylabel('benchmark time')
+
+        width = 0.3
+        plt.bar(np.arange(len(data_f32)), data_f32, width=width)
+        plt.bar(np.arange(len(data_f64))+width, data_f64, width=width)
+
+        plt.tight_layout()
+
+        plt.savefig("sph_kernel_performance.pdf")
+
+    )");
 }

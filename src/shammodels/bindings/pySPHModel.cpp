@@ -22,6 +22,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using T       = Model<Tvec, SPHKernel>;
     using TConfig = typename T::Solver::Config;
 
+
+    logger::debug_ln("[Py]", "registering class :",name_config,typeid(T).name());
+    logger::debug_ln("[Py]", "registering class :",name_model,typeid(T).name());
+
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
@@ -94,6 +98,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("resize_simulation_box",
              [](T &self, f64_3 box_min, f64_3 box_max) {
                  return self.resize_simulation_box({box_min, box_max});
+             })
+        .def("push_particle",
+             [](T &self, std::vector<f64_3> pos, std::vector<f64> hpart) {
+                 return self.push_particle(pos,hpart);
              })
         .def("add_cube_fcc_3d",
              [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {

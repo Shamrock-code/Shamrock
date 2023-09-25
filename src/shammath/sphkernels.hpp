@@ -208,16 +208,13 @@ namespace shammath::details {
         }
     };
 
-
-
-
     template<class Tscal>
     class KernelDefC2 {
         public:
         inline static constexpr Tscal Rkern  = 2;
         inline static constexpr Tscal hfactd = 1.0;
 
-        inline static constexpr Tscal norm_1d = 3./4.;
+        inline static constexpr Tscal norm_1d = 3. / 4.;
         inline static constexpr Tscal norm_2d = 7. / (4 * shambase::Constants<Tscal>::pi);
         inline static constexpr Tscal norm_3d = 21 / (16 * shambase::Constants<Tscal>::pi);
 
@@ -225,47 +222,35 @@ namespace shammath::details {
 
             constexpr Tscal div1_2 = (1. / 2.);
 
-            Tscal p1 = (1 - q*div1_2);
-            Tscal p2 = (1 + q*2);
+            Tscal p1 = (1 - q * div1_2);
+            Tscal p2 = (1 + q * 2);
 
-            p1*= p1;
-            p1*= p1;
+            p1 *= p1;
+            p1 *= p1;
 
             if (q < 2.) {
-                return p1*p2;
+                return p1 * p2;
             } else
                 return 0;
         }
 
         inline static Tscal df(Tscal q) {
 
-            Tscal t1 = 3 - q;
-            Tscal t2 = 2 - q;
-            Tscal t3 = 1 - q;
+            constexpr Tscal div1_2 = (1. / 2.);
+            constexpr Tscal div1_8 = (1. / 8.);
+            constexpr Tscal div1_4 = (1. / 4.);
 
-            Tscal t1_2 = t1 * t1;
-            Tscal t2_2 = t2 * t2;
-            Tscal t3_2 = t3 * t3;
+            Tscal p1 = (1 - q * div1_2);
+            Tscal p2 = (1 + q * 2);
 
-            t1 = t1_2 * t1_2;
-            t2 = t2_2 * t2_2;
-            t3 = t3_2 * t3_2;
+            Tscal p3 = p1 * p1 * p1;
 
-            t1 *= (1) * (-5);
-            t2 *= (-6) * (-5);
-            t3 *= (15) * (-5);
-
-            if (q < 1.) {
-                return t1 + t2 + t3;
-            } else if (q < 2.) {
-                return t1 + t2;
-            } else if (q < 3.) {
-                return t1;
+            if (q < 2.) {
+                return 2 * (p3 * p1 - p3 * p2);
             } else
                 return 0;
         }
     };
-
 
     template<class Tscal>
     class KernelDefC4 {
@@ -279,52 +264,37 @@ namespace shammath::details {
 
         inline static Tscal f(Tscal q) {
 
-            constexpr Tscal div1_2 = (1. / 2.);
+            constexpr Tscal div1_2   = (1. / 2.);
             constexpr Tscal div35_12 = (35. / 12.);
 
-            Tscal p1 = (1 - q*div1_2);
-            Tscal p2 = (1 + q*3 + div35_12*q*q);
+            Tscal p1 = (1 - q * div1_2);
+            Tscal p2 = (1 + q * 3 + div35_12 * q * q);
 
-            p1*= p1;
-            p1 = p1*p1*p1;
+            p1 *= p1;
+            p1 = p1 * p1 * p1;
 
             if (q < 2.) {
-                return p1*p2;
+                return p1 * p2;
             } else
                 return 0;
         }
 
         inline static Tscal df(Tscal q) {
 
-            Tscal t1 = 3 - q;
-            Tscal t2 = 2 - q;
-            Tscal t3 = 1 - q;
+            constexpr Tscal div7_96 = (7. / 96.);
 
-            Tscal t1_2 = t1 * t1;
-            Tscal t2_2 = t2 * t2;
-            Tscal t3_2 = t3 * t3;
+            Tscal p1 = (-2 + q);
+            Tscal p2 = (2 + 5 * q);
 
-            t1 = t1_2 * t1_2;
-            t2 = t2_2 * t2_2;
-            t3 = t3_2 * t3_2;
+            Tscal p14 = p1 * p1;
+            p14 *= p14;
 
-            t1 *= (1) * (-5);
-            t2 *= (-6) * (-5);
-            t3 *= (15) * (-5);
-
-            if (q < 1.) {
-                return t1 + t2 + t3;
-            } else if (q < 2.) {
-                return t1 + t2;
-            } else if (q < 3.) {
-                return t1;
+            if (q < 2.) {
+                return div7_96 * p14 * p1 * q * p2;
             } else
                 return 0;
         }
     };
-
-
-
 
     template<class Tscal>
     class KernelDefC6 {
@@ -338,46 +308,35 @@ namespace shammath::details {
 
         inline static Tscal f(Tscal q) {
 
-            constexpr Tscal div1_2 = (1. / 2.);
+            constexpr Tscal div1_2  = (1. / 2.);
             constexpr Tscal div25_4 = (25. / 4.);
 
-            Tscal p1 = (1 - q*div1_2);
-            Tscal p2 = (1 + q*3 + div25_4*q*q+ 4*q*q*q);
+            Tscal p1 = (1 - q * div1_2);
+            Tscal p2 = (1 + q * 4 + div25_4 * q * q + 4 * q * q * q);
 
-            p1*= p1;
-            p1*= p1;
-            p1*= p1;
+            p1 *= p1;
+            p1 *= p1;
+            p1 *= p1;
 
             if (q < 2.) {
-                return p1*p2;
+                return p1 * p2;
             } else
                 return 0;
         }
 
         inline static Tscal df(Tscal q) {
 
-            Tscal t1 = 3 - q;
-            Tscal t2 = 2 - q;
-            Tscal t3 = 1 - q;
+            constexpr Tscal div11_512 = (11. / 512.);
 
-            Tscal t1_2 = t1 * t1;
-            Tscal t2_2 = t2 * t2;
-            Tscal t3_2 = t3 * t3;
+            Tscal p1 = (-2 + q);
+            Tscal p2 = 2 + 7 * q + 8 * q * q;
 
-            t1 = t1_2 * t1_2;
-            t2 = t2_2 * t2_2;
-            t3 = t3_2 * t3_2;
+            Tscal p12 = p1 * p1;
+            Tscal p14 = p12 * p12;
+            Tscal p17 = p12 * p14 * p1;
 
-            t1 *= (1) * (-5);
-            t2 *= (-6) * (-5);
-            t3 *= (15) * (-5);
-
-            if (q < 1.) {
-                return t1 + t2 + t3;
-            } else if (q < 2.) {
-                return t1 + t2;
-            } else if (q < 3.) {
-                return t1;
+            if (q < 2.) {
+                return div11_512 * p17 * q * p2;
             } else
                 return 0;
         }
@@ -467,7 +426,6 @@ namespace shammath {
      */
     template<class flt_type>
     using M6 = SPHKernelGen<flt_type, details::KernelDefM6<flt_type>>;
-
 
     /**
      * @brief The C2 SPH kernel

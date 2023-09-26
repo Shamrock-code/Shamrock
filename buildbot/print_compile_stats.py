@@ -2,7 +2,7 @@ from lib.buildbot import *
 
 print_buildbot_info("compile stats")
 
-abs_build_dir = os.path.join(abs_proj_dir,"build")
+abs_build_dir = os.path.join(abs_proj_dir,"build_config/dpcpp_cuda_release_sm80")
 
 
 arr = []

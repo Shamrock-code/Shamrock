@@ -6,17 +6,19 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/type_aliases.hpp"
 #include "shambindings/pybindaliases.hpp"
-#include "shamrock/physics/Constants.hpp"
-#include "shamrock/physics/units/Names.hpp"
-#include "shamrock/physics/units/UnitSystem.hpp"
+#include <shamunits/Constants.hpp>
+#include <shamunits/Names.hpp>
+#include <shamunits/UnitSystem.hpp>
 #include <memory>
 #include <pybind11/cast.h>
+#include "shambase/sycl.hpp"
 
 
 Register_pymod(pyunits_init) {
 
-    using UnitSystem = shamrock::UnitSystem<f64>;
+    using UnitSystem = shamunits::UnitSystem<f64>;
 
 
     py::class_<UnitSystem>(m, "UnitSystem")
@@ -46,11 +48,11 @@ Register_pymod(pyunits_init) {
         .def("get",
             [](UnitSystem & self, std::string name, i32 power, std::string pref){
 
-                shamrock::UnitPrefix pref_ =  shamrock::unit_prefix_from_name(pref);
+                shamunits::UnitPrefix pref_ =  shamunits::unit_prefix_from_name(pref);
 
                 return self.runtime_get(
                         pref_, 
-                        shamrock::units::unit_from_name(name), 
+                        shamunits::units::unit_from_name(name), 
                         power
                     );
 
@@ -64,10 +66,10 @@ Register_pymod(pyunits_init) {
             [](UnitSystem & self, std::string name, i32 power, std::string pref){
             
             
-                shamrock::UnitPrefix pref_ =  shamrock::unit_prefix_from_name(pref);
+                shamunits::UnitPrefix pref_ =  shamunits::unit_prefix_from_name(pref);
 
                 return self.runtime_to(
-                    pref_, shamrock::units::unit_from_name(name), power);
+                    pref_, shamunits::units::unit_from_name(name), power);
             }, 
             //py::arg("self"), 
             py::arg("name"),
@@ -78,15 +80,15 @@ Register_pymod(pyunits_init) {
 
 
 
-    py::class_<shamrock::Constants<f64>>(m, "Constants")
+    py::class_<shamunits::Constants<f64>>(m, "Constants")
         .def(py::init([](UnitSystem s) {
-            return std::make_unique<shamrock::Constants<f64>>(s);
+            return std::make_unique<shamunits::Constants<f64>>(s);
         }))
 
         
 
         #define X(st) \
-        .def( #st ,[](shamrock::Constants<f64> & cte, i32 power){\
+        .def( #st ,[](shamunits::Constants<f64> & cte, i32 power){\
             return sycl::pown(cte.st(),power);\
         },py::arg("power") = 1)
 

@@ -9,30 +9,33 @@
 #pragma once
 
 #include "Names.hpp"
-#include "shambase/floats.hpp"
-#include "shambase/type_traits.hpp"
-#include "shamrock/physics/units/ConvertionConstants.hpp"
+#include "ConvertionConstants.hpp"
+#include <cmath>
 
 #define addget(uname)                                                                              \
     template<UnitPrefix pref = None,                                                               \
              units::UnitName u,                                                                    \
-             i32 power                                = 1,                                         \
+             int power                                = 1,                                         \
              std::enable_if_t<u == units::uname, int> = 0>                                         \
     inline constexpr T get() const noexcept
 
 #define Uget(unitname, mult_pow) get<pref,units::unitname, (mult_pow)*power>()
 #define Cget(constant_name, mult_pow)                                                              \
-    shambase::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name, T(1) / constant_name)
+    details::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name, T(1) / constant_name)
 #define PREF Cget((get_prefix_val<T,pref>()), 1)
 
-namespace shamrock {
+namespace shamunits {
 
     template<class T>
     class UnitSystem {
 
-        template<i32 power>
-        inline static constexpr T pow(T a, T a_inv) noexcept {
-            return shambase::pow_constexpr_fast_inv<power>(a, a_inv);
+        template<int power>
+        inline static constexpr T pow_constexpr(T a, T a_inv) noexcept {
+            return details::pow_constexpr_fast_inv<power>(a, a_inv);
+        }
+
+        inline T pown(T a, int n){
+            return std::pow(a,n);
         }
 
         using Uconvert = ConvertionConstants<T>;
@@ -55,13 +58,13 @@ namespace shamrock {
               mol_inv(unit_qte), cd_inv(unit_lumint) {}
 
         // clang-format off
-        addget(second)    { return PREF* pow<power>(s  , s_inv);   }
-        addget(metre)     { return PREF* pow<power>(m  , m_inv);   }
-        addget(kilogramm) { return PREF* pow<power>(kg , kg_inv);  }
-        addget(Ampere)    { return PREF* pow<power>(A  , A_inv);   }
-        addget(Kelvin)    { return PREF* pow<power>(K  , K_inv);   }
-        addget(mole)      { return PREF* pow<power>(mol, mol_inv); }
-        addget(candela)   { return PREF* pow<power>(cd , cd_inv);  }
+        addget(second)    { return PREF* pow_constexpr<power>(s  , s_inv);   }
+        addget(metre)     { return PREF* pow_constexpr<power>(m  , m_inv);   }
+        addget(kilogramm) { return PREF* pow_constexpr<power>(kg , kg_inv);  }
+        addget(Ampere)    { return PREF* pow_constexpr<power>(A  , A_inv);   }
+        addget(Kelvin)    { return PREF* pow_constexpr<power>(K  , K_inv);   }
+        addget(mole)      { return PREF* pow_constexpr<power>(mol, mol_inv); }
+        addget(candela)   { return PREF* pow_constexpr<power>(cd , cd_inv);  }
         
         addget(Hertz)   { return PREF* Uget(s, -1); }
         //addget(mps)     { return PREF* Uget(m, 1)       * Uget(s, -1); }
@@ -102,7 +105,7 @@ namespace shamrock {
 
         template<UnitPrefix pref = None,                                                             
              units::UnitName u,                                                                    
-             i32 power                                = 1>  
+             int power                                = 1>  
         inline constexpr T to() {
             return get<u, -power>();
         }
@@ -174,16 +177,16 @@ namespace shamrock {
 
         public:
 
-        inline T runtime_get(UnitPrefix pref ,units::UnitName name, i32 power){
-            return sycl::pown(getter_2(pref, name),power);
+        inline T runtime_get(UnitPrefix pref ,units::UnitName name, int power){
+            return pown(getter_2(pref, name),power);
         }
 
-        inline T runtime_to(UnitPrefix pref ,units::UnitName name, i32 power){
-            return sycl::pown(getter_2(pref, name),-power);
+        inline T runtime_to(UnitPrefix pref ,units::UnitName name, int power){
+            return pown(getter_2(pref, name),-power);
         }
     };
 
-} // namespace shamrock
+} // namespace shamunits
 
 #undef addget
 #undef PREF

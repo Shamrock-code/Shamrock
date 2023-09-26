@@ -188,6 +188,8 @@ add_custom_command(
 # Targets ##############################################################################
 ########################################################################################
 
+add_subdirectory(src/shamunits)
+
 ######################
 # Shamalgs
 ######################
@@ -212,6 +214,7 @@ if(SHAMROCK_USE_NVTX)
     target_link_libraries(shamalgs PUBLIC nvtx3-cpp)
 endif()
 
+target_link_libraries(shamalgs PUBLIC shamunits)
 
 
 
@@ -245,6 +248,7 @@ else()
 endif()
 
 
+target_link_libraries(shamrock_lib PUBLIC shamunits)
 
 
 
@@ -271,6 +275,9 @@ if("${BUILD_SIM}")
     
     target_link_libraries(shamrock PUBLIC MPI::MPI_C)
     target_link_libraries(shamrock PUBLIC fmt::fmt)
+    target_link_libraries(shamrock PUBLIC shamunits)
+
+    
 
     if(SHAMROCK_USE_NVTX)
         target_link_libraries(shamrock PUBLIC nvtx3-cpp)
@@ -306,6 +313,7 @@ if("${BUILD_TEST}")
 
     target_link_libraries(shamrock_test PUBLIC shamrock_lib)
     target_link_libraries(shamrock_test PUBLIC shamalgs)
+    target_link_libraries(shamrock_test PUBLIC shamunits)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")

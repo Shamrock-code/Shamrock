@@ -1,1 +1,1 @@
-Welcome to the doxygen documentation of shamrock (Units library) !
+Welcome to the doxygen documentation of shamrock !

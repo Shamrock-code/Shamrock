@@ -1,4 +1,4 @@
 
-![The Rust Logo](images/no_background_nocolor.png)
+![Shamrock Logo](images/no_background_nocolor.png)
 
-Welcome to the documentation of the Shamrock code !
+Welcome to the documentation of the Shamrock code units library!

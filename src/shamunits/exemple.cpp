@@ -6,9 +6,8 @@
 //
 // -------------------------------------------------------//
 
-#include "shamunits/Constants.hpp"
-#include "shamunits/Names.hpp"
 #include <iostream>
+#include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 
 // g++ -std=c++17 -Iinclude exemple.cpp

@@ -7,7 +7,13 @@
 
 This is the units library in use in the Shamrock code, this repository will be updated when change are made to this library in the Shamrock monorepo. 
 
+Almost everything is marked `constexpr` in the library, so most of the conversion if possible will be opmitized away by the compiler, allowing for zero cost abstraction here :)
+
+Here is an exemple of the usage of the units library :
 ```c++
+#include <iostream>
+#include <shamunits/Constants.hpp>
+#include <shamunits/UnitSystem.hpp>
 
 int main(void){
 
@@ -42,3 +48,6 @@ int main(void){
 }
 
 ```
+
+If you want to try here is a godbolt link : https://godbolt.org/z/8z71qYh69
+

@@ -10,8 +10,8 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shamunits/UnitSystem.hpp"
-#include "shamunits/Constants.hpp"
+#include <shamunits/UnitSystem.hpp>
+#include <shamunits/Constants.hpp>
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <variant>

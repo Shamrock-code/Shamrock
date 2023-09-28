@@ -1,16 +1,51 @@
-######################################
-# Cmake build configuration for shamrock
-######################################
+## -------------------------------------------------------
+##
+## SHAMROCK code for hydrodynamics
+## Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+## Licensed under CeCILL 2.1 License, see LICENSE for more information
+##
+## -------------------------------------------------------
 
+
+################################
+# Cmake config
+################################
 cmake_minimum_required(VERSION 3.9)
-
-
-project(Shamrock CXX C)
-
 
 # Necessary to link a subfolder library into another subfolder
 cmake_policy(SET CMP0079 NEW)
 cmake_policy(SET CMP0076 NEW)
+
+list(APPEND CMAKE_MODULE_PATH
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+    )
+
+option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
+
+# Necessary for clangd to work properly
+if(EXPORT_COMPILE_COMMANDS)
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+endif()
+
+################################
+# Shamrock configuration
+################################  
+project(Shamrock VERSION 2023.0)
+
+
+option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
+option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
+option(SHAMROCK_USE_PCH "use precompiled headers" Off)
+
+
+
+set(SHAMROCK_ENABLE_BACKEND "SYCL" CACHE STRING "Shamrock backend used")
+set_property(CACHE SHAMROCK_ENABLE_BACKEND PROPERTY STRINGS SYCL)
+
+
+
+
+
 
 
 
@@ -18,37 +53,12 @@ cmake_policy(SET CMP0076 NEW)
 #Project config
 ######################
 
-set(SYCL_COMPILER "OTHER" CACHE STRING "Sycl compiler used")
-set_property(CACHE SYCL_COMPILER PROPERTY STRINGS DPCPP OPENSYCL OTHER)
 
-set(SHAMROCK_LOOP_DEFAULT "PARRALEL_FOR_ROUND" CACHE STRING "Default loop mode in shamrock")
-set_property(CACHE SHAMROCK_LOOP_DEFAULT PROPERTY STRINGS PARRALEL_FOR PARRALEL_FOR_ROUND ND_RANGE)
 
-set(SHAMROCK_LOOP_GSIZE 256 CACHE STRING "Default group size in shamrock")
 
-option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
-option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
-option(SHAMROCK_USE_PCH "use precompiled headers" Off)
-option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
-
-message("-- Shamrock config : ")
-message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
-message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
-message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
-message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
-message("     SHAMROCK_USE_PCH : ${SHAMROCK_USE_PCH}")
-message("     SHAMROCK_USE_SHARED_LIB : ${SHAMROCK_USE_SHARED_LIB}")
-message("     SYCL_COMPILER : ${SYCL_COMPILER}")
-message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
-message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
 
 
-
-# Necessary for clangd to work properly
-if(EXPORT_COMPILE_COMMANDS)
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-endif()
 
 set(Default_comp "${CMAKE_CXX_COMPILER}")
 
@@ -95,6 +105,7 @@ endif()
 ######################
 # Compiler selection
 ######################
+include(ShamConfigureSYCL)
 if(${SYCL_COMPILER} STREQUAL "DPCPP")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_DPCPP -Wno-unknown-cuda-version")
 elseif(${SYCL_COMPILER} STREQUAL "OPENSYCL")
@@ -106,27 +117,10 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include/sycl")
 
-message("-- SYCL feature test --")
-if(NOT DEFINED SYCL_feature_include)
-try_compile(SYCL_feature_include ${CMAKE_BINARY_DIR}/compile_tests ${CMAKE_SOURCE_DIR}/cmake/feature_test/sycl_include.cpp)
-endif()
-if(SYCL_feature_include)
-    message("    - sycl header : Yes")
-else()
-    message("    - sycl header : No")
-    message( SEND_ERROR "Shamrock cannot be compiled without sycl headers" )
-endif()
-if(NOT DEFINED SYCL_feature_reduc2020)
-try_compile(SYCL_feature_reduc2020 ${CMAKE_BINARY_DIR}/compile_tests ${CMAKE_SOURCE_DIR}/cmake/feature_test/sycl2020_reduc.cpp)
-endif()
-if(SYCL_feature_reduc2020)
-    message("    - sycl 2020 reduction : Yes")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL2020_FEATURE_REDUCTION")
-else()
-    message("    - sycl 2020 reduction : No")
-endif()
-message("-- SYCL feature test (Done) --")
 
+
+enable_language(C)
+enable_language(CXX)
 
 
 ######################
@@ -182,6 +176,17 @@ add_custom_command(
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp "${CMAKE_CXX_FLAGS}"
   )
 
+
+message("-- Shamrock config : ")
+message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
+message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
+message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
+message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
+message("     SHAMROCK_USE_PCH : ${SHAMROCK_USE_PCH}")
+message("     SHAMROCK_USE_SHARED_LIB : ${SHAMROCK_USE_SHARED_LIB}")
+message("     SYCL_COMPILER : ${SYCL_COMPILER}")
+message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
+message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
 
 
 ########################################################################################

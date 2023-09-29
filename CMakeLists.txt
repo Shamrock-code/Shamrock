@@ -74,6 +74,8 @@ include(ShamConfigureCXX)
 ######################
 # Compiler selection
 ######################
+
+
 include(ShamConfigureSYCL)
 if(${SYCL_COMPILER} STREQUAL "DPCPP")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_DPCPP -Wno-unknown-cuda-version")

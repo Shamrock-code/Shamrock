@@ -21,6 +21,18 @@ set_property(CACHE SYCL_COMPILER PROPERTY STRINGS DPCPP OPENSYCL OTHER)
 
 
 
+
+
+
+if(USE_ACPP_CMAKE)
+  find_package(AdaptiveCpp CONFIG REQUIRED)
+
+elseif(USE_HIPSYCL_CMAKE)
+  find_package(hipSYCL CONFIG REQUIRED)
+
+else()
+
+
 check_cxx_source_compiles(
     "
     #include <sycl/sycl.hpp>
@@ -93,5 +105,7 @@ option(INTEL_LLVM_NO_RDC Off)
 endif()
 
 elseif(${SYCL_COMPILER} STREQUAL "OPENSYCL")
+
+endif()
 
 endif()

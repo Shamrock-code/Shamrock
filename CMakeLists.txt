@@ -6,7 +6,6 @@
 ##
 ## -------------------------------------------------------
 
-
 ################################
 # Cmake config
 ################################
@@ -33,12 +32,6 @@ endif()
 project(Shamrock VERSION 2023.0)
 
 
-option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
-option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
-option(SHAMROCK_USE_PCH "use precompiled headers" Off)
-
-
-
 set(SHAMROCK_ENABLE_BACKEND "SYCL" CACHE STRING "Shamrock backend used")
 set_property(CACHE SHAMROCK_ENABLE_BACKEND PROPERTY STRINGS SYCL)
 
@@ -56,6 +49,9 @@ set_property(CACHE SHAMROCK_ENABLE_BACKEND PROPERTY STRINGS SYCL)
 
 
 
+option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
+option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
+option(SHAMROCK_USE_PCH "use precompiled headers" Off)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 
 
@@ -71,34 +67,7 @@ LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 ######################
 #checking compiler flag support 
 ######################
-include(CheckCXXCompilerFlag)
-
-check_cxx_compiler_flag("-march=native" COMPILER_SUPPORT_MARCHNATIVE)
-check_cxx_compiler_flag("-pedantic-errors" COMPILER_SUPPORT_PEDANTIC)
-check_cxx_compiler_flag("-fcolor-diagnostics" COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
-
-######################
-# Add compilation flags depending upon the build type
-######################
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection")  # or 11, 14, 17, 20
-set(CMAKE_CXX_STANDARD_REQUIRED ON)  # optional, ensure standard is supported
-set(CMAKE_CXX_EXTENSIONS OFF)  # optional, keep compiler extensions off
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type") 
-set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
-
-if(COMPILER_SUPPORT_PEDANTIC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors") 
-endif()
-
-if(COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics") 
-endif()
-
-if(COMPILER_SUPPORT_MARCHNATIVE)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native") 
-endif()
+include(ShamConfigureCXX)
 
 
 

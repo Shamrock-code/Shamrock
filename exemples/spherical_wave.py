@@ -7,6 +7,7 @@ target_tot_u = 1
 
 
 dr = 0.01
+
 bmin = (-0.6,-0.6,-0.6)
 bmax = ( 0.6, 0.6, 0.6)
 pmass = -1
@@ -62,8 +63,9 @@ pmass = model.total_mass_to_part_mass(totmass)
 
 model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
 
-#rinj = 0.008909042924642563*2
-rinj = 0.008909042924642563*2*2
+rinj = 0.008909042924642563*2/2
+#rinj = 0.008909042924642563*2*2
+#rinj = 0.01718181
 u_inj = 1
 model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
 

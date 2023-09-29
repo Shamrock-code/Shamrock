@@ -129,8 +129,8 @@ void Module<Tvec, TgridVec>::compute_limiter() {
         return storage.merged_patchdata_ghost.get().get(id).total_elements;
     }));
 
-    ComputeField<Tscal8> &a_x = storage.a_z.get();
-    ComputeField<Tscal8> &a_y = storage.a_z.get();
+    ComputeField<Tscal8> &a_x = storage.a_x.get();
+    ComputeField<Tscal8> &a_y = storage.a_y.get();
     ComputeField<Tscal8> &a_z = storage.a_z.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
@@ -176,7 +176,18 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_x[cell_gid] = shammath::van_leer_slope(dqm, dqp);
+                     
+
+                    a_x[cell_gid] = Tscal8 {
+                        shammath::van_leer_slope(dqm.s0(), dqp.s0()),
+                        shammath::van_leer_slope(dqm.s1(), dqp.s1()),
+                        shammath::van_leer_slope(dqm.s2(), dqp.s2()),
+                        shammath::van_leer_slope(dqm.s3(), dqp.s3()),
+                        shammath::van_leer_slope(dqm.s4(), dqp.s4()),
+                        shammath::van_leer_slope(dqm.s5(), dqp.s5()),
+                        shammath::van_leer_slope(dqm.s6(), dqp.s6()),
+                        shammath::van_leer_slope(dqm.s7(), dqp.s7())
+                    };
                 });
         });
 
@@ -204,7 +215,16 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_y[cell_gid] = shammath::van_leer_slope(dqm, dqp);
+                    a_y[cell_gid] = Tscal8 {
+                        shammath::van_leer_slope(dqm.s0(), dqp.s0()),
+                        shammath::van_leer_slope(dqm.s1(), dqp.s1()),
+                        shammath::van_leer_slope(dqm.s2(), dqp.s2()),
+                        shammath::van_leer_slope(dqm.s3(), dqp.s3()),
+                        shammath::van_leer_slope(dqm.s4(), dqp.s4()),
+                        shammath::van_leer_slope(dqm.s5(), dqp.s5()),
+                        shammath::van_leer_slope(dqm.s6(), dqp.s6()),
+                        shammath::van_leer_slope(dqm.s7(), dqp.s7())
+                    };
                 });
         });
 
@@ -232,11 +252,20 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_z[cell_gid] = shammath::van_leer_slope(dqm, dqp);
+                    a_z[cell_gid] = Tscal8 {
+                        shammath::van_leer_slope(dqm.s0(), dqp.s0()),
+                        shammath::van_leer_slope(dqm.s1(), dqp.s1()),
+                        shammath::van_leer_slope(dqm.s2(), dqp.s2()),
+                        shammath::van_leer_slope(dqm.s3(), dqp.s3()),
+                        shammath::van_leer_slope(dqm.s4(), dqp.s4()),
+                        shammath::van_leer_slope(dqm.s5(), dqp.s5()),
+                        shammath::van_leer_slope(dqm.s6(), dqp.s6()),
+                        shammath::van_leer_slope(dqm.s7(), dqp.s7())
+                    };
                 });
         });
 
-        /*
+        
         if (a_x.get_field(p.id_patch).has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in a_x");
             throw shambase::throw_with_loc<std::runtime_error>("detected nan");
@@ -251,7 +280,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
             logger::err_ln("[Zeus]", "nan detected in a_z");
             throw shambase::throw_with_loc<std::runtime_error>("detected nan");
         }
-        */
+        
     });
 }
 
@@ -695,12 +724,12 @@ void Module<Tvec, TgridVec>::update_Q(Tscal dt) {
 
                     Tscal8 fsum = {};
 
-                    fsum += Flux_xp[cell_gid];
-                    fsum += Flux_yp[cell_gid];
-                    fsum += Flux_zp[cell_gid];
-                    fsum -= Flux_x[cell_gid];
-                    fsum -= Flux_y[cell_gid];
-                    fsum -= Flux_z[cell_gid];
+                    fsum -= Flux_xp[cell_gid];
+                    fsum -= Flux_yp[cell_gid];
+                    fsum -= Flux_zp[cell_gid];
+                    fsum += Flux_x[cell_gid];
+                    fsum += Flux_y[cell_gid];
+                    fsum += Flux_z[cell_gid];
 
                     fsum /= V;
                     fsum *= _dt;

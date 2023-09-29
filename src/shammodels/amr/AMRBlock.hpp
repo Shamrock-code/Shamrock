@@ -32,6 +32,7 @@ namespace shammodels::amr {
      */
     template<class Tvec, class TgridVec, u32 NsideBlockPow>
     struct AMRBlock {
+        using Tscal              = shambase::VecComponent<Tvec>;
 
         static constexpr u32 dim = shambase::VectorProperties<TgridVec>::dimension;
 
@@ -69,15 +70,34 @@ namespace shammodels::amr {
             return {};
         }
 
-        static constexpr std::array<u32,dim> get_coord(u32 i) noexcept{
+        inline static constexpr std::array<u32,dim> get_coord(u32 i) noexcept{
             static_assert(dim == 3, "only in dim 3 for now");
 
             if constexpr (dim == 3) {
                 const u32 tmp  = i >> NsideBlockPow;
-                return {(tmp) >> NsideBlockPow, (tmp)%Nside,i % Nside};
+                return {i % Nside, (tmp)%Nside,(tmp) >> NsideBlockPow};
             }
 
             return {};
+        }
+
+        inline static std::pair<Tvec, Tvec> utils_get_cell_coords(std::pair<TgridVec, TgridVec> input, u32 lid){
+            Tvec block_min = input.first.template convert<Tscal>();
+            Tvec block_max = input.second.template convert<Tscal>();
+            Tvec delta_cell = (block_max - block_min)/side_size;
+
+            std::array<u32,dim> l_coord = get_coord(lid);
+
+            Tvec cell_offset = Tvec{
+                delta_cell.x()*l_coord[0],
+                delta_cell.y()*l_coord[1],
+                delta_cell.z()*l_coord[2]
+            };
+
+            return {
+                block_min + cell_offset,
+                block_min + cell_offset + delta_cell,
+            };
         }
 
         template<class Func>

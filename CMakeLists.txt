@@ -38,28 +38,19 @@ set_property(CACHE SHAMROCK_ENABLE_BACKEND PROPERTY STRINGS SYCL)
 
 
 
-
-
-
-
 ######################
 #Project config
 ######################
-
-
-
-
 option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
 option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
 option(SHAMROCK_USE_PCH "use precompiled headers" Off)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 
 
-
 set(Default_comp "${CMAKE_CXX_COMPILER}")
 
-LIST(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
-LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
+list(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
+list(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 
 
 
@@ -74,21 +65,8 @@ include(ShamConfigureCXX)
 ######################
 # Compiler selection
 ######################
-
-
 include(ShamConfigureSYCL)
-if(${SYCL_COMPILER} STREQUAL "DPCPP")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_DPCPP -Wno-unknown-cuda-version")
-elseif(${SYCL_COMPILER} STREQUAL "OPENSYCL")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_OPENSYCL")
-elseif(${SYCL_COMPILER} STREQUAL "OTHER")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_SYCLUNKNOWN")
-endif()
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include/sycl")
-
-
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_SYCL_FLAGS}")
 
 
 enable_language(C)
@@ -98,15 +76,7 @@ enable_language(CXX)
 ######################
 #shamrock impl control
 ######################
-if(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARRALEL_FOR")
-elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR_ROUND")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND")
-elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_DEFAULT_ND_RANGE")
-endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
 
 
 if(SHAMROCK_USE_PROFILING)
@@ -120,11 +90,9 @@ endif()
 ######################
 # Add external libraries
 ######################
-set(MPI_CXX_SKIP_MPICXX true)
-find_package(MPI REQUIRED COMPONENTS C)
+include(ShamConfigureMPI)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
 
-message(STATUS "MPI include dir : ${MPI_C_INCLUDE_DIRS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOMPI_SKIP_MPICXX")
 
 set(PYBIND11_FINDPYTHON ON)
 add_subdirectory(external)
@@ -150,13 +118,10 @@ add_custom_command(
 
 
 message("-- Shamrock config : ")
-message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
-message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
 message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
 message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
 message("     SHAMROCK_USE_PCH : ${SHAMROCK_USE_PCH}")
 message("     SHAMROCK_USE_SHARED_LIB : ${SHAMROCK_USE_SHARED_LIB}")
-message("     SYCL_COMPILER : ${SYCL_COMPILER}")
 message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
 message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
 

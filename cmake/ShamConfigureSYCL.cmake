@@ -31,6 +31,9 @@ option(SYCL2020_FEATURE_REDUCTION off)
 
 if(USE_ACPP_CMAKE)
 
+  message(FATAL_ERROR
+          "The acpp cmake integration is not (yet) supported in shamrock"        )
+
   # try any of the ACPP current / legacy configs
   find_package(AdaptiveCpp CONFIG)
   if(NOT AdaptiveCpp_FOUND)
@@ -81,7 +84,7 @@ else()
     HAS_SYCL2020_HEADER)
 
   if(NOT HAS_SYCL2020_HEADER)
-    message(FATAL_ERROR "Can not find sycl headers <sycl/sycl.hpp>")
+    message(FATAL_ERROR "The selected compiler does <sycl/sycl.hpp>")
   endif()
 
   check_cxx_source_compiles("
@@ -160,15 +163,29 @@ message(STATUS "SYCL compiler config :")
 message(STATUS "  SYCL_COMPILER : ${SYCL_COMPILER}")
 if(${SYCL_COMPILER} STREQUAL "DPCPP")
 
+  if(DEFINED INTEL_LLVM_PATH)
   set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL_COMP_DPCPP -Wno-unknown-cuda-version")
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${COMP_ROOT_DIR}/include")
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${COMP_ROOT_DIR}/include/sycl")
+  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${INTEL_LLVM_PATH}/include")
+  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${INTEL_LLVM_PATH}/include/sycl")
+  list(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${INTEL_LLVM_PATH}/bin")
+  list(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${INTEL_LLVM_PATH}/lib")
+  else()
+  message(FATAL_ERROR 
+  "INTEL_LLVM_PATH is not set, please set it to the root path of intel llvm sycl compiler")
+  endif()
 
 elseif(${SYCL_COMPILER} STREQUAL "OPENSYCL")
 
+  if(DEFINED ACPP_PATH)
   set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL_COMP_OPENSYCL")
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${COMP_ROOT_DIR}/include")
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${COMP_ROOT_DIR}/include/sycl")
+  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${ACPP_PATH}/include")
+  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${ACPP_PATH}/include/sycl")
+  list(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${ACPP_PATH}/bin")
+  list(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${ACPP_PATH}/lib")
+  else()
+  message(FATAL_ERROR 
+  "ACPP_PATH is not set, please set it to the root path of acpp (formely Hipsycl or Opensycl) sycl compiler")
+  endif()
 
 elseif(${SYCL_COMPILER} STREQUAL "OPENSYCL_CMAKE")
 

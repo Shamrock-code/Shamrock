@@ -2,28 +2,25 @@
 
 ## Buildbot utility
 ```
-usage: configure.py [-h] [--gen GEN] [--build BUILD] [--nocode] [--lib] [--tests] [--outdir OUTDIR] [--cxxpath CXXPATH] [--cxxcompiler CXXCOMPILER] [--compiler COMPILER] [--profile PROFILE]
-                    [--cppflags CPPFLAGS] [--cmakeargs CMAKEARGS]
+usage: configure.py [-h] [--compiler COMPILER] [--cxxbin CXXBIN] [--cxxpath CXXPATH] [--gen GEN] [--build BUILD] [--lib] [--tests]
+                    [--builddir BUILDDIR] [--profile PROFILE] [--cxxflags CXXFLAGS] [--cmakeargs CMAKEARGS]
 
-Configure utility for the code
+Configure utility for Shamrock
 
 options:
   -h, --help            show this help message and exit
-  --gen GEN             use NINJA build system instead of Make
-  --build BUILD         change the build type
-  --nocode              disable the build of the main executable
-  --lib                 build the lib instead of the executable
-  --tests               enable the build of the tests
-  --outdir OUTDIR       output directory
-  --cxxpath CXXPATH     select the compiler path
-  --cxxcompiler CXXCOMPILER
-                        select the compiler
-  --compiler COMPILER   id of the compiler
+  --compiler COMPILER   select the id of the compiler config
+  --cxxbin CXXBIN       override the executable chosen by --compiler
+  --cxxpath CXXPATH     select the compiler root path
+  --gen GEN             generator to use (make, ninja, ...)
+  --build BUILD         change the build type for shamrock
+  --lib                 build the lib instead of an executable (for python lib)
+  --tests               build also the tests
+  --builddir BUILDDIR   build directory chosen
   --profile PROFILE     select the compilation profile
-  --cppflags CPPFLAGS   c++ compilation flags
+  --cxxflags CXXFLAGS   additional c++ compilation flags
   --cmakeargs CMAKEARGS
-                        cmake configuration flags
-
+                        additional cmake configuration flags
 ```
 
 Essentially for each compiler we define several profiles, which holds corresponding compilation flags. 

@@ -47,14 +47,6 @@ option(SHAMROCK_USE_PCH "use precompiled headers" Off)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 
 
-set(Default_comp "${CMAKE_CXX_COMPILER}")
-
-list(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
-list(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
-
-
-
-
 ######################
 #checking compiler flag support 
 ######################

@@ -209,49 +209,46 @@ target_link_libraries(shamrock_lib PUBLIC shamunits)
 
 
 
-if("${BUILD_SIM}")
-
-    message("-- adding shamrock target")
+message("-- adding shamrock target")
 
 
-    if("${BUILD_PYLIB}")
-    pybind11_add_module(shamrock  )
-    target_link_libraries(shamrock PUBLIC pybind11::module)
-    else()
-    add_executable(shamrock src/main.cpp )
-    target_link_libraries(shamrock PUBLIC pybind11::embed)
-    endif()
-    
-    target_link_libraries(shamrock PUBLIC shamrock_lib)
-    target_link_libraries(shamrock PUBLIC shamalgs)
-    
-    
-    target_link_libraries(shamrock PUBLIC MPI::MPI_C)
-    target_link_libraries(shamrock PUBLIC fmt::fmt)
-    target_link_libraries(shamrock PUBLIC shamunits)
-
-    
-
-    if(SHAMROCK_USE_NVTX)
-        target_link_libraries(shamrock PUBLIC nvtx3-cpp)
-    endif()
-
-
-
-    if(SHAMROCK_USE_PCH)
-    target_precompile_headers(shamrock REUSE_FROM shamrock_lib)
-    endif()
-
-    
-
-
-    target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/src")
-    #target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/external")
-
-    #do lib build instead if building the pylib
-
-
+if("${BUILD_PYLIB}")
+pybind11_add_module(shamrock  )
+target_link_libraries(shamrock PUBLIC pybind11::module)
+else()
+add_executable(shamrock src/main.cpp )
+target_link_libraries(shamrock PUBLIC pybind11::embed)
 endif()
+
+target_link_libraries(shamrock PUBLIC shamrock_lib)
+target_link_libraries(shamrock PUBLIC shamalgs)
+
+
+target_link_libraries(shamrock PUBLIC MPI::MPI_C)
+target_link_libraries(shamrock PUBLIC fmt::fmt)
+target_link_libraries(shamrock PUBLIC shamunits)
+
+
+
+if(SHAMROCK_USE_NVTX)
+    target_link_libraries(shamrock PUBLIC nvtx3-cpp)
+endif()
+
+
+
+if(SHAMROCK_USE_PCH)
+target_precompile_headers(shamrock REUSE_FROM shamrock_lib)
+endif()
+
+
+
+
+target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/src")
+#target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/external")
+
+#do lib build instead if building the pylib
+
+
 
 
 if("${BUILD_TEST}")

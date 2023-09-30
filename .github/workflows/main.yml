@@ -104,9 +104,9 @@ jobs:
     uses: ./.github/workflows/shamrock-dpcpp.yml
   
 
-  #shamrock_linux_opensycl_macos:
+  #shamrock_linux_acpp_macos:
   #  needs: [pragma_check, copyright_check]
-  #  uses: ./.github/workflows/macos-opensycl.yml
+  #  uses: ./.github/workflows/macos-acpp.yml
   #  with:
   #    os: ${{ matrix.os }}
   #  strategy:
@@ -193,7 +193,7 @@ jobs:
 
     runs-on: [self-hosted, raw]
     
-    needs: [shamrock_linux_opensycl, shamrock_linux_dpcpp, make_documentation]
+    needs: [shamrock_linux_acpp, shamrock_linux_dpcpp, make_documentation]
 
     if: github.ref == 'refs/heads/main'
 
@@ -212,18 +212,18 @@ jobs:
       - name: 'Download coverage list'
         uses: actions/download-artifact@v3
         with:
-          name: code-coverage-list-opensycl_omp_debug
-          path: code-coverage-list-opensycl_omp_debug
+          name: code-coverage-list-acpp_omp_debug
+          path: code-coverage-list-acpp_omp_debug
 
       - name: 'Download coverage list'
         uses: actions/download-artifact@v3
         with:
-          name: code-coverage-report-opensycl_omp_debug
-          path: code-coverage-report-opensycl_omp_debug
+          name: code-coverage-report-acpp_omp_debug
+          path: code-coverage-report-acpp_omp_debug
 
       
       - name: 'Tar coverage'
-        run: tar -cvf coverage.tar.gz code-coverage-list-opensycl_omp_debug code-coverage-report-opensycl_omp_debug
+        run: tar -cvf coverage.tar.gz code-coverage-list-acpp_omp_debug code-coverage-report-acpp_omp_debug
 
 
       - name: ls local

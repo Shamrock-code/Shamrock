@@ -262,11 +262,13 @@ else:
         cpp_flags += profile_dpcpp[args.profile]["cxxflags"]
         cmake_cmd += " "+profile_dpcpp[args.profile]["cmakeflags"]
         cmake_cmd += " -DCMAKE_CXX_COMPILER="+comp_path
+        cmake_cmd += " -DSYCL_IMPLEMENTATION=IntelLLVM"
 
     elif args.compiler == "acpp":
         cpp_flags += profile_acpp[args.profile]["cxxflags"]
         cmake_cmd += " "+profile_acpp[args.profile]["cmakeflags"]
         cmake_cmd += " -DCMAKE_CXX_COMPILER="+comp_path
+        cmake_cmd += " -DSYCL_IMPLEMENTATION=ACPPDirect"
 
     #elif args.compiler == "acpp_cmake":
     #    cpp_flags += profile_acpp_cmake[args.profile]["cxxflags"]

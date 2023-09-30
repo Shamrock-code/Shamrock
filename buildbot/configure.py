@@ -288,6 +288,7 @@ elif args.build == "asan":
 
 
 
+cmake_cmd += " -DSHAMROCK_ENABLE_BACKEND=SYCL"
 
 
 if (args.lib):

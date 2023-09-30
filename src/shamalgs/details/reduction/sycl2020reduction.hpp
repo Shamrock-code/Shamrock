@@ -64,7 +64,7 @@ namespace shamalgs::reduction::details {
         return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
         #endif
 
-        #ifdef SYCL_COMP_OPENSYCL
+        #ifdef SYCL_COMP_ACPP
         return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
         #endif
     }

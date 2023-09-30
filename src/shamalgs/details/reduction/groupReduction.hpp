@@ -32,7 +32,7 @@ class KernelSliceReduceMax;
         sycl::maximum<> {}
 #endif
 
-#ifdef SYCL_COMP_OPENSYCL
+#ifdef SYCL_COMP_ACPP
 template<typename T = void>
 struct _tmp_max {
     HIPSYCL_UNIVERSAL_TARGET inline T operator()(const T &lhs, const T &rhs) const {

@@ -155,7 +155,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
-            --outdir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile omp
+            --builddir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile omp
   
       - name: compile Shamrock
         run: |
@@ -234,7 +234,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile omp_sanitizer
+            --builddir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile omp_sanitizer
   
       - name: compile Shamrock
         run: |
@@ -315,7 +315,7 @@ jobs:
         run: |
 
           python3 buildbot/configure.py --gen ninja --tests --build release \
-            --outdir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile generic
+            --builddir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile generic
   
       - name: compile Shamrock
         run: |
@@ -416,7 +416,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
-            --outdir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile cuda-sm70 \
+            --builddir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile cuda-sm70 \
             --cxxflags="--acpp-cuda-path=/home/docker/opt/cuda"
   
       - name: compile Shamrock
@@ -507,7 +507,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
-            --outdir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile hip-gfx906
+            --builddir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile hip-gfx906
   
       - name: compile Shamrock
         run: |
@@ -580,7 +580,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
-            --outdir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile cuda-nvcxx
+            --builddir build --cxxpath AdaptiveCpp_comp --compiler acpp --profile cuda-nvcxx
   
       - name: compile Shamrock
         run: |

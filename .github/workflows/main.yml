@@ -80,7 +80,7 @@ jobs:
 
 
   linux_acpp:
-    name: Build OpenSYCL
+    name: Build AdaptiveCpp
     needs: [pragma_check, copyright_check]
     uses: ./.github/workflows/linux-build-acpp.yml
 

@@ -10,7 +10,7 @@
 
 //#include <sycl/sycl.hpp>
 
-#ifdef SYCL_COMP_OPENSYCL
+#ifdef SYCL_COMP_ACPP
 #include <hipSYCL/sycl/libkernel/vec.hpp>
 #include <hipSYCL/sycl/types.hpp>
 

@@ -25,7 +25,7 @@ namespace shambase {
 
     #endif
 
-    #ifdef SYCL_COMP_OPENSYCL
+    #ifdef SYCL_COMP_ACPP
 
     namespace details{
         template<class T>

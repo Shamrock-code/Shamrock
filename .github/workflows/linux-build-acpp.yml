@@ -96,7 +96,7 @@ jobs:
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
-          name: AdaptiveCPP_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
+          name: AdaptiveCpp_compiler-clang-${{ matrix.clang }}-${{matrix.cuda}}-${{matrix.rocm}}
           path: acpp.tar  
 
 
@@ -141,5 +141,5 @@ jobs:
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
-          name: AdaptiveCPP_compiler-nvcxx--${{matrix.cuda}}-${{matrix.nvhpc}}
+          name: AdaptiveCpp_compiler-nvcxx--${{matrix.cuda}}-${{matrix.nvhpc}}
           path: acpp.tar  

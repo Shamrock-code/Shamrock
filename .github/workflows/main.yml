@@ -79,15 +79,15 @@ jobs:
 
 
 
-  linux_opensycl:
+  linux_acpp:
     name: Build OpenSYCL
     needs: [pragma_check, copyright_check]
-    uses: ./.github/workflows/linux-build-opensycl.yml
+    uses: ./.github/workflows/linux-build-acpp.yml
 
-  shamrock_linux_opensycl:
+  shamrock_linux_acpp:
     name: Shamrock Test
-    needs: [pragma_check, copyright_check,linux_opensycl]
-    uses: ./.github/workflows/shamrock-opensycl.yml
+    needs: [pragma_check, copyright_check,linux_acpp]
+    uses: ./.github/workflows/shamrock-acpp.yml
     
 
 
@@ -117,7 +117,7 @@ jobs:
   upload_doc:
 
     if: github.ref == 'refs/heads/main'
-    needs: [shamrock_linux_opensycl, shamrock_linux_dpcpp, make_documentation]
+    needs: [shamrock_linux_acpp, shamrock_linux_dpcpp, make_documentation]
 
     # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
     permissions:

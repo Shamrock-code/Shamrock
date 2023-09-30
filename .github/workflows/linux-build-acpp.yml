@@ -17,7 +17,7 @@ jobs:
     steps:
 
       - name: clone AdaptiveCPP
-        run: git clone --recurse-submodules https://github.com/AdaptiveCPP/AdaptiveCPP.git
+        run: git clone --recurse-submodules https://github.com/AdaptiveCpp/AdaptiveCpp.git
 
 
       # Open SYCL requirement

@@ -45,6 +45,24 @@ option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 ######################
 include(ShamConfigureCXX)
 
+include(ShamBuildAsan)
+include(ShamBuildCoverage)
+
+set(ValidShamBuildType "Debug" "Release" "ASAN" "COVERAGE")
+if(NOT CMAKE_BUILD_TYPE)
+    #set default build to release
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Cmake build type" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${ValidShamBuildType})
+endif()
+if(NOT "${CMAKE_BUILD_TYPE}" IN_LIST ValidShamBuildType)
+    message(FATAL_ERROR 
+        "The required build type in unknown -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}. "
+        "please use a build type in the following list (case-sensitive) "
+        "${ValidShamBuildType}")
+endif()
+message(STATUS "current build type : CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+
+
 ######################
 # Compiler selection
 ######################

@@ -280,6 +280,10 @@ if args.build == "release":
     cmake_cmd += " -DCMAKE_BUILD_TYPE=Release"
 elif args.build == "debug":
     cmake_cmd += " -DCMAKE_BUILD_TYPE=Debug"
+elif args.build == "coverage":
+    cmake_cmd += " -DCMAKE_BUILD_TYPE=COVERAGE"
+elif args.build == "asan":
+    cmake_cmd += " -DCMAKE_BUILD_TYPE=ASAN"
 
 
 

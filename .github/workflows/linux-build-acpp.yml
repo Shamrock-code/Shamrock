@@ -67,9 +67,9 @@ jobs:
       - name: install Ninja-build
         run: sudo apt install -y ninja-build
 
-      - name: configure AdaptiveCPP
+      - name: configure AdaptiveCpp
         run: |
-          cd AdaptiveCPP
+          cd AdaptiveCpp
           cmake -G Ninja \
             -DCMAKE_CXX_COMPILER=/usr/bin/clang++-${{matrix.clang}} \
             -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-${{matrix.clang}} \
@@ -78,20 +78,20 @@ jobs:
             -DWITH_LEVEL_ZERO_BACKEND=OFF \
             -DCUDA_TOOLKIT_ROOT_DIR=~/opt/cuda \
             -DROCM_PATH=/opt/rocm \
-            -DCMAKE_INSTALL_PREFIX=../AdaptiveCPP_comp .
+            -DCMAKE_INSTALL_PREFIX=../AdaptiveCpp_comp .
 
-      - name: compile & install AdaptiveCPP
+      - name: compile & install AdaptiveCpp
         run: |
-          cd AdaptiveCPP
+          cd AdaptiveCpp
           ninja install
 
       - name: cp cuda libs
         run: |
-          cp ~/opt/cuda/lib64/stubs/libcuda.so AdaptiveCPP_comp/lib/libcuda.so
-          cp ~/opt/cuda/lib64/stubs/libcuda.so AdaptiveCPP_comp/lib/libcuda.so.1
+          cp ~/opt/cuda/lib64/stubs/libcuda.so AdaptiveCpp_comp/lib/libcuda.so
+          cp ~/opt/cuda/lib64/stubs/libcuda.so AdaptiveCpp_comp/lib/libcuda.so.1
 
       - name: 'Tar acpp'
-        run: tar -cvf acpp.tar AdaptiveCPP_comp
+        run: tar -cvf acpp.tar AdaptiveCpp_comp
 
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3

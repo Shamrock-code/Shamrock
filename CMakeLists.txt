@@ -32,15 +32,8 @@ endif()
 project(Shamrock VERSION 2023.0)
 
 
-set(SHAMROCK_ENABLE_BACKEND "SYCL" CACHE STRING "Shamrock backend used")
-set_property(CACHE SHAMROCK_ENABLE_BACKEND PROPERTY STRINGS SYCL)
 
-
-
-
-######################
-#Project config
-######################
+option(SHAMROCK_WITH_MPI "use MPI libraries" On)
 option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
 option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
 option(SHAMROCK_USE_PCH "use precompiled headers" Off)
@@ -52,13 +45,20 @@ option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 ######################
 include(ShamConfigureCXX)
 
-
-
 ######################
 # Compiler selection
 ######################
-include(ShamConfigureSYCL)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_SYCL_FLAGS}")
+
+if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "SYCL")
+    include(ShamConfigureSYCL)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_SYCL_FLAGS}")
+else()
+    message(FATAL_ERROR
+        "You must select a Shamrock Backend "
+        "-DSHAMROCK_ENABLE_BACKEND=[SYCL]")
+endif()
+set(SHAMROCK_ENABLE_BACKEND "${SHAMROCK_ENABLE_BACKEND}" CACHE STRING "Shamrock backend used")
+
 
 
 enable_language(C)
@@ -82,9 +82,10 @@ endif()
 ######################
 # Add external libraries
 ######################
-include(ShamConfigureMPI)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
-
+if(SHAMROCK_WITH_MPI)
+    include(ShamConfigureMPI)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
+endif()
 
 set(PYBIND11_FINDPYTHON ON)
 add_subdirectory(external)

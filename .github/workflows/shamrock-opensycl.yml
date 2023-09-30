@@ -47,7 +47,7 @@ jobs:
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler opensycl --profile omp_coverage
+            --builddir opensycl_omp_debug --cxxpath OpenSYCL_comp --compiler acpp --profile omp_coverage
 
       - name: compile Shamrock
         run: |

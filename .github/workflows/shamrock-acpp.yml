@@ -88,11 +88,16 @@ jobs:
           cd acpp_omp_debug
           llvm-profdata-15 merge -sparse utests_* -o utests.profdata
 
-      - name: print coverage
+      - name: make coverage reports
         run: |
           cd acpp_omp_debug
           llvm-cov-15 report shamrock_test -instr-profile=utests.profdata > coverage_list.txt
           llvm-cov-15 show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov -Xdemangler c++filt -Xdemangler -n -ignore-filename-regex=".*\Tests.cpp$|.*\Tests.hpp$|.*\shamtest.cpp|.*\shamtest.hpp|.*\main_test.cpp|.*\aliases.hpp"
+      
+      - name: print coverage
+        run: |
+          cd acpp_omp_debug
+          llvm-cov-15 report shamrock_test -instr-profile=utests.profdata
 
       - name: Archive code coverage results 1
         uses: actions/upload-artifact@v3

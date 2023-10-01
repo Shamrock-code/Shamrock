@@ -92,7 +92,9 @@ jobs:
         run: |
           cd acpp_omp_debug
           llvm-cov-15 report shamrock_test -instr-profile=utests.profdata > coverage_list.txt
-          llvm-cov-15 show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov -Xdemangler c++filt -Xdemangler -n -ignore-filename-regex=".*\Tests.cpp$|.*\Tests.hpp$|.*\shamtest.cpp|.*\shamtest.hpp|.*\main_test.cpp|.*\aliases.hpp"
+          llvm-cov-15 show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov\
+              -Xdemangler c++filt -Xdemangler -n \
+              -ignore-filename-regex="external/*|.*\Tests.cpp$|.*\Tests.hpp$|.*\shamtest.cpp|.*\shamtest.hpp|.*\main_test.cpp|.*\aliases.hpp"
       
       - name: print coverage
         run: |

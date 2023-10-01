@@ -241,7 +241,7 @@ else:
 
 
 if args.interactive:
-    if args.compiler == "dpcpp":
+    if args.compiler == "intel_llvm":
         print((profile_dpcpp.keys()))
 
     elif args.compiler == "acpp":
@@ -258,7 +258,7 @@ cpp_flags = ""
 if not args.profile:
     print("WARNING : no profile were selected, you have to input the flag through 'cppflags'")
 else:
-    if args.compiler == "dpcpp":
+    if args.compiler == "intel_llvm":
         cpp_flags += profile_dpcpp[args.profile]["cxxflags"]
         cmake_cmd += " "+profile_dpcpp[args.profile]["cmakeflags"]
         cmake_cmd += " -DCMAKE_CXX_COMPILER="+comp_path

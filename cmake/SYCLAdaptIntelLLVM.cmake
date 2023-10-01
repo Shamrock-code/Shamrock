@@ -15,19 +15,19 @@ check_cxx_source_compiles("
       #else
       #error
       #endif"
-    SYCL_COMPILER_IS_DPCPP)
+    SYCL_COMPILER_IS_INTEL_LLVM)
 
-if(NOT SYCL_COMPILER_IS_DPCPP)
+if(NOT SYCL_COMPILER_IS_INTEL_LLVM)
     message(FATAL_ERROR
         "intel llvm should have sycl header and defines SYCL_IMPLEMENTATION_ONEAPI, this is not the case here")
 endif()
 
-set(SYCL_COMPILER "DPCPP")
+set(SYCL_COMPILER "INTEL_LLVM")
 
 set(SYCL2020_FEATURE_REDUCTION ON)
 
 if(DEFINED INTEL_LLVM_PATH)
-    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL_COMP_DPCPP -Wno-unknown-cuda-version")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL_COMP_INTEL_LLVM -Wno-unknown-cuda-version")
     set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${INTEL_LLVM_PATH}/include")
     set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${INTEL_LLVM_PATH}/include/sycl")
     list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${INTEL_LLVM_PATH}/bin")

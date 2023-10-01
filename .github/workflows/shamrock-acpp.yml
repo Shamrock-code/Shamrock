@@ -101,7 +101,8 @@ jobs:
       - name: print coverage
         run: |
           cd acpp_omp_debug
-          llvm-cov-15 report shamrock_test -instr-profile=utests.profdata
+          llvm-cov-15 report shamrock_test -instr-profile=utests.profdata \
+              -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp"\
 
       - name: Archive code coverage results 1
         uses: actions/upload-artifact@v3

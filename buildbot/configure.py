@@ -116,7 +116,7 @@ else:
 ######### 
 # defines all the build profiles
 #########
-intel_llvm_cmake_flag = "-DUSE_INTEL_LLVM=true -DINTEL_LLVM_PATH="+abs_compiler_root_dir
+intel_llvm_cmake_flag = "-DINTEL_LLVM_PATH="+abs_compiler_root_dir
 profile_dpcpp = {
     "bare" : {"cxxflags" : "-fsycl", "cmakeflags" : intel_llvm_cmake_flag},
     "native_cpu" : {"cxxflags" : "-fsycl -fsycl-targets=native_cpu", "cmakeflags" : intel_llvm_cmake_flag},

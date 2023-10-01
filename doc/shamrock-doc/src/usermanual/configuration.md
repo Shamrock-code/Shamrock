@@ -30,7 +30,7 @@ python buildbot/configure.py
     --gen ninja                     #to compile with ninja instead of make
     --build debug                   #to compile the code in debug mode
     --tests                         #compile also the test
-    --outdir build_hipsycl_debug    #directory where the build files will be held
+    --builddir build_hipsycl_debug    #directory where the build files will be held
     --cxxpath ../sycl_cpl/hipSYCL   #path to the cxx compiler
     --compiler hipsycl              #id of the compiler (hipsycl or dpcpp)
     --profile omp                   #selected profile

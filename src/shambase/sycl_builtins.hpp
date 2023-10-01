@@ -31,7 +31,7 @@ namespace shambase {
         std::enable_if_t<std::is_integral_v<T>,
                          int> = 0>
     i32 any(sycl::vec<T, n> v) {
-        #ifdef SYCL_COMP_DPCPP
+        #ifdef SYCL_COMP_INTEL_LLVM
             return sycl::any(v);
         #else
             return shambase::sum_accumulate(

@@ -37,7 +37,7 @@ namespace shamalgs::reduction::details {
         q.submit([&](sycl::handler &cgh) {
             sycl::accessor global_mem{buf_int, cgh, sycl::read_only};
 
-#ifdef SYCL_COMP_DPCPP
+#ifdef SYCL_COMP_INTEL_LLVM
             auto reduc = sycl::reduction(recov, cgh, op);
 #else
             sycl::accessor acc_rec{recov, cgh, sycl::write_only, sycl::no_init};
@@ -60,7 +60,7 @@ namespace shamalgs::reduction::details {
 
     template<class T>
     inline T SYCL2020<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        #ifdef SYCL_COMP_DPCPP
+        #ifdef SYCL_COMP_INTEL_LLVM
         return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
         #endif
 

@@ -378,7 +378,7 @@ namespace shamtest {
             s_out += R"(    "commit_hash" : ")" + git_commit_hash + "\",\n" ;
             s_out += R"(    "world_size" : ")" + std::to_string(instance::world_size) + "\",\n" ;
 
-            #if defined (SYCL_COMP_DPCPP)
+            #if defined (SYCL_COMP_INTEL_LLVM)
             s_out += R"(    "compiler" : "DPCPP",)" "\n" ;
             #elif defined (SYCL_COMP_HIPSYCL)
             s_out += R"(    "compiler" : "HipSYCL",)" "\n" ;

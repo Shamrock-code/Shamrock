@@ -23,7 +23,7 @@ class KernelSliceReduceMin;
 template<class T, u32 work_group_size>
 class KernelSliceReduceMax;
 
-#ifdef SYCL_COMP_DPCPP
+#ifdef SYCL_COMP_INTEL_LLVM
     #define SYCL_SUM_OP                                                                            \
         sycl::plus<> {}
     #define SYCL_MIN_OP                                                                            \

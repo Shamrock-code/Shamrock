@@ -91,7 +91,7 @@ namespace shamalgs::random {
     inline u8 next_obj(std::mt19937 &eng, std::uniform_real_distribution<f64> &distval) {
         return u8(distval(eng));
     }
-#ifdef SYCL_COMP_DPCPP
+#ifdef SYCL_COMP_INTEL_LLVM
     template<>
     inline f16 next_obj(std::mt19937 &eng, std::uniform_real_distribution<f64> &distval) {
         return f16(distval(eng));

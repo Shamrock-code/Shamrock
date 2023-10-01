@@ -33,7 +33,7 @@ using f64 = sycl::detail::dp_float;
 
 #endif
 
-#ifdef SYCL_COMP_DPCPP
+#ifdef SYCL_COMP_INTEL_LLVM
 #include <cstdint>
 #include <detail/generic_type_lists.hpp>
 #include <sycl/types.hpp>

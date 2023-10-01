@@ -1,10 +1,34 @@
 # Running on cluster
 
 # LLVM local install on cluster
+
+Make a shallow clone of llvm :
+```
+git clone --depth 1 https://github.com/llvm/llvm-project.git -b release/17.x
+cd llvm-project
+```
+
+```
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-17.0.1/llvm-project-17.0.1.src.tar.xz
+tar -xvf llvm-project-17.0.1.src.tar.xz
+cd llvm-project-17.0.1.src
+```
+
+configure it :
 ```
 mkdir build
 cd build
-cmake -DLLVM_ENABLE_PROJECTS=all -DCMAKE_INSTALL_PREFIX=...instal loc.../llvm-17.0.1-local -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
+cmake -DLLVM_ENABLE_PROJECTS=all -DCMAKE_INSTALL_PREFIX=...instal loc.../llvm-17.x-local -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
+```
+
+compile it : 
+```
+make -j install
+```
+
+
+```
+cmake -DLLVM_ENABLE_PROJECTS=clang -DCMAKE_INSTALL_PREFIX=/local/tdavidcl/llvm-17.x-local -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
 ```
 
 # CBP (AMD GPU)

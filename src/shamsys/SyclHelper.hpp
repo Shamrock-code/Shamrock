@@ -10,7 +10,9 @@
 
 //TODO remove this file
 
-#include "aliases.hpp"
+
+#include "shambase/type_aliases.hpp"
+#include "shambase/sycl_vec_aliases.hpp"
 #include <ostream>
 #include <random> 
 #include "shambase/sycl.hpp"

@@ -7,7 +7,9 @@
 // -------------------------------------------------------//
 
 #include "fallbackMemory.hpp"
-#include "aliases.hpp"
+
+#include "shambase/type_aliases.hpp"
+#include "shambase/sycl_vec_aliases.hpp"
 
 namespace shamalgs::memory::details {
 

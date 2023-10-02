@@ -8,7 +8,9 @@
 
 #pragma once
 
+
 #include "shambase/type_aliases.hpp"
+#include "shambase/sycl_vec_aliases.hpp"
 #include "shambase/SourceLocation.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"

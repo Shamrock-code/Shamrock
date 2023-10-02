@@ -8,7 +8,8 @@
 
 #pragma once 
 
-#include "aliases.hpp"
+
+#include "shambase/type_aliases.hpp"
 #include <chrono>
 #include <fstream>
 #include <string>

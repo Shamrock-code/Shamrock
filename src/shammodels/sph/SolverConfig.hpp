@@ -16,6 +16,8 @@
 #include "shamsys/legacy/log.hpp"
 #include <variant>
 
+#include "shambase/sycl_vec_aliases.hpp"
+
 namespace shammodels::sph {
     template<class Tvec, template<class> class SPHKernel>
     struct SolverConfig;

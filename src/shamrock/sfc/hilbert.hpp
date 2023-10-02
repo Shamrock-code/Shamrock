@@ -29,6 +29,9 @@
 #include "bmi.hpp"
 #include "shambase/sycl.hpp"
 
+#include "shambase/type_aliases.hpp"
+#include "shambase/sycl_vec_aliases.hpp"
+
 // modified from :
 // Programming the Hilbert curve
 // killing J., 2004, AIPC, 707, 381. doi:10.1063/1.1751381

@@ -114,7 +114,7 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_EXECUTABLE_BUILD")
 endif()
 
-include_directories(Before System external/plf_nanotimer)
+include_directories(external/plf_nanotimer)
 
 ######################
 # generate version.cpp

@@ -166,7 +166,7 @@ template<class T> void append_to_map(
 
         if (field.get_name() == key) {
 
-            logger::debug_ln("PyShamrockCTX","appending field",key)
+            logger::debug_ln("PyShamrockCTX","appending field",key);
             
             {
                 sycl::host_accessor acc {shambase::get_check_ref(field.get_buf())};

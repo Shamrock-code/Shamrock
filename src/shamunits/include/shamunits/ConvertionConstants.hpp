@@ -8,10 +8,7 @@
 
 #pragma once
 
-#include "shambase/Constants.hpp"
-#include "shambase/type_aliases.hpp"
-
-namespace shamrock {
+namespace shamunits {
 
     template<class T>
     struct ConvertionConstants {
@@ -33,4 +30,4 @@ namespace shamrock {
         static constexpr T K_degC_offset = 273.15;
     };
 
-} // namespace shamrock
+} // namespace shamunits

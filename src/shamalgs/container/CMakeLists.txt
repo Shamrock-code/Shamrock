@@ -1,7 +1,5 @@
 
 
-
-if("${BUILD_SIM}")
 target_sources(shamalgs
     PRIVATE
     ResizableBuffer.cpp
@@ -9,4 +7,3 @@ target_sources(shamalgs
     PUBLIC
         
     )
-endif()

@@ -23,7 +23,7 @@ class KernelSliceReduceMin;
 template<class T, u32 work_group_size>
 class KernelSliceReduceMax;
 
-#ifdef SYCL_COMP_DPCPP
+#ifdef SYCL_COMP_INTEL_LLVM
     #define SYCL_SUM_OP                                                                            \
         sycl::plus<> {}
     #define SYCL_MIN_OP                                                                            \
@@ -32,7 +32,7 @@ class KernelSliceReduceMax;
         sycl::maximum<> {}
 #endif
 
-#ifdef SYCL_COMP_OPENSYCL
+#ifdef SYCL_COMP_ACPP
 template<typename T = void>
 struct _tmp_max {
     HIPSYCL_UNIVERSAL_TARGET inline T operator()(const T &lhs, const T &rhs) const {

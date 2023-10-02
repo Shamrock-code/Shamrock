@@ -8,10 +8,9 @@
 
 #pragma once
 
-#include "shambase/exception.hpp"
-#include "shambase/floats.hpp"
 #include <stdexcept>
 #include <unordered_map>
+#include "details/utils.hpp"
 
 #define XMAC_UNITS                                                                                 \
     /*base units*/                                                                                 \
@@ -36,12 +35,12 @@
     X1(Weber, Wb)    /* (kg⋅m2⋅s−2⋅A−1) 	(V⋅s)*/                                       \
     X1(Tesla, T)     /* (kg⋅s−2⋅A−1) 	(Wb/m2)*/                                            \
     X1(Henry, H)     /* (kg⋅m2⋅s−2⋅A−2) 	(Wb/A)*/                                        \
-    X1(lumens, lm)   /* (cd⋅sr) 	(cd⋅sr)*/                                                     \
-    X1(lux, lx)      /* (cd⋅sr⋅m−2) 	(lm/m2)*/                                               \
+    X1(lumens, lm)   /* (cd.sr) 	(cd.sr)*/                                                         \
+    X1(lux, lx)      /* (cd.sr.m−2) 	(lm/m2)*/                                                   \
     X1(Bequerel, Bq) /* (s−1)*/                                                                  \
-    X1(Gray, Gy)     /* (m2⋅s−2) 	(J/kg)*/                                                     \
-    X1(Sievert, Sv)  /* (m2⋅s−2) 	(J/kg)*/                                                     \
-    X1(katal, kat)   /* (mol⋅s−1) */                                                           \
+    X1(Gray, Gy)     /* (m2.s−2) 	(J/kg)*/                                                       \
+    X1(Sievert, Sv)  /* (m2.s−2) 	(J/kg)*/                                                       \
+    X1(katal, kat)   /* (mol.s-1) */                                                               \
     /*relative units*/                                                                             \
     X1(minutes, mn)                                                                                \
     X1(hours, hr)                                                                                  \
@@ -52,8 +51,6 @@
     X1(parsec, pc)                                                                                 \
     X1(electron_volt, eV)                                                                          \
     X1(ergs, erg)
-
-
 
 #define XMAC_UNIT_PREFIX  \
     X(tera  ,T, 12)\
@@ -71,7 +68,8 @@
     X(pico  ,p, -12)\
     X(femto ,f, -15)                                                              
 
-namespace shamrock {
+
+namespace shamunits {
 
     enum UnitPrefix {
         #define X(longname, shortname, value) longname = value , shortname = value,
@@ -81,7 +79,7 @@ namespace shamrock {
 
     template<class T,UnitPrefix p>
     inline constexpr T get_prefix_val() {
-        return shambase::pow_constexpr_fast_inv<p, T>(10, 1e-1);
+        return details::pow_constexpr_fast_inv<p, T>(10, 1e-1);
     }
 
     static const std::unordered_map<std::string, UnitPrefix> map_name_to_unit_prefix{
@@ -117,7 +115,7 @@ namespace shamrock {
             return search->second;
         }
 
-        throw shambase::throw_with_loc<std::invalid_argument>("this unit prefix name is unknown");
+        throw std::invalid_argument("this unit prefix name is unknown");
         return None; // to silence a warning
     }
 
@@ -165,10 +163,10 @@ namespace shamrock {
                 return search->second;
             }
 
-            throw shambase::throw_with_loc<std::invalid_argument>("this unit name is unknown");
+            throw std::invalid_argument("this unit name is unknown");
             return s; // to silence a warning
         }
 
     } // namespace units
 
-} // namespace shamrock
+} // namespace shamunits

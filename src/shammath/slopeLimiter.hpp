@@ -37,9 +37,11 @@ namespace shammath {
     template<class T>
     inline T van_leer_slope(T f, T g) {
         T tmp = f * g;
-        tmp   = tmp + shambase::sycl_utils::g_sycl_abs(tmp);
-        T sm = f + g;
-        return tmp / (f + g + 1.e-9*sycl::sign(f));
+        if(tmp > 0){
+            return 2*tmp/(f+g);
+        }else{
+            return 0;
+        }
     }
 
 } // namespace shammath

@@ -10,10 +10,10 @@ DPC++ status :
 ![badge2](https://badgen.net/static/DPC++%2FCUDA/yes/green)
 ![badge2](https://badgen.net/static/DPC++%2FHIP:ROCM/yes/green)
 
-OpenSycl status :
-![badge2](https://badgen.net/static/OpenSYCL%2FOpenMP/yes/green)
-![badge2](https://badgen.net/static/OpenSYCL%2FROCM/yes/green)
-![badge2](https://badgen.net/static/OpenSYCL%2FCUDA/yes/green)
+AdaptiveCPP status :
+![badge2](https://badgen.net/static/ACPP%2FOpenMP/yes/green)
+![badge2](https://badgen.net/static/ACPP%2FROCM/yes/green)
+![badge2](https://badgen.net/static/ACPP%2FCUDA/yes/green)
 
 # Getting started
 

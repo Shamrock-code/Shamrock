@@ -21,7 +21,7 @@ namespace shammodels::zeus {
         
         using Tscal              = shambase::VecComponent<Tvec>;
 
-        Tscal eos_gamma = 5/3;
+        Tscal eos_gamma = 5./3.;
 
         Tscal grid_coord_to_pos_fact = 1;
 

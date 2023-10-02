@@ -70,7 +70,7 @@ model.resize_simulation_box(bmin,bmax)
 sdf = sarracen.read_phantom(ph_file)
 tuple_of_lists = (list(sdf['x']), list(sdf['y']), list(sdf['z']))
 list_of_tuples = [tuple(item) for item in zip(*tuple_of_lists)]
-model.push_particle(list_of_tuples, list(sdf['h']))
+model.push_particle(list_of_tuples, list(sdf['h']), list(sdf['u']))
 
 vol_b = (xM - xm)*(yM - ym)*(zM - zm)
 
@@ -85,7 +85,7 @@ model.set_value_in_a_box("uint","f64", 0 , bmin,bmax) # initialize fields: set u
 #rinj = 0.008909042924642563*2*2
 rinj = 0.01781818
 u_inj = 1
-model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj) # inject particles in the center
+#model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj) # inject particles in the center
 
 
 
@@ -121,7 +121,7 @@ model.set_eos_gamma(5/3)
 
 
 ev_f = "/home/ylapeyre/phantom_tests/sedov5/sedov01.ev"
-output_dir = "/home/ylapeyre/Shamrock_tests/sedov5/"
+output_dir = "/home/ylapeyre/Shamrock_tests/sedov5b/"
 ev_dic = {}
 with open(ev_f, 'r') as phantom_ev:
     # read the col names

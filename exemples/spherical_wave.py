@@ -1,20 +1,32 @@
 import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
+# needed for phantom
+import sarracen
+
+ph_dir = "/home/ylapeyre/phantom_tests/sedov5/"
+ph_file = ph_dir + "sedov_00000"
 
 gamma = 5./3.
 rho_g = 1
 target_tot_u = 1
 
-
 dr = 0.01 # number of part
-bmin = (-0.5,-0.5,-0.5)
-bmax = ( 0.5, 0.5, 0.5)
+bmin = (-0.49500000000000000 ,-0.49940798284902627,-0.48976186579314762)
+bmax = (0.49500000000000000 , 0.49363448015713002, 0.48976186579314762)
 
-pmass = -1
+pmass = 5.7511351536505855E-006
 
 
+""""
+Phantom units
+     Mass:  1.000E+00 g       Length:  1.000E+00 cm    Time:  1.000E+00 s
+  Density:  1.000E+00 g/cm^3  Energy:  1.000E+00 erg   En/m:  1.000E+00 erg/g
+ Velocity:  1.000E+00 cm/s    Bfield:  3.545E+00 G  opacity:  1.000E+00 cm^2/g
+        G:  6.672E-08              c:  2.998E+10       mu_0:  1.000E+00
+        a:  7.565E-15          kB/mH:  8.254E+07
 
+"""
 
 """ ctx = shamrock.Context()
 ctx.pdata_layout_new()
@@ -36,11 +48,11 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 
-cfg = model.gen_default_config()
+cfg = model.gen_default_config() #configuration of the solver: unit syst, art visc config, bundary config
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_boundary_periodic()
+cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)# cullen dennen 2010
+cfg.set_boundary_periodic() #or free
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -53,7 +65,12 @@ xm,ym,zm = bmin
 xM,yM,zM = bmax
 
 model.resize_simulation_box(bmin,bmax)
-model.add_cube_fcc_3d(dr, bmin,bmax)
+#model.add_cube_fcc_3d(dr, bmin,bmax)
+
+sdf = sarracen.read_phantom(ph_file)
+tuple_of_lists = (list(sdf['x']), list(sdf['y']), list(sdf['z']))
+list_of_tuples = [tuple(item) for item in zip(*tuple_of_lists)]
+model.push_particle(list_of_tuples, list(sdf['h']))
 
 vol_b = (xM - xm)*(yM - ym)*(zM - zm)
 
@@ -62,13 +79,13 @@ totmass = (rho_g*vol_b)
 
 pmass = model.total_mass_to_part_mass(totmass)
 
-model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
+model.set_value_in_a_box("uint","f64", 0 , bmin,bmax) # initialize fields: set u everywhere to 0
 
 #rinj = 0.008909042924642563*2
 #rinj = 0.008909042924642563*2*2
 rinj = 0.01781818
 u_inj = 1
-model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
+model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj) # inject particles in the center
 
 
 
@@ -103,8 +120,8 @@ model.set_eos_gamma(5/3)
 
 
 
-ev_f = "/home/ylapeyre/phantom_tests/sedov3/sedov_indno01.ev"
-output_dir = "/home/ylapeyre/Shamrock_tests/sedov3/"
+ev_f = "/home/ylapeyre/phantom_tests/sedov5/sedov01.ev"
+output_dir = "/home/ylapeyre/Shamrock_tests/sedov5/"
 ev_dic = {}
 with open(ev_f, 'r') as phantom_ev:
     # read the col names
@@ -146,11 +163,11 @@ current_dt = ev_dic['dt'][0]
 i = 0
 i_dump = 0
 #while t_sum < t_target:
-for next_dt in ev_dic['dt'][1:2]:
+for next_dt in ev_dic['dt'][1:]:
 
     print("step : t=",t_sum)
     
-    next_sh_dt = model.evolve(t_sum, current_dt, True, output_dir + "dump_"+str(i_dump)+".vtk", True)
+    next_sh_dt = model.evolve(t_sum, current_dt, True, output_dir + "dump_oui_"+str(i_dump)+".vtk", True)
 
     if i % 1 == 0:
         i_dump += 1
@@ -179,7 +196,7 @@ rho = pmass*(model.get_hfact()/hpart)**3
 P = (gamma-1) * rho *uint
 
 
-plt.style.use('custom_style.mplstyle')
+""" plt.style.use('custom_style.mplstyle')
 fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
 
 axs[0,0].scatter(r, vr,c = 'black',s=1,label = "v")
@@ -204,5 +221,5 @@ axs[0,1].set_xlim(0,0.55)
 axs[1,1].set_xlim(0,0.55)
 
 plt.tight_layout()
-plt.show()
+plt.show() """
 

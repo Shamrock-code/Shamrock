@@ -163,7 +163,7 @@ inline void post_insert_data(PatchScheduler &sched) {
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::push_particle(
-    std::vector<Tvec> &part_pos_insert, std::vector<Tscal> &part_hpart_insert) {
+    std::vector<Tvec> &part_pos_insert, std::vector<Tscal> &part_hpart_insert, std::vector<Tscal> &part_u_insert) {
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
@@ -179,11 +179,14 @@ void Model<Tvec, SPHKernel>::push_particle(
 
         std::vector<Tvec> vec_acc;
         std::vector<Tscal> hpart_acc;
+        std::vector<Tscal> u_acc;
         for (u32 i = 0; i < part_pos_insert.size(); i++) {
             Tvec r = part_pos_insert[i];
+            Tscal u = part_u_insert[i];
             if (patch_coord.contain_pos(r)) {
                 vec_acc.push_back(r);
                 hpart_acc.push_back(part_hpart_insert[i]);
+                u_acc.push_back(u);
             }
         }
 
@@ -218,6 +221,13 @@ void Model<Tvec, SPHKernel>::push_particle(
             f.override(buf, len);
         }
 
+        {
+            u32 len                 = u_acc.size();
+            PatchDataField<Tscal> &f = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
+            sycl::buffer<Tscal> buf(u_acc.data(), len);
+            f.override(buf, len);
+        }
+
         pdat.insert_elements(tmp);
 
         sched.check_patchdata_locality_corectness();
@@ -233,6 +243,7 @@ void Model<Tvec, SPHKernel>::push_particle(
         post_insert_data<Tvec>(sched);
     });
 }
+
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {

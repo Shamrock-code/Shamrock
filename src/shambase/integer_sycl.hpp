@@ -16,7 +16,7 @@ namespace shambase {
 
     
 
-    #ifdef SYCL_COMP_DPCPP
+    #ifdef SYCL_COMP_INTEL_LLVM
 
     template<class T>
     inline constexpr T sycl_clz(T a) noexcept{
@@ -25,7 +25,7 @@ namespace shambase {
 
     #endif
 
-    #ifdef SYCL_COMP_OPENSYCL
+    #ifdef SYCL_COMP_ACPP
 
     namespace details{
         template<class T>

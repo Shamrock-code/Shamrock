@@ -49,13 +49,13 @@ brew install boost
 </tr>
 </table>
 
-Clone the OpenSYCL repository: 
+Clone the AdaptiveCpp repository: 
 ```bash
-git clone --recurse-submodules https://github.com/OpenSYCL/OpenSYCL.git
-cd OpenSYCL
+git clone --recurse-submodules https://github.com/AdaptiveCpp/AdaptiveCpp.git
+cd AdaptiveCpp
 ```
 
-Configure OpenSYCL : 
+Configure AdaptiveCpp : 
 
 <table>
 <tr>
@@ -69,7 +69,7 @@ Configure OpenSYCL :
 cmake \
     -DCMAKE_CXX_COMPILER=/usr/bin/clang++-16 \
     -DCLANG_EXECUTABLE_PATH=/usr/bin/clang++-16 \
-    -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+    -DCMAKE_INSTALL_PREFIX=../AdaptiveCpp_comp .
 ```
 
 if your
@@ -83,23 +83,23 @@ OMP_ROOT=` brew list libomp |
 
 cmake \
     -DOpenMP_ROOT=$OMP_ROOT \
-    -DCMAKE_INSTALL_PREFIX=../OpenSYCL_comp .
+    -DCMAKE_INSTALL_PREFIX=../AdaptiveCpp_comp .
 ```
 </td>
 </tr>
 </table>
 
-Compile OpenSYCL : 
+Compile AdaptiveCpp : 
 
 ```bash
 make -j install
 ```
 
-now move out of OpenSYCL direcotry
+now move out of AdaptiveCpp direcotry
 ```sh
 cd ..
 ```
-, you should see a `OpenSYCL_comp` folder.
+, you should see a `AdaptiveCpp_comp` folder.
 
 ## Compile Shamrock
 
@@ -123,17 +123,17 @@ python3 buildbot/configure.py \
   --gen make \
   --build release \
   --tests \
-  --outdir build \
-  --cxxpath ../OpenSYCL_comp \
-  --compiler opensycl
+  --builddir build \
+  --cxxpath ../AdaptiveCpp_comp \
+  --compiler acpp
 ```
 
 Here we tell the configure utility :
 - `--gen make`, to use `make` for project generation (alternatively you can use `ninja` if it is installed it may reduce the build time significately). 
 - `--build release` tells the utility to compile an optimized version. 
-- `--outdir build` mean that the build directory will be `build`
-- `--cxxpath ../OpenSYCL_comp` tells the path to the used compiler (opensycl here)
-- `--compiler opensycl` tells the code that OpenSYCL is used.
+- `--builddir build` mean that the build directory will be `build`
+- `--cxxpath ../AdaptiveCpp_comp` tells the path to the used compiler (AdaptiveCpp here)
+- `--compiler acpp` tells the code that OpenSYCL is used.
 
 Move into the build directory and compile the code : 
 

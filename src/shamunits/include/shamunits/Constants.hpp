@@ -8,36 +8,33 @@
 
 #pragma once
 
-#include "shambase/Constants.hpp"
-#include "shambase/exception.hpp"
-#include "shambase/type_aliases.hpp"
-#include "shamrock/physics/units/ConvertionConstants.hpp"
-#include "shamrock/physics/units/Names.hpp"
-#include "shamrock/physics/units/UnitSystem.hpp"
+#include "ConvertionConstants.hpp"
+#include "Names.hpp"
+#include "UnitSystem.hpp"
 #include <stdexcept>
+#include "details/utils.hpp"
 
 #define addconstant(name)                                                                          \
-    template<i32 power = 1>                                                                        \
+    template<int power = 1>                                                                        \
     inline constexpr T name()
-#define Uget(unitname, mult_pow) units.template get<None,units::unitname, (mult_pow)*power>()
-#define Cget(constant_name, mult_pow) shambase::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name,1/constant_name)
+#define Uget(unitname, mult_pow) units.template get<None, units::unitname, (mult_pow)*power>()
+#define Cget(constant_name, mult_pow)                                                              \
+    details::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name, 1 / constant_name)
 
-namespace shamrock {
+namespace shamunits {
 
     template<class T>
-    struct DimlessConstants {
-
-        using Math = shambase::Constants<T>;
-
-        static constexpr T fine_structure        = 0.0072973525693;
-        static constexpr T proton_electron_ratio = 1836.1526734311;
-        static constexpr T electron_proton_ratio = 1 / proton_electron_ratio;
-    };
+    constexpr T pi = 3.141592653589793116;
+    template<class T>
+    constexpr T fine_structure = 0.0072973525693;
+    template<class T>
+    constexpr T proton_electron_ratio = 1836.1526734311;
+    template<class T>
+    constexpr T electron_proton_ratio = 1 / proton_electron_ratio<T>;
 
     template<class T>
     struct Constants {
 
-        using Dimensionless = DimlessConstants<T>;
         using Conv = ConvertionConstants<T>;
 
         struct Si {
@@ -52,33 +49,29 @@ namespace shamrock {
             static constexpr T Kcd         = 683;             // (lm.W-1)
 
             // other constants in si units
-            static constexpr T G         = 6.6743015e-11;      // (N.m2.kg-2)
-            static constexpr T hbar      = 1.054571817e-34;    // (J.s-1)
-            static constexpr T mu_0      = 1.2566370621219e-6; //
-            static constexpr T Z_0       = mu_0 * c;           //
-            static constexpr T epsilon_0 = 1 / (Z_0 * c);      //
-            static constexpr T ke        = 1 / (4 * Dimensionless::Math::pi * epsilon_0); //
+            static constexpr T G         = 6.6743015e-11;               // (N.m2.kg-2)
+            static constexpr T hbar      = 1.054571817e-34;             // (J.s-1)
+            static constexpr T mu_0      = 1.2566370621219e-6;          //
+            static constexpr T Z_0       = mu_0 * c;                    //
+            static constexpr T epsilon_0 = 1 / (Z_0 * c);               //
+            static constexpr T ke        = 1 / (4 * pi<T> * epsilon_0); //
 
             static constexpr T hour = Conv::hr_to_s; //(s)
-            static constexpr T day = Conv::dy_to_s; //(s)
+            static constexpr T day  = Conv::dy_to_s; //(s)
             static constexpr T year = Conv::yr_to_s; //(s)
 
-            static constexpr T astronomical_unit = Conv::au_to_m; //(m)
-            static constexpr T light_year = Conv::ly_to_m; //(m)
-            static constexpr T parsec = Conv::pc_to_m; //(m)
-            static constexpr T planck_lenght = 1.61625518e-35; //(m)
-            
-            static constexpr T proton_mass = 1.67262192e-27; //(kg)
-            static constexpr T electron_mass =
-                proton_mass * Dimensionless::electron_proton_ratio; //(kg)
-            static constexpr T earth_mass   = 5.9722e24;            //(kg)
-            static constexpr T jupiter_mass = 1.898e27;             //(kg)
-            static constexpr T sol_mass     = 1.98847e30;           //(kg)
-            static constexpr T planck_mass  = 2.17643424e-8;        //(kg)
+            static constexpr T astronomical_unit = Conv::au_to_m;  //(m)
+            static constexpr T light_year        = Conv::ly_to_m;  //(m)
+            static constexpr T parsec            = Conv::pc_to_m;  //(m)
+            static constexpr T planck_lenght     = 1.61625518e-35; //(m)
 
-            
+            static constexpr T proton_mass   = 1.67262192e-27;                         //(kg)
+            static constexpr T electron_mass = proton_mass * electron_proton_ratio<T>; //(kg)
+            static constexpr T earth_mass    = 5.9722e24;                              //(kg)
+            static constexpr T jupiter_mass  = 1.898e27;                               //(kg)
+            static constexpr T sol_mass      = 1.98847e30;                             //(kg)
+            static constexpr T planck_mass   = 2.17643424e-8;                          //(kg)
         };
-
 
         const UnitSystem<T> units;
         explicit Constants(const UnitSystem<T> units) : units(units) {}
@@ -106,7 +99,7 @@ namespace shamrock {
         // clang-format on
     };
 
-} // namespace shamrock
+} // namespace shamunits
 
 #undef Uget
 #undef addconstant

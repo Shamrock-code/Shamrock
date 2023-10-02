@@ -74,9 +74,10 @@ namespace shammodels::zeus {
                     sycl::host_accessor cell_min{buf_cell_min, sycl::read_only};
                     sycl::host_accessor cell_max{buf_cell_max, sycl::read_only};
 
+                    Tscal scale_factor = solver.solver_config.grid_coord_to_pos_fact;
                     for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
-                        Tvec block_min  = cell_min[i].template convert<Tscal>();
-                        Tvec block_max  = cell_max[i].template convert<Tscal>();
+                        Tvec block_min  = cell_min[i].template convert<Tscal>()*scale_factor;
+                        Tvec block_max  = cell_max[i].template convert<Tscal>()*scale_factor;
                         Tvec delta_cell = (block_max - block_min) / Block::side_size;
 
                         Block::for_each_cell_in_block(delta_cell, [&](u32 lid, Tvec delta) {
@@ -87,6 +88,13 @@ namespace shammodels::zeus {
                 }
             });
         }
+
+        inline std::pair<Tvec,Tvec> get_cell_coords(std::pair<TgridVec,TgridVec> block_coords, u32 lid){
+            using Block = typename Solver::Config::AMRBlock;
+            return Block::utils_get_cell_coords(block_coords,lid);
+        }
+
     };
 
 } // namespace shammodels::zeus
+

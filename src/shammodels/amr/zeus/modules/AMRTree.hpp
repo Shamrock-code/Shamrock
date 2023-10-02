@@ -33,6 +33,7 @@ namespace shammodels::zeus::modules {
 
         void build_trees();
         void build_neigh_cache();
+        void correct_bounding_box();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

@@ -13,10 +13,10 @@
 
 enum SYCLImplementation { OPENSYCL, DPCPP, UNKNOWN };
 
-#ifdef SYCL_COMP_OPENSYCL
+#ifdef SYCL_COMP_ACPP
 constexpr SYCLImplementation sycl_implementation = OPENSYCL;
 #else
-    #ifdef SYCL_COMP_DPCPP
+    #ifdef SYCL_COMP_INTEL_LLVM
 constexpr SYCLImplementation sycl_implementation = DPCPP;
     #else
 constexpr SYCLImplementation sycl_implementation = UNKNOWN;

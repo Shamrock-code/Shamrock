@@ -32,8 +32,6 @@ constexpr SYCLImplementation sycl_implementation = UNKNOWN;
 
 namespace sham::details {
 
-    static constexpr bool multiple_device_support = false;
-
     struct DeviceStreamNative {
         sycl::queue &queue_obj;
     };
@@ -97,7 +95,12 @@ namespace sham::details {
 
     } // namespace handle
 
-    inline void backend_initialize() {  }
+    inline void backend_initialize(int argc, char *argv[]) {
+
+        
+
+
+    }
 
     inline void backend_finalize() { 
         handle::device_handle.reset();

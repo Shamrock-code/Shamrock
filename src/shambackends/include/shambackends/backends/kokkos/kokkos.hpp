@@ -10,6 +10,8 @@
 
 #include "check_backend.hpp"
 
+#include "aliases/basetypes.hpp"
+
 namespace sham::details {
 
  static constexpr bool multiple_device_support = false;
@@ -25,12 +27,12 @@ namespace sham::details {
     struct DeviceContextNative {
         
 
-        inline DeviceStreamNative get_stream(u32 i = 0) { return DeviceStreamNative{queue_obj}; }
+        inline DeviceStreamNative get_stream(u32 i = 0) { return DeviceStreamNative{}; }
     };
 
     struct HostContextNative {
         
-        inline HostStreamNative get_stream(u32 i = 0) { return HostStreamNative{queue_obj}; }
+        inline HostStreamNative get_stream(u32 i = 0) { return HostStreamNative{}; }
     };
 
     namespace handle {
@@ -42,7 +44,7 @@ namespace sham::details {
                 throw std::invalid_argument("The sycl backend does not support multiple device, "
                                             "please call get_device only with i=0");
             }
-            return DeviceContextNative{*compute_device, *device_handle};
+            return DeviceContextNative{};
         }
 
         inline HostContextNative get_host(u32 i = 0) {
@@ -50,13 +52,20 @@ namespace sham::details {
                 throw std::invalid_argument("The sycl backend does not support multiple host, "
                                             "please call get_host only with i=0");
             }
-            return HostContextNative{*host_device, *host_handle};
+            return HostContextNative{};
         }
 
     } // namespace handle
 
-    void initialize_backend() {}
+    inline void backend_initialize(int argc, char *argv[]) {
 
-    void finalize_backend() {}
+        
+
+
+    }
+
+    inline void backend_finalize() { 
+        
+    }
 
 } // namespace sham::details

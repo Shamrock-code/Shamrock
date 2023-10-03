@@ -17,7 +17,6 @@
 #endif
 
 namespace sham {
-    static constexpr bool multiple_device_support = details::multiple_device_support;
 
     struct DeviceStream {
         using InternalHndl = details::DeviceStreamNative;
@@ -64,7 +63,7 @@ namespace sham {
     inline HostContext get_host(u32 i = 0) { return details::handle::get_host(i); }
 
     
-    inline void backend_initialize() { details::backend_initialize(); }
+    inline void backend_initialize(int argc, char *argv[]) { details::backend_initialize(argc, argv); }
 
     inline void backend_finalize() { details::backend_finalize(); }
 

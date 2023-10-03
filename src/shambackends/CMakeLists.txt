@@ -25,9 +25,15 @@ if(${SHAMBACKENDS_USE} STREQUAL "SYCL")
     message(STATUS "adding sycl backend")
     include(ShamConfigureSYCL)
     target_compile_definitions(shambackends INTERFACE "SHAMBACKENDS_USE_SYCL")
+    
+
+    set(SHAMBACKEND_CXX_FLAGS  "${SHAM_CXX_SYCL_FLAGS}" CACHE INTERNAL "cxx flags to append")
 elseif(${SHAMBACKENDS_USE} STREQUAL "KOKKOS")
     message(STATUS "adding kokkos backend")
     target_link_libraries(shambackends INTERFACE Kokkos::kokkos)
     target_compile_definitions(shambackends INTERFACE "SHAMBACKENDS_USE_KOKKOS")
+
+
+    set(SHAMBACKEND_CXX_FLAGS  "" CACHE INTERNAL "cxx flags to append")
 endif()
 

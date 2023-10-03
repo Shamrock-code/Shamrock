@@ -94,6 +94,8 @@ endif()
 add_subdirectory(src/shamunits)
 add_subdirectory(src/shambackends)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAMBACKEND_CXX_FLAGS}")
+
 if(SHAMROCK_WITH_MPI)
     include(ShamConfigureMPI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")

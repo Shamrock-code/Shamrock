@@ -13,7 +13,6 @@
 #include "aliases/basetypes.hpp"
 #include "aliases/half.hpp"
 #include "aliases/vec.hpp"
-#include <device.hpp>
 #include <stdexcept>
 #include <sycl/sycl.hpp>
 #include <vector>

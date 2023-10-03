@@ -1,0 +1,33 @@
+#ignore utility directories
+.cache
+.vscode
+__pycache__
+
+#*.sycl
+
+#compile/build/test folders
+build_*
+build
+
+test_pipeline
+test_res_*
+tmp.json
+scripts
+
+#ignore version.cpp generated file
+version.cpp
+
+#Tex
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.toc
+report.tex
+
+.DS_Store
+
+shamrock.egg-info
+*.so

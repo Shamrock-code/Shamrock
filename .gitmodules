@@ -11,3 +11,6 @@
 [submodule "external/NVTX"]
 	path = external/NVTX
 	url = git@github.com:Shamrock-code/NVTX.git
+[submodule "src/shambackends/external/kokkos"]
+	path = src/shambackends/external/kokkos
+	url = https://github.com/kokkos/kokkos.git

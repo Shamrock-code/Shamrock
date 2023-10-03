@@ -61,35 +61,13 @@ namespace sham::details {
         inline std::unique_ptr<sycl::queue> device_handle;
         inline std::unique_ptr<sycl::queue> host_handle;
 
-        inline DeviceContextNative get_device(u32 i = 0) {
-            if (i != 0) {
-                throw std::invalid_argument("The sycl backend does not support multiple device, "
-                                            "please call get_device only with i=0");
-            }
+        inline DeviceContextNative get_device() {
+
             return DeviceContextNative{*compute_device, *device_handle};
         }
 
-        inline HostContextNative get_host(u32 i = 0) {
-            if (i != 0) {
-                throw std::invalid_argument("The sycl backend does not support multiple host, "
-                                            "please call get_host only with i=0");
-            }
-            return HostContextNative{*host_device, *host_handle};
-        }
+        inline HostContextNative get_host() {
 
-        inline DeviceContextNative get_device_stream(u32 i = 0) {
-            if (i != 0) {
-                throw std::invalid_argument("The sycl backend does not support multiple device, "
-                                            "please call get_device only with i=0");
-            }
-            return DeviceContextNative{*compute_device, *device_handle};
-        }
-
-        inline HostContextNative get_host_stream(u32 i = 0) {
-            if (i != 0) {
-                throw std::invalid_argument("The sycl backend does not support multiple host, "
-                                            "please call get_host only with i=0");
-            }
             return HostContextNative{*host_device, *host_handle};
         }
 

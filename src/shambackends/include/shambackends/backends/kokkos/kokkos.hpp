@@ -39,19 +39,11 @@ namespace sham::details {
 
 
 
-        inline DeviceContextNative get_device(u32 i = 0) {
-            if (i != 0) {
-                throw std::invalid_argument("The sycl backend does not support multiple device, "
-                                            "please call get_device only with i=0");
-            }
+        inline DeviceContextNative get_device() {
             return DeviceContextNative{};
         }
 
-        inline HostContextNative get_host(u32 i = 0) {
-            if (i != 0) {
-                throw std::invalid_argument("The sycl backend does not support multiple host, "
-                                            "please call get_host only with i=0");
-            }
+        inline HostContextNative get_host() {
             return HostContextNative{};
         }
 

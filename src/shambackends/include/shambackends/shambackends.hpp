@@ -58,9 +58,9 @@ namespace sham {
         inline HostStream get_stream(u32 i = 0) { return hndl.get_stream(i); }
     };
 
-    inline DeviceContext get_device(u32 i = 0) { return details::handle::get_device(i); }
+    inline DeviceContext get_device() { return details::handle::get_device(); }
 
-    inline HostContext get_host(u32 i = 0) { return details::handle::get_host(i); }
+    inline HostContext get_host() { return details::handle::get_host(); }
 
     
     inline void backend_initialize(int argc, char *argv[]) { details::backend_initialize(argc, argv); }

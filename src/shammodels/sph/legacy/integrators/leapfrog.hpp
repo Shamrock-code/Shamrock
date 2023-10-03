@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shamsys/legacy/log.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shamrock/legacy/utils/syclreduction.hpp"
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"

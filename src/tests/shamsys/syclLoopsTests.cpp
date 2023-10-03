@@ -11,7 +11,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/sycl_utils.hpp"
 #include "shambase/stacktrace.hpp"
 #include <vector>

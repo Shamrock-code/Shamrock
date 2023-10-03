@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include <array>
 
 namespace shammath {

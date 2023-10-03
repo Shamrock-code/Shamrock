@@ -13,7 +13,7 @@
 #include "shamalgs/atomic/DynamicIdGenerator.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambase/integer.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 namespace shamalgs::numeric::details {
 

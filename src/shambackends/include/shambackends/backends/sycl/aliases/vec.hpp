@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "../check_backend.hpp"
+
 #include "basetypes.hpp"
 #include "half.hpp"
 

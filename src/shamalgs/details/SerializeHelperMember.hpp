@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shambase/memory.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/type_aliases.hpp"
 #include <memory>
 #include <type_traits>

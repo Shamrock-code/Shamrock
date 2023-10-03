@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shamalgs/memory.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"

@@ -12,7 +12,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/integer.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/type_traits.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "DigitBinner.hpp"

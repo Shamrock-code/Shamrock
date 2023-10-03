@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shamalgs/memory.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 
 namespace shamalgs::reduction::details {

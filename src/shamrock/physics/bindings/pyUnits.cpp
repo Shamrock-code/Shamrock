@@ -13,7 +13,7 @@
 #include <shamunits/UnitSystem.hpp>
 #include <memory>
 #include <pybind11/cast.h>
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 
 Register_pymod(pyunits_init) {

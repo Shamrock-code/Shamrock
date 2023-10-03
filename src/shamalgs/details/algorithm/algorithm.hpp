@@ -23,7 +23,7 @@
 #include "shambase/type_aliases.hpp"
 #include "shambase/sycl_vec_aliases.hpp"
 
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 /**
  * @brief namespace to store algorithms implemented by shamalgs

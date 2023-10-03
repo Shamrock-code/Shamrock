@@ -15,7 +15,7 @@
 #include "shamalgs/random.hpp"
 #include "shambase/Constants.hpp"
 #include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 

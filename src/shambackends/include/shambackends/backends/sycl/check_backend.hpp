@@ -8,20 +8,6 @@
 
 #pragma once
 
-#include "aliases.hpp"
-#include <shambackends/backends/sycl/sycl.hpp>
-
-namespace shamalgs::memory::details {
-
-    template<class T>
-    struct AvoidCopy{
-
-        static T extract_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx);
-
-    };
-    
-
-    
-
-
-}
+#ifndef SHAMBACKENDS_USE_SYCL
+#error You have included a file belonging to the sycl backend, but you are not compiling with the sycl backend
+#endif

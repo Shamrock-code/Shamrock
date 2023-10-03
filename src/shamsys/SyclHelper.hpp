@@ -15,7 +15,7 @@
 #include "shambase/sycl_vec_aliases.hpp"
 #include <ostream>
 #include <random> 
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 
 

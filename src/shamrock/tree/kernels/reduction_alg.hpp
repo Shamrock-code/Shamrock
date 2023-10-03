@@ -13,7 +13,7 @@
 
 #include <memory>
 #include <vector>
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 
 template<class u_morton>

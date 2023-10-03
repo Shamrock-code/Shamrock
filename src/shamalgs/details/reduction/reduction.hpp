@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"

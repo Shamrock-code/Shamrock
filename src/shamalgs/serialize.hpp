@@ -12,7 +12,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/type_aliases.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <memory>

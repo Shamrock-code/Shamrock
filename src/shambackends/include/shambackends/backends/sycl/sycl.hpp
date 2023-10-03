@@ -8,8 +8,12 @@
 
 #pragma once
 
-#include "type_aliases.hpp"
+#include "check_backend.hpp"
+
 #include <sycl/sycl.hpp>
+#include "aliases/basetypes.hpp"
+#include "aliases/half.hpp"
+#include "aliases/vec.hpp"
 
 enum SYCLImplementation { OPENSYCL, DPCPP, UNKNOWN };
 

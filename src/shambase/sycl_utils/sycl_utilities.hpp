@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/type_traits.hpp"
 #include "shambase/vectors.hpp"
 #include "vectorProperties.hpp"

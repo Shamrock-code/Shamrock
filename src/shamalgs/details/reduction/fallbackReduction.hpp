@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 
 namespace shamalgs::reduction::details {

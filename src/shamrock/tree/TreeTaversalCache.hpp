@@ -10,7 +10,7 @@
 
 #include "shamalgs/numeric.hpp"
 #include "shambase/DistributedData.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 

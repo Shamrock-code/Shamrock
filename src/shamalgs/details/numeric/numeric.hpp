@@ -9,7 +9,7 @@
 #pragma once
 
 #include "aliases.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 /**
  * @brief namespace containing the numeric algorithms of shamalgs

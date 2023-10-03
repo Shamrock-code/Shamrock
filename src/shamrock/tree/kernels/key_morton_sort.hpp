@@ -11,7 +11,7 @@
 #include "aliases.hpp"
 #include "flags.hpp"
 #include <memory>
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 
 enum SortImplType{

@@ -10,7 +10,7 @@
 
 #include "aliases.hpp"
 #include "shamrock/math/tensors.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 //%Impl status : Good
 

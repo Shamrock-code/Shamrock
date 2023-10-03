@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shambase/DistributedData.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shammath/AABB.hpp"
 
 namespace shammodels::zeus {

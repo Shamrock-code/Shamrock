@@ -25,7 +25,7 @@
 #include "shambase/integer_sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <type_traits>
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 namespace shamrock::sfc {
 

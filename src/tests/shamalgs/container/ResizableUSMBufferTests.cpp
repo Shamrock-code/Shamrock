@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/container/ResizableUSMBuffer.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "shamalgs/numeric.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shamrock/tree/RadixTree.hpp"
 
 namespace shamrock::tree {

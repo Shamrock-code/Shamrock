@@ -10,7 +10,7 @@
 
 //%Impl status : Good
 
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 namespace shamrock::sph {
 
     template<class flt>

@@ -16,7 +16,7 @@
  */
 
 #include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 /**
  * @brief Helper class to build morton codes

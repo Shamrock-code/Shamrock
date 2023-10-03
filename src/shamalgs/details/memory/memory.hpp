@@ -12,7 +12,7 @@
 #include "shambase/type_aliases.hpp"
 #include "shambase/sycl_vec_aliases.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"

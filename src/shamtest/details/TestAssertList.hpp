@@ -14,7 +14,7 @@
 
 #include "TestAssert.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl.hpp"
+#include <shambackends/backends/sycl/sycl.hpp>
 
 namespace shamtest::details {
     struct TestAssertList {

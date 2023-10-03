@@ -67,15 +67,6 @@ message(STATUS "current build type : CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 # Compiler selection
 ######################
 
-if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "SYCL")
-    include(ShamConfigureSYCL)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_SYCL_FLAGS}")
-else()
-    message(FATAL_ERROR
-        "You must select a Shamrock Backend "
-        "-DSHAMROCK_ENABLE_BACKEND=[SYCL]")
-endif()
-set(SHAMROCK_ENABLE_BACKEND "${SHAMROCK_ENABLE_BACKEND}" CACHE STRING "Shamrock backend used")
 
 
 

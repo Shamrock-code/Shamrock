@@ -17,11 +17,13 @@ if((NOT ${SHAMBACKENDS_USE} IN_LIST KNOWN_SHAMBACKENDS_USE) OR (NOT (DEFINED SHA
     "No backends were selected for ShamBackends please select one "
     "-DSHAMBACKENDS_USE=[SYCL;KOKKOS]")
 endif()
+set(SHAMBACKENDS_USE "${SHAMBACKENDS_USE}" CACHE STRING "Shamrock backend used")
 
 add_subdirectory(external)
 
 if(${SHAMBACKENDS_USE} STREQUAL "SYCL")
     message(STATUS "adding sycl backend")
+    include(ShamConfigureSYCL)
     target_compile_definitions(shambackends INTERFACE "SHAMBACKENDS_USE_SYCL")
 elseif(${SHAMBACKENDS_USE} STREQUAL "KOKKOS")
     message(STATUS "adding kokkos backend")
@@ -29,4 +31,3 @@ elseif(${SHAMBACKENDS_USE} STREQUAL "KOKKOS")
     target_compile_definitions(shambackends INTERFACE "SHAMBACKENDS_USE_KOKKOS")
 endif()
 
-set(SHAMBACKENDS_USE "${SHAMBACKENDS_USE}" CACHE STRING "Variable saying which backend is in use")

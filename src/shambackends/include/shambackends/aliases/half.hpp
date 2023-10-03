@@ -8,4 +8,7 @@
 
 #pragma once
 
-#include <shambackends/aliases/vec.hpp>
+
+#ifdef SHAMBACKENDS_USE_SYCL
+#include <shambackends/backends/sycl/aliases/half.hpp>
+#endif

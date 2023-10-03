@@ -8,4 +8,14 @@
 
 #pragma once
 
-#include "DeviceQueue.hpp"
+#include "check_backend.hpp"
+
+#include "sycl.hpp"
+
+namespace sham::details {
+
+    struct DeviceContextNative {
+        sycl::device device_obj;
+    };
+
+} // namespace sham::details

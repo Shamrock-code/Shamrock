@@ -8,4 +8,6 @@
 
 #pragma once
 
-#include "DeviceQueue.hpp"
+#ifndef SHAMBACKENDS_USE_KOKKOS
+#error You have included a file belonging to the Kokkos backend, but you are not compiling with the Kokkos backend
+#endif

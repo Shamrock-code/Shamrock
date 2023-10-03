@@ -8,6 +8,18 @@
 
 #pragma once
 
-#ifndef SHAMBACKENDS_USE_SYCL
-#error You have included a file belonging to the sycl backend, but you are not compiling with the sycl backend
+#include "shambackends/backends/sycl/buffer.hpp"
+#include <utility>
+#ifdef SHAMBACKENDS_USE_SYCL
+    #include <shambackends/backends/sycl/sycl.hpp>
 #endif
+#ifdef SHAMBACKENDS_USE_KOKKOS
+    #include <shambackends/backends/kokkos/kokkos.hpp>
+#endif
+
+namespace sham {
+
+    template<class T>
+    using buffer = details::buffer<T>;
+
+}

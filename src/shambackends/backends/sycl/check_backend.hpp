@@ -8,10 +8,6 @@
 
 #pragma once
 
-#ifdef SHAMBACKENDS_USE_SYCL
-#include <shambackends/backends/sycl/aliases/basetypes.hpp>
-#endif
-
-#ifdef SHAMBACKENDS_USE_KOKKOS
-#include <shambackends/backends/kokkos/aliases/basetypes.hpp>
+#ifndef SHAMROCK_ENABLE_BACKEND_SYCL
+#error You have included a file belonging to the sycl backend, but you are not compiling with the sycl backend
 #endif

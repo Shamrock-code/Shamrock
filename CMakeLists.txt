@@ -69,9 +69,25 @@ message(STATUS "current build type : CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 
 
+if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "SYCL")
+    include(ShamConfigureSYCL)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_ENABLE_BACKEND_SYCL")
+elseif("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "KOKKOS")
+    include(ShamConfigureSYCL)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_ENABLE_BACKEND_KOKKOS")
+else()
+    message(FATAL_ERROR
+        "You must select a Shamrock Backend "
+        "-DSHAMROCK_ENABLE_BACKEND=[SYCL,KOKKOS]")
+endif()
+set(SHAMROCK_ENABLE_BACKEND "${SHAMROCK_ENABLE_BACKEND}" CACHE STRING "Shamrock backend used")
+
+
 
 enable_language(C)
 enable_language(CXX)
+
+
 
 
 ######################
@@ -91,8 +107,6 @@ endif()
 ######################
 # Add external libraries
 ######################
-add_subdirectory(src/shamunits)
-add_subdirectory(src/shambackends)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAMBACKEND_CXX_FLAGS}")
 
@@ -137,6 +151,7 @@ message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
 # Targets ##############################################################################
 ########################################################################################
 
+add_subdirectory(src/shamunits)
 
 ######################
 # Shamalgs
@@ -163,9 +178,11 @@ if(SHAMROCK_USE_NVTX)
 endif()
 
 target_link_libraries(shamalgs PUBLIC shamunits)
-target_link_libraries(shamalgs PUBLIC shambackends)
 
 
+if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "KOKKOS")
+target_link_libraries(shamalgs Kokkos::kokkos)
+endif()
 
 
 
@@ -198,9 +215,10 @@ endif()
 
 
 target_link_libraries(shamrock_lib PUBLIC shamunits)
-target_link_libraries(shamrock_lib PUBLIC shambackends)
 
-
+if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "KOKKOS")
+target_link_libraries(shamrock_lib Kokkos::kokkos)
+endif()
 
 
 
@@ -224,9 +242,10 @@ target_link_libraries(shamrock PUBLIC shamalgs)
 target_link_libraries(shamrock PUBLIC MPI::MPI_C)
 target_link_libraries(shamrock PUBLIC fmt::fmt)
 target_link_libraries(shamrock PUBLIC shamunits)
-target_link_libraries(shamrock PUBLIC shambackends)
 
-
+if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "KOKKOS")
+target_link_libraries(shamrock Kokkos::kokkos)
+endif()
 
 if(SHAMROCK_USE_NVTX)
     target_link_libraries(shamrock PUBLIC nvtx3-cpp)
@@ -269,6 +288,11 @@ if("${BUILD_TEST}")
     #target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
     target_link_libraries(shamrock_test PUBLIC fmt::fmt)
+
+
+if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "KOKKOS")
+target_link_libraries(shamrock_test Kokkos::kokkos)
+endif()
 
     if(SHAMROCK_USE_NVTX)
         target_link_libraries(shamrock_test PUBLIC nvtx3-cpp)

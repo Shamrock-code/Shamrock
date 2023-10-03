@@ -6,13 +6,20 @@
 //
 // -------------------------------------------------------//
 
-#include <iostream>
-#include <shambackends/Constants.hpp>
+#pragma once
 
-// g++ -std=c++17 -Iinclude exemple.cpp
+#include "check_backend.hpp"
 
-int main(void){
+#include "sycl.hpp"
 
+namespace sham::details {
 
+    template<class T>
+    class buffer {
 
-}
+        std::unique_ptr<sycl::buffer<T>> storage;
+
+        inline std::unique_ptr<sycl::buffer<T>> &get_native_handle() { return storage; }
+    };
+    
+} // namespace sham::details

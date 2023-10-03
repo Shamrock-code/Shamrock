@@ -8,7 +8,10 @@
 
 #pragma once
 
+#ifdef SHAMROCK_ENABLE_BACKEND_SYCL
+#include <shambackends/backends/sycl/aliases/basetypes.hpp>
+#endif
 
-#ifdef SHAMBACKENDS_USE_SYCL
-#include <shambackends/backends/sycl/aliases/half.hpp>
+#ifdef SHAMROCK_ENABLE_BACKEND_KOKKOS
+#include <shambackends/backends/kokkos/aliases/basetypes.hpp>
 #endif

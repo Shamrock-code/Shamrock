@@ -9,10 +9,10 @@
 #pragma once
 
 #include <utility>
-#ifdef SHAMBACKENDS_USE_SYCL
+#ifdef SHAMROCK_ENABLE_BACKEND_SYCL
     #include <shambackends/backends/sycl/sycl.hpp>
 #endif
-#ifdef SHAMBACKENDS_USE_KOKKOS
+#ifdef SHAMROCK_ENABLE_BACKEND_KOKKOS
     #include <shambackends/backends/kokkos/kokkos.hpp>
 #endif
 

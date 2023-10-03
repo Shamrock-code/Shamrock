@@ -11,18 +11,23 @@
 #include "basetypes.hpp"
 #include "half.hpp"
 
-#define TYPEDEFS_TYPES(...) \
-using i64_##__VA_ARGS__ = sycl::vec<i64,__VA_ARGS__>;\
-using i32_##__VA_ARGS__ = sycl::vec<i32,__VA_ARGS__>;\
-using i16_##__VA_ARGS__ = sycl::vec<i16,__VA_ARGS__>;\
-using i8_##__VA_ARGS__  = sycl::vec<i8 ,__VA_ARGS__>;\
-using u64_##__VA_ARGS__ = sycl::vec<u64,__VA_ARGS__>;\
-using u32_##__VA_ARGS__ = sycl::vec<u32,__VA_ARGS__>;\
-using u16_##__VA_ARGS__ = sycl::vec<u16,__VA_ARGS__>;\
-using u8_##__VA_ARGS__  = sycl::vec<u8 ,__VA_ARGS__>;\
-using f16_##__VA_ARGS__ = sycl::vec<f16,__VA_ARGS__>;\
-using f32_##__VA_ARGS__ = sycl::vec<f32,__VA_ARGS__>;\
-using f64_##__VA_ARGS__ = sycl::vec<f64,__VA_ARGS__>;\
+namespace sham {
+    template<typename T, int N>
+    using vec = sycl::vec<T, N>;
+} // namespace sham
+
+#define TYPEDEFS_TYPES(...)                                                                        \
+    using i64_##__VA_ARGS__ = sham::vec<i64, __VA_ARGS__>;                                         \
+    using i32_##__VA_ARGS__ = sham::vec<i32, __VA_ARGS__>;                                         \
+    using i16_##__VA_ARGS__ = sham::vec<i16, __VA_ARGS__>;                                         \
+    using i8_##__VA_ARGS__  = sham::vec<i8, __VA_ARGS__>;                                          \
+    using u64_##__VA_ARGS__ = sham::vec<u64, __VA_ARGS__>;                                         \
+    using u32_##__VA_ARGS__ = sham::vec<u32, __VA_ARGS__>;                                         \
+    using u16_##__VA_ARGS__ = sham::vec<u16, __VA_ARGS__>;                                         \
+    using u8_##__VA_ARGS__  = sham::vec<u8, __VA_ARGS__>;                                          \
+    using f16_##__VA_ARGS__ = sham::vec<f16, __VA_ARGS__>;                                         \
+    using f32_##__VA_ARGS__ = sham::vec<f32, __VA_ARGS__>;                                         \
+    using f64_##__VA_ARGS__ = sham::vec<f64, __VA_ARGS__>;
 
 TYPEDEFS_TYPES(2)
 TYPEDEFS_TYPES(3)

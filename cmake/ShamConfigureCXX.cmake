@@ -6,7 +6,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)  # optional, keep compiler extensions off
 
 check_cxx_compiler_flag("-march=native" COMPILER_SUPPORT_MARCHNATIVE)
 check_cxx_compiler_flag("-pedantic-errors" COMPILER_SUPPORT_PEDANTIC)
+
 check_cxx_compiler_flag("-fcolor-diagnostics" COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
+check_cxx_compiler_flag("-fdiagnostics-color" COMPILER_SUPPORT_DIAGNOSTIC_COLOR)
+
+
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type") 
 set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
@@ -18,6 +22,9 @@ endif()
 
 if(COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics") 
+endif()
+if(COMPILER_SUPPORT_DIAGNOSTIC_COLOR)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdiagnostics-color=always") 
 endif()
 
 if(COMPILER_SUPPORT_MARCHNATIVE)

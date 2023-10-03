@@ -8,5 +8,64 @@
 
 #pragma once
 
-#include "DeviceContext.hpp"
-#include "DeviceQueue.hpp"
+#include <utility>
+#ifdef SHAMBACKENDS_USE_SYCL
+    #include <shambackends/backends/sycl/sycl.hpp>
+#endif
+#ifdef SHAMBACKENDS_USE_KOKKOS
+    #include <shambackends/backends/kokkos/kokkos.hpp>
+#endif
+
+namespace sham {
+    static constexpr bool multiple_device_support = details::multiple_device_support;
+
+    struct DeviceStream {
+        using InternalHndl = details::DeviceStreamNative;
+
+        InternalHndl hndl;
+
+        public:
+        DeviceStream(InternalHndl hndl) : hndl(std::move(hndl)) {}
+    };
+
+    struct HostStream {
+        using InternalHndl = details::HostStreamNative;
+
+        InternalHndl hndl;
+
+        public:
+        HostStream(InternalHndl hndl) : hndl(std::move(hndl)) {}
+    };
+
+    struct DeviceContext {
+        using InternalHndl = details::DeviceContextNative;
+
+        InternalHndl hndl;
+
+        public:
+        DeviceContext(InternalHndl hndl) : hndl(std::move(hndl)) {}
+
+        inline DeviceStream get_stream(u32 i = 0) { return hndl.get_stream(i); }
+    };
+
+    struct HostContext {
+        using InternalHndl = details::HostContextNative;
+
+        InternalHndl hndl;
+
+        public:
+        HostContext(InternalHndl hndl) : hndl(std::move(hndl)) {}
+
+        inline HostStream get_stream(u32 i = 0) { return hndl.get_stream(i); }
+    };
+
+    inline DeviceContext get_device(u32 i = 0) { return details::handle::get_device(i); }
+
+    inline HostContext get_host(u32 i = 0) { return details::handle::get_host(i); }
+
+    
+    inline void backend_initialize() { details::backend_initialize(); }
+
+    inline void backend_finalize() { details::backend_finalize(); }
+
+} // namespace sham

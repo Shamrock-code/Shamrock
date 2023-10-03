@@ -8,4 +8,5 @@
 
 #pragma once
 
+#include "DeviceContext.hpp"
 #include "DeviceQueue.hpp"

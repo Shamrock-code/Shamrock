@@ -8,10 +8,13 @@
 
 #pragma once
 
-#ifdef SHAMBACKENDS_USE_SYCL
-#include <shambackends/backends/sycl/aliases/basetypes.hpp>
-#endif
+#include "check_backend.hpp"
 
-#ifdef SHAMBACKENDS_USE_KOKKOS
-#include <shambackends/backends/kokkos/aliases/basetypes.hpp>
-#endif
+
+namespace sham::details {
+
+    struct DeviceContextNative {
+        
+    };
+
+} // namespace sham::details

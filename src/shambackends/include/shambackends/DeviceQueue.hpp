@@ -13,6 +13,9 @@
     #include <shambackends/backends/sycl/DeviceQueue.hpp>
     #include <shambackends/backends/sycl/sycl.hpp>
 #endif
+#ifdef SHAMBACKENDS_USE_KOKKOS
+    #include <shambackends/backends/kokkos/DeviceQueue.hpp>
+#endif
 
 namespace sham {
 

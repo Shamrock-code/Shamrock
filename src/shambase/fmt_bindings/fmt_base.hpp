@@ -8,10 +8,8 @@
 
 #pragma once
 
-#ifdef SHAMBACKENDS_USE_SYCL
-#include <shambackends/backends/sycl/aliases/basetypes.hpp>
-#endif
-
-#ifdef SHAMBACKENDS_USE_KOKKOS
-#include <shambackends/backends/kokkos/aliases/basetypes.hpp>
-#endif
+#include "aliases.hpp"
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+#include <fmt/printf.h>

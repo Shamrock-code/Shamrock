@@ -8,11 +8,7 @@
 
 #pragma once
 
-#include "aliases.hpp"
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <fmt/ranges.h>
-#include <fmt/printf.h>
+#include "fmt_defs.hpp"
 
 
 template<class T>

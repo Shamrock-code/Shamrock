@@ -12,6 +12,9 @@
     #include <shambackends/backends/sycl/DeviceContext.hpp>
     #include <shambackends/backends/sycl/sycl.hpp>
 #endif
+#ifdef SHAMBACKENDS_USE_KOKKOS
+    #include <shambackends/backends/kokkos/DeviceContext.hpp>
+#endif
 
 namespace sham {
 

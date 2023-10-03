@@ -8,10 +8,17 @@
 
 #pragma once
 
-#ifdef SHAMBACKENDS_USE_SYCL
-#include <shambackends/backends/sycl/aliases/basetypes.hpp>
-#endif
+#include "check_backend.hpp"
 
-#ifdef SHAMBACKENDS_USE_KOKKOS
-#include <shambackends/backends/kokkos/aliases/basetypes.hpp>
-#endif
+#include "shambackends/backends/kokkos/DeviceContext.hpp"
+
+namespace sham::details {
+
+    struct DeviceQueueNative {
+        
+        explicit DeviceQueueNative(DeviceContextNative &ctx) {
+            
+        }
+    };
+
+} // namespace sham::details

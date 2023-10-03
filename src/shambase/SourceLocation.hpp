@@ -16,7 +16,7 @@
  */
 
 #include "aliases.hpp"
-#include "fmt_bindings/fmt_defs.hpp"
+#include "fmt_bindings/fmt_base.hpp"
 
 /**
  * @brief provide information about the source location

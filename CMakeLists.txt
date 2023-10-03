@@ -169,7 +169,7 @@ target_link_libraries(shamalgs PUBLIC shamunits)
 
 
 if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "KOKKOS")
-target_link_libraries(shamalgs Kokkos::kokkos)
+target_link_libraries(shamalgs PUBLIC Kokkos::kokkos)
 endif()
 
 
@@ -205,7 +205,7 @@ endif()
 target_link_libraries(shamrock_lib PUBLIC shamunits)
 
 if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "KOKKOS")
-target_link_libraries(shamrock_lib Kokkos::kokkos)
+target_link_libraries(shamrock_lib PUBLIC Kokkos::kokkos)
 endif()
 
 
@@ -232,7 +232,7 @@ target_link_libraries(shamrock PUBLIC fmt::fmt)
 target_link_libraries(shamrock PUBLIC shamunits)
 
 if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "KOKKOS")
-target_link_libraries(shamrock Kokkos::kokkos)
+target_link_libraries(shamrock PUBLIC Kokkos::kokkos)
 endif()
 
 if(SHAMROCK_USE_NVTX)
@@ -279,7 +279,7 @@ if("${BUILD_TEST}")
 
 
 if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "KOKKOS")
-target_link_libraries(shamrock_test Kokkos::kokkos)
+target_link_libraries(shamrock_test PUBLIC Kokkos::kokkos)
 endif()
 
     if(SHAMROCK_USE_NVTX)

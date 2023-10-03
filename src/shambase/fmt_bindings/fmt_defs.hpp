@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "fmt_defs.hpp"
+#include "fmt_base.hpp"
 
 
 template<class T>

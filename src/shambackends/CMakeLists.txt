@@ -10,16 +10,23 @@ target_include_directories(shambackends INTERFACE
 "$<INSTALL_INTERFACE:include>")
 
 
+# check that the wanted sycl backend is in the list
+set(KNOWN_SHAMBACKENDS_USE "SYCL;KOKKOS")
+if((NOT ${SHAMBACKENDS_USE} IN_LIST KNOWN_SHAMBACKENDS_USE) OR (NOT (DEFINED SHAMBACKENDS_USE)))
+  message(FATAL_ERROR
+    "No backends were selected for ShamBackends please select one "
+    "-DSHAMBACKENDS_USE=[SYCL;KOKKOS]")
+endif()
+
 add_subdirectory(external)
+
 if(${SHAMBACKENDS_USE} STREQUAL "SYCL")
     message(STATUS "adding sycl backend")
+    target_compile_definitions(shambackends INTERFACE "SHAMBACKENDS_USE_SYCL")
 elseif(${SHAMBACKENDS_USE} STREQUAL "KOKKOS")
     message(STATUS "adding kokkos backend")
-    target_link_libraries(shambackends)
-else()
-    message(FATAL_ERROR
-        "No backends were selected for ShamBackends please select one "
-        "-DSYCL_IMPLEMENTATION=[SYCL;KOKKOS]")
+    target_link_libraries(shambackends INTERFACE Kokkos::kokkos)
+    target_compile_definitions(shambackends INTERFACE "SHAMBACKENDS_USE_KOKKOS")
 endif()
 
 set(SHAMBACKENDS_USE "${SHAMBACKENDS_USE}" CACHE STRING "Variable saying which backend is in use")

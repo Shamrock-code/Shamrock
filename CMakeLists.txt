@@ -100,6 +100,9 @@ endif()
 ######################
 # Add external libraries
 ######################
+add_subdirectory(src/shamunits)
+add_subdirectory(src/shambackends)
+
 if(SHAMROCK_WITH_MPI)
     include(ShamConfigureMPI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
@@ -141,7 +144,6 @@ message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
 # Targets ##############################################################################
 ########################################################################################
 
-add_subdirectory(src/shamunits)
 
 ######################
 # Shamalgs
@@ -168,6 +170,7 @@ if(SHAMROCK_USE_NVTX)
 endif()
 
 target_link_libraries(shamalgs PUBLIC shamunits)
+target_link_libraries(shamalgs PUBLIC shambackends)
 
 
 
@@ -202,6 +205,7 @@ endif()
 
 
 target_link_libraries(shamrock_lib PUBLIC shamunits)
+target_link_libraries(shamrock_lib PUBLIC shambackends)
 
 
 
@@ -227,6 +231,7 @@ target_link_libraries(shamrock PUBLIC shamalgs)
 target_link_libraries(shamrock PUBLIC MPI::MPI_C)
 target_link_libraries(shamrock PUBLIC fmt::fmt)
 target_link_libraries(shamrock PUBLIC shamunits)
+target_link_libraries(shamrock PUBLIC shambackends)
 
 
 
@@ -264,6 +269,7 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamrock_lib)
     target_link_libraries(shamrock_test PUBLIC shamalgs)
     target_link_libraries(shamrock_test PUBLIC shamunits)
+    target_link_libraries(shamrock_test PUBLIC shambackends)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")

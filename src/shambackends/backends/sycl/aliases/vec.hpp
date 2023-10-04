@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../check_backend.hpp"
+#ifdef SHAMROCK_ENABLE_BACKEND_SYCL
 
 #include "basetypes.hpp"
 #include "half.hpp"
@@ -38,3 +38,5 @@ TYPEDEFS_TYPES(8)
 TYPEDEFS_TYPES(16)
 
 #undef TYPEDEFS_TYPES
+
+#endif

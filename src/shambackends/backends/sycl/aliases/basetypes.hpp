@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "../check_backend.hpp"
+#ifdef SHAMROCK_ENABLE_BACKEND_SYCL
 
 #include <cstdint>
 using i64 = std::int64_t  ;
@@ -35,3 +35,5 @@ constexpr i64 operator""_i64(unsigned long long n){return i64(n);}
 //constexpr f16 operator""_f16(long double n){return f16(n);}
 constexpr f32 operator""_f32(long double n){return f32(n);}
 constexpr f64 operator""_f64(long double n){return f64(n);}
+
+#endif

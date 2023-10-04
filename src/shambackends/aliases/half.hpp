@@ -9,6 +9,5 @@
 #pragma once
 
 
-#ifdef SHAMROCK_ENABLE_BACKEND_SYCL
 #include <shambackends/backends/sycl/aliases/half.hpp>
-#endif
+#include <shambackends/backends/kokkos/aliases/half.hpp>

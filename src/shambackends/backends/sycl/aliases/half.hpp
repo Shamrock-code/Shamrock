@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "../check_backend.hpp"
+
+#ifdef SHAMROCK_ENABLE_BACKEND_SYCL
 
 #ifdef SYCL_COMP_ACPP
 #include <hipSYCL/sycl/libkernel/vec.hpp>
@@ -33,3 +34,5 @@ using f16 = sycl::half    ;
 #endif
 
 constexpr f16 operator""_f16(long double n){return f16(n);}
+
+#endif

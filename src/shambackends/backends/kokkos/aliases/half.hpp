@@ -8,3 +8,7 @@
 
 #pragma once
 
+
+#ifdef SHAMROCK_ENABLE_BACKEND_KOKKOS
+
+#endif

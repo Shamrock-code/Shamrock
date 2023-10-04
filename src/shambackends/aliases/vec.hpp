@@ -9,6 +9,5 @@
 #pragma once
 
 
-#ifdef SHAMROCK_ENABLE_BACKEND_SYCL
 #include <shambackends/backends/sycl/aliases/vec.hpp>
-#endif
+#include <shambackends/backends/kokkos/aliases/vec.hpp>

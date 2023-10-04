@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "check_backend.hpp"
+#ifdef SHAMROCK_ENABLE_BACKEND_SYCL
 
 #include "aliases/basetypes.hpp"
 #include "aliases/half.hpp"
@@ -87,3 +87,5 @@ namespace sham::details {
     }
 
 } // namespace sham::details
+
+#endif

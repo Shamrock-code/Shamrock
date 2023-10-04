@@ -8,8 +8,10 @@
 
 #pragma once
 
-#include "check_backend.hpp"
 
+#ifdef SHAMROCK_ENABLE_BACKEND_KOKKOS
+
+#include "Kokkos_Core.hpp"
 #include "aliases/basetypes.hpp"
 
 namespace sham::details {
@@ -51,13 +53,15 @@ namespace sham::details {
 
     inline void backend_initialize(int argc, char *argv[]) {
 
-        
+        Kokkos::initialize(argc,argv);        
 
 
     }
 
     inline void backend_finalize() { 
-        
+        Kokkos::finalize();
     }
 
 } // namespace sham::details
+
+#endif

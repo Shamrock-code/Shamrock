@@ -9,12 +9,9 @@
 #pragma once
 
 #include <utility>
-#ifdef SHAMROCK_ENABLE_BACKEND_SYCL
-    #include <shambackends/backends/sycl/sycl.hpp>
-#endif
-#ifdef SHAMROCK_ENABLE_BACKEND_KOKKOS
-    #include <shambackends/backends/kokkos/kokkos.hpp>
-#endif
+
+#include <shambackends/backends/sycl/sycl.hpp>
+#include <shambackends/backends/kokkos/kokkos.hpp>
 
 namespace sham {
 

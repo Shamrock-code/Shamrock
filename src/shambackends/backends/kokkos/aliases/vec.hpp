@@ -8,6 +8,7 @@
 
 #pragma once
 
+#ifdef SHAMROCK_ENABLE_BACKEND_KOKKOS
 #include "basetypes.hpp"
 #include "half.hpp"
 #include <array>
@@ -20,3 +21,4 @@ namespace sham {
     };
 
 } // namespace sham
+#endif

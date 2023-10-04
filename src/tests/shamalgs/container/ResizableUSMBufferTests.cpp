@@ -8,6 +8,7 @@
 
 #include "shamalgs/container/ResizableUSMBuffer.hpp"
 #include "shambase/sycl.hpp"
+#include "shambase/sycl_utils.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
@@ -39,5 +40,31 @@ TestStart(Unittest, "shamalgs/container/ResizableUSMBuffer", test_resizableUSMBu
         shamalgs::ResizableUSMBuffer<u32> usm_rbuf2{std::move(usm_rbuf)};
 
     }
+
+}
+
+TestStart(Unittest, "shamalgs/container/ResizableUSMBuffer:synchronisation", test_resizableUSMBuffer_sync, 1) {
+
+    sycl::queue &q = shamsys::instance::get_compute_queue();
+
+    shamalgs::ResizableUSMBuffer<u32> usm_rbuf(q, shamalgs::Device);
+    usm_rbuf.change_capacity(100);
+
+    {
+        std::vector<sycl::event> wait_list;
+        u32* acc = usm_rbuf.get_usm_ptr(wait_list);
+
+        sycl::event ret = q.submit([&](sycl::handler & cgh){
+            cgh.depends_on(wait_list);
+
+            shambase::parralel_for(cgh, 100, "test", [=](u32 id){
+                acc[id] = id;
+            });
+        });
+
+        usm_rbuf.register_read_write_event(ret);
+    }
+
+
 
 }

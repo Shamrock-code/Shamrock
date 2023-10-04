@@ -7,6 +7,10 @@
 // -------------------------------------------------------//
 
 #include "ResizableUSMBuffer.hpp"
+#include "shamalgs/details/reduction/reduction.hpp"
+#include "shambase/sycl_utils/vec_equals.hpp"
+#include "shamsys/NodeInstance.hpp"
+#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
 template<class T>
 void shamalgs::ResizableUSMBuffer<T>::alloc() {
@@ -116,6 +120,46 @@ shamalgs::ResizableUSMBuffer<T>::ResizableUSMBuffer::~ResizableUSMBuffer() {
         free();
     }
 }
+
+
+
+
+template<class T>
+bool shamalgs::ResizableUSMBuffer<T>::check_buf_match(ResizableUSMBuffer<T> &f2){
+
+    bool match = true;
+
+    match = match && (val_count == f2.val_count);
+
+    {
+
+        std::vector<sycl::event> wait_list;
+        auto acc1 = get_usm_ptr_read_only(wait_list);
+        auto acc2 = f2.get_usm_ptr_read_only(wait_list);
+
+        sycl::buffer<u8> res_buf(val_count);
+
+        sycl::event e = shamsys::instance::get_compute_queue().submit([&,acc1,acc2](sycl::handler &cgh) {
+            cgh.depends_on(wait_list);
+
+            sycl::accessor acc_res{res_buf, cgh, sycl::write_only, sycl::no_init};
+
+            cgh.parallel_for(sycl::range<1>{val_count}, [=](sycl::item<1> i) {
+                acc_res[i] = shambase::vec_equals(acc1[i], acc2[i]);
+            });
+        });
+
+        register_read_event(e);
+        f2.register_read_event(e);
+
+        match = match && shamalgs::reduction::is_all_true(res_buf, f2.size());
+    }
+
+    return match;
+
+}
+
+
 
 #define X(a) template class shamalgs::ResizableUSMBuffer<a>;
 XMAC_LIST_ENABLED_ResizableUSMBuffer

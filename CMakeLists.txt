@@ -269,7 +269,6 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamrock_lib)
     target_link_libraries(shamrock_test PUBLIC shamalgs)
     target_link_libraries(shamrock_test PUBLIC shamunits)
-    target_link_libraries(shamrock_test PUBLIC shambackends)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")

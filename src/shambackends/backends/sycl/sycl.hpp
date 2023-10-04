@@ -54,37 +54,15 @@ namespace sham::details {
 
     namespace handle {
 
-        inline std::unique_ptr<sycl::device> compute_device;
-        inline std::unique_ptr<sycl::device> host_device;
+        DeviceContextNative get_device();
 
-        inline std::unique_ptr<sycl::queue> device_handle;
-        inline std::unique_ptr<sycl::queue> host_handle;
-
-        inline DeviceContextNative get_device() {
-
-            return DeviceContextNative{*compute_device, *device_handle};
-        }
-
-        inline HostContextNative get_host() {
-
-            return HostContextNative{*host_device, *host_handle};
-        }
+        HostContextNative get_host();
 
     } // namespace handle
 
-    inline void backend_initialize(int argc, char *argv[]) {
+    void backend_initialize(int argc, char *argv[]);
 
-        
-
-
-    }
-
-    inline void backend_finalize() { 
-        handle::device_handle.reset();
-        handle::host_handle.reset();
-        handle::compute_device.reset();
-        handle::host_device.reset();
-    }
+    void backend_finalize();
 
 } // namespace sham::details
 

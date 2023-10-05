@@ -8,13 +8,15 @@
 
 #pragma once
 
+#include "aliases.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl.hpp"
-#include "shambase/type_aliases.hpp"
 #include "shambase/sycl_vec_aliases.hpp"
+#include "shambase/type_aliases.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <cstddef>
+#include <random>
 #include <stdexcept>
 #include <utility>
 
@@ -41,9 +43,101 @@ namespace shamalgs {
 
     enum BufferType { Host, Device, Shared };
 
+    u32 gen_buf_hash();
 
+    struct EventStateHolder {
+        std::vector<sycl::event> event_last_read;
+        sycl::event event_last_write;
 
+        const u32 id_hash = gen_buf_hash();
+        inline u32 get_hash() { return id_hash; }
 
+        bool up_to_date_events = true;
+
+        enum LastEvent { READ, READ_WRITE } last_event_create;
+
+        void add_read_dependancies(std::vector<sycl::event> &depends_list) {
+
+            if (!up_to_date_events) {
+                throw shambase::throw_with_loc<std::runtime_error>(
+                    "you want to create a event depedancy, but the event state was not updated "
+                    "after last event usage");
+            }
+
+            up_to_date_events = false;
+            last_event_create = READ;
+
+            depends_list.push_back(event_last_write);
+
+            logger::debug_sycl_ln("[USMBuffer]", "id :",id_hash, "|","add read dependancy");
+        }
+
+        void add_read_write_dependancies(std::vector<sycl::event> &depends_list) {
+
+            if (!up_to_date_events) {
+                throw shambase::throw_with_loc<std::runtime_error>(
+                    "you want to create a event depedancy, but the event state was not updated "
+                    "after last event usage");
+            }
+
+            up_to_date_events = false;
+            last_event_create = READ_WRITE;
+
+            depends_list.push_back(event_last_write);
+            for (sycl::event e : event_last_read) {
+                depends_list.push_back(e);
+            }
+            logger::debug_sycl_ln("[USMBuffer]", "add read write dependancy");
+
+            event_last_read  = {};
+            event_last_write = {};
+
+            logger::debug_sycl_ln("[USMBuffer]","id :",id_hash, "|", "reset event list");
+        }
+
+        void register_read_event(sycl::event e) {
+
+            if (up_to_date_events) {
+                throw shambase::throw_with_loc<std::runtime_error>(
+                    "you are trying to register an event without having fetched one previoulsy");
+            }
+
+            if (last_event_create != READ) {
+                throw shambase::throw_with_loc<std::runtime_error>(
+                    "you want to register a read event but the last dependcy was not in read mode");
+            }
+
+            up_to_date_events = true;
+            event_last_read.push_back(e);
+
+            logger::debug_sycl_ln("[USMBuffer]", "id :",id_hash, "|","append last read");
+        }
+
+        void register_read_write_event(sycl::event e) {
+            if (up_to_date_events) {
+                throw shambase::throw_with_loc<std::runtime_error>(
+                    "you are trying to register an event without having fetched one previoulsy");
+            }
+
+            if (last_event_create != READ_WRITE) {
+                throw shambase::throw_with_loc<std::runtime_error>(
+                    "you want to register a read event but the last dependcy was not in read mode");
+            }
+
+            up_to_date_events = true;
+            event_last_write  = e;
+            logger::debug_sycl_ln("[USMBuffer]","id :",id_hash, "|", "set last write");
+        }
+
+        void synchronize() {
+
+            logger::debug_sycl_ln("[USMBuffer]","id :",id_hash, "|", "synchronize");
+            event_last_write.wait_and_throw();
+            for (sycl::event e : event_last_read) {
+                e.wait_and_throw();
+            }
+        }
+    };
 
     template<class T>
     class ResizableUSMBuffer {
@@ -68,109 +162,7 @@ namespace shamalgs {
 
         T *usm_ptr = nullptr;
 
-
-        struct EventStateHolder{
-            std::vector<sycl::event> event_last_read;
-            sycl::event event_last_write;
-
-            bool up_to_date_events = true;
-            
-            enum LastEvent{
-                READ, READ_WRITE
-            } last_event_create;
-
-            void add_read_dependancies(std::vector<sycl::event> & depends_list){
-
-                if(!up_to_date_events){
-                    throw shambase::throw_with_loc<std::runtime_error>(
-                        "you want to create a event depedancy, but the event state was not updated after last event usage"
-                        );
-                }
-
-                up_to_date_events = false;
-                last_event_create= READ;
-
-                depends_list.push_back(event_last_write);
-
-                logger::debug_sycl_ln("[USMBuffer]", "add read dependancy");
-            }
-
-            void add_read_write_dependancies(std::vector<sycl::event> & depends_list){
-
-                if(!up_to_date_events){
-                    throw shambase::throw_with_loc<std::runtime_error>(
-                        "you want to create a event depedancy, but the event state was not updated after last event usage"
-                        );
-                }
-
-                up_to_date_events = false;
-                last_event_create= READ_WRITE;
-                
-                depends_list.push_back(event_last_write);
-                for (sycl::event e : event_last_read) {
-                    depends_list.push_back(e);
-                }
-                logger::debug_sycl_ln("[USMBuffer]", "add read write dependancy");
-
-                event_last_read = {};
-                event_last_write = {};
-
-                logger::debug_sycl_ln("[USMBuffer]", "reset event list");
-            }
-
-
-            void register_read_event(sycl::event e){
-
-                if(up_to_date_events){
-                    throw shambase::throw_with_loc<std::runtime_error>(
-                        "you are trying to register an event without having fetched one previoulsy"
-                        );
-                }
-
-                if(last_event_create != READ ){
-                    throw shambase::throw_with_loc<std::runtime_error>(
-                        "you want to register a read event but the last dependcy was not in read mode"
-                        );
-                }
-
-                up_to_date_events = true;
-                event_last_read.push_back(e);
-
-                logger::debug_sycl_ln("[USMBuffer]", "append last read");
-            }
-
-            void register_read_write_event(sycl::event e){
-                if(up_to_date_events){
-                    throw shambase::throw_with_loc<std::runtime_error>(
-                        "you are trying to register an event without having fetched one previoulsy"
-                        );
-                }
-
-                if(last_event_create != READ_WRITE ){
-                    throw shambase::throw_with_loc<std::runtime_error>(
-                        "you want to register a read event but the last dependcy was not in read mode"
-                        );
-                }
-
-                up_to_date_events = true;
-                event_last_write = e;
-                logger::debug_sycl_ln("[USMBuffer]", "set last write");
-            }
-
-            void synchronize(){
-
-                logger::debug_sycl_ln("[USMBuffer]", "synchronize");
-                event_last_write.wait_and_throw();
-                for (sycl::event e : event_last_read) {
-                    e.wait_and_throw();
-                }
-
-            }
-
-
-        } events_hndl;
-
-        
+        EventStateHolder  events_hndl;
 
         u32 capacity  = 0;
         u32 val_count = 0;
@@ -183,7 +175,7 @@ namespace shamalgs {
         public:
         inline ResizableUSMBuffer(sycl::queue &q, BufferType type) : q(q), type(type){};
 
-        ResizableUSMBuffer(const ResizableUSMBuffer &other)
+        ResizableUSMBuffer(ResizableUSMBuffer &other)
             : val_count(other.val_count), capacity(other.capacity), q(other.q) {
             if (capacity != 0) {
 
@@ -192,7 +184,7 @@ namespace shamalgs {
 
                 q.memcpy(usm_ptr, other.usm_ptr, sizeof(T) * val_count).wait();
             }
-        }// copy constructor
+        } // copy constructor
 
         ResizableUSMBuffer(ResizableUSMBuffer &&other) noexcept
             : usm_ptr(other.release_usm_ptr()), val_count(std::move(other.val_count)),
@@ -226,28 +218,22 @@ namespace shamalgs {
 
         [[nodiscard]] BufferType get_buf_type() const { return type; }
 
-        inline T *release_usm_ptr() { 
-            
-            
+        inline T *release_usm_ptr() {
+
             synchronize_events();
-            
-            return std::exchange(usm_ptr, nullptr); }
 
-        inline size_t memsize(){
-            return capacity*sizeof(T);
+            return std::exchange(usm_ptr, nullptr);
         }
 
-        inline u32 size(){
-            return val_count;
-        }
+        inline size_t memsize() { return capacity * sizeof(T); }
 
-        [[nodiscard]] bool check_buf_match( ResizableUSMBuffer<T> &f2);
+        inline u32 size() { return val_count; }
 
-        void synchronize_events(){
-            events_hndl.synchronize();
-        }
+        [[nodiscard]] bool check_buf_match(ResizableUSMBuffer<T> &f2);
 
-        inline T const* get_usm_ptr_read_only(std::vector<sycl::event> & depends_list) {
+        void synchronize_events() { events_hndl.synchronize(); }
+
+        inline T const *get_usm_ptr_read_only(std::vector<sycl::event> &depends_list) {
             if (is_empty()) {
                 throw shambase::throw_with_loc<std::runtime_error>(
                     "the usm buffer is not allocated");
@@ -258,29 +244,20 @@ namespace shamalgs {
             return usm_ptr;
         }
 
-        inline T * get_usm_ptr(std::vector<sycl::event> & depends_list) {
+        inline T *get_usm_ptr(std::vector<sycl::event> &depends_list) {
             if (is_empty()) {
                 throw shambase::throw_with_loc<std::runtime_error>(
                     "the usm buffer is not allocated");
             }
 
             events_hndl.add_read_write_dependancies(depends_list);
-            
+
             return usm_ptr;
         }
 
+        void register_read_event(sycl::event e) { events_hndl.register_read_event(e); }
 
-        void register_read_event(sycl::event e){
-            events_hndl.register_read_event(e);
-        }
-
-        void register_read_write_event(sycl::event e){
-            events_hndl.register_read_write_event(e);
-        }
-
-
-
-
+        void register_read_write_event(sycl::event e) { events_hndl.register_read_write_event(e); }
 
         void change_buf_type(BufferType new_type);
     };

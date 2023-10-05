@@ -12,6 +12,13 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
+
+u32 shamalgs::gen_buf_hash(){
+    static std::mt19937 gengine {0};
+    return std::uniform_int_distribution<u32>(0,u32_max)(gengine);
+}
+
+
 template<class T>
 void shamalgs::ResizableUSMBuffer<T>::alloc() {
     if (usm_ptr != nullptr) {

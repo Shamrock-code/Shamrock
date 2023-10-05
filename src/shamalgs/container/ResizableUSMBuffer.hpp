@@ -51,6 +51,9 @@ namespace shamalgs {
 
         const u32 id_hash = gen_buf_hash();
         inline u32 get_hash() { return id_hash; }
+        inline std::string get_hash_log(){
+            return shambase::format("id = {} |", id_hash);
+        }
 
         bool up_to_date_events = true;
 
@@ -59,7 +62,7 @@ namespace shamalgs {
         void add_read_dependancies(std::vector<sycl::event> &depends_list) {
 
             if (!up_to_date_events) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::throw_with_loc<std::runtime_error>(get_hash_log()+
                     "you want to create a event depedancy, but the event state was not updated "
                     "after last event usage");
             }
@@ -69,13 +72,13 @@ namespace shamalgs {
 
             depends_list.push_back(event_last_write);
 
-            logger::debug_sycl_ln("[USMBuffer]", "id :",id_hash, "|","add read dependancy");
+            logger::debug_sycl_ln("[USMBuffer]", get_hash_log(),"add read dependancy");
         }
 
         void add_read_write_dependancies(std::vector<sycl::event> &depends_list) {
 
             if (!up_to_date_events) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::throw_with_loc<std::runtime_error>(get_hash_log()+
                     "you want to create a event depedancy, but the event state was not updated "
                     "after last event usage");
             }
@@ -87,55 +90,63 @@ namespace shamalgs {
             for (sycl::event e : event_last_read) {
                 depends_list.push_back(e);
             }
-            logger::debug_sycl_ln("[USMBuffer]", "add read write dependancy");
+            logger::debug_sycl_ln("[USMBuffer]",get_hash_log(), "add read write dependancy");
 
             event_last_read  = {};
             event_last_write = {};
 
-            logger::debug_sycl_ln("[USMBuffer]","id :",id_hash, "|", "reset event list");
+            logger::debug_sycl_ln("[USMBuffer]",get_hash_log(), "reset event list");
         }
 
         void register_read_event(sycl::event e) {
 
             if (up_to_date_events) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::throw_with_loc<std::runtime_error>(get_hash_log()+
                     "you are trying to register an event without having fetched one previoulsy");
             }
 
             if (last_event_create != READ) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::throw_with_loc<std::runtime_error>(get_hash_log()+
                     "you want to register a read event but the last dependcy was not in read mode");
             }
 
             up_to_date_events = true;
             event_last_read.push_back(e);
 
-            logger::debug_sycl_ln("[USMBuffer]", "id :",id_hash, "|","append last read");
+            logger::debug_sycl_ln("[USMBuffer]",get_hash_log(),"append last read");
         }
 
         void register_read_write_event(sycl::event e) {
             if (up_to_date_events) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::throw_with_loc<std::runtime_error>(get_hash_log()+
                     "you are trying to register an event without having fetched one previoulsy");
             }
 
             if (last_event_create != READ_WRITE) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::throw_with_loc<std::runtime_error>(get_hash_log()+
                     "you want to register a read event but the last dependcy was not in read mode");
             }
 
             up_to_date_events = true;
             event_last_write  = e;
-            logger::debug_sycl_ln("[USMBuffer]","id :",id_hash, "|", "set last write");
+            logger::debug_sycl_ln("[USMBuffer]",get_hash_log(), "set last write");
         }
 
         void synchronize() {
 
-            logger::debug_sycl_ln("[USMBuffer]","id :",id_hash, "|", "synchronize");
+            if (up_to_date_events) {
+                throw shambase::throw_with_loc<std::runtime_error>(get_hash_log()+
+                    "the events are not up to date");
+            }
+
+            logger::debug_sycl_ln("[USMBuffer]",get_hash_log(), "synchronize");
             event_last_write.wait_and_throw();
             for (sycl::event e : event_last_read) {
                 e.wait_and_throw();
             }
+
+            event_last_read  = {};
+            event_last_write = {};
         }
     };
 
@@ -231,7 +242,10 @@ namespace shamalgs {
 
         [[nodiscard]] bool check_buf_match(ResizableUSMBuffer<T> &f2);
 
-        void synchronize_events() { events_hndl.synchronize(); }
+        void synchronize_events() { 
+            StackEntry stack_loc{};
+            events_hndl.synchronize(); 
+        }
 
         inline T const *get_usm_ptr_read_only(std::vector<sycl::event> &depends_list) {
             if (is_empty()) {

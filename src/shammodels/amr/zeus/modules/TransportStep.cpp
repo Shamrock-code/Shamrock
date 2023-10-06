@@ -76,12 +76,12 @@ void Module<Tvec, TgridVec>::compute_cell_centered_momentas() {
                     Tvec vyp = vel_yp[cell_gid];
                     Tvec vzp = vel_zp[cell_gid];
 
-                    Tvec tmp_m  = vm * r;
-                    Tscal tmp_x = vxp.x() * r;
-                    Tscal tmp_y = vyp.y() * r;
-                    Tscal tmp_z = vzp.z() * r;
+                    Tvec tmp_m  = vm ;
+                    Tscal tmp_x = vxp.x() ;
+                    Tscal tmp_y = vyp.y() ;
+                    Tscal tmp_z = vzp.z() ;
 
-                    Q[cell_gid] = {r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e};
+                    Q[cell_gid] = {r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e/r};
                 });
         });
     });
@@ -734,7 +734,19 @@ void Module<Tvec, TgridVec>::update_Q(Tscal dt) {
                     fsum /= V;
                     fsum *= _dt;
 
-                    Q[cell_gid] += fsum;
+                    Tscal8 Qtmp = Q[cell_gid];
+
+                    Qtmp += fsum;
+
+                    //Qtmp.s1() *= Qtmp.s0();
+                    //Qtmp.s2() *= Qtmp.s0();
+                    //Qtmp.s3() *= Qtmp.s0();
+                    //Qtmp.s4() *= Qtmp.s0();
+                    //Qtmp.s5() *= Qtmp.s0();
+                    //Qtmp.s6() *= Qtmp.s0();
+                    //Qtmp.s7() *= Qtmp.s0();
+
+                    Q[cell_gid] = Qtmp;
                 });
         });
     });

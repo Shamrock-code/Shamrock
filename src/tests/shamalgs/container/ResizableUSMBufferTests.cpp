@@ -86,7 +86,8 @@ TestStart(Unittest, "shamalgs/container/ResizableUSMBuffer:synchronisation", tes
             });
         });
 
-        usm_rbuf.register_read_write_event(ret);
+        usm_rbuf.register_read_event(ret);
+        usm_rbuf_sub1.register_read_write_event(ret);
     }
 
     {
@@ -102,7 +103,8 @@ TestStart(Unittest, "shamalgs/container/ResizableUSMBuffer:synchronisation", tes
             });
         });
 
-        usm_rbuf.register_read_write_event(ret);
+        usm_rbuf.register_read_event(ret);
+        usm_rbuf_sub2.register_read_write_event(ret);
     }
 
 }

@@ -13,12 +13,6 @@
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 
 
-u32 shamalgs::gen_buf_hash(){
-    static std::mt19937 gengine {0};
-    return std::uniform_int_distribution<u32>(0,u32_max)(gengine);
-}
-
-
 template<class T>
 void shamalgs::ResizableUSMBuffer<T>::alloc() {
     if (usm_ptr != nullptr) {
@@ -127,13 +121,7 @@ void shamalgs::ResizableUSMBuffer<T>::change_buf_type(BufferType new_type) {
     sycl::free(old_usm, q);
 }
 
-template<class T>
-shamalgs::ResizableUSMBuffer<T>::ResizableUSMBuffer::~ResizableUSMBuffer() {
-    StackEntry stack_loc{};
-    if (usm_ptr != nullptr) {
-        free();
-    }
-}
+
 
 
 

@@ -107,4 +107,23 @@ TestStart(Unittest, "shamalgs/container/ResizableUSMBuffer:synchronisation", tes
         usm_rbuf_sub2.register_read_write_event(ret);
     }
 
+    {
+        std::vector<sycl::event> wait_list;
+        const u32* acc_src1 = usm_rbuf_sub1.get_usm_ptr_read_only(wait_list);
+        const u32* acc_src2 = usm_rbuf_sub2.get_usm_ptr_read_only(wait_list);
+        u32* acc_d = usm_rbuf.get_usm_ptr(wait_list);
+
+        sycl::event ret = q.submit([&](sycl::handler & cgh){
+            cgh.depends_on(wait_list);
+
+            shambase::parralel_for(cgh, 100, "test4", [=](u32 id){
+                acc_d[id] = acc_src1[id] + acc_src2[id];
+            });
+        });
+
+        usm_rbuf.register_read_write_event(ret);
+        usm_rbuf_sub1.register_read_event(ret);
+        usm_rbuf_sub2.register_read_event(ret);
+    }
+
 }

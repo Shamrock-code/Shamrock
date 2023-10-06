@@ -72,7 +72,7 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
 
 
 
-template <class T> bool PatchDataField<T>::check_field_match(const PatchDataField<T> &f2) const {
+template <class T> bool PatchDataField<T>::check_field_match( PatchDataField<T> &f2) {
     bool match = true;
 
     match = match && (field_name == f2.field_name);
@@ -87,7 +87,7 @@ template <class T> bool PatchDataField<T>::check_field_match(const PatchDataFiel
 
 template<class T> class PdatField_append_subset_to;
 
-template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) const {
+template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar)
         throw shambase::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
@@ -167,7 +167,7 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
 
 }
 
-template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const {
+template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar){
         throw shambase::throw_with_loc<std::invalid_argument>("field must be similar for extraction");

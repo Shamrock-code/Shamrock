@@ -172,8 +172,8 @@ namespace shamrock::patch {
                              std::array<Tvecbox, 8> min_box,
                              std::array<Tvecbox, 8> max_box);
 
-        void append_subset_to(std::vector<u32> &idxs, PatchData &pdat) const;
-        void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat) const;
+        void append_subset_to(std::vector<u32> &idxs, PatchData &pdat);
+        void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat);
 
         inline u32 get_obj_cnt() {
 
@@ -287,7 +287,7 @@ namespace shamrock::patch {
             }
         }
 
-        inline friend bool operator==(const PatchData &p1, const PatchData &p2) {
+        inline friend bool operator==(PatchData &p1, PatchData &p2) {
             bool check = true;
 
             if (p1.fields.size() != p2.fields.size()) {

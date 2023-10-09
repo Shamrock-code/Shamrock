@@ -76,12 +76,13 @@ void Module<Tvec, TgridVec>::compute_cell_centered_momentas() {
                     Tvec vyp = vel_yp[cell_gid];
                     Tvec vzp = vel_zp[cell_gid];
 
-                    Tvec tmp_m  = vm ;
-                    Tscal tmp_x = vxp.x() ;
-                    Tscal tmp_y = vyp.y() ;
-                    Tscal tmp_z = vzp.z() ;
+                    Tvec tmp_m  = vm * r;
+                    Tscal tmp_x = vxp.x() * r;
+                    Tscal tmp_y = vyp.y() * r;
+                    Tscal tmp_z = vzp.z() * r;
 
-                    Q[cell_gid] = {r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e/r};
+                    Q[cell_gid] = {r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e};
+                
                 });
         });
     });

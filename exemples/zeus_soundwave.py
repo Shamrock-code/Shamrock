@@ -25,22 +25,28 @@ model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 cfg = model.gen_default_config()
 scale_fact = 1/(sz*base*multx)
 cfg.set_scale_factor(scale_fact)
+
+cfg.set_eos_gamma(5./3.)
 model.set_config(cfg)
 
 
+gamma = 5./3. 
+
+u_cs1 = 1/( gamma*(gamma-1))
+
 kx,ky,kz = 2*np.pi,0,0
-delta_rho = 0
-delta_v = 1e-4
+delta_rho = 1e-5
+delta_v = 1e-5
 
 def rho_map(rmin,rmax):
 
     x,y,z = rmin
 
-    return 1. + delta_rho*np.sin(kx*x + ky*y + kz*z)
+    return 1. + delta_rho*np.cos(kx*x + ky*y + kz*z)
 
 def eint_map(rmin,rmax):
 
-    return 1.
+    return u_cs1*10
 
 def vel_map(rmin,rmax):
 
@@ -59,4 +65,4 @@ for i in range(2000):
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 
-    model.evolve_once(float(i),0.001)
+    model.evolve_once(float(i),0.0001)

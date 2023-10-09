@@ -27,7 +27,7 @@ scale_fact = 1/(sz*base*multx)
 cfg.set_scale_factor(scale_fact)
 model.set_config(cfg)
 
-file_data = "ghost_dump_debug5.000000patch_0000.txt"
+file_data = "ghost_dump_debug0.000000patch_0000.txt"
 block_size = 8
 
 block_min = []

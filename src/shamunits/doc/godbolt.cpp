@@ -250,6 +250,13 @@ namespace shamunits {
             return get<None,u,power>();
         }
 
+        template<                                                             
+             units::UnitName u,                                                                    
+             int power                                = 1>  
+        inline constexpr T to(){
+            return to<None,u,power>();
+        }
+
         private:
 
         template<UnitPrefix pref = None>
@@ -468,6 +475,6 @@ int main(void){
     double value = 12; //here 12 Myr
 
     // print : value = 3.15576e+19 s
-    std::cout << "value = "<<astro_units.to<None,units::second>() << " s"<< std::endl;
+    std::cout << "value = "<<astro_units.to<units::second>() << " s"<< std::endl;
 
 }

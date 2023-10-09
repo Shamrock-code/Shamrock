@@ -117,6 +117,13 @@ namespace shamunits {
             return get<None,u,power>();
         }
 
+        template<                                                             
+             units::UnitName u,                                                                    
+             int power                                = 1>  
+        inline constexpr T to(){
+            return to<None,u,power>();
+        }
+
         private:
 
         template<UnitPrefix pref = None>

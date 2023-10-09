@@ -24,6 +24,7 @@
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/legacy/log.hpp"
 
+#include "shambase/sycl_vec_aliases.hpp"
 
 
 

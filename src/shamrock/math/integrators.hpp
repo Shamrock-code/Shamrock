@@ -12,6 +12,8 @@
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"
 
+#include "shambase/sycl_vec_aliases.hpp"
+
 namespace shamrock {
     namespace integrators {
 

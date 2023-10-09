@@ -12,6 +12,7 @@
 #include "shambase/type_aliases.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include <pybind11/stl.h>
+#include "shambase/sycl_vec_aliases.hpp"
 
 
 namespace PYBIND11_NAMESPACE { namespace detail {

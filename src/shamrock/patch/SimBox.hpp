@@ -188,10 +188,16 @@ namespace shamrock::patch {
     }
 
     template<class T> PatchCoordTransform<T> SimulationBoxInfo::get_patch_transform() const{
-        
+
         auto [bmin, bmax] = get_bounding_box<T>();
 
-        return PatchCoordTransform<T>{ patch_coord_bounding_box.get_patch_range(), shammath::CoordRange<T>{bmin,bmax} };
+        shammath::CoordRange<T>tmp {bmin,bmax};
+
+        if(tmp.is_err_mode()){
+            throw shambase::throw_with_loc<std::runtime_error>("the box size is not set, please resize the box to the domain size");
+        }
+
+        return PatchCoordTransform<T>{ patch_coord_bounding_box.get_patch_range(), tmp };
 
     }
 

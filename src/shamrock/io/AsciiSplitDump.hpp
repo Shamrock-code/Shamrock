@@ -12,6 +12,7 @@
 #include "shambase/string.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"
+#include "shambase/sycl_vec_aliases.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iostream>

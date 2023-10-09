@@ -165,9 +165,11 @@ template<class T> void append_to_map(
     auto appender = [&](auto & field){
 
         if (field.get_name() == key) {
+
+            logger::debug_ln("PyShamrockCTX","appending field",key);
             
             {
-                sycl::host_accessor acc {*field.get_buf()};
+                sycl::host_accessor acc {shambase::get_check_ref(field.get_buf())};
                 u32 len = field.size();
 
                 for (u32 i = 0 ; i < len; i++) {

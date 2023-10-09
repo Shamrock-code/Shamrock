@@ -12,6 +12,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"
+#include "shambase/sycl_vec_aliases.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <cstddef>
 #include <stdexcept>

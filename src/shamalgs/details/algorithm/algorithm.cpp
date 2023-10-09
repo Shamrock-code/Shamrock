@@ -8,6 +8,7 @@
 
 #include "algorithm.hpp"
 #include "bitonicSort.hpp"
+
 namespace shamalgs::algorithm {
 
     template<class Tkey, class Tval>

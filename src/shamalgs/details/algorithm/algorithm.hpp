@@ -19,7 +19,9 @@
  * 
  */
 
-#include "aliases.hpp"
+
+#include "shambase/type_aliases.hpp"
+#include "shambase/sycl_vec_aliases.hpp"
 
 #include "shambase/sycl.hpp"
 

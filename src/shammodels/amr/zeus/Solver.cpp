@@ -209,6 +209,25 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
         });
     }
 
+
+    src_step.compute_div_v();
+    src_step.update_eint_eos(dt_input);
+
+    if(do_debug_dump){
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+            using MergedPDat = shamrock::MergedPatchData;
+            MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+
+            sycl::buffer<Tscal> &divv = storage.div_v_n.get().get_buf_check(p.id_patch);
+
+            debug_dump.get_file(p.id_patch).change_table_name("divv_source", "f64");
+            debug_dump.get_file(p.id_patch).write_table(divv, mpdat.total_elements*AMRBlock::block_size);
+
+        });
+    }
+
+    storage.div_v_n.reset();
+
     modules::WriteBack wb (context, solver_config,storage);
     wb.write_back_merged_data();
 

@@ -34,8 +34,8 @@ gamma = 5./3.
 
 u_cs1 = 1/( gamma*(gamma-1))
 
-kx,ky,kz = 2*np.pi,0,0
-delta_rho = 1e-5
+kx,ky,kz = 4*np.pi,0,0
+delta_rho = 0
 delta_v = 1e-5
 
 def rho_map(rmin,rmax):
@@ -46,7 +46,9 @@ def rho_map(rmin,rmax):
 
 def eint_map(rmin,rmax):
 
-    return u_cs1*10
+    x,y,z = rmin
+    #return x
+    return u_cs1 + u_cs1*delta_rho*np.cos(kx*x + ky*y + kz*z)
 
 def vel_map(rmin,rmax):
 
@@ -65,4 +67,4 @@ for i in range(2000):
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 
-    model.evolve_once(float(i),0.0001)
+    model.evolve_once(float(i),0.001)

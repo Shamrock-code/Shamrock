@@ -14,7 +14,7 @@ model = shamrock.get_AMRZeus(
 
 model.init_scheduler(int(1e7),1)
 
-multx = 2
+multx = 4
 multy = 1
 multz = 1
 
@@ -25,7 +25,9 @@ model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 cfg = model.gen_default_config()
 scale_fact = 1/(sz*base*multx)
 cfg.set_scale_factor(scale_fact)
-cfg.set_eos_gamma(1.4)
+
+gamma = 1.4
+cfg.set_eos_gamma(gamma)
 model.set_config(cfg)
 
 
@@ -41,13 +43,16 @@ def rho_map(rmin,rmax):
         return 0.125
 
 
+eint_L = 1./(gamma-1)
+eint_R = 0.1/(gamma-1)
+
 def eint_map(rmin,rmax):
 
     x,y,z = rmin
     if x < 0.5:
-        return 1
+        return eint_L
     else:
-        return 0.1
+        return eint_R
 
 def vel_map(rmin,rmax):
 
@@ -60,9 +65,10 @@ model.set_field_value_lambda_f64_3("vel", vel_map)
 
 #model.evolve_once(0,0.1)
 freq = 50
-for i in range(10000):
+dt = 0.0005
+for i in range(1001):
     
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 
-    model.evolve_once(0,0.0005)
+    model.evolve_once(i*dt,dt)

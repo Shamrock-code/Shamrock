@@ -45,9 +45,16 @@ int main(void){
     // in those units G is 3.94781e+25
     std::cout << astro_cte.G() << std::endl;
 
+    //now if the code return a value in astro_units
+    //we can convert it to any units like so
+    double value = 12; //here 12 Myr
+
+    // print : value = 3.15576e+19 s
+    std::cout << "value = "<< astro_units.to<units::second>() << " s"<< std::endl;
+
 }
 
 ```
 
-If you want to try here is a godbolt link : https://godbolt.org/z/8z71qYh69
+If you want to try here is a godbolt link : https://godbolt.org/z/5zjGMea57
 

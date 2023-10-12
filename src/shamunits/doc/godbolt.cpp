@@ -483,6 +483,6 @@ int main(void){
     double value = 12; //here 12 Myr
 
     // print : value = 3.15576e+19 s
-    std::cout << "value = "<<astro_units.to<units::second>() << " s"<< std::endl;
+    std::cout << "value = "<< astro_units.to<units::second>() << " s"<< std::endl;
 
 }

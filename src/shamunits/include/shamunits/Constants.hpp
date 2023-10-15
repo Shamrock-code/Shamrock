@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file Constants.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "ConvertionConstants.hpp"
 #include "Names.hpp"
 #include "UnitSystem.hpp"

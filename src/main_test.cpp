@@ -6,7 +6,11 @@
 //
 // -------------------------------------------------------//
 
-//%Impl status : Good
+/**
+ * @file main_test.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
 
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"

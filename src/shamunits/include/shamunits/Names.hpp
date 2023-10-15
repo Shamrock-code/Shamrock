@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file Names.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include <stdexcept>
 #include <unordered_map>
 #include "details/utils.hpp"

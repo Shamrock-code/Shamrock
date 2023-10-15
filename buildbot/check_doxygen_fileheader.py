@@ -48,6 +48,7 @@ if len(missing_doxygenfilehead) > 0:
         print(" -",i.split(abs_proj_dir)[-1])
 
     print(r"""
+    
     Please add a doxygen header in the file above, similar to this : 
 
     /**

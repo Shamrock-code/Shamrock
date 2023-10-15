@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file UnitSystem.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "Names.hpp"
 #include "ConvertionConstants.hpp"
 #include <cmath>

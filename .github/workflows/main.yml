@@ -44,6 +44,18 @@ jobs:
       - name: Licence check
         run: python buildbot/check_licencing.py
 
+  doxygen_check:
+    name: "Check : (Doxygen file header)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      - name: Licence check
+        run: python buildbot/check_doxygen_fileheader.py
+
   
   #make shamrock documentation
   make_documentation:
@@ -51,7 +63,7 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    needs: [pragma_check, copyright_check]
+    needs: [pragma_check, copyright_check,doxygen_check]
     
     steps:
       - uses: actions/checkout@v3
@@ -84,12 +96,12 @@ jobs:
 
   linux_acpp:
     name: Build AdaptiveCpp
-    needs: [pragma_check, copyright_check]
+    needs: [pragma_check, copyright_check,doxygen_check]
     uses: ./.github/workflows/linux-build-acpp.yml
 
   shamrock_linux_acpp:
     name: Shamrock Test
-    needs: [pragma_check, copyright_check,linux_acpp]
+    needs: [pragma_check, copyright_check,doxygen_check,linux_acpp]
     uses: ./.github/workflows/shamrock-acpp.yml
     
 
@@ -98,17 +110,17 @@ jobs:
 
   linux_dpcpp:
     name: Build DPCPP
-    needs: [pragma_check, copyright_check]
+    needs: [pragma_check, copyright_check,doxygen_check]
     uses: ./.github/workflows/linux-build-dpcpp.yml
 
   shamrock_linux_dpcpp:
     name: Shamrock Test
-    needs: [pragma_check, copyright_check,linux_dpcpp]
+    needs: [pragma_check, copyright_check,doxygen_check,linux_dpcpp]
     uses: ./.github/workflows/shamrock-dpcpp.yml
   
 
   #shamrock_linux_acpp_macos:
-  #  needs: [pragma_check, copyright_check]
+  #  needs: [pragma_check, copyright_check,doxygen_check]
   #  uses: ./.github/workflows/macos-acpp.yml
   #  with:
   #    os: ${{ matrix.os }}

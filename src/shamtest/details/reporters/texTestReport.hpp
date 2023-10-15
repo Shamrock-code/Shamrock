@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file texTestReport.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shamtest/details/TestResult.hpp"
 #include <vector>
 

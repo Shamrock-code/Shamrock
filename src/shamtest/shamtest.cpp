@@ -6,7 +6,11 @@
 //
 // -------------------------------------------------------//
 
-//%Impl status : Good
+/**
+ * @file shamtest.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
 
 #include "shamtest.hpp"
 #include <cmath>

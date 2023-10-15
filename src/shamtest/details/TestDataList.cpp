@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file TestDataList.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "TestDataList.hpp"
 #include "shambase/bytestream.hpp"
 #include "shambase/string.hpp"

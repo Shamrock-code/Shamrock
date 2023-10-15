@@ -12,7 +12,6 @@
  * @file TestResult.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief header describing return type of a test, and the type of the test
- * @date 2023-01-04
  *
  */
 

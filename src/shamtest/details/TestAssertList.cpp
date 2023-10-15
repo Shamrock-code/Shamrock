@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file TestAssertList.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "TestAssertList.hpp"
 #include "shambase/bytestream.hpp"
 #include "shamtest/details/TestAssert.hpp"

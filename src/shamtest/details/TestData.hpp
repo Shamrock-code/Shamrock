@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file TestData.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "aliases.hpp"
 #include "shamtest/details/DataNode.hpp"
 

@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file TestDataList.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "aliases.hpp"
 
 #include "TestData.hpp"

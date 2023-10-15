@@ -12,7 +12,6 @@
  * @file shamtest.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief main include file for testing
- * @date 2023-01-04
  */
 
 #include "aliases.hpp"

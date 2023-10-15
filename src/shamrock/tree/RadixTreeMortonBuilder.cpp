@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file RadixTreeMortonBuilder.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "RadixTreeMortonBuilder.hpp"
 #include "kernels/key_morton_sort.hpp"
 #include "shamalgs/algorithm.hpp"

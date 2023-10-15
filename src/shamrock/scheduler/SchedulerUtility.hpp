@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file SchedulerUtility.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "ComputeField.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"

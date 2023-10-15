@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file hilbertsfc.hpp
+ * @file hilbert.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief hilbert curve implementation from killing J., 2004
  *
@@ -17,10 +17,6 @@
  * Programming the Hilbert curve     
  * killing J., 2004, AIPC, 707, 381. doi:10.1063/1.1751381     
  *
- * @version 1.0
- * @date 2022-02-28
- * 
- * @copyright Copyright (c) 2022
  * 
  */
 

@@ -7,13 +7,9 @@
 // -------------------------------------------------------//
 
 /**
- * @file loadbalancing_hilbert.cpp
+ * @file HilbertLoadBalance.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief implementation of the hilbert curve load balancing
- * @version 1.0
- * @date 2022-02-28
- *
- * @copyright Copyright (c) 2022
  *
  */
 

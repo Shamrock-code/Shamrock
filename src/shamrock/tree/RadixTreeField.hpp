@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file RadixTreeField.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shambase/type_aliases.hpp"
 #include "shambase/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"

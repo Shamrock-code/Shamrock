@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file scheduler_patch_list.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "scheduler_patch_list.hpp"
 
 #include <vector>

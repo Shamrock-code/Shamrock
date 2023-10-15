@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file TreeCellRanges.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "kernels/compute_ranges.hpp"
 #include "kernels/convert_ranges.hpp"
 #include "shamalgs/memory.hpp"

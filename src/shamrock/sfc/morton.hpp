@@ -12,10 +12,6 @@
  * @file morton.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Morton curve implementation
- * @version 0.1
- * @date 2022-03-03
- *
- * @copyright Copyright (c) 2022
  *
  */
 

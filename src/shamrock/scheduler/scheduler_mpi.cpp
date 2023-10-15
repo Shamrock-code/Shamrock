@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file scheduler_mpi.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "scheduler_mpi.hpp"
 
 #include <ctime>

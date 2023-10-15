@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file InterfacesUtility.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shamalgs/memory.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"

@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file ShamrockCtx.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "aliases.hpp"
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"

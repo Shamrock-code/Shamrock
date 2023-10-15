@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file karras_alg.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "aliases.hpp"
 #include "flags.hpp"
 #include <memory>

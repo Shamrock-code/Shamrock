@@ -18,7 +18,7 @@
 #include "shamtest/shamtest.hpp"
 #include "shamalgs/random.hpp"
 
-#include "shamrock/tree/tests/TreeTests.hpp"
+#include "tests/shamrock/tree/TreeTests.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 #include "shamrock/sfc/morton.hpp"
 

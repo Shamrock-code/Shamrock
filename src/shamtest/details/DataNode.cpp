@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file DataNode.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "DataNode.hpp"
 #include "shambase/bytestream.hpp"
 #include "shambase/string.hpp"

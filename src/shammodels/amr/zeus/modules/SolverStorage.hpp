@@ -15,7 +15,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shamrock/tree/TreeTaversalCache.hpp"
+#include "shamrock/tree/TreeTraversalCache.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/StorageComponent.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"

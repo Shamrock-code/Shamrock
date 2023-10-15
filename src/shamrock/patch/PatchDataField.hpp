@@ -6,9 +6,13 @@
 //
 // -------------------------------------------------------//
 
-//%Impl status : Good
-
 #pragma once
+
+/**
+ * @file PatchDataField.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "aliases.hpp"
 #include "shamalgs/memory.hpp"

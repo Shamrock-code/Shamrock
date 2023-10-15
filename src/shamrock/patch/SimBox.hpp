@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file SimBox.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "aliases.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambase/exception.hpp"

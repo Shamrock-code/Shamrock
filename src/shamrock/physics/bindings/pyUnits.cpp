@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file pyUnits.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ * \todo move to bindings
+ */
+
 #include "shambase/type_aliases.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include <shamunits/Constants.hpp>

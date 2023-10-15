@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file PatchDataField.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "PatchDataField.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/random.hpp"

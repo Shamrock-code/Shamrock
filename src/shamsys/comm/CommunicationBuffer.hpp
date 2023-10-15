@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file CommunicationBuffer.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shambase/exception.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"

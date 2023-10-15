@@ -6,9 +6,13 @@
 //
 // -------------------------------------------------------//
 
-
-
 #pragma once
+
+/**
+ * @file MpiDataTypeHandler.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
 
 #include "aliases.hpp"
 #include "shamsys/legacy/log.hpp"

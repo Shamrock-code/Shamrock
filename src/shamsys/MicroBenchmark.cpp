@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file MicroBenchmark.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambase/exception.hpp"

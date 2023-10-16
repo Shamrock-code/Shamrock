@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file sycl_vec_aliases.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "type_aliases.hpp"
 
 #define TYPEDEFS_TYPES(...) \

@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file sycl.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "type_aliases.hpp"
 #include <sycl/sycl.hpp>
 

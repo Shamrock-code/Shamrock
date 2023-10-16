@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file GhostZones.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/memory.hpp"

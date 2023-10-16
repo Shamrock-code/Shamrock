@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file ResizableBuffer.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "ResizableBuffer.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"

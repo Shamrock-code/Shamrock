@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file sycl_builtins.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/vectors.hpp"

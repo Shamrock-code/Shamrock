@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file groupReduction.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/memory.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils.hpp"

@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file pyAMRGodunovModel.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include <memory>
 
 #include "shambindings/pybindaliases.hpp"

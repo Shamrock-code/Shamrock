@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file endian.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/integer.hpp"
 #include "shambase/type_aliases.hpp"
 

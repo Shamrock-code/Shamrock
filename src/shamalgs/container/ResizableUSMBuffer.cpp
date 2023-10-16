@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file ResizableUSMBuffer.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "ResizableUSMBuffer.hpp"
 #include "shamalgs/details/reduction/reduction.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"

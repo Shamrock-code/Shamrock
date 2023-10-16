@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file bitonicSort_legacy.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "bitonicSort.hpp"
 #include "shambase/integer.hpp"
 #include "shamsys/legacy/log.hpp"

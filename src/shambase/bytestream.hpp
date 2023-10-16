@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file bytestream.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/type_aliases.hpp"
 #include <sstream>
 #include <string>

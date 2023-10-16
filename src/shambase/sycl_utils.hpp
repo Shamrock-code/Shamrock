@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file sycl_utils.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
 #include "shamsys/legacy/log.hpp"

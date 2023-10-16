@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file integer_sycl.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/type_aliases.hpp"
 #include "shambase/type_traits.hpp"
 #include "shambase/sycl.hpp"

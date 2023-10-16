@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file vec_equals.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/sycl.hpp"
 #include "vectorProperties.hpp"
 

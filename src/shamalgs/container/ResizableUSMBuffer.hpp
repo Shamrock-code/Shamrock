@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file ResizableUSMBuffer.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shamalgs/container/BufferEventHandler.hpp"
 #include "shambase/exception.hpp"

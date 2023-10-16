@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file sparseXchg.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shambase/stacktrace.hpp"

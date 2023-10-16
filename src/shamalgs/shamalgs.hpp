@@ -13,11 +13,7 @@
  * @file shamalgs.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief include file to make doxygen happy with namespaces
- * @version 0.1
- * @date 2023-02-13
- * 
- * @copyright Copyright (c) 2023
- * 
+ * \todo remove and use a dox file instead
  */
 
 #include "numeric.hpp"

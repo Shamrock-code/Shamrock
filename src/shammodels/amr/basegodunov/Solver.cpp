@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file Solver.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 

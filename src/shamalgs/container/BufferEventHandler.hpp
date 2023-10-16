@@ -9,6 +9,13 @@
 #pragma once
 
 
+/**
+ * @file BufferEventHandler.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 
 #include "shambase/string.hpp"
 #include "shambase/type_aliases.hpp"

@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file type_aliases.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 //#include <sycl/sycl.hpp>
 
 #ifdef SYCL_COMP_ACPP

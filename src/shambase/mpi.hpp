@@ -8,9 +8,14 @@
 
 #pragma once
 
+
 /**
- * @brief Utility header to include MPI properly
+ * @file mpi.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief Use this header to include MPI properly
+ * 
  */
+ 
 
 #if __has_include(<mpi.h>)
 #include <mpi.h>

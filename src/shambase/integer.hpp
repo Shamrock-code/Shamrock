@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file integer.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/type_aliases.hpp"
 #include <climits>
 #include "shambase/type_traits.hpp"

@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file fallbackReduction.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"

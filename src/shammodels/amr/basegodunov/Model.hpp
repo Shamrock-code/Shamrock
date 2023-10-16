@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file Model.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/memory.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"

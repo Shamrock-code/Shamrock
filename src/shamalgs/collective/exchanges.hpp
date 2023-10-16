@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file exchanges.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/type_aliases.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"

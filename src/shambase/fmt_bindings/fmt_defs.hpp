@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file fmt_defs.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include <fmt/core.h>
 #include <fmt/format.h>

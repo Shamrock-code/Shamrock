@@ -9,6 +9,13 @@
 
 #pragma once
 
+/**
+ * @file pytypealias.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/type_aliases.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include <pybind11/stl.h>

@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file time.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/string.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/legacy/log.hpp"

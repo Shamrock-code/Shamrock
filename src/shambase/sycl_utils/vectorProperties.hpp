@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file vectorProperties.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include <limits>
 

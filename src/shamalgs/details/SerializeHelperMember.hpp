@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file SerializeHelperMember.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/memory.hpp"
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"

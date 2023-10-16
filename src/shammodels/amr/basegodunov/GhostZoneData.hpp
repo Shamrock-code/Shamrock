@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file GhostZoneData.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/DistributedData.hpp"
 #include "shambase/sycl.hpp"
 #include "shammath/AABB.hpp"

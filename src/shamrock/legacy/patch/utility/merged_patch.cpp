@@ -6,6 +6,11 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file merged_patch.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
 
 #include "merged_patch.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"

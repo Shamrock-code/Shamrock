@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file SPHSolverImpl.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"

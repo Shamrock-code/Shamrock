@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file AsciiSplitDump.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shambase/DistributedData.hpp"
 #include "shambase/string.hpp"
 #include "shambase/sycl.hpp"

@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file SPHUtilities.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "SPHUtilities.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 #include "shammath/sphkernels.hpp"

@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file sparse_communicator_rtree_buf.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamrock/tree/RadixTree.hpp"
 #include "sparse_communicator.hpp"
 

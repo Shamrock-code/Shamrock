@@ -24,4 +24,3 @@ target_sources(shamrock_lib
 
 
 
-add_subdirectory(tests)

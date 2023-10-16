@@ -7,6 +7,14 @@
 // -------------------------------------------------------//
 
 #pragma once
+
+/**
+ * @file interf_impl_util.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamrock/tree/RadixTree.hpp"
 #include "interface_handler_impl_list.hpp"
 #include "shamrock/legacy/utils/interact_crit_utils.hpp"

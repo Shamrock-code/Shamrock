@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file sparse_communicator_patchdata_field.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "sparse_communicator.hpp"
 
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"

@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file Sink.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shammodels/sph/SolverConfig.hpp"

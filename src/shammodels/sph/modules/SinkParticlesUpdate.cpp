@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file SinkParticlesUpdate.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shamalgs/reduction.hpp"

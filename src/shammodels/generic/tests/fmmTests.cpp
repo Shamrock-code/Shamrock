@@ -7,6 +7,13 @@
 // -------------------------------------------------------//
 
 
+/**
+ * @file fmmTests.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/legacy/log.hpp"

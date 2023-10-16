@@ -7,8 +7,13 @@
 // -------------------------------------------------------//
 
 
-//%Impl status : Good
-
+/**
+ * @file nbody_setup.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "nbody_setup.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 

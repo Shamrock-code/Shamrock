@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file ValueLoader.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "ValueLoader.hpp"
 
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"

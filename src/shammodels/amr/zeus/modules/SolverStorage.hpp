@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file SolverStorage.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/zeus/GhostZoneData.hpp"

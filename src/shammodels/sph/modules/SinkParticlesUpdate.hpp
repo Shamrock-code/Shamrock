@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file Sink.hpp
+ * @file SinkParticlesUpdate.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
  * 

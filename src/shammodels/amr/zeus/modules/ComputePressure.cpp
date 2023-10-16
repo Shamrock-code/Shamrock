@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file ComputePressure.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammodels/amr/zeus/modules/ComputePressure.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"

@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file ConservativeCheck.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "ConservativeCheck.hpp"
 
 #include "shambase/sycl_utils/sycl_utilities.hpp"

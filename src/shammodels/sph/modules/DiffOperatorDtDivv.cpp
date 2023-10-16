@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file DiffOperatorDtDivv.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shambase/memory.hpp"
 #include "shammath/matrix.hpp"

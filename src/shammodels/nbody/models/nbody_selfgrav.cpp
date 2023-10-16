@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file nbody_selfgrav.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 
 #include "nbody_selfgrav.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"

@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file leapfrog.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamsys/legacy/log.hpp"
 #include "shambase/sycl.hpp"
 #include "shamrock/legacy/utils/syclreduction.hpp"

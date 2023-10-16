@@ -9,10 +9,9 @@
 #pragma once
 
 /**
- * @file kernels.hpp
+ * @file sphkernels.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief sph kernels
- * @date 2023-05-10
  */
 
 //%Impl status : Good

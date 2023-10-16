@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file NeighFaceList.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/sycl.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"

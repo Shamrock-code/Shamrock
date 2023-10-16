@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file FaceFlagger.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/zeus/NeighFaceList.hpp"
 #include "shammodels/amr/zeus/Solver.hpp"

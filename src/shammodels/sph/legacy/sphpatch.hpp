@@ -6,14 +6,16 @@
 //
 // -------------------------------------------------------//
 
-
-
-//%Impl status : Should rewrite
-
-
-
-
 #pragma once
+
+
+/**
+ * @file sphpatch.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"

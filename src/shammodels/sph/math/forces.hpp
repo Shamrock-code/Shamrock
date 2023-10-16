@@ -12,7 +12,6 @@
  * @file forces.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief file containing formulas for sph forces
- * @date 2023-01-04
  */
 
 #include "shambase/sycl_utils/sycl_utilities.hpp"

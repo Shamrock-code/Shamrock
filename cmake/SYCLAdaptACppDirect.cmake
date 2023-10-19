@@ -51,13 +51,49 @@ if(NOT DEFINED SYCL_feature_reduc2020)
   endif()
 endif()
 
-
 set(SYCL_COMPILER "ACPP")
 
 if(DEFINED ACPP_PATH)
+
+
+
+
+  check_cxx_source_compiles(
+  "
+  #include <${ACPP_PATH}/include/AdaptiveCpp/sycl/sycl.hpp>
+  int main(void){}
+  "    
+  HAS_ACPP_HEADER_FOLDER)
+  
+  
+  check_cxx_source_compiles(
+  "
+  #include <${ACPP_PATH}/include/OpenSYCL/sycl/sycl.hpp>
+  int main(void){}
+  "    
+  HAS_OpenSYCL_HEADER_FOLDER)
+  
+  
+  check_cxx_source_compiles(
+  "
+  #include <${ACPP_PATH}/include/hipSYCL/sycl/sycl.hpp>
+  int main(void){}
+  "    
+  HAS_hipSYCL_HEADER_FOLDER)
+  
+
+
+
   set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL_COMP_ACPP")
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${ACPP_PATH}/include")
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${ACPP_PATH}/include/sycl")
+  if(HAS_ACPP_HEADER_FOLDER)
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${ACPP_PATH}/include/AdaptiveCpp")
+  endif()
+  if(HAS_OpenSYCL_HEADER_FOLDER)
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${ACPP_PATH}/include/OpenSYCL")
+  endif()
+  if(HAS_hipSYCL_HEADER_FOLDER)
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${ACPP_PATH}/include/hipSYCL")
+  endif()
   list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${ACPP_PATH}/bin")
   list(APPEND CMAKE_SYSTEM_LIBRARY_PATH "${ACPP_PATH}/lib")
 else()

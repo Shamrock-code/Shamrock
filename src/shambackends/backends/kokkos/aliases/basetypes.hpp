@@ -7,7 +7,12 @@
 // -------------------------------------------------------//
 
 #pragma once
-
+/**
+ * @file basetypes.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 #ifdef SHAMROCK_ENABLE_BACKEND_KOKKOS
 #include <cstdint>
 using i64 = std::int64_t  ;

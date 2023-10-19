@@ -8,5 +8,12 @@
 
 #pragma once
 
+/**
+ * @file basetypes.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include <shambackends/backends/sycl/aliases/basetypes.hpp>
 #include <shambackends/backends/kokkos/aliases/basetypes.hpp>

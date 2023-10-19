@@ -7,7 +7,12 @@
 // -------------------------------------------------------//
 
 #pragma once
-
+/**
+ * @file buffer.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 
 #ifdef SHAMROCK_ENABLE_BACKEND_SYCL
 

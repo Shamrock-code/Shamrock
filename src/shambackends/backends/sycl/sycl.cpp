@@ -5,7 +5,12 @@
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
-
+/**
+ * @file sycl.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 #ifdef SHAMROCK_ENABLE_BACKEND_SYCL
 
 #include "sycl.hpp"

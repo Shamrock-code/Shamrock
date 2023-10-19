@@ -7,7 +7,12 @@
 // -------------------------------------------------------//
 
 #pragma once
-
+/**
+ * @file vec.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 
 #include <shambackends/backends/sycl/aliases/vec.hpp>
 #include <shambackends/backends/kokkos/aliases/vec.hpp>

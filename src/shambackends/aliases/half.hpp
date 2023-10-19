@@ -7,7 +7,12 @@
 // -------------------------------------------------------//
 
 #pragma once
-
+/**
+ * @file half.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 
 #include <shambackends/backends/sycl/aliases/half.hpp>
 #include <shambackends/backends/kokkos/aliases/half.hpp>

@@ -7,7 +7,12 @@
 // -------------------------------------------------------//
 
 #pragma once
-
+/**
+ * @file shambackends.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 #include <utility>
 
 #include <shambackends/backends/sycl/sycl.hpp>

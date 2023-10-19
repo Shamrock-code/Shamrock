@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file reduction.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shambase/exception.hpp"
 #include <shambackends/backends/sycl/sycl.hpp>

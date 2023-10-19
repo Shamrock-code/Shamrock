@@ -8,9 +8,16 @@
 
 #pragma once
 
+/**
+ * @file SPHUtilities.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
-#include "shammodels/sph/sphpart.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 
@@ -32,7 +39,7 @@ namespace shammodels::sph {
 
         SPHTreeUtilities(PatchScheduler &sched) : sched(sched) {}
 
-        static void iterate_smoothing_lenght_tree(
+        static void iterate_smoothing_length_tree(
 
             sycl::buffer<vec> &merged_r,
             sycl::buffer<flt> &hnew,
@@ -95,7 +102,7 @@ namespace shammodels::sph {
             return interf_handle.make_interface_cache(sptree, interactR_mpi_tree, interactR_patch);
         }
 
-        static void iterate_smoothing_lenght_cache(
+        static void iterate_smoothing_length_cache(
 
             sycl::buffer<vec> &merged_r,
             sycl::buffer<flt> &hnew,
@@ -111,7 +118,7 @@ namespace shammodels::sph {
         );
 
         template<class u_morton>
-        static void iterate_smoothing_lenght_tree(
+        static void iterate_smoothing_length_tree(
 
             sycl::buffer<vec> &merged_r,
             sycl::buffer<flt> &hnew,
@@ -125,7 +132,7 @@ namespace shammodels::sph {
             flt h_evol_iter_max
 
         ) {
-            SPHTreeUtilities<vec, SPHKernel, u_morton>::iterate_smoothing_lenght_tree(
+            SPHTreeUtilities<vec, SPHKernel, u_morton>::iterate_smoothing_length_tree(
                 merged_r,
                 hnew,
                 hold,

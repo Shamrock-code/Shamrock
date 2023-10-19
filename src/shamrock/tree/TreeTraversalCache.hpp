@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file TreeTraversalCache.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shamalgs/numeric.hpp"
 #include "shambase/DistributedData.hpp"
 #include <shambackends/backends/sycl/sycl.hpp>

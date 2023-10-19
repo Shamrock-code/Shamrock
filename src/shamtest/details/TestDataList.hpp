@@ -8,9 +8,16 @@
 
 #pragma once
 
+/**
+ * @file TestDataList.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "aliases.hpp"
 
 #include "TestData.hpp"
+#include <vector>
 
 namespace shamtest::details {
 
@@ -25,7 +32,9 @@ namespace shamtest::details {
             return test_data.back();
         }
 
-        std::string serialize();
+        std::string serialize_json();
+        void serialize(std::basic_stringstream<u8> &stream);
+        static TestDataList deserialize(std::basic_stringstream<u8> &reader);
     };
 
 }

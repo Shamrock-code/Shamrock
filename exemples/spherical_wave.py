@@ -74,7 +74,7 @@ model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
 #print("Current part mass :", pmass)
 
 #for it in range(5):
-#    setup.update_smoothing_lenght(ctx)
+#    setup.update_smoothing_length(ctx)
 
 
 

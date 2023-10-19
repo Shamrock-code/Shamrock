@@ -33,4 +33,3 @@ target_sources(shamrock_test
 endif()
 
 
-add_subdirectory(tests)

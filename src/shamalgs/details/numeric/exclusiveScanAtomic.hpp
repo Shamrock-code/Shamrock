@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file exclusiveScanAtomic.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shamalgs/atomic/DeviceCounter.hpp"
 #include "shamalgs/atomic/DynamicIdGenerator.hpp"

@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file SolverConfig.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <shamunits/UnitSystem.hpp>

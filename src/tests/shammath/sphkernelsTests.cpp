@@ -150,7 +150,7 @@ Outplot gen_plot(std::vector<f64> & xin){
     return out;
 }
 
-TestStart(Analysis, "shammath/sphkernels_plotall", plotkernels, 1){
+TestStart(ValidationTest, "shammath/sphkernels_plotall", plotkernels, 1){
 
     std::vector<f64> X;
 
@@ -241,9 +241,19 @@ TestStart(Analysis, "shammath/sphkernels_plotall", plotkernels, 1){
 
         plt.tight_layout()
 
-        plt.savefig("sph_kernels.pdf")
+        plt.savefig("tests/figures/sph_kernels.pdf")
 
     )");
+
+    TEX_REPORT(R"==(
+
+        \begin{figure}[ht!]
+        \center
+        \includegraphics[width=0.95\linewidth]{figures/sph_kernels.pdf}
+        \caption{SPH kernels implemented in shamrock}
+        \end{figure}
+
+    )==")
     
 }
 

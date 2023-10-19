@@ -25,22 +25,30 @@ model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 cfg = model.gen_default_config()
 scale_fact = 1/(sz*base*multx)
 cfg.set_scale_factor(scale_fact)
+
+cfg.set_eos_gamma(5./3.)
 model.set_config(cfg)
 
 
-kx,ky,kz = 2*np.pi,0,0
+gamma = 5./3. 
+
+u_cs1 = 1/( gamma*(gamma-1))
+
+kx,ky,kz = 4*np.pi,0,0
 delta_rho = 0
-delta_v = 1e-4
+delta_v = 1e-5
 
 def rho_map(rmin,rmax):
 
     x,y,z = rmin
 
-    return 1. + delta_rho*np.sin(kx*x + ky*y + kz*z)
+    return 1. + delta_rho*np.cos(kx*x + ky*y + kz*z)
 
 def eint_map(rmin,rmax):
 
-    return 1.
+    x,y,z = rmin
+    #return x
+    return u_cs1 + u_cs1*delta_rho*np.cos(kx*x + ky*y + kz*z)
 
 def vel_map(rmin,rmax):
 

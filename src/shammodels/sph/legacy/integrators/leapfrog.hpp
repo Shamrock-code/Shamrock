@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file leapfrog.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamsys/legacy/log.hpp"
 #include <shambackends/backends/sycl/sycl.hpp>
 #include "shamrock/legacy/utils/syclreduction.hpp"
@@ -25,7 +32,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/sph/kernels.hpp"
-#include "shammodels/sph/legacy/algs/smoothing_lenght.hpp"
+#include "shammodels/sph/legacy/algs/smoothing_length.hpp"
 #include "shamrock/sph/sphpart.hpp"
 #include "shammodels/sph/legacy/sphpatch.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
@@ -350,7 +357,7 @@ namespace sph {
 
 
 
-        //iterate smoothing lenght
+        //iterate smoothing length
         sched.for_each_patch([&](u64 id_patch, Patch  /*cur_p*/) {
 
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","Init h iteration");
@@ -368,9 +375,9 @@ namespace sph {
             logger::debug_ln("SPHLeapfrog","merging -> original size :" , merge_pdat.at(id_patch).or_element_cnt
                       , "| merged :" , pdat_merge.get_obj_cnt());
 
-            models::sph::algs::SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
+            models::sph::algs::SmoothinglengthCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
-            h_iterator.iterate_smoothing_lenght(
+            h_iterator.iterate_smoothing_length(
                 shamsys::instance::get_compute_queue(), 
                 merge_pdat.at(id_patch).or_element_cnt,
                 sph_gpart_mass,

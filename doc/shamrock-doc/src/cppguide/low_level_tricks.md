@@ -223,7 +223,7 @@ int MyVar; // Declared in this file, and is writeable
 #include Header1.h // MyVar is seen as a constant, declared elsewhere
 ```
 
-## Bit shift up to bit lenght
+## Bit shift up to bit length
 (source : https://stackoverflow.com/questions/599365/what-is-your-favorite-c-programming-trick)
 
 Bit-shifts are only defined up to a shift-amount of 31 (on a 32 bit integer)..

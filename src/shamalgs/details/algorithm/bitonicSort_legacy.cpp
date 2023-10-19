@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file bitonicSort_legacy.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "bitonicSort.hpp"
 #include "shambase/integer.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -97,7 +104,7 @@ namespace shamalgs::algorithm::details {
 
 
         if(!shambase::is_pow_of_two(len)){
-            throw std::invalid_argument("this algorithm can only be used with lenght that are powers of two");
+            throw std::invalid_argument("this algorithm can only be used with length that are powers of two");
         }
 
 

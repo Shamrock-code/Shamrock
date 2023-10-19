@@ -147,7 +147,7 @@ template<class T> void make_bandwith_matrix(std::string dset_name,sycl::queue & 
     T* ptr1;
     T* ptr2;
 
-    auto comm = [&](u32 rank_send, u32 rank_recv) -> f64{
+    auto comm = [&](u32 rank_send, u32 rank_recv) -> f64 {
 
         mpi::barrier(MPI_COMM_WORLD);
 

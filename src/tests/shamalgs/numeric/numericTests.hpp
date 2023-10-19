@@ -47,7 +47,7 @@ struct TestStreamCompact {
             }
         }
 
-        shamtest::asserts().assert_equal("same lenght", res_len, u32(idxs.size()));
+        shamtest::asserts().assert_equal("same length", res_len, u32(idxs.size()));
 
         for(u32 idx = 0; idx < res_len; idx ++){
             shamtest::asserts().assert_equal("sid_check", res_check[idx], idxs[idx]);

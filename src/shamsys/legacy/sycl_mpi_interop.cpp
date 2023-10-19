@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file sycl_mpi_interop.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "sycl_mpi_interop.hpp"
 #include "shambase/memory.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"

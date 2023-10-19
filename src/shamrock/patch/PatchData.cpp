@@ -6,6 +6,11 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file PatchData.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "PatchData.hpp"
 #include "shambase/exception.hpp"
@@ -181,7 +186,7 @@ namespace shamrock::patch{
 
 
 
-    void PatchData::append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) const {
+    void PatchData::append_subset_to(sycl::buffer<u32> & idxs, u32 sz, PatchData & pdat) {
         StackEntry stack_loc{};
 
         for(u32 idx = 0; idx < fields.size(); idx++){
@@ -202,7 +207,7 @@ namespace shamrock::patch{
         }
     }
 
-    void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat) const {
+    void PatchData::append_subset_to(std::vector<u32> & idxs, PatchData &pdat) {
         StackEntry stack_loc{};
 
         for(u32 idx = 0; idx < fields.size(); idx++){

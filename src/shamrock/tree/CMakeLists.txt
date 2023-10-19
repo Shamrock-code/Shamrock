@@ -30,4 +30,3 @@ target_sources(shamrock_test
 endif()
 
 add_subdirectory(kernels)
-add_subdirectory(tests)

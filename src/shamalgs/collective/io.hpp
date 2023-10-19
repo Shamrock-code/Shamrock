@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file io.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/collective/indexing.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/MpiWrapper.hpp"

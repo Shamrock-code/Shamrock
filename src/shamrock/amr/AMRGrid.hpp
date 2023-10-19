@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file AMRGrid.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "AMRCell.hpp"
 #include "aliases.hpp"
 #include "shamalgs/algorithm.hpp"

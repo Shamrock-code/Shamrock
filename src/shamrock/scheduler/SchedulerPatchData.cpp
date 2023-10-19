@@ -7,13 +7,9 @@
 // -------------------------------------------------------//
 
 /**
- * @file scheduler_patch_data.cpp
+ * @file SchedulerPatchData.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Implementation of PatchData handling related function
- * @version 0.1
- * @date 2022-03-01
- * 
- * @copyright Copyright (c) 2022
  * 
  */
 

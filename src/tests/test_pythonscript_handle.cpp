@@ -53,3 +53,15 @@ TestStart(Unittest, "shamtest/PyScriptHandle(run)", shamtestpyscriptrunfail, 1) 
         )")
     );
 }
+
+TestStart(Unittest, "shamtest/PyScriptHandle(shamrock)", shamtestpyscriptrunshamrockmodule, 1) {
+
+    PyScriptHandle hdnl{};
+
+    shamtest::asserts().assert_bool("success", 
+        hdnl.exec(R"(
+            import shamrock
+            
+        )")
+    );
+}

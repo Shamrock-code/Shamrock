@@ -6,9 +6,13 @@
 //
 // -------------------------------------------------------//
 
-//%Impl status : Good
-
 #pragma once
+
+/**
+ * @file PatchDataField.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "aliases.hpp"
 #include "shamalgs/memory.hpp"
@@ -142,9 +146,9 @@ template <class T> class PatchDataField {
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
 
-    inline const std::unique_ptr<sycl::buffer<T>> &get_buf() const { return buf.get_buf(); }
+    //inline const std::unique_ptr<sycl::buffer<T>> &get_buf() const { return buf.get_buf(); }
 
-    inline std::unique_ptr<sycl::buffer<T>> &get_buf_priviledge() { return buf.get_buf_priviledge(); }
+    inline std::unique_ptr<sycl::buffer<T>> &get_buf() { return buf.get_buf_priviledge(); }
 
     //[[deprecated]]
     // inline std::unique_ptr<sycl::buffer<T>> get_sub_buf(){
@@ -196,13 +200,13 @@ template <class T> class PatchDataField {
      * @return std::tuple<std::optional<sycl::buffer<u32>>, u32> 
      */
     template<class LambdaCd>
-    std::tuple<std::optional<sycl::buffer<u32>>, u32> get_elements_in_half_open(T vmin, T vmax) const;
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> get_elements_in_half_open(T vmin, T vmax);
 
     template <class Lambdacd>
-    std::vector<u32> get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) const;
+    std::vector<u32> get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax);
 
     template <class Lambdacd>
-    inline std::unique_ptr<sycl::buffer<u32>> get_elements_with_range_buf(Lambdacd &&cd_true, T vmin, T vmax) const{
+    inline std::unique_ptr<sycl::buffer<u32>> get_elements_with_range_buf(Lambdacd &&cd_true, T vmin, T vmax){
         std::vector<u32> idxs = get_elements_with_range(std::forward<Lambdacd>(cd_true), vmin,vmax);
         if(idxs.empty()){
             return {};
@@ -211,11 +215,11 @@ template <class T> class PatchDataField {
         }
     }
 
-    template <class Lambdacd> void check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log = "") const;
+    template <class Lambdacd> void check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log = "");
 
     void extract_element(u32 pidx, PatchDataField<T> &to);
 
-    bool check_field_match(const PatchDataField<T> &f2) const;
+    bool check_field_match(PatchDataField<T> &f2);
 
     inline void field_raz(){
         logger::debug_ln("PatchDataField","raz : ",field_name);
@@ -228,10 +232,10 @@ template <class T> class PatchDataField {
      * @param idxs
      * @param pfield
      */
-    void append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const;
-    void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
+    void append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield);
+    void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield);
 
-    inline PatchDataField make_new_from_subset(sycl::buffer<u32> &idxs_buf, u32 sz) const {
+    inline PatchDataField make_new_from_subset(sycl::buffer<u32> &idxs_buf, u32 sz) {
         PatchDataField pfield(field_name, nvar);
         append_subset_to(idxs_buf,sz,pfield);
         return pfield;
@@ -247,7 +251,7 @@ template <class T> class PatchDataField {
      * This function can be used to apply the result of a sort to the field
      * 
      * @param index_map 
-     * @param len the lenght of the map (must match with the current count)
+     * @param len the length of the map (must match with the current count)
      */
     void index_remap(sycl::buffer<u32> & index_map, u32 len);
 
@@ -369,7 +373,7 @@ template <class T> inline void PatchDataField<T>::override(const T val) {
 template <class T>
 template <class Lambdacd>
 inline std::vector<u32>
-PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) const {
+PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) {
     StackEntry stack_loc{};
     std::vector<u32> idxs;
 
@@ -429,7 +433,7 @@ class PatchDataRangeCheckError : public std::exception {
 
 template <class T>
 template <class Lambdacd>
-inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log) const {
+inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log) {
     StackEntry stack_loc{};
 
     if(is_empty()){return;}

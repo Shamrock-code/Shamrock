@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file TreeStructure.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "aliases.hpp"
 
 #include "kernels/karras_alg.hpp"

@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file interact_crit_utils.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 namespace interact_crit::utils {
 
     template<class InteractCd,class... Args>

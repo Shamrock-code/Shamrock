@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file AABB.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shambase/SourceLocation.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"

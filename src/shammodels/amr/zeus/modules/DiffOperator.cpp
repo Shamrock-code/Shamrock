@@ -7,6 +7,13 @@
 // -------------------------------------------------------//
 
 
+/**
+ * @file DiffOperator.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammodels/amr/zeus/modules/DiffOperator.hpp"
 #include "shammodels/amr/zeus/NeighFaceList.hpp"
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"

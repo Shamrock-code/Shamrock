@@ -6,17 +6,25 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file TestDataList.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "TestDataList.hpp"
+#include "shambase/bytestream.hpp"
 #include "shambase/string.hpp"
+#include <sstream>
 
 namespace shamtest::details {
-    
-    std::string TestDataList::serialize(){
+
+    std::string TestDataList::serialize_json() {
         std::string acc = "\n[\n";
 
-        for(u32 i = 0; i < test_data.size(); i++){
-            acc += shambase::increase_indent( test_data[i].serialize()) ;
-            if(i < test_data.size()-1){
+        for (u32 i = 0; i < test_data.size(); i++) {
+            acc += shambase::increase_indent(test_data[i].serialize_json());
+            if (i < test_data.size() - 1) {
                 acc += ",";
             }
         }
@@ -25,4 +33,15 @@ namespace shamtest::details {
         return acc;
     }
 
-}
+    void TestDataList::serialize(std::basic_stringstream<u8> &stream) {
+        shambase::stream_write_vector(stream, test_data);
+    }
+    TestDataList TestDataList::deserialize(std::basic_stringstream<u8> &stream) {
+        TestDataList out;
+
+        shambase::stream_read_vector(stream, out.test_data);
+
+        return {};
+    }
+
+} // namespace shamtest::details

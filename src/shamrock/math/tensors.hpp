@@ -6,11 +6,13 @@
 //
 // -------------------------------------------------------//
 
-
-
-//%Impl status : Clean
-
 #pragma once
+
+/**
+ * @file tensors.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "tensors/symtensors.hpp"
 #include "tensors/collections.hpp"

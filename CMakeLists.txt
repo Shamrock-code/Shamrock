@@ -39,6 +39,12 @@ option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
 option(SHAMROCK_USE_PCH "use precompiled headers" Off)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 
+if(APPLE)
+if(SHAMROCK_USE_SHARED_LIB)
+message(STATUS "forcing SHAMROCK_USE_SHARED_LIB=Off on Macos because of know issues")
+endif()
+set(SHAMROCK_USE_SHARED_LIB Off)
+endif()
 
 ######################
 #checking compiler flag support 

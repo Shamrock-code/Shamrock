@@ -7,6 +7,14 @@
 // -------------------------------------------------------//
 
 #pragma once
+
+/**
+ * @file interf_impl_util.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamrock/tree/RadixTree.hpp"
 #include "interface_handler_impl_list.hpp"
 #include "shamrock/legacy/utils/interact_crit_utils.hpp"
@@ -162,7 +170,7 @@ namespace impl{
 
             
 
-            //was used for smoothing lenght
+            //was used for smoothing length
             //sycl::buffer<flt> buf_local_field_val(pfield.local_nodes_value.data(),pfield.local_nodes_value.size());
             //sycl::buffer<flt> buf_global_field_val(pfield.global_values.data(),pfield.global_values.size());
 
@@ -220,7 +228,7 @@ namespace impl{
 
                                 #if false
                                 out << "   testing : "<<test_patch_id << "\n";
-                                auto interact_cd_cell_patch = [out](const auto & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
+                                auto interact_cd_cell_patch = [out](const auto & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slength, flt b1_max_slength, flt b2_min_slength, flt b2_max_slength){
         
                                     
                                     out << "\t\tb1_min : "<<b1_min << "\n";
@@ -229,8 +237,8 @@ namespace impl{
                                     out << "\t\tb2_max : "<<b2_max << "\n";
 
 
-                                    out << "\t\tb2_min_slenght : "<<b2_min_slenght << "\n";
-                                    out << "\t\tb2_max_slenght : "<<b2_max_slenght << "\n";
+                                    out << "\t\tb2_min_slength : "<<b2_min_slength << "\n";
+                                    out << "\t\tb2_max_slength : "<<b2_max_slength << "\n";
 
 
                                     vec c1 = (b1_max + b1_min)/2;
@@ -241,10 +249,10 @@ namespace impl{
 
 
                                     out << "\t\tdist_to_surf : "<<dist_to_surf << "\n";
-                                    out << "\t\ttop : "<<L1 + b2_max_slenght << "\n";
-                                    out << "\t\tbot : "<<dist_to_surf + b2_min_slenght/2 << "\n";
+                                    out << "\t\ttop : "<<L1 + b2_max_slength << "\n";
+                                    out << "\t\tbot : "<<dist_to_surf + b2_min_slength/2 << "\n";
 
-                                    flt opening_angle_sq = (L1 + b2_max_slenght)/(dist_to_surf + b2_min_slenght/2);
+                                    flt opening_angle_sq = (L1 + b2_max_slength)/(dist_to_surf + b2_min_slength/2);
                                     opening_angle_sq *= opening_angle_sq;
 
                                     out << "\t\tangle : "<<sycl::sqrt(opening_angle_sq) << "\n";

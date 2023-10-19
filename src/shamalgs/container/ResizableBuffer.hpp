@@ -6,9 +6,16 @@
 //
 // -------------------------------------------------------//
 
-//%Impl status : Good
-
 #pragma once
+
+
+/**
+ * @file ResizableBuffer.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 
 #include "shambase/type_aliases.hpp"
 #include "shambase/sycl_vec_aliases.hpp"

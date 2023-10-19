@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file CommProtocolException.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include <exception>
 #include <string>
 

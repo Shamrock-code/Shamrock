@@ -29,7 +29,7 @@ int main(void){
     double sol_mass = Constants<double>(si).sol_mass();
 
     /*
-    * create a unit system with time in Myr, lenght in au, mass in solar masses
+    * create a unit system with time in Myr, length in au, mass in solar masses
     */
     UnitSystem<double> astro_units {
         si.get<mega, units::years>(),
@@ -37,7 +37,7 @@ int main(void){
         si.get<units::kilogramm>()*sol_mass,
     };
 
-    //this time it returns 1 because the base lenght is the astronomical unit
+    //this time it returns 1 because the base length is the astronomical unit
     std::cout << astro_units.get<units::astronomical_unit,2>() << std::endl;
 
     Constants<double> astro_cte {astro_units};
@@ -45,9 +45,16 @@ int main(void){
     // in those units G is 3.94781e+25
     std::cout << astro_cte.G() << std::endl;
 
+    //now if the code return a value in astro_units
+    //we can convert it to any units like so
+    double value = 12; //here 12 Myr
+
+    // print : value = 3.15576e+19 s
+    std::cout << "value = "<< astro_units.to<units::second>() << " s"<< std::endl;
+
 }
 
 ```
 
-If you want to try here is a godbolt link : https://godbolt.org/z/8z71qYh69
+If you want to try here is a godbolt link : https://godbolt.org/z/5zjGMea57
 

@@ -27,7 +27,7 @@ scale_fact = 1/(sz*base*multx)
 cfg.set_scale_factor(scale_fact)
 model.set_config(cfg)
 
-file_data = "ghost_dump_debug5.000000patch_0000.txt"
+file_data = "ghost_dump_debug0.000000patch_0000.txt"
 block_size = 8
 
 block_min = []
@@ -47,6 +47,8 @@ cell_vel_start_transp = []
 cell_rho_end_transp = []
 cell_eint_end_transp = []
 cell_vel_end_transp = []
+
+cell_divv_source = []
 
 cell_vel_n_xp = []
 
@@ -96,6 +98,9 @@ for line in lines:
             active_field = "eint_end_transp"
         elif line == "--> vel_end_transp type=f64_3\n":
             active_field = "vel_end_transp"
+
+        elif line == "--> divv_source type=f64\n":
+            active_field = "divv_source"
 
         elif line == "--> vel_n_xp type=f64_3\n":
             active_field = "vel_n_xp"
@@ -199,6 +204,11 @@ for line in lines:
             y = float(splt[1])
             z = float(splt[2])
             cell_vel_end_transp.append((x,y,z))
+
+        
+        elif active_field == "divv_source":
+            val = float(line[:-1])
+            cell_divv_source.append(val)
 
         elif active_field == "vel_n_xp":
             splt = (line[:-1].split())
@@ -357,6 +367,7 @@ select_cell_eint_post_source = []
 select_cell_velx_post_source  = []
 select_cell_vely_post_source  = []
 select_cell_velz_post_source  = []
+select_cell_divv_source  = []
 
 select_cell_eint_start_transp = []
 select_cell_velx_start_transp  = []
@@ -430,6 +441,9 @@ for i in range(len(cell_rho)):
         select_cell_velx_end_transp .append(vx )
         select_cell_vely_end_transp .append(vy )
         select_cell_velz_end_transp .append(vz )
+
+
+        select_cell_divv_source.append(cell_divv_source[i])
 
         vx,vy,vz = cell_vel_n_xp[i]
         select_cell_velx_n_xp .append(vx )
@@ -583,6 +597,10 @@ axs[0,2].legend()
 axs[1,1].scatter(select_cell_x,select_cell_force_x, s = 1, label = "fx")
 axs[1,1].set_title("fx")
 axs[1,1].legend()
+
+axs[1,2].scatter(select_cell_x,select_cell_divv_source, s = 1, label = "divv_source")
+axs[1,2].set_title("divv_source")
+axs[1,2].legend()
 
 axs[1,0].scatter(select_cell_x,select_cell_Q[0], s = 1, label = "Q")
 axs[1,0].scatter(select_cell_x,select_cell_ax[0], s = 1, label = "ax")

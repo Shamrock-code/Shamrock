@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file StorageComponent.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/SourceLocation.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"

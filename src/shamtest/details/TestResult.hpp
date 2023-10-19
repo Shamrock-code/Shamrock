@@ -12,18 +12,19 @@
  * @file TestResult.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief header describing return type of a test, and the type of the test
- * @date 2023-01-04
  *
  */
 
 #include "aliases.hpp"
 #include "shamtest/details/TestAssertList.hpp"
 #include "shamtest/details/TestDataList.hpp"
+#include <utility>
+#include <vector>
 
 /**
  * @brief Describe the type of the performed test
  */
-enum TestType { Benchmark, Analysis, Unittest };
+enum TestType { Benchmark, LongBenchmark, ValidationTest, LongValidationTest, Unittest };
 
 namespace shamtest::details {
 
@@ -36,6 +37,7 @@ namespace shamtest::details {
         u32 world_rank;         /*!< MPI rank that performed the test */
         TestAssertList asserts; /*!< List of the asserts performed withing the test */
         TestDataList test_data; /*!< Data returned by the test */
+        std::string tex_output; /*!< Tex output of the test */
 
         /**
          * @brief Constructructor
@@ -47,12 +49,25 @@ namespace shamtest::details {
         inline TestResult(const TestType &type, std::string name, const u32 &world_rank)
             : type(type), name(std::move(name)), world_rank(world_rank), asserts{}, test_data() {}
 
+        inline TestResult(
+            TestType type,
+            std::string name,
+            u32 world_rank,
+            TestAssertList &&asserts,
+            TestDataList &&test_data,
+            std::string tex_output)
+            : type(type), name(std::move(name)), world_rank(world_rank),
+              asserts(std::forward<TestAssertList>(asserts)),
+              test_data(std::forward<TestDataList>(test_data)), tex_output(std::move(tex_output)) {}
         /**
          * @brief serialize the result of the test
          *
          * @return std::string the serialized results
          */
-        std::string serialize();
+        std::string serialize_json();
+
+        void serialize(std::basic_stringstream<u8> &stream);
+        static TestResult deserialize(std::basic_stringstream<u8> &reader);
     };
 
 } // namespace shamtest::details

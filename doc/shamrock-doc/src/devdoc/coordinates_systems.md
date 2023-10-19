@@ -28,7 +28,7 @@ sched.set_coord_domain_bound(bmin,bmax);
 ### AMR Case
 
 They are represented using half-open intervals of integers 
-`[0,max_amr[` The only criterion is that `max_amr` must divide `PatchScheduler::max_axis_patch_coord_lenght`
+`[0,max_amr[` The only criterion is that `max_amr` must divide `PatchScheduler::max_axis_patch_coord_length`
 
 Using a offset + scalling the AMR integer coordinates can be seen as real floating point coordinates.
 

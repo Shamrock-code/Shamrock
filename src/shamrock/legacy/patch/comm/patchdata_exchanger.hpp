@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file patchdata_exchanger.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"

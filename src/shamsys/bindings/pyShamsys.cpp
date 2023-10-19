@@ -6,65 +6,77 @@
 //
 // -------------------------------------------------------//
 
-#include "shambase/exception.hpp"
-#include "shambindings/pybindaliases.hpp"
-
+/**
+ * @file pyShamsys.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "pyNodeInstance.hpp"
+#include "shambase/exception.hpp"
+#include "shambindings/pybindaliases.hpp"
 #include "shamsys/legacy/log.hpp"
 
+Register_pymod(pysyslibinit) {
 
-Register_pymod(pysyslibinit){
+    m.def(
+        "change_loglevel",
+        [](u32 loglevel) {
+            if (loglevel > 127) {
+                throw shambase::throw_with_loc<std::invalid_argument>("loglevel must be below 128");
+            }
 
+            if (loglevel == i8_max) {
+                logger::raw_ln(
+                    "If you've seen spam in your life i can garantee you, this is worst");
+            }
 
-    m.def("change_loglevel",[](u32 loglevel){
+            logger::raw_ln("-> modified loglevel to", logger::loglevel, "enabled log types : ");
 
-        if (loglevel > 127) {
-            throw shambase::throw_with_loc<std::invalid_argument>("loglevel must be below 128");
-        }
-
-        if(loglevel == i8_max){
-            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
-        }
-
-        logger::raw_ln("-> modified loglevel to",logger::loglevel,"enabled log types : ");
-
-        logger::loglevel = loglevel;
-        logger::print_active_level();
-
-    }, R"pbdoc(
+            logger::loglevel = loglevel;
+            logger::print_active_level();
+        },
+        R"pbdoc(
 
         Change the loglevel
 
     )pbdoc");
 
-
-
-    m.def("get_git_info",[](){
-        return git_info_str;
-    }, R"pbdoc(
+    m.def(
+        "get_git_info",
+        []() {
+            return git_info_str;
+        },
+        R"pbdoc(
         Return git_info_str
     )pbdoc");
 
-    m.def("print_git_info",[](){
-        logger::raw_ln(git_info_str);
-    }, R"pbdoc(
+    m.def(
+        "print_git_info",
+        []() {
+            logger::raw_ln(git_info_str);
+        },
+        R"pbdoc(
         print git_info_str
     )pbdoc");
 
-    m.def("get_compile_arg",[](){
-        return compile_arg;
-    }, R"pbdoc(
+    m.def(
+        "get_compile_arg",
+        []() {
+            return compile_arg;
+        },
+        R"pbdoc(
         Return compile_arg
     )pbdoc");
 
-    m.def("print_compile_arg",[](){
-        logger::raw_ln(compile_arg);
-    }, R"pbdoc(
+    m.def(
+        "print_compile_arg",
+        []() {
+            logger::raw_ln(compile_arg);
+        },
+        R"pbdoc(
         print compile_arg
     )pbdoc");
-
-
 
     py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");
 

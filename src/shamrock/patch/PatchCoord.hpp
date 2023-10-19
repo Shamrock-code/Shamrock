@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file PatchCoord.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "aliases.hpp"
 #include "shammath/CoordRange.hpp"
 #include <shambackends/backends/sycl/sycl.hpp>

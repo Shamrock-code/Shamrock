@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file SPHUtilities.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "SPHUtilities.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 #include "shammath/sphkernels.hpp"
@@ -15,7 +22,7 @@ using namespace shamrock::sph;
 namespace shammodels::sph {
 
     template<class vec, class SPHKernel>
-    void SPHUtilities<vec, SPHKernel>::iterate_smoothing_lenght_cache(
+    void SPHUtilities<vec, SPHKernel>::iterate_smoothing_length_cache(
 
         sycl::buffer<vec> &merged_r,
         sycl::buffer<flt> &hnew,
@@ -103,7 +110,7 @@ namespace shammodels::sph {
     }
 
     template<class vec, class SPHKernel, class u_morton>
-    void SPHTreeUtilities<vec, SPHKernel, u_morton>::iterate_smoothing_lenght_tree(
+    void SPHTreeUtilities<vec, SPHKernel, u_morton>::iterate_smoothing_length_tree(
         sycl::buffer<vec> &merged_r,
         sycl::buffer<flt> &hnew,
         sycl::buffer<flt> &hold,

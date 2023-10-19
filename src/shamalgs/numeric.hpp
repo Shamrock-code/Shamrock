@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file numeric.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include <shamalgs/details/numeric/numeric.hpp>
 
 namespace shamalgs {

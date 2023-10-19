@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file Solver.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/AMRBlock.hpp"
 #include "shammodels/amr/zeus/modules/SolverStorage.hpp"
@@ -27,6 +34,10 @@ namespace shammodels::zeus {
 
         static constexpr u32 NsideBlockPow = 1;
         using AMRBlock = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>; 
+
+        inline void set_eos_gamma(Tscal gamma){
+            eos_gamma = gamma;
+        }
     };
 
     template<class Tvec, class TgridVec>

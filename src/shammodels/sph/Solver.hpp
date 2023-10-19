@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file Solver.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "SolverConfig.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
@@ -18,7 +24,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
-#include "shamrock/tree/TreeTaversalCache.hpp"
+#include "shamrock/tree/TreeTraversalCache.hpp"
 #include <memory>
 #include <variant>
 namespace shammodels::sph {

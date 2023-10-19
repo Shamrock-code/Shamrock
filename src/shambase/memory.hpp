@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file memory.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shambase/type_aliases.hpp"

@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file integrators.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"

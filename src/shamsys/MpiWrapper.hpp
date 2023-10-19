@@ -9,14 +9,10 @@
 #pragma once
 
 /**
- * @file mpi_wrapper.hpp
+ * @file MpiWrapper.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief This header does the MPI include and wrap MPI calls
- * @version 0.1
- * @date 2022-03-14
- * 
- * @copyright Copyright (c) 2022
- * 
+ *
  */
 
 

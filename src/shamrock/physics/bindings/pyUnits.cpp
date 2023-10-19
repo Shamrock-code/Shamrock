@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file pyUnits.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ * \todo move to bindings
+ */
+
 #include "shambase/type_aliases.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include <shamunits/Constants.hpp>
@@ -23,14 +30,14 @@ Register_pymod(pyunits_init) {
 
     py::class_<UnitSystem>(m, "UnitSystem")
         .def(py::init([](f64 unit_time,
-                         f64 unit_lenght,
+                         f64 unit_length,
                          f64 unit_mass,
                          f64 unit_current,
                          f64 unit_temperature,
                          f64 unit_qte,
                          f64 unit_lumint) {
             return std::make_unique<UnitSystem>(unit_time,
-                                                unit_lenght,
+                                                unit_length,
                                                 unit_mass,
                                                 unit_current,
                                                 unit_temperature,
@@ -39,7 +46,7 @@ Register_pymod(pyunits_init) {
         }),
         py::kw_only(),
         py::arg("unit_time") = 1,
-        py::arg("unit_lenght") = 1,
+        py::arg("unit_length") = 1,
         py::arg("unit_mass") = 1,
         py::arg("unit_current") = 1,
         py::arg("unit_temperature") = 1,

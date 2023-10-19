@@ -41,3 +41,88 @@ TestStart(Unittest, "shamalgs/container/ResizableUSMBuffer", test_resizableUSMBu
     }
 
 }
+
+TestStart(Unittest, "shamalgs/container/ResizableUSMBuffer:synchronisation", test_resizableUSMBuffer_sync, 1) {
+
+    sycl::queue &q = shamsys::instance::get_compute_queue();
+
+    shamalgs::ResizableUSMBuffer<u32> usm_rbuf(q, shamalgs::Device);
+    usm_rbuf.change_capacity(100);
+
+    {
+        std::vector<sycl::event> wait_list;
+        u32* acc = usm_rbuf.get_usm_ptr(wait_list);
+
+        sycl::event ret = q.submit([&](sycl::handler & cgh){
+            cgh.depends_on(wait_list);
+
+            shambase::parralel_for(cgh, 100, "test1", [=](u32 id){
+                acc[id] = id;
+            });
+        });
+
+        usm_rbuf.register_read_write_event(ret);
+    }
+
+
+
+    shamalgs::ResizableUSMBuffer<u32> usm_rbuf_sub1(q, shamalgs::Device);
+    usm_rbuf_sub1.change_capacity(100);
+
+    shamalgs::ResizableUSMBuffer<u32> usm_rbuf_sub2(q, shamalgs::Device);
+    usm_rbuf_sub2.change_capacity(100);
+
+    {
+        std::vector<sycl::event> wait_list;
+        const u32* acc_src = usm_rbuf.get_usm_ptr_read_only(wait_list);
+        u32* acc_d1 = usm_rbuf_sub1.get_usm_ptr(wait_list);
+
+        sycl::event ret = q.submit([&](sycl::handler & cgh){
+            cgh.depends_on(wait_list);
+
+            shambase::parralel_for(cgh, 100, "test2", [=](u32 id){
+                acc_d1[id] = acc_src[id]*2;
+            });
+        });
+
+        usm_rbuf.register_read_event(ret);
+        usm_rbuf_sub1.register_read_write_event(ret);
+    }
+
+    {
+        std::vector<sycl::event> wait_list;
+        const u32* acc_src = usm_rbuf.get_usm_ptr_read_only(wait_list);
+        u32* acc_d2 = usm_rbuf_sub2.get_usm_ptr(wait_list);
+
+        sycl::event ret = q.submit([&](sycl::handler & cgh){
+            cgh.depends_on(wait_list);
+
+            shambase::parralel_for(cgh, 100, "test3", [=](u32 id){
+                acc_d2[id] = acc_src[id]*3;
+            });
+        });
+
+        usm_rbuf.register_read_event(ret);
+        usm_rbuf_sub2.register_read_write_event(ret);
+    }
+
+    {
+        std::vector<sycl::event> wait_list;
+        const u32* acc_src1 = usm_rbuf_sub1.get_usm_ptr_read_only(wait_list);
+        const u32* acc_src2 = usm_rbuf_sub2.get_usm_ptr_read_only(wait_list);
+        u32* acc_d = usm_rbuf.get_usm_ptr(wait_list);
+
+        sycl::event ret = q.submit([&](sycl::handler & cgh){
+            cgh.depends_on(wait_list);
+
+            shambase::parralel_for(cgh, 100, "test4", [=](u32 id){
+                acc_d[id] = acc_src1[id] + acc_src2[id];
+            });
+        });
+
+        usm_rbuf.register_read_write_event(ret);
+        usm_rbuf_sub1.register_read_event(ret);
+        usm_rbuf_sub2.register_read_event(ret);
+    }
+
+}

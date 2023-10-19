@@ -9,6 +9,11 @@
 #pragma once
 // plan for a tree that can combine both a radix tree field and a patch tree
 
+/**
+ * @file full_tree_field.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
 
 #include "aliases.hpp"
 #include "patch_field.hpp"

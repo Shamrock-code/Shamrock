@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file MicroBenchmark.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambase/exception.hpp"
@@ -47,9 +53,9 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv){
 
     u32 wr = instance::world_rank;
 
-    u64 lenght = 1024UL*1014UL*8UL; //8MB messages
-    CommunicationBuffer buf_recv{lenght, shamsys::get_protocol()};
-    CommunicationBuffer buf_send{lenght, shamsys::get_protocol()};
+    u64 length = 1024UL*1014UL*8UL; //8MB messages
+    CommunicationBuffer buf_recv{length, shamsys::get_protocol()};
+    CommunicationBuffer buf_send{length, shamsys::get_protocol()};
 
     std::vector<MPI_Request> rqs;
 
@@ -66,13 +72,13 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv){
             rqs.push_back(MPI_Request{});
             u32 rq_index = rqs.size() - 1;
             auto & rq = rqs[rq_index]; 
-            mpi::isend(buf_send.get_ptr(), lenght, MPI_BYTE, wr_receiv, 0, MPI_COMM_WORLD, &rq);
+            mpi::isend(buf_send.get_ptr(), length, MPI_BYTE, wr_receiv, 0, MPI_COMM_WORLD, &rq);
             is_used = true;
         }
         
         if(wr == wr_receiv){
             MPI_Status s;
-            mpi::recv(buf_recv.get_ptr(), lenght, MPI_BYTE, wr_sender, 0, MPI_COMM_WORLD, &s);
+            mpi::recv(buf_recv.get_ptr(), length, MPI_BYTE, wr_sender, 0, MPI_COMM_WORLD, &s);
             is_used = true;
         }
         
@@ -90,7 +96,7 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv){
 
     if(instance::world_rank == 0){
         logger::raw_ln(shambase::format(" - p2p bandwith : {:0.2f} GB.s^-1 (ranks : {} -> {}) (loops : {})", 
-            (f64(lenght*loops) / t)*1e-9 , 
+            (f64(length*loops) / t)*1e-9 , 
             wr_sender, 
             wr_receiv,
             loops));
@@ -106,9 +112,9 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2){
 
     u32 wr = instance::world_rank;
 
-    u64 lenght = 8ULL; //8B messages
-    CommunicationBuffer buf_recv{lenght, shamsys::get_protocol()};
-    CommunicationBuffer buf_send{lenght, shamsys::get_protocol()};
+    u64 length = 8ULL; //8B messages
+    CommunicationBuffer buf_recv{length, shamsys::get_protocol()};
+    CommunicationBuffer buf_send{length, shamsys::get_protocol()};
 
     f64 t = 0;
     u64 loops = 0;
@@ -121,15 +127,15 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2){
 
         if(wr == wr1){
             MPI_Status s;
-            mpi::send(buf_send.get_ptr(), lenght, MPI_BYTE, wr2, 0, MPI_COMM_WORLD); 
-            mpi::recv(buf_recv.get_ptr(), lenght, MPI_BYTE, wr2, 1, MPI_COMM_WORLD, &s);
+            mpi::send(buf_send.get_ptr(), length, MPI_BYTE, wr2, 0, MPI_COMM_WORLD); 
+            mpi::recv(buf_recv.get_ptr(), length, MPI_BYTE, wr2, 1, MPI_COMM_WORLD, &s);
             is_used = true;
         }
         
         if(wr == wr2){
             MPI_Status s;
-            mpi::recv(buf_recv.get_ptr(), lenght, MPI_BYTE, wr1, 0, MPI_COMM_WORLD, &s);
-            mpi::send(buf_send.get_ptr(), lenght, MPI_BYTE, wr1, 1, MPI_COMM_WORLD); 
+            mpi::recv(buf_recv.get_ptr(), length, MPI_BYTE, wr1, 0, MPI_COMM_WORLD, &s);
+            mpi::send(buf_send.get_ptr(), length, MPI_BYTE, wr1, 1, MPI_COMM_WORLD); 
             is_used = true;
         }
         

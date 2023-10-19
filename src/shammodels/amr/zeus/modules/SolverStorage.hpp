@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file SolverStorage.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/zeus/GhostZoneData.hpp"
@@ -15,7 +22,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shamrock/tree/TreeTaversalCache.hpp"
+#include "shamrock/tree/TreeTraversalCache.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/StorageComponent.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"

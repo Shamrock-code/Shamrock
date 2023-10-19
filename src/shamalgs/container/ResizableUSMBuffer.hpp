@@ -8,13 +8,24 @@
 
 #pragma once
 
+/**
+ * @file ResizableUSMBuffer.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "aliases.hpp"
+#include "shamalgs/container/BufferEventHandler.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include <shambackends/backends/sycl/sycl.hpp>
 #include "shambase/type_aliases.hpp"
 #include "shambase/sycl_vec_aliases.hpp"
+#include "shambase/type_aliases.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <cstddef>
+#include <random>
 #include <stdexcept>
 #include <utility>
 
@@ -41,6 +52,8 @@ namespace shamalgs {
 
     enum BufferType { Host, Device, Shared };
 
+    
+
     template<class T>
     class ResizableUSMBuffer {
 
@@ -64,6 +77,8 @@ namespace shamalgs {
 
         T *usm_ptr = nullptr;
 
+        BufferEventHandler  events_hndl;
+
         u32 capacity  = 0;
         u32 val_count = 0;
 
@@ -75,14 +90,16 @@ namespace shamalgs {
         public:
         inline ResizableUSMBuffer(sycl::queue &q, BufferType type) : q(q), type(type){};
 
-        ResizableUSMBuffer(const ResizableUSMBuffer &other)
+        ResizableUSMBuffer(ResizableUSMBuffer &other)
             : val_count(other.val_count), capacity(other.capacity), q(other.q) {
             if (capacity != 0) {
+
+                other.synchronize_events();
                 alloc();
 
                 q.memcpy(usm_ptr, other.usm_ptr, sizeof(T) * val_count).wait();
             }
-        }// copy constructor
+        } // copy constructor
 
         ResizableUSMBuffer(ResizableUSMBuffer &&other) noexcept
             : usm_ptr(other.release_usm_ptr()), val_count(std::move(other.val_count)),
@@ -104,7 +121,12 @@ namespace shamalgs {
 
         void free();
 
-        ~ResizableUSMBuffer();
+        ~ResizableUSMBuffer(){
+            StackEntry stack_loc{};
+            if (usm_ptr != nullptr) {
+                free();
+            }
+        }
 
         void change_capacity(u32 new_capa);
 
@@ -116,23 +138,49 @@ namespace shamalgs {
 
         [[nodiscard]] BufferType get_buf_type() const { return type; }
 
-        inline T *release_usm_ptr() { return std::exchange(usm_ptr, nullptr); }
+        inline T *release_usm_ptr() {
 
-        inline T const *get_usm_ptr_read_only() {
+            synchronize_events();
+
+            return std::exchange(usm_ptr, nullptr);
+        }
+
+        inline size_t memsize() { return capacity * sizeof(T); }
+
+        inline u32 size() { return val_count; }
+
+        [[nodiscard]] bool check_buf_match(ResizableUSMBuffer<T> &f2);
+
+        void synchronize_events() { 
+            StackEntry stack_loc{};
+            events_hndl.synchronize(); 
+        }
+
+        inline T const *get_usm_ptr_read_only(std::vector<sycl::event> &depends_list) {
             if (is_empty()) {
                 throw shambase::throw_with_loc<std::runtime_error>(
                     "the usm buffer is not allocated");
             }
+
+            events_hndl.add_read_dependancies(depends_list);
+
             return usm_ptr;
         }
 
-        inline T const *get_usm_ptr() {
+        inline T *get_usm_ptr(std::vector<sycl::event> &depends_list) {
             if (is_empty()) {
                 throw shambase::throw_with_loc<std::runtime_error>(
                     "the usm buffer is not allocated");
             }
+
+            events_hndl.add_read_write_dependancies(depends_list);
+
             return usm_ptr;
         }
+
+        void register_read_event(sycl::event e) { events_hndl.register_read_event(e); }
+
+        void register_read_write_event(sycl::event e) { events_hndl.register_read_write_event(e); }
 
         void change_buf_type(BufferType new_type);
     };

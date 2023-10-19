@@ -40,7 +40,5 @@ if("${BUILD_TEST}")
 endif()
 
 add_subdirectory(base)
-add_subdirectory(scheduler)
 add_subdirectory(interfaces)
 add_subdirectory(utility)
-add_subdirectory(tests)

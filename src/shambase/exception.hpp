@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file exception.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/SourceLocation.hpp"
 
 namespace shambase {

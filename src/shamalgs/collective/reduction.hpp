@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file reduction.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/exception.hpp"
 #include "shambase/type_aliases.hpp"
 #include "shamsys/MpiWrapper.hpp"

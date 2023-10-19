@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file distributedDataComm.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/sparseXchg.hpp"
 #include "shambase/DistributedData.hpp"

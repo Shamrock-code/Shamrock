@@ -12,10 +12,6 @@
  * @file Patch.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Header file for the patch struct and related function
- * @version 1.0
- * @date 2022-02-28
- *
- * @copyright Copyright (c) 2022
  *
  */
 

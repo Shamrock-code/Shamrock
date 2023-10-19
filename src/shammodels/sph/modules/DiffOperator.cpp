@@ -6,10 +6,17 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file DiffOperator.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shammodels/sph/sphpart.hpp"
+#include "shammodels/sph/math/density.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv(Tscal gpart_mass) {

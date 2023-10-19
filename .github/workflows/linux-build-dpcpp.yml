@@ -72,15 +72,18 @@ jobs:
         run: sudo apt install ninja-build
 
       - name : Install pck (DPCPP esimd)
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           sudo apt install -y libva-dev libffi-dev libtool
 
       
       - name : Install pck (opencl)
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           sudo apt install -y clinfo intel-opencl-icd opencl-headers
 
       - name : run clinfo
+        if: steps.cache-dpcpp.outputs.cache-hit != 'true'
         run: |
           clinfo
 

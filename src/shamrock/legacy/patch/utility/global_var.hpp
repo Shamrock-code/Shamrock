@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file global_var.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"

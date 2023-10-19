@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file FaceFlagger.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shambase/SourceLocation.hpp"

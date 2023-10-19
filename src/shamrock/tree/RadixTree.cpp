@@ -6,8 +6,11 @@
 //
 // -------------------------------------------------------//
 
-
-//%Impl status : Clean unfinished
+/**
+ * @file RadixTree.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "RadixTree.hpp"
 

@@ -9,6 +9,13 @@
 #pragma once
 
 /**
+ * @file enabled_fields.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
+/**
  * @brief X macro listing all enabled field types in the scheduler
  * 
  */

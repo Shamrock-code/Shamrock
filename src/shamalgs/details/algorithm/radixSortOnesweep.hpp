@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file radixSortOnesweep.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"

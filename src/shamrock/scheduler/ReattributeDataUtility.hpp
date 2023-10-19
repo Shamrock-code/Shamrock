@@ -8,6 +8,11 @@
 
 #pragma once
 
+/**
+ * @file ReattributeDataUtility.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "shamalgs/memory.hpp"
 #include "shambase/string.hpp"

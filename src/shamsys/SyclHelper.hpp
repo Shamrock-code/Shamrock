@@ -8,7 +8,11 @@
 
 #pragma once
 
-//TODO remove this file
+/**
+ * @file SyclHelper.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
 
 
 #include "shambase/type_aliases.hpp"

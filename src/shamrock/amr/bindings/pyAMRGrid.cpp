@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file pyAMRGrid.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * \todo move to shambindings folder
+ */
+
 #include "aliases.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shamrock/amr/AMRGrid.hpp"

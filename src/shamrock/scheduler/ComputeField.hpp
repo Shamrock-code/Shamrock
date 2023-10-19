@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file ComputeField.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"
 #include <shambackends/backends/sycl/sycl.hpp>

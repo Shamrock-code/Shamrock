@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file MortonKernels.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "MortonKernels.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/integer_sycl.hpp"

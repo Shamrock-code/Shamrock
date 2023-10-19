@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file pyAMRZeusModel.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * \todo move to shambindings
+ */
+ 
 #include <memory>
 
 #include "shambindings/pybindaliases.hpp"
@@ -28,6 +35,9 @@ namespace shammodels::zeus{
         py::class_<TConfig>(m, name_config.c_str())
             .def("set_scale_factor",[](TConfig & self, Tscal scale_factor){
                 self.grid_coord_to_pos_fact = scale_factor;
+            })
+            .def("set_eos_gamma",[](TConfig & self, Tscal eos_gamma){
+                self.set_eos_gamma(eos_gamma);
             });
 
         py::class_<T>(m, name_model.c_str())

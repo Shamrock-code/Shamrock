@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file AMRHandler.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "AMRCell.hpp"
 #include "aliases.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"

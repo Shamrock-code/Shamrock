@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file matrix.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include <shambackends/backends/sycl/sycl.hpp>
 #include <array>
 

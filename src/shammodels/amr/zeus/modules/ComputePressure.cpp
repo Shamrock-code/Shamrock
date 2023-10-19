@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file ComputePressure.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammodels/amr/zeus/modules/ComputePressure.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
@@ -57,7 +64,7 @@ void Module<Tvec, TgridVec>::compute_p() {
 
             shambase::parralel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute pressure", [=](u64 id_a) {
-                    p[id_a] = (gamma - 1) * rho[id_a] * eint[id_a];
+                    p[id_a] = (gamma - 1) /** rho[id_a]*/ * eint[id_a];
                 });
         });
 

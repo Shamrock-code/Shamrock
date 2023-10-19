@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file SignalCatch.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 namespace shamsys {
     void register_signals();
 }

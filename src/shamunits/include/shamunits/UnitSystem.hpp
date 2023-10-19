@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file UnitSystem.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "Names.hpp"
 #include "ConvertionConstants.hpp"
 #include <cmath>
@@ -46,15 +52,15 @@ namespace shamunits {
         T s_inv, m_inv, kg_inv, A_inv, K_inv, mol_inv, cd_inv;
 
         explicit UnitSystem(T unit_time = 1 ,
-                   T unit_lenght = 1 ,
+                   T unit_length = 1 ,
                    T unit_mass = 1 ,
                    T unit_current = 1 ,
                    T unit_temperature = 1 ,
                    T unit_qte = 1 ,
                    T unit_lumint = 1 )
-            : s(1 / unit_time), m(1 / unit_lenght), kg(1 / unit_mass), A(1 / unit_current),
+            : s(1 / unit_time), m(1 / unit_length), kg(1 / unit_mass), A(1 / unit_current),
               K(1 / unit_temperature), mol(1 / unit_qte), cd(1 / unit_lumint), s_inv(unit_time),
-              m_inv(unit_lenght), kg_inv(unit_mass), A_inv(unit_current), K_inv(unit_temperature),
+              m_inv(unit_length), kg_inv(unit_mass), A_inv(unit_current), K_inv(unit_temperature),
               mol_inv(unit_qte), cd_inv(unit_lumint) {}
 
         // clang-format off
@@ -115,6 +121,13 @@ namespace shamunits {
              int power                                = 1>  
         inline constexpr T get(){
             return get<None,u,power>();
+        }
+
+        template<                                                             
+             units::UnitName u,                                                                    
+             int power                                = 1>  
+        inline constexpr T to(){
+            return to<None,u,power>();
         }
 
         private:

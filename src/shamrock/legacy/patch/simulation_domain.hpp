@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file simulation_domain.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "aliases.hpp"
 #include <memory>
 #include <vector>

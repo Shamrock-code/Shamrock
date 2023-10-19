@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file Model.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambase/string.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
@@ -16,7 +23,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shammodels/sph/sphpart.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>

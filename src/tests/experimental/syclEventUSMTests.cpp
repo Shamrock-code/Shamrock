@@ -126,7 +126,7 @@ QueueEvent sub_func(QueueEvent & e, u32* ptr){
     return e2;
 }
 
-TestStart(Analysis, "test-usm-event-arch", usm_event_test, 1){
+TestStart(ValidationTest, "test-usm-event-arch", usm_event_test, 1){
 
     sycl::queue & q = shamsys::instance::get_compute_queue();
 

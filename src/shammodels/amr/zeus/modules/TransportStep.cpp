@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file TransportStep.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammath/slopeLimiter.hpp"
 #include "shammodels/amr/zeus/modules/TransportStep.hpp"
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
@@ -82,6 +89,7 @@ void Module<Tvec, TgridVec>::compute_cell_centered_momentas() {
                     Tscal tmp_z = vzp.z() * r;
 
                     Q[cell_gid] = {r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e};
+                
                 });
         });
     });
@@ -161,7 +169,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
             sycl::accessor Q_xp{buf_Q_xp, cgh, sycl::read_only};
             sycl::accessor a_x{buf_a_x, cgh, sycl::write_only, sycl::no_init};
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_x", [=](u32 block_id, u32 cell_gid) {
@@ -200,7 +208,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
             sycl::accessor Q_yp{buf_Q_yp, cgh, sycl::read_only};
             sycl::accessor a_y{buf_a_y, cgh, sycl::write_only, sycl::no_init};
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_y", [=](u32 block_id, u32 cell_gid) {
@@ -237,7 +245,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
             sycl::accessor Q_zp{buf_Q_zp, cgh, sycl::read_only};
             sycl::accessor a_z{buf_a_z, cgh, sycl::write_only, sycl::no_init};
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
@@ -374,7 +382,7 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
             sycl::accessor vel{buf_vel, cgh, sycl::read_only};
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
             Tscal dt              = dt_in;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
@@ -412,7 +420,7 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
             sycl::accessor vel{buf_vel, cgh, sycl::read_only};
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
             Tscal dt              = dt_in;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
@@ -450,7 +458,7 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
             sycl::accessor vel{buf_vel, cgh, sycl::read_only};
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
             Tscal dt              = dt_in;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
@@ -569,7 +577,7 @@ void Module<Tvec, TgridVec>::compute_flux() {
 
             sycl::accessor vel{buf_vel, cgh, sycl::read_only};
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
@@ -593,7 +601,7 @@ void Module<Tvec, TgridVec>::compute_flux() {
 
             sycl::accessor vel{buf_vel, cgh, sycl::read_only};
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
@@ -617,7 +625,7 @@ void Module<Tvec, TgridVec>::compute_flux() {
 
             sycl::accessor vel{buf_vel, cgh, sycl::read_only};
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
@@ -712,7 +720,7 @@ void Module<Tvec, TgridVec>::update_Q(Tscal dt) {
 
             Tscal _dt = dt;
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::block_size;
+            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
@@ -734,7 +742,19 @@ void Module<Tvec, TgridVec>::update_Q(Tscal dt) {
                     fsum /= V;
                     fsum *= _dt;
 
-                    Q[cell_gid] += fsum;
+                    Tscal8 Qtmp = Q[cell_gid];
+
+                    Qtmp += fsum;
+
+                    //Qtmp.s1() *= Qtmp.s0();
+                    //Qtmp.s2() *= Qtmp.s0();
+                    //Qtmp.s3() *= Qtmp.s0();
+                    //Qtmp.s4() *= Qtmp.s0();
+                    //Qtmp.s5() *= Qtmp.s0();
+                    //Qtmp.s6() *= Qtmp.s0();
+                    //Qtmp.s7() *= Qtmp.s0();
+
+                    Q[cell_gid] = Qtmp;
                 });
         });
     });

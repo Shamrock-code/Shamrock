@@ -8,7 +8,14 @@
 
 #pragma once
 
-//%Impl status : Good
+
+/**
+ * @file density.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 
 #include <shambackends/backends/sycl/sycl.hpp>
 namespace shamrock::sph {

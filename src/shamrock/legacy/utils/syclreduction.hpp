@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file syclreduction.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "aliases.hpp"
 #include <memory>
 #include <stdexcept>
@@ -16,6 +22,7 @@ namespace syclalg {
 
     //TODO to optimize
     template<class T>
+    [[deprecated("please use the shamalgs library instead")]]
     inline T get_max(sycl::queue & queue, const std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
 
         T accum;
@@ -51,6 +58,7 @@ namespace syclalg {
 
     //TODO to optimize
     template<class T>
+    [[deprecated("please use the shamalgs library instead")]]
     inline T get_min(sycl::queue & queue, const std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
 
         T accum;
@@ -89,6 +97,7 @@ namespace syclalg {
 
 
     template<class T> 
+    [[deprecated("please use the shamalgs library instead")]]
     inline std::tuple<T,T> get_min_max(sycl::queue & queue, const std::unique_ptr<sycl::buffer<T>> & buf, u32 len){
         
         T accum_min, accum_max;

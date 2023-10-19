@@ -8,5 +8,12 @@
 
 #pragma once
 
+/**
+ * @file type_aliases.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include <shambackends/aliases/basetypes.hpp>
 #include <shambackends/aliases/half.hpp>

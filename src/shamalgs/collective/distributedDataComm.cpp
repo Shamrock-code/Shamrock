@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file distributedDataComm.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "distributedDataComm.hpp"
 
 #include "shamalgs/serialize.hpp"
@@ -20,12 +27,12 @@ namespace shamalgs::collective {
         struct DataTmp {
             u64 sender;
             u64 receiver;
-            u64 lenght;
+            u64 length;
             std::unique_ptr<sycl::buffer<u8>> &data;
 
             u64 get_ser_sz() {
                 return SerializeHelper::serialize_byte_size<u64>() * 3 +
-                       SerializeHelper::serialize_byte_size<u8>(lenght);
+                       SerializeHelper::serialize_byte_size<u8>(length);
             }
         };
 
@@ -37,7 +44,7 @@ namespace shamalgs::collective {
             std::map<std::pair<i32, i32>, SerializeHelper> serializers;
 
             for (auto &[key, vect] : send_data) {
-                u64 byte_sz = SerializeHelper::serialize_byte_size<u64>(); // vec lenght
+                u64 byte_sz = SerializeHelper::serialize_byte_size<u64>(); // vec length
                 for (DataTmp &d : vect) {
                     byte_sz += d.get_ser_sz();
                 }
@@ -50,8 +57,8 @@ namespace shamalgs::collective {
                 for (DataTmp &d : vect) {
                     ser.write(d.sender);
                     ser.write(d.receiver);
-                    ser.write(d.lenght);
-                    ser.write_buf(shambase::get_check_ref(d.data), d.lenght);
+                    ser.write(d.length);
+                    ser.write_buf(shambase::get_check_ref(d.data), d.length);
                 }
             }
 
@@ -143,11 +150,11 @@ namespace shamalgs::collective {
                 u64 cnt_obj;
                 recv.ser.load(cnt_obj);
                 for (u32 i = 0; i < cnt_obj; i++) {
-                    u64 sender, receiver, lenght;
+                    u64 sender, receiver, length;
 
                     recv.ser.load(sender);
                     recv.ser.load(receiver);
-                    recv.ser.load(lenght);
+                    recv.ser.load(length);
 
                     { // check correctness ranks
                         i32 supposed_sender_rank = rank_getter(sender);
@@ -158,9 +165,9 @@ namespace shamalgs::collective {
                     }
 
                     auto it = recv_distrib_data.add_obj(
-                        sender, receiver, std::make_unique<sycl::buffer<u8>>(lenght));
+                        sender, receiver, std::make_unique<sycl::buffer<u8>>(length));
 
-                    recv.ser.load_buf(*it->second, lenght);
+                    recv.ser.load_buf(*it->second, length);
                 }
             }
         }

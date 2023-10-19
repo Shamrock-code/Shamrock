@@ -6,11 +6,18 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file TestAssert.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "TestAssert.hpp"
+#include "shambase/bytestream.hpp"
 
 namespace shamtest::details {
 
-    std::string TestAssert::serialize() {
+    std::string TestAssert::serialize_json() {
         std::string acc = "\n{\n";
 
         acc += R"(    "value" : )" + std::to_string(value) + ",\n";
@@ -24,6 +31,24 @@ namespace shamtest::details {
 
         acc += "\n}";
         return acc;
+    }
+
+    void TestAssert::serialize(std::basic_stringstream<u8> &stream) {
+        u8 bl = value;
+        shambase::stream_write(stream, bl);
+        shambase::stream_write_string(stream, name);
+        shambase::stream_write_string(stream, comment);
+    }
+
+    TestAssert TestAssert::deserialize(std::basic_stringstream<u8> &stream) {
+        u8 bl;
+        std::string name;
+        std::string comment;
+        shambase::stream_read(stream, bl);
+        shambase::stream_read_string(stream, name);
+        shambase::stream_read_string(stream, comment);
+
+        return {bool(bl), name, comment};
     }
 
 } // namespace shamtest::details

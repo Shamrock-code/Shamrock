@@ -96,7 +96,7 @@ namespace shammodels::amr {
 
             return {
                 block_min + cell_offset,
-                block_min + cell_offset + delta_cell,
+                block_min + cell_offset + delta_cell
             };
         }
 

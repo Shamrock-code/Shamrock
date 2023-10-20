@@ -9,12 +9,12 @@
 /**
  * @file TransportStep.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shammath/slopeLimiter.hpp"
+
 #include "shammodels/amr/zeus/modules/TransportStep.hpp"
+#include "shammath/slopeLimiter.hpp"
 #include "shammodels/amr/zeus/modules/GhostZones.hpp"
 #include "shammodels/amr/zeus/modules/ValueLoader.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -62,7 +62,7 @@ void Module<Tvec, TgridVec>::compute_cell_centered_momentas() {
         sycl::buffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
 
         sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q = Q.get_buf_check(p.id_patch);
-
+        bool cons_transp                         = solver_config.use_consistent_transport;
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             sycl::accessor rho{buf_rho, cgh, sycl::read_only};
             sycl::accessor vel{buf_vel, cgh, sycl::read_only};
@@ -83,13 +83,26 @@ void Module<Tvec, TgridVec>::compute_cell_centered_momentas() {
                     Tvec vyp = vel_yp[cell_gid];
                     Tvec vzp = vel_zp[cell_gid];
 
-                    Tvec tmp_m  = vm * r;
-                    Tscal tmp_x = vxp.x() * r;
-                    Tscal tmp_y = vyp.y() * r;
-                    Tscal tmp_z = vzp.z() * r;
+                    // without consistent transport
 
-                    Q[cell_gid] = {r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e};
-                
+                    if (!cons_transp) {
+                        Tvec tmp_m  = vm * r;
+                        Tscal tmp_x = vxp.x() * r;
+                        Tscal tmp_y = vyp.y() * r;
+                        Tscal tmp_z = vzp.z() * r;
+
+                        Q[cell_gid] = {r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e};
+                    } else {
+
+                        // with consistent transport
+                        Tvec tmp_m  = vm;
+                        Tscal tmp_x = vxp.x();
+                        Tscal tmp_y = vyp.y();
+                        Tscal tmp_z = vzp.z();
+
+                        Q[cell_gid] = {
+                            r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e / r};
+                    }
                 });
         });
     });
@@ -184,9 +197,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                     
-
-                    a_x[cell_gid] = Tscal8 {
+                    a_x[cell_gid] = Tscal8{
                         shammath::van_leer_slope(dqm.s0(), dqp.s0()),
                         shammath::van_leer_slope(dqm.s1(), dqp.s1()),
                         shammath::van_leer_slope(dqm.s2(), dqp.s2()),
@@ -194,8 +205,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                         shammath::van_leer_slope(dqm.s4(), dqp.s4()),
                         shammath::van_leer_slope(dqm.s5(), dqp.s5()),
                         shammath::van_leer_slope(dqm.s6(), dqp.s6()),
-                        shammath::van_leer_slope(dqm.s7(), dqp.s7())
-                    };
+                        shammath::van_leer_slope(dqm.s7(), dqp.s7())};
                 });
         });
 
@@ -223,7 +233,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_y[cell_gid] = Tscal8 {
+                    a_y[cell_gid] = Tscal8{
                         shammath::van_leer_slope(dqm.s0(), dqp.s0()),
                         shammath::van_leer_slope(dqm.s1(), dqp.s1()),
                         shammath::van_leer_slope(dqm.s2(), dqp.s2()),
@@ -231,8 +241,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                         shammath::van_leer_slope(dqm.s4(), dqp.s4()),
                         shammath::van_leer_slope(dqm.s5(), dqp.s5()),
                         shammath::van_leer_slope(dqm.s6(), dqp.s6()),
-                        shammath::van_leer_slope(dqm.s7(), dqp.s7())
-                    };
+                        shammath::van_leer_slope(dqm.s7(), dqp.s7())};
                 });
         });
 
@@ -260,7 +269,7 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                     Tscal8 dqm = (Qi - Qim) / d_cell;
                     Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_z[cell_gid] = Tscal8 {
+                    a_z[cell_gid] = Tscal8{
                         shammath::van_leer_slope(dqm.s0(), dqp.s0()),
                         shammath::van_leer_slope(dqm.s1(), dqp.s1()),
                         shammath::van_leer_slope(dqm.s2(), dqp.s2()),
@@ -268,12 +277,10 @@ void Module<Tvec, TgridVec>::compute_limiter() {
                         shammath::van_leer_slope(dqm.s4(), dqp.s4()),
                         shammath::van_leer_slope(dqm.s5(), dqp.s5()),
                         shammath::van_leer_slope(dqm.s6(), dqp.s6()),
-                        shammath::van_leer_slope(dqm.s7(), dqp.s7())
-                    };
+                        shammath::van_leer_slope(dqm.s7(), dqp.s7())};
                 });
         });
 
-        
         if (a_x.get_field(p.id_patch).has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in a_x");
             throw shambase::throw_with_loc<std::runtime_error>("detected nan");
@@ -288,7 +295,6 @@ void Module<Tvec, TgridVec>::compute_limiter() {
             logger::err_ln("[Zeus]", "nan detected in a_z");
             throw shambase::throw_with_loc<std::runtime_error>("detected nan");
         }
-        
     });
 }
 
@@ -384,6 +390,7 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
             Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
             Tscal dt              = dt_in;
+            bool enable_vanleer   = solver_config.use_van_leer;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
                     Tscal d_cell =
@@ -398,10 +405,18 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
                     Tscal8 res;
 
-                    if (vx >= 0) {
-                        res = Qim + aim * (d_cell - vx * dt) * 0.5;
+                    if (enable_vanleer) {
+                        if (vx >= 0) {
+                            res = Qim + aim * (d_cell - vx * dt) * 0.5;
+                        } else {
+                            res = Qi + ai * (d_cell + vx * dt) * 0.5;
+                        }
                     } else {
-                        res = Qi + ai * (d_cell + vx * dt) * 0.5;
+                        if (vx >= 0) {
+                            res = Qim;
+                        } else {
+                            res = Qi;
+                        }
                     }
 
                     Qstar_x[cell_gid] = res;
@@ -422,6 +437,7 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
             Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
             Tscal dt              = dt_in;
+            bool enable_vanleer   = solver_config.use_van_leer;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
                     Tscal d_cell =
@@ -435,11 +451,18 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
                     Tscal vy   = vel[cell_gid].y();
 
                     Tscal8 res;
-
-                    if (vy >= 0) {
-                        res = Qim + aim * (d_cell - vy * dt) * 0.5;
+                    if (enable_vanleer) {
+                        if (vy >= 0) {
+                            res = Qim + aim * (d_cell - vy * dt) * 0.5;
+                        } else {
+                            res = Qi + ai * (d_cell + vy * dt) * 0.5;
+                        }
                     } else {
-                        res = Qi + ai * (d_cell + vy * dt) * 0.5;
+                        if (vy >= 0) {
+                            res = Qim;
+                        } else {
+                            res = Qi;
+                        }
                     }
 
                     Qstar_y[cell_gid] = res;
@@ -460,6 +483,7 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
             Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
             Tscal dt              = dt_in;
+            bool enable_vanleer   = solver_config.use_van_leer;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
                     Tscal d_cell =
@@ -474,10 +498,18 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
                     Tscal8 res;
 
-                    if (vz >= 0) {
-                        res = Qim + aim * (d_cell - vz * dt) * 0.5;
+                    if (enable_vanleer) {
+                        if (vz >= 0) {
+                            res = Qim + aim * (d_cell - vz * dt) * 0.5;
+                        } else {
+                            res = Qi + ai * (d_cell + vz * dt) * 0.5;
+                        }
                     } else {
-                        res = Qi + ai * (d_cell + vz * dt) * 0.5;
+                        if (vz >= 0) {
+                            res = Qim;
+                        } else {
+                            res = Qi;
+                        }
                     }
 
                     Qstar_z[cell_gid] = res;
@@ -579,6 +611,7 @@ void Module<Tvec, TgridVec>::compute_flux() {
 
             Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
+            bool const_transp = solver_config.use_consistent_transport;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
                     Tvec d_cell =
@@ -587,6 +620,17 @@ void Module<Tvec, TgridVec>::compute_flux() {
 
                     Tscal8 Qstari = Qstar_x[cell_gid];
                     Tscal vx      = vel[cell_gid].x();
+
+                    // with consistent transport
+                    if (const_transp) {
+                        Qstari.s1() *= Qstari.s0();
+                        Qstari.s2() *= Qstari.s0();
+                        Qstari.s3() *= Qstari.s0();
+                        Qstari.s4() *= Qstari.s0();
+                        Qstari.s5() *= Qstari.s0();
+                        Qstari.s6() *= Qstari.s0();
+                        Qstari.s7() *= Qstari.s0();
+                    }
 
                     Flux_x[cell_gid] = Qstari * (vx * d_cell.y() * d_cell.z());
                 });
@@ -603,6 +647,7 @@ void Module<Tvec, TgridVec>::compute_flux() {
 
             Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
+            bool const_transp = solver_config.use_consistent_transport;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
                     Tvec d_cell =
@@ -611,7 +656,16 @@ void Module<Tvec, TgridVec>::compute_flux() {
 
                     Tscal8 Qstari = Qstar_y[cell_gid];
                     Tscal vy      = vel[cell_gid].y();
-
+                    // with consistent transport
+                    if (const_transp) {
+                        Qstari.s1() *= Qstari.s0();
+                        Qstari.s2() *= Qstari.s0();
+                        Qstari.s3() *= Qstari.s0();
+                        Qstari.s4() *= Qstari.s0();
+                        Qstari.s5() *= Qstari.s0();
+                        Qstari.s6() *= Qstari.s0();
+                        Qstari.s7() *= Qstari.s0();
+                    }
                     Flux_y[cell_gid] = Qstari * (vy * d_cell.x() * d_cell.z());
                 });
         });
@@ -627,6 +681,7 @@ void Module<Tvec, TgridVec>::compute_flux() {
 
             Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
+            bool const_transp = solver_config.use_consistent_transport;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
                     Tvec d_cell =
@@ -635,7 +690,16 @@ void Module<Tvec, TgridVec>::compute_flux() {
 
                     Tscal8 Qstari = Qstar_z[cell_gid];
                     Tscal vz      = vel[cell_gid].z();
-
+                    // with consistent transport
+                    if (const_transp) {
+                        Qstari.s1() *= Qstari.s0();
+                        Qstari.s2() *= Qstari.s0();
+                        Qstari.s3() *= Qstari.s0();
+                        Qstari.s4() *= Qstari.s0();
+                        Qstari.s5() *= Qstari.s0();
+                        Qstari.s6() *= Qstari.s0();
+                        Qstari.s7() *= Qstari.s0();
+                    }
                     Flux_z[cell_gid] = Qstari * (vz * d_cell.x() * d_cell.y());
                 });
         });
@@ -722,6 +786,7 @@ void Module<Tvec, TgridVec>::update_Q(Tscal dt) {
 
             Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
+            bool const_transp = solver_config.use_consistent_transport;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
                     Tvec d_cell =
@@ -744,15 +809,18 @@ void Module<Tvec, TgridVec>::update_Q(Tscal dt) {
 
                     Tscal8 Qtmp = Q[cell_gid];
 
-                    Qtmp += fsum;
+                    // with consistent transport
+                    if (const_transp) {
+                        Qtmp.s1() *= Qtmp.s0();
+                        Qtmp.s2() *= Qtmp.s0();
+                        Qtmp.s3() *= Qtmp.s0();
+                        Qtmp.s4() *= Qtmp.s0();
+                        Qtmp.s5() *= Qtmp.s0();
+                        Qtmp.s6() *= Qtmp.s0();
+                        Qtmp.s7() *= Qtmp.s0();
+                    }
 
-                    //Qtmp.s1() *= Qtmp.s0();
-                    //Qtmp.s2() *= Qtmp.s0();
-                    //Qtmp.s3() *= Qtmp.s0();
-                    //Qtmp.s4() *= Qtmp.s0();
-                    //Qtmp.s5() *= Qtmp.s0();
-                    //Qtmp.s6() *= Qtmp.s0();
-                    //Qtmp.s7() *= Qtmp.s0();
+                    Qtmp += fsum;
 
                     Q[cell_gid] = Qtmp;
                 });

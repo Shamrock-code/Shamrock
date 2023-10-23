@@ -314,13 +314,13 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
     modules::ValueLoader<Tvec, TgridVec, Tscal8> val_load_vec8(context, solver_config, storage);
     ComputeField<Tscal8> &Q   = storage.Q.get();
-    ComputeField<Tscal8> &a_x = storage.a_z.get();
-    ComputeField<Tscal8> &a_y = storage.a_z.get();
+    ComputeField<Tscal8> &a_x = storage.a_x.get();
+    ComputeField<Tscal8> &a_y = storage.a_y.get();
     ComputeField<Tscal8> &a_z = storage.a_z.get();
 
-    ComputeField<Tscal8> a_xm = val_load_vec8.load_value_with_gz(a_x, {1, 0, 0}, "a_xm");
-    ComputeField<Tscal8> a_ym = val_load_vec8.load_value_with_gz(a_y, {0, 1, 0}, "a_ym");
-    ComputeField<Tscal8> a_zm = val_load_vec8.load_value_with_gz(a_z, {0, 0, 1}, "a_zm");
+    ComputeField<Tscal8> a_xm = val_load_vec8.load_value_with_gz(a_x, {-1, 0, 0}, "a_xm");
+    ComputeField<Tscal8> a_ym = val_load_vec8.load_value_with_gz(a_y, {0, -1, 0}, "a_ym");
+    ComputeField<Tscal8> a_zm = val_load_vec8.load_value_with_gz(a_z, {0, 0, -1}, "a_zm");
 
     ComputeField<Tscal8> &Q_xm = storage.Q_xm.get();
     ComputeField<Tscal8> &Q_ym = storage.Q_ym.get();
@@ -407,9 +407,9 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
 
                     if (enable_vanleer) {
                         if (vx >= 0) {
-                            res = Qim + aim * (d_cell - vx * dt) * 0.5;
+                            res = Qim + 0.5 * (d_cell - vx * dt) * aim;
                         } else {
-                            res = Qi + ai * (d_cell + vx * dt) * 0.5;
+                            res = Qi - 0.5 * (d_cell + vx * dt) * ai;
                         }
                     } else {
                         if (vx >= 0) {
@@ -455,7 +455,7 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
                         if (vy >= 0) {
                             res = Qim + aim * (d_cell - vy * dt) * 0.5;
                         } else {
-                            res = Qi + ai * (d_cell + vy * dt) * 0.5;
+                            res = Qi - ai * (d_cell + vy * dt) * 0.5;
                         }
                     } else {
                         if (vy >= 0) {
@@ -502,7 +502,7 @@ void Module<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
                         if (vz >= 0) {
                             res = Qim + aim * (d_cell - vz * dt) * 0.5;
                         } else {
-                            res = Qi + ai * (d_cell + vz * dt) * 0.5;
+                            res = Qi - ai * (d_cell + vz * dt) * 0.5;
                         }
                     } else {
                         if (vz >= 0) {

@@ -79,7 +79,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     using namespace shamrock::patch;
     using namespace shamrock;
     using Block = typename Config::AMRBlock;
-    AsciiSplitDump debug_dump("ghost_dump_debug"+std::to_string(t_current));
+    AsciiSplitDump debug_dump("ghost_dump_debug"+std::to_string(t_current) + std::to_string(solver_config.use_van_leer)+ std::to_string(solver_config.use_consistent_transport));
 
     bool do_debug_dump = false;
 

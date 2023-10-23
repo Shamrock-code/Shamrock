@@ -63,7 +63,7 @@ def run_sim(ctp = False, vanleer = False, label = "none"):
     freq = 20
     t = 0
 
-    dt = 0.01
+    dt = 1/128
     for i in range(1000):
         
         if i % freq == 0:

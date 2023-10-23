@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file Solver.hpp
+ * @file SolverConfig.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
  * 

@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file ValueLoader.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "ValueLoader.hpp"
 
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
@@ -61,7 +68,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_xp(
             static_assert(dim == 3, "implemented only in dim 3");
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[0] < Block::Nside-1) {
+            if (lid_coord[0] < Block::Nside - 1) {
                 lid_coord[0] += 1;
                 val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
             }
@@ -113,7 +120,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_yp(
             static_assert(dim == 3, "implemented only in dim 3");
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[1] < Block::Nside-1) {
+            if (lid_coord[1] < Block::Nside - 1) {
                 lid_coord[1] += 1;
                 val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
             }
@@ -165,7 +172,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_zp(
             static_assert(dim == 3, "implemented only in dim 3");
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[2] < Block::Nside-1) {
+            if (lid_coord[2] < Block::Nside - 1) {
                 lid_coord[2] += 1;
                 val_out[base_idx] = src[base_idx - lid + Block::get_index(lid_coord)];
             }
@@ -277,7 +284,6 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xm(
     });
 }
 
-
 template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
 
@@ -313,7 +319,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
 
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[0] == 0) {
+            if (lid_coord[0] == Block::Nside -1 ) {
                 auto tmp = cell_max[block_id] - cell_min[block_id];
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
@@ -323,9 +329,16 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
                     if (nV == Va) { // same level
-                        val_out[base_idx] =
-                            src[block_id_b * Block::block_size +
+                        auto val = src[block_id_b * Block::block_size +
                                 Block::get_index({0, lid_coord[1], lid_coord[2]})];
+
+                        //if constexpr (std::is_same_v<T, Tvec>){
+                        //sycl::ext::oneapi::experimental::printf("%d %f %f %f\n",block_id_b * Block::block_size +
+                        //        Block::get_index({0, lid_coord[1], lid_coord[2]}),val.x(),val.y(),val.z());
+                        //}
+                        
+                        val_out[base_idx] = val;
+                            
                     }
                 });
             }
@@ -388,7 +401,6 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_ym(
     });
 }
 
-
 template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_yp(
 
@@ -424,7 +436,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_yp(
 
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[1] == 0) {
+            if (lid_coord[1] == Block::Nside -1 ) {
                 auto tmp = cell_max[block_id] - cell_min[block_id];
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
@@ -499,7 +511,6 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zm(
     });
 }
 
-
 template<class Tvec, class TgridVec, class T>
 void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zp(
 
@@ -535,7 +546,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zp(
 
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[2] == 0) {
+            if (lid_coord[2] == Block::Nside -1 ) {
                 auto tmp = cell_max[block_id] - cell_min[block_id];
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
@@ -768,7 +779,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
         sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
         sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
-        load_patch_internal_block(offset, pdat.get_obj_cnt(), nvar, buf_src, buf_dest);
+        load_patch_internal_block(offset, mpdat.total_elements, nvar, buf_src, buf_dest);
     });
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
@@ -788,7 +799,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             nvar,
             buf_src,
             buf_dest);
@@ -811,7 +822,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             nvar,
             buf_src,
             buf_dest);
@@ -834,7 +845,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             nvar,
             buf_src,
             buf_dest);
@@ -872,7 +883,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
 
         load_patch_internal_block(
             offset,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             compute_field.get_field(p.id_patch).get_nvar(),
             buf_src,
             buf_dest);
@@ -895,7 +906,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             compute_field.get_field(p.id_patch).get_nvar(),
             buf_src,
             buf_dest);
@@ -918,7 +929,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             compute_field.get_field(p.id_patch).get_nvar(),
             buf_src,
             buf_dest);
@@ -941,7 +952,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
             buf_cell_min,
             buf_cell_max,
             face_lists,
-            pdat.get_obj_cnt(),
+            mpdat.total_elements,
             compute_field.get_field(p.id_patch).get_nvar(),
             buf_src,
             buf_dest);

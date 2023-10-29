@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file pdat_comm_cp_to_host.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 
 namespace impl::copy_to_host {

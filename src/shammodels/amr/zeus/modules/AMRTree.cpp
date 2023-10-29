@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file AMRTree.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shammodels/amr/zeus/modules/AMRTree.hpp"
 
 template<class Tvec, class TgridVec>
@@ -68,10 +75,152 @@ void Module<Tvec, TgridVec>::build_trees(){
     trees.for_each([](u64 id, RTree & tree){
         tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
         tree.convert_bounding_box(shamsys::instance::get_compute_queue());
+
     });
+
+
+
 
     storage.trees.set(std::move(trees));
 
+}
+
+template<class Tvec, class TgridVec>
+void Module<Tvec, TgridVec>::correct_bounding_box(){
+
+    StackEntry stack_loc{};
+
+    using MergedPDat = shamrock::MergedPatchData;
+    using RTree = typename Storage::RTree;
+
+    storage.trees.get().for_each([&](u64 id, RTree & tree){
+        
+        u32 leaf_count = tree.tree_reduced_morton_codes.tree_leaf_count;
+        u32 internal_cell_count = tree.tree_struct.internal_cell_count;
+        u32 tot_count = leaf_count + internal_cell_count;
+
+        sycl::buffer<TgridVec> tmp_min_cell(tot_count);
+        sycl::buffer<TgridVec> tmp_max_cell(tot_count);
+
+
+        MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(id);
+        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamrock::tree::ObjectIterator cell_looper(tree, cgh);
+
+            u32 leaf_offset = tree.tree_struct.internal_cell_count;
+
+            sycl::accessor acc_bmin {buf_cell_min, cgh, sycl::read_only};
+            sycl::accessor acc_bmax {buf_cell_max, cgh, sycl::read_only};
+
+            sycl::accessor comp_min {tmp_min_cell, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor comp_max {tmp_max_cell, cgh, sycl::write_only, sycl::no_init};
+
+
+            TgridVec imin = shambase::VectorProperties<TgridVec>::get_max();
+            TgridVec imax = shambase::VectorProperties<TgridVec>::get_min();
+
+            shambase::parralel_for(cgh, leaf_count,"compute leaf boxes", [=](u64 leaf_id){
+
+                TgridVec min = imin;
+                TgridVec max = imax;
+
+                cell_looper.iter_object_in_cell(leaf_id + leaf_offset, [&](u32 block_id){
+                    TgridVec bmin = acc_bmin[block_id];
+                    TgridVec bmax = acc_bmax[block_id];
+
+                    min = shambase::sycl_utils::g_sycl_min(min, bmin);
+                    max = shambase::sycl_utils::g_sycl_max(max, bmax);
+                });
+
+                comp_min[leaf_offset + leaf_id] = min;
+                comp_max[leaf_offset + leaf_id] = max;
+
+            });
+
+
+
+        });
+
+        auto ker_reduc_hmax = [&](sycl::handler &cgh) {
+            u32 offset_leaf = internal_cell_count;
+
+            sycl::accessor comp_min {tmp_min_cell, cgh, sycl::read_write};
+            sycl::accessor comp_max {tmp_max_cell, cgh, sycl::read_write};
+
+            sycl::accessor rchild_id   {shambase::get_check_ref(tree.tree_struct.buf_rchild_id  ),cgh, sycl::read_only};
+            sycl::accessor lchild_id   {shambase::get_check_ref(tree.tree_struct.buf_lchild_id  ),cgh, sycl::read_only};
+            sycl::accessor rchild_flag {shambase::get_check_ref(tree.tree_struct.buf_rchild_flag),cgh, sycl::read_only};
+            sycl::accessor lchild_flag {shambase::get_check_ref(tree.tree_struct.buf_lchild_flag),cgh, sycl::read_only};
+
+            shambase::parralel_for(cgh, internal_cell_count,"propagate up", [=](u64 gid){
+
+                u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
+                u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
+
+                TgridVec bminl = comp_min[lid];
+                TgridVec bminr = comp_min[rid];
+                TgridVec bmaxl = comp_max[lid];
+                TgridVec bmaxr = comp_max[rid];
+
+                TgridVec bmin = shambase::sycl_utils::g_sycl_min(bminl, bminr);
+                TgridVec bmax = shambase::sycl_utils::g_sycl_max(bmaxl, bmaxr);
+
+                comp_min[gid] = bmin;
+                comp_max[gid] = bmax;
+            });
+        };
+
+        for (u32 i = 0; i < tree.tree_depth; i++) {
+            shamsys::instance::get_compute_queue().submit(ker_reduc_hmax);
+        }
+
+        sycl::buffer<TgridVec> & tree_bmin = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_min_cell_flt);
+        sycl::buffer<TgridVec> & tree_bmax = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_max_cell_flt);
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            shamrock::tree::ObjectIterator cell_looper(tree, cgh);
+
+            u32 leaf_offset = tree.tree_struct.internal_cell_count;
+
+            sycl::accessor comp_bmin {tmp_min_cell, cgh, sycl::read_only};
+            sycl::accessor comp_bmax {tmp_max_cell, cgh, sycl::read_only};
+
+            sycl::accessor tree_buf_min {tree_bmin, cgh, sycl::read_write};
+            sycl::accessor tree_buf_max {tree_bmax, cgh, sycl::read_write};
+
+            shambase::parralel_for(cgh, tot_count,"write in tree range", [=](u64 nid){
+
+                TgridVec load_min = comp_bmin[nid]; 
+                TgridVec load_max = comp_bmax[nid]; 
+
+                //if(
+                //    (!shambase::vec_equals(load_min,tree_buf_min[nid]))
+                //  || !shambase::vec_equals(load_max,tree_buf_max[nid])
+                //    )
+                //{
+//
+                //    sycl::ext::oneapi::experimental::printf(
+                //        "%ld : (%ld %ld %ld) -> (%ld %ld %ld) & (%ld %ld %ld) -> (%ld %ld %ld)\n", 
+                //        nid,
+                //        tree_buf_min[nid].x(),tree_buf_min[nid].y(),tree_buf_min[nid].z(),
+                //        load_min.x(),load_min.y(),load_min.z(),
+                //        tree_buf_max[nid].x(),tree_buf_max[nid].y(),tree_buf_max[nid].z(),
+                //        load_max.x(),load_max.y(),load_max.z()
+                //    );
+//
+                //}
+
+                tree_buf_min[nid] = load_min;
+                tree_buf_max[nid] = load_max;   
+
+            });
+
+        });
+
+    });
 }
 
 template<class Tvec, class TgridVec>
@@ -140,6 +289,12 @@ void Module<Tvec, TgridVec>::build_neigh_cache(){
 
                         cnt += (no_interact) ? 0 : 1;
                     });
+
+                //if(cell_aabb.lower.x() < 0 && cell_aabb.lower.y() == 10){
+                //    sycl::ext::oneapi::experimental::printf("%d (%ld %ld %ld) : %d\n", id_a,
+                //    cell_aabb.lower.x(),cell_aabb.lower.y(),cell_aabb.lower.z()
+                //    ,cnt);
+                //}
 
                 neigh_cnt[id_a] = cnt;
             });

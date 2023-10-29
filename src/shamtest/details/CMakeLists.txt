@@ -10,6 +10,7 @@ PRIVATE
     TestDataList.cpp
     TestResult.cpp
     Test.cpp
+    reporters/texTestReport.cpp
 PUBLIC
 )
 endif()

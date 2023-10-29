@@ -6,8 +6,16 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file algorithm.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "algorithm.hpp"
 #include "bitonicSort.hpp"
+
 namespace shamalgs::algorithm {
 
     template<class Tkey, class Tval>

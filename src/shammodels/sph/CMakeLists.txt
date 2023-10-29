@@ -4,6 +4,8 @@ target_sources(shamrock_lib
         SPHSolverImpl.cpp
         Model.cpp
         Solver.cpp
+        SPHUtilities.cpp
+
     PUBLIC
     )
 

@@ -12,10 +12,6 @@
  * @file morton.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Morton curve implementation
- * @version 0.1
- * @date 2022-03-03
- *
- * @copyright Copyright (c) 2022
  *
  */
 
@@ -25,7 +21,7 @@
 #include "shambase/integer_sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <type_traits>
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamrock::sfc {
 

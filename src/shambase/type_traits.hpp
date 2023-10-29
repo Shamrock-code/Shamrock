@@ -8,7 +8,14 @@
 
 #pragma once
 
-#include "shambase/type_aliases.hpp"
+/**
+ * @file type_traits.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/typeAliasVec.hpp"
 #include <climits>
 #include <type_traits>
 

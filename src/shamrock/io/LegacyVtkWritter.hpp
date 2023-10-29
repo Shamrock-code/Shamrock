@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file LegacyVtkWritter.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamalgs/collective/io.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/details/memory/bufferFlattening.hpp"

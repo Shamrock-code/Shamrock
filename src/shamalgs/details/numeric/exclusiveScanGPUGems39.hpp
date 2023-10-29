@@ -8,8 +8,15 @@
 
 #pragma once
 
+/**
+ * @file exclusiveScanGPUGems39.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamalgs::numeric::details {
 

@@ -6,8 +6,17 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file fallbackMemory.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "fallbackMemory.hpp"
-#include "aliases.hpp"
+
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/typeAliasVec.hpp"
 
 namespace shamalgs::memory::details {
 

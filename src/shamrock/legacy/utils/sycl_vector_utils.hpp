@@ -108,7 +108,7 @@ template<> inline u64 next_obj(std::mt19937 &  eng, std::uniform_real_distributi
 template<> inline u32 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return u32(distval(eng));}
 template<> inline u16 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return u16(distval(eng));}
 template<> inline u8  next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return u8 (distval(eng));}
-#ifdef SYCL_COMP_DPCPP
+#ifdef SYCL_COMP_INTEL_LLVM
 template<> inline f16 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return f16(distval(eng));}
 #endif
 template<> inline f32 next_obj(std::mt19937 &  eng, std::uniform_real_distribution<f64> & distval){ return f32(distval(eng));}

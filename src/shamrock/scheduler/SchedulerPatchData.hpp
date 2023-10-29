@@ -9,13 +9,10 @@
 #pragma once
 
 /**
- * @file scheduler_patch_data.hpp
+ * @file SchedulerPatchData.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief PatchData handling
- * @version 0.1
- * @date 2022-03-01
- *
- * @copyright Copyright (c) 2022
+ 
  *
  */
 

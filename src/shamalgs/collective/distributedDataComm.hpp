@@ -8,11 +8,18 @@
 
 #pragma once
 
+/**
+ * @file distributedDataComm.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/sparseXchg.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
 #include <functional>
 #include <mpi.h>
@@ -27,7 +34,7 @@ namespace shamalgs::collective {
 
     void distributed_data_sparse_comm(SerializedDDataComm &send_ddistrib_data,
                                              SerializedDDataComm &recv_distrib_data,
-                                             shamsys::CommunicationProtocol prot,
+                                             shamcomm::CommunicationProtocol prot,
                                              std::function<i32(u64)> rank_getter,
                                              std::optional<SparseCommTable> comm_table = {});
 
@@ -35,7 +42,7 @@ namespace shamalgs::collective {
     inline void serialize_sparse_comm(
         shambase::DistributedDataShared<T> && send_distrib_data,
         shambase::DistributedDataShared<T> &recv_distrib_data,
-        shamsys::CommunicationProtocol prot,
+        shamcomm::CommunicationProtocol prot,
         std::function<i32(u64)> rank_getter,
         std::function<std::unique_ptr<sycl::buffer<u8>>(T &)> serialize,
         std::function<T(std::unique_ptr<sycl::buffer<u8>> &&)> deserialize,

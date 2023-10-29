@@ -1,0 +1,53 @@
+name: Src checks
+
+
+on:
+  workflow_call:
+
+  push:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  schedule:
+    # At 02:00 on Monday, Wednesday, and Friday.
+    - cron:  '0 2 * * 1,3,5'
+    
+jobs:
+
+  pragma_check:
+    name: "Pragma once"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      - name: Pragma check
+        run: python buildbot/check_pragma_once.py
+
+
+  copyright_check:
+    name: "Copyright"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      - name: Licence check
+        run: python buildbot/check_licencing.py
+
+  doxygen_check:
+    name: "Doxygen file header"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+      - name: Doxygen file header
+        run: python buildbot/check_doxygen_fileheader.py

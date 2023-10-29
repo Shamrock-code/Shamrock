@@ -8,9 +8,15 @@
 
 #pragma once
 
+/**
+ * @file PatchCoord.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "aliases.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamrock::patch {
 

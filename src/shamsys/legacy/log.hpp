@@ -8,7 +8,13 @@
 
 #pragma once 
 
-#include "aliases.hpp"
+/**
+ * @file log.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
+#include "shambackends/typeAliasVec.hpp"
 #include <chrono>
 #include <fstream>
 #include <string>
@@ -238,8 +244,8 @@ namespace logger {
     inline i8 loglevel = 0;
 
     #define LIST_LEVEL                                                                                                      \
-    X(debug_alloc, terminal_effects::colors_foreground_8b::red, "Debug Alloc ", i8_max)                                     \
-    X(debug_mpi, terminal_effects::colors_foreground_8b::blue, "Debug MPI ", i8_max-1)                                      \
+    X(debug_alloc, terminal_effects::colors_foreground_8b::red, "Debug Alloc ", 127)                                     \
+    X(debug_mpi, terminal_effects::colors_foreground_8b::blue, "Debug MPI ", 100)                                      \
     X(debug_sycl, terminal_effects::colors_foreground_8b::magenta, "Debug SYCL", 11)                                        \
     X(debug, terminal_effects::colors_foreground_8b::green, "Debug ", 10)                                                   \
     X(info, terminal_effects::colors_foreground_8b::cyan, "", 1)                                                            \

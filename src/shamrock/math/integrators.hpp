@@ -8,9 +8,17 @@
 
 #pragma once
 
-#include "shambase/sycl.hpp"
+/**
+ * @file integrators.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"
+
+#include "shambackends/typeAliasVec.hpp"
 
 namespace shamrock {
     namespace integrators {

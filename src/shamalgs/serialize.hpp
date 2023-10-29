@@ -8,12 +8,19 @@
 
 #pragma once
 
+/**
+ * @file serialize.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "details/SerializeHelperMember.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/sycl.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <memory>
 #include <stdexcept>

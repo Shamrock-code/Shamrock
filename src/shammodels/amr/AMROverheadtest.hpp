@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file AMROverheadtest.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/memory.hpp"
 #include "shammath/intervals.hpp"
 #include "shamrock/amr/AMRGrid.hpp"

@@ -7,6 +7,13 @@
 // -------------------------------------------------------//
 
 
+/**
+ * @file fmmTests.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -185,7 +192,7 @@ class FMM_prec_eval{public:
 
 
 
-TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
+TestStart(ValidationTest,"models/generic/fmm/precision", fmm_prec, 1){
 
     std::mt19937 eng(0x1111);
 
@@ -356,9 +363,21 @@ TestStart(Analysis,"models/generic/fmm/precision", fmm_prec, 1){
 
         plt.tight_layout()
 
-        plt.savefig("fmm_precision.pdf")
+        plt.savefig("tests/figures/fmm_precision.pdf")
 
     )");
+
+
+
+    TEX_REPORT(R"==(
+
+        \begin{figure}[ht!]
+        \center
+        \includegraphics[width=0.95\linewidth]{figures/fmm_precision.pdf}
+        \caption{FMM precision}
+        \end{figure}
+
+    )==")
 }
 
 
@@ -680,7 +699,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
     logger::debug_ln("RTreeFMM", "computing cell infos");
     std::unique_ptr<sycl::buffer<vec>> cell_centers = std::make_unique<sycl::buffer<vec>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
-    std::unique_ptr<sycl::buffer<flt>> cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
+    std::unique_ptr<sycl::buffer<flt>> cell_length = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
@@ -692,7 +711,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
         auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::write_only,sycl::no_init};
-        auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::write_only,sycl::no_init};
+        auto c_length = sycl::accessor{*cell_length,cgh,sycl::write_only,sycl::no_init};
 
         cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
             vec cur_pos_min_cell_a = pos_min_cell[item];
@@ -705,7 +724,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
             flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
 
             c_centers[item] = sa;
-            c_lenght[item] = l_cell_a;
+            c_length[item] = l_cell_a;
         });
 
     });
@@ -721,7 +740,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
         //user accessors
         auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
-        auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
+        auto c_length = sycl::accessor{*cell_length,cgh,sycl::read_only};
 
         auto xyz = sycl::accessor {*pos_part, cgh,sycl::read_only};
         auto fxyz = sycl::accessor {*buf_force, cgh,sycl::read_write};
@@ -741,7 +760,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
             vec cur_pos_max_cell_a = pos_max_cell[id_cell_a];
 
             vec sa = c_centers[id_cell_a];
-            flt l_cell_a = c_lenght[id_cell_a];
+            flt l_cell_a = c_length[id_cell_a];
 
             auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
 
@@ -758,7 +777,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
                     vec sb = c_centers[id_cell_b];
                     vec r_fmm = sb-sa;
-                    flt l_cell_b = c_lenght[id_cell_b];
+                    flt l_cell_b = c_length[id_cell_b];
 
                     flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
@@ -778,7 +797,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
                             vec sb = c_centers[id_cell_b];
                             vec r_fmm = sb-sa;
-                            flt l_cell_b = c_lenght[id_cell_b];
+                            flt l_cell_b = c_length[id_cell_b];
 
                             flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
@@ -873,7 +892,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
         Rta tree_acc(rtree, cgh);
 
         auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
-        auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
+        auto c_length = sycl::accessor{*cell_length,cgh,sycl::read_only};
 
         sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count};
 
@@ -896,19 +915,19 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
             vec cur_pos_max_cell_a = tree_acc.pos_max_cell[id_cell_a];
 
             vec sa = c_centers[id_cell_a];
-            flt l_cell_a = c_lenght[id_cell_a];
+            flt l_cell_a = c_length[id_cell_a];
 
             auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
 
             walker::rtree_for_cell(
                 tree_acc,
-                [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a,&c_centers,&c_lenght,&open_crit_sq](u32 id_cell_b){
+                [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a,&c_centers,&c_length,&open_crit_sq](u32 id_cell_b){
                     vec cur_pos_min_cell_b = tree_acc.pos_min_cell[id_cell_b];
                     vec cur_pos_max_cell_b = tree_acc.pos_max_cell[id_cell_b];
 
                     vec sb = c_centers[id_cell_b];
                     vec r_fmm = sb-sa;
-                    flt l_cell_b = c_lenght[id_cell_b];
+                    flt l_cell_b = c_length[id_cell_b];
 
                     flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
@@ -927,7 +946,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
                     
                     //vec sb = c_centers[node_b];
                     //vec r_fmm = sb-sa;
-                    //flt l_cell_b = c_lenght[node_b];
+                    //flt l_cell_b = c_length[node_b];
 //
                     //flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 //
@@ -1021,7 +1040,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
 
         auto c_centers = sycl::host_accessor{*cell_centers,sycl::read_only};
-        auto c_lenght = sycl::host_accessor{*cell_lenght,sycl::read_only};
+        auto c_length = sycl::host_accessor{*cell_length,sycl::read_only};
 
 
         auto pos_min_cell = sycl::host_accessor{*rtree.tree_cell_ranges.buf_pos_min_cell_flt};
@@ -1036,7 +1055,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
                 vec cur_pos_max_cell_a = pos_max_cell[cell_a];
 
                 vec sa = c_centers[cell_a];
-                flt l_cell_a = c_lenght[cell_a];
+                flt l_cell_a = c_length[cell_a];
 
                 //user defs for the cell pair a-b (current_node_id) return interact cd
                 vec cur_pos_min_cell_b = pos_min_cell[cell_b];
@@ -1044,7 +1063,7 @@ Result_nompi_fmm_testing<flt,morton_mode,fmm_order> nompi_fmm_testing(std::uniqu
 
                 vec sb = c_centers[cell_b];
                 vec r_fmm = sb-sa;
-                flt l_cell_b = c_lenght[cell_b];
+                flt l_cell_b = c_length[cell_b];
 
                 flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
@@ -1158,7 +1177,7 @@ std::unique_ptr<sycl::buffer<sycl::vec<flt,3>>> pos_partgen_distrib(u32 npart){
 }
 
 
-TestStart(Analysis,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
+TestStart(ValidationTest,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1){
 
     
     constexpr u32 reduc_level = 5;

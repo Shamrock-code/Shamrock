@@ -8,7 +8,14 @@
 
 #pragma once
 
-#include "shambase/type_aliases.hpp"
+/**
+ * @file indexing.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
@@ -26,7 +33,7 @@ namespace shamalgs::collective {
         u64 scan_val;
         mpi::exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
 
-        if(shamsys::instance::world_rank == 0){
+        if(shamcomm::world_rank() == 0){
             scan_val = 0;
         }
 
@@ -43,7 +50,7 @@ namespace shamalgs::collective {
         u64 scan_val;
         mpi::exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
 
-        if(shamsys::instance::world_rank == 0){
+        if(shamcomm::world_rank() == 0){
             scan_val = 0;
         }
 

@@ -8,6 +8,11 @@
 
 #pragma once
 
+/**
+ * @file ReattributeDataUtility.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "shamalgs/memory.hpp"
 #include "shambase/string.hpp"
@@ -15,7 +20,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/comm/details/CommunicationBufferImpl.hpp"
+#include "shamcomm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
 
@@ -165,7 +170,7 @@ namespace shamrock {
             shamalgs::collective::serialize_sparse_comm<PatchData>(
                 std::move(part_exchange), 
                 recv_dat, 
-                shamsys::get_protocol(), 
+                shamcomm::get_protocol(), 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 

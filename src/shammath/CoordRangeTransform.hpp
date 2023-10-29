@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file CoordRangeTransform.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "CoordRange.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 

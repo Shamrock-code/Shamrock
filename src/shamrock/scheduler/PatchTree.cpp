@@ -7,13 +7,10 @@
 // -------------------------------------------------------//
 
 /**
- * @file patchtree.cpp
+ * @file PatchTree.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief PatchTree implementation
- * @version 0.1
- * @date 2022-03-01
- * 
- * @copyright Copyright (c) 2022
+ *
  * 
  */
 

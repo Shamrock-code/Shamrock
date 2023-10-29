@@ -12,9 +12,6 @@
  * @file sycl_handler.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief header file to manage sycl
- * @date 2022-02-28
- *
- * @copyright Copyright (c) 2022
  */
 
 

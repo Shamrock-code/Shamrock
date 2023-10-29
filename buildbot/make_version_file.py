@@ -19,7 +19,7 @@ git_head = str_git[str_git.find("HEAD -> ")+8:str_git.find(")")]
 
 
 str_ = '''
-#include "aliases.hpp"
+#include "version.hpp"
 
 const std::string git_info_str = R"%%('''
 

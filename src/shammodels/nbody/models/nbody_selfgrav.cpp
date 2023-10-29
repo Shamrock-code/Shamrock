@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file nbody_selfgrav.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 
 #include "nbody_selfgrav.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
@@ -143,7 +150,7 @@ class FMMInteract_cd{
         return opening_angle_sq > cd.opening_crit_sq;
     }
 
-    static bool interact_cd_cell_patch(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
+    static bool interact_cd_cell_patch(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slength, flt b1_max_slength, flt b2_min_slength, flt b2_max_slength){
         
         //return true;
         //return interact_cd_cell_cell(cd, b1_min, b1_max, b2_min, b2_max);
@@ -154,13 +161,13 @@ class FMMInteract_cd{
 
         flt dist_to_surf = sycl::sqrt(BBAA::get_sq_distance_to_BBAAsurface(c1, b2_min, b2_max));
 
-        flt opening_angle_sq = (L1 + b2_max_slenght)/(dist_to_surf /*+ b2_min_slenght/2*/);
+        flt opening_angle_sq = (L1 + b2_max_slength)/(dist_to_surf /*+ b2_min_slength/2*/);
         opening_angle_sq *= opening_angle_sq;
 
         return opening_angle_sq > cd.opening_crit_sq;
     }
 
-    static bool interact_cd_cell_patch_outdomain(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slenght, flt b1_max_slenght, flt b2_min_slenght, flt b2_max_slenght){
+    static bool interact_cd_cell_patch_outdomain(const FMMInteract_cd & cd,vec b1_min, vec b1_max,vec b2_min, vec b2_max, flt b1_min_slength, flt b1_max_slength, flt b2_min_slength, flt b2_max_slength){
         return false;
     }
 };
@@ -511,14 +518,14 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         
         //generate tree fields
 
-        std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> cell_lenghts;
+        std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt> >> cell_lengths;
         std::unordered_map<u64, std::unique_ptr<RadixTreeField<vec3>>> cell_centers;
 
         sched.for_each_patch_data([&](u64 id_patch, Patch &  /*cur_p*/, PatchData & pdat) {
 
             auto & rtree = *radix_trees[id_patch];
 
-            auto & c_len = cell_lenghts[id_patch];
+            auto & c_len = cell_lengths[id_patch];
             auto & c_cen = cell_centers[id_patch];
 
             c_len = std::make_unique<RadixTreeField<flt> >(); 
@@ -527,11 +534,11 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             c_len->nvar = 1;
             c_cen->nvar = 1;
 
-            auto & cell_lenght  = c_len->radix_tree_field_buf;
+            auto & cell_length  = c_len->radix_tree_field_buf;
             auto & cell_centers = c_cen->radix_tree_field_buf;
 
             cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
-            cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
+            cell_length = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
 
             shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
@@ -543,7 +550,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
                 auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::write_only,sycl::no_init};
-                auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::write_only,sycl::no_init};
+                auto c_length = sycl::accessor{*cell_length,cgh,sycl::write_only,sycl::no_init};
 
                 cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
                     vec3 cur_pos_min_cell_a = pos_min_cell[item];
@@ -556,7 +563,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                     flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
 
                     c_centers[item] = sa;
-                    c_lenght[item] = l_cell_a;
+                    c_length[item] = l_cell_a;
                 });
 
             });
@@ -590,39 +597,39 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
         //generate the tree field for the box size info
 
-        FullTreeField<flt, RadTree> min_slenght;
-        FullTreeField<flt, RadTree> max_slenght;
+        FullTreeField<flt, RadTree> min_slength;
+        FullTreeField<flt, RadTree> max_slength;
 
-        legacy::PatchField<flt> & max_slenght_cells = max_slenght.patch_field;
-        legacy::PatchField<flt> & min_slenght_cells = min_slenght.patch_field;
+        legacy::PatchField<flt> & max_slength_cells = max_slength.patch_field;
+        legacy::PatchField<flt> & min_slength_cells = min_slength.patch_field;
 
-        std::unordered_map<u64, flt> min_slenght_map;
-        std::unordered_map<u64, flt> max_slenght_map;
+        std::unordered_map<u64, flt> min_slength_map;
+        std::unordered_map<u64, flt> max_slength_map;
 
         using RtreeField = typename RadTree::template RadixTreeField<flt>;
-        std::unordered_map<u64, std::unique_ptr<RtreeField>> & min_tree_slenght_map = min_slenght.patch_tree_fields;
-        std::unordered_map<u64, std::unique_ptr<RtreeField>> & max_tree_slenght_map = max_slenght.patch_tree_fields;
+        std::unordered_map<u64, std::unique_ptr<RtreeField>> & min_tree_slength_map = min_slength.patch_tree_fields;
+        std::unordered_map<u64, std::unique_ptr<RtreeField>> & max_tree_slength_map = max_slength.patch_tree_fields;
 
         for(auto & [k,rtree_ptr] : radix_trees){
-            auto [min,max] = rtree_ptr->get_min_max_cell_side_lenght();
-            min_slenght_map[k] = min;
-            max_slenght_map[k] = max;
+            auto [min,max] = rtree_ptr->get_min_max_cell_side_length();
+            min_slength_map[k] = min;
+            max_slength_map[k] = max;
         }
 
         sched.compute_patch_field(
-            min_slenght_cells, get_mpi_type<flt>(), [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
-                return min_slenght_map[p.id_patch];
+            min_slength_cells, get_mpi_type<flt>(), [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
+                return min_slength_map[p.id_patch];
             });
 
         sched.compute_patch_field(
-            max_slenght_cells, get_mpi_type<flt>(), [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
-                return max_slenght_map[p.id_patch];
+            max_slength_cells, get_mpi_type<flt>(), [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
+                return max_slength_map[p.id_patch];
             });
 
 
         for(auto & [k,rtree_ptr] : radix_trees){
-            std::unique_ptr<RtreeField> & field_min = min_tree_slenght_map[k];
-            std::unique_ptr<RtreeField> & field_max = max_tree_slenght_map[k];
+            std::unique_ptr<RtreeField> & field_min = min_tree_slength_map[k];
+            std::unique_ptr<RtreeField> & field_max = max_tree_slength_map[k];
 
             u32 total_cell_bount = rtree_ptr->tree_struct.internal_cell_count + rtree_ptr->tree_reduced_morton_codes.tree_leaf_count;
 
@@ -669,7 +676,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
         flt open_crit = 0.5;
         using InterfHndl =  Interfacehandler<Tree_Send, flt, RadTree>;
         InterfHndl interf_hndl = InterfHndl();
-        interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slenght,max_slenght);
+        interf_hndl.compute_interface_list(sched,sptree,sd,radix_trees,FMMInteract_cd<flt>(open_crit),min_slength,max_slength);
         interf_hndl.initial_fetch(sched);
         interf_hndl.comm_trees();
         
@@ -698,10 +705,10 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
             auto & rtree = *radix_trees[id_patch];
 
 
-            auto & c_len = cell_lenghts[id_patch];
+            auto & c_len = cell_lengths[id_patch];
             auto & c_cen = cell_centers[id_patch];
 
-            auto & cell_lenght  = c_len->radix_tree_field_buf;
+            auto & cell_length  = c_len->radix_tree_field_buf;
             auto & cell_centers = c_cen->radix_tree_field_buf;
 
 
@@ -717,7 +724,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                 Rta tree_acc(rtree, cgh);
 
                 auto c_centers = sycl::accessor{*cell_centers,cgh,sycl::read_only};
-                auto c_lenght = sycl::accessor{*cell_lenght,cgh,sycl::read_only};
+                auto c_length = sycl::accessor{*cell_length,cgh,sycl::read_only};
 
                 sycl::range<1> range_leaf = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count};
 
@@ -739,7 +746,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                     vec cur_pos_max_cell_a = tree_acc.pos_max_cell[id_cell_a];
 
                     vec sa = c_centers[id_cell_a];
-                    flt l_cell_a = c_lenght[id_cell_a];
+                    flt l_cell_a = c_length[id_cell_a];
 
                     auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
 
@@ -747,13 +754,13 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 //#if false
                     walker::rtree_for_cell(
                         tree_acc,
-                        [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a,&c_centers,&c_lenght,&open_crit_sq](u32 id_cell_b){
+                        [&tree_acc,&cur_pos_min_cell_a,&cur_pos_max_cell_a,&sa,&l_cell_a,&c_centers,&c_length,&open_crit_sq](u32 id_cell_b){
                             vec cur_pos_min_cell_b = tree_acc.pos_min_cell[id_cell_b];
                             vec cur_pos_max_cell_b = tree_acc.pos_max_cell[id_cell_b];
 
                             vec sb = c_centers[id_cell_b];
                             vec r_fmm = sb-sa;
-                            flt l_cell_b = c_lenght[id_cell_b];
+                            flt l_cell_b = c_length[id_cell_b];
 
                             flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
@@ -772,7 +779,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                             
                             //vec sb = c_centers[node_b];
                             //vec r_fmm = sb-sa;
-                            //flt l_cell_b = c_lenght[node_b];
+                            //flt l_cell_b = c_length[node_b];
                             
                             walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a){
 
@@ -864,10 +871,10 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
 
-            auto & c_len = cell_lenghts[id_patch];
+            auto & c_len = cell_lengths[id_patch];
             auto & c_cen = cell_centers[id_patch];
 
-            auto & cur_cell_lenght  = c_len->radix_tree_field_buf;
+            auto & cur_cell_length  = c_len->radix_tree_field_buf;
             auto & cur_cell_centers = c_cen->radix_tree_field_buf;
 
 
@@ -888,7 +895,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
                 //compute interface cell info
                 auto interf_cell_centers = std::make_unique<sycl::buffer<vec3>>(rtree_interf.tree_struct.internal_cell_count + rtree_interf.tree_reduced_morton_codes.tree_leaf_count);
-                auto interf_cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree_interf.tree_struct.internal_cell_count + rtree_interf.tree_reduced_morton_codes.tree_leaf_count);
+                auto interf_cell_length = std::make_unique<sycl::buffer<flt>>(rtree_interf.tree_struct.internal_cell_count + rtree_interf.tree_reduced_morton_codes.tree_leaf_count);
 
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
 
@@ -900,7 +907,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
                     auto c_centers = sycl::accessor{*interf_cell_centers,cgh,sycl::write_only,sycl::no_init};
-                    auto c_lenght = sycl::accessor{*interf_cell_lenght,cgh,sycl::write_only,sycl::no_init};
+                    auto c_length = sycl::accessor{*interf_cell_length,cgh,sycl::write_only,sycl::no_init};
 
                     cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
                         vec3 cur_pos_min_cell_a = pos_min_cell[item];
@@ -913,7 +920,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                         flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
 
                         c_centers[item] = sa;
-                        c_lenght[item] = l_cell_a;
+                        c_length[item] = l_cell_a;
                     });
 
                 });
@@ -931,11 +938,11 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
 
                     auto interf_c_centers = sycl::accessor{*interf_cell_centers,cgh,sycl::read_only};
-                    auto interf_c_lenght = sycl::accessor{*interf_cell_lenght,cgh,sycl::read_only};
+                    auto interf_c_length = sycl::accessor{*interf_cell_length,cgh,sycl::read_only};
 
 
                     auto cur_c_centers = sycl::accessor{*cur_cell_centers,cgh,sycl::read_only};
-                    auto cur_c_lenght = sycl::accessor{*cur_cell_lenght,cgh,sycl::read_only};
+                    auto cur_c_length = sycl::accessor{*cur_cell_length,cgh,sycl::read_only};
 
 
                     sycl::range<1> cur_range_leaf = sycl::range<1>{rtree_cur.tree_reduced_morton_codes.tree_leaf_count};
@@ -970,7 +977,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
                         vec cur_pos_max_cell_a = tree_acc_curr.pos_max_cell[id_cell_a];
 
                         vec sa = cur_c_centers[id_cell_a];
-                        flt l_cell_a = cur_c_lenght[id_cell_a];
+                        flt l_cell_a = cur_c_length[id_cell_a];
 
                         auto dM_k = SymTensorCollection<flt, 1, fmm_order+1>::zeros();
 
@@ -983,7 +990,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(PatchScheduler &sched, f64 old_ti
 
                                 vec sb = interf_c_centers[id_cell_b];
                                 vec r_fmm = sb-sa;
-                                flt l_cell_b = interf_c_lenght[id_cell_b];
+                                flt l_cell_b = interf_c_length[id_cell_b];
 
                                 flt opening_angle_sq = (l_cell_a + l_cell_b)*(l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 

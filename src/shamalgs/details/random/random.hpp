@@ -8,11 +8,18 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file random.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/typeAliasVec.hpp"
+#include "shambase/Constants.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <random>
-#include "shambase/sycl.hpp"
-#include "shamrock/physics/Constants.hpp"
+#include "shambackends/sycl.hpp"
 
 /**
  * @brief namespace to contain utility related to random number generation in shamalgs
@@ -23,7 +30,9 @@ namespace shamalgs::random {
     template<class T> T mock_value(std::mt19937 & eng, T min_bound, T max_bound);
 
     template<class T> T mock_gaussian(std::mt19937 & eng){
-        constexpr T _2pi = shambase::Constants<T>::pi*2;
+        using namespace shambase::constants;
+
+        constexpr T _2pi = pi<T>*2;
         T r_3 = shamalgs::random::mock_value<T>(eng,0, 1);
         T r_4 = shamalgs::random::mock_value<T>(eng,0, 1);
         return sycl::sqrt(-2*sycl::log(r_3))*sycl::cos(_2pi*r_4);
@@ -91,7 +100,7 @@ namespace shamalgs::random {
     inline u8 next_obj(std::mt19937 &eng, std::uniform_real_distribution<f64> &distval) {
         return u8(distval(eng));
     }
-#ifdef SYCL_COMP_DPCPP
+#ifdef SYCL_COMP_INTEL_LLVM
     template<>
     inline f16 next_obj(std::mt19937 &eng, std::uniform_real_distribution<f64> &distval) {
         return f16(distval(eng));

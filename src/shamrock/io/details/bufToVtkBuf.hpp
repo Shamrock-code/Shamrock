@@ -8,10 +8,17 @@
 
 #pragma once
 
+/**
+ * @file bufToVtkBuf.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shambase/endian.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamrock::details {
 

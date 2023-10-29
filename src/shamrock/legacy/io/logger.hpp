@@ -10,9 +10,11 @@
 #pragma once 
 
 /**
-* \file logger.hpp
-* blabla
-*/
+ * @file logger.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 
 
 

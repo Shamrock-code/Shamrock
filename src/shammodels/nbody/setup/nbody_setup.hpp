@@ -6,11 +6,15 @@
 //
 // -------------------------------------------------------//
 
-
-//%Impl status : Good
-
 #pragma once
 
+/**
+ * @file nbody_setup.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 

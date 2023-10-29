@@ -20,13 +20,13 @@
 
 //%Impl status : Good
 
-
+//#pragma message("This file is deprecated please use the alias include directly")
 
 
 #include <cstring>
 #include <string>
 #include <type_traits>
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 
 inline std::string __file_to_loc(const char* filename){
     return std::string(std::strstr(filename, "/src/") ? std::strstr(filename, "/src/")+1  : filename);
@@ -75,30 +75,3 @@ constexpr u16 u16_min = 0x0000;
 constexpr u8  u8_min  = 0x00;
 
 
-
-extern const std::string git_info_str;
-extern const std::string git_commit_hash;
-extern const std::string compile_arg;
-
-
-
-const u32 term_width = 64;
-
-inline std::string shamrock_title_bar_big = "\n\
-  █████████  █████   █████   █████████   ██████   ██████ ███████████      ███████      █████████  █████   ████\n\
- ███░░░░░███░░███   ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███   ███░░░░░███   ███░░░░░███░░███   ███░ \n\
-░███    ░░░  ░███    ░███  ░███    ░███  ░███░█████░███  ░███    ░███  ███     ░░███ ███     ░░░  ░███  ███   \n\
-░░█████████  ░███████████  ░███████████  ░███░░███ ░███  ░██████████  ░███      ░███░███          ░███████    \n\
- ░░░░░░░░███ ░███░░░░░███  ░███░░░░░███  ░███ ░░░  ░███  ░███░░░░░███ ░███      ░███░███          ░███░░███   \n\
- ███    ░███ ░███    ░███  ░███    ░███  ░███      ░███  ░███    ░███ ░░███     ███ ░░███     ███ ░███ ░░███  \n\
-░░█████████  █████   █████ █████   █████ █████     █████ █████   █████ ░░░███████░   ░░█████████  █████ ░░████\n\
- ░░░░░░░░░  ░░░░░   ░░░░░ ░░░░░   ░░░░░ ░░░░░     ░░░░░ ░░░░░   ░░░░░    ░░░░░░░      ░░░░░░░░░  ░░░░░   ░░░░ \n\
-";
-
-inline void print_title_bar(){
-    printf("%s\n",shamrock_title_bar_big.c_str());
-    printf("---------------------------------------------------------------------------------");
-    printf("%s\n",git_info_str.c_str());
-    printf("---------------------------------------------------------------------------------\n");
-
-}

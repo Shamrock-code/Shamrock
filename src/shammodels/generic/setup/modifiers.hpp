@@ -9,6 +9,13 @@
 #pragma once
 
 
+/**
+ * @file modifiers.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/exception.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"

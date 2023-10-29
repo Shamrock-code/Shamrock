@@ -6,9 +6,16 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file UpdateViscosity.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "UpdateViscosity.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
-#include "shamrock/sph/kernels.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <variant>
 
@@ -176,6 +183,6 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     });
 }
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 template class shammodels::sph::modules::UpdateViscosity<f64_3, M4>;
 template class shammodels::sph::modules::UpdateViscosity<f64_3, M6>;

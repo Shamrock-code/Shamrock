@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file DataNode.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief This file hold the definitions for a test DataNode
+ */
+
 #include "aliases.hpp"
 
 namespace shamtest::details {
@@ -15,6 +21,9 @@ namespace shamtest::details {
         std::string name;
         std::vector<f64> data;
 
-        std::string serialize();
+        std::string serialize_json();
+
+        void serialize(std::basic_stringstream<byte> &stream);
+        static DataNode deserialize(std::basic_stringstream<byte> &reader);
     };
 } // namespace shamtest::details

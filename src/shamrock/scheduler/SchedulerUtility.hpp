@@ -8,10 +8,16 @@
 
 #pragma once
 
+/**
+ * @file SchedulerUtility.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "ComputeField.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/math/integrators.hpp"

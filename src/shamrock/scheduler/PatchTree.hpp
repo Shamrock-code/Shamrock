@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file PatchTree.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "aliases.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/scheduler/PatchTreeNode.hpp"

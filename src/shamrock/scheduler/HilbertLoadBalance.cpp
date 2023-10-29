@@ -7,13 +7,9 @@
 // -------------------------------------------------------//
 
 /**
- * @file loadbalancing_hilbert.cpp
+ * @file HilbertLoadBalance.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief implementation of the hilbert curve load balancing
- * @version 1.0
- * @date 2022-02-28
- *
- * @copyright Copyright (c) 2022
  *
  */
 
@@ -79,7 +75,7 @@ namespace shamrock::scheduler {
         //*
         {
             double target_datacnt = double(std::get<1>(patch_dt[global_patch_list.size() - 1])) /
-                                    shamsys::instance::world_size;
+                                    shamcomm::world_size();
             for (auto t : patch_dt) {
                 logger::debug_ln("HilbertLoadBalance",
                                  std::get<0>(t),
@@ -87,7 +83,7 @@ namespace shamrock::scheduler {
                                  std::get<2>(t),
                                  sycl::clamp(i32(std::get<1>(t) / target_datacnt),
                                              0,
-                                             i32(shamsys::instance::world_size) - 1),
+                                             i32(shamcomm::world_size()) - 1),
                                  (std::get<1>(t) / target_datacnt));
             }
         }
@@ -112,9 +108,9 @@ namespace shamrock::scheduler {
                 // up the target dt_cnt or find another way
                 double target_datacnt =
                     double(std::get<1>(patch_dt[global_patch_list.size() - 1])) /
-                    shamsys::instance::world_size;
+                    shamcomm::world_size();
 
-                i32 wsize = shamsys::instance::world_size;
+                i32 wsize = shamcomm::world_size();
 
                 cgh.parallel_for<Write_chosen_node<hilbert_num>>(range, [=](sycl::item<1> item) {
                     u64 i = (u64)item.get_id(0);
@@ -144,9 +140,9 @@ namespace shamrock::scheduler {
 
         // make change list
         {
-            std::vector<u64> load_per_node(shamsys::instance::world_size);
+            std::vector<u64> load_per_node(shamcomm::world_size());
 
-            std::vector<i32> tags_it_node(shamsys::instance::world_size);
+            std::vector<i32> tags_it_node(shamcomm::world_size());
             for (u64 i = 0; i < global_patch_list.size(); i++) {
 
                 i32 old_owner = global_patch_list[i].node_owner_id;
@@ -178,7 +174,7 @@ namespace shamrock::scheduler {
             f64 avg = 0;
             f64 var = 0;
 
-            for (i32 nid = 0; nid < shamsys::instance::world_size; nid++) {
+            for (i32 nid = 0; nid < shamcomm::world_size(); nid++) {
                 f64 val = load_per_node[nid];
                 min = sycl::fmin(min, val);
                 max = sycl::fmax(max, val);
@@ -186,14 +182,14 @@ namespace shamrock::scheduler {
                 
                 logger::debug_ln("HilbertLoadBalance", nid, load_per_node[nid]);
             }
-            avg /= shamsys::instance::world_size;
-            for (i32 nid = 0; nid < shamsys::instance::world_size; nid++) {
+            avg /= shamcomm::world_size();
+            for (i32 nid = 0; nid < shamcomm::world_size(); nid++) {
                 f64 val = load_per_node[nid];
                 var += (val - avg)*(val - avg);
             }
-            var /= shamsys::instance::world_size;
+            var /= shamcomm::world_size();
 
-            if(shamsys::instance::world_rank == 0){
+            if(shamcomm::world_rank() == 0){
                 std::string str = "Loadbalance stats : \n";
                 str += shambase::format("    npatch = {}\n", global_patch_list.size() );
                 str += shambase::format("    min = {}\n", min);

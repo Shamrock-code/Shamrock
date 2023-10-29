@@ -12,10 +12,6 @@
  * @file interface_handler.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
- * @version 0.1
- * @date 2022-03-14
- * 
- * @copyright Copyright (c) 2022
  * 
  */
 
@@ -104,7 +100,7 @@ template <class vectype, class primtype> class LegacyInterfacehandler {
     inline void compute_interface_list(PatchScheduler &sched, SerialPatchTree<vectype> &sptree, legacy::PatchField<primtype> h_field,bool periodic) {
         StackEntry stack_loc{};
         interface_comm_list = Interface_Generator<vectype, primtype, interface_selector>::get_interfaces_comm_list(
-            sched, sptree, h_field, shambase::format_printf("interfaces_%d_node%d", 0, shamsys::instance::world_rank),periodic);
+            sched, sptree, h_field, shambase::format_printf("interfaces_%d_node%d", 0, shamcomm::world_rank()),periodic);
         
     }
 

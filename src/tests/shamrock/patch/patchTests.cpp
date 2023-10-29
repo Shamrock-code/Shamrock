@@ -32,11 +32,11 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:MpiType", patch_mpi_type, 2){
 
 
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         mpi::send(&check_patch, 1, get_patch_mpi_type<3>(), 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shamsys::instance::world_rank == 1){
+    if(shamcomm::world_rank() == 1){
         Patch rpatch{};
 
         MPI_Status st;

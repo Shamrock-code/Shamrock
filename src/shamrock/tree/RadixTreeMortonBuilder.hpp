@@ -15,8 +15,8 @@
  * @date 2023-08-02
  */
 
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/sycl.hpp"
 
 /**
  * @brief Helper class to build morton codes

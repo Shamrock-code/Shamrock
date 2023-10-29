@@ -18,7 +18,7 @@
 #include "shamtest/shamtest.hpp"
 #include "shamalgs/random.hpp"
 
-#include "shamrock/tree/tests/TreeTests.hpp"
+#include "tests/shamrock/tree/TreeTests.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
 #include "shamrock/sfc/morton.hpp"
 
@@ -643,7 +643,7 @@ f64 amr_walk_perf(f64 lambda_tilde,
                 f32 lambda_tilde = lambda_tilde_f32;
                 f32 cell_len_side = cell_coords.delt().x();
 
-                //mocked jeans lenght
+                //mocked jeans length
                 bool should_refine = cell_len_side > (lambda_tilde/sycl::sqrt(density));  
 
                 should_refine = should_refine && (high_bound.x() - low_bound.x() > 1);
@@ -991,7 +991,7 @@ class FmmTestInteractCrit {
     sycl::buffer<vec> &positions;
     u32 leaf_count;
     
-    RadixTreeField<flt> & cell_lenghts;
+    RadixTreeField<flt> & cell_lengths;
     RadixTreeField<vec> & cell_centers;
 
     flt open_crit_sq;
@@ -1003,7 +1003,7 @@ class FmmTestInteractCrit {
         sycl::accessor<vec, 1, sycl::access::mode::read> tree_cell_coordrange_min;
         sycl::accessor<vec, 1, sycl::access::mode::read> tree_cell_coordrange_max;
 
-        sycl::accessor<flt, 1, sycl::access::mode::read> c_lenght;
+        sycl::accessor<flt, 1, sycl::access::mode::read> c_length;
         sycl::accessor<vec, 1, sycl::access::mode::read> c_center;
 
         flt open_crit_sq;
@@ -1013,7 +1013,7 @@ class FmmTestInteractCrit {
             tree_cell_coordrange_min{*crit.tree.tree_cell_ranges.buf_pos_min_cell_flt, cgh, sycl::read_only},
                 tree_cell_coordrange_max{
                     *crit.tree.tree_cell_ranges.buf_pos_max_cell_flt, cgh, sycl::read_only} ,
-              c_lenght{*crit.cell_lenghts.radix_tree_field_buf, cgh, sycl::read_only},
+              c_length{*crit.cell_lengths.radix_tree_field_buf, cgh, sycl::read_only},
               c_center{*crit.cell_centers.radix_tree_field_buf, cgh, sycl::read_only},
               open_crit_sq(crit.open_crit_sq) {}
 
@@ -1022,7 +1022,7 @@ class FmmTestInteractCrit {
             flt l_cell_a;
             vec sa;
             ObjectValues(Access acc, u32 index)
-                : l_cell_a(acc.c_lenght[index]),sa(acc.c_center[index]) {}
+                : l_cell_a(acc.c_length[index]),sa(acc.c_center[index]) {}
         };
 
     };
@@ -1034,7 +1034,7 @@ class FmmTestInteractCrit {
 
         vec sb = acc.c_center[node_index];
         vec r_fmm = sb-current_values.sa;
-        flt l_cell_b = acc.c_lenght[node_index];
+        flt l_cell_b = acc.c_length[node_index];
 
         flt opening_angle_sq = (current_values.l_cell_a + l_cell_b)*(current_values.l_cell_a + l_cell_b)/sycl::dot(r_fmm,r_fmm);
 
@@ -1118,17 +1118,17 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta){
             rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
             rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
 
-            RadixTreeField<flt> cell_lenghts;
+            RadixTreeField<flt> cell_lengths;
             RadixTreeField<vec> cell_centers;
 
-            cell_lenghts.nvar = 1;
+            cell_lengths.nvar = 1;
             cell_centers.nvar = 1;
 
-            auto & buf_cell_lenght  = cell_lenghts.radix_tree_field_buf;
+            auto & buf_cell_length  = cell_lengths.radix_tree_field_buf;
             auto & buf_cell_centers = cell_centers.radix_tree_field_buf;
 
             buf_cell_centers = std::make_unique<sycl::buffer<vec>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
-            buf_cell_lenght = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
+            buf_cell_length = std::make_unique<sycl::buffer<flt>>(rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count);
 
             q.submit([&](sycl::handler &cgh) {
 
@@ -1139,7 +1139,7 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta){
                 auto pos_max_cell = sycl::accessor{*rtree.tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
 
                 auto c_centers = sycl::accessor{*buf_cell_centers,cgh,sycl::write_only,sycl::no_init};
-                auto c_lenght = sycl::accessor{*buf_cell_lenght,cgh,sycl::write_only,sycl::no_init};
+                auto c_length = sycl::accessor{*buf_cell_length,cgh,sycl::write_only,sycl::no_init};
 
                 cgh.parallel_for(range_tree, [=](sycl::item<1> item) {
                     vec cur_pos_min_cell_a = pos_min_cell[item];
@@ -1152,7 +1152,7 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta){
                     flt l_cell_a = sycl::max(sycl::max(dc_a.x(),dc_a.y()),dc_a.z());
 
                     c_centers[item] = sa;
-                    c_lenght[item] = l_cell_a;
+                    c_length[item] = l_cell_a;
                 });
 
             });
@@ -1175,7 +1175,7 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta){
                             rtree,
                             *pos, 
                             rtree.tree_reduced_morton_codes.tree_leaf_count, 
-                            cell_lenghts,
+                            cell_lengths,
                             cell_centers,
                             crit_theta*crit_theta
                         }

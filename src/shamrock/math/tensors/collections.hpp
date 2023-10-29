@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file collections.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ * \todo move to math
+ */
+
 #include "symtensors.hpp"
 
 

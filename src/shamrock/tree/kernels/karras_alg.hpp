@@ -8,10 +8,16 @@
 
 #pragma once
 
+/**
+ * @file karras_alg.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "aliases.hpp"
 #include "flags.hpp"
 #include <memory>
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 /**
  * @brief Karras 2012 algorithm with addition endrange buffer

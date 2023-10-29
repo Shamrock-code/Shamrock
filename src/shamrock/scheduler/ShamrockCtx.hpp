@@ -8,6 +8,12 @@
 
 #pragma once
 
+/**
+ * @file ShamrockCtx.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "aliases.hpp"
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
@@ -169,8 +175,8 @@ class ShamrockCtx{public:
 
         std::vector<std::unique_ptr<PatchData>> recv_data;
 
-        for(u32 i = 0; i < world_size; i++){
-            if (i == world_rank) {
+        for(u32 i = 0; i < shamcomm::world_size(); i++){
+            if (i == shamcomm::world_rank()) {
                 recv_data = sched->gather_data(i);
             }else{
                 sched->gather_data(i);

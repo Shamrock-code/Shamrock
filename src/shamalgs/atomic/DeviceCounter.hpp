@@ -8,10 +8,17 @@
 
 #pragma once
 
+/**
+ * @file DeviceCounter.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "aliases.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambase/integer.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamalgs::atomic {
 

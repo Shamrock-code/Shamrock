@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file SPHSolverImpl.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "SPHSolverImpl.hpp"
 
 shamrock::tree::ObjectCache
@@ -165,7 +172,7 @@ shammodels::SPHSolverImpl::build_hiter_neigh_cache(u32 start_offset,
 
             cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
                 u32 id_a = start_offset + (u32)item.get_id(0);
-                // increase smoothing lenght to include possible future neigh in the cache
+                // increase smoothing length to include possible future neigh in the cache
                 flt h_a  = hpart[id_a] * h_tolerance;
                 flt dint = h_a * h_a * Rker2;
 
@@ -215,7 +222,7 @@ shammodels::SPHSolverImpl::build_hiter_neigh_cache(u32 start_offset,
             cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
                 u32 id_a = start_offset + (u32)item.get_id(0);
 
-                // increase smoothing lenght to include possible future neigh in the cache
+                // increase smoothing length to include possible future neigh in the cache
                 flt h_a  = hpart[id_a] * h_tolerance;
                 flt dint = h_a * h_a * Rker2;
 

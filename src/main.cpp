@@ -44,6 +44,7 @@
 #include <vector>
 
 #include "shambindings/pybindaliases.hpp"
+#include "version.hpp"
 
 //%Impl status : Should rewrite
 
@@ -120,7 +121,7 @@ int main(int argc, char *argv[]) {
         shamsys::instance::init(argc,argv);
     }
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         std::cout << shamrock_title_bar_big << std::endl;
         logger::print_faint_row();
 
@@ -145,7 +146,7 @@ int main(int argc, char *argv[]) {
         shamsys::run_micro_benchmark();
     }
     
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         logger::print_faint_row();
         logger::raw_ln("log status : ");
         if(logger::loglevel == i8_max){
@@ -161,7 +162,7 @@ int main(int argc, char *argv[]) {
 
     if(opts::has_option("--sycl-ls")){
 
-        if(shamsys::instance::world_rank == 0){
+        if(shamcomm::world_rank() == 0){
             logger::print_faint_row();
         }
         shamsys::instance::print_device_list();
@@ -170,7 +171,7 @@ int main(int argc, char *argv[]) {
 
     if(opts::has_option("--sycl-ls-map")){
 
-        if(shamsys::instance::world_rank == 0){
+        if(shamcomm::world_rank() == 0){
             logger::print_faint_row();
         }
         shamsys::instance::print_device_list();
@@ -185,7 +186,7 @@ int main(int argc, char *argv[]) {
     
 
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
         logger::print_faint_row();
         logger::raw_ln(" - Code init",terminal_effects::colors_foreground_8b::green + "DONE"+ terminal_effects::reset, "now it's time to",
         terminal_effects::colors_foreground_8b::cyan + terminal_effects::blink + "ROCK"+ terminal_effects::reset);
@@ -201,7 +202,7 @@ int main(int argc, char *argv[]) {
         if(opts::has_option("--ipython")){
             StackEntry stack_loc{};
 
-            if(shamsys::instance::world_size > 1){
+            if(shamcomm::world_size() > 1){
                 throw shambase::throw_with_loc<std::runtime_error>("cannot run ipython mode with > 1 processes");
             }
 
@@ -225,13 +226,13 @@ int main(int argc, char *argv[]) {
 
             py::scoped_interpreter guard{};
 
-            if(shamsys::instance::world_rank == 0){
+            if(shamcomm::world_rank() == 0){
             std::cout << "-----------------------------------" << std::endl;
             std::cout << "running pyscript : " << fname << std::endl;
             std::cout << "-----------------------------------" << std::endl;
             }
             py::eval_file(fname);
-            if(shamsys::instance::world_rank == 0){
+            if(shamcomm::world_rank() == 0){
             std::cout << "-----------------------------------" << std::endl;
             std::cout << "pyscript end" << std::endl;
             std::cout << "-----------------------------------" << std::endl;
@@ -262,7 +263,7 @@ int main(int argc, char *argv[]) {
     }
 
     #ifdef SHAMROCK_USE_PROFILING
-    shambase::details::dump_profiling(shamsys::instance::world_rank);
+    shambase::details::dump_profiling(shamcomm::world_rank());
     #endif
 
     shamsys::instance::close();

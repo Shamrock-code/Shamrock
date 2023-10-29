@@ -1,0 +1,5 @@
+/**
+* \namespace shamrock
+* \brief namespace for the main framework
+*
+*/

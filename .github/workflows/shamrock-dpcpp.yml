@@ -3,11 +3,22 @@ name: Shamrock (DPCPP)
 
 on:
   workflow_call:
+
+  push:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  schedule:
+    # At 02:00 on Monday, Wednesday, and Friday.
+    - cron:  '0 2 * * 1,3,5'
+
     
 jobs:
   shamrock_dpcpp_nativecpu:
     name: DPCPP Native CPU
-    runs-on: [self-hosted, raw]
+    runs-on: [self-hosted, ubuntu20]
 
     #for now this is quite buggy
     if: false
@@ -17,50 +28,24 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Cache DPCPP
-        id: cache-dpcpp
-        uses: actions/cache@v3
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
-        with:
-          fail-on-cache-miss: true
-          path: dpcpp_compiler
-          key: dpcpp-nativecpu.tar.gz
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
-      
-      - name : Install pck (DPCPP)
-        run: |
-          sudo apt update
-          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common libva-dev
-          
-      - name : Install pck (DPCPP esimd)
-        run: |
-          sudo apt install -y libva-dev libffi-dev libtool
-          
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
-
       - name : Check binary
         run: |
-          dpcpp_compiler/bin/clang++ --version
+          /home/docker/compilers/DPCPP/bin/clang++ --version
       
       - name: configure Shamrock
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile native_cpu
+          python3 buildbot/configure.py --gen ninja --tests --build release \
+            --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile native_cpu
 
       - name: compile Shamrock
         run: |
-          cd dpcpp_bare_debug
+          cd build
           ninja
 
       - name: run Shamrock
         run: |
-          cd dpcpp_bare_debug
-          export DPCPP_HOME=../dpcpp_compiler
+          cd build
+          export DPCPP_HOME=/home/docker/compilers/DPCPP
           export PATH=$DPCPP_HOME/bin:$PATH
           export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
           ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
@@ -68,11 +53,11 @@ jobs:
 
   shamrock_dpcpp_cuda:
     name: DPCPP CUDA ${{ matrix.cuda }}
-    runs-on: [self-hosted, raw]
+    runs-on: [self-hosted, ubuntu20]
 
     strategy:
       matrix:
-        cuda: [12.1.1]
+        cuda: [11.0.2]
     
     steps:
     
@@ -80,60 +65,26 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Cache DPCPP
-        id: cache-dpcpp
-        uses: actions/cache@v3
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
-        with:
-          fail-on-cache-miss: true
-          path: dpcpp_compiler
-          key: dpcpp-cuda-${{ matrix.cuda }}.tar.gz
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
-          
-      - name: install CUDA
-        run: |
-          mkdir -p ~/opt/cuda
-          wget -q -O cuda.sh https://developer.download.nvidia.com/compute/cuda/12.1.1/local_installers/cuda_12.1.1_530.30.02_linux.run
-          sudo sh ./cuda.sh --override --silent --toolkit --no-man-page --no-drm --no-opengl-libs --installpath=~/opt/cuda || true
-          echo "CUDA Version ${{matrix.cuda}}" | sudo tee ~/opt/cuda/version.txt
-      
-      - name : Install pck (DPCPP)
-        run: |
-          sudo apt update
-          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common libva-dev
-          
-      - name : Install pck (DPCPP esimd)
-        run: |
-          sudo apt install -y libva-dev libffi-dev libtool
-          
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
-
       - name : Check binary
         run: |
-          dpcpp_compiler/bin/clang++ --version
+          /home/docker/compilers/DPCPP/bin/clang++ --version
 
-      
       - name: configure Shamrock
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile cuda \
-            --cxxflags="--cuda-path=/home/docker/opt/cuda"
+          python3 buildbot/configure.py --gen ninja --tests --build release \
+            --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile cuda \
+            --cxxflags="--cuda-path=/home/docker/opt/cuda" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
 
       - name: compile Shamrock
         run: |
-          cd dpcpp_bare_debug
+          cd build
           ninja
 
       # no device to run on
       #- name: run Shamrock
       #  run: |
-      #    cd dpcpp_bare_debug
-      #    export DPCPP_HOME=../dpcpp_compiler
+      #    cd build
+      #    export DPCPP_HOME=/home/docker/compilers/DPCPP
       #    export PATH=$DPCPP_HOME/bin:$PATH
       #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
       #    export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
@@ -142,7 +93,7 @@ jobs:
 
   shamrock_dpcpp_hip:
     name: DPCPP HIP ROCM ${{ matrix.rocm }}
-    runs-on: [self-hosted, raw]
+    runs-on: [self-hosted, ubuntu20]
     strategy:
       matrix:
         rocm: [5.4.3]
@@ -153,67 +104,27 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Cache DPCPP
-        id: cache-dpcpp
-        uses: actions/cache@v3
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 15
-        with:
-          fail-on-cache-miss: true
-          path: dpcpp_compiler
-          key: dpcpp-hip-${{ matrix.rocm }}.tar.gz
-
-          
-
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
-
-      
-      - name: install ROCm
-        run: |
-          [[ ${{matrix.rocm}} == 4.0.1 ]] && CODENAME=xenial
-          [[ ${{matrix.rocm}} == 5.4.3 ]] && CODENAME=focal
-          sudo apt install -y libnuma-dev cmake unzip
-          wget -q -O - https://repo.radeon.com/rocm/rocm.gpg.key | sudo apt-key add -
-          echo "deb [arch=amd64] https://repo.radeon.com/rocm/apt/${{matrix.rocm}} $CODENAME main" | sudo tee /etc/apt/sources.list.d/rocm.list
-          printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
-          sudo apt update -y
-          sudo apt install -y rocm-dev
-          
-      - name : Install pck (DPCPP)
-        run: |
-          sudo apt update
-          sudo apt-get install -y -qq g++-10 clang libomp-dev libtinfo5 libopenmpi-dev openmpi-bin openmpi-common
-          
-      - name : Install pck (DPCPP esimd)
-        run: |
-          sudo apt install -y libva-dev libffi-dev libtool
-
-      - name: install Ninja-build
-        run: sudo apt install ninja-build
-
       - name : Check binary
         run: |
-          dpcpp_compiler/bin/clang++ --version
+          /home/docker/compilers/DPCPP/bin/clang++ --version
 
       
       - name: configure Shamrock
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build debug \
-            --outdir dpcpp_bare_debug --cxxpath dpcpp_compiler --compiler dpcpp --profile hip-gfx906 \
-            --cxxflags="--rocm-path=/opt/rocm"
+          python3 buildbot/configure.py --gen ninja --tests --build release \
+            --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile hip-gfx906 \
+            --cxxflags="--rocm-path=/opt/rocm" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
 
       - name: compile Shamrock
         run: |
-          cd dpcpp_bare_debug
+          cd build
           ninja
 
       # no device to run on
       #- name: run Shamrock
       #  run: |
-      #    cd dpcpp_bare_debug
-      #    export DPCPP_HOME=../dpcpp_compiler
+      #    cd build
+      #    export DPCPP_HOME=/home/docker/compilers/DPCPP
       #    export PATH=$DPCPP_HOME/bin:$PATH
       #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
       #    export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu

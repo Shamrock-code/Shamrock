@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file pyShamrockCtx.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * \todo move to shambindings folder
+ */
+
 #include "shambindings/pybindaliases.hpp"
 
 #include <pybind11/stl.h>
@@ -165,9 +172,11 @@ template<class T> void append_to_map(
     auto appender = [&](auto & field){
 
         if (field.get_name() == key) {
+
+            logger::debug_ln("PyShamrockCTX","appending field",key);
             
             {
-                sycl::host_accessor acc {*field.get_buf()};
+                sycl::host_accessor acc {shambase::get_check_ref(field.get_buf())};
                 u32 len = field.size();
 
                 for (u32 i = 0 ; i < len; i++) {
@@ -266,6 +275,7 @@ Register_pymod(pyshamrockctxinit){
                 append_to_map<u64   >(fname, data, dic_out);
                 append_to_map<u32_3 >(fname, data, dic_out);
                 append_to_map<u64_3 >(fname, data, dic_out);
+                append_to_map<i64_3 >(fname, data, dic_out);
             }
 
             return dic_out;

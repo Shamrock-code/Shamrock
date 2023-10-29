@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file cmdopt.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/string.hpp"

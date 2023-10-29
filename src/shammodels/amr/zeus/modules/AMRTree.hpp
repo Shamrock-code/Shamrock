@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file AMRTree.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/amr/zeus/Solver.hpp"
 #include "shammodels/amr/zeus/modules/SolverStorage.hpp"
@@ -33,6 +40,7 @@ namespace shammodels::zeus::modules {
 
         void build_trees();
         void build_neigh_cache();
+        void correct_bounding_box();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

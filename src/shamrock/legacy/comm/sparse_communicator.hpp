@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file sparse_communicator.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "aliases.hpp"
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -135,7 +142,7 @@ StackEntry stack_loc{};
                     const Patch &psend = communicator.global_patch_list[communicator.global_comm_vec[i].x()];
                     const Patch &precv = communicator.global_patch_list[communicator.global_comm_vec[i].y()];
 
-                    if (precv.node_owner_id == shamsys::instance::world_rank) {
+                    if (precv.node_owner_id == shamcomm::world_rank()) {
 
                         if (psend.node_owner_id != precv.node_owner_id) {
                             recv_obj[precv.id_patch].push_back({psend.id_patch, std::make_unique<PatchData>(pdl)}); 

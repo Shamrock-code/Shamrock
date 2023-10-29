@@ -8,7 +8,14 @@
 
 #pragma once
 
-#include "shambase/sycl.hpp"
+/**
+ * @file matrix.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/sycl.hpp"
 #include <array>
 
 namespace shammath {

@@ -8,8 +8,14 @@
 
 #pragma once
 
+/**
+ * @file TreeTraversal.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shamalgs/numeric.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 
 namespace shamrock::tree {

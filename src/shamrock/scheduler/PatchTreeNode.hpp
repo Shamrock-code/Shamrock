@@ -6,8 +6,13 @@
 //
 // -------------------------------------------------------//
 
-
 #pragma once
+
+/**
+ * @file PatchTreeNode.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "shamrock/patch/PatchCoord.hpp"
 #include "shamrock/patch/PatchCoordTransform.hpp"

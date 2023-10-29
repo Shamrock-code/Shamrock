@@ -1,142 +1,98 @@
-######################################
-# Cmake build configuration for shamrock
-######################################
+## -------------------------------------------------------
+##
+## SHAMROCK code for hydrodynamics
+## Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+## Licensed under CeCILL 2.1 License, see LICENSE for more information
+##
+## -------------------------------------------------------
 
+################################
+# Cmake config
+################################
 cmake_minimum_required(VERSION 3.9)
-
-
-project(Shamrock CXX C)
-
 
 # Necessary to link a subfolder library into another subfolder
 cmake_policy(SET CMP0079 NEW)
 cmake_policy(SET CMP0076 NEW)
 
-
-
-######################
-#Project config
-######################
-
-set(SYCL_COMPILER "OTHER" CACHE STRING "Sycl compiler used")
-set_property(CACHE SYCL_COMPILER PROPERTY STRINGS DPCPP OPENSYCL OTHER)
-
-set(SHAMROCK_LOOP_DEFAULT "PARRALEL_FOR_ROUND" CACHE STRING "Default loop mode in shamrock")
-set_property(CACHE SHAMROCK_LOOP_DEFAULT PROPERTY STRINGS PARRALEL_FOR PARRALEL_FOR_ROUND ND_RANGE)
-
-set(SHAMROCK_LOOP_GSIZE 256 CACHE STRING "Default group size in shamrock")
+list(APPEND CMAKE_MODULE_PATH
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
+    )
 
 option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
-option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
-option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
-option(SHAMROCK_USE_PCH "use precompiled headers" Off)
-option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
-
-message("-- Shamrock config : ")
-message("     SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
-message("     SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
-message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
-message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
-message("     SHAMROCK_USE_PCH : ${SHAMROCK_USE_PCH}")
-message("     SHAMROCK_USE_SHARED_LIB : ${SHAMROCK_USE_SHARED_LIB}")
-message("     SYCL_COMPILER : ${SYCL_COMPILER}")
-message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
-message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
-
-
 
 # Necessary for clangd to work properly
 if(EXPORT_COMPILE_COMMANDS)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
-set(Default_comp "${CMAKE_CXX_COMPILER}")
+################################
+# Shamrock configuration
+################################  
+project(Shamrock VERSION 2023.0)
 
-LIST(APPEND CMAKE_SYSTEM_PROGRAM_PATH  "${COMP_ROOT_DIR}/bin")
-LIST(APPEND CMAKE_SYSTEM_LIBRARY_PATH  "${COMP_ROOT_DIR}/bin/lib")
 
 
+option(SHAMROCK_WITH_MPI "use MPI libraries" On)
+option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
+option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
+option(SHAMROCK_USE_PCH "use precompiled headers" Off)
+option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 
+if(APPLE)
+if(SHAMROCK_USE_SHARED_LIB)
+message(STATUS "forcing SHAMROCK_USE_SHARED_LIB=Off on Macos because of know issues")
+endif()
+set(SHAMROCK_USE_SHARED_LIB Off)
+endif()
 
 ######################
 #checking compiler flag support 
 ######################
-include(CheckCXXCompilerFlag)
+include(ShamConfigureCXX)
 
-check_cxx_compiler_flag("-march=native" COMPILER_SUPPORT_MARCHNATIVE)
-check_cxx_compiler_flag("-pedantic-errors" COMPILER_SUPPORT_PEDANTIC)
-check_cxx_compiler_flag("-fcolor-diagnostics" COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
+include(ShamBuildAsan)
+include(ShamBuildCoverage)
 
-######################
-# Add compilation flags depending upon the build type
-######################
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection")  # or 11, 14, 17, 20
-set(CMAKE_CXX_STANDARD_REQUIRED ON)  # optional, ensure standard is supported
-set(CMAKE_CXX_EXTENSIONS OFF)  # optional, keep compiler extensions off
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type") 
-set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
-
-if(COMPILER_SUPPORT_PEDANTIC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors") 
+set(ValidShamBuildType "Debug" "Release" "ASAN" "COVERAGE")
+if(NOT CMAKE_BUILD_TYPE)
+    #set default build to release
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Cmake build type" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${ValidShamBuildType})
 endif()
-
-if(COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics") 
+if(NOT "${CMAKE_BUILD_TYPE}" IN_LIST ValidShamBuildType)
+    message(FATAL_ERROR 
+        "The required build type in unknown -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}. "
+        "please use a build type in the following list (case-sensitive) "
+        "${ValidShamBuildType}")
 endif()
-
-if(COMPILER_SUPPORT_MARCHNATIVE)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native") 
-endif()
-
+message(STATUS "current build type : CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 
 ######################
 # Compiler selection
 ######################
-if(${SYCL_COMPILER} STREQUAL "DPCPP")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_DPCPP -Wno-unknown-cuda-version")
-elseif(${SYCL_COMPILER} STREQUAL "OPENSYCL")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_OPENSYCL")
-elseif(${SYCL_COMPILER} STREQUAL "OTHER")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL_COMP_SYCLUNKNOWN")
-endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -isystem ${COMP_ROOT_DIR}/include/sycl")
-
-message("-- SYCL feature test --")
-try_compile(SYCL_feature_reduc2020 ${CMAKE_BINARY_DIR}/compile_tests ${CMAKE_SOURCE_DIR}/cmake/feature_test/sycl_include.cpp)
-if(SYCL_feature_reduc2020)
-    message("    - sycl header : Yes")
+if("${SHAMROCK_ENABLE_BACKEND}" STREQUAL "SYCL")
+    include(ShamConfigureSYCL)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_SYCL_FLAGS}")
 else()
-    message("    - sycl header : No")
-    message( SEND_ERROR "Shamrock cannot be compiled without sycl headers" )
+    message(FATAL_ERROR
+        "You must select a Shamrock Backend "
+        "-DSHAMROCK_ENABLE_BACKEND=[SYCL]")
 endif()
+set(SHAMROCK_ENABLE_BACKEND "${SHAMROCK_ENABLE_BACKEND}" CACHE STRING "Shamrock backend used")
 
-try_compile(SYCL_feature_reduc2020 ${CMAKE_BINARY_DIR}/compile_tests ${CMAKE_SOURCE_DIR}/cmake/feature_test/sycl2020_reduc.cpp)
-if(SYCL_feature_reduc2020)
-    message("    - sycl 2020 reduction : Yes")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL2020_FEATURE_REDUCTION")
-else()
-    message("    - sycl 2020 reduction : No")
-endif()
-message("-- SYCL feature test (Done) --")
+
+
+enable_language(C)
+enable_language(CXX)
 
 
 ######################
 #shamrock impl control
 ######################
-if(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARRALEL_FOR")
-elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARRALEL_FOR_ROUND")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND")
-elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_DEFAULT_ND_RANGE")
-endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
 
 
 if(SHAMROCK_USE_PROFILING)
@@ -150,11 +106,10 @@ endif()
 ######################
 # Add external libraries
 ######################
-set(MPI_CXX_SKIP_MPICXX true)
-find_package(MPI REQUIRED COMPONENTS C)
-
-message(STATUS "MPI include dir : ${MPI_C_INCLUDE_DIRS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DOMPI_SKIP_MPICXX")
+if(SHAMROCK_WITH_MPI)
+    include(ShamConfigureMPI)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
+endif()
 
 set(PYBIND11_FINDPYTHON ON)
 add_subdirectory(external)
@@ -165,7 +120,7 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_EXECUTABLE_BUILD")
 endif()
 
-include_directories(Before System external/plf_nanotimer)
+include_directories(external/plf_nanotimer)
 
 ######################
 # generate version.cpp
@@ -179,10 +134,20 @@ add_custom_command(
   )
 
 
+message("-- Shamrock config : ")
+message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
+message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
+message("     SHAMROCK_USE_PCH : ${SHAMROCK_USE_PCH}")
+message("     SHAMROCK_USE_SHARED_LIB : ${SHAMROCK_USE_SHARED_LIB}")
+message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
+message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
+
 
 ########################################################################################
 # Targets ##############################################################################
 ########################################################################################
+
+add_subdirectory(src/shamunits)
 
 ######################
 # Shamalgs
@@ -208,6 +173,7 @@ if(SHAMROCK_USE_NVTX)
     target_link_libraries(shamalgs PUBLIC nvtx3-cpp)
 endif()
 
+target_link_libraries(shamalgs PUBLIC shamunits)
 
 
 
@@ -241,6 +207,7 @@ else()
 endif()
 
 
+target_link_libraries(shamrock_lib PUBLIC shamunits)
 
 
 
@@ -248,46 +215,46 @@ endif()
 
 
 
-if("${BUILD_SIM}")
-
-    message("-- adding shamrock target")
+message("-- adding shamrock target")
 
 
-    if("${BUILD_PYLIB}")
-    pybind11_add_module(shamrock  )
-    target_link_libraries(shamrock PUBLIC pybind11::module)
-    else()
-    add_executable(shamrock src/main.cpp )
-    target_link_libraries(shamrock PUBLIC pybind11::embed)
-    endif()
-    
-    target_link_libraries(shamrock PUBLIC shamrock_lib)
-    target_link_libraries(shamrock PUBLIC shamalgs)
-    
-    
-    target_link_libraries(shamrock PUBLIC MPI::MPI_C)
-    target_link_libraries(shamrock PUBLIC fmt::fmt)
-
-    if(SHAMROCK_USE_NVTX)
-        target_link_libraries(shamrock PUBLIC nvtx3-cpp)
-    endif()
-
-
-
-    if(SHAMROCK_USE_PCH)
-    target_precompile_headers(shamrock REUSE_FROM shamrock_lib)
-    endif()
-
-    
-
-
-    target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/src")
-    #target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/external")
-
-    #do lib build instead if building the pylib
-
-
+if("${BUILD_PYLIB}")
+pybind11_add_module(shamrock  )
+target_link_libraries(shamrock PUBLIC pybind11::module)
+else()
+add_executable(shamrock src/main.cpp )
+target_link_libraries(shamrock PUBLIC pybind11::embed)
 endif()
+
+target_link_libraries(shamrock PUBLIC shamrock_lib)
+target_link_libraries(shamrock PUBLIC shamalgs)
+
+
+target_link_libraries(shamrock PUBLIC MPI::MPI_C)
+target_link_libraries(shamrock PUBLIC fmt::fmt)
+target_link_libraries(shamrock PUBLIC shamunits)
+
+
+
+if(SHAMROCK_USE_NVTX)
+    target_link_libraries(shamrock PUBLIC nvtx3-cpp)
+endif()
+
+
+
+if(SHAMROCK_USE_PCH)
+target_precompile_headers(shamrock REUSE_FROM shamrock_lib)
+endif()
+
+
+
+
+target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/src")
+#target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/external")
+
+#do lib build instead if building the pylib
+
+
 
 
 if("${BUILD_TEST}")
@@ -302,6 +269,7 @@ if("${BUILD_TEST}")
 
     target_link_libraries(shamrock_test PUBLIC shamrock_lib)
     target_link_libraries(shamrock_test PUBLIC shamalgs)
+    target_link_libraries(shamrock_test PUBLIC shamunits)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")

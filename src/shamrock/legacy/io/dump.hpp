@@ -7,6 +7,14 @@
 // -------------------------------------------------------//
 
 #pragma once
+
+/**
+ * @file dump.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "aliases.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
@@ -370,7 +378,7 @@ inline void dump_patch_data(std::string prefix, PatchScheduler & sched){
 
         sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData & pdat){
 
-            std::cout << "[" << shamsys::instance::world_rank << "] writing pdat : " << pid << std::endl;
+            std::cout << "[" << shamcomm::world_rank() << "] writing pdat : " << pid << std::endl;
             
             MPI_Status st;
             MPI_File & mfilepatch = patch_files[pfile_map[pid]].mfile;
@@ -403,7 +411,7 @@ inline void dump_patch_list(std::string prefix, PatchScheduler & sched){
 
 
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
 
         if(sched.patch_list.global.size() > u64(u32_max)){
             throw shambase::throw_with_loc<std::runtime_error>("patch list size > u32_max not handled by dump");
@@ -430,7 +438,7 @@ inline void dump_simbox(std::string prefix, PatchScheduler & sched){
 
 
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
 
 
         MPI_Status st;
@@ -468,7 +476,7 @@ inline void dump_siminfo(std::string prefix, f64 time){
 
 
 
-    if(shamsys::instance::world_rank == 0){
+    if(shamcomm::world_rank() == 0){
 
 
         MPI_Status st;

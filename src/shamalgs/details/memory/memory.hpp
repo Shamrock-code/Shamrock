@@ -8,9 +8,17 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file memory.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+
+#include "shambackends/typeAliasVec.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -230,7 +238,7 @@ namespace shamalgs::memory {
 
         // HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer
         // doesn't wait for the end of the queue resulting in out of bound access
-        #ifdef SYCL_COMP_OPENSYCL
+        #ifdef SYCL_COMP_ACPP
         shamsys::instance::get_compute_queue().wait();
         #endif
 
@@ -249,7 +257,7 @@ namespace shamalgs::memory {
 
         // HIPSYCL segfault otherwise because looks like the destructor of the sycl buffer
         // doesn't wait for the end of the queue resulting in out of bound access
-        #ifdef SYCL_COMP_OPENSYCL
+        #ifdef SYCL_COMP_ACPP
         shamsys::instance::get_compute_queue().wait();
         #endif
 

@@ -10,8 +10,9 @@
 #include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/PyScriptHandle.hpp"
+#include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shambase/stacktrace.hpp"
 #include <vector>
@@ -22,7 +23,7 @@ namespace shambase {
 
 }
 
-TestStart(Analysis, "sycl/loop_perfs", syclloopperfs, 1){
+TestStart(Benchmark, "sycl/loop_perfs", syclloopperfs, 1){
 
     std::vector<f64> speed_parfor ;
 

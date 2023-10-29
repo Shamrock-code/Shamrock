@@ -1,0 +1,5 @@
+/**
+* \namespace shamalgs
+* \brief namespace for algorithms
+*
+*/

@@ -5,7 +5,7 @@ import numpy as np
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
-codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_lenght = sicte.au(), unit_mass = sicte.sol_mass(), )
+codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
 ucte = shamrock.Constants(codeu)
 
 
@@ -102,7 +102,7 @@ print("Run")
 print("Current part mass :", pmass)
 
 #for it in range(5):
-#    setup.update_smoothing_lenght(ctx)
+#    setup.update_smoothing_length(ctx)
 
 
 

@@ -12,16 +12,14 @@
  * @file algorithm.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief main include file for the shamalgs algorithms
- * @version 0.1
- * @date 2023-02-13
- * 
- * @copyright Copyright (c) 2023
  * 
  */
 
-#include "aliases.hpp"
 
-#include "shambase/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/typeAliasVec.hpp"
+
+#include "shambackends/sycl.hpp"
 
 /**
  * @brief namespace to store algorithms implemented by shamalgs
@@ -89,7 +87,7 @@ namespace shamalgs::algorithm {
      * @param q the sycl queue
      * @param buf the buffer to apply the remapping on
      * @param index_map the index map 
-     * @param len lenght of the index map
+     * @param len length of the index map
      */
     template<class T>
     sycl::buffer<T> index_remap(
@@ -105,7 +103,7 @@ namespace shamalgs::algorithm {
      * @param q the sycl queue
      * @param buf the buffer to apply the remapping on
      * @param index_map the index map 
-     * @param len lenght of the index map
+     * @param len length of the index map
      * @param nvar the number of variable per index
      */
     template<class T>
@@ -118,7 +116,7 @@ namespace shamalgs::algorithm {
      * @brief generate a buffer such that for i in [0,len[, buf[i] = i 
      * 
      * @param q the queue to run on
-     * @param len lenght of the buffer to generate
+     * @param len length of the buffer to generate
      * @return sycl::buffer<u32> the returned buffer
      */
     sycl::buffer<u32> gen_buffer_index(sycl::queue & q , u32 len);

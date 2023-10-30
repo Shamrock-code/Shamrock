@@ -108,7 +108,7 @@ struct PyScriptHandle {
     /**
      * @brief execute the given script
      *
-     * @tparam N lenght of the source chars
+     * @tparam N length of the source chars
      * @param expr the source to be executed
      * @param global the global py variable
      * @return true the script executed succesfully

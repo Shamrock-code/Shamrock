@@ -8,9 +8,15 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file fmm.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ * \todo move to shammodels generic
+ */
+
 #include "shamrock/math/tensors.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 //%Impl status : Good
 

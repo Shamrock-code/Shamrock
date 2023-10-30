@@ -8,8 +8,16 @@
 
 #pragma once
 
+/**
+ * @file groupReduction.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/memory.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/math.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
@@ -23,7 +31,7 @@ class KernelSliceReduceMin;
 template<class T, u32 work_group_size>
 class KernelSliceReduceMax;
 
-#ifdef SYCL_COMP_DPCPP
+#ifdef SYCL_COMP_INTEL_LLVM
     #define SYCL_SUM_OP                                                                            \
         sycl::plus<> {}
     #define SYCL_MIN_OP                                                                            \
@@ -32,17 +40,17 @@ class KernelSliceReduceMax;
         sycl::maximum<> {}
 #endif
 
-#ifdef SYCL_COMP_OPENSYCL
+#ifdef SYCL_COMP_ACPP
 template<typename T = void>
 struct _tmp_max {
     HIPSYCL_UNIVERSAL_TARGET inline T operator()(const T &lhs, const T &rhs) const {
-        return shambase::sycl_utils::g_sycl_max(lhs, rhs);
+        return sham::max(lhs, rhs);
     }
 };
 template<typename T = void>
 struct _tmp_min {
     HIPSYCL_UNIVERSAL_TARGET inline T operator()(const T &lhs, const T &rhs) const {
-        return shambase::sycl_utils::g_sycl_min(lhs, rhs);
+        return sham::min(lhs, rhs);
     }
 };
     #define SYCL_SUM_OP                                                                            \

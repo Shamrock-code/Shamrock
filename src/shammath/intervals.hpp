@@ -8,7 +8,13 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file intervals.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/type_traits.hpp"
 

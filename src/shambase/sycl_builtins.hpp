@@ -8,7 +8,14 @@
 
 #pragma once
 
-#include "shambase/sycl.hpp"
+/**
+ * @file sycl_builtins.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambase/vectors.hpp"
 #include "shambase/integer.hpp"
@@ -31,7 +38,7 @@ namespace shambase {
         std::enable_if_t<std::is_integral_v<T>,
                          int> = 0>
     i32 any(sycl::vec<T, n> v) {
-        #ifdef SYCL_COMP_DPCPP
+        #ifdef SYCL_COMP_INTEL_LLVM
             return sycl::any(v);
         #else
             return shambase::sum_accumulate(

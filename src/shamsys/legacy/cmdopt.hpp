@@ -11,11 +11,7 @@
 /**
  * @file cmdopt.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief
- * @version 0.1
- * @date 2022-03-21
- *
- * @copyright Copyright (c) 2022
+ * @brief 
  *
  */
 
@@ -26,8 +22,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-
-#include "aliases.hpp"
 
 namespace opts{
 

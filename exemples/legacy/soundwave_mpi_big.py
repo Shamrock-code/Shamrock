@@ -69,9 +69,9 @@ setup.set_total_mass(totmass)
 pmass = setup.get_part_mass()
 print("Current part mass :", pmass)
 
-#update particle smoothing lenght
+#update particle smoothing length
 for it in range(5):
-    setup.update_smoothing_lenght(ctx)
+    setup.update_smoothing_length(ctx)
 
 
 #compute physical mode

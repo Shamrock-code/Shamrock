@@ -1,5 +1,4 @@
 
-if("${BUILD_SIM}")
 
 target_sources(shamrock_lib
     PRIVATE
@@ -12,5 +11,4 @@ target_sources(shamrock_lib
         #scheduler.hpp
     )
 
-endif()
 

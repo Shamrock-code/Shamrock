@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file interface_handler_impl_list.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/legacy/patch/simulation_domain.hpp"

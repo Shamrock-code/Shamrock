@@ -102,7 +102,7 @@ while 1:
 print("Current part mass :", pmass)
 
 #for it in range(5):
-#    setup.update_smoothing_lenght(ctx)
+#    setup.update_smoothing_length(ctx)
 
 
 

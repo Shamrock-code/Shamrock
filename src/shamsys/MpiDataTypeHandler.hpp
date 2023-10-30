@@ -6,14 +6,18 @@
 //
 // -------------------------------------------------------//
 
-
-
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file MpiDataTypeHandler.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shamsys/legacy/log.hpp"
 #include <functional>
 #include <string>
+
 namespace shamsys::mpidtypehandler {
 
     using fct_sig = std::function<void()>;

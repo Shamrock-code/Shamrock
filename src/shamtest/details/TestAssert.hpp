@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file TestAssert.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shambase/SourceLocation.hpp"
 
 namespace shamtest::details {
@@ -18,7 +23,9 @@ namespace shamtest::details {
         std::string name;
         std::string comment;
 
-        std::string serialize();
+        std::string serialize_json();
+        void serialize(std::basic_stringstream<byte> &stream);
+        static TestAssert deserialize(std::basic_stringstream<byte> &reader);
 
     };
 

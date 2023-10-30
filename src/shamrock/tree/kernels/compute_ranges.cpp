@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file compute_ranges.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "compute_ranges.hpp"
 
 #include "shambase/integer.hpp"

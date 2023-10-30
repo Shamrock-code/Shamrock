@@ -11,7 +11,13 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file integrators_utils.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include <iostream>
 

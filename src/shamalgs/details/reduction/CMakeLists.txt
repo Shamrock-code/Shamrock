@@ -1,5 +1,5 @@
 
-target_sources(shamrock_lib
+target_sources(shamalgs
     PRIVATE
         reduction.cpp
     PUBLIC

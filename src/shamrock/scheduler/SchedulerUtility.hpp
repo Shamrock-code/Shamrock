@@ -8,10 +8,16 @@
 
 #pragma once
 
+/**
+ * @file SchedulerUtility.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "ComputeField.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamrock/math/integrators.hpp"
@@ -187,6 +193,18 @@ namespace shamrock {
             using namespace shamrock::patch;
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                 PatchDataField<T> &pdat_field = pdat.get_field<T>(field_idx);
+                cfield.field_data.add_obj(id_patch, pdat_field.duplicate(new_name));
+            });
+            return cfield;
+        }
+
+        template<class T>
+        inline ComputeField<T> save_field_custom(std::string new_name, std::function<PatchDataField<T> & (u64)> field_getter){
+            StackEntry stack_loc{};
+            ComputeField<T> cfield;
+            using namespace shamrock::patch;
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                PatchDataField<T> &pdat_field = field_getter(id_patch);
                 cfield.field_data.add_obj(id_patch, pdat_field.duplicate(new_name));
             });
             return cfield;

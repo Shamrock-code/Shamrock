@@ -6,9 +6,14 @@
 //
 // -------------------------------------------------------//
 
-//%Impl status : Good
-
 #pragma once
+
+/**
+ * @file patchdata_field.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 
 #include <cstdint>
 #include <cstdio>
@@ -20,7 +25,6 @@
 
 
 
-#include "aliases.hpp"
 
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/legacy/log.hpp"

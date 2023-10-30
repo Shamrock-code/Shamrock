@@ -8,7 +8,14 @@
 
 #pragma once
 
-#include "shambase/type_aliases.hpp"
+/**
+ * @file integer.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambase/aliases_int.hpp"
 #include <climits>
 #include "shambase/type_traits.hpp"
 
@@ -80,36 +87,33 @@ namespace shambase {
      * @param v 
      * @return constexpr T 
      */
-    template<class T, std::enable_if_t<std::is_integral_v<T> || has_bitlen_v<T, 32> || (!std::is_signed_v<T>), int> = 0>
+    template<class T, std::enable_if_t<std::is_integral_v<T> || (!std::is_signed_v<T>), int> = 0>
     inline constexpr T roundup_pow2 (T v) noexcept {
-        v--;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-        v++;
+        
+        if constexpr (has_bitlen_v<T, 32>){
+            v--;
+            v |= v >> 1;
+            v |= v >> 2;
+            v |= v >> 4;
+            v |= v >> 8;
+            v |= v >> 16;
+            v++;
+            return v;
+        }
+
+        if constexpr (has_bitlen_v<T, 64>){
+            v--;
+            v |= v >> 1;
+            v |= v >> 2;
+            v |= v >> 4;
+            v |= v >> 8;
+            v |= v >> 16;
+            v |= v >> 32;
+            v++;
+            return v;
+        }
     };
 
-    /**
-     * @brief round up to the next power of two
-     * Modified from the 32 bit version
-     * 
-     * @tparam T 
-     * @param v 
-     * @return constexpr T 
-     */
-    template<class T, std::enable_if_t<std::is_integral_v<T> || has_bitlen_v<T, 64> || (!std::is_signed_v<T>), int> = 0>
-    inline constexpr T roundup_pow2 (T v) noexcept {
-        v--;
-        v |= v >> 1;
-        v |= v >> 2;
-        v |= v >> 4;
-        v |= v >> 8;
-        v |= v >> 16;
-        v |= v >> 32;
-        v++;
-    };
 
 
     inline constexpr u32 group_count(u32 len, u32 group_size){
@@ -122,13 +126,6 @@ namespace shambase {
     }
 
 
-    inline auto pack(u32 a, u32 b) -> u64 {
-        return (u64(a) << 32U) + b;
-    };
-
-    inline auto unpack (u64 v) -> sycl::vec<u32, 2> {
-        return {u32(v >> 32U), u32(v)};
-    };
 
 
     
@@ -141,6 +138,22 @@ namespace shambase {
     template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0> 
     inline constexpr bool is_most_sig_bit_set(const T x)noexcept{
         return (x & most_sig_bit_mask<T>());
+    }
+
+
+    template<i32 power,class T>
+    inline constexpr T pow_constexpr(T a) noexcept {
+
+        if constexpr (power == 0){
+            return T{1};
+        }else if constexpr (power % 2 == 0){
+            T tmp = pow_constexpr<power/2>(a);
+            return tmp*tmp;
+        }else if constexpr (power % 2 == 1){
+            T tmp = pow_constexpr<(power-1)/2>(a);
+            return tmp*tmp*a;
+        }
+
     }
 
 

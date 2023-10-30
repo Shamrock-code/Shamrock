@@ -6,9 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file key_morton_sort.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "key_morton_sort.hpp"
-#include "aliases.hpp"
-#include "flags.hpp"
 #include "shamsys/legacy/log.hpp"
 
 #include "shamalgs/algorithm.hpp"

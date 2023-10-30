@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file ShamrockCtx.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -169,8 +174,8 @@ class ShamrockCtx{public:
 
         std::vector<std::unique_ptr<PatchData>> recv_data;
 
-        for(u32 i = 0; i < world_size; i++){
-            if (i == world_rank) {
+        for(u32 i = 0; i < shamcomm::world_size(); i++){
+            if (i == shamcomm::world_rank()) {
                 recv_data = sched->gather_data(i);
             }else{
                 sched->gather_data(i);
@@ -204,7 +209,7 @@ class ShamrockCtx{public:
             sched->set_coord_domain_bound<f64_3>(a,b);
         }else{
             throw shambase::throw_with_loc<std::runtime_error>(
-                __LOC_PREFIX__ + "the chosen type for the main field is not handled"
+                "the chosen type for the main field is not handled"
                 );
         }
 

@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file stacktrace.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "SourceLocation.hpp"
 #include "shambase/string.hpp"
 #include <stack>

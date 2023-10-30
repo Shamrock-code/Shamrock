@@ -11,7 +11,13 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file smoothing_lenght_impl.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -187,7 +193,7 @@ namespace impl {
     template<class A,class B,class C> class Kernel_Finalize_omega;
 
     template<class morton_prec, class Kernel>
-    class IntSmoothingLenghtCompute{public:
+    class IntSmoothinglengthCompute{public:
 
 
 

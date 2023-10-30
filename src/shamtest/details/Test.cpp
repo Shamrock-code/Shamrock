@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file Test.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "Test.hpp"
 
 #include "shamsys/NodeInstance.hpp"
@@ -20,14 +26,14 @@ namespace shamtest::details {
         using namespace shamsys::instance;
 
         if (node_count != -1) {
-            if (node_count != world_size) {
+            if (node_count != shamcomm::world_size()) {
                 throw shambase::throw_with_loc<std::runtime_error>(
                     "trying to run a test with wrong number of nodes"
                 );
             }
         }
 
-        current_test = TestResult{type, name, world_rank};
+        current_test = TestResult{type, name, shamcomm::world_rank()};
         
         try{
             test_functor();

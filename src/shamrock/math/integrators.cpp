@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file integrators.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ * \todo move formula to shammath
+ */
+
 #include "shamrock/math/integrators.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils.hpp"

@@ -8,9 +8,15 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file simulation_domain.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include <memory>
 #include <vector>
+#include "shambase/exception.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include <optional>
 

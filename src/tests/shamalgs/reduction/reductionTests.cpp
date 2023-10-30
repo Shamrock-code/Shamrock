@@ -276,26 +276,29 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1){
         });
     }, 10, 1e8, exp_test));
 
-    results.emplace("sycl2020",shambase::benchmark_pow_len([&](u32 sz){
-        sycl::buffer<T> buf = shamalgs::random::mock_buffer<T>(0x111, sz);
+    #ifdef SYCL2020_FEATURE_REDUCTION
 
-        //do op on GPU to force locality on GPU before test
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+        results.emplace("sycl2020",shambase::benchmark_pow_len([&](u32 sz){
+            sycl::buffer<T> buf = shamalgs::random::mock_buffer<T>(0x111, sz);
 
-            sycl::accessor acc {buf, cgh, sycl::read_write};
-            cgh.parallel_for(sycl::range<1>{sz}, [=](sycl::item<1> id){
-                acc[id] = acc[id]*acc[id];
+            //do op on GPU to force locality on GPU before test
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+
+                sycl::accessor acc {buf, cgh, sycl::read_write};
+                cgh.parallel_for(sycl::range<1>{sz}, [=](sycl::item<1> id){
+                    acc[id] = acc[id]*acc[id];
+                });
+
+            }).wait();
+
+            return shambase::timeit([&](){
+
+                T sum = shamalgs::reduction::details::SYCL2020<T>::sum(shamsys::instance::get_compute_queue(),buf,0, sz);
+                shamsys::instance::get_compute_queue().wait();
+
             });
-
-        }).wait();
-
-        return shambase::timeit([&](){
-
-            T sum = shamalgs::reduction::details::SYCL2020<T>::sum(shamsys::instance::get_compute_queue(),buf,0, sz);
-            shamsys::instance::get_compute_queue().wait();
-
-        });
-    }, 10, 1e8, exp_test));
+        }, 10, 1e8, exp_test));
+    #endif
 
 
     results.emplace("slicegroup8",shambase::benchmark_pow_len([&](u32 sz){

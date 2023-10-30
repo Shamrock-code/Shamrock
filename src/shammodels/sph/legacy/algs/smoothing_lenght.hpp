@@ -12,7 +12,13 @@
 #pragma once
 
 
-#include "aliases.hpp"
+/**
+ * @file smoothing_lenght.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
@@ -23,7 +29,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shammodels/sph/legacy/algs/smoothing_lenght_impl.hpp"
+#include "shammodels/sph/legacy/algs/smoothing_length_impl.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
 
@@ -31,7 +37,7 @@ namespace models::sph {
 namespace algs {
 
 template<class flt, class morton_prec, class Kernel>
-class SmoothingLenghtCompute{
+class SmoothinglengthCompute{
 
     using vec = sycl::vec<flt, 3>;
 
@@ -46,7 +52,7 @@ class SmoothingLenghtCompute{
 
     public:
 
-    SmoothingLenghtCompute (
+    SmoothinglengthCompute (
         shamrock::patch::PatchDataLayout &pdl,
         f32 htol_up_tol,
         f32 htol_up_iter){
@@ -58,7 +64,7 @@ class SmoothingLenghtCompute{
         this->htol_up_iter = htol_up_iter;
     }
 
-    inline void iterate_smoothing_lenght(
+    inline void iterate_smoothing_length(
         sycl::queue & queue,
         u32 or_element_cnt,
         
@@ -78,7 +84,7 @@ class SmoothingLenghtCompute{
 
         for (u32 it_num = 0 ; it_num < 30; it_num++) {
 
-            impl::IntSmoothingLenghtCompute<morton_prec, Kernel>::template sycl_h_iter_step<flt>(queue, 
+            impl::IntSmoothinglengthCompute<morton_prec, Kernel>::template sycl_h_iter_step<flt>(queue, 
                 or_element_cnt, 
                 ihpart, 
                 ixyz,
@@ -103,7 +109,7 @@ class SmoothingLenghtCompute{
             //}
         }
 
-        impl::IntSmoothingLenghtCompute<morton_prec, Kernel>::template sycl_h_iter_omega<flt>(queue, 
+        impl::IntSmoothinglengthCompute<morton_prec, Kernel>::template sycl_h_iter_omega<flt>(queue, 
                 or_element_cnt, 
                 ihpart, 
                 ixyz,
@@ -122,7 +128,7 @@ class SmoothingLenghtCompute{
 
     #if false
     [[deprecated]]
-    inline void iterate_smoothing_lenght(
+    inline void iterate_smoothing_length(
         sycl::queue & queue,
         u32 or_element_cnt,
         
@@ -135,13 +141,13 @@ class SmoothingLenghtCompute{
         sycl::buffer<flt> & omega,
         sycl::buffer<flt> & eps_h){
 
-        auto timer = timings::start_timer("iterate_smoothing_lenght",timings::function);
+        auto timer = timings::start_timer("iterate_smoothing_length",timings::function);
 
         impl::sycl_init_h_iter_bufs(queue, or_element_cnt,ihpart, pdat_buf_merge, hnew, omega, eps_h);
 
         for (u32 it_num = 0 ; it_num < 30; it_num++) {
 
-            impl::IntSmoothingLenghtCompute<morton_prec, Kernel>::template sycl_h_iter_step<flt>(queue, 
+            impl::IntSmoothinglengthCompute<morton_prec, Kernel>::template sycl_h_iter_step<flt>(queue, 
                 or_element_cnt, 
                 ihpart, 
                 ixyz,
@@ -165,7 +171,7 @@ class SmoothingLenghtCompute{
             //}
         }
 
-        impl::IntSmoothingLenghtCompute<morton_prec, Kernel>::template _sycl_h_iter_omega<flt>(queue, 
+        impl::IntSmoothinglengthCompute<morton_prec, Kernel>::template _sycl_h_iter_omega<flt>(queue, 
                 or_element_cnt, 
                 ihpart, 
                 ixyz,
@@ -190,7 +196,7 @@ class SmoothingLenghtCompute{
 
 
 template<class flt, class u_morton, class Kernel>
-inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,flt htol_up_tol,
+inline void compute_smoothing_length(PatchScheduler &sched,bool periodic_mode,flt htol_up_tol,
         flt htol_up_iter ,flt sph_gpart_mass){
 
             using namespace shamrock::patch;
@@ -292,7 +298,7 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
         hnew_field.generate(sched);
         omega_field.generate(sched);
 
-        //iterate smoothing lenght
+        //iterate smoothing length
         sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
             logger::debug_ln("SPHLeapfrog","patch : n°",id_patch,"->","Init h iteration");
             if (merge_pdat.at(id_patch).or_element_cnt == 0)
@@ -310,9 +316,9 @@ inline void compute_smoothing_lenght(PatchScheduler &sched,bool periodic_mode,fl
             logger::debug_ln("SPHLeapfrog","merging -> original size :" , merge_pdat.at(id_patch).or_element_cnt
                       , "| merged :" , pdat_merge.get_obj_cnt());
 
-            SmoothingLenghtCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
+            SmoothinglengthCompute<flt, u32, Kernel> h_iterator(sched.pdl, htol_up_tol, htol_up_iter);
 
-            h_iterator.iterate_smoothing_lenght(
+            h_iterator.iterate_smoothing_length(
                 shamsys::instance::get_compute_queue(), 
                 merge_pdat.at(id_patch).or_element_cnt,
                 sph_gpart_mass,

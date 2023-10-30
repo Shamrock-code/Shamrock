@@ -9,17 +9,12 @@
 #pragma once
 
 /**
- * @file loadbalancing_hilbert.hpp
+ * @file HilbertLoadBalance.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief function to run load balancing with the hilbert curve
- * @version 1.0
- * @date 2022-02-28
- * 
- * @copyright Copyright (c) 2022
  * 
  */
 
-#include "aliases.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/sfc/hilbert.hpp"
 

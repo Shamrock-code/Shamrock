@@ -9,7 +9,12 @@
 #pragma once
 
 
-#include "aliases.hpp"
+/**
+ * @file merged_patch.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"

@@ -8,7 +8,13 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file compute_field.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
+
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"

@@ -6,10 +6,17 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file Model.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "Model.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sph/kernels.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <utility>
@@ -85,11 +92,11 @@ auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
     std::vector<Tvec> list_dr{};
     shamalgs::collective::vector_allgatherv(std::vector<Tvec>{best_dr}, list_dr, MPI_COMM_WORLD);
 
-    //reset distances because if two rank find the same distance the return value won't be the same
-    //this bug took me a whole day to fix, aaaaaaaaaaaaah !!!!!
-    //maybe this should be moved somewhere else to prevent similar issues
-    //TODO (in a year maybe XD )
-    best_dr     = shambase::VectorProperties<Tvec>::get_max();
+    // reset distances because if two rank find the same distance the return value won't be the same
+    // this bug took me a whole day to fix, aaaaaaaaaaaaah !!!!!
+    // maybe this should be moved somewhere else to prevent similar issues
+    // TODO (in a year maybe XD )
+    best_dr    = shambase::VectorProperties<Tvec>::get_max();
     best_dist2 = shambase::VectorProperties<Tscal>::get_max();
 
     for (Tvec tmp : list_dr) {
@@ -101,9 +108,6 @@ auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
         }
     }
 
-
-
-
     return pos + best_dr;
 }
 
@@ -114,41 +118,40 @@ auto Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> b
     return {a, b};
 }
 
-
 template<class Tvec>
-inline void post_insert_data(PatchScheduler & sched){
+inline void post_insert_data(PatchScheduler &sched) {
     sched.scheduler_step(false, false);
 
-/*
-        if(shamsys::instance::world_rank == 7){
-            logger::raw_ln(sched.dump_status());
-        }
-*/
-        
+    /*
+            if(shamcomm::world_rank() == 7){
+                logger::raw_ln(sched.dump_status());
+            }
+    */
+
     auto [m, M] = sched.get_box_tranform<Tvec>();
 
-{
-    StackEntry stack_loc{};
-    SerialPatchTree<Tvec> sptree(sched.patch_tree,
-                                    sched.get_sim_box().get_patch_transform<Tvec>());
-    shamrock::ReattributeDataUtility reatrib(sched);
-    sptree.attach_buf();
-    reatrib.reatribute_patch_objects(sptree, "xyz");
-    sched.check_patchdata_locality_corectness();
-}
+    {
+        StackEntry stack_loc{};
+        SerialPatchTree<Tvec> sptree(
+            sched.patch_tree, sched.get_sim_box().get_patch_transform<Tvec>());
+        shamrock::ReattributeDataUtility reatrib(sched);
+        sptree.attach_buf();
+        reatrib.reatribute_patch_objects(sptree, "xyz");
+        sched.check_patchdata_locality_corectness();
+    }
 
     sched.scheduler_step(true, true);
 
-{
-    StackEntry stack_loc{};
-    SerialPatchTree<Tvec> sptree(sched.patch_tree,
-                                    sched.get_sim_box().get_patch_transform<Tvec>());
+    {
+        StackEntry stack_loc{};
+        SerialPatchTree<Tvec> sptree(
+            sched.patch_tree, sched.get_sim_box().get_patch_transform<Tvec>());
 
-    shamrock::ReattributeDataUtility reatrib(sched);
-    sptree.attach_buf();
-    reatrib.reatribute_patch_objects(sptree, "xyz");
-    sched.check_patchdata_locality_corectness();
-}
+        shamrock::ReattributeDataUtility reatrib(sched);
+        sptree.attach_buf();
+        reatrib.reatribute_patch_objects(sptree, "xyz");
+        sched.check_patchdata_locality_corectness();
+    }
 
     std::string log = "";
 
@@ -159,18 +162,99 @@ inline void post_insert_data(PatchScheduler & sched){
     });
 
     std::string log_gathered = "";
-    shamalgs::collective::gather_str(log, log_gathered);
+    shamcomm::gather_str(log, log_gathered);
 
-    if (shamsys::instance::world_rank == 0)
+    if (shamcomm::world_rank() == 0)
         logger::info_ln("Model", "current particle counts : ", log_gathered);
+}
 
-    
+template<class Tvec, template<class> class SPHKernel>
+void Model<Tvec, SPHKernel>::push_particle(
+    std::vector<Tvec> &part_pos_insert, std::vector<Tscal> &part_hpart_insert, std::vector<Tscal> &part_u_insert) {
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+
+    PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+    std::string log = "";
+
+    sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+        PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
+
+        shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+
+        std::vector<Tvec> vec_acc;
+        std::vector<Tscal> hpart_acc;
+        std::vector<Tscal> u_acc;
+        for (u32 i = 0; i < part_pos_insert.size(); i++) {
+            Tvec r = part_pos_insert[i];
+            Tscal u = part_u_insert[i];
+            if (patch_coord.contain_pos(r)) {
+                vec_acc.push_back(r);
+                hpart_acc.push_back(part_hpart_insert[i]);
+                u_acc.push_back(u);
+            }
+        }
+
+        if (vec_acc.size() == 0) {
+            return;
+        }
+
+        log += shambase::format(
+            "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
+            shamcomm::world_rank(),
+            p.id_patch,
+            vec_acc.size(),
+            patch_coord.lower,
+            patch_coord.upper);
+
+        PatchData tmp(sched.pdl);
+        tmp.resize(vec_acc.size());
+        tmp.fields_raz();
+
+        {
+            u32 len                 = vec_acc.size();
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+            sycl::buffer<Tvec> buf(vec_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len = vec_acc.size();
+            PatchDataField<Tscal> &f =
+                tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+            sycl::buffer<Tscal> buf(hpart_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len                 = u_acc.size();
+            PatchDataField<Tscal> &f = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
+            sycl::buffer<Tscal> buf(u_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        pdat.insert_elements(tmp);
+
+        sched.check_patchdata_locality_corectness();
+
+        std::string log_gathered = "";
+        shamcomm::gather_str(log, log_gathered);
+
+        if (shamcomm::world_rank() == 0) {
+            logger::info_ln("Model", "Push particles : ", log_gathered);
+        }
+        log = "";
+
+        post_insert_data<Tvec>(sched);
+    });
 }
 
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
-StackEntry stack_loc{};
+    StackEntry stack_loc{};
 
     shammath::CoordRange<Tvec> box = _box;
 
@@ -180,7 +264,7 @@ StackEntry stack_loc{};
 
     std::string log = "";
 
-    auto make_sliced = [&](){
+    auto make_sliced = [&]() {
         std::vector<Tvec> vec_lst;
         generic::setup::generators::add_particles_fcc(
             dr,
@@ -192,21 +276,20 @@ StackEntry stack_loc{};
                 vec_lst.push_back(r);
             });
 
-
         std::vector<std::vector<Tvec>> sliced_buf;
 
-        u32 sz_buf = sched.crit_patch_split*4;
+        u32 sz_buf = sched.crit_patch_split * 4;
 
         std::vector<Tvec> cur_buf;
-        for (u32 i = 0; i < vec_lst.size(); i ++) {
+        for (u32 i = 0; i < vec_lst.size(); i++) {
             cur_buf.push_back(vec_lst[i]);
 
-            if(cur_buf.size() > sz_buf){
+            if (cur_buf.size() > sz_buf) {
                 sliced_buf.push_back(std::exchange(cur_buf, std::vector<Tvec>{}));
             }
         }
 
-        if(cur_buf.size() > 0){
+        if (cur_buf.size() > 0) {
             sliced_buf.push_back(std::exchange(cur_buf, std::vector<Tvec>{}));
         }
 
@@ -215,7 +298,7 @@ StackEntry stack_loc{};
 
     std::vector<std::vector<Tvec>> sliced_buf = make_sliced();
 
-    for(std::vector<Tvec> to_ins : sliced_buf){
+    for (std::vector<Tvec> to_ins : sliced_buf) {
 
         sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
             PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
@@ -223,20 +306,23 @@ StackEntry stack_loc{};
             shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
 
             std::vector<Tvec> vec_acc;
-            for(Tvec r : to_ins){
-                if(patch_coord.contain_pos(r)){
+            for (Tvec r : to_ins) {
+                if (patch_coord.contain_pos(r)) {
                     vec_acc.push_back(r);
                 }
             }
 
-            if(vec_acc.size() == 0){
+            if (vec_acc.size() == 0) {
                 return;
             }
 
-            log +=
-                shambase::format("\n  rank = {}  patch id={}, add N={} particles, coords = {} {}", shamsys::instance::world_rank,p.id_patch, vec_acc.size(), 
-                    patch_coord.lower, patch_coord.upper
-                );
+            log += shambase::format(
+                "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
+                shamcomm::world_rank(),
+                p.id_patch,
+                vec_acc.size(),
+                patch_coord.lower,
+                patch_coord.upper);
 
             PatchData tmp(sched.pdl);
             tmp.resize(vec_acc.size());
@@ -260,21 +346,19 @@ StackEntry stack_loc{};
 
         sched.check_patchdata_locality_corectness();
 
-
         std::string log_gathered = "";
-        shamalgs::collective::gather_str(log, log_gathered);
+        shamcomm::gather_str(log, log_gathered);
 
-        if (shamsys::instance::world_rank == 0) {
+        if (shamcomm::world_rank() == 0) {
             logger::info_ln("Model", "Push particles : ", log_gathered);
         }
         log = "";
 
         post_insert_data<Tvec>(sched);
     }
-
 }
 
-using namespace shamrock::sph::kernels;
+using namespace shammath;
 
 template class shammodels::sph::Model<f64_3, M4>;
 template class shammodels::sph::Model<f64_3, M6>;

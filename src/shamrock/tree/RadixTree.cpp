@@ -6,13 +6,15 @@
 //
 // -------------------------------------------------------//
 
-
-//%Impl status : Clean unfinished
+/**
+ * @file RadixTree.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include "RadixTree.hpp"
 
 
-#include "aliases.hpp"
 #include <tuple>
 #include <vector>
 
@@ -335,6 +337,7 @@ template void RadixTree<u32, u32_3>::print_tree_field(sycl::buffer<u32> &buf_fie
 template void RadixTree<u32, u64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 template void RadixTree<u64, u32_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 template void RadixTree<u64, u64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
+template void RadixTree<u64, i64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 
 
@@ -1075,4 +1078,7 @@ template class RadixTree<u64, u32_3>;
 
 template class RadixTree<u32, u64_3>;
 template class RadixTree<u64, u64_3>;
+
+template class RadixTree<u32, i64_3>;
+template class RadixTree<u64, i64_3>;
 

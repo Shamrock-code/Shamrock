@@ -19,7 +19,8 @@
  * 
  */
 
-#include "aliases.hpp"
+
+#include "shambase/aliases_int.hpp"
 
 namespace shamrock::sfc::bmi {
 

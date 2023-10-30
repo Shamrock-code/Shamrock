@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file exclusiveScanGPUGems39.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "exclusiveScanGPUGems39.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambase/integer.hpp"

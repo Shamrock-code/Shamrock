@@ -8,7 +8,13 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file sparse_communicator_impl.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamrock/patch/Patch.hpp"
 #include <vector>
 

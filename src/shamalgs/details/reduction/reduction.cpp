@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file reduction.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "reduction.hpp"
 
 #include "shamalgs/memory.hpp"
@@ -151,9 +158,12 @@ namespace shamalgs::reduction {
     X(f64_16) \
     X(u32   ) \
     X(u64   ) \
+    X(i32   ) \
+    X(i64   ) \
     X(u32_3 ) \
     X(u64_3 ) \
-    X(i64_3 )
+    X(i64_3 ) \
+    X(i32_3 )
 
     #define X(_arg_) \
     template _arg_ sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);\

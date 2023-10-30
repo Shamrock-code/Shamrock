@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file Patch.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shamrock/patch/Patch.hpp"
 #include "shamsys/MpiDataTypeHandler.hpp"
 

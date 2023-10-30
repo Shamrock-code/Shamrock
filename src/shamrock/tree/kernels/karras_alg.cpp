@@ -6,8 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file karras_alg.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "karras_alg.hpp"
-#include "aliases.hpp"
 #include <stdexcept>
 
 #include "shambase/integer_sycl.hpp"
@@ -31,7 +36,7 @@ void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count,
 
     queue.submit([&](sycl::handler &cgh) {
         //@TODO add check if split count above 2G
-        i32 morton_lenght = (i32)internal_cell_count + 1;
+        i32 morton_length = (i32)internal_cell_count + 1;
 
         auto m = in_morton.template get_access<sycl::access::mode::read>(cgh);
 
@@ -45,14 +50,14 @@ void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count,
             int i = (int)item.get_id(0);
 
             auto DELTA = [=](i32 x, i32 y){
-                return shambase::karras_delta(x,y,morton_lenght,m);
+                return shambase::karras_delta(x,y,morton_length,m);
             };
 
             int ddelta = DELTA(i, i + 1) - DELTA(i, i - 1);
 
             int d = SGN(ddelta);
 
-            // Compute upper bound for the lenght of the range
+            // Compute upper bound for the length of the range
             int delta_min = DELTA(i, i - d);
             int lmax      = 2;
             while (DELTA(i, i + lmax * d) > delta_min) {

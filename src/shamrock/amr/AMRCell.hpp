@@ -8,7 +8,13 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file AMRCell.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/sycl_utils.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 

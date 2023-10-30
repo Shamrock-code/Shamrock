@@ -8,8 +8,14 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file Log.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shambase/string.hpp"
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
 
 namespace shamsys {
 

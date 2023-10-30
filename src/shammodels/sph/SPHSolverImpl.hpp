@@ -8,11 +8,18 @@
 
 #pragma once
 
+/**
+ * @file SPHSolverImpl.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
-#include "shamrock/sph/kernels.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 
@@ -24,7 +31,7 @@ namespace shammodels {
         using vec                = f64_3;
         static constexpr u32 dim = 3;
         using u_morton           = u32;
-        using Kernel             = shamrock::sph::kernels::M4<flt>;
+        using Kernel             = shammath::M4<flt>;
 
         static constexpr flt Rkern = Kernel::Rkern;
 

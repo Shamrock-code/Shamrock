@@ -8,7 +8,14 @@
 
 #pragma once
 
-#include "shambase/sycl.hpp"
+/**
+ * @file vec_equals.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/sycl.hpp"
 #include "vectorProperties.hpp"
 
 namespace shambase {

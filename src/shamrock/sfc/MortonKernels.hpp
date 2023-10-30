@@ -8,11 +8,13 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file MortonKernels.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shamrock/sfc/morton.hpp"
-
-
-
 
 namespace shamrock::sfc{
 
@@ -38,8 +40,8 @@ namespace shamrock::sfc{
         * @brief fill the end of a buffer (indices from morton_count up to fill_count-1) with error values (maximum int value)
         * 
         * @param queue sycl queue
-        * @param morton_count lenght of the morton buffer 
-        * @param fill_count final lenght to be filled with error value
+        * @param morton_count length of the morton buffer 
+        * @param fill_count final length to be filled with error value
         * @param buf_morton morton buffer that will be updated
         */
         template<class morton_t>
@@ -82,7 +84,7 @@ namespace shamrock::sfc{
         * @brief convert a buffer of 3d positions to morton codes
         * 
         * @param queue sycl queue
-        * @param pos_count lenght of the position buffer 
+        * @param pos_count length of the position buffer 
         * @param in_positions 
         * @param bounding_box_min 
         * @param bounding_box_max 
@@ -100,8 +102,8 @@ namespace shamrock::sfc{
         * @brief fill the end of a buffer (indices from morton_count up to fill_count-1) with error values (maximum int value)
         * 
         * @param queue sycl queue
-        * @param morton_count lenght of the morton buffer 
-        * @param fill_count final lenght to be filled with error value
+        * @param morton_count length of the morton buffer 
+        * @param fill_count final length to be filled with error value
         * @param buf_morton morton buffer that will be updated
         */
         inline static void sycl_fill_trailling_buffer(

@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file pyAMRTestModel.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * \todo move to shambindings
+ */
+ 
 
 #include "shambindings/pybindaliases.hpp"
 

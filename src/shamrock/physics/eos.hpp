@@ -8,10 +8,17 @@
 
 #pragma once
 
-#include "aliases.hpp"
-#include <memory>
+/**
+ * @file eos.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ * \todo move to shammodels generic
+ */
 
-//%Impl status : Clean unfinished
+#include "shambackends/typeAliasFp16.hpp"
+#include "shambase/aliases_float.hpp"
+#include "shambackends/sycl.hpp"
+#include <memory>
 
 
 enum EquationsOfStateType{

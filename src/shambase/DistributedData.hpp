@@ -8,7 +8,13 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file DistributedData.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"

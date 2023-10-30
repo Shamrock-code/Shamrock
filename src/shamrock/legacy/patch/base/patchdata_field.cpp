@@ -6,12 +6,17 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file patchdata_field.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
 
 //%Impl status : Good
 
 #include "patchdata_field.hpp"
 
-#include "aliases.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 //#include "shamrock/legacy/patch/base/pdat_comm_impl/pdat_comm_cp_to_host.hpp"
 //#include "shamrock/legacy/patch/base/pdat_comm_impl/pdat_comm_directgpu.hpp"
@@ -36,7 +41,7 @@ namespace patchdata_field {
 
         if (comm_mode == CopyToHost && comm_op == Send) {
 
-            comm_ptr = impl::copy_to_host::send::init<T>(pdat_field.get_buf_priviledge(), comm_val_cnt);
+            comm_ptr = impl::copy_to_host::send::init<T>(pdat_field.get_buf(), comm_val_cnt);
 
         } else if (comm_mode == CopyToHost && comm_op == Recv_Probe) {
 
@@ -44,7 +49,7 @@ namespace patchdata_field {
 
         } else if (comm_mode == DirectGPU && comm_op == Send) {
 
-            comm_ptr = impl::directgpu::send::init<T>(pdat_field.get_buf_priviledge(), comm_val_cnt);
+            comm_ptr = impl::directgpu::send::init<T>(pdat_field.get_buf(), comm_val_cnt);
 
         } else if (comm_mode == DirectGPU && comm_op == Recv_Probe) {
 
@@ -69,7 +74,7 @@ namespace patchdata_field {
             impl::copy_to_host::send::finalize<T>(comm_ptr);
 
         } else if (comm_mode == CopyToHost && comm_op == Recv_Probe) {
-            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf_priviledge(), comm_ptr,comm_val_cnt);
+            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf(), comm_ptr,comm_val_cnt);
 
         } else if (comm_mode == DirectGPU && comm_op == Send) {
 
@@ -77,7 +82,7 @@ namespace patchdata_field {
 
         } else if (comm_mode == DirectGPU && comm_op == Recv_Probe) {
 
-            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf_priviledge(), comm_ptr,comm_val_cnt);
+            impl::copy_to_host::recv::finalize<T>(pdat_field.get_buf(), comm_ptr,comm_val_cnt);
 
         } else {
             logger::err_ln("PatchDataField MPI Comm", "communication mode & op combination not implemented :", comm_mode,

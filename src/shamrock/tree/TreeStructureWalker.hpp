@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file TreeStructureWalker.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 
 #include "TreeStructure.hpp"
 

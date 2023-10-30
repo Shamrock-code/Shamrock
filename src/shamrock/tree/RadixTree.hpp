@@ -8,9 +8,12 @@
 
 #pragma once
 
+/**
+ * @file RadixTree.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
-
-#include "aliases.hpp"
 #include <array>
 #include <memory>
 #include <stdexcept>
@@ -226,7 +229,7 @@ class RadixTree{
     void for_each_leaf(sycl::queue & queue, LambdaForEachCell && par_for_each_cell) const;
     
 
-    std::tuple<coord_t,coord_t> get_min_max_cell_side_lenght();
+    std::tuple<coord_t,coord_t> get_min_max_cell_side_length();
 
 
     struct CuttedTree{
@@ -572,12 +575,12 @@ inline void RadixTree<u_morton, vec3>::for_each_leaf(sycl::queue & queue, Lambda
 
 
 template<class u_morton,class vec3>
-inline auto RadixTree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::tuple<coord_t,coord_t>{
+inline auto RadixTree<u_morton, vec3>::get_min_max_cell_side_length() -> std::tuple<coord_t,coord_t>{
 
     u32 len = tree_reduced_morton_codes.tree_leaf_count;
 
-    sycl::buffer<coord_t> min_side_lenght {len};
-    sycl::buffer<coord_t> max_side_lenght {len};
+    sycl::buffer<coord_t> min_side_length {len};
+    sycl::buffer<coord_t> max_side_length {len};
 
     auto & q = shamsys::instance::get_compute_queue();
 
@@ -587,8 +590,8 @@ inline auto RadixTree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::tu
         sycl::accessor pos_min_cell { *tree_cell_ranges.buf_pos_min_cell_flt,cgh,sycl::read_only};
         sycl::accessor pos_max_cell { *tree_cell_ranges.buf_pos_max_cell_flt,cgh,sycl::read_only};
 
-        sycl::accessor s_lengh_min { min_side_lenght,cgh,sycl::write_only,sycl::no_init};
-        sycl::accessor s_lengh_max { max_side_lenght,cgh,sycl::write_only,sycl::no_init};
+        sycl::accessor s_lengh_min { min_side_length,cgh,sycl::write_only,sycl::no_init};
+        sycl::accessor s_lengh_max { max_side_length,cgh,sycl::write_only,sycl::no_init};
 
         sycl::range<1> range_tree{tree_reduced_morton_codes.tree_leaf_count};
 
@@ -615,8 +618,8 @@ inline auto RadixTree<u_morton, vec3>::get_min_max_cell_side_lenght() -> std::tu
 
     
 
-    coord_t min = shamalgs::reduction::min(q, min_side_lenght, 0,len);
-    coord_t max = shamalgs::reduction::max(q, max_side_lenght, 0,len);
+    coord_t min = shamalgs::reduction::min(q, min_side_length, 0,len);
+    coord_t max = shamalgs::reduction::max(q, max_side_length, 0,len);
 
     return {min,max};
 }

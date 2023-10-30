@@ -9,9 +9,17 @@
 
 #pragma once
 
-#include "shambase/type_aliases.hpp"
+/**
+ * @file pytypealias.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include <pybind11/stl.h>
+#include "shambackends/typeAliasVec.hpp"
 
 
 namespace PYBIND11_NAMESPACE { namespace detail {

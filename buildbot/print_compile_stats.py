@@ -1,13 +1,16 @@
 from lib.buildbot import * 
-
+import argparse
 print_buildbot_info("compile stats")
 
-abs_build_dir = os.path.join(abs_proj_dir,"build")
+
+parser = argparse.ArgumentParser(description='Configure utility for Shamrock')
+parser.add_argument('path')           # positional argument
+args = parser.parse_args()
 
 
 arr = []
 
-f = open(abs_build_dir + "/.ninja_log",'r')
+f = open(args.path + "/.ninja_log",'r')
 for l in f.readlines():
     if len(l.split()) == 5:
         arr.append(l.split())

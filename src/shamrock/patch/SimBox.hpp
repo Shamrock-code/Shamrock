@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file SimBox.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shamalgs/collective/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shammath/CoordRange.hpp"
@@ -155,10 +160,9 @@ namespace shamrock::patch {
 
         if (!pdl.check_main_field_type<T>()) {
 
-            throw std::invalid_argument(
-                __LOC_PREFIX__ +
-                "the chosen type for the main field does not match the required template type\n" +
-                "call : " + __PRETTY_FUNCTION__
+            throw shambase::throw_with_loc<std::invalid_argument>(
+                "the chosen type for the main field does not match the required template type\n" 
+                "call : " + std::string(__PRETTY_FUNCTION__)
             );
         }
 
@@ -166,10 +170,9 @@ namespace shamrock::patch {
 
         if (!pval) {
 
-            throw std::invalid_argument(
-                __LOC_PREFIX__ +
-                "the type in SimulationBoxInfo does not match the one in the layout\n" +
-                "call : " + __PRETTY_FUNCTION__
+            throw shambase::throw_with_loc<std::invalid_argument>(
+                "the type in SimulationBoxInfo does not match the one in the layout\n" 
+                "call : " + std::string(__PRETTY_FUNCTION__)
             );
         }
 
@@ -180,18 +183,24 @@ namespace shamrock::patch {
         if (pdl.check_main_field_type<T>()) {
             bounding_box.value = new_box;
         } else {
-            throw std::runtime_error(
-                __LOC_PREFIX__ + "The main field is not of the required type\n" +
-                "call : " + __PRETTY_FUNCTION__
+            throw shambase::throw_with_loc<std::invalid_argument>(
+                "The main field is not of the required type\n" 
+                "call : " + std::string(__PRETTY_FUNCTION__)
             );
         }
     }
 
     template<class T> PatchCoordTransform<T> SimulationBoxInfo::get_patch_transform() const{
-        
+
         auto [bmin, bmax] = get_bounding_box<T>();
 
-        return PatchCoordTransform<T>{ patch_coord_bounding_box.get_patch_range(), shammath::CoordRange<T>{bmin,bmax} };
+        shammath::CoordRange<T>tmp {bmin,bmax};
+
+        if(tmp.is_err_mode()){
+            throw shambase::throw_with_loc<std::runtime_error>("the box size is not set, please resize the box to the domain size");
+        }
+
+        return PatchCoordTransform<T>{ patch_coord_bounding_box.get_patch_range(), tmp };
 
     }
 

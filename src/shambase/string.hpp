@@ -8,8 +8,17 @@
 
 #pragma once
 
-#include "aliases.hpp"
-#include "fmt_bindings/fmt_defs.hpp"
+/**
+ * @file string.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+#include <fmt/printf.h>
 #include "exception.hpp"
 #include <fstream>
 #include <vector>
@@ -165,6 +174,18 @@ namespace shambase {
 
         if (s.size() > max_len) {
             return s.substr(0,max_len-5) + " ...";
+        }else{
+            return s;
+        }
+
+    }
+
+    inline std::string trunc_str_start(std::string s , u32 max_len){
+
+        if(max_len < 5) throw std::invalid_argument("max len should be above 4");
+
+        if (s.size() > max_len) {
+            return "... "+s.substr(s.size()-(max_len-4),s.size()) ;
         }else{
             return s;
         }

@@ -12,15 +12,15 @@
  * @file NodeInstance.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Header file describing a Node Instance
- * @copyright Copyright(C) 2021-2022 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
  *
  * A NodeInstance is a wrapper to perform a combined initialisation of both SYCL & MPI.
  * Essentially it handle the MPI process and corresponding accelerators
  */
 
 
-#include "aliases.hpp"
 
+#include "shambase/aliases_int.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include <vector>
 #include <sycl/sycl.hpp>
 
@@ -151,16 +151,6 @@ namespace shamsys::instance {
     ////////////////////////////
 
     // idea to handle multiple GPU with MPI : i32 get_mpi_tag(u32 tag);
-
-    /**
-     * @brief the MPI world rank
-     */
-    inline u32 world_rank;
-
-    /**
-     * @brief the MPI world size
-     */
-    inline u32 world_size;
 
     /**
      * @brief Get the process name

@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file scheduler_patch_list.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "scheduler_patch_list.hpp"
 
 #include <vector>
@@ -34,7 +40,7 @@ std::unordered_set<u64> SchedulerPatchList::build_local(){StackEntry stack_loc{}
     local.clear();
     for(const shamrock::patch::Patch &p : global){
         //TODO add check node_owner_id valid 
-        if(i32(p.node_owner_id) == shamsys::instance::world_rank){
+        if(i32(p.node_owner_id) == shamcomm::world_rank()){
             local.push_back(p);
             out_ids.insert(p.id_patch);
         }
@@ -54,7 +60,7 @@ void SchedulerPatchList::build_local_differantial(std::unordered_set<u64> &patch
         bool was_owned = (patch_id_lst.find(p.id_patch) != patch_id_lst.end());
 
         //TODO add check node_owner_id valid 
-        if(i32(p.node_owner_id) == shamsys::instance::world_rank){
+        if(i32(p.node_owner_id) == shamcomm::world_rank()){
             local.push_back(p);
 
             if(!was_owned){

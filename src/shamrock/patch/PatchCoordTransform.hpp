@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file PatchCoordTransform.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shammath/CoordRange.hpp"
 #include "shammath/CoordRangeTransform.hpp"
 #include "shamrock/patch/Patch.hpp"

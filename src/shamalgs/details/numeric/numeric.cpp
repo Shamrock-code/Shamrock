@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file numeric.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/exclusiveScanAtomic.hpp"

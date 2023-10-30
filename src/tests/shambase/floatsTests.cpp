@@ -10,6 +10,9 @@
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamtest/shamtest.hpp"
 
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/typeAliasVec.hpp"
+
 TestStart(Unittest, "shambase::has_nan", testshambasehasnan, 1) {
 
     f32_3 v1 {0,0,0};

@@ -8,10 +8,17 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file symtensors.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 
 
 //%Impl status : Clean
+
+#include "shambase/aliases_int.hpp"
 
 template <class T> struct SymTensor3d_1 {
 

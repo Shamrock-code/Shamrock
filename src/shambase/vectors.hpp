@@ -8,7 +8,14 @@
 
 #pragma once
 
-#include "shambase/type_aliases.hpp"
+/**
+ * @file vectors.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/typeAliasVec.hpp"
 
 namespace shambase {
 

@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file MortonKernels.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "MortonKernels.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/integer_sycl.hpp"
@@ -163,4 +169,6 @@ namespace shamrock::sfc {
     template class MortonKernels<u64, u32_3, 3>;
     template class MortonKernels<u32, u64_3, 3>;
     template class MortonKernels<u64, u64_3, 3>;
+    template class MortonKernels<u32, i64_3, 3>;
+    template class MortonKernels<u64, i64_3, 3>;
 } // namespace shamrock::sfc

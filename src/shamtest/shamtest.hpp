@@ -12,10 +12,8 @@
  * @file shamtest.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief main include file for testing
- * @date 2023-01-04
  */
 
-#include "aliases.hpp"
 #include "details/Test.hpp"
 
 /**
@@ -60,6 +58,24 @@ namespace shamtest {
 
     } // namespace details
 
+
+    struct TestConfig{
+
+        bool print_test_list_exit = false;
+
+        bool full_output = false;
+
+        bool output_tex = true;
+        std::optional<std::string> json_output = {};
+
+        bool run_long_tests = false;
+        bool run_unittest = true;
+        bool run_validation = true;
+        bool run_benchmark = false;
+
+        std::optional<std::string> run_only = {};
+    };
+
     /**
      * @brief run all the tests
      *
@@ -70,7 +86,7 @@ namespace shamtest {
      * @param run_unittest run unittests ?
      * @return int
      */
-    int run_all_tests(int argc, char *argv[], bool run_bench, bool run_analysis, bool run_unittest);
+    int run_all_tests(int argc, char *argv[],TestConfig cfg);
 
     /**
      * @brief current test asserts
@@ -89,6 +105,11 @@ namespace shamtest {
     inline shamtest::details::TestDataList &test_data() {
         return shamtest::details::current_test.test_data;
     };
+
+    inline std::string & test_tex_out(){
+        return shamtest::details::current_test.tex_output;
+    }
+    
 } // namespace shamtest
 
 /**
@@ -124,7 +145,7 @@ namespace shamtest {
  * _Assert(a == 0)
  * \endcode
  */
-#define _Assert(a) shamtest::asserts().assert_bool(#a, a);
+#define _Assert(a) shamtest::asserts().assert_bool("_Assert(" #a ")", a);
 
 /**
  * @brief Assert macro for test, testing equality between two variables
@@ -146,3 +167,15 @@ namespace shamtest {
  */
 #define _AssertFloatEqual(a, b, prec)                                                              \
     shamtest::asserts().assert_float_equal(#a " ==(" #prec ") " #b, a, b, prec);
+
+/**
+ * @brief Macro to write stuff to the tex test report
+ *
+ * Usage :
+ * \code{.cpp}
+ * TEX_REPORT(R"==(
+ *   here i'm writing tex
+ * )==")
+ * \endcode
+ */
+#define TEX_REPORT(src) shamtest::details::current_test.tex_output += src;

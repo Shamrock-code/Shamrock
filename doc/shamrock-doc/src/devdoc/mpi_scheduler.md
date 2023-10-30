@@ -183,7 +183,7 @@ void merge_patches(std::unordered_set<u64> merge_rq){
         
         std::cout << format("  -> (%d %d %d %d %d %d %d %d)\n", patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
         
-        if(patch_list.global[patch_list.id_patch_to_global_idx[ patch_id0 ]].node_owner_id == shamsys::instance::world_rank){
+        if(patch_list.global[patch_list.id_patch_to_global_idx[ patch_id0 ]].node_owner_id == shamcomm::world_rank()){
             patch_data.merge_patchdata(patch_id0, patch_id0, patch_id1, patch_id2, patch_id3, patch_id4, patch_id5, patch_id6, patch_id7);
         }
 

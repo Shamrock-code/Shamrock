@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file TreeReducedMortonCodes.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "kernels/reduction_alg.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/reduction.hpp"

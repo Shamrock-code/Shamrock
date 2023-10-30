@@ -8,9 +8,14 @@
 
 #pragma once
 
+/**
+ * @file PatchData.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "PatchDataField.hpp"
 #include "PatchDataLayout.hpp"
-#include "aliases.hpp"
 
 #include "Patch.hpp"
 #include "shambase/exception.hpp"
@@ -145,7 +150,7 @@ namespace shamrock::patch {
          * This function can be used to apply the result of a sort to the field
          *
          * @param index_map
-         * @param len the lenght of the map (must match with the current count)
+         * @param len the length of the map (must match with the current count)
          */
         void index_remap(sycl::buffer<u32> &index_map, u32 len);
 
@@ -155,7 +160,7 @@ namespace shamrock::patch {
          * This function can be used to apply the result of a sort to the field
          *
          * @param index_map
-         * @param len the lenght of the map
+         * @param len the length of the map
          */
         void index_remap_resize(sycl::buffer<u32> &index_map, u32 len);
 
@@ -172,8 +177,8 @@ namespace shamrock::patch {
                              std::array<Tvecbox, 8> min_box,
                              std::array<Tvecbox, 8> max_box);
 
-        void append_subset_to(std::vector<u32> &idxs, PatchData &pdat) const;
-        void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat) const;
+        void append_subset_to(std::vector<u32> &idxs, PatchData &pdat);
+        void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat);
 
         inline u32 get_obj_cnt() {
 
@@ -287,7 +292,7 @@ namespace shamrock::patch {
             }
         }
 
-        inline friend bool operator==(const PatchData &p1, const PatchData &p2) {
+        inline friend bool operator==(PatchData &p1, PatchData &p2) {
             bool check = true;
 
             if (p1.fields.size() != p2.fields.size()) {

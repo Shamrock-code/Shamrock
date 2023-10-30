@@ -8,12 +8,15 @@
 
 #pragma once
 
-#include "aliases.hpp"
-#include "flags.hpp"
+/**
+ * @file reduction_alg.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
 
 #include <memory>
 #include <vector>
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 
 template<class u_morton>

@@ -12,15 +12,9 @@
  * @file interface_generator.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
- * @version 0.1
- * @date 2022-03-14
- * 
- * @copyright Copyright (c) 2022
  * 
  */
 
-
-#include "aliases.hpp"
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
@@ -481,7 +475,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
                 const Patch & precv = sched.patch_list.global[global_comm_vec[i].y()];
                 //std::cout << format("(%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,iterator);
 
-                if(precv.node_owner_id == shamsys::instance::world_rank){
+                if(precv.node_owner_id == shamcomm::world_rank()){
 
                     if(psend.node_owner_id != precv.node_owner_id){
                         std::cout << shambase::format_printf("recv (%3d,%3d) : %d -> %d / %d\n",global_comm_vec[i].x(),global_comm_vec[i].y(),psend.node_owner_id,precv.node_owner_id,global_comm_tag[i]);

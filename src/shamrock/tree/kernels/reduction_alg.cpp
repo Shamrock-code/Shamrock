@@ -6,8 +6,12 @@
 //
 // -------------------------------------------------------//
 
-#include "aliases.hpp"
-#include "flags.hpp"
+/**
+ * @file reduction_alg.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 
 #include "reduction_alg.hpp"
 #include <algorithm>
@@ -17,7 +21,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/string.hpp"
 #include "shambase/integer_sycl.hpp"
 

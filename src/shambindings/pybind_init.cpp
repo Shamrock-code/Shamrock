@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file pybind_init.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "pybindaliases.hpp"
 
 #include <pybind11/iostream.h>
@@ -13,7 +20,7 @@
 
 SHAMROCK_PY_MODULE(shamrock,m){
 
-    #ifdef LIB_BUILD
+    #ifdef SHAMROCK_LIB_BUILD
     m.attr("redirect_output") = py::capsule(new py::scoped_ostream_redirect(
         std::cout,                               // std::ostream&
         py::module_::import("sys").attr("stdout") // Python output

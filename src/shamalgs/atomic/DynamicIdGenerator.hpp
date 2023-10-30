@@ -8,10 +8,16 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file DynamicIdGenerator.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/memory.hpp"
 #include "shambase/integer.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamalgs::atomic {
 

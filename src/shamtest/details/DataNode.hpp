@@ -8,13 +8,25 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file DataNode.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief This file hold the definitions for a test DataNode
+ */
+
+#include "shambase/aliases_float.hpp"
+#include "shambase/aliases_int.hpp"
+#include <string>
+#include <vector>
 
 namespace shamtest::details {
     struct DataNode {
         std::string name;
         std::vector<f64> data;
 
-        std::string serialize();
+        std::string serialize_json();
+
+        void serialize(std::basic_stringstream<byte> &stream);
+        static DataNode deserialize(std::basic_stringstream<byte> &reader);
     };
 } // namespace shamtest::details

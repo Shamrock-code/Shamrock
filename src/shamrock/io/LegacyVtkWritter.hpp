@@ -8,12 +8,20 @@
 
 #pragma once
 
+/**
+ * @file LegacyVtkWritter.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamalgs/collective/io.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/details/memory/bufferFlattening.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
+#include "shamcomm/io.hpp"
 #include "shamrock/io/details/bufToVtkBuf.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shambase/endian.hpp"
@@ -174,7 +182,7 @@ namespace shamrock {
             }
 
             
-            shamalgs::collective::open_reset_file(mfile, fname);
+            shamcomm::open_reset_file(mfile, fname);
 
 
             std::stringstream ss;

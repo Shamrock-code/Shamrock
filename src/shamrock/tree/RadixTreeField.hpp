@@ -8,8 +8,14 @@
 
 #pragma once
 
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+/**
+ * @file RadixTreeField.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 template<class T>

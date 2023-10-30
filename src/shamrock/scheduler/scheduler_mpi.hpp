@@ -28,7 +28,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "aliases.hpp"
+
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
@@ -59,7 +59,7 @@ class PatchScheduler{
     public:
 
     static constexpr u64 max_axis_patch_coord = LoadBalancer::max_box_sz;
-    static constexpr u64 max_axis_patch_coord_lenght = LoadBalancer::max_box_sz+1;
+    static constexpr u64 max_axis_patch_coord_length = LoadBalancer::max_box_sz+1;
 
     using PatchTree = shamrock::scheduler::PatchTree;
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;

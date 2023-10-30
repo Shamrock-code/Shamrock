@@ -8,10 +8,14 @@
 
 #pragma once 
 
-#include "aliases.hpp"
-#include "flags.hpp"
+/**
+ * @file key_morton_sort.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include <memory>
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 
 enum SortImplType{

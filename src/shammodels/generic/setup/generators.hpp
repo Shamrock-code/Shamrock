@@ -11,11 +11,17 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file generators.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/random.hpp"
 #include "shambase/Constants.hpp"
-#include "shambase/type_aliases.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -110,7 +116,7 @@ namespace generic::setup::generators {
         u32 iy = std::ceil(iboc_dim.y());
         u32 iz = std::ceil(iboc_dim.z());
 
-        if(shamsys::instance::world_rank == 0) logger::info_ln("SPH", "Add fcc lattice size : (",ix,iy,iz,")");
+        if(shamcomm::world_rank() == 0) logger::info_ln("SPH", "Add fcc lattice size : (",ix,iy,iz,")");
         //std::cout << "part box size : (" << ix << ", " << iy << ", " << iz << ")" << std::endl;
 
         if((iy % 2) != 0 && (iz % 2) != 0){
@@ -169,7 +175,7 @@ namespace generic::setup::generators {
         std::function<flt(flt)> rot_profile,
         std::function<void(DiscOutput<flt>)> pusher
     ){
-        constexpr flt _2pi = 2*shambase::Constants<flt>::pi;
+        constexpr flt _2pi = 2*shambase::constants::pi<flt>;
 
 
         auto f_func = [&](flt r){
@@ -216,7 +222,7 @@ namespace generic::setup::generators {
 
             auto vel = vk*etheta;
 
-            flt rho = (sigma / (H * shambase::Constants<flt>::pi2_sqrt))*
+            flt rho = (sigma / (H * shambase::constants::pi2_sqrt<flt>))*
                 sycl::exp(- z*z / (2*H*H));
 
             DiscOutput<flt> out {

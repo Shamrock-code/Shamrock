@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file TestData.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shamtest/details/DataNode.hpp"
 
 namespace shamtest::details {
@@ -25,7 +30,11 @@ namespace shamtest::details {
             dataset.push_back(DataNode{std::move(name), std::move(new_vec)});
         }
 
-        std::string serialize();
+        std::string serialize_json();
+
+
+        void serialize(std::basic_stringstream<byte> &stream);
+        static TestData deserialize(std::basic_stringstream<byte> &stream);
     };
 
 } // namespace shamtest::details

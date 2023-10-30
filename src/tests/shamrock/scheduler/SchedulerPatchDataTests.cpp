@@ -25,8 +25,8 @@ TestStart(Unittest, "shamrock/scheduler/SchedulerPatchData::apply_change_list", 
     using namespace shamrock::patch;
     using namespace shamrock::scheduler;
 
-    const i32 wsize = world_size;
-    const i32 wrank = world_rank;
+    const i32 wsize = shamcomm::world_size();
+    const i32 wrank = shamcomm::world_rank();
 
     u64 npatch = wsize*5;
     u64 seed = 0x123;

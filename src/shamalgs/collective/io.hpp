@@ -8,8 +8,15 @@
 
 #pragma once
 
+/**
+ * @file io.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/collective/indexing.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
@@ -78,47 +85,13 @@ namespace shamalgs::collective {
 
         mpi::file_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
 
-        if (shamsys::instance::world_rank == 0) {
+        if (shamcomm::world_rank() == 0) {
             mpi::file_write(fh, s.c_str(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE);
         }
 
         file_head_ptr = file_head_ptr + s.size();
     }
 
-    /**
-     * @brief open a mpi file and remove its content
-     * 
-     */
-    inline void open_reset_file(MPI_File & fh, std::string fname){
-
-        int rc = mpi::file_open(
-            MPI_COMM_WORLD,
-            fname.c_str(),
-            MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
-            MPI_INFO_NULL,
-            &fh
-        );
-
-        if(rc != MPI_SUCCESS){ 
-
-            if(shamsys::instance::world_rank == 0){
-                mpi::file_delete(fname.c_str(), MPI_INFO_NULL);
-            }
-
-            int rc = mpi::file_open(
-                MPI_COMM_WORLD,
-                fname.c_str(),
-                MPI_MODE_CREATE | MPI_MODE_WRONLY | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
-                MPI_INFO_NULL,
-                &fh
-            );
-
-            if(rc != MPI_SUCCESS){
-                throw shambase::throw_with_loc<std::runtime_error>("cannot create file");
-            }
-
-        }
-    }
 
 
     

@@ -8,8 +8,14 @@
 
 #pragma once
 
-#include "aliases.hpp"
-#include "shambase/sycl.hpp"
+/**
+ * @file numeric.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/sycl.hpp"
 
 /**
  * @brief namespace containing the numeric algorithms of shamalgs
@@ -34,7 +40,7 @@ namespace shamalgs::numeric {
      * 
      * @param q the queue to run on
      * @param buf_flags buffer of only 0 and ones
-     * @param len the lenght of the buffer considered
+     * @param len the length of the buffer considered
      * @return std::tuple<sycl::buffer<u32>, u32> table of the index to extract and its size
      */
     std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);

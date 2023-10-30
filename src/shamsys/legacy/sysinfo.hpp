@@ -8,6 +8,12 @@
 
 #pragma once
 
-#include <aliases.hpp>
+/**
+ * @file sysinfo.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
 
+
+#include <string>
 inline std::string get_cpu_name();

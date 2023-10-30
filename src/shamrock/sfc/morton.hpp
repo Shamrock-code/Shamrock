@@ -12,20 +12,15 @@
  * @file morton.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Morton curve implementation
- * @version 0.1
- * @date 2022-03-03
- *
- * @copyright Copyright (c) 2022
  *
  */
 
-#include "aliases.hpp"
 #include "bmi.hpp"
 #include "shammath/CoordRangeTransform.hpp"
 #include "shambase/integer_sycl.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include <type_traits>
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shamrock::sfc {
 
@@ -184,7 +179,7 @@ namespace shamrock::sfc {
 
         private:
         static constexpr bool implemented_int =
-            std::is_same<pos_t, u32_3>::value || std::is_same<pos_t, u64_3>::value;
+            std::is_same<pos_t, u32_3>::value || std::is_same<pos_t, u64_3>::value || std::is_same<pos_t, i64_3>::value;
 
         static constexpr bool implemented_float =
             std::is_same<pos_t, f32_3>::value || std::is_same<pos_t, f64_3>::value;

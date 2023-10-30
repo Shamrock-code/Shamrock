@@ -8,11 +8,17 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file DigitBinner.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/integer.hpp"
-#include "shambase/sycl.hpp"
+#include "shambackends/sycl.hpp"
 #include "shambase/type_traits.hpp"
 #include "shamsys/legacy/log.hpp"
 

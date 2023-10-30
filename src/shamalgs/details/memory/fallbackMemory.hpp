@@ -8,8 +8,14 @@
 
 #pragma once
 
-#include "aliases.hpp"
-#include "shambase/sycl.hpp"
+/**
+ * @file fallbackMemory.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambackends/sycl.hpp"
 
 namespace shamalgs::memory::details {
 

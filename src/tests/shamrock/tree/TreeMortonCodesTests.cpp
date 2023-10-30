@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/random.hpp"
-#include "shambase/type_aliases.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"

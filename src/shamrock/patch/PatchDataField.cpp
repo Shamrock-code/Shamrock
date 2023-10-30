@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file PatchDataField.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "PatchDataField.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/random.hpp"
@@ -14,7 +20,6 @@
 #include "shambase/memory.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
-#include "shamrock/patch/ResizableBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <memory>
@@ -23,8 +28,8 @@ template<class T> class Kernel_Extract_element;
 
 template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
 
-    auto fast_extract_ptr = [](u32 idx, u32 lenght, auto cnt) {
-        T end_ = cnt[lenght - 1];
+    auto fast_extract_ptr = [](u32 idx, u32 length, auto cnt) {
+        T end_ = cnt[length - 1];
         T extr = cnt[idx];
 
         cnt[idx] = end_;
@@ -73,7 +78,7 @@ template <class T> void PatchDataField<T>::extract_element(u32 pidx, PatchDataFi
 
 
 
-template <class T> bool PatchDataField<T>::check_field_match(const PatchDataField<T> &f2) const {
+template <class T> bool PatchDataField<T>::check_field_match( PatchDataField<T> &f2) {
     bool match = true;
 
     match = match && (field_name == f2.field_name);
@@ -88,7 +93,7 @@ template <class T> bool PatchDataField<T>::check_field_match(const PatchDataFiel
 
 template<class T> class PdatField_append_subset_to;
 
-template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) const {
+template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar)
         throw shambase::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
@@ -168,7 +173,7 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
 
 }
 
-template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) const {
+template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar){
         throw shambase::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
@@ -295,7 +300,7 @@ PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::stri
     using Prop = shambase::VectorProperties<T>;
 
     return PatchDataField<T>(
-        ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, Prop::get_min(), Prop::get_max()),
+        shamalgs::ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, Prop::get_min(), Prop::get_max()),
         obj_cnt, name, nvar
     );
 }
@@ -328,7 +333,7 @@ template<class T>
 PatchDataField<T> PatchDataField<T>::deserialize_buf(shamalgs::SerializeHelper &serializer, std::string field_name, u32 nvar){
     u32 cnt;
     serializer.load(cnt);
-    ResizableBuffer<T> rbuf = ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
+    shamalgs::ResizableBuffer<T> rbuf = shamalgs::ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
     return PatchDataField<T>(std::move(rbuf), cnt, field_name, nvar);
 }
 
@@ -365,7 +370,7 @@ PatchDataField<T> PatchDataField<T>::deserialize_full(shamalgs::SerializeHelper 
     std::string field_name;
     serializer.load(field_name);
 
-    ResizableBuffer<T> rbuf = ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
+    shamalgs::ResizableBuffer<T> rbuf = shamalgs::ResizableBuffer<T>::deserialize_buf(serializer, cnt*nvar);
     return PatchDataField<T>(std::move(rbuf), cnt, field_name, nvar);
 }
 

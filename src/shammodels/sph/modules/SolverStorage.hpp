@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file SolverStorage.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
@@ -16,14 +23,14 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
-#include "shamrock/tree/TreeTaversalCache.hpp"
-#include "shamrock/utils/SolverStorageComponent.hpp"
+#include "shamrock/tree/TreeTraversalCache.hpp"
+#include "shambase/StorageComponent.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shammodels::sph {
 
     template<class T>
-    using Component = shamrock::StorageComponent<T>;
+    using Component = shambase::StorageComponent<T>;
 
     template<class Tvec, class Tmorton>
     class SolverStorage {

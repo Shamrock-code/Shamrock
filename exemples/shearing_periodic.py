@@ -52,7 +52,7 @@ model.set_value_in_a_box("uint","f64", 3 , (0.2,-pen_sz,-pen_sz),(xM,pen_sz,pen_
 #print("Current part mass :", pmass)
 
 #for it in range(5):
-#    setup.update_smoothing_lenght(ctx)
+#    setup.update_smoothing_length(ctx)
 
 
 

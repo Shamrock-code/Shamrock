@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file PatchDataLayout.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"

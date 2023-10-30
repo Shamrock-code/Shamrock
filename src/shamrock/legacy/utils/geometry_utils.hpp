@@ -12,15 +12,10 @@
  * @file geometry_utils.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
- * @version 0.1
- * @date 2022-03-14
- * 
- * @copyright Copyright (c) 2022
  * 
  */
 
-
-#include "aliases.hpp"
+#include "shambackends/sycl.hpp"
 #include <tuple>
 
 
@@ -40,7 +35,7 @@ class ALignedAxisBoundingBox{
         return max_coord - min_coord;
     }
 
-    inline flt get_max_side_lenght() const {
+    inline flt get_max_side_length() const {
         const vec sz = get_size();
         return sycl::fmax(sycl::fmax(sz.x(),sz.y()),sz.z());
     }

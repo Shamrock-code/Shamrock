@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file interface_handler_impl_tree.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamrock/legacy/comm/sparse_communicator.hpp"
 #include "shamrock/legacy/patch/utility/compute_field.hpp"
 #include "shamrock/tree/RadixTree.hpp"

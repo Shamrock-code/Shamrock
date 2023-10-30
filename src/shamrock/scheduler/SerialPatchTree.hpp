@@ -9,13 +9,9 @@
 #pragma once
 
 /**
- * @file serialpatchtree.hpp
+ * @file SerialPatchTree.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
- * @version 0.1
- * @date 2022-03-14
- * 
- * @copyright Copyright (c) 2022
  * 
  */
 
@@ -33,7 +29,6 @@
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-#include "aliases.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
 #include <array>
 #include <tuple>

@@ -8,6 +8,13 @@
 
 #pragma once
 
+/**
+ * @file interface_handler_impl.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "shamrock/legacy/patch/utility/compute_field.hpp"
 #include "shamrock/scheduler/scheduler_mpi.hpp"
 #include "interface_generator.hpp"

@@ -6,6 +6,13 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file streamCompactExclScan.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
 
 #include "streamCompactExclScan.hpp"
 #include "shamalgs/memory.hpp"

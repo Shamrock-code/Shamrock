@@ -9,12 +9,19 @@
 
 #pragma once
 
-#ifdef EXECUTABLE_BUILD
+/**
+ * @file pybindaliases.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#ifdef SHAMROCK_EXECUTABLE_BUILD
 #include <pybind11/embed.h>
 #define SHAMROCK_PY_MODULE(name,module) PYBIND11_EMBEDDED_MODULE(name, module)
 #endif
 
-#ifdef LIB_BUILD
+#ifdef SHAMROCK_LIB_BUILD
 #include <pybind11/pybind11.h>
 #define SHAMROCK_PY_MODULE(name,module) PYBIND11_MODULE(name, module)
 #endif

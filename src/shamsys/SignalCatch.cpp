@@ -6,6 +6,12 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file SignalCatch.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ */
+
 #include "shambase/stacktrace.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -28,7 +34,7 @@ namespace shamsys::details {
             return std::to_string(signum);
         };
 
-        std::cout << "... received signal world rank=" + std::to_string(instance::world_rank) +
+        std::cout << "... received signal world rank=" + std::to_string(shamcomm::world_rank()) +
                          " : " + get_signame() + "\ncurrent stacktrace : \n" +
                          shambase::fmt_callstack()
                   << std::endl;
@@ -37,7 +43,7 @@ namespace shamsys::details {
 
         
         #ifdef SHAMROCK_USE_PROFILING
-        shambase::details::dump_profiling(shamsys::instance::world_rank);
+        shambase::details::dump_profiling(shamcomm::world_rank());
         #endif
 
 

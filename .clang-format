@@ -8,7 +8,7 @@ ColumnLimit: 100
 AccessModifierOffset: 0
 EmptyLineBeforeAccessModifier : Always
 
-#AlignAfterOpenBracket: BlockIndent
+AlignAfterOpenBracket: AlwaysBreak
 AlignConsecutiveAssignments: true
 
 AlignEscapedNewlines: Right

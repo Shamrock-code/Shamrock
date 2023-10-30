@@ -6,13 +6,19 @@
 //
 // -------------------------------------------------------//
 
+/**
+ * @file interface_generator.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+
 #include "interface_generator.hpp"
 
 #include <memory>
 #include <stdexcept>
 #include <vector>
 
-#include "aliases.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"

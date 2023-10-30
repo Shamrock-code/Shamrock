@@ -8,7 +8,12 @@
 
 #pragma once
 
-#include "aliases.hpp"
+/**
+ * @file TreeMortonCodes.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
 #include "shamalgs/memory.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shamalgs/reduction.hpp"

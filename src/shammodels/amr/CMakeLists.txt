@@ -1,3 +1,3 @@
-add_subdirectory(bindings)
+
 add_subdirectory(basegodunov)
 add_subdirectory(zeus)

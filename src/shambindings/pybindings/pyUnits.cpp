@@ -10,7 +10,6 @@
  * @file pyUnits.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
- * \todo move to bindings
  */
 
 #include "shambackends/typeAliasVec.hpp"

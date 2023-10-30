@@ -1,29 +1,7 @@
 
-set(Sources
-pybind_init.cpp
-)
-set(SourcesTest
 
-)
-set(Headers
-)
-set(HeadersTest
+# Whenever this glob's value changes, cmake will rerun and update the build with the
+# new/removed files.
+file(GLOB_RECURSE glob_bindings_sources CONFIGURE_DEPENDS "*.cpp")
 
-)
-
-target_sources(shamrock_lib
-    PRIVATE
-        ${Sources}
-    PUBLIC
-        ${Headers}
-    )
-
-if("${BUILD_TEST}")
-target_sources(shamrock_test
-    PRIVATE
-     ${SourcesTest}
-    PUBLIC
-     ${HeadersTest}
-    )
-endif()
-
+target_sources(shamrock_lib PRIVATE ${glob_bindings_sources})

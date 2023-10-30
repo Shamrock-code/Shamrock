@@ -30,6 +30,7 @@
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
+#include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
@@ -867,28 +868,8 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
         shambase::throw_unimplemented();
     }
 
-    using namespace shamrock;
-    using namespace shamrock::patch;
-
-    PatchDataLayout &pdl = scheduler().pdl;
-
-    const u32 iaxyz     = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
-
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        sycl::buffer<Tvec> &buf_axyz     = pdat.get_field_buf_ref<Tvec>(iaxyz);
-        sycl::buffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
-
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor axyz{buf_axyz, cgh, sycl::read_write};
-            sycl::accessor axyz_ext{buf_axyz_ext, cgh, sycl::read_only};
-
-            shambase::parralel_for(
-                cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
-                    axyz[gid] += axyz_ext[gid];
-                });
-        });
-    });
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    ext_forces.add_ext_forces(gpart_mass);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1466,7 +1447,6 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz     = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
     const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
@@ -1483,13 +1463,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     sink_update.predictor_step(dt);
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        PatchDataField<Tvec> &field = pdat.get_field<Tvec>(iaxyz_ext);
-        field.field_raz();
-    });
 
     sink_update.compute_ext_forces();
-    sink_update.compute_sph_forces(gpart_mass);
+
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    ext_forces.compute_ext_forces_indep_v(gpart_mass);
 
     gen_serial_patch_tree();
 

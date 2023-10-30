@@ -5,5 +5,4 @@ target_sources(shamrock_lib
     PUBLIC
     )
 
-    add_subdirectory(bindings)
     add_subdirectory(modules)

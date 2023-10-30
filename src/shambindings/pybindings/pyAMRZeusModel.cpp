@@ -10,7 +10,6 @@
  * @file pyAMRZeusModel.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
- * \todo move to shambindings
  */
  
 #include <memory>

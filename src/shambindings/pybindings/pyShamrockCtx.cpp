@@ -10,7 +10,6 @@
  * @file pyShamrockCtx.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
- * \todo move to shambindings folder
  */
 
 #include "shambindings/pybindaliases.hpp"

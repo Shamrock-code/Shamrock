@@ -80,7 +80,13 @@ struct shammodels::sph::SolverConfig {
             Tscal beta_AV     = 2.0;
         };
 
-        using Variant  = std::variant<None, Constant, VaryingMM97, VaryingCD10>;
+        struct ConstantDisc {
+            Tscal alpha_AV   = 0.1;
+            Tscal alpha_u     = 1.0;
+            Tscal beta_AV     = 2.0;
+        };
+
+        using Variant  = std::variant<None, Constant, VaryingMM97, VaryingCD10, ConstantDisc>;
         Variant config = Constant{};
 
         void set(Variant v) { config = v; }
@@ -144,6 +150,13 @@ struct shammodels::sph::SolverConfig {
                 logger::raw_ln("  sigma_decay =", v->sigma_decay);
                 logger::raw_ln("  alpha_u     =", v->alpha_u);
                 logger::raw_ln("  beta_AV     =", v->beta_AV);
+            } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&config)) {
+                logger::raw_ln("  Config Type : constant disc");
+                logger::raw_ln("  alpha_AV   =", v->alpha_AV);
+                logger::raw_ln("  alpha_u     =", v->alpha_u);
+                logger::raw_ln("  beta_AV     =", v->beta_AV);
+            }else {
+            shambase::throw_unimplemented();
             }
 
             logger::raw_ln("--- artificial viscosity config (deduced)");
@@ -335,6 +348,10 @@ struct shammodels::sph::SolverConfig {
     }
 
     inline void set_artif_viscosity_VaryingCD10(typename AVConfig::VaryingCD10 v) {
+        artif_viscosity.set(v);
+    }
+
+    inline void set_artif_viscosity_ConstantDisc(typename AVConfig::ConstantDisc v) {
         artif_viscosity.set(v);
     }
 

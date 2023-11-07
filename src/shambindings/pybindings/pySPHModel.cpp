@@ -80,6 +80,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("sigma_decay"),
             py::arg("alpha_u"),
             py::arg("beta_AV"))
+        .def(
+            "set_artif_viscosity_ConstantDisc",
+            [](TConfig &self,
+               Tscal alpha_AV,
+               Tscal alpha_u,
+               Tscal beta_AV) {
+                self.set_artif_viscosity_ConstantDisc(
+                    {alpha_AV, alpha_u, beta_AV});
+            },
+            py::kw_only(),
+            py::arg("alpha_AV"),
+            py::arg("alpha_u"),
+            py::arg("beta_AV"))
         .def("set_boundary_free",&TConfig::set_boundary_free)
         .def("set_boundary_periodic",&TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic",&TConfig::set_boundary_shearing_periodic)

@@ -14,6 +14,7 @@
  * @brief file containing formulas for sph forces
  */
 
+#include "shambackends/math.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 namespace shamrock::sph {
 
@@ -111,10 +112,26 @@ namespace shamrock::sph {
      * @param v_scal_rhat
      * @return Tscal
      */
+
     template<class Tscal>
     inline Tscal q_av(Tscal rho, Tscal vsig, Tscal v_scal_rhat) {
         return shambase::sycl_utils::g_sycl_max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
     }
+
+    template<class Tscal>
+    inline Tscal q_av_disc(Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs_a, Tscal beta_av, Tscal v_scal_rhat) {
+        Tscal q_av_d;
+        if (v_scal_rhat < Tscal(0)){
+            Tscal q_av_d =  (-Tscal(0.5) * rho * h / sham::abs(rab)) * (alpha_av * cs_a + beta_av * sham::abs(v_scal_rhat)) * v_scal_rhat;
+        } else {
+            Tscal q_av_d = (-Tscal(0.5) * rho * h * sham::abs(rab)) * alpha_av * cs_a * v_scal_rhat;
+        }
+        return q_av_d;
+    }
+
+    enum ViscosityType{
+        Standard = 0, Disc = 1
+    };
 
     /**
      * @brief \cite Phantom_2018 eq.35
@@ -160,7 +177,7 @@ namespace shamrock::sph {
                (Fab_inv_omega_a_rho_a + Fab_inv_omega_b_rho_b);
     }
 
-    template<class Kernel, class Tvec, class Tscal>
+    template<class Kernel, class Tvec, class Tscal, ViscosityType visco_mode = Standard>
     inline void add_to_derivs_sph_artif_visco_cond(
         Tscal pmass,
         Tvec dr,
@@ -184,6 +201,8 @@ namespace shamrock::sph {
         Tscal cs_b,
         Tscal alpha_a,
         Tscal alpha_b,
+        Tscal h_a,
+        Tscal h_b,
 
         Tscal beta_AV,
         Tscal alpha_u,
@@ -213,8 +232,18 @@ namespace shamrock::sph {
         Tscal dWab_a = Fab_a;
         Tscal dWab_b = Fab_b;
 
-        Tscal qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
-        Tscal qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
+        Tscal qa_ab;
+        Tscal qb_ab;
+
+        if constexpr (visco_mode == Standard){
+        qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
+        qb_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
+        }
+
+        if constexpr (visco_mode == Disc){
+        qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, beta_AV, v_ab_r_ab);
+        qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, beta_AV, v_ab_r_ab);
+        } 
 
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;

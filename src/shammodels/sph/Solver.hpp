@@ -178,6 +178,7 @@ namespace shammodels::sph {
         void update_derivs_mm97();
         void update_derivs_cd10();
         void update_derivs_constantAV();
+        void update_derivs_disc_visco();
         /**
          * @brief 
          * 

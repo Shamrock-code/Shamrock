@@ -18,6 +18,7 @@
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
+#include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::sph::modules {
@@ -46,6 +47,7 @@ namespace shammodels::sph::modules {
 
         void update_artificial_viscosity_mm97(Tscal dt, typename Config::AVConfig::VaryingMM97 cfg);
         void update_artificial_viscosity_cd10(Tscal dt, typename Config::AVConfig::VaryingCD10 cfg);
+        void update_artificial_viscosity_disc(Tscal dt, typename Config::AVConfig::ConstantDisc cfg);
     };
 
 } // namespace shammodels::sph::modules

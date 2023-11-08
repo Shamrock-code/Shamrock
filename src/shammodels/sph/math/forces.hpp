@@ -250,7 +250,7 @@ namespace shamrock::sph {
         }
 
         if constexpr (visco_mode == Disc){
-        qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, beta_AV, v_ab_r_ab);
+        qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
         qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
         //logger::raw_ln("##############################qab_a", qa_ab);
         //logger::raw_ln("##################");

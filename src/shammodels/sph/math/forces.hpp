@@ -123,14 +123,33 @@ namespace shamrock::sph {
     inline Tscal q_av_disc(Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs, Tscal vsig, Tscal v_scal_rhat) {
         Tscal q_av_d;
         Tscal rho1 = 1./ rho;
-        Tscal rabinv = 1. / rab;
-        if (v_scal_rhat < Tscal(0)){
-            q_av_d = -Tscal(0.5) * rho * vsig * h * sham::abs(rabinv) * v_scal_rhat;
-        } else {
-            Tscal q_av_d = -Tscal(0.5) * rho * sham::abs(rabinv) * alpha_av * cs * h * v_scal_rhat;
-            //logger::raw_ln("##############################qav_d", q_av_d);
-            //q_av_d = Tscal(0);
+        Tscal rabinv = 1. / (rab);
+
+        if(rab < 1e-9){
+            rabinv = 0;
         }
+
+        Tscal prefact = -Tscal(0.5) * rho * sham::abs(rabinv) * h;
+
+        Tscal vsig_disc;
+        if (v_scal_rhat < Tscal(0)){
+            vsig_disc = vsig;
+        } else {
+            vsig_disc =  (alpha_av * cs);
+        }
+
+        q_av_d =  prefact* vsig_disc * v_scal_rhat;
+    
+        //q_av_d = Tscal(0);
+        if (sham::abs(q_av_d) >0.0001){
+        //logger::raw_ln("##############################alphaAV", alpha_av);
+        //logger::raw_ln("##############################qav_dh", h);
+        //logger::raw_ln("##############################rabinv", rabinv);
+        //logger::raw_ln("##############################cs", cs);
+        //logger::raw_ln("##############################qav_d", q_av_d);
+        }
+        
+    
         return q_av_d;
     }
 

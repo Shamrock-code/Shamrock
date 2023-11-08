@@ -81,7 +81,7 @@ struct shammodels::sph::SolverConfig {
         };
 
         struct ConstantDisc {
-            Tscal alpha_AV   = 0.1;
+            Tscal alpha_AV   = 1.0;
             Tscal alpha_u     = 1.0;
             Tscal beta_AV     = 2.0;
         };

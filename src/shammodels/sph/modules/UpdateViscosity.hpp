@@ -47,7 +47,6 @@ namespace shammodels::sph::modules {
 
         void update_artificial_viscosity_mm97(Tscal dt, typename Config::AVConfig::VaryingMM97 cfg);
         void update_artificial_viscosity_cd10(Tscal dt, typename Config::AVConfig::VaryingCD10 cfg);
-        void update_artificial_viscosity_disc(Tscal dt, typename Config::AVConfig::ConstantDisc cfg);
     };
 
 } // namespace shammodels::sph::modules

@@ -16,6 +16,7 @@
 
 #include "shambackends/math.hpp"
 #include "shambase/sycl_utils/sycl_utilities.hpp"
+#include "shamsys/legacy/log.hpp"
 namespace shamrock::sph {
 
     /**
@@ -119,12 +120,16 @@ namespace shamrock::sph {
     }
 
     template<class Tscal>
-    inline Tscal q_av_disc(Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs_a, Tscal beta_av, Tscal v_scal_rhat) {
+    inline Tscal q_av_disc(Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs, Tscal vsig, Tscal v_scal_rhat) {
         Tscal q_av_d;
+        Tscal rho1 = 1./ rho;
+        Tscal rabinv = 1. / rab;
         if (v_scal_rhat < Tscal(0)){
-            Tscal q_av_d =  (-Tscal(0.5) * rho * h / sham::abs(rab)) * (alpha_av * cs_a + beta_av * sham::abs(v_scal_rhat)) * v_scal_rhat;
+            q_av_d = -Tscal(0.5) * rho * vsig * h * sham::abs(rabinv) * v_scal_rhat;
         } else {
-            Tscal q_av_d = (-Tscal(0.5) * rho * h * sham::abs(rab)) * alpha_av * cs_a * v_scal_rhat;
+            Tscal q_av_d = -Tscal(0.5) * rho * sham::abs(rabinv) * alpha_av * cs * h * v_scal_rhat;
+            //logger::raw_ln("##############################qav_d", q_av_d);
+            //q_av_d = Tscal(0);
         }
         return q_av_d;
     }
@@ -237,12 +242,19 @@ namespace shamrock::sph {
 
         if constexpr (visco_mode == Standard){
         qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
-        qb_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
+        qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);        
+        //logger::raw_ln("##############################qab_a", qa_ab);
+        //logger::raw_ln("###################");
+        //logger::raw_ln("##############################qab_b", qb_ab);
+        
         }
 
         if constexpr (visco_mode == Disc){
         qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, beta_AV, v_ab_r_ab);
-        qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, beta_AV, v_ab_r_ab);
+        qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
+        //logger::raw_ln("##############################qab_a", qa_ab);
+        //logger::raw_ln("##################");
+        //logger::raw_ln("##############################qab_b", qb_ab);
         } 
 
         Tscal AV_P_a = P_a + qa_ab;

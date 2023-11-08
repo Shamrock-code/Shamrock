@@ -40,7 +40,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&solver_config.artif_viscosity.config)) {
         update_artificial_viscosity_cd10(dt, *v);
     } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&solver_config.artif_viscosity.config)) {
-        update_artificial_viscosity_disc(dt, *v);
+        logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (constant AV)");
     } else {
         shambase::throw_unimplemented();
     }
@@ -188,14 +188,6 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
 }
 
 
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artificial_viscosity_disc(
-    Tscal dt, typename Config::AVConfig::ConstantDisc cfg) {
-
-    StackEntry stack_loc{};
-    logger::debug_ln("UpdateViscosity", "skiping viscosity update <= alpha viscosity (disc)");
-
-}
 
 using namespace shammath;
 template class shammodels::sph::modules::UpdateViscosity<f64_3, M4>;

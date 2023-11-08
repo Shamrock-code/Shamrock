@@ -1425,14 +1425,12 @@ void SPHSolve<Tvec, Kern>::update_derivs_disc_visco() {
     const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
-    const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
-    u32 ialpha_AV_interf                           = ghost_layout.get_field_idx<Tscal>("alpha_AV");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<RTree> &trees           = storage.merged_pos_trees.get();
@@ -1459,7 +1457,6 @@ void SPHSolve<Tvec, Kern>::update_derivs_disc_visco() {
         sycl::buffer<Tscal> &buf_omega    = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sycl::buffer<Tscal> &buf_alpha_AV = mpdat.get_field_buf_ref<Tscal>(ialpha_AV_interf);
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -1469,9 +1466,11 @@ void SPHSolve<Tvec, Kern>::update_derivs_disc_visco() {
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             const Tscal pmass   = gpart_mass;
+            const Tscal alpha_AV = constant_av_config->alpha_AV;
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
 
+            logger::debug_sycl_ln("deriv kernel", "alpha_AV  :", alpha_AV);
             logger::debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
             logger::debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
 
@@ -1490,7 +1489,6 @@ void SPHSolve<Tvec, Kern>::update_derivs_disc_visco() {
             sycl::accessor omega{buf_omega, cgh, sycl::read_only};
             sycl::accessor u{buf_uint, cgh, sycl::read_only};
             sycl::accessor pressure{buf_pressure, cgh, sycl::read_only};
-            sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_only};
             sycl::accessor cs{
                 storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
 
@@ -1515,7 +1513,6 @@ void SPHSolve<Tvec, Kern>::update_derivs_disc_visco() {
                 Tscal cs_a = cs[id_a];
                 Tscal omega_a       = omega[id_a];
                 const Tscal u_a     = u[id_a];
-                const Tscal alpha_a = alpha_AV[id_a];
 
                 Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
                 Tscal rho_a_sq  = rho_a * rho_a;
@@ -1543,13 +1540,13 @@ void SPHSolve<Tvec, Kern>::update_derivs_disc_visco() {
                     const Tscal u_b     = u[id_b];
                     Tscal P_b           = pressure[id_b];
                     Tscal omega_b       = omega[id_b];
-                    const Tscal alpha_b = alpha_AV[id_b];
                     Tscal cs_b  = cs[id_b];
 
                     Tscal rab = sycl::sqrt(rab2);
 
                     Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
-
+                    const Tscal alpha_a = alpha_AV;
+                    const Tscal alpha_b = alpha_AV;
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 

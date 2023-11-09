@@ -3,11 +3,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sarracen
 
-outputdir = "/home/ylapeyre/track_bug1/KH_0ssss/"
-ph_dir = "/home/ylapeyre/track_bug1/KH_0/"
+outputdir = "/home/ylapeyre/hydro/sham_KH/"
+ph_dir = "/home/ylapeyre/hydro/phantom_KH/"
 ph_file = ph_dir + "kh_00000"
 ev_f = ph_dir + "kh01.ev"
 
+'''
 ev_dic = {}
 with open(ev_f, 'r') as phantom_ev:
     # read the col names
@@ -40,17 +41,24 @@ with open(ev_f, 'r') as phantom_ev:
     for column in columns:
         ev_dic[column] = ev_data[i_dic]
         i_dic +=1
-
+'''
 gamma = 5./3.
 rho_g = 1
 target_tot_u = 1
 
 
-dr = 0.01
+dr13 = 0.02
+dr2 = 0.01
 
-bmin = (0, 0,-0.08)
-bmax = (1, 1, 0.08)
-pmass = -1
+bmin = (0, 0, -0.76547e-01)
+bmax = (1, 1, 0.76547e-01)
+###bmin1 = (0, 0,-0.1)
+###bmax1 = (1, 0.25, 0.1)
+###bmin2 = (0, 0.25,-0.1)
+###bmax2 = (1, 0.75, 0.1)
+###bmin3 = (0, 0.75,-0.1)
+###bmax3 = (1, 1, 0.1)
+pmass = 0.0005
 
 
 #ctx = shamrock.Context()
@@ -58,8 +66,8 @@ pmass = -1
 #model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 #model.init_scheduler(int(1e7),1)
 #bmin,bmax = model.get_ideal_fcc_box(dr,bmin,bmax)
-xm,ym,zm = bmin
-xM,yM,zM = bmax
+###xm,ym,zm = bmin1
+###xM,yM,zM = bmax3
 #model.resize_simulation_box(bmin,bmax)
 #model.add_cube_fcc_3d(dr, bmin,bmax)
 #xc,yc,zc = model.get_closest_part_to((0,0,0))
@@ -86,13 +94,15 @@ model.init_scheduler(int(1e6),1)
 
 #bmin = (xm - xc,ym - yc, zm - zc)
 #bmax = (xM - xc,yM - yc, zM - zc)
-#xm,ym,zm = bmin
-#xM,yM,zM = bmax
+xm,ym,zm = bmin
+xM,yM,zM = bmax
 
 model.resize_simulation_box(bmin,bmax)
 
 
-#model.add_cube_fcc_3d(dr, bmin,bmax)
+###model.add_cube_fcc_3d(dr13, bmin1, bmax1)
+###model.add_cube_fcc_3d(dr13, bmin3, bmax3)
+###model.add_cube_fcc_3d(dr2, bmin2, bmax2)
 
 sdf = sarracen.read_phantom(ph_file)
 tuple_of_lists = (list(sdf['x']), list(sdf['y']), list(sdf['z']))
@@ -108,22 +118,6 @@ pmass = model.total_mass_to_part_mass(totmass)
 
 #model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
 
-rinj = 0.008909042924642563*2/2
-#rinj = 0.008909042924642563*2*2
-#rinj = 0.01718181
-#u_inj = 1
-#model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
-
-
-
-#print("Current part mass :", pmass)
-
-#for it in range(5):
-#    setup.update_smoothing_length(ctx)
-
-
-
-#print("Current part mass :", pmass)
 model.set_particle_mass(pmass)
 
 

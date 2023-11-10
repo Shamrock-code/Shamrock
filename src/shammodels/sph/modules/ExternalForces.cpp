@@ -25,7 +25,11 @@ template<class Tvec, template<class> class SPHKernel>
 using Module = shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>;
 
 template<class Tvec, template<class> class SPHKernel>
-void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v(Tscal gpart_mass) {
+void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
+
+    StackEntry stack_loc{};
+
+    Tscal gpart_mass = solver_config.gpart_mass;
 
     using namespace shamrock;
     using namespace shamrock::patch;
@@ -40,7 +44,7 @@ void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v(Tscal gpart_mass) {
         field.field_raz();
     });
 
-    sink_update.compute_sph_forces(gpart_mass);
+    sink_update.compute_sph_forces();
 
     using SolverConfigExtForce = typename Config::ExtForceConfig;
     using EF_PointMass         = typename SolverConfigExtForce::PointMass;
@@ -100,7 +104,12 @@ void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v(Tscal gpart_mass) {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Module<Tvec, SPHKernel>::add_ext_forces(Tscal gpart_mass) {
+void Module<Tvec, SPHKernel>::add_ext_forces() {
+
+    StackEntry stack_loc{};
+
+    Tscal gpart_mass = solver_config.gpart_mass;
+
     using namespace shamrock;
     using namespace shamrock::patch;
 
@@ -180,8 +189,11 @@ void Module<Tvec, SPHKernel>::add_ext_forces(Tscal gpart_mass) {
 
 
 template<class Tvec, template<class> class SPHKernel>
-void Module<Tvec, SPHKernel>::point_mass_accrete_particles(Tscal gpart_mass) {
+void Module<Tvec, SPHKernel>::point_mass_accrete_particles() {
+    
     StackEntry stack_loc{};
+
+    Tscal gpart_mass = solver_config.gpart_mass;
 
     using namespace shamrock;
     using namespace shamrock::patch;

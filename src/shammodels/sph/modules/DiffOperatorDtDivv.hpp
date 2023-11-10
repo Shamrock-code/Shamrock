@@ -40,7 +40,7 @@ namespace shammodels::sph::modules {
         DiffOperatorDtDivv(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void update_dtdivv(Tscal gpart_mass);
+        void update_dtdivv();
         
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

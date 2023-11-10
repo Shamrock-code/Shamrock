@@ -40,7 +40,7 @@ namespace shammodels::sph::modules {
         ConservativeCheck(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void check_conservation(Tscal gpart_mass);
+        void check_conservation();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

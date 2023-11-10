@@ -18,6 +18,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/sph/io/PhantomDump.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void add_instance(py::module &m, std::string name_config, std::string name_model) {
@@ -217,7 +218,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         })
         .def("gen_default_config", [](T &self) { return typename T::Solver::Config{}; })
         .def("set_solver_config", &T::set_solver_config)
-        .def("add_sink", &T::add_sink);
+        .def("add_sink", &T::add_sink)
+        .def("gen_config_from_phantom_dump",[](T&self, PhantomDump & dump){
+            return self.gen_config_from_phantom_dump(dump);
+        })
+        .def("init_from_phantom_dump",[](T& self, PhantomDump & dump){
+            self.init_from_phantom_dump(dump);
+        });
     ;
 }
 

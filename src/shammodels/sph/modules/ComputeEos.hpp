@@ -40,7 +40,7 @@ namespace shammodels::sph::modules {
         ComputeEos(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void compute_eos(Tscal gpart_mass);
+        void compute_eos();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

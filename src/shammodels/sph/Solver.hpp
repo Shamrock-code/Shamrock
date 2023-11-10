@@ -59,9 +59,6 @@ namespace shammodels::sph {
         static constexpr Tscal htol_up_tol  = 1.1;
         static constexpr Tscal htol_up_iter = 1.1;
 
-        Tscal gpart_mass;
-        Tscal cfl_cour;
-        Tscal cfl_force;
 
         inline void init_required_fields() {
             context.pdata_layout_add_field<Tvec>("xyz", 1);

@@ -30,6 +30,11 @@ jobs:
           python3 buildbot/configure.py --gen ninja --tests --build coverage \
             --builddir acpp_omp_debug --cxxpath /home/docker/compilers/AdaptiveCpp_clang${{matrix.clang}} --compiler acpp --profile omp
 
+      - name: Pull reference files
+        run: |
+          cd acpp_omp_debug
+          git clone https://github.com/Shamrock-code/reference-files.git
+
       - name: compile Shamrock
         run: |
           cd acpp_omp_debug

@@ -14,13 +14,18 @@
  */
 
 #include "shammodels/sph/modules/DiffOperator.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv(Tscal gpart_mass) {
+void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
+    StackEntry stack_loc{};
+
+    Tscal gpart_mass = solver_config.gpart_mass;
+    
     using namespace shamrock;
     using namespace shamrock::patch;
 
@@ -121,7 +126,11 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv(Tscal
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv(Tscal gpart_mass) {
+void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
+
+    StackEntry stack_loc{};
+
+    Tscal gpart_mass = solver_config.gpart_mass;
 
     using namespace shamrock;
     using namespace shamrock::patch;

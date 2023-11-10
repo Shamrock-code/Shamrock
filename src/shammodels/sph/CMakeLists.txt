@@ -6,6 +6,8 @@ target_sources(shamrock_lib
         Solver.cpp
         SPHUtilities.cpp
 
+        io/PhantomDump.cpp
+
     PUBLIC
     )
 

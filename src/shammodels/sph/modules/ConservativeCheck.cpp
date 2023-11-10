@@ -20,8 +20,11 @@
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conservation(
-    Tscal gpart_mass) {
+void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conservation() {
+
+    StackEntry stack_loc{};
+
+    Tscal gpart_mass = solver_config.gpart_mass;
 
     using namespace shamrock;
     using namespace shamrock::patch;

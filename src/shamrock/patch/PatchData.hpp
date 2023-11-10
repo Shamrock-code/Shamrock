@@ -24,6 +24,7 @@
 #include "shambase/sycl_utils.hpp"
 #include "shammath/intervals.hpp"
 #include <variant>
+#include <vector>
 
 namespace shamrock::patch {
     /**
@@ -371,6 +372,25 @@ namespace shamrock::patch {
                 });
             }
             return ret;
+        }
+
+
+
+
+        /**
+         * @brief 
+         * \todo should add a check in patch data to check that
+         * size in ovveride match with the one in the input vec
+         * @tparam T 
+         * @param field_name 
+         * @param vec 
+         */
+        template<class T>
+        void override_patch_field(std::string field_name, std::vector<T> & vec){
+            u32 len                 = vec.size();
+            PatchDataField<T> &f = get_field<T>(pdl.get_field_idx<T>(field_name));
+            sycl::buffer<T> buf(vec.data(), len);
+            f.override(buf, len);
         }
     };
 

@@ -11,25 +11,28 @@
 /**
  * @file SolverConfig.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "shambackends/math.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
-#include <shamunits/UnitSystem.hpp>
-#include <shamunits/Constants.hpp>
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <shamunits/Constants.hpp>
+#include <shamunits/UnitSystem.hpp>
 #include <variant>
 
+#include "AVConfig.hpp"
 #include "shambackends/typeAliasVec.hpp"
+#include "shammodels/EOSConfig.hpp"
 
 namespace shammodels::sph {
     template<class Tvec, template<class> class SPHKernel>
     struct SolverConfig;
-}
+
+} // namespace shammodels::sph
 
 template<class Tvec, template<class> class SPHKernel>
 struct shammodels::sph::SolverConfig {
@@ -43,281 +46,102 @@ struct shammodels::sph::SolverConfig {
 
     std::optional<shamunits::UnitSystem<Tscal>> unit_sys = {};
 
-    struct AVConfig {
+    Tscal gpart_mass;
+    Tscal cfl_cour;
+    Tscal cfl_force;
 
-        /**
-         * @brief cf Price 2018 , q^a_ab = 0
-         */
-        struct None {};
+    using AVConfig = AVConfig<Tvec>;
 
-        struct Constant {
-            Tscal alpha_u  = 1.0;
-            Tscal alpha_AV = 1.0;
-            Tscal beta_AV  = 2.0;
-        };
-
-        /**
-         * @brief Morris & Monaghan 1997
-         *
-         */
-        struct VaryingMM97 {
-            Tscal alpha_min   = 0.1;
-            Tscal alpha_max   = 1.0;
-            Tscal sigma_decay = 0.1;
-            Tscal alpha_u     = 1.0;
-            Tscal beta_AV     = 2.0;
-        };
-
-        /**
-         * @brief Cullen & Dehnen 2010
-         *
-         */
-        struct VaryingCD10 {
-            Tscal alpha_min   = 0.1;
-            Tscal alpha_max   = 1.0;
-            Tscal sigma_decay = 0.1;
-            Tscal alpha_u     = 1.0;
-            Tscal beta_AV     = 2.0;
-        };
-
-        using Variant  = std::variant<None, Constant, VaryingMM97, VaryingCD10>;
-        Variant config = Constant{};
-
-        void set(Variant v) { config = v; }
-
-        inline bool has_alphaAV_field() {
-            bool is_varying_alpha =
-                bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
-            return is_varying_alpha;
-        }
-
-        inline bool has_divv_field() {
-            bool is_varying_alpha =
-                bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
-            return is_varying_alpha;
-        }
-        inline bool has_curlv_field() {
-            bool is_varying_alpha =
-                bool(std::get_if<VaryingCD10>(&config));
-            return is_varying_alpha;
-        }
-        inline bool has_dtdivv_field() {
-            bool is_varying_alpha =
-                bool(std::get_if<VaryingCD10>(&config));
-            return is_varying_alpha;
-        }
-
-        inline bool has_field_soundspeed() {
-
-            // this should not be needed idealy, but we need the pressure on the ghosts and 
-            // we don't want to communicate it as it can be recomputed from the other fields
-            // hence we copy the soundspeed at the end of the step to a field in the patchdata
-            // cf eos module there is another soundspeed field available as a Compute field
-            // unifying the patchdata and the ghosts is really needed ...
-
-            bool is_varying_alpha =
-                bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
-            return is_varying_alpha;
-        }
-
-        inline void print_status() {
-            logger::raw_ln("--- artificial viscosity config");
-
-            if (None *v = std::get_if<None>(&config)) {
-                logger::raw_ln("  Config Type : None (No artificial viscosity)");
-            } else if (Constant *v = std::get_if<Constant>(&config)) {
-                logger::raw_ln("  Config Type : Constant (Constant artificial viscosity)");
-                logger::raw_ln("  alpha_u  =", v->alpha_u);
-                logger::raw_ln("  alpha_AV =", v->alpha_AV);
-                logger::raw_ln("  beta_AV  =", v->beta_AV);
-            } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&config)) {
-                logger::raw_ln("  Config Type : VaryingMM97 (Morris & Monaghan 1997)");
-                logger::raw_ln("  alpha_min   =", v->alpha_min);
-                logger::raw_ln("  alpha_max   =", v->alpha_max);
-                logger::raw_ln("  sigma_decay =", v->sigma_decay);
-                logger::raw_ln("  alpha_u     =", v->alpha_u);
-                logger::raw_ln("  beta_AV     =", v->beta_AV);
-            } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&config)) {
-                logger::raw_ln("  Config Type : VaryingCD10 (Cullen & Dehnen 2010)");
-                logger::raw_ln("  alpha_min   =", v->alpha_min);
-                logger::raw_ln("  alpha_max   =", v->alpha_max);
-                logger::raw_ln("  sigma_decay =", v->sigma_decay);
-                logger::raw_ln("  alpha_u     =", v->alpha_u);
-                logger::raw_ln("  beta_AV     =", v->beta_AV);
-            }
-
-            logger::raw_ln("--- artificial viscosity config (deduced)");
-
-            logger::raw_ln("-------------");
-        }
-    };
-
-
-    struct BCConfig{
-        struct Free{
+    struct BCConfig {
+        struct Free {
             Tscal expand_tolerance = 1.2;
         };
-        struct Periodic{
-
-        };
-        struct ShearingPeriodic{
-            i32_3 shear_base; 
-            i32_3 shear_dir; 
+        struct Periodic {};
+        struct ShearingPeriodic {
+            i32_3 shear_base;
+            i32_3 shear_dir;
             Tscal shear_speed;
         };
 
-        using Variant = std::variant<Free,Periodic,ShearingPeriodic>;
+        using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
 
         Variant config = Free{};
 
-        inline void set_free(){
-            config = Free{};
+        inline void set_free() { config = Free{}; }
+
+        inline void set_periodic() { config = Periodic{}; }
+
+        inline void set_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
+            config = ShearingPeriodic{shear_base, shear_dir, speed};
         }
-
-        inline void set_periodic(){
-            config = Periodic{};
-        }
-
-        inline void set_shearing_periodic(
-            i32_3 shear_base,
-            i32_3 shear_dir, Tscal speed){
-            config = ShearingPeriodic{
-                shear_base,shear_dir,speed
-            };
-        }
-    };  
-
-
-
-
-
-
-
-    struct EOSConfig{
-        struct Adiabatic{
-            Tscal gamma = 5./3.;
-        };
-
-        struct LocallyIsothermal{
-
-        };
-
-        using Variant = std::variant<Adiabatic, LocallyIsothermal>;
-
-        Variant config = Adiabatic{};
-
-        inline void set_adiabatic(Tscal gamma){
-            config = Adiabatic{gamma};
-        }
-
-        inline void set_locally_isothermal(){
-            config = LocallyIsothermal{};
-        }
-
     };
 
-    inline bool is_eos_locally_isothermal(){
+    using EOSConfig = shammodels::EOSConfig<Tvec>;
+
+    inline bool is_eos_locally_isothermal() {
         using T = typename EOSConfig::LocallyIsothermal;
-        return bool(
-            std::get_if<T>(&eos_config.config)
-            );
+        return bool(std::get_if<T>(&eos_config.config));
     }
 
-    inline bool ghost_has_soundspeed(){
-        return is_eos_locally_isothermal();
-    }
-
-
+    inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
 
     EOSConfig eos_config;
 
-    inline void set_eos_adiabatic(Tscal gamma){
-       eos_config.set_adiabatic(gamma);
-    }
-    inline void set_eos_locally_isothermal(){
-       eos_config.set_locally_isothermal();
-    }
+    inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
+    inline void set_eos_locally_isothermal() { eos_config.set_locally_isothermal(); }
 
+    struct ExtForceConfig {
 
-
-
-
-    struct ExtForceConfig{
-
-        struct PointMass{
+        struct PointMass {
             Tscal central_mass;
             Tscal Racc;
         };
 
-        struct LenseThirring{
+        struct LenseThirring {
             Tscal central_mass;
             Tscal Racc;
             Tscal a_spin;
             Tvec dir_spin;
         };
 
-        using VariantForce = std::variant<PointMass,LenseThirring>;
+        using VariantForce = std::variant<PointMass, LenseThirring>;
 
         std::vector<VariantForce> ext_forces;
 
-        inline void add_point_mass(
-            Tscal central_mass,
-            Tscal Racc){
-                ext_forces.push_back(PointMass{central_mass, Racc});
+        inline void add_point_mass(Tscal central_mass, Tscal Racc) {
+            ext_forces.push_back(PointMass{central_mass, Racc});
         }
 
-        inline void add_lense_thrirring(
-            Tscal central_mass,
-            Tscal Racc,
-            Tscal a_spin,
-            Tvec dir_spin
-        ){
-            if(sham::abs(sycl::length(dir_spin) - 1) > 1e-8){
-                shambase::throw_with_loc<std::invalid_argument>("the sping direction should be a unit vector");
+        inline void
+        add_lense_thrirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
+            if (sham::abs(sycl::length(dir_spin) - 1) > 1e-8) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "the sping direction should be a unit vector");
             }
-            ext_forces.push_back(LenseThirring{central_mass, Racc,a_spin,dir_spin});
+            ext_forces.push_back(LenseThirring{central_mass, Racc, a_spin, dir_spin});
         }
-
     };
 
-    ExtForceConfig ext_force_config {};
+    ExtForceConfig ext_force_config{};
 
-    inline void add_ext_force_point_mass(
-        Tscal central_mass,
-        Tscal Racc){
-            ext_force_config.add_point_mass(central_mass, Racc);
+    inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
+        ext_force_config.add_point_mass(central_mass, Racc);
     }
 
-    inline void add_ext_force_lense_thrirring(
-        Tscal central_mass,
-        Tscal Racc,
-        Tscal a_spin,
-        Tvec dir_spin
-    ){
-        ext_force_config.add_lense_thrirring( central_mass,  Racc,  a_spin,  dir_spin);
+    inline void
+    add_ext_force_lense_thrirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
+        ext_force_config.add_lense_thrirring(central_mass, Racc, a_spin, dir_spin);
     }
-
-
-
-     
-
 
     BCConfig boundary_config;
 
-    inline void set_boundary_free(){
-       boundary_config.set_free();
-    }
+    inline void set_boundary_free() { boundary_config.set_free(); }
 
-    inline void set_boundary_periodic(){
-        boundary_config.set_periodic();
-    }
+    inline void set_boundary_periodic() { boundary_config.set_periodic(); }
 
-    inline void set_boundary_shearing_periodic(
-            i32_3 shear_base,
-            i32_3 shear_dir, Tscal speed){
-        boundary_config.set_shearing_periodic(shear_base,shear_dir, speed);
+    inline void set_boundary_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
+        boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
     }
-
 
     AVConfig artif_viscosity;
 
@@ -349,39 +173,44 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_dtdivv() { return artif_viscosity.has_dtdivv_field(); }
     inline bool has_field_curlv() { return artif_viscosity.has_curlv_field() && (dim == 3); }
 
-    inline bool has_field_soundspeed() { return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal(); }
+    inline bool has_field_soundspeed() {
+        return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
+    }
 
-    inline void print_status() { 
-        if(shamcomm::world_rank() != 0){return;}
+    inline void print_status() {
+        if (shamcomm::world_rank() != 0) {
+            return;
+        }
         logger::raw_ln("----- SPH Solver configuration -----");
-        
-        artif_viscosity.print_status(); 
-        
-        
+
+        logger::raw_ln("part mass",gpart_mass, "( can be changed using .set_part_mass() )");
+        logger::raw_ln("cfl force",cfl_force);
+        logger::raw_ln("cfl courant",cfl_cour);
+
+        artif_viscosity.print_status();
+        eos_config.print_status();
+
         logger::raw_ln("------------------------------------");
     }
 
+    inline void set_units(shamunits::UnitSystem<Tscal> new_sys) { unit_sys = new_sys; }
 
-    inline void set_units(shamunits::UnitSystem<Tscal> new_sys){
-        unit_sys = new_sys;
-    }
-
-    inline Tscal get_constant_G(){
-        if(!unit_sys){
+    inline Tscal get_constant_G() {
+        if (!unit_sys) {
             logger::warn_ln("sph::Config", "the unit system is not set");
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.G();
-        }else{
+        } else {
             return shamunits::Constants<Tscal>{*unit_sys}.G();
         }
     }
 
-    inline Tscal get_constant_c(){
-        if(!unit_sys){
+    inline Tscal get_constant_c() {
+        if (!unit_sys) {
             logger::warn_ln("sph::Config", "the unit system is not set");
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.c();
-        }else{
+        } else {
             return shamunits::Constants<Tscal>{*unit_sys}.c();
         }
     }

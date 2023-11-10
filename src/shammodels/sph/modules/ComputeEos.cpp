@@ -23,10 +23,13 @@
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos(Tscal gpart_mass) {
+void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
+
 
     NamedStackEntry stack_loc{"compute eos"};
 
+    Tscal gpart_mass = solver_config.gpart_mass;
+    
     using namespace shamrock;
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();

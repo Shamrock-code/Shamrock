@@ -23,9 +23,11 @@ template<class Tvec, template<class> class SPHKernel>
 using SinkUpdate = shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>; 
 
 template<class Tvec, template<class> class SPHKernel>
-void SinkUpdate<Tvec, SPHKernel>::accrete_particles(Tscal gpart_mass){
+void SinkUpdate<Tvec, SPHKernel>::accrete_particles(){
     StackEntry stack_loc{};
-
+    
+    Tscal gpart_mass = solver_config.gpart_mass;
+    
     if(storage.sinks.is_empty()){
         return;
     }
@@ -166,10 +168,12 @@ void SinkUpdate<Tvec, SPHKernel>::corrector_step(Tscal dt){
 
 
 template<class Tvec, template<class> class SPHKernel>
-void SinkUpdate<Tvec, SPHKernel>::compute_sph_forces(Tscal gpart_mass){
+void SinkUpdate<Tvec, SPHKernel>::compute_sph_forces(){
 
     StackEntry stack_loc{};
-
+    
+    Tscal gpart_mass = solver_config.gpart_mass;
+    
     if(storage.sinks.is_empty()){
         return;
     }

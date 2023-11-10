@@ -347,7 +347,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
                     eps_h,
                     range_npart,
                     neigh_cache,
-                    gpart_mass,
+                    solver_config.gpart_mass,
                     htol_up_tol,
                     htol_up_iter);
                 // sph_utils.iterate_smoothing_length_tree(merged_r, hnew, hold, eps_h, range_npart,
@@ -416,7 +416,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
                 ;
 
                 sph_utils.compute_omega(
-                    merged_r, hnew, omega_h, range_npart, neigh_cache, gpart_mass);
+                    merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);
             });
         }
         _epsilon_h.reset();
@@ -809,7 +809,7 @@ void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_eos_fields() {
 
-    modules::ComputeEos<Tvec, Kern>(context, solver_config, storage).compute_eos(gpart_mass);
+    modules::ComputeEos<Tvec, Kern>(context, solver_config, storage).compute_eos();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -859,7 +859,7 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
     }
 
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
-    ext_forces.add_ext_forces(gpart_mass);
+    ext_forces.add_ext_forces();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -922,7 +922,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
         /////////////////////////////////////////////
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            const Tscal pmass    = gpart_mass;
+            const Tscal pmass    = solver_config.gpart_mass;
             const Tscal alpha_u  = constant_av_config->alpha_u;
             const Tscal alpha_AV = constant_av_config->alpha_AV;
             const Tscal beta_AV  = constant_av_config->beta_AV;
@@ -1104,7 +1104,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
         /////////////////////////////////////////////
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            const Tscal pmass   = gpart_mass;
+            const Tscal pmass   = solver_config.gpart_mass;
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
 
@@ -1294,7 +1294,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
         /////////////////////////////////////////////
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            const Tscal pmass   = gpart_mass;
+            const Tscal pmass   = solver_config.gpart_mass;
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
 
@@ -1449,8 +1449,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     
-    sink_update.accrete_particles(gpart_mass);
-    ext_forces.point_mass_accrete_particles(gpart_mass);
+    sink_update.accrete_particles();
+    ext_forces.point_mass_accrete_particles();
 
 
     do_predictor_leapfrog(dt);
@@ -1463,7 +1463,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     sink_update.compute_ext_forces();
 
     
-    ext_forces.compute_ext_forces_indep_v(gpart_mass);
+    ext_forces.compute_ext_forces_indep_v();
 
     gen_serial_patch_tree();
 
@@ -1521,7 +1521,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         update_derivs();
 
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
-        cv_check.check_conservation(gpart_mass);
+        cv_check.check_conservation();
 
         ComputeField<Tscal> vepsilon_v_sq =
             utility.make_compute_field<Tscal>("vmean epsilon_v^2", 1);
@@ -1608,7 +1608,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                 {
                     NamedStackEntry tmppp{"compute vsig"};
                     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        const Tscal pmass    = gpart_mass;
+                        const Tscal pmass    = solver_config.gpart_mass;
                         const Tscal alpha_u  = 1.0;
                         const Tscal alpha_AV = 1.0;
                         const Tscal beta_AV  = 2.0;
@@ -1714,8 +1714,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                     sycl::accessor vsig{vsig_buf, cgh, sycl::read_only};
                     sycl::accessor cfl_dt{cfl_dt_buf, cgh, sycl::write_only, sycl::no_init};
 
-                    Tscal C_cour  = cfl_cour;
-                    Tscal C_force = cfl_force;
+                    Tscal C_cour  = solver_config.cfl_cour;
+                    Tscal C_force = solver_config.cfl_force;
 
                     cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                         Tscal h_a     = hpart[item];
@@ -1743,17 +1743,17 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
             if (solver_config.has_field_divv()) {
                 sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                    .update_divv(gpart_mass);
+                    .update_divv();
             }
 
             if (solver_config.has_field_curlv()) {
                 sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                    .update_curlv(gpart_mass);
+                    .update_curlv();
             }
 
             if (solver_config.has_field_dtdivv()) {
                 sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
-                    .update_dtdivv(gpart_mass);
+                    .update_dtdivv();
             }
 
             // this should not be needed idealy, but we need the pressure on the ghosts and 
@@ -1769,7 +1769,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                     /////////////////////////////////////////////
 
                     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        const Tscal pmass = gpart_mass;
+                        const Tscal pmass = solver_config.gpart_mass;
 
                         sycl::accessor cs_in{
                             storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
@@ -1813,7 +1813,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                     cgh,
                     sycl::write_only,
                     sycl::no_init};
-                const Tscal part_mass = gpart_mass;
+                const Tscal part_mass = solver_config.gpart_mass;
 
                 cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                     u32 gid = (u32)item.get_id();

@@ -27,6 +27,7 @@ cfg.add_ext_force_lense_thrirring(
     0.2,
     (np.sin(3 * np.pi / 18),np.sin(3 * np.pi / 18),0)
 )
+cfg.set_eos_locally_isothermal()
 cfg.print_status()
 cfg.set_units(codeu)
 model.set_solver_config(cfg)
@@ -38,7 +39,7 @@ bmin = (-10,-10,-10)
 bmax = (10,10,10)
 model.resize_simulation_box(bmin,bmax)
 
-cfg.set_eos_adiabatic(1) #to have cs 0
+#cfg.set_eos_adiabatic(1) #to have cs 0
 
 disc_mass = 0.001
 
@@ -49,7 +50,7 @@ pmass = model.add_disc_3d(
     0.2,3,
     disc_mass,
     1.,
-    0.05,
+    0.000001, # H/r = cs = epsilon
     1./4.)
 
 model.set_cfl_cour(0.3)

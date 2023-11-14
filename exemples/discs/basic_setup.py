@@ -46,7 +46,7 @@ disc_mass = 0.001
 pmass = model.add_disc_3d(
     (0,0,0),
     1,
-    100000,
+    1000000,
     0.2,3,
     disc_mass,
     1.,

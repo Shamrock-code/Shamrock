@@ -7,7 +7,7 @@ central_mass = 1e6
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
-codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
+codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au()/10, unit_mass = sicte.sol_mass(), )
 ucte = shamrock.Constants(codeu)
 
 
@@ -19,7 +19,7 @@ model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = 
 cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0,alpha_max = 1,sigma_decay = 0, alpha_u = 0, beta_AV = 0)
 #cfg.set_artif_viscosity_ConstantDisc(alpha_AV = 0.0, alpha_u = 0, beta_AV = 0)
 cfg.add_ext_force_lense_thrirring(
     central_mass,

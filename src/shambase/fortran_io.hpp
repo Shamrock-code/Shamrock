@@ -173,7 +173,9 @@ namespace shambase {
 
         template<class T>
         inline void write_val_array(std::vector<T> &vec, u32 val_count) {
-
+            if(val_count > vec.size()){
+                throw throw_with_loc<std::invalid_argument>("val count is higher than vec size");
+            }
             i32 totlen = sizeof(T) * val_count;
             stream_write(data, totlen);
 
@@ -207,7 +209,7 @@ namespace shambase {
             buffer << in_f.rdbuf();
             in_f.close();
         } else {
-            shambase::throw_unimplemented();
+            shambase::throw_unimplemented("file not found");
         }
 
         return FortranIOFile(std::move(buffer), buffer.tellp());

@@ -74,6 +74,7 @@ struct shammodels::sph::SolverConfig {
         inline void set_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
             config = ShearingPeriodic{shear_base, shear_dir, speed};
         }
+
     };
 
     using EOSConfig = shammodels::EOSConfig<Tvec>;
@@ -161,6 +162,9 @@ struct shammodels::sph::SolverConfig {
     inline void set_artif_viscosity_VaryingCD10(typename AVConfig::VaryingCD10 v) {
         artif_viscosity.set(v);
     }
+    inline void set_artif_viscosity_ConstantDisc(typename AVConfig::ConstantDisc v) {
+        artif_viscosity.set(v);
+    }
 
     inline bool has_field_uint() {
         // no barotropic for now
@@ -182,6 +186,18 @@ struct shammodels::sph::SolverConfig {
             return;
         }
         logger::raw_ln("----- SPH Solver configuration -----");
+
+        logger::raw_ln("units : ");
+        if(unit_sys){
+            logger::raw_ln("unit_length      :" , unit_sys->m_inv  ); 
+            logger::raw_ln("unit_mass        :" , unit_sys->kg_inv ); 
+            logger::raw_ln("unit_current     :" , unit_sys->A_inv  ); 
+            logger::raw_ln("unit_temperature :" , unit_sys->K_inv  );
+            logger::raw_ln("unit_qte         :" , unit_sys->mol_inv); 
+            logger::raw_ln("unit_lumint      :" , unit_sys->cd_inv );
+        }else {
+            logger::raw_ln("not set");
+        }
 
         logger::raw_ln("part mass",gpart_mass, "( can be changed using .set_part_mass() )");
         logger::raw_ln("cfl force",cfl_force);

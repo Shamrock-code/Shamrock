@@ -17,6 +17,7 @@
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shammodels/sph/math/forces.hpp"
 #include <variant>
 
 template<class Tvec, template<class> class SPHKernel>
@@ -29,6 +30,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     using Constant    = typename Cfg_AV::Constant;
     using VaryingMM97 = typename Cfg_AV::VaryingMM97;
     using VaryingCD10 = typename Cfg_AV::VaryingCD10;
+    using ConstantDisc = typename Cfg_AV::ConstantDisc;
     if (None *v = std::get_if<None>(&solver_config.artif_viscosity.config)) {
         logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (No viscosity mode)");
     } else if (Constant *v = std::get_if<Constant>(&solver_config.artif_viscosity.config)) {
@@ -37,6 +39,8 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
         update_artificial_viscosity_mm97(dt, *v);
     } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&solver_config.artif_viscosity.config)) {
         update_artificial_viscosity_cd10(dt, *v);
+    } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&solver_config.artif_viscosity.config)) {
+        logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (constant AV)");
     } else {
         shambase::throw_unimplemented();
     }

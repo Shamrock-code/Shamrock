@@ -16,6 +16,7 @@
 
 #include <stdexcept>
 #include <unordered_map>
+#include <string>
 #include "details/utils.hpp"
 
 #define XMAC_UNITS                                                                                 \

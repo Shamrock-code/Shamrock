@@ -180,6 +180,7 @@ namespace shamrock::patch {
     }
 
     template <class T> inline void SimulationBoxInfo::set_bounding_box(shammath::CoordRange<T> new_box) {
+        new_box.check_throw_ranges();
         if (pdl.check_main_field_type<T>()) {
             bounding_box.value = new_box;
         } else {

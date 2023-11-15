@@ -43,4 +43,8 @@ namespace shambase {
         throw throw_with_loc<std::runtime_error>("unimplemented",loc);
     }
 
+    inline void throw_unimplemented(std::string message,SourceLocation loc = SourceLocation{}) {
+        throw throw_with_loc<std::runtime_error>(message + "\nunimplemented",loc);
+    }
+
 } // namespace shambase

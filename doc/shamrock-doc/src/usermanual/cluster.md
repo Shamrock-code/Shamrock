@@ -58,6 +58,12 @@ python3 buildbot/configure.py --gen make --tests --build release --outdir build 
 ### Compiling dpcpp
 
 ```
+module load hip
+module load openmpi
+
+```
+
+```
 python3 buildbot/configure.py --hip --cmake-opt="-DCMAKE_INSTALL_PREFIX=../../dpcpp_compiler" --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=/opt/rocm" --cmake-gen "Unix Makefiles"
 ```
 
@@ -68,12 +74,32 @@ export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
 
 tar -xvf Shamrock.tar.gz 
 cd Shamrock
-python3 buildbot/configure.py --gen make --tests --build release --outdir dpcpp_rocm --cxxpath ../llvm/build --compiler dpcpp --profile hip-gfx906 --cxxflags="--rocm-path=/opt/rocm"
+python3 buildbot/configure.py --gen make --tests --build release --builddir dpcpp_rocm --cxxpath ../llvm/build --compiler intel_llvm --profile hip-gfx906 --cxxflags="--rocm-path=/opt/rocm"
 cd dpcpp_rocm
 make -j
 ```
 
 Runing the code on 8 gpu per nodes
 ```bash
-mpirun -machinefile $OAR_NODEFILE -npernode 8 -x PATH=~/dpcpp_compiler/bin:$PATH -x LD_LIBRARY_PATH=~/dpcpp_compiler/lib:$LD_LIBRARY_PATH ./shamrock --sycl-cfg auto:HIP --loglevel 1 --sycl-ls-map  --rscript ../exemples/spherical_wave.py
+module load hip
+module load openmpi
+$(which mpirun) -machinefile $OAR_NODEFILE -npernode 8 -x PATH=~/dpcpp_compiler/bin:$PATH -x LD_LIBRARY_PATH=~/dpcpp_compiler/lib:$LD_LIBRARY_PATH ./shamrock --sycl-cfg auto:HIP --loglevel 1 --sycl-ls-map  --benchmark-mpi --rscript ../exemples/spherical_wave.py
+```
+
+
+```bash
+module load hip
+module load openmpi
+$(which mpirun) -machinefile $OAR_NODEFILE -npernode 8 --mca pml ucx -x UCX_TLS=self,sm,rocm -x PATH=~/dpcpp_compiler/bin:$PATH -x LD_LIBRARY_PATH=~/dpcpp_compiler/lib:$LD_LIBRARY_PATH ./shamrock --sycl-cfg auto:HIP --loglevel 1 --sycl-ls-map  --benchmark-mpi --rscript ../exemples/spherical_wave.py
+```
+
+
+
+
+```
+  359  oarsub -t exotic -p neowise -l gpu=1 -I
+  360  oarsub -t exotic -p neowise -l gpu=16,walltime=0:30 -I
+  361  oarsub -t exotic -p neowise -l gpu=16,walltime=0:30 -I
+  362  oarsub -t exotic -p neowise -l gpu=32,walltime=0:30 -I
+  363  oarsub -t exotic -p neowise -l gpu=64,walltime=0:30 -I
 ```

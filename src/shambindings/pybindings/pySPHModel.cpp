@@ -81,6 +81,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("sigma_decay"),
             py::arg("alpha_u"),
             py::arg("beta_AV"))
+        .def(
+            "set_artif_viscosity_ConstantDisc",
+            [](TConfig &self,
+               Tscal alpha_AV,
+               Tscal alpha_u,
+               Tscal beta_AV) {
+                self.set_artif_viscosity_ConstantDisc(
+                    {alpha_AV, alpha_u, beta_AV});
+            },
+            py::kw_only(),
+            py::arg("alpha_AV"),
+            py::arg("alpha_u"),
+            py::arg("beta_AV"))
         .def("set_boundary_free",&TConfig::set_boundary_free)
         .def("set_boundary_periodic",&TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic",&TConfig::set_boundary_shearing_periodic)
@@ -219,11 +232,25 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("gen_default_config", [](T &self) { return typename T::Solver::Config{}; })
         .def("set_solver_config", &T::set_solver_config)
         .def("add_sink", &T::add_sink)
-        .def("gen_config_from_phantom_dump",[](T&self, PhantomDump & dump){
-            return self.gen_config_from_phantom_dump(dump);
-        })
+        .def("gen_config_from_phantom_dump",
+            [](T&self, PhantomDump & dump, bool bypass_error){
+                return self.gen_config_from_phantom_dump(dump,bypass_error);
+            },
+            py::arg("dump"),
+            py::arg("bypass_error") = false, 
+R"==(
+    This function generate a shamrock sph solver config from a phantom dump
+
+    Parameters
+    ----------
+    PhantomDump dump
+    bypass_error = false (default) bypass any error in the config
+)==")
         .def("init_from_phantom_dump",[](T& self, PhantomDump & dump){
             self.init_from_phantom_dump(dump);
+        })
+        .def("make_phantom_dump",[](T & self){
+            return self.make_phantom_dump();
         });
     ;
 }

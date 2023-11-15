@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 outputdir = "/home/ylapeyre/discs/test_lense_thirring/"
-central_mass = 1e6
+central_mass = 1e8
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
-codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au()/10, unit_mass = sicte.sol_mass(), )
+codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
 ucte = shamrock.Constants(codeu)
 
 

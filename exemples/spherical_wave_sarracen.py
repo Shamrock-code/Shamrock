@@ -52,6 +52,7 @@ cfg = model.gen_default_config() #configuration of the solver: unit syst, art vi
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)# cullen dennen 2010
 cfg.set_boundary_periodic() #or free
+cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -108,7 +109,6 @@ tot_u = pmass*model.get_sum("uint","f64")
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
-model.set_eos_gamma(5/3)
 
 
 

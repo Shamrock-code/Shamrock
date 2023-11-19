@@ -135,6 +135,14 @@ Here we tell the configure utility :
 - `--cxxpath ../AdaptiveCpp_comp` tells the path to the used compiler (AdaptiveCpp here)
 - `--compiler acpp` tells the code that OpenSYCL is used.
 
+## Manage python
+You need to create a virtual environment for python.
+```bash
+python3 -m venv Shamrock-venv
+source Shamrock-venv/bin/activate
+```
+## finally: compile the code!
+
 Move into the build directory and compile the code : 
 
 ```bash

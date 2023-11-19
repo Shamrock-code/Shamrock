@@ -23,6 +23,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/sph/io/PhantomDump.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void add_instance(py::module &m, std::string name_config, std::string name_model) {
@@ -39,6 +40,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
+        .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
+        .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "set_artif_viscosity_Constant",
@@ -83,9 +86,26 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("sigma_decay"),
             py::arg("alpha_u"),
             py::arg("beta_AV"))
+        .def(
+            "set_artif_viscosity_ConstantDisc",
+            [](TConfig &self,
+               Tscal alpha_AV,
+               Tscal alpha_u,
+               Tscal beta_AV) {
+                self.set_artif_viscosity_ConstantDisc(
+                    {alpha_AV, alpha_u, beta_AV});
+            },
+            py::kw_only(),
+            py::arg("alpha_AV"),
+            py::arg("alpha_u"),
+            py::arg("beta_AV"))
         .def("set_boundary_free",&TConfig::set_boundary_free)
         .def("set_boundary_periodic",&TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic",&TConfig::set_boundary_shearing_periodic)
+
+        .def("add_ext_force_point_mass",&TConfig::add_ext_force_point_mass)
+        .def("add_ext_force_lense_thrirring",&TConfig::add_ext_force_lense_thrirring)
+
         .def("set_units", &TConfig::set_units);
 
     py::class_<T>(m, name_model.c_str())
@@ -95,7 +115,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_cfl_cour", &T::set_cfl_cour)
         .def("set_cfl_force", &T::set_cfl_force)
         .def("set_particle_mass", &T::set_particle_mass)
-        .def("set_eos_gamma", &T::set_eos_gamma)
         .def("rho_h", &T::rho_h)
         .def("get_hfact", &T::get_hfact)
         .def("get_box_dim_fcc_3d",
@@ -272,6 +291,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("delta_y"),
             py::arg("nx"),
             py::arg("ny"));
+        .def("add_sink", &T::add_sink)
+        .def("gen_config_from_phantom_dump",
+            [](T&self, PhantomDump & dump, bool bypass_error){
+                return self.gen_config_from_phantom_dump(dump,bypass_error);
+            },
+            py::arg("dump"),
+            py::arg("bypass_error") = false, 
+R"==(
+    This function generate a shamrock sph solver config from a phantom dump
+
+    Parameters
+    ----------
+    PhantomDump dump
+    bypass_error = false (default) bypass any error in the config
+)==")
+        .def("init_from_phantom_dump",[](T& self, PhantomDump & dump){
+            self.init_from_phantom_dump(dump);
+        })
+        .def("make_phantom_dump",[](T & self){
+            return self.make_phantom_dump();
+        });
     ;
 }
 

@@ -41,6 +41,11 @@ jobs:
           python3 buildbot/configure.py --gen ninja --tests --build asan \
             --builddir build --cxxpath /home/docker/compilers/AdaptiveCpp_clang${{matrix.clang}} --compiler acpp --profile omp
   
+      - name: Pull reference files
+        run: |
+          cd build
+          git clone https://github.com/Shamrock-code/reference-files.git
+
       - name: compile Shamrock
         run: |
           cd build

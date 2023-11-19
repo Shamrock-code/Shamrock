@@ -43,17 +43,17 @@ namespace shammodels::sph::modules {
         /**
          * @brief is ran once per timestep, it computes the forces that are independant of velocity
          *
-         * @param gpart_mass
          */
-        void compute_ext_forces_indep_v(Tscal gpart_mass);
+        void compute_ext_forces_indep_v();
 
         /**
          * @brief add external forces to the particle acceleration, note that forces dependant on
          * velocity shlould be added here
          *
-         * @param gpart_mass
          */
-        void add_ext_forces(Tscal gpart_mass);
+        void add_ext_forces();
+
+        void point_mass_accrete_particles();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

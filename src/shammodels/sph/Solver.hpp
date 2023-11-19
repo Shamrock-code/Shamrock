@@ -59,10 +59,6 @@ namespace shammodels::sph {
         static constexpr Tscal htol_up_tol  = 1.1;
         static constexpr Tscal htol_up_iter = 1.1;
 
-        Tscal eos_gamma;
-        Tscal gpart_mass;
-        Tscal cfl_cour;
-        Tscal cfl_force;
 
         inline void init_required_fields() {
             context.pdata_layout_add_field<Tvec>("xyz", 1);
@@ -93,6 +89,10 @@ namespace shammodels::sph {
             }
 
             if(solver_config.has_field_soundspeed()){
+
+                // this should not be needed idealy, but we need the pressure on the ghosts and 
+                // we don't want to communicate it as it can be recomputed from the other fields
+                // hence we copy the soundspeed at the end of the step to a field in the patchdata
                 context.pdata_layout_add_field<Tscal>("soundspeed", 1);
             }
         }
@@ -175,6 +175,7 @@ namespace shammodels::sph {
         void update_derivs_mm97();
         void update_derivs_cd10();
         void update_derivs_constantAV();
+        void update_derivs_disc_visco();
         /**
          * @brief 
          * 

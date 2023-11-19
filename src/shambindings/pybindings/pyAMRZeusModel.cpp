@@ -18,6 +18,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/amr/zeus/Model.hpp"
 #include <pybind11/functional.h>
+
 namespace shammodels::zeus{
     template<class Tvec, class TgridVec>
     void add_instance(py::module &m, std::string name_config, std::string name_model) {

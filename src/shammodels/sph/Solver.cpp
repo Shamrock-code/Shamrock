@@ -27,6 +27,7 @@
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
+#include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
@@ -302,7 +303,8 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
     ComputeField<Tscal> _epsilon_h, _h_old;
 
     u32 hstep_cnt = 0;
-    for (; hstep_cnt < 100; hstep_cnt++) {
+    u32 hstep_max = 100;
+    for (; hstep_cnt < hstep_max; hstep_cnt++) {
 
         gen_ghost_handler(time_val);
         build_ghost_cache();
@@ -346,13 +348,16 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
                     eps_h,
                     range_npart,
                     neigh_cache,
-                    gpart_mass,
+                    solver_config.gpart_mass,
                     htol_up_tol,
                     htol_up_iter);
                 // sph_utils.iterate_smoothing_length_tree(merged_r, hnew, hold, eps_h, range_npart,
                 // tree, gpart_mass, htol_up_tol, htol_up_iter);
             });
             max_eps_h = _epsilon_h.compute_rank_max();
+            
+            logger::debug_ln("Smoothinglength","iteration :",iter_h, "epsmax",max_eps_h);
+
             if (max_eps_h < 1e-6) {
                 logger::debug_sycl("Smoothinglength", "converged at i =", iter_h);
                 break;
@@ -415,7 +420,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
                 ;
 
                 sph_utils.compute_omega(
-                    merged_r, hnew, omega_h, range_npart, neigh_cache, gpart_mass);
+                    merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);
             });
         }
         _epsilon_h.reset();
@@ -423,7 +428,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
         break;
     }
 
-    if (hstep_cnt == 100) {
+    if (hstep_cnt == hstep_max) {
         logger::err_ln("SPH", "the h iterator is not converged after", hstep_cnt, "iterations");
     }
 }
@@ -439,6 +444,10 @@ void SPHSolve<Tvec, Kern>::init_ghost_layout() {
     ghost_layout.add_field<Tscal>("uint", 1);
     ghost_layout.add_field<Tvec>("vxyz", 1);
     ghost_layout.add_field<Tscal>("omega", 1);
+
+    if(solver_config.ghost_has_soundspeed()){
+        ghost_layout.add_field<Tscal>("soundspeed", 1);
+    }
 
     if (solver_config.has_field_alphaAV()) {
         ghost_layout.add_field<Tscal>("alpha_AV", 1);
@@ -647,6 +656,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     using namespace shamrock::patch;
 
     bool has_alphaAV_field = solver_config.has_field_alphaAV();
+    bool has_soundspeed_field = solver_config.ghost_has_soundspeed();
 
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
@@ -657,6 +667,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
 
     const u32 ialpha_AV = (has_alphaAV_field) ? pdl.get_field_idx<Tscal>("alpha_AV") : 0;
+    const u32 isoundspeed = (has_soundspeed_field) ? pdl.get_field_idx<Tscal>("soundspeed") : 0;
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
@@ -666,6 +677,9 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 ialpha_AV_interf =
         (has_alphaAV_field) ? ghost_layout.get_field_idx<Tscal>("alpha_AV") : 0;
+
+    const u32 isoundspeed_interf =
+        (has_soundspeed_field) ? ghost_layout.get_field_idx<Tscal>("soundspeed") : 0;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -706,6 +720,11 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_alphaAV_field) {
                 sender_patch.get_field<Tscal>(ialpha_AV).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tscal>(ialpha_AV_interf));
+            }
+
+            if (has_soundspeed_field) {
+                sender_patch.get_field<Tscal>(isoundspeed).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(isoundspeed_interf));
             }
         });
 
@@ -753,6 +772,11 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
                         .insert(pdat.get_field<Tscal>(ialpha_AV));
                 }
 
+                if (has_soundspeed_field) {
+                    pdat_new.get_field<Tscal>(isoundspeed_interf)
+                        .insert(pdat.get_field<Tscal>(isoundspeed));
+                }
+
                 pdat_new.check_field_obj_cnt_match();
 
                 return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
@@ -789,43 +813,13 @@ void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::compute_eos_fields() {
 
-    NamedStackEntry stack_loc{"compute eos"};
-
-    using namespace shamrock;
-
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-
-    shamrock::SchedulerUtility utility(scheduler());
-
-    storage.pressure.set(utility.make_compute_field<Tscal>("pressure", 1, [&](u64 id) {
-        return storage.merged_patchdata_ghost.get().get(id).total_elements;
-    }));
-
-    storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor P{
-                storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor U{
-                mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf), cgh, sycl::read_only};
-            sycl::accessor h{
-                mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
-
-            Tscal pmass = gpart_mass;
-            Tscal gamma = this->eos_gamma;
-
-            cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
-                using namespace shamrock::sph;
-                P[item] = (gamma - 1) * rho_h(pmass, h[item], Kernel::hfactd) * U[item];
-            });
-        });
-    });
+    modules::ComputeEos<Tvec, Kern>(context, solver_config, storage).compute_eos();
 }
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::reset_eos_fields() {
     storage.pressure.reset();
+    storage.soundspeed.reset();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -853,6 +847,7 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
     using Constant    = typename Cfg_AV::Constant;
     using VaryingMM97 = typename Cfg_AV::VaryingMM97;
     using VaryingCD10 = typename Cfg_AV::VaryingCD10;
+    using ConstantDisc = typename Cfg_AV::ConstantDisc;
 
     Cfg_AV cfg_av = solver_config.artif_viscosity;
 
@@ -864,12 +859,14 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
         update_derivs_mm97();
     } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&cfg_av.config)) {
         update_derivs_cd10();
+    }else if (ConstantDisc *v = std::get_if<ConstantDisc>(&cfg_av.config)) {
+        update_derivs_disc_visco();
     } else {
         shambase::throw_unimplemented();
     }
 
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
-    ext_forces.add_ext_forces(gpart_mass);
+    ext_forces.add_ext_forces();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -932,8 +929,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
         /////////////////////////////////////////////
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            const Tscal pmass    = gpart_mass;
-            const Tscal gamma    = this->eos_gamma;
+            const Tscal pmass    = solver_config.gpart_mass;
             const Tscal alpha_u  = constant_av_config->alpha_u;
             const Tscal alpha_AV = constant_av_config->alpha_AV;
             const Tscal beta_AV  = constant_av_config->beta_AV;
@@ -957,6 +953,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
             sycl::accessor omega{buf_omega, cgh, sycl::read_only};
             sycl::accessor u{buf_uint, cgh, sycl::read_only};
             sycl::accessor pressure{buf_pressure, cgh, sycl::read_only};
+            sycl::accessor cs{
+                storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
 
             // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
@@ -987,7 +985,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
 
                 Tscal omega_a_rho_a_inv = 1 / (omega_a * rho_a);
 
-                Tscal cs_a = sycl::sqrt(gamma * P_a / rho_a);
+                Tscal cs_a = cs[id_a];
 
                 Tvec force_pressure{0, 0, 0};
                 Tscal tmpdU_pressure = 0;
@@ -1017,7 +1015,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
                     Tscal P_b   = pressure[id_b];
                     // f32 P_b     = cs * cs * rho_b;
                     Tscal omega_b       = omega[id_b];
-                    Tscal cs_b          = sycl::sqrt(gamma * P_b / rho_b);
+                    Tscal cs_b          = cs[id_b];
 
                     /////////////////
                     // internal energy update
@@ -1040,8 +1038,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_constantAV() {
                         P_a, P_b,
                         cs_a, cs_b,
                         alpha_a, alpha_b,
-                        beta_AV,
-                        alpha_u,
+                        h_a, h_b,
+                        beta_AV, alpha_u,
 
                         force_pressure,
                         tmpdU_pressure);
@@ -1113,8 +1111,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
         /////////////////////////////////////////////
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            const Tscal pmass   = gpart_mass;
-            const Tscal gamma   = this->eos_gamma;
+            const Tscal pmass   = solver_config.gpart_mass;
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
 
@@ -1137,6 +1134,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
             sycl::accessor u{buf_uint, cgh, sycl::read_only};
             sycl::accessor pressure{buf_pressure, cgh, sycl::read_only};
             sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_only};
+            sycl::accessor cs{
+                storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
 
             // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
@@ -1167,7 +1166,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
 
                 Tscal omega_a_rho_a_inv = 1 / (omega_a * rho_a);
 
-                Tscal cs_a = sycl::sqrt(gamma * P_a / rho_a);
+                Tscal cs_a = cs[id_a];
 
                 const Tscal alpha_a = alpha_AV[id_a];
 
@@ -1199,7 +1198,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
                     Tscal P_b   = pressure[id_b];
                     // f32 P_b     = cs * cs * rho_b;
                     Tscal omega_b       = omega[id_b];
-                    Tscal cs_b          = sycl::sqrt(gamma * P_b / rho_b);
+                    Tscal cs_b          = cs[id_b];
 
                     /////////////////
                     // internal energy update
@@ -1221,8 +1220,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_mm97() {
                         P_a, P_b,
                         cs_a, cs_b,
                         alpha_a, alpha_b,
-                        beta_AV,
-                        alpha_u,
+                       h_a, h_b,
+                        beta_AV, alpha_u,
 
                         force_pressure,
                         tmpdU_pressure);
@@ -1302,8 +1301,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
         /////////////////////////////////////////////
 
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            const Tscal pmass   = gpart_mass;
-            const Tscal gamma   = this->eos_gamma;
+            const Tscal pmass   = solver_config.gpart_mass;
             const Tscal alpha_u = constant_av_config->alpha_u;
             const Tscal beta_AV = constant_av_config->beta_AV;
 
@@ -1326,6 +1324,8 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
             sycl::accessor u{buf_uint, cgh, sycl::read_only};
             sycl::accessor pressure{buf_pressure, cgh, sycl::read_only};
             sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_only};
+            sycl::accessor cs{
+                storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
 
             // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
@@ -1345,6 +1345,7 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
                 Tvec xyz_a          = xyz[id_a];
                 Tvec vxyz_a         = vxyz[id_a];
                 Tscal P_a           = pressure[id_a];
+                Tscal cs_a = cs[id_a];
                 Tscal omega_a       = omega[id_a];
                 const Tscal u_a     = u[id_a];
                 const Tscal alpha_a = alpha_AV[id_a];
@@ -1357,7 +1358,6 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
 
                 Tscal omega_a_rho_a_inv = 1 / (omega_a * rho_a);
 
-                Tscal cs_a = sycl::sqrt(gamma * P_a / rho_a);
 
                 Tvec force_pressure{0, 0, 0};
                 Tscal tmpdU_pressure = 0;
@@ -1377,11 +1377,11 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
                     Tscal P_b           = pressure[id_b];
                     Tscal omega_b       = omega[id_b];
                     const Tscal alpha_b = alpha_AV[id_b];
+                    Tscal cs_b  = cs[id_b];
 
                     Tscal rab = sycl::sqrt(rab2);
 
                     Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
-                    Tscal cs_b  = sycl::sqrt(gamma * P_b / rho_b);
 
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
@@ -1398,8 +1398,177 @@ void SPHSolve<Tvec, Kern>::update_derivs_cd10() {
                         P_a, P_b,
                         cs_a, cs_b,
                         alpha_a, alpha_b,
-                        beta_AV,
-                        alpha_u,
+                        h_a, h_b,
+
+                        beta_AV, alpha_u,
+
+                        force_pressure,
+                        tmpdU_pressure);
+                    // clang-format on
+                });
+
+                axyz[id_a] = force_pressure;
+                du[id_a]   = tmpdU_pressure;
+            });
+        });
+    });
+}
+template<class Tvec, template<class> class Kern>
+void SPHSolve<Tvec, Kern>::update_derivs_disc_visco() {
+
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    PatchDataLayout &pdl = scheduler().pdl;
+
+    const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz     = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
+
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+
+    auto &merged_xyzh                                 = storage.merged_xyzh.get();
+    shambase::DistributedData<RTree> &trees           = storage.merged_pos_trees.get();
+    ComputeField<Tscal> &omega                        = storage.omega.get();
+    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
+
+    using CstAVdisc               = typename Config::AVConfig::ConstantDisc;
+    CstAVdisc *constant_av_config = std::get_if<CstAVdisc>(&solver_config.artif_viscosity.config);
+
+    if (!constant_av_config) {
+        throw shambase::throw_with_loc<std::invalid_argument>(
+            "cannot execute the constant viscosity kernel without constant AV config");
+    }
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+        PatchData &mpdat              = merged_patch.pdat;
+        sycl::buffer<Tvec> &buf_xyz =
+            shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+        sycl::buffer<Tvec> &buf_axyz      = pdat.get_field_buf_ref<Tvec>(iaxyz);
+        sycl::buffer<Tscal> &buf_duint    = pdat.get_field_buf_ref<Tscal>(iduint);
+        sycl::buffer<Tvec> &buf_vxyz      = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+        sycl::buffer<Tscal> &buf_hpart    = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sycl::buffer<Tscal> &buf_omega    = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+        sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+        sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
+
+        sycl::range range_npart{pdat.get_obj_cnt()};
+
+        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+
+        /////////////////////////////////////////////
+
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            const Tscal pmass   = solver_config.gpart_mass;
+            const Tscal alpha_AV = constant_av_config->alpha_AV;
+            const Tscal alpha_u = constant_av_config->alpha_u;
+            const Tscal beta_AV = constant_av_config->beta_AV;
+
+            logger::debug_sycl_ln("deriv kernel", "alpha_AV  :", alpha_AV);
+            logger::debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
+            logger::debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
+
+            // tree::ObjectIterator particle_looper(tree,cgh);
+
+            // tree::LeafCacheObjectIterator
+            // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+
+            tree::ObjectCacheIterator particle_looper(pcache, cgh);
+
+            sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
+            sycl::accessor axyz{buf_axyz, cgh, sycl::write_only};
+            sycl::accessor du{buf_duint, cgh, sycl::write_only};
+            sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
+            sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
+            sycl::accessor omega{buf_omega, cgh, sycl::read_only};
+            sycl::accessor u{buf_uint, cgh, sycl::read_only};
+            sycl::accessor pressure{buf_pressure, cgh, sycl::read_only};
+            sycl::accessor cs{
+                storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
+
+            // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
+
+            // sycl::stream out {4096,1024,cgh};
+
+            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force disc", [=](u64 gid) {
+                u32 id_a = (u32)gid;
+
+                using namespace shamrock::sph;
+
+                Tvec sum_axyz  = {0, 0, 0};
+                Tscal sum_du_a = 0;
+
+                Tscal h_a           = hpart[id_a];
+                Tvec xyz_a          = xyz[id_a];
+                Tvec vxyz_a         = vxyz[id_a];
+                Tscal P_a           = pressure[id_a];
+                Tscal cs_a = cs[id_a];
+                Tscal omega_a       = omega[id_a];
+                const Tscal u_a     = u[id_a];
+
+                Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
+                Tscal rho_a_sq  = rho_a * rho_a;
+                Tscal rho_a_inv = 1. / rho_a;
+
+                // f32 P_a     = cs * cs * rho_a;
+
+                Tscal omega_a_rho_a_inv = 1 / (omega_a * rho_a);
+
+
+                Tvec force_pressure{0, 0, 0};
+                Tscal tmpdU_pressure = 0;
+
+                particle_looper.for_each_object( id_a, [&](u32 id_b) {
+                    // compute only omega_a
+                    Tvec dr    = xyz_a - xyz[id_b];
+                    Tscal rab2 = sycl::dot(dr, dr);
+                    Tscal h_b  = hpart[id_b];
+
+                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                        return;
+                    }
+
+                    Tvec vxyz_b         = vxyz[id_b];
+                    const Tscal u_b     = u[id_b];
+                    Tscal P_b           = pressure[id_b];
+                    Tscal omega_b       = omega[id_b];
+                    Tscal cs_b  = cs[id_b];
+
+                    Tscal rab = sycl::sqrt(rab2);
+
+                    Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
+                    const Tscal alpha_a = alpha_AV;
+                    const Tscal alpha_b = alpha_AV;
+                    Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+                    Tscal Fab_b = Kernel::dW_3d(rab, h_b);
+
+                    // clang-format off
+                    add_to_derivs_sph_artif_visco_cond<Kernel,Tvec, Tscal, shamrock::sph::Disc>(
+                        pmass,
+                        dr, rab,
+                        rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
+                        omega_a, omega_b,
+                        Fab_a, Fab_b,
+                        vxyz_a, vxyz_b,
+                        u_a, u_b,
+                        P_a, P_b,
+                        cs_a, cs_b,
+                        alpha_a, alpha_b,
+                        h_a, h_b,
+
+                        beta_AV, alpha_u,
 
                         force_pressure,
                         tmpdU_pressure);
@@ -1439,6 +1608,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     shambase::Timer tstep;
     tstep.start();
 
+    scheduler().scheduler_step(true, true);
+
     using namespace shamrock;
     using namespace shamrock::patch;
 
@@ -1454,8 +1625,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     shamrock::SchedulerUtility utility(scheduler());
 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    
+    sink_update.accrete_particles();
+    ext_forces.point_mass_accrete_particles();
 
-    sink_update.accrete_particles(gpart_mass);
 
     do_predictor_leapfrog(dt);
 
@@ -1466,8 +1640,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     sink_update.compute_ext_forces();
 
-    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
-    ext_forces.compute_ext_forces_indep_v(gpart_mass);
+    
+    ext_forces.compute_ext_forces_indep_v();
 
     gen_serial_patch_tree();
 
@@ -1525,7 +1699,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         update_derivs();
 
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
-        cv_check.check_conservation(gpart_mass);
+        cv_check.check_conservation();
 
         ComputeField<Tscal> vepsilon_v_sq =
             utility.make_compute_field<Tscal>("vmean epsilon_v^2", 1);
@@ -1612,8 +1786,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                 {
                     NamedStackEntry tmppp{"compute vsig"};
                     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        const Tscal pmass    = gpart_mass;
-                        const Tscal gamma    = this->eos_gamma;
+                        const Tscal pmass    = solver_config.gpart_mass;
                         const Tscal alpha_u  = 1.0;
                         const Tscal alpha_AV = 1.0;
                         const Tscal beta_AV  = 2.0;
@@ -1625,6 +1798,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                         sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
                         sycl::accessor u{buf_uint, cgh, sycl::read_only};
                         sycl::accessor pressure{buf_pressure, cgh, sycl::read_only};
+
+
+                        sycl::accessor cs{
+                            storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
+
                         sycl::accessor vsig{vsig_buf, cgh, sycl::write_only, sycl::no_init};
 
                         constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
@@ -1648,7 +1826,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
                                 const Tscal u_a = u[id_a];
 
-                                Tscal cs_a = sycl::sqrt(gamma * P_a / rho_a);
+                                Tscal cs_a = cs[id_a];
 
                                 Tscal vsig_max = 0;
 
@@ -1675,7 +1853,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
                                     Tscal rho_b         = rho_h(pmass, h_b, Kernel::hfactd);
                                     Tscal P_b           = pressure[id_b];
-                                    Tscal cs_b          = sycl::sqrt(gamma * P_b / rho_b);
+                                    Tscal cs_b          = cs[id_b];
                                     Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
                                     Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
 
@@ -1714,8 +1892,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                     sycl::accessor vsig{vsig_buf, cgh, sycl::read_only};
                     sycl::accessor cfl_dt{cfl_dt_buf, cgh, sycl::write_only, sycl::no_init};
 
-                    Tscal C_cour  = cfl_cour;
-                    Tscal C_force = cfl_force;
+                    Tscal C_cour  = solver_config.cfl_cour;
+                    Tscal C_force = solver_config.cfl_force;
 
                     cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                         Tscal h_a     = hpart[item];
@@ -1743,24 +1921,25 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
             if (solver_config.has_field_divv()) {
                 sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                    .update_divv(gpart_mass);
+                    .update_divv();
             }
 
             if (solver_config.has_field_curlv()) {
                 sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                    .update_curlv(gpart_mass);
+                    .update_curlv();
             }
 
             if (solver_config.has_field_dtdivv()) {
                 sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
-                    .update_dtdivv(gpart_mass);
+                    .update_dtdivv();
             }
 
+            // this should not be needed idealy, but we need the pressure on the ghosts and 
+            // we don't want to communicate it as it can be recomputed from the other fields
+            // hence we copy the soundspeed at the end of the step to a field in the patchdata
             if (solver_config.has_field_soundspeed()) {
                 const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                    sycl::buffer<Tscal> &buf_hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
-                    sycl::buffer<Tscal> &buf_uint  = pdat.get_field_buf_ref<Tscal>(iuint);
                     sycl::buffer<Tscal> &buf_cs    = pdat.get_field_buf_ref<Tscal>(isoundspeed);
 
                     sycl::range range_npart{pdat.get_obj_cnt()};
@@ -1768,21 +1947,15 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                     /////////////////////////////////////////////
 
                     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        const Tscal pmass = gpart_mass;
+                        const Tscal pmass = solver_config.gpart_mass;
 
-                        sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-                        sycl::accessor u{buf_uint, cgh, sycl::read_only};
+                        sycl::accessor cs_in{
+                            storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
                         sycl::accessor cs{buf_cs, cgh, sycl::write_only, sycl::no_init};
 
-                        Tscal gamma = this->eos_gamma;
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                                using namespace shamrock::sph;
-                                Tscal rho_a = rho_h(pmass, hpart[item], Kernel::hfactd);
-
-                                Tscal P_a  = (gamma - 1) * rho_a * u[item];
-                                Tscal cs_a = sycl::sqrt(gamma * P_a / rho_a);
-                                cs[item]   = cs_a;
+                                cs[item]   = cs_in[item];
                             });
                     });
                 });
@@ -1818,7 +1991,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                     cgh,
                     sycl::write_only,
                     sycl::no_init};
-                const Tscal part_mass = gpart_mass;
+                const Tscal part_mass = solver_config.gpart_mass;
 
                 cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                     u32 gid = (u32)item.get_id();

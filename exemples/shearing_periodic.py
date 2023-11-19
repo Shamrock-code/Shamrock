@@ -22,6 +22,7 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_boundary_shearing_periodic((1,0,0),(0,0,1),10.)
+cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -69,7 +70,6 @@ a = input("continue ?")
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
-model.set_eos_gamma(5/3)
 
 
 

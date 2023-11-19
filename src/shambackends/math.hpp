@@ -31,8 +31,8 @@ namespace sham {
     }
 
     template<class T>
-    inline T abs(T a, T b) {
-        return shambase::sycl_utils::g_sycl_abs(a, b);
+    inline T abs(T a) {
+        return shambase::sycl_utils::g_sycl_abs(a);
     }
 
     template<class T>

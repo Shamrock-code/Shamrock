@@ -1,9 +1,15 @@
 import shamrock
+import matplotlib.pyplot as plt
+import numpy as np
+
+central_mass = 1e6
+
+
 
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
-codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
+codeu = shamrock.UnitSystem(unit_time = 1,unit_length = sicte.au()/10, unit_mass = sicte.sol_mass(), )
 ucte = shamrock.Constants(codeu)
 
 
@@ -17,6 +23,12 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_eos_locally_isothermal()
+cfg.add_ext_force_lense_thrirring(
+    central_mass,
+    0.1,
+    0.2,
+    (1,0,0)
+)
 cfg.print_status()
 cfg.set_units(codeu)
 model.set_solver_config(cfg)
@@ -32,12 +44,12 @@ disc_mass = 0.001
 
 pmass = model.add_disc_3d(
     (0,0,0),
-    1,
+    central_mass,
     100000,
-    0.2,3,
+    0.3,2,
     disc_mass,
     1.,
-    0.05,
+    0.01,
     1./4.)
 
 model.set_cfl_cour(0.3)
@@ -48,11 +60,37 @@ print("Current part mass :", pmass)
 model.set_particle_mass(pmass)
 
 
-model.add_sink(1,(0,0,0),(0,0,0),0.1)
+#model.add_sink(1,(0,0,0),(0,0,0),0.1)
 
 vk_p = (ucte.G() * 1 / 1)**0.5
-model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,vk_p),0.01)
+#model.add_sink(3*ucte.jupiter_mass(),(1,0,0),(0,0,vk_p),0.01)
 #model.add_sink(100,(0,2,0),(0,0,1))
+
+def compute_rho(h):
+    return np.array([ model.rho_h(h[i]) for i in range(len(h))])
+
+
+def plot_vertical_profile(r, rrange, label = ""):
+
+    data = ctx.collect_data()
+
+    rhosel = []
+    ysel = []
+
+    for i in range(len(data["hpart"][:])):
+        rcy = data["xyz"][i,0]**2 + data["xyz"][i,2]**2
+
+        if rcy > r - rrange and rcy < r + rrange:
+            rhosel.append(model.rho_h(data["hpart"][i]))
+            ysel.append(data["xyz"][i,1])
+
+    rhosel = np.array(rhosel)
+    ysel = np.array(ysel)
+
+    rhobar = np.mean(rhosel)
+    
+    plt.scatter(ysel, rhosel/rhobar, s=1, label = label)
+
 
 print("Small timestep")
 model.evolve(0,1e-7, False, "", False)
@@ -62,25 +100,46 @@ print("Plot timestep")
 
 
 
+#plt.xscale('log')
+#plt.yscale('log')
+
+
+
 print("Run")
 
 
 print("Current part mass :", pmass)
 
+#for it in range(5):
+#    setup.update_smoothing_length(ctx)
+
+
+
+
+
+
+
+#for i in range(9):
+#    model.evolve(5e-4, False, False, "", False)
+#plot_vertical_profile(1,0.5, label = "init")
 
 t_sum = 0
-t_target = 1
+t_target = 10000
 current_dt = 1e-7
+
+
+fdump = 10
+
 i = 0
 i_dump = 0
 while t_sum < t_target:
 
     print("step : t=",t_sum)
 
-    do_dump = (i % 50 == 0)  
-    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)
+    do_dump = (i % fdump == 0)  
+    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_"+str(i_dump)+".vtk", do_dump)
 
-    if i % 50 == 0:
+    if i % fdump == 0:
         i_dump += 1
 
     t_sum += current_dt
@@ -90,3 +149,9 @@ while t_sum < t_target:
         current_dt = t_target - t_sum
 
     i+= 1
+
+
+#plot_vertical_profile(1,0.5, label = "end")
+
+plt.legend()
+plt.show()

@@ -9,7 +9,7 @@ central_mass = 1e6
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
-codeu = shamrock.UnitSystem(unit_time = 1,unit_length = sicte.au()/10, unit_mass = sicte.sol_mass(), )
+codeu = shamrock.UnitSystem(unit_time = 1,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
 ucte = shamrock.Constants(codeu)
 
 
@@ -23,11 +23,11 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_eos_locally_isothermal()
-cfg.add_ext_force_lense_thrirring(
-    central_mass,
-    0.1,
-    0.2,
-    (1,0,0)
+cfg.add_ext_force_lense_thirring(
+    central_mass = central_mass,
+    Racc = 0.1,
+    a_spin = 0.9,
+    dir_spin = (3**0.5 / 2,1/2,0)
 )
 cfg.print_status()
 cfg.set_units(codeu)
@@ -45,8 +45,8 @@ disc_mass = 0.001
 pmass = model.add_disc_3d(
     (0,0,0),
     central_mass,
-    100000,
-    0.3,2,
+    200000,
+    0.2,2,
     disc_mass,
     1.,
     0.01,
@@ -124,31 +124,45 @@ print("Current part mass :", pmass)
 #plot_vertical_profile(1,0.5, label = "init")
 
 t_sum = 0
-t_target = 10000
+t_target = 100000
 current_dt = 1e-7
 
-
-fdump = 10
-
-i = 0
 i_dump = 0
+dt_dump = 100
+
+do_dump = False
+next_dt_target = t_sum + dt_dump
 while t_sum < t_target:
 
-    print("step : t=",t_sum)
 
-    do_dump = (i % fdump == 0)  
-    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_"+str(i_dump)+".vtk", do_dump)
+    while t_sum < next_dt_target:
 
-    if i % fdump == 0:
-        i_dump += 1
+        do_dump = (t_sum + current_dt) == next_dt_target
 
-    t_sum += current_dt
-    current_dt = next_dt
+        
 
-    if (t_target - t_sum) < next_dt:
-        current_dt = t_target - t_sum
+        next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)
+        print("--> do dump",do_dump)
+        
+        if do_dump:
+            i_dump += 1
 
-    i+= 1
+        t_sum += current_dt
+        current_dt = next_dt
+
+        if do_dump:
+            break
+
+        if (next_dt_target - t_sum) < next_dt:
+            current_dt = next_dt_target - t_sum
+
+
+
+    next_dt_target += dt_dump
+
+    if (next_dt_target - t_sum) < next_dt:
+        current_dt = next_dt_target - t_sum
+
 
 
 #plot_vertical_profile(1,0.5, label = "end")

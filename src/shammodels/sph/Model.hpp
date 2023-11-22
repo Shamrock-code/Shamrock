@@ -23,6 +23,7 @@
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
+#include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shammodels/sph/math/density.hpp"
@@ -81,7 +82,7 @@ namespace shammodels::sph {
 
         SolverConfig gen_config_from_phantom_dump(PhantomDump & phdump, bool bypass_error);
         void init_from_phantom_dump(PhantomDump & phdump);
-        //PhantomDump make_phantom_dump();
+        PhantomDump make_phantom_dump();
 
         u64 get_total_part_count();
 
@@ -645,6 +646,9 @@ namespace shammodels::sph {
 
         f64
         evolve_once(f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
+    
+        private:
+        void add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat);
     };
 
 } // namespace shammodels

@@ -19,6 +19,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
+#include "shammodels/sph/math/forces.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::sph::modules {
 

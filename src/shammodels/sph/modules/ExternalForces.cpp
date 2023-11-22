@@ -48,7 +48,7 @@ void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
 
     using SolverConfigExtForce = typename Config::ExtForceConfig;
     using EF_PointMass         = typename SolverConfigExtForce::PointMass;
-    using EF_LenseThrirring    = typename SolverConfigExtForce::LenseThirring;
+    using EF_LenseThirring    = typename SolverConfigExtForce::LenseThirring;
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force)) {
 
@@ -75,7 +75,7 @@ void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
                 });
             });
 
-        } else if (EF_LenseThrirring *ext_force = std::get_if<EF_LenseThrirring>(&var_force)) {
+        } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force)) {
 
             Tscal cmass = ext_force->central_mass;
             Tscal G     = solver_config.get_constant_G();
@@ -137,10 +137,10 @@ void Module<Tvec, SPHKernel>::add_ext_forces() {
 
     using SolverConfigExtForce = typename Config::ExtForceConfig;
     using EF_PointMass         = typename SolverConfigExtForce::PointMass;
-    using EF_LenseThrirring    = typename SolverConfigExtForce::LenseThirring;
+    using EF_LenseThirring    = typename SolverConfigExtForce::LenseThirring;
 
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
-        if (EF_LenseThrirring *ext_force = std::get_if<EF_LenseThrirring>(&var_force)) {
+        if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force)) {
 
             Tscal cmass = ext_force->central_mass;
             Tscal G     = solver_config.get_constant_G();
@@ -201,7 +201,7 @@ void Module<Tvec, SPHKernel>::point_mass_accrete_particles() {
 
     using SolverConfigExtForce = typename Config::ExtForceConfig;
     using EF_PointMass         = typename SolverConfigExtForce::PointMass;
-    using EF_LenseThrirring    = typename SolverConfigExtForce::LenseThirring;
+    using EF_LenseThirring    = typename SolverConfigExtForce::LenseThirring;
 
 
     PatchDataLayout &pdl = scheduler().pdl;
@@ -219,7 +219,7 @@ void Module<Tvec, SPHKernel>::point_mass_accrete_particles() {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force)) {
             pos_accretion = {0,0,0};
             Racc = ext_force->Racc;
-        } else if (EF_LenseThrirring *ext_force = std::get_if<EF_LenseThrirring>(&var_force)) {
+        } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force)) {
             pos_accretion = {0,0,0};
             Racc = ext_force->Racc;
         }else{

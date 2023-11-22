@@ -24,6 +24,7 @@ parser.add_argument("--cxxflags", help="additional c++ compilation flags")
 parser.add_argument("--cmakeargs", help="additional cmake configuration flags")
 
 parser.add_argument("--interactive",     action='store_true', help="additional cmake configuration flags")
+parser.add_argument("--fresh",     action='store_true', help="Do a fresh cmake configuration")
 
 args = parser.parse_args()
 
@@ -238,6 +239,9 @@ elif args.gen == "make":
     cmake_cmd += ' -G "Unix Makefiles"'
 else:
     raise "unknown generator"
+
+if args.fresh:
+    cmake_cmd += " --fresh"
 
 
 if args.interactive:

@@ -27,6 +27,7 @@
 #include <array>
 #include <cstdlib>
 #include <fstream>
+#include <functional>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -41,6 +42,11 @@ namespace shammodels::sph {
         std::vector<std::pair<std::string, T>> entries;
 
         static PhantomDumpTableHeader<T> from_file(shambase::FortranIOFile &phfile);
+
+        void add(std::string s, T val){
+            s = shambase::format("{:16s}", s);
+            entries.push_back({s,val});
+        }
 
         void write(shambase::FortranIOFile &phfile);
 
@@ -64,6 +70,10 @@ namespace shammodels::sph {
                 }
             }
         }
+
+        void print_state();
+
+        
     };
 
     template<class T>
@@ -85,6 +95,8 @@ namespace shammodels::sph {
                 }
             }
         }
+
+        void print_state();
     };
 
     struct PhantomDumpBlock {
@@ -93,14 +105,26 @@ namespace shammodels::sph {
         using fort_real = f64;
         using fort_int  = int;
 
-        std::vector<PhantomDumpBlockArray<fort_int>> table_header_fort_int;
-        std::vector<PhantomDumpBlockArray<i8>> table_header_i8;
-        std::vector<PhantomDumpBlockArray<i16>> table_header_i16;
-        std::vector<PhantomDumpBlockArray<i32>> table_header_i32;
-        std::vector<PhantomDumpBlockArray<i64>> table_header_i64;
-        std::vector<PhantomDumpBlockArray<fort_real>> table_header_fort_real;
-        std::vector<PhantomDumpBlockArray<f32>> table_header_f32;
-        std::vector<PhantomDumpBlockArray<f64>> table_header_f64;
+        std::vector<PhantomDumpBlockArray<fort_int>> blocks_fort_int;
+        std::vector<PhantomDumpBlockArray<i8>> blocks_i8;
+        std::vector<PhantomDumpBlockArray<i16>> blocks_i16;
+        std::vector<PhantomDumpBlockArray<i32>> blocks_i32;
+        std::vector<PhantomDumpBlockArray<i64>> blocks_i64;
+        std::vector<PhantomDumpBlockArray<fort_real>> blocks_fort_real;
+        std::vector<PhantomDumpBlockArray<f32>> blocks_f32;
+        std::vector<PhantomDumpBlockArray<f64>> blocks_f64;
+
+        u64 get_ref_fort_int(std::string s);
+        u64 get_ref_i8(std::string s);
+        u64 get_ref_i16(std::string s);
+        u64 get_ref_i32(std::string s);
+        u64 get_ref_i64(std::string s);
+        u64 get_ref_fort_real(std::string s);
+        u64 get_ref_f32(std::string s);
+        u64 get_ref_f64(std::string s);
+
+
+        void print_state();
 
         static PhantomDumpBlock
         from_file(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
@@ -112,28 +136,28 @@ namespace shammodels::sph {
 
             field_name = shambase::format("{:16s}",field_name);
 
-            for(auto & tmp : table_header_fort_int){
+            for(auto & tmp : blocks_fort_int){
                 tmp.fill_vec(field_name, vec);
             }
-            for(auto & tmp : table_header_i8){
+            for(auto & tmp : blocks_i8){
                 tmp.fill_vec(field_name, vec);
             }
-            for(auto & tmp : table_header_i16){
+            for(auto & tmp : blocks_i16){
                 tmp.fill_vec(field_name, vec);
             }
-            for(auto & tmp : table_header_i32){
+            for(auto & tmp : blocks_i32){
                 tmp.fill_vec(field_name, vec);
             }
-            for(auto & tmp : table_header_i64){
+            for(auto & tmp : blocks_i64){
                 tmp.fill_vec(field_name, vec);
             }
-            for(auto & tmp : table_header_fort_real){
+            for(auto & tmp : blocks_fort_real){
                 tmp.fill_vec(field_name, vec);
             }
-            for(auto & tmp : table_header_f32){
+            for(auto & tmp : blocks_f32){
                 tmp.fill_vec(field_name, vec);
             }
-            for(auto & tmp : table_header_f64){
+            for(auto & tmp : blocks_f64){
                 tmp.fill_vec(field_name, vec);
             }
         }
@@ -149,6 +173,13 @@ namespace shammodels::sph {
         fort_int i1, i2, iversion, i3;
         fort_real r1;
         std::string fileid;
+
+        void override_magic_number(){
+            i1 = 60769;
+            i2 = 60878;
+            i3 = 690706;
+            r1 = i2;
+        }
 
         void check_magic_numbers() {
             if (i1 != 60769) {
@@ -285,6 +316,8 @@ namespace shammodels::sph {
 
             return vec;
         }
+
+        void print_state();
 
     };
 

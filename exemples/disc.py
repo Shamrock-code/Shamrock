@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-
+outputdir = "disc_output/"
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
@@ -17,7 +17,8 @@ model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = 
 cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+#cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+cfg.set_artif_viscosity_ConstantDisc(alpha_AV = 1, alpha_u = 1, beta_AV = 2)
 cfg.print_status()
 cfg.set_units(codeu)
 model.set_solver_config(cfg)
@@ -29,14 +30,14 @@ bmin = (-10,-10,-10)
 bmax = (10,10,10)
 model.resize_simulation_box(bmin,bmax)
 
-model.set_eos_gamma(5/3)
+#model.set_eos_gamma(5/3)
 
 disc_mass = 0.001
 
 pmass = model.add_disc_3d(
     (0,0,0),
     1,
-    1000000,
+    100000,
     0.2,3,
     disc_mass,
     1.,
@@ -124,7 +125,7 @@ while t_sum < t_target:
     print("step : t=",t_sum)
 
     do_dump = (i % 50 == 0)  
-    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_"+str(i_dump)+".vtk", do_dump)
+    next_dt = model.evolve(t_sum,current_dt, do_dump, outputdir + "dump_"+str(i_dump)+".vtk", do_dump)
 
     if i % 50 == 0:
         i_dump += 1

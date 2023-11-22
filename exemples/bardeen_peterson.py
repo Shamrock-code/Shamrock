@@ -5,8 +5,6 @@ import numpy as np
 central_mass = 1e6
 
 
-
-
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(unit_time = 1,unit_length = sicte.au()/10, unit_mass = sicte.sol_mass(), )

@@ -185,7 +185,7 @@ StackEntry stack_loc{};
 
                 PatchData & pdat = *pdat_ptr;
 
-                u32 ixyz = pdat.pdl.get_field_idx<vectype>("xyz");
+                u32 ixyz = pdat.get_layout().get_field_idx<vectype>("xyz");
 
                 u32 nobj = pdat.get_obj_cnt();
 

@@ -56,7 +56,7 @@ namespace impl {
 
             sycl::range<1> range{pdat.get_obj_cnt()};
 
-            u32 field_ipos = pdat.pdl.get_field_idx<f32_3>("xyz");
+            u32 field_ipos = pdat.get_layout().get_field_idx<f32_3>("xyz");
 
             PatchDataField<f32_3> & pos_field = pdat.get_field<f32_3>(field_ipos);
 
@@ -117,7 +117,7 @@ namespace impl {
 
             sycl::range<1> range{pdat.get_obj_cnt()};
 
-            u32 field_ipos = pdat.pdl.get_field_idx<f64_3>("xyz");
+            u32 field_ipos = pdat.get_layout().get_field_idx<f64_3>("xyz");
 
             PatchDataField<f64_3> & pos_field = pdat.get_field<f64_3>(field_ipos);
 

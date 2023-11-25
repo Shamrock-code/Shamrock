@@ -37,11 +37,12 @@ namespace shamrock::patch {
         using var_t = FieldVariant<PatchDataField>;
 
         std::vector<var_t> fields;
+        PatchDataLayout pdl;
 
         public:
         using field_variant_t = var_t;
 
-        PatchDataLayout &pdl;
+        
 
         inline PatchData(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
 
@@ -82,7 +83,9 @@ namespace shamrock::patch {
 
         PatchData &operator=(const PatchData &other) = delete;
 
-
+        inline /*const*/ PatchDataLayout & get_layout(){
+            return pdl;
+        }
         
 
         static PatchData mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl);

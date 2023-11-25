@@ -110,7 +110,7 @@ StackEntry stack_loc{};
 
         if(!send_comm_pdat.empty()){
         
-            PatchDataLayout & pdl = send_comm_pdat[0]->pdl;
+            PatchDataLayout pdl = send_comm_pdat[0]->get_layout();
 
             std::vector<PatchDataMpiRequest> rq_lst;
 

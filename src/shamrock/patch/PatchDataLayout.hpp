@@ -63,7 +63,7 @@ namespace shamrock::patch {
          * @return FieldDescriptor<T>
          */
         template<class T>
-        FieldDescriptor<T> get_field(std::string field_name);
+        FieldDescriptor<T> get_field(std::string field_name) const;
 
         /**
          * @brief Get the field description at given index
@@ -73,7 +73,7 @@ namespace shamrock::patch {
          * @return FieldDescriptor<T>
          */
         template<class T>
-        FieldDescriptor<T> get_field(u32 idx);
+        FieldDescriptor<T> get_field(u32 idx) const;
 
         /**
          * @brief Get the field id if matching name & type
@@ -83,7 +83,7 @@ namespace shamrock::patch {
          * @return u32
          */
         template<class T>
-        u32 get_field_idx(std::string field_name);
+        u32 get_field_idx(std::string field_name) const;
 
 
         /**
@@ -95,7 +95,7 @@ namespace shamrock::patch {
          * @return u32
          */
         template<class T>
-        u32 get_field_idx(std::string field_name,u32 nvar);
+        u32 get_field_idx(std::string field_name,u32 nvar) const;
 
         /**
          * @brief check that field of id @idx is of type T
@@ -106,7 +106,7 @@ namespace shamrock::patch {
          * @return false
          */
         template<class T>
-        bool check_field_type(u32 idx);
+        bool check_field_type(u32 idx) const;
 
         /**
          * @brief check that main field (id=0)is of type T
@@ -116,7 +116,7 @@ namespace shamrock::patch {
          * @return false
          */
         template<class T>
-        inline bool check_main_field_type() {
+        inline bool check_main_field_type()  const{
             return check_field_type<T>(0);
         }
 
@@ -132,14 +132,14 @@ namespace shamrock::patch {
          *
          * @return std::string
          */
-        std::string get_description_str();
+        std::string get_description_str() const;
 
         /**
          * @brief Get the list of field names
          *
          * @return std::vector<std::string>
          */
-        std::vector<std::string> get_field_names();
+        std::vector<std::string> get_field_names() const;
 
         /**
          * @brief for each visit of each field
@@ -148,8 +148,8 @@ namespace shamrock::patch {
          * @param func 
          */
         template<class Functor>
-        inline void for_each_field_any(Functor &&func) {
-            for (auto &f : fields) {
+        inline void for_each_field_any(Functor &&func)  const {
+            for ( const auto &f : fields) {
                 f.visit([&](auto &arg) { func(arg); });
             }
         }
@@ -183,9 +183,9 @@ namespace shamrock::patch {
     }
 
     template<class T>
-    inline PatchDataLayout::FieldDescriptor<T> PatchDataLayout::get_field(std::string field_name) {
+    inline PatchDataLayout::FieldDescriptor<T> PatchDataLayout::get_field(std::string field_name) const {
 
-        for (var_t &fvar : fields) {
+        for (const var_t &fvar : fields) {
             if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fvar.value)) {
                 if (pval->name == field_name) {
                     return *pval;
@@ -199,9 +199,9 @@ namespace shamrock::patch {
     }
 
     template<class T>
-    inline PatchDataLayout::FieldDescriptor<T> PatchDataLayout::get_field(u32 idx) {
+    inline PatchDataLayout::FieldDescriptor<T> PatchDataLayout::get_field(u32 idx) const {
 
-        if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[idx].value)) {
+        if (const FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[idx].value)) {
             return *pval;
         }
 
@@ -211,9 +211,9 @@ namespace shamrock::patch {
     }
 
     template<class T>
-    inline u32 PatchDataLayout::get_field_idx(std::string field_name) {
+    inline u32 PatchDataLayout::get_field_idx(std::string field_name) const {
         for (u32 i = 0; i < fields.size(); i++) {
-            if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
+            if (const FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
                 if (pval->name == field_name) {
                     return i;
                 }
@@ -226,9 +226,9 @@ namespace shamrock::patch {
     }
 
     template<class T>
-    inline u32 PatchDataLayout::get_field_idx(std::string field_name,u32 nvar) {
+    inline u32 PatchDataLayout::get_field_idx(std::string field_name,u32 nvar)  const{
         for (u32 i = 0; i < fields.size(); i++) {
-            if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
+            if (const FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
                 if ((pval->name == field_name) && (pval->nvar == nvar)) {
                     return i;
                 }
@@ -241,10 +241,10 @@ namespace shamrock::patch {
     }
 
     template<class T>
-    inline bool PatchDataLayout::check_field_type(u32 idx) {
-        var_t &tmp = fields[idx];
+    inline bool PatchDataLayout::check_field_type(u32 idx) const {
+        const var_t &tmp = fields[idx];
 
-        FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&tmp.value);
+        const FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&tmp.value);
 
         if (pval) {
             return true;

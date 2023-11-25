@@ -23,6 +23,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/sycl_utils.hpp"
 #include "shammath/intervals.hpp"
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -44,7 +45,7 @@ namespace shamrock::patch {
 
         
 
-        inline PatchData(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
+        inline PatchData(PatchDataLayout pdl) : pdl(std::move(pdl)) { init_fields(); }
 
         inline PatchData(const PatchData &other) : pdl(other.pdl) {
 
@@ -83,7 +84,7 @@ namespace shamrock::patch {
 
         PatchData &operator=(const PatchData &other) = delete;
 
-        inline /*const*/ PatchDataLayout & get_layout(){
+        inline const PatchDataLayout & get_layout(){
             return pdl;
         }
         

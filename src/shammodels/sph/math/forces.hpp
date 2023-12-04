@@ -11,6 +11,7 @@
 /**
  * @file forces.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief file containing formulas for sph forces
  */
 

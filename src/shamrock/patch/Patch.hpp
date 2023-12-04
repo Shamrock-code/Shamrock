@@ -15,6 +15,7 @@
  *
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "PatchCoord.hpp"
@@ -29,28 +30,70 @@ namespace shamrock::patch {
      */
     struct Patch {
 
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Constexpr defs
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        /**
+         * \var dim
+         * \brief dimension of the patch (only 3 so far)
+         *
+         * \var splts_count
+         * \brief if a patch splits, this gives the number of childs
+         *
+         * \var err_node_flag
+         * \brief value of `node_owner_id` if the patch is invalid
+         *
+         */
+
         static constexpr u32 dim = 3U;
 
         static_assert(dim <4, "the patch object is implemented only up to dim 3");
 
         static constexpr u32 splts_count = 1U << dim;
 
-        u64 id_patch; // unique key that identify the patch
+        static constexpr u32 err_node_flag = u32_max;
 
-        // load balancing fields
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Members
+        ////////////////////////////////////////////////////////////////////////////////////////////
 
-        u64 pack_node_index; ///< this value mean "to pack with index xxx in the global patch table"
-                             ///< and not "to pack with id_pach == xxx"
-        u64 load_value;      ///< if synchronized contain the load value of the patch
+        /**
+         * \var id_patch
+         * \brief unique key that identify the patch
+         *
+         * \var pack_node_index
+         * \brief this value mean "to pack with index xxx in the global patch table"
+         * and not "to pack with id_pach == xxx"
+         *
+         * \var load_value
+         * \brief if synchronized contain the load value of the patch
+         *
+         * \var coord_min
+         * \brief 
+         *
+         * \var coord_max
+         * \brief 
+         *
+         * \var data_count
+         * \brief number of element in the corresponding patchdata
+         *
+         * \var node_owner_id
+         * \brief node rank owner of this patch
+         */
 
-        // Data
+        u64 id_patch;
+        u64 pack_node_index;
+        u64 load_value;
+
         std::array<u64,dim> coord_min;
         std::array<u64,dim> coord_max;
 
-        //[[deprecated("should be removed at some point to allow variable size pdat")]] 
-        u32 data_count; ///< number of element in the corresponding patchdata
+        u32 node_owner_id;
 
-        u32 node_owner_id; ///< node rank owner of this patch
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // functions
+        ////////////////////////////////////////////////////////////////////////////////////////////
 
         /**
          * @brief check if patch equals
@@ -59,35 +102,22 @@ namespace shamrock::patch {
          * @return true
          * @return false
          */
-        inline bool operator==(const Patch &rhs) {
+        bool operator==(const Patch &rhs);
 
-            bool ret_val = true;
-
-            ret_val = ret_val && (id_patch == rhs.id_patch);
-
-            ret_val = ret_val && (pack_node_index == rhs.pack_node_index);
-            ret_val = ret_val && (load_value == rhs.load_value);
-
-            ret_val = ret_val && (coord_min[0] == rhs.coord_min[0]);
-            ret_val = ret_val && (coord_min[1] == rhs.coord_min[1]);
-            ret_val = ret_val && (coord_min[2] == rhs.coord_min[2]);
-            ret_val = ret_val && (coord_max[0] == rhs.coord_max[0]);
-            ret_val = ret_val && (coord_max[1] == rhs.coord_max[1]);
-            ret_val = ret_val && (coord_max[2] == rhs.coord_max[2]);
-            ret_val = ret_val && (data_count == rhs.data_count);
-
-            ret_val = ret_val && (node_owner_id == rhs.node_owner_id);
-
-            return ret_val;
-        }
-
+        /**
+         * @brief Make the patch in error mode (patch struct that will be flushed on sync) 
+         */
         inline void set_err_mode() {
-            // TODO notify in the documentation that this mean the patch is dead because it will be
-            // flushed out when performing the sync
-            node_owner_id = u32_max;
+            node_owner_id = err_node_flag;
         }
 
-        [[nodiscard]] inline bool is_err_mode() const { return node_owner_id == u32_max; }
+        /**
+         * @brief check if a patch is in error mode
+         * 
+         * @return true this patch is in error mode it should be flushed out
+         * @return false  this patch is not in error mode it is a valid one
+         */
+        [[nodiscard]] inline bool is_err_mode() const { return node_owner_id == err_node_flag; }
 
         [[nodiscard]] std::array<u64, dim> get_split_coord() const;
 
@@ -141,9 +171,35 @@ namespace shamrock::patch {
         }
     };
 
+    
+
     ////////////////////////////////////////////
     // out of line implementation
     ////////////////////////////////////////////
+
+    inline bool Patch::operator==(const Patch &rhs) {
+
+        bool ret_val = true;
+
+        ret_val = ret_val && (id_patch == rhs.id_patch);
+
+        ret_val = ret_val && (pack_node_index == rhs.pack_node_index);
+        ret_val = ret_val && (load_value == rhs.load_value);
+
+        #pragma unroll
+        for(u32 i = 0; i < dim; i++){
+            ret_val = ret_val && (coord_min[i] == rhs.coord_min[i]);
+        }
+
+        #pragma unroll
+        for(u32 i = 0; i < dim; i++){
+            ret_val = ret_val && (coord_max[i] == rhs.coord_max[i]);
+        }
+
+        ret_val = ret_val && (node_owner_id == rhs.node_owner_id);
+
+        return ret_val;
+    }
 
     template <class T>
     inline std::tuple<sycl::vec<T, 3>, sycl::vec<T, 3>>
@@ -174,7 +230,6 @@ namespace shamrock::patch {
 
         // setup internal fields
         p0 = *this; // copy of the current state
-        p0.data_count /= 8;
         p0.load_value /= 8;
 
         p1 = p0;
@@ -232,14 +287,6 @@ namespace shamrock::patch {
         ret.load_value += patches[5].load_value;
         ret.load_value += patches[6].load_value;
         ret.load_value += patches[7].load_value;
-
-        ret.data_count += patches[1].data_count;
-        ret.data_count += patches[2].data_count;
-        ret.data_count += patches[3].data_count;
-        ret.data_count += patches[4].data_count;
-        ret.data_count += patches[5].data_count;
-        ret.data_count += patches[6].data_count;
-        ret.data_count += patches[7].data_count;
 
         return ret;
     }

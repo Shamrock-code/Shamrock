@@ -1,6 +1,6 @@
 [submodule "external/pybind11"]
 	path = external/pybind11
-	url = ../../pybind/pybind11
+	url = https://github.com/Shamrock-code/pybind11.git
 	branch = stable
 [submodule "external/fmt"]
 	path = external/fmt
@@ -10,4 +10,4 @@
 	url = https://github.com/mattreecebentley/plf_nanotimer.git
 [submodule "external/NVTX"]
 	path = external/NVTX
-	url = git@github.com:Shamrock-code/NVTX.git
+	url = https://github.com/Shamrock-code/NVTX.git

@@ -17,7 +17,7 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 #include <pybind11/numpy.h>
-#include <pybind11/stl.h>
+#include "shambindings/pybind11_stl.hpp"
 
 Register_pymod(pyamrgridinit) {
 

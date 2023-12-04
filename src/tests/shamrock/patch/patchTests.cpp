@@ -27,7 +27,6 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:MpiType", patch_mpi_type, 2){
     check_patch.coord_max[0] = 3;
     check_patch.coord_max[1] = 8;
     check_patch.coord_max[2] = 6;
-    check_patch.data_count = 7444444;
     check_patch.node_owner_id = 44444;
 
 
@@ -60,7 +59,6 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:SplitMerge", splitmergepatch, 1){
     check_patch.coord_max[0] = 256;
     check_patch.coord_max[1] = 128;
     check_patch.coord_max[2] = 1024;
-    check_patch.data_count = 8;
     check_patch.node_owner_id = 0;
 
 
@@ -75,15 +73,6 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:SplitMerge", splitmergepatch, 1){
     shamtest::asserts().assert_bool("", splts[5].load_value == 1);
     shamtest::asserts().assert_bool("", splts[6].load_value == 1);
     shamtest::asserts().assert_bool("", splts[7].load_value == 1);
-
-    shamtest::asserts().assert_bool("", splts[0].data_count == 1);
-    shamtest::asserts().assert_bool("", splts[1].data_count == 1);
-    shamtest::asserts().assert_bool("", splts[2].data_count == 1);
-    shamtest::asserts().assert_bool("", splts[3].data_count == 1);
-    shamtest::asserts().assert_bool("", splts[4].data_count == 1);
-    shamtest::asserts().assert_bool("", splts[5].data_count == 1);
-    shamtest::asserts().assert_bool("", splts[6].data_count == 1);
-    shamtest::asserts().assert_bool("", splts[7].data_count == 1);
 
     Patch p = Patch::merge_patch(splts);
 
@@ -105,7 +94,6 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:SplitCoord", splitcoord, 1){
     p0.coord_max[0] = 256;
     p0.coord_max[1] = 128;
     p0.coord_max[2] = 1024;
-    p0.data_count = 8;
     p0.node_owner_id = 0;
 
     u64 min_x = p0.coord_min[0];

@@ -42,6 +42,10 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
     shambase::Timer tstep;
     tstep.start();
 
+    scheduler().update_local_load_value([&](shamrock::patch::Patch p){
+        return scheduler().patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+    });
+
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();
     storage.serial_patch_tree.set(std::move(_sptree));

@@ -9,7 +9,7 @@
 #include "shamalgs/memory.hpp"
 #include "shammath/AABB.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shambase/time.hpp"
 #include "shamrock/tree/TreeStructureWalker.hpp"

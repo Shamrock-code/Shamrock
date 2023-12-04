@@ -266,7 +266,7 @@ namespace logger {
         if (loglevel >= log_##_name) {                                                                                      \
             std::cout << "[" + (color) + module_name + terminal_effects::reset + "] " + (color) + (loginf) +          \
                              terminal_effects::reset + ": ";                                                                \
-            print(var2...);                                                                                                 \
+            logger::print(var2...);                                                                                         \
         }                                                                                                                   \
     }                                                                                                                       \
                                                                                                                             \

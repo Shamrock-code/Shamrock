@@ -5,7 +5,7 @@ HilbertLoadBalance.cpp
 SchedulerPatchData.cpp
 SerialPatchTree.cpp
         
-scheduler_mpi.cpp 
+PatchScheduler.cpp 
 scheduler_patch_list.cpp 
 )
 set(SourcesTest

@@ -18,7 +18,7 @@
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
@@ -39,6 +39,7 @@ namespace shammodels {
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
         SPHSolverImpl(ShamrockCtx &ctx) : context(ctx){};
 
+        [[deprecated]]
         static shamrock::tree::ObjectCache build_neigh_cache(u32 start_offset,
                                                              u32 obj_cnt,
                                                              sycl::buffer<vec> &buf_xyz,
@@ -46,6 +47,7 @@ namespace shammodels {
                                                              RadixTree<u_morton, vec> &tree,
                                                              sycl::buffer<flt> &tree_field_hmax);
 
+        [[deprecated]]
         static shamrock::tree::ObjectCache
         build_hiter_neigh_cache(u32 start_offset,
                                 u32 obj_cnt,
@@ -83,6 +85,27 @@ namespace shammodels {
                 tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
                 tree.convert_bounding_box(shamsys::instance::get_compute_queue());
             });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             return trees;
         }

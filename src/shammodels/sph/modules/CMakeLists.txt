@@ -9,5 +9,7 @@ target_sources(shamrock_lib
         ExternalForces.cpp
         ComputeEos.cpp
         UpdateDerivs.cpp
+        ComputeLoadBalanceValue.cpp
+        NeighbourCache.cpp
     PUBLIC
     )

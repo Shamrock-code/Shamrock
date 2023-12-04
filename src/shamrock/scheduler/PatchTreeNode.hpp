@@ -55,7 +55,6 @@ namespace shamrock::scheduler {
         u64 linked_patchid;
 
         // patch fields
-        u64 data_count = u64_max;
         u64 load_value = u64_max;
 
         std::array<PatchTreeNode, split_count> get_split_nodes();

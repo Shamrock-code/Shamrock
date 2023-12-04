@@ -29,7 +29,7 @@
 //#include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shammodels/sph/legacy/algs/smoothing_length.hpp"
 #include "shamrock/sph/sphpart.hpp"

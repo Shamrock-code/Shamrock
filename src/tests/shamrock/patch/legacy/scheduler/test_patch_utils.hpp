@@ -11,7 +11,7 @@
 #include <vector>
 #include <random>
 
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 
 
 inline void make_global_local_check_vec(std::vector<shamrock::patch::Patch> & global, std::vector<shamrock::patch::Patch> & local){
@@ -38,7 +38,6 @@ inline void make_global_local_check_vec(std::vector<shamrock::patch::Patch> & gl
             element.coord_max[0]         = distu64(eng);
             element.coord_max[1]         = distu64(eng);
             element.coord_max[2]         = distu64(eng);
-            element.data_count    = element.load_value;
             element.node_owner_id = distu32(eng);
 
 

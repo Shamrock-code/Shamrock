@@ -34,13 +34,13 @@ Register_MPIDtypeInit(init_patch_type, "mpi patch type") {
     using namespace shamrock::patch;
 
     patch_3d_MPI_block_lens[0] = 9; // 9 u64
-    patch_3d_MPI_block_lens[1] = 2; // 2 u32
+    patch_3d_MPI_block_lens[1] = 1; // 2 u32
 
     patch_3d_MPI_types_list[0] = MPI_LONG;
     patch_3d_MPI_types_list[1] = MPI_INT;
 
     patch_3d_MPI_offset[0] = offsetof(shamrock::patch::Patch, id_patch);
-    patch_3d_MPI_offset[1] = offsetof(shamrock::patch::Patch, data_count);
+    patch_3d_MPI_offset[1] = offsetof(shamrock::patch::Patch, node_owner_id);
 
     mpi::type_create_struct(
         2, patch_3d_MPI_block_lens, patch_3d_MPI_offset, patch_3d_MPI_types_list, &patch_3d_MPI_type

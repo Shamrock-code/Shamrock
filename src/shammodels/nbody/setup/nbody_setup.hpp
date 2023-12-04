@@ -15,7 +15,7 @@
  * 
  */
  
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"

@@ -65,6 +65,24 @@ namespace BBAA {
             );
     }
 
+    template<class VecType> bool is_coord_in_range_incl_max(VecType part_pos,VecType pos_min_patch,VecType pos_max_patch);
+
+    template<> inline bool is_coord_in_range_incl_max<f32_3>(f32_3 part_pos,f32_3 pos_min_patch,f32_3 pos_max_patch) {
+        return (
+                (pos_min_patch.x() <= part_pos.x()) && (part_pos.x() <= pos_max_patch.x()) &&
+                (pos_min_patch.y() <= part_pos.y()) && (part_pos.y() <= pos_max_patch.y()) &&
+                (pos_min_patch.z() <= part_pos.z()) && (part_pos.z() <= pos_max_patch.z()) 
+            );
+    }
+
+    template<> inline bool is_coord_in_range_incl_max<f64_3>(f64_3 part_pos,f64_3 pos_min_patch,f64_3 pos_max_patch) {
+        return (
+                (pos_min_patch.x() <= part_pos.x()) && (part_pos.x() <= pos_max_patch.x()) &&
+                (pos_min_patch.y() <= part_pos.y()) && (part_pos.y() <= pos_max_patch.y()) &&
+                (pos_min_patch.z() <= part_pos.z()) && (part_pos.z() <= pos_max_patch.z()) 
+            );
+    }
+
 
 
     template<class VecType> bool iscellb_inside_a(VecType pos_min_cella,VecType pos_max_cella,VecType pos_min_cellb,VecType pos_max_cellb);

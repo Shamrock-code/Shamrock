@@ -1,0 +1,122 @@
+site_name: Shamrock
+
+repo_url: https://github.com/tdavidcl/Shamrock
+repo_name: Shamrock
+
+copyright: Copyright(C) 2021-2023 Timothée David--Cléris
+
+
+nav:
+  - 'Mkdocs documentation': 'index.md'
+  - 'Doxygen documentation': 'doxygen.md'
+
+  - 'User Documentation' :
+    - 'QuickStart' : 'usermanual/quickstart.md'
+    - 'Configuration' : 'usermanual/configuration.md'
+    - 'Usage' : 'usermanual/usage.md'
+    - 'Utilities' : 'usermanual/utilities.md'
+    - 'Running on cluster' : 'usermanual/cluster.md'
+    - 'OpenMPI CUDA Aware' : 'usermanual/openmpi_setup.md'
+
+  - 'Develloper Doc' :
+    - 'Codebase Organisation' : 'devdoc/codebase_org.md'
+    - 'Testing' : 'devdoc/testing.md'
+    - 'Conventions' : 'devdoc/coding_conventions.md'
+    - 'Code coverage' : 'devdoc/code_coverage.md'
+    - 'Profiling' : 'devdoc/profiling.md'
+    - 'Types' : 'devdoc/types.md'
+    - 'Communication protocols' : 'devdoc/communication_protocol.md'
+    - 'Coordinate systems' : 'devdoc/coordinates_systems.md'
+    - 'Radix Tree' : 'devdoc/tree_usage.md'
+    - 'Scheduler' : 'devdoc/mpi_scheduler.md'
+    - 'PatchData' : 'devdoc/scheduler/patchdata.md'
+    - 'PatchList' : 'devdoc/scheduler/patchlist.md'
+    - 'PatchTree' : 'devdoc/scheduler/patchtree.md'
+
+  - 'Sycl guide' :
+
+    - 'SYCL tricks' : 'syclguide/sycl_tricks.md'
+
+  - 'C++ guide' :
+
+    - 'Replacing preprocessors' : 'cppguide/replacing_preproc.md'
+    - 'Policy design' : 'cppguide/design_by_policy.md'
+    - 'Low level tricks' : 'cppguide/low_level_tricks.md'
+    - 'Dirty tricks' : 'cppguide/dirty_tricks.md'
+
+
+
+
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+  
+
+  logo: assets/logo.png
+
+  favicon: assets/logo.ico
+
+  palette: 
+
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+        primary: black
+
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+        primary: black
+
+
+
+
+plugins:
+  - git-authors
+  - search
+  - git-revision-date
+
+markdown_extensions:
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+
+  # Python Markdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde

@@ -27,7 +27,7 @@ SchedulerPatchList make_plist(std::mt19937 & eng, u32 max_patch_per_node, u32 nb
 
         Patch p;
         p.id_patch = i + u64(shamcomm::world_rank())*max_patch_per_node;
-        p.data_count = nb_part;
+        p.load_value = nb_part;
         p.node_owner_id = shamcomm::world_rank();
 
         plist.local.push_back(p);
@@ -73,7 +73,7 @@ BenchResult benchmark_comm(std::mt19937 & eng, u32 max_patch_per_node, u32 nb_pa
             });
 
         std::unique_ptr<PatchDataField<T>> data = std::make_unique<PatchDataField<T>>("tmp",1);
-        data->gen_mock_data(p.data_count, eng);
+        data->gen_mock_data(p.load_value, eng);
 
         send_data.push_back(std::move(data));
     }
@@ -104,7 +104,7 @@ BenchResult benchmark_comm(std::mt19937 & eng, u32 max_patch_per_node, u32 nb_pa
 
     u64 nb_obj = 0;
     for(const Patch & p : plist.global){
-        nb_obj += p.data_count;
+        nb_obj += p.load_value;
     }
 
 

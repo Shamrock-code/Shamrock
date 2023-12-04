@@ -9,6 +9,7 @@
 /**
  * @file Solver.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -28,10 +29,12 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
+#include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
+#include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
@@ -43,7 +46,7 @@
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/tree/TreeTraversalCache.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -237,6 +240,7 @@ void SPHSolve<Tvec, Kern>::merge_position_ghost() {
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
 }
 
+
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
 
@@ -244,9 +248,170 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
 
     SPHSolverImpl solver(context);
 
-    constexpr u32 reduc_level = 3;
     auto &merged_xyzh         = storage.merged_xyzh.get();
-    storage.merged_pos_trees.set(solver.make_merge_patch_trees(merged_xyzh, reduc_level));
+
+
+    shambase::DistributedData<RTree> trees =
+        merged_xyzh.template map<RTree>([&](u64 id, PreStepMergedField &merged) {
+            Tvec bmin = merged.bounds.lower;
+            Tvec bmax = merged.bounds.upper;
+
+            RTree tree(shamsys::instance::get_compute_queue(),
+                        {bmin, bmax},
+                        merged.field_pos.get_buf(),
+                        merged.field_pos.get_obj_cnt(),
+                        solver_config.tree_reduction_level);
+
+            return tree;
+        });
+
+    trees.for_each([&](u64 id, RTree &tree) {
+        tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
+        tree.convert_bounding_box(shamsys::instance::get_compute_queue());
+    });
+
+
+
+    bool corect_boxes = solver_config.use_two_stage_search;
+    if(corect_boxes){
+
+        trees.for_each([&](u64 id, RTree & tree){
+            
+            u32 leaf_count = tree.tree_reduced_morton_codes.tree_leaf_count;
+            u32 internal_cell_count = tree.tree_struct.internal_cell_count;
+            u32 tot_count = leaf_count + internal_cell_count;
+
+            sycl::buffer<Tvec> tmp_min_cell(tot_count);
+            sycl::buffer<Tvec> tmp_max_cell(tot_count);
+
+            sycl::buffer<Tvec> &buf_part_pos = shambase::get_check_ref(merged_xyzh.get(id).field_pos.get_buf());
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                shamrock::tree::ObjectIterator cell_looper(tree, cgh);
+
+                u32 leaf_offset = tree.tree_struct.internal_cell_count;
+
+                sycl::accessor acc_pos {buf_part_pos, cgh, sycl::read_only};
+
+                sycl::accessor comp_min {tmp_min_cell, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor comp_max {tmp_max_cell, cgh, sycl::write_only, sycl::no_init};
+
+
+                // how to lose a f****ing afternoon :
+                // 1 - code a nice algorithm that should optimize the code
+                // 2 - pass all the tests
+                // 3 - benchmark it and discover big loss in perf for no reasons
+                // 4 - change a parameter and discover a segfault (on GPU to have more fun ....) 
+                // 5 - find that actually the core algorithm of the code create a bug in the new thing
+                // 6 - discover that every value in everything is wrong
+                // 7 - spent the whole night on it
+                // 8 - start putting prints everywhere
+                // 9 - isolate a bugged id
+                // 10 - try to understand why a f***ing leaf is as big as the root of the tree
+                // 11 - **** a few hours latter
+                // 12 - the goddam c++ standard define std::numeric_limits<float>::min() to be epsilon instead of -max
+                // 13 - road rage 
+                // 14 - open a bier
+                // alt f4 the ide
+
+                Tvec imin = shambase::VectorProperties<Tvec>::get_max();
+                Tvec imax = -shambase::VectorProperties<Tvec>::get_max();
+
+                shambase::parralel_for(cgh, leaf_count,"compute leaf boxes", [=](u64 leaf_id){
+
+                    Tvec min = imin;
+                    Tvec max = imax;
+
+                    cell_looper.iter_object_in_cell(leaf_id + leaf_offset, [&](u32 part_id){
+                        Tvec r = acc_pos[part_id];
+
+                        min = sham::min(min, r);
+                        max = sham::max(max, r);
+                    });
+
+                    comp_min[leaf_offset + leaf_id] = min;
+                    comp_max[leaf_offset + leaf_id] = max;
+
+                });
+
+            });
+
+            //{
+            //    u32 leaf_offset = tree.tree_struct.internal_cell_count;
+            //    sycl::host_accessor pos_min_cell  {tmp_min_cell};
+            //    sycl::host_accessor pos_max_cell  {tmp_max_cell};
+            //    
+            //    for (u32 i = 0; i < 1000; i++) {
+            //            logger::raw_ln(i,pos_max_cell[i+leaf_offset] - pos_min_cell[i+leaf_offset]);
+            //        
+            //    }
+            //}
+
+            auto ker_reduc_hmax = [&](sycl::handler &cgh) {
+                u32 offset_leaf = internal_cell_count;
+
+                sycl::accessor comp_min {tmp_min_cell, cgh, sycl::read_write};
+                sycl::accessor comp_max {tmp_max_cell, cgh, sycl::read_write};
+
+                sycl::accessor rchild_id   {shambase::get_check_ref(tree.tree_struct.buf_rchild_id  ),cgh, sycl::read_only};
+                sycl::accessor lchild_id   {shambase::get_check_ref(tree.tree_struct.buf_lchild_id  ),cgh, sycl::read_only};
+                sycl::accessor rchild_flag {shambase::get_check_ref(tree.tree_struct.buf_rchild_flag),cgh, sycl::read_only};
+                sycl::accessor lchild_flag {shambase::get_check_ref(tree.tree_struct.buf_lchild_flag),cgh, sycl::read_only};
+
+                shambase::parralel_for(cgh, internal_cell_count,"propagate up", [=](u64 gid){
+
+                    u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
+                    u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
+
+                    Tvec bminl = comp_min[lid];
+                    Tvec bminr = comp_min[rid];
+                    Tvec bmaxl = comp_max[lid];
+                    Tvec bmaxr = comp_max[rid];
+
+                    Tvec bmin = shambase::sycl_utils::g_sycl_min(bminl, bminr);
+                    Tvec bmax = shambase::sycl_utils::g_sycl_max(bmaxl, bmaxr);
+
+                    comp_min[gid] = bmin;
+                    comp_max[gid] = bmax;
+                });
+            };
+
+            for (u32 i = 0; i < tree.tree_depth; i++) {
+                shamsys::instance::get_compute_queue().submit(ker_reduc_hmax);
+            }
+
+            sycl::buffer<Tvec> & tree_bmin = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_min_cell_flt);
+            sycl::buffer<Tvec> & tree_bmax = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_max_cell_flt);
+
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                shamrock::tree::ObjectIterator cell_looper(tree, cgh);
+
+                u32 leaf_offset = tree.tree_struct.internal_cell_count;
+
+                sycl::accessor comp_bmin {tmp_min_cell, cgh, sycl::read_only};
+                sycl::accessor comp_bmax {tmp_max_cell, cgh, sycl::read_only};
+
+                sycl::accessor tree_buf_min {tree_bmin, cgh, sycl::read_write};
+                sycl::accessor tree_buf_max {tree_bmax, cgh, sycl::read_write};
+
+                shambase::parralel_for(cgh, tot_count,"write in tree range", [=](u64 nid){
+
+                    Tvec load_min = comp_bmin[nid]; 
+                    Tvec load_max = comp_bmax[nid]; 
+
+                    tree_buf_min[nid] = load_min;
+                    tree_buf_max[nid] = load_max;   
+
+                });
+
+            });
+
+        });
+    }
+
+
+    
+    storage.merged_pos_trees.set(std::move(trees));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -478,166 +643,13 @@ void SPHSolve<Tvec, Kern>::reset_presteps_rint() {
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
-
-    shambase::Timer time_neigh;
-    time_neigh.start();
-
-    StackEntry stack_loc{};
-
-    // do cache
-    storage.neighbors_cache.set(shamrock::tree::ObjectCacheHandler(u64(10e9), [&](u64 patch_id) {
-        logger::debug_ln("BasicSPH", "build particle cache id =", patch_id);
-
-        NamedStackEntry cache_build_stack_loc{"build cache"};
-
-        PreStepMergedField &mfield = storage.merged_xyzh.get().get(patch_id);
-
-        sycl::buffer<Tvec> &buf_xyz    = shambase::get_check_ref(mfield.field_pos.get_buf());
-        sycl::buffer<Tscal> &buf_hpart = shambase::get_check_ref(mfield.field_hpart.get_buf());
-        sycl::buffer<Tscal> &tree_field_rint = shambase::get_check_ref(
-            storage.rtree_rint_field.get().get(patch_id).radix_tree_field_buf);
-
-        sycl::range range_npart{mfield.original_elements};
-
-        RTree &tree = storage.merged_pos_trees.get().get(patch_id);
-
-        u32 obj_cnt       = mfield.original_elements;
-        Tscal h_tolerance = htol_up_tol;
-
-        NamedStackEntry stack_loc1{"init cache"};
-
-        using namespace shamrock;
-
-        sycl::buffer<u32> neigh_count(obj_cnt);
-
-        shamsys::instance::get_compute_queue().wait_and_throw();
-
-        logger::debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
-
-        shamsys::instance::get_compute_queue().submit([&, h_tolerance](sycl::handler &cgh) {
-            tree::ObjectIterator particle_looper(tree, cgh);
-
-            // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-
-            sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-            sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-
-            sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
-
-            sycl::accessor neigh_cnt{neigh_count, cgh, sycl::write_only, sycl::no_init};
-
-            // sycl::stream out {4096,1024,cgh};
-
-            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
-            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
-                u32 id_a = (u32)gid;
-
-                Tscal rint_a = hpart[id_a] * h_tolerance;
-
-                Tvec xyz_a = xyz[id_a];
-
-                Tvec inter_box_a_min = xyz_a - rint_a * Kernel::Rkern;
-                Tvec inter_box_a_max = xyz_a + rint_a * Kernel::Rkern;
-
-                u32 cnt = 0;
-
-                particle_looper.rtree_for(
-                    [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
-                        Tscal int_r_max_cell = rint_tree[node_id] * Kernel::Rkern;
-
-                        using namespace walker::interaction_crit;
-
-                        return sph_radix_cell_crit(
-                            xyz_a, inter_box_a_min, inter_box_a_max, bmin, bmax, int_r_max_cell);
-                    },
-                    [&](u32 id_b) {
-                        // particle_looper.for_each_object(id_a,[&](u32 id_b){
-                        //  compute only omega_a
-                        Tvec dr      = xyz_a - xyz[id_b];
-                        Tscal rab2   = sycl::dot(dr, dr);
-                        Tscal rint_b = hpart[id_b] * h_tolerance;
-
-                        bool no_interact =
-                            rab2 > rint_a * rint_a * Rker2 && rab2 > rint_b * rint_b * Rker2;
-
-                        cnt += (no_interact) ? 0 : 1;
-                    });
-
-                neigh_cnt[id_a] = cnt;
-            });
-        });
-
-        tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
-
-        NamedStackEntry stack_loc2{"fill cache"};
-
-        shamsys::instance::get_compute_queue().submit([&, h_tolerance](sycl::handler &cgh) {
-            tree::ObjectIterator particle_looper(tree, cgh);
-
-            // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-
-            sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-            sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-
-            sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
-
-            sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
-            sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
-
-            // sycl::stream out {4096,1024,cgh};
-
-            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
-            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
-                u32 id_a = (u32)gid;
-
-                Tscal rint_a = hpart[id_a] * h_tolerance;
-
-                Tvec xyz_a = xyz[id_a];
-
-                Tvec inter_box_a_min = xyz_a - rint_a * Kernel::Rkern;
-                Tvec inter_box_a_max = xyz_a + rint_a * Kernel::Rkern;
-
-                u32 cnt = scanned_neigh_cnt[id_a];
-
-                particle_looper.rtree_for(
-                    [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
-                        Tscal int_r_max_cell = rint_tree[node_id] * Kernel::Rkern;
-
-                        using namespace walker::interaction_crit;
-
-                        return sph_radix_cell_crit(
-                            xyz_a, inter_box_a_min, inter_box_a_max, bmin, bmax, int_r_max_cell);
-                    },
-                    [&](u32 id_b) {
-                        // particle_looper.for_each_object(id_a,[&](u32 id_b){
-                        //  compute only omega_a
-                        Tvec dr      = xyz_a - xyz[id_b];
-                        Tscal rab2   = sycl::dot(dr, dr);
-                        Tscal rint_b = hpart[id_b] * h_tolerance;
-
-                        bool no_interact =
-                            rab2 > rint_a * rint_a * Rker2 && rab2 > rint_b * rint_b * Rker2;
-
-                        if (!no_interact) {
-                            neigh[cnt] = id_b;
-                        }
-                        cnt += (no_interact) ? 0 : 1;
-                    });
-            });
-        });
-
-        return pcache;
-    }));
-
-    using namespace shamrock::patch;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        storage.neighbors_cache.get().preload(cur_p.id_patch);
-    });
-
-    time_neigh.end();
-    storage.timings_details.neighbors += time_neigh.elasped_sec();
+    if(solver_config.use_two_stage_search){
+        shammodels::sph::modules::NeighbourCache<Tvec,u_morton, Kern>(context, solver_config, storage)
+        .start_neighbors_cache_2stages();
+    }else{
+        shammodels::sph::modules::NeighbourCache<Tvec,u_morton, Kern>(context, solver_config, storage)
+        .start_neighbors_cache();
+    }
 }
 
 template<class Tvec, template<class> class Kern>
@@ -875,6 +887,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     shambase::Timer tstep;
     tstep.start();
+
+    modules::ComputeLoadBalanceValue<Tvec, Kern> (context, solver_config, storage).update_load_balancing();
 
     scheduler().scheduler_step(true, true);
 
@@ -1187,20 +1201,72 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
                 logger::info_ln("sph::Model", "cfl dt =", next_cfl);
             }
 
-            if (solver_config.has_field_divv()) {
-                sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                    .update_divv();
-            }
 
-            if (solver_config.has_field_curlv()) {
-                sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
-                    .update_curlv();
-            }
+
+            //if (solver_config.has_field_divv()) {
+            //    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+            //        .update_divv();
+            //}
+            //
+            //if (solver_config.has_field_curlv()) {
+            //    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+            //        .update_curlv();
+            //}
+            //
+            //if (solver_config.has_field_dtdivv()) {
+            //    sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+            //        .update_dtdivv(false);
+            //}
 
             if (solver_config.has_field_dtdivv()) {
-                sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
-                    .update_dtdivv();
+                
+                if(solver_config.combined_dtdiv_divcurlv_compute){
+                    //L2 distance r :  1.32348e-05 
+                    //L2 distance h :  7.68714e-06 
+                    //L2 distance vr :  0.0133985 
+                    //L2 distance u :  0.0380309 
+                    if (solver_config.has_field_dtdivv()) {     
+                        sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+                            .update_dtdivv(true);
+                    }
+                }else{
+                    //L2 distance r :  1.32348e-05 
+                    //L2 distance h :  7.68714e-06 
+                    //L2 distance vr :  0.0133985 
+                    //L2 distance u :  0.0380309 
+
+                    if (solver_config.has_field_divv()) {
+                        sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                            .update_divv();
+                    }
+                    
+                    if (solver_config.has_field_curlv()) {
+                        sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                            .update_curlv();
+                    }
+                    
+                    if (solver_config.has_field_dtdivv()) {
+                        sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+                            .update_dtdivv(false);
+                    }
+                }
+
+            }else{
+                if (solver_config.has_field_divv()) {
+                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                        .update_divv();
+                }
+
+                if (solver_config.has_field_curlv()) {
+                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                        .update_curlv();
+                }
             }
+
+
+
+
+
 
             // this should not be needed idealy, but we need the pressure on the ghosts and 
             // we don't want to communicate it as it can be recomputed from the other fields
@@ -1347,6 +1413,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         timer_io.end();
         storage.timings_details.io += timer_io.elasped_sec();
     }
+
 
     tstep.end();
 

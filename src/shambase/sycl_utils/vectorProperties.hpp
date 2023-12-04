@@ -37,7 +37,7 @@ namespace shambase {
 
         static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
 
-        static constexpr T get_min() { return std::numeric_limits<T>::min(); }
+        static constexpr T get_min() { return std::numeric_limits<T>::min(); } //why this f***ing thing gives epsilon on float when you except -max aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah !!!!
         static constexpr T get_max() { return std::numeric_limits<T>::max(); }
         static constexpr T get_inf() { return std::numeric_limits<T>::infinity(); }
         static constexpr T get_zero(){return 0;}

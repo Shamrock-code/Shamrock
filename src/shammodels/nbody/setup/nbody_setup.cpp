@@ -16,6 +16,7 @@
  
 #include "nbody_setup.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
+#include "shamrock/patch/Patch.hpp"
 
 
 
@@ -29,8 +30,9 @@ void models::nbody::NBodySetup<flt>::init(PatchScheduler & sched){
     std::cout << "build local" << std::endl;
     sched.owned_patch_id = sched.patch_list.build_local();
     sched.patch_list.build_local_idx_map();
-    sched.update_local_dtcnt_value();
-    sched.update_local_load_value();
+    sched.update_local_load_value([&](shamrock::patch::Patch p){
+        return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+    });
 }
 
 

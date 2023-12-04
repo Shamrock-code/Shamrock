@@ -9,7 +9,7 @@
 
 /**
  * @file main.cpp
- * @author your name (you@domain.com)
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
  * @version 0.1
  * @date 2022-05-24

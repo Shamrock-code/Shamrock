@@ -21,11 +21,14 @@
 
 
 #include <array>
+#include <stdexcept>
 #include <tuple>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
 
+#include "shambase/SourceLocation.hpp"
+#include "shambase/exception.hpp"
 #include "shamrock/patch/Patch.hpp"
 
 /**
@@ -47,7 +50,17 @@ class SchedulerPatchList{public:
      */
     std::vector<shamrock::patch::Patch> local;
 
+    bool is_load_values_up_to_date = false;
 
+    inline void invalidate_load_values(){
+        is_load_values_up_to_date = false;
+    }
+    
+    inline void check_load_values_valid(SourceLocation loc = SourceLocation{}){
+        if(!is_load_values_up_to_date){
+            throw shambase::throw_with_loc<std::runtime_error>("the load values are invalid please update them",loc);
+        }
+    }
 
     /**
      * @brief rebuild global from the local list of each tables

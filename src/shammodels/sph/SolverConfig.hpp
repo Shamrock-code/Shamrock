@@ -11,6 +11,7 @@
 /**
  * @file SolverConfig.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -84,6 +85,13 @@ struct shammodels::sph::SolverConfig {
     Tscal cfl_cour;
     Tscal cfl_force;
 
+    u32 tree_reduction_level = 3;
+    bool use_two_stage_search = true;
+    bool combined_dtdiv_divcurlv_compute = false;
+
+    static constexpr Tscal htol_up_tol  = 1.1;
+    static constexpr Tscal htol_up_iter = 1.1;
+
     using AVConfig       = AVConfig<Tvec>;
     using BCConfig       = BCConfig<Tvec>;
     using EOSConfig      = shammodels::EOSConfig<Tvec>;
@@ -93,6 +101,13 @@ struct shammodels::sph::SolverConfig {
     ExtForceConfig ext_force_config{};
     BCConfig boundary_config;
     AVConfig artif_viscosity;
+
+    inline void set_tree_reduction_level(u32 level){
+        tree_reduction_level = level;
+    }
+    inline void set_two_stage_search(bool enable){
+        use_two_stage_search = enable;
+    }
 
     inline bool is_eos_locally_isothermal() {
         using T = typename EOSConfig::LocallyIsothermal;

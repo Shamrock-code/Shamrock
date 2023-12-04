@@ -245,26 +245,21 @@ void PatchTree::update_ptnode(Node & n,std::vector<shamrock::patch::Patch> & pli
     auto & tnode = n.tree_node;
 
     if(n.linked_patchid != u64_max){
-        n.data_count = 0;
         n.load_value = 0;
-        n.data_count += plist[id_patch_to_global_idx[n.linked_patchid]].data_count;
         n.load_value += plist[id_patch_to_global_idx[n.linked_patchid]].load_value;
     }else if (tnode.childs_nid[0] != u64_max) {
 
         bool has_err_val = false;
 
-        n.data_count = 0;
         n.load_value = 0;
         for(u8 idc = 0; idc < 8 ; idc ++){
 
-            if(tree[tnode.childs_nid[idc]].data_count == u64_max)has_err_val = true;
+            if(tree[tnode.childs_nid[idc]].load_value == u64_max)has_err_val = true;
 
-            n.data_count += tree[tnode.childs_nid[idc]].data_count;
             n.load_value += tree[tnode.childs_nid[idc]].load_value;
         }
         
         if(has_err_val){
-            n.data_count = u64_max;
             n.load_value = u64_max;
         }
         
@@ -275,10 +270,9 @@ void PatchTree::update_ptnode(Node & n,std::vector<shamrock::patch::Patch> & pli
 // TODO add test value on root = sum all leaf
 void PatchTree::update_values_node(std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
 
+    tree[0].load_value = u64_max;
 
-    tree[0].data_count = u64_max;
-
-    while(tree[0].data_count == u64_max){
+    while(tree[0].load_value == u64_max){
         for(auto & [key,ptnode] : tree){
             update_ptnode(ptnode,plist,id_patch_to_global_idx);
         }

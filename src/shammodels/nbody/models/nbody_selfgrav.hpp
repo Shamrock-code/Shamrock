@@ -16,7 +16,7 @@
  * 
  */
  
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/legacy/log.hpp"
 
 

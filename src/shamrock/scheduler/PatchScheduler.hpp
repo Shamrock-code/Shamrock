@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file scheduler_mpi.hpp
+ * @file PatchScheduler.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief MPI scheduler
  * @version 0.1
@@ -103,16 +103,12 @@ class PatchScheduler{
     std::string dump_status();
 
 
-    inline void update_local_dtcnt_value(){
+    inline void update_local_load_value(std::function<u64(shamrock::patch::Patch)> load_function){
         for(u64 id : owned_patch_id){
-            patch_list.local[patch_list.id_patch_to_local_idx[id]].data_count = patch_data.owned_data.get(id).get_obj_cnt();
+            shamrock::patch::Patch & p = patch_list.local[patch_list.id_patch_to_local_idx[id]];
+            p.load_value = load_function(p);
         }
-    }
-
-    inline void update_local_load_value(){
-        for(u64 id : owned_patch_id){
-            patch_list.local[patch_list.id_patch_to_local_idx[id]].load_value = patch_data.owned_data.get(id).get_obj_cnt();
-        }
+        patch_list.is_load_values_up_to_date = true;
     }
 
 

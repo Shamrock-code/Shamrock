@@ -15,7 +15,7 @@
  */
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 
 enum GlobalVariableType{
     min,max,sum

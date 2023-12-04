@@ -289,9 +289,9 @@ void compare_results(
     TEX_REPORT("\\item L2 distance u : $" + std::to_string (l2_u)+"$\n");
     TEX_REPORT(R"==(\end{itemize})==" "\n")
 
-    _Assert(l2_r < 1e-3)
-    _Assert(l2_vr < 1e-4)
-    _Assert(l2_h < 1e-7)
+    _Assert(l2_r < 1e-6)
+    _Assert(l2_vr < 1e-3)
+    _Assert(l2_h < 1e-8)
     _Assert(l2_u < 1)
 
 }

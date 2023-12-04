@@ -14,7 +14,7 @@
 
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 
 /*
 Test_start("patchdata::", sync_patchdata_layout, -1) {

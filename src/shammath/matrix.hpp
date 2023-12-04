@@ -41,9 +41,9 @@ namespace shammath {
         T det = (-a02 * a11 * a20 + a01 * a12 * a20 + a02 * a10 * a21 - a00 * a12 * a21 -
                  a01 * a10 * a22 + a00 * a11 * a22);
 
-        return {vec{-a12 * a21 + a11 * a22, a02 * a21 - a01 * a22, -a02 * a11 + a01 * a12},
-                vec{a12 * a20 - a10 * a22, -a02 * a20 + a00 * a22, a02 * a10 - a00 * a12},
-                vec{-a11 * a20 + a10 * a21, a01 * a20 - a00 * a21, -a01 * a10 + a00 * a11}};
+        return {(vec{-a12 * a21 + a11 * a22, a02 * a21 - a01 * a22, -a02 * a11 + a01 * a12} / det),
+                (vec{a12 * a20 - a10 * a22, -a02 * a20 + a00 * a22, a02 * a10 - a00 * a12} / det),
+                (vec{-a11 * a20 + a10 * a21, a01 * a20 - a00 * a21, -a01 * a10 + a00 * a11} / det)};
     }
 
     template<class T>

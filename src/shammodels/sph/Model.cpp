@@ -9,6 +9,7 @@
 /**
  * @file Model.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -21,7 +22,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamrock/patch/PatchData.hpp"
-#include "shamrock/scheduler/scheduler_mpi.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <utility>
@@ -51,8 +52,9 @@ void Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
     logger::debug_ln("Sys", "build local scheduler tables");
     sched.owned_patch_id = sched.patch_list.build_local();
     sched.patch_list.build_local_idx_map();
-    sched.update_local_dtcnt_value();
-    sched.update_local_load_value();
+    sched.update_local_load_value([&](shamrock::patch::Patch p){
+        return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+    });
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -128,6 +130,8 @@ auto Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> b
 template<class Tvec>
 inline void post_insert_data(PatchScheduler &sched) {
     StackEntry stack_loc{};
+
+    logger::raw_ln(sched.dump_status());
     sched.scheduler_step(false, false);
 
     /*
@@ -257,6 +261,8 @@ void Model<Tvec, SPHKernel>::push_particle(
         }
         log = "";
 
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+
         post_insert_data<Tvec>(sched);
     });
 }
@@ -362,7 +368,8 @@ void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
             logger::info_ln("Model", "Push particles : ", log_gathered);
         }
         log = "";
-
+        
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
         post_insert_data<Tvec>(sched);
     }
 }
@@ -559,6 +566,8 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
             logger::info_ln("Model", "Push particles : ", log_gathered);
         }
         log = "";
+
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
 
         post_insert_data<Tvec>(sched);
 

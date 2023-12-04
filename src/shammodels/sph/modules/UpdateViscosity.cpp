@@ -9,6 +9,7 @@
 /**
  * @file UpdateViscosity.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief 
  * 
  */
@@ -100,6 +101,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     });
 }
 
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artificial_viscosity_cd10(
     Tscal dt, typename Config::AVConfig::VaryingCD10 cfg) {
@@ -148,21 +150,32 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
                 Tvec curlv_a  = curlv[item];
                 Tscal dtdivv_a  = dtdivv[item];
 
+                
+
                 Tscal vsig            = cs_a;
                 Tscal inv_tau_a       = vsig * sigma_decay / h_a;
                 Tscal fact_t          = dt * inv_tau_a;
                 Tscal euler_impl_fact = 1 / (1 + fact_t);
 
-                Tscal div_corec = g_sycl_max<Tscal>(-divv_a, 0);
-                Tscal divv_a_sq = div_corec*div_corec;
-                //Tscal divv_a_sq_corec = g_sycl_max(-divv_a, 0);
-                Tscal curlv_a_sq = sycl::dot(curlv_a,curlv_a);
-
-                Tscal denom = (curlv_a_sq + divv_a_sq);
-
-                Tscal balsara_corec = (denom <= 0) ? 1 : divv_a_sq / (curlv_a_sq + divv_a_sq);
 
 
+                //Tscal div_corec = g_sycl_max<Tscal>(-divv_a, 0);
+                //Tscal divv_a_sq = div_corec*div_corec;
+                ////Tscal divv_a_sq_corec = g_sycl_max(-divv_a, 0);
+                //Tscal curlv_a_sq = sycl::dot(curlv_a,curlv_a);
+                //Tscal denom = (curlv_a_sq + divv_a_sq);
+                //Tscal balsara_corec = (denom <= 0) ? 1 : divv_a_sq / (curlv_a_sq + divv_a_sq);
+                
+                auto xi_lim = [](Tscal divv, Tvec curlv){
+                    auto fac = sham::max(-divv, Tscal{0});
+                    fac *= fac;
+                    auto traceS = sycl::dot(curlv,curlv);
+                    if (fac + traceS > 1e-12) {
+                        return fac/(fac + traceS);
+                    }
+                    return Tscal{1};
+                };
+                Tscal balsara_corec = xi_lim(divv_a,curlv_a);
 
 
                 Tscal A_a = balsara_corec*g_sycl_max<Tscal>(-dtdivv_a, 0);

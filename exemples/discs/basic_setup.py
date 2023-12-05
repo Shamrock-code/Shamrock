@@ -78,7 +78,14 @@ while t_sum < t_target:
     print("step : t=",t_sum)
 
     do_dump = (i % 50 == 0)  
-    next_dt = model.evolve(t_sum,current_dt, do_dump, outputdir + "dump_"+str(i_dump)+".vtk", do_dump)
+    #next_dt = model.evolve(t_sum,current_dt, do_dump, outputdir + "dump_"+str(i_dump)+".vtk", do_dump)
+    next_dt = model.evolve(t_sum,current_dt, False, outputdir + "dump_{:04}.vtk".format(i_dump), False)
+
+    if do_dump:
+        dump = model.make_phantom_dump()
+        fname = outputdir + "/test_LT_{:04}".format(i_dump)
+        dump.save_dump(fname)
+        print("saving t=",t_sum+current_dt,fname)
 
     if i % 50 == 0:
         i_dump += 1

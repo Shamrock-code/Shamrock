@@ -27,3 +27,21 @@ params = sdf.params()
 print(params) 
 
 sdf.calc_density()
+
+
+
+def myfunction(param1, param2):
+    A = np.cos(param1) + param2
+
+    return A
+
+A = [1, 2, 3]
+B = [12, 27, 49]
+
+plt.plot(A, B)
+plt.scatter(A, B, s=20)
+plr.xlabel('mon array A')
+
+plt.title('mon titre')
+
+plt.show()

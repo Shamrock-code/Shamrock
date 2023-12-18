@@ -18,6 +18,7 @@
 
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambase/string.hpp"
+#include "shambase/Constants.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shammodels/generic/setup/generators.hpp"
@@ -31,6 +32,7 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <hipSYCL/sycl/libkernel/builtins.hpp>
 #include <vector>
 
 #include <pybind11/functional.h>
@@ -656,6 +658,41 @@ namespace shammodels::sph {
     
         private:
         void add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat);
+
+        template<class T>
+        inline void warp_disc(Tvec pos, Tvec vel, int npart_tot, int npart_start, Tscal posangle, Tscal incl, Tscal Rwarp, Tscal Hwarp) {
+            Tvec k = Tvec(-std::sin(posangle), 0., cos(posangle));
+           
+           //for (i32 i=0; i < 5; i++){
+            Tscal R = sycl::sqrt(sycl::dot(pos, pos));
+            Tscal inc;
+            Tscal psi = 0.;
+
+            if (R < Rwarp - Hwarp){
+                inc = 0.;
+            }
+            else if (R < Rwarp + 3. * Hwarp) {
+                inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<T> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl));
+                psi = shambase::constants::pi<T> * Rwarp / (4. * Hwarp) * sycl::sin(incl) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl)), 2));
+                Tscal psimax = sycl::max(psimax, psi);
+            }
+            else{
+                inc = 0.;
+            }
+    
+           
+        }
+
+        template<class T>
+        inline void rotate_vector(Tvec u, Tvec v, Tscal theta){
+            // normalize the reference direction
+            Tscal vunit = v / sycl::sqrt(sycl::dot(v, v));
+            Tvec w = sycl::cross(vunit, u);
+            // Rodrigues' rotation formula
+            u = u * sycl::cos(theta) + w * sycl::sin(theta) + vunit * sycl::dot(vunit, u) * (1. - sycl::cos(theta));
+        }
     };
+
+
 
 } // namespace shammodels

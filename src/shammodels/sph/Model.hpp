@@ -173,7 +173,12 @@ namespace shammodels::sph {
                 Tscal disc_mass,
                 Tscal p,
                 Tscal H_r_in,
-                Tscal q){
+                Tscal q,
+                bool do_warp=false,
+                Tscal posangle=0 ,
+                Tscal incl=30.,
+                Tscal Rwarp=5.,
+                Tscal Hwarp=1.){
 
             Tscal G = solver.solver_config.get_constant_G();
 
@@ -261,6 +266,10 @@ namespace shammodels::sph {
                 }
 
                 log += shambase::format("\n    patch id={}, add N={} particles", ptch.id_patch, vec_pos.size());
+
+                if (do_warp) {
+                warp_disc<T>(vec_pos, vec_vel, posangle, incl, Rwarp, Hwarp);
+                }
 
                 PatchData tmp(sched.pdl);
                 tmp.resize(vec_pos.size());
@@ -660,24 +669,30 @@ namespace shammodels::sph {
         void add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat);
 
         template<class T>
-        inline void warp_disc(Tvec pos, Tvec vel, int npart_tot, int npart_start, Tscal posangle, Tscal incl, Tscal Rwarp, Tscal Hwarp) {
+        inline void warp_disc(Tvec pos, Tvec vel, Tscal posangle, Tscal incl, Tscal Rwarp, Tscal Hwarp) {
             Tvec k = Tvec(-std::sin(posangle), 0., cos(posangle));
-           
-           //for (i32 i=0; i < 5; i++){
-            Tscal R = sycl::sqrt(sycl::dot(pos, pos));
             Tscal inc;
             Tscal psi = 0.;
+            u32 len = pos.size();
 
-            if (R < Rwarp - Hwarp){
-                inc = 0.;
+            for (i32 i=0; i < len; i++){
+                Tscal R = sycl::sqrt(sycl::dot(pos(i), pos(i)));
+                if (R < Rwarp - Hwarp){
+                    inc = 0.;
+                }
+                else if (R < Rwarp + 3. * Hwarp) {
+                    inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<T> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl));
+                    psi = shambase::constants::pi<T> * Rwarp / (4. * Hwarp) * sycl::sin(incl) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl)), 2));
+                    Tscal psimax = sycl::max(psimax, psi);
+                }
+                else{
+                    inc = 0.;
             }
-            else if (R < Rwarp + 3. * Hwarp) {
-                inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<T> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl));
-                psi = shambase::constants::pi<T> * Rwarp / (4. * Hwarp) * sycl::sin(incl) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl)), 2));
-                Tscal psimax = sycl::max(psimax, psi);
-            }
-            else{
-                inc = 0.;
+
+            //rotation position and velocity
+
+            rotate_vector<T>(pos, k, inc);
+            rotate_vector<T>(vel, k, inc);
             }
     
            

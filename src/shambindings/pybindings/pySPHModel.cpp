@@ -14,6 +14,7 @@
  */
  
 #include <memory>
+#include <pybind11/cast.h>
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
@@ -163,9 +164,31 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal disc_mass,
                 Tscal p,
                 Tscal H_r_in,
-                Tscal q){
-                    return self.add_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q);
-                })
+                Tscal q,
+                bool do_warp=false,
+                Tscal posangle=0.,
+                Tscal incl=30.,
+                Tscal Rwarp=5.,
+                Tscal Hwarp=1.){
+                    return self.add_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, 
+                    do_warp, posangle, incl, Rwarp, Hwarp);
+                },
+                py::kw_only{},
+                py::arg("center") = Tvec{0,0,0},
+                py::arg("center_mass"),
+                py::arg("Npart"),
+                py::arg("r_in"),
+                py::arg("r_out"),
+                py::arg("disc_mass"),
+                py::arg("p"),
+                py::arg("H_r_in"),
+                py::arg("q"),
+                py::arg("do_warp")=false,
+                py::arg("posangle")=0.,
+                py::arg("incl")=30.,
+                py::arg("Rwarp")=5.,
+                py::arg("Hwarp")=1.
+                )
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
         .def("set_value_in_a_box",

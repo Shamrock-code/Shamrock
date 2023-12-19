@@ -268,7 +268,7 @@ namespace shammodels::sph {
                 log += shambase::format("\n    patch id={}, add N={} particles", ptch.id_patch, vec_pos.size());
 
                 if (do_warp) {
-                warp_disc<T>(vec_pos, vec_vel, posangle, incl, Rwarp, Hwarp);
+                warp_disc<Tscal>(vec_pos, vec_vel, posangle, incl, Rwarp, Hwarp);
                 }
 
                 PatchData tmp(sched.pdl);

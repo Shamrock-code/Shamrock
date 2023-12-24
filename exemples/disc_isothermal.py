@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = "/home/ylapeyre/Shamrock_tests/test_LP07/"
+outputdir = "/home/ylapeyre/Shamrock_tests/warp_setup/"
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
@@ -37,11 +37,16 @@ pmass = model.add_disc_3d(
     (0,0,0),
     1,
     100000,
-    0.2,3,
+    1., 10.,
     disc_mass,
     1.,
     0.05,
-    1./4.)
+    1./4.,
+    do_warp=True,
+    posangle=0.,
+    incl = 30.,
+    Rwarp = 5.,
+    Hwarp = 1.)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)

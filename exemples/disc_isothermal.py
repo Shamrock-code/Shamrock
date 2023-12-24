@@ -2,6 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
+outputdir = "/home/ylapeyre/Shamrock_tests/test_LP07/"
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
@@ -18,7 +19,7 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_eos_locally_isothermal()
+cfg.set_eos_locally_isothermalLP07(0.005,3/4, 1)
 cfg.print_status()
 cfg.set_units(codeu)
 model.set_solver_config(cfg)
@@ -123,7 +124,7 @@ while t_sum < t_target:
     print("step : t=",t_sum)
 
     do_dump = (i % 50 == 0)  
-    next_dt = model.evolve(t_sum,current_dt, do_dump, "dump_{:04}.vtk".format(i_dump), do_dump)
+    next_dt = model.evolve(t_sum,current_dt, do_dump, outputdir + "dump_{:04}.vtk".format(i_dump), do_dump)
 
     if i % 50 == 0:
         i_dump += 1

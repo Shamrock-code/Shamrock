@@ -175,7 +175,7 @@ namespace shammodels::sph {
                 Tscal H_r_in,
                 Tscal q,
                 bool do_warp=false,
-                Tscal posangle=0 ,
+                Tscal posangle=0.,
                 Tscal incl=30.,
                 Tscal Rwarp=5.,
                 Tscal Hwarp=1.){
@@ -668,40 +668,41 @@ namespace shammodels::sph {
         private:
         void add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat);
 
-        template<class T>
-        inline void warp_disc(Tvec pos, Tvec vel, Tscal posangle, Tscal incl, Tscal Rwarp, Tscal Hwarp) {
+        template<class Tscal>
+        inline void warp_disc(std::vector<Tvec> pos, std::vector<Tvec> vel, Tscal posangle=0., Tscal incl=30., Tscal Rwarp=5., Tscal Hwarp=1.) {
             Tvec k = Tvec(-std::sin(posangle), 0., cos(posangle));
             Tscal inc;
             Tscal psi = 0.;
             u32 len = pos.size();
+            //Tvec R_vec = sycl::sqrt(sycl::dot(pos, pos));
 
             for (i32 i=0; i < len; i++){
-                Tscal R = sycl::sqrt(sycl::dot(pos(i), pos(i)));
+                Tvec R_vec = pos[i];
+                Tscal R = sycl::sqrt(sycl::dot(R_vec, R_vec));
                 if (R < Rwarp - Hwarp){
                     inc = 0.;
                 }
                 else if (R < Rwarp + 3. * Hwarp) {
-                    inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<T> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl));
-                    psi = shambase::constants::pi<T> * Rwarp / (4. * Hwarp) * sycl::sin(incl) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl)), 2));
+                    inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl));
+                    psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl), 2)));
                     Tscal psimax = sycl::max(psimax, psi);
                 }
                 else{
                     inc = 0.;
+
+                //rotation position and velocity
+
+                rotate_vector(pos[i], k, inc);
+                rotate_vector(vel[i], k, inc); 
             }
-
-            //rotation position and velocity
-
-            rotate_vector<T>(pos, k, inc);
-            rotate_vector<T>(vel, k, inc);
             }
     
            
         }
 
-        template<class T>
-        inline void rotate_vector(Tvec u, Tvec v, Tscal theta){
+        inline void rotate_vector(Tvec & u, Tvec & v, Tscal theta){
             // normalize the reference direction
-            Tscal vunit = v / sycl::sqrt(sycl::dot(v, v));
+            Tvec vunit = v / sycl::sqrt(sycl::dot(v, v));
             Tvec w = sycl::cross(vunit, u);
             // Rodrigues' rotation formula
             u = u * sycl::cos(theta) + w * sycl::sin(theta) + vunit * sycl::dot(vunit, u) * (1. - sycl::cos(theta));

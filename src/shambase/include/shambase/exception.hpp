@@ -21,12 +21,17 @@ namespace shambase {
 
     std::string exception_format(SourceLocation loc);
 
+    template<class ExcptTypes>
+    inline ExcptTypes make_except_with_loc(std::string message, SourceLocation loc = SourceLocation{}) {
+        return ExcptTypes(message + exception_format(loc));
+    }
+
     /**
      * @brief Throw an exception and append the source location to it
      *
      * Usage : 
      * ~~~~~{.cpp}
-     * throw shambase::throw_with_loc<MyException>("message");
+     * shambase::throw_with_loc<MyException>("message");
      * ~~~~~
      * 
      * @tparam ExcptTypes 
@@ -35,16 +40,16 @@ namespace shambase {
      * @return ExcptTypes 
      */
     template<class ExcptTypes>
-    inline ExcptTypes throw_with_loc(std::string message, SourceLocation loc = SourceLocation{}) {
-        return ExcptTypes(message + exception_format(loc));
+    inline void throw_with_loc(std::string message, SourceLocation loc = SourceLocation{}) {
+        throw make_except_with_loc<ExcptTypes>(message + exception_format(loc));
     }
 
     inline void throw_unimplemented(SourceLocation loc = SourceLocation{}) {
-        throw throw_with_loc<std::runtime_error>("unimplemented",loc);
+        throw_with_loc<std::runtime_error>("unimplemented",loc);
     }
 
     inline void throw_unimplemented(std::string message,SourceLocation loc = SourceLocation{}) {
-        throw throw_with_loc<std::runtime_error>(message + "\nunimplemented",loc);
+        throw_with_loc<std::runtime_error>(message + "\nunimplemented",loc);
     }
 
 } // namespace shambase

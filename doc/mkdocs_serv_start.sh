@@ -1,0 +1,2 @@
+cd mkdocs
+mkdocs serve

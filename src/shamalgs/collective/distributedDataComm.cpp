@@ -160,7 +160,7 @@ namespace shamalgs::collective {
                         i32 supposed_sender_rank = rank_getter(sender);
                         i32 real_sender_rank     = recv.sender_ranks;
                         if (supposed_sender_rank != real_sender_rank) {
-                            throw throw_with_loc<std::runtime_error>("the rank do not matches");
+                            throw make_except_with_loc<std::runtime_error>("the rank do not matches");
                         }
                     }
 

@@ -102,7 +102,7 @@ namespace shamrock::tree {
             do {
 
                 if (cache.is_empty()) {
-                    throw shambase::throw_with_loc<std::runtime_error>(
+                    throw shambase::make_except_with_loc<std::runtime_error>(
                         "the cache is empty no entry can be popped");
                 }
 
@@ -136,7 +136,7 @@ namespace shamrock::tree {
             u64 add_sz = c.get_memsize();
 
             if (add_sz + current_device_memsize > max_device_memsize) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     "their is no space within the imposed limit, try freeing some space in the "
                     "cache, or increase the size limit");
             }
@@ -161,7 +161,7 @@ namespace shamrock::tree {
 
             while (new_sz + current_device_memsize > max_device_memsize) {
                 if (cache.is_empty()) {
-                    throw shambase::throw_with_loc<std::runtime_error>(
+                    throw shambase::make_except_with_loc<std::runtime_error>(
                         "their no space left to allocate a cache, try with smaller objects, or "
                         "increase the size limit");
                 }

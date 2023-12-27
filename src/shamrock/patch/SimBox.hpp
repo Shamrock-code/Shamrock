@@ -160,7 +160,7 @@ namespace shamrock::patch {
 
         if (!pdl.check_main_field_type<T>()) {
 
-            throw shambase::throw_with_loc<std::invalid_argument>(
+            throw shambase::make_except_with_loc<std::invalid_argument>(
                 "the chosen type for the main field does not match the required template type\n" 
                 "call : " + std::string(__PRETTY_FUNCTION__)
             );
@@ -170,7 +170,7 @@ namespace shamrock::patch {
 
         if (!pval) {
 
-            throw shambase::throw_with_loc<std::invalid_argument>(
+            throw shambase::make_except_with_loc<std::invalid_argument>(
                 "the type in SimulationBoxInfo does not match the one in the layout\n" 
                 "call : " + std::string(__PRETTY_FUNCTION__)
             );
@@ -184,7 +184,7 @@ namespace shamrock::patch {
         if (pdl.check_main_field_type<T>()) {
             bounding_box.value = new_box;
         } else {
-            throw shambase::throw_with_loc<std::invalid_argument>(
+            throw shambase::make_except_with_loc<std::invalid_argument>(
                 "The main field is not of the required type\n" 
                 "call : " + std::string(__PRETTY_FUNCTION__)
             );
@@ -198,7 +198,7 @@ namespace shamrock::patch {
         shammath::CoordRange<T>tmp {bmin,bmax};
 
         if(tmp.is_err_mode()){
-            throw shambase::throw_with_loc<std::runtime_error>("the box size is not set, please resize the box to the domain size");
+            throw shambase::make_except_with_loc<std::runtime_error>("the box size is not set, please resize the box to the domain size");
         }
 
         return PatchCoordTransform<T>{ patch_coord_bounding_box.get_patch_range(), tmp };
@@ -230,7 +230,7 @@ namespace shamrock::patch {
         } else if (pdl.check_main_field_type<i64_3>()) {
             bounding_box.value = shammath::CoordRange<i64_3>::max_range();
         } else {
-            throw shambase::throw_with_loc<std::runtime_error>("the chosen type for the main field is not handled");
+            throw shambase::make_except_with_loc<std::runtime_error>("the chosen type for the main field is not handled");
         }
     }
 } // namespace shamrock::patch

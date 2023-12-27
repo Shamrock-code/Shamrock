@@ -13,7 +13,7 @@
  * 
  */
  
-#include "stacktrace.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
 #include <sstream>
 #include <vector>

@@ -113,7 +113,7 @@ void shamalgs::ResizableBuffer<T>::resize(u32 new_size) {
 template<class T>
 void shamalgs::ResizableBuffer<T>::overwrite(ResizableBuffer<T> &f2, u32 cnt) {
     if (val_cnt < cnt) {
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             "to overwrite you need more element in the field");
     }
 
@@ -132,7 +132,7 @@ template<class T>
 void shamalgs::ResizableBuffer<T>::override(sycl::buffer<T> &data, u32 cnt) {
 
     if (cnt != val_cnt)
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             "buffer size doesn't match patchdata field size"); // TODO remove ref to size
 
     if (val_cnt > 0) {

@@ -6,9 +6,13 @@ mkdir bin
 curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.28/mdbook-v0.4.28-x86_64-unknown-linux-gnu.tar.gz | tar -xz --directory=bin
 bin/mdbook build
 
-cd ../mkdocs
-mkdocs build
 
+
+cd ../mkdocs
+cd docs/assets/figures
+sh make_all_figs.sh
+cd ../../..
+mkdocs build
 cd ..
 
 

@@ -17,6 +17,7 @@
 
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamsys/legacy/log.hpp"
+
 namespace shammodels::sph {
 
     template<class Tvec>
@@ -64,13 +65,13 @@ struct shammodels::sph::AVConfig {
     };
 
     struct ConstantDisc {
-        Tscal alpha_AV   = 1.0;
-        Tscal alpha_u     = 1.0;
-        Tscal beta_AV     = 2.0;
+        Tscal alpha_AV = 1.0;
+        Tscal alpha_u  = 1.0;
+        Tscal beta_AV  = 2.0;
     };
 
-    using Variant  = std::variant<None, Constant, VaryingMM97, VaryingCD10, ConstantDisc>;
-    
+    using Variant = std::variant<None, Constant, VaryingMM97, VaryingCD10, ConstantDisc>;
+
     Variant config = Constant{};
 
     void set(Variant v) { config = v; }
@@ -142,7 +143,7 @@ struct shammodels::sph::AVConfig {
             logger::raw_ln("  alpha_AV   =", v->alpha_AV);
             logger::raw_ln("  alpha_u     =", v->alpha_u);
             logger::raw_ln("  beta_AV     =", v->beta_AV);
-        }else {
+        } else {
             shambase::throw_unimplemented();
         }
 

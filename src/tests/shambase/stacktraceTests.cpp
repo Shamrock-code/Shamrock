@@ -16,5 +16,5 @@ TestStart(Unittest, "shambase/stacktrace/print_stack", test_stackprinter, 1){
 
     logger::raw_ln(shambase::fmt_callstack());
 
-    //throw shambase::throw_with_loc<std::invalid_argument>("test");
+    //throw shambase::make_except_with_loc<std::invalid_argument>("test");
 }

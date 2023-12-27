@@ -107,6 +107,8 @@ namespace shamunits {
         addget(eV) {return PREF* Uget(Joule, 1) * Cget(Uconvert::eV_to_J,1);}
         addget(erg) {return PREF* Uget(Joule, 1) * Cget(Uconvert::erg_to_J,1);}
 
+        addget(pint) {return PREF* Uget(m, 3) * Cget(Uconvert::litre_to_pint/1000,1);}
+
         // clang-format on
 
         template<UnitPrefix pref = None,                                                             
@@ -172,6 +174,7 @@ namespace shamunits {
             case units::parsec: return get<pref, units::parsec>(); break;
             case units::eV: return get<pref, units::eV>(); break;
             case units::erg:  return get<pref, units::erg>(); break;
+            case units::pint:  return get<pref, units::pint>(); break;
             }
         }
 

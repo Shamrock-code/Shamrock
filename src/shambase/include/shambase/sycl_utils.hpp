@@ -40,7 +40,7 @@ namespace shambase {
                            u64 max_range,
                            const SourceLocation loc = SourceLocation()) {
         if (buf.size() < max_range) {
-            throw throw_with_loc<std::invalid_argument>("buffer is too small", loc);
+            throw make_except_with_loc<std::invalid_argument>("buffer is too small", loc);
         }
     }
 

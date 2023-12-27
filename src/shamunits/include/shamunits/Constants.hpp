@@ -77,6 +77,8 @@ namespace shamunits {
             static constexpr T jupiter_mass  = 1.898e27;                               //(kg)
             static constexpr T sol_mass      = 1.98847e30;                             //(kg)
             static constexpr T planck_mass   = 2.17643424e-8;                          //(kg)
+
+            static constexpr T guiness_density = Conv::gcm3_to_guiness_density*1000;  //(kg.m-3)
         };
 
         const UnitSystem<T> units;
@@ -101,6 +103,7 @@ namespace shamunits {
         addconstant(earth_mass)         { return Cget(Si::earth_mass,1) * Uget(kg,1) ; }
         addconstant(jupiter_mass)         { return Cget(Si::jupiter_mass,1) * Uget(kg,1) ; }
         addconstant(sol_mass)         { return Cget(Si::sol_mass,1) * Uget(kg,1) ; }
+        addconstant(guiness_density)         { return Cget(Si::guiness_density,1) *Uget(kg,1)* Uget(m,-3) ; }
 
         // clang-format on
     };

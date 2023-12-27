@@ -70,7 +70,7 @@ void PatchTree::merge_node_dm1(u64 idparent){
     auto & parent_tnode = parent_node.tree_node;
 
     if(!parent_tnode.child_are_all_leafs ){
-        throw shambase::throw_with_loc<std::runtime_error>("node should be parent of only leafs");
+        throw shambase::make_except_with_loc<std::runtime_error>("node should be parent of only leafs");
     }
     
     leaf_key.erase(parent_tnode.childs_nid[0]);

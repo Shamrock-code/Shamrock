@@ -16,6 +16,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include "shambase/source_location.hpp"
 
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -32,46 +33,14 @@
  */
 struct SourceLocation {
 
-    const char *fileName; /*!< The filename */
-    const char *functionName;/*!< TThe name of the function */
-    const u32 lineNumber;/*!< do i really need to explain this one XD */
-    const u32 columnOffset;/*!< \see SourceLocation.lineNumber */
+    shambase::cxxstd::source_location loc;
 
-    explicit SourceLocation(
+    inline explicit SourceLocation(
 
-        #if defined __has_builtin
-        #if __has_builtin(__builtin_FILE)
-            const char *fileName = __builtin_FILE(),
-        #else
-            const char *fileName = "unimplemented",
-        #endif
-        #if __has_builtin(__builtin_FUNCTION)
-            const char *functionName = __builtin_FUNCTION(),
-        #else
-            const char *functionName = "unimplemented",
-        #endif
-        #if __has_builtin(__builtin_LINE)
-            const u32 lineNumber = __builtin_LINE(),
-        #else
-            const u32 lineNumber = 0,
-        #endif
-        #if __has_builtin(__builtin_COLUMN)
-            const u32 columnOffset = __builtin_COLUMN()
-        #else
-            const u32 columnOffset = 0
-        #endif
-        #else
-
-            const char *fileName = "unimplemented",
-            const char *functionName = "unimplemented",
-            const u32 lineNumber = 0, const u32 columnOffset = 0
-        #endif
+        shambase::cxxstd::source_location _loc = shambase::cxxstd::source_location::current()
 
         ) : 
-            fileName(fileName), 
-            functionName(functionName), 
-            lineNumber(lineNumber),
-            columnOffset(columnOffset) {}
+            loc(_loc) {}
 
     /**
      * @brief format the location in multiple lines
@@ -86,7 +55,7 @@ R"=(
 call = {}
 -------------------------
 )="
-            , fileName, lineNumber, columnOffset, functionName);
+            , loc.file_name(), loc.line(), loc.column(), loc.function_name());
     }
 
     /**
@@ -105,7 +74,7 @@ stacktrace :
 {}
 -------------------------
 )="
-            , fileName, lineNumber, columnOffset, functionName,stacktrace);
+            ,loc.file_name(), loc.line(), loc.column(), loc.function_name(),stacktrace);
     }
 
     /**
@@ -114,7 +83,7 @@ stacktrace :
      * @return std::string the formated location
      */
     std::string format_one_line(){
-        return fmt::format("{}:{}:{}", fileName, lineNumber, columnOffset);
+        return fmt::format("{}:{}:{}", loc.file_name(), loc.line(), loc.column());
     }
 
     /**
@@ -123,6 +92,6 @@ stacktrace :
      * @return std::string the formated location
      */
     std::string format_one_line_func(){
-        return fmt::format("{} ({}:{}:{})", functionName, fileName, lineNumber, columnOffset);
+        return fmt::format("{} ({}:{}:{})", loc.function_name(), loc.file_name(), loc.line(), loc.column());
     }
 };

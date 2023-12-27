@@ -44,7 +44,7 @@ namespace shamalgs::collective {
             mpi::allreduce(&a.y(), &ret.y(), 1, get_mpi_type<T>(), op, comm);
             mpi::allreduce(&a.z(), &ret.z(), 1, get_mpi_type<T>(), op, comm);
         }else{
-            throw shambase::throw_with_loc<std::invalid_argument>("unimplemented");
+            throw shambase::make_except_with_loc<std::invalid_argument>("unimplemented");
         }
         return ret;
     }

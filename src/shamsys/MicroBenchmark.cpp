@@ -107,7 +107,7 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2){
     StackEntry stack_loc{};
 
     if(wr1 == wr2){
-        throw shambase::throw_with_loc<std::invalid_argument>("can not launch this test with same ranks");
+        throw shambase::make_except_with_loc<std::invalid_argument>("can not launch this test with same ranks");
     }
 
     u32 wr = shamcomm::world_rank();

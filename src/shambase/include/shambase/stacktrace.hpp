@@ -40,18 +40,18 @@ namespace shambase::details {
             : loc(loc), do_timer(do_timer) {
             #ifdef SHAMROCK_USE_PROFILING
             if (do_timer)
-                add_prof_entry(loc.functionName, true);
+                add_prof_entry(loc.loc.function_name(), true);
             #endif
             call_stack.emplace(loc);
             #ifdef SHAMROCK_USE_NVTX
-            nvtxRangePush(loc.functionName);
+            nvtxRangePush(loc.loc.function_name());
             #endif
         }
 
         inline ~BasicStackEntry() {
             #ifdef SHAMROCK_USE_PROFILING
             if (do_timer)
-                add_prof_entry(call_stack.top().functionName, false);
+                add_prof_entry(call_stack.top().loc.function_name(), false);
             #endif
             call_stack.pop();
             #ifdef SHAMROCK_USE_NVTX

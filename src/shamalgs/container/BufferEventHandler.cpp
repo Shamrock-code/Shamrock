@@ -31,7 +31,7 @@ void shamalgs::BufferEventHandler::add_read_dependancies(std::vector<sycl::event
 
         logger::err_ln("BufferEventHandler", err);
 
-        throw shambase::throw_with_loc<std::runtime_error>(err);
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
 
     up_to_date_events = false;
@@ -53,7 +53,7 @@ void shamalgs::BufferEventHandler::add_read_write_dependancies(
             
         logger::err_ln("BufferEventHandler", err);
 
-        throw shambase::throw_with_loc<std::runtime_error>(err);
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
 
     up_to_date_events = false;
@@ -81,7 +81,7 @@ void shamalgs::BufferEventHandler::register_read_event(sycl::event e) {
         
         logger::err_ln("BufferEventHandler", err);
 
-        throw shambase::throw_with_loc<std::runtime_error>(err);
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
 
     if (last_event_create != READ) {
@@ -92,7 +92,7 @@ void shamalgs::BufferEventHandler::register_read_event(sycl::event e) {
         
         logger::err_ln("BufferEventHandler", err);
 
-        throw shambase::throw_with_loc<std::runtime_error>(err);
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
 
     up_to_date_events = true;
@@ -111,7 +111,7 @@ void shamalgs::BufferEventHandler::register_read_write_event(sycl::event e) {
         
         logger::err_ln("BufferEventHandler", err);
 
-        throw shambase::throw_with_loc<std::runtime_error>(err);
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
 
     if (last_event_create != READ_WRITE) {
@@ -122,7 +122,7 @@ void shamalgs::BufferEventHandler::register_read_write_event(sycl::event e) {
 
         logger::err_ln("BufferEventHandler", err);
 
-        throw shambase::throw_with_loc<std::runtime_error>(err);
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
 
     up_to_date_events = true;
@@ -140,7 +140,7 @@ void shamalgs::BufferEventHandler::synchronize() {
 
         logger::err_ln("BufferEventHandler", err);
 
-        throw shambase::throw_with_loc<std::runtime_error>(err);
+        throw shambase::make_except_with_loc<std::runtime_error>(err);
     }
 
     event_last_write.wait_and_throw();

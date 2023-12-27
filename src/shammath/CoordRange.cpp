@@ -22,91 +22,91 @@ namespace shammath {
     template<>
     void CoordRange<f32_3>::check_throw_ranges(SourceLocation loc){
         if(lower.x() >= upper.x()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.y() >= upper.y()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.z() >= upper.z()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
     }
 
     template<>
     void CoordRange<f64_3>::check_throw_ranges(SourceLocation loc){
         if(lower.x() >= upper.x()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.y() >= upper.y()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.z() >= upper.z()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
     }
 
     template<>
     void CoordRange<u16_3>::check_throw_ranges(SourceLocation loc){
         if(lower.x() >= upper.x()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.y() >= upper.y()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.z() >= upper.z()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
     }
 
     template<>
     void CoordRange<u32_3>::check_throw_ranges(SourceLocation loc){
         if(lower.x() >= upper.x()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.y() >= upper.y()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.z() >= upper.z()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
     }
 
     template<>
     void CoordRange<u64_3>::check_throw_ranges(SourceLocation loc){
         if(lower.x() >= upper.x()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.y() >= upper.y()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.z() >= upper.z()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
     }
     
     template<>
     void CoordRange<i32_3>::check_throw_ranges(SourceLocation loc){
         if(lower.x() >= upper.x()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.y() >= upper.y()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.z() >= upper.z()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
     }
 
     template<>
     void CoordRange<i64_3>::check_throw_ranges(SourceLocation loc){
         if(lower.x() >= upper.x()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.y() >= upper.y()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
         if(lower.z() >= upper.z()){
-            throw shambase::throw_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
+            throw shambase::make_except_with_loc<std::runtime_error>("this range is ill formed normally upper > lower");
         }
     }
 

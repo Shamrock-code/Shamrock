@@ -38,14 +38,21 @@ namespace shammodels {
 
         struct LocallyIsothermal {};
 
+        struct LocallyIsothermalLP07 {
+            Tscal cs0 = 0.005;
+            Tscal q = -2;
+            Tscal r0 = 10;
+        };
+
         // internal wiring of the eos to the code
 
-        using Variant = std::variant<Adiabatic, LocallyIsothermal>;
+        using Variant = std::variant<Adiabatic, LocallyIsothermal, LocallyIsothermalLP07>;
 
         Variant config = Adiabatic{};
 
         inline void set_adiabatic(Tscal gamma) { config = Adiabatic{gamma}; }
         inline void set_locally_isothermal() { config = LocallyIsothermal{}; }
+        inline void set_locally_isothermalLP07(Tscal cs0, Tscal q, Tscal r0) { config = LocallyIsothermalLP07{cs0, q, r0}; }
 
         inline void print_status();
     };
@@ -70,6 +77,8 @@ void shammodels::EOSConfig<Tvec>::print_status() {
         logger::raw_ln("gamma", eos_config->gamma);
     } else if (LocallyIsothermal *eos_config = std::get_if<LocallyIsothermal>(&config)) {
         logger::raw_ln("locally isothermal : ");
+    } else if (LocallyIsothermalLP07 *eos_config = std::get_if<LocallyIsothermalLP07>(&config)) {
+        logger::raw_ln("locally isothermal (Lodato Price 2007) : ");
     } else {
         shambase::throw_unimplemented();
     }

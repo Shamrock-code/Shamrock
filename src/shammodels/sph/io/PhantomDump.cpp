@@ -21,7 +21,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shammodels/EOSConfig.hpp"
-#include "shammodels/sph/AVConfig.hpp"
+#include "shammodels/sph/config/AVConfig.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/UnitSystem.hpp"
 #include <string>

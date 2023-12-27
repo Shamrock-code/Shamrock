@@ -1,0 +1,25 @@
+.md-typeset h1 {
+  font-weight: bold
+}
+
+.md-typeset h2 {
+  font-weight: bold
+}
+
+
+
+/* Increase logo + header size */
+
+.md-header__button.md-logo {
+  margin: 0;
+  padding: 4px;
+}
+
+.md-header__button.md-logo img {
+  width: 70px;
+  height: 70px;
+}
+
+.md-header__topic {
+  font-size: x-large;
+}

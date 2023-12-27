@@ -67,7 +67,7 @@ void Module<Tvec, TgridVec>::write_back_merged_data(){
 
         if (mpdat.pdat.has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in write back");
-            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+            throw shambase::make_except_with_loc<std::runtime_error>("detected nan");
         }
         
     });

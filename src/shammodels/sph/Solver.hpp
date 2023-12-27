@@ -16,8 +16,10 @@
  */
 
 #include "SolverConfig.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
+#include "shammodels/sph/SolverLog.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -26,7 +28,9 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shamrock/tree/TreeTraversalCache.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <memory>
+#include <stdexcept>
 #include <variant>
 namespace shammodels::sph {
 
@@ -56,6 +60,7 @@ namespace shammodels::sph {
         SolverStorage<Tvec, u_morton> storage {};
 
         Config solver_config;
+        SolverLog solve_logs;
 
         static constexpr Tscal htol_up_tol  = 1.1;
         static constexpr Tscal htol_up_iter = 1.1;
@@ -155,7 +160,7 @@ namespace shammodels::sph {
         
 
 
-        void sph_prestep(Tscal time_val);
+        void sph_prestep(Tscal time_val, Tscal dt);
 
         void apply_position_boundary(Tscal time_val);
 
@@ -185,10 +190,53 @@ namespace shammodels::sph {
 
         Solver(ShamrockCtx &context) : context(context) {}
 
-        Tscal evolve_once(Tscal t_current,Tscal dt_input,
-                          bool do_dump,
-                          std::string vtk_dump_name,
-                          bool vtk_dump_patch_id);
+        void vtk_do_dump(std::string filename, bool add_patch_world_id);
+
+        void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename){
+            solver_config.set_debug_dump(_do_debug_dump, _debug_dump_filename);
+        }
+
+        void evolve_once();
+
+        Tscal evolve_once_time_expl(Tscal t_current,Tscal dt_input){
+                            solver_config.set_time(t_current);
+                            solver_config.set_next_dt(dt_input);
+                            evolve_once();
+                            return solver_config.get_dt_sph();
+                          }
+
+        
+        inline bool evolve_until(Tscal target_time,i32 niter_max){
+            auto step = [&](){
+                Tscal dt = solver_config.get_dt_sph();
+                Tscal t = solver_config.get_time();
+
+                if(t > target_time){
+                    throw shambase::make_except_with_loc<std::invalid_argument>("the target time is higher than the current time");
+                }
+
+                if(t + dt > target_time){
+                    solver_config.set_next_dt(target_time - t);
+                }
+                evolve_once();
+            };
+
+            i32 iter_count = 0;
+            
+            while(solver_config.get_time() < target_time){
+                step();
+                iter_count++;
+
+                if((iter_count >= niter_max) && (niter_max != -1)){
+                    logger::info_ln("SPH","stopping evolve until because of niter =",iter_count);
+                    return false;
+                }
+            }
+
+            return true;
+            
+        }
+
     };
 
-} // namespace shammodels
+} // namespace shammodels::sph

@@ -139,7 +139,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
                     if(periodic && err){
                         logger::err_ln("Patch Object Mover", "id = ",i, "is out of bound with periodic mode");
-                        throw shambase::throw_with_loc<std::runtime_error>("error");
+                        throw shambase::make_except_with_loc<std::runtime_error>("error");
                     }
                 }
             }
@@ -161,7 +161,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
 
 
-        throw shambase::throw_with_loc<std::runtime_error>("box cannot be resized in periodic mode");
+        throw shambase::make_except_with_loc<std::runtime_error>("box cannot be resized in periodic mode");
     }
 
     if(synced_should_res_box){
@@ -386,7 +386,7 @@ inline void reatribute_particles<f64_3>(PatchScheduler & sched, SerialPatchTree<
 
                     if(periodic && err){
                         logger::err_ln("Patch Object Mover", "id = ",i, "is out of bound with periodic mode");
-                        throw shambase::throw_with_loc<std::runtime_error>("error");
+                        throw shambase::make_except_with_loc<std::runtime_error>("error");
                     }
                 }
             }
@@ -408,7 +408,7 @@ inline void reatribute_particles<f64_3>(PatchScheduler & sched, SerialPatchTree<
 
 
 
-        throw shambase::throw_with_loc<std::runtime_error>("box cannot be resized in periodic mode");
+        throw shambase::make_except_with_loc<std::runtime_error>("box cannot be resized in periodic mode");
     }
 
     if(synced_should_res_box){

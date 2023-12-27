@@ -97,7 +97,7 @@ inline void pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> am
     using vec = sycl::vec<flt, 3>;
 
     if (std::get<0>(ampls) != 0) {
-        throw shambase::throw_with_loc<std::runtime_error>("density perturbation not implemented");
+        throw shambase::make_except_with_loc<std::runtime_error>("density perturbation not implemented");
     }
 
     sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData & pdat){

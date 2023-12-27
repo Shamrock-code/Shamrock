@@ -69,11 +69,11 @@ namespace shamalgs {
 
         inline void check_head_move(u64 off) {
             if (!storage) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     ("the buffer is not allocated, the head cannot be moved"));
             }
             if (head + off > storage->size()) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     shambase::format("the buffer is not allocated, the head cannot be moved\n "
                                      "storage size : {}, requested head : {}",
                                      storage->size(),

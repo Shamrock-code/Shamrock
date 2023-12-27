@@ -101,7 +101,7 @@ namespace shambase {
     template<class T>
     inline T &get_check_ref(const std::unique_ptr<T> &ptr, SourceLocation loc = SourceLocation()) {
         if (!bool(ptr)) {
-            throw throw_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
+            throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
         }
         return *ptr;
     }
@@ -116,7 +116,7 @@ namespace shambase {
     template<typename T>
     auto extract_value(std::optional<T> &o, SourceLocation loc = SourceLocation()) -> T {
         if (!bool(o)) {
-            throw throw_with_loc<std::runtime_error>(
+            throw make_except_with_loc<std::runtime_error>(
                 "the value cannot be extracted, as the optional is empty", loc);
         }
         return std::exchange(o, std::nullopt).value();
@@ -132,7 +132,7 @@ namespace shambase {
     template<typename T>
     auto extract_pointer(std::unique_ptr<T> &o, SourceLocation loc = SourceLocation()) -> T {
         if (!bool(o)) {
-            throw throw_with_loc<std::runtime_error>(
+            throw make_except_with_loc<std::runtime_error>(
                 "the value cannot be extracted, as the unique_ptr is empty", loc);
         }
         std::unique_ptr<T> tmp = std::exchange(o, {});
@@ -142,7 +142,7 @@ namespace shambase {
     template<int n, class T>
     inline std::array<T, n> convert_to_array(std::vector<T> &in) {
         if (in.size() != n) {
-            throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
                 "you've input values with the wrong size, input size = {}, wanted = {}",
                 in.size(),
                 n));

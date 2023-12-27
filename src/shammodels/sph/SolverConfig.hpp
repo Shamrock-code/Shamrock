@@ -26,7 +26,8 @@
 #include <shamunits/UnitSystem.hpp>
 #include <variant>
 
-#include "AVConfig.hpp"
+#include "config/AVConfig.hpp"
+#include "config/BCConfig.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shammodels/EOSConfig.hpp"
 
@@ -35,38 +36,17 @@ namespace shammodels::sph {
     struct SolverConfig;
 
     template<class Tvec>
-    struct BCConfig;
-
+    struct SolverStatusVar;
 
 } // namespace shammodels::sph
 
 template<class Tvec>
-struct shammodels::sph::BCConfig {
+struct shammodels::sph::SolverStatusVar {
 
-    using Tscal              = shambase::VecComponent<Tvec>;
-    static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+    using Tscal = shambase::VecComponent<Tvec>;
 
-    struct Free {
-        Tscal expand_tolerance = 1.2;
-    };
-    struct Periodic {};
-    struct ShearingPeriodic {
-        i32_3 shear_base;
-        i32_3 shear_dir;
-        Tscal shear_speed;
-    };
-
-    using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
-
-    Variant config = Free{};
-
-    inline void set_free() { config = Free{}; }
-
-    inline void set_periodic() { config = Periodic{}; }
-
-    inline void set_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
-        config = ShearingPeriodic{shear_base, shear_dir, speed};
-    }
+    Tscal time   = 0;
+    Tscal dt_sph = 0;
 };
 
 template<class Tvec, template<class> class SPHKernel>
@@ -79,62 +59,116 @@ struct shammodels::sph::SolverConfig {
 
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    std::optional<shamunits::UnitSystem<Tscal>> unit_sys = {};
 
     Tscal gpart_mass;
     Tscal cfl_cour;
     Tscal cfl_force;
 
-    u32 tree_reduction_level = 3;
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Units Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    std::optional<shamunits::UnitSystem<Tscal>> unit_sys = {};
+
+    inline void set_units(shamunits::UnitSystem<Tscal> new_sys) { unit_sys = new_sys; }
+
+    inline Tscal get_constant_G() {
+        if (!unit_sys) {
+            logger::warn_ln("sph::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.G();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.G();
+        }
+    }
+
+    inline Tscal get_constant_c() {
+        if (!unit_sys) {
+            logger::warn_ln("sph::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.c();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.c();
+        }
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Units Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Solver status variables
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using SolverStatusVar = SolverStatusVar<Tvec>;
+
+    SolverStatusVar time_state;
+
+    inline void set_time(Tscal t) { time_state.time = t; }
+    inline void set_next_dt(Tscal dt) { time_state.dt_sph = dt; }
+
+    inline Tscal get_time() { return time_state.time; }
+    inline Tscal get_dt_sph() { return time_state.dt_sph; }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Solver status variables (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Tree config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    u32 tree_reduction_level  = 3;
     bool use_two_stage_search = true;
+
+    inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
+    inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Tree config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Solver behavior config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
     bool combined_dtdiv_divcurlv_compute = false;
+    static constexpr Tscal htol_up_tol   = 1.1;
+    static constexpr Tscal htol_up_iter  = 1.1;
 
-    static constexpr Tscal htol_up_tol  = 1.1;
-    static constexpr Tscal htol_up_iter = 1.1;
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Solver behavior config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
-    using AVConfig       = AVConfig<Tvec>;
-    using BCConfig       = BCConfig<Tvec>;
-    using EOSConfig      = shammodels::EOSConfig<Tvec>;
-    using ExtForceConfig = shammodels::ExtForceConfig<Tvec>;
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // EOS Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using EOSConfig = shammodels::EOSConfig<Tvec>;
 
     EOSConfig eos_config;
-    ExtForceConfig ext_force_config{};
-    BCConfig boundary_config;
-    AVConfig artif_viscosity;
-
-    inline void set_tree_reduction_level(u32 level){
-        tree_reduction_level = level;
-    }
-    inline void set_two_stage_search(bool enable){
-        use_two_stage_search = enable;
-    }
 
     inline bool is_eos_locally_isothermal() {
         using T = typename EOSConfig::LocallyIsothermal;
         return bool(std::get_if<T>(&eos_config.config));
     }
 
-    inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
-
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
     inline void set_eos_locally_isothermal() { eos_config.set_locally_isothermal(); }
+    inline void set_eos_locally_isothermalLP07(Tscal cs0, Tscal q, Tscal r0) { eos_config.set_locally_isothermalLP07(cs0, q, r0); }
 
-    inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
-        ext_force_config.add_point_mass(central_mass, Racc);
-    }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // EOS Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
-    inline void
-    add_ext_force_lense_thirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-        ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
-    }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Artificial viscosity Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
-    inline void set_boundary_free() { boundary_config.set_free(); }
+    using AVConfig = AVConfig<Tvec>;
 
-    inline void set_boundary_periodic() { boundary_config.set_periodic(); }
-
-    inline void set_boundary_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
-        boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
-    }
+    AVConfig artif_viscosity;
 
     inline void set_artif_viscosity_None() {
         using Tmp = typename AVConfig::None;
@@ -155,6 +189,77 @@ struct shammodels::sph::SolverConfig {
     inline void set_artif_viscosity_ConstantDisc(typename AVConfig::ConstantDisc v) {
         artif_viscosity.set(v);
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Artificial viscosity Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Boundary Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using BCConfig       = BCConfig<Tvec>;
+
+    BCConfig boundary_config;
+
+    inline void set_boundary_free() { boundary_config.set_free(); }
+
+    inline void set_boundary_periodic() { boundary_config.set_periodic(); }
+
+    inline void set_boundary_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
+        boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Boundary Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Ext force Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using ExtForceConfig = shammodels::ExtForceConfig<Tvec>;
+
+    ExtForceConfig ext_force_config{};
+
+    inline void add_ext_force_point_mass(Tscal central_mass, Tscal Racc) {
+        ext_force_config.add_point_mass(central_mass, Racc);
+    }
+
+    inline void
+    add_ext_force_lense_thirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
+        ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
+    }
+
+    inline void add_ext_force_shearing_box(Tscal Omega_0, Tscal eta, Tscal q) {
+        ext_force_config.add_shearing_box(Omega_0, eta, q);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Ext force Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Ext force Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    bool do_debug_dump = false;
+    std::string debug_dump_filename = "";
+
+    inline void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename){
+        this->do_debug_dump = _do_debug_dump;
+        this->debug_dump_filename = _debug_dump_filename;
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Ext force Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+    inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
 
     inline bool has_field_uint() {
         // no barotropic for now
@@ -195,29 +300,9 @@ struct shammodels::sph::SolverConfig {
 
         artif_viscosity.print_status();
         eos_config.print_status();
+        boundary_config.print_status();
 
         logger::raw_ln("------------------------------------");
     }
 
-    inline void set_units(shamunits::UnitSystem<Tscal> new_sys) { unit_sys = new_sys; }
-
-    inline Tscal get_constant_G() {
-        if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.G();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.G();
-        }
-    }
-
-    inline Tscal get_constant_c() {
-        if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.c();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.c();
-        }
-    }
 };

@@ -23,7 +23,7 @@
 template<class T>
 void shamalgs::ResizableUSMBuffer<T>::alloc() {
     if (usm_ptr != nullptr) {
-        throw shambase::throw_with_loc<std::runtime_error>("the usm pointer is already allocated");
+        throw shambase::make_except_with_loc<std::runtime_error>("the usm pointer is already allocated");
     }
 
     if (type == Host) {

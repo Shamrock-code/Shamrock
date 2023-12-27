@@ -27,7 +27,7 @@ namespace shamtest::details {
 
         if (node_count != -1) {
             if (node_count != shamcomm::world_size()) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     "trying to run a test with wrong number of nodes"
                 );
             }

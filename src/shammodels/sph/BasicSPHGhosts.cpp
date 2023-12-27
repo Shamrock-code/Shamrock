@@ -201,12 +201,15 @@ inline void for_each_patch_shift(ShearPeriodicInfo<T> shearinfo, sycl::vec<T,3> 
 
     std::vector<i32_3> list_possible;
 
+    //logger::raw_ln("testing :",shearinfo.shear_value,shearinfo.shear_dir, shearinfo.shear_base);
 
-    i32 repetition_x = 1;
-    i32 repetition_y = 1;
-    i32 repetition_z = 1;
+    // a bit of dirty fix doesn't hurt
+    // this should be done in a better way a some point
+    i32 repetition_x = 1 + abs(shearinfo.shear_dir.x());
+    i32 repetition_y = 1 + abs(shearinfo.shear_dir.y());
+    i32 repetition_z = 1 + abs(shearinfo.shear_dir.z());
 
-
+    T sz = bsize.x()*shearinfo.shear_dir.x() + bsize.y()*shearinfo.shear_dir.y() + bsize.z()*shearinfo.shear_dir.z();
 
     for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
         for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
@@ -219,7 +222,7 @@ inline void for_each_patch_shift(ShearPeriodicInfo<T> shearinfo, sycl::vec<T,3> 
 
                 i32 d = dx + dy + dz;
 
-                i32 df = -int(d * shearinfo.shear_value);
+                i32 df = -int(d * shearinfo.shear_value/sz);
                 
                 i32_3 off_d = {
                     shearinfo.shear_dir.x()*df,
@@ -232,9 +235,13 @@ inline void for_each_patch_shift(ShearPeriodicInfo<T> shearinfo, sycl::vec<T,3> 
         }
     }
 
+    //logger::raw_ln("trying", list_possible.size(), "patches ghosts");
+
     for(i32_3 off : list_possible){
 
         auto shift = compute_shift_infos(off,shearinfo,bsize);
+
+        //logger::raw_ln("check :",off,shift.shift, shift.shift_speed);
 
         funct(off,shift);
         
@@ -383,6 +390,9 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                                             {xoff, yoff, zoff},
                                             interf_volume,
                                             interf_volume.get_volume() / sender_volume});
+
+                        //logger::raw_ln("found :",offset, shift.shift_speed, vec{xoff, yoff, zoff});
+
                     });
             });
         });

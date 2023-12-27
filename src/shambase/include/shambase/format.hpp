@@ -6,21 +6,24 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
- * @file exception.cpp
+ * @file format.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
- * 
  */
- 
-#include "exception.hpp"
-#include "shambase/stacktrace.hpp"
 
-namespace shambase {
+#include <fmt/core.h>
+#include <fmt/format.h>
+#include <fmt/printf.h>
+#include <fmt/ranges.h>
 
-    std::string exception_format(SourceLocation loc){
-        return loc.format_multiline(fmt_callstack());
-    }
+namespace shamrock::cxxstd{
 
+    template<class T>
+    using formatter = fmt::formatter<T>;
 
-}
+    
+
+} // namespace shamrock::cxxstd

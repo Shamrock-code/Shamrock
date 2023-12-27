@@ -44,7 +44,7 @@ namespace shambase {
             std::pair<iterator, bool> ret = data.emplace(id, std::forward<T>(obj));
 
             if (!ret.second) {
-                throw throw_with_loc<std::runtime_error>("the key already exist");
+                throw make_except_with_loc<std::runtime_error>("the key already exist");
             }
 
             return ret.first;

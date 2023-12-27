@@ -119,7 +119,7 @@ class ShamrockCtx{public:
         }else if (type == "u64_3"){
             pdata_layout_add_field<u64_3>(fname, nvar);
         }else{
-            throw shambase::throw_with_loc<std::invalid_argument>("the select type is not registered");
+            throw shambase::make_except_with_loc<std::invalid_argument>("the select type is not registered");
         }
     }
 
@@ -208,7 +208,7 @@ class ShamrockCtx{public:
             
             sched->set_coord_domain_bound<f64_3>(a,b);
         }else{
-            throw shambase::throw_with_loc<std::runtime_error>(
+            throw shambase::make_except_with_loc<std::runtime_error>(
                 "the chosen type for the main field is not handled"
                 );
         }

@@ -74,7 +74,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.extract_element(pidx,out_field);
                 }else{  
-                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
+                    throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, out_pdat.fields[idx].value);
@@ -97,7 +97,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.insert(out_field);
                 }else{  
-                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
+                    throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, pdat.fields[idx].value);
@@ -119,7 +119,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.overwrite(out_field,obj_cnt);
                 }else{  
-                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
+                    throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, pdat.fields[idx].value);
@@ -199,7 +199,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.append_subset_to(idxs, sz, out_field);
                 }else{  
-                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
+                    throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, pdat.fields[idx].value);
@@ -220,7 +220,7 @@ namespace shamrock::patch{
                 if constexpr (std::is_same<t1, t2>::value){
                     field.append_subset_to(idxs, out_field);
                 }else{  
-                    throw shambase::throw_with_loc<std::invalid_argument>("missmatch");
+                    throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
                 }
 
             }, fields[idx].value, pdat.fields[idx].value);

@@ -34,7 +34,7 @@ namespace shambase {
             shambase::stream_read(buffer, new_check);
 
             if (new_check != fortran_byte) {
-                throw shambase::throw_with_loc<std::runtime_error>("fortran 4 bytes invalid");
+                throw shambase::make_except_with_loc<std::runtime_error>("fortran 4 bytes invalid");
             }
 
             fortran_byte = new_check;
@@ -174,7 +174,7 @@ namespace shambase {
         template<class T>
         inline void write_val_array(std::vector<T> &vec, u32 val_count) {
             if(val_count > vec.size()){
-                throw throw_with_loc<std::invalid_argument>("val count is higher than vec size");
+                throw make_except_with_loc<std::invalid_argument>("val count is higher than vec size");
             }
             i32 totlen = sizeof(T) * val_count;
             stream_write(data, totlen);

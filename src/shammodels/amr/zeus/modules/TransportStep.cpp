@@ -283,17 +283,17 @@ void Module<Tvec, TgridVec>::compute_limiter() {
 
         if (a_x.get_field(p.id_patch).has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in a_x");
-            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+            throw shambase::make_except_with_loc<std::runtime_error>("detected nan");
         }
 
         if (a_y.get_field(p.id_patch).has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in a_y");
-            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+            throw shambase::make_except_with_loc<std::runtime_error>("detected nan");
         }
 
         if (a_z.get_field(p.id_patch).has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in a_z");
-            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+            throw shambase::make_except_with_loc<std::runtime_error>("detected nan");
         }
     });
 }

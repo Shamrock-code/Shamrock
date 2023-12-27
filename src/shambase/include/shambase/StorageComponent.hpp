@@ -40,7 +40,7 @@ namespace shambase {
         void set(T &&arg, SourceLocation loc = SourceLocation()) {
             StackEntry stack_loc{};
             if (hndl) {
-                throw shambase::throw_with_loc<std::runtime_error>(
+                throw shambase::make_except_with_loc<std::runtime_error>(
                     "please reset the storage component before", loc);
             }
             hndl = std::make_unique<T>(std::forward<T>(arg));

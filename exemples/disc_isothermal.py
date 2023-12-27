@@ -88,59 +88,37 @@ def plot_vertical_profile(r, rrange, label = ""):
     plt.scatter(ysel, rhosel/rhobar, s=1, label = label)
 
 
-print("Small timestep")
-model.evolve(0,1e-7, False, "", False)
-
-print("Plot timestep")
-
-
-
-
-#plt.xscale('log')
-#plt.yscale('log')
-
-
 
 print("Run")
 
+model.evolve_once_override_time(0,0)
 
 print("Current part mass :", pmass)
 
-#for it in range(5):
-#    setup.update_smoothing_length(ctx)
-
-
-
-
-
-
-
-#for i in range(9):
-#    model.evolve(5e-4, False, False, "", False)
 plot_vertical_profile(1,0.5, label = "init")
 
 t_sum = 0
 t_target = 4e-1
-current_dt = 1e-7
-i = 0
+
 i_dump = 0
-while t_sum < t_target:
+dt_dump = 1e-2
+next_dt_target = t_sum + dt_dump 
 
-    print("step : t=",t_sum)
+while next_dt_target <= t_target:
 
-    do_dump = (i % 50 == 0)  
-    next_dt = model.evolve(t_sum,current_dt, do_dump, outputdir + "dump_{:04}.vtk".format(i_dump), do_dump)
 
-    if i % 50 == 0:
-        i_dump += 1
+    fname = "dump_{:04}.phfile".format(i_dump)
 
-    t_sum += current_dt
-    current_dt = next_dt
+    model.evolve_until(next_dt_target)
+    
+    do_dump = (i % 50 == 0) 
+    if do_dump:
+      dump = model.make_phantom_dump()
+      dump.save_dump(fname)
 
-    if (t_target - t_sum) < next_dt:
-        current_dt = t_target - t_sum
+    i_dump += 1
 
-    i+= 1
+    next_dt_target += dt_dump
 
 
 plot_vertical_profile(1,0.5, label = "end")

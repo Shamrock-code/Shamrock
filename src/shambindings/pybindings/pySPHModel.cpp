@@ -14,6 +14,7 @@
  */
  
 #include <memory>
+#include <pybind11/cast.h>
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
@@ -40,6 +41,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_two_stage_search",&TConfig::set_two_stage_search)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
+        .def("set_eos_locally_isothermalLP07", &TConfig::set_eos_locally_isothermalLP07)
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "set_artif_viscosity_Constant",
@@ -110,12 +112,28 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Racc"),
             py::arg("a_spin"),
             py::arg("dir_spin"))
+        .def("add_ext_force_shearing_box",[](TConfig & self,Tscal Omega_0,Tscal eta,Tscal q){
+            self.add_ext_force_shearing_box(Omega_0, eta, q);
+        },
+            py::kw_only(),
+            py::arg("Omega_0"),
+            py::arg("eta"),
+            py::arg("q"))
         .def("set_units", &TConfig::set_units);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) { return std::make_unique<T>(ctx); }))
         .def("init_scheduler", &T::init_scheduler)
-        .def("evolve", &T::evolve_once)
+
+        .def("evolve_once_override_time", &T::evolve_once_time_expl)
+        .def("evolve_once", &T::evolve_once)
+        .def("evolve_until",[](T&self, f64 target_time,i32 niter_max){
+            return self.evolve_until(target_time, niter_max);
+        },
+        py::arg("target_time"),
+        py::kw_only(),
+        py::arg("niter_max") = -1)
+        .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour)
         .def("set_cfl_force", &T::set_cfl_force)
         .def("set_particle_mass", &T::set_particle_mass)
@@ -204,7 +222,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                      f64_3 val = value.cast<f64_3>();
                      self.set_value_in_a_box(field_name, val, {box_min, box_max});
                  } else {
-                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                     throw shambase::make_except_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
         .def("set_value_in_sphere",
@@ -221,10 +239,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                      f64_3 val = value.cast<f64_3>();
                      self.set_value_in_sphere(field_name, val, center, radius);
                  } else {
-                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                     throw shambase::make_except_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
         .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>)
+        .def("set_field_value_lambda_f64",&T::template set_field_value_lambda<f64>)
         //.def("set_field_value_lambda_f64_3",[](T&self,std::string field_name, const std::function<f64_3 (Tscal, Tscal , Tscal)> pos_to_val){
         //    self.template set_field_value_lambda<f64_3>(field_name, [=](Tvec v){
         //        return pos_to_val(v.x(), v.y(),v.z());
@@ -244,7 +263,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                      f64_3 val = value.cast<f64_3>();
                      self.add_kernel_value(field_name, val, center, h_ker);
                  } else {
-                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                     throw shambase::make_except_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
         .def("get_sum",
@@ -254,7 +273,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                  } else if (field_type == "f64_3") {
                      return py::cast(self.template get_sum<f64_3>(field_name));
                  } else {
-                     throw shambase::throw_with_loc<std::invalid_argument>("unknown field type");
+                     throw shambase::make_except_with_loc<std::invalid_argument>("unknown field type");
                  }
              })
         .def("get_closest_part_to", [](T & self,f64_3 pos) -> f64_3 {
@@ -282,6 +301,22 @@ R"==(
         })
         .def("make_phantom_dump",[](T & self){
             return self.make_phantom_dump();
+        })
+        .def("do_vtk_dump", &T::do_vtk_dump)
+        .def("set_debug_dump",&T::set_debug_dump)
+        .def("solver_logs_last_rate",&T::solver_logs_last_rate)
+        .def("solver_logs_last_obj_count",&T::solver_logs_last_obj_count)
+        .def("get_time",[](T & self){
+            return self.solver.solver_config.get_time();
+        })
+        .def("get_dt",[](T & self){
+            return self.solver.solver_config.get_dt_sph();
+        })
+        .def("set_time",[](T & self, Tscal t){
+            return self.solver.solver_config.set_time(t);
+        })
+        .def("set_next_dt",[](T & self, Tscal dt){
+            return self.solver.solver_config.set_next_dt(dt);
         });
     ;
 }
@@ -309,7 +344,7 @@ Register_pymod(pysphmodel) {
             } else if (vector_type == "f64_3" && kernel == "M6") {
                 ret = std::make_unique<Model<f64_3, shammath::M6>>(ctx);
             } else {
-                throw shambase::throw_with_loc<std::invalid_argument>(
+                throw shambase::make_except_with_loc<std::invalid_argument>(
                     "unknown combination of representation and kernel");
             }
 

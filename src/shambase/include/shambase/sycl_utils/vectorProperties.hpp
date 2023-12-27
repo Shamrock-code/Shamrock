@@ -16,7 +16,7 @@
  */
  
 #include "shambackends/typeAliasVec.hpp"
-#include <limits>
+#include "shambase/numeric_limits.hpp"
 
 namespace shambase {
 
@@ -37,10 +37,10 @@ namespace shambase {
 
         static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
 
-        static constexpr T get_min() { return std::numeric_limits<T>::min(); } //why this f***ing thing gives epsilon on float when you except -max aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah !!!!
-        static constexpr T get_max() { return std::numeric_limits<T>::max(); }
-        static constexpr T get_inf() { return std::numeric_limits<T>::infinity(); }
-        static constexpr T get_zero(){return 0;}
+        static constexpr T get_min() { return shambase::get_min<T>(); } //why this f***ing thing gives epsilon on float when you except -max aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaah !!!!
+        static constexpr T get_max() { return shambase::get_max<T>(); }
+        static constexpr T get_inf() { return shambase::get_infty<T>(); }
+        static constexpr T get_zero(){ return 0;}
     };
 
     template<class T, u32 dim>
@@ -60,7 +60,7 @@ namespace shambase {
         static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
 
         static constexpr sycl::vec<T, dim> get_min() {
-            constexpr T min = std::numeric_limits<T>::min();
+            constexpr T min = shambase::get_min<T>();
             if constexpr (dim == 2) {
                 return {min, min};
             }
@@ -79,7 +79,7 @@ namespace shambase {
             }
         }
         static constexpr sycl::vec<T, dim> get_max() {
-            constexpr T max = std::numeric_limits<T>::max();
+            constexpr T max = shambase::get_max<T>();
             if constexpr (dim == 2) {
                 return {max, max};
             }

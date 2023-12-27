@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = "/home/ylapeyre/Shamrock_tests/LT_test/LT_test2/"
+outputdir = "./"
 central_mass = 1e8
 
 si = shamrock.UnitSystem()

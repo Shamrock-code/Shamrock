@@ -14,7 +14,6 @@
  */
  
 #include <memory>
-#include <pybind11/cast.h>
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"

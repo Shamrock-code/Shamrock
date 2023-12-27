@@ -32,7 +32,6 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
 #include <vector>
 
 #include <pybind11/functional.h>

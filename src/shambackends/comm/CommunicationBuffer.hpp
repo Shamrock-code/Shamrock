@@ -26,7 +26,7 @@
 #include "shambase/exception.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamcomm/details/CommunicationBufferImpl.hpp"
+#include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 
 namespace shamcomm {
 

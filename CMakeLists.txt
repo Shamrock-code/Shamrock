@@ -41,7 +41,7 @@ option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 
 if(APPLE)
 if(SHAMROCK_USE_SHARED_LIB)
-message(STATUS "forcing SHAMROCK_USE_SHARED_LIB=Off on Macos because of know issues")
+message(STATUS "forcing SHAMROCK_USE_SHARED_LIB=Off on Macos because of known issues")
 endif()
 set(SHAMROCK_USE_SHARED_LIB Off)
 endif()

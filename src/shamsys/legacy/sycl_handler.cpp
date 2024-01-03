@@ -123,7 +123,7 @@ namespace sycl_handler {
             throw ShamrockSyclException("Sycl Handler is already on");
         }
 
-        logger::raw_ln(terminal_effects::colors_foreground_8b::cyan + " >>> init SYCL instances <<< " + terminal_effects::reset);
+        logger::raw_ln(shambase::term_colors::col8b_cyan() + " >>> init SYCL instances <<< " + shambase::term_colors::reset());
 
 
 

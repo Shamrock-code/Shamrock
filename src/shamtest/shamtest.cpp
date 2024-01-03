@@ -25,6 +25,7 @@
 #include "shambase/bytestream.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "shambase/term_colors.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -172,7 +173,7 @@ namespace shamtest {
         logger::print_faint_row();
         logger::print_faint_row();
         logger::print_faint_row();
-        logger::raw_ln(terminal_effects::bold + "Test Report :" + terminal_effects::reset);
+        logger::raw_ln(shambase::term_colors::bold() + "Test Report :" + shambase::term_colors::reset());
         logger::raw_ln();
 
         u32 test_count  = results.size();

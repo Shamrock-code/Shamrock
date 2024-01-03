@@ -10,12 +10,20 @@ CPU : Platinum 9242 @ 2.3GHz (48 cores, 2 socket)
 RAM : 384 GiB
 interconnect 100 GiB/s
 '''
+#dic["CascadeLake1"] = {
+#    "label" : "CascadeLake",
+#    "X" : [2,4,8,16,128],
+#    "rate" : [981011.0412950808, 2041550.4552234707, 3657283.5229988615, 7577602.18079052, 42975622.415431604],
+#    "cnt" : [3900960, 7916016, 15835008, 31808472, 254467776],
+#    "lb_pred" : [100,100,100,100, 100]
+#}
+
 dic["CascadeLake1"] = {
     "label" : "CascadeLake",
-    "X" : [2,4,8,16],
-    "rate" : [981011.0412950808, 2041550.4552234707, 3657283.5229988615, 7577602.18079052],
-    "cnt" : [3900960, 7916016, 15835008, 31808472],
-    "lb_pred" : [100,100,100,100]
+    "X" : [2, 4, 8, 16, 32,64,128,152],
+    "rate" : [1705829.042131229, 3328780.0407591304, 6709830.7891846, 10790180.093741834, 20591599.941228684,40850996.51509906, 63314184.38101712,76556249.52454272],
+    "cnt" : [11838528, 23793664, 47434464, 95496480, 191092864,381677472, 767134656,910455552],
+    "lb_pred" : [100, 100, 100, 100,100,100,100, 100]
 }
 
 
@@ -244,7 +252,7 @@ plt.figure()
 for k in dic.keys():
     plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ), label = dic[k]["label"])
 #plt.ylim(0,1e6)
-plt.xlim(1,150)
+plt.xlim(1,200)
 plt.xscale('log')
 plt.ylabel(r"$N_{\rm part} / (N_{\rm cpu} t_{\rm step})$")
 plt.xlabel(r"$N_{\rm cpu}$")
@@ -257,7 +265,7 @@ plt.figure()
 for k in dic.keys():
     plt.plot(dic[k]["X"]  , (np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))/(np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))[0], label =  dic[k]["label"])
 #plt.ylim(0,1e6)
-plt.xlim(1,150)
+plt.xlim(1,200)
 plt.xscale('log')
 plt.ylabel(r"$\chi$")
 plt.xlabel(r"$N_{\rm cpu}$")
@@ -270,7 +278,7 @@ plt.figure()
 for k in dic.keys():
     plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"]), label = dic[k]["label"])
 #plt.ylim(0,1e6)
-plt.xlim(1,150)
+plt.xlim(1,200)
 plt.xscale('log')
 plt.yscale('log')
 plt.ylabel(r"$N_{\rm part} / (t_{\rm step})$")

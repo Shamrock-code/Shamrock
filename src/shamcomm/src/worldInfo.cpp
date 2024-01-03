@@ -14,7 +14,7 @@
 
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
-#include "shamsys/MpiWrapper.hpp"
+#include "shamcomm/mpi.hpp"
 
 namespace shamcomm {
 

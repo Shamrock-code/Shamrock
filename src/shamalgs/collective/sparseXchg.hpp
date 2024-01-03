@@ -23,7 +23,7 @@
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SyclMpiTypes.hpp"
-#include "shamcomm/CommunicationBuffer.hpp"
+#include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambase/integer.hpp"
 #include "shamsys/legacy/log.hpp"
 

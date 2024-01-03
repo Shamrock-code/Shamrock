@@ -20,7 +20,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamcomm/details/CommunicationBufferImpl.hpp"
+#include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
 

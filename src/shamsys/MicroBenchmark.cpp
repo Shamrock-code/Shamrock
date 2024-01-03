@@ -19,7 +19,7 @@
 #include "shambase/string.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamcomm/CommunicationBuffer.hpp"
+#include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <mpi.h>
 #include <stdexcept>

@@ -23,8 +23,7 @@
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/EnvVariables.hpp"
-#include "shamcomm/CommunicationBuffer.hpp"
-#include "shamcomm/details/CommunicationBufferImpl.hpp"
+#include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/MpiWrapper.hpp"
@@ -613,11 +612,11 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
             dgpu_capable = true;
         }
 
-        using namespace terminal_effects::colors_foreground_8b;
+        using namespace shambase::term_colors;
         if(dgpu_capable){
-            logger::raw_ln(" - MPI use Direct Comm :",green + "Yes"+ terminal_effects::reset);
+            logger::raw_ln(" - MPI use Direct Comm :",col8b_green() + "Yes"+ reset());
         }else{
-            logger::raw_ln(" - MPI use Direct Comm :",red + "No"+ terminal_effects::reset);
+            logger::raw_ln(" - MPI use Direct Comm :",col8b_red() + "No"+ reset());
         }
         dgpu_mode = dgpu_capable;
     }
@@ -701,20 +700,20 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
 
         bool call_abort = false;
 
-        using namespace terminal_effects::colors_foreground_8b;
+        using namespace shambase::term_colors;
         if(dgpu_mode){
             if(validate_comm(shamcomm::DirectGPU)){
-                if(shamcomm::world_rank() == 0) logger::raw_ln(" - MPI use Direct Comm :",green + "Working"+ terminal_effects::reset);
+                if(shamcomm::world_rank() == 0) logger::raw_ln(" - MPI use Direct Comm :",col8b_green() + "Working"+ reset());
             }else{
-                if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Direct Comm :",red + "Fail"+ terminal_effects::reset);
+                if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Direct Comm :",col8b_red() + "Fail"+ reset());
                 if(shamcomm::world_rank() == 0)logger::err_ln("Sys", "the select comm mode failed, try forcing dgpu mode off");
                 call_abort = true;
             }
         }else{
             if(validate_comm(shamcomm::CopyToHost)){
-                if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",green + "Working"+ terminal_effects::reset);
+                if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",col8b_green() + "Working"+ reset());
             }else{
-                if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",red + "Fail"+ terminal_effects::reset);
+                if(shamcomm::world_rank() == 0)logger::raw_ln(" - MPI use Copy to Host :",col8b_red() + "Fail"+ reset());
                 call_abort = true;
             }
         }

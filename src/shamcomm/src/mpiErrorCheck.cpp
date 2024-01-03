@@ -13,7 +13,7 @@
  *
  */
 
-#include "mpiErrorCheck.hpp"
+#include "shamcomm/mpiErrorCheck.hpp"
 #include "mpi.h"
 #include <cstdio>
 

@@ -32,9 +32,9 @@ Register_pymod(pysyslibinit) {
                     "If you've seen spam in your life i can garantee you, this is worst");
             }
 
-            logger::raw_ln("-> modified loglevel to", logger::loglevel, "enabled log types : ");
+            logger::raw_ln("-> modified loglevel to", logger::get_loglevel(), "enabled log types : ");
 
-            logger::loglevel = loglevel;
+            logger::set_loglevel(loglevel);
             logger::print_active_level();
         },
         R"pbdoc(

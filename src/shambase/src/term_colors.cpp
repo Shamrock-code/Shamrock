@@ -6,26 +6,23 @@
 //
 // -------------------------------------------------------//
 
-#pragma once 
-
 /**
- * @file log.hpp
+ * @file term_colors.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief 
+ * 
  */
 
-#include "shambackends/typeAliasVec.hpp"
-#include <chrono>
-#include <fstream>
-#include <string>
-#include <iostream>
-
-#include "shamsys/Log.hpp"
-
-
 #include "shambase/term_colors.hpp"
-#include "shamcomm/logs.hpp"
 
+namespace shambase::details {
+    TermColors _int_term_colors = TermColors::get_config_colors();
+}
 
+void shambase::term_colors::enable_colors() {
+    details::_int_term_colors = details::TermColors::get_config_colors();
+}
 
-
+void shambase::term_colors::disable_colors() {
+    details::_int_term_colors = details::TermColors::get_config_nocolors();
+}

@@ -12,7 +12,7 @@
 #include "shamalgs/reduction.hpp"
 #include "shambase/DistributedData.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamcomm/details/CommunicationBufferImpl.hpp"
+#include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 #include <map>

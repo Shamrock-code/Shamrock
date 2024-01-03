@@ -8,8 +8,7 @@
 
 #include "shamalgs/random.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
-#include "shamcomm/CommunicationBuffer.hpp"
-#include "shamcomm/details/CommunicationBufferImpl.hpp"
+#include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 

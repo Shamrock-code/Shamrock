@@ -49,7 +49,7 @@ namespace syclalg {
                 }
             }
         }else{
-            throw shambase::throw_with_loc<std::runtime_error>("syclalg::get_max : input buffer not allocated");
+            throw shambase::make_except_with_loc<std::runtime_error>("syclalg::get_max : input buffer not allocated");
         } 
 
         return accum;
@@ -87,7 +87,7 @@ namespace syclalg {
             } 
 
         }else {
-            throw shambase::throw_with_loc<std::runtime_error>("syclalg::get_min : input buffer not allocated");
+            throw shambase::make_except_with_loc<std::runtime_error>("syclalg::get_min : input buffer not allocated");
         } 
 
         
@@ -128,7 +128,7 @@ namespace syclalg {
 
 
         } else {
-            throw shambase::throw_with_loc<std::runtime_error>("syclalg::get_max : input buffer not allocated");
+            throw shambase::make_except_with_loc<std::runtime_error>("syclalg::get_max : input buffer not allocated");
         } 
 
         return {accum_min,accum_max};

@@ -28,7 +28,7 @@ jobs:
         run: pip install -U jupyter-book sphinx_proof matplotlib numpy
 
       - name: pip install packages (mkdocs)
-        run: pip install -U pip install mkdocs-material mkdocs-git-committers-plugin-2 mkdocs-git-authors-plugin mkdocs-git-revision-date-plugin
+        run: pip install mkdocs-material mkdocs-git-committers-plugin-2 mkdocs-git-authors-plugin mkdocs-git-revision-date-plugin mkdocs-git-revision-date-localized-plugin
 
       - name : Install pck (doxygen)
         run: |

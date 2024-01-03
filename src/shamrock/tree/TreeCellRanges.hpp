@@ -194,7 +194,7 @@ namespace shamrock::tree {
             } else if (buf_pos_min_cell_flt) {
                 return buf_pos_min_cell_flt->size();
             } else {
-                throw shambase::throw_with_loc<std::runtime_error>("no buffers are allocated");
+                throw shambase::make_except_with_loc<std::runtime_error>("no buffers are allocated");
             }
         }
 

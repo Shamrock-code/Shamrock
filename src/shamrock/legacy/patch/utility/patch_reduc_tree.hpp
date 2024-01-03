@@ -36,12 +36,12 @@ class PatchFieldReduction{public:
 
 
     inline void attach_buf(){
-        if(tree_field_buf != nullptr) throw shambase::throw_with_loc<std::runtime_error>("tree_field_buf is already allocated");
+        if(tree_field_buf != nullptr) throw shambase::make_except_with_loc<std::runtime_error>("tree_field_buf is already allocated");
         tree_field_buf = new sycl::buffer<type>(tree_field.data(),tree_field.size());
     }
 
     inline void detach_buf(){
-        if(tree_field_buf == nullptr) throw shambase::throw_with_loc<std::runtime_error>("tree_field_buf wasn't allocated");
+        if(tree_field_buf == nullptr) throw shambase::make_except_with_loc<std::runtime_error>("tree_field_buf wasn't allocated");
         delete tree_field_buf;
         tree_field_buf = nullptr;
     }

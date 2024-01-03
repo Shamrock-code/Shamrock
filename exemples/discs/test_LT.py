@@ -2,8 +2,8 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = "/home/ylapeyre/Shamrock_tests/new_tilt/"
-ph_dir = "/home/ylapeyre/phantom_tests/warp_newtilt/"
+outputdir = "./"
+ph_dir = "./"
 ph_file = ph_dir + "warp_00000"
 
 ctx = shamrock.Context()

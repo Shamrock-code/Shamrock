@@ -66,7 +66,7 @@ namespace shamsys::instance::details {
             {
                 sycl::host_accessor acc {b, sycl::read_only};
                 if(acc[9] != 9){
-                    throw shambase::throw_with_loc<std::runtime_error>("The chosen SYCL queue cannot execute a basic kernel");
+                    throw shambase::make_except_with_loc<std::runtime_error>("The chosen SYCL queue cannot execute a basic kernel");
                 }
             }
         };
@@ -480,7 +480,7 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
 
         }else{
             logger::err_ln("Sys", "cannot query local rank cannot use autodetect");
-            throw shambase::throw_with_loc<std::runtime_error>("cannot query local rank cannot use autodetect");
+            throw shambase::make_except_with_loc<std::runtime_error>("cannot query local rank cannot use autodetect");
         }
     }
 
@@ -490,11 +490,11 @@ print_buf = shambase::format("| {:>4} | {:>8} | {:>12} | {:>16} |\n", rank,"???"
             [&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){});
 
         if(alt_id >= cnt_dev){
-            throw shambase::throw_with_loc<std::invalid_argument>("the alt queue id is larger than the number of queue");
+            throw shambase::make_except_with_loc<std::invalid_argument>("the alt queue id is larger than the number of queue");
         }
 
         if(compute_id >= cnt_dev){
-            throw shambase::throw_with_loc<std::invalid_argument>("the compute queue id is larger than the number of queue");
+            throw shambase::make_except_with_loc<std::invalid_argument>("the compute queue id is larger than the number of queue");
         }
 
         details::for_each_device([&](u32 key_global, const sycl::platform & plat, const sycl::device & dev){

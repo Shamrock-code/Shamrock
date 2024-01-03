@@ -58,7 +58,7 @@ class SchedulerPatchList{public:
     
     inline void check_load_values_valid(SourceLocation loc = SourceLocation{}){
         if(!is_load_values_up_to_date){
-            throw shambase::throw_with_loc<std::runtime_error>("the load values are invalid please update them",loc);
+            throw shambase::make_except_with_loc<std::runtime_error>("the load values are invalid please update them",loc);
         }
     }
 

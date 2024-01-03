@@ -43,7 +43,33 @@ namespace shammodels {
             Tvec dir_spin;
         };
 
-        using VariantForce = std::variant<PointMass, LenseThirring>;
+        /**
+         * \brief Shearing box forces as in athena
+         * \cite Stone2010_shear_box
+         * \f[
+         *  \mathbf{f} = 2\Omega_0 \left(  q \Omega_0 x +  v_y \right) \basevec{x} -2\Omega_0 v_x \basevec{y} - \Omega_0^2 z \basevec{z}  \f]
+         * Shear speed :
+         * \f[
+         *  \omega = q \Omega_0 L_x \f]
+         */
+        struct ShearingBoxForce {
+            i32_3 shear_base = {1,0,0};
+            i32_3 shear_dir = {0,1,0};
+
+            Tscal Omega_0;
+            Tscal eta;
+            Tscal q;
+
+            inline Tscal shear_speed(Tscal box_lenght){
+                return q*Omega_0*box_lenght;
+            }
+
+            ShearingBoxForce()= default;
+            ShearingBoxForce(Tscal Omega_0,Tscal eta,Tscal q) : Omega_0(Omega_0), eta(eta), q(q){};
+
+        };
+
+        using VariantForce = std::variant<PointMass, LenseThirring, ShearingBoxForce>;
 
         std::vector<VariantForce> ext_forces;
 
@@ -59,7 +85,17 @@ namespace shammodels {
             }
             ext_forces.push_back(LenseThirring{central_mass, Racc, a_spin, dir_spin});
         }
-        
+
+        /**
+         * @brief
+         * \todo add check for norm of shear vectors
+         */
+        inline void add_shearing_box(
+            Tscal Omega_0,Tscal eta,Tscal q) {
+
+            ext_forces.push_back(
+                ShearingBoxForce{Omega_0, eta, q});
+        }
     };
 
-}
+} // namespace shammodels

@@ -96,7 +96,7 @@ template<class T> class PdatField_append_subset_to;
 template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &idxs_buf,u32 sz, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar)
-        throw shambase::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
+        throw shambase::make_except_with_loc<std::invalid_argument>("field must be similar for extraction");
 
     const u32 start_enque = pfield.size();
 
@@ -176,7 +176,7 @@ template <class T> void PatchDataField<T>::append_subset_to(sycl::buffer<u32> &i
 template <class T> void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar){
-        throw shambase::throw_with_loc<std::invalid_argument>("field must be similar for extraction");
+        throw shambase::make_except_with_loc<std::invalid_argument>("field must be similar for extraction");
     }
     
     using buf_t = std::unique_ptr<sycl::buffer<T>>;
@@ -280,7 +280,7 @@ template<class T> void PatchDataField<T>::index_remap_resize(sycl::buffer<u32> &
 template<class T> void PatchDataField<T>::index_remap(sycl::buffer<u32> & index_map, u32 len){
 
     if(len != get_obj_cnt()){
-        throw shambase::throw_with_loc<std::invalid_argument>("the match of the new index map does not match with the patchdatafield obj count");
+        throw shambase::make_except_with_loc<std::invalid_argument>("the match of the new index map does not match with the patchdatafield obj count");
     }
 
     index_remap_resize(index_map,len);
@@ -382,7 +382,7 @@ PatchDataField<T> PatchDataField<T>::deserialize_full(shamalgs::SerializeHelper 
 
 template<class T>    T PatchDataField<T>::compute_max(){StackEntry stack_loc{};
     if(is_empty()){
-        throw shambase::throw_with_loc<std::invalid_argument>("the field is empty");
+        throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
     return shamalgs::reduction::max(
         shamsys::instance::get_compute_queue(), 
@@ -393,7 +393,7 @@ template<class T>    T PatchDataField<T>::compute_max(){StackEntry stack_loc{};
 
 template<class T>    T PatchDataField<T>::compute_min(){StackEntry stack_loc{};
     if(is_empty()){
-        throw shambase::throw_with_loc<std::invalid_argument>("the field is empty");
+        throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
     return shamalgs::reduction::min(
         shamsys::instance::get_compute_queue(), 
@@ -404,7 +404,7 @@ template<class T>    T PatchDataField<T>::compute_min(){StackEntry stack_loc{};
 
 template<class T> T PatchDataField<T>::compute_sum(){StackEntry stack_loc{};
     if(is_empty()){
-        throw shambase::throw_with_loc<std::invalid_argument>("the field is empty");
+        throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
     return shamalgs::reduction::sum(
         shamsys::instance::get_compute_queue(), 
@@ -415,7 +415,7 @@ template<class T> T PatchDataField<T>::compute_sum(){StackEntry stack_loc{};
 
 template<class T> shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum(){StackEntry stack_loc{};
     if(is_empty()){
-        throw shambase::throw_with_loc<std::invalid_argument>("the field is empty");
+        throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
     return shamalgs::reduction::dot_sum(
         shamsys::instance::get_compute_queue(), 

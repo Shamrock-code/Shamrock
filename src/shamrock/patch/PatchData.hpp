@@ -189,7 +189,7 @@ namespace shamrock::patch {
                 return fields[0].visit_return([](auto &field) { return field.get_obj_cnt(); });
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>(
+            throw shambase::make_except_with_loc<std::runtime_error>(
                 "this patchdata does not contains any fields");
         }
 
@@ -232,7 +232,7 @@ namespace shamrock::patch {
                 return *pval;
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>(
+            throw shambase::make_except_with_loc<std::runtime_error>(
                 "the request id is not of correct type\n"
                 "   current map is : \n" +
                 pdl.get_description_str() +
@@ -252,7 +252,7 @@ namespace shamrock::patch {
                 return shambase::get_check_ref(pval->get_buf());
             }
 
-            throw shambase::throw_with_loc<std::runtime_error>(
+            throw shambase::make_except_with_loc<std::runtime_error>(
                 "the request id is not of correct type\n"
                 "   current map is : \n" +
                 pdl.get_description_str() +
@@ -270,7 +270,7 @@ namespace shamrock::patch {
             for (auto &field_var : fields) {
                 field_var.visit([&](auto &field) {
                     if (field.get_obj_cnt() != cnt) {
-                        throw shambase::throw_with_loc<std::runtime_error>("mismatch in obj cnt");
+                        throw shambase::make_except_with_loc<std::runtime_error>("mismatch in obj cnt");
                     }
                 });
             }
@@ -392,6 +392,45 @@ namespace shamrock::patch {
             sycl::buffer<T> buf(vec.data(), len);
             f.override(buf, len);
         }
+
+        /**
+         * @brief Fetch data of a patchdata field into a std::vector
+         * @tparam T 
+         * @param key 
+         * @param pdat 
+         * @return std::vector<T> 
+         */
+        template<class T>
+        inline std::vector<T> fetch_data(std::string key){
+
+            std::vector<T> vec;
+
+            auto appender = [&](auto & field){
+
+                if (field.get_name() == key) {
+
+                    logger::debug_ln("PyShamrockCTX","appending field",key);
+                    
+                    {
+                        sycl::host_accessor acc {shambase::get_check_ref(field.get_buf())};
+                        u32 len = field.size();
+
+                        for (u32 i = 0 ; i < len; i++) {
+                            vec.push_back(acc[i]);
+                        }
+                    }
+
+                }
+
+            };
+
+            for_each_field<T>([&](auto & field){
+                appender(field);
+            });
+
+            return vec;
+
+        }
     };
 
     template<class T>
@@ -401,7 +440,7 @@ namespace shamrock::patch {
 
         if (!pdl.check_main_field_type<T>()) {
 
-            throw shambase::throw_with_loc<std::invalid_argument>(
+            throw shambase::make_except_with_loc<std::invalid_argument>(
                 "the chosen type for the main field does not match the required template type");
         }
 
@@ -413,7 +452,7 @@ namespace shamrock::patch {
                     if (shambase::VectorProperties<T>::dimension == 3) {
                         return shammath::is_in_half_open(val, vmin, vmax);
                     } else {
-                        throw shambase::throw_with_loc<std::runtime_error>(
+                        throw shambase::make_except_with_loc<std::runtime_error>(
                             "dimension != 3 is not handled");
                     }
                 },

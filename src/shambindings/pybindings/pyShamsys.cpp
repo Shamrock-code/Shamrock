@@ -24,7 +24,7 @@ Register_pymod(pysyslibinit) {
         "change_loglevel",
         [](u32 loglevel) {
             if (loglevel > i8_max) {
-                throw shambase::throw_with_loc<std::invalid_argument>("loglevel must be below 128");
+                throw shambase::make_except_with_loc<std::invalid_argument>("loglevel must be below 128");
             }
 
             if (loglevel == i8_max) {

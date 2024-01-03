@@ -32,7 +32,6 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
 #include <vector>
 
 #include <pybind11/functional.h>
@@ -87,6 +86,14 @@ namespace shammodels::sph {
         SolverConfig gen_config_from_phantom_dump(PhantomDump & phdump, bool bypass_error);
         void init_from_phantom_dump(PhantomDump & phdump);
         PhantomDump make_phantom_dump();
+
+        void do_vtk_dump(std::string filename, bool add_patch_world_id){
+            solver.vtk_do_dump(filename, add_patch_world_id);
+        }
+
+        void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename){
+            solver.set_debug_dump(_do_debug_dump, _debug_dump_filename);
+        }
 
         u64 get_total_part_count();
 
@@ -650,6 +657,13 @@ namespace shammodels::sph {
 
         inline void set_solver_config(typename Solver::Config cfg) { solver.solver_config = cfg; }
 
+        inline f64 solver_logs_last_rate(){
+            return solver.solve_logs.get_last_rate();
+        }
+        inline u64 solver_logs_last_obj_count(){
+            return solver.solve_logs.get_last_obj_count();
+        }
+
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// analysis utilities
         ////////////////////////////////////////////////////////////////////////////////////////////
@@ -663,8 +677,18 @@ namespace shammodels::sph {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         f64
-        evolve_once(f64 t_curr, f64 dt_input, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id);
+        evolve_once_time_expl(f64 t_curr, f64 dt_input);
     
+        void timestep();
+
+        inline void evolve_once(){
+            solver.evolve_once();
+        }
+
+        inline bool evolve_until(Tscal target_time,i32 niter_max){
+            return solver.evolve_until(target_time,niter_max);
+        }
+
         private:
         void add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat);
 
@@ -710,5 +734,5 @@ namespace shammodels::sph {
     };
 
 
+} // namespace shammodels::sph
 
-} // namespace shammodels

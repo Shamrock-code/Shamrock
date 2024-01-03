@@ -1,0 +1,167 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file primitive_type_info.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief 
+ * 
+ */
+ 
+#include "shambase/aliases_float.hpp"
+#include "shambase/aliases_int.hpp"
+#include <limits>
+
+namespace shambase{
+
+    template<class T>
+    struct primitive_type_info{
+        static constexpr bool is_specialized = false;
+        static constexpr bool is_float = false;
+        static constexpr bool is_int = false;
+        static constexpr bool is_unsigned = false;
+    };
+
+    template<>
+    struct primitive_type_info<f64>{
+        using T = f64;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = true;
+        static constexpr bool is_int = false;
+        static constexpr bool is_unsigned = false;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+        static constexpr T epsilon = std::numeric_limits<T>::epsilon(); 
+        static constexpr T infty = std::numeric_limits<T>::infinity();
+    };
+
+    template<>
+    struct primitive_type_info<f32>{
+        using T = f32;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = true;
+        static constexpr bool is_int = false;
+        static constexpr bool is_unsigned = false;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+        static constexpr T epsilon = std::numeric_limits<T>::epsilon(); 
+        static constexpr T infty = std::numeric_limits<T>::infinity();
+    };
+
+    template<>
+    struct primitive_type_info<i8>{
+        using T = i8;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = false;
+        static constexpr bool is_int = true;
+        static constexpr bool is_unsigned = false;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+    };
+
+    template<>
+    struct primitive_type_info<i16>{
+        using T = i16;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = false;
+        static constexpr bool is_int = true;
+        static constexpr bool is_unsigned = false;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+    };
+
+    template<>
+    struct primitive_type_info<i32>{
+        using T = i32;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = false;
+        static constexpr bool is_int = true;
+        static constexpr bool is_unsigned = false;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+    };
+
+    template<>
+    struct primitive_type_info<i64>{
+        using T = i64;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = false;
+        static constexpr bool is_int = true;
+        static constexpr bool is_unsigned = false;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+    };
+    template<>
+    struct primitive_type_info<u8>{
+        using T = u8;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = false;
+        static constexpr bool is_int = true;
+        static constexpr bool is_unsigned = true;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+    };
+
+    template<>
+    struct primitive_type_info<u16>{
+        using T = u16;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = false;
+        static constexpr bool is_int = true;
+        static constexpr bool is_unsigned = true;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+    };
+
+    template<>
+    struct primitive_type_info<u32>{
+        using T = u32;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = false;
+        static constexpr bool is_int = true;
+        static constexpr bool is_unsigned = true;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+    };
+
+    template<>
+    struct primitive_type_info<u64>{
+        using T = u64;
+
+        static constexpr bool is_specialized = true;
+        static constexpr bool is_float = false;
+        static constexpr bool is_int = true;
+        static constexpr bool is_unsigned = true;
+
+        static constexpr T max = std::numeric_limits<T>::max();
+        static constexpr T min = std::numeric_limits<T>::lowest(); 
+    };
+
+
+
+}

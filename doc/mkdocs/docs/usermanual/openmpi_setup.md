@@ -1,4 +1,4 @@
-# Using OpenMPI cuda aware
+# Using CUDA aware openMPI
 
 
 ## UCX setup

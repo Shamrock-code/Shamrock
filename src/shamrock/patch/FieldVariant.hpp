@@ -62,7 +62,7 @@ namespace shamrock::patch {
             if (Container<T> *pval = std::get_if<Container<T>>(&value)) {
                 return *pval;
             }
-            throw shambase::throw_with_loc<std::invalid_argument>("the type asked is not correct");
+            throw shambase::make_except_with_loc<std::invalid_argument>("the type asked is not correct");
         }
 
         template<class Func>

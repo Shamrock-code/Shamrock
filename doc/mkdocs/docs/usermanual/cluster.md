@@ -1,4 +1,4 @@
-# Running on cluster
+# Running on clusters
 
 # CBP (AMD GPU)
 

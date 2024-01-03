@@ -134,7 +134,7 @@ void sparse_comm_test(std::string prefix, shamcomm::CommunicationProtocol prot){
                 shamtest::asserts().assert_bool(prefix+"same buffer", shamalgs::reduction::equals_ptr(ref.payload, recv_buf.payload));
 
             }else{
-                throw shambase::throw_with_loc<std::runtime_error>(prefix+"missing recv mesages");
+                throw shambase::make_except_with_loc<std::runtime_error>(prefix+"missing recv mesages");
             }
 
             ref_idx ++;

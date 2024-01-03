@@ -54,7 +54,7 @@ namespace shamcomm {
             } else if (comm_mode == DirectGPU) {
                 _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(bytelen);
             } else {
-                throw shambase::throw_with_loc<std::invalid_argument>("unknown mode");
+                throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -64,7 +64,7 @@ namespace shamcomm {
             } else if (comm_mode == DirectGPU) {
                 _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(bytebuf);
             } else {
-                throw shambase::throw_with_loc<std::invalid_argument>("unknown mode");
+                throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
@@ -76,7 +76,7 @@ namespace shamcomm {
                 _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(
                     std::forward<sycl::buffer<u8>>(bytebuf));
             } else {
-                throw shambase::throw_with_loc<std::invalid_argument>("unknown mode");
+                throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 

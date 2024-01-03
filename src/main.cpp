@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
             StackEntry stack_loc{};
 
             if(shamcomm::world_size() > 1){
-                throw shambase::throw_with_loc<std::runtime_error>("cannot run ipython mode with > 1 processes");
+                throw shambase::make_except_with_loc<std::runtime_error>("cannot run ipython mode with > 1 processes");
             }
 
             py::scoped_interpreter guard{};

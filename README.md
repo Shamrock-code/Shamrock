@@ -52,7 +52,7 @@ AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)
 # Documentation
 
 We provide both a book like documentation and the more classic doxygen style for more details about the sources
- - The documentation is available here: [mdbook doc](https://tdavidcl.github.io/Shamrock/mdbook/index.html)
+ - The documentation is available here: [mkdocs doc](https://tdavidcl.github.io/Shamrock/mkdocs/index.html)
  - The doxygen doc is available here: [doxygen](https://tdavidcl.github.io/Shamrock/doxygen/index.html)
 
 # Getting started

@@ -68,7 +68,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(PatchScheduler & sched, 
             f.override(buf,len);
         }
 
-        if(sched.owned_patch_id.empty()) throw shambase::throw_with_loc<std::runtime_error>("the scheduler does not have patch in that rank");
+        if(sched.owned_patch_id.empty()) throw shambase::make_except_with_loc<std::runtime_error>("the scheduler does not have patch in that rank");
 
         u64 insert_id = *sched.owned_patch_id.begin();
 

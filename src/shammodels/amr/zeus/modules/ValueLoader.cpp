@@ -217,7 +217,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block(
             load_patch_internal_block_zp(nobj, nvar, buf_src, buf_dest);
 
         } else {
-            throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
                 "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
         }
     } else {
@@ -619,7 +619,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level(
                 offset, buf_cell_min, buf_cell_max, face_lists, nobj, nvar, buf_src, buf_dest);
 
         } else {
-            throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
                 "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
         }
     } else {
@@ -679,7 +679,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_level_up(
             OrientedNeighFaceList<Tvec> &face_zp = face_lists.zp();
 
         } else {
-            throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
                 "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
         }
     } else {
@@ -738,7 +738,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_level_down(
             OrientedNeighFaceList<Tvec> &face_zp = face_lists.zp();
 
         } else {
-            throw shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
                 "offset : ({},{},{}) is invalid", offset[0], offset[1], offset[2]));
         }
     } else {

@@ -46,7 +46,7 @@ namespace shamcomm {
                 &fh);
 
             if (rc != MPI_SUCCESS) {
-                throw shambase::throw_with_loc<std::runtime_error>("cannot create file");
+                throw shambase::make_except_with_loc<std::runtime_error>("cannot create file");
             }
         }
     }

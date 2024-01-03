@@ -60,7 +60,7 @@ namespace shammodels::zeus {
             // clang-format off
             return ghost_id_build_map.template map<T>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
                 if (!bool(build_table.ids_interf)) {
-                    throw shambase::throw_with_loc<std::runtime_error>(
+                    throw shambase::make_except_with_loc<std::runtime_error>(
                         "their is an empty id table in the interface, it should have been removed");
                 }
 

@@ -15,10 +15,18 @@ nav:
     - 'Configuration' : 'usermanual/configuration.md'
     - 'Usage' : 'usermanual/usage.md'
     - 'Utilities' : 'usermanual/utilities.md'
-    - 'Running on cluster' : 'usermanual/cluster.md'
-    - 'OpenMPI CUDA Aware' : 'usermanual/openmpi_setup.md'
+    - 'Running on clusters' : 'usermanual/cluster.md'
+    - 'Specific clusters' :
+      - 'PSMN' : 'usermanual/clusters/psmn.md'
+    - 'CUDA aware openMPI' : 'usermanual/openmpi_setup.md'
+
+  - 'Physical models' :
+    - 'SPH' :
+      - 'Scalling test' : 'models/sph/scalling.md'
+      - 'Shearing box' : 'models/sph/shearing_box.md'
 
   - 'Develloper Doc' :
+    - 'Git guide' : 'devdoc/git_guide.md'
     - 'Codebase Organisation' : 'devdoc/codebase_org.md'
     - 'Testing' : 'devdoc/testing.md'
     - 'Conventions' : 'devdoc/coding_conventions.md'
@@ -56,6 +64,11 @@ theme:
   features:
     - navigation.instant
     - navigation.instant.progress
+
+    - content.code.copy
+    - content.code.select
+
+    - content.tooltips
   
 
   logo: assets/logo.png
@@ -67,35 +80,39 @@ theme:
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
       scheme: default
+      #primary: grey
       toggle:
         icon: material/brightness-7
         name: Switch to dark mode
-        primary: black
 
     # Palette toggle for dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
+      #primary: grey
       toggle:
         icon: material/brightness-4
         name: Switch to light mode
-        primary: black
 
 
 
+extra_css:
+  - stylesheets/extra.css
 
 plugins:
   - git-authors
   - search
-  - git-revision-date
+  - git-revision-date-localized:
+      enable_creation_date: true
+  
 
 markdown_extensions:
   # Python Markdown
   - abbr
   - admonition
-  - attr_list
   - def_list
   - footnotes
   - md_in_html
+  - attr_list
   - toc:
       permalink: true
 
@@ -120,3 +137,19 @@ markdown_extensions:
   - pymdownx.tasklist:
       custom_checkbox: true
   - pymdownx.tilde
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+
+
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

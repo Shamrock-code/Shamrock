@@ -66,7 +66,7 @@ f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2) {
         }
 
     } else {
-        throw shambase::throw_with_loc<std::runtime_error>("should have same size");
+        throw shambase::make_except_with_loc<std::runtime_error>("should have same size");
     }
 
     return sqrt(sum / v1.size());
@@ -86,7 +86,7 @@ f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2, std::vector<f64> & re
         }
 
     } else {
-        throw shambase::throw_with_loc<std::runtime_error>("should have same size");
+        throw shambase::make_except_with_loc<std::runtime_error>("should have same size");
     }
 
     return sqrt(sum / cnt);
@@ -330,9 +330,9 @@ void do_test(bool long_version) {
     model.init_from_phantom_dump(dump_start);
 
     f64 t = start_t;
-    model.evolve_once(t, 0, false, "", false);
+    model.evolve_once_time_expl(t, 0);
     for (; t < dt * 1; t += dt) {
-        model.evolve_once(t, dt, false, "", false);
+        model.evolve_once_time_expl(t, dt);
     }
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
@@ -346,7 +346,7 @@ void do_test(bool long_version) {
     }
 
     for (; t < dt * 10; t += dt) {
-        model.evolve_once(t, dt, false, "", false);
+        model.evolve_once_time_expl(t, dt);
     }
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
@@ -364,7 +364,7 @@ void do_test(bool long_version) {
     }
 
     for (; t < dt * 100; t += dt) {
-        model.evolve_once(t, dt, false, "", false);
+        model.evolve_once_time_expl(t, dt);
     }
 
     {
@@ -383,7 +383,7 @@ void do_test(bool long_version) {
     
 
     for (; t < dt * 1000; t += dt) {
-        model.evolve_once(t, dt, false, "", false);
+        model.evolve_once_time_expl(t, dt);
     }
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =

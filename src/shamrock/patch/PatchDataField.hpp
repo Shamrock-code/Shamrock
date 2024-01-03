@@ -354,7 +354,7 @@ template <class T> inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
     if (obj_to_rem > obj_cnt) {
         
-        throw shambase::throw_with_loc<std::invalid_argument>("impossible to remove more object than there is in the patchdata field");
+        throw shambase::make_except_with_loc<std::invalid_argument>("impossible to remove more object than there is in the patchdata field");
     }
 
     resize(obj_cnt - obj_to_rem);
@@ -474,7 +474,7 @@ inline void PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vma
 
     if(error){
         logger::err_ln("PatchDataField", "additional infos :",add_log);
-        throw shambase::throw_with_loc<PatchDataRangeCheckError>("obj not in range");
+        throw shambase::make_except_with_loc<PatchDataRangeCheckError>("obj not in range");
     }
 
 }

@@ -173,7 +173,7 @@ void Module<Tvec, TgridVec>::compute_forces() {
         });
         if (storage.forces.get().get_field(p.id_patch).has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in forces");
-            throw shambase::throw_with_loc<std::runtime_error>("detected nan");
+            throw shambase::make_except_with_loc<std::runtime_error>("detected nan");
         }
         // logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
     });

@@ -64,7 +64,7 @@ namespace shamcomm {
             public:
             inline CommunicationBuffer(u64 bytelen){
                 if (bytelen == 0) {
-                    throw shambase::throw_with_loc<std::invalid_argument>("can not create a buffer of size = 0");
+                    throw shambase::make_except_with_loc<std::invalid_argument>("can not create a buffer of size = 0");
                 }
                 this->bytelen = bytelen;
                 alloc_usm(bytelen);
@@ -142,7 +142,7 @@ namespace shamcomm {
             public:
             inline CommunicationBuffer(u64 bytelen){
                 if (bytelen == 0) {
-                    throw shambase::throw_with_loc<std::invalid_argument>("can not create a buffer of size = 0");
+                    throw shambase::make_except_with_loc<std::invalid_argument>("can not create a buffer of size = 0");
                 }
                 this->bytelen = bytelen;
                 alloc_usm(bytelen);

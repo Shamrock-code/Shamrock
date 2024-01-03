@@ -60,7 +60,7 @@ namespace shamrock {
                     }
 
                     if(err_id_in_newid){
-                        throw shambase::throw_with_loc<std::runtime_error>("a new id could not be computed");
+                        throw shambase::make_except_with_loc<std::runtime_error>("a new id could not be computed");
                     }
 
                 }

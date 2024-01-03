@@ -26,6 +26,7 @@
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
+#include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
@@ -161,6 +162,301 @@ void vtk_dump_add_field(
 
     writter.write_field(field_dump_name, field_vals, num_obj);
 }
+
+
+
+template<class Tvec, template<class> class Kern>
+void SPHSolve<Tvec, Kern>::vtk_do_dump(std::string filename, bool add_patch_world_id){
+    using namespace shamrock;
+    using namespace shamrock::patch;
+    shamrock::SchedulerUtility utility(scheduler());
+    PatchDataLayout &pdl = scheduler().pdl;
+    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint      = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
+ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
+
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sycl::accessor acc_h{
+                    shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),
+                    cgh,
+                    sycl::read_only};
+
+                sycl::accessor acc_rho{
+                    shambase::get_check_ref(density.get_buf(p.id_patch)),
+                    cgh,
+                    sycl::write_only,
+                    sycl::no_init};
+                const Tscal part_mass = solver_config.gpart_mass;
+
+                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                    u32 gid = (u32)item.get_id();
+                    using namespace shamrock::sph;
+                    Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
+                    acc_rho[gid] = rho_ha;
+                });
+            });
+        });
+
+        shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);
+        writter.add_point_data_section();
+
+        u32 fnum = 0;
+        if (add_patch_world_id) {
+            fnum += 2;
+        }
+        fnum++;
+        fnum++;
+        fnum++;
+        fnum++;
+        fnum++;
+
+        if (solver_config.has_field_alphaAV()) {
+            fnum++;
+        }
+
+        if (solver_config.has_field_divv()) {
+            fnum++;
+        }
+
+        if (solver_config.has_field_curlv()) {
+            fnum++;
+        }
+
+        if (solver_config.has_field_soundspeed()) {
+            fnum++;
+        }
+
+        if (solver_config.has_field_dtdivv()) {
+            fnum++;
+        }
+
+        writter.add_field_data_section(fnum);
+
+        if (add_patch_world_id) {
+            vtk_dump_add_patch_id(scheduler(), writter);
+            vtk_dump_add_worldrank(scheduler(), writter);
+        }
+
+        vtk_dump_add_field<Tscal>(scheduler(), writter, ihpart, "h");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, ivxyz, "v");
+        vtk_dump_add_field<Tvec>(scheduler(), writter, iaxyz, "a");
+
+        if (solver_config.has_field_alphaAV()) {
+            const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, ialpha_AV, "alpha_AV");
+        }
+
+        if (solver_config.has_field_divv()) {
+            const u32 idivv = pdl.get_field_idx<Tscal>("divv");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, idivv, "divv");
+        }
+
+        if (solver_config.has_field_dtdivv()) {
+            const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, idtdivv, "dtdivv");
+        }
+
+        if (solver_config.has_field_curlv()) {
+            const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
+            vtk_dump_add_field<Tvec>(scheduler(), writter, icurlv, "curlv");
+        }
+
+        if (solver_config.has_field_soundspeed()) {
+            const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
+        }
+
+        vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Debug interface dump
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+namespace shammodels::sph{
+
+    template<class Tvec>
+    struct Debug_ph_dump{
+        using Tscal              = shambase::VecComponent<Tvec>;
+
+        u64 nobj;
+        f64 gpart_mass;
+
+        sycl::buffer<Tvec> &buf_xyz;
+        sycl::buffer<Tscal> &buf_hpart;
+        sycl::buffer<Tvec> &buf_vxyz;
+    };
+
+    template<class Tvec>
+    void fill_blocks(PhantomDumpBlock & block, Debug_ph_dump<Tvec> & info){
+        
+        using Tscal              = shambase::VecComponent<Tvec>;
+        std::vector<Tvec> xyz = shamalgs::memory::buf_to_vec(info.buf_xyz, info.nobj);
+
+        u64 xid = block.get_ref_fort_real("x");
+        u64 yid = block.get_ref_fort_real("y");
+        u64 zid = block.get_ref_fort_real("z");
+
+        for (auto vec : xyz) {
+            block.blocks_fort_real[xid].vals.push_back(vec.x());
+            block.blocks_fort_real[yid].vals.push_back(vec.y());
+            block.blocks_fort_real[zid].vals.push_back(vec.z());
+        }
+
+
+        std::vector<Tscal> h = shamalgs::memory::buf_to_vec(info.buf_hpart, info.nobj);
+        u64 hid = block.get_ref_f32("h");
+        for (auto h_ : h) {
+            block.blocks_f32[hid].vals.push_back(h_);
+        }
+
+
+
+
+        std::vector<Tvec> vxyz = shamalgs::memory::buf_to_vec(info.buf_vxyz, info.nobj);
+
+        u64 vxid = block.get_ref_fort_real("vx");
+        u64 vyid = block.get_ref_fort_real("vy");
+        u64 vzid = block.get_ref_fort_real("vz");
+
+        for (auto vec : vxyz) {
+            block.blocks_fort_real[vxid].vals.push_back(vec.x());
+            block.blocks_fort_real[vyid].vals.push_back(vec.y());
+            block.blocks_fort_real[vzid].vals.push_back(vec.z());
+        }
+
+        block.tot_count = block.blocks_fort_real[xid].vals.size();
+
+    }
+
+
+    template<class Tvec>
+    shammodels::sph::PhantomDump make_interface_debug_phantom_dump(Debug_ph_dump<Tvec> info) {
+
+
+
+        using Tscal              = shambase::VecComponent<Tvec>;
+        PhantomDump dump;
+
+        dump.override_magic_number();
+        dump.iversion = 1;
+        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writter");
+
+        u32 Ntot = info.nobj;
+        dump.table_header_fort_int.add("nparttot", Ntot);
+        dump.table_header_fort_int.add("ntypes", 8);
+        dump.table_header_fort_int.add("npartoftype", Ntot);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+        dump.table_header_fort_int.add("npartoftype", 0);
+
+        dump.table_header_i64.add("nparttot", Ntot);
+        dump.table_header_i64.add("ntypes", 8);
+        dump.table_header_i64.add("npartoftype", Ntot);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+        dump.table_header_i64.add("npartoftype", 0);
+
+        dump.table_header_fort_int.add("nblocks", 1);
+        dump.table_header_fort_int.add("nptmass", 0);
+        dump.table_header_fort_int.add("ndustlarge", 0);
+        dump.table_header_fort_int.add("ndustsmall", 0);
+        dump.table_header_fort_int.add("idust", 7);
+        dump.table_header_fort_int.add("idtmax_n", 1);
+        dump.table_header_fort_int.add("idtmax_frac", 0);
+        dump.table_header_fort_int.add("idumpfile", 0);
+        dump.table_header_fort_int.add("majorv", 2023);
+        dump.table_header_fort_int.add("minorv", 0);
+        dump.table_header_fort_int.add("microv", 0);
+        dump.table_header_fort_int.add("isink", 0);
+
+        dump.table_header_i32.add("iexternalforce", 0);
+        dump.table_header_i32.add("ieos", 2);
+        dump.table_header_fort_real.add("gamma", 1.66667);
+        dump.table_header_fort_real.add("RK2", 0);
+        dump.table_header_fort_real.add("polyk2", 0);
+        dump.table_header_fort_real.add("qfacdisc", 0.75);
+        dump.table_header_fort_real.add("qfacdisc2", 0.75);
+
+
+        dump.table_header_fort_real.add("time", 0);
+        dump.table_header_fort_real.add("dtmax", 0.1);
+
+
+        dump.table_header_fort_real.add("rhozero", 0);
+        dump.table_header_fort_real.add("hfact",1.2);
+        dump.table_header_fort_real.add("tolh", 0.0001);
+        dump.table_header_fort_real.add("C_cour", 0);
+        dump.table_header_fort_real.add("C_force",0);
+        dump.table_header_fort_real.add("alpha", 0);
+        dump.table_header_fort_real.add("alphau", 1);
+        dump.table_header_fort_real.add("alphaB", 1);
+        
+
+        dump.table_header_fort_real.add("massoftype", info.gpart_mass);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+        dump.table_header_fort_real.add("massoftype", 0);
+
+
+        dump.table_header_fort_real.add("Bextx", 0);
+        dump.table_header_fort_real.add("Bexty", 0);
+        dump.table_header_fort_real.add("Bextz", 0);
+        dump.table_header_fort_real.add("dum", 0);
+
+        dump.table_header_fort_real.add("get_conserv", -1);
+        dump.table_header_fort_real.add("etot_in", 0.59762);
+        dump.table_header_fort_real.add("angtot_in", 0.0189694);
+        dump.table_header_fort_real.add("totmom_in", 0.0306284);
+
+        dump.table_header_f64.add("udist", 1);
+        dump.table_header_f64.add("umass", 1);
+        dump.table_header_f64.add("utime", 1);
+        dump.table_header_f64.add("umagfd", 3.54491);
+
+
+        PhantomDumpBlock block_part;
+        
+        fill_blocks(block_part, info);
+
+        dump.blocks.push_back(std::move(block_part));
+
+
+        return dump;
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+
 
 template<class Tvec, template<class> class Kern>
 void SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
@@ -450,7 +746,7 @@ void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
+void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -472,7 +768,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val) {
     u32 hstep_max = 100;
     for (; hstep_cnt < hstep_max; hstep_cnt++) {
 
-        gen_ghost_handler(time_val);
+        gen_ghost_handler(time_val+dt);
         build_ghost_cache();
         merge_position_ghost();
         build_merged_pos_trees();
@@ -868,18 +1164,13 @@ bool SPHSolve<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
 }
 
 template<class Tvec, template<class> class Kern>
-auto SPHSolve<Tvec, Kern>::evolve_once(
-    Tscal t_current, Tscal dt, bool do_dump, std::string vtk_dump_name, bool vtk_dump_patch_id)
-    -> Tscal {
+void SPHSolve<Tvec, Kern>::evolve_once()
+     {
+
+        Tscal t_current = solver_config.get_time();
+        Tscal dt = solver_config.get_dt_sph();
+
     StackEntry stack_loc{};
-
-    struct DumpOption {
-        bool vtk_do_dump;
-        std::string vtk_dump_fname;
-        bool vtk_dump_patch_id;
-    };
-
-    DumpOption dump_opt{do_dump, vtk_dump_name, vtk_dump_patch_id};
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("sph::Model", shambase::format("t = {}, dt = {}", t_current, dt));
@@ -927,11 +1218,11 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     gen_serial_patch_tree();
 
-    apply_position_boundary(t_current);
+    apply_position_boundary(t_current+dt);
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
-    sph_prestep(t_current);
+    sph_prestep(t_current, dt);
 
     using RTree = RadixTree<u_morton, Tvec>;
 
@@ -961,7 +1252,7 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         reset_eos_fields();
 
         if (corrector_iter_cnt == 50) {
-            throw shambase::throw_with_loc<std::runtime_error>(
+            throw shambase::make_except_with_loc<std::runtime_error>(
                 "the corrector has made over 50 loops, either their is a bug, either you are using "
                 "a dt that is too large");
         }
@@ -971,6 +1262,54 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
         // compute pressure
         compute_eos_fields();
+
+
+
+
+        constexpr bool debug_interfaces = false;
+        if constexpr(debug_interfaces){
+
+            if(solver_config.do_debug_dump){
+
+
+                shambase::DistributedData<MergedPatchData> &mpdat =
+                    storage.merged_patchdata_ghost.get();
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+
+                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+                    PatchData &mpdat              = merged_patch.pdat;
+
+                    sycl::buffer<Tvec> &buf_xyz =
+                        shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+
+
+                    Debug_ph_dump<Tvec> info {
+                        merged_patch.total_elements,
+                        solver_config.gpart_mass,
+
+                        buf_xyz,
+                        buf_hpart,
+                        buf_vxyz
+                    };
+
+                    make_interface_debug_phantom_dump(info)
+                        .gen_file()
+                        .write_to_file(solver_config.debug_dump_filename
+                            );
+                    logger::raw_ln("writing : ", solver_config.debug_dump_filename);
+
+                
+                });
+
+            }
+
+        }
+
+
+
 
         // compute force
         logger::debug_ln("sph::BasicGas", "compute force");
@@ -1306,114 +1645,6 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
 
     // if delta too big jump to compute force
 
-    if (dump_opt.vtk_do_dump) {
-
-        shambase::Timer timer_io;
-        timer_io.start();
-
-        ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
-
-        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor acc_h{
-                    shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),
-                    cgh,
-                    sycl::read_only};
-
-                sycl::accessor acc_rho{
-                    shambase::get_check_ref(density.get_buf(p.id_patch)),
-                    cgh,
-                    sycl::write_only,
-                    sycl::no_init};
-                const Tscal part_mass = solver_config.gpart_mass;
-
-                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                    u32 gid = (u32)item.get_id();
-                    using namespace shamrock::sph;
-                    Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
-                    acc_rho[gid] = rho_ha;
-                });
-            });
-        });
-
-        shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), dump_opt.vtk_dump_fname);
-        writter.add_point_data_section();
-
-        u32 fnum = 0;
-        if (dump_opt.vtk_dump_patch_id) {
-            fnum += 2;
-        }
-        fnum++;
-        fnum++;
-        fnum++;
-        fnum++;
-        fnum++;
-        fnum++;
-
-        if (solver_config.has_field_alphaAV()) {
-            fnum++;
-        }
-
-        if (solver_config.has_field_divv()) {
-            fnum++;
-        }
-
-        if (solver_config.has_field_curlv()) {
-            fnum++;
-        }
-
-        if (solver_config.has_field_soundspeed()) {
-            fnum++;
-        }
-
-        if (solver_config.has_field_dtdivv()) {
-            fnum++;
-        }
-
-        writter.add_field_data_section(fnum);
-
-        if (dump_opt.vtk_dump_patch_id) {
-            vtk_dump_add_patch_id(scheduler(), writter);
-            vtk_dump_add_worldrank(scheduler(), writter);
-        }
-
-        vtk_dump_add_field<Tscal>(scheduler(), writter, ihpart, "h");
-        vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
-        vtk_dump_add_field<Tvec>(scheduler(), writter, ivxyz, "v");
-        vtk_dump_add_field<Tvec>(scheduler(), writter, iaxyz, "a");
-
-        if (solver_config.has_field_alphaAV()) {
-            const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, ialpha_AV, "alpha_AV");
-        }
-
-        if (solver_config.has_field_divv()) {
-            const u32 idivv = pdl.get_field_idx<Tscal>("divv");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, idivv, "divv");
-        }
-
-        if (solver_config.has_field_dtdivv()) {
-            const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, idtdivv, "dtdivv");
-        }
-
-        if (solver_config.has_field_curlv()) {
-            const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
-            vtk_dump_add_field<Tvec>(scheduler(), writter, icurlv, "curlv");
-        }
-
-        if (solver_config.has_field_soundspeed()) {
-            const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
-        }
-
-        vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
-        vtk_dump_add_compute_field(scheduler(), writter, omega, "omega");
-
-        timer_io.end();
-        storage.timings_details.io += timer_io.elasped_sec();
-    }
-
 
     tstep.end();
 
@@ -1431,6 +1662,15 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
         100 * (storage.timings_details.interface / tstep.elasped_sec()),
         100 * (storage.timings_details.neighbors / tstep.elasped_sec()),
         100 * (storage.timings_details.io / tstep.elasped_sec()));
+
+    solve_logs.register_log({
+        t_current,// f64 solver_t;
+        dt,// f64 solver_dt;
+        shamcomm::world_rank(),// i32 world_rank;
+        rank_count,// u64 rank_count;
+        rate,// f64 rate;
+        tstep.elasped_sec()// f64 elasped_sec;
+    });
 
     std::string gathered = "";
     shamcomm::gather_str(log_rank_rate, gathered);
@@ -1460,7 +1700,8 @@ auto SPHSolve<Tvec, Kern>::evolve_once(
     reset_presteps_rint();
     reset_neighbors_cache();
 
-    return next_cfl;
+    solver_config.set_next_dt(next_cfl);
+    solver_config.set_time(t_current + dt);
 }
 
 using namespace shammath;

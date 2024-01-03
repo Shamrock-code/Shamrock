@@ -34,7 +34,7 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build(
     using namespace shamrock::sfc;
 
     if (cnt_obj > i32_max - 1) {
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             "number of element in patch above i32_max-1");
     }
 
@@ -73,7 +73,7 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build_raw(
     using namespace shamrock::sfc;
 
     if (cnt_obj > i32_max - 1) {
-        throw shambase::throw_with_loc<std::invalid_argument>(
+        throw shambase::make_except_with_loc<std::invalid_argument>(
             "number of element in patch above i32_max-1");
     }
 

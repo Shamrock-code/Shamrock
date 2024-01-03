@@ -116,7 +116,7 @@ Register_pymod(pyunits_init) {
         X(earth_mass)
         X(jupiter_mass)
         X(sol_mass)
-        
+        X(guiness_density)
 
         ;
 }

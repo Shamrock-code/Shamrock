@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = "./
+outputdir = "/home/ylapeyre/Shamrock_tests/warp_setup/"
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
@@ -36,7 +36,7 @@ disc_mass = 0.001
 pmass = model.add_disc_3d(
     center=(0,0,0),
     center_mass=1.,
-    Npart=100000,
+    Npart=10,
     r_in=1., r_out=10.,
     disc_mass=disc_mass,
     p=1.,
@@ -98,7 +98,7 @@ print("Current part mass :", pmass)
 plot_vertical_profile(1,0.5, label = "init")
 
 t_sum = 0
-t_target = 4e-1
+t_target = 1000000
 
 i_dump = 0
 dt_dump = 1e-2
@@ -111,7 +111,7 @@ while next_dt_target <= t_target:
 
     model.evolve_until(next_dt_target)
     
-    do_dump = (i % 50 == 0) 
+    do_dump = True#(i_dump % 50 == 0) 
     if do_dump:
       dump = model.make_phantom_dump()
       dump.save_dump(fname)

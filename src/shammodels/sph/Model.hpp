@@ -21,6 +21,7 @@
 #include "shambase/Constants.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
@@ -708,7 +709,7 @@ namespace shammodels::sph {
                 }
                 else if (R < Rwarp + 3. * Hwarp) {
                     inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl));
-                    logger::debug_ln("sph::Model", inc);
+                    //logger::debug_ln("sph::Model", inc);
                     psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl), 2)));
                     Tscal psimax = sycl::max(psimax, psi);
                 }
@@ -716,9 +717,15 @@ namespace shammodels::sph {
                     inc = 0.;
 
                 //rotation position and velocity
+                Tvec u = pos[i];
 
                 rotate_vector(pos[i], k, inc);
                 rotate_vector(vel[i], k, inc); 
+
+                logger::raw('POS');
+                logger::raw(u);
+                logger::raw('NEWPOS');
+                logger::raw(pos[i]);
             }
             }
     

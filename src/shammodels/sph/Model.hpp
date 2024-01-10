@@ -701,6 +701,8 @@ namespace shammodels::sph {
             u32 len = pos.size();
             u32 c = 0;
             //Tvec R_vec = sycl::sqrt(sycl::dot(pos, pos));
+            //convert to radians (sycl functions take radians)
+            Tscal incl_rad = incl * shambase::constants::pi<Tscal> / 180.;
 
             for (i32 i=0; i < len; i++){
                 Tvec R_vec = pos[i]+1;
@@ -709,9 +711,9 @@ namespace shammodels::sph {
                     inc = 0.;
                 }
                 else if (R < Rwarp + 3. * Hwarp) {
-                    inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl));
+                    inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl_rad));
                     //logger::debug_ln("sph::Model", inc);
-                    psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl), 2)));
+                    psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl_rad), 2)));
                     Tscal psimax = sycl::max(psimax, psi);
                     if (c<10){
                         Tvec vunit = vel[i] / sycl::sqrt(sycl::dot(vel[i], vel[i]));

@@ -719,6 +719,7 @@ namespace shammodels::sph {
                         // Rodrigues' rotation formula
                         Tvec newpos = pos[i] * sycl::cos(inc) + w * sycl::sin(inc) + vunit * sycl::dot(vunit, pos[i]) * (1. - sycl::cos(inc));
                         logger::raw(shambase::format("inc {}, oldpos {}, newpos {}\n", inc, R_vec, newpos));
+                        logger::raw("sin(90) = {}, sin)(pi/2) = {} \n", sycl::cos(90.), sycl::cos(shambase::constants::pi<Tscal> / 2.));
                     }
                     c = c+1;
                 }

@@ -699,6 +699,7 @@ namespace shammodels::sph {
             Tscal inc;
             Tscal psi = 0.;
             u32 len = pos.size();
+            u32 c = 0;
             //Tvec R_vec = sycl::sqrt(sycl::dot(pos, pos));
 
             for (i32 i=0; i < len; i++){
@@ -717,15 +718,17 @@ namespace shammodels::sph {
                     inc = 0.;
 
                 //rotation position and velocity
-                Tvec u = pos[i];
 
                 rotate_vector(pos[i], k, inc);
                 rotate_vector(vel[i], k, inc); 
 
-                logger::raw('POS');
-                logger::raw(u);
-                logger::raw('NEWPOS');
-                logger::raw(pos[i]);
+                if (c <10){
+                    logger::raw('POS');
+                    logger::raw(R_vec);
+                    logger::raw('NEWPOS');
+                    logger::raw(pos[i]);
+                }
+                c = c+1;
             }
             }
     

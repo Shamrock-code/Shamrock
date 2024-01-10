@@ -703,7 +703,7 @@ namespace shammodels::sph {
             //Tvec R_vec = sycl::sqrt(sycl::dot(pos, pos));
 
             for (i32 i=0; i < len; i++){
-                Tvec R_vec = pos[i];
+                Tvec R_vec = pos[i]+1;
                 Tscal R = sycl::sqrt(sycl::dot(R_vec, R_vec));
                 if (R < Rwarp - Hwarp){
                     inc = 0.;

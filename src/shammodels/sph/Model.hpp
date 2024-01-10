@@ -708,6 +708,7 @@ namespace shammodels::sph {
                 }
                 else if (R < Rwarp + 3. * Hwarp) {
                     inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl));
+                    logger::debug_ln("sph::Model", inc);
                     psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl), 2)));
                     Tscal psimax = sycl::max(psimax, psi);
                 }

@@ -6,7 +6,7 @@ outputdir = "/local/ylapeyre/Shamrock_tests/warp30/"
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
-codeu = shamrock.UnitSystem(unit_time = 5022728.7900823336, unit_length = 14960000000000.000, unit_mass = 1.9891000000000000E+033, )
+codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
 ucte = shamrock.Constants(codeu)
 
 

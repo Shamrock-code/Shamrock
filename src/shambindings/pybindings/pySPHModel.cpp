@@ -182,7 +182,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal p,
                 Tscal H_r_in,
                 Tscal q,
-                bool do_warp=false,
+                bool do_warp=true,
                 Tscal posangle=0.,
                 Tscal incl=30.,
                 Tscal Rwarp=5.,

@@ -723,10 +723,10 @@ namespace shammodels::sph {
                 rotate_vector(vel[i], k, inc); 
 
                 if (c <10){
-                    logger::raw('POS');
-                    logger::raw(R_vec);
-                    logger::raw('NEWPOS');
-                    logger::raw(pos[i]);
+                    //logger::raw('POS');
+                    logger::raw(shambase::format("oldpos {}, newpos {}\n", R_vec, pos[i]));
+                    //logger::raw('NEWPOS');
+                    //logger::raw(pos[i]);
                 }
                 c = c+1;
             }

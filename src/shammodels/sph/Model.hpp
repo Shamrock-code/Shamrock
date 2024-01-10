@@ -713,23 +713,31 @@ namespace shammodels::sph {
                     //logger::debug_ln("sph::Model", inc);
                     psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl), 2)));
                     Tscal psimax = sycl::max(psimax, psi);
+                    if (c<10){
+                        Tvec vunit = vel[i] / sycl::sqrt(sycl::dot(vel[i], vel[i]));
+                        Tvec w = sycl::cross(vunit, pos[i]);
+                        // Rodrigues' rotation formula
+                        Tvec newpos = pos[i] * sycl::cos(inc) + w * sycl::sin(inc) + vunit * sycl::dot(vunit, pos[i]) * (1. - sycl::cos(inc));
+                        logger::raw(shambase::format("inc {}, oldpos {}, newpos {}\n", inc, R_vec, newpos));
+                    }
+                    c = c+1;
                 }
                 else{
                     inc = 0.;
-
+                }
                 //rotation position and velocity
 
                 rotate_vector(pos[i], k, inc);
                 rotate_vector(vel[i], k, inc); 
 
-                if (c <10){
-                    //logger::raw('POS');
-                    logger::raw(shambase::format("oldpos {}, newpos {}\n", R_vec, pos[i]));
-                    //logger::raw('NEWPOS');
-                    //logger::raw(pos[i]);
-                }
-                c = c+1;
-            }
+                //if (c <10){
+                //    //logger::raw('POS');
+                //    logger::raw(shambase::format("oldpos {}, newpos {}\n", R_vec, pos[i]));
+                //    //logger::raw('NEWPOS');
+                //    //logger::raw(pos[i]);
+                //}
+                //c = c+1;
+            
             }
     
            

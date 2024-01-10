@@ -19,7 +19,7 @@ cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_eos_locally_isothermalLP07(0.005,3/4, 1)
+#cfg.set_eos_locally_isothermalLP07(0.005,3/4, 1)
 cfg.set_eos_locally_isothermal()
 cfg.print_status()
 cfg.set_units(codeu)
@@ -43,7 +43,7 @@ pmass = model.add_disc_3d(
     p=1.,
     H_r_in=0.05,
     q=1./4.,
-    do_warp=True,
+    do_warp=False,
     posangle=0.,
     incl = 30.,
     Rwarp = 5.,

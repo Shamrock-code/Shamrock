@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = "/home/ylapeyre/Shamrock_tests/warp_setup/"
+outputdir = "/local/ylapeyre/Shamrock_tests/warp30/"
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
@@ -18,8 +18,8 @@ model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = 
 cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-#cfg.set_eos_locally_isothermalLP07(0.005,3/4, 1)
+#cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+cfg.set_eos_locally_isothermalLP07(0.005,3/4, 1)
 cfg.set_eos_locally_isothermal()
 cfg.print_status()
 cfg.set_units(codeu)
@@ -37,13 +37,13 @@ disc_mass = 0.001
 pmass = model.add_disc_3d(
     center=(0,0,0),
     center_mass=1.,
-    Npart=10,
+    Npart=100000,
     r_in=1., r_out=10.,
     disc_mass=disc_mass,
     p=1.,
     H_r_in=0.05,
     q=1./4.,
-    do_warp=False,
+    do_warp=True,
     posangle=0.,
     incl = 30.,
     Rwarp = 5.,
@@ -108,11 +108,12 @@ next_dt_target = t_sum + dt_dump
 while next_dt_target <= t_target:
 
 
-    fname = "dump_{:04}.phfile".format(i_dump)
+    fname = outputdir + "dump_{:04}.phfile".format(i_dump)
+    
 
     model.evolve_until(next_dt_target)
     
-    do_dump = True#(i_dump % 50 == 0) 
+    do_dump = (i_dump % 50 == 0) 
     if do_dump:
       dump = model.make_phantom_dump()
       dump.save_dump(fname)

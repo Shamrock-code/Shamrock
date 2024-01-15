@@ -776,14 +776,14 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
         dump.table_header_f64.add("udist", units->m_inv);
         dump.table_header_f64.add("umass", units->kg_inv);
         dump.table_header_f64.add("utime", units->s_inv);
-        dump.table_header_f64.add("umagfd", 3.54491);
+        dump.table_header_f64.add("umagfd", 8138.1879492138260);
     }else {
         logger::warn_ln("SPH", "no units are set, defaulting to SI");
 
         dump.table_header_f64.add("udist", 1);
         dump.table_header_f64.add("umass", 1);
         dump.table_header_f64.add("utime", 1);
-        dump.table_header_f64.add("umagfd", 3.54491);
+        dump.table_header_f64.add("umagfd", 8138.1879492138260);
     }
 
 

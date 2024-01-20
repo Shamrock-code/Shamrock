@@ -29,6 +29,7 @@ namespace sham::queues {
         inline sycl::queue &get_queue() { return shambase::get_check_ref(queue); }
     };
 
+
 } // namespace sham::queues
 namespace sham {
 
@@ -58,5 +59,25 @@ namespace sham {
     queues::QueueDetails &get_queue_details(u32 id = 0, queues::QueueKind kind = queues::Compute);
 
     sycl::queue &get_queue(u32 id = 0, queues::QueueKind kind = queues::Compute);
+
+
+    struct QueueId{
+        u32 id;
+        queues::QueueKind kind;
+
+        inline sycl::queue & get_queue(){
+            return ::sham::get_queue(id, kind);
+        }
+        inline queues::QueueDetails & get_queue_details(){
+            return ::sham::get_queue_details(id, kind);
+        } 
+    };
+
+    inline sycl::queue & get_queue(QueueId id){
+        return id.get_queue();
+    }
+    inline queues::QueueDetails & get_queue_details(QueueId id){
+        return id.get_queue_details();
+    }
 
 } // namespace sham

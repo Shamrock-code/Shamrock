@@ -17,6 +17,7 @@
 #include "fmt/core.h"
 #include "shambase/term_colors.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamcomm/mpi.hpp"
 
 namespace shamcomm {
 
@@ -24,9 +25,12 @@ namespace shamcomm {
     StateMPI_Aware mpi_rocm_aware;
 
     void fetch_mpi_capabilities() {
+        logs::debug_ln("Comm", "fetching mpi capabilities...");
         #ifdef FOUND_MPI_EXT
+        logs::debug_mpi_ln("Comm", "FOUND_MPI_EXT is defined");
         // detect MPI cuda aware
         #if defined(MPIX_CUDA_AWARE_SUPPORT)
+        logs::debug_mpi_ln("Comm", "MPIX_CUDA_AWARE_SUPPORT is defined");
         if (1 == MPIX_Query_cuda_support()) {
             mpi_cuda_aware = Yes;
         } else {
@@ -38,6 +42,7 @@ namespace shamcomm {
 
         // detect MPI rocm aware
         #if defined(MPIX_ROCM_AWARE_SUPPORT)
+        logs::debug_mpi_ln("Comm", "MPIX_ROCM_AWARE_SUPPORT is defined");
         if (1 == MPIX_Query_rocm_support()) {
             mpi_rocm_aware = Yes;
         } else {

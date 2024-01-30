@@ -236,8 +236,8 @@ namespace shamrock::patch{
         });        
     }
 
-    u64 PatchData::serialize_buf_byte_size(){
-        u64 sum = 0;
+    shamalgs::SerializeSize PatchData::serialize_buf_byte_size(){
+        shamalgs::SerializeSize sum {};
         for_each_field_any([&](auto & f){
             sum += f.serialize_buf_byte_size();
         }); 

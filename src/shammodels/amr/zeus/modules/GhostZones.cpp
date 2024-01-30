@@ -207,7 +207,6 @@ Module<Tvec, TgridVec>::communicate_pdat(
     shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
         std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
         recv_dat,
-        shamcomm::get_protocol(),
         [&](u64 id) {
             return scheduler().get_patch_rank_owner(id);
         },
@@ -237,7 +236,6 @@ shambase::DistributedDataShared<PatchDataField<T>> Module<Tvec, TgridVec>::commu
     shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
         std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf),
         recv_dat,
-        shamcomm::get_protocol(),
         [&](u64 id) {
             return scheduler().get_patch_rank_owner(id);
         },

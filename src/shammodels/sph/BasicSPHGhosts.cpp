@@ -230,7 +230,14 @@ inline void for_each_patch_shift(ShearPeriodicInfo<T> shearinfo, sycl::vec<T,3> 
                     shearinfo.shear_dir.z()*df
                 };
                 
-                list_possible.push_back({xoff+off_d.x(),yoff+off_d.y(),zoff+off_d.z()});
+                // on redhat based systems stl vector freaks out
+                // because iterator to back does *(end() - 1)
+                // the issue is that the compiler gets confused 
+                // by the sycl::vec defining the - operator
+                // creating the ambiguity and ... 
+                // ultimatly the compiler shitting itself
+                list_possible.resize(list_possible.size() + 1);
+                list_possible[list_possible.size() - 1]= i32_3{xoff+off_d.x(),yoff+off_d.y(),zoff+off_d.z()};
             }
         }
     }
@@ -468,22 +475,23 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
         shamrock::patch::PatchData &src = sched.patch_data.get_pdat(sender);
         PatchDataField<vec> &xyz        = src.get_field<vec>(0);
 
-        std::unique_ptr<sycl::buffer<u32>> idxs = xyz.get_elements_with_range_buf(
-            [&](vec val, vec vmin, vec vmax) {
-                return Patch::is_in_patch_converted(val, vmin, vmax);
-            },
-            build.cut_volume.lower,
-            build.cut_volume.upper);
+        std::tuple<std::optional<sycl::buffer<u32>>, u32> idxs_res 
+            = xyz.get_ids_buf_where([](auto access, u32 id, vec vmin, vec vmax){
+                return Patch::is_in_patch_converted(access[id], vmin, vmax);
+            }, build.cut_volume.lower, build.cut_volume.upper);
 
         u32 pcnt = 0;
-        if (bool(idxs)) {
-            pcnt = idxs->size();
+        if (bool(std::get<0>(idxs_res))) {
+            pcnt = std::get<1>(idxs_res);
         }
 
         // prevent sending empty patches
         if (pcnt == 0) {
             return;
         }
+
+        std::unique_ptr<sycl::buffer<u32>> idxs 
+            = std::make_unique<sycl::buffer<u32>>(shambase::extract_value(std::get<0>(idxs_res)));
 
         f64 ratio = f64(pcnt) / f64(src.get_obj_cnt());
 

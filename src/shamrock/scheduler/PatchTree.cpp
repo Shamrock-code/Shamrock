@@ -21,6 +21,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 
 namespace shamrock::scheduler {
 u64 PatchTree::insert_node(Node n){
@@ -281,7 +282,7 @@ void PatchTree::update_values_node(std::vector<shamrock::patch::Patch> & plist,s
 }
 
 void PatchTree::partial_values_reduction(std::vector<shamrock::patch::Patch> &plist, std::unordered_map<u64, u64> id_patch_to_global_idx){
-
+    StackEntry stack_loc{};
     for( u64 id_leaf : leaf_key){
         update_ptnode(tree[id_leaf],plist,id_patch_to_global_idx);
     }
@@ -295,7 +296,7 @@ void PatchTree::partial_values_reduction(std::vector<shamrock::patch::Patch> &pl
 
 
 std::unordered_set<u64> PatchTree::get_split_request(u64 crit_load_split){
-
+    StackEntry stack_loc{};
     std::unordered_set<u64> rq;
 
     for(u64 a : leaf_key){
@@ -310,6 +311,7 @@ std::unordered_set<u64> PatchTree::get_split_request(u64 crit_load_split){
 
 
 std::unordered_set<u64> PatchTree::get_merge_request(u64 crit_load_merge){
+    StackEntry stack_loc{};
     std::unordered_set<u64> rq;
 
     for(u64 a : parent_of_only_leaf_key){

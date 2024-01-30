@@ -50,7 +50,7 @@ template<class T,class Fct> void unit_test_reduc_sum(std::string name, Fct && re
     }
 
     {
-        check_val = T{0};
+        check_val = shambase::VectorProperties<T>::get_zero();
         for(auto & f : vals){
             check_val += f;
         }

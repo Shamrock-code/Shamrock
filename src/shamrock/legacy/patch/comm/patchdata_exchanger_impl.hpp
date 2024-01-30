@@ -84,6 +84,7 @@ inline void make_comm_table(
 
 
 
+[[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
 inline void patch_data_exchange_object(
     shamrock::patch::PatchDataLayout & pdl,
     std::vector<shamrock::patch::Patch> & global_patch_list,
@@ -208,6 +209,7 @@ inline void patch_data_exchange_object(
 
 
 template<class T>
+[[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
 inline void patch_data_field_exchange_object(
     std::vector<shamrock::patch::Patch> & global_patch_list,
     std::vector<std::unique_ptr<PatchDataField<T>>> &send_comm_pdat,

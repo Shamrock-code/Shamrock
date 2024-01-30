@@ -73,6 +73,7 @@ namespace patchdata_field {
 
 
     template<class T>
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     inline u64 isend( PatchDataField<T> &p, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm){
 
         rq_lst.emplace_back(p,current_mode,Send,p.size());
@@ -90,6 +91,7 @@ namespace patchdata_field {
     
 
     template<class T>
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     inline u64 irecv_probe(PatchDataField<T> &p, std::vector<PatchDataFieldMpiRequest<T>> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm){
         MPI_Status st;
         i32 cnt;

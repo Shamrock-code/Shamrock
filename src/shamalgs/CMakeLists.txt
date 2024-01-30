@@ -13,7 +13,7 @@ set(HeadersTest
 
 target_sources(shamalgs
     PRIVATE
-        ${Sources}
+        serialize.cpp
     PUBLIC
         ${Headers}
     )

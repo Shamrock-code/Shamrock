@@ -119,7 +119,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Omega_0"),
             py::arg("eta"),
             py::arg("q"))
-        .def("set_units", &TConfig::set_units);
+        .def("set_units", &TConfig::set_units)
+        .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
+        .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) { return std::make_unique<T>(ctx); }))
@@ -147,6 +149,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
              [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
                  return self.get_ideal_fcc_box(dr, {box_min, box_max});
              })
+        .def("get_ideal_hcp_box",
+             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
+                 return self.get_ideal_hcp_box(dr, {box_min, box_max});
+             })
         .def("resize_simulation_box",
              [](T &self, f64_3 box_min, f64_3 box_max) {
                  return self.resize_simulation_box({box_min, box_max});
@@ -158,6 +164,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("add_cube_fcc_3d",
              [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
                  return self.add_cube_fcc_3d(dr, {box_min, box_max});
+             })
+        .def("add_cube_hcp_3d",
+             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
+                 return self.add_cube_hcp_3d(dr, {box_min, box_max});
              })
         .def("add_disc_3d_keplerian",
              [](T &self,
@@ -244,6 +254,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
              })
         .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>)
         .def("set_field_value_lambda_f64",&T::template set_field_value_lambda<f64>)
+        .def("remap_positions",&T::remap_positions)
         //.def("set_field_value_lambda_f64_3",[](T&self,std::string field_name, const std::function<f64_3 (Tscal, Tscal , Tscal)> pos_to_val){
         //    self.template set_field_value_lambda<f64_3>(field_name, [=](Tvec v){
         //        return pos_to_val(v.x(), v.y(),v.z());
@@ -317,6 +328,12 @@ R"==(
         })
         .def("set_next_dt",[](T & self, Tscal dt){
             return self.solver.solver_config.set_next_dt(dt);
+        })
+        .def("set_cfl_multipler", [](T & self, Tscal lambda){
+            return self.solver.solver_config.set_cfl_multipler(lambda);
+        })
+        .def("set_cfl_mult_stiffness", [](T & self, Tscal cstiff){
+            return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
         });
     ;
 }

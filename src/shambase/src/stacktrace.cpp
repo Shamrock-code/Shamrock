@@ -22,6 +22,54 @@ namespace shambase::details {
 
     Timer global_timer = Timer{};
 
+    //two entry types, 
+    // one with start, end 
+    // one with start, end as separate envents
+
+
+    struct ProfileEntry{
+        f64 time_start;
+        f64 time_end;
+        std::string entry_name;
+
+        std::string format(){
+            return shambase::format_printf(R"({"tstart": %f, "tend": %f, "name": "%s"})", time_start,time_end,entry_name);
+        }
+    };
+
+    std::vector<ProfileEntry> profile_data;
+
+    f64 get_wtime(){
+        global_timer.end();
+        return global_timer.elasped_sec(); 
+    }
+
+    void register_profile_entry(std::source_location loc, f64 start_time, f64 end_time){
+        profile_data.push_back({start_time, end_time, loc.function_name()});
+    };
+
+    void clear_profiling_data(){
+        profile_data.clear();
+    }
+
+    void dump_profilings(std::string process_prefix, u32 world_rank){
+        std::ofstream outfile(process_prefix + std::to_string(world_rank));
+        outfile << "[";
+
+        u32 len = profile_data.size();
+
+        for (u32 i = 0; i < len; i++) {
+            outfile << profile_data[i].format();
+            if (i != len - 1) {
+                outfile << ",";
+            }
+        }
+
+        outfile << "]";
+        outfile.close();
+    }
+
+
     struct ChromeProfileEntry {
         std::string name;
         u64 time_val;
@@ -30,13 +78,6 @@ namespace shambase::details {
         std::string format(u32 world_rank);
     };
 
-    std::vector<ChromeProfileEntry> chome_prof;
-
-    void add_prof_entry(std::string n, bool is_start) {
-        global_timer.end();
-        chome_prof.push_back(
-            ChromeProfileEntry{n, static_cast<u64>(global_timer.elasped_sec() * 1e6), is_start});
-    }
 
     std::string ChromeProfileEntry::format(u32 world_rank) {
         if (is_start) {
@@ -75,14 +116,31 @@ namespace shambase::details {
         }
     }
 
-    void dump_profiling(u32 world_rank) {
-        std::ofstream outfile("timings_" + std::to_string(world_rank));
+    void dump_profilings_chrome(std::string process_prefix, u32 world_rank){
+
+        std::vector<ChromeProfileEntry> chrome_prof;
+
+        auto to_prof_time = [](f64 in){
+            return static_cast<u64>(in * 1e6);
+        };
+
+        for (ProfileEntry entry : profile_data) {
+            chrome_prof.push_back(ChromeProfileEntry{entry.entry_name,to_prof_time(entry.time_start),true});
+            chrome_prof.push_back(ChromeProfileEntry{entry.entry_name,to_prof_time(entry.time_end),false});
+        }
+
+        std::sort(chrome_prof.begin(), chrome_prof.end(),[](const ChromeProfileEntry &a, const ChromeProfileEntry &b)
+        { 
+            return a.time_val < b.time_val;
+        });
+
+        std::ofstream outfile(process_prefix + std::to_string(world_rank));
         outfile << "[";
 
-        u32 len = chome_prof.size();
+        u32 len = chrome_prof.size();
 
         for (u32 i = 0; i < len; i++) {
-            outfile << chome_prof[i].format(world_rank);
+            outfile << chrome_prof[i].format(world_rank);
             if (i != len - 1) {
                 outfile << ",";
             }
@@ -90,9 +148,11 @@ namespace shambase::details {
 
         outfile << "]";
         outfile.close();
+    
+
     }
 
-} // namespace shambase::details
+}
 
 namespace shambase {
 

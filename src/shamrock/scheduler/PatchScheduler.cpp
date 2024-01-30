@@ -313,7 +313,8 @@ std::tuple<f64_3,f64_3> PatchScheduler::get_box_volume(){
 
 
 //TODO clean the output of this function
-void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing){StackEntry stack_loc{};
+void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing){
+    StackEntry stack_loc{};
 
     //std::cout << dump_status();
 
@@ -921,9 +922,6 @@ void PatchScheduler::dump_local_patches(std::string filename){
 
 std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_data(u32 rank){
 
-    if(rank != 0){
-        throw shambase::make_except_with_loc<std::invalid_argument>("this method is only implemented for rank=0");
-    }
 
     using namespace shamrock::patch;
 

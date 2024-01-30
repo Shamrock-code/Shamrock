@@ -9,13 +9,14 @@
 /**
  * @file bitonicSort_updated.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "bitonicSort.hpp"
 
 #include "shambase/integer.hpp"
+#include "shambase/sycl_utils.hpp"
 
 // modified from http://www.bealto.com/gpu-sorting.html
 
@@ -23,9 +24,6 @@ namespace shamalgs::algorithm::details {
 
     template<class Tkey, class Tval>
     struct OrderingPrimitive {
-
-        using AccKey = sycl::accessor<Tkey, 1, sycl::access::mode::read_write, sycl::target::device>;
-        using AccVal = sycl::accessor<Tval, 1, sycl::access::mode::read_write, sycl::target::device>;
 
         inline static void _order(Tkey &a, Tkey &b, Tval &va, Tval &vb, bool reverse) {
             bool swap   = reverse ^ (a < b);
@@ -39,7 +37,8 @@ namespace shamalgs::algorithm::details {
             vb          = (swap) ? auxida : auxidb;
         }
 
-        inline static void _orderV(Tkey *x, Tval *vx, u32 a, u32 b, bool reverse) {
+        inline static void
+        _orderV(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, u32 b, bool reverse) {
             bool swap   = reverse ^ (x[a] < x[b]);
             auto auxa   = x[a];
             auto auxb   = x[b];
@@ -52,16 +51,18 @@ namespace shamalgs::algorithm::details {
         }
 
         template<u32 stencil_size>
-        static void order_stencil(Tkey *x, Tval *vx, u32 a, bool reverse);
+        static void order_stencil(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse);
 
         template<>
-        inline void order_stencil<2>(Tkey *x, Tval *vx, u32 a, bool reverse) {
+        inline void
+        order_stencil<2>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
             _orderV(x, vx, a, a + 1, reverse);
         }
 
         template<>
-        inline void order_stencil<4>(Tkey *x, Tval *vx, u32 a, bool reverse) {
-#pragma unroll
+        inline void
+        order_stencil<4>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
+            #pragma unroll
             for (int i4 = 0; i4 < 2; i4++) {
                 _orderV(x, vx, a + i4, a + i4 + 2, reverse);
             }
@@ -70,8 +71,9 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void order_stencil<8>(Tkey *x, Tval *vx, u32 a, bool reverse) {
-#pragma unroll
+        inline void
+        order_stencil<8>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
+            #pragma unroll
             for (int i8 = 0; i8 < 4; i8++) {
                 _orderV(x, vx, a + i8, a + i8 + 4, reverse);
             }
@@ -80,8 +82,9 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void order_stencil<16>(Tkey *x, Tval *vx, u32 a, bool reverse) {
-#pragma unroll
+        inline void
+        order_stencil<16>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
+            #pragma unroll
             for (int i16 = 0; i16 < 8; i16++) {
                 _orderV(x, vx, a + i16, a + i16 + 8, reverse);
             }
@@ -90,8 +93,9 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void order_stencil<32>(Tkey *x, Tval *vx, u32 a, bool reverse) {
-#pragma unroll
+        inline void
+        order_stencil<32>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
+            #pragma unroll
             for (int i32 = 0; i32 < 16; i32++) {
                 _orderV(x, vx, a + i32, a + i32 + 16, reverse);
             }
@@ -100,10 +104,12 @@ namespace shamalgs::algorithm::details {
         }
 
         template<u32 stencil_size>
-        static void order_kernel(AccKey m, AccVal id, u32 inc, u32 length, i32 t);
+        static void
+        order_kernel(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t);
 
         template<>
-        inline void order_kernel<32>(AccKey m, AccVal id, u32 inc, u32 length, i32 t) {
+        inline void
+        order_kernel<32>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
             u32 _inc = inc;
             u32 _dir = length << 1U;
 
@@ -114,10 +120,12 @@ namespace shamalgs::algorithm::details {
 
             // Load
             Tkey x[32];
+            #pragma unroll
             for (int k = 0; k < 32; k++)
                 x[k] = m[k * _inc + i];
 
             uint idx[32];
+            #pragma unroll
             for (int k = 0; k < 32; k++)
                 idx[k] = id[k * _inc + i];
 
@@ -125,14 +133,17 @@ namespace shamalgs::algorithm::details {
             order_stencil<32>(x, idx, 0, reverse);
 
             // Store
+            #pragma unroll
             for (int k = 0; k < 32; k++)
                 m[k * _inc + i] = x[k];
+            #pragma unroll
             for (int k = 0; k < 32; k++)
                 id[k * _inc + i] = idx[k];
         }
 
         template<>
-        inline void order_kernel<16>(AccKey m, AccVal id, u32 inc, u32 length, i32 t) {
+        inline void
+        order_kernel<16>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
 
             u32 _inc = inc;
             u32 _dir = length << 1;
@@ -144,10 +155,12 @@ namespace shamalgs::algorithm::details {
 
             // Load
             Tkey x[16];
+            #pragma unroll
             for (int k = 0; k < 16; k++)
                 x[k] = m[k * _inc + i];
 
             Tval idx[16];
+            #pragma unroll
             for (int k = 0; k < 16; k++)
                 idx[k] = id[k * _inc + i];
 
@@ -155,14 +168,17 @@ namespace shamalgs::algorithm::details {
             order_stencil<16>(x, idx, 0, reverse);
 
             // Store
+            #pragma unroll
             for (int k = 0; k < 16; k++)
                 m[k * _inc + i] = x[k];
+            #pragma unroll
             for (int k = 0; k < 16; k++)
                 id[k * _inc + i] = idx[k];
         }
 
         template<>
-        inline void order_kernel<8>(AccKey m, AccVal id, u32 inc, u32 length, i32 t) {
+        inline void
+        order_kernel<8>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
             u32 _inc = inc;
             u32 _dir = length << 1;
 
@@ -173,10 +189,12 @@ namespace shamalgs::algorithm::details {
 
             // Load
             Tkey x[8];
+            #pragma unroll
             for (int k = 0; k < 8; k++)
                 x[k] = m[k * _inc + i];
 
             Tval idx[8];
+            #pragma unroll
             for (int k = 0; k < 8; k++)
                 idx[k] = id[k * _inc + i];
 
@@ -184,14 +202,17 @@ namespace shamalgs::algorithm::details {
             order_stencil<8>(x, idx, 0, reverse);
 
             // Store
+            #pragma unroll
             for (int k = 0; k < 8; k++)
                 m[k * _inc + i] = x[k];
+            #pragma unroll
             for (int k = 0; k < 8; k++)
                 id[k * _inc + i] = idx[k];
         }
 
         template<>
-        inline void order_kernel<4>(AccKey m, AccVal id, u32 inc, u32 length, i32 t) {
+        inline void
+        order_kernel<4>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
             u32 _inc = inc;
             u32 _dir = length << 1;
 
@@ -230,7 +251,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void order_kernel<2>(AccKey m, AccVal id, u32 inc, u32 length, i32 t) {
+        inline void
+        order_kernel<2>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
             u32 _inc = inc;
             u32 _dir = length << 1;
 
@@ -238,32 +260,33 @@ namespace shamalgs::algorithm::details {
             int i        = (t << 1) - low;    // insert 0 at position INC
             bool reverse = ((_dir & i) == 0); // asc/desc order
 
+            u32 addr_1 = 0 + i;
+            u32 addr_2 = _inc + i;
+
             // Load
-            Tkey x0   = m[0 + i];
-            Tkey x1   = m[_inc + i];
-            Tval idx0 = id[0 + i];
-            Tval idx1 = id[_inc + i];
+            Tkey x0   = m[addr_1];
+            Tkey x1   = m[addr_2];
+            Tval idx0 = id[addr_1];
+            Tval idx1 = id[addr_2];
 
             // Sort
             _order(x0, x1, idx0, idx1, reverse);
 
             // Store
-            m[0 + i]     = x0;
-            m[_inc + i]  = x1;
-            id[0 + i]    = idx0;
-            id[_inc + i] = idx1;
+            m[addr_1]  = x0;
+            m[addr_2]  = x1;
+            id[addr_1] = idx0;
+            id[addr_2] = idx1;
         }
     };
 
     template<class Tkey, class Tval, u32 MaxStencilSize>
     void sort_by_key_bitonic_updated(
-        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len
-    ) {
+        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
 
         if (!shambase::is_pow_of_two(len)) {
             throw std::invalid_argument(
-                "this algorithm can only be used with length that are powers of two"
-            );
+                "this algorithm can only be used with length that are powers of two");
         }
 
         using B = OrderingPrimitive<Tkey, Tval>;
@@ -282,19 +305,19 @@ namespace shamalgs::algorithm::details {
                         unsigned int nThreads = len >> ninc;
                         sycl::range<1> range{nThreads};
 
-                        auto ker_sort_morton_b32 = [&](sycl::handler &cgh) {
-                            sycl::accessor m{buf_key, cgh, sycl::read_write};
-                            sycl::accessor id{buf_values, cgh, sycl::read_write};
+                        q.submit([&](sycl::handler &cgh) {
+                            sycl::accessor accm{buf_key, cgh, sycl::read_write};
+                            sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            cgh.parallel_for(range, [=](sycl::item<1> item) {
-                                //(__global data_t * data,__global uint * ids,int inc,int dir)
+                            shambase::parralel_for(
+                                cgh, nThreads, "bitonic sort pass B32", [=](u64 gid) {
+                                    //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                                B::template order_kernel<32>(
-                                    m, id, inc, length, item.get_id(0)
-                                );
-                            });
-                        };
-                        q.submit(ker_sort_morton_b32);
+                                    Tkey *m  = accm.get_pointer();
+                                    Tval *id = accid.get_pointer();
+                                    B::template order_kernel<32>(m, id, inc, length, gid);
+                                });
+                        });
                     }
                 }
 
@@ -304,19 +327,19 @@ namespace shamalgs::algorithm::details {
                         unsigned int nThreads = len >> ninc;
                         sycl::range<1> range{nThreads};
 
-                        auto ker_sort_morton_b16 = [&](sycl::handler &cgh) {
-                            sycl::accessor m{buf_key, cgh, sycl::read_write};
-                            sycl::accessor id{buf_values, cgh, sycl::read_write};
+                        q.submit([&](sycl::handler &cgh) {
+                            sycl::accessor accm{buf_key, cgh, sycl::read_write};
+                            sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            cgh.parallel_for(range, [=](sycl::item<1> item) {
-                                //(__global data_t * data,__global uint * ids,int inc,int dir)
+                            shambase::parralel_for(
+                                cgh, nThreads, "bitonic sort pass B16", [=](u64 gid) {
+                                    //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                                B::template order_kernel<16>(
-                                    m, id, inc, length, item.get_id(0)
-                                );
-                            });
-                        };
-                        q.submit(ker_sort_morton_b16);
+                                    Tkey *m  = accm.get_pointer();
+                                    Tval *id = accid.get_pointer();
+                                    B::template order_kernel<16>(m, id, inc, length, gid);
+                                });
+                        });
 
                         // sort_kernel_B8(arg_eq,* buf_key->buf,*
                         // particles::buf_ids->buf,inc,length<<1);//.wait();
@@ -330,19 +353,19 @@ namespace shamalgs::algorithm::details {
                         unsigned int nThreads = len >> ninc;
                         sycl::range<1> range{nThreads};
 
-                        auto ker_sort_morton_b8 = [&](sycl::handler &cgh) {
-                            sycl::accessor m{buf_key, cgh, sycl::read_write};
-                            sycl::accessor id{buf_values, cgh, sycl::read_write};
+                        q.submit([&](sycl::handler &cgh) {
+                            sycl::accessor accm{buf_key, cgh, sycl::read_write};
+                            sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            cgh.parallel_for(range, [=](sycl::item<1> item) {
-                                //(__global data_t * data,__global uint * ids,int inc,int dir)
+                            shambase::parralel_for(
+                                cgh, nThreads, "bitonic sort pass B8", [=](u64 gid) {
+                                    //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                                B::template order_kernel<8>(
-                                    m, id, inc, length, item.get_id(0)
-                                );
-                            });
-                        };
-                        q.submit(ker_sort_morton_b8);
+                                    Tkey *m  = accm.get_pointer();
+                                    Tval *id = accid.get_pointer();
+                                    B::template order_kernel<8>(m, id, inc, length, gid);
+                                });
+                        });
 
                         // sort_kernel_B8(arg_eq,* buf_key->buf,*
                         // particles::buf_ids->buf,inc,length<<1);//.wait();
@@ -357,16 +380,18 @@ namespace shamalgs::algorithm::details {
                         sycl::range<1> range{nThreads};
                         // sort_kernel_B4(arg_eq,* buf_key->buf,*
                         // particles::buf_ids->buf,inc,length<<1);
-                        auto ker_sort_morton_b4 = [&](sycl::handler &cgh) {
-                            sycl::accessor m{buf_key, cgh, sycl::read_write};
-                            sycl::accessor id{buf_values, cgh, sycl::read_write};
-                            cgh.parallel_for(range, [=](sycl::item<1> item) {
-                                B::template order_kernel<4>(
-                                    m, id, inc, length, item.get_id(0)
-                                );
-                            });
-                        };
-                        q.submit(ker_sort_morton_b4);
+
+                        q.submit([&](sycl::handler &cgh) {
+                            sycl::accessor accm{buf_key, cgh, sycl::read_write};
+                            sycl::accessor accid{buf_values, cgh, sycl::read_write};
+
+                            shambase::parralel_for(
+                                cgh, nThreads, "bitonic sort pass B4", [=](u64 gid) {
+                                    Tkey *m  = accm.get_pointer();
+                                    Tval *id = accid.get_pointer();
+                                    B::template order_kernel<4>(m, id, inc, length, gid);
+                                });
+                        });
                     }
                 }
 
@@ -377,19 +402,20 @@ namespace shamalgs::algorithm::details {
                     sycl::range<1> range{nThreads};
                     // sort_kernel_B2(arg_eq,* buf_key->buf,*
                     // particles::buf_ids->buf,inc,length<<1);
-                    auto ker_sort_morton_b2 = [&](sycl::handler &cgh) {
-                        sycl::accessor m{buf_key, cgh, sycl::read_write};
-                        sycl::accessor id{buf_values, cgh, sycl::read_write};
 
-                        cgh.parallel_for(range, [=](sycl::item<1> item) {
+                    q.submit([&](sycl::handler &cgh) {
+                        sycl::accessor accm{buf_key, cgh, sycl::read_write};
+                        sycl::accessor accid{buf_values, cgh, sycl::read_write};
+
+                        shambase::parralel_for(cgh, nThreads, "bitonic sort pass B2", [=](u64 gid) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                            B::template order_kernel<2>(
-                                m, id, inc, length, item.get_id(0)
-                            );
+                            Tkey *m  = accm.get_pointer();
+                            Tval *id = accid.get_pointer();
+
+                            B::template order_kernel<2>(m, id, inc, length, gid);
                         });
-                    };
-                    q.submit(ker_sort_morton_b2);
+                    });
                 }
 
                 inc >>= ninc;
@@ -398,27 +424,21 @@ namespace shamalgs::algorithm::details {
     }
 
     template void sort_by_key_bitonic_updated<u32, u32, 16>(
-        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated<u64, u32, 16>(
-        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated<u32, u32, 8>(
-        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated<u64, u32, 8>(
-        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated<u32, u32, 32>(
-        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated<u64, u32, 32>(
-        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
 } // namespace shamalgs::algorithm::details

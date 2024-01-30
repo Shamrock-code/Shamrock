@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <vector>
 
-void sparse_comm_test(std::string prefix, shamcomm::CommunicationProtocol prot){
+void sparse_comm_test(std::string prefix, sham::queues::QueueDetails & qdet){
     
     using namespace shamalgs::collective;
     using namespace shamsys::instance;
@@ -81,14 +81,14 @@ void sparse_comm_test(std::string prefix, shamcomm::CommunicationProtocol prot){
         if(bufinfo.sender_rank == world_rank()){
             sendop.push_back(SendPayload{
                 bufinfo.receiver_rank,
-                std::make_unique<CommunicationBuffer>(*bufinfo.payload, prot)
+                std::make_unique<CommunicationBuffer>(*bufinfo.payload, qdet)
             });
         }
     }
 
 
     std::vector<RecvPayload> recvop;
-    base_sparse_comm(sendop, recvop, prot);
+    base_sparse_comm(sendop, recvop);
 
     std::vector<RefBuff> recv_data;
     for(RecvPayload & load : recvop){
@@ -145,10 +145,6 @@ void sparse_comm_test(std::string prefix, shamcomm::CommunicationProtocol prot){
 
 TestStart(Unittest, "shamalgs/collective/sparseXchg", testsparsexchg, -1){
 
-    if(shamsys::instance::is_direct_gpu_selected()){
-        sparse_comm_test("DirectGPU  mode : ",shamcomm::DirectGPU);
-    }else{
-        sparse_comm_test("CopyToHost mode : ",shamcomm::CopyToHost);
-    }
+    sparse_comm_test("",sham::get_queue_details());
 
 }

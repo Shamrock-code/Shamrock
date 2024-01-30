@@ -182,7 +182,7 @@ namespace shamrock::tree {
             serializer.write_buf(*buf_endrange, internal_cell_count);
         }
 
-        inline u64 serialize_byte_size() {
+        inline shamalgs::SerializeSize serialize_byte_size() {
 
             using H = shamalgs::SerializeHelper;
 

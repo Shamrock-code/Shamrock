@@ -37,6 +37,18 @@ if(NOT HAS_SYCL2020_HEADER)
   message(FATAL_ERROR "Acpp can not compile a simple exemple including <sycl/sycl.hpp>")
 endif()
 
+
+check_cxx_source_compiles(
+    "
+    #include <sycl/sycl.hpp>
+    int main(void){
+      bool a = sycl::isinf(0.f / 1.f);
+    }
+    "    
+    SYCL2020_FEATURE_ISINF)
+
+
+
 if(NOT DEFINED SYCL_feature_reduc2020)
   message(STATUS "Performing Test " SYCL_feature_reduc2020)
   try_compile(

@@ -1368,6 +1368,7 @@ void SPHSolve<Tvec, Kern>::evolve_once()
                         eps_v));
             }
             need_rerun_corrector = true;
+            solver_config.time_state.cfl_multiplier /= 2;
 
             // logger::info_ln("rerun corrector ...");
         } else {
@@ -1513,8 +1514,8 @@ void SPHSolve<Tvec, Kern>::evolve_once()
                     sycl::accessor vsig{vsig_buf, cgh, sycl::read_only};
                     sycl::accessor cfl_dt{cfl_dt_buf, cgh, sycl::write_only, sycl::no_init};
 
-                    Tscal C_cour  = solver_config.cfl_cour;
-                    Tscal C_force = solver_config.cfl_force;
+                    Tscal C_cour  = solver_config.cfl_cour*solver_config.time_state.cfl_multiplier;
+                    Tscal C_force = solver_config.cfl_force*solver_config.time_state.cfl_multiplier;
 
                     cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                         Tscal h_a     = hpart[item];
@@ -1537,7 +1538,7 @@ void SPHSolve<Tvec, Kern>::evolve_once()
             next_cfl = shamalgs::collective::allreduce_min(rank_dt);
 
             if (shamcomm::world_rank() == 0) {
-                logger::info_ln("sph::Model", "cfl dt =", next_cfl);
+                logger::info_ln("sph::Model", "cfl dt =", next_cfl, "cfl multiplier :",solver_config.time_state.cfl_multiplier);
             }
 
 
@@ -1702,6 +1703,15 @@ void SPHSolve<Tvec, Kern>::evolve_once()
 
     solver_config.set_next_dt(next_cfl);
     solver_config.set_time(t_current + dt);
+
+    auto get_next_cfl_mult = [&](){
+        Tscal cfl_m = solver_config.time_state.cfl_multiplier;
+        Tscal stiff = solver_config.cfl_multiplier_stiffness;
+
+        return (cfl_m* stiff + 1.)/(stiff + 1.);
+    };
+
+    solver_config.time_state.cfl_multiplier = get_next_cfl_mult();
 }
 
 using namespace shammath;

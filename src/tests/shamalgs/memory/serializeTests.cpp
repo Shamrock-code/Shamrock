@@ -10,6 +10,8 @@
 #include "shamalgs/serialize.hpp"
 #include "shamalgs/random.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
+#include "shambase/time.hpp"
+#include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
@@ -54,7 +56,7 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
 
     shamalgs::SerializeHelper ser;
 
-    u64 bytelen = ser.serialize_byte_size<u8>(n1) 
+    shamalgs::SerializeSize bytelen = ser.serialize_byte_size<u8>(n1) 
         + ser.serialize_byte_size<f64_16>() 
         + ser.serialize_byte_size<u32_3>(n2)
         + ser.serialize_byte_size(test_str);
@@ -92,4 +94,230 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
         check_buf("buf 2", buf_comp2, buf2);
 
     }
+}
+
+TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializer,1){
+
+
+    auto get_perf_knownsize = [](u32 buf_cnt, u32 buf_len) -> std::pair<f64,f64> {
+        StackEntry stack{};
+        std::vector<sycl::buffer<f64>> bufs;
+        std::vector<sycl::buffer<f64>> bufs_ret;
+
+        for(u32 i = 0; i < buf_cnt;i++){
+            bufs.emplace_back(
+                shamalgs::random::mock_buffer<f64>(0x111 + i, buf_len)
+            );
+        }
+
+        shambase::Timer tser;
+        tser.start();
+
+        shamalgs::SerializeHelper ser1;
+        shamalgs::SerializeSize sz = ser1.serialize_byte_size<f64>(buf_cnt*buf_len);
+        ser1.allocate(sz);
+        for(u32 i = 0; i < buf_cnt;i++){
+            ser1.write_buf(bufs[i], buf_len);
+        }
+        auto recov = ser1.finalize();
+        shamsys::instance::get_compute_queue().wait();
+
+        tser.end();
+
+
+        shambase::Timer tdeser;
+        tdeser.start();
+
+
+        for(u32 i = 0; i < buf_cnt;i++){
+            bufs_ret.emplace_back(
+                sycl::buffer<f64>(buf_len)
+            );
+        }
+
+        shamalgs::SerializeHelper ser2(std::move(recov));
+        for(u32 i = 0; i < buf_cnt;i++){
+            ser2.load_buf(bufs_ret[i], buf_len);
+        }
+        shamsys::instance::get_compute_queue().wait();
+
+        tdeser.end();
+
+        return {sz.get_total_size()/(tser.nanosec/1e9), sz.get_total_size()/(tdeser.nanosec/1e9)};
+
+    };
+    auto get_perf_unknownsize = [](u32 buf_cnt, u32 buf_len) -> std::pair<f64,f64> {
+        StackEntry stack{};
+        std::vector<sycl::buffer<f64>> bufs;
+        std::vector<sycl::buffer<f64>> bufs_ret;
+
+        for(u32 i = 0; i < buf_cnt;i++){
+            bufs.emplace_back(
+                shamalgs::random::mock_buffer<f64>(0x111 + i, buf_len)
+            );
+        }
+
+        shambase::Timer tser;
+        tser.start();
+
+        shamalgs::SerializeHelper ser1;
+        shamalgs::SerializeSize sz = ser1.serialize_byte_size<f64>(buf_cnt*buf_len) + (ser1.serialize_byte_size<u32>() * buf_cnt);
+        ser1.allocate(sz);
+        for(u32 i = 0; i < buf_cnt;i++){
+            ser1.write(buf_len);
+            ser1.write_buf(bufs[i], buf_len);
+        }
+        auto recov = ser1.finalize();
+        shamsys::instance::get_compute_queue().wait();
+
+        tser.end();
+
+
+        shambase::Timer tdeser;
+        tdeser.start();
+
+
+        for(u32 i = 0; i < buf_cnt;i++){
+            bufs_ret.emplace_back(
+                sycl::buffer<f64>(buf_len)
+            );
+        }
+
+        shamalgs::SerializeHelper ser2(std::move(recov));
+        for(u32 i = 0; i < buf_cnt;i++){
+            u32 tmp;
+            ser2.load(tmp);
+            ser2.load_buf(bufs_ret[i], buf_len);
+        }
+        shamsys::instance::get_compute_queue().wait();
+
+        tdeser.end();
+
+        
+
+        return {sz.get_total_size()/(tser.nanosec/1e9), sz.get_total_size()/(tdeser.nanosec/1e9)};
+
+    };
+    {
+    std::vector<f64> x;
+    std::vector<f64> tser,tdeser;
+    std::vector<f64> tser_usz,tdeser_usz;
+
+    for (u32 i = 1; i < 10000; i*=2){
+        logger::debug_ln("Test", "i =",i);
+        
+        auto [p1,p2] = get_perf_knownsize(i, 100);
+        auto [p3,p4] = get_perf_unknownsize(i, 100);
+        x.push_back(i);
+        tser.push_back(p1);
+        tdeser.push_back(p2);
+        tser_usz.push_back(p3);
+        tdeser_usz.push_back(p4);
+    }
+
+
+    PyScriptHandle hdnl{};
+
+    hdnl.data()["X"] = x;
+    hdnl.data()["ser_ksz"] = tser;
+    hdnl.data()["deser_ksz"] = tdeser;
+    hdnl.data()["ser_usz"] = tser_usz;
+    hdnl.data()["deser_usz"] = tdeser_usz;
+
+    hdnl.exec(R"py(
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        plt.style.use('custom_style.mplstyle')
+
+        fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(15,6))
+
+        axs.plot(X,ser_ksz,'-',c = 'black',label = "serialize (kz)")
+        axs.plot(X,deser_ksz,':',c = 'black',label = "deserialize (kz)")
+        axs.plot(X,ser_usz,'--',c = 'black',label = "serialize (ukz)")
+        axs.plot(X,deser_usz,'-.',c = 'black',label = "deserialize (ukz)")
+
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.xlabel('buffer count')
+        plt.ylabel('Bandwidth (B.s-1)')
+        plt.legend()
+        plt.tight_layout()
+
+        plt.savefig("tests/figures/benchmark-serialize1.pdf")
+
+    )py");
+
+    TEX_REPORT(R"==(
+
+        \begin{figure}[ht!]
+        \center
+        \includegraphics[width=0.95\linewidth]{tests/figures/benchmark-serialize1}
+        \caption{Test the serializehelper performance (buf size = 100 f64)}
+        \end{figure}
+
+    )==")
+    }
+
+        {
+    std::vector<f64> x;
+    std::vector<f64> tser,tdeser;
+    std::vector<f64> tser_usz,tdeser_usz;
+
+    for (u32 i = 8; i < 10000; i*=2){
+        logger::debug_ln("Test", "i =",i);
+        
+        auto [p1,p2] = get_perf_knownsize(1000, i);
+        auto [p3,p4] = get_perf_unknownsize(1000, i);
+        x.push_back(i);
+        tser.push_back(p1);
+        tdeser.push_back(p2);
+        tser_usz.push_back(p3);
+        tdeser_usz.push_back(p4);
+    }
+
+
+    PyScriptHandle hdnl{};
+
+    hdnl.data()["X"] = x;
+    hdnl.data()["ser_ksz"] = tser;
+    hdnl.data()["deser_ksz"] = tdeser;
+    hdnl.data()["ser_usz"] = tser_usz;
+    hdnl.data()["deser_usz"] = tdeser_usz;
+
+    hdnl.exec(R"py(
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        plt.style.use('custom_style.mplstyle')
+
+        fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(15,6))
+
+        axs.plot(X,ser_ksz,'-',c = 'black',label = "serialize (kz)")
+        axs.plot(X,deser_ksz,':',c = 'black',label = "deserialize (kz)")
+        axs.plot(X,ser_usz,'--',c = 'black',label = "serialize (ukz)")
+        axs.plot(X,deser_usz,'-.',c = 'black',label = "deserialize (ukz)")
+
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.xlabel('buffer size (f64)')
+        plt.ylabel('Bandwidth (B.s-1)')
+        plt.legend()
+        plt.tight_layout()
+
+        plt.savefig("tests/figures/benchmark-serialize2.pdf")
+
+    )py");
+
+    TEX_REPORT(R"==(
+
+        \begin{figure}[ht!]
+        \center
+        \includegraphics[width=0.95\linewidth]{tests/figures/benchmark-serialize2}
+        \caption{Test the serializehelper performance (buf count = 1000)}
+        \end{figure}
+
+    )==")
+    }
+
 }

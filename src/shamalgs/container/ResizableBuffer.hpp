@@ -192,7 +192,7 @@ namespace shamalgs {
          */
         static ResizableBuffer deserialize_buf(shamalgs::SerializeHelper &serializer, u32 val_cnt);
 
-        u64 serialize_buf_byte_size();
+        SerializeSize serialize_buf_byte_size();
 
         static ResizableBuffer mock_buffer(u64 seed, u32 val_cnt, T min_bound, T max_bound);
 

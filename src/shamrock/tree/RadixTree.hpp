@@ -107,7 +107,7 @@ class RadixTree{
 
     void serialize(shamalgs::SerializeHelper &serializer);
 
-    u64 serialize_byte_size();
+    shamalgs::SerializeSize serialize_byte_size();
 
     static RadixTree deserialize(shamalgs::SerializeHelper &serializer);
 

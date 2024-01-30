@@ -178,7 +178,7 @@ namespace shamrock::tree {
             return ret;
         }
 
-        inline u64 serialize_byte_size() {
+        inline shamalgs::SerializeSize serialize_byte_size() {
 
 
             using H = shamalgs::SerializeHelper;

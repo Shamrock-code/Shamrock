@@ -19,7 +19,7 @@
 
 namespace shamtest::details {
 
-    TestResult current_test{Unittest, "", -1};
+    TestResult current_test{Unittest, "", 0};
 
     TestResult Test::run() {
 
@@ -33,7 +33,7 @@ namespace shamtest::details {
             }
         }
 
-        current_test = TestResult{type, name, shamcomm::world_rank()};
+        current_test = TestResult{type, name, u32(shamcomm::world_rank())};
         
         try{
             test_functor();

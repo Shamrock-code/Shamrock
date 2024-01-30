@@ -39,11 +39,11 @@ namespace shamsys::details {
                          shambase::fmt_callstack()
                   << std::endl;
 
-        std::cout << "dump profiling : " << std::endl;
+        //std::cout << "dump profiling : " << std::endl;
 
         
         #ifdef SHAMROCK_USE_PROFILING
-        shambase::details::dump_profiling(shamcomm::world_rank());
+        //shambase::details::dump_profiling(shamcomm::world_rank());
         #endif
 
 

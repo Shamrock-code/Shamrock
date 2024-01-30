@@ -70,7 +70,7 @@ namespace shambase {
          * @return true the storage is empty
          * @return false the storage hold an object
          */
-        bool is_empty() { return !hndl; }
+        bool is_empty() { return !bool(hndl); }
     };
 
 } // namespace shambase

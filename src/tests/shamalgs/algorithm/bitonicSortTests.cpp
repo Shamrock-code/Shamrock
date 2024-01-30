@@ -7,6 +7,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/details/algorithm/radixSortOnesweep.hpp"
+#include "shamtest/PyScriptHandle.hpp"
 #include "sortTests.hpp"
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
 
@@ -52,10 +53,10 @@ TestStart(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v3", 
 }
 */
 
+#if false
 TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark", 
     test_bitonic_sort_legacy_benchmark, 1){
 
-    
     /*
     {
         TestSortByKey<u32, u32>test (
@@ -245,4 +246,90 @@ TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark",
     }
 
 
+}
+#endif
+
+
+TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark", 
+    test_bitonic_sort, 1){
+
+    PyScriptHandle hdnl{};
+
+    {
+        TestSortByKey<u32, u32>test (
+        (TestSortByKey<u32, u32>::vFunctionCall)
+            shamalgs::algorithm::details::sort_by_key_bitonic_fallback
+        );
+    
+        auto result = test.benchmark();
+
+        hdnl.data()["label_1"] = "bitonic fallback (u32,u32)";
+        hdnl.data()["Nobj_1"] = result.sizes;
+        hdnl.data()["t_sort_1"] = result.times;
+
+    }
+
+    {
+        TestSortByKey<u32, u32>test (
+        (TestSortByKey<u32, u32>::vFunctionCall)
+            shamalgs::algorithm::details::sort_by_key_bitonic_updated<u32,u32,16>
+        );
+    
+        auto result = test.benchmark();
+
+        hdnl.data()["label_2"] = "bitonic updated (u32,u32,16)";
+        hdnl.data()["Nobj_2"] = result.sizes;
+        hdnl.data()["t_sort_2"] = result.times;
+
+    }
+
+    {
+        TestSortByKey<u32, u32>test (
+        (TestSortByKey<u32, u32>::vFunctionCall)
+            shamalgs::algorithm::details::sort_by_key_bitonic_updated<u32,u32,32>
+        );
+    
+        auto result = test.benchmark();
+
+        hdnl.data()["label_3"] = "bitonic updated (u32,u32,32)";
+        hdnl.data()["Nobj_3"] = result.sizes;
+        hdnl.data()["t_sort_3"] = result.times;
+
+    }
+
+
+    hdnl.exec(R"py(
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        plt.style.use('custom_style.mplstyle')
+
+        plt.plot(Nobj_1, np.array(t_sort_1)/np.array(Nobj_1), label=label_1)
+        plt.plot(Nobj_2, np.array(t_sort_2)/np.array(Nobj_2), label=label_2)
+        plt.plot(Nobj_3, np.array(t_sort_3)/np.array(Nobj_3), label=label_3)
+
+
+        plt.xscale('log')
+        plt.yscale('log')
+
+        plt.xlabel(r"$N$")
+
+        plt.ylabel(r"$t_{\rm sort}/N$ (s)")
+        plt.legend()
+
+        plt.tight_layout()
+
+        plt.savefig("tests/figures/sort_benchmark.pdf")
+    )py");
+
+
+    TEX_REPORT(R"==(
+
+        \begin{figure}[ht!]
+        \center
+        \includegraphics[width=0.95\linewidth]{figures/sort_benchmark.pdf}
+        \caption{Bencmark of the sorting algs}
+        \end{figure}
+
+    )==")
 }

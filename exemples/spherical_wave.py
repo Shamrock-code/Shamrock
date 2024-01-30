@@ -17,23 +17,8 @@ pmass = -1
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
-model.init_scheduler(int(1e7),1)
-bmin,bmax = model.get_ideal_fcc_box(dr,bmin,bmax)
-xm,ym,zm = bmin
-xM,yM,zM = bmax
-model.resize_simulation_box(bmin,bmax)
-model.add_cube_fcc_3d(dr, bmin,bmax)
-xc,yc,zc = model.get_closest_part_to((0,0,0))
-ctx.close_sched()
-del model
-del ctx
 
-
-ctx = shamrock.Context()
-ctx.pdata_layout_new()
-
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 
 cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
@@ -47,13 +32,17 @@ model.set_solver_config(cfg)
 model.init_scheduler(int(1e6),1)
 
 
-bmin = (xm - xc,ym - yc, zm - zc)
-bmax = (xM - xc,yM - yc, zM - zc)
+bmin,bmax = model.get_ideal_hcp_box(dr,bmin,bmax)
 xm,ym,zm = bmin
 xM,yM,zM = bmax
 
 model.resize_simulation_box(bmin,bmax)
-model.add_cube_fcc_3d(dr, bmin,bmax)
+model.add_cube_hcp_3d(dr, bmin,bmax)
+
+
+xc,yc,zc = model.get_closest_part_to((0,0,0))
+print("closest part to (0,0,0) is in :",xc,yc,zc)
+
 
 vol_b = (xM - xm)*(yM - ym)*(zM - zm)
 
@@ -64,12 +53,15 @@ pmass = model.total_mass_to_part_mass(totmass)
 
 model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
 
-rinj = 0.008909042924642563*2/2
+rinj = 0.008909042924642563*2
 #rinj = 0.008909042924642563*2*2
 #rinj = 0.01718181
 u_inj = 1
 model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
 
+
+tot_u = pmass*model.get_sum("uint","f64")
+print("total u :",tot_u)
 
 
 #print("Current part mass :", pmass)
@@ -85,11 +77,17 @@ model.set_particle_mass(pmass)
 
 tot_u = pmass*model.get_sum("uint","f64")
 
-model.set_cfl_cour(0.3)
-model.set_cfl_force(0.25)
+model.set_cfl_cour(0.1)
+model.set_cfl_force(0.1)
+
+model.timestep()
+model.do_vtk_dump("init.vtk", True)
 
 t_target = 0.1
 model.evolve_until(t_target)
+
+
+model.do_vtk_dump("end.vtk", True)
 
 
 import numpy as np

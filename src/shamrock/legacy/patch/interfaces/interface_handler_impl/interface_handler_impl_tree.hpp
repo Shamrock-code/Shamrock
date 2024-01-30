@@ -114,6 +114,7 @@ class Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec
 
 
 
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     void initial_fetch(PatchScheduler &sched){
         
         std::vector<u64_2> send_vec;
@@ -131,11 +132,13 @@ class Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec
     }
 
 
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     SparseCommResult<RadixTree<u_morton, vec>> tree_recv_map;
     void comm_trees(){
         tree_recv_map = communicator->sparse_exchange(tree_send_map.list_rtree);
     }
 
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     SparseCommResult<shamrock::patch::PatchData> comm_pdat(PatchScheduler &sched){
 
         using namespace shamrock::patch;
@@ -159,6 +162,7 @@ class Interfacehandler<Tree_Send,pos_prec,RadixTree<u_morton, sycl::vec<pos_prec
     }
 
     template<class T>
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     SparseCommResult<RadixTreeField<T>> comm_tree_field(PatchScheduler &sched, std::unordered_map<u64, std::unique_ptr<RadixTreeField<T>>> & tree_fields){
 
         SparseCommSource<RadixTreeField<T>> src;

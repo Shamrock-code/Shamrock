@@ -2,31 +2,54 @@
 BasedOnStyle: LLVM
 IndentWidth: 4
 ---
+
 Language: Cpp
+Standard: c++17
 ColumnLimit: 100
 
 AccessModifierOffset: 0
-EmptyLineBeforeAccessModifier : Always
 
 AlignAfterOpenBracket: AlwaysBreak
 AlignConsecutiveAssignments: true
-
 AlignEscapedNewlines: Right
 AlignOperands:   true
 AlignTrailingComments: true
 
+AllowShortCaseLabelsOnASingleLine : true
+AllowShortLambdasOnASingleLine: Empty
+
+AlwaysBreakTemplateDeclarations: Yes
+#AlwaysBreakTemplateDeclarations: true
 
 BinPackArguments: false
 BinPackParameters: false
-
-AlwaysBreakTemplateDeclarations: MultiLine
-AllowShortCaseLabelsOnASingleLine : true
 BreakBeforeConceptDeclarations : true
+BreakBeforeBinaryOperators: All
+BreakConstructorInitializers: BeforeColon
+
+IncludeBlocks: Regroup
+
+EmptyLineBeforeAccessModifier : Always
+
 NamespaceIndentation: All
+
+IndentPPDirectives: BeforeHash
+
 #SeparateDefinitionBlocks: Leave
 SpaceAfterTemplateKeyword: false
-AlwaysBreakTemplateDeclarations: true
+SpaceAfterCStyleCast: true
 
 PenaltyReturnTypeOnItsOwnLine: 1
-IndentPPDirectives: BeforeHash
-AllowShortLambdasOnASingleLine: Empty
+
+
+IncludeCategories:
+  - Regex:           '^"(shambase)/'
+    Priority:        0
+  
+  - Regex:           '<[[:alnum:].]+>'
+    Priority:        4
+  - Regex:           '.*'
+    Priority:        1
+    SortPriority:    0
+
+    

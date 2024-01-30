@@ -77,7 +77,7 @@ void RadixTree<u_morton, vec3>::serialize(shamalgs::SerializeHelper &serializer)
 }
 
 template <class u_morton, class pos_t >
-u64 RadixTree<u_morton, pos_t>::serialize_byte_size(){
+shamalgs::SerializeSize RadixTree<u_morton, pos_t>::serialize_byte_size(){
     using H = shamalgs::SerializeHelper;
     return H::serialize_byte_size<pos_t>()*2 
         + tree_morton_codes.serialize_byte_size()

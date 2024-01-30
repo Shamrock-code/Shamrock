@@ -60,7 +60,6 @@ namespace shamalgs::collective {
 
     inline void sparse_comm_c(const std::vector<SendPayload> & message_send,
         std::vector<RecvPayload> & message_recv,
-        shamcomm::CommunicationProtocol protocol,
         const SparseCommTable & comm_table){
         StackEntry stack_loc{};
 
@@ -120,7 +119,7 @@ namespace shamalgs::collective {
                 mpi::probe(comm_ranks.x(), i,MPI_COMM_WORLD, & st);
                 mpi::get_count(&st, MPI_BYTE, &cnt);
 
-                payload.payload = std::make_unique<shamcomm::CommunicationBuffer>(cnt, protocol);
+                payload.payload = std::make_unique<shamcomm::CommunicationBuffer>(cnt);
 
                 mpi::irecv(
                     payload.payload->get_ptr(), 
@@ -143,8 +142,7 @@ namespace shamalgs::collective {
 
     inline void base_sparse_comm(
         const std::vector<SendPayload> & message_send,
-        std::vector<RecvPayload> & message_recv,
-        shamcomm::CommunicationProtocol protocol
+        std::vector<RecvPayload> & message_recv
         ) 
     {
         StackEntry stack_loc{};
@@ -155,7 +153,7 @@ namespace shamalgs::collective {
 
         comm_table.build(message_send);
         
-        sparse_comm_c(message_send, message_recv, protocol, comm_table);
+        sparse_comm_c(message_send, message_recv, comm_table);
     }
 
 } // namespace shamalgs::collective

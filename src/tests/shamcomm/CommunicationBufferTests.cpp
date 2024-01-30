@@ -9,6 +9,8 @@
 #include "shamalgs/random.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shamcomm/worldInfo.hpp"
+#include "shamcomm/mpi.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
@@ -46,15 +48,40 @@ TestStart(Unittest, "shamsys/comm/CommunicationBuffer/constructor", test_basic_s
     sycl::buffer<u8> buf_comp = shamalgs::random::mock_buffer<u8>(0x111, nbytes);
 
     {
-        shamcomm::CommunicationBuffer cbuf {buf_comp, shamcomm::CopyToHost};
+        shamcomm::CommunicationBuffer cbuf {buf_comp, sham::get_queue_details()};
         sycl::buffer<u8> ret = cbuf.copy_back();
         check_buf("copy to host mode", buf_comp, ret);
     }
 
     {
-        shamcomm::CommunicationBuffer cbuf {buf_comp, shamcomm::DirectGPU};
+        shamcomm::CommunicationBuffer cbuf {buf_comp, sham::get_queue_details()};
         sycl::buffer<u8> ret = cbuf.copy_back();
         check_buf("copy to host mode", buf_comp, ret);
     }
+
+}
+
+
+TestStart(Unittest, "shamsys/comm/CommunicationBuffer/send_recv", test_basic_serialized_send_recv, 2){
+
+
+    u32 nbytes = 1e5;
+    sycl::buffer<u8> buf_comp = shamalgs::random::mock_buffer<u8>(0x111, nbytes);
+
+
+    if(shamcomm::world_rank() == 0){
+        shamcomm::CommunicationBuffer cbuf {buf_comp, sham::get_queue_details()};
+        MPI_Send(cbuf.get_ptr(), nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
+    }
+
+    if(shamcomm::world_rank() == 1){
+        shamcomm::CommunicationBuffer cbuf {nbytes, sham::get_queue_details()};
+        MPI_Recv(cbuf.get_ptr(), nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
+
+
+        sycl::buffer<u8> ret = cbuf.copy_back();
+        check_buf("copy to host mode", buf_comp, ret);
+    }
+
 
 }

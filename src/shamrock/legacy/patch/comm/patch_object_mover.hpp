@@ -27,9 +27,11 @@
 
 
 template<class vecprec> 
+[[deprecated("Legacy module")]]
 inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map(PatchScheduler & sched, SerialPatchTree<vecprec> & sptree);
 
 template<> 
+[[deprecated("Legacy module")]]
 inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchScheduler & sched, SerialPatchTree<f32_3> & sptree){
 
     
@@ -62,6 +64,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(PatchSch
 
 
 template<> 
+[[deprecated("Legacy module")]]
 inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchScheduler & sched, SerialPatchTree<f64_3> & sptree){
 
     
@@ -97,9 +100,11 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(PatchSch
 
 
 template <class vecprec>
+[[deprecated("Legacy module")]]
 inline void reatribute_particles(PatchScheduler & sched, SerialPatchTree<vecprec> & sptree,bool periodic);
 
 template<>
+[[deprecated("Legacy module")]]
 inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<f32_3> & sptree,bool periodic){
 
     using namespace shamrock::patch;
@@ -347,6 +352,7 @@ inline void reatribute_particles<f32_3>(PatchScheduler & sched, SerialPatchTree<
 
 
 template<>
+[[deprecated("Legacy module")]]
 inline void reatribute_particles<f64_3>(PatchScheduler & sched, SerialPatchTree<f64_3> & sptree,bool periodic){
 
     using namespace shamrock::patch;

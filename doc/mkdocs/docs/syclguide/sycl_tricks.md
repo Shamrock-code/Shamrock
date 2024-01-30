@@ -1,5 +1,13 @@
 # Sycl tricks
 
+
+## SYCL in-order queues
+
+```c++
+sycl::queue q {..., sycl::property::queue::in_order}
+```
+
+
 ## Dealing with sycl accessors in loop macros
 
 ### SYCL parralel for

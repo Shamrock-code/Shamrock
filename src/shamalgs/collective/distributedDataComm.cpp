@@ -30,7 +30,7 @@ namespace shamalgs::collective {
             u64 length;
             std::unique_ptr<sycl::buffer<u8>> &data;
 
-            u64 get_ser_sz() {
+            SerializeSize get_ser_sz() {
                 return SerializeHelper::serialize_byte_size<u64>() * 3 +
                        SerializeHelper::serialize_byte_size<u8>(length);
             }
@@ -44,7 +44,7 @@ namespace shamalgs::collective {
             std::map<std::pair<i32, i32>, SerializeHelper> serializers;
 
             for (auto &[key, vect] : send_data) {
-                u64 byte_sz = SerializeHelper::serialize_byte_size<u64>(); // vec length
+                SerializeSize byte_sz = SerializeHelper::serialize_byte_size<u64>(); // vec length
                 for (DataTmp &d : vect) {
                     byte_sz += d.get_ser_sz();
                 }
@@ -71,7 +71,6 @@ namespace shamalgs::collective {
 
     void distributed_data_sparse_comm(SerializedDDataComm &send_distrib_data,
                                       SerializedDDataComm &recv_distrib_data,
-                                      shamcomm::CommunicationProtocol prot,
                                       std::function<i32(u64)> rank_getter,
                                       std::optional<SparseCommTable> comm_table) {
 
@@ -107,7 +106,7 @@ namespace shamalgs::collective {
         {NamedStackEntry stack_loc2{"prepare payload"};
         for (auto &[key, buf] : send_bufs) {
             send_payoad.push_back(
-                {key.second, std::make_unique<shamcomm::CommunicationBuffer>(get_check_ref(buf), prot)});
+                {key.second, std::make_unique<shamcomm::CommunicationBuffer>(get_check_ref(buf))});
         }    
         }
         
@@ -116,9 +115,9 @@ namespace shamalgs::collective {
         std::vector<RecvPayload> recv_payload;
 
         if (comm_table) {
-            sparse_comm_c(send_payoad, recv_payload, prot, *comm_table);
+            sparse_comm_c(send_payoad, recv_payload, *comm_table);
         } else {
-            base_sparse_comm(send_payoad, recv_payload, prot);
+            base_sparse_comm(send_payoad, recv_payload);
         }
 
         // make serializers from recv buffs

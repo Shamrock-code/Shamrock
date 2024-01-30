@@ -15,15 +15,15 @@
  * 
  */
  
-#include "typeAliasBase.hpp"
-#include "typeAliasFp16.hpp"
-#include "typeAliasVec.hpp"
-#include <sycl/sycl.hpp>
+#include "typeAliasBase.hpp" // IWYU pragma: export
+#include "typeAliasFp16.hpp" // IWYU pragma: export
+#include "typeAliasVec.hpp" // IWYU pragma: export
+#include <sycl/sycl.hpp> /// IWYU pragma: export
 
-enum SYCLImplementation { OPENSYCL, DPCPP, UNKNOWN };
+enum SYCLImplementation { ACPP, DPCPP, UNKNOWN };
 
 #ifdef SYCL_COMP_ACPP
-constexpr SYCLImplementation sycl_implementation = OPENSYCL;
+constexpr SYCLImplementation sycl_implementation = ACPP;
 #else
     #ifdef SYCL_COMP_INTEL_LLVM
 constexpr SYCLImplementation sycl_implementation = DPCPP;
@@ -31,3 +31,5 @@ constexpr SYCLImplementation sycl_implementation = DPCPP;
 constexpr SYCLImplementation sycl_implementation = UNKNOWN;
     #endif
 #endif
+
+

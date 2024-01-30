@@ -24,6 +24,7 @@
 namespace impl {
     
     template <class vectype, class primtype>
+    [[deprecated("Legacy module")]]
     void comm_interfaces(PatchScheduler &sched, std::vector<InterfaceComm<vectype>> &interface_comm_list,
                         std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>> &interface_map,bool periodic) {
         StackEntry stack_loc{};
@@ -68,6 +69,7 @@ namespace impl {
 
 
     template <class T,class vectype>
+    [[deprecated("Legacy module")]]
     void comm_interfaces_field(PatchScheduler &sched, PatchComputeField<T> &pcomp_field, std::vector<InterfaceComm<vectype>> &interface_comm_list,
                         std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>>> &interface_field_map,bool periodic) {
 

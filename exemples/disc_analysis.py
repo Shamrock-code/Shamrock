@@ -1,11 +1,15 @@
+"""
+compare Shamrock and Phantom's fortran dumps through sarracen
+"""
+
 import sys
-sys.path.append('/home/ylapeyre/Documents/githubrepo/sarracen/sarracen') #/home/ylapeyre/Documents/githubrepo/ShamrockWorkspace/Shamrock-venv/lib/python3.11/site-packages/
+sys.path.append('./') #address of sarracen's dev branch on your machine
 import sarracen
 import matplotlib.pyplot as plt  
 import numpy as np 
 
-file_sh = '/home/ylapeyre/Shamrock_tests/30_01/kk_001.phfile'
-file_ph = '/home/ylapeyre/phantom_tests/warp_newtilt/warp_00000'
+file_sh = ''
+file_ph = ''
 
 sdf_sh = sarracen.read_phantom(file_sh)
 unit_am_sh = sarracen.disc.angular_momentum(sdf_sh,bins=100,retbins=True, origin=[0.,0.,0.])

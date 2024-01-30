@@ -108,8 +108,8 @@ next_dt_target = t_sum + dt_dump
 while next_dt_target <= t_target:
 
 
-    fname = outputdir + "kk_001.phfile"
-    fname2 = outputdir + "kk_001.vtk"
+    fname = "dump_{:04}.phfile".format(i_dump)
+    fname2 = "dump_{:04}.vtk".format(i_dump)
     
 
     model.evolve_until(next_dt_target)

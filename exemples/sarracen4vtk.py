@@ -1,3 +1,8 @@
+"""
+Basically sarracen's dev branch but for vtk dumps
+"""
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 import vtk
@@ -161,8 +166,8 @@ def read_vtk(filename):
     return series
 
 
-
-file = "/home/ylapeyre/Shamrock_tests/dump.vtk"
+#########################PLOTTING#######################
+file = ""
 mydata = read_vtk(file)
 
 #rbins = _bin_particles_by_radius(mydata, origin=[0,0,0])

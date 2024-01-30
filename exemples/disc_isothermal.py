@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = "/local/ylapeyre/Shamrock_tests/30_01/"
+outputdir = ""
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)

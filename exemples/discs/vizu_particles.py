@@ -1,10 +1,14 @@
+"""
+Vizualize basic quantities related to the particles
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import sarracen
 import vtk
 
-filename_ph = "/home/ylapeyre/phantom_tests/warp_newtilt/warp_00000"
-filename_sh = "/home/ylapeyre/Shamrock_tests/new_tilt/test_LT_0000"
+filename_ph = "./"
+filename_sh = "./"
 
 
 file_ph = sarracen.read_phantom(filename_ph)

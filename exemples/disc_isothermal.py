@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = "/local/ylapeyre/Shamrock_tests/warp30/"
+outputdir = "/local/ylapeyre/Shamrock_tests/30_01/"
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
@@ -38,16 +38,16 @@ pmass = model.add_disc_3d(
     center=(0,0,0),
     center_mass=1.,
     Npart=100000,
-    r_in=1., r_out=10.,
+    r_in=0.5, r_out=2.,
     disc_mass=disc_mass,
     p=1.,
     H_r_in=0.05,
     q=1./4.,
-    do_warp=False,
+    do_warp=True,
     posangle=0.,
     incl = 30.,
-    Rwarp = 5.,
-    Hwarp = 1.)
+    Rwarp = 1.,
+    Hwarp = 0.05)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
@@ -108,15 +108,17 @@ next_dt_target = t_sum + dt_dump
 while next_dt_target <= t_target:
 
 
-    fname = outputdir + "dump_{:04}.phfile".format(i_dump)
+    fname = outputdir + "kk_001.phfile"
+    fname2 = outputdir + "kk_001.vtk"
     
 
     model.evolve_until(next_dt_target)
     
     do_dump = (i_dump % 50 == 0) 
     if do_dump:
-      dump = model.make_phantom_dump()
-      dump.save_dump(fname)
+        dump = model.make_phantom_dump()
+        dump2 = model.do_vtk_dump(fname2, False)
+        dump.save_dump(fname)
 
     i_dump += 1
 

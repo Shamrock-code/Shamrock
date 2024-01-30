@@ -182,11 +182,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal p,
                 Tscal H_r_in,
                 Tscal q,
-                bool do_warp=true,
-                Tscal posangle=0.,
-                Tscal incl=30.,
-                Tscal Rwarp=5.,
-                Tscal Hwarp=1.){
+                bool do_warp,
+                Tscal posangle,
+                Tscal incl,
+                Tscal Rwarp,
+                Tscal Hwarp){
                     return self.add_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, 
                     do_warp, posangle, incl, Rwarp, Hwarp);
                 },
@@ -200,11 +200,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 py::arg("p"),
                 py::arg("H_r_in"),
                 py::arg("q"),
-                py::arg("do_warp")=false,
-                py::arg("posangle")=0.,
-                py::arg("incl")=30.,
-                py::arg("Rwarp")=5.,
-                py::arg("Hwarp")=1.
+                py::arg("do_warp"),
+                py::arg("posangle"),
+                py::arg("incl"),
+                py::arg("Rwarp"),
+                py::arg("Hwarp")
                 )
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)

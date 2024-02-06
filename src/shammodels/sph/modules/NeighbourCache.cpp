@@ -43,7 +43,7 @@ void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache() {
     StackEntry stack_loc{};
 
     // do cache
-    storage.neighbors_cache.set(shamrock::tree::ObjectCacheHandler(u64(10e9), [&](u64 patch_id) {
+    storage.neighbors_cache.set(shamrock::tree::ObjectCacheHandler(solver_config.max_neigh_cache_size, [&](u64 patch_id) {
         logger::debug_ln("BasicSPH", "build particle cache id =", patch_id);
 
         NamedStackEntry cache_build_stack_loc{"build cache"};
@@ -215,7 +215,7 @@ void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache_2stages() {
     StackEntry stack_loc{};
 
     // do cache
-    storage.neighbors_cache.set(shamrock::tree::ObjectCacheHandler(u64(10e9), [&](u64 patch_id) {
+    storage.neighbors_cache.set(shamrock::tree::ObjectCacheHandler(solver_config.max_neigh_cache_size, [&](u64 patch_id) {
         logger::debug_ln("BasicSPH", "build particle cache id =", patch_id);
 
         NamedStackEntry cache_build_stack_loc{"build cache"};

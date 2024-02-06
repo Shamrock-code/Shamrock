@@ -21,6 +21,8 @@
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 
+#define ZVEC shambase::VectorProperties<Tvec>::get_zero()
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdivv(bool also_do_div_curl_v) {
 
@@ -137,7 +139,8 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
                 shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute dtdivv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
-                    Tvec sum_axyz  = {0, 0, 0};
+
+                    Tvec sum_axyz  = ZVEC;
                     Tscal sum_du_a = 0;
                     Tscal h_a      = hpart[id_a];
                     Tvec xyz_a     = xyz[id_a];
@@ -152,10 +155,10 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
                     Tscal sum_nabla_a = 0;
 
-                    std::array<Tvec, dim> Rij_a{Tvec{0}, Tvec{0}, Tvec{0}};
+                    std::array<Tvec, dim> Rij_a{ZVEC, ZVEC, ZVEC};
 
-                    std::array<Tvec, dim> Rij_a_dvk_dxj{Tvec{0}, Tvec{0}, Tvec{0}};
-                    std::array<Tvec, dim> Rij_a_dak_dxj{Tvec{0}, Tvec{0}, Tvec{0}};
+                    std::array<Tvec, dim> Rij_a_dvk_dxj{ZVEC, ZVEC, ZVEC};
+                    std::array<Tvec, dim> Rij_a_dak_dxj{ZVEC, ZVEC, ZVEC};
 
                     particle_looper.for_each_object(id_a, [&](u32 id_b) {
                         // compute only omega_a
@@ -252,7 +255,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
                 shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute dtdivv + divcurl v", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
-                    Tvec sum_axyz  = {0, 0, 0};
+                    Tvec sum_axyz  = ZVEC;
                     Tscal sum_du_a = 0;
                     Tscal h_a      = hpart[id_a];
                     Tvec xyz_a     = xyz[id_a];
@@ -267,10 +270,10 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
                     Tscal sum_nabla_a = 0;
 
-                    std::array<Tvec, dim> Rij_a{Tvec{0}, Tvec{0}, Tvec{0}};
+                    std::array<Tvec, dim> Rij_a{ZVEC, ZVEC, ZVEC};
 
-                    std::array<Tvec, dim> Rij_a_dvk_dxj{Tvec{0}, Tvec{0}, Tvec{0}};
-                    std::array<Tvec, dim> Rij_a_dak_dxj{Tvec{0}, Tvec{0}, Tvec{0}};
+                    std::array<Tvec, dim> Rij_a_dvk_dxj{ZVEC, ZVEC, ZVEC};
+                    std::array<Tvec, dim> Rij_a_dak_dxj{ZVEC, ZVEC, ZVEC};
 
                     Tscal sum_nabla_v = 0;
                     Tvec sum_nabla_cross_v{};
@@ -294,7 +297,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
                         Tvec r_ab_unit = r_ab / rab;
 
                         if (rab < 1e-9) {
-                            r_ab_unit = {0, 0, 0};
+                            r_ab_unit = ZVEC;
                         }
 
                         Tvec dWab_a = Kernel::dW_3d(rab, h_a) * r_ab_unit;

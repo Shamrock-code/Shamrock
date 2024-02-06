@@ -130,9 +130,11 @@ struct shammodels::sph::SolverConfig {
 
     u32 tree_reduction_level  = 3;
     bool use_two_stage_search = true;
+    u64 max_neigh_cache_size = 10e9;
 
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
+    inline void set_max_neigh_cache_size(u64 val) { max_neigh_cache_size = val; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config (END)

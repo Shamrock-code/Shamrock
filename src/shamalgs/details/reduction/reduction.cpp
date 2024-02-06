@@ -90,7 +90,7 @@ namespace shamalgs::reduction {
                 sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = !shambase::has_nan(acc1[item]);
+                    out[item] = !sham::has_nan(acc1[item]);
                 });
             });
 
@@ -111,7 +111,7 @@ namespace shamalgs::reduction {
                 sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = !shambase::has_inf(acc1[item]);
+                    out[item] = !sham::has_inf(acc1[item]);
                 });
             });
 
@@ -132,7 +132,7 @@ namespace shamalgs::reduction {
                 sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                    out[item] = !shambase::has_nan_or_inf(acc1[item]);
+                    out[item] = !sham::has_nan_or_inf(acc1[item]);
                 });
             });
 

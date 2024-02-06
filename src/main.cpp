@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
 
     opts::register_opt("--rscript","(filepath)", "run shamrock with python runscirpt");
     opts::register_opt("--ipython",{}, "run shamrock in Ipython mode");
+    opts::register_opt("--force-dgpu",{}, "for direct mpi comm on");
 
     opts::init(argc, argv);
 
@@ -262,7 +263,7 @@ int main(int argc, char *argv[]) {
     }
 
     #ifdef SHAMROCK_USE_PROFILING
-    shambase::details::dump_profiling(shamcomm::world_rank());
+    //shambase::details::dump_profiling(shamcomm::world_rank());
     #endif
 
     shamsys::instance::close();

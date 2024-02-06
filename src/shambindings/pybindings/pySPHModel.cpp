@@ -39,6 +39,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level",&TConfig::set_tree_reduction_level)
         .def("set_two_stage_search",&TConfig::set_two_stage_search)
+        .def("set_max_neigh_cache_size",&TConfig::set_max_neigh_cache_size)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
         .def("set_eos_locally_isothermalLP07", &TConfig::set_eos_locally_isothermalLP07)
@@ -232,6 +233,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
              })
         .def("set_field_value_lambda_f64_3",&T::template set_field_value_lambda<f64_3>)
         .def("set_field_value_lambda_f64",&T::template set_field_value_lambda<f64>)
+        .def("remap_positions",&T::remap_positions)
         //.def("set_field_value_lambda_f64_3",[](T&self,std::string field_name, const std::function<f64_3 (Tscal, Tscal , Tscal)> pos_to_val){
         //    self.template set_field_value_lambda<f64_3>(field_name, [=](Tvec v){
         //        return pos_to_val(v.x(), v.y(),v.z());

@@ -19,13 +19,16 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+
 #include <utility>
 #include <vector>
 
@@ -33,14 +36,15 @@ template<class Tvec, template<class> class SPHKernel>
 using Model = shammodels::sph::Model<Tvec, SPHKernel>;
 
 template<class Tvec, template<class> class SPHKernel>
-f64 Model<Tvec, SPHKernel>::evolve_once_time_expl(
-    f64 t_curr, f64 dt_input) {
-    return solver.evolve_once_time_expl(t_curr, dt_input);
+f64 Model<Tvec, SPHKernel>::evolve_once_time_expl(f64 t_curr, f64 dt_input) {
+    auto tmp = solver.evolve_once_time_expl(t_curr, dt_input);
+    solver.print_timestep_logs();
+    return tmp;
 }
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::timestep() {
-    return solver.evolve_once();
+    solver.evolve_once();
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -58,7 +62,7 @@ void Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
     logger::debug_ln("Sys", "build local scheduler tables");
     sched.owned_patch_id = sched.patch_list.build_local();
     sched.patch_list.build_local_idx_map();
-    sched.update_local_load_value([&](shamrock::patch::Patch p){
+    sched.update_local_load_value([&](shamrock::patch::Patch p) {
         return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
     });
 }
@@ -133,11 +137,61 @@ auto Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> b
     return {a, b};
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec(Tvec)> map) {
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+
+    PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+    sched.for_each_patchdata_nonempty([&](const Patch, PatchData &pdat) {
+        sycl::buffer<Tvec> &xyz = shambase::get_check_ref(pdat.get_field<Tvec>(0).get_buf());
+
+        sycl::host_accessor acc{xyz, sycl::read_write};
+
+        u32 cnt = pdat.get_obj_cnt();
+
+        for (u32 i = 0; i < cnt; i++) {
+            acc[i] = map(acc[i]);
+        }
+    });
+
+
+    modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+        .update_load_balancing();
+    sched.scheduler_step(false, false);
+
+    {
+        StackEntry stack_loc{};
+        SerialPatchTree<Tvec> sptree(
+            sched.patch_tree, sched.get_sim_box().get_patch_transform<Tvec>());
+        shamrock::ReattributeDataUtility reatrib(sched);
+        sptree.attach_buf();
+        reatrib.reatribute_patch_objects(sptree, "xyz");
+        sched.check_patchdata_locality_corectness();
+    }
+
+    modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+        .update_load_balancing();
+    sched.scheduler_step(true, true);
+
+    {
+        StackEntry stack_loc{};
+        SerialPatchTree<Tvec> sptree(
+            sched.patch_tree, sched.get_sim_box().get_patch_transform<Tvec>());
+
+        shamrock::ReattributeDataUtility reatrib(sched);
+        sptree.attach_buf();
+        reatrib.reatribute_patch_objects(sptree, "xyz");
+        sched.check_patchdata_locality_corectness();
+    }
+}
+
 template<class Tvec>
 inline void post_insert_data(PatchScheduler &sched) {
     StackEntry stack_loc{};
 
-    //logger::raw_ln(sched.dump_status());
+    // logger::raw_ln(sched.dump_status());
     sched.scheduler_step(false, false);
 
     /*
@@ -174,16 +228,33 @@ inline void post_insert_data(PatchScheduler &sched) {
     std::string log = "";
 
     using namespace shamrock::patch;
+
+    u32 smallest_count = u32_max;
+    u32 largest_count = 0;
+
     sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
-        log +=
-            shambase::format("\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
+        u32 tmp = pdat.get_obj_cnt();
+        smallest_count = sham::min(tmp, smallest_count);
+        largest_count = sham::max(tmp, largest_count);
     });
 
-    std::string log_gathered = "";
-    shamcomm::gather_str(log, log_gathered);
+    smallest_count = shamalgs::collective::allreduce_min(smallest_count);
+    largest_count = shamalgs::collective::allreduce_max(largest_count);
 
-    if (shamcomm::world_rank() == 0)
-        logger::info_ln("Model", "current particle counts : ", log_gathered);
+    if (shamcomm::world_rank() == 0){
+        logger::info_ln("Model", "current particle counts : min = ", smallest_count, "max = ",largest_count);
+    }
+
+    //sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+    //    log += shambase::format(
+    //        "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
+    //});
+    //
+    //std::string log_gathered = "";
+    //shamcomm::gather_str(log, log_gathered);
+    //
+    //if (shamcomm::world_rank() == 0)
+    //    logger::info_ln("Model", "current particle counts : ", log_gathered);
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -242,8 +313,8 @@ void Model<Tvec, SPHKernel>::push_particle(
 
         {
             u32 len = vec_acc.size();
-            PatchDataField<Tscal> &f =
-                tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+            PatchDataField<Tscal> &f
+                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
             sycl::buffer<Tscal> buf(hpart_acc.data(), len);
             f.override(buf, len);
         }
@@ -267,25 +338,24 @@ void Model<Tvec, SPHKernel>::push_particle(
         }
         log = "";
 
-        modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+            .update_load_balancing();
 
         post_insert_data<Tvec>(sched);
     });
 }
-
 
 template<class Tvec, template<class> class SPHKernel>
 auto Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _box)
     -> std::pair<Tvec, Tvec> {
     StackEntry stack_loc{};
 
-
-    using Lattice = shammath::LatticeHCP<Tvec>;
+    using Lattice     = shammath::LatticeHCP<Tvec>;
     using LatticeIter = typename shammath::LatticeHCP<Tvec>::Iterator;
 
     shammath::CoordRange<Tvec> box = _box;
-    auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
-    
+    auto [idxs_min, idxs_max]      = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
+
     auto [idxs_min_per, idxs_max_per] = Lattice::nearest_periodic_box_indices(idxs_min, idxs_max);
 
     shammath::CoordRange<Tvec> ret = Lattice::get_periodic_box(dr, idxs_min_per, idxs_max_per);
@@ -295,6 +365,7 @@ auto Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+    shambase::Timer time_setup;time_setup.start();
 
     StackEntry stack_loc{};
 
@@ -304,80 +375,114 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
-    using Lattice = shammath::LatticeHCP<Tvec>;
-    using LatticeIter = typename shammath::LatticeHCP<Tvec>::Iterator;
+    using Lattice     = shammath::LatticeHCP<Tvec>;
+    using LatticeIter = typename shammath::LatticeHCP<Tvec>::IteratorDiscontinuous;
 
     auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
 
-    LatticeIter gen = LatticeIter(dr, idxs_min, idxs_max, 
-        [&](Tvec r) {
-                return box.contain_pos(r);
-            });
+    LatticeIter gen = LatticeIter(dr, idxs_min, idxs_max);
+
+    u64 acc_count =0;
 
     std::string log = "";
-    while(!gen.is_done()){
-        std::vector<Tvec> to_ins = gen.next_n(sched.crit_patch_split * 8);
+    while (!gen.is_done()) {
+
+        // loc maximum count of insert part
+        u64 loc_sum_ins_cnt = 0;
+        // sum_node( loc_sum_ins_cnt )
+        u64 max_loc_sum_ins_cnt = 0;
+
+        do {
+            std::vector<Tvec> to_ins = gen.next_n(sched.crit_patch_split*2);
+            acc_count += to_ins.size();
 
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
-            PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
+            sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+                PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
-            shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+                shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
 
-            std::vector<Tvec> vec_acc;
-            for (Tvec r : to_ins) {
-                if (patch_coord.contain_pos(r)) {
-                    vec_acc.push_back(r);
+                std::vector<Tvec> vec_acc;
+                for (Tvec r : to_ins) {
+                    if (patch_coord.contain_pos(r)) {
+                        vec_acc.push_back(r);
+                    }
                 }
+
+                // update max insert_count
+                loc_sum_ins_cnt += vec_acc.size();
+
+                if (vec_acc.size() == 0) {
+                    return;
+                }
+
+                log += shambase::format(
+                    "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
+                    shamcomm::world_rank(),
+                    p.id_patch,
+                    vec_acc.size(),
+                    patch_coord.lower,
+                    patch_coord.upper);
+                
+                // reserve space to avoid allocating during copy
+                pdat.reserve(vec_acc.size());
+
+                PatchData tmp(sched.pdl);
+                tmp.resize(vec_acc.size());
+                tmp.fields_raz();
+
+                {
+                    u32 len                 = vec_acc.size();
+                    PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+                    //sycl::buffer<Tvec> buf(vec_acc.data(), len);
+                    f.override(vec_acc, len);
+                }
+
+                {
+                    PatchDataField<Tscal> &f
+                        = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                    f.override(dr);
+                }
+
+                pdat.insert_elements(tmp);
+
+            });
+
+            max_loc_sum_ins_cnt = shamalgs::collective::allreduce_max(loc_sum_ins_cnt);
+
+            if(shamcomm::world_rank() == 0){
+                logger::info_ln("Model", "--> insertion loop : max loc insert count = ",max_loc_sum_ins_cnt, "sum =",acc_count);
             }
-
-            if (vec_acc.size() == 0) {
-                return;
-            }
-
-            log += shambase::format(
-                "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
-                shamcomm::world_rank(),
-                p.id_patch,
-                vec_acc.size(),
-                patch_coord.lower,
-                patch_coord.upper);
-
-            PatchData tmp(sched.pdl);
-            tmp.resize(vec_acc.size());
-            tmp.fields_raz();
-
-            {
-                u32 len                 = vec_acc.size();
-                PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
-                sycl::buffer<Tvec> buf(vec_acc.data(), len);
-                f.override(buf, len);
-            }
-
-            {
-                PatchDataField<Tscal> &f =
-                    tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
-                f.override(dr);
-            }
-
-            pdat.insert_elements(tmp);
-        });
+        }while(!gen.is_done() && max_loc_sum_ins_cnt < sched.crit_patch_split*8);
+        
 
         sched.check_patchdata_locality_corectness();
 
-        std::string log_gathered = "";
-        shamcomm::gather_str(log, log_gathered);
-
-        if (shamcomm::world_rank() == 0) {
-            logger::info_ln("Model", "Push particles : ", log_gathered);
-        }
+        //if(logger::details::loglevel >= shamcomm::logs::log_info){
+        //    std::string log_gathered = "";
+        //    shamcomm::gather_str(log, log_gathered);
+        //
+        //    if (shamcomm::world_rank() == 0) {
+        //        logger::debug_ln("Model", "Push particles : ", log_gathered);
+        //    }
+        //}
         log = "";
-        
-        modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+            .update_load_balancing();
         post_insert_data<Tvec>(sched);
+        
+    }
+
+    if(true){
+        modules::ParticleReordering<Tvec,u32, SPHKernel>(ctx, solver.solver_config, solver.storage).reorder_particles();
+    }
+
+    time_setup.end();
+    if(shamcomm::world_rank() == 0){
+        logger::info_ln("Model", "add_cube_hcp took :",time_setup.elasped_sec(),"s");
     }
 }
-
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
@@ -463,8 +568,8 @@ void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
             }
 
             {
-                PatchDataField<Tscal> &f =
-                    tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                PatchDataField<Tscal> &f
+                    = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
                 f.override(dr);
             }
 
@@ -480,8 +585,9 @@ void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
             logger::info_ln("Model", "Push particles : ", log_gathered);
         }
         log = "";
-        
-        modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+            .update_load_balancing();
         post_insert_data<Tvec>(sched);
     }
 }
@@ -679,7 +785,8 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
         }
         log = "";
 
-        modules::ComputeLoadBalanceValue<Tvec, SPHKernel> (ctx, solver.solver_config, solver.storage).update_load_balancing();
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
+            .update_load_balancing();
 
         post_insert_data<Tvec>(sched);
 
@@ -712,11 +819,10 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
     }
 }
 
-
-
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat){
-    
+void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(
+    PhantomDumpBlock &block, shamrock::patch::PatchData &pdat) {
+
     std::vector<Tvec> xyz = pdat.fetch_data<Tvec>("xyz");
 
     u64 xid = block.get_ref_fort_real("x");
@@ -729,31 +835,27 @@ void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(PhantomDumpBlock & block,
         block.blocks_fort_real[zid].vals.push_back(vec.z());
     }
 
-
     std::vector<Tscal> h = pdat.fetch_data<Tscal>("hpart");
-    u64 hid = block.get_ref_f32("h");
+    u64 hid              = block.get_ref_f32("h");
     for (auto h_ : h) {
         block.blocks_f32[hid].vals.push_back(h_);
     }
 
-
-    if(solver.solver_config.has_field_alphaAV()){
+    if (solver.solver_config.has_field_alphaAV()) {
         std::vector<Tscal> alpha = pdat.fetch_data<Tscal>("alpha_AV");
-        u64 aid = block.get_ref_f32("alpha");
+        u64 aid                  = block.get_ref_f32("alpha");
         for (auto alp_ : alpha) {
             block.blocks_f32[aid].vals.push_back(alp_);
         }
     }
 
-    if(solver.solver_config.has_field_divv()){
+    if (solver.solver_config.has_field_divv()) {
         std::vector<Tscal> vecdivv = pdat.fetch_data<Tscal>("divv");
-        u64 divvid = block.get_ref_f32("divv");
+        u64 divvid                 = block.get_ref_f32("divv");
         for (auto d_ : vecdivv) {
             block.blocks_f32[divvid].vals.push_back(d_);
         }
     }
-
-
 
     std::vector<Tvec> vxyz = pdat.fetch_data<Tvec>("vxyz");
 
@@ -768,13 +870,12 @@ void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(PhantomDumpBlock & block,
     }
 
     std::vector<Tscal> u = pdat.fetch_data<Tscal>("uint");
-    u64 uid = block.get_ref_fort_real("u");
+    u64 uid              = block.get_ref_fort_real("u");
     for (auto u_ : u) {
         block.blocks_fort_real[uid].vals.push_back(u_);
     }
 
     block.tot_count = block.blocks_fort_real[xid].vals.size();
-
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -830,20 +931,17 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
     dump.table_header_fort_real.add("qfacdisc", 0.75);
     dump.table_header_fort_real.add("qfacdisc2", 0.75);
 
-
     dump.table_header_fort_real.add("time", solver.solver_config.get_time());
     dump.table_header_fort_real.add("dtmax", solver.solver_config.get_dt_sph());
-
 
     dump.table_header_fort_real.add("rhozero", 0);
     dump.table_header_fort_real.add("hfact", Kernel::hfactd);
     dump.table_header_fort_real.add("tolh", 0.0001);
     dump.table_header_fort_real.add("C_cour", solver.solver_config.cfl_cour);
-    dump.table_header_fort_real.add("C_force",solver.solver_config.cfl_force);
+    dump.table_header_fort_real.add("C_force", solver.solver_config.cfl_force);
     dump.table_header_fort_real.add("alpha", 0);
     dump.table_header_fort_real.add("alphau", 1);
     dump.table_header_fort_real.add("alphaB", 1);
-    
 
     dump.table_header_fort_real.add("massoftype", solver.solver_config.gpart_mass);
     dump.table_header_fort_real.add("massoftype", 0);
@@ -854,15 +952,14 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
     dump.table_header_fort_real.add("massoftype", 0);
     dump.table_header_fort_real.add("massoftype", 0);
 
-
     dump.table_header_fort_real.add("Bextx", 0);
     dump.table_header_fort_real.add("Bexty", 0);
     dump.table_header_fort_real.add("Bextz", 0);
     dump.table_header_fort_real.add("dum", 0);
 
-    PatchScheduler & sched = shambase::get_check_ref(solver.context.sched);
-        
-    auto [bmin,bmax] = sched.get_box_volume<Tvec>();
+    PatchScheduler &sched = shambase::get_check_ref(solver.context.sched);
+
+    auto [bmin, bmax] = sched.get_box_volume<Tvec>();
 
     dump.table_header_fort_real.add("xmin", bmin.x());
     dump.table_header_fort_real.add("xmax", bmax.x());
@@ -870,8 +967,6 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
     dump.table_header_fort_real.add("ymax", bmax.x());
     dump.table_header_fort_real.add("zmin", bmin.z());
     dump.table_header_fort_real.add("zmax", bmax.x());
-
-
 
     dump.table_header_fort_real.add("get_conserv", -1);
     dump.table_header_fort_real.add("etot_in", 0.59762);
@@ -888,14 +983,14 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
         f64 utime = units->template to<shamunits::units::s>();
         f64 udist = units->template to<shamunits::units::m>();
 
-        shamunits::Constants<double> ctes {*units};
-        f64 ccst = ctes.c();
-        f64 ucharge = sqrt(umass*udist / (4.*shambase::constants::pi<f64> /*mu_0 in cgs*/));
+        shamunits::Constants<double> ctes{*units};
+        f64 ccst    = ctes.c();
+        f64 ucharge = sqrt(umass * udist / (4. * shambase::constants::pi<f64> /*mu_0 in cgs*/));
 
-        f64 umagfd = umass/(utime*ucharge);
+        f64 umagfd = umass / (utime * ucharge);
 
         dump.table_header_f64.add("umagfd", umagfd);
-    }else {
+    } else {
         logger::warn_ln("SPH", "no units are set, defaulting to SI");
 
         dump.table_header_f64.add("udist", 1);
@@ -904,24 +999,17 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
         dump.table_header_f64.add("umagfd", 3.54491);
     }
 
-
-
     PhantomDumpBlock block_part;
-    
+
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered = ctx.allgather_data();
 
-        for(auto & dat : gathered){
+        for (auto &dat : gathered) {
             add_pdat_to_phantom_block(block_part, shambase::get_check_ref(dat));
         }
-
     }
-    
+
     dump.blocks.push_back(std::move(block_part));
-
-
-
-
 
     return dump;
 }

@@ -369,6 +369,7 @@ template <class vectype, class field_type, class InterfaceSelector> class Interf
     }
 
 
+    [[deprecated("Old sph module")]]
     inline static void comm_interface(PatchScheduler &sched, std::vector<InterfaceComm<vectype>> & interface_comm_list){
 
         

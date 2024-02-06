@@ -36,6 +36,7 @@
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
+#include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
@@ -1222,6 +1223,10 @@ void SPHSolve<Tvec, Kern>::evolve_once()
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
+    if(false){
+        modules::ParticleReordering<Tvec,u_morton, Kern>(context, solver_config, storage).reorder_particles();
+    }
+
     sph_prestep(t_current, dt);
 
     using RTree = RadixTree<u_morton, Tvec>;
@@ -1670,7 +1675,8 @@ void SPHSolve<Tvec, Kern>::evolve_once()
         shamcomm::world_rank(),// i32 world_rank;
         rank_count,// u64 rank_count;
         rate,// f64 rate;
-        tstep.elasped_sec()// f64 elasped_sec;
+        tstep.elasped_sec(),// f64 elasped_sec;
+        shambase::details::get_wtime()
     });
 
     std::string gathered = "";

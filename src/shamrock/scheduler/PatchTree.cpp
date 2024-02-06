@@ -21,6 +21,7 @@
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 
 namespace shamrock::scheduler {
 u64 PatchTree::insert_node(Node n){
@@ -240,13 +241,13 @@ void PatchTree::build_from_patchtable(std::vector<shamrock::patch::Patch> & plis
 
 }
 
-void PatchTree::update_ptnode(Node & n,std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
+void PatchTree::update_ptnode(Node & n,std::vector<shamrock::patch::Patch> & plist, const std::unordered_map<u64,u64> & id_patch_to_global_idx){
 
     auto & tnode = n.tree_node;
 
     if(n.linked_patchid != u64_max){
         n.load_value = 0;
-        n.load_value += plist[id_patch_to_global_idx[n.linked_patchid]].load_value;
+        n.load_value += plist[id_patch_to_global_idx.at(n.linked_patchid)].load_value;
     }else if (tnode.childs_nid[0] != u64_max) {
 
         bool has_err_val = false;
@@ -268,7 +269,7 @@ void PatchTree::update_ptnode(Node & n,std::vector<shamrock::patch::Patch> & pli
 }
 
 // TODO add test value on root = sum all leaf
-void PatchTree::update_values_node(std::vector<shamrock::patch::Patch> & plist,std::unordered_map<u64,u64> id_patch_to_global_idx){
+void PatchTree::update_values_node(std::vector<shamrock::patch::Patch> & plist,const std::unordered_map<u64,u64> & id_patch_to_global_idx){
 
     tree[0].load_value = u64_max;
 
@@ -280,12 +281,13 @@ void PatchTree::update_values_node(std::vector<shamrock::patch::Patch> & plist,s
 
 }
 
-void PatchTree::partial_values_reduction(std::vector<shamrock::patch::Patch> &plist, std::unordered_map<u64, u64> id_patch_to_global_idx){
-
+void PatchTree::partial_values_reduction(std::vector<shamrock::patch::Patch> &plist, const std::unordered_map<u64, u64> & id_patch_to_global_idx){
+    StackEntry stack_loc{};
+    
     for( u64 id_leaf : leaf_key){
         update_ptnode(tree[id_leaf],plist,id_patch_to_global_idx);
     }
-
+    
     for( u64 id_leaf : parent_of_only_leaf_key){
         update_ptnode(tree[id_leaf],plist,id_patch_to_global_idx);
     }
@@ -295,7 +297,7 @@ void PatchTree::partial_values_reduction(std::vector<shamrock::patch::Patch> &pl
 
 
 std::unordered_set<u64> PatchTree::get_split_request(u64 crit_load_split){
-
+    StackEntry stack_loc{};
     std::unordered_set<u64> rq;
 
     for(u64 a : leaf_key){
@@ -310,6 +312,7 @@ std::unordered_set<u64> PatchTree::get_split_request(u64 crit_load_split){
 
 
 std::unordered_set<u64> PatchTree::get_merge_request(u64 crit_load_merge){
+    StackEntry stack_loc{};
     std::unordered_set<u64> rq;
 
     for(u64 a : parent_of_only_leaf_key){

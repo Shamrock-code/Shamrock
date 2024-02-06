@@ -20,6 +20,7 @@
 template <class u_morton, class vec3> 
 struct SparseCommExchanger<RadixTree<u_morton, vec3>>{
 
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     static SparseCommResult<RadixTree<u_morton, vec3 >> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<RadixTree<u_morton, vec3>> &send_comm_pdat){
 StackEntry stack_loc{};
         using namespace shamrock::patch;

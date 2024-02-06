@@ -3,9 +3,14 @@
 ## Sedov blast 
 
 
-![Sedov scalling](../../assets/figures/sedov_scalling.svg)
-![Sedov scalling](../../assets/figures/sedov_scalling_div.svg)
-![Sedov scalling](../../assets/figures/sedov_scalling_eff.svg)
+![Sedov scalling CPU](../../assets/figures/sedov_scalling_cpu.svg)
+![Sedov scalling CPU](../../assets/figures/sedov_scalling_div_cpu.svg)
+![Sedov scalling CPU](../../assets/figures/sedov_scalling_eff_cpu.svg)
+
+
+![Sedov scalling](../../assets/figures/sedov_scalling_GPU.svg)
+![Sedov scalling](../../assets/figures/sedov_scalling_div_GPU.svg)
+![Sedov scalling](../../assets/figures/sedov_scalling_eff_GPU.svg)
 
 
 ## Scripts for the scalling tests

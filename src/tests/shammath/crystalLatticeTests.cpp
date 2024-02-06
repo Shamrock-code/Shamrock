@@ -89,10 +89,7 @@ bool check_periodicity(std::array<i32, 3> coord_min, std::array<i32, 3> coord_ma
         box = shammath::LatticeHCP<f64_3>::get_periodic_box(1, coord_min, coord_max);
 
         auto gen = shammath::LatticeHCP<f64_3>::Iterator
-        {1., coord_min, coord_max, 
-        [](f64_3 pos){
-            return true;
-        }};
+        {1., coord_min, coord_max};
 
         std::vector<f64_3> parts = gen.next_n(100000);
 

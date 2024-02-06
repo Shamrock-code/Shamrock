@@ -527,6 +527,8 @@ namespace shammodels::sph {
             if(shamcomm::world_rank() == 0) logger::info_ln("Model", "current particle counts : ", log_gathered);
         }
 
+        void remap_positions(std::function<Tvec(Tvec)> map);
+
         void push_particle(std::vector<Tvec> & part_pos_insert, std::vector<Tscal> & part_hpart_insert, std::vector<Tscal> &part_u_insert);
 
         template<class T>
@@ -676,6 +678,7 @@ namespace shammodels::sph {
 
         inline void evolve_once(){
             solver.evolve_once();
+            solver.print_timestep_logs();
         }
 
         inline bool evolve_until(Tscal target_time,i32 niter_max){

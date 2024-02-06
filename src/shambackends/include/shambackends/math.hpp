@@ -18,6 +18,36 @@
 #include "shambase/sycl_utils/sycl_utilities.hpp"
 #include "shambase/sycl_utils/vec_equals.hpp"
 
+
+namespace sham::syclbackport {
+
+
+
+#ifndef SYCL2020_FEATURE_ISINF
+#ifdef SYCL_COMP_ACPP
+template<class T> 
+HIPSYCL_UNIVERSAL_TARGET bool fallback_is_inf(T value){
+
+    __hipsycl_if_target_host(
+        return std::isinf(value);
+        )
+
+    __hipsycl_if_target_hiplike(
+        return isinf(value);
+        ) 
+
+    __hipsycl_if_target_spirv(
+        static_assert(false, "this case is not implemented");
+        )
+
+}
+#endif
+#endif
+
+}
+
+
+
 namespace sham {
 
     template<class T>
@@ -58,5 +88,100 @@ namespace sham {
     inline auto unpack32 (u64 v) -> sycl::vec<u32, 2> {
         return {u32(v >> 32U), u32(v)};
     };
+
+
+    
+    template<class T>
+    inline bool has_nan(T v){
+        auto tmp = ! sycl::isnan(v);
+        return !(tmp);
+    }
+
+    template<class T>
+    inline bool has_inf(T v){
+        #ifdef SYCL2020_FEATURE_ISINF
+            auto tmp = ! sycl::isinf(v);
+            return !(tmp);
+        #else
+            auto tmp = ! syclbackport::fallback_is_inf(v);
+            return !(tmp);
+        #endif
+    }
+
+    template<class T>
+    inline bool has_nan_or_inf(T v){
+        #ifdef SYCL2020_FEATURE_ISINF
+            auto tmp = ! (sycl::isnan(v) || sycl::isinf(v));
+            return !(tmp);
+        #else
+            auto tmp = ! (sycl::isnan(v) || syclbackport::fallback_is_inf(v));
+            return !(tmp);
+        #endif
+    }
+
+    /**
+     * @brief return true if vector has a nan
+     * 
+     * @tparam T 
+     * @tparam n 
+     * @param v 
+     * @return true 
+     * @return false 
+     */
+    template<class T, int n>
+    inline bool has_nan(sycl::vec<T,n> v){
+        bool has = false;
+        #pragma unroll 
+        for(i32 i = 0 ; i < n; i ++){
+            has = has || (sycl::isnan(v[i]));
+        }
+        return has;
+    }
+
+    /**
+     * @brief return true if vector has a inf
+     * 
+     * @tparam T 
+     * @tparam n 
+     * @param v 
+     * @return true 
+     * @return false 
+     */
+    template<class T, int n>
+    inline bool has_inf(sycl::vec<T,n> v){
+        bool has = false;
+        #pragma unroll 
+        for(i32 i = 0 ; i < n; i ++){
+            #ifdef SYCL2020_FEATURE_ISINF
+                has = has || (sycl::isinf(v[i]));
+            #else
+                has = has || (syclbackport::fallback_is_inf(v[i]));
+            #endif
+        }
+        return has;
+    }
+
+    /**
+     * @brief return true if vector has a nan or a inf
+     * 
+     * @tparam T 
+     * @tparam n 
+     * @param v 
+     * @return true 
+     * @return false 
+     */
+    template<class T, int n>
+    inline bool has_nan_or_inf(sycl::vec<T,n> v){
+        bool has = false;
+        #pragma unroll 
+        for(i32 i = 0 ; i < n; i ++){
+            #ifdef SYCL2020_FEATURE_ISINF
+                has = has || (sycl::isnan(v[i]) || sycl::isinf(v[i]));
+            #else
+                has = has || (sycl::isnan(v[i]) || syclbackport::fallback_is_inf(v[i]));
+            #endif
+        }
+        return has;
+    }
 
 } // namespace sham

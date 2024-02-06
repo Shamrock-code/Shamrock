@@ -21,7 +21,10 @@ if(COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
 endif()
 
 if(COMPILER_SUPPORT_MARCHNATIVE)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native") 
+    option(CXX_FLAG_ARCH_NATIVE "Use -march=native flag" On)
+    if(CXX_FLAG_ARCH_NATIVE)
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=native")
+    endif()
 endif()
 
 
@@ -58,3 +61,10 @@ if(NOT CXX_VALARRAY_COMPILE)
     endif()
 
 endif()
+
+
+message( " ---- Shamrock C++ config ---- ")
+message( "  CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
+message( "  CMAKE_CXX_FLAGS_DEBUG : ${CMAKE_CXX_FLAGS_DEBUG}")
+message( "  CMAKE_CXX_FLAGS_RELEASE : ${CMAKE_CXX_FLAGS_RELEASE}")
+message( " ----------------------------- ")

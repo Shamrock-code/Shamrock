@@ -127,7 +127,7 @@ namespace shamalgs::reduction::details {
                         u64 iread  = gid * slice_read_size;
                         u64 iwrite = group_tile_id * slice_write_size;
 
-                        T val_read = (iread < max_id) ? global_mem[iread] : T{0};
+                        T val_read = (iread < max_id) ? global_mem[iread] : shambase::VectorProperties<T>::get_zero();
 
                         T local_red =
                             sycl::reduce_over_group(item.get_group(), val_read, SYCL_SUM_OP);
@@ -167,7 +167,7 @@ namespace shamalgs::reduction::details {
             });
         });
 
-        T ret{0};
+        T ret = shambase::VectorProperties<T>::get_zero();
         {
             sycl::host_accessor acc{recov, sycl::read_only};
             for (u64 i = 0; i < remaining_val; i++) {

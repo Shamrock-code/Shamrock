@@ -230,7 +230,14 @@ inline void for_each_patch_shift(ShearPeriodicInfo<T> shearinfo, sycl::vec<T,3> 
                     shearinfo.shear_dir.z()*df
                 };
                 
-                list_possible.push_back({xoff+off_d.x(),yoff+off_d.y(),zoff+off_d.z()});
+                // on redhat based systems stl vector freaks out
+                // because iterator to back does *(end() - 1)
+                // the issue is that the compiler gets confused 
+                // by the sycl::vec defining the - operator
+                // creating the ambiguity and ... 
+                // ultimatly the compiler shitting itself
+                list_possible.resize(list_possible.size() + 1);
+                list_possible[list_possible.size() - 1]= i32_3{xoff+off_d.x(),yoff+off_d.y(),zoff+off_d.z()};
             }
         }
     }

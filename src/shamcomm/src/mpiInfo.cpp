@@ -24,7 +24,9 @@ namespace shamcomm {
     StateMPI_Aware mpi_cuda_aware;
     StateMPI_Aware mpi_rocm_aware;
 
-    void fetch_mpi_capabilities() {
+    bool forced_on;
+
+    void fetch_mpi_capabilities(bool force_aware) {
         logs::debug_ln("Comm", "fetching mpi capabilities...");
         #ifdef FOUND_MPI_EXT
         logs::debug_mpi_ln("Comm", "FOUND_MPI_EXT is defined");
@@ -55,24 +57,35 @@ namespace shamcomm {
         mpi_cuda_aware = Unknown;
         mpi_rocm_aware = Unknown;
         #endif
+
+        if(force_aware){
+            forced_on = true;
+            mpi_cuda_aware = Yes;
+            mpi_rocm_aware = Yes;
+        }
     }
 
     void print_mpi_capabilities() {
         using namespace shambase::term_colors;
-        if (mpi_cuda_aware == Yes) {
-            logs::print_ln(" - MPI CUDA-AWARE :", col8b_green() + "Yes" + reset());
-        } else if (mpi_cuda_aware == No) {
-            logs::print_ln(" - MPI CUDA-AWARE :", col8b_red() + "No" + reset());
-        } else if (mpi_cuda_aware == Unknown) {
-            logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Unknown" + reset());
-        }
+        if(!forced_on){
+            if (mpi_cuda_aware == Yes) {
+                logs::print_ln(" - MPI CUDA-AWARE :", col8b_green() + "Yes" + reset());
+            } else if (mpi_cuda_aware == No) {
+                logs::print_ln(" - MPI CUDA-AWARE :", col8b_red() + "No" + reset());
+            } else if (mpi_cuda_aware == Unknown) {
+                logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Unknown" + reset());
+            }
 
-        if (mpi_rocm_aware == Yes) {
-            logs::print_ln(" - MPI ROCM-AWARE :", col8b_green() + "Yes" + reset());
-        } else if (mpi_rocm_aware == No) {
-            logs::print_ln(" - MPI ROCM-AWARE :", col8b_red() + "No" + reset());
-        } else if (mpi_rocm_aware == Unknown) {
-            logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Unknown" + reset());
+            if (mpi_rocm_aware == Yes) {
+                logs::print_ln(" - MPI ROCM-AWARE :", col8b_green() + "Yes" + reset());
+            } else if (mpi_rocm_aware == No) {
+                logs::print_ln(" - MPI ROCM-AWARE :", col8b_red() + "No" + reset());
+            } else if (mpi_rocm_aware == Unknown) {
+                logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Unknown" + reset());
+            }
+        }else {
+            logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Forced Yes" + reset());
+            logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Forced Yes" + reset());
         }
     }
 } // namespace shamcomm

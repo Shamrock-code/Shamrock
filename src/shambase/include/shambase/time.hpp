@@ -63,7 +63,7 @@ namespace shambase {
     } 
 
 
-    /*
+    #ifdef __MACH__
     class Timer {
     public:
         std::chrono::steady_clock::time_point t_start, t_end;
@@ -87,11 +87,16 @@ namespace shambase {
         }
 
     };
-    */
+    #else
 
     class Timer {
     public:
+
+    
         plf::nanotimer timer;
+    
+
+
         f64 nanosec;
 
         Timer(){};
@@ -111,6 +116,7 @@ namespace shambase {
         }
 
     };
+    #endif
 
     class FunctionTimer{
         f64 acc = 0;

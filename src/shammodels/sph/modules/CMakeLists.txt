@@ -11,5 +11,6 @@ target_sources(shamrock_lib
         UpdateDerivs.cpp
         ComputeLoadBalanceValue.cpp
         NeighbourCache.cpp
+        ParticleReordering.cpp
     PUBLIC
     )

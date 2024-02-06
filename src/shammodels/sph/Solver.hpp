@@ -196,6 +196,13 @@ namespace shammodels::sph {
             solver_config.set_debug_dump(_do_debug_dump, _debug_dump_filename);
         }
 
+        inline void print_timestep_logs(){
+            if(shamcomm::world_rank() == 0){
+                logger::info_ln("SPH", "iteration since start :",solve_logs.get_iteration_count());
+                logger::info_ln("SPH", "time since start :",shambase::details::get_wtime(),"(s)");
+            }
+        }
+
         void evolve_once();
 
         Tscal evolve_once_time_expl(Tscal t_current,Tscal dt_input){
@@ -232,6 +239,8 @@ namespace shammodels::sph {
                     return false;
                 }
             }
+
+            print_timestep_logs();
 
             return true;
             

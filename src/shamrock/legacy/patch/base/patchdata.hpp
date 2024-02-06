@@ -124,6 +124,7 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> & rq_lst){
  * @param tag MPI communication tag
  * @param comm MPI communicator
  */
+[[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
 u64 patchdata_isend(shamrock::patch::PatchData &p, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_dest, i32 tag, MPI_Comm comm);
 
 /**
@@ -135,6 +136,7 @@ u64 patchdata_isend(shamrock::patch::PatchData &p, std::vector<PatchDataMpiReque
  * @param comm  MPI communicator
  * @return the received patchdata (it works but weird because asynchronous)
  */
+[[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
 u64 patchdata_irecv_probe(shamrock::patch::PatchData &pdat, std::vector<PatchDataMpiRequest> &rq_lst, i32 rank_source, i32 tag, MPI_Comm comm);
 
 /**

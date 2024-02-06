@@ -23,6 +23,7 @@ template <class T>
 struct SparseCommExchanger<RadixTreeField<T>>{
 
     //TODO emit warning that here the sycl buffer will be used with it's internal size
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     static SparseCommResult<RadixTreeField<T>> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<RadixTreeField<T>> &send_comm_pdat){
 StackEntry stack_loc{};
         using namespace shamrock::patch;

@@ -32,10 +32,14 @@ class SparsePatchCommunicator;
 
 template <class T> 
 struct SparseCommExchanger{
+
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     static SparseCommResult<T> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<T> &send_comm_pdat);
 };
 
-class SparsePatchCommunicator {
+class 
+    [[deprecated("Please shamalgs sparse comm instead")]] 
+    SparsePatchCommunicator {
     
 
     std::vector<i32> local_comm_tag;
@@ -87,6 +91,7 @@ class SparsePatchCommunicator {
     friend struct SparseCommExchanger;
 
     template<class T>
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     inline SparseCommResult<T> sparse_exchange(const SparseCommSource<T> &send_comm_pdat){
         return SparseCommExchanger<T>::sp_xchg(*this, send_comm_pdat);
     }
@@ -102,6 +107,7 @@ class SparsePatchCommunicator {
 
 template <> 
 struct SparseCommExchanger<shamrock::patch::PatchData>{
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     static SparseCommResult<shamrock::patch::PatchData> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<shamrock::patch::PatchData> &send_comm_pdat){
 StackEntry stack_loc{};
         using namespace shamrock::patch;

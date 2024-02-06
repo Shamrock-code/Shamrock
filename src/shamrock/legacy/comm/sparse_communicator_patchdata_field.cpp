@@ -20,6 +20,8 @@
 
 template <class T> 
 struct SparseCommExchanger<PatchDataField<T>>{
+
+    [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
     static SparseCommResult<PatchDataField<T>> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<PatchDataField<T>> &send_comm_pdat){
 StackEntry stack_loc{};
         using namespace shamrock::patch;

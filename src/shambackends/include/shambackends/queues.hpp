@@ -80,4 +80,8 @@ namespace sham {
         return id.get_queue_details();
     }
 
+    inline QueueId get_queue_id(u32 id = 0, queues::QueueKind kind = queues::Compute){
+        return {id, kind};
+    }
+
 } // namespace sham

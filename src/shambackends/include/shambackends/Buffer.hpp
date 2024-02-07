@@ -15,6 +15,7 @@
  *
  */
 #include "shambackends/queues.hpp"
+#include "shamcomm/logs.hpp"
 
 namespace sham::buffer::details {
 
@@ -23,14 +24,20 @@ namespace sham::buffer::details {
 
         QueueId queue_id;
         std::unique_ptr<sycl::buffer<T>> storage;
+        u64 size;
 
         public:
         inline QueueId get_queue_id() { return queue_id; }
 
         inline sycl::queue &get_queue() { queue_id.get_queue(); }
 
-        BufferAllocBasic(u64 size, QueueId qid) : queue_id(qid) {
+        BufferAllocBasic(u64 sz, QueueId qid) : queue_id(qid), size(sz) {
+            shamcomm::logs::debug_alloc_ln("BufferImpl Basic", "alloc size =",sz);
             storage = std::make_unique<sycl::buffer<T>>(size);
+        }
+
+        ~BufferAllocBasic() noexcept {
+            shamcomm::logs::debug_alloc_ln("BufferImpl Basic", "free size =",size);
         }
 
         inline sycl::buffer<T> &get_buf() const { return *storage; }

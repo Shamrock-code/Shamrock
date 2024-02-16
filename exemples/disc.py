@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = "disc_output/"
+outputdir = ""
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
@@ -35,14 +35,19 @@ model.resize_simulation_box(bmin,bmax)
 disc_mass = 0.001
 
 pmass = model.add_disc_3d(
-    (0,0,0),
-    1,
-    100000,
-    0.2,3,
-    disc_mass,
-    1.,
-    0.05,
-    1./4.)
+    center=(0,0,0),
+    center_mass=1.,
+    Npart=100000,
+    r_in=1., r_out=10.,
+    disc_mass=disc_mass,
+    p=1.,
+    H_r_in=0.05,
+    q=1./4.,
+    do_warp=False,
+    posangle=0.,
+    incl = 30.,
+    Rwarp = 5.,
+    Hwarp = 1.)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
@@ -121,7 +126,7 @@ next_dt_target = t_sum + dt_dump
 
 while next_dt_target <= t_target:
 
-    fname = "dump_{:04}.phfile".format(i_dump)
+    fname = outputdir + "dump_{:04}.phfile".format(i_dump)
 
     model.evolve_until(next_dt_target)
     dump = model.make_phantom_dump()

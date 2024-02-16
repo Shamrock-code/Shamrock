@@ -18,8 +18,10 @@
 
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambase/string.hpp"
+#include "shambase/Constants.hpp"
 #include "shambase/sycl_utils/vectorProperties.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
@@ -215,7 +217,12 @@ namespace shammodels::sph {
                 Tscal disc_mass,
                 Tscal p,
                 Tscal H_r_in,
-                Tscal q){
+                Tscal q,
+                bool do_warp,
+                Tscal posangle,
+                Tscal incl,
+                Tscal Rwarp,
+                Tscal Hwarp){
 
             Tscal G = solver.solver_config.get_constant_G();
 
@@ -303,6 +310,12 @@ namespace shammodels::sph {
                 }
 
                 log += shambase::format("\n    patch id={}, add N={} particles", ptch.id_patch, vec_pos.size());
+
+                if (do_warp) {
+                    logger::raw("############### WARPING ##############");
+                    warp_disc<Tscal>(vec_pos, vec_vel, posangle, incl, Rwarp, Hwarp);
+                    logger::raw(Rwarp);
+                }
 
                 PatchData tmp(sched.pdl);
                 tmp.resize(vec_pos.size());
@@ -723,6 +736,91 @@ namespace shammodels::sph {
 
         private:
         void add_pdat_to_phantom_block(PhantomDumpBlock & block, shamrock::patch::PatchData & pdat);
+
+        template<class Tscal>
+        inline void warp_disc(std::vector<Tvec> & pos, std::vector<Tvec> &vel, Tscal posangle, Tscal incl, Tscal Rwarp, Tscal Hwarp) {
+            Tvec k = Tvec(-std::sin(posangle), std::cos(posangle), 0.);
+            Tscal inc;
+            Tscal psi = 0.;
+            u32 len = pos.size();
+            u32 c = 0;
+            //Tvec R_vec = sycl::sqrt(sycl::dot(pos, pos));
+            //convert to radians (sycl functions take radians)
+            Tscal incl_rad = incl * shambase::constants::pi<Tscal> / 180.;
+
+            for (i32 i=0; i < len; i++){
+                Tvec R_vec = pos[i];
+                Tscal R = sycl::sqrt(sycl::dot(R_vec, R_vec));
+                if (R < Rwarp - Hwarp){
+                    inc = 0.;
+                }
+                else if (R < Rwarp + 3. * Hwarp && R > Rwarp - Hwarp) {
+                    //logger::raw("############### Condition fulfilled ############## \n");
+                    inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl_rad));
+                    //logger::debug_ln("sph::Model", inc);
+                    psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl_rad), 2)));
+                    Tscal psimax = sycl::max(psimax, psi);
+                    Tscal x = pos[i].x();
+                    Tscal y = pos[i].y();
+                    Tscal z = pos[i].z();
+
+                    Tscal xp = x * sycl::cos(inc) + y * sycl::sin(inc);
+                    Tscal yp = - x * sycl::sin(inc) + y * sycl::cos(inc);
+
+                    //pos[i] = Tvec(xp, yp, z);
+
+                    Tvec kk = Tvec(0., 0., 1.);
+                    Tvec w = sycl::cross(kk, pos[i]);
+                    // Rodrigues' rotation formula
+                    pos[i] = pos[i] * sycl::cos(inc) + w * sycl::sin(inc) + kk * sycl::dot(kk, pos[i]) * (1. - sycl::cos(inc));
+
+                    if (c<10){
+                        Tvec vunit = vel[i] / sycl::sqrt(sycl::dot(vel[i], vel[i]));
+                        Tvec w = sycl::cross(vunit, pos[i]);
+                        // Rodrigues' rotation formula
+                        Tvec newpos = pos[i] * sycl::cos(inc) + w * sycl::sin(inc) + vunit * sycl::dot(vunit, pos[i]) * (1. - sycl::cos(inc));
+                        logger::raw(shambase::format("inc {}, oldpos {}, newpos {}\n", inc, R_vec, newpos));
+                        logger::raw(shambase::format("sin(90) = {}, sin)(pi/2) = {} \n", sycl::cos(90.), sycl::cos(shambase::constants::pi<Tscal> / 2.)));
+                        c = c+1;
+                    }
+                    
+                }
+                else{
+                    inc = 0.;
+                }
+                //rotation position and velocity
+
+
+                //rotate_vector(pos[i], k, inc);
+                //rotate_vector(vel[i], k, inc); 
+
+                //if (c <10){
+                //    //logger::raw('POS');
+                //    logger::raw(shambase::format("oldpos {}, newpos {}\n", R_vec, pos[i]));
+                //    //logger::raw('NEWPOS');
+                //    //logger::raw(pos[i]);
+                //}
+                //c = c+1;
+            
+            }
+    
+           
+        }
+
+        inline void rotate_vector(Tvec & u, Tvec & vunit, Tscal theta){
+            // normalize the reference direction
+            //Tvec vunit = v / sycl::sqrt(sycl::dot(v, v));
+            Tvec w = sycl::cross(vunit, u);
+            // Rodrigues' rotation formula
+            //u = u * sycl::cos(theta) + w * sycl::sin(theta) + vunit * sycl::dot(vunit, u) * (1. - sycl::cos(theta));
+            Tscal x = u.x();
+            Tscal y = u.y();
+            Tscal z = u.z();
+
+            u = Tvec(x, 4., z);
+        }
     };
 
+
 } // namespace shammodels::sph
+

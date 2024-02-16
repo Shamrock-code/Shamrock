@@ -1357,7 +1357,7 @@ shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
         dump.table_header_f64.add("udist", 1);
         dump.table_header_f64.add("umass", 1);
         dump.table_header_f64.add("utime", 1);
-        dump.table_header_f64.add("umagfd", 3.54491);
+        dump.table_header_f64.add("umagfd", 1);
     }
 
     PhantomDumpBlock block_part;

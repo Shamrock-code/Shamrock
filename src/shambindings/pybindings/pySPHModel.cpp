@@ -193,23 +193,31 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal disc_mass,
                 Tscal p,
                 Tscal H_r_in,
-                Tscal q){
-                    return self.add_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q);
-                })
-        .def("add_big_disc_3d",[](T &self,
-                Tvec center, 
-                Tscal central_mass,
-                u32 Npart,
-                Tscal r_in,
-                Tscal r_out,
-                Tscal disc_mass,
-                Tscal p,
-                Tscal H_r_in,
                 Tscal q,
-                u64 seed){
-                    self.add_big_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, std::mt19937{seed});
-                    return disc_mass / Npart;
-                })
+                bool do_warp,
+                Tscal posangle,
+                Tscal incl,
+                Tscal Rwarp,
+                Tscal Hwarp){
+                    return self.add_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, 
+                    do_warp, posangle, incl, Rwarp, Hwarp);
+                },
+                py::kw_only{},
+                py::arg("center") = Tvec{0,0,0},
+                py::arg("center_mass"),
+                py::arg("Npart"),
+                py::arg("r_in"),
+                py::arg("r_out"),
+                py::arg("disc_mass"),
+                py::arg("p"),
+                py::arg("H_r_in"),
+                py::arg("q"),
+                py::arg("do_warp"),
+                py::arg("posangle"),
+                py::arg("incl"),
+                py::arg("Rwarp"),
+                py::arg("Hwarp")
+                )
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
         .def("set_value_in_a_box",

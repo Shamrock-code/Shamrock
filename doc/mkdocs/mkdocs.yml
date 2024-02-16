@@ -18,6 +18,7 @@ nav:
     - 'Running on clusters' : 'usermanual/cluster.md'
     - 'Specific clusters' :
       - 'PSMN' : 'usermanual/clusters/psmn.md'
+      - 'Adastra' : 'usermanual/clusters/adastra.md'
     - 'CUDA aware openMPI' : 'usermanual/openmpi_setup.md'
 
   - 'Physical models' :

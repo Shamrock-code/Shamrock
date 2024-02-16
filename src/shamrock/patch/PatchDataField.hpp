@@ -182,6 +182,8 @@ class PatchDataField {
 
     void override(sycl::buffer<T> &data, u32 cnt);
 
+    void override(std::vector<T> &data, u32 cnt);
+
     void override(const T val);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -461,6 +463,11 @@ inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
 
 template<class T>
 inline void PatchDataField<T>::override(sycl::buffer<T> &data, u32 cnt) {
+    buf.override(data, cnt);
+}
+
+template<class T>
+inline void PatchDataField<T>::override(std::vector<T> &data, u32 cnt) {
     buf.override(data, cnt);
 }
 

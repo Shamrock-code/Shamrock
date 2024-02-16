@@ -671,6 +671,9 @@ namespace shammodels::sph {
         inline u64 solver_logs_last_obj_count(){
             return solver.solve_logs.get_last_obj_count();
         }
+        inline void change_htolerance(Tscal in){
+            solver.solver_config.htol_up_tol = in;
+        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// analysis utilities
@@ -691,6 +694,7 @@ namespace shammodels::sph {
 
         inline void evolve_once(){
             solver.evolve_once();
+            solver.print_timestep_logs();
         }
 
         inline bool evolve_until(Tscal target_time,i32 niter_max){

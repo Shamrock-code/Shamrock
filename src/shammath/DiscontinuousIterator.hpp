@@ -30,24 +30,13 @@ namespace shammath {
      *
      * Usage :
      * \code{.cpp}
-     * DynamicIdGenerator<i32, group_size> id_gen(q);
-     * q.submit([&](sycl::handler &cgh) {
-     *
-     *    auto dyn_id = id_gen.get_access(cgh);
-     *
-     *    cgh.parallel_for(sycl::nd_range<1>{len, group_size},
-     *        [=](sycl::nd_item<1> id) {
-     *
-     *            atomic::DynamicId<i32> group_id = dyn_id.compute_id(id);
-     *
-     *            u32 group_tile_id = group_id.dyn_group_id;
-     *            u32 global_id = group_id.dyn_global_id;
-     *
-     *            // kernel execution
-     *
-     *        });
-     *
-     * });
+     * i32 min = 0;
+     * i32 max = 100;
+     * shammath::DiscontinuousIterator<i32> it(min, max);
+     * while (!it.is_done()) {
+     *     i32 tmp = it.next();
+     *     // do something with the value
+     * }
      * \endcode
      * 
      * @tparam T 
@@ -87,22 +76,24 @@ namespace shammath {
         T get() { return current.to_ullong() + offset; }
 
         void advance_it() {
-            do {
-                bool carry  = true; // backward
-                int pointer = firstbit;
-                while (carry && !done) {
-                    if (current[pointer]) {
-                        current.flip(pointer);
-                        pointer--;
-                        if (pointer < 0) {
-                            done = true;
+            if(!done){
+                do {
+                    bool carry  = true; // backward
+                    int pointer = firstbit;
+                    while (carry && !done) {
+                        if (current[pointer]) {
+                            current.flip(pointer);
+                            pointer--;
+                            if (pointer < 0) {
+                                done = true;
+                            }
+                        } else {
+                            carry = false;
+                            current.flip(pointer);
                         }
-                    } else {
-                        carry = false;
-                        current.flip(pointer);
                     }
-                }
-            } while (current.to_ullong() >= tmax);
+                } while (current.to_ullong() >= tmax);
+            }
         }
     };
     

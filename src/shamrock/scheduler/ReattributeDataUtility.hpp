@@ -34,6 +34,9 @@ namespace shamrock {
 
 
         template<class T> shambase::DistributedData<sycl::buffer<u64>> compute_new_pid(SerialPatchTree<T> & sptree, u32 ipos){
+            
+            StackEntry stack_loc{};
+            
             shambase::DistributedData<sycl::buffer<u64>> newid_buf_map;
 
 
@@ -73,7 +76,7 @@ namespace shamrock {
         inline shambase::DistributedDataShared<shamrock::patch::PatchData> extract_elements(shambase::DistributedData<sycl::buffer<u64>> new_pid){
             shambase::DistributedDataShared<patch::PatchData> part_exchange;
 
-            
+            StackEntry stack_loc{};
 
             using namespace shamrock::patch;
 

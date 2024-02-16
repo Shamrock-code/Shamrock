@@ -23,6 +23,7 @@
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -36,12 +37,14 @@ using Model = shammodels::sph::Model<Tvec, SPHKernel>;
 
 template<class Tvec, template<class> class SPHKernel>
 f64 Model<Tvec, SPHKernel>::evolve_once_time_expl(f64 t_curr, f64 dt_input) {
-    return solver.evolve_once_time_expl(t_curr, dt_input);
+    auto tmp = solver.evolve_once_time_expl(t_curr, dt_input);
+    solver.print_timestep_logs();
+    return tmp;
 }
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::timestep() {
-    return solver.evolve_once();
+    solver.evolve_once();
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -362,6 +365,7 @@ auto Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _
 
 template<class Tvec, template<class> class SPHKernel>
 void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+    shambase::Timer time_setup;time_setup.start();
 
     StackEntry stack_loc{};
 
@@ -372,11 +376,13 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
     using Lattice     = shammath::LatticeHCP<Tvec>;
-    using LatticeIter = typename shammath::LatticeHCP<Tvec>::Iterator;
+    using LatticeIter = typename shammath::LatticeHCP<Tvec>::IteratorDiscontinuous;
 
     auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
 
     LatticeIter gen = LatticeIter(dr, idxs_min, idxs_max);
+
+    u64 acc_count =0;
 
     std::string log = "";
     while (!gen.is_done()) {
@@ -388,7 +394,7 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 
         do {
             std::vector<Tvec> to_ins = gen.next_n(sched.crit_patch_split*2);
-
+            acc_count += to_ins.size();
 
 
             sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
@@ -417,6 +423,9 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
                     vec_acc.size(),
                     patch_coord.lower,
                     patch_coord.upper);
+                
+                // reserve space to avoid allocating during copy
+                pdat.reserve(vec_acc.size());
 
                 PatchData tmp(sched.pdl);
                 tmp.resize(vec_acc.size());
@@ -425,8 +434,8 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
                 {
                     u32 len                 = vec_acc.size();
                     PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
-                    sycl::buffer<Tvec> buf(vec_acc.data(), len);
-                    f.override(buf, len);
+                    //sycl::buffer<Tvec> buf(vec_acc.data(), len);
+                    f.override(vec_acc, len);
                 }
 
                 {
@@ -442,7 +451,7 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
             max_loc_sum_ins_cnt = shamalgs::collective::allreduce_max(loc_sum_ins_cnt);
 
             if(shamcomm::world_rank() == 0){
-                logger::info_ln("Model", "--> insertion loop : max loc insert count = ",max_loc_sum_ins_cnt);
+                logger::info_ln("Model", "--> insertion loop : max loc insert count = ",max_loc_sum_ins_cnt, "sum =",acc_count);
             }
         }while(!gen.is_done() && max_loc_sum_ins_cnt < sched.crit_patch_split*8);
         
@@ -462,6 +471,16 @@ void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
         modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
             .update_load_balancing();
         post_insert_data<Tvec>(sched);
+        
+    }
+
+    if(true){
+        modules::ParticleReordering<Tvec,u32, SPHKernel>(ctx, solver.solver_config, solver.storage).reorder_particles();
+    }
+
+    time_setup.end();
+    if(shamcomm::world_rank() == 0){
+        logger::info_ln("Model", "add_cube_hcp took :",time_setup.elasped_sec(),"s");
     }
 }
 

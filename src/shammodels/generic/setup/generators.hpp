@@ -222,7 +222,7 @@ namespace generic::setup::generators {
 
             auto vel = vk*etheta;
 
-            flt rho = (sigma / (H * shambase::constants::pi2_sqrt<flt>))*
+            flt rho = 0.1*(sigma / (H * shambase::constants::pi2_sqrt<flt>))*
                 sycl::exp(- z*z / (2*H*H));
 
             DiscOutput<flt> out {

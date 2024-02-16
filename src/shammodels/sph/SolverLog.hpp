@@ -37,6 +37,7 @@ struct shammodels::sph::SolverLog{
         u64 rank_count;
         f64 rate;
         f64 elasped_sec;
+        f64 wtime;
     };
 
     std::vector<StepInfo> step_logs;
@@ -47,5 +48,9 @@ struct shammodels::sph::SolverLog{
 
     f64 get_last_rate();
     u64 get_last_obj_count();
+
+    u64 get_iteration_count(){
+        return step_logs.size();
+    }
 
 };

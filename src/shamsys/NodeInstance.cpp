@@ -249,10 +249,12 @@ namespace shamsys::instance {
 
             // logger::debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
+            bool force_aware = opts::has_option("--force-dgpu");
+
             if (shambase::contain_substr(sycl_cfg, "auto:")) {
 
                 std::string search = sycl_cfg.substr(5);
-                init_auto(search, MPIInitInfo{argc, argv});
+                init_auto(search, MPIInitInfo{argc, argv,force_aware});
 
             } else {
 
@@ -292,7 +294,7 @@ namespace shamsys::instance {
                     throw ShamsysInstanceException("compute config is to big for an integer");
                 }
 
-                init(SyclInitInfo{ialt, icomp}, MPIInitInfo{argc, argv});
+                init(SyclInitInfo{ialt, icomp}, MPIInitInfo{argc, argv, force_aware});
             }
 
         } else {
@@ -310,7 +312,7 @@ namespace shamsys::instance {
         std::cout << "%MPI_DEFINE:MPI_COMM_WORLD=" << MPI_COMM_WORLD << "\n";
 #endif
 
-        shamcomm::fetch_mpi_capabilities();
+        shamcomm::fetch_mpi_capabilities(mpi_info.force_aware);
 
         mpi::init(&mpi_info.argc, &mpi_info.argv);
 

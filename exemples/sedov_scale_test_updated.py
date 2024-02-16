@@ -39,6 +39,7 @@ cfg = model.gen_default_config()
 cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
+cfg.set_max_neigh_cache_size(int(10e9))
 cfg.print_status()
 model.set_solver_config(cfg)
 model.init_scheduler(scheduler_split_val,scheduler_merge_val)
@@ -53,7 +54,9 @@ model.add_cube_hcp_3d(dr, bmin,bmax)
 
 
 xc,yc,zc = model.get_closest_part_to((0,0,0))
-print("closest part to (0,0,0) is in :",xc,yc,zc)
+
+if shamrock.sys.world_rank() == 0:
+    print("closest part to (0,0,0) is in :",xc,yc,zc)
 
 
 vol_b = (xM - xm)*(yM - ym)*(zM - zm)
@@ -73,7 +76,8 @@ model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
 
 
 tot_u = pmass*model.get_sum("uint","f64")
-print("total u :",tot_u)
+if shamrock.sys.world_rank() == 0:
+    print("total u :",tot_u)
 
 
 #print("Current part mass :", pmass)

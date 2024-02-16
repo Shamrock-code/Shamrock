@@ -47,10 +47,22 @@
 
 //%Impl status : Should rewrite
 
-const std::string run_ipython_src = R"(
+extern const char* ipython_run_src();
+
+const std::string run_ipython_src = 
+R"(
+
 from IPython import start_ipython
 from traitlets.config.loader import Config
-import sys
+
+import signal
+
+# here the signal interup for sigint is None
+# this make ipython freaks out for weird reasons
+# registering the handler fix it ...
+# i swear python c api is horrible to works with
+import shamrock.sys
+signal.signal(signal.SIGINT, shamrock.sys.signal_handler)
 
 c = Config()
 
@@ -65,6 +77,14 @@ import shamrock
 
 start_ipython(config=c)
 
+)";
+
+
+const std::string modify_path = 
+std::string("paths = ")+ ipython_run_src()+"\n"+
+R"(
+import sys
+sys.path = paths
 )";
 
 
@@ -90,6 +110,7 @@ int main(int argc, char *argv[]) {
 
     opts::register_opt("--rscript","(filepath)", "run shamrock with python runscirpt");
     opts::register_opt("--ipython",{}, "run shamrock in Ipython mode");
+    opts::register_opt("--force-dgpu",{}, "for direct mpi comm on");
 
     opts::init(argc, argv);
 
@@ -206,7 +227,7 @@ int main(int argc, char *argv[]) {
             }
 
             py::scoped_interpreter guard{};
-            
+            py::exec(modify_path);
             
             std::cout << "--------------------------------------------" << std::endl;
             std::cout << "-------------- ipython ---------------------" << std::endl;
@@ -224,6 +245,7 @@ int main(int argc, char *argv[]) {
             //rscript.run_file(fname);
 
             py::scoped_interpreter guard{};
+            py::exec(modify_path);
 
             if(shamcomm::world_rank() == 0){
             std::cout << "-----------------------------------" << std::endl;

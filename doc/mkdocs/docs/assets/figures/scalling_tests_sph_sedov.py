@@ -290,33 +290,160 @@ plt.savefig("sedov_scalling_cpu.svg")
 
 
 dic = {}
-dic["Adastra mi250X"] = {
-    "label" : "Adastra mi250X",
-    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4],
-    "rate" : [
-        28144452.5247059, 
-        65301034.81380231, 
-        126258518.4939734, 
-        220797309.04850662, 
-        451664700.5182303, 
-        850424568.3261222,
-        1548188962.967435],
-    "cnt" : [
-        403064480, 
-        802649952, 
-        1606415328, 
-        3211389720, 
-        6421199616,
-        12828966752, 
-        25658246736],
-    "lb_pred" : [100, 100, 100, 100,100,100,100]
-}
+
+
+
 
 
 dic = {}
 
+
+dic["Adastra mi250X 1e6"] = {
+    "label" : "Adastra mi250X 1e6",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
+    "rate" : [
+        10027327.390461681, 
+        28627147.672835156,
+        67501397.63723984,
+        68893852.40823084,
+        181130613.04604933,
+        467921137.5994176,
+        194426012.21058697,
+        403097423.35557157,
+        864848615.6035736
+        ],
+    "cnt" : [
+        8157600, 
+        16217760,
+        32416896,
+        64603248,
+        129168000,
+        256893816,
+        514205664,
+        1029488400,
+        2052189216
+        ],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+'''v1
+dic["Adastra mi250X 8e6"] = {
+    "label" : "Adastra mi250X 8e6",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,256*4],
+    "rate" : [
+        25848206.663575538, 
+        59237902.16775592,
+        109234312.63323641,
+        196113292.237535,
+        452113937.04432863,
+        849201205.388938,
+        847490119.5221043,
+        3279951826.7928686
+        ],
+    "cnt" : [
+        64603248, 
+        129168000,
+        256893816,
+        514205664,
+        1029488400,
+        2052189216,
+        4107883904,
+        16404962112
+        ],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+'''
+dic["Adastra mi250X 8e6"] = {
+    "label" : "Adastra mi250X 8e6",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
+    "rate" : [
+        26008574.678514816, 
+        58880254.89086981,
+        81988685.92629065,
+        197070974.04349208,
+        450267279.825966,
+        420014612.6583188,
+        885810397.4549791,
+        1937228587.1181426,
+        156993712.01623392
+        ],
+    "cnt" : [
+        64603248, 
+        129168000,
+        256893816,
+        514205664,
+        1029488400,
+        2052189216,
+        4107883904,
+        8219290896,
+        16404962112
+        ],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+
+dic["Adastra mi250X 16e6"] = {
+    "label" : "Adastra mi250X 16e6",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
+    "rate" : [
+        30716696.37947792, 
+        55392681.947984114,
+        102484035.0776653,
+        238320708.63068068,
+        431453021.27965516,
+        606635005.5261021,
+        1330179076.937796,
+        2293882848.760971,
+        294004163.7261851
+        ],
+    "cnt" : [
+        129168000, 
+        256893816,
+        514205664,
+        1029488400,
+        2052189216,
+        4107883904,
+        8219290896,
+        16404962112,
+        32824341072
+        ],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+
+'''
+dic["Adastra mi250X 20e6"] = {
+    "label" : "Adastra mi250X 20e6",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
+    "rate" : [
+        28162471.616545185, 
+        65985664.576028824,
+        126697959.30386999,
+        219791447.40876472,
+        455775333.11801857,
+        
+        431453021.27965516,
+        606635005.5261021,
+        1330179076.937796,
+        2293882848.760971,
+        3279951826.7928686
+        ],
+    "cnt" : [
+        403064480, 
+        802649952,
+        1606415328,
+        3211389720,
+        6421199616,
+        
+        2052189216,
+        4107883904,
+        8219290896,
+        16404962112,
+        16404962112
+        ],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+'''
+
 dic["Adastra mi250X 1"] = {
-    "label" : "Adastra mi250X 50e6/GPU",
+    "label" : "Adastra mi250X 50e6/GPU (low patch count)",
     "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4],
     "rate" : [
         28144452.5247059, 
@@ -337,6 +464,7 @@ dic["Adastra mi250X 1"] = {
     "lb_pred" : [100, 100, 100, 100,100,100,100]
 }
 
+'''
 dic["Adastra mi250X 2"] = {
     "label" : "Adastra mi250X 20e6/GPU",
     "X" : [1*4, 2*4, 4*4, 8*4,32*4,64*4],
@@ -356,8 +484,8 @@ dic["Adastra mi250X 2"] = {
         10259483520],
     "lb_pred" : [100, 100, 100, 100,100,100,100]
 }
-
-
+'''
+'''
 dic["Adastra mi250X 3"] = {
     "label" : "Adastra mi250X 10e6/GPU",
     "X" : [1*4, 2*4, 4*4],
@@ -373,43 +501,223 @@ dic["Adastra mi250X 3"] = {
         ],
     "lb_pred" : [100, 100, 100, 100,100,100,100]
 }
+'''
+
+dic = {}
 
 
-plt.figure()
+dic["Adastra mi250X 1e6"] = {
+    "label" : "1e6 parts / GPUs",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
+    "rate" : [
+        10705666.585170781, 
+        30074005.10485011,
+        24222645.776111893,
+        77221476.61925279,
+        215989609.6768017,
+        179888954.78658682,
+        589484332.7888682,
+        1653007675.187291,
+        1375007011.974956
+        ],
+    "cnt" : [
+        8157600, 
+        16217760,
+        32416896,
+        64603248,
+        129168000,
+        256893816,
+        514205664,
+        1029488400,
+        2052189216
+        ],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+
+dic["Adastra mi250X 8e6"] = {
+    "label" : "8e6 parts / GPUs",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
+    "rate" : [
+        27925165.0051521, 
+        70589467.85605815,
+        89884388.05374768,
+        216719945.62412375,
+        532159209.383341,
+        709226620.418723,
+        1700242124.593388,
+        4046052257.6171503,
+        5342278044.610529
+        ],
+    "cnt" : [
+        64603248, 
+        129168000,
+        256893816,
+        514205664,
+        1029488400,
+        2052189216,
+        4107883904,
+        8219290896,
+        16404962112
+        ],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+
+dic["Adastra mi250X 16e6"] = {
+    "label" : "16e6 parts / GPUs",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
+    "rate" : [
+        37025358.19356769, 
+        70180062.59854978,
+        112351276.67165202,
+        289277358.35634714,
+        547930990.8163583,
+        888915130.1262488,
+        2240839098.6210938,
+        4111305966.830165,
+        6757111637.777441
+        ],
+    "cnt" : [
+        129168000, 
+        256893816,
+        514205664,
+        1029488400,
+        2052189216,
+        4107883904,
+        8219290896,
+        16404962112,
+        32824341072
+        ],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+
+
+
+dic["Adastra mi250X 32e6"] = {
+    "label" : "32e6 parts / GPUs",
+    "X" : [1*4, 2*4, 4*4, 8*4, 16*4,32*4,64*4,128*4,256*4],
+    "rate" : [
+        37263623.46191787, 
+        74708547.71419899,
+        149063290.90710586,
+        285482136.6247805,
+        554224717.891204,
+        1143403466.2394433,
+        2263933822.3465977,
+        4263623185.706088,
+        8729139669.248592
+        ],
+    "cnt" : [
+        256893816, 
+        514205664,
+        1029488400,
+        2052189216,
+        4107883904,
+        8219290896,
+        16404962112,
+        32824341072,
+        65656270200
+        ],
+    "lb_pred" : [100, 100, 100, 100,100,100,100]
+}
+
+
+
+from matplotlib.ticker import ScalarFormatter
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
 for k in dic.keys():
-    plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ), label = dic[k]["label"])
+    X = dic[k]["X"]
+    Y = np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  )
+    p, = plt.plot(X,Y, label = dic[k]["label"])
+    plt.annotate(f'{Y[-1]:.2e}', xy=(1.01,Y[-1]), xycoords=('axes fraction', 'data'), 
+                     ha='left', va='center', color=p.get_color())
 #plt.ylim(0,1e6)
 #plt.xlim(1,200)
 plt.xscale('log')
-plt.ylabel(r"$N_{\rm part} / (N_{\rm GPU} t_{\rm step})$")
-plt.xlabel(r"$N_{\rm GPU}$")
+ax.xaxis.set_major_formatter(ScalarFormatter())
+
+#plt.yscale('log')
+#plt.ylabel(r"$N_{\rm part} / (N_{\rm GPU} t_{\rm step})$")
+plt.ylabel(r"Particles / seconds / GPU")
+plt.xlabel(r"GPUs")
+plt.title("Adastra mi250x")
 plt.legend()
 plt.grid()
 plt.savefig("sedov_scalling_div_GPU.svg")
 
 
-plt.figure()
+fig = plt.figure()
+ax = fig.add_subplot(111)
 for k in dic.keys():
-    plt.plot(dic[k]["X"]  , (np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))/(np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))[0], label =  dic[k]["label"])
+    X = dic[k]["X"]
+    Y = np.array(dic[k]["rate"])  / ( 1900 * np.array(dic[k]["X"]) / 4)
+    p, = plt.plot(X,Y, label = dic[k]["label"])
+    plt.annotate(f'{Y[-1]:.2e}', xy=(1.01,Y[-1]), xycoords=('axes fraction', 'data'), 
+                     ha='left', va='center', color=p.get_color())
 #plt.ylim(0,1e6)
 #plt.xlim(1,200)
 plt.xscale('log')
-plt.ylabel(r"$\chi$")
-plt.xlabel(r"$N_{\rm GPU}$")
+ax.xaxis.set_major_formatter(ScalarFormatter())
+
+#plt.yscale('log')
+#plt.ylabel(r"$N_{\rm part} / (N_{\rm GPU} t_{\rm step})$")
+plt.ylabel(r"Particles / seconds / Watt")
+plt.xlabel(r"GPUs")
+plt.title("Adastra mi250x")
+plt.legend()
+plt.grid()
+plt.savefig("sedov_scalling_energy_GPU.pdf")
+
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+idx = 0
+pos_anot = [0.5, 0.78, 0.70, 0.92]
+for k in dic.keys():
+    X = dic[k]["X"]
+    Y = (np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))/(np.array(dic[k]["rate"])  /np.array(dic[k]["X"]  ))[0]
+    p, = plt.plot(X,Y, label = dic[k]["label"])
+    plt.annotate(f'{Y[-1]:.2f}', xy=(1.01,pos_anot[idx]), xycoords=('axes fraction', 'data'), 
+                     ha='left', va='center', color=p.get_color())
+    idx += 1
+plt.ylim(0,1.5)
+#plt.xlim(1,200)
+plt.xscale('log')
+ax.xaxis.set_major_formatter(ScalarFormatter())
+
+plt.ylabel(r"Parallel efficiency ")
+plt.xlabel(r"GPUs")
+plt.title("Adastra mi250x")
 plt.legend()
 plt.grid()
 plt.savefig("sedov_scalling_eff_GPU.svg")
 
 
-plt.figure()
+fig = plt.figure()
+ax = fig.add_subplot(111)
+idx = 0
+pos_anot = [1.38e9, 5.e9,7e9, 10e9]
 for k in dic.keys():
-    plt.plot(dic[k]["X"]  , np.array(dic[k]["rate"]), label = dic[k]["label"])
+    X = dic[k]["X"]
+    Y = np.array(dic[k]["rate"])
+    p, = plt.plot(X,Y, label = dic[k]["label"])
+    plt.annotate(f'{Y[-1]:.2e}', xy=(1.01,pos_anot[idx]), xycoords=('axes fraction', 'data'), 
+                     ha='left', va='center', color=p.get_color())
+    idx += 1
+    
 #plt.ylim(0,1e6)
 #plt.xlim(1,200)
 plt.xscale('log')
 plt.yscale('log')
-plt.ylabel(r"$N_{\rm part} / (t_{\rm step})$")
-plt.xlabel(r"$N_{\rm GPU}$")
+ax.xaxis.set_major_formatter(ScalarFormatter())
+
+plt.ylabel(r"Particles / seconds")
+plt.xlabel(r"GPUs")
 plt.legend()
+plt.title("Adastra mi250x")
 plt.grid()
 plt.savefig("sedov_scalling_GPU.svg")
+

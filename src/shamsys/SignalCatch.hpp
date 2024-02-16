@@ -15,5 +15,8 @@
  */
 
 namespace shamsys {
+    namespace details {
+        void signal_callback_handler(int signum);
+    }
     void register_signals();
 }

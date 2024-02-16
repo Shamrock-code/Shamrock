@@ -343,6 +343,10 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
                 str += "Scheduler step timings : ";
                 str += shambase::format("\n   metadata sync     : {:<10} ({:2.f}%)", 
                     metadata_sync.get_time_str(), 100*(metadata_sync.nanosec/total));
+                if(patch_tree_count_reduce){
+                    str += shambase::format("\n   patch tree reduce : {:<10} ({:2.f}%)", 
+                        patch_tree_count_reduce->get_time_str(), 100*(patch_tree_count_reduce->nanosec/total));
+                }
                 if(gen_merge_split_rq){
                     str += shambase::format("\n   gen split merge   : {:<10} ({:2.f}%)", 
                         gen_merge_split_rq->get_time_str(), 100*(gen_merge_split_rq->nanosec/total));

@@ -65,6 +65,7 @@ namespace shamsys::instance {
     struct MPIInitInfo {
         int argc;
         char **argv;
+        bool force_aware;
     };
 
     /**

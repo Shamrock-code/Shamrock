@@ -22,7 +22,7 @@ namespace shamcomm {
     extern StateMPI_Aware mpi_cuda_aware;
     extern StateMPI_Aware mpi_rocm_aware;
 
-    void fetch_mpi_capabilities();
+    void fetch_mpi_capabilities(bool force_aware) ;
 
     void print_mpi_capabilities();
 

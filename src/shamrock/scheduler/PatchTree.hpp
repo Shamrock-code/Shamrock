@@ -81,7 +81,7 @@ namespace shamrock::scheduler {
          * @param id_patch_to_global_idx
          */
         void update_values_node(
-            std::vector<Patch> &plist, std::unordered_map<u64, u64> id_patch_to_global_idx
+            std::vector<Patch> &plist, const std::unordered_map<u64, u64> & id_patch_to_global_idx
         );
 
         /**
@@ -91,7 +91,7 @@ namespace shamrock::scheduler {
          * @param id_patch_to_global_idx
          */
         void partial_values_reduction(
-            std::vector<Patch> &plist, std::unordered_map<u64, u64> id_patch_to_global_idx
+            std::vector<Patch> &plist, const std::unordered_map<u64, u64> & id_patch_to_global_idx
         );
 
         /**
@@ -119,7 +119,7 @@ namespace shamrock::scheduler {
         void remove_node(u64 id);
 
         void update_ptnode(
-            Node &n, std::vector<Patch> &plist, std::unordered_map<u64, u64> id_patch_to_global_idx
+            Node &n, std::vector<Patch> &plist, const std::unordered_map<u64, u64>& id_patch_to_global_idx
         );
     };
 

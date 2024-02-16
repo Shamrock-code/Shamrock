@@ -36,6 +36,7 @@
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
+#include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
@@ -518,7 +519,7 @@ void SPHSolve<Tvec, Kern>::build_ghost_cache() {
     SPHUtils sph_utils(scheduler());
 
     storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
-        storage.ghost_handler.get(), storage.serial_patch_tree.get(), htol_up_tol));
+        storage.ghost_handler.get(), storage.serial_patch_tree.get(), solver_config.htol_up_tol));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -765,7 +766,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
     ComputeField<Tscal> _epsilon_h, _h_old;
 
     u32 hstep_cnt = 0;
-    u32 hstep_max = 100;
+    u32 hstep_max = solver_config.h_max_subcycles_count;
     for (; hstep_cnt < hstep_max; hstep_cnt++) {
 
         gen_ghost_handler(time_val+dt);
@@ -781,7 +782,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
         Tscal max_eps_h;
 
         u32 iter_h = 0;
-        for (; iter_h < 50; iter_h++) {
+        for (; iter_h < solver_config.h_iter_per_subcycles; iter_h++) {
             NamedStackEntry stack_loc2{"iterate smoothing length"};
             // iterate smoothing length
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
@@ -811,8 +812,8 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
                     range_npart,
                     neigh_cache,
                     solver_config.gpart_mass,
-                    htol_up_tol,
-                    htol_up_iter);
+                    solver_config.htol_up_tol,
+                    solver_config.htol_up_iter);
                 // sph_utils.iterate_smoothing_length_tree(merged_r, hnew, hold, eps_h, range_npart,
                 // tree, gpart_mass, htol_up_tol, htol_up_iter);
             });
@@ -820,20 +821,42 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
             
             logger::debug_ln("Smoothinglength","iteration :",iter_h, "epsmax",max_eps_h);
 
-            if (max_eps_h < 1e-6) {
+            if (max_eps_h < solver_config.epsilon_h) {
                 logger::debug_sycl("Smoothinglength", "converged at i =", iter_h);
                 break;
             }
         }
 
-        // logger::info_ln("Smoothinglength", "eps max =", max_eps_h);
+        //logger::info_ln("Smoothinglength", "eps max =", max_eps_h);
 
         Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
         if (min_eps_h == -1) {
+
+            Tscal largest_h = 0;
+
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                largest_h = sham::max(largest_h, pdat.get_field<Tscal>(ihpart).compute_min());
+            });
+            Tscal global_largest_h = shamalgs::collective::allreduce_max(largest_h);
+
+
+            u64 cnt_unconverged = 0;
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                auto res = _epsilon_h.get_field(p.id_patch).get_ids_buf_where([](auto access, u32 id) {
+                    return access[id] == -1;
+                });
+                cnt_unconverged += std::get<1>(res);
+            });
+
+            u64 global_cnt_unconverged = shamalgs::collective::allreduce_sum(cnt_unconverged);
+
+
+
+
             if (shamcomm::world_rank() == 0) {
                 logger::warn_ln(
                     "Smoothinglength",
-                    "smoothing length is not converged, rerunning the iterator ...");
+                    "smoothing length is not converged, rerunning the iterator ...\n     largest h =",global_largest_h, "unconverged cnt =",global_cnt_unconverged);
             }
 
             reset_ghost_handler();
@@ -928,7 +951,7 @@ void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
             PreStepMergedField &tmp = xyzh_merged.get(id);
 
             return rtree.compute_int_boxes(
-                shamsys::instance::get_compute_queue(), tmp.field_hpart.get_buf(), htol_up_tol);
+                shamsys::instance::get_compute_queue(), tmp.field_hpart.get_buf(), solver_config.htol_up_tol);
         }));
 }
 
@@ -1221,6 +1244,10 @@ void SPHSolve<Tvec, Kern>::evolve_once()
     apply_position_boundary(t_current+dt);
 
     u64 Npart_all = scheduler().get_total_obj_count();
+
+    if(false){
+        modules::ParticleReordering<Tvec,u_morton, Kern>(context, solver_config, storage).reorder_particles();
+    }
 
     sph_prestep(t_current, dt);
 
@@ -1670,7 +1697,8 @@ void SPHSolve<Tvec, Kern>::evolve_once()
         shamcomm::world_rank(),// i32 world_rank;
         rank_count,// u64 rank_count;
         rate,// f64 rate;
-        tstep.elasped_sec()// f64 elasped_sec;
+        tstep.elasped_sec(),// f64 elasped_sec;
+        shambase::details::get_wtime()
     });
 
     std::string gathered = "";

@@ -24,7 +24,11 @@ namespace shamalgs::numeric {
 
     template<class T>
     sycl::buffer<T> exclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len){
+        #ifdef __MACH__ //decoupled lookback perf on mac os is awfull
+        return details::exclusive_sum_fallback(q, buf1, len);
+        #else
         return details::exclusive_sum_atomic_decoupled_v5<T, 512>(q, buf1, len);
+        #endif
     }
 
     template<class T>

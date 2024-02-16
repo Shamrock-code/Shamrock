@@ -39,6 +39,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level",&TConfig::set_tree_reduction_level)
         .def("set_two_stage_search",&TConfig::set_two_stage_search)
+        .def("set_max_neigh_cache_size",&TConfig::set_max_neigh_cache_size)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
         .def("set_eos_locally_isothermalLP07", &TConfig::set_eos_locally_isothermalLP07)
@@ -334,7 +335,8 @@ R"==(
         })
         .def("set_cfl_mult_stiffness", [](T & self, Tscal cstiff){
             return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
-        });
+        })
+        .def("change_htolerance",&T::change_htolerance);
     ;
 }
 

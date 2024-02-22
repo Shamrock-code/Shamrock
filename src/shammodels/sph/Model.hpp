@@ -394,7 +394,7 @@ namespace shammodels::sph {
                 reatrib.reatribute_patch_objects(sptree, "xyz");
             }
 
-            sched.check_patchdata_locality_corectness();
+            //sched.check_patchdata_locality_corectness();
 
             sched.scheduler_step(true, true);
 
@@ -751,10 +751,10 @@ namespace shammodels::sph {
             for (i32 i=0; i < len; i++){
                 Tvec R_vec = pos[i];
                 Tscal R = sycl::sqrt(sycl::dot(R_vec, R_vec));
-                if (R < Rwarp - Hwarp){
+                if (R <= Rwarp - Hwarp){
                     inc = 0.;
                 }
-                else if (R < Rwarp + 3. * Hwarp && R > Rwarp - Hwarp) {
+                else if (R > Rwarp - Hwarp && R < Rwarp+ 3. * Hwarp) {
                     //logger::raw("############### Condition fulfilled ############## \n");
                     inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (R - Rwarp))) * sycl::sin(incl_rad));
                     //logger::debug_ln("sph::Model", inc);
@@ -767,12 +767,12 @@ namespace shammodels::sph {
                     Tscal xp = x * sycl::cos(inc) + y * sycl::sin(inc);
                     Tscal yp = - x * sycl::sin(inc) + y * sycl::cos(inc);
 
-                    //pos[i] = Tvec(xp, yp, z);
+                    pos[i] = Tvec(xp, yp, z);
 
                     Tvec kk = Tvec(0., 0., 1.);
                     Tvec w = sycl::cross(kk, pos[i]);
                     // Rodrigues' rotation formula
-                    pos[i] = pos[i] * sycl::cos(inc) + w * sycl::sin(inc) + kk * sycl::dot(kk, pos[i]) * (1. - sycl::cos(inc));
+                    //pos[i] = pos[i] * sycl::cos(inc) + w * sycl::sin(inc) + kk * sycl::dot(kk, pos[i]) * (1. - sycl::cos(inc));
 
                     if (c<10){
                         Tvec vunit = vel[i] / sycl::sqrt(sycl::dot(vel[i], vel[i]));
@@ -787,6 +787,17 @@ namespace shammodels::sph {
                 }
                 else{
                     inc = 0.;
+                    Tvec kk = Tvec(0., 0., 1.);
+                    Tvec w = sycl::cross(kk, pos[i]);
+                    //pos[i] = pos[i] * sycl::cos(inc) + w * sycl::sin(inc) + kk * sycl::dot(kk, pos[i]) * (1. - sycl::cos(inc));
+                    Tscal x = pos[i].x();
+                    Tscal y = pos[i].y();
+                    Tscal z = pos[i].z();
+
+                    Tscal xp = x * sycl::cos(inc) + y * sycl::sin(inc);
+                    Tscal yp = - x * sycl::sin(inc) + y * sycl::cos(inc);
+
+                    pos[i] = Tvec(xp, yp, z);
                 }
                 //rotation position and velocity
 

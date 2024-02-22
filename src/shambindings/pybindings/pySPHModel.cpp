@@ -203,7 +203,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     do_warp, posangle, incl, Rwarp, Hwarp);
                 },
                 py::kw_only{},
-                py::arg("center") = Tvec{0,0,0},
+                py::arg("center"),
                 py::arg("center_mass"),
                 py::arg("Npart"),
                 py::arg("r_in"),

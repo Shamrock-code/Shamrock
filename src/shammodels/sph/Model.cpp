@@ -512,6 +512,7 @@ class DiscIterator {
     std::function<Tscal(Tscal)> sigma_profile;
     std::function<Tscal(Tscal)> cs_profile;
     std::function<Tscal(Tscal)> rot_profile;
+    std::function<Tscal(Tscal)> vel_full_corr;
 
     public:
     DiscIterator(
@@ -527,11 +528,13 @@ class DiscIterator {
         std::mt19937 eng,
         std::function<Tscal(Tscal)> sigma_profile,
         std::function<Tscal(Tscal)> cs_profile,
-        std::function<Tscal(Tscal)> rot_profile
+        std::function<Tscal(Tscal)> rot_profile,
+        std::function<Tscal(Tscal)> vel_full_corr
     ) : current_index(0), Npart(Npart),
     center(center), central_mass(central_mass), r_in(r_in), r_out(r_out), disc_mass(disc_mass),
     p(p), H_r_in(H_r_in), q(q),
-    eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile), rot_profile(rot_profile)
+    eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile), rot_profile(rot_profile),
+    vel_full_corr(vel_full_corr)
     {
 
         if (Npart == 0) {
@@ -564,10 +567,11 @@ class DiscIterator {
             
         auto theta = shamalgs::random::mock_value<Tscal>(eng,0, _2pi);
         auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng);
+        Tscal aspin = 2.;
 
         Tscal r = find_r();
 
-        Tscal vk = rot_profile(r);
+        Tscal vk = vel_full_corr(r); // rot_profile(r);
         Tscal cs = cs_profile(r);
         Tscal sigma = sigma_profile(r);
 
@@ -672,6 +676,25 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         return shamrock::sph::rho_h(solver.solver_config.gpart_mass, h, Kernel::hfactd);
     };
 
+    auto vel_full_corr = [&] (Tscal r) -> Tscal{
+        //carefull: needs r in cylindrical
+        Tscal G = solver.solver_config.get_constant_G();
+        Tscal c = solver.solver_config.get_constant_c();
+        Tscal aspin = 2.;
+        Tscal term = G * central_mass / r;
+        Tscal term_fs = 1. - sycl::sqrt(r_in / r);
+        Tscal term_pr = - sycl::pow(cs_law(r), 2) * (1.5 + p + q + 1. / term_fs);
+        Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
+        Tscal det = sycl::pow(term_bh, 2) + 4.*(term + term_pr);
+        Tscal Rg   = G * central_mass / sycl::pow(c, 2);
+        Tscal vkep = sqrt(G * central_mass / r);
+
+        Tscal vphi = 0.5*(term_bh + sycl::sqrt(det));
+
+        return vphi;
+
+    };
+
     Tscal part_mass = disc_mass/Npart;
 
     shambase::Timer time_setup;time_setup.start();
@@ -698,7 +721,8 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         eng,
         sigma_profile,
         cs_profile,
-        rot_profile);
+        rot_profile,
+        vel_full_corr);
 
     u64 acc_count =0;
 

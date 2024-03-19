@@ -504,6 +504,7 @@ class DiscIterator {
     Tscal p;
     Tscal H_r_in;
     Tscal q;
+    Tscal G;
 
     u64 current_index;
     
@@ -525,6 +526,7 @@ class DiscIterator {
         Tscal p,
         Tscal H_r_in,
         Tscal q,
+        Tscal G,
         std::mt19937 eng,
         std::function<Tscal(Tscal)> sigma_profile,
         std::function<Tscal(Tscal)> cs_profile,
@@ -532,7 +534,7 @@ class DiscIterator {
         std::function<Tscal(Tscal)> vel_full_corr
     ) : current_index(0), Npart(Npart),
     center(center), central_mass(central_mass), r_in(r_in), r_out(r_out), disc_mass(disc_mass),
-    p(p), H_r_in(H_r_in), q(q),
+    p(p), H_r_in(H_r_in), q(q), G(G),
     eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile), rot_profile(rot_profile),
     vel_full_corr(vel_full_corr)
     {
@@ -565,7 +567,7 @@ class DiscIterator {
             }
         };
             
-        auto theta = shamalgs::random::mock_value<Tscal>(eng,0, _2pi);
+        auto theta = shamalgs::random::mock_value<Tscal>(eng, 0, _2pi);
         auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng);
         Tscal aspin = 2.;
 
@@ -575,20 +577,26 @@ class DiscIterator {
         Tscal cs = cs_profile(r);
         Tscal sigma = sigma_profile(r);
 
-        Tscal H_r = cs/vk;
-        Tscal H = H_r * r;
+        Tscal Omega_Kep = sycl::sqrt(G * central_mass/ (r * r * r));
+        
+        //Tscal H_r = cs/vk;
+        //Tscal H =  H_r * r;
+        Tscal H = sycl::sqrt(2.) * 3. * cs / Omega_Kep; //factor taken from phantom, to fasten thermalizing
                 
-        Tscal z = H*Gauss;
+        Tscal z = H * Gauss;
 
-        auto pos = sycl::vec<Tscal, 3>{r*sycl::cos(theta),z,r*sycl::sin(theta)};
+        auto pos = sycl::vec<Tscal, 3>{r*sycl::cos(theta),z,r*sycl::sin(theta)}; 
 
         auto etheta = sycl::vec<Tscal, 3>{-pos.z(),0, pos.x()};
         etheta /= sycl::length(etheta);
 
         auto vel = vk*etheta;
 
-        Tscal rho = (sigma / (H * shambase::constants::pi2_sqrt<Tscal>))*
-            sycl::exp(- z*z / (2*H*H));
+        //Tscal rho = (sigma / (H * shambase::constants::pi2_sqrt<Tscal>))*
+        //    sycl::exp(- z*z / (2*H*H));
+
+        Tscal fs = 1. - sycl::sqrt(r_in / r);
+        Tscal rho = (sigma * fs) * sycl::exp(- z*z / (2*H*H));
 
         Out out {
             pos, vel, cs, rho
@@ -663,8 +671,27 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         return sycl::sqrt(G * central_mass/r);
     };
 
+    auto vel_full_corr = [&] (Tscal r) -> Tscal{
+        //carefull: needs r in cylindrical
+        Tscal G = solver.solver_config.get_constant_G();
+        Tscal c = solver.solver_config.get_constant_c();
+        Tscal aspin = 2.;
+        Tscal term = G * central_mass / r;
+        Tscal term_fs = 1. - sycl::sqrt(r_in / r);
+        Tscal term_pr = - sycl::pow(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
+        Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
+        Tscal det = sycl::pow(term_bh, 2) + 4.*(term + term_pr);
+        Tscal Rg   = G * central_mass / sycl::pow(c, 2);
+        Tscal vkep = sqrt(G * central_mass / r);
+
+        Tscal vphi = 0.5*(term_bh + sycl::sqrt(det));
+
+        return vphi;
+
+    };
+
     auto cs_profile = [&](Tscal r){
-        Tscal cs_in = H_r_in*rot_profile(r_in);
+        Tscal cs_in = (H_r_in * r_in / r )*rot_profile(r_in);//H_r_in*rot_profile(r_in);
         return cs_law(r)*cs_in; 
     };
 
@@ -676,24 +703,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         return shamrock::sph::rho_h(solver.solver_config.gpart_mass, h, Kernel::hfactd);
     };
 
-    auto vel_full_corr = [&] (Tscal r) -> Tscal{
-        //carefull: needs r in cylindrical
-        Tscal G = solver.solver_config.get_constant_G();
-        Tscal c = solver.solver_config.get_constant_c();
-        Tscal aspin = 2.;
-        Tscal term = G * central_mass / r;
-        Tscal term_fs = 1. - sycl::sqrt(r_in / r);
-        Tscal term_pr = - sycl::pow(cs_law(r), 2) * (1.5 + p + q + 1. / term_fs);
-        Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
-        Tscal det = sycl::pow(term_bh, 2) + 4.*(term + term_pr);
-        Tscal Rg   = G * central_mass / sycl::pow(c, 2);
-        Tscal vkep = sqrt(G * central_mass / r);
 
-        Tscal vphi = 0.5*(term_bh + sycl::sqrt(det));
-
-        return vphi;
-
-    };
 
     Tscal part_mass = disc_mass/Npart;
 
@@ -708,6 +718,10 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
     using Out = generic::setup::generators::DiscOutput<Tscal>; 
     using DIter = typename BigDiscUtils<Tvec>::DiscIterator;
 
+
+    logger::info_ln("Model", "######## JUST BEFORE G ##########");
+    Tscal G = solver.solver_config.get_constant_G();
+    logger::info_ln("Model", "######## JUST AFTER G ##########");
     DIter gen = DIter(
         center, 
         central_mass,
@@ -718,6 +732,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         p,
         H_r_in,
         q,
+        G,
         eng,
         sigma_profile,
         cs_profile,

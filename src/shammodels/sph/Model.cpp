@@ -530,12 +530,11 @@ class DiscIterator {
         std::mt19937 eng,
         std::function<Tscal(Tscal)> sigma_profile,
         std::function<Tscal(Tscal)> cs_profile,
-        std::function<Tscal(Tscal)> rot_profile,
         std::function<Tscal(Tscal)> vel_full_corr
     ) : current_index(0), Npart(Npart),
     center(center), central_mass(central_mass), r_in(r_in), r_out(r_out), disc_mass(disc_mass),
     p(p), H_r_in(H_r_in), q(q), G(G),
-    eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile), rot_profile(rot_profile),
+    eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile),
     vel_full_corr(vel_full_corr)
     {
 
@@ -736,7 +735,6 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         eng,
         sigma_profile,
         cs_profile,
-        rot_profile,
         vel_full_corr);
 
     u64 acc_count =0;

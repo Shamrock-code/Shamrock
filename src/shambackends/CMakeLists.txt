@@ -8,6 +8,7 @@ set(Sources
         src/usmbuffer.cpp
         src/Device.cpp
         src/DeviceContext.cpp
+        src/DeviceQueue.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

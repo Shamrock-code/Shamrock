@@ -504,6 +504,7 @@ class DiscIterator {
     Tscal p;
     Tscal H_r_in;
     Tscal q;
+    Tscal G;
 
     bool do_warp;
     Tscal incl;
@@ -530,6 +531,7 @@ class DiscIterator {
         Tscal p,
         Tscal H_r_in,
         Tscal q,
+        Tscal G,
         std::mt19937 eng,
         bool do_warp,
         Tscal incl,
@@ -541,7 +543,7 @@ class DiscIterator {
         std::function<Tscal(Tscal)> rot_profile
     ) : current_index(0), Npart(Npart),
     center(center), central_mass(central_mass), r_in(r_in), r_out(r_out), disc_mass(disc_mass),
-    p(p), H_r_in(H_r_in), q(q),
+    p(p), H_r_in(H_r_in), q(q), G(G),
     do_warp(do_warp), incl(incl), Rwarp(Rwarp), Hwarp(Hwarp),
     eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile), rot_profile(rot_profile)
     {
@@ -583,8 +585,8 @@ class DiscIterator {
         Tscal cs = cs_profile(r);
         Tscal sigma = sigma_profile(r);
 
-        Tscal H_r = cs/vk;
-        Tscal H = H_r * r;
+        Tscal Omega_Kep = sycl::sqrt(G * central_mass/ (r * r * r));
+        Tscal H = sycl::sqrt(2.) * 3. * cs / Omega_Kep; 
                 
         Tscal z = H*Gauss;
 
@@ -614,8 +616,10 @@ class DiscIterator {
                 Tscal z = pos.z();
                 Tvec kk = Tvec(0., 0., 1.);
                 Tvec w = sycl::cross(kk, pos);
+                Tvec wv = sycl::cross(kk, vel);
                 // Rodrigues' rotation formula
                 pos = pos * sycl::cos(inc) + w * sycl::sin(inc) + kk * sycl::dot(kk, pos) * (1. - sycl::cos(inc));
+                vel = vel * sycl::cos(inc) + wv * sycl::sin(inc) + kk * sycl::dot(kk, vel) * (1. - sycl::cos(inc));
 
             }
             else{
@@ -623,8 +627,8 @@ class DiscIterator {
             }            
         };
         
-        Tscal rho = (sigma / (H * shambase::constants::pi2_sqrt<Tscal>))*
-            sycl::exp(- z*z / (2*H*H));
+        Tscal fs = 1. - sycl::sqrt(r_in / r);
+        Tscal rho = (sigma * fs) * sycl::exp(- z*z / (2*H*H));
 
         Out out {
             pos, vel, cs, rho
@@ -676,6 +680,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 ) {
 
     Tscal eos_gamma;
+
     using Config = SolverConfig;
     using SolverConfigEOS     = typename Config::EOSConfig;
     using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
@@ -704,6 +709,24 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         Tscal G = solver.solver_config.get_constant_G();
         return sycl::sqrt(G * central_mass/r);
     };
+//    auto vel_full_corr = [&] (Tscal r) -> Tscal{
+//        //carefull: needs r in cylindrical
+//        Tscal G = solver.solver_config.get_constant_G();
+//        Tscal c = solver.solver_config.get_constant_c();
+//        Tscal aspin = 2.;
+//        Tscal term = G * central_mass / r;
+//        Tscal term_fs = 1. - sycl::sqrt(r_in / r);
+//        Tscal term_pr = - sycl::pow(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
+//        Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
+//        Tscal det = sycl::pow(term_bh, 2) + 4.*(term + term_pr);
+//        Tscal Rg   = G * central_mass / sycl::pow(c, 2);
+//        Tscal vkep = sqrt(G * central_mass / r);
+//
+//        Tscal vphi = 0.5*(term_bh + sycl::sqrt(det));
+//
+//        return vphi;
+//
+//    };
 
     auto cs_profile = [&](Tscal r){
         Tscal cs_in = H_r_in*rot_profile(r_in);
@@ -731,6 +754,8 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
     using Out = generic::setup::generators::DiscOutput<Tscal>; 
     using DIter = typename BigDiscUtils<Tvec>::DiscIterator;
 
+    Tscal G = solver.solver_config.get_constant_G();
+
     DIter gen = DIter(
         center, 
         central_mass,
@@ -741,6 +766,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         p,
         H_r_in,
         q,
+        G,
         eng,
         do_warp,
         incl,

@@ -505,6 +505,12 @@ class DiscIterator {
     Tscal H_r_in;
     Tscal q;
 
+    bool do_warp;
+    Tscal incl;
+    Tscal posangle;
+    Tscal Rwarp;
+    Tscal Hwarp;
+
     u64 current_index;
     
     std::mt19937 eng;
@@ -525,12 +531,18 @@ class DiscIterator {
         Tscal H_r_in,
         Tscal q,
         std::mt19937 eng,
+        bool do_warp,
+        Tscal incl,
+        Tscal posangle,
+        Tscal Rwarp,
+        Tscal Hwarp,
         std::function<Tscal(Tscal)> sigma_profile,
         std::function<Tscal(Tscal)> cs_profile,
         std::function<Tscal(Tscal)> rot_profile
     ) : current_index(0), Npart(Npart),
     center(center), central_mass(central_mass), r_in(r_in), r_out(r_out), disc_mass(disc_mass),
     p(p), H_r_in(H_r_in), q(q),
+    do_warp(do_warp), incl(incl), Rwarp(Rwarp), Hwarp(Hwarp),
     eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile), rot_profile(rot_profile)
     {
 
@@ -583,6 +595,34 @@ class DiscIterator {
 
         auto vel = vk*etheta;
 
+        if (do_warp){
+            Tvec k = Tvec(-std::sin(posangle), std::cos(posangle), 0.);
+            Tscal inc;
+            Tscal psi = 0.;
+
+            //convert to radians (sycl functions take radians)
+            Tscal incl_rad = incl * shambase::constants::pi<Tscal> / 180.;
+            if (r < Rwarp - Hwarp){
+                inc = 0.;
+            }
+            else if (r < Rwarp + 3. * Hwarp && r > Rwarp - Hwarp) {
+                inc = sycl::asin(0.5 * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (r - Rwarp))) * sycl::sin(incl_rad));
+                psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad) / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl_rad), 2)));
+                Tscal psimax = sycl::max(psimax, psi);
+                Tscal x = pos.x();
+                Tscal y = pos.y();
+                Tscal z = pos.z();
+                Tvec kk = Tvec(0., 0., 1.);
+                Tvec w = sycl::cross(kk, pos);
+                // Rodrigues' rotation formula
+                pos = pos * sycl::cos(inc) + w * sycl::sin(inc) + kk * sycl::dot(kk, pos) * (1. - sycl::cos(inc));
+
+            }
+            else{
+                inc = 0.;
+            }            
+        };
+        
         Tscal rho = (sigma / (H * shambase::constants::pi2_sqrt<Tscal>))*
             sycl::exp(- z*z / (2*H*H));
 
@@ -626,7 +666,13 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
                 Tscal p,
                 Tscal H_r_in,
                 Tscal q,
-                std::mt19937 eng
+                std::mt19937 eng,
+
+                bool do_warp,
+                Tscal incl,
+                Tscal posangle,
+                Tscal Rwarp,
+                Tscal Hwarp
 ) {
 
     Tscal eos_gamma;
@@ -696,6 +742,11 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         H_r_in,
         q,
         eng,
+        do_warp,
+        incl,
+        posangle,
+        Rwarp,
+        Hwarp,
         sigma_profile,
         cs_profile,
         rot_profile);

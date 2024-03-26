@@ -206,8 +206,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal p,
                 Tscal H_r_in,
                 Tscal q,
-                u16 seed){
-                    self.add_big_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, std::mt19937{seed});
+                u16 seed,
+                bool do_warp,
+                Tscal incl,
+                Tscal posangle,
+                Tscal Rwarp,
+                Tscal Hwarp){
+                    self.add_big_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, std::mt19937{seed}, do_warp, incl, posangle, Rwarp, Hwarp);
                     return disc_mass / Npart;
                 })
         .def("get_total_part_count", &T::get_total_part_count)

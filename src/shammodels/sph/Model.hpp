@@ -146,7 +146,13 @@ namespace shammodels::sph {
                 Tscal p,
                 Tscal H_r_in,
                 Tscal q,
-                std::mt19937 eng
+                std::mt19937 eng,
+
+                bool do_warp,
+                Tscal incl,
+                Tscal posangle,
+                Tscal Rwarp,
+                Tscal Hwarp
         );
 
         inline void add_sink(Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius){

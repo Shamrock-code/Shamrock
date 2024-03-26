@@ -214,7 +214,23 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 Tscal Hwarp){
                     self.add_big_disc_3d(center, central_mass, Npart, r_in, r_out, disc_mass, p, H_r_in, q, std::mt19937{seed}, do_warp, incl, posangle, Rwarp, Hwarp);
                     return disc_mass / Npart;
-                })
+                },
+                py::kw_only(),
+                py::arg("center"),
+                py::arg("central_mass"),
+                py::arg("Npart"),
+                py::arg("r_in"),
+                py::arg("r_out"),
+                py::arg("disc_mass"),
+                py::arg("p"),
+                py::arg("H_r_in"),
+                py::arg("q"),
+                py::arg("seed"),
+                py::arg("do_warp"),
+                py::arg("incl"),
+                py::arg("posangle"),
+                py::arg("Rwarp"),
+                py::arg("Hwarp"))
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
         .def("set_value_in_a_box",

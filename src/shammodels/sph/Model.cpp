@@ -20,7 +20,6 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 
-#include "shamcomm/logs.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/generic/setup/generators.hpp"
@@ -582,25 +581,24 @@ class DiscIterator {
 
         Tscal r = find_r();
 
-        Tscal vtheta = rot_profile(r);
+        Tscal vk = rot_profile(r);
         Tscal cs = cs_profile(r);
         Tscal sigma = sigma_profile(r);
 
         Tscal Omega_Kep = sycl::sqrt(G * central_mass/ (r * r * r));
-        Tscal H = cs / Omega_Kep; //sycl::sqrt(2.) * 3. * 
+        Tscal H = sycl::sqrt(2.) * 3. * cs / Omega_Kep; 
                 
         Tscal z = H*Gauss;
 
-        //auto pos = sycl::vec<Tscal, 3>{r*sycl::cos(theta),r*sycl::sin(theta), z};
-        //auto vel = sycl::vec<Tscal, 3>{-vtheta*sycl::sin(theta), vtheta*sycl::cos(theta), 0.}; //vk*etheta;
         auto pos = sycl::vec<Tscal, 3>{r*sycl::cos(theta),z,r*sycl::sin(theta)};
 
         auto etheta = sycl::vec<Tscal, 3>{-pos.z(),0, pos.x()};
         etheta /= sycl::length(etheta);
-        auto vel = vtheta*etheta;
+
+        auto vel = vk*etheta;
 
         if (do_warp){
-            Tvec k = Tvec(-sycl::sin(posangle), sycl::cos(posangle), 0.);
+            Tvec k = Tvec(-std::sin(posangle), std::cos(posangle), 0.);
             Tscal inc;
             Tscal psi = 0.;
 
@@ -618,10 +616,10 @@ class DiscIterator {
                 Tscal z = pos.z();
                 Tvec kk = Tvec(0., 0., 1.);
                 Tvec w = sycl::cross(kk, pos);
-                Tvec wv = sycl::cross(k, vel);
+                Tvec wv = sycl::cross(kk, vel);
                 // Rodrigues' rotation formula
                 pos = pos * sycl::cos(inc) + w * sycl::sin(inc) + kk * sycl::dot(kk, pos) * (1. - sycl::cos(inc));
-                //vel = vel * sycl::cos(inc) + wv * sycl::sin(inc) + kk * sycl::dot(kk, vel) * (1. - sycl::cos(inc));
+                vel = vel * sycl::cos(inc) + wv * sycl::sin(inc) + kk * sycl::dot(kk, vel) * (1. - sycl::cos(inc));
 
             }
             else{

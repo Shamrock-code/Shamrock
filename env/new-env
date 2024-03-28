@@ -1,0 +1,11 @@
+#!/bin/python3
+
+import argparse
+
+parser = argparse.ArgumentParser(description='Environment utility for Shamrock')
+
+parser.add_argument("--machine", action='store', help="machine assumed for the environment")
+parser.add_argument("--builddir", action='store', help="build directory to use")
+
+args = parser.parse_args()
+

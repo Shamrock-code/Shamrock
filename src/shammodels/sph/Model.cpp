@@ -581,21 +581,16 @@ class DiscIterator {
 
         Tscal r = find_r();
 
-        Tscal vk = rot_profile(r);
+        Tscal vtheta = rot_profile(r);
         Tscal cs = cs_profile(r);
         Tscal sigma = sigma_profile(r);
 
         Tscal Omega_Kep = sycl::sqrt(G * central_mass/ (r * r * r));
-        Tscal H = sycl::sqrt(2.) * 3. * cs / Omega_Kep; 
-                
+        Tscal H = cs / Omega_Kep;  //sycl::sqrt(2.) * 3. *                 
         Tscal z = H*Gauss;
 
-        auto pos = sycl::vec<Tscal, 3>{r*sycl::cos(theta),z,r*sycl::sin(theta)};
-
-        auto etheta = sycl::vec<Tscal, 3>{-pos.z(),0, pos.x()};
-        etheta /= sycl::length(etheta);
-
-        auto vel = vk*etheta;
+        auto pos = sycl::vec<Tscal, 3>{r*sycl::cos(theta),r*sycl::sin(theta), z};
+        auto vel = sycl::vec<Tscal, 3>{-vtheta*sycl::sin(theta), vtheta*sycl::cos(theta), 0.}; //vk*etheta;
 
         if (do_warp){
             Tvec k = Tvec(-std::sin(posangle), std::cos(posangle), 0.);
@@ -615,11 +610,11 @@ class DiscIterator {
                 Tscal y = pos.y();
                 Tscal z = pos.z();
                 Tvec kk = Tvec(0., 0., 1.);
-                Tvec w = sycl::cross(kk, pos);
-                Tvec wv = sycl::cross(kk, vel);
+                Tvec w = sycl::cross(k, pos);
+                Tvec wv = sycl::cross(k, vel);
                 // Rodrigues' rotation formula
-                pos = pos * sycl::cos(inc) + w * sycl::sin(inc) + kk * sycl::dot(kk, pos) * (1. - sycl::cos(inc));
-                vel = vel * sycl::cos(inc) + wv * sycl::sin(inc) + kk * sycl::dot(kk, vel) * (1. - sycl::cos(inc));
+                pos = pos * sycl::cos(inc) + w * sycl::sin(inc) + k * sycl::dot(k, pos) * (1. - sycl::cos(inc));
+                vel = vel * sycl::cos(inc) + wv * sycl::sin(inc) + k * sycl::dot(k, vel) * (1. - sycl::cos(inc));
 
             }
             else{
@@ -627,8 +622,8 @@ class DiscIterator {
             }            
         };
         
-        Tscal fs = 1. - sycl::sqrt(r_in / r);
-        Tscal rho = (sigma * fs) * sycl::exp(- z*z / (2*H*H));
+        Tscal fs = 1.;//1. - sycl::sqrt(r_in / r);
+        Tscal rho = (sigma * fs) / (sycl::sqrt(_2pi) * H) * sycl::exp(- z*z / (2*H*H));
 
         Out out {
             pos, vel, cs, rho
@@ -705,28 +700,28 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         return sycl::pow(r/r_in, -q);
     };
 
-    auto rot_profile = [&](Tscal r){
-        Tscal G = solver.solver_config.get_constant_G();
-        return sycl::sqrt(G * central_mass/r);
-    };
-//    auto vel_full_corr = [&] (Tscal r) -> Tscal{
-//        //carefull: needs r in cylindrical
+//    auto rot_profile = [&](Tscal r){
 //        Tscal G = solver.solver_config.get_constant_G();
-//        Tscal c = solver.solver_config.get_constant_c();
-//        Tscal aspin = 2.;
-//        Tscal term = G * central_mass / r;
-//        Tscal term_fs = 1. - sycl::sqrt(r_in / r);
-//        Tscal term_pr = - sycl::pow(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
-//        Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
-//        Tscal det = sycl::pow(term_bh, 2) + 4.*(term + term_pr);
-//        Tscal Rg   = G * central_mass / sycl::pow(c, 2);
-//        Tscal vkep = sqrt(G * central_mass / r);
-//
-//        Tscal vphi = 0.5*(term_bh + sycl::sqrt(det));
-//
-//        return vphi;
-//
+//        return sycl::sqrt(G * central_mass/r);
 //    };
+    auto rot_profile = [&] (Tscal r) -> Tscal{
+        //carefull: needs r in cylindrical
+        Tscal G = solver.solver_config.get_constant_G();
+        Tscal c = solver.solver_config.get_constant_c();
+        Tscal aspin = 2.;
+        Tscal term = G * central_mass / r;
+        Tscal term_fs = 1. - sycl::sqrt(r_in / r);
+        Tscal term_pr = - sycl::pow(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
+        Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
+        Tscal det = sycl::pow(term_bh, 2) + 4.*(term + term_pr);
+        Tscal Rg   = G * central_mass / sycl::pow(c, 2);
+        Tscal vkep = sqrt(G * central_mass / r);
+
+        Tscal vphi = 0.5*(term_bh + sycl::sqrt(det));
+
+        return vphi;
+
+    };
 
     auto cs_profile = [&](Tscal r){
         Tscal cs_in = H_r_in*rot_profile(r_in);

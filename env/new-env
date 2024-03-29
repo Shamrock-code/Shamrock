@@ -3,12 +3,20 @@
 import argparse
 import os
 import sys
-import subprocess
+import importlib
 
 
-abs_proj_dir = os.path.abspath(os.path.join(__file__, "../.."))
-abs_env_dir = abs_proj_dir+"/env"
-abs_machine_dir = abs_proj_dir+"/env/machine"
+# Get current file path
+cur_file = os.path.realpath(os.path.expanduser(__file__))
+
+# Get project directory
+abs_proj_dir = os.path.abspath(os.path.join(cur_file, "../.."))
+
+# Get env directory
+abs_env_dir = os.path.abspath(os.path.join(abs_proj_dir, "env"))
+
+# Get project env cache directory
+abs_env_cache_dir = os.path.abspath(os.path.join(abs_proj_dir, ".env"))
 
 # Customer formatter required to print help message for "--" option.
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -28,18 +36,28 @@ if __name__ == "__main__":
             underlying_tool_args = sys.argv[idx + 1:]
             break
         else:
-            wrapper_program_args = sys.argv
-            underlying_tool_args = None
+            wrapper_program_args = sys.argv[1:]
+            underlying_tool_args = []
 
     parser = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,description='Environment utility for Shamrock')
 
     parser.add_argument("--machine", action='store', required=True , help="machine assumed for the environment")
     parser.add_argument("--builddir", action='store', required=True , help="build directory to use")
-
+    
     args = parser.parse_args(wrapper_program_args)
     args.underlying_tool_args = underlying_tool_args
 
 
-    command = ["python3", abs_machine_dir+ "/"+args.machine + "/setup-env.py"] + underlying_tool_args
 
-    subprocess.run(command)
+    # Make everything in env importable by python
+    sys.path.insert(0, abs_env_dir)
+
+    # Load the machine file
+    # TODO add check that the file exist
+    importlib.invalidate_caches()
+    mod = importlib.import_module("machine."+args.machine+".setup-env")
+    mod.setup(
+        argv = underlying_tool_args,
+        cache = abs_env_cache_dir
+        )
+

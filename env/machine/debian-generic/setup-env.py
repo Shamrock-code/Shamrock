@@ -3,8 +3,9 @@ import argparse
 NAME = "Debian generic"
 PATH = "machine/debian-generic"
 
+print("loading : ",NAME)
 
-if __name__ == "__main__":
+def setup(argv, cache : str):
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)
@@ -17,6 +18,5 @@ if __name__ == "__main__":
     parser.add_argument("--sycl-backend", action='store', help="build directory to use")
     parser.add_argument("--arch", action='store', help="machine assumed for the environment")
 
-    args = parser.parse_args()
-
+    args = parser.parse_args(argv)
 

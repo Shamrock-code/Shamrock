@@ -1,11 +1,45 @@
-#!/bin/python3
+#!/usr/bin/python3
 
 import argparse
+import os
+import sys
+import subprocess
 
-parser = argparse.ArgumentParser(description='Environment utility for Shamrock')
 
-parser.add_argument("--machine", action='store', help="machine assumed for the environment")
-parser.add_argument("--builddir", action='store', help="build directory to use")
+abs_proj_dir = os.path.abspath(os.path.join(__file__, "../.."))
+abs_env_dir = abs_proj_dir+"/env"
+abs_machine_dir = abs_proj_dir+"/env/machine"
 
-args = parser.parse_args()
+# Customer formatter required to print help message for "--" option.
+class CustomHelpFormatter(argparse.HelpFormatter):
+    def format_help(self):
+        USAGESTR="usage: new-env [-h] --machine MACHINE --builddir BUILDDIR"
+        original_help = super().format_help().replace(USAGESTR,USAGESTR+" -- (argument for the env)")
+        return original_help + "  --                   Everything after this will be forwarded to the env. \n"
 
+
+if __name__ == "__main__":
+
+    # https://stackoverflow.com/questions/77809386/how-to-capture-all-arguments-after-double-dash-using-argparse
+    # Extract underlying ("--") args before argparse parsing
+    for idx, arg in enumerate(sys.argv):
+        if arg == "--":
+            wrapper_program_args = sys.argv[1:idx]
+            underlying_tool_args = sys.argv[idx + 1:]
+            break
+        else:
+            wrapper_program_args = sys.argv
+            underlying_tool_args = None
+
+    parser = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,description='Environment utility for Shamrock')
+
+    parser.add_argument("--machine", action='store', required=True , help="machine assumed for the environment")
+    parser.add_argument("--builddir", action='store', required=True , help="build directory to use")
+
+    args = parser.parse_args(wrapper_program_args)
+    args.underlying_tool_args = underlying_tool_args
+
+
+    command = ["python3", abs_machine_dir+ "/"+args.machine + "/setup-env.py"] + underlying_tool_args
+
+    subprocess.run(command)

@@ -3,8 +3,13 @@ import argparse
 NAME = "Debian generic"
 PATH = "machine/debian-generic"
 
+
 if __name__ == "__main__":
-    
+
+    print("------------------------------------------")
+    print("Running env setup for : "+NAME)
+    print("------------------------------------------")
+
     parser = argparse.ArgumentParser(prog=PATH,description= NAME+' env for Shamrock')
 
     parser.add_argument("--backend", action='store', help="build directory to use")
@@ -14,4 +19,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print("test")
+

@@ -27,6 +27,8 @@ namespace sham {
         DeviceScheduler(DeviceContext *ctx);
 
         DeviceQueue &get_queue(u32 id = 0);
+
+        void print_info();
     };
 
 } // namespace sham

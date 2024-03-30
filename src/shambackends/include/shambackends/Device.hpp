@@ -14,13 +14,35 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambackends/sycl.hpp"
 
 namespace sham {
 
     enum class Vendor { UNKNOWN, NVIDIA, AMD, INTEL, APPLE };
 
+    inline std::string vendor_name(Vendor v){
+        switch (v) {
+            case Vendor::UNKNOWN : return "Unknown";
+            case Vendor::NVIDIA : return "Nvidia";
+            case Vendor::AMD : return "AMD";
+            case Vendor::INTEL : return "Intel";
+            case Vendor::APPLE : return "Apple";
+            default: shambase::throw_unimplemented();
+        }
+    }
+
     enum class Backend { UNKNOWN, CUDA, ROCM, OPENMP };
+
+    inline std::string backend_name(Backend b){
+        switch (b) {
+            case Backend::UNKNOWN : return "Unknown";
+            case Backend::CUDA : return "CUDA";
+            case Backend::ROCM : return "ROCM";
+            case Backend::OPENMP : return "OpenMP";
+            default: shambase::throw_unimplemented();
+        }
+    }
 
     struct DeviceProperties {
         Vendor vendor;

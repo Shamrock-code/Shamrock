@@ -18,15 +18,13 @@
 
 namespace sham {
 
-    class DeviceContext{
+    class DeviceContext {
         public:
-
-        Device * device;
+        Device *device;
 
         sycl::context ctx;
 
-        DeviceContext(Device * device);
-
+        DeviceContext(Device *device);
     };
 
-}
+} // namespace sham

@@ -18,36 +18,30 @@
 
 namespace sham {
 
-    enum class Vendor{
-        UNKNOWN ,NVIDIA, AMD, INTEL, APPLE
-    };
+    enum class Vendor { UNKNOWN, NVIDIA, AMD, INTEL, APPLE };
 
-    enum class Backend{
-        UNKNOWN ,CUDA, ROCM, OPENMP
-    };
+    enum class Backend { UNKNOWN, CUDA, ROCM, OPENMP };
 
-    struct DeviceProperties{
+    struct DeviceProperties {
         Vendor vendor;
         Backend backend;
     };
 
-    struct DeviceMPIProperties{
+    struct DeviceMPIProperties {
         bool is_mpi_direct_capable;
     };
 
-    class Device{
+    class Device {
         public:
-
         usize device_id;
 
         sycl::device dev;
-        
+
         DeviceProperties prop;
 
         DeviceMPIProperties mpi_prop;
-
     };
 
     std::vector<std::unique_ptr<Device>> get_device_list();
 
-}
+} // namespace sham

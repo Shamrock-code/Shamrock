@@ -9,6 +9,7 @@ set(Sources
         src/Device.cpp
         src/DeviceContext.cpp
         src/DeviceQueue.cpp
+        src/DeviceScheduler.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

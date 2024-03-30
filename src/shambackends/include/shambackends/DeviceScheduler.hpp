@@ -14,20 +14,19 @@
  * @brief
  */
 
-#include "shambackends/DeviceContext.hpp"
+#include "shambackends/DeviceQueue.hpp"
 
 namespace sham {
 
-    class DeviceQueue {
+    class DeviceScheduler {
         public:
         DeviceContext *ctx;
 
-        sycl::queue q;
+        std::vector<std::unique_ptr<DeviceQueue>> queues;
 
-        std::string queue_name;
-        bool in_order;
+        DeviceScheduler(DeviceContext *ctx);
 
-        DeviceQueue(std::string queue_name, DeviceContext *ctx, bool in_order);
+        DeviceQueue &get_queue(u32 id = 0);
     };
 
 } // namespace sham

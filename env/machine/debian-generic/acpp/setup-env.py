@@ -2,6 +2,7 @@ import argparse
 import os
 import utils.repos
 import utils.sysinfo
+import utils.envscript
 
 NAME = "Debian generic AdaptiveCpp"
 PATH = "machine/debian-generic/acpp"
@@ -10,21 +11,6 @@ print("loading :",NAME)
 
 def is_acpp_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/acpp")
-
-
-def write_env_file(source_file, header, path_write):
-
-    ENV_SCRIPT_CONTENT = header + "\n"
-
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-
-    with open(os.path.abspath(os.path.join(cur_file, "../"+source_file))) as f:
-        contents = f.read()
-        ENV_SCRIPT_CONTENT += contents 
-
-    with open(path_write, "w") as env_script:
-        env_script.write(ENV_SCRIPT_CONTENT)
 
 def setup(argv,builddir, shamrockdir):
 
@@ -62,8 +48,13 @@ def setup(argv,builddir, shamrockdir):
     ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
     ENV_SCRIPT_HEADER += "export MAKE_OPT=\""+gen_opt+"\"\n"
 
-    write_env_file(
-        source_file = "env_built_acpp.sh", 
+    # Get current file path
+    cur_file = os.path.realpath(os.path.expanduser(__file__))
+    source_file = "env_built_acpp.sh"
+    source_path = os.path.abspath(os.path.join(cur_file, "../"+source_file))
+
+    utils.envscript.write_env_file(
+        source_path = source_path, 
         header = ENV_SCRIPT_HEADER, 
         path_write = ENV_SCRIPT_PATH)
 

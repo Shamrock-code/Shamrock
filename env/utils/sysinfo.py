@@ -2,13 +2,25 @@
 import os
 import shutil
 
+import importlib.util
+psutil_spec = importlib.util.find_spec("psutil")
+psutil_found = psutil_spec is not None
+
+if psutil_found:
+    import psutil
+
 def is_ninja_available():
     return not (shutil.which("ninja") == None)
 
 
 def get_avail_mem():
-    tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
-    return free_m
+    free_mem = 0
+    if psutil_found:
+        free_mem = (psutil.virtual_memory().available)/1e6
+    else:
+        tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
+        free_mem = free_m
+    return free_mem
 
 def should_limit_comp_cores():
     MAX_COMP_SZ = 1e9

@@ -182,8 +182,10 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp
 )
 
 target_sources(shamrock PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp)
-target_sources(shamrock_test PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp)
 
+if("${BUILD_TEST}")
+  target_sources(shamrock_test PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp)
+endif()
 
 
 
@@ -201,4 +203,6 @@ add_subdirectory(shammodels)
 
 #add_subdirectory(runscript)
 
-add_subdirectory(tests)
+if("${BUILD_TEST}")
+  add_subdirectory(tests)
+endif()

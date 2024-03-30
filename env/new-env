@@ -15,8 +15,6 @@ abs_proj_dir = os.path.abspath(os.path.join(cur_file, "../.."))
 # Get env directory
 abs_env_dir = os.path.abspath(os.path.join(abs_proj_dir, "env"))
 
-# Get project env cache directory
-abs_env_cache_dir = os.path.abspath(os.path.join(abs_proj_dir, ".env"))
 
 # Customer formatter required to print help message for "--" option.
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -58,6 +56,7 @@ if __name__ == "__main__":
     mod = importlib.import_module("machine."+args.machine+".setup-env")
     mod.setup(
         argv = underlying_tool_args,
-        cache = abs_env_cache_dir
+        builddir = os.path.abspath(os.path.expanduser(args.builddir)),
+        shamrockdir = abs_proj_dir
         )
 

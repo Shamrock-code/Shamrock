@@ -19,6 +19,7 @@ function shamconfigure {
         -DSYCL_IMPLEMENTATION=ACPPDirect \
         -DCMAKE_CXX_COMPILER="${ACPP_INSTALL_DIR}/bin/acpp" \
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
+        -DCMAKE_BUILD_TYPE="${BUILD_TYPE_CMAKE}" \
         -DBUILD_TEST=Yes
 }
 

@@ -32,6 +32,7 @@ function shamconfigure {
         -DINTEL_LLVM_PATH="${INTELLLVM_INSTALL_DIR}" \
         -DCMAKE_CXX_COMPILER="${INTELLLVM_INSTALL_DIR}/bin/clang++" \
         -DCMAKE_CXX_FLAGS="${SHAMROCK_CXX_FLAGS}" \
+        -DCMAKE_BUILD_TYPE="${BUILD_TYPE_CMAKE}" \
         -DBUILD_TEST=Yes
 }
 

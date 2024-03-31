@@ -3,7 +3,7 @@
 
 function setupcompiler {
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR}
-    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC $MAKE_OPT && $MAKE_EXEC install)
+    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
 }
 
 function updatecompiler {
@@ -23,5 +23,5 @@ function shamconfigure {
 }
 
 function shammake {
-    (cd $BUILD_DIR && $MAKE_EXEC $MAKE_OPT)
+    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
 }

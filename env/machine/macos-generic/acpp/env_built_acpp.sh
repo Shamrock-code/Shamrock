@@ -29,5 +29,5 @@ function shamconfigure {
 }
 
 function shammake {
-    (cd $BUILD_DIR && $MAKE_EXEC $MAKE_OPT)
+    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
 }

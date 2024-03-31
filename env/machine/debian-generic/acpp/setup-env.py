@@ -1,8 +1,10 @@
 import argparse
 import os
-import utils.repos
+import utils.acpp
 import utils.sysinfo
 import utils.envscript
+import utils.cuda_arch
+import utils.amd_arch
 
 NAME = "Debian generic AdaptiveCpp"
 PATH = "machine/debian-generic/acpp"
@@ -26,13 +28,15 @@ def setup(argv,builddir, shamrockdir):
 
     args = parser.parse_args(argv)
 
+    acpp_target = utils.acpp.get_acpp_target_env(args)  
+
     gen, gen_opt, cmake_gen = utils.sysinfo.select_generator(args)
     
     ACPP_GIT_DIR = builddir+"/.env/acpp-git"
     ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
     ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
 
-    utils.repos.clone_acpp(ACPP_GIT_DIR)
+    utils.acpp.clone_acpp(ACPP_GIT_DIR)
 
     ENV_SCRIPT_PATH = builddir+"/activate"
 
@@ -42,11 +46,15 @@ def setup(argv,builddir, shamrockdir):
     ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR="+ACPP_GIT_DIR+"\n"
     ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR="+ACPP_BUILD_DIR+"\n"
     ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR="+ACPP_INSTALL_DIR+"\n"
+
+    if not (acpp_target == None):
+        ENV_SCRIPT_HEADER += "export ACPP_TARGETS=\""+acpp_target+"\"\n"
+
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=\""+gen_opt+"\"\n"
+    ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))

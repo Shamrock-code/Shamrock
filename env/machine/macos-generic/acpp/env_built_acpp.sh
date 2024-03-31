@@ -3,6 +3,8 @@
 
 OMP_ROOT=`brew list libomp | grep libomp.a | sed -E "s/\/lib\/.*//"`
 
+export LD_LIBRARY_PATH=$OMP_ROOT/lib:$LD_LIBRARY_PATH
+
 function setupcompiler {
     cmake -S $ACPP_GIT_DIR  -B $ACPP_BUILD_DIR \
         -DOpenMP_ROOT="${OMP_ROOT}" \

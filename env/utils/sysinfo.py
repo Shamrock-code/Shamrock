@@ -44,7 +44,7 @@ def should_limit_comp_cores():
 
 
 
-def select_generator(args):
+def select_generator(args, buildtype):
 
     limit_cores, cores = should_limit_comp_cores()
 
@@ -73,4 +73,12 @@ def select_generator(args):
     if args.gen == None:
         print("-- generator not specified, defaulting to :",gen)
 
-    return gen, gen_opt, cmake_gen
+    cmake_buildt = "Release"
+    if buildtype == "release":
+        cmake_buildt = "Release"
+    elif buildtype == "debug":
+        cmake_buildt = "Debug"
+    elif buildtype == "asan":
+        cmake_buildt = "ASAN"
+
+    return gen, gen_opt, cmake_gen,cmake_buildt

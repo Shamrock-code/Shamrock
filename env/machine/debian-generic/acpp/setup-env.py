@@ -14,7 +14,7 @@ print("loading :",NAME)
 def is_acpp_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/acpp")
 
-def setup(argv,builddir, shamrockdir):
+def setup(argv,builddir, shamrockdir,buildtype):
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)
@@ -34,7 +34,7 @@ def setup(argv,builddir, shamrockdir):
     else:
         print("-- setting acpp target to :",acpp_target)
 
-    gen, gen_opt, cmake_gen = utils.sysinfo.select_generator(args)
+    gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
     
     ACPP_GIT_DIR = builddir+"/.env/acpp-git"
     ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
@@ -58,6 +58,7 @@ def setup(argv,builddir, shamrockdir):
 
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
+    ENV_SCRIPT_HEADER += "export CMAKE_BUILD_TYPE=\""+cmake_build_type+"\"\n"
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
     ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"

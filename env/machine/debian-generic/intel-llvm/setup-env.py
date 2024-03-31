@@ -14,7 +14,7 @@ print("loading :",NAME)
 def is_intel_llvm_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/clang++")
 
-def setup(argv,builddir, shamrockdir):
+def setup(argv,builddir, shamrockdir,buildtype):
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)
@@ -33,7 +33,7 @@ def setup(argv,builddir, shamrockdir):
 
     args = parser.parse_args(argv)
 
-    gen, gen_opt, cmake_gen = utils.sysinfo.select_generator(args)
+    gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
     
     INTELLLVM_GIT_DIR = builddir+"/.env/intel-llvm-git"
     INTELLLVM_INSTALL_DIR = builddir + "/.env/intel-llvm-installdir"
@@ -53,6 +53,7 @@ def setup(argv,builddir, shamrockdir):
     ENV_SCRIPT_HEADER += "export INTELLLVM_CONFIGURE_ARGS=("+configure_args+")\n"
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
+    ENV_SCRIPT_HEADER += "export CMAKE_BUILD_TYPE=\""+cmake_build_type+"\"\n"
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
     ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"

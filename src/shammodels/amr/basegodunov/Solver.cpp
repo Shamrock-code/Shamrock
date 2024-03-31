@@ -28,10 +28,7 @@
 #include "shamrock/io/LegacyVtkWritter.hpp"
 
 template<class Tvec, class TgridVec>
-using Solver = shammodels::basegodunov::Solver<Tvec, TgridVec>;
-
-template<class Tvec, class TgridVec>
-auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tscal{
+auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tscal{
 
     StackEntry stack_loc{};
 
@@ -207,7 +204,7 @@ auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tsc
 
 
 template<class Tvec, class TgridVec>
-void Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::string filename){
+void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::string filename){
 
     StackEntry stack_loc{};
     shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);

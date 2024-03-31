@@ -49,6 +49,8 @@ def setup(argv,builddir, shamrockdir):
 
     if not (acpp_target == None):
         ENV_SCRIPT_HEADER += "export ACPP_TARGETS=\""+acpp_target+"\"\n"
+    else:
+        ENV_SCRIPT_HEADER += "unset -f ACPP_TARGETS\n"
 
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"

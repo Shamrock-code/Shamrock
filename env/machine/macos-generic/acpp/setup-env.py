@@ -46,7 +46,7 @@ def setup(argv,builddir, shamrockdir):
     ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=\""+gen_opt+"\"\n"
+    ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))

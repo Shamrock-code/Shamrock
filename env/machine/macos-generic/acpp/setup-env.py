@@ -1,6 +1,6 @@
 import argparse
 import os
-import utils.repos
+import utils.acpp
 import utils.sysinfo
 import utils.envscript
 
@@ -32,7 +32,7 @@ def setup(argv,builddir, shamrockdir):
     ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
     ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
 
-    utils.repos.clone_acpp(ACPP_GIT_DIR)
+    utils.acpp.clone_acpp(ACPP_GIT_DIR)
 
     ENV_SCRIPT_PATH = builddir+"/activate"
 

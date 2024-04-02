@@ -60,10 +60,7 @@ def setup(argv,builddir, shamrockdir,buildtype):
     ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
-    if gen_opt == "":
-        ENV_SCRIPT_HEADER += "export MAKE_OPT=\n"
-    else:
-        ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
+    ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
 
     ENV_SCRIPT_HEADER += "export SHAMROCK_BUILD_TYPE=\""+cmake_build_type+"\"\n"
 

@@ -1,7 +1,7 @@
 # Exports will be provided by the new env script above this line
 # will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
 
-export ACPP_TARGETS="cuda:sm_70"
+export ACPP_TARGETS="cuda:sm_80"
 
 function setupcompiler {
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \

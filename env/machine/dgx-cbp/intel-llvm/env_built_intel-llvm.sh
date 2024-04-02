@@ -13,7 +13,7 @@ function setupcompiler {
 
     (cd ${INTELLLVM_GIT_DIR}/build && $MAKE_EXEC "${MAKE_OPT[@]}" all libsycldevice)
     (cd ${INTELLLVM_GIT_DIR}/build && $MAKE_EXEC install)
-    
+
 }
 
 function updatecompiler {
@@ -29,7 +29,7 @@ function shamconfigure {
         -DSYCL_IMPLEMENTATION=IntelLLVM \
         -DINTEL_LLVM_PATH="${INTELLLVM_INSTALL_DIR}" \
         -DCMAKE_CXX_COMPILER="${INTELLLVM_INSTALL_DIR}/bin/clang++" \
-        -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=nvidia_gpu_sm80" \
+        -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=nvidia_gpu_sm_80" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes
 }

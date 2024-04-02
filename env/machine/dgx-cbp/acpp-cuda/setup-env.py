@@ -26,12 +26,6 @@ def setup(argv,builddir, shamrockdir,buildtype):
 
     args = parser.parse_args(argv)
 
-    acpp_target = utils.acpp.get_acpp_target_env(args)  
-    if (acpp_target == None):
-        print("-- target not specified using acpp default")
-    else:
-        print("-- setting acpp target to :",acpp_target)
-
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
     
     ACPP_GIT_DIR = builddir+"/.env/acpp-git"

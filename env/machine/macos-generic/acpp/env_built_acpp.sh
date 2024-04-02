@@ -5,7 +5,7 @@ OMP_ROOT=`brew list libomp | grep libomp.a | sed -E "s/\/lib\/.*//"`
 
 export LD_LIBRARY_PATH=$OMP_ROOT/lib:$LD_LIBRARY_PATH
 
-function setupcompiler {
+setupcompiler () {
     cmake -S $ACPP_GIT_DIR  -B $ACPP_BUILD_DIR \
         -DOpenMP_ROOT="${OMP_ROOT}" \
         -DWITH_SSCP_COMPILER=OFF \
@@ -14,12 +14,12 @@ function setupcompiler {
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
 }
 
-function updatecompiler {
+updatecompiler () {
     (cd ${ACPP_GIT_DIR} && git pull)
     setupcompiler
 }
 
-function shamconfigure {
+shamconfigure () {
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
@@ -31,6 +31,6 @@ function shamconfigure {
         -DBUILD_TEST=Yes
 }
 
-function shammake {
+shammake () {
     (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
 }

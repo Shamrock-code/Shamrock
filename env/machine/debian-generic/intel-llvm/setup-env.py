@@ -77,4 +77,4 @@ def setup(argv,builddir, shamrockdir,buildtype):
         print("-- intel llvm already installed => skipping")
     else:
         print("-- running compiler setup")
-        os.system("sh -c 'cd "+builddir+" && source ./activate &&  updatecompiler'")
+        os.system("bash -c 'cd "+builddir+" && source ./activate &&  updatecompiler'")

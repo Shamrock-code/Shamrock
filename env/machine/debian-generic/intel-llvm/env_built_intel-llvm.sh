@@ -3,7 +3,7 @@
 
 export LD_LIBRARY_PATH=$INTELLLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 
-setupcompiler () {
+function setupcompiler {
 
     python3 ${INTELLLVM_GIT_DIR}/buildbot/configure.py \
         "${INTELLLVM_CONFIGURE_ARGS[@]}" \
@@ -18,12 +18,12 @@ setupcompiler () {
     #(cd ${INTELLLVM_GIT_DIR}/build && $MAKE_EXEC "${MAKE_OPT[@]}" all libsycldevice)
 }
 
-updatecompiler () {
+function updatecompiler {
     (cd ${ACPP_GIT_DIR} && git pull)
     setupcompiler
 }
 
-shamconfigure () {
+function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
@@ -36,6 +36,6 @@ shamconfigure () {
         -DBUILD_TEST=Yes
 }
 
-shammake () {
+function shammake {
     (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
 }

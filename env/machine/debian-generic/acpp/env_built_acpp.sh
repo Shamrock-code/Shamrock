@@ -1,17 +1,17 @@
 # Exports will be provided by the new env script above this line
 # will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
 
-setupcompiler () {
+function setupcompiler {
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR}
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
 }
 
-updatecompiler () {
+function updatecompiler {
     (cd ${ACPP_GIT_DIR} && git pull)
     setupcompiler
 }
 
-shamconfigure () {
+function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
@@ -23,6 +23,6 @@ shamconfigure () {
         -DBUILD_TEST=Yes
 }
 
-shammake () {
+function shammake {
     (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
 }

@@ -6,7 +6,7 @@ import utils.envscript
 import utils.cuda_arch
 import utils.amd_arch
 
-NAME = "CBP Nvidia DGX A100 AdaptiveCpp"
+NAME = "CBP Nvidia DGX A100 AdaptiveCpp (CUDA Backend)"
 PATH = "machine/dgx-cbp/acpp-cuda"
 
 print("loading :",NAME)

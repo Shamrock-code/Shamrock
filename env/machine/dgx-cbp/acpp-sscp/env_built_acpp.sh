@@ -7,7 +7,7 @@ function setupcompiler {
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
         -DCUDAToolkit_LIBRARY_ROOT=/usr/lib/cuda \
-        -DWITH_CUDA_BACKEND=Off \
+        -DWITH_CUDA_BACKEND=On \
         -DWITH_ROCM_BACKEND=Off \
         -DWITH_LEVEL_ZERO_BACKEND=Off \
         -DWITH_SSCP_COMPILER=On

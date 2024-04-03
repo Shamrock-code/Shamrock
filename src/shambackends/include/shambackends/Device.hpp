@@ -62,6 +62,8 @@ namespace sham {
         DeviceProperties prop;
 
         DeviceMPIProperties mpi_prop;
+
+        void update_mpi_prop();
     };
 
     std::vector<std::unique_ptr<Device>> get_device_list();

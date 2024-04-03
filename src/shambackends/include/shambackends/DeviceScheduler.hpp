@@ -31,4 +31,6 @@ namespace sham {
         void print_info();
     };
 
+    DeviceScheduler * dev_sched;
+
 } // namespace sham

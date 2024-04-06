@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file RadixTree.hpp
+ * @file DeviceScheduler.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  */

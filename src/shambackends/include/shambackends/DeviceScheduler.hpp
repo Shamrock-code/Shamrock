@@ -20,17 +20,15 @@ namespace sham {
 
     class DeviceScheduler {
         public:
-        DeviceContext *ctx;
+        std::shared_ptr<DeviceContext> ctx;
 
         std::vector<std::unique_ptr<DeviceQueue>> queues;
 
-        DeviceScheduler(DeviceContext *ctx);
+        DeviceScheduler(std::shared_ptr<DeviceContext> ctx);
 
         DeviceQueue &get_queue(u32 id = 0);
 
         void print_info();
     };
-
-    DeviceScheduler * dev_sched;
 
 } // namespace sham

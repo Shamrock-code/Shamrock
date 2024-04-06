@@ -68,4 +68,6 @@ namespace sham {
 
     std::vector<std::unique_ptr<Device>> get_device_list();
 
+    Device sycl_dev_to_sham_dev(usize i, const sycl::device &dev);
+
 } // namespace sham

@@ -20,11 +20,11 @@ namespace sham {
 
     class DeviceContext {
         public:
-        Device *device;
+        std::shared_ptr<Device> device;
 
         sycl::context ctx;
 
-        DeviceContext(Device *device);
+        DeviceContext(std::shared_ptr<Device> device);
     };
 
 } // namespace sham

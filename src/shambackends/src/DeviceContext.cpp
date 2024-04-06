@@ -12,6 +12,14 @@ namespace sham {
         }
     };
 
-    DeviceContext::DeviceContext(Device *dev) : device(dev), ctx(dev->dev, exception_handler) {}
+    DeviceContext::DeviceContext(std::shared_ptr<Device> dev) : device(std::move(dev)) {
+
+        if(bool(device)){
+            ctx = sycl::context(device->dev,exception_handler);
+        }else{
+            shambase::throw_with_loc<std::invalid_argument>("dev is empty");
+        }
+
+    }
     
 } // namespace sham

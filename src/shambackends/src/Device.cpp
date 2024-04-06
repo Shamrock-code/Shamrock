@@ -156,4 +156,8 @@ namespace sham {
         return ret;
     }
 
+    void Device::update_mpi_prop(){
+        mpi_prop = fetch_mpi_properties(dev, prop);
+    }
+
 } // namespace sham

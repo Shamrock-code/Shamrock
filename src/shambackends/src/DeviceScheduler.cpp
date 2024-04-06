@@ -5,7 +5,7 @@
 
 namespace sham {
 
-    DeviceScheduler::DeviceScheduler(DeviceContext *ctx) : ctx(ctx) {
+    DeviceScheduler::DeviceScheduler(std::shared_ptr<DeviceContext> ctx) : ctx(ctx) {
 
         queues.push_back(std::make_unique<DeviceQueue>("main_queue", ctx, false));
     }

@@ -20,14 +20,16 @@ namespace sham {
 
     class DeviceQueue {
         public:
-        DeviceContext *ctx;
+        std::shared_ptr<DeviceContext> ctx;
 
         sycl::queue q;
 
         std::string queue_name;
         bool in_order;
 
-        DeviceQueue(std::string queue_name, DeviceContext *ctx, bool in_order);
+        void test();
+
+        DeviceQueue(std::string queue_name, std::shared_ptr<DeviceContext> ctx, bool in_order);
     };
 
 } // namespace sham

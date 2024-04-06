@@ -18,15 +18,36 @@
 
 namespace sham {
 
+    /**
+     * @brief A class that represents a SYCL context
+     *
+     * This class is responsible for creating and holding the SYCL context
+     * object, as well as providing methods for accessing it.
+     */
     class DeviceContext {
-        public:
+    public:
+        /**
+         * The device(s) associated with this context
+         */
         std::shared_ptr<Device> device;
 
+        /**
+         * The SYCL context object
+         */
         sycl::context ctx;
 
+        /**
+         * @brief Print information about this context
+         */
         void print_info();
 
-        DeviceContext(std::shared_ptr<Device> device);
+        /**
+         * @brief Construct a new Device Context object
+         *
+         * @param device The device(s) to use for this context
+         */
+        explicit DeviceContext(std::shared_ptr<Device> device);
     };
+
 
 } // namespace sham

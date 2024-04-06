@@ -47,6 +47,10 @@ namespace sham {
     struct DeviceProperties {
         Vendor vendor;
         Backend backend;
+        usize global_mem_size;
+        usize global_mem_cache_line_size;
+        usize global_mem_cache_size;
+        usize local_mem_size;
     };
 
     struct DeviceMPIProperties {
@@ -64,6 +68,8 @@ namespace sham {
         DeviceMPIProperties mpi_prop;
 
         void update_mpi_prop();
+
+        void print_info();
     };
 
     std::vector<std::unique_ptr<Device>> get_device_list();

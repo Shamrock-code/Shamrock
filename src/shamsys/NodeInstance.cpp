@@ -171,6 +171,14 @@ namespace syclinit {
 
         sched_compute = std::make_unique<sham::DeviceScheduler>(ctx_compute);
         sched_alt = std::make_unique<sham::DeviceScheduler>(ctx_alt);
+
+        sched_compute->test();
+        sched_alt->test();
+
+        logger::raw_ln("--- Compute ---");
+        sched_compute->print_info();
+        logger::raw_ln("--- Alternative ---");
+        sched_alt->print_info();
     }
 
     void init_queues_auto(std::string search_key) {
@@ -301,8 +309,6 @@ namespace syclinit {
 
                 }
             });
-
-        logger::raw_ln(device_compute.get());
 
         init_device_scheduling();
         initialized = true;

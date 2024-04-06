@@ -16,6 +16,7 @@
 #include "shambackends/Device.hpp"
 #include "shambase/string.hpp"
 
+#include "shamcomm/logs.hpp"
 #include "shamcomm/mpiInfo.hpp"
 
 namespace sham {
@@ -58,9 +59,19 @@ namespace sham {
      *         SYCL device.
      */
     DeviceProperties fetch_properties(const sycl::device &dev) {
+
+        usize gmemsize = dev.get_info<sycl::info::device::global_mem_size>();
+        usize gmemcache = dev.get_info<sycl::info::device::global_mem_cache_line_size>();
+        usize gcachesize = dev.get_info<sycl::info::device::global_mem_cache_size>();
+        usize localmemsize = dev.get_info<sycl::info::device::local_mem_size>();
+
         return {
             Vendor::UNKNOWN,        // We cannot determine the vendor
-            get_device_backend(dev) // Query the backend based on the platform name
+            get_device_backend(dev), // Query the backend based on the platform name
+            gmemsize,
+            gmemcache,
+            gcachesize,
+            localmemsize
         };
     }
 
@@ -158,6 +169,36 @@ namespace sham {
 
     void Device::update_mpi_prop(){
         mpi_prop = fetch_mpi_properties(dev, prop);
+    }
+
+    void Device::print_info(){
+        shamcomm::logs::raw_ln("  Device info :");
+        switch (prop.backend) {
+            case sham::Backend::OPENMP : 
+                shamcomm::logs::raw_ln("   - Backend : OpenMP"); break;
+            case sham::Backend::CUDA : 
+                shamcomm::logs::raw_ln("   - Backend : CUDA"); break;
+            case sham::Backend::ROCM : 
+                shamcomm::logs::raw_ln("   - Backend : ROCM"); break;
+            case sham::Backend::UNKNOWN : 
+                shamcomm::logs::raw_ln("   - Backend : Unknown"); break;
+        }
+        switch (prop.vendor) {
+            case sham::Vendor::AMD : 
+                shamcomm::logs::raw_ln("   - Vendor : AMD"); break;
+            case sham::Vendor::APPLE : 
+                shamcomm::logs::raw_ln("   - Vendor : Apple"); break;
+            case sham::Vendor::INTEL : 
+                shamcomm::logs::raw_ln("   - Vendor : Intel"); break;
+            case sham::Vendor::NVIDIA : 
+                shamcomm::logs::raw_ln("   - Vendor : Nvidia"); break;
+            case sham::Vendor::UNKNOWN : 
+                shamcomm::logs::raw_ln("   - Vendor : Unknown"); break;
+        }
+        logger::raw_ln("   - Global mem size :",shambase::readable_sizeof(prop.global_mem_size));
+        logger::raw_ln("   - Cache line size :",shambase::readable_sizeof(prop.global_mem_cache_line_size));
+        logger::raw_ln("   - Cache size      :",shambase::readable_sizeof(prop.global_mem_cache_size));
+        logger::raw_ln("   - Local mem size  :",shambase::readable_sizeof(prop.local_mem_size));
     }
 
 } // namespace sham

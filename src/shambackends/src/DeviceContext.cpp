@@ -13,6 +13,7 @@
  */
 
 #include "shambackends/DeviceContext.hpp"
+#include "shamcomm/logs.hpp"
 
 namespace sham {
 
@@ -34,6 +35,17 @@ namespace sham {
             shambase::throw_with_loc<std::invalid_argument>("dev is empty");
         }
 
+    }
+
+    void DeviceContext::print_info(){
+        device->print_info();
+
+        shamcomm::logs::raw_ln("  Context info");
+
+        logger::raw_ln("   - is_host() :",ctx.is_host());
+        #ifdef SYCL_COMP_ACPP
+        logger::raw_ln("   - hipSYCL_hash_code() :",ctx.hipSYCL_hash_code());
+        #endif
     }
     
 } // namespace sham

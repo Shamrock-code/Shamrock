@@ -24,6 +24,8 @@ namespace sham {
 
         sycl::context ctx;
 
+        void print_info();
+
         DeviceContext(std::shared_ptr<Device> device);
     };
 

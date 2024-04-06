@@ -29,6 +29,8 @@ namespace sham {
         DeviceQueue &get_queue(u32 id = 0);
 
         void print_info();
+
+        void test();
     };
 
 } // namespace sham

@@ -27,9 +27,19 @@ namespace sham {
     DeviceQueue &DeviceScheduler::get_queue(u32 i) { return *(queues.at(i)); }
 
     void DeviceScheduler::print_info(){
+
+        ctx->print_info();
+
+        shamcomm::logs::raw_ln("  Queue list:");
         for (auto & q : queues) {
-            std::string tmp = shambase::format("name : {:20s} {}",q->queue_name, q->in_order);
+            std::string tmp = shambase::format("   - name : {:20s} in order : {}",q->queue_name, q->in_order);
             shamcomm::logs::raw_ln(tmp);
+        }
+    }
+
+    void DeviceScheduler::test(){
+        for (auto & q : queues) {
+            q->test();
         }
     }
 

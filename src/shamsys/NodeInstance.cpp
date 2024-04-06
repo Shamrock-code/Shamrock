@@ -42,51 +42,6 @@
 namespace shamsys::instance::details {
 
     /**
-     * @brief validate a sycl queue
-     *
-     * @param q
-     */
-    void check_queue_is_valid(sycl::queue &q) {
-
-        auto test_kernel = [](sycl::queue &q) {
-            sycl::buffer<u32> b(10);
-
-            q.submit([&](sycl::handler &cgh) {
-                sycl::accessor acc{b, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range<1>{10}, [=](sycl::item<1> i) {
-                    acc[i] = i.get_linear_id();
-                });
-            });
-
-            q.wait();
-
-            {
-                sycl::host_accessor acc{b, sycl::read_only};
-                if (acc[9] != 9) {
-                    throw shambase::make_except_with_loc<std::runtime_error>(
-                        "The chosen SYCL queue cannot execute a basic kernel");
-                }
-            }
-        };
-
-        std::exception_ptr eptr;
-        try {
-            test_kernel(q);
-            // logger::info_ln("NodeInstance", "selected queue
-            // :",q.get_device().get_info<sycl::info::device::name>()," working !");
-        } catch (...) {
-            eptr = std::current_exception(); // capture
-        }
-
-        if (eptr) {
-            // logger::err_ln("NodeInstance", "selected queue
-            // :",q.get_device().get_info<sycl::info::device::name>(),"does not function properly");
-            std::rethrow_exception(eptr);
-        }
-    }
-
-    /**
      * @brief for each SYCL device
      *
      * @param fct
@@ -175,10 +130,10 @@ namespace syclinit {
         sched_compute->test();
         sched_alt->test();
 
-        logger::raw_ln("--- Compute ---");
-        sched_compute->print_info();
-        logger::raw_ln("--- Alternative ---");
-        sched_alt->print_info();
+        //logger::raw_ln("--- Compute ---");
+        //sched_compute->print_info();
+        //logger::raw_ln("--- Alternative ---");
+        //sched_alt->print_info();
     }
 
     void init_queues_auto(std::string search_key) {
@@ -315,32 +270,20 @@ namespace syclinit {
     }
 
     void finalize(){
-     
-     initialized = false;
+        initialized = false;
 
-    device_compute.reset();
-    device_alt.reset();
+        device_compute.reset();
+        device_alt.reset();
 
+        ctx_compute.reset();
+        ctx_alt.reset();
 
-    ctx_compute.reset();
-    ctx_alt.reset();
-
-    sched_compute.reset();
-    sched_alt.reset();   
+        sched_compute.reset();
+        sched_alt.reset();   
     }
 };
 
 namespace shamsys::instance {
-
-    auto exception_handler = [](sycl::exception_list exceptions) {
-        for (std::exception_ptr const &e : exceptions) {
-            try {
-                std::rethrow_exception(e);
-            } catch (sycl::exception const &e) {
-                printf("Caught synchronous SYCL exception: %s\n", e.what());
-            }
-        }
-    };
 
     u32 compute_queue_eu_count = 64;
 

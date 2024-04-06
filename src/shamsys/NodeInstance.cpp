@@ -14,6 +14,8 @@
 
 #include "NodeInstance.hpp"
 
+#include "shambackends/Device.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
@@ -148,6 +150,180 @@ namespace shamsys::instance::details {
 
 } // namespace shamsys::instance::details
 
+namespace syclinit {
+
+    bool initialized = false;
+
+    std::shared_ptr<sham::Device> device_compute;
+    std::shared_ptr<sham::Device> device_alt;
+
+
+    std::shared_ptr<sham::DeviceContext> ctx_compute;
+    std::shared_ptr<sham::DeviceContext> ctx_alt;
+
+    std::unique_ptr<sham::DeviceScheduler> sched_compute;
+    std::unique_ptr<sham::DeviceScheduler> sched_alt;
+
+    void init_device_scheduling(){
+        StackEntry stack_loc{false};
+        ctx_compute = std::make_shared<sham::DeviceContext>(device_compute);
+        ctx_alt = std::make_shared<sham::DeviceContext>(device_alt);
+
+        sched_compute = std::make_unique<sham::DeviceScheduler>(ctx_compute);
+        sched_alt = std::make_unique<sham::DeviceScheduler>(ctx_alt);
+    }
+
+    void init_queues_auto(std::string search_key) {
+        StackEntry stack_loc{false};
+        std::optional<u32> local_id = shamsys::env::get_local_rank();
+
+        if (local_id) {
+
+            sham::get_device_list();
+
+            u32 valid_dev_cnt = 0;
+
+            shamsys::instance::details::for_each_device(
+                [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
+                    if (shambase::contain_substr(
+                            plat.get_info<sycl::info::platform::name>(), search_key)) {
+                        valid_dev_cnt++;
+                    }
+                });
+
+            u32 valid_dev_id = 0;
+
+            shamsys::instance::details::for_each_device(
+                [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
+                    if (shambase::contain_substr(
+                            plat.get_info<sycl::info::platform::name>(), search_key)) {
+
+                        if ((*local_id) % valid_dev_cnt == valid_dev_id) {
+                            logger::debug_sycl_ln(
+                                "Sys",
+                                "create queue :\n",
+                                "Local ID :",
+                                *local_id,
+                                "\n Queue id :",
+                                key_global);
+
+                            auto PlatformName = plat.get_info<sycl::info::platform::name>();
+                            auto DeviceName   = dev.get_info<sycl::info::device::name>();
+                            logger::debug_sycl_ln(
+                                "NodeInstance",
+                                "init alt queue  : ",
+                                "|",
+                                DeviceName,
+                                "|",
+                                PlatformName,
+                                "|",
+                                shambase::getDevice_type(dev),
+                                "|");
+
+                            device_alt = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
+
+                            logger::debug_sycl_ln(
+                                "NodeInstance",
+                                "init comp queue : ",
+                                "|",
+                                DeviceName,
+                                "|",
+                                PlatformName,
+                                "|",
+                                shambase::getDevice_type(dev),
+                                "|");
+                            device_compute = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
+
+                        }
+
+                        valid_dev_id++;
+                    }
+                });
+
+        } else {
+            logger::err_ln("Sys", "cannot query local rank cannot use autodetect");
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "cannot query local rank cannot use autodetect");
+        }
+
+        init_device_scheduling();
+        initialized = true;
+    }
+
+    void init_queues(u32 alt_id, u32 compute_id) {
+        StackEntry stack_loc{false};
+
+        u32 cnt_dev = shamsys::instance::details::for_each_device(
+            [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {});
+
+        if (alt_id >= cnt_dev) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the alt queue id is larger than the number of queue");
+        }
+
+        if (compute_id >= cnt_dev) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the compute queue id is larger than the number of queue");
+        }
+
+        shamsys::instance::details::for_each_device(
+            [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
+                auto PlatformName = plat.get_info<sycl::info::platform::name>();
+                auto DeviceName   = dev.get_info<sycl::info::device::name>();
+
+                if (key_global == alt_id) {
+                    logger::debug_sycl_ln(
+                        "NodeInstance",
+                        "init alt queue  : ",
+                        "|",
+                        DeviceName,
+                        "|",
+                        PlatformName,
+                        "|",
+                        shambase::getDevice_type(dev),
+                        "|");
+                        device_alt = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
+
+                }
+
+                if (key_global == compute_id) {
+                    logger::debug_sycl_ln(
+                        "NodeInstance",
+                        "init comp queue : ",
+                        "|",
+                        DeviceName,
+                        "|",
+                        PlatformName,
+                        "|",
+                        shambase::getDevice_type(dev),
+                        "|");
+                        device_compute = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
+
+                }
+            });
+
+        logger::raw_ln(device_compute.get());
+
+        init_device_scheduling();
+        initialized = true;
+    }
+
+    void finalize(){
+     
+     initialized = false;
+
+    device_compute.reset();
+    device_alt.reset();
+
+
+    ctx_compute.reset();
+    ctx_alt.reset();
+
+    sched_compute.reset();
+    sched_alt.reset();   
+    }
+};
+
 namespace shamsys::instance {
 
     auto exception_handler = [](sycl::exception_list exceptions) {
@@ -167,7 +343,7 @@ namespace shamsys::instance {
     bool is_initialized() {
         int flag = false;
         mpi::initialized(&flag);
-        return sham::backend::is_initialized() && flag;
+        return syclinit::initialized && flag;
     };
 
     void print_queue_map() {
@@ -181,15 +357,15 @@ namespace shamsys::instance {
                 "| {:>4} | {:>8} | {:>12} | {:>16} |\n",
                 rank,
                 *loc,
-                sham::get_queue_details(0, sham::queues::Alternative).queue_global_id,
-                sham::get_queue_details(0, sham::queues::Compute).queue_global_id);
+                syclinit::device_alt->device_id,
+                syclinit::device_compute->device_id);
         } else {
             print_buf = shambase::format(
                 "| {:>4} | {:>8} | {:>12} | {:>16} |\n",
                 rank,
                 "???",
-                sham::get_queue_details(0, sham::queues::Alternative).queue_global_id,
-                sham::get_queue_details(0, sham::queues::Compute).queue_global_id);
+                syclinit::device_alt->device_id,
+                syclinit::device_compute->device_id);
         }
 
         std::string recv;
@@ -361,6 +537,9 @@ namespace shamsys::instance {
             logger::debug_ln("NodeInstance", "------------ MPI / SYCL init ok ------------");
         }
         mpidtypehandler::init_mpidtype();
+
+        syclinit::device_compute->update_mpi_prop();
+        syclinit::device_alt->update_mpi_prop();
     }
 
     void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info) {
@@ -387,16 +566,27 @@ namespace shamsys::instance {
             logger::raw_ln(" Hopefully it was quick :')\n");
         }
         mpi::finalize();
-        sham::backend::close();
+        syclinit::finalize();
     }
 
     ////////////////////////////
     // sycl related routines
     ////////////////////////////
 
-    sycl::queue &get_compute_queue(u32 /*id*/) { return sham::get_queue(0, sham::queues::Compute); }
+    sycl::queue &get_compute_queue(u32 /*id*/) { 
+        return syclinit::sched_compute->get_queue().q; 
+        }
 
-    sycl::queue &get_alt_queue(u32 /*id*/) { return sham::get_queue(0, sham::queues::Alternative); }
+    sycl::queue &get_alt_queue(u32 /*id*/) { 
+        return syclinit::sched_alt->get_queue().q; }
+
+    sham::DeviceScheduler & get_compute_scheduler(){
+        return *syclinit::sched_compute;
+    }    
+    
+    sham::DeviceScheduler & get_alt_scheduler(){
+        return *syclinit::sched_alt;
+    }
 
     void print_device_info(const sycl::device &Device) {
         std::cout << "   - " << Device.get_info<sycl::info::device::name>() << " "
@@ -407,156 +597,11 @@ namespace shamsys::instance {
 
     void print_device_list() { details::print_device_list(); }
 
-    void init_queues_auto(std::string search_key) {
-        std::optional<u32> local_id = env::get_local_rank();
-
-        if (local_id) {
-
-            u32 valid_dev_cnt = 0;
-
-            details::for_each_device(
-                [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
-                    if (shambase::contain_substr(
-                            plat.get_info<sycl::info::platform::name>(), search_key)) {
-                        valid_dev_cnt++;
-                    }
-                });
-
-            u32 valid_dev_id = 0;
-
-            details::for_each_device(
-                [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
-                    if (shambase::contain_substr(
-                            plat.get_info<sycl::info::platform::name>(), search_key)) {
-
-                        if ((*local_id) % valid_dev_cnt == valid_dev_id) {
-                            logger::debug_sycl_ln(
-                                "Sys",
-                                "create queue :\n",
-                                "Local ID :",
-                                *local_id,
-                                "\n Queue id :",
-                                key_global);
-
-                            std::vector<sham::queues::QueueDetails> det_compute = {};
-                            std::vector<sham::queues::QueueDetails> det_alt     = {};
-
-                            det_compute.emplace_back();
-                            det_alt.emplace_back();
-
-                            auto PlatformName = plat.get_info<sycl::info::platform::name>();
-                            auto DeviceName   = dev.get_info<sycl::info::device::name>();
-                            logger::debug_sycl_ln(
-                                "NodeInstance",
-                                "init alt queue  : ",
-                                "|",
-                                DeviceName,
-                                "|",
-                                PlatformName,
-                                "|",
-                                shambase::getDevice_type(dev),
-                                "|");
-                            det_alt[0].queue =
-                                std::make_unique<sycl::queue>(dev, exception_handler);
-                            det_alt[0].queue_global_id = key_global;
-
-                            logger::debug_sycl_ln(
-                                "NodeInstance",
-                                "init comp queue : ",
-                                "|",
-                                DeviceName,
-                                "|",
-                                PlatformName,
-                                "|",
-                                shambase::getDevice_type(dev),
-                                "|");
-                            det_compute[0].queue =
-                                std::make_unique<sycl::queue>(dev, exception_handler);
-                            det_compute[0].queue_global_id = key_global;
-
-                            compute_queue_eu_count =
-                                dev.get_info<sycl::info::device::max_compute_units>();
-
-                            sham::backend::init_manual(std::move(det_compute), std::move(det_alt));
-                        }
-
-                        valid_dev_id++;
-                    }
-                });
-
-        } else {
-            logger::err_ln("Sys", "cannot query local rank cannot use autodetect");
-            throw shambase::make_except_with_loc<std::runtime_error>(
-                "cannot query local rank cannot use autodetect");
-        }
-    }
-
-    void init_queues(u32 alt_id, u32 compute_id) {
-
-        u32 cnt_dev = details::for_each_device(
-            [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {});
-
-        if (alt_id >= cnt_dev) {
-            throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the alt queue id is larger than the number of queue");
-        }
-
-        if (compute_id >= cnt_dev) {
-            throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the compute queue id is larger than the number of queue");
-        }
-
-        std::vector<sham::queues::QueueDetails> det_compute = {};
-        std::vector<sham::queues::QueueDetails> det_alt     = {};
-
-        det_compute.emplace_back();
-        det_alt.emplace_back();
-
-        details::for_each_device(
-            [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
-                auto PlatformName = plat.get_info<sycl::info::platform::name>();
-                auto DeviceName   = dev.get_info<sycl::info::device::name>();
-
-                if (key_global == alt_id) {
-                    logger::debug_sycl_ln(
-                        "NodeInstance",
-                        "init alt queue  : ",
-                        "|",
-                        DeviceName,
-                        "|",
-                        PlatformName,
-                        "|",
-                        shambase::getDevice_type(dev),
-                        "|");
-                    det_alt[0].queue = std::make_unique<sycl::queue>(dev, exception_handler);
-                    det_alt[0].queue_global_id = key_global;
-                }
-
-                if (key_global == compute_id) {
-                    logger::debug_sycl_ln(
-                        "NodeInstance",
-                        "init comp queue : ",
-                        "|",
-                        DeviceName,
-                        "|",
-                        PlatformName,
-                        "|",
-                        shambase::getDevice_type(dev),
-                        "|");
-                    det_compute[0].queue = std::make_unique<sycl::queue>(dev, exception_handler);
-                    det_compute[0].queue_global_id = key_global;
-
-                    compute_queue_eu_count = dev.get_info<sycl::info::device::max_compute_units>();
-                }
-            });
-
-        sham::backend::init_manual(std::move(det_compute), std::move(det_alt));
-    }
 
     void start_sycl(u32 alt_id, u32 compute_id) {
         // start sycl
 
-        if (sham::backend::is_initialized()) {
+        if (syclinit::initialized) {
             throw ShamsysInstanceException("Sycl is already initialized");
         }
 
@@ -564,17 +609,17 @@ namespace shamsys::instance {
             logger::debug_ln("Sys", "start sycl queues ...");
         }
 
-        init_queues(alt_id, compute_id);
+        syclinit::init_queues(alt_id, compute_id);
     }
 
     void start_sycl_auto(std::string search_key) {
         // start sycl
 
-        if (sham::backend::is_initialized()) {
+        if (syclinit::initialized) {
             throw ShamsysInstanceException("Sycl is already initialized");
         }
 
-        init_queues_auto(search_key);
+        syclinit::init_queues_auto(search_key);
     }
 
     ////////////////////////////
@@ -598,68 +643,17 @@ namespace shamsys::instance {
 
     void print_mpi_capabilities() { shamcomm::print_mpi_capabilities(); }
 
-    bool dgpu_mode    = false;
-    bool dgpu_capable = false;
     void check_dgpu_available() {
 
-        dgpu_capable = false;
-
-        enum backenddevice { CUDA, ROCM, Unknown, OpenMP } backend = Unknown;
-
-        std::string pname =
-            get_compute_queue().get_device().get_platform().get_info<sycl::info::platform::name>();
-
-        if (shambase::contain_substr(pname, "CUDA")) {
-            backend = CUDA;
-        }
-        if (shambase::contain_substr(pname, "NVIDIA")) {
-            backend = CUDA;
-        }
-        if (shambase::contain_substr(pname, "ROCM")) {
-            backend = ROCM;
-        }
-        if (shambase::contain_substr(pname, "AMD")) {
-            backend = ROCM;
-        }
-        if (shambase::contain_substr(pname, "OpenMP")) {
-            backend = OpenMP;
-        }
-
-        if ((shamcomm::mpi_cuda_aware == shamcomm::Yes) && backend == CUDA) {
-            dgpu_capable = true;
-        }
-
-        if ((shamcomm::mpi_rocm_aware == shamcomm::Yes) && backend == ROCM) {
-            dgpu_capable = true;
-        }
-
-        if (backend == OpenMP) {
-            dgpu_capable = true;
-        }
-
         using namespace shambase::term_colors;
-        if (dgpu_capable) {
+        if (syclinit::device_compute->mpi_prop.is_mpi_direct_capable) {
             logger::raw_ln(" - MPI use Direct Comm :", col8b_green() + "Yes" + reset());
         } else {
             logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "No" + reset());
         }
-        dgpu_mode = dgpu_capable;
-        sham::get_queue_details().direct_mpi_comm_capable = dgpu_mode;
     }
 
-    void force_direct_gpu_mode(bool force) {
-        if (force != dgpu_capable) {
-            if (shamcomm::world_rank() == 0) {
-                logger::warn_ln(
-                    "Sys", "you are forcing the Direct comm mode to :", force, "it might no work");
-            }
-            dgpu_mode = dgpu_capable;
-        }
-    }
-
-    bool is_direct_gpu_selected() { return dgpu_mode; }
-
-    bool validate_comm(sham::queues::QueueDetails &qdet) {
+    bool validate_comm(sham::DeviceScheduler & device_sched) {
 
         u32 nbytes = 1e5;
         sycl::buffer<u8> buf_comp(nbytes);
@@ -671,8 +665,8 @@ namespace shamsys::instance {
             }
         }
 
-        shamcomm::CommunicationBuffer cbuf{buf_comp, qdet};
-        shamcomm::CommunicationBuffer cbuf_recv{nbytes, qdet};
+        shamcomm::CommunicationBuffer cbuf{buf_comp, device_sched};
+        shamcomm::CommunicationBuffer cbuf_recv{nbytes, device_sched};
 
         MPI_Request rq1, rq2;
         if (shamcomm::world_rank() == shamcomm::world_size() - 1) {
@@ -728,11 +722,11 @@ namespace shamsys::instance {
 
         bool call_abort = false;
 
-        dgpu_mode = sham::get_queue_details(0, sham::queues::Compute).direct_mpi_comm_capable;
+        bool dgpu_mode = syclinit::sched_compute->ctx->device->mpi_prop.is_mpi_direct_capable;
 
         using namespace shambase::term_colors;
         if (dgpu_mode) {
-            if (validate_comm(sham::get_queue_details(0, sham::queues::Compute))) {
+            if (validate_comm(*syclinit::sched_compute)) {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(" - MPI use Direct Comm :", col8b_green() + "Working" + reset());
             } else {
@@ -743,7 +737,7 @@ namespace shamsys::instance {
                 call_abort = true;
             }
         } else {
-            if (validate_comm(sham::get_queue_details(0, sham::queues::Compute))) {
+            if (validate_comm(*syclinit::sched_compute)) {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(
                         " - MPI use Copy to Host :", col8b_green() + "Working" + reset());

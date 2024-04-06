@@ -20,6 +20,7 @@
 
 
 #include "shambase/aliases_int.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include <vector>
 #include <sycl/sycl.hpp>
@@ -147,6 +148,9 @@ namespace shamsys::instance {
      */
     sycl::queue &get_alt_queue(u32 id = 0);
 
+    sham::DeviceScheduler & get_compute_scheduler();
+    sham::DeviceScheduler & get_alt_scheduler();
+
     ////////////////////////////
     // MPI related routines
     ////////////////////////////
@@ -163,8 +167,6 @@ namespace shamsys::instance {
 
     void check_dgpu_available();
     
-    void force_direct_gpu_mode(bool force);
     void validate_comm();
-    bool is_direct_gpu_selected();
 
 } // namespace shamsys::instance

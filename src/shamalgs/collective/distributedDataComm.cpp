@@ -106,7 +106,7 @@ namespace shamalgs::collective {
         {NamedStackEntry stack_loc2{"prepare payload"};
         for (auto &[key, buf] : send_bufs) {
             send_payoad.push_back(
-                {key.second, std::make_unique<shamcomm::CommunicationBuffer>(get_check_ref(buf))});
+                {key.second, std::make_unique<shamcomm::CommunicationBuffer>(get_check_ref(buf), instance::get_compute_scheduler())});
         }    
         }
         

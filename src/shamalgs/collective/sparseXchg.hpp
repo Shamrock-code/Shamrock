@@ -119,7 +119,7 @@ namespace shamalgs::collective {
                 mpi::probe(comm_ranks.x(), i,MPI_COMM_WORLD, & st);
                 mpi::get_count(&st, MPI_BYTE, &cnt);
 
-                payload.payload = std::make_unique<shamcomm::CommunicationBuffer>(cnt);
+                payload.payload = std::make_unique<shamcomm::CommunicationBuffer>(cnt, get_compute_scheduler());
 
                 mpi::irecv(
                     payload.payload->get_ptr(), 

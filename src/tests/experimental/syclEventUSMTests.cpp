@@ -172,3 +172,58 @@ TestStart(ValidationTest, "test-usm-event-arch", usm_event_test, 1){
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace syclut{
+
+    enum BufferTarget{
+        device, shared, host
+    };
+
+
+    template<class T, BufferTarget target>
+    class usmbuffer{
+        T* usm_ptr = nullptr;
+        sycl::queue & queue;
+
+        public:
+
+        usmbuffer(size_t sz, sycl::queue & q): queue(q){
+            usm_ptr = sycl::malloc_device<T>(sz,queue);
+        }
+
+        ~usmbuffer(){
+            sycl::free(usm_ptr, queue);
+        }
+    };
+
+}
+
+
+TestStart(ValidationTest, "usm-buffer", usm_buffer, 1){
+
+    sycl::queue & q = shamsys::instance::get_compute_queue();
+
+    auto buf = syclut::usmbuffer<int, syclut::device>(1000, q);
+
+    
+
+    sycl::event e = q.submit([&](sycl::handler & cgh){
+        
+    });
+
+    
+
+}

@@ -81,7 +81,7 @@ namespace shamrock::scheduler {
             mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
             mpi::get_count(&st, get_mpi_type<u64>(), &cnt);
 
-            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(cnt*8);
+            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(cnt*8, shamsys::instance::get_compute_scheduler());
 
             mpi::irecv(msg.buf->get_ptr(), cnt, get_mpi_type<u64>(), msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
         }
@@ -117,7 +117,7 @@ namespace shamrock::scheduler {
                 std::unique_ptr<sycl::buffer<u8>> tmp = serializer(patchdata);
 
                 send_payloads.push_back(Message{
-                    std::make_unique<shamcomm::CommunicationBuffer>(shambase::get_check_ref(tmp)),
+                    std::make_unique<shamcomm::CommunicationBuffer>(shambase::get_check_ref(tmp), shamsys::instance::get_compute_scheduler()),
                     op.rank_owner_new,
                     op.tag_comm});
             }

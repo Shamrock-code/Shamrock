@@ -24,6 +24,8 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambackends/DeviceContext.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
@@ -48,36 +50,39 @@ namespace shamcomm {
         using Protocol = CommunicationProtocol;
 
         public:
-        inline CommunicationBuffer(u64 bytelen, sham::queues::QueueDetails &queue_details = sham::get_queue_details()) {
-            Protocol comm_mode = get_protocol(queue_details);
+        inline CommunicationBuffer(u64 bytelen, sham::DeviceScheduler &queue_details) {
+            sham::Device & dev = *queue_details.ctx->device;
+            Protocol comm_mode = get_protocol(dev);
             if (comm_mode == CopyToHost) {
-                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(bytelen, queue_details.get_queue());
+                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(bytelen, queue_details.get_queue().q);
             } else if (comm_mode == DirectGPU) {
-                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(bytelen, queue_details.get_queue());
+                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(bytelen, queue_details.get_queue().q);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
-        inline CommunicationBuffer(sycl::buffer<u8> &bytebuf, sham::queues::QueueDetails &queue_details = sham::get_queue_details()) {
-            Protocol comm_mode = get_protocol(queue_details);
+        inline CommunicationBuffer(sycl::buffer<u8> &bytebuf, sham::DeviceScheduler &queue_details) {
+            sham::Device & dev = *queue_details.ctx->device;
+            Protocol comm_mode = get_protocol(dev);
             if (comm_mode == CopyToHost) {
-                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(bytebuf, queue_details.get_queue());
+                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(bytebuf, queue_details.get_queue().q);
             } else if (comm_mode == DirectGPU) {
-                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(bytebuf, queue_details.get_queue());
+                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(bytebuf, queue_details.get_queue().q);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
-        inline CommunicationBuffer(sycl::buffer<u8> &&bytebuf, sham::queues::QueueDetails &queue_details = sham::get_queue_details()) {
-            Protocol comm_mode = get_protocol(queue_details);
+        inline CommunicationBuffer(sycl::buffer<u8> &&bytebuf, sham::DeviceScheduler &queue_details) {
+            sham::Device & dev = *queue_details.ctx->device;
+            Protocol comm_mode = get_protocol(dev);
             if (comm_mode == CopyToHost) {
                 _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(
-                    std::forward<sycl::buffer<u8>>(bytebuf), queue_details.get_queue());
+                    std::forward<sycl::buffer<u8>>(bytebuf), queue_details.get_queue().q);
             } else if (comm_mode == DirectGPU) {
                 _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(
-                    std::forward<sycl::buffer<u8>>(bytebuf), queue_details.get_queue());
+                    std::forward<sycl::buffer<u8>>(bytebuf), queue_details.get_queue().q);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }

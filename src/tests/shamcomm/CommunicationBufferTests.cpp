@@ -11,6 +11,7 @@
 #include "shambackends/math.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/mpi.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
@@ -48,13 +49,13 @@ TestStart(Unittest, "shamsys/comm/CommunicationBuffer/constructor", test_basic_s
     sycl::buffer<u8> buf_comp = shamalgs::random::mock_buffer<u8>(0x111, nbytes);
 
     {
-        shamcomm::CommunicationBuffer cbuf {buf_comp, sham::get_queue_details()};
+        shamcomm::CommunicationBuffer cbuf {buf_comp, shamsys::instance::get_compute_scheduler()};
         sycl::buffer<u8> ret = cbuf.copy_back();
         check_buf("copy to host mode", buf_comp, ret);
     }
 
     {
-        shamcomm::CommunicationBuffer cbuf {buf_comp, sham::get_queue_details()};
+        shamcomm::CommunicationBuffer cbuf {buf_comp, shamsys::instance::get_compute_scheduler()};
         sycl::buffer<u8> ret = cbuf.copy_back();
         check_buf("copy to host mode", buf_comp, ret);
     }
@@ -70,12 +71,12 @@ TestStart(Unittest, "shamsys/comm/CommunicationBuffer/send_recv", test_basic_ser
 
 
     if(shamcomm::world_rank() == 0){
-        shamcomm::CommunicationBuffer cbuf {buf_comp, sham::get_queue_details()};
+        shamcomm::CommunicationBuffer cbuf {buf_comp, shamsys::instance::get_compute_scheduler()};
         MPI_Send(cbuf.get_ptr(), nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
     }
 
     if(shamcomm::world_rank() == 1){
-        shamcomm::CommunicationBuffer cbuf {nbytes, sham::get_queue_details()};
+        shamcomm::CommunicationBuffer cbuf {nbytes, shamsys::instance::get_compute_scheduler()};
         MPI_Recv(cbuf.get_ptr(), nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
 
 

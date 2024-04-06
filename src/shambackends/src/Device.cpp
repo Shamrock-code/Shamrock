@@ -51,6 +51,9 @@ namespace sham {
         return Backend::UNKNOWN; // Unknown backend
     }
 
+#define FETCH_PROP(info_, info_type) info_type info_ = dev.get_info<sycl::info::device::info_>();
+#define FETCH_PROPN(info_, info_type, n) info_type n = dev.get_info<sycl::info::device::info_>();
+
     /**
      * @brief Fetches the properties of a SYCL device.
      *
@@ -60,19 +63,96 @@ namespace sham {
      */
     DeviceProperties fetch_properties(const sycl::device &dev) {
 
-        usize gmemsize = dev.get_info<sycl::info::device::global_mem_size>();
-        usize gmemcache = dev.get_info<sycl::info::device::global_mem_cache_line_size>();
-        usize gcachesize = dev.get_info<sycl::info::device::global_mem_cache_size>();
-        usize localmemsize = dev.get_info<sycl::info::device::local_mem_size>();
+        FETCH_PROP(device_type, sycl::info::device_type)
+        FETCH_PROP(vendor_id, uint32_t)
+        FETCH_PROP(max_compute_units, uint32_t)
+        FETCH_PROP(max_work_item_dimensions, uint32_t)
+        FETCH_PROPN(max_work_item_sizes<1>, sycl::id<1>, max_work_item_sizes_1d)
+        FETCH_PROPN(max_work_item_sizes<2>, sycl::id<2>, max_work_item_sizes_2d)
+        FETCH_PROPN(max_work_item_sizes<3>, sycl::id<3>, max_work_item_sizes_3d)
+        FETCH_PROP(max_work_group_size, size_t)
+        FETCH_PROP(max_num_sub_groups, uint32_t)
+        FETCH_PROP(sub_group_independent_forward_progress, bool)
+        FETCH_PROP(sub_group_sizes, std::vector<size_t>)
+
+        FETCH_PROP(preferred_vector_width_char, uint32_t)
+        FETCH_PROP(preferred_vector_width_short, uint32_t)
+        FETCH_PROP(preferred_vector_width_int, uint32_t)
+        FETCH_PROP(preferred_vector_width_long, uint32_t)
+        FETCH_PROP(preferred_vector_width_float, uint32_t)
+        FETCH_PROP(preferred_vector_width_double, uint32_t)
+        FETCH_PROP(preferred_vector_width_half, uint32_t)
+        FETCH_PROP(native_vector_width_char, uint32_t)
+        FETCH_PROP(native_vector_width_short, uint32_t)
+        FETCH_PROP(native_vector_width_int, uint32_t)
+        FETCH_PROP(native_vector_width_long, uint32_t)
+        FETCH_PROP(native_vector_width_float, uint32_t)
+        FETCH_PROP(native_vector_width_double, uint32_t)
+        FETCH_PROP(native_vector_width_half, uint32_t)
+
+        FETCH_PROP(max_clock_frequency, uint32_t)
+        FETCH_PROP(address_bits, uint32_t)
+        FETCH_PROP(max_mem_alloc_size, uint64_t)
+        FETCH_PROP(max_read_image_args, uint32_t)
+        FETCH_PROP(max_write_image_args, uint32_t)
+        FETCH_PROP(image2d_max_width, size_t)
+        FETCH_PROP(image2d_max_height, size_t)
+        FETCH_PROP(image3d_max_width, size_t)
+        FETCH_PROP(image3d_max_height, size_t)
+        FETCH_PROP(image3d_max_depth, size_t)
+        FETCH_PROP(image_max_buffer_size, size_t)
+
+        FETCH_PROP(max_samplers, uint32_t)
+        FETCH_PROP(max_parameter_size, size_t)
+        FETCH_PROP(mem_base_addr_align, uint32_t)
+        FETCH_PROP(half_fp_config, std::vector<sycl::info::fp_config>)
+        FETCH_PROP(single_fp_config, std::vector<sycl::info::fp_config>)
+        FETCH_PROP(double_fp_config, std::vector<sycl::info::fp_config>)
+        FETCH_PROP(global_mem_cache_type, sycl::info::global_mem_cache_type)
+        FETCH_PROP(global_mem_cache_line_size, uint32_t)
+        FETCH_PROP(global_mem_cache_size, uint64_t)
+        FETCH_PROP(global_mem_size, uint64_t)
+        FETCH_PROP(local_mem_type, sycl::info::local_mem_type)
+        FETCH_PROP(local_mem_size, uint64_t)
+        FETCH_PROP(error_correction_support, bool)
+#ifdef SYCL_COMP_INTEL_LLVM
+        FETCH_PROP(atomic_memory_order_capabilities, std::vector<sycl::memory_order>)
+        FETCH_PROP(atomic_fence_order_capabilities, std::vector<sycl::memory_order>)
+        FETCH_PROP(atomic_memory_scope_capabilities, std::vector<sycl::memory_scope>)
+        FETCH_PROP(atomic_fence_scope_capabilities, std::vector<sycl::memory_scope>)
+#endif
+        FETCH_PROP(profiling_timer_resolution, size_t)
+        FETCH_PROP(is_available, bool)
+        FETCH_PROP(execution_capabilities, std::vector<sycl::info::execution_capability>)
+        // FETCH_PROP(built_in_kernel_ids,std::vector<sycl::kernel_id>)
+        FETCH_PROP(built_in_kernels, std::vector<std::string>)
+        FETCH_PROP(platform, sycl::platform)
+        FETCH_PROP(name, std::string)
+        FETCH_PROP(vendor, std::string)
+
+        FETCH_PROP(driver_version, std::string)
+        FETCH_PROP(version, std::string)
+#ifdef SYCL_COMP_INTEL_LLVM
+        FETCH_PROP(backend_version, std::string)
+#endif
+        FETCH_PROP(aspects, std::vector<sycl::aspect>)
+        FETCH_PROP(printf_buffer_size, size_t)
+#ifdef SYCL_COMP_INTEL_LLVM
+        FETCH_PROP(parent_device, device)
+#endif
+        FETCH_PROP(partition_max_sub_devices, uint32_t)
+        FETCH_PROP(partition_properties, std::vector<sycl::info::partition_property>)
+        FETCH_PROP(partition_affinity_domains, std::vector<sycl::info::partition_affinity_domain>)
+        FETCH_PROP(partition_type_property, sycl::info::partition_property)
+        FETCH_PROP(partition_type_affinity_domain, sycl::info::partition_affinity_domain)
 
         return {
-            Vendor::UNKNOWN,        // We cannot determine the vendor
+            Vendor::UNKNOWN,         // We cannot determine the vendor
             get_device_backend(dev), // Query the backend based on the platform name
-            gmemsize,
-            gmemcache,
-            gcachesize,
-            localmemsize
-        };
+            global_mem_size,
+            global_mem_cache_line_size,
+            global_mem_cache_size,
+            local_mem_size};
     }
 
     /**
@@ -167,38 +247,29 @@ namespace sham {
         return ret;
     }
 
-    void Device::update_mpi_prop(){
-        mpi_prop = fetch_mpi_properties(dev, prop);
-    }
+    void Device::update_mpi_prop() { mpi_prop = fetch_mpi_properties(dev, prop); }
 
-    void Device::print_info(){
+    void Device::print_info() {
         shamcomm::logs::raw_ln("  Device info :");
         switch (prop.backend) {
-            case sham::Backend::OPENMP : 
-                shamcomm::logs::raw_ln("   - Backend : OpenMP"); break;
-            case sham::Backend::CUDA : 
-                shamcomm::logs::raw_ln("   - Backend : CUDA"); break;
-            case sham::Backend::ROCM : 
-                shamcomm::logs::raw_ln("   - Backend : ROCM"); break;
-            case sham::Backend::UNKNOWN : 
-                shamcomm::logs::raw_ln("   - Backend : Unknown"); break;
+        case sham::Backend::OPENMP: shamcomm::logs::raw_ln("   - Backend : OpenMP"); break;
+        case sham::Backend::CUDA: shamcomm::logs::raw_ln("   - Backend : CUDA"); break;
+        case sham::Backend::ROCM: shamcomm::logs::raw_ln("   - Backend : ROCM"); break;
+        case sham::Backend::UNKNOWN: shamcomm::logs::raw_ln("   - Backend : Unknown"); break;
         }
         switch (prop.vendor) {
-            case sham::Vendor::AMD : 
-                shamcomm::logs::raw_ln("   - Vendor : AMD"); break;
-            case sham::Vendor::APPLE : 
-                shamcomm::logs::raw_ln("   - Vendor : Apple"); break;
-            case sham::Vendor::INTEL : 
-                shamcomm::logs::raw_ln("   - Vendor : Intel"); break;
-            case sham::Vendor::NVIDIA : 
-                shamcomm::logs::raw_ln("   - Vendor : Nvidia"); break;
-            case sham::Vendor::UNKNOWN : 
-                shamcomm::logs::raw_ln("   - Vendor : Unknown"); break;
+        case sham::Vendor::AMD: shamcomm::logs::raw_ln("   - Vendor : AMD"); break;
+        case sham::Vendor::APPLE: shamcomm::logs::raw_ln("   - Vendor : Apple"); break;
+        case sham::Vendor::INTEL: shamcomm::logs::raw_ln("   - Vendor : Intel"); break;
+        case sham::Vendor::NVIDIA: shamcomm::logs::raw_ln("   - Vendor : Nvidia"); break;
+        case sham::Vendor::UNKNOWN: shamcomm::logs::raw_ln("   - Vendor : Unknown"); break;
         }
-        logger::raw_ln("   - Global mem size :",shambase::readable_sizeof(prop.global_mem_size));
-        logger::raw_ln("   - Cache line size :",shambase::readable_sizeof(prop.global_mem_cache_line_size));
-        logger::raw_ln("   - Cache size      :",shambase::readable_sizeof(prop.global_mem_cache_size));
-        logger::raw_ln("   - Local mem size  :",shambase::readable_sizeof(prop.local_mem_size));
+        logger::raw_ln("   - Global mem size :", shambase::readable_sizeof(prop.global_mem_size));
+        logger::raw_ln(
+            "   - Cache line size :", shambase::readable_sizeof(prop.global_mem_cache_line_size));
+        logger::raw_ln(
+            "   - Cache size      :", shambase::readable_sizeof(prop.global_mem_cache_size));
+        logger::raw_ln("   - Local mem size  :", shambase::readable_sizeof(prop.local_mem_size));
     }
 
 } // namespace sham

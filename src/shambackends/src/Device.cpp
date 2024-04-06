@@ -270,6 +270,7 @@ namespace sham {
         logger::raw_ln(
             "   - Cache size      :", shambase::readable_sizeof(prop.global_mem_cache_size));
         logger::raw_ln("   - Local mem size  :", shambase::readable_sizeof(prop.local_mem_size));
+        logger::raw_ln("   - Direct MPI capable :",mpi_prop.is_mpi_direct_capable);
     }
 
 } // namespace sham

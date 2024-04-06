@@ -125,7 +125,7 @@ namespace sham {
         FETCH_PROP(is_available, bool)
         FETCH_PROP(execution_capabilities, std::vector<sycl::info::execution_capability>)
         // FETCH_PROP(built_in_kernel_ids,std::vector<sycl::kernel_id>)
-        FETCH_PROP(built_in_kernels, std::vector<std::string>)
+        //FETCH_PROP(built_in_kernels, std::vector<std::string>)
         FETCH_PROP(platform, sycl::platform)
         FETCH_PROP(name, std::string)
         FETCH_PROP(vendor, std::string)
@@ -136,9 +136,9 @@ namespace sham {
         FETCH_PROP(backend_version, std::string)
 #endif
         FETCH_PROP(aspects, std::vector<sycl::aspect>)
-        FETCH_PROP(printf_buffer_size, size_t)
+        //FETCH_PROP(printf_buffer_size, size_t)
 #ifdef SYCL_COMP_INTEL_LLVM
-        FETCH_PROP(parent_device, device)
+        //FETCH_PROP(parent_device, device)
 #endif
         FETCH_PROP(partition_max_sub_devices, uint32_t)
         FETCH_PROP(partition_properties, std::vector<sycl::info::partition_property>)

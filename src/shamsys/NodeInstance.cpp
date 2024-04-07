@@ -142,8 +142,6 @@ namespace syclinit {
 
         if (local_id) {
 
-            sham::get_device_list();
-
             u32 valid_dev_cnt = 0;
 
             shamsys::instance::details::for_each_device(

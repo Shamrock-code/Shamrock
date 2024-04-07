@@ -103,8 +103,8 @@ namespace sham {
         //FETCH_PROP(image3d_max_height, size_t)
         //FETCH_PROP(image3d_max_depth, size_t)
         //FETCH_PROP(image_max_buffer_size, size_t)
+        //FETCH_PROP(max_samplers, uint32_t)
 
-        FETCH_PROP(max_samplers, uint32_t)
         FETCH_PROP(max_parameter_size, size_t)
         FETCH_PROP(mem_base_addr_align, uint32_t)
         FETCH_PROP(half_fp_config, std::vector<sycl::info::fp_config>)
@@ -126,9 +126,9 @@ namespace sham {
         FETCH_PROP(profiling_timer_resolution, size_t)
         FETCH_PROP(is_available, bool)
         FETCH_PROP(execution_capabilities, std::vector<sycl::info::execution_capability>)
-        // FETCH_PROP(built_in_kernel_ids,std::vector<sycl::kernel_id>)
+        //FETCH_PROP(built_in_kernel_ids,std::vector<sycl::kernel_id>)
         //FETCH_PROP(built_in_kernels, std::vector<std::string>)
-        FETCH_PROP(platform, sycl::platform)
+        //FETCH_PROP(platform, sycl::platform)
         FETCH_PROP(name, std::string)
         FETCH_PROP(vendor, std::string)
 
@@ -137,7 +137,7 @@ namespace sham {
 #ifdef SYCL_COMP_INTEL_LLVM
         FETCH_PROP(backend_version, std::string)
 #endif
-        FETCH_PROP(aspects, std::vector<sycl::aspect>)
+        //FETCH_PROP(aspects, std::vector<sycl::aspect>)
         //FETCH_PROP(printf_buffer_size, size_t)
 #ifdef SYCL_COMP_INTEL_LLVM
         //FETCH_PROP(parent_device, device)

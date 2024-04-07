@@ -36,22 +36,19 @@
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-using Model = shammodels::sph::Model<Tvec, SPHKernel>;
-
-template<class Tvec, template<class> class SPHKernel>
-f64 Model<Tvec, SPHKernel>::evolve_once_time_expl(f64 t_curr, f64 dt_input) {
+f64 shammodels::sph::Model<Tvec, SPHKernel>::evolve_once_time_expl(f64 t_curr, f64 dt_input) {
     auto tmp = solver.evolve_once_time_expl(t_curr, dt_input);
     solver.print_timestep_logs();
     return tmp;
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::timestep() {
+void shammodels::sph::Model<Tvec, SPHKernel>::timestep() {
     solver.evolve_once();
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
+void shammodels::sph::Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
     solver.init_required_fields();
     solver.init_ghost_layout();
     ctx.init_sched(crit_split, crit_merge);
@@ -71,18 +68,18 @@ void Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-u64 Model<Tvec, SPHKernel>::get_total_part_count() {
+u64 shammodels::sph::Model<Tvec, SPHKernel>::get_total_part_count() {
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
     return shamalgs::collective::allreduce_sum(sched.get_rank_count());
 }
 
 template<class Tvec, template<class> class SPHKernel>
-f64 Model<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmass) {
+f64 shammodels::sph::Model<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmass) {
     return totmass / get_total_part_count();
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
+auto shammodels::sph::Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
@@ -133,7 +130,7 @@ auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box)
+auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box)
     -> std::pair<Tvec, Tvec> {
     StackEntry stack_loc{};
     auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(dr, box);
@@ -141,7 +138,7 @@ auto Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> b
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec(Tvec)> map) {
+void shammodels::sph::Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec(Tvec)> map) {
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
@@ -261,7 +258,7 @@ inline void post_insert_data(PatchScheduler &sched) {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::push_particle(
+void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
     std::vector<Tvec> &part_pos_insert,
     std::vector<Tscal> &part_hpart_insert,
     std::vector<Tscal> &part_u_insert) {
@@ -349,7 +346,7 @@ void Model<Tvec, SPHKernel>::push_particle(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _box)
+auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _box)
     -> std::pair<Tvec, Tvec> {
     StackEntry stack_loc{};
 
@@ -367,7 +364,7 @@ auto Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
     shambase::Timer time_setup;time_setup.start();
 
     StackEntry stack_loc{};
@@ -616,7 +613,7 @@ class DiscIterator {
 
             
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::add_big_disc_3d(
+void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
                 Tvec center, 
                 Tscal central_mass,
                 u32 Npart,
@@ -846,7 +843,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 }
         
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
     StackEntry stack_loc{};
 
     shammath::CoordRange<Tvec> box = _box;
@@ -954,7 +951,7 @@ void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump &phdump, bool bypass_error)
+auto shammodels::sph::Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump &phdump, bool bypass_error)
     -> SolverConfig {
     StackEntry stack_loc{};
     SolverConfig conf{};
@@ -979,7 +976,7 @@ auto Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump &phdump, b
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
+void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
     StackEntry stack_loc{};
 
     bool has_coord_in_header = true;
@@ -1181,7 +1178,7 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(
+void shammodels::sph::Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(
     PhantomDumpBlock &block, shamrock::patch::PatchData &pdat) {
 
     std::vector<Tvec> xyz = pdat.fetch_data<Tvec>("xyz");
@@ -1240,7 +1237,7 @@ void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
+shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phantom_dump() {
     StackEntry stack_loc{};
 
     PhantomDump dump;

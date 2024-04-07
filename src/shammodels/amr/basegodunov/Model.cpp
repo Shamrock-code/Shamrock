@@ -21,10 +21,7 @@
 #include "shamsys/NodeInstance.hpp"
 
 template<class Tvec, class TgridVec>
-using Model = shammodels::basegodunov::Model<Tvec, TgridVec>;
-
-template<class Tvec, class TgridVec>
-void Model<Tvec, TgridVec>::init_scheduler(u32 crit_split, u32 crit_merge){
+void shammodels::basegodunov::Model<Tvec, TgridVec>::init_scheduler(u32 crit_split, u32 crit_merge){
 
     solver.init_required_fields();
     //solver.init_ghost_layout();
@@ -44,7 +41,7 @@ void Model<Tvec, TgridVec>::init_scheduler(u32 crit_split, u32 crit_merge){
 }
 
 template<class Tvec, class TgridVec>
-void Model<Tvec, TgridVec>::make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count){
+void shammodels::basegodunov::Model<Tvec, TgridVec>::make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count){
 
     if(cell_size.x() < Solver::Config::AMRBlock::Nside){
         shambase::throw_with_loc<std::invalid_argument>(
@@ -80,7 +77,7 @@ void Model<Tvec, TgridVec>::make_base_grid(TgridVec bmin, TgridVec cell_size, u3
 }
 
 template<class Tvec, class TgridVec>
-void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
+void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filename){
 
     StackEntry stack_loc{};
     shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
@@ -146,7 +143,7 @@ void Model<Tvec, TgridVec>::dump_vtk(std::string filename){
 }
 
 template<class Tvec, class TgridVec>
-auto Model<Tvec, TgridVec>::evolve_once(Tscal t_current,Tscal dt_input)-> Tscal{
+auto shammodels::basegodunov::Model<Tvec, TgridVec>::evolve_once(Tscal t_current,Tscal dt_input)-> Tscal{
     return solver.evolve_once(t_current, dt_input);
 }
 

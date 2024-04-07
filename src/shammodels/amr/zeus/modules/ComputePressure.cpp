@@ -19,10 +19,7 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, class TgridVec>
-using Module = shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>;
-
-template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::compute_p() {
+void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
 
     StackEntry stack_loc{};
 

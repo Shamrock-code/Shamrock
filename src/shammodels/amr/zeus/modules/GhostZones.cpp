@@ -26,8 +26,6 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 
-template<class Tvec, class TgridVec>
-using Module = shammodels::zeus::modules::GhostZones<Tvec, TgridVec>;
 namespace shammodels::zeus::modules {
     /**
      * @brief find interfaces corresponding to shared surface between domains
@@ -118,7 +116,7 @@ namespace shammodels::zeus::modules {
 } // namespace shammodels::zeus::modules
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::build_ghost_cache() {
+void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() {
 
     StackEntry stack_loc{};
 
@@ -197,7 +195,7 @@ void Module<Tvec, TgridVec>::build_ghost_cache() {
 
 template<class Tvec, class TgridVec>
 shambase::DistributedDataShared<shamrock::patch::PatchData>
-Module<Tvec, TgridVec>::communicate_pdat(
+shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
     shamrock::patch::PatchDataLayout &pdl,
     shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf) {
     StackEntry stack_loc{};
@@ -227,7 +225,7 @@ Module<Tvec, TgridVec>::communicate_pdat(
 
 template<class Tvec, class TgridVec>
 template<class T>
-shambase::DistributedDataShared<PatchDataField<T>> Module<Tvec, TgridVec>::communicate_pdat_field(
+shambase::DistributedDataShared<PatchDataField<T>> shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat_field(
     shambase::DistributedDataShared<PatchDataField<T>> &&interf) {
     StackEntry stack_loc{};
 
@@ -256,7 +254,7 @@ shambase::DistributedDataShared<PatchDataField<T>> Module<Tvec, TgridVec>::commu
 
 template<class Tvec, class TgridVec>
 template<class T, class Tmerged>
-shambase::DistributedData<Tmerged> Module<Tvec, TgridVec>::merge_native(
+shambase::DistributedData<Tmerged> shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::merge_native(
     shambase::DistributedDataShared<T> &&interfs,
     std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> init,
     std::function<void(Tmerged &, T &)> appender) {
@@ -282,7 +280,7 @@ shambase::DistributedData<Tmerged> Module<Tvec, TgridVec>::merge_native(
 }
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::exchange_ghost() {
+void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
 
     StackEntry stack_loc{};
 
@@ -406,7 +404,7 @@ void Module<Tvec, TgridVec>::exchange_ghost() {
 template<class Tvec, class TgridVec>
 template<class T>
 shamrock::ComputeField<T>
-Module<Tvec, TgridVec>::exchange_compute_field(shamrock::ComputeField<T> &in) {
+shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_compute_field(shamrock::ComputeField<T> &in) {
 
     StackEntry stack_loc{};
 

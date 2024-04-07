@@ -21,10 +21,7 @@
 #include "shamrock/tree/TreeTraversal.hpp"
 
 template<class Tvec, class TgridVec>
-using Module = shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>;
-
-template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::compute_gradu() {
+void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
 
     using namespace shamrock::patch;
     using namespace shamrock;

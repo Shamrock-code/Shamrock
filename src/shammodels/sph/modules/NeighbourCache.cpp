@@ -23,12 +23,9 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/Constants.hpp"
 
-template<class Tvec, class Tmorton, template<class> class SPHKernel>
-using Module = shammodels::sph::modules::NeighbourCache<Tvec,Tmorton, SPHKernel>;
-
 
 template<class Tvec, class Tmorton, template<class> class SPHKernel>
-void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache() {
+void shammodels::sph::modules::NeighbourCache<Tvec,Tmorton, SPHKernel>::start_neighbors_cache() {
 
     // interface_control
     using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
@@ -199,7 +196,7 @@ void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache() {
 }
 
 template<class Tvec, class Tmorton, template<class> class SPHKernel>
-void Module<Tvec,Tmorton, SPHKernel>::start_neighbors_cache_2stages() {
+void shammodels::sph::modules::NeighbourCache<Tvec,Tmorton, SPHKernel>::start_neighbors_cache_2stages() {
 
 
     // interface_control

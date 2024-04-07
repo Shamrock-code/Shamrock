@@ -21,13 +21,10 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"
 
-template<class Tvec, class TgridVec>
-using Module = shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>;
-
 // this flags faces but not your face
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::flag_faces() {
+void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
 
     using namespace shamrock::patch;
     using namespace shamrock;
@@ -125,7 +122,7 @@ void Module<Tvec, TgridVec>::flag_faces() {
 }
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::split_face_list() {
+void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::split_face_list() {
 
     using namespace shamrock::patch;
     using namespace shamrock;
@@ -221,7 +218,7 @@ struct AMRNeighIds {
 
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::compute_neigh_ids(){
+void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::compute_neigh_ids(){
 
 
 
@@ -233,7 +230,7 @@ void Module<Tvec, TgridVec>::compute_neigh_ids(){
 
 template<class Tvec, class TgridVec>
 shamrock::tree::ObjectCache
-Module<Tvec, TgridVec>::isolate_lookups(shamrock::tree::ObjectCache &cache,
+shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::isolate_lookups(shamrock::tree::ObjectCache &cache,
                                         sycl::buffer<u8> &face_normals_lookup,
                                         u8 lookup_value) {
 

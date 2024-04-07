@@ -56,9 +56,6 @@
 #include <stdexcept>
 #include <vector>
 
-template<class Tvec, template<class> class Kern>
-using SPHSolve = shammodels::sph::Solver<Tvec, Kern>;
-
 template<class vec>
 shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
     StackEntry stack_loc{};
@@ -167,7 +164,7 @@ void vtk_dump_add_field(
 
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::vtk_do_dump(std::string filename, bool add_patch_world_id){
+void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(std::string filename, bool add_patch_world_id){
     using namespace shamrock;
     using namespace shamrock::patch;
     shamrock::SchedulerUtility utility(scheduler());
@@ -460,7 +457,7 @@ namespace shammodels::sph{
 
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
+void shammodels::sph::Solver<Tvec, Kern>::gen_serial_patch_tree() {
     StackEntry stack_loc{};
 
     SerialPatchTree<Tvec> _sptree = SerialPatchTree<Tvec>::build(scheduler());
@@ -469,7 +466,7 @@ void SPHSolve<Tvec, Kern>::gen_serial_patch_tree() {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
+void shammodels::sph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
 
     StackEntry stack_loc{};
 
@@ -511,7 +508,7 @@ void SPHSolve<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::build_ghost_cache() {
+void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
 
     StackEntry stack_loc{};
 
@@ -526,13 +523,13 @@ void SPHSolve<Tvec, Kern>::build_ghost_cache() {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::clear_ghost_cache() {
+void shammodels::sph::Solver<Tvec, Kern>::clear_ghost_cache() {
     StackEntry stack_loc{};
     storage.ghost_patch_cache.reset();
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::merge_position_ghost() {
+void shammodels::sph::Solver<Tvec, Kern>::merge_position_ghost() {
 
     StackEntry stack_loc{};
 
@@ -542,7 +539,7 @@ void SPHSolve<Tvec, Kern>::merge_position_ghost() {
 
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
+void shammodels::sph::Solver<Tvec, Kern>::build_merged_pos_trees() {
 
     StackEntry stack_loc{};
 
@@ -715,13 +712,13 @@ void SPHSolve<Tvec, Kern>::build_merged_pos_trees() {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::clear_merged_pos_trees() {
+void shammodels::sph::Solver<Tvec, Kern>::clear_merged_pos_trees() {
     StackEntry stack_loc{};
     storage.merged_pos_trees.reset();
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
+void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 
     StackEntry stack_loc{};
     using namespace shamrock::patch;
@@ -750,7 +747,7 @@ void SPHSolve<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
+void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -922,7 +919,7 @@ void SPHSolve<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::init_ghost_layout() {
+void shammodels::sph::Solver<Tvec, Kern>::init_ghost_layout() {
 
     storage.ghost_layout.set(shamrock::patch::PatchDataLayout{});
 
@@ -943,7 +940,7 @@ void SPHSolve<Tvec, Kern>::init_ghost_layout() {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
+void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
 
     StackEntry stack_loc{};
 
@@ -959,12 +956,12 @@ void SPHSolve<Tvec, Kern>::compute_presteps_rint() {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::reset_presteps_rint() {
+void shammodels::sph::Solver<Tvec, Kern>::reset_presteps_rint() {
     storage.rtree_rint_field.reset();
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
+void shammodels::sph::Solver<Tvec, Kern>::start_neighbors_cache() {
     if(solver_config.use_two_stage_search){
         shammodels::sph::modules::NeighbourCache<Tvec,u_morton, Kern>(context, solver_config, storage)
         .start_neighbors_cache_2stages();
@@ -975,12 +972,12 @@ void SPHSolve<Tvec, Kern>::start_neighbors_cache() {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::reset_neighbors_cache() {
+void shammodels::sph::Solver<Tvec, Kern>::reset_neighbors_cache() {
     storage.neighbors_cache.reset();
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
+void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     StackEntry stack_loc{};
 
@@ -1126,7 +1123,7 @@ void SPHSolve<Tvec, Kern>::communicate_merge_ghosts_fields() {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::reset_merge_ghosts_fields() {
+void shammodels::sph::Solver<Tvec, Kern>::reset_merge_ghosts_fields() {
     storage.merged_patchdata_ghost.reset();
 }
 
@@ -1135,7 +1132,7 @@ void SPHSolve<Tvec, Kern>::reset_merge_ghosts_fields() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
+void shammodels::sph::Solver<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 
     sph::modules::UpdateViscosity<Tvec, Kern>(context, solver_config, storage)
         .update_artificial_viscosity(dt);
@@ -1146,19 +1143,19 @@ void SPHSolve<Tvec, Kern>::update_artificial_viscosity(Tscal dt) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::compute_eos_fields() {
+void shammodels::sph::Solver<Tvec, Kern>::compute_eos_fields() {
 
     modules::ComputeEos<Tvec, Kern>(context, solver_config, storage).compute_eos();
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::reset_eos_fields() {
+void shammodels::sph::Solver<Tvec, Kern>::reset_eos_fields() {
     storage.pressure.reset();
     storage.soundspeed.reset();
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::prepare_corrector() {
+void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
 
     StackEntry stack_loc{};
 
@@ -1174,7 +1171,7 @@ void SPHSolve<Tvec, Kern>::prepare_corrector() {
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::update_derivs() {
+void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
 
     modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
     derivs.update_derivs();
@@ -1185,12 +1182,12 @@ void SPHSolve<Tvec, Kern>::update_derivs() {
 
 
 template<class Tvec, template<class> class Kern>
-bool SPHSolve<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
+bool shammodels::sph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
     return false;
 }
 
 template<class Tvec, template<class> class Kern>
-void SPHSolve<Tvec, Kern>::evolve_once()
+void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
      {
 
         Tscal t_current = solver_config.get_time();

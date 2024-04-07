@@ -472,7 +472,7 @@ namespace shamsys::instance {
                 shamcomm::world_rank(),
                 shamcomm::world_rank(),
                 shamcomm::world_size(),
-                get_process_name()));
+                shamcomm::get_process_name()));
 
         mpi::barrier(MPI_COMM_WORLD);
         // if(world_rank == 0){
@@ -575,21 +575,6 @@ namespace shamsys::instance {
     // MPI related routines
     ////////////////////////////
 
-    std::string get_process_name() {
-
-        // Get the name of the processor
-        char processor_name[MPI_MAX_PROCESSOR_NAME];
-        int name_len;
-
-        int err_code = mpi::get_processor_name(processor_name, &name_len);
-
-        if (err_code != MPI_SUCCESS) {
-            throw ShamsysInstanceException("failed getting the process name");
-        }
-
-        return std::string(processor_name);
-    }
-
     void print_mpi_capabilities() { shamcomm::print_mpi_capabilities(); }
 
     void check_dgpu_available() {
@@ -599,108 +584,6 @@ namespace shamsys::instance {
             logger::raw_ln(" - MPI use Direct Comm :", col8b_green() + "Yes" + reset());
         } else {
             logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "No" + reset());
-        }
-    }
-
-    bool validate_comm(sham::DeviceScheduler & device_sched) {
-
-        u32 nbytes = 1e5;
-        sycl::buffer<u8> buf_comp(nbytes);
-
-        {
-            sycl::host_accessor acc1{buf_comp, sycl::write_only, sycl::no_init};
-            for (u32 i = 0; i < nbytes; i++) {
-                acc1[i] = i % 100;
-            }
-        }
-
-        shamcomm::CommunicationBuffer cbuf{buf_comp, device_sched};
-        shamcomm::CommunicationBuffer cbuf_recv{nbytes, device_sched};
-
-        MPI_Request rq1, rq2;
-        if (shamcomm::world_rank() == shamcomm::world_size() - 1) {
-            MPI_Isend(cbuf.get_ptr(), nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, &rq1);
-        }
-
-        if (shamcomm::world_rank() == 0) {
-            MPI_Irecv(
-                cbuf_recv.get_ptr(),
-                nbytes,
-                MPI_BYTE,
-                shamcomm::world_size() - 1,
-                0,
-                MPI_COMM_WORLD,
-                &rq2);
-        }
-
-        if (shamcomm::world_rank() == shamcomm::world_size() - 1) {
-            MPI_Wait(&rq1, MPI_STATUS_IGNORE);
-        }
-
-        if (shamcomm::world_rank() == 0) {
-            MPI_Wait(&rq2, MPI_STATUS_IGNORE);
-        }
-
-        sycl::buffer<u8> recv = shamcomm::CommunicationBuffer::convert(std::move(cbuf_recv));
-
-        bool valid = true;
-
-        if (shamcomm::world_rank() == 0) {
-            sycl::host_accessor acc1{buf_comp};
-            sycl::host_accessor acc2{recv};
-
-            std::string id_err_list = "errors in id : ";
-
-            bool eq = true;
-            for (u32 i = 0; i < recv.size(); i++) {
-                if (!sham::equals(acc1[i], acc2[i])) {
-                    eq = false;
-                    // id_err_list += std::to_string(i) + " ";
-                }
-            }
-
-            valid = eq;
-        }
-
-        return valid;
-    }
-
-    void validate_comm() {
-        u32 nbytes = 1e5;
-        sycl::buffer<u8> buf_comp(nbytes);
-
-        bool call_abort = false;
-
-        bool dgpu_mode = syclinit::sched_compute->ctx->device->mpi_prop.is_mpi_direct_capable;
-
-        using namespace shambase::term_colors;
-        if (dgpu_mode) {
-            if (validate_comm(*syclinit::sched_compute)) {
-                if (shamcomm::world_rank() == 0)
-                    logger::raw_ln(" - MPI use Direct Comm :", col8b_green() + "Working" + reset());
-            } else {
-                if (shamcomm::world_rank() == 0)
-                    logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "Fail" + reset());
-                if (shamcomm::world_rank() == 0)
-                    logger::err_ln("Sys", "the select comm mode failed, try forcing dgpu mode off");
-                call_abort = true;
-            }
-        } else {
-            if (validate_comm(*syclinit::sched_compute)) {
-                if (shamcomm::world_rank() == 0)
-                    logger::raw_ln(
-                        " - MPI use Copy to Host :", col8b_green() + "Working" + reset());
-            } else {
-                if (shamcomm::world_rank() == 0)
-                    logger::raw_ln(" - MPI use Copy to Host :", col8b_red() + "Fail" + reset());
-                call_abort = true;
-            }
-        }
-
-        mpi::barrier(MPI_COMM_WORLD);
-
-        if (call_abort) {
-            MPI_Abort(MPI_COMM_WORLD, 26);
         }
     }
 

@@ -157,16 +157,9 @@ namespace shamsys::instance {
 
     // idea to handle multiple GPU with MPI : i32 get_mpi_tag(u32 tag);
 
-    /**
-     * @brief Get the process name
-     * @return std::string process name
-     */
-    std::string get_process_name();
 
     void print_mpi_capabilities();
 
     void check_dgpu_available();
-    
-    void validate_comm();
 
 } // namespace shamsys::instance

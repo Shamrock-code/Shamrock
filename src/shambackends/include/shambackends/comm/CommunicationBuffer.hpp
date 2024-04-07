@@ -142,6 +142,6 @@ namespace shamcomm {
         }
     };
 
-    
+    void validate_comm(sham::DeviceScheduler & sched);
 
-} // namespace shamsys
+} // namespace shamcomm

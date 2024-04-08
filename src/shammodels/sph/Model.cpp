@@ -708,11 +708,11 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         //carefull: needs r in cylindrical
         Tscal G = solver.solver_config.get_constant_G();
         Tscal c = solver.solver_config.get_constant_c();
-        Tscal aspin = 2.;
+        Tscal aspin = 0.9;
         Tscal term = G * central_mass / r;
         Tscal term_fs = 1. - sycl::sqrt(r_in / r);
         Tscal term_pr = - sycl::pow(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
-        Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
+        Tscal term_bh = - (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
         Tscal det = sycl::pow(term_bh, 2) + 4.*(term + term_pr);
         Tscal Rg   = G * central_mass / sycl::pow(c, 2);
         Tscal vkep = sqrt(G * central_mass / r);
@@ -798,7 +798,9 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
                     // add all part to insert in a vector
                     part_list.push_back(r);
                     }
-                
+                    else{
+                    logger::raw_ln("excluding :", r.pos, "not in :", patch_coord.lower, patch_coord.upper);
+                    }
                 }
 
                 // update max insert_count

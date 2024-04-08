@@ -530,12 +530,12 @@ class DiscIterator {
         std::mt19937 eng,
         std::function<Tscal(Tscal)> sigma_profile,
         std::function<Tscal(Tscal)> cs_profile,
-        std::function<Tscal(Tscal)> vel_full_corr
+        std::function<Tscal(Tscal)> rot_profile
     ) : current_index(0), Npart(Npart),
     center(center), central_mass(central_mass), r_in(r_in), r_out(r_out), disc_mass(disc_mass),
     p(p), H_r_in(H_r_in), q(q), G(G),
     eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile),
-    vel_full_corr(vel_full_corr)
+    rot_profile(rot_profile)
     {
 
         if (Npart == 0) {
@@ -572,7 +572,7 @@ class DiscIterator {
 
         Tscal r = find_r();
 
-        Tscal vk = vel_full_corr(r); // rot_profile(r);
+        Tscal vk = rot_profile(r);
         Tscal cs = cs_profile(r);
         Tscal sigma = sigma_profile(r);
 
@@ -665,12 +665,12 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         return sycl::pow(r/r_in, -q);
     };
 
-    auto rot_profile = [&](Tscal r){
+    auto kep_profile = [&](Tscal r){
         Tscal G = solver.solver_config.get_constant_G();
         return sycl::sqrt(G * central_mass/r);
     };
 
-    auto vel_full_corr = [&] (Tscal r) -> Tscal{
+    auto rot_profile = [&] (Tscal r) -> Tscal{
         //carefull: needs r in cylindrical
         Tscal G = solver.solver_config.get_constant_G();
         Tscal c = solver.solver_config.get_constant_c();
@@ -690,7 +690,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
     };
 
     auto cs_profile = [&](Tscal r){
-        Tscal cs_in = (H_r_in * r_in / r )*rot_profile(r_in);//H_r_in*rot_profile(r_in);
+        Tscal cs_in = (H_r_in * r_in / r )*kep_profile(r_in);//H_r_in*rot_profile(r_in);
         return cs_law(r)*cs_in; 
     };
 
@@ -733,7 +733,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         eng,
         sigma_profile,
         cs_profile,
-        vel_full_corr);
+        rot_profile);
 
     u64 acc_count =0;
 

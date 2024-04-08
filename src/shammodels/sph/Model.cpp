@@ -718,9 +718,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
     using DIter = typename BigDiscUtils<Tvec>::DiscIterator;
 
 
-    logger::info_ln("Model", "######## JUST BEFORE G ##########");
     Tscal G = solver.solver_config.get_constant_G();
-    logger::info_ln("Model", "######## JUST AFTER G ##########");
     DIter gen = DIter(
         center, 
         central_mass,

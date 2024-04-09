@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = '/Users/ylapeyre/Documents/Shamwork/08_04/test1/'
+outputdir = '/Users/ylapeyre/Documents/Shamwork/09_04/test1/'
 
 
 si = shamrock.UnitSystem()
@@ -15,7 +15,7 @@ ucte = shamrock.Constants(codeu)
 
 #code u
 central_mass = 1 
-Rw = 5. #/ sicte.au() 
+Rw = 1. #/ sicte.au() 
 orbital_period = np.sqrt(4 * np.pi**2 * Rw**3 / central_mass) #physical units
 print("################## orbital period = {} ##################".format(orbital_period))
 
@@ -23,7 +23,7 @@ ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 
 cfg = model.gen_default_config()
 cfg.set_artif_viscosity_ConstantDisc(alpha_AV = 0, alpha_u = 0, beta_AV = 0)
@@ -33,7 +33,7 @@ cfg.add_ext_force_lense_thirring(
     central_mass = central_mass,
     Racc = 0.1,
     a_spin = 0.9,
-    dir_spin = (3**0.5 / 2,1/2,0)
+    dir_spin = (0,1,0) #align with BH spin
 )
 cfg.print_status()
 cfg.set_units(codeu)
@@ -52,8 +52,8 @@ pmass = model.add_big_disc_3d(
     center      =(0,0,0),
     central_mass=central_mass,
     Npart       =100000,
-    r_in        =1, 
-    r_out       =10,
+    r_in        =0.2, 
+    r_out       =2,
     disc_mass   =disc_mass,
     p           =1.,
     H_r_in      =0.05,
@@ -62,8 +62,8 @@ pmass = model.add_big_disc_3d(
     do_warp     =True, 
     incl        =30., 
     posangle    =0., 
-    Rwarp       =5, 
-    Hwarp       =1)
+    Rwarp       =1., 
+    Hwarp       =0.2)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
@@ -80,8 +80,8 @@ dump = model.make_phantom_dump()
 dump.save_dump(outputdir + "initdump")
 print("Run")
 
-model.change_htolerance(1.3)
-model.evolve_once_override_time(0,0)
+#model.change_htolerance(1.3)
+#model.evolve_once_override_time(0,0)
 model.change_htolerance(1.1)
 
 print("Current part mass :", pmass)
@@ -90,7 +90,7 @@ t_sum = 0
 t_target = 100000
 
 i_dump = 0
-dt_dump = 0.5
+dt_dump = 1
 next_dt_target = t_sum + dt_dump
 
 while next_dt_target <= t_target:

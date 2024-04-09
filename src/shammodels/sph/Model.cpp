@@ -704,7 +704,9 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 //        Tscal G = solver.solver_config.get_constant_G();
 //        return sycl::sqrt(G * central_mass/r);
 //    };
+
     auto rot_profile = [&] (Tscal r) -> Tscal{
+        // corrected vphi profile
         //carefull: needs r in cylindrical
         Tscal G = solver.solver_config.get_constant_G();
         Tscal c = solver.solver_config.get_constant_c();
@@ -723,9 +725,27 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 
     };
 
+    auto rot_profile2 = [&] (Tscal r) -> Tscal{
+        // profile for LT
+        //carefull: needs r in cylindrical
+        Tscal G = solver.solver_config.get_constant_G();
+        Tscal c = solver.solver_config.get_constant_c();
+        Tscal aspin = 0.9;
+        Tscal theta = 30. * shambase::constants::pi<f64> / 180.;
+        Tscal Rg   = G * central_mass / sycl::pow(c, 2);
+        Tscal vkep = sqrt(G * central_mass / r);
+        Tscal r_on_rg = r / Rg;
+
+        Tscal vphi = (sycl::pow(vkep, 4) / (c*c*c)) * (sycl::sqrt(aspin*aspin + sycl::pow(r_on_rg, 3)) - aspin) * sycl::cos(theta);
+
+        return vphi;
+
+    };
+
     auto cs_profile = [&](Tscal r){
         Tscal cs_in = H_r_in*rot_profile(r_in);
         return cs_law(r)*cs_in; 
+    //    return Tscal(0.); //for LT test
     };
 
     auto get_hfact = []() -> Tscal {

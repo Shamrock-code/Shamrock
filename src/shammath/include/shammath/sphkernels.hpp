@@ -17,6 +17,7 @@
 //%Impl status : Good
 
 #include "shambase/constants.hpp"
+#include "shambackends/math.hpp"
 
 namespace shammath::details {
 
@@ -214,9 +215,9 @@ namespace shammath::details {
         inline static constexpr Tscal Rkern  = 3.5;
         inline static constexpr Tscal hfactd = 1.0;
 
-        inline static constexpr Tscal norm_1d = 1. / 120.;
-        inline static constexpr Tscal norm_2d = 7. / (478 * shambase::constants::pi<Tscal>);
-        inline static constexpr Tscal norm_3d = 1 / (120 * shambase::constants::pi<Tscal>);
+        inline static constexpr Tscal norm_1d = 1. / 720;
+        inline static constexpr Tscal norm_2d = 256. / (113149 * shambase::constants::pi<Tscal>);
+        inline static constexpr Tscal norm_3d = 6. / (5040. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
 
@@ -231,15 +232,10 @@ namespace shammath::details {
             Tscal t4 = div1_2 - q;
 
             // up to order 6
-            t1 = t1 * (t1*t1);
-            t2 = t2 * (t2*t2);
-            t3 = t3 * (t3*t3);
-            t4 = t4 * (t4*t4);
-
-            t1 *= t1;
-            t2 *= t2;
-            t3 *= t3;
-            t4 *= t4;
+            t1 = sham::pow_constexpr<6>(t1);
+            t2 = sham::pow_constexpr<6>(t2);
+            t3 = sham::pow_constexpr<6>(t3);
+            t4 = sham::pow_constexpr<6>(t4);
 
             t1 *= 1.;
             t2 *= -7.;
@@ -261,27 +257,34 @@ namespace shammath::details {
 
         inline static Tscal df(Tscal q) {
 
-            Tscal t1 = 3 - q;
-            Tscal t2 = 2 - q;
-            Tscal t3 = 1 - q;
+            constexpr Tscal div7_2 = (7. / 2.);
+            constexpr Tscal div5_2 = (5. / 2.);
+            constexpr Tscal div3_2 = (3. / 2.);
+            constexpr Tscal div1_2 = (1. / 2.);
 
-            Tscal t1_2 = t1 * t1;
-            Tscal t2_2 = t2 * t2;
-            Tscal t3_2 = t3 * t3;
+            Tscal t1 = div7_2 - q;
+            Tscal t2 = div5_2 - q;
+            Tscal t3 = div3_2 - q;
+            Tscal t4 = div1_2 - q;
 
-            t1 = t1_2 * t1_2;
-            t2 = t2_2 * t2_2;
-            t3 = t3_2 * t3_2;
+            // up to order 6
+            t1 = sham::pow_constexpr<5>(t1);
+            t2 = sham::pow_constexpr<5>(t2);
+            t3 = sham::pow_constexpr<5>(t3);
+            t4 = sham::pow_constexpr<5>(t4);
 
-            t1 *= (1) * (-5);
-            t2 *= (-6) * (-5);
-            t3 *= (15) * (-5);
+            t1 *= (-6.)*(1.);
+            t2 *= (-6.)*(-7.);
+            t3 *= (-6.)*(21.);
+            t4 *= (-6.)*(-35.);
 
-            if (q < 1.) {
+            if (q < div1_2) {
+                return t1 + t2 + t3 + t4;
+            } else if (q < div3_2) {
                 return t1 + t2 + t3;
-            } else if (q < 2.) {
+            } else if (q < div5_2) {
                 return t1 + t2;
-            } else if (q < 3.) {
+            } else if (q < div7_2) {
                 return t1;
             } else
                 return 0;

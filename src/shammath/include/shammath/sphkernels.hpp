@@ -206,6 +206,88 @@ namespace shammath::details {
         }
     };
 
+
+
+    template<class Tscal>
+    class KernelDefM7 {
+        public:
+        inline static constexpr Tscal Rkern  = 3.5;
+        inline static constexpr Tscal hfactd = 1.0;
+
+        inline static constexpr Tscal norm_1d = 1. / 120.;
+        inline static constexpr Tscal norm_2d = 7. / (478 * shambase::constants::pi<Tscal>);
+        inline static constexpr Tscal norm_3d = 1 / (120 * shambase::constants::pi<Tscal>);
+
+        inline static Tscal f(Tscal q) {
+
+            constexpr Tscal div7_2 = (7. / 2.);
+            constexpr Tscal div5_2 = (5. / 2.);
+            constexpr Tscal div3_2 = (3. / 2.);
+            constexpr Tscal div1_2 = (1. / 2.);
+
+            Tscal t1 = div7_2 - q;
+            Tscal t2 = div5_2 - q;
+            Tscal t3 = div3_2 - q;
+            Tscal t4 = div1_2 - q;
+
+            // up to order 6
+            t1 = t1 * (t1*t1);
+            t2 = t2 * (t2*t2);
+            t3 = t3 * (t3*t3);
+            t4 = t4 * (t4*t4);
+
+            t1 *= t1;
+            t2 *= t2;
+            t3 *= t3;
+            t4 *= t4;
+
+            t1 *= 1.;
+            t2 *= -7.;
+            t3 *= 21.;
+            t4 *= -35.;
+
+            if (q < div1_2) {
+                return t1 + t2 + t3 + t4;
+            } else if (q < div3_2) {
+                return t1 + t2 + t3;
+            } else if (q < div5_2) {
+                return t1 + t2;
+            } else if (q < div7_2) {
+                return t1;
+            } else
+                return 0;
+
+        }
+
+        inline static Tscal df(Tscal q) {
+
+            Tscal t1 = 3 - q;
+            Tscal t2 = 2 - q;
+            Tscal t3 = 1 - q;
+
+            Tscal t1_2 = t1 * t1;
+            Tscal t2_2 = t2 * t2;
+            Tscal t3_2 = t3 * t3;
+
+            t1 = t1_2 * t1_2;
+            t2 = t2_2 * t2_2;
+            t3 = t3_2 * t3_2;
+
+            t1 *= (1) * (-5);
+            t2 *= (-6) * (-5);
+            t3 *= (15) * (-5);
+
+            if (q < 1.) {
+                return t1 + t2 + t3;
+            } else if (q < 2.) {
+                return t1 + t2;
+            } else if (q < 3.) {
+                return t1;
+            } else
+                return 0;
+        }
+    };
+
     template<class Tscal>
     class KernelDefC2 {
         public:
@@ -424,6 +506,15 @@ namespace shammath {
      */
     template<class flt_type>
     using M6 = SPHKernelGen<flt_type, details::KernelDefM6<flt_type>>;
+
+    /**
+     * @brief The M7 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
+    template<class flt_type>
+    using M7 = SPHKernelGen<flt_type, details::KernelDefM7<flt_type>>;
 
     /**
      * @brief The C2 SPH kernel

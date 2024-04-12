@@ -110,6 +110,11 @@ TestStart(Unittest, "shammath/sphkernels/M6", validateM6kernel, 1){
     validate_kernel_3d<shammath::M6<f64>>(1e-5,1e-5,1e-5);
 }
 
+TestStart(Unittest, "shammath/sphkernels/M7", validateM7kernel, 1){
+    validate_kernel_3d<shammath::M7<f32>>(1e-3,1e-3,1e-3);
+    validate_kernel_3d<shammath::M7<f64>>(1e-5,1e-5,1e-5);
+}
+
 TestStart(Unittest, "shammath/sphkernels/C2", validateC2kernel, 1){
     validate_kernel_3d<shammath::C2<f32>>(1e-3,1e-4,1e-3);
     validate_kernel_3d<shammath::C2<f64>>(1e-5,1e-5,1e-5);

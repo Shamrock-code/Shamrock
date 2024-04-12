@@ -292,6 +292,253 @@ namespace shammath::details {
     };
 
     template<class Tscal>
+    class KernelDefM8 {
+        public:
+        inline static constexpr Tscal Rkern  = 4.0;
+        inline static constexpr Tscal hfactd = 1.0;
+
+        inline static constexpr Tscal norm_1d = 1. / 5040;
+        inline static constexpr Tscal norm_2d = 9. / (29749. * shambase::constants::pi<Tscal>);
+        inline static constexpr Tscal norm_3d = 6. / (40320. * shambase::constants::pi<Tscal>);
+
+        inline static Tscal f(Tscal q) {
+
+            Tscal t1 = 4 - q;
+            Tscal t2 = 3 - q;
+            Tscal t3 = 2 - q;
+            Tscal t4 = 1 - q;
+
+            t1 = sham::pow_constexpr<7>(t1);
+            t2 = sham::pow_constexpr<7>(t2);
+            t3 = sham::pow_constexpr<7>(t3);
+            t4 = sham::pow_constexpr<7>(t4);
+
+            t1 *= 1.;
+            t2 *= -8.;
+            t3 *= 28.;
+            t4 *= -56.;
+
+            if (q < 1) {
+                return t1 + t2 + t3 + t4;
+            } else if (q < 2) {
+                return t1 + t2 + t3;
+            } else if (q < 3) {
+                return t1 + t2;
+            } else if (q < 4) {
+                return t1;
+            } else
+                return 0;
+
+        }
+
+        inline static Tscal df(Tscal q) {
+
+            Tscal t1 = 4 - q;
+            Tscal t2 = 3 - q;
+            Tscal t3 = 2 - q;
+            Tscal t4 = 1 - q;
+
+            t1 = sham::pow_constexpr<6>(t1);
+            t2 = sham::pow_constexpr<6>(t2);
+            t3 = sham::pow_constexpr<6>(t3);
+            t4 = sham::pow_constexpr<6>(t4);
+
+            t1 *= (-7.)*(1.);
+            t2 *= (-7.)*(-8.);
+            t3 *= (-7.)*(28.);
+            t4 *= (-7.)*(-56.);
+
+            if (q < 1) {
+                return t1 + t2 + t3 + t4;
+            } else if (q < 2) {
+                return t1 + t2 + t3;
+            } else if (q < 3) {
+                return t1 + t2;
+            } else if (q < 4) {
+                return t1;
+            } else
+                return 0;
+        }
+    };
+
+
+
+
+
+    template<class Tscal>
+    class KernelDefM9 {
+        public:
+        inline static constexpr Tscal Rkern  = 4.5;
+        inline static constexpr Tscal hfactd = 1.0;
+
+        inline static constexpr Tscal norm_1d = 1. / 40320;
+        inline static constexpr Tscal norm_2d = 512. / (14345663 * shambase::constants::pi<Tscal>);
+        inline static constexpr Tscal norm_3d = 6. / (362880. * shambase::constants::pi<Tscal>);
+
+        inline static Tscal f(Tscal q) {
+
+            constexpr Tscal div9_2 = (9. / 2.);
+            constexpr Tscal div7_2 = (7. / 2.);
+            constexpr Tscal div5_2 = (5. / 2.);
+            constexpr Tscal div3_2 = (3. / 2.);
+            constexpr Tscal div1_2 = (1. / 2.);
+
+            Tscal t1 = div9_2 - q;
+            Tscal t2 = div7_2 - q;
+            Tscal t3 = div5_2 - q;
+            Tscal t4 = div3_2 - q;
+            Tscal t5 = div1_2 - q;
+
+            t1 = sham::pow_constexpr<8>(t1);
+            t2 = sham::pow_constexpr<8>(t2);
+            t3 = sham::pow_constexpr<8>(t3);
+            t4 = sham::pow_constexpr<8>(t4);
+            t5 = sham::pow_constexpr<8>(t5);
+
+            t1 *= 1.;
+            t2 *= -9.;
+            t3 *= 36.;
+            t4 *= -84.;
+            t5 *= 126.;
+
+            if (q < div1_2) {
+                return t1 + t2 + t3 + t4 + t5;
+            } else if (q < div3_2) {
+                return t1 + t2 + t3 + t4;
+            } else if (q < div5_2) {
+                return t1 + t2 + t3;
+            } else if (q < div7_2) {
+                return t1 + t2;
+            } else if (q < div9_2) {
+                return t1;
+            } else
+                return 0;
+
+        }
+
+        inline static Tscal df(Tscal q) {
+
+            constexpr Tscal div9_2 = (9. / 2.);
+            constexpr Tscal div7_2 = (7. / 2.);
+            constexpr Tscal div5_2 = (5. / 2.);
+            constexpr Tscal div3_2 = (3. / 2.);
+            constexpr Tscal div1_2 = (1. / 2.);
+
+            Tscal t1 = div9_2 - q;
+            Tscal t2 = div7_2 - q;
+            Tscal t3 = div5_2 - q;
+            Tscal t4 = div3_2 - q;
+            Tscal t5 = div1_2 - q;
+
+            t1 = sham::pow_constexpr<7>(t1);
+            t2 = sham::pow_constexpr<7>(t2);
+            t3 = sham::pow_constexpr<7>(t3);
+            t4 = sham::pow_constexpr<7>(t4);
+            t5 = sham::pow_constexpr<7>(t5);
+
+            t1 *= (-8.)*(1.);
+            t2 *= (-8.)*(-9.);
+            t3 *= (-8.)*(36.);
+            t4 *= (-8.)*(-84.);
+            t5 *= (-8.)*(126.);
+
+            if (q < div1_2) {
+                return t1 + t2 + t3 + t4 + t5;
+            } else if (q < div3_2) {
+                return t1 + t2 + t3 + t4;
+            } else if (q < div5_2) {
+                return t1 + t2 + t3;
+            } else if (q < div7_2) {
+                return t1 + t2;
+            } else if (q < div9_2) {
+                return t1;
+            } else
+                return 0;
+        }
+    };
+
+
+    template<class Tscal>
+    class KernelDefM10 {
+        public:
+        inline static constexpr Tscal Rkern  = 5;
+        inline static constexpr Tscal hfactd = 1.0;
+
+        inline static constexpr Tscal norm_1d = 1. / 362880;
+        inline static constexpr Tscal norm_2d = 11. / (2922230 * shambase::constants::pi<Tscal>);
+        inline static constexpr Tscal norm_3d = 6. / (3628800. * shambase::constants::pi<Tscal>);
+
+        inline static Tscal f(Tscal q) {
+
+            Tscal t1 = 5 - q;
+            Tscal t2 = 4 - q;
+            Tscal t3 = 3 - q;
+            Tscal t4 = 2 - q;
+            Tscal t5 = 1 - q;
+
+            t1 = sham::pow_constexpr<9>(t1);
+            t2 = sham::pow_constexpr<9>(t2);
+            t3 = sham::pow_constexpr<9>(t3);
+            t4 = sham::pow_constexpr<9>(t4);
+            t5 = sham::pow_constexpr<9>(t5);
+
+            t1 *= 1.;
+            t2 *= -10.;
+            t3 *= 45.;
+            t4 *= -120.;
+            t5 *= 210.;
+
+            if (q < 1) {
+                return t1 + t2 + t3 + t4 + t5;
+            } else if (q < 2) {
+                return t1 + t2 + t3 + t4;
+            } else if (q < 3) {
+                return t1 + t2 + t3;
+            } else if (q < 4) {
+                return t1 + t2;
+            } else if (q < 5) {
+                return t1;
+            } else
+                return 0;
+
+        }
+
+        inline static Tscal df(Tscal q) {
+
+            Tscal t1 = 5 - q;
+            Tscal t2 = 4 - q;
+            Tscal t3 = 3 - q;
+            Tscal t4 = 2 - q;
+            Tscal t5 = 1 - q;
+
+            t1 = sham::pow_constexpr<8>(t1);
+            t2 = sham::pow_constexpr<8>(t2);
+            t3 = sham::pow_constexpr<8>(t3);
+            t4 = sham::pow_constexpr<8>(t4);
+            t5 = sham::pow_constexpr<8>(t5);
+
+            t1 *= (-9.)*(1.);
+            t2 *= (-9.)*(-10.);
+            t3 *= (-9.)*(45.);
+            t4 *= (-9.)*(-120.);
+            t5 *= (-9.)*(210.);
+
+            if (q < 1) {
+                return t1 + t2 + t3 + t4 + t5;
+            } else if (q < 2) {
+                return t1 + t2 + t3 + t4;
+            } else if (q < 3) {
+                return t1 + t2 + t3;
+            } else if (q < 4) {
+                return t1 + t2;
+            } else if (q < 5) {
+                return t1;
+            } else
+                return 0;
+        }
+    };
+
+    template<class Tscal>
     class KernelDefC2 {
         public:
         inline static constexpr Tscal Rkern  = 2;
@@ -518,6 +765,33 @@ namespace shammath {
      */
     template<class flt_type>
     using M7 = SPHKernelGen<flt_type, details::KernelDefM7<flt_type>>;
+
+    /**
+     * @brief The M8 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
+    template<class flt_type>
+    using M8 = SPHKernelGen<flt_type, details::KernelDefM8<flt_type>>;
+
+    /**
+     * @brief The M8 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
+    template<class flt_type>
+    using M9 = SPHKernelGen<flt_type, details::KernelDefM9<flt_type>>;
+
+    /**
+     * @brief The M8 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
+    template<class flt_type>
+    using M10 = SPHKernelGen<flt_type, details::KernelDefM10<flt_type>>;
 
     /**
      * @brief The C2 SPH kernel

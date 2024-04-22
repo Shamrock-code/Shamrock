@@ -46,12 +46,12 @@ jobs:
             cuda: 11.0.2
             rocm: 5.4.3
             backend: cuda.explicit-multipass
-            arch: sm_86
+            arch: sm_80
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
             backend: cuda.integrated-multipass
-            arch: sm_86
+            arch: sm_80
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3

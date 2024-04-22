@@ -18,7 +18,7 @@ jobs:
 
 
   shamrock_acpp:
-    name: AdaptiveCpp ${{ matrix.profile }} clang-${{ matrix.clang }}
+    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} 
     runs-on: [self-hosted, ubuntu20]
 
     strategy:
@@ -27,9 +27,33 @@ jobs:
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
-            backend: omp
-            arch: 
-    #if: false
+            backend: omp.accelerated
+            arch: none
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: omp.library-only
+            arch: none
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: generic
+            arch: none
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: cuda.explicit-multipass
+            arch: sm_86
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: cuda.integrated-multipass
+            arch: sm_86
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: hip
+            arch: gfx906
   
     timeout-minutes: 60
     steps:
@@ -51,7 +75,7 @@ jobs:
       - name: Build
         run: |
           cd build
-          source activate && shamconfigure
+          source activate && shammake
 
       - name: Pull reference files
         run: |

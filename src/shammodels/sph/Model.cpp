@@ -674,10 +674,10 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
         Tscal aspin = 2.;
         Tscal term = G * central_mass / r;
         Tscal term_fs = 1. - sycl::sqrt(r_in / r);
-        Tscal term_pr = - sycl::pow(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
+        Tscal term_pr = - sycl::pown(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
         Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
-        Tscal det = sycl::pow(term_bh, 2) + 4.*(term + term_pr);
-        Tscal Rg   = G * central_mass / sycl::pow(c, 2);
+        Tscal det = sycl::pown(term_bh, 2) + 4.*(term + term_pr);
+        Tscal Rg   = G * central_mass / sycl::pown(c, 2);
         Tscal vkep = sqrt(G * central_mass / r);
 
         Tscal vphi = 0.5*(term_bh + sycl::sqrt(det));

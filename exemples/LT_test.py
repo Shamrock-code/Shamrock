@@ -2,22 +2,32 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = '/Users/ylapeyre/Documents/Shamwork/09_04/test1/'
-
+outputdir = '/Users/ylapeyre/Documents/Shamwork/01_05/test1/'
+central_mass = 1
 
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
-codeu = shamrock.UnitSystem(unit_time = 3600*24*365,unit_length = sicte.au(), unit_mass = sicte.sol_mass(), )
+codeu = shamrock.UnitSystem(unit_time = sicte.G()*sicte.sol_mass()/(sicte.c()**2) /sicte.c(),unit_length = sicte.G()*sicte.sol_mass()/(sicte.c()**2), unit_mass = sicte.sol_mass(), )
 ucte = shamrock.Constants(codeu)
 
 
 #central_mass = 1e6
 
-#code u
-central_mass = 1 
-Rw = 1. #/ sicte.au() 
-orbital_period = np.sqrt(4 * np.pi**2 * Rw**3 / central_mass) #physical units
+#code u 
+G = ucte.G()
+c_lum = ucte.c()
+gm_c2 = G * central_mass / (c_lum**2)
+
+print("################## GM/c2 = {} ##################".format(gm_c2))
+print("################## G = {} ##################".format(G))
+print("################## c = {} ##################".format(c_lum))
+Rin = 4 * gm_c2 #/ sicte.au() 
+Rout = 10 * Rin
+
+orbital_period = 2 * np.pi * np.sqrt((Rin**3) / (central_mass * G)) #physical units
 print("################## orbital period = {} ##################".format(orbital_period))
+
+
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
@@ -31,9 +41,9 @@ cfg.set_artif_viscosity_ConstantDisc(alpha_AV = 0, alpha_u = 0, beta_AV = 0)
 cfg.set_eos_locally_isothermal()
 cfg.add_ext_force_lense_thirring(
     central_mass = central_mass,
-    Racc = 0.1,
+    Racc = gm_c2 *2,
     a_spin = 0.9,
-    dir_spin = (0,1,0) #align with BH spin
+    dir_spin = (0,0,1) #align with BH spin
 )
 cfg.print_status()
 cfg.set_units(codeu)
@@ -47,13 +57,13 @@ bmax = (10,10,10)
 model.resize_simulation_box(bmin,bmax)
 
 disc_mass = 0.001
-
+"""
 pmass = model.add_big_disc_3d(
     center      =(0,0,0),
     central_mass=central_mass,
     Npart       =100000,
-    r_in        =0.2, 
-    r_out       =2,
+    r_in        =Rin, 
+    r_out       =Rout,
     disc_mass   =disc_mass,
     p           =1.,
     H_r_in      =0.05,
@@ -62,8 +72,8 @@ pmass = model.add_big_disc_3d(
     do_warp     =True, 
     incl        =30., 
     posangle    =0., 
-    Rwarp       =1., 
-    Hwarp       =0.2)
+    Rwarp       =Rin, 
+    Hwarp       =Rout *4)
 
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
@@ -87,10 +97,10 @@ model.change_htolerance(1.1)
 print("Current part mass :", pmass)
 
 t_sum = 0
-t_target = 100000
+t_target = 100 * orbital_period
 
 i_dump = 0
-dt_dump = 1
+dt_dump = orbital_period / 20.
 next_dt_target = t_sum + dt_dump
 
 while next_dt_target <= t_target:
@@ -105,3 +115,4 @@ while next_dt_target <= t_target:
 
     next_dt_target += dt_dump
 
+"""

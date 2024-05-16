@@ -102,10 +102,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                 cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
                     using namespace shamrock::sph;
 
-                    Tscal cs_out = cs0[item];
+                    Tscal cs_out = 0.;//cs0[item];
                     Tscal rho_a = rho_h(pmass, h[item], Kernel::hfactd);
 
-                    Tscal P_a   = EOS::pressure_from_cs(cs_out*cs_out , rho_a) ;
+                    Tscal P_a   = 0.;//EOS::pressure_from_cs(cs_out*cs_out , rho_a) ;
                     
                     P[item]     = P_a;
                     cs[item]    = cs_out;

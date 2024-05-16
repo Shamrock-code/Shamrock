@@ -1482,7 +1482,7 @@ void SPHSolve<Tvec, Kern>::evolve_once()
 
                                 const Tscal u_a = u[id_a];
 
-                                Tscal cs_a = cs[id_a];
+                                Tscal cs_a = 0.;//cs[id_a];
 
                                 Tscal vsig_max = 0;
 
@@ -1509,7 +1509,7 @@ void SPHSolve<Tvec, Kern>::evolve_once()
 
                                     Tscal rho_b         = rho_h(pmass, h_b, Kernel::hfactd);
                                     Tscal P_b           = pressure[id_b];
-                                    Tscal cs_b          = cs[id_b];
+                                    Tscal cs_b          = 0.;//cs[id_b];
                                     Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
                                     Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
 

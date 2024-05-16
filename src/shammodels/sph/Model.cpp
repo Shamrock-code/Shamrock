@@ -20,6 +20,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 
+#include "shamcomm/logs.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/generic/setup/generators.hpp"
@@ -599,6 +600,16 @@ class DiscIterator {
 
             //convert to radians (sycl functions take radians)
             Tscal incl_rad = incl * shambase::constants::pi<Tscal> / 180.;
+            //Tvec w = sycl::cross(k, pos);
+            //Tvec wv = sycl::cross(k, vel);
+            //Tscal x = pos.x();
+            //Tscal y = pos.y();
+            //Tscal z = pos.z();
+            //pos = Tvec(x*sycl::cos(incl_rad)-y*sycl::sin(incl_rad), x*sycl::sin(incl_rad)+y*sycl::cos(incl_rad), 0.);
+            //logger::info_ln("Model", "LALALALALALALA AVANT LA POS");
+            //pos = pos * sycl::cos(inc) + w * sycl::sin(incl_rad) + k * sycl::dot(k, pos) * (1. - sycl::cos(incl_rad));
+            //logger::info_ln("Model", "LALALALALALALA APRES LA POS");
+            //vel = vel * sycl::cos(inc) + wv * sycl::sin(incl_rad) + k * sycl::dot(k, vel) * (1. - sycl::cos(incl_rad));
             if (r < Rwarp - Hwarp){
                 inc = 0.;
             }
@@ -705,7 +716,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 //        return sycl::sqrt(G * central_mass/r);
 //    };
 
-    auto rot_profile = [&] (Tscal r) -> Tscal{
+    auto rot_profile2 = [&] (Tscal r) -> Tscal{
         // corrected vphi profile
         //carefull: needs r in cylindrical
         Tscal G = solver.solver_config.get_constant_G();
@@ -725,18 +736,18 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 
     };
 
-    auto rot_profile2 = [&] (Tscal r) -> Tscal{
+    auto rot_profile = [&] (Tscal r) -> Tscal{
         // profile for LT
         //carefull: needs r in cylindrical
         Tscal G = solver.solver_config.get_constant_G();
         Tscal c = solver.solver_config.get_constant_c();
         Tscal aspin = 0.9;
-        Tscal theta = 30. * shambase::constants::pi<f64> / 180.;
+        Tscal inc = 30. * shambase::constants::pi<f64> / 180.;
         Tscal Rg   = G * central_mass / sycl::pow(c, 2);
         Tscal vkep = sqrt(G * central_mass / r);
         Tscal r_on_rg = r / Rg;
 
-        Tscal vphi = (sycl::pow(vkep, 4) / (c*c*c)) * (sycl::sqrt(aspin*aspin + sycl::pow(r_on_rg, 3)) - aspin) * sycl::cos(theta);
+        Tscal vphi = (sycl::pow(vkep, 4) / (c*c*c)) * (sycl::sqrt(aspin*aspin + sycl::pow(r_on_rg, 3)) - aspin) * sycl::cos(inc);
 
         return vphi;
 

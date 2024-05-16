@@ -2,7 +2,7 @@ import shamrock
 import matplotlib.pyplot as plt
 import numpy as np
 
-outputdir = '/Users/ylapeyre/Documents/Shamwork/01_05/test1/'
+outputdir = '/Users/ylapeyre/Documents/Shamwork/01_05/test3/'
 central_mass = 1
 
 si = shamrock.UnitSystem()
@@ -52,16 +52,16 @@ model.set_solver_config(cfg)
 model.init_scheduler(int(1e7),1)
 
 
-bmin = (-10,-10,-10)
-bmax = (10,10,10)
+bmin = (-100,-100,-100)
+bmax = (100,100,100)
 model.resize_simulation_box(bmin,bmax)
 
 disc_mass = 0.001
-"""
+
 pmass = model.add_big_disc_3d(
     center      =(0,0,0),
     central_mass=central_mass,
-    Npart       =100000,
+    Npart       =50000,
     r_in        =Rin, 
     r_out       =Rout,
     disc_mass   =disc_mass,
@@ -100,7 +100,7 @@ t_sum = 0
 t_target = 100 * orbital_period
 
 i_dump = 0
-dt_dump = orbital_period / 20.
+dt_dump = orbital_period / 10.
 next_dt_target = t_sum + dt_dump
 
 while next_dt_target <= t_target:
@@ -115,4 +115,3 @@ while next_dt_target <= t_target:
 
     next_dt_target += dt_dump
 
-"""

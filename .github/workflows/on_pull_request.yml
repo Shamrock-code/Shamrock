@@ -26,6 +26,11 @@ jobs:
     needs: [src_check]
     uses: ./.github/workflows/shamrock-acpp-clang15.yml
 
+  shamrock_linux_acpp_macos:
+    name: Shamrock Test
+    needs: [src_check]
+    uses: ./.github/workflows/shamrock-acpp-macos.yml
+
   shamrock_linux_acpp_asan:
     name: Shamrock Test
     needs: [src_check]

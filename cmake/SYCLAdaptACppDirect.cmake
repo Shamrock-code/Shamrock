@@ -26,15 +26,16 @@ if(NOT SYCL_COMPILER_IS_ACPP)
     "-DCMAKE_CXX_COMPILER=<path_to_compiler>")
 endif()
 
-check_cxx_source_compiles(
-    "
-    #include <sycl/sycl.hpp>
-    int main(void){}
-    "    
-    HAS_SYCL2020_HEADER)
+variable_watch(__CMAKE_CXX_COMPILER_OUTPUT)
+
+if(NOT DEFINED HAS_SYCL2020_HEADER)
+  try_compile(
+      HAS_SYCL2020_HEADER ${CMAKE_BINARY_DIR}/compile_tests
+      ${CMAKE_SOURCE_DIR}/cmake/feature_test/sycl2020_sycl_header.cpp OUTPUT_VARIABLE TRY_COMPILE_OUTPUT)
+endif()
 
 if(NOT HAS_SYCL2020_HEADER)
-  message(FATAL_ERROR "Acpp can not compile a simple exemple including <sycl/sycl.hpp>")
+  message(FATAL_ERROR "Acpp can not compile a simple exemple including <sycl/sycl.hpp> \n Logs: ${TRY_COMPILE_OUTPUT}" )
 endif()
 
 

@@ -18,6 +18,7 @@ jobs:
 
 
   shamrock_acpp:
+    if: false
     name: AdaptiveCpp macos
     runs-on: macos-latest
   

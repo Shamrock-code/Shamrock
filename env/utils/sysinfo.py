@@ -12,14 +12,17 @@ if psutil_found:
 def is_ninja_available():
     return not (shutil.which("ninja") == None)
 
-
 def get_avail_mem():
     free_mem = 0
     if psutil_found:
         free_mem = (psutil.virtual_memory().available)/1e6
     else:
-        tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
-        free_mem = free_m
+        try:
+            tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
+            free_mem = free_m
+        except:
+            print("Available memory can not be detected -> assuming 16Go")
+            free_mem = 1e9*16
     return free_mem
 
 def should_limit_comp_cores():

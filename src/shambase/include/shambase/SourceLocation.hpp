@@ -20,7 +20,7 @@
 
 /**
  * @brief provide information about the source location
- * 
+ *
  * Exemple :
  * \code{.cpp}
  * SourceLocation loc = SourceLocation{};
@@ -28,25 +28,22 @@
  */
 struct SourceLocation {
 
-    shambase::cxxstd::source_location loc;
+    using srcloc = shambase::cxxstd::source_location;
 
-    inline explicit SourceLocation(
+    srcloc loc;
 
-        shambase::cxxstd::source_location _loc = shambase::cxxstd::source_location::current()
-
-        ) : 
-            loc(_loc) {}
+    inline explicit SourceLocation(srcloc _loc = srcloc::current()) : loc(_loc) {}
 
     /**
      * @brief format the location in multiple lines
-     * 
+     *
      * @return std::string the formated location
      */
     std::string format_multiline();
 
     /**
      * @brief format the location in multiple lines with a given stacktrace
-     * 
+     *
      * @param stacktrace the stacktrace to add to the location
      * @return std::string the formated location
      */
@@ -54,14 +51,14 @@ struct SourceLocation {
 
     /**
      * @brief format the location in a one liner
-     * 
+     *
      * @return std::string the formated location
      */
     std::string format_one_line();
 
     /**
      * @brief format the location in a one liner with the function name displayed
-     * 
+     *
      * @return std::string the formated location
      */
     std::string format_one_line_func();

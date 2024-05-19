@@ -2,24 +2,17 @@ name: pull request comment
 on:
   issue_comment:                                     
     types: [created, edited, deleted]
-
 jobs:
 
   job01:
     if: ${{ github.event.issue.pull_request }}    # <--- The other way to compare if it's on a PR or on an issue
-    runs-on: [ubuntu-latest]
-
+    runs-on: [re-centos7]
     steps:
-
-      - name: start
-        run: echo start
-
       - name: say hello
         if: contains(github.event.comment.body, '/support')   # check the comment if it contains the keywords
         run: |
           echo say hello
-
       - name: test
-          if: contains(github.event.comment.body, '/test')  # check the comment if it contains the keywords
-          run: |
+        if: contains(github.event.comment.body, '/test')  # check the comment if it contains the keywords
+        run: |
           echo test

@@ -15,6 +15,7 @@
  */
 
 #include "shambase/SourceLocation.hpp"
+#include "shambase/aliases_int.hpp"
 
 namespace shamtest::details {
 

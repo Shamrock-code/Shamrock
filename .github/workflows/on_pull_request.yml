@@ -23,8 +23,6 @@ jobs:
     needs: [src_check]
     uses: ./.github/workflows/make_documentation.yml
 
-
-
   shamrock_linux_acpp:
     name: Shamrock Test
     needs: [src_check]
@@ -33,6 +31,7 @@ jobs:
   shamrock_linux_acpp_macos:
     name: Shamrock Test
     needs: [src_check]
+    if: contains(github.event.pull_request.labels.*.name, 'test-macos')
     uses: ./.github/workflows/shamrock-acpp-macos.yml
 
   shamrock_linux_acpp_asan:

@@ -15,8 +15,9 @@ jobs:
     name: Detect changes
     runs-on: ubuntu-latest
     timeout-minutes: 3
+
     outputs:
-      filters: ${{ steps.result.changes.result }}
+      filters: ${{ steps.changes.result }}
 
     steps:
       - name: Check file changes
@@ -33,5 +34,5 @@ jobs:
               - 'env/**'
               - 'external/**'
 
-      - run: echo '${{ steps.changes.outputs.result }}'
+      - run: echo '${{ steps.changes.outputs.changes }}'
      

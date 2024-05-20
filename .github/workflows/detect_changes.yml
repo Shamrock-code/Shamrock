@@ -24,10 +24,14 @@ jobs:
         id: changes
         with:
           filters: |
-            base: 
-              - 'src/shambase/**'
-            algs: 
-              - 'src/shamalgs/**'
+            ci: 
+              - '.github/workflows/**'
+            doc:
+              - 'doc/**'
+            src: 
+              - 'src/**'
+              - 'env/**'
+              - 'external/**'
 
       - run: echo '${{ steps.result.outputs.result }}'
      

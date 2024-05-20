@@ -1,0 +1,33 @@
+name: Identify changed files
+
+on:
+  workflow_call:
+    outputs:
+      filters:
+        description: Matched filters
+        value: ${{ jobs.need_check.outputs.filters }}
+
+permissions: read-all
+
+jobs:
+
+  need_check:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      filters: ${{ steps.result.changes.result }}
+
+    steps:
+      - name: Check file changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            base: 
+              - 'src/shambase/**'
+            algs: 
+              - 'src/shamalgs/**'
+
+      - run: echo '${{ steps.result.outputs.result }}'
+     

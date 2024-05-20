@@ -33,5 +33,5 @@ jobs:
               - 'env/**'
               - 'external/**'
 
-      - run: echo '${{ steps.result.outputs.result }}'
+      - run: echo '${{ steps.changes.outputs.result }}'
      

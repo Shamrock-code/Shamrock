@@ -14,17 +14,22 @@
  */
 
 #include "shambackends/usmbuffer.hpp"
+#include <memory>
 
 namespace sham {
 
     template<USMKindTarget target>
-    usmptr_holder<target>::usmptr_holder(size_t sz, sycl::queue &q) : queue(q), size(sz) {
+    usmptr_holder<target>::usmptr_holder(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched) : dev_sched(dev_sched), size(sz) {
+
+        sycl::context & sycl_ctx = dev_sched->ctx->ctx;
+        sycl::device & dev = dev_sched->ctx->device->dev;
+
         if constexpr (target == device) {
-            usm_ptr = sycl::malloc_device(sz, queue);
+            usm_ptr = sycl::malloc_device(sz, dev, sycl_ctx);
         } else if constexpr (target == shared) {
-            usm_ptr = sycl::malloc_shared(sz, queue);
+            usm_ptr = sycl::malloc_shared(sz, dev, sycl_ctx);
         } else if constexpr (target == host) {
-            usm_ptr = sycl::malloc_host(sz, queue);
+            usm_ptr = sycl::malloc_host(sz, sycl_ctx);
         } else {
             shambase::throw_unimplemented();
         }
@@ -32,7 +37,8 @@ namespace sham {
 
     template<USMKindTarget target>
     usmptr_holder<target>::~usmptr_holder() {
-        sycl::free(usm_ptr, queue);
+        sycl::context & sycl_ctx = dev_sched->ctx->ctx;
+        sycl::free(usm_ptr, sycl_ctx);
     }
 
     template class usmptr_holder<device>;

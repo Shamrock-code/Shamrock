@@ -35,6 +35,7 @@
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 #include "MpiDataTypeHandler.hpp"
+#include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -116,16 +117,16 @@ namespace syclinit {
     std::shared_ptr<sham::DeviceContext> ctx_compute;
     std::shared_ptr<sham::DeviceContext> ctx_alt;
 
-    std::unique_ptr<sham::DeviceScheduler> sched_compute;
-    std::unique_ptr<sham::DeviceScheduler> sched_alt;
+    std::shared_ptr<sham::DeviceScheduler> sched_compute;
+    std::shared_ptr<sham::DeviceScheduler> sched_alt;
 
     void init_device_scheduling(){
         StackEntry stack_loc{false};
         ctx_compute = std::make_shared<sham::DeviceContext>(device_compute);
         ctx_alt = std::make_shared<sham::DeviceContext>(device_alt);
 
-        sched_compute = std::make_unique<sham::DeviceScheduler>(ctx_compute);
-        sched_alt = std::make_unique<sham::DeviceScheduler>(ctx_alt);
+        sched_compute = std::make_shared<sham::DeviceScheduler>(ctx_compute);
+        sched_alt = std::make_shared<sham::DeviceScheduler>(ctx_alt);
 
         sched_compute->test();
         sched_alt->test();
@@ -533,6 +534,14 @@ namespace shamsys::instance {
     
     sham::DeviceScheduler & get_alt_scheduler(){
         return *syclinit::sched_alt;
+    }
+
+    std::shared_ptr<sham::DeviceScheduler> get_compute_scheduler_ptr(){
+        return syclinit::sched_compute;
+    }    
+    
+    std::shared_ptr<sham::DeviceScheduler> get_alt_scheduler_ptr(){
+        return syclinit::sched_alt;
     }
 
     void print_device_info(const sycl::device &Device) {

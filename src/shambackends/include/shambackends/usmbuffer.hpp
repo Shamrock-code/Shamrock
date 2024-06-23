@@ -16,7 +16,10 @@
  */
  
 #include "shambase/exception.hpp"
+#include "shambackends/DeviceContext.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
+#include <memory>
 
 namespace sham {
 
@@ -56,7 +59,7 @@ namespace sham {
     class usmptr_holder{
         void* usm_ptr = nullptr; ///< The USM buffer pointer
         size_t size = 0;         ///< The size of the USM buffer
-        sycl::queue & queue;    ///< The SYCL queue used to allocate/free the USM buffer
+        std::shared_ptr<DeviceScheduler> dev_sched;    ///< The SYCL queue used to allocate/free the USM buffer
 
         public:
 
@@ -66,7 +69,7 @@ namespace sham {
          * @param sz The size of the USM buffer to be allocated
          * @param q The SYCL queue used to allocate/free the USM buffer
          */
-        usmptr_holder(size_t sz, sycl::queue & q);
+        usmptr_holder(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
 
         /**
          * @brief Default destructor
@@ -92,7 +95,7 @@ namespace sham {
         usmptr_holder(usmptr_holder&& other) noexcept
             : usm_ptr(std::exchange(other.usm_ptr, nullptr)), 
             size(other.size),
-            queue(other.queue) {}
+            dev_sched(other.dev_sched) {}
 
         /**
          * @brief Deleted copy assignment operator
@@ -110,7 +113,7 @@ namespace sham {
          */
         usmptr_holder& operator=(usmptr_holder&& other) noexcept
         {
-            queue = other.queue;
+            dev_sched = other.dev_sched;
             size = other.size;
             std::swap(usm_ptr, other.usm_ptr);
             return *this;
@@ -137,14 +140,15 @@ namespace sham {
         }
 
         /**
-         * @brief Get the SYCL queue used for allocation/freeing the USM buffer
+         * @brief Get the SYCL context used for allocation/freeing the USM buffer
          *
-         * @return The SYCL queue used for allocation/freeing the USM buffer
+         * @return The SYCL context used for allocation/freeing the USM buffer
          */
-        inline sycl::queue & get_queue() const {
-            return queue;
+        inline DeviceScheduler& get_dev_scheduler() const {
+            return *dev_sched;
         }
     };
+    
     /**
      * @brief A buffer allocated in USM (Unified Shared Memory)
      *
@@ -164,8 +168,8 @@ namespace sham {
          * @param sz The number of elements in the buffer
          * @param q The SYCL queue to use for allocation/deallocation
          */
-        usmbuffer(size_t sz, sycl::queue & q)
-            : hold(sz*sizeof(T), q), size(sz) {}
+        usmbuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
+            : hold(sz*sizeof(T), dev_sched), size(sz) {}
 
         /**
          * @brief Deleted copy constructor
@@ -196,12 +200,12 @@ namespace sham {
         }
 
         /**
-         * @brief Gets the SYCL queue used related to the buffer
+         * @brief Gets the SYCL context used related to the buffer
          *
-         * @return The SYCL queue used related to the buffer
+         * @return The SYCL context used related to the buffer
          */
-        [[nodiscard]] inline sycl::queue & get_queue() const {
-            return hold.get_queue();
+        [[nodiscard]] inline DeviceScheduler& get_dev_scheduler() const {
+            return hold.get_dev_scheduler();
         }
 
         /**

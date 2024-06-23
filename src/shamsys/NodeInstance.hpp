@@ -151,6 +151,9 @@ namespace shamsys::instance {
     sham::DeviceScheduler & get_compute_scheduler();
     sham::DeviceScheduler & get_alt_scheduler();
 
+    std::shared_ptr<sham::DeviceScheduler> get_compute_scheduler_ptr();
+    std::shared_ptr<sham::DeviceScheduler> get_alt_scheduler_ptr();
+
     ////////////////////////////
     // MPI related routines
     ////////////////////////////

@@ -13,13 +13,13 @@
  *
  */
 
-#include "shambackends/usmbuffer.hpp"
+#include "shambackends/USMPtrHolder.hpp"
 #include <memory>
 
 namespace sham {
 
     template<USMKindTarget target>
-    usmptr_holder<target>::usmptr_holder(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched) : dev_sched(dev_sched), size(sz) {
+    USMPtrHolder<target>::USMPtrHolder(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched) : dev_sched(dev_sched), size(sz) {
 
         sycl::context & sycl_ctx = dev_sched->ctx->ctx;
         sycl::device & dev = dev_sched->ctx->device->dev;
@@ -36,13 +36,13 @@ namespace sham {
     }
 
     template<USMKindTarget target>
-    usmptr_holder<target>::~usmptr_holder() {
+    USMPtrHolder<target>::~USMPtrHolder() {
         sycl::context & sycl_ctx = dev_sched->ctx->ctx;
         sycl::free(usm_ptr, sycl_ctx);
     }
 
-    template class usmptr_holder<device>;
-    template class usmptr_holder<shared>;
-    template class usmptr_holder<host>;
+    template class USMPtrHolder<device>;
+    template class USMPtrHolder<shared>;
+    template class USMPtrHolder<host>;
 
 } // namespace sham

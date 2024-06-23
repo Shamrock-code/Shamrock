@@ -56,7 +56,7 @@ namespace sham {
      * accidental copies of the class.
      */
     template<USMKindTarget target>
-    class usmptr_holder{
+    class USMPtrHolder{
         void* usm_ptr = nullptr; ///< The USM buffer pointer
         size_t size = 0;         ///< The size of the USM buffer
         std::shared_ptr<DeviceScheduler> dev_sched;    ///< The SYCL queue used to allocate/free the USM buffer
@@ -69,30 +69,30 @@ namespace sham {
          * @param sz The size of the USM buffer to be allocated
          * @param q The SYCL queue used to allocate/free the USM buffer
          */
-        usmptr_holder(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+        USMPtrHolder(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
 
         /**
          * @brief Default destructor
          *
          * Frees the USM buffer using the SYCL queue used for allocation
          */
-        ~usmptr_holder();
+        ~USMPtrHolder();
 
         /**
          * @brief Deleted copy constructor
          */
-        usmptr_holder(const usmptr_holder& other) = delete;
+        USMPtrHolder(const USMPtrHolder& other) = delete;
 
         /**
          * @brief Move constructor
          *
-         * Moves the contents of the other usmptr_holder into this one, leaving the other
-         * one in a valid but unspecified state. The other usmptr_holder will not free the
+         * Moves the contents of the other USMPtrHolder into this one, leaving the other
+         * one in a valid but unspecified state. The other USMPtrHolder will not free the
          * USM buffer on destruction.
          *
-         * @param other The usmptr_holder to be moved from
+         * @param other The USMPtrHolder to be moved from
          */
-        usmptr_holder(usmptr_holder&& other) noexcept
+        USMPtrHolder(USMPtrHolder&& other) noexcept
             : usm_ptr(std::exchange(other.usm_ptr, nullptr)), 
             size(other.size),
             dev_sched(other.dev_sched) {}
@@ -100,18 +100,18 @@ namespace sham {
         /**
          * @brief Deleted copy assignment operator
          */
-        usmptr_holder& operator=(const usmptr_holder& other) = delete;
+        USMPtrHolder& operator=(const USMPtrHolder& other) = delete;
 
         /**
          * @brief Move assignment operator
          *
-         * Moves the contents of the other usmptr_holder into this one, leaving the other
-         * one in a valid but unspecified state. The other usmptr_holder will not free the
+         * Moves the contents of the other USMPtrHolder into this one, leaving the other
+         * one in a valid but unspecified state. The other USMPtrHolder will not free the
          * USM buffer on destruction.
          *
-         * @param other The usmptr_holder to be moved from
+         * @param other The USMPtrHolder to be moved from
          */
-        usmptr_holder& operator=(usmptr_holder&& other) noexcept
+        USMPtrHolder& operator=(USMPtrHolder&& other) noexcept
         {
             dev_sched = other.dev_sched;
             size = other.size;
@@ -148,86 +148,5 @@ namespace sham {
             return *dev_sched;
         }
     };
-    
-    /**
-     * @brief A buffer allocated in USM (Unified Shared Memory)
-     *
-     * @tparam T The type of the buffer's elements
-     * @tparam target The USM target where the buffer is allocated (host, device, shared)
-     */
-    template<class T, USMKindTarget target>
-    class usmbuffer{
-        usmptr_holder<target> hold; ///< The USM pointer holder
-        size_t size = 0; ///< The number of elements in the buffer
 
-        public:
-
-        /**
-         * @brief Constructs the USM buffer from its size and a SYCL queue
-         *
-         * @param sz The number of elements in the buffer
-         * @param q The SYCL queue to use for allocation/deallocation
-         */
-        usmbuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
-            : hold(sz*sizeof(T), dev_sched), size(sz) {}
-
-        /**
-         * @brief Deleted copy constructor
-         */
-        usmbuffer(const usmbuffer& other) = delete;
-
-        /**
-         * @brief Deleted copy assignment operator
-         */
-        usmbuffer& operator=(const usmbuffer& other) = delete;
-
-        /**
-         * @brief Gets a read-only pointer to the buffer's data
-         *
-         * @return A const pointer to the buffer's data
-         */
-        [[nodiscard]] inline const T * get_read_only_ptr() const {
-            return hold.template ptr_cast<T>();
-        }
-
-        /**
-         * @brief Gets a read-write pointer to the buffer's data
-         *
-         * @return A pointer to the buffer's data
-         */
-        [[nodiscard]] inline T * get_ptr() const {
-            return hold.template ptr_cast<T>();
-        }
-
-        /**
-         * @brief Gets the SYCL context used related to the buffer
-         *
-         * @return The SYCL context used related to the buffer
-         */
-        [[nodiscard]] inline DeviceScheduler& get_dev_scheduler() const {
-            return hold.get_dev_scheduler();
-        }
-
-        /**
-         * @brief Gets the number of elements in the buffer
-         *
-         * @return The number of elements in the buffer
-         */
-        [[nodiscard]] inline size_t get_size() const {
-            return size;
-        }
-
-        /**
-         * @brief Gets the size of the buffer in bytes
-         *
-         * @return The size of the buffer in bytes
-         */
-        [[nodiscard]] inline size_t get_bytesize() const {
-            return hold.get_size();
-        }
-
-    };
-
-    
-
-} // namespace sham
+}

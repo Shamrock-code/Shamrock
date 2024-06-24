@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file usmbuffer.cpp
+ * @file USMPtrHolder.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -35,10 +35,20 @@ namespace sham {
         }
     }
 
+
+
+    template<USMKindTarget target>
+    void USMPtrHolder<target>::free_ptr(){
+        if(usm_ptr != nullptr){
+            sycl::context & sycl_ctx = dev_sched->ctx->ctx;
+            sycl::free(usm_ptr, sycl_ctx);
+            usm_ptr = nullptr;
+        }
+    }
+
     template<USMKindTarget target>
     USMPtrHolder<target>::~USMPtrHolder() {
-        sycl::context & sycl_ctx = dev_sched->ctx->ctx;
-        sycl::free(usm_ptr, sycl_ctx);
+        free_ptr();
     }
 
     template class USMPtrHolder<device>;

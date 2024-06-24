@@ -9,33 +9,35 @@
 #pragma once
 
 /**
- * @file usmbuffer.hpp
+ * @file DeviceBuffer.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
  */
  
-#include "shambase/exception.hpp"
-#include "shambackends/DeviceContext.hpp"
+#include "shambase/SourceLocation.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/USMPtrHolder.hpp"
-#include "shambackends/sycl.hpp"
+#include "shambackends/details/BufferEventHandler.hpp"
+#include "shambackends/details/memoryHandle.hpp"
 #include <memory>
 
 namespace sham {
 
-    
     /**
      * @brief A buffer allocated in USM (Unified Shared Memory)
      *
      * @tparam T The type of the buffer's elements
      * @tparam target The USM target where the buffer is allocated (host, device, shared)
      */
-    template<class T, USMKindTarget target>
+    template<class T, USMKindTarget target = device>
     class DeviceBuffer{
         
         USMPtrHolder<target> hold; ///< The USM pointer holder
         size_t size = 0; ///< The number of elements in the buffer
+        details::BufferEventHandler events_hndl;
+
+        SourceLocation construct_loc;
 
         public:
 
@@ -46,7 +48,7 @@ namespace sham {
          * @param q The SYCL queue to use for allocation/deallocation
          */
         DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
-            : hold(sz*sizeof(T), dev_sched), size(sz) {}
+            : hold(details::create_usm_ptr<target>(sz*sizeof(T), dev_sched)), size(sz) {}
 
         /**
          * @brief Deleted copy constructor
@@ -58,12 +60,18 @@ namespace sham {
          */
         DeviceBuffer& operator=(const DeviceBuffer& other) = delete;
 
+        ~DeviceBuffer(){
+            //give the ptr holder and event handler to the memory handler
+            details::release_usm_ptr(std::move(hold), std::move(events_hndl));
+        }
+
         /**
          * @brief Gets a read-only pointer to the buffer's data
          *
          * @return A const pointer to the buffer's data
          */
-        [[nodiscard]] inline const T * get_read_only_ptr() const {
+        [[nodiscard]] inline const T * get_read_access(std::vector<sycl::event> &depends_list) {
+            events_hndl.read_access(depends_list);
             return hold.template ptr_cast<T>();
         }
 
@@ -72,8 +80,13 @@ namespace sham {
          *
          * @return A pointer to the buffer's data
          */
-        [[nodiscard]] inline T * get_ptr() const {
+        [[nodiscard]] inline T * get_write_access(std::vector<sycl::event> &depends_list) {
+            events_hndl.write_access(depends_list);
             return hold.template ptr_cast<T>();
+        }
+
+        void complete_state(sycl::event e){
+            events_hndl.complete_state(e);
         }
 
         /**

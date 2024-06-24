@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file usmbuffer.hpp
+ * @file USMPtrHolder.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -61,7 +61,11 @@ namespace sham {
         size_t size = 0;         ///< The size of the USM buffer
         std::shared_ptr<DeviceScheduler> dev_sched;    ///< The SYCL queue used to allocate/free the USM buffer
 
+
+
         public:
+
+        void free_ptr();
 
         /**
          * @brief Constructor
@@ -130,6 +134,10 @@ namespace sham {
             return reinterpret_cast<T*>(usm_ptr);
         }
 
+        inline void* get_raw_ptr() const {
+            return usm_ptr;
+        }
+
         /**
          * @brief Get the size of the USM buffer
          *
@@ -147,6 +155,8 @@ namespace sham {
         inline DeviceScheduler& get_dev_scheduler() const {
             return *dev_sched;
         }
+
     };
+
 
 }

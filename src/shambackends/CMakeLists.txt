@@ -5,7 +5,10 @@ project(Shambackends CXX C)
 set(Sources
         src/comm/details/CommunicationBufferImpl.cpp
         src/comm/CommunicationBuffer.cpp
-        src/usmbuffer.cpp
+        src/details/BufferEventHandler.cpp
+        src/details/memoryHandle.cpp
+        src/USMPtrHolder.cpp
+        src/DeviceBuffer.cpp
         src/Device.cpp
         src/DeviceContext.cpp
         src/DeviceQueue.cpp

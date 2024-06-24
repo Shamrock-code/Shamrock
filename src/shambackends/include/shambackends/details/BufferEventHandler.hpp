@@ -15,6 +15,7 @@
  *
  */
 
+#include "shambase/SourceLocation.hpp"
 #include "shambackends/sycl.hpp"
 
 namespace sham::details {
@@ -24,7 +25,7 @@ namespace sham::details {
         std::vector<sycl::event> read_dependencies;
         std::vector<sycl::event> write_dependencies;
 
-        void wait_all() {
+        void wait_all(SourceLocation src_loc = SourceLocation{}) {
             sycl::event::wait(read_dependencies);
             sycl::event::wait(write_dependencies);
             read_dependencies.clear();
@@ -37,10 +38,10 @@ namespace sham::details {
 
         bool up_to_date_events = true;
 
-        void read_access(std::vector<sycl::event> &depends_list);
+        void read_access(std::vector<sycl::event> &depends_list, SourceLocation src_loc = SourceLocation{});
 
-        void write_access(std::vector<sycl::event> &depends_list);
+        void write_access(std::vector<sycl::event> &depends_list, SourceLocation src_loc = SourceLocation{});
 
-        void complete_state(sycl::event e);
+        void complete_state(sycl::event e, SourceLocation src_loc = SourceLocation{});
     };
 } // namespace sham::details

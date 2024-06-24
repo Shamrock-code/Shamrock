@@ -51,10 +51,11 @@ void add(sycl::queue & q,sham::DeviceBuffer<int> & f_a,sham::DeviceBuffer<int> &
 
 TestStart(Unittest, "shambackends/DeviceBuffer:smalltaskgraph", DeviceBuffer_small_task_graph, 1){
 
-
-    sham::DeviceBuffer<int> a{1000,shamsys::instance::get_compute_scheduler_ptr()};
-    sham::DeviceBuffer<int> b{1000,shamsys::instance::get_compute_scheduler_ptr()};
-    sham::DeviceBuffer<int> c{1000,shamsys::instance::get_compute_scheduler_ptr()};
+    std::shared_ptr<sham::DeviceScheduler> dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    
+    sham::DeviceBuffer<int> a{1000,dev_sched};
+    sham::DeviceBuffer<int> b{1000,dev_sched};
+    sham::DeviceBuffer<int> c{1000,dev_sched};
 
     sycl::queue & q = shamsys::instance::get_compute_scheduler().get_queue().q;
 

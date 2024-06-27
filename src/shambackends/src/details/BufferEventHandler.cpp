@@ -31,7 +31,7 @@ namespace sham::details {
         up_to_date_events = false;
         last_access       = READ;
 
-        for (sycl::event e : write_dependencies) {
+        for (sycl::event e : write_events) {
             depends_list.push_back(e);
         }
 
@@ -49,10 +49,10 @@ namespace sham::details {
         up_to_date_events = false;
         last_access       = WRITE;
 
-        for (sycl::event e : write_dependencies) {
+        for (sycl::event e : write_events) {
             depends_list.push_back(e);
         }
-        for (sycl::event e : read_dependencies) {
+        for (sycl::event e : read_events) {
             depends_list.push_back(e);
         }
 
@@ -68,16 +68,16 @@ namespace sham::details {
 
         if (last_access == READ) {
 
-            read_dependencies.push_back(e);
+            read_events.push_back(e);
             up_to_date_events = true;
 
         } else if (last_access == WRITE) {
 
             // the new event depends on those so we can clear
-            write_dependencies.clear();
-            read_dependencies.clear();
+            write_events.clear();
+            read_events.clear();
 
-            write_dependencies.push_back(e);
+            write_events.push_back(e);
             up_to_date_events = true;
         }
     }

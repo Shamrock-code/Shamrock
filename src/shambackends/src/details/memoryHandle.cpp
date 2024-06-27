@@ -45,7 +45,7 @@ namespace sham::details {
             size,
             " | mode =",
             get_mode_name<target>());
-        auto ret = USMPtrHolder<target>(size, dev_sched);
+        auto ret = USMPtrHolder<target>::create(size, dev_sched);
         shamcomm::logs::debug_alloc_ln(
             "memoryHandle", "pointer created : ptr =", ret.get_raw_ptr());
         return ret;

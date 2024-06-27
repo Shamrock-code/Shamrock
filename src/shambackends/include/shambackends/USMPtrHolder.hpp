@@ -20,28 +20,26 @@
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 #include <memory>
+#include <utility>
 
 namespace sham {
 
     /**
-     * @brief Enum listing the different types of USM buffers
+     * @brief Enum listing the different types of USM pointers allocations 
      *
-     * There are three types of USM buffers:
-     *
-     * - Device buffers are allocated on the device's memory, and can only be accessed by the
+     * - Device USM pointers are allocated on the device's memory, and can only be accessed by the
      *   device.
      *
-     * - Shared buffers are allocated on the host's memory, and can be accessed by both the host
+     * - Shared USM pointers are allocated on the host's memory, and can be accessed by both the host
      *   and the device. (May induce implicit communications between the host and the device)
      *
-     * - Host buffers are allocated on the host's memory, and can only be accessed by the host.
+     * - Host USM pointers are allocated on the host's memory, and can only be accessed by the host.
      */
     enum USMKindTarget {
-        device, ///< Device buffer
-        shared, ///< Shared buffer
-        host    ///< Host buffer
+        device, ///< Device memory
+        shared, ///< Shared memory
+        host    ///< Host memory
     };
-
 
     /**
      * @brief Class for holding a USM pointer
@@ -57,28 +55,36 @@ namespace sham {
      */
     template<USMKindTarget target>
     class USMPtrHolder{
+
         void* usm_ptr = nullptr; ///< The USM buffer pointer
         size_t size = 0;         ///< The size of the USM buffer
         std::shared_ptr<DeviceScheduler> dev_sched;    ///< The SYCL queue used to allocate/free the USM buffer
 
-
+        USMPtrHolder(void* usm_ptr, size_t size , std::shared_ptr<DeviceScheduler> dev_sched) : usm_ptr(usm_ptr), size(size), dev_sched(std::move(dev_sched)){}
 
         public:
 
-        void free_ptr();
+        void free_ptr(); ///< Free the held pointer
 
         /**
-         * @brief Constructor
+         * @brief Create a USM pointer holder
+         *
+         * Allocate a USM buffer of the given size using the provided SYCL queue.
+         * The USM buffer can be either a device, shared or host buffer,
+         * depending on the template parameter `target`.
          *
          * @param sz The size of the USM buffer to be allocated
-         * @param q The SYCL queue used to allocate/free the USM buffer
-         */
-        USMPtrHolder(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
-
-        /**
-         * @brief Default destructor
+         * @param dev_sched The Device Scheduler used to allocate/free the USM buffer
          *
-         * Frees the USM buffer using the SYCL queue used for allocation
+         * @return A USMPtrHolder instance wrapping the allocated USM buffer
+         */
+        static USMPtrHolder create(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+
+        
+        /**
+         * @brief USM pointer holder destructor
+         *
+         * Frees the USM pointer if not equall to nullptr
          */
         ~USMPtrHolder();
 
@@ -91,8 +97,7 @@ namespace sham {
          * @brief Move constructor
          *
          * Moves the contents of the other USMPtrHolder into this one, leaving the other
-         * one in a valid but unspecified state. The other USMPtrHolder will not free the
-         * USM buffer on destruction.
+         * one with a nullptr USM pointer, which disable the destructor.
          *
          * @param other The USMPtrHolder to be moved from
          */
@@ -124,26 +129,34 @@ namespace sham {
         }
 
         /**
-         * @brief Cast the USM buffer pointer to the given type
+         * @brief Cast the USM pointer to the given type
          *
          * @tparam T The type to cast the USM buffer pointer to
-         * @return The casted USM buffer pointer
+         * @return The casted USM pointer
          */
         template<class T>
         inline T* ptr_cast() const {
             return reinterpret_cast<T*>(usm_ptr);
         }
 
-        inline void* get_raw_ptr() const {
+        /**
+         * @brief Get the raw pointer of the USM allocation
+         *
+         * This method returns the raw pointer to the USM allocation. The caller must
+         * be careful with the type and the usage of the returned pointer.
+         *
+         * @return The raw pointer of the USM allocation
+         */
+        [[nodiscard]] inline void* get_raw_ptr() const {
             return usm_ptr;
         }
 
         /**
-         * @brief Get the size of the USM buffer
+         * @brief Get the size of the USM allocation (in byte)
          *
-         * @return The size of the USM buffer
+         * @return The size of the USM allocation (in byte)
          */
-        inline size_t get_size() const{
+        [[nodiscard]] inline size_t get_size() const{
             return size;
         }
 
@@ -152,11 +165,11 @@ namespace sham {
          *
          * @return The SYCL context used for allocation/freeing the USM buffer
          */
-        inline DeviceScheduler& get_dev_scheduler() const {
+        [[nodiscard]] inline DeviceScheduler& get_dev_scheduler() const {
             return *dev_sched;
         }
 
     };
 
 
-}
+} // namespace sham

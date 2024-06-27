@@ -19,12 +19,12 @@
 namespace sham {
 
     template<USMKindTarget target>
-    USMPtrHolder<target> USMPtrHolder<target>::create(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched){
+    USMPtrHolder<target>
+    USMPtrHolder<target>::create(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched) {
 
-
-        sycl::context & sycl_ctx = dev_sched->ctx->ctx;
-        sycl::device & dev = dev_sched->ctx->device->dev;
-        void* usm_ptr;
+        sycl::context &sycl_ctx = dev_sched->ctx->ctx;
+        sycl::device &dev       = dev_sched->ctx->device->dev;
+        void *usm_ptr;
         if constexpr (target == device) {
             usm_ptr = sycl::malloc_device(sz, dev, sycl_ctx);
         } else if constexpr (target == shared) {
@@ -38,12 +38,10 @@ namespace sham {
         return USMPtrHolder<target>(usm_ptr, sz, dev_sched);
     }
 
-
-
     template<USMKindTarget target>
-    void USMPtrHolder<target>::free_ptr(){
-        if(usm_ptr != nullptr){
-            sycl::context & sycl_ctx = dev_sched->ctx->ctx;
+    void USMPtrHolder<target>::free_ptr() {
+        if (usm_ptr != nullptr) {
+            sycl::context &sycl_ctx = dev_sched->ctx->ctx;
             sycl::free(usm_ptr, sycl_ctx);
             usm_ptr = nullptr;
         }

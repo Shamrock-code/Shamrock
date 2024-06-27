@@ -15,7 +15,6 @@
  *
  */
  
-#include "shambase/SourceLocation.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
@@ -36,8 +35,6 @@ namespace sham {
         USMPtrHolder<target> hold; ///< The USM pointer holder
         size_t size = 0; ///< The number of elements in the buffer
         details::BufferEventHandler events_hndl;
-
-        SourceLocation construct_loc;
 
         public:
 

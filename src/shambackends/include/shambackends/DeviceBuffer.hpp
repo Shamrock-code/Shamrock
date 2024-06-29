@@ -32,20 +32,22 @@ namespace sham {
     template<class T, USMKindTarget target = device>
     class DeviceBuffer{
         
-        USMPtrHolder<target> hold; ///< The USM pointer holder
-        size_t size = 0; ///< The number of elements in the buffer
-        details::BufferEventHandler events_hndl;
-
         public:
 
         /**
-         * @brief Constructs the USM buffer from its size and a SYCL queue
+         * @brief Construct a new Device Buffer object
          *
-         * @param sz The number of elements in the buffer
-         * @param q The SYCL queue to use for allocation/deallocation
+         * @param sz The size of the buffer in number of elements
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor creates a new Device Buffer object with the given size.
+         * It allocates the buffer as USM memory and stores the USM pointer and the
+         * size in the respective member variables.
          */
         DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
-            : hold(details::create_usm_ptr<target>(sz*sizeof(T), dev_sched)), size(sz) {}
+            : hold(details::create_usm_ptr<target>(sz*sizeof(T), dev_sched))     // Create USM pointer
+            , size(sz)                                                           // Store size
+        {}
 
         /**
          * @brief Deleted copy constructor
@@ -57,15 +59,27 @@ namespace sham {
          */
         DeviceBuffer& operator=(const DeviceBuffer& other) = delete;
 
+        /**
+         * @brief Destructor for DeviceBuffer
+         *
+         * This destructor releases the USM pointer and event handler
+         * by transfering them back to the memory handler
+         */
         ~DeviceBuffer(){
             //give the ptr holder and event handler to the memory handler
             details::release_usm_ptr(std::move(hold), std::move(events_hndl));
         }
 
         /**
-         * @brief Gets a read-only pointer to the buffer's data
+         * @brief Get a read-only pointer to the buffer's data.
          *
-         * @return A const pointer to the buffer's data
+         * This function returns a const pointer to the buffer's data. The
+         * pointer is locked for reading and the event handler is updated to
+         * reflect the read access.
+         *
+         * @param depends_list A vector of SYCL events to wait for before
+         *        accessing the buffer.
+         * @return A const pointer to the buffer's data.
          */
         [[nodiscard]] inline const T * get_read_access(std::vector<sycl::event> &depends_list) {
             events_hndl.read_access(depends_list);
@@ -73,23 +87,36 @@ namespace sham {
         }
 
         /**
-         * @brief Gets a read-write pointer to the buffer's data
+         * @brief Get a read-write pointer to the buffer's data
          *
-         * @return A pointer to the buffer's data
+         * This function returns a pointer to the buffer's data. The event handler is updated to
+         * reflect the write access.
+         *
+         * @param depends_list A vector of SYCL events to wait for before
+         *        accessing the buffer.
+         * @return A pointer to the buffer's data.
          */
         [[nodiscard]] inline T * get_write_access(std::vector<sycl::event> &depends_list) {
             events_hndl.write_access(depends_list);
             return hold.template ptr_cast<T>();
         }
 
-        void complete_state(sycl::event e){
+        /**
+         * @brief Complete the event state of the buffer.
+         *
+         * This function complete the event state of the buffer by registering the 
+         * event resulting of the last queried access 
+         *
+         * @param e The SYCL event resulting of the queried access.
+         */
+        void complete_event_state(sycl::event e){
             events_hndl.complete_state(e);
         }
 
         /**
-         * @brief Gets the SYCL context used related to the buffer
+         * @brief Gets the Device scheduler corresponding to the held allocation
          *
-         * @return The SYCL context used related to the buffer
+         * @return The Device scheduler
          */
         [[nodiscard]] inline DeviceScheduler& get_dev_scheduler() const {
             return hold.get_dev_scheduler();
@@ -110,11 +137,30 @@ namespace sham {
          * @return The size of the buffer in bytes
          */
         [[nodiscard]] inline size_t get_bytesize() const {
-            return hold.get_size();
+            return hold.get_bytesize();
         }
 
-    };
+        private:
 
-    
+        /**
+         * @brief The USM pointer holder
+         */
+        USMPtrHolder<target> hold;
+
+        /**
+         * @brief The number of elements in the buffer
+         */
+        size_t size = 0;
+
+        /**
+         * @brief Event handler for the buffer
+         *
+         * This event handler keeps track of the events associated with read and write
+         * accesses to the buffer. It is used to ensure that the buffer is not accessed
+         * before the data is in a complete state.
+         */
+        details::BufferEventHandler events_hndl;
+
+    };
 
 } // namespace sham

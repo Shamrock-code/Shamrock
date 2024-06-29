@@ -152,7 +152,7 @@ namespace sham {
          *
          * @return The size of the USM allocation (in byte)
          */
-        [[nodiscard]] inline size_t get_size() const { return size; }
+        [[nodiscard]] inline size_t get_bytesize() const { return size; }
 
         /**
          * @brief Get the SYCL context used for allocation/freeing the USM buffer

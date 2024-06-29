@@ -28,7 +28,7 @@ void fill(sycl::queue & q, sham::DeviceBuffer<int> & f_a, int value){
 
     });
 
-    f_a.complete_state(e);
+    f_a.complete_event_state(e);
 }
 
 void add(sycl::queue & q,sham::DeviceBuffer<int> & f_a,sham::DeviceBuffer<int> & f_b,sham::DeviceBuffer<int> & f_c)
@@ -50,9 +50,9 @@ void add(sycl::queue & q,sham::DeviceBuffer<int> & f_a,sham::DeviceBuffer<int> &
 
     });
 
-    f_a.complete_state(e);
-    f_b.complete_state(e);
-    f_c.complete_state(e);
+    f_a.complete_event_state(e);
+    f_b.complete_event_state(e);
+    f_c.complete_event_state(e);
 
 }
 

@@ -58,7 +58,7 @@ namespace sham::details {
         shamcomm::logs::debug_alloc_ln(
             "memoryHandle",
             "release usm pointer size :",
-            usm_ptr_hold.get_size(),
+            usm_ptr_hold.get_bytesize(),
             " | ptr =",
             usm_ptr_hold.get_raw_ptr(),
             " | mode =",

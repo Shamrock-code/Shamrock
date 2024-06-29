@@ -27,8 +27,8 @@ TestStart(Unittest, "shambackends/DeviceBuffer", DeviceBuffer_consttructor, 1){
 
     std::vector<sycl::event> e;
 
-    REQUIRE(buf.get_read_access(e) != nullptr);buf.complete_state(sycl::event{});
-    REQUIRE(buf.get_write_access(e) != nullptr);buf.complete_state(sycl::event{});
+    REQUIRE(buf.get_read_access(e) != nullptr);buf.complete_event_state(sycl::event{});
+    REQUIRE(buf.get_write_access(e) != nullptr);buf.complete_event_state(sycl::event{});
     REQUIRE(buf.get_size() == sz);
     REQUIRE(buf.get_bytesize() == sz*sizeof(T));
 

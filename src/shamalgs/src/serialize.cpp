@@ -13,7 +13,7 @@
  *
  */
 
-#include "serialize.hpp"
+#include "shamalgs/serialize.hpp"
 #include "shamcomm/logs.hpp"
 
 // Layout of the SerializeHelper is

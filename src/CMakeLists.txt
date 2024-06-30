@@ -13,7 +13,7 @@ add_custom_command(
 
 
 
-set(as_subproject shamunits shambase shamcomm shambackends shammath)
+set(as_subproject shamunits shambase shamcomm shambackends shammath shamalgs)
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -29,31 +29,7 @@ add_subdirectory(shambase)
 add_subdirectory(shamcomm)
 add_subdirectory(shambackends)
 add_subdirectory(shammath)
-
-######################
-# Shamalgs
-######################
-if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shamalgs target (Shared lib)")
-add_library(shamalgs SHARED "")
-else()
-message("-- adding shamalgs target (no lib)")
-add_library(shamalgs OBJECT "")
-endif()
-
-target_include_directories(shamalgs PUBLIC "${CMAKE_SOURCE_DIR}/src")
-
-if(SHAMROCK_USE_PCH)
-    target_precompile_headers(shamalgs PRIVATE "<sycl/sycl.hpp>")
-endif()
-
-target_link_libraries(shamalgs PUBLIC shamunits)
-target_link_libraries(shamalgs PUBLIC shambase)
-target_link_libraries(shamalgs PUBLIC shamcomm)
-target_link_libraries(shamalgs PUBLIC shambackends)
-target_link_libraries(shamalgs PUBLIC shammath)
-
-
+add_subdirectory(shamalgs)
 
 
 
@@ -84,6 +60,7 @@ target_link_libraries(shamrock_lib PUBLIC shambase)
 target_link_libraries(shamrock_lib PUBLIC shamcomm)
 target_link_libraries(shamrock_lib PUBLIC shambackends)
 target_link_libraries(shamrock_lib PUBLIC shammath)
+target_link_libraries(shamrock_lib PUBLIC shamalgs)
 
 
 
@@ -196,7 +173,6 @@ add_subdirectory(shamsys)
 add_subdirectory(shamtest)
 add_subdirectory(shambindings)
 
-add_subdirectory(shamalgs)
 
 add_subdirectory(shamrock)
 add_subdirectory(shammodels)

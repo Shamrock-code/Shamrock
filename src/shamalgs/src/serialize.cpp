@@ -44,9 +44,9 @@ u64 extract_preahead(std::unique_ptr<sycl::buffer<u8>> &storage) {
     return ret;
 }
 
-void write_prehead(u64 prehead, sycl::buffer<u8> &buf) {
+void write_prehead(sycl::queue & q,u64 prehead, sycl::buffer<u8> &buf) {
     using Helper = shamalgs::details::SerializeHelperMember<u64>;
-    shamsys::instance::get_compute_queue().submit([&, prehead](sycl::handler &cgh) {
+    q.submit([&, prehead](sycl::handler &cgh) {
         sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
         cgh.single_task([=]() {
             Helper::store(&accbuf[0], prehead);
@@ -64,7 +64,7 @@ void write_prehead(u64 prehead, sycl::buffer<u8> &buf) {
 #endif
 
 std::unique_ptr<std::vector<u8>>
-extract_header(std::unique_ptr<sycl::buffer<u8>> &storage, u64 header_size, u64 pre_head_lenght) {
+extract_header(sycl::queue & q, std::unique_ptr<sycl::buffer<u8>> &storage, u64 header_size, u64 pre_head_lenght) {
 
     std::unique_ptr<std::vector<u8>> storage_header =
         std::make_unique<std::vector<u8>>(header_size);
@@ -72,7 +72,7 @@ extract_header(std::unique_ptr<sycl::buffer<u8>> &storage, u64 header_size, u64 
     if(header_size > 0){
         sycl::buffer<u8> attach(storage_header->data(), header_size);
 
-        shamsys::instance::get_compute_queue().submit([&, pre_head_lenght](sycl::handler &cgh) {
+        q.submit([&, pre_head_lenght](sycl::handler &cgh) {
             sycl::accessor accbufstg{*storage, cgh, sycl::read_only};
             sycl::accessor buf_header{attach, cgh, sycl::write_only, sycl::no_init};
 
@@ -89,6 +89,7 @@ extract_header(std::unique_ptr<sycl::buffer<u8>> &storage, u64 header_size, u64 
 }
 
 void write_header(
+    sycl::queue & q,
     std::unique_ptr<sycl::buffer<u8>> &storage,
     std::unique_ptr<std::vector<u8>> &storage_header,
     u64 header_size,
@@ -98,7 +99,7 @@ void write_header(
     if(header_size > 0){
         sycl::buffer<u8> attach(storage_header->data(), header_size);
 
-        shamsys::instance::get_compute_queue().submit([&, pre_head_lenght](sycl::handler &cgh) {
+        q.submit([&, pre_head_lenght](sycl::handler &cgh) {
             sycl::accessor accbufstg{*storage, cgh, sycl::write_only};
             sycl::accessor buf_header{attach, cgh, sycl::read_only};
 
@@ -126,7 +127,7 @@ void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
 
     logger::debug_sycl_ln("SerializeHelper","allocate()", bytelen, header_size);
 
-    write_prehead(szinfo.head_size, *storage);
+    write_prehead(dev_sched->get_queue().q, szinfo.head_size, *storage);
     // std::cout << "prehead write :" << szinfo.head_size << std::endl;
 
     head_device = pre_head_lenght() + header_size;
@@ -137,19 +138,22 @@ std::unique_ptr<sycl::buffer<u8>> shamalgs::SerializeHelper::finalize() {
 
     logger::debug_sycl_ln("SerializeHelper","finalize()", storage->size(), header_size);
 
-    write_header(storage, storage_header, header_size, pre_head_lenght());
+    write_header(dev_sched->get_queue().q, storage, storage_header, header_size, pre_head_lenght());
 
     std::unique_ptr<sycl::buffer<u8>> ret;
     std::swap(ret, storage);
     return ret;
 }
 
-shamalgs::SerializeHelper::SerializeHelper(std::unique_ptr<sycl::buffer<u8>> &&input)
-    : storage(std::forward<std::unique_ptr<sycl::buffer<u8>>>(input)) {
+
+shamalgs::SerializeHelper::SerializeHelper(std::shared_ptr<sham::DeviceScheduler> _dev_sched) : dev_sched(std::move(_dev_sched)) {}
+
+shamalgs::SerializeHelper::SerializeHelper(std::shared_ptr<sham::DeviceScheduler> _dev_sched, std::unique_ptr<sycl::buffer<u8>> &&input)
+    : dev_sched(std::move(_dev_sched)), storage(std::forward<std::unique_ptr<sycl::buffer<u8>>>(input)) {
 
     header_size = extract_preahead(storage);
     // std::cout << "prehead read :" << header_size << std::endl;
-    storage_header = extract_header(storage, header_size, pre_head_lenght());
+    storage_header = extract_header(dev_sched->get_queue().q, storage, header_size, pre_head_lenght());
 
     logger::debug_sycl_ln("SerializeHelper","SerializeHelper(std::unique_ptr<sycl::buffer<u8>> &&)", storage->size(), header_size);
 

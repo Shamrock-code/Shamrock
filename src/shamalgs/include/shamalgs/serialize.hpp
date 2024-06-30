@@ -19,9 +19,9 @@
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamsys/NodeInstance.hpp"
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -170,11 +170,13 @@ namespace shamalgs {
 
         static u64 pre_head_lenght();
 
+        std::shared_ptr<sham::DeviceScheduler> dev_sched;
 
         public:
-        SerializeHelper() = default;
 
-        SerializeHelper(std::unique_ptr<sycl::buffer<u8>> &&storage);
+        SerializeHelper(std::shared_ptr<sham::DeviceScheduler> dev_sched);
+
+        SerializeHelper(std::shared_ptr<sham::DeviceScheduler> dev_sched, std::unique_ptr<sycl::buffer<u8>> &&storage);
 
         void allocate(SerializeSize szinfo);
 
@@ -273,7 +275,7 @@ namespace shamalgs {
             u64 offset = align_repr(len * Helper::szrepr);
             check_head_move_device(offset);
 
-            shamsys::instance::get_compute_queue().submit(
+            dev_sched->get_queue().q.submit(
                 [&, current_head](sycl::handler &cgh) {
                     sycl::accessor accbufbyte{*storage, cgh, sycl::write_only};
                     sycl::accessor accbuf{buf, cgh, sycl::read_only};
@@ -298,7 +300,7 @@ namespace shamalgs {
             u64 offset = align_repr(len * Helper::szrepr);
             check_head_move_device(offset);
 
-            shamsys::instance::get_compute_queue().submit([&, current_head](sycl::handler &cgh) {
+            dev_sched->get_queue().q.submit([&, current_head](sycl::handler &cgh) {
                 sycl::accessor accbufbyte{*storage, cgh, sycl::read_only};
                 sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
 

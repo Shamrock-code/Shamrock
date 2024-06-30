@@ -13,7 +13,7 @@
  * 
  */
  
-#include "random.hpp"
+#include "shamalgs/details/random/random.hpp"
 #include "shamalgs/memory.hpp"
 
 

@@ -13,9 +13,9 @@
  * 
  */
  
-#include "bitonicSort.hpp"
+#include "shamalgs/details/algorithm/bitonicSort.hpp"
+#include "shamcomm/logs.hpp"
 #include "shambase/integer.hpp"
-#include "shamsys/legacy/log.hpp"
 
 // modified from http://www.bealto.com/gpu-sorting.html
 
@@ -109,7 +109,7 @@ namespace shamalgs::algorithm::details {
 
 
 
-        logger::debug_sycl_ln(
+        shamcomm::logs::debug_sycl_ln(
             "BitonicSorter", "submit : sycl_sort_morton_key_pair<u32, MultiKernel>"
         );
 

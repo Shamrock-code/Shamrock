@@ -13,7 +13,7 @@
  *
  */
 
-#include "bitonicSort.hpp"
+#include "shamalgs/details/algorithm/bitonicSort.hpp"
 
 #include "shambase/integer.hpp"
 #include "shambase/sycl_utils.hpp"

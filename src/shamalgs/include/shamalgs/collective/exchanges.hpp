@@ -16,10 +16,11 @@
  */
  
 #include "shambackends/typeAliasVec.hpp"
-#include "shamsys/MpiWrapper.hpp"
-#include "shamsys/NodeInstance.hpp"
-#include "shamsys/SyclMpiTypes.hpp"
+#include "shamcomm/worldInfo.hpp"
+#include "shamcomm/mpi.hpp"
+#include "shamcomm/mpiErrorCheck.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
 
 namespace shamalgs::collective {
 
@@ -40,14 +41,14 @@ namespace shamalgs::collective {
         int* table_data_count = new int[shamcomm::world_size()];
 
         //crash
-        mpi::allgather(
+        MPICHECK(MPI_Allgather(
             &local_count, 
             1, 
             MPI_INT, 
             &table_data_count[0], 
             1, 
             MPI_INT, 
-            comm);
+            comm));
 
         //printf("table_data_count = [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
 
@@ -63,7 +64,7 @@ namespace shamalgs::collective {
         
         //printf("node_displacments_data_table = [%d,%d,%d,%d]\n",node_displacments_data_table[0],node_displacments_data_table[1],node_displacments_data_table[2],node_displacments_data_table[3]);
         
-        mpi::allgatherv(
+        MPICHECK(MPI_Allgatherv(
             &send_vec[0], 
             send_vec.size(),
             send_type, 
@@ -71,7 +72,7 @@ namespace shamalgs::collective {
             table_data_count, 
             node_displacments_data_table, 
             recv_type, 
-            comm);
+            comm));
 
 
         delete [] table_data_count;
@@ -100,21 +101,21 @@ namespace shamalgs::collective {
 
         //querry global size and resize the receiving vector
         u32 global_len;
-        mpi::allreduce(&local_count, &global_len, 1, MPI_INT , MPI_SUM, MPI_COMM_WORLD);
+        MPICHECK(MPI_Allreduce(&local_count, &global_len, 1, MPI_INT , MPI_SUM, MPI_COMM_WORLD));
         recv_vec.resize(global_len);
 
 
 
         int* table_data_count = new int[shamcomm::world_size()];
 
-        mpi::allgather(
+        MPICHECK(MPI_Allgather(
             &local_count, 
             1, 
             MPI_INT, 
             &table_data_count[0], 
             1, 
             MPI_INT, 
-            comm);
+            comm));
 
         //printf("table_data_count = [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
 
@@ -130,7 +131,7 @@ namespace shamalgs::collective {
         
         //printf("node_displacments_data_table = [%d,%d,%d,%d]\n",node_displacments_data_table[0],node_displacments_data_table[1],node_displacments_data_table[2],node_displacments_data_table[3]);
         
-        mpi::allgatherv(
+        MPICHECK(MPI_Allgatherv(
             &send_vec[0], 
             send_vec.size(),
             send_type, 
@@ -138,7 +139,7 @@ namespace shamalgs::collective {
             table_data_count, 
             node_displacments_data_table, 
             recv_type, 
-            comm);
+            comm));
 
 
         delete [] table_data_count;

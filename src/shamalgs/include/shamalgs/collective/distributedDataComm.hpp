@@ -20,7 +20,8 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamsys/SyclMpiTypes.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
+#include "shamcomm/logs.hpp"
 #include <functional>
 #include <mpi.h>
 #include <optional>
@@ -32,13 +33,15 @@ namespace shamalgs::collective {
 
     using SerializedDDataComm = shambase::DistributedDataShared<std::unique_ptr<sycl::buffer<u8>>>;
 
-    void distributed_data_sparse_comm(SerializedDDataComm &send_ddistrib_data,
+    void distributed_data_sparse_comm(std::shared_ptr<sham::DeviceScheduler> dev_sched,
+                                            SerializedDDataComm &send_ddistrib_data,
                                              SerializedDDataComm &recv_distrib_data,
                                              std::function<i32(u64)> rank_getter,
                                              std::optional<SparseCommTable> comm_table = {});
 
     template<class T>
     inline void serialize_sparse_comm(
+        std::shared_ptr<sham::DeviceScheduler> dev_sched,
         shambase::DistributedDataShared<T> && send_distrib_data,
         shambase::DistributedDataShared<T> &recv_distrib_data,
         std::function<i32(u64)> rank_getter,
@@ -65,6 +68,7 @@ namespace shamalgs::collective {
         SerializedDDataComm dcomm_recv;
 
         distributed_data_sparse_comm(
+            dev_sched,
             dcomm_send, 
             dcomm_recv, 
             rank_getter);

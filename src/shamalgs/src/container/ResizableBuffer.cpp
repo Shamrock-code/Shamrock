@@ -13,12 +13,10 @@
  * 
  */
  
-#include "ResizableBuffer.hpp"
+#include "shamalgs/container/ResizableBuffer.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
-#include "shamrock/legacy/patch/base/enabled_fields.hpp"
-#include "shamsys/NodeInstance.hpp"
-#include "shamsys/legacy/log.hpp"
+#include "shamcomm/logs.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // memory manipulation
@@ -66,7 +64,7 @@ void shamalgs::ResizableBuffer<T>::change_capacity(u32 new_capa) {
                 alloc();
 
                 if (val_cnt > 0) {
-                    shamalgs::memory::copybuf_discard(*old_buf, *buf, std::min(val_cnt,capacity));
+                    shamalgs::memory::copybuf_discard(dev_sched->get_queue().q,*old_buf, *buf, std::min(val_cnt,capacity));
                 }
 
                 logger::debug_alloc_ln("PatchDataField", "delete old buf : ");
@@ -117,7 +115,7 @@ void shamalgs::ResizableBuffer<T>::overwrite(ResizableBuffer<T> &f2, u32 cnt) {
     }
 
     if (val_cnt > 0) {
-        shamalgs::memory::copybuf_discard(*f2.get_buf(), *buf, cnt);
+        shamalgs::memory::copybuf_discard(dev_sched->get_queue().q,*f2.get_buf(), *buf, cnt);
     }
 }
 
@@ -129,7 +127,7 @@ void shamalgs::ResizableBuffer<T>::override(sycl::buffer<T> &data, u32 cnt) {
             "buffer size doesn't match patchdata field size"); // TODO remove ref to size
 
     if (val_cnt > 0) {
-        shamalgs::memory::copybuf_discard(data, *buf, val_cnt);
+        shamalgs::memory::copybuf_discard(dev_sched->get_queue().q,data, *buf, val_cnt);
     }
 }
 
@@ -164,7 +162,7 @@ void shamalgs::ResizableBuffer<T>::override(const T val) {
     if (val_cnt > 0) {
 
         shamalgs::memory::buf_fill_discard(
-            shamsys::instance::get_compute_queue(), 
+            dev_sched->get_queue().q,
             shambase::get_check_ref(buf), 
             val);
 
@@ -178,10 +176,10 @@ void shamalgs::ResizableBuffer<T>::index_remap_resize(sycl::buffer<u32> &index_m
         auto get_new_buf = [&]() {
             if (nvar == 1) {
                 return shamalgs::algorithm::index_remap(
-                    shamsys::instance::get_compute_queue(), *get_buf(), index_map, len);
+                    dev_sched->get_queue().q, *get_buf(), index_map, len);
             } else {
                 return shamalgs::algorithm::index_remap_nvar(
-                    shamsys::instance::get_compute_queue(), *get_buf(), index_map, len, nvar);
+                    dev_sched->get_queue().q, *get_buf(), index_map, len, nvar);
             }
         };
 
@@ -204,9 +202,9 @@ template<class T>
 shamalgs::ResizableBuffer<T>
 shamalgs::ResizableBuffer<T>::deserialize_buf(shamalgs::SerializeHelper &serializer, u32 val_cnt) {
     if (val_cnt == 0) {
-        return ResizableBuffer();
+        return ResizableBuffer(serializer.get_device_scheduler());
     } else {
-        ResizableBuffer rbuf(val_cnt);
+        ResizableBuffer rbuf(serializer.get_device_scheduler(),val_cnt);
         serializer.load_buf(*(rbuf.buf), val_cnt);
         return std::move(rbuf);
     }
@@ -227,7 +225,7 @@ bool shamalgs::ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2)
 
         sycl::buffer<u8> res_buf(val_cnt);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        dev_sched->get_queue().q.submit([&](sycl::handler &cgh) {
             sycl::accessor acc1{*buf, cgh, sycl::read_only};
             sycl::accessor acc2{*buf_f2, cgh, sycl::read_only};
 
@@ -252,17 +250,17 @@ shamalgs::SerializeSize shamalgs::ResizableBuffer<T>::serialize_buf_byte_size() 
 
 template<class T>
 shamalgs::ResizableBuffer<T>
-shamalgs::ResizableBuffer<T>::mock_buffer(u64 seed, u32 val_cnt, T min_bound, T max_bound) {
+shamalgs::ResizableBuffer<T>::mock_buffer(std::shared_ptr<sham::DeviceScheduler> _dev_sched, u64 seed, u32 val_cnt, T min_bound, T max_bound) {
     sycl::buffer<T> buf_mocked = shamalgs::random::mock_buffer(seed, val_cnt, min_bound, max_bound);
-    return ResizableBuffer<T>(std::move(buf_mocked), val_cnt);
+    return ResizableBuffer<T>(_dev_sched,std::move(buf_mocked), val_cnt);
 }
 
 //////////////////////////////////////////////////////////////////////////
-// Define the patchdata field for all classes in XMAC_LIST_ENABLED_FIELD
+// Define the patchdata field for all classes in XMAC_LIST_ENABLED_ResizableUSMBuffer
 //////////////////////////////////////////////////////////////////////////
 
 #define X(a) template class shamalgs::ResizableBuffer<a>;
-XMAC_LIST_ENABLED_FIELD
+XMAC_LIST_ENABLED_ResizableUSMBuffer
 #undef X
 
 //////////////////////////////////////////////////////////////////////////

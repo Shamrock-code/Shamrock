@@ -17,9 +17,9 @@
  
 #include "shambase/exception.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamsys/MpiWrapper.hpp"
-#include "shamsys/NodeInstance.hpp"
-#include "shamsys/SyclMpiTypes.hpp"
+#include "shamcomm/mpi.hpp"
+#include "shamcomm/mpiErrorCheck.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -29,7 +29,7 @@ namespace shamalgs::collective {
     template<class T>
     inline T allreduce_one(T a, MPI_Op op, MPI_Comm comm){
         T ret;
-        mpi::allreduce(&a, &ret, 1, get_mpi_type<T>(), op, comm);
+        MPICHECK(MPI_Allreduce(&a, &ret, 1, get_mpi_type<T>(), op, comm));
         return ret;
     }
 
@@ -37,12 +37,12 @@ namespace shamalgs::collective {
     inline sycl::vec<T,n> allreduce_one(sycl::vec<T,n> a, MPI_Op op, MPI_Comm comm){
         sycl::vec<T,n> ret;
         if constexpr (n == 2){
-            mpi::allreduce(&a.x(), &ret.x(), 1, get_mpi_type<T>(), op, comm);
-            mpi::allreduce(&a.y(), &ret.y(), 1, get_mpi_type<T>(), op, comm);
+            MPICHECK(MPI_Allreduce(&a.x(), &ret.x(), 1, get_mpi_type<T>(), op, comm));
+            MPICHECK(MPI_Allreduce(&a.y(), &ret.y(), 1, get_mpi_type<T>(), op, comm));
         }else if constexpr (n == 3){
-            mpi::allreduce(&a.x(), &ret.x(), 1, get_mpi_type<T>(), op, comm);
-            mpi::allreduce(&a.y(), &ret.y(), 1, get_mpi_type<T>(), op, comm);
-            mpi::allreduce(&a.z(), &ret.z(), 1, get_mpi_type<T>(), op, comm);
+            MPICHECK(MPI_Allreduce(&a.x(), &ret.x(), 1, get_mpi_type<T>(), op, comm));
+            MPICHECK(MPI_Allreduce(&a.y(), &ret.y(), 1, get_mpi_type<T>(), op, comm));
+            MPICHECK(MPI_Allreduce(&a.z(), &ret.z(), 1, get_mpi_type<T>(), op, comm));
         }else{
             throw shambase::make_except_with_loc<std::invalid_argument>("unimplemented");
         }

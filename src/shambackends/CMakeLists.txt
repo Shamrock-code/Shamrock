@@ -13,6 +13,7 @@ set(Sources
         src/DeviceContext.cpp
         src/DeviceQueue.cpp
         src/DeviceScheduler.cpp
+        src/SyclMpiTypes.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

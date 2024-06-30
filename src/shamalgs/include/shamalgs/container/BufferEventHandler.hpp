@@ -20,7 +20,6 @@
 #include "shambase/string.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/sycl.hpp"
-#include "shamsys/legacy/log.hpp"
 
 namespace shamalgs {
     u32 gen_buf_hash();

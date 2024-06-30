@@ -174,6 +174,10 @@ namespace shamalgs {
 
         public:
 
+        std::shared_ptr<sham::DeviceScheduler> & get_device_scheduler(){
+            return dev_sched;
+        }
+
         SerializeHelper(std::shared_ptr<sham::DeviceScheduler> dev_sched);
 
         SerializeHelper(std::shared_ptr<sham::DeviceScheduler> dev_sched, std::unique_ptr<sycl::buffer<u8>> &&storage);

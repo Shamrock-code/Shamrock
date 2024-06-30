@@ -13,8 +13,9 @@
  * 
  */
  
-#include "BufferEventHandler.hpp"
+#include "shamalgs/container/BufferEventHandler.hpp"
 #include <random>
+#include "shamcomm/logs.hpp"
 
 u32 shamalgs::gen_buf_hash() {
     constexpr u32 u32_max = 0xFFFFFFFF;

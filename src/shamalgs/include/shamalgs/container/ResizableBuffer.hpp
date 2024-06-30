@@ -42,6 +42,7 @@
     X(i64_3)
 
 namespace shamalgs {
+
     template<class T>
     class ResizableBuffer {
 
@@ -72,6 +73,8 @@ namespace shamalgs {
         void alloc();
         void free();
         void change_capacity(u32 new_capa);
+
+        std::shared_ptr<sham::DeviceScheduler> dev_sched;
 
         public:
         ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -144,30 +147,31 @@ namespace shamalgs {
         // constructors & destructors
         ////////////////////////////////////////////////////////////////////////////////////////////////
 
-        explicit ResizableBuffer(u32 cnt = 0) : val_cnt(cnt), capacity(cnt) {
+        explicit ResizableBuffer(std::shared_ptr<sham::DeviceScheduler> _dev_sched, u32 cnt = 0) : dev_sched(std::move(_dev_sched)), val_cnt(cnt), capacity(cnt) {
             if (capacity != 0) {
                 alloc();
             }
         }
 
-        inline ResizableBuffer(sycl::buffer<T> &&moved_buf, u32 val_cnt)
-            : buf(std::make_unique<sycl::buffer<T>>(std::forward<sycl::buffer<T>>(moved_buf))),
+        inline ResizableBuffer(std::shared_ptr<sham::DeviceScheduler> _dev_sched, sycl::buffer<T> &&moved_buf, u32 val_cnt)
+            : dev_sched(std::move(_dev_sched)),buf(std::make_unique<sycl::buffer<T>>(std::forward<sycl::buffer<T>>(moved_buf))),
               val_cnt(val_cnt), capacity(moved_buf.size()) {}
 
         ResizableBuffer(const ResizableBuffer &other)
-            : val_cnt(other.val_cnt), capacity(other.capacity) {
+            : val_cnt(other.val_cnt), capacity(other.capacity), dev_sched(other.dev_sched) {
             if (capacity != 0) {
                 alloc();
                 // copydata(other._data,_data, capacity);
-                shamalgs::memory::copybuf_discard(*other.buf, *buf, capacity);
+                shamalgs::memory::copybuf_discard(dev_sched->get_queue().q,*other.buf, *buf, capacity);
             }
         }
 
         ResizableBuffer(ResizableBuffer &&other) noexcept
-            : buf(std::move(other.buf)), val_cnt(std::move(other.val_cnt)),
+            : dev_sched(std::move(other.dev_sched)),buf(std::move(other.buf)), val_cnt(std::move(other.val_cnt)),
               capacity(std::move(other.capacity)) {} // move constructor
 
         ResizableBuffer &operator=(ResizableBuffer &&other) noexcept {
+            dev_sched = std::move(other.dev_sched);
             buf      = std::move(other.buf);
             val_cnt  = std::move(other.val_cnt);
             capacity = std::move(other.capacity);
@@ -193,7 +197,7 @@ namespace shamalgs {
 
         SerializeSize serialize_buf_byte_size();
 
-        static ResizableBuffer mock_buffer(u64 seed, u32 val_cnt, T min_bound, T max_bound);
+        static ResizableBuffer mock_buffer(std::shared_ptr<sham::DeviceScheduler> _dev_sched,u64 seed, u32 val_cnt, T min_bound, T max_bound);
 
         ResizableBuffer &operator=(const ResizableBuffer &other) // copy assignment
             = delete;

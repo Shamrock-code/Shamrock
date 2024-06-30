@@ -16,9 +16,7 @@
 
 
 
-#include "shamsys/MpiWrapper.hpp"
-#include "shamsys/legacy/log.hpp"
-
+#include "shamcomm/mpi.hpp"
 #include "shambackends/typeAliasVec.hpp"
 
 

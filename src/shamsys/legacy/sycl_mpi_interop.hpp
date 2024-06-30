@@ -20,10 +20,10 @@
  * 
  */
 
-#include "shamsys/NodeInstance.hpp"
-#include "shamsys/SyclMpiTypes.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
+#include "shamsys/MpiWrapper.hpp"
 #include "log.hpp"
-
+#include "shamsys/NodeInstance.hpp"
 
 
 #define XMAC_SYCLMPI_TYPE_ENABLED \

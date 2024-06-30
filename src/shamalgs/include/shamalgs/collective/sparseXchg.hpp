@@ -20,12 +20,9 @@
 #include "shambackends/math.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamsys/MpiWrapper.hpp"
-#include "shamsys/NodeInstance.hpp"
-#include "shamsys/SyclMpiTypes.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shamcomm/mpiErrorCheck.hpp"
 #include "shambase/integer.hpp"
-#include "shamsys/legacy/log.hpp"
 
 namespace shamalgs::collective {
 
@@ -45,7 +42,6 @@ namespace shamalgs::collective {
 
         void build(const std::vector<SendPayload> & message_send){
             StackEntry stack_loc{};
-            using namespace shamsys::instance;
 
             local_send_vec_comm_ranks.resize(message_send.size());
 
@@ -58,12 +54,12 @@ namespace shamalgs::collective {
         }
     };
 
-    inline void sparse_comm_c(const std::vector<SendPayload> & message_send,
+    inline void sparse_comm_c(std::shared_ptr<sham::DeviceScheduler> dev_sched,
+    const std::vector<SendPayload> & message_send,
         std::vector<RecvPayload> & message_recv,
         const SparseCommTable & comm_table){
         StackEntry stack_loc{};
 
-        using namespace shamsys::instance;
 
         //share comm list accros nodes
         const std::vector<u64> & send_vec_comm_ranks= comm_table.local_send_vec_comm_ranks;
@@ -87,14 +83,14 @@ namespace shamalgs::collective {
                 u32 rq_index = rqs.size() - 1;
                 auto & rq = rqs[rq_index]; 
 
-                mpi::isend(
+                MPICHECK(MPI_Isend(
                     payload->get_ptr(), 
                     payload->get_bytesize(), 
                     MPI_BYTE, 
                     comm_ranks.y(), 
                     i, 
                     MPI_COMM_WORLD, 
-                    &rq);
+                    &rq));
 
                 send_idx++;
             }
@@ -116,19 +112,19 @@ namespace shamalgs::collective {
 
                 MPI_Status st;
                 i32 cnt;
-                mpi::probe(comm_ranks.x(), i,MPI_COMM_WORLD, & st);
-                mpi::get_count(&st, MPI_BYTE, &cnt);
+                MPICHECK(MPI_Probe(comm_ranks.x(), i,MPI_COMM_WORLD, & st));
+                MPICHECK(MPI_Get_count(&st, MPI_BYTE, &cnt));
 
-                payload.payload = std::make_unique<shamcomm::CommunicationBuffer>(cnt, get_compute_scheduler());
+                payload.payload = std::make_unique<shamcomm::CommunicationBuffer>(cnt, *dev_sched);
 
-                mpi::irecv(
+                MPICHECK(MPI_Irecv(
                     payload.payload->get_ptr(), 
                     cnt, 
                     MPI_BYTE, 
                     comm_ranks.x(), 
                     i, 
                     MPI_COMM_WORLD, 
-                    &rq);
+                    &rq));
 
                 message_recv.push_back(std::move(payload));
 
@@ -136,24 +132,23 @@ namespace shamalgs::collective {
         }
 
         std::vector<MPI_Status> st_lst(rqs.size());
-        mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
+        MPICHECK(MPI_Waitall(rqs.size(), rqs.data(), st_lst.data()));
     }
 
 
     inline void base_sparse_comm(
+        std::shared_ptr<sham::DeviceScheduler> dev_sched,
         const std::vector<SendPayload> & message_send,
         std::vector<RecvPayload> & message_recv
         ) 
     {
         StackEntry stack_loc{};
 
-        using namespace shamsys::instance;
-
         SparseCommTable comm_table;
 
         comm_table.build(message_send);
         
-        sparse_comm_c(message_send, message_recv, comm_table);
+        sparse_comm_c(dev_sched, message_send, message_recv, comm_table);
     }
 
 } // namespace shamalgs::collective

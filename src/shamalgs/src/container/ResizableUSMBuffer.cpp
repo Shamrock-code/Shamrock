@@ -13,10 +13,9 @@
  * 
  */
  
-#include "ResizableUSMBuffer.hpp"
+#include "shamalgs/container/ResizableUSMBuffer.hpp"
 #include "shamalgs/details/reduction/reduction.hpp"
-#include "shamsys/NodeInstance.hpp"
-#include "shamrock/legacy/utils/sycl_vector_utils.hpp"
+#include "shamcomm/logs.hpp"
 
 
 template<class T>
@@ -147,7 +146,7 @@ bool shamalgs::ResizableUSMBuffer<T>::check_buf_match(ResizableUSMBuffer<T> &f2)
 
         sycl::buffer<u8> res_buf(val_count);
 
-        sycl::event e = shamsys::instance::get_compute_queue().submit([&,acc1,acc2](sycl::handler &cgh) {
+        sycl::event e = q.submit([&,acc1,acc2](sycl::handler &cgh) {
             cgh.depends_on(wait_list);
 
             sycl::accessor acc_res{res_buf, cgh, sycl::write_only, sycl::no_init};

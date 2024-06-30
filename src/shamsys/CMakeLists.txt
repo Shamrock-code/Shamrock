@@ -1,7 +1,6 @@
 
 set(Sources
     NodeInstance.cpp
-    SyclMpiTypes.cpp
     SyclHelper.cpp
     SignalCatch.cpp
     EnvVariables.cpp
@@ -12,7 +11,6 @@ set(SourcesTest
 )
 set(Headers
     NodeInstance.hpp
-    SyclMpiTypes.hpp
     SyclHelper.hpp
 )
 set(HeadersTest

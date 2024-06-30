@@ -21,7 +21,6 @@
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamsys/legacy/log.hpp"
 #include <cstddef>
 #include <random>
 #include <stdexcept>

@@ -13,7 +13,7 @@
  * 
  */
  
-#include "distributedDataComm.hpp"
+#include "shamalgs/collective/distributedDataComm.hpp"
 
 #include "shamalgs/serialize.hpp"
 #include "shambase/exception.hpp"
@@ -36,7 +36,7 @@ namespace shamalgs::collective {
             }
         };
 
-        auto serialize_group_data(std::map<std::pair<i32, i32>, std::vector<DataTmp>> &send_data)
+        auto serialize_group_data(std::shared_ptr<sham::DeviceScheduler> dev_sched, std::map<std::pair<i32, i32>, std::vector<DataTmp>> &send_data)
             -> std::map<std::pair<i32, i32>, SerializeHelper> {
 
             StackEntry stack_loc{};
@@ -48,11 +48,12 @@ namespace shamalgs::collective {
                 for (DataTmp &d : vect) {
                     byte_sz += d.get_ser_sz();
                 }
-                serializers[key].allocate(byte_sz);
+                serializers.emplace(key, dev_sched);
+                serializers.at(key).allocate(byte_sz);
             }
 
             for (auto &[key, vect] : send_data) {
-                SerializeHelper &ser = serializers[key];
+                SerializeHelper &ser = serializers.at(key);
                 ser.write<u64>(vect.size());
                 for (DataTmp &d : vect) {
                     ser.write(d.sender);
@@ -69,7 +70,8 @@ namespace shamalgs::collective {
 
     using SerializedDDataComm = shambase::DistributedDataShared<std::unique_ptr<sycl::buffer<u8>>>;
 
-    void distributed_data_sparse_comm(SerializedDDataComm &send_distrib_data,
+    void distributed_data_sparse_comm(std::shared_ptr<sham::DeviceScheduler> dev_sched,
+                                    SerializedDDataComm &send_distrib_data,
                                       SerializedDDataComm &recv_distrib_data,
                                       std::function<i32(u64)> rank_getter,
                                       std::optional<SparseCommTable> comm_table) {
@@ -77,7 +79,6 @@ namespace shamalgs::collective {
         StackEntry stack_loc{};
 
         using namespace shambase;
-        using namespace shamsys;
         using DataTmp = details::DataTmp;
 
         // prepare map
@@ -91,7 +92,7 @@ namespace shamalgs::collective {
 
         // serialize together similar communications
         std::map<std::pair<i32, i32>, SerializeHelper> serializers =
-            details::serialize_group_data(send_data);
+            details::serialize_group_data(dev_sched, send_data);
 
         // recover bufs from serializers
         std::map<std::pair<i32, i32>, std::unique_ptr<sycl::buffer<u8>>> send_bufs;
@@ -106,7 +107,7 @@ namespace shamalgs::collective {
         {NamedStackEntry stack_loc2{"prepare payload"};
         for (auto &[key, buf] : send_bufs) {
             send_payoad.push_back(
-                {key.second, std::make_unique<shamcomm::CommunicationBuffer>(get_check_ref(buf), instance::get_compute_scheduler())});
+                {key.second, std::make_unique<shamcomm::CommunicationBuffer>(get_check_ref(buf), *dev_sched)});
         }    
         }
         
@@ -115,9 +116,9 @@ namespace shamalgs::collective {
         std::vector<RecvPayload> recv_payload;
 
         if (comm_table) {
-            sparse_comm_c(send_payoad, recv_payload, *comm_table);
+            sparse_comm_c(dev_sched, send_payoad, recv_payload, *comm_table);
         } else {
-            base_sparse_comm(send_payoad, recv_payload);
+            base_sparse_comm(dev_sched, send_payoad, recv_payload);
         }
 
         // make serializers from recv buffs
@@ -138,7 +139,7 @@ namespace shamalgs::collective {
 
                 recv_payload_bufs.push_back(RecvPayloadSer{
                     payload.sender_ranks,
-                    SerializeHelper(std::make_unique<sycl::buffer<u8>>(std::move(buf)))});
+                    SerializeHelper(dev_sched, std::make_unique<sycl::buffer<u8>>(std::move(buf)))});
             }
         }
 

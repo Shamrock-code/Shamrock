@@ -13,10 +13,10 @@
  * 
  */
  
-#include "memory.hpp"
+#include "shamalgs/details/memory/memory.hpp"
 
-#include "avoidCopyMemory.hpp"
-#include "fallbackMemory.hpp"
+#include "shamalgs/details/memory/avoidCopyMemory.hpp"
+#include "shamalgs/details/memory/fallbackMemory.hpp"
 
 namespace shamalgs::memory {
 

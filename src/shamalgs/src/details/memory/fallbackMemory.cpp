@@ -13,7 +13,7 @@
  * 
  */
  
-#include "fallbackMemory.hpp"
+#include "shamalgs/details/memory/fallbackMemory.hpp"
 
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/typeAliasVec.hpp"

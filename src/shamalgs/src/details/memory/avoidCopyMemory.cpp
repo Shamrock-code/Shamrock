@@ -13,7 +13,7 @@
  * 
  */
  
-#include "avoidCopyMemory.hpp"
+#include "shamalgs/details/memory/avoidCopyMemory.hpp"
 
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/typeAliasVec.hpp"

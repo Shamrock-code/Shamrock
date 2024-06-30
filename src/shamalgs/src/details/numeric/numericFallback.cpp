@@ -14,7 +14,7 @@
  */
  
 
-#include "numericFallback.hpp"
+#include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/memory.hpp"
 
 namespace shamalgs::numeric::details {

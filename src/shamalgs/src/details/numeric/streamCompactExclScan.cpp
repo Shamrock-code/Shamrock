@@ -14,12 +14,11 @@
  */
  
 
-#include "streamCompactExclScan.hpp"
+#include "shamalgs/details/numeric/streamCompactExclScan.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/integer.hpp"
-#include "shamsys/legacy/log.hpp"
 
 class StreamCompactionAlg;
 

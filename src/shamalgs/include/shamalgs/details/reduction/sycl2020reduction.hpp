@@ -37,7 +37,7 @@ namespace shamalgs::reduction::details {
         u32 len = end_id - start_id;
 
         sycl::buffer<T> buf_int(len);
-        shamalgs::memory::write_with_offset_into(buf_int, buf1, start_id, len);
+        shamalgs::memory::write_with_offset_into(q, buf_int, buf1, start_id, len);
 
         sycl::buffer<T> recov{1};
 

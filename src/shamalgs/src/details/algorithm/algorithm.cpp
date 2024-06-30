@@ -13,8 +13,8 @@
  * 
  */
  
-#include "algorithm.hpp"
-#include "bitonicSort.hpp"
+#include "shamalgs/details/algorithm/algorithm.hpp"
+#include "shamalgs/details/algorithm/bitonicSort.hpp"
 
 namespace shamalgs::algorithm {
 

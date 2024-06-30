@@ -13,7 +13,7 @@
  * 
  */
  
-#include "reduction.hpp"
+#include "shamalgs/details/reduction/reduction.hpp"
 
 #include "shamalgs/memory.hpp"
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"

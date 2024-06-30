@@ -13,11 +13,10 @@
  * 
  */
  
-#include "exclusiveScanGPUGems39.hpp"
+#include "shamalgs/details/numeric/exclusiveScanGPUGems39.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambase/integer.hpp"
 #include "shambackends/math.hpp"
-#include "shamsys/legacy/log.hpp"
 
 /*
 

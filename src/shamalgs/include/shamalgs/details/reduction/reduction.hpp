@@ -19,7 +19,6 @@
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
-#include "shamsys/NodeInstance.hpp"
 
 namespace shamalgs::reduction {
 
@@ -39,7 +38,7 @@ namespace shamalgs::reduction {
     bool is_all_true(sycl::buffer<u8> &buf, u32 cnt);
 
     template<class T>
-    bool equals(sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt) {
+    bool equals(sycl::queue & q, sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt) {
 
         if (buf1.size() < cnt) {
             throw shambase::make_except_with_loc<std::invalid_argument>("buf 1 is larger than cnt");
@@ -50,7 +49,7 @@ namespace shamalgs::reduction {
         }
 
         sycl::buffer<u8> res(cnt);
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        q.submit([&](sycl::handler &cgh) {
             sycl::accessor acc1{buf1, cgh, sycl::read_only};
             sycl::accessor acc2{buf2, cgh, sycl::read_only};
 

@@ -103,7 +103,7 @@ namespace shamalgs::reduction::details {
 
         sycl::buffer<T> buf_int(len);
 
-        shamalgs::memory::write_with_offset_into(buf_int, buf1, start_id, len);
+        shamalgs::memory::write_with_offset_into(q, buf_int, buf1, start_id, len);
 
         u32 cur_slice_sz  = 1;
         u32 remaining_val = len;
@@ -187,7 +187,7 @@ namespace shamalgs::reduction::details {
 
         sycl::buffer<T> buf_int(len);
 
-        shamalgs::memory::write_with_offset_into(buf_int, buf1, start_id, len);
+        shamalgs::memory::write_with_offset_into(q, buf_int, buf1, start_id, len);
 
         u32 cur_slice_sz  = 1;
         u32 remaining_val = len;
@@ -272,7 +272,7 @@ namespace shamalgs::reduction::details {
 
         sycl::buffer<T> buf_int(len);
 
-        shamalgs::memory::write_with_offset_into(buf_int, buf1, start_id, len);
+        shamalgs::memory::write_with_offset_into(q, buf_int, buf1, start_id, len);
 
         u32 cur_slice_sz  = 1;
         u32 remaining_val = len;

@@ -16,9 +16,10 @@
  */
  
 #include "shambackends/typeAliasVec.hpp"
-#include "shamsys/MpiWrapper.hpp"
-#include "shamsys/NodeInstance.hpp"
-#include "shamsys/SyclMpiTypes.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
+#include "shamcomm/mpiErrorCheck.hpp"
+#include "shamcomm/worldInfo.hpp"
+#include "shamcomm/logs.hpp"
 
 namespace shamalgs::collective {
 
@@ -31,14 +32,14 @@ namespace shamalgs::collective {
     inline ViewInfo fetch_view(u64 byte_count){
 
         u64 scan_val;
-        mpi::exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
+        MPICHECK(MPI_Exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD));
 
         if(shamcomm::world_rank() == 0){
             scan_val = 0;
         }
 
         u64 sum_val;
-        mpi::allreduce(&byte_count, &sum_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
+        MPICHECK(MPI_Allreduce(&byte_count, &sum_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD));
 
         logger::debug_mpi_ln("fetch view",byte_count, "->",scan_val, "sum:",sum_val);
 
@@ -48,7 +49,7 @@ namespace shamalgs::collective {
     inline ViewInfo fetch_view_known_total(u64 byte_count,u64 total_byte){
 
         u64 scan_val;
-        mpi::exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
+        MPICHECK(MPI_Exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD));
 
         if(shamcomm::world_rank() == 0){
             scan_val = 0;

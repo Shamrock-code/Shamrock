@@ -96,7 +96,7 @@ namespace shamrock::scheduler {
         using ChangeOp = shamrock::scheduler::LoadBalancingChangeList::ChangeOp;
 
         auto serializer = [](shamrock::patch::PatchData &pdat) {
-            shamalgs::SerializeHelper ser;
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(pdat.serialize_buf_byte_size());
             pdat.serialize_buf(ser);
             return ser.finalize();
@@ -104,7 +104,7 @@ namespace shamrock::scheduler {
 
         auto deserializer = [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
-            shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         };
 

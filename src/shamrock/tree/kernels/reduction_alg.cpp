@@ -265,7 +265,7 @@ void make_indexmap(
         }
 
         buf_reduc_index_map =
-            std::make_unique<sycl::buffer<u32>>(shamalgs::memory::vector_to_buf(reduc_index_map));
+            std::make_unique<sycl::buffer<u32>>(shamalgs::memory::vector_to_buf(queue, reduc_index_map));
 
     }
 }

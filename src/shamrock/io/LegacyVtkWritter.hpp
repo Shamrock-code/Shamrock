@@ -27,7 +27,6 @@
 #include "shambase/endian.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/SyclMpiTypes.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <string>
 

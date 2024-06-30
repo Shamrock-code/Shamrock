@@ -73,17 +73,18 @@ namespace shamalgs::reduction {
     bool has_nan_or_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>
-    bool equals(sycl::buffer<T> &buf1, sycl::buffer<T> &buf2) {
+    bool equals(sycl::queue &q,sycl::buffer<T> &buf1, sycl::buffer<T> &buf2) {
         bool same_size = buf1.size() == buf2.size();
         if (!same_size) {
             return false;
         }
 
-        return equals(buf1, buf2, buf1.size());
+        return equals(q, buf1, buf2, buf1.size());
     }
 
     template<class T>
-    bool equals_ptr_s(const std::unique_ptr<sycl::buffer<T>> &buf1,
+    bool equals_ptr_s(sycl::queue &q,
+    const std::unique_ptr<sycl::buffer<T>> &buf1,
                       const std::unique_ptr<sycl::buffer<T>> &buf2,
                       u32 cnt) {
         bool same_alloc = bool(buf1) == bool(buf2);
@@ -96,11 +97,13 @@ namespace shamalgs::reduction {
             return true;
         }
 
-        return equals(*buf1, *buf2, cnt);
+        return equals(q, *buf1, *buf2, cnt);
     }
 
     template<class T>
-    bool equals_ptr(const std::unique_ptr<sycl::buffer<T>> &buf1,
+    bool equals_ptr(
+        sycl::queue &q,
+        const std::unique_ptr<sycl::buffer<T>> &buf1,
                     const std::unique_ptr<sycl::buffer<T>> &buf2) {
         bool same_alloc = bool(buf1) == bool(buf2);
 
@@ -112,6 +115,6 @@ namespace shamalgs::reduction {
             return true;
         }
 
-        return equals(*buf1, *buf2);
+        return equals(q, *buf1, *buf2);
     }
 } // namespace shamalgs::reduction

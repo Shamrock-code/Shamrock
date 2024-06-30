@@ -90,7 +90,7 @@ void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &wr
             using namespace shamalgs::memory;
             using namespace shambase;
 
-            write_with_offset_into(idp, cur_p.id_patch, ptr, pdat.get_obj_cnt());
+            write_with_offset_into(shamsys::instance::get_compute_queue(),idp, cur_p.id_patch, ptr, pdat.get_obj_cnt());
 
             ptr += pdat.get_obj_cnt();
         });
@@ -117,7 +117,7 @@ void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &w
             using namespace shamalgs::memory;
             using namespace shambase;
 
-            write_with_offset_into<u32>(idp, shamcomm::world_rank(), ptr, pdat.get_obj_cnt());
+            write_with_offset_into<u32>(shamsys::instance::get_compute_queue(),idp, shamcomm::world_rank(), ptr, pdat.get_obj_cnt());
 
             ptr += pdat.get_obj_cnt();
         });

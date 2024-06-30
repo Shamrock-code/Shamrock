@@ -23,7 +23,7 @@ TestStart(
     std::string name            = "testfield";
     PatchDataField<u32_3> field = PatchDataField<u32_3>::mock_field(0x111, len, name, nvar);
 
-    shamalgs::SerializeHelper ser;
+    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
 
     ser.allocate(field.serialize_buf_byte_size());
     field.serialize_buf(ser);
@@ -31,7 +31,7 @@ TestStart(
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(),std::move(recov));
 
         PatchDataField<u32_3> buf2 = PatchDataField<u32_3>::deserialize_buf(ser2, name, nvar);
 
@@ -47,7 +47,7 @@ TestStart(
     std::string name            = "testfield";
     PatchDataField<u32_3> field = PatchDataField<u32_3>::mock_field(0x111, len, name, nvar);
 
-    shamalgs::SerializeHelper ser;
+    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
 
     ser.allocate(field.serialize_full_byte_size());
     field.serialize_full(ser);
@@ -55,7 +55,7 @@ TestStart(
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(),std::move(recov));
 
         PatchDataField<u32_3> buf2 = PatchDataField<u32_3>::deserialize_full(ser2);
 

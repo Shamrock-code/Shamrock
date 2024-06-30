@@ -17,9 +17,8 @@
  
 #include "shamalgs/collective/indexing.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamsys/MpiWrapper.hpp"
-#include "shamsys/NodeInstance.hpp"
-#include "shamsys/SyclMpiTypes.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
+#include "shamcomm/mpiErrorCheck.hpp"
 
 namespace shamalgs::collective {
 
@@ -37,15 +36,15 @@ namespace shamalgs::collective {
         auto dtype = get_mpi_type<T>();
 
         i32 sz;
-        mpi::type_size(dtype, &sz);
+        MPICHECK(MPI_Type_size(dtype, &sz));
 
         ViewInfo view = fetch_view(u64(sz) * data_cnt);
 
         u64 disp = file_head_ptr + view.head_offset;
 
-        mpi::file_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL);
+        MPICHECK(MPI_File_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL));
 
-        mpi::file_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE);
+        MPICHECK(MPI_File_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE));
 
         file_head_ptr = view.total_byte_count + file_head_ptr;
     }
@@ -66,15 +65,15 @@ namespace shamalgs::collective {
         auto dtype = get_mpi_type<T>();
 
         i32 sz;
-        mpi::type_size(dtype, &sz);
+        MPICHECK(MPI_Type_size(dtype, &sz));
 
         ViewInfo view = fetch_view_known_total(u64(sz) * data_cnt, u64(sz)*total_cnt);
 
         u64 disp = file_head_ptr + view.head_offset;
 
-        mpi::file_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL);
+        MPICHECK(MPI_File_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL));
 
-        mpi::file_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE);
+        MPICHECK(MPI_File_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE));
 
         file_head_ptr = view.total_byte_count + file_head_ptr;
     }
@@ -83,10 +82,10 @@ namespace shamalgs::collective {
 
     inline void write_header(MPI_File fh, std::string s, u64 & file_head_ptr) {
 
-        mpi::file_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
+        MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
 
         if (shamcomm::world_rank() == 0) {
-            mpi::file_write(fh, s.c_str(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE);
+            MPICHECK(MPI_File_write(fh, s.c_str(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE));
         }
 
         file_head_ptr = file_head_ptr + s.size();

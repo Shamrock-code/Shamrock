@@ -203,20 +203,21 @@ shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
     shambase::DistributedDataShared<shamrock::patch::PatchData> recv_dat;
 
     shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
+        shamsys::instance::get_compute_scheduler_ptr(),
         std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
         recv_dat,
         [&](u64 id) {
             return scheduler().get_patch_rank_owner(id);
         },
         [](shamrock::patch::PatchData &pdat) {
-            shamalgs::SerializeHelper ser;
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(pdat.serialize_buf_byte_size());
             pdat.serialize_buf(ser);
             return ser.finalize();
         },
         [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
-            shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         });
 
@@ -232,20 +233,21 @@ shambase::DistributedDataShared<PatchDataField<T>> shammodels::zeus::modules::Gh
     shambase::DistributedDataShared<PatchDataField<T>> recv_dat;
 
     shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
+        shamsys::instance::get_compute_scheduler_ptr(),
         std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf),
         recv_dat,
         [&](u64 id) {
             return scheduler().get_patch_rank_owner(id);
         },
         [](PatchDataField<T> &pdat) {
-            shamalgs::SerializeHelper ser;
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(pdat.serialize_full_byte_size());
             pdat.serialize_buf(ser);
             return ser.finalize();
         },
         [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
-            shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
             return PatchDataField<T>::deserialize_full(ser);
         });
 

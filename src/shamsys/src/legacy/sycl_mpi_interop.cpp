@@ -12,7 +12,7 @@
  * @brief 
  */
 
-#include "sycl_mpi_interop.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shambase/memory.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 

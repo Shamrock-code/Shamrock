@@ -12,7 +12,7 @@
  * @brief
  */
 
-#include "NodeInstance.hpp"
+#include "shamsys/NodeInstance.hpp"
 
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceScheduler.hpp"
@@ -34,7 +34,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
-#include "MpiDataTypeHandler.hpp"
+#include "shamsys/MpiDataTypeHandler.hpp"
 #include <memory>
 #include <optional>
 #include <stdexcept>

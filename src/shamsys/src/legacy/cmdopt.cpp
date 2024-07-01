@@ -12,7 +12,7 @@
  * @brief 
  */
 
-#include "cmdopt.hpp"
+#include "shamsys/legacy/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shambase/string.hpp"
 #include <optional>

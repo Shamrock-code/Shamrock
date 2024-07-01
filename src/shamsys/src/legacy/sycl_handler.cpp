@@ -12,7 +12,7 @@
  * @brief 
  */
 
-#include "sycl_handler.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 
 #include <memory>
 #include <ostream>
@@ -24,9 +24,9 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
-#include "cmdopt.hpp"
+#include "shamsys/legacy/cmdopt.hpp"
 
-#include "log.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shambase/string.hpp"
 
 

@@ -12,7 +12,7 @@
  * @brief 
  */
 
-#include "SyclHelper.hpp"
+#include "shamsys/SyclHelper.hpp"
 
 namespace shamsys::syclhelper::mock {
 

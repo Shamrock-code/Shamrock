@@ -12,7 +12,7 @@
  * @brief
  */
 
-#include "EnvVariables.hpp"
+#include "shamsys/EnvVariables.hpp"
 #include <cstdlib>
 #include <string>
 

@@ -13,7 +13,7 @@ add_custom_command(
 
 
 
-set(as_subproject shamunits shambase shamcomm shambackends shammath shamalgs)
+set(as_subproject shamunits shambase shamcomm shambackends shammath shamalgs shamsys)
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -30,6 +30,7 @@ add_subdirectory(shamcomm)
 add_subdirectory(shambackends)
 add_subdirectory(shammath)
 add_subdirectory(shamalgs)
+add_subdirectory(shamsys)
 
 
 
@@ -61,6 +62,7 @@ target_link_libraries(shamrock_lib PUBLIC shamcomm)
 target_link_libraries(shamrock_lib PUBLIC shambackends)
 target_link_libraries(shamrock_lib PUBLIC shammath)
 target_link_libraries(shamrock_lib PUBLIC shamalgs)
+target_link_libraries(shamrock_lib PUBLIC shamsys)
 
 
 
@@ -87,6 +89,7 @@ target_link_libraries(shamrock PUBLIC shambase)
 target_link_libraries(shamrock PUBLIC shamcomm)
 target_link_libraries(shamrock PUBLIC shambackends)
 target_link_libraries(shamrock PUBLIC shammath)
+target_link_libraries(shamrock PUBLIC shamsys)
 
 
 
@@ -122,6 +125,7 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamcomm)
     target_link_libraries(shamrock_test PUBLIC shambackends)
     target_link_libraries(shamrock_test PUBLIC shammath)
+    target_link_libraries(shamrock_test PUBLIC shamsys)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")
@@ -169,7 +173,6 @@ endif()
 
 
 
-add_subdirectory(shamsys)
 add_subdirectory(shamtest)
 add_subdirectory(shambindings)
 

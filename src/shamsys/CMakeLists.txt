@@ -1,37 +1,32 @@
+cmake_minimum_required(VERSION 3.9)
+
+project(Shamsys CXX C)
 
 set(Sources
-    NodeInstance.cpp
-    SyclHelper.cpp
-    SignalCatch.cpp
-    EnvVariables.cpp
-    MicroBenchmark.cpp
-)
-set(SourcesTest
-    
-)
-set(Headers
-    NodeInstance.hpp
-    SyclHelper.hpp
-)
-set(HeadersTest
-
-)
-
-target_sources(shamrock_lib
-    PRIVATE
-        ${Sources}
-    PUBLIC
-        ${Headers}
+        src/NodeInstance.cpp
+        src/SyclHelper.cpp
+        src/SignalCatch.cpp
+        src/EnvVariables.cpp
+        src/MicroBenchmark.cpp
+        src/legacy/sycl_handler.cpp
+        src/legacy/sycl_mpi_interop.cpp
+        src/legacy/cmdopt.cpp
     )
 
-if("${BUILD_TEST}")
-target_sources(shamrock_test
-    PRIVATE
-        ${SourcesTest}
-    PUBLIC
-        ${HeadersTest}
-    )
+if(SHAMROCK_USE_SHARED_LIB)
+message("-- adding shamsys target (Shared lib)")
+add_library(shamsys SHARED ${Sources})
+else()
+message("-- adding shamsys target (object lib)")
+add_library(shamsys OBJECT ${Sources})
 endif()
 
+add_library(shamsys::shamsys ALIAS shamsys)
 
-add_subdirectory(legacy)
+target_link_libraries(shamsys PUBLIC shambase)
+target_link_libraries(shamsys PUBLIC shamcomm)
+target_link_libraries(shamsys PUBLIC shambackends)
+
+target_include_directories(shamsys PUBLIC
+"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+"$<INSTALL_INTERFACE:include>")

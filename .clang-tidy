@@ -1,7 +1,6 @@
----
+
 Checks: >
   -clang-analyzer-optin.mpi*  
-...
 
 # -clang-analyzer-optin.mpi* to avoid crash from llvm 15 to 17
 

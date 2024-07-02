@@ -49,6 +49,10 @@ jobs:
         run: |
           python3 ./buildbot/make_clang_tidy_db.py 
 
+      - name: Install clang-tidy
+        run: |
+          sudo apt install clang-tidy-15
+
       - name: Run clang-tidy
         run: |
-          run-clang-tidy -p build/clang-tidy.mod -use-color -config-file .clang-tidy -export-fixes clang-tidy_results.yaml -extra-arg-before="-Wno-unused-command-line-argument"
+          run-clang-tidy-15 -p build/clang-tidy.mod -use-color -config-file .clang-tidy -export-fixes clang-tidy_results.yaml -extra-arg-before="-Wno-unused-command-line-argument"

@@ -4,7 +4,7 @@ comp_db = open("build/compile_commands.json", "r")
 db = comp_db.read()
 
 db = db.replace("--acpp-targets='omp'","")
-print(db)
+#print(db)
 
 try:
     os.mkdir("build/clang-tidy.mod")

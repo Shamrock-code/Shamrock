@@ -45,6 +45,11 @@ jobs:
           cd build
           source activate && shamconfigure
 
+      - name: Generate version file
+        run: |
+          cd build
+          ninja src/CMakeFiles/shamrock_lib.dir/version.cpp.o
+
       - name: Copy DB
         run: |
           python3 ./buildbot/make_clang_tidy_db.py 

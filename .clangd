@@ -13,8 +13,6 @@ CompileFlags:
     ]
 
 
-# Diagnostics:
-#   ClangTidy:
-#     Add: [
-#       modernize*
-#       ]
+#Diagnostics:
+#  ClangTidy:
+#    Add: 'bugprone-*'

@@ -1,22 +1,5 @@
 ---
-Checks: >
-  -*,
-  clang-diagnostic-*,
-  llvm-*,
-  misc-*,
-  -misc-non-private-member-variables-in-classes,
-  bugprone-*,
-  -bugprone-easily-swappable-parameters,
-  readability-identifier-naming,
-  cppcoreguidelines-*,
-  -cppcoreguidelines-avoid-magic-numbers,
-  -cppcoreguidelines-macro-usage,
-  mpi-*,
-  modernize-*,
-  -modernize-macro-to-enum,
-  -modernize-use-trailing-return-type,
-  hicpp-*
-...
+Checks: |
 
 CheckOptions:
   - key:             readability-identifier-naming.ClassCase

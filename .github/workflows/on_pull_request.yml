@@ -44,11 +44,6 @@ jobs:
     needs: [src_check]
     uses: ./.github/workflows/shamrock-acpp-clang15-tidy.yml
 
-  shamrock_linux_acpp_tidy:
-    name: Shamrock Test
-    needs: [src_check]
-    uses: ./.github/workflows/shamrock-acpp-clang15-tidy.yml
-
   shamrock_linux_acpp_cov:
     name: Shamrock Test
     needs: [src_check]

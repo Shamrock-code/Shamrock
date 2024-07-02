@@ -1,7 +1,6 @@
 ---
 BasedOnStyle: LLVM
 IndentWidth: 4
----
 
 Language: Cpp
 Standard: c++17
@@ -45,7 +44,6 @@ PenaltyReturnTypeOnItsOwnLine: 1
 IncludeCategories:
   - Regex:           '^"(shambase)/'
     Priority:        0
-  
   - Regex:           '<[[:alnum:].]+>'
     Priority:        4
   - Regex:           '.*'

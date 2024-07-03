@@ -443,6 +443,12 @@ namespace sham {
     template<class T, std::enable_if_t<std::is_integral_v<T> || (!std::is_signed_v<T>), int> = 0>
     inline constexpr T roundup_pow2_clz (T v) noexcept {
 
+        constexpr T max_signed_p1 = (shambase::get_max<T>()>>1) +1;
+
+        if(v == 0 || v > max_signed_p1){
+            return 0;
+        }
+
         T clz_val = sham::clz(v);
 
         T val_rounded_pow = 1U << (shambase::bitsizeof<T>-clz_val);

@@ -38,7 +38,7 @@ namespace sham {
     };
 
     DeviceContext::DeviceContext(std::shared_ptr<Device> dev)
-        : device(std::move(dev)), ctx(ctx_init(dev)) {}
+        : device(std::move(dev)), ctx(ctx_init(device)) {}
 
     void DeviceContext::print_info() {
         device->print_info();

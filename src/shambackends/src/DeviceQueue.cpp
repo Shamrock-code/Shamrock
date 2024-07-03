@@ -28,13 +28,7 @@ namespace sham {
     DeviceQueue::DeviceQueue(
         std::string queue_name, std::shared_ptr<DeviceContext> _ctx, bool in_order)
         : queue_name(std::move(queue_name)), ctx(std::move(_ctx)), in_order(in_order),
-          q(build_queue(ctx->ctx, ctx->device->dev, in_order)) {
-        if (in_order) {
-            q = sycl::queue{ctx->ctx, ctx->device->dev, sycl::property::queue::in_order{}};
-        } else {
-            q = sycl::queue{ctx->ctx, ctx->device->dev};
-        }
-    }
+          q(build_queue(ctx->ctx, ctx->device->dev, in_order)) {}
 
     void DeviceQueue::test() {
         auto test_kernel = [](sycl::queue &q) {

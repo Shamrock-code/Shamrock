@@ -27,25 +27,28 @@ namespace sham {
         }
     };
 
-    DeviceContext::DeviceContext(std::shared_ptr<Device> dev) : device(std::move(dev)) {
-
-        if(bool(device)){
-            ctx = sycl::context(device->dev,exception_handler);
-        }else{
+    /**
+     * @brief Lambda used to provide sycl::context initialization
+     */
+    auto ctx_init = [](std::shared_ptr<Device> &dev) -> sycl::context {
+        if (!bool(dev)) {
             shambase::throw_with_loc<std::invalid_argument>("dev is empty");
         }
+        return sycl::context(dev->dev, exception_handler);
+    };
 
-    }
+    DeviceContext::DeviceContext(std::shared_ptr<Device> dev)
+        : device(std::move(dev)), ctx(ctx_init(dev)) {}
 
-    void DeviceContext::print_info(){
+    void DeviceContext::print_info() {
         device->print_info();
 
         shamcomm::logs::raw_ln("  Context info");
 
-        logger::raw_ln("   - is_host() :",ctx.is_host());
-        #ifdef SYCL_COMP_ACPP
-        logger::raw_ln("   - hipSYCL_hash_code() :",ctx.hipSYCL_hash_code());
-        #endif
+        logger::raw_ln("   - is_host() :", ctx.is_host());
+        // #ifdef SYCL_COMP_ACPP
+        //         logger::raw_ln("   - hipSYCL_hash_code() :", ctx.hipSYCL_hash_code());
+        // #endif
     }
-    
+
 } // namespace sham

@@ -12,24 +12,31 @@
  * @brief
  */
 
-#include <utility>
-
 #include "shambackends/DeviceQueue.hpp"
+#include <utility>
 
 namespace sham {
 
-    DeviceQueue::DeviceQueue(std::string queue_name, std::shared_ptr<DeviceContext> _ctx, bool in_order) :
-        queue_name(std::move(queue_name)), ctx(std::move(_ctx)) ,in_order(in_order)
-    {
-        if(in_order){
+    auto build_queue = [](sycl::context &ctx, sycl::device &dev, bool in_order) -> sycl::queue {
+        if (in_order) {
+            return sycl::queue{ctx, dev, sycl::property::queue::in_order{}};
+        } else {
+            return sycl::queue{ctx, dev};
+        }
+    };
+
+    DeviceQueue::DeviceQueue(
+        std::string queue_name, std::shared_ptr<DeviceContext> _ctx, bool in_order)
+        : queue_name(std::move(queue_name)), ctx(std::move(_ctx)), in_order(in_order),
+          q(build_queue(ctx->ctx, ctx->device->dev, in_order)) {
+        if (in_order) {
             q = sycl::queue{ctx->ctx, ctx->device->dev, sycl::property::queue::in_order{}};
-        }else{
+        } else {
             q = sycl::queue{ctx->ctx, ctx->device->dev};
         }
-        
     }
 
-    void DeviceQueue::test(){
+    void DeviceQueue::test() {
         auto test_kernel = [](sycl::queue &q) {
             sycl::buffer<u32> b(10);
 
@@ -67,5 +74,5 @@ namespace sham {
             std::rethrow_exception(eptr);
         }
     }
-    
+
 } // namespace sham

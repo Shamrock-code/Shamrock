@@ -14,7 +14,7 @@
 
 #include "MortonKernels.hpp"
 #include "shambase/integer.hpp"
-#include "shambase/integer_sycl.hpp"
+#include "shambackends/math.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template <class T> class fill_trailling_buf;

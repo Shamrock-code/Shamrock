@@ -251,7 +251,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         sycl::buffer<Tscal> &buf_omega    = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sycl::buffer<Tscal> &buf_alpha_AV = mpdat.get_field_buf_ref<Tscal>(ialpha_AV_interf);
+        sycl::buffer<Tscal> &buf_alpha_AV = shambase::get_check_ref(storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf());
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -405,14 +405,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
-    const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
-    u32 ialpha_AV_interf                           = ghost_layout.get_field_idx<Tscal>("alpha_AV");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     ComputeField<Tscal> &omega                        = storage.omega.get();
@@ -430,7 +428,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         sycl::buffer<Tscal> &buf_omega    = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sycl::buffer<Tscal> &buf_alpha_AV = mpdat.get_field_buf_ref<Tscal>(ialpha_AV_interf);
+        sycl::buffer<Tscal> &buf_alpha_AV = shambase::get_check_ref(storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf());
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -712,3 +710,4 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 using namespace shammath;
 template class shammodels::sph::modules::UpdateDerivs<f64_3, M4>;
 template class shammodels::sph::modules::UpdateDerivs<f64_3, M6>;
+template class shammodels::sph::modules::UpdateDerivs<f64_3, M8>;

@@ -166,3 +166,4 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 using namespace shammath;
 template class shammodels::sph::modules::ComputeEos<f64_3, M4>;
 template class shammodels::sph::modules::ComputeEos<f64_3, M6>;
+template class shammodels::sph::modules::ComputeEos<f64_3, M8>;

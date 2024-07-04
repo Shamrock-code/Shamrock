@@ -302,7 +302,7 @@ PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::stri
     using Prop = shambase::VectorProperties<T>;
 
     return PatchDataField<T>(
-        shamalgs::ResizableBuffer<T>::mock_buffer(seed, obj_cnt*nvar, vmin, vmax),
+        shamalgs::ResizableBuffer<T>::mock_buffer(shamsys::instance::get_compute_scheduler_ptr(),seed, obj_cnt*nvar, vmin, vmax),
         obj_cnt, name, nvar
     );
 }

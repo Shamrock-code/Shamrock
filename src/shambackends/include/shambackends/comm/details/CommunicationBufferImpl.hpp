@@ -15,7 +15,7 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shambackends/queues.hpp"
+#include "shambackends/Device.hpp"
 #include <stdexcept>
 #include <variant>
 
@@ -34,8 +34,8 @@ namespace shamcomm {
         
     };
 
-    inline CommunicationProtocol get_protocol(sham::queues::QueueDetails &queue_details){
-        if(queue_details.direct_mpi_comm_capable){
+    inline CommunicationProtocol get_protocol(sham::Device &device){
+        if(device.mpi_prop.is_mpi_direct_capable){
             return DirectGPU;
         }else{
             return CopyToHost;

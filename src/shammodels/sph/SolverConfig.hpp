@@ -286,6 +286,10 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_dtdivv() { return artif_viscosity.has_dtdivv_field(); }
     inline bool has_field_curlv() { return artif_viscosity.has_curlv_field() && (dim == 3); }
 
+    inline bool has_axyz_in_ghost(){
+        return has_field_dtdivv();
+    }
+
     inline bool has_field_soundspeed() {
         return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
     }

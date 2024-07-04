@@ -360,6 +360,7 @@ namespace shamrock::patch{
     template void PatchData::split_patchdata(std::array<std::reference_wrapper<PatchData>,8> pdats, std::array<f64_3, 8> min_box,  std::array<f64_3, 8> max_box);
     template void PatchData::split_patchdata(std::array<std::reference_wrapper<PatchData>,8> pdats, std::array<u32_3, 8> min_box,  std::array<u32_3, 8> max_box);
     template void PatchData::split_patchdata(std::array<std::reference_wrapper<PatchData>,8> pdats, std::array<u64_3, 8> min_box,  std::array<u64_3, 8> max_box);
+    template void PatchData::split_patchdata(std::array<std::reference_wrapper<PatchData>,8> pdats, std::array<i64_3, 8> min_box,  std::array<i64_3, 8> max_box);
 
 
     

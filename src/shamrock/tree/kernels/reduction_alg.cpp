@@ -21,9 +21,10 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/exception.hpp"
+#include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambase/string.hpp"
-#include "shambase/integer_sycl.hpp"
+#include "shambackends/math.hpp"
 
 class Kernel_generate_split_table_morton32;
 class Kernel_generate_split_table_morton64;
@@ -141,7 +142,7 @@ void sycl_reduction_iteration(
         cgh.parallel_for<kername>(range_morton_count, [=](sycl::item<1> item) {
             int i = item.get_id(0);
 
-            auto DELTA = [=](i32 x, i32 y) { return shambase::karras_delta(x, y, _morton_cnt, m); };
+            auto DELTA = [=](i32 x, i32 y) { return sham::karras_delta(x, y, _morton_cnt, m); };
 
             // find index of preceding i-1 non duplicate morton code
             u32 before1 = i - 1;
@@ -264,7 +265,7 @@ void make_indexmap(
         }
 
         buf_reduc_index_map =
-            std::make_unique<sycl::buffer<u32>>(shamalgs::memory::vector_to_buf(reduc_index_map));
+            std::make_unique<sycl::buffer<u32>>(shamalgs::memory::vector_to_buf(queue, reduc_index_map));
 
     }
 }

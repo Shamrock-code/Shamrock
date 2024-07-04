@@ -23,6 +23,7 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
     StackEntry stack_loc{};
+    logger::debug_ln("SPH", "Updating divv");
 
     Tscal gpart_mass = solver_config.gpart_mass;
     
@@ -129,6 +130,7 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
     StackEntry stack_loc{};
+    logger::debug_ln("SPH", "Updating curlv");
 
     Tscal gpart_mass = solver_config.gpart_mass;
 
@@ -234,3 +236,4 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 using namespace shammath;
 template class shammodels::sph::modules::DiffOperators<f64_3, M4>;
 template class shammodels::sph::modules::DiffOperators<f64_3, M6>;
+template class shammodels::sph::modules::DiffOperators<f64_3, M8>;

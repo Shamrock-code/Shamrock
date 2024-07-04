@@ -109,10 +109,10 @@ class PatchDataField {
     using Field_type = T;
 
     inline PatchDataField(std::string name, u32 nvar)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(0), buf(0){};
+        : field_name(std::move(name)), nvar(nvar), obj_cnt(0), buf(shamsys::instance::get_compute_scheduler_ptr(),0){};
 
     inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt), buf(obj_cnt * nvar){};
+        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt), buf(shamsys::instance::get_compute_scheduler_ptr(), obj_cnt * nvar){};
 
     inline PatchDataField(const PatchDataField &other)
         : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {}
@@ -124,7 +124,7 @@ class PatchDataField {
 
     inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
         : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(std::forward<sycl::buffer<T>>(moved_buf), obj_cnt * nvar) {}
+          buf(shamsys::instance::get_compute_scheduler_ptr(),std::forward<sycl::buffer<T>>(moved_buf), obj_cnt * nvar) {}
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 

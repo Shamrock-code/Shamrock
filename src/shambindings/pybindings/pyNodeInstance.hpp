@@ -15,6 +15,7 @@
  */
 
 #include "shambindings/pybindaliases.hpp"
+#include "shamcomm/mpiInfo.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
 
@@ -47,7 +48,7 @@ namespace shamsys::instance {
 
             )pbdoc");
 
-        m.def("get_process_name", &get_process_name, R"pbdoc(
+        m.def("get_process_name", &shamcomm::get_process_name, R"pbdoc(
 
             Get the name of the process
 

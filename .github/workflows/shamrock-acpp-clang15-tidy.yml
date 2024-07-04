@@ -1,0 +1,63 @@
+name: Acpp/clang15 (Clang-tidy)
+
+
+on:
+  workflow_call:
+
+  push:
+    branches: [ "main" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  schedule:
+    # At 02:00 on Monday, Wednesday, and Friday.
+    - cron:  '0 2 * * 1,3,5'
+
+jobs:
+
+  shamrock_acpp_omp_tidy:
+    name: AdaptiveCpp omp tidy clang-${{ matrix.clang }}
+    runs-on: [self-hosted, ubuntu20]
+
+    strategy:
+      matrix:
+        clang: [15]
+        cuda: [11.0.2]
+        rocm: [5.4.3]
+    #if: false
+  
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+  
+      - name: ls local
+        run : ls -la
+
+      - name: configure Shamrock
+        run: |
+          ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp
+  
+      - name: Configure
+        run: |
+          cd build
+          source activate && shamconfigure
+
+      - name: Generate version file
+        run: |
+          cd build
+          ninja src/CMakeFiles/shamrock_lib.dir/version.cpp.o
+
+      - name: Copy DB
+        run: |
+          python3 ./buildbot/make_clang_tidy_db.py 
+
+      - name: Install clang-tidy
+        run: |
+          sudo apt install clang-tidy-15
+
+      - name: Run clang-tidy
+        run: |
+          run-clang-tidy-15 -p build/clang-tidy.mod -use-color -config-file .clang-tidy -export-fixes clang-tidy_results.yaml -extra-arg-before="-Wno-unused-command-line-argument"

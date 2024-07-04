@@ -64,6 +64,9 @@ namespace shammodels::sph {
 
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
 
+        Component<shamrock::ComputeField<Tscal>> alpha_av_updated;
+        Component<shambase::DistributedData<PatchDataField<Tscal>>> alpha_av_ghost;
+
         Component<shamrock::ComputeField<Tscal>> pressure;
         Component<shamrock::ComputeField<Tscal>> soundspeed;
 

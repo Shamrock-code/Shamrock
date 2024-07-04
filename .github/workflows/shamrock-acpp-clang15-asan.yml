@@ -38,18 +38,22 @@ jobs:
 
       - name: configure Shamrock
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build asan \
-            --builddir build --cxxpath /home/docker/compilers/AdaptiveCpp_clang${{matrix.clang}} --compiler acpp --profile omp
+          ./env/new-env --machine debian-generic.acpp --builddir build --type asan -- --backend omp
   
+      - name: Configure
+        run: |
+          cd build
+          source activate && shamconfigure
+
+      - name: Build
+        run: |
+          cd build
+          source activate && shammake
+
       - name: Pull reference files
         run: |
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
-
-      - name: compile Shamrock
-        run: |
-          cd build
-          ninja
   
       - name: run Shamrock Unittests world_size = 1
         run: |

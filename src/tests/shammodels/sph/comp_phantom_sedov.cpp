@@ -75,12 +75,15 @@ f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2) {
 f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2, std::vector<f64> & ref_trunc, f64 truncval) {
     f64 sum = 0;
     u32 cnt = 0;
+    f64 max = 0;
 
     if (v1.size() == v2.size()) {
 
         for (u32 i = 0; i < v1.size(); i++) {
             if(ref_trunc[i] < truncval){
                 sum += (v1[i] - v2[i]) * (v1[i] - v2[i]);
+
+                max = sham::max(max, v2[i]);
                 cnt ++;
             }
         }
@@ -89,7 +92,7 @@ f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2, std::vector<f64> & re
         throw shambase::make_except_with_loc<std::runtime_error>("should have same size");
     }
 
-    return sqrt(sum / cnt);
+    return sqrt(sum / cnt) / max;
 }
 
 std::vector<size_t> ordered_indexes(std::vector<double> &ref_vec) {
@@ -225,12 +228,23 @@ void compare_results(
         ph_rho = pmass*(1.2/np.array(ph_h))**3
         sham_rho = pmass*(1.2/np.array(sham_h))**3
 
+        np.save("tests/figures/"+name+"ph_r", ph_r)
+        np.save("tests/figures/"+name+"ph_rho", ph_rho)
+        np.save("tests/figures/"+name+"ph_u", ph_u)
+        np.save("tests/figures/"+name+"ph_vr", ph_vr)
+        np.save("tests/figures/"+name+"ph_alpha", ph_alpha)
+        np.save("tests/figures/"+name+"sham_r", sham_r)
+        np.save("tests/figures/"+name+"sham_rho", sham_rho)
+        np.save("tests/figures/"+name+"sham_u", sham_u)
+        np.save("tests/figures/"+name+"sham_vr", sham_vr)
+        np.save("tests/figures/"+name+"sham_alpha", sham_alpha)
+
         smarker = 1
         print(len(ph_r), len(ph_rho))
-        axs[0,0].scatter(ph_r,ph_rho,s=smarker,c = 'red', rasterized=True,label = "phantom")
-        axs[0,1].scatter(ph_r,ph_u,s=smarker,c = 'red', rasterized=True)
-        axs[1,0].scatter(ph_r,ph_vr,s=smarker,c = 'red', rasterized=True)
-        axs[1,1].scatter(ph_r,ph_alpha, s=smarker,c = 'red', rasterized=True)
+        axs[0,0].scatter(ph_r,ph_rho,s=smarker*5, marker="x",c = 'red', rasterized=True,label = "phantom")
+        axs[0,1].scatter(ph_r,ph_u,s=smarker*5, marker="x",c = 'red', rasterized=True)
+        axs[1,0].scatter(ph_r,ph_vr,s=smarker*5, marker="x",c = 'red', rasterized=True)
+        axs[1,1].scatter(ph_r,ph_alpha, s=smarker*5, marker="x",c = 'red', rasterized=True)
 
         axs[0,0].scatter(sham_r,sham_rho,s=smarker,c = 'black', rasterized=True,label = "shamrock")
         axs[0,1].scatter(sham_r,sham_u,s=smarker,c = 'black', rasterized=True)
@@ -239,7 +253,7 @@ void compare_results(
 
         
         axs[0,0].set_ylabel(r"$\rho$")
-        axs[1,0].set_ylabel(r"$vr$")
+        axs[1,0].set_ylabel(r"$v_r$")
         axs[0,1].set_ylabel(r"$u$")
         axs[1,1].set_ylabel(r"$\alpha$")
 
@@ -276,23 +290,23 @@ void compare_results(
     f64 l2_h = compute_L2(sham_hpart, h, sham_r, 0.4);
     f64 l2_u = compute_L2(sham_uint, u, sham_r, 0.4);
 
-    logger::raw_ln("L2 distance r : ", l2_r);
-    logger::raw_ln("L2 distance h : ", l2_h);
-    logger::raw_ln("L2 distance vr : ", l2_vr);
-    logger::raw_ln("L2 distance u : ", l2_u);
+    logger::raw_ln("normalized L2 distance r : ", l2_r);
+    logger::raw_ln("normalized L2 distance h : ", l2_h);
+    logger::raw_ln("normalized L2 distance vr : ", l2_vr);
+    logger::raw_ln("normalized L2 distance u : ", l2_u);
 
     TEX_REPORT(R"==(\begin{itemize})==" "\n")
     TEX_REPORT("\\item t = $" + std::to_string(time) +"$\n")
-    TEX_REPORT("\\item L2 distance r : $" + std::to_string (l2_r)+"$\n");
-    TEX_REPORT("\\item L2 distance h : $" + std::to_string (l2_h)+"$\n");
-    TEX_REPORT("\\item L2 distance vr : $" + std::to_string (l2_vr)+"$\n");
-    TEX_REPORT("\\item L2 distance u : $" + std::to_string (l2_u)+"$\n");
+    TEX_REPORT("\\item normalized L2 distance r : $" + std::to_string (l2_r)+"$\n");
+    TEX_REPORT("\\item normalized L2 distance h : $" + std::to_string (l2_h)+"$\n");
+    TEX_REPORT("\\item normalized L2 distance vr : $" + std::to_string (l2_vr)+"$\n");
+    TEX_REPORT("\\item normalized L2 distance u : $" + std::to_string (l2_u)+"$\n");
     TEX_REPORT(R"==(\end{itemize})==" "\n")
 
-    _Assert(l2_r < 1e-6)
-    _Assert(l2_vr < 1e-3)
-    _Assert(l2_h < 1e-8)
-    _Assert(l2_u < 1)
+    _Assert(l2_r < 1e-9)
+    _Assert(l2_vr < 28e-06 )
+    _Assert(l2_h < 4e-08 )
+    _Assert(l2_u < 2e-07 )
 
 }
 
@@ -330,9 +344,11 @@ void do_test(bool long_version) {
     model.init_from_phantom_dump(dump_start);
 
     f64 t = start_t;
+    u32 i = 0;
     model.evolve_once_time_expl(t, 0);
-    for (; t < dt * 1; t += dt) {
+    for (; i< 1; i++) {
         model.evolve_once_time_expl(t, dt);
+        t = i * dt;
     }
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
@@ -345,8 +361,9 @@ void do_test(bool long_version) {
             model.solver.solver_config.gpart_mass,t);
     }
 
-    for (; t < dt * 10; t += dt) {
+    for (; i< 10; i++) {
         model.evolve_once_time_expl(t, dt);
+        t = i * dt;
     }
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
@@ -363,8 +380,9 @@ void do_test(bool long_version) {
         return;
     }
 
-    for (; t < dt * 100; t += dt) {
+    for (; i< 100; i++) {
         model.evolve_once_time_expl(t, dt);
+        t = i * dt;
     }
 
     {
@@ -382,8 +400,9 @@ void do_test(bool long_version) {
 
     
 
-    for (; t < dt * 1000; t += dt) {
+    for (; i< 1000; i++) {
         model.evolve_once_time_expl(t, dt);
+        t = (i+1) * dt;
     }
     {
         std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =

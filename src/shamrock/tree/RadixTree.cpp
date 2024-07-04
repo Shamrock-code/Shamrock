@@ -25,6 +25,7 @@
 #include "shambase/floats.hpp"
 #include "shambase/integer.hpp"
 #include "shamrock/sfc/MortonKernels.hpp"
+#include "shamsys/NodeInstance.hpp"
 
 
 
@@ -1047,7 +1048,7 @@ typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tr
             std::move(ret), 
             std::move(new_node_id_to_old_v2), 
             std::make_unique<sycl::buffer<u32>>(
-                shamalgs::memory::vector_to_buf(std::move(extract_id))
+                shamalgs::memory::vector_to_buf(shamsys::instance::get_compute_queue(),std::move(extract_id))
                 )};
 
     }

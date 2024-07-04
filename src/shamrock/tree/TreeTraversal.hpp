@@ -263,8 +263,8 @@ namespace shamrock::tree {
                 u_morton m_l = tree_morton[lid];
                 u_morton m_r = tree_morton[rid];
 
-                u32 affinity_l = shambase::clz_xor(morton_code, m_l);
-                u32 affinity_r = shambase::clz_xor(morton_code, m_r);
+                u32 affinity_l = sham::clz_xor(morton_code, m_l);
+                u32 affinity_r = sham::clz_xor(morton_code, m_r);
 
                 u32 next_id = (affinity_l > affinity_r) ? lid : rid;
                 u32 next_flag = (affinity_l > affinity_r) ? lflag : rflag;

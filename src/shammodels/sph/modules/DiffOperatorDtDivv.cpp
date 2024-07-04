@@ -28,6 +28,8 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
     StackEntry stack_loc{};
 
+    logger::debug_ln("SPH", "Updating dt divv");
+
     Tscal gpart_mass = solver_config.gpart_mass;
 
     using namespace shamrock;
@@ -38,47 +40,6 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
 
-    using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
-
-    shambase::Timer time_interf;
-    time_interf.start();
-
-    // exchange the actual state of the acceleration
-    // this should be ran only after acceleration update
-    // ideally i wouldn't want to do this but due to the formulation
-    // of the Culhen & Dehnen switch we need the divergence of the acceleration
-    // the following calls exchange the acceleration and make a merged field out of it
-    auto a_interf = ghost_handle.template build_interface_native<PatchDataField<Tvec>>(
-        storage.ghost_patch_cache.get(),
-        [&](u64 sender,
-            u64 /*receiver*/,
-            InterfaceBuildInfos binfo,
-            sycl::buffer<u32> &buf_idx,
-            u32 cnt) -> PatchDataField<Tvec> {
-            PatchData &sender_patch = scheduler().patch_data.get_pdat(sender);
-
-            PatchDataField<Tvec> &sender_axyz = sender_patch.get_field<Tvec>(iaxyz);
-
-            return sender_axyz.make_new_from_subset(buf_idx, cnt);
-        });
-
-    shambase::DistributedDataShared<PatchDataField<Tvec>> interf_pdat =
-        ghost_handle.communicate_pdatfield(std::move(a_interf), 1);
-
-    shambase::DistributedData<PatchDataField<Tvec>> merged_a =
-        ghost_handle.template merge_native<PatchDataField<Tvec>, PatchDataField<Tvec>>(
-            std::move(interf_pdat),
-            [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
-                PatchDataField<Tvec> &axyz = pdat.get_field<Tvec>(iaxyz);
-
-                return axyz.duplicate();
-            },
-            [](PatchDataField<Tvec> &mpdat, PatchDataField<Tvec> &pdat_interf) {
-                mpdat.insert(pdat_interf);
-            });
-
-    time_interf.end();
-    storage.timings_details.interface += time_interf.elasped_sec();
 
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
@@ -88,6 +49,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iaxyz_interf                               = ghost_layout.get_field_idx<Tvec>("axyz");
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
@@ -97,13 +59,12 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         MergedPatchData &merged_patch     = mpdat.get(cur_p.id_patch);
-        PatchDataField<Tvec> &merged_axyz = merged_a.get(cur_p.id_patch);
         PatchData &mpdat                  = merged_patch.pdat;
 
         sycl::buffer<Tvec> &buf_xyz =
             shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
         sycl::buffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-        sycl::buffer<Tvec> &buf_axyz = shambase::get_check_ref(merged_axyz.get_buf());
+        sycl::buffer<Tvec> &buf_axyz = mpdat.get_field_buf_ref<Tvec>(iaxyz_interf);
 
         sycl::buffer<Tscal> &buf_hpart  = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sycl::buffer<Tscal> &buf_omega  = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
@@ -362,3 +323,4 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 using namespace shammath;
 template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, M4>;
 template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, M6>;
+template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, M8>;

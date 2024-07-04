@@ -14,6 +14,7 @@
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamsys/NodeInstance.hpp"
 
 template<class T>
 inline void check_buf(std::string prefix, sycl::buffer<T> & b1, sycl::buffer<T> & b2){
@@ -54,7 +55,7 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
     u32 n2 = 100;
     sycl::buffer<u32_3> buf_comp2 = shamalgs::random::mock_buffer<u32_3>(0x121, n2);
 
-    shamalgs::SerializeHelper ser;
+    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
 
     shamalgs::SerializeSize bytelen = ser.serialize_byte_size<u8>(n1) 
         + ser.serialize_byte_size<f64_16>() 
@@ -77,7 +78,7 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
         std::string recv_str;
         sycl::buffer<u32_3> buf2 (n2);
 
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
         logger::raw_ln("load 1 ");
         ser2.load_buf(buf1, n1);logger::raw_ln("load 1 done");
@@ -113,7 +114,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         shambase::Timer tser;
         tser.start();
 
-        shamalgs::SerializeHelper ser1;
+        shamalgs::SerializeHelper ser1(shamsys::instance::get_compute_scheduler_ptr());
         shamalgs::SerializeSize sz = ser1.serialize_byte_size<f64>(buf_cnt*buf_len);
         ser1.allocate(sz);
         for(u32 i = 0; i < buf_cnt;i++){
@@ -135,7 +136,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
             );
         }
 
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
         for(u32 i = 0; i < buf_cnt;i++){
             ser2.load_buf(bufs_ret[i], buf_len);
         }
@@ -160,7 +161,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         shambase::Timer tser;
         tser.start();
 
-        shamalgs::SerializeHelper ser1;
+        shamalgs::SerializeHelper ser1(shamsys::instance::get_compute_scheduler_ptr());
         shamalgs::SerializeSize sz = ser1.serialize_byte_size<f64>(buf_cnt*buf_len) + (ser1.serialize_byte_size<u32>() * buf_cnt);
         ser1.allocate(sz);
         for(u32 i = 0; i < buf_cnt;i++){
@@ -183,7 +184,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
             );
         }
 
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
         for(u32 i = 0; i < buf_cnt;i++){
             u32 tmp;
             ser2.load(tmp);

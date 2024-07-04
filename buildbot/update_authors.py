@@ -3,7 +3,7 @@ import glob
 import sys
 import subprocess
 
-print_buildbot_info("licence check tool")
+print_buildbot_info("Authors check tool")
 
 file_list = glob.glob(str(abs_src_dir)+"/**",recursive=True)
 

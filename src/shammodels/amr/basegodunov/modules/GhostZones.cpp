@@ -26,9 +26,6 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 
-template<class Tvec, class TgridVec>
-using Module = shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>;
-
 namespace shammodels::basegodunov::modules {
     /**
      * @brief find interfaces corresponding to shared surface between domains
@@ -119,7 +116,7 @@ namespace shammodels::basegodunov::modules {
 } // namespace shammodels::godunov::modules
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::build_ghost_cache() {
+void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() {
 
     StackEntry stack_loc{};
 
@@ -198,7 +195,7 @@ void Module<Tvec, TgridVec>::build_ghost_cache() {
 
 template<class Tvec, class TgridVec>
 shambase::DistributedDataShared<shamrock::patch::PatchData>
-Module<Tvec, TgridVec>::communicate_pdat(
+shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
     shamrock::patch::PatchDataLayout &pdl,
     shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf) {
     StackEntry stack_loc{};
@@ -206,20 +203,21 @@ Module<Tvec, TgridVec>::communicate_pdat(
     shambase::DistributedDataShared<shamrock::patch::PatchData> recv_dat;
 
     shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
+        shamsys::instance::get_compute_scheduler_ptr(),
         std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
         recv_dat,
         [&](u64 id) {
             return scheduler().get_patch_rank_owner(id);
         },
         [](shamrock::patch::PatchData &pdat) {
-            shamalgs::SerializeHelper ser;
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(pdat.serialize_buf_byte_size());
             pdat.serialize_buf(ser);
             return ser.finalize();
         },
         [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
-            shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         });
 
@@ -228,27 +226,28 @@ Module<Tvec, TgridVec>::communicate_pdat(
 
 template<class Tvec, class TgridVec>
 template<class T>
-shambase::DistributedDataShared<PatchDataField<T>> Module<Tvec, TgridVec>::communicate_pdat_field(
+shambase::DistributedDataShared<PatchDataField<T>> shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::communicate_pdat_field(
     shambase::DistributedDataShared<PatchDataField<T>> &&interf) {
     StackEntry stack_loc{};
 
     shambase::DistributedDataShared<PatchDataField<T>> recv_dat;
 
     shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
+        shamsys::instance::get_compute_scheduler_ptr(),
         std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf),
         recv_dat,
         [&](u64 id) {
             return scheduler().get_patch_rank_owner(id);
         },
         [](PatchDataField<T> &pdat) {
-            shamalgs::SerializeHelper ser;
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(pdat.serialize_full_byte_size());
             pdat.serialize_buf(ser);
             return ser.finalize();
         },
         [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
-            shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
             return PatchDataField<T>::deserialize_full(ser);
         });
 
@@ -257,7 +256,7 @@ shambase::DistributedDataShared<PatchDataField<T>> Module<Tvec, TgridVec>::commu
 
 template<class Tvec, class TgridVec>
 template<class T, class Tmerged>
-shambase::DistributedData<Tmerged> Module<Tvec, TgridVec>::merge_native(
+shambase::DistributedData<Tmerged> shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::merge_native(
     shambase::DistributedDataShared<T> &&interfs,
     std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> init,
     std::function<void(Tmerged &, T &)> appender) {
@@ -283,7 +282,7 @@ shambase::DistributedData<Tmerged> Module<Tvec, TgridVec>::merge_native(
 }
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::exchange_ghost() {
+void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
 
     StackEntry stack_loc{};
 
@@ -407,7 +406,7 @@ void Module<Tvec, TgridVec>::exchange_ghost() {
 template<class Tvec, class TgridVec>
 template<class T>
 shamrock::ComputeField<T>
-Module<Tvec, TgridVec>::exchange_compute_field(shamrock::ComputeField<T> &in) {
+shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_compute_field(shamrock::ComputeField<T> &in) {
 
     StackEntry stack_loc{};
 

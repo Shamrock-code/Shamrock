@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <vector>
 
-void sparse_comm_test(std::string prefix, sham::queues::QueueDetails & qdet){
+void sparse_comm_test(std::string prefix, sham::DeviceScheduler & qdet){
     
     using namespace shamalgs::collective;
     using namespace shamsys::instance;
@@ -88,7 +88,7 @@ void sparse_comm_test(std::string prefix, sham::queues::QueueDetails & qdet){
 
 
     std::vector<RecvPayload> recvop;
-    base_sparse_comm(sendop, recvop);
+    base_sparse_comm(get_compute_scheduler_ptr(), sendop, recvop);
 
     std::vector<RefBuff> recv_data;
     for(RecvPayload & load : recvop){
@@ -131,7 +131,7 @@ void sparse_comm_test(std::string prefix, sham::queues::QueueDetails & qdet){
 
                 shamtest::asserts().assert_equal(prefix+"same sender", recv_buf.sender_rank , ref.sender_rank);
                 shamtest::asserts().assert_equal(prefix+"same receiver", recv_buf.receiver_rank , ref.receiver_rank);
-                shamtest::asserts().assert_bool(prefix+"same buffer", shamalgs::reduction::equals_ptr(ref.payload, recv_buf.payload));
+                shamtest::asserts().assert_bool(prefix+"same buffer", shamalgs::reduction::equals_ptr(get_compute_queue(),ref.payload, recv_buf.payload));
 
             }else{
                 throw shambase::make_except_with_loc<std::runtime_error>(prefix+"missing recv mesages");
@@ -145,6 +145,6 @@ void sparse_comm_test(std::string prefix, sham::queues::QueueDetails & qdet){
 
 TestStart(Unittest, "shamalgs/collective/sparseXchg", testsparsexchg, -1){
 
-    sparse_comm_test("",sham::get_queue_details());
+    sparse_comm_test("",shamsys::instance::get_compute_scheduler());
 
 }

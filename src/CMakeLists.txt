@@ -13,7 +13,7 @@ add_custom_command(
 
 
 
-set(as_subproject shamunits shambase shamcomm shambackends shammath)
+set(as_subproject shamunits shambase shamcomm shambackends shammath shamalgs shamsys)
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -29,31 +29,8 @@ add_subdirectory(shambase)
 add_subdirectory(shamcomm)
 add_subdirectory(shambackends)
 add_subdirectory(shammath)
-
-######################
-# Shamalgs
-######################
-if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shamalgs target (Shared lib)")
-add_library(shamalgs SHARED "")
-else()
-message("-- adding shamalgs target (no lib)")
-add_library(shamalgs OBJECT "")
-endif()
-
-target_include_directories(shamalgs PUBLIC "${CMAKE_SOURCE_DIR}/src")
-
-if(SHAMROCK_USE_PCH)
-    target_precompile_headers(shamalgs PRIVATE "<sycl/sycl.hpp>")
-endif()
-
-target_link_libraries(shamalgs PUBLIC shamunits)
-target_link_libraries(shamalgs PUBLIC shambase)
-target_link_libraries(shamalgs PUBLIC shamcomm)
-target_link_libraries(shamalgs PUBLIC shambackends)
-target_link_libraries(shamalgs PUBLIC shammath)
-
-
+add_subdirectory(shamalgs)
+add_subdirectory(shamsys)
 
 
 
@@ -84,6 +61,8 @@ target_link_libraries(shamrock_lib PUBLIC shambase)
 target_link_libraries(shamrock_lib PUBLIC shamcomm)
 target_link_libraries(shamrock_lib PUBLIC shambackends)
 target_link_libraries(shamrock_lib PUBLIC shammath)
+target_link_libraries(shamrock_lib PUBLIC shamalgs)
+target_link_libraries(shamrock_lib PUBLIC shamsys)
 
 
 
@@ -110,6 +89,7 @@ target_link_libraries(shamrock PUBLIC shambase)
 target_link_libraries(shamrock PUBLIC shamcomm)
 target_link_libraries(shamrock PUBLIC shambackends)
 target_link_libraries(shamrock PUBLIC shammath)
+target_link_libraries(shamrock PUBLIC shamsys)
 
 
 
@@ -145,6 +125,7 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamcomm)
     target_link_libraries(shamrock_test PUBLIC shambackends)
     target_link_libraries(shamrock_test PUBLIC shammath)
+    target_link_libraries(shamrock_test PUBLIC shamsys)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")
@@ -182,23 +163,25 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp
 )
 
 target_sources(shamrock PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp)
-target_sources(shamrock_test PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp)
+
+if("${BUILD_TEST}")
+  target_sources(shamrock_test PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp)
+endif()
 
 
 
 
 
 
-
-add_subdirectory(shamsys)
 add_subdirectory(shamtest)
 add_subdirectory(shambindings)
 
-add_subdirectory(shamalgs)
 
 add_subdirectory(shamrock)
 add_subdirectory(shammodels)
 
 #add_subdirectory(runscript)
 
-add_subdirectory(tests)
+if("${BUILD_TEST}")
+  add_subdirectory(tests)
+endif()

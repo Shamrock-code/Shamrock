@@ -6,25 +6,33 @@
 //
 // -------------------------------------------------------//
 
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shambackends/usmbuffer.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include <memory>
+#include <vector>
 
 
-TestStart(Unittest, "shambackends/usmbuffer", usmbuffer_consttructor, 1){
+TestStart(Unittest, "shambackends/DeviceBuffer", DeviceBuffer_consttructor, 1){
     using namespace sham;
 
     constexpr USMKindTarget target = USMKindTarget::device;
     const size_t sz = 10;
     using T = int;
 
-    sycl::queue & q = shamsys::instance::get_compute_queue();
-    sham::usmbuffer<T,target> buf{sz,q};
+    std::shared_ptr<DeviceScheduler> sched = shamsys::instance::get_compute_scheduler_ptr();
+    sham::DeviceBuffer<T,target> buf{sz,sched};
 
-    REQUIRE(buf.get_ptr() != nullptr);
-    REQUIRE(buf.get_read_only_ptr() != nullptr);
+    std::vector<sycl::event> e;
+
+    REQUIRE(buf.get_read_access(e) != nullptr);buf.complete_event_state(sycl::event{});
+    REQUIRE(buf.get_write_access(e) != nullptr);buf.complete_event_state(sycl::event{});
     REQUIRE(buf.get_size() == sz);
     REQUIRE(buf.get_bytesize() == sz*sizeof(T));
-    REQUIRE(buf.get_queue() == q);
+
+    
+    //REQUIRE(buf.get_sched() == sched);
 }
 

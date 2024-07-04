@@ -341,10 +341,13 @@ Register_pymod(pysphmodel) {
         m, "SPHModel_f64_3_M4_SolverConfig", "SPHModel_f64_3_M4");
     add_instance<f64_3, shammath::M6>(
         m, "SPHModel_f64_3_M6_SolverConfig", "SPHModel_f64_3_M6");
+    add_instance<f64_3, shammath::M8>(
+        m, "SPHModel_f64_3_M8_SolverConfig", "SPHModel_f64_3_M8");
 
     using VariantSPHModelBind =
         std::variant<std::unique_ptr<Model<f64_3, shammath::M4>>,
-                     std::unique_ptr<Model<f64_3, shammath::M6>>>;
+                     std::unique_ptr<Model<f64_3, shammath::M6>>,
+                     std::unique_ptr<Model<f64_3, shammath::M8>>>;
 
     m.def(
         "get_SPHModel",
@@ -355,6 +358,8 @@ Register_pymod(pysphmodel) {
                 ret = std::make_unique<Model<f64_3, shammath::M4>>(ctx);
             } else if (vector_type == "f64_3" && kernel == "M6") {
                 ret = std::make_unique<Model<f64_3, shammath::M6>>(ctx);
+            } else if (vector_type == "f64_3" && kernel == "M8") {
+                ret = std::make_unique<Model<f64_3, shammath::M8>>(ctx);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>(
                     "unknown combination of representation and kernel");

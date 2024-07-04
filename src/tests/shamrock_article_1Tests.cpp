@@ -170,7 +170,7 @@ inline void test_tree_build_steps(std::string dset_name) {
 
                 using namespace shamrock::sfc;
 
-                u32 morton_len = shambase::roundup_pow2_clz(cnt_obj);
+                u32 morton_len = sham::roundup_pow2_clz(cnt_obj);
 
 
                 auto out_buf_morton = std::make_unique<sycl::buffer<morton_mode>>(morton_len);

@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file eos.hpp
+ * @file HydroSoundwave.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  */

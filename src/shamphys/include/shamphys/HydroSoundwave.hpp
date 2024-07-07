@@ -21,11 +21,15 @@
 namespace shamphys {
 
     class HydroSoundwave {
+        public:
         f64 cs;
         f64 k;
 
         std::complex<f64> rho_tilde;
         std::complex<f64> v_tilde;
+
+        HydroSoundwave(f64 _cs, f64 _k, std::complex<f64> _rho_tilde, std::complex<f64> _v_tilde)
+            : cs(_cs), k(_k), rho_tilde(_rho_tilde), v_tilde(_v_tilde) {}
 
         inline f64 get_omega() { return cs * k; }
 
@@ -36,7 +40,7 @@ namespace shamphys {
         field_val get_value(f64 t, f64 x) {
             static constexpr std::complex<double> i(0.0, 1.0);
 
-            std::complex<f64> val = std::exp(i * get_omega() * t - k * x);
+            std::complex<f64> val = std::exp(i * (get_omega() * t - k * x));
 
             return {std::real(val * rho_tilde), std::real(val * v_tilde)};
         }

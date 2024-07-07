@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.9)
 project(Shamphys CXX C)
 
 set(Sources
-    src/soundwave.cpp
+    src/HydroSoundwave.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

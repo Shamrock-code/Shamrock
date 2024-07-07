@@ -37,13 +37,7 @@ namespace shamphys {
             f64 rho, v;
         };
 
-        field_val get_value(f64 t, f64 x) {
-            static constexpr std::complex<double> i(0.0, 1.0);
-
-            std::complex<f64> val = std::exp(i * (get_omega() * t - k * x));
-
-            return {std::real(val * rho_tilde), std::real(val * v_tilde)};
-        }
+        field_val get_value(f64 t, f64 x);
     };
 
 } // namespace shamphys

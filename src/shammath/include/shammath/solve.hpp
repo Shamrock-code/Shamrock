@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file derivatives.hpp
+ * @file solve.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *

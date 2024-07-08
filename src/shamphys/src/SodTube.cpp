@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file HydroSoundwave.cpp
+ * @file SodTube.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Sod tube analytical solution adapted from a script of Leodasce Sewanou
  */

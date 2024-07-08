@@ -14,6 +14,7 @@
 
 #include "shambase/aliases_float.hpp"
 #include "shambindings/pybind11_stl.hpp"
+#include "shamphys/SodTube.hpp"
 #include <pybind11/complex.h>
 #include "shambindings/pybindaliases.hpp"
 #include "shamphys/BlackHoles.hpp"
@@ -120,5 +121,22 @@ Register_pymod(shamphyslibinit) {
         .def("get_value",[](shamphys::HydroSoundwave& self,f64 t, f64 x){
             auto ret = self.get_value(t, x);
             return std::pair<f64,f64>{ret.rho, ret.v};
+        });
+
+    py::class_<shamphys::SodTube>(shamphys_module, "SodTube")
+        .def(py::init([](f64 gamma, f64 rho_1, f64 P_1, f64 rho_5, f64 P_5) {
+            return std::make_unique<shamphys::SodTube>(
+                shamphys::SodTube{gamma, rho_1, P_1, rho_5, P_5});
+        }),
+        py::kw_only(),
+        py::arg("gamma"),
+        py::arg("rho_1"),
+        py::arg("P_1"),
+        py::arg("rho_5"),
+        py::arg("P_5")
+        )
+        .def("get_value",[](shamphys::SodTube& self,f64 t, f64 x){
+            auto ret = self.get_value(t, x);
+            return std::tuple<f64,f64,f64>{ret.rho, ret.vx, ret.P};
         });
 }

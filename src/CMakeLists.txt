@@ -129,6 +129,7 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shambackends)
     target_link_libraries(shamrock_test PUBLIC shammath)
     target_link_libraries(shamrock_test PUBLIC shamsys)
+    target_link_libraries(shamrock_test PUBLIC shamphys)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")

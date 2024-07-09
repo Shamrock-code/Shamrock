@@ -30,6 +30,7 @@ jobs:
             backend: omp
             arch: none
             runtest: yes
+            uploadartifact: yes
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
@@ -104,7 +105,7 @@ jobs:
           mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - uses: actions/upload-artifact@v4
-        if: "${{matrix.backend}}" == "omp"
+        if: matrix.uploadartifact
         with:
           name: buildfolder-${{ matrix.backend }}-${{ matrix.arch }}-clang-${{ matrix.clang }}
           path: build

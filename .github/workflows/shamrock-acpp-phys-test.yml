@@ -31,10 +31,18 @@ jobs:
       - name: ls local
         run : ls -la
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: buildfolder-${{ matrix.backend }}-${{ matrix.arch }}-clang-${{ matrix.clang }}
-          path: build
+      - name: Setup env
+        run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
+  
+      - name: Configure
+        run: |
+          cd build
+          source activate && shamconfigure
+
+      - name: Build
+        run: |
+          cd build
+          source activate && shammake
 
       - name: run test
         run: |

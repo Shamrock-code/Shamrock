@@ -103,9 +103,3 @@ jobs:
         run: |
           cd build
           mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-
-      - uses: actions/upload-artifact@v4
-        if: matrix.uploadartifact
-        with:
-          name: buildfolder-${{ matrix.backend }}-${{ matrix.arch }}-clang-${{ matrix.clang }}
-          path: build

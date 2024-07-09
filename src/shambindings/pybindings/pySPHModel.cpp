@@ -15,6 +15,8 @@
  
 #include <memory>
 #include <random>
+#include "shammodels/sph/modules/AnalysisSodTube.hpp"
+#include "shamphys/SodTube.hpp"
 #include <pybind11/cast.h>
 
 #include "shambindings/pybindaliases.hpp"
@@ -30,6 +32,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using Tscal = shambase::VecComponent<Tvec>;
 
     using T       = Model<Tvec, SPHKernel>;
+
+    using TAnalysisSodTube       = shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>;
     using TConfig = typename T::Solver::Config;
 
 
@@ -124,6 +128,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_units", &TConfig::set_units)
         .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
         .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness);
+
+    std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
+    py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())
+        .def("compute_L2_dist", [](TAnalysisSodTube&self) -> std::tuple<Tscal, Tvec, Tscal> {
+            auto ret = self.compute_L2_dist();
+            return {ret.rho, ret.v, ret.P};
+        });
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) { return std::make_unique<T>(ctx); }))
@@ -329,7 +340,10 @@ R"==(
         .def("set_cfl_mult_stiffness", [](T & self, Tscal cstiff){
             return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
         })
-        .def("change_htolerance",&T::change_htolerance);
+        .def("change_htolerance",&T::change_htolerance)
+        .def("make_analysis_sodtube",[](T & self, shamphys::SodTube sod){
+            return std::make_unique<TAnalysisSodTube>(self.ctx, self.solver.solver_config, self.solver.storage,sod);
+        });
     ;
 }
 

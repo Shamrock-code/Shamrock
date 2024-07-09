@@ -91,21 +91,23 @@ pass_vy = 2.9881306160215856e-05
 pass_vz = 1.7413547093275864e-07
 pass_P = 0.0001248364612976704
 
+err_log = ""
+
 if rho > pass_rho:
-    print("error on rho is too high",rho ,">",pass_rho )
+    err_log += ("error on rho is too high "+str(rho) +">"+str(pass_rho) ) + "\n"
     test_pass = False
 if vx > pass_vx:
-    print("error on vx is too high",vx ,">",pass_vx )
+    err_log += ("error on vx is too high "+str(vx) +">"+str(pass_vx) )+ "\n"
     test_pass = False
 if vy > pass_vy:
-    print("error on vy is too high",vy ,">",pass_vy )
+    err_log += ("error on vy is too high "+str(vy) +">"+str(pass_vy) )+ "\n"
     test_pass = False
 if vz > pass_vz:
-    print("error on vz is too high",vz ,">",pass_vz )
+    err_log += ("error on vz is too high "+str(vz) +">"+str(pass_vz) )+ "\n"
     test_pass = False
 if P > pass_P:
-    print("error on P is too high",P ,">",pass_P )
+    err_log += ("error on P is too high "+str(P) +">"+str(pass_P) )+ "\n"
     test_pass = False
 
 if test_pass == False:
-    exit("Test did not pass L2 margins")
+    exit("Test did not pass L2 margins : \n"+err_log)

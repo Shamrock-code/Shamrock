@@ -37,4 +37,6 @@ jobs:
           path: build
 
       - name: run test
-        run: ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}
+        run: |
+          cd build
+          ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}

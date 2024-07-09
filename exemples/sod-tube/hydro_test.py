@@ -64,14 +64,14 @@ print("Current part mass :", pmass)
 model.set_cfl_cour(0.1)
 model.set_cfl_force(0.1)
 
-t_target = 0.001
+t_target = 0.245
 
 model.evolve_until(t_target)
 
 #model.evolve_once()
 
-sod = shamrock.phys.SodTube(gamma = 1.4, rho_1 = 1,P_1 = 1,rho_5 = 0.125,P_5 = 0.1)
-sodanalysis = model.make_analysis_sodtube(sod)
+sod = shamrock.phys.SodTube(gamma = gamma, rho_1 = 1,P_1 = 1,rho_5 = 0.125,P_5 = 0.1)
+sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, 0.0, -0.5,0.5)
 print(sodanalysis.compute_L2_dist())
 
 

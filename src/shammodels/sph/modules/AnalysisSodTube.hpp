@@ -12,12 +12,12 @@
  * @file ComputeEos.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shambackends/vec.hpp"
+
 #include "shambackends/typeAliasVec.hpp"
+#include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamphys/SodTube.hpp"
@@ -40,9 +40,21 @@ namespace shammodels::sph::modules {
         Storage &storage;
 
         shamphys::SodTube solution;
+        Tvec direction;
+        Tscal time_val;
+        Tscal x_ref;        // shock centered on x_ref
+        Tscal x_min,x_max; // check only between [x_min, x_max ]
 
-        AnalysisSodTube(ShamrockCtx &context, Config &solver_config, Storage &storage, shamphys::SodTube& solution)
-            : context(context), solver_config(solver_config), storage(storage), solution(solution) {}
+        AnalysisSodTube(
+            ShamrockCtx &context,
+            Config &solver_config,
+            Storage &storage,
+            shamphys::SodTube &solution,
+            Tvec direction,
+            Tscal time_val,
+            Tscal x_ref,Tscal x_min,Tscal x_max)
+            : context(context), solver_config(solver_config), storage(storage), solution(solution),
+              direction(direction), time_val(time_val), x_ref(x_ref), x_min(x_min),x_max(x_max) {}
 
         struct field_val {
             Tscal rho;
@@ -55,6 +67,5 @@ namespace shammodels::sph::modules {
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };
-
 
 } // namespace shammodels::sph::modules

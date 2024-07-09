@@ -39,4 +39,5 @@ jobs:
       - name: run test
         run: |
           cd build
+          chmod +x ./shamrock
           ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}

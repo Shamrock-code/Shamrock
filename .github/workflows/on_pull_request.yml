@@ -54,3 +54,9 @@ jobs:
     needs: [src_check]
 
     uses: ./.github/workflows/shamrock-dpcpp.yml
+
+  
+  shamrock_linux_acpp_phystests:
+    name: Shamrock Phys Test
+    needs: [shamrock_linux_acpp]
+    uses: ./.github/workflows/shamrock-acpp-phys-test.yml

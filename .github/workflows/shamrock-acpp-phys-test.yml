@@ -1,0 +1,40 @@
+name: Acpp/clang15
+
+on:
+  workflow_call:
+
+jobs:
+
+
+  shamrock_acpp:
+    name: test ${{ matrix.testfile }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} 
+    runs-on: [self-hosted, ubuntu20]
+
+    strategy:
+      matrix:
+        include: 
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: omp
+            arch: none
+            runtest: yes
+            testfile: sod_tube.py
+
+
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+  
+      - name: ls local
+        run : ls -la
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: buildfolder-${{ matrix.backend }}-${{ matrix.arch }}-clang-${{ matrix.clang }}
+          path: build
+
+      - name: run test
+        run: ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}

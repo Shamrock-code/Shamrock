@@ -40,6 +40,7 @@
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
+#include "shammodels/sph/modules/UpdateDustDerivsTVI.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchData.hpp"
@@ -732,12 +733,20 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     const u32 iuint      = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
 
+
+    bool has_Sdust_field = solver_config.has_field_Sdust();
+    const u32 iSdust = (has_Sdust_field) ? pdl.get_field_idx<Tscal>("Sdust") : 0;
+    const u32 idSdust = (has_Sdust_field) ? pdl.get_field_idx<Tscal>("dSdust") : 0;
+
     shamrock::SchedulerUtility utility(scheduler());
 
     // forward euler step f dt/2
     logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
+    if(has_Sdust_field){
+        utility.fields_forward_euler<Tscal>(iSdust, idSdust, dt/2);
+    }
 
     // forward euler step positions dt
     logger::debug_ln("sph::BasicGas", "forward euler step positions dt");
@@ -747,6 +756,10 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     logger::debug_ln("sph::BasicGas", "forward euler step f dt/2");
     utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
     utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
+    if(has_Sdust_field){
+        utility.fields_forward_euler<Tscal>(iSdust, idSdust, dt/2);
+    }
+    
 }
 
 template<class Tvec, template<class> class Kern>
@@ -941,6 +954,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_ghost_layout() {
         ghost_layout.add_field<Tscal>("soundspeed", 1);
     }
 
+    if(solver_config.has_field_Sdust()){
+        ghost_layout.add_field<Tscal>("Sdust", solver_config.get_Sdust_nvar());
+    }
+
 }
 
 template<class Tvec, template<class> class Kern>
@@ -993,6 +1010,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     bool has_alphaAV_field = solver_config.has_field_alphaAV();
     bool has_soundspeed_field = solver_config.ghost_has_soundspeed();
+    bool has_Sdust_field = solver_config.has_field_Sdust();
 
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
@@ -1005,6 +1023,8 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 ialpha_AV = (has_alphaAV_field) ? pdl.get_field_idx<Tscal>("alpha_AV") : 0;
     const u32 isoundspeed = (has_soundspeed_field) ? pdl.get_field_idx<Tscal>("soundspeed") : 0;
 
+    const u32 iSdust = (has_Sdust_field) ? pdl.get_field_idx<Tscal>("Sdust") : 0;
+
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
@@ -1016,6 +1036,9 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 isoundspeed_interf =
         (has_soundspeed_field) ? ghost_layout.get_field_idx<Tscal>("soundspeed") : 0;
+
+    const u32 iSdust_interf =
+        (has_Sdust_field) ? ghost_layout.get_field_idx<Tscal>("Sdust") : 0;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -1062,6 +1085,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_soundspeed_field) {
                 sender_patch.get_field<Tscal>(isoundspeed).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tscal>(isoundspeed_interf));
+            }
+
+            if (has_Sdust_field) {
+                sender_patch.get_field<Tscal>(iSdust).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(iSdust_interf));
             }
         });
 
@@ -1112,6 +1140,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 if (has_soundspeed_field) {
                     pdat_new.get_field<Tscal>(isoundspeed_interf)
                         .insert(pdat.get_field<Tscal>(isoundspeed));
+                }
+
+                if (has_Sdust_field) {
+                    pdat_new.get_field<Tscal>(iSdust_interf)
+                        .insert(pdat.get_field<Tscal>(iSdust));
                 }
 
                 pdat_new.check_field_obj_cnt_match();
@@ -1173,13 +1206,26 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     logger::debug_ln("sph::BasicGas", "save old fields");
     storage.old_axyz.set(utility.save_field<Tvec>(iaxyz, "axyz_old"));
     storage.old_duint.set(utility.save_field<Tscal>(iduint, "duint_old"));
+
+
+    bool has_Sdust_field = solver_config.has_field_Sdust();
+    const u32 idSdust = (has_Sdust_field) ? pdl.get_field_idx<Tscal>("dSdust") : 0;
+    if(has_Sdust_field){
+        storage.old_dSdust.set(utility.save_field<Tscal>(idSdust, "dSdust_old"));
+    }
 }
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
 
     modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
+
     derivs.update_derivs();
+
+    if(solver_config.has_field_Sdust()){
+        modules::UpdateDustDerivsTVI<Tvec, Kern> derivs(context, solver_config, storage);
+        derivs.update_dust_derivs();
+    }
 
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     ext_forces.add_ext_forces();
@@ -1452,6 +1498,8 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
             utility.make_compute_field<Tscal>("vmean epsilon_v^2", 1);
         ComputeField<Tscal> uepsilon_u_sq =
             utility.make_compute_field<Tscal>("umean epsilon_u^2", 1);
+        ComputeField<Tscal> Sdustepsilon_Sdust_sq =
+            utility.make_compute_field<Tscal>("Sdustmean epsilon_Sdust^2", 1);
 
         // corrector
         logger::debug_ln("sph::BasicGas", "leapfrog corrector");
@@ -1459,6 +1507,15 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once()
             ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
         utility.fields_leapfrog_corrector<Tscal>(
             iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
+
+        bool has_Sdust_field = solver_config.has_field_Sdust();
+        const u32 idSdust = (has_Sdust_field) ? pdl.get_field_idx<Tscal>("dSdust") : 0;
+        const u32 iSdust = (has_Sdust_field) ? pdl.get_field_idx<Tscal>("Sdust") : 0;
+        if(has_Sdust_field){
+            utility.fields_leapfrog_corrector<Tscal>(
+                iSdust, idSdust, storage.old_dSdust.get(), Sdustepsilon_Sdust_sq, dt / 2);
+            storage.old_dSdust.reset();
+        }
 
         storage.old_axyz.reset();
         storage.old_duint.reset();

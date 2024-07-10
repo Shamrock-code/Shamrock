@@ -72,6 +72,7 @@ namespace shammodels::sph {
 
         Component<shamrock::ComputeField<Tvec>> old_axyz;
         Component<shamrock::ComputeField<Tscal>> old_duint;
+        Component<shamrock::ComputeField<Tscal>> old_dSdust;
 
         Component<std::vector<SinkParticle<Tvec>>> sinks;
 

@@ -108,7 +108,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_boundary_free",&TConfig::set_boundary_free)
         .def("set_boundary_periodic",&TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic",&TConfig::set_boundary_shearing_periodic)
-
+        .def("set_dust_config_none",&TConfig::set_dust_config_none)
+        .def("set_dust_config_tvi",[](TConfig & self,Tscal rho_grain, std::vector<Tscal> dust_sizes){
+            self.set_dust_config_tvi(rho_grain,dust_sizes);
+        },
+        py::kw_only(),
+        py::arg("rho_grain"),
+        py::arg("dust_sizes"))
         .def("add_ext_force_point_mass",&TConfig::add_ext_force_point_mass)
         .def("add_ext_force_lense_thirring",[](TConfig & self,Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin){
             self.add_ext_force_lense_thirring(central_mass,Racc,a_spin,dir_spin);

@@ -97,6 +97,12 @@ namespace shammodels::sph {
                 // hence we copy the soundspeed at the end of the step to a field in the patchdata
                 context.pdata_layout_add_field<Tscal>("soundspeed", 1);
             }
+
+            if(solver_config.has_field_Sdust()){
+                u32 nvar = solver_config.get_Sdust_nvar();
+                context.pdata_layout_add_field<Tscal>("Sdust", nvar);
+                context.pdata_layout_add_field<Tscal>("dSdust", nvar);
+            }
         }
 
         // serial patch tree control

@@ -25,6 +25,7 @@
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <variant>
+#include <vector>
 
 #include "config/AVConfig.hpp"
 #include "config/BCConfig.hpp"
@@ -38,6 +39,8 @@ namespace shammodels::sph {
     template<class Tvec>
     struct SolverStatusVar;
 
+    template<class Tvec>
+    struct DustConfig;
 } // namespace shammodels::sph
 
 template<class Tvec>
@@ -49,6 +52,66 @@ struct shammodels::sph::SolverStatusVar {
     Tscal dt_sph = 0;
 
     Tscal cfl_multiplier = 1e-2;
+};
+
+template<class Tvec>
+struct shammodels::sph::DustConfig {
+
+    using Tscal              = shambase::VecComponent<Tvec>;
+    static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+
+    struct None{};
+
+    struct DustMonofluidTvi{
+        std::vector<Tscal> dust_sizes;
+        Tscal rho_grain;
+    };
+
+    using Variant = std::variant<None, DustMonofluidTvi>;
+
+    Variant config = None{};
+
+    inline void set_dust_config_none(){
+        config = None{};
+    };  
+
+    inline void set_dust_config_tvi(Tscal rho_grain, std::vector<Tscal> dust_sizes){
+        if(dust_sizes.size() > 1){
+            shambase::throw_unimplemented();
+        }
+        config = DustMonofluidTvi{dust_sizes, rho_grain};
+    };  
+    
+    inline void print_status() {
+        logger::raw_ln("--- Dust config");
+
+        if (None *v = std::get_if<None>(&config)) {
+            logger::raw_ln("  Config Type : No dust");
+        } else if (DustMonofluidTvi *v = std::get_if<DustMonofluidTvi>(&config)) {
+            logger::raw_ln("  Config Type : Dust TVI");
+            logger::raw_ln("     rho_grain =",v->rho_grain);
+            logger::raw_ln("     dust_size =",v->dust_sizes);
+        } else {
+            shambase::throw_unimplemented();
+        }
+        logger::raw_ln("-------------");
+    }
+
+
+    inline bool has_field_Sdust() {
+        bool is_monof_tvi =
+            bool(std::get_if<DustMonofluidTvi>(&config));
+        return is_monof_tvi;
+    }
+
+    inline u32 get_Sdust_nvar(){
+        if(DustMonofluidTvi *v = std::get_if<DustMonofluidTvi>(&config)){
+            return v->dust_sizes.size();
+        }
+        shambase::throw_unimplemented();
+        return 0;
+    }
+
 };
 
 template<class Tvec, template<class> class SPHKernel>
@@ -66,7 +129,6 @@ struct shammodels::sph::SolverConfig {
     Tscal cfl_cour;
     Tscal cfl_force;
     Tscal cfl_multiplier_stiffness = 2;
-
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -275,8 +337,24 @@ struct shammodels::sph::SolverConfig {
     // Ext force Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Dust Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
+    using DustConfig     = DustConfig<Tvec>;
+    DustConfig dust_config{};
 
+    inline void set_dust_config_none(){
+        dust_config.set_dust_config_none();
+    };  
+
+    inline void set_dust_config_tvi(Tscal rho_grain, std::vector<Tscal> dust_sizes){
+        dust_config.set_dust_config_tvi(rho_grain, dust_sizes);
+    }; 
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Dust Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
 
     inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
 
@@ -290,6 +368,15 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_divv() { return artif_viscosity.has_alphaAV_field(); }
     inline bool has_field_dtdivv() { return artif_viscosity.has_dtdivv_field(); }
     inline bool has_field_curlv() { return artif_viscosity.has_curlv_field() && (dim == 3); }
+
+
+    inline bool has_field_Sdust() {
+        return dust_config.has_field_Sdust();
+    }
+
+    inline u32 get_Sdust_nvar(){
+        return dust_config.get_Sdust_nvar();
+    }
 
     inline bool has_axyz_in_ghost(){
         return has_field_dtdivv();
@@ -324,6 +411,7 @@ struct shammodels::sph::SolverConfig {
         artif_viscosity.print_status();
         eos_config.print_status();
         boundary_config.print_status();
+        dust_config.print_status();
 
         logger::raw_ln("------------------------------------");
     }

@@ -104,8 +104,8 @@ namespace shammath {
     inline constexpr DustConsState<Tvec>
     d_prim_to_cons(const DustPrimState<Tvec> d_prim){
         DustConsState<Tvec> d_cons;
-        d_cons.rho = prim.rho;
-        d_cons.rhovel = (prim.vel * prim.rho);
+        d_cons.rho = d_prim.rho;
+        d_cons.rhovel = (d_prim.vel * d_prim.rho);
         return d_cons;
     }
 

@@ -6,6 +6,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file ComputeFlux.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
@@ -386,6 +388,22 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         NGLink<std::array<Tscal, 2>> &rhoe_face_zp = storage.rhoe_face_zp.get().get(id);
         NGLink<std::array<Tscal, 2>> &rhoe_face_zm = storage.rhoe_face_zm.get().get(id);
 
+        /**
+        NGLink<std::vector<std::array<Tscal,2>>> &rho_dust_face_xp = storage.rho_dust_face_xp.get().get(id);
+        NGLink<std::vector<std::array<Tscal,2>>> &rho_dust_face_xm = storage.rho_dust_face_xm.get().get(id);
+        NGLink<std::vector<std::array<Tscal,2>>> &rho_dust_face_yp = storage.rho_dust_face_yp.get().get(id);
+        NGLink<std::vector<std::array<Tscal,2>>> &rho_dust_face_ym = storage.rho_dust_face_ym.get().get(id);
+        NGLink<std::vector<std::array<Tscal,2>>> &rho_dust_face_zp = storage.rho_dust_face_zp.get().get(id);
+        NGLink<std::vector<std::array<Tscal,2>>> &rho_dust_face_zm = storage.rho_dust_face_zm.get().get(id);
+
+        NGLink<std::vector<std::array<Tvec,2>>> &rhov_dust_face_xp =  storage.rhov_dust_face_xp.get().get(id);
+        NGLink<std::vector<std::array<Tvec,2>>> &rhov_dust_face_xm =  storage.rhov_dust_face_xm.get().get(id);
+        NGLink<std::vector<std::array<Tvec,2>>> &rhov_dust_face_yp =  storage.rhov_dust_face_yp.get().get(id);
+        NGLink<std::vector<std::array<Tvec,2>>> &rhov_dust_face_ym =  storage.rhov_dust_face_ym.get().get(id);
+        NGLink<std::vector<std::array<Tvec,2>>> &rhov_dust_face_zp =  storage.rhov_dust_face_zp.get().get(id);
+        NGLink<std::vector<std::array<Tvec,2>>> &rhov_dust_face_zm =  storage.rhov_dust_face_zm.get().get(id);
+        **/
+
         const u32 ixp = oriented_cell_graph.xp;
         const u32 ixm = oriented_cell_graph.xm;
         const u32 iyp = oriented_cell_graph.yp;
@@ -400,12 +418,30 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         NGLink<Tscal> buf_flux_rho_face_zp{*oriented_cell_graph.graph_links[izp]};
         NGLink<Tscal> buf_flux_rho_face_zm{*oriented_cell_graph.graph_links[izm]};
 
+        /**
+        NGLink<std::vector<Tscal>> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
+        NGLink<std::vector<Tscal>> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixm]};
+        NGLink<std::vector<Tscal>> buf_flux_rho_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
+        NGLink<std::vector<Tscal>> buf_flux_rho_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
+        NGLink<std::vector<Tscal>> buf_flux_rho_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
+        NGLink<std::vector<Tscal>> buf_flux_rho_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
+        **/
+
         NGLink<Tvec> buf_flux_rhov_face_xp{*oriented_cell_graph.graph_links[ixp]};
         NGLink<Tvec> buf_flux_rhov_face_xm{*oriented_cell_graph.graph_links[ixm]};
         NGLink<Tvec> buf_flux_rhov_face_yp{*oriented_cell_graph.graph_links[iyp]};
         NGLink<Tvec> buf_flux_rhov_face_ym{*oriented_cell_graph.graph_links[iym]};
         NGLink<Tvec> buf_flux_rhov_face_zp{*oriented_cell_graph.graph_links[izp]};
         NGLink<Tvec> buf_flux_rhov_face_zm{*oriented_cell_graph.graph_links[izm]};
+
+        /**
+        NGLink<std::vector<Tvec>> buf_flux_rhov_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
+        NGLink<std::vector<Tvec>> buf_flux_rhov_dust_face_xp{*oriented_cell_graph.graph_links[ixm]};
+        NGLink<std::vector<Tvec>> buf_flux_rhov_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
+        NGLink<std::vector<Tvec>> buf_flux_rhov_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
+        NGLink<std::vector<Tvec>> buf_flux_rhov_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
+        NGLink<std::vector<Tvec>> buf_flux_rhov_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
+        **/
 
         NGLink<Tscal> buf_flux_rhoe_face_xp{*oriented_cell_graph.graph_links[ixp]};
         NGLink<Tscal> buf_flux_rhoe_face_xm{*oriented_cell_graph.graph_links[ixm]};
@@ -573,7 +609,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         flux_rhoe_face_ym.add_obj(id, std::move(buf_flux_rhoe_face_ym));
         flux_rhoe_face_zp.add_obj(id, std::move(buf_flux_rhoe_face_zp));
         flux_rhoe_face_zm.add_obj(id, std::move(buf_flux_rhoe_face_zm));
-    });
+});
 
     storage.flux_rho_face_xp.set(std::move(flux_rho_face_xp));
     storage.flux_rho_face_xm.set(std::move(flux_rho_face_xm));

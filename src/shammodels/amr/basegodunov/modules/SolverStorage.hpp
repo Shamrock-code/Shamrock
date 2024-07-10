@@ -59,11 +59,20 @@ namespace shammodels::basegodunov {
 
         Component<shambase::DistributedData<shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>>> cell_link_graph;
 
-        Component<shamrock::ComputeField<Tvec>> grad_rho;
+        Component<shamrock::ComputeField<Tvec>> grad_rho; 
         Component<shamrock::ComputeField<Tvec>> dx_rhov;
         Component<shamrock::ComputeField<Tvec>> dy_rhov;
         Component<shamrock::ComputeField<Tvec>> dz_rhov;
         Component<shamrock::ComputeField<Tvec>> grad_rhoe;
+
+        /**
+        Component<std::vector<shamrock::ComputeFiled<Tvec> >> grad_rho_dust;
+        Component<std::vector<shamrock::ComputeFiled<Tvec> >> dx_rhov_dust;
+        Component<std::vector<shamrock::ComputeFiled<Tvec> >> dy_rhov_dust;
+        Component<std::vector<shamrock::ComputeFiled<Tvec> >> dz_rhov_dust;
+
+
+        **/
 
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_xp;
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_xm;
@@ -71,6 +80,15 @@ namespace shammodels::basegodunov {
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_ym;
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_zp;
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_face_zm;
+
+        /**
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<std::array<Tscal,2>>>>> rho_dust_face_xp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<std::array<Tscal,2>>>>> rho_dust_face_xm;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<std::array<Tscal,2>>>>> rho_dust_face_yp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<std::array<Tscal,2>>>>> rho_dust_face_ym;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<std::array<Tscal,2>>>>> rho_dust_face_zp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<std::array<Tscal,2>>>>> rho_dust_face_zm;
+        **/
 
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> rhov_face_xp;
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> rhov_face_xm;
@@ -93,6 +111,15 @@ namespace shammodels::basegodunov {
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>> flux_rho_face_zp;
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>> flux_rho_face_zm;
 
+        /**
+            Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<Tscal>>>> flux_rho_dust_face_xp;
+            Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<Tscal>>>> flux_rho_dust_face_xm;
+            Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<Tscal>>>> flux_rho_dust_face_yp;
+            Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<Tscal>>>> flux_rho_dust_face_ym;
+            Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<Tscal>>>> flux_rho_dust_face_zp;
+            Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::vector<Tscal>>>> flux_rho_dust_face_zm;
+        **/
+
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>> flux_rhov_face_xp;
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>> flux_rhov_face_xm;
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>> flux_rhov_face_yp;
@@ -110,6 +137,11 @@ namespace shammodels::basegodunov {
         Component<shamrock::ComputeField<Tscal>> dtrho;
         Component<shamrock::ComputeField<Tvec>> dtrhov;
         Component<shamrock::ComputeField<Tscal>> dtrhoe;
+
+        /***
+        Component<shamrock::ComputedField<std::vector<Tscal>>> dtrho_dust;
+        Component<shamrock::ComputedField<std::vector<Tscal>>> dtrhov_dust;
+        **/
         struct {
             f64 interface = 0;
             f64 neighbors = 0;

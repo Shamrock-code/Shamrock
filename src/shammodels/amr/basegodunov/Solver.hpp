@@ -27,6 +27,15 @@ namespace shammodels::basegodunov {
         HLL = 1
     };
 
+    /**
+    DHLL ====> Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
+    
+    HB   ====> Huang and Bai. This is the pressureless Riemann solver proposed by Huang and Bai (2022) in Athena++ */
+    enum DustRiemannSolverMode{
+        DHLL = 0,
+        HB   = 1   
+    };
+
     enum SlopeMode{
         None = 0,
         VanLeer_f = 1,
@@ -80,6 +89,14 @@ namespace shammodels::basegodunov {
             context.pdata_layout_add_field<Tscal>("rho", AMRBlock::block_size);
             context.pdata_layout_add_field<Tvec>("rhovel", AMRBlock::block_size);
             context.pdata_layout_add_field<Tscal>("rhoetot", AMRBlock::block_size);
+
+            /** for (size_t i = 0; i < Ndust; i++)
+                {
+                    sdt::string dsut_id = std::to_string(i+1);
+                    context.pdata_layaout_add_field<TgridVec>("rho_dust"+ dust_id, AMRBlock::bloc_size);
+                    context.pdata_layaout_add_field<TgridVec>("rhov_dust"+ dust_id, AMRBlock::bloc_size);
+                }
+             **/
         }
 
         Solver(ShamrockCtx &context) : context(context) {}

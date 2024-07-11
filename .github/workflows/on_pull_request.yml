@@ -1,4 +1,4 @@
-name: Pull request checks
+name: On PR
 
 # Controls when the workflow will run
 on:

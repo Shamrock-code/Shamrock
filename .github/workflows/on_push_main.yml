@@ -1,4 +1,4 @@
-name: Auto release
+name: On Push
 
 # Controls when the workflow will run
 on:

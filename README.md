@@ -3,7 +3,7 @@
    <img alt="text" src="doc/logosham_white.png" width="600">
  </picture>
  
-![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/source_checks.yml/badge.svg?branch=main)  ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/shamrock-dpcpp.yml/badge.svg?branch=main)  ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/shamrock-acpp-clang15.yml/badge.svg?branch=main)  ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/shamrock-acpp-clang15-asan.yml/badge.svg?branch=main) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/on_push_main.yml/badge.svg?branch=main) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 # The Shamrock code
 

@@ -2,7 +2,8 @@ name: Pull request checks
 
 # Controls when the workflow will run
 on:
-  pull_request:
+  pull_request_target:
+    types: [opened,edited,synchronize,labeled]
 
 
 jobs:

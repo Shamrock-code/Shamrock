@@ -139,4 +139,23 @@ Register_pymod(shamphyslibinit) {
             auto ret = self.get_value(t, x);
             return std::tuple<f64,f64,f64>{ret.rho, ret.vx, ret.P};
         });
+
+
+    py::class_<shamphys::SodTubeDustTVI>(shamphys_module, "SodTubeDustTVI")
+        .def(py::init([](f64 gamma, f64 epsilon, f64 rho_1, f64 P_1, f64 rho_5, f64 P_5) {
+            return std::make_unique<shamphys::SodTubeDustTVI>(
+                shamphys::SodTubeDustTVI{gamma, epsilon, rho_1, P_1, rho_5, P_5});
+        }),
+        py::kw_only(),
+        py::arg("gamma"),
+        py::arg("epsilon"),
+        py::arg("rho_1"),
+        py::arg("P_1"),
+        py::arg("rho_5"),
+        py::arg("P_5")
+        )
+        .def("get_value",[](shamphys::SodTubeDustTVI& self,f64 t, f64 x){
+            auto ret = self.get_value(t, x);
+            return std::tuple<f64,f64,f64,f64>{ret.rho, ret.epsilon, ret.vx, ret.P};
+        });
 }

@@ -18,10 +18,10 @@
 #include <cmath>
 #include <iostream>
 
-f64 shamphys::SodTube::soundspeed(f64 P, f64 rho) { return std::sqrt(gamma * P / rho); };
+f64 shamphys::SodTube::soundspeed(f64 P, f64 rho) { return std::sqrt(gamma * gamma_corec * P / rho); };
 
-shamphys::SodTube::SodTube(f64 _gamma, f64 _rho_1, f64 _P_1, f64 _rho_5, f64 _P_5)
-    : gamma(_gamma), rho_1(_rho_1), P_1(_P_1), rho_5(_rho_5), P_5(_P_5) {
+shamphys::SodTube::SodTube(f64 _gamma, f64 _rho_1, f64 _P_1, f64 _rho_5, f64 _P_5, f64 _gamma_corec)
+    : gamma(_gamma), rho_1(_rho_1), P_1(_P_1), rho_5(_rho_5), P_5(_P_5), gamma_corec(_gamma_corec) {
     c_1 = soundspeed(P_1, rho_1);
     c_5 = soundspeed(P_5, rho_5);
 

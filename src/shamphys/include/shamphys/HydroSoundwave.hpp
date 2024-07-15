@@ -41,7 +41,3 @@ namespace shamphys {
     };
 
 } // namespace shamphys
-
-
-
-

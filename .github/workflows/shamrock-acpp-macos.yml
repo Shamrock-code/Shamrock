@@ -43,37 +43,4 @@ jobs:
       - name: Setup env
         run : ./env/new-env --machine macos-generic.acpp --builddir build -- 
   
-      - name: Configure
-        run: |
-          cd build
-          source activate && shamconfigure
-
-      - name: Build
-        run: |
-          cd build
-          source activate && shammake
-
-      - name: Pull reference files
-        run: |
-          cd build
-          git clone https://github.com/Shamrock-code/reference-files.git
-
-      - name: run Shamrock Unittests world_size = 1
-        run: |
-          cd build
-          ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-  
-      - name: run Shamrock Unittests world_size = 2
-        run: |
-          cd build
-          mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-      
-      - name: run Shamrock Unittests world_size = 3
-        run: |
-          cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-  
-      - name: run Shamrock Unittests world_size = 4
-        run: |
-          cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+      - uses: ./.github/workflows/actions/shamrock_test.yml

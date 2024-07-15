@@ -56,6 +56,11 @@ jobs:
         run : ls -la
 
       - name: Setup env
-        run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
+        run : ./env/new-env \
+                --machine debian-generic.acpp \
+                --builddir build \
+                -- \
+                --backend ${{ matrix.backend }} \
+                --arch ${{ matrix.arch }}
   
       - uses: ./.github/workflows/actions/shamrock_test.yml

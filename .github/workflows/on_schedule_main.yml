@@ -40,6 +40,11 @@ jobs:
     needs: [src_check]
     uses: ./.github/workflows/shamrock-acpp-clang15-asan.yml
 
+  shamrock_linux_acpp_ubsan:
+    name: Shamrock Test
+    needs: [src_check]
+    uses: ./.github/workflows/shamrock-acpp-clang15-ubsan.yml
+
   shamrock_linux_acpp_tidy:
     name: Shamrock Test
     needs: [src_check]

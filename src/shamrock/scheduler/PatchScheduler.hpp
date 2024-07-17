@@ -46,7 +46,7 @@
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamrock/patch/PatchField.hpp"
-#include "shambase/integer_sycl.hpp"
+#include "shambackends/math.hpp"
 
 /**
  * @brief The MPI scheduler
@@ -419,6 +419,7 @@ class PatchScheduler{
                 
                 if(pdat.get_obj_cnt() > 0){
                     write_with_offset_into(
+                        shamsys::instance::get_compute_queue(),
                         get_check_ref(ret), 
                         get_check_ref(pdat.get_field<T>(field_idx).get_buf()), 
                         ptr, 

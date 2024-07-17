@@ -9,12 +9,10 @@
 /**
  * @file TestResult.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "TestResult.hpp"
-
-
 #include "shambase/bytestream.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -32,41 +30,34 @@ namespace shamtest::details {
 
         auto get_type_name = [](TestType t) -> std::string {
             switch (t) {
-            case Benchmark:
-                return "Benchmark";
-            case LongBenchmark:
-                return "LongBenchmark";
-            case ValidationTest:
-                return "ValidationTest";
-            case LongValidationTest:
-                return "LongValidationTest";
-            case Unittest:
-                return "Unittest";
+            case Benchmark: return "Benchmark";
+            case LongBenchmark: return "LongBenchmark";
+            case ValidationTest: return "ValidationTest";
+            case LongValidationTest: return "LongValidationTest";
+            case Unittest: return "Unittest";
             }
-
         };
 
         auto get_str = [&]() -> std::string {
             return "{\n"
-                   R"(    "type" : ")" +
-                   get_type_name(type) + "\",\n" + R"(    "name" : ")" + name + "\",\n" +
-                   R"(    "compute_queue" : ")" +
-                   get_compute_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
-                   R"(    "alt_queue" : ")" +
-                   get_alt_queue().get_device().get_info<sycl::info::device::name>() + "\",\n" +
-                   R"(    "world_rank" : )" + std::to_string(world_rank) + ",\n" +
-                   R"(    "asserts" : )" + shambase::increase_indent(asserts.serialize_json()) + ",\n" +
-                   R"(    "test_data" : )" + shambase::increase_indent(test_data.serialize_json()) + "\n" + "}";
+                   R"(    "type" : ")"
+                   + get_type_name(type) + "\",\n" + R"(    "name" : ")" + name + "\",\n"
+                   + R"(    "compute_queue" : ")"
+                   + get_compute_queue().get_device().get_info<sycl::info::device::name>() + "\",\n"
+                   + R"(    "alt_queue" : ")"
+                   + get_alt_queue().get_device().get_info<sycl::info::device::name>() + "\",\n"
+                   + R"(    "world_rank" : )" + std::to_string(world_rank) + ",\n"
+                   + R"(    "asserts" : )" + shambase::increase_indent(asserts.serialize_json())
+                   + ",\n" + R"(    "test_data" : )"
+                   + shambase::increase_indent(test_data.serialize_json()) + "\n" + "}";
         };
 
         return get_str();
     }
 
-
-
     void TestResult::serialize(std::basic_stringstream<byte> &stream) {
 
-        logger::debug_mpi_ln("TEST", "serialize :",name);
+        logger::debug_mpi_ln("TEST", "serialize :", name);
 
         shambase::stream_write(stream, type);
 
@@ -78,21 +69,18 @@ namespace shamtest::details {
         test_data.serialize(stream);
 
         shambase::stream_write_string(stream, tex_output);
-
     }
 
-
-    TestResult TestResult::deserialize(std::basic_stringstream<byte> & reader){
-        TestType type;          
-        std::string name;       
-        u32 world_rank;         
+    TestResult TestResult::deserialize(std::basic_stringstream<byte> &reader) {
+        TestType type;
+        std::string name;
+        u32 world_rank;
         std::string tex_output;
-
 
         shambase::stream_read(reader, type);
 
         shambase::stream_read_string(reader, name);
-        logger::debug_mpi_ln("TEST", "deserialize :",name);
+        logger::debug_mpi_ln("TEST", "deserialize :", name);
 
         shambase::stream_read(reader, world_rank);
 
@@ -101,7 +89,13 @@ namespace shamtest::details {
 
         shambase::stream_read_string(reader, tex_output);
 
-        return TestResult{type,name,world_rank,std::move(asserts),std::move(test_data),std::move(tex_output)};
+        return TestResult{
+            type,
+            name,
+            world_rank,
+            std::move(asserts),
+            std::move(test_data),
+            std::move(tex_output)};
     }
 
 } // namespace shamtest::details

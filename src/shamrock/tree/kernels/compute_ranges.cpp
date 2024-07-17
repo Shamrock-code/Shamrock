@@ -15,7 +15,7 @@
 #include "compute_ranges.hpp"
 
 #include "shambase/integer.hpp"
-#include "shambase/integer_sycl.hpp"
+#include "shambackends/math.hpp"
 
 template<class u_morton>
 void sycl_compute_cell_ranges(
@@ -73,7 +73,7 @@ void sycl_compute_cell_ranges(
 
             if(gid >= internal_cell_cnt) return;
 
-            uint clz_ = shambase::clz_xor(morton_map[gid], morton_map[end_range_map[gid]]);
+            uint clz_ = sham::clz_xor(morton_map[gid], morton_map[end_range_map[gid]]);
 
             using Morton = shamrock::sfc::MortonCodes<u_morton, 3>;
 

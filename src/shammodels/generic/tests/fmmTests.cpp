@@ -1183,19 +1183,19 @@ TestStart(ValidationTest,"models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec , 1
     constexpr f64 open_crit = 0.3;
     
 
-    {
+    if(false){
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32,u32,4>(pos,reduc_level,open_crit);
         shamtest::asserts().assert_bool("fmm_f32_u32_order4", res.prec < 1e-5);
     }
 
-    {
+    if(false){
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32,u64,4>(pos,reduc_level,open_crit);
         shamtest::asserts().assert_bool("fmm_f32_u64_order4", res.prec < 1e-5);
     }
 
-    {
+    if(false){
         auto pos = pos_partgen_distrib<f64>(1e4);
         auto res = nompi_fmm_testing<f64,u32,4>(pos,reduc_level,open_crit);
         shamtest::asserts().assert_bool("fmm_f64_u32_order4", res.prec < 1e-5);

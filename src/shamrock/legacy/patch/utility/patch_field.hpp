@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "shamalgs/collective/exchanges.hpp"
+#include "shambackends/sycl.hpp"
 
 template<class type>
 class BufferedPField{public:

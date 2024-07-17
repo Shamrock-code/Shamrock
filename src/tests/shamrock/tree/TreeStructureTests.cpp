@@ -43,14 +43,14 @@ TestStart(Unittest, "shamrock/tree/TreeStructure::serialize", teststructureseria
         strc.build_one_cell_mode();
     }
 
-    shamalgs::SerializeHelper ser;
+    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(strc.serialize_byte_size());
     strc.serialize(ser);
 
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(),std::move(recov));
 
         TreeStruct outser = TreeStruct::deserialize(ser2);
 

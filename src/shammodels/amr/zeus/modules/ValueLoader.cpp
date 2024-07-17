@@ -18,14 +18,11 @@
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
-template<class Tvec, class TgridVec, class T>
-using Module = shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>;
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_internal_block_xm(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_xm(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
@@ -51,7 +48,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_xm(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_internal_block_xp(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_xp(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
@@ -77,7 +74,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_xp(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_internal_block_ym(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_ym(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
@@ -103,7 +100,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_ym(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_internal_block_yp(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_yp(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
@@ -129,7 +126,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_yp(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_internal_block_zm(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_zm(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
@@ -155,7 +152,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_zm(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_internal_block_zp(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_zp(
     u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
@@ -181,7 +178,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block_zp(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_internal_block(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block(
     std::array<Tgridscal, dim> offset,
     u32 nobj,
     u32 nvar,
@@ -230,7 +227,7 @@ void Module<Tvec, TgridVec, T>::load_patch_internal_block(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xm(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_xm(
 
     std::array<Tgridscal, dim> offset,
     sycl::buffer<TgridVec> &buf_cell_min,
@@ -285,7 +282,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xm(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
 
     std::array<Tgridscal, dim> offset,
     sycl::buffer<TgridVec> &buf_cell_min,
@@ -347,7 +344,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_ym(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_ym(
 
     std::array<Tgridscal, dim> offset,
     sycl::buffer<TgridVec> &buf_cell_min,
@@ -402,7 +399,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_ym(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_yp(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_yp(
 
     std::array<Tgridscal, dim> offset,
     sycl::buffer<TgridVec> &buf_cell_min,
@@ -457,7 +454,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_yp(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zm(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_zm(
 
     std::array<Tgridscal, dim> offset,
     sycl::buffer<TgridVec> &buf_cell_min,
@@ -512,7 +509,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zm(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zp(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_zp(
 
     std::array<Tgridscal, dim> offset,
     sycl::buffer<TgridVec> &buf_cell_min,
@@ -567,7 +564,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level_zp(
 }
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level(
 
     std::array<Tgridscal, dim> offset,
     sycl::buffer<TgridVec> &buf_cell_min,
@@ -632,7 +629,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_same_level(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_level_up(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_level_up(
 
     std::array<Tgridscal, dim> offset,
     sycl::buffer<TgridVec> &buf_cell_min,
@@ -692,7 +689,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_level_up(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, class TgridVec, class T>
-void Module<Tvec, TgridVec, T>::load_patch_neigh_level_down(
+void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_level_down(
 
     std::array<Tgridscal, dim> offset,
     sycl::buffer<TgridVec> &buf_cell_min,
@@ -751,7 +748,7 @@ void Module<Tvec, TgridVec, T>::load_patch_neigh_level_down(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, class TgridVec, class T>
-shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
+shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name) {
 
     StackEntry stack_loc{};
@@ -855,7 +852,7 @@ shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
 }
 
 template<class Tvec, class TgridVec, class T>
-shamrock::ComputeField<T> Module<Tvec, TgridVec, T>::load_value_with_gz(
+shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     shamrock::ComputeField<T> &compute_field,
     std::array<Tgridscal, dim> offset,
     std::string result_name) {

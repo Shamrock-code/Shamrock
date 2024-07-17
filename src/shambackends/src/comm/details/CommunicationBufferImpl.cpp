@@ -17,7 +17,6 @@
 #include "shambase/exception.hpp"
 
 #include "shambackends/USMBufferInterop.hpp"
-#include "shambackends/queues.hpp"
 
 #include <cstring>
 #include <stdexcept>

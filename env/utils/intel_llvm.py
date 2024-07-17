@@ -1,0 +1,54 @@
+import os
+import utils.cuda_arch
+import utils.amd_arch
+
+def clone_intel_llvm(folder):
+    if os.path.isdir(folder):
+        print("-- skipping git clone folder does already exist")
+    else:
+        print("-- clonning https://github.com/intel/llvm.git")
+        os.system("git clone https://github.com/intel/llvm.git "+folder)
+
+
+def get_llvm_configure_arg(args):
+
+    configure_args = ""
+    if args.cuda:
+        configure_args += " --cuda"
+    if not (args.cuda_path == None):
+        pth = os.path.abspath(os.path.expanduser(args.cuda_path))
+        configure_args += ' --cmake-opt="-DCUDA_TOOLKIT_ROOT_DIR='+pth+'"'
+
+    if args.hip:
+        configure_args += " --hip"
+    if not (args.rocm_path == None):
+        pth = os.path.abspath(os.path.expanduser(args.rocm_path))
+        configure_args += ' --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR='+pth+'"'
+
+    return configure_args
+
+def get_intel_llvm_target_flags(args):
+
+    if args.target == None:
+        raise "You must chose a target"
+
+    arch_list = {}
+
+    if args.cuda:
+        for k in utils.cuda_arch.NVIDIA_ARCH_DESC.keys():
+            arch_list["nvidia_gpu_"+k] = {"desc":utils.cuda_arch.NVIDIA_ARCH_DESC[k], "flags":"-fsycl -fsycl-targets=nvidia_gpu_"+k}
+
+    if args.hip:
+        for k in utils.amd_arch.AMD_ARCH_DESC.keys():
+            arch_list["amd_gpu_"+k] = {"desc":utils.amd_arch.AMD_ARCH_DESC[k], "flags":"-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch="+k}
+
+
+    if not (args.target in arch_list.keys()):
+        for k in arch_list.keys():
+            print("   ",k,':', arch_list[k]["desc"])
+        raise "Unknown target"
+
+    print("you've chosen intel llvm backend :",args.target)
+    print("     ->",arch_list[args.target]["desc"])
+
+    return arch_list[args.target]["flags"]

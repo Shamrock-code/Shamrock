@@ -4,30 +4,47 @@ name: Acpp/clang15
 on:
   workflow_call:
   
-  push:
-    branches: [ "main" ]
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
-  schedule:
-    # At 02:00 on Monday, Wednesday, and Friday.
-    - cron:  '0 2 * * 1,3,5'
 
 jobs:
 
 
   shamrock_acpp:
-    name: AdaptiveCpp ${{ matrix.profile }} clang-${{ matrix.clang }}
+    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} 
     runs-on: [self-hosted, ubuntu20]
 
     strategy:
       matrix:
-        clang: [15]
-        cuda: [11.0.2]
-        rocm: [5.4.3]
-        profile: [omp, generic, cuda-sm70, hip-gfx906]
-    #if: false
+        include: 
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: omp
+            arch: none
+            runtest: yes
+            uploadartifact: yes
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: generic
+            arch: none
+            runtest: yes
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: cuda.explicit-multipass
+            arch: sm_80
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: cuda.integrated-multipass
+            arch: sm_80
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: hip
+            arch: gfx906
   
     timeout-minutes: 60
     steps:
@@ -37,38 +54,45 @@ jobs:
   
       - name: ls local
         run : ls -la
+
+      - name: Setup env
+        run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
   
-      - name: configure Shamrock
+      - name: Configure
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build release \
-            --builddir build --cxxpath /home/docker/compilers/AdaptiveCpp_clang${{matrix.clang}} --compiler acpp --profile ${{ matrix.profile }}
-  
+          cd build
+          source activate && shamconfigure
+
+      - name: Build
+        run: |
+          cd build
+          source activate && shammake
+
       - name: Pull reference files
         run: |
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
 
-      - name: compile Shamrock
-        run: |
-          cd build
-          ninja
-  
       - name: run Shamrock Unittests world_size = 1
+        if: matrix.runtest
         run: |
           cd build
           ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
   
       - name: run Shamrock Unittests world_size = 2
+        if: matrix.runtest
         run: |
           cd build
           mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
       
       - name: run Shamrock Unittests world_size = 3
+        if: matrix.runtest
         run: |
           cd build
           mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
   
       - name: run Shamrock Unittests world_size = 4
+        if: matrix.runtest
         run: |
           cd build
           mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi

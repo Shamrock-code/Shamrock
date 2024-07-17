@@ -28,10 +28,7 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, class TgridVec>
-using Solver = shammodels::zeus::Solver<Tvec, TgridVec>;
-
-template<class Tvec, class TgridVec>
-auto Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tscal{
+auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input) -> Tscal{
 
     StackEntry stack_loc{};
 

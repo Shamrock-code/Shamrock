@@ -16,10 +16,7 @@
 #include "shammodels/amr/zeus/modules/WriteBack.hpp"
 
 template<class Tvec, class TgridVec>
-using Module = shammodels::zeus::modules::WriteBack<Tvec, TgridVec>;
-
-template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::write_back_merged_data(){
+void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_data(){
 
     StackEntry stack_loc{};
 

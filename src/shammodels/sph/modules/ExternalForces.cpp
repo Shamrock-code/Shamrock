@@ -21,10 +21,7 @@
 #include "shamunits/Constants.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-using Module = shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>;
-
-template<class Tvec, template<class> class SPHKernel>
-void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
+void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
 
     StackEntry stack_loc{};
 
@@ -122,7 +119,7 @@ void Module<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Module<Tvec, SPHKernel>::add_ext_forces() {
+void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces() {
 
     StackEntry stack_loc{};
 
@@ -241,7 +238,7 @@ void Module<Tvec, SPHKernel>::add_ext_forces() {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Module<Tvec, SPHKernel>::point_mass_accrete_particles() {
+void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accrete_particles() {
 
     StackEntry stack_loc{};
 
@@ -340,3 +337,4 @@ void Module<Tvec, SPHKernel>::point_mass_accrete_particles() {
 using namespace shammath;
 template class shammodels::sph::modules::ExternalForces<f64_3, M4>;
 template class shammodels::sph::modules::ExternalForces<f64_3, M6>;
+template class shammodels::sph::modules::ExternalForces<f64_3, M8>;

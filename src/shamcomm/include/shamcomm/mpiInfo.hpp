@@ -17,6 +17,7 @@
  * current process.
  */
 
+#include <string>
 namespace shamcomm {
 
     /**
@@ -60,5 +61,12 @@ namespace shamcomm {
      * @brief Print the MPI capabilities
      */
     void print_mpi_capabilities();
+
+    /**
+     * @brief Get the process name
+     * 
+     * @return std::string the process name
+     */
+    std::string get_process_name();
 
 } // namespace shamcomm

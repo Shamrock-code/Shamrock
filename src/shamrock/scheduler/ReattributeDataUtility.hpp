@@ -171,20 +171,21 @@ namespace shamrock {
             DistributedDataShared<patch::PatchData> recv_dat;
 
             shamalgs::collective::serialize_sparse_comm<PatchData>(
+                shamsys::instance::get_compute_scheduler_ptr(),
                 std::move(part_exchange), 
                 recv_dat, 
                 [&](u64 id){
                     return sched.get_patch_rank_owner(id);
                 }, 
                 [](PatchData & pdat){
-                    shamalgs::SerializeHelper ser;
+                    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
                     ser.allocate(pdat.serialize_buf_byte_size());
                     pdat.serialize_buf(ser);
                     return ser.finalize();
                 }, 
                 [&](std::unique_ptr<sycl::buffer<u8>> && buf){
                     //exchange the buffer held by the distrib data and give it to the serializer
-                    shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
                     return PatchData::deserialize_buf(ser, sched.pdl);
                 });
 

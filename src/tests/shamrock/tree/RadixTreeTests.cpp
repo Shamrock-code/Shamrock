@@ -30,14 +30,14 @@ TestStart(Unittest, "shamrock/tree/RadixTree::serialize", testradixtreeserialize
         buf, 
         cnt, 0);
 
-    shamalgs::SerializeHelper ser;
+    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(tree.serialize_byte_size());
     tree.serialize(ser);
 
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
         RadixTree<u_morton, f32_3> outser = RadixTree<u_morton, f32_3>::deserialize(ser2);
 

@@ -32,14 +32,14 @@ TestStart(Unittest, "shamrock/tree/TreeMortonCodes::serialize", test_tree_morton
     codes.build(q, range_coord, cnt, buf);
 
     
-    shamalgs::SerializeHelper ser;
+    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(codes.serialize_byte_size());
     codes.serialize(ser);
 
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(),std::move(recov));
 
         TreeMorton outser = TreeMorton::deserialize(ser2);
 

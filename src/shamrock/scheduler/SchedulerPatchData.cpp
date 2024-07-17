@@ -81,7 +81,7 @@ namespace shamrock::scheduler {
             mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
             mpi::get_count(&st, get_mpi_type<u64>(), &cnt);
 
-            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(cnt*8);
+            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(cnt*8, shamsys::instance::get_compute_scheduler());
 
             mpi::irecv(msg.buf->get_ptr(), cnt, get_mpi_type<u64>(), msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
         }
@@ -96,7 +96,7 @@ namespace shamrock::scheduler {
         using ChangeOp = shamrock::scheduler::LoadBalancingChangeList::ChangeOp;
 
         auto serializer = [](shamrock::patch::PatchData &pdat) {
-            shamalgs::SerializeHelper ser;
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(pdat.serialize_buf_byte_size());
             pdat.serialize_buf(ser);
             return ser.finalize();
@@ -104,7 +104,7 @@ namespace shamrock::scheduler {
 
         auto deserializer = [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
-            shamalgs::SerializeHelper ser(std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         };
 
@@ -117,7 +117,7 @@ namespace shamrock::scheduler {
                 std::unique_ptr<sycl::buffer<u8>> tmp = serializer(patchdata);
 
                 send_payloads.push_back(Message{
-                    std::make_unique<shamcomm::CommunicationBuffer>(shambase::get_check_ref(tmp)),
+                    std::make_unique<shamcomm::CommunicationBuffer>(shambase::get_check_ref(tmp), shamsys::instance::get_compute_scheduler()),
                     op.rank_owner_new,
                     op.tag_comm});
             }
@@ -274,6 +274,12 @@ void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalanc
         const std::array<shamrock::patch::Patch, 8> patches,
         std::array<std::reference_wrapper<shamrock::patch::PatchData>, 8> pdats);
 
+    template void split_patchdata<i64_3>(
+        shamrock::patch::PatchData &original_pd,
+        const shamrock::patch::SimulationBoxInfo &sim_box,
+        const std::array<shamrock::patch::Patch, 8> patches,
+        std::array<std::reference_wrapper<shamrock::patch::PatchData>, 8> pdats);
+
     void SchedulerPatchData::split_patchdata(
         u64 key_orginal, const std::array<shamrock::patch::Patch, 8> patches) {
 
@@ -307,6 +313,10 @@ void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalanc
             } else if (pdl.check_main_field_type<u64_3>()) {
 
                 shamrock::scheduler::split_patchdata<u64_3>(
+                    original_pd, sim_box, patches, {pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7});
+            }  else if (pdl.check_main_field_type<i64_3>()) {
+
+                shamrock::scheduler::split_patchdata<i64_3>(
                     original_pd, sim_box, patches, {pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7});
             } else {
                 throw shambase::make_except_with_loc<std::runtime_error>(

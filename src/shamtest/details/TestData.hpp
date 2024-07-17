@@ -11,7 +11,7 @@
 /**
  * @file TestData.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "shamtest/details/DataNode.hpp"
@@ -31,7 +31,6 @@ namespace shamtest::details {
         }
 
         std::string serialize_json();
-
 
         void serialize(std::basic_stringstream<byte> &stream);
         static TestData deserialize(std::basic_stringstream<byte> &stream);

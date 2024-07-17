@@ -1,0 +1,91 @@
+
+import os
+import shutil
+
+import importlib.util
+psutil_spec = importlib.util.find_spec("psutil")
+psutil_found = psutil_spec is not None
+
+if psutil_found:
+    import psutil
+
+def is_ninja_available():
+    return not (shutil.which("ninja") == None)
+
+def get_avail_mem():
+    free_mem = 0
+    if psutil_found:
+        free_mem = (psutil.virtual_memory().available)/1e6
+    else:
+        try:
+            tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
+            free_mem = free_m
+        except:
+            print("Available memory can not be detected -> assuming 16Go")
+            free_mem = 1e9*16
+    return free_mem
+
+def should_limit_comp_cores():
+    MAX_COMP_SZ = 1e9
+    avail = get_avail_mem()*1e6
+
+    limit = False
+    cnt = os.cpu_count()
+
+    avail_per_cores = avail / os.cpu_count()
+    if avail_per_cores < MAX_COMP_SZ:
+        print("-- low memory per cores, limitting number of thread for compilation")
+        print("   ->  free memory /cores :", avail / os.cpu_count())
+        cnt = int(avail / MAX_COMP_SZ)
+        limit = True
+        if cnt < 1:
+            cnt = 1
+        print("   ->  limiting to", cnt,"cores")
+
+    return limit,cnt
+
+
+
+
+def select_generator(args, buildtype):
+
+    limit_cores, cores = should_limit_comp_cores()
+
+    gen = "make"
+    gen_opt = ""
+
+    if args.gen == None:
+        if is_ninja_available():
+            gen = "ninja"
+    else:
+        gen = args.gen
+
+    cmake_gen = ""
+    if gen == "make":
+        cmake_gen = "Unix Makefiles"
+        gen_opt = " -j "+str(cores)
+    elif gen == "ninja":
+        cmake_gen = "Ninja"
+        if limit_cores:
+            gen_opt = " -j "+str(cores)
+        else:
+            gen_opt = ""
+    else:
+        raise "unknown generator "+gen
+
+    if args.gen == None:
+        print("-- generator not specified, defaulting to :",gen)
+
+    cmake_buildt = "Release"
+    if buildtype == "release":
+        cmake_buildt = "Release"
+    elif buildtype == "debug":
+        cmake_buildt = "Debug"
+    elif buildtype == "asan":
+        cmake_buildt = "ASAN"
+    elif buildtype == "coverage":
+        cmake_buildt = "COVERAGE"
+    else:
+        raise "Unknown build type"
+
+    return gen, gen_opt, cmake_gen,cmake_buildt

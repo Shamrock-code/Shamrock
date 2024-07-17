@@ -168,6 +168,11 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    inline bool is_eos_adiabatic() {
+        using T = typename EOSConfig::Adiabatic;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
     inline void set_eos_locally_isothermal() { eos_config.set_locally_isothermal(); }
     inline void set_eos_locally_isothermalLP07(Tscal cs0, Tscal q, Tscal r0) { eos_config.set_locally_isothermalLP07(cs0, q, r0); }
@@ -285,6 +290,10 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_divv() { return artif_viscosity.has_alphaAV_field(); }
     inline bool has_field_dtdivv() { return artif_viscosity.has_dtdivv_field(); }
     inline bool has_field_curlv() { return artif_viscosity.has_curlv_field() && (dim == 3); }
+
+    inline bool has_axyz_in_ghost(){
+        return has_field_dtdivv();
+    }
 
     inline bool has_field_soundspeed() {
         return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();

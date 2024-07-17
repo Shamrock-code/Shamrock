@@ -1,0 +1,63 @@
+name: On Schedule
+
+
+on:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+  schedule:
+    # At 02:00 on Monday, Wednesday, and Friday.
+    - cron:  '0 2 * * 1,3,5'
+
+  
+jobs:
+
+  src_check:
+    name: "Src checks"
+    #needs: [detect_changes]
+    uses: ./.github/workflows/source_checks.yml
+
+  
+  #make shamrock documentation
+  make_documentation:
+    name: "Documentation"
+    needs: [src_check]
+    uses: ./.github/workflows/make_documentation.yml
+
+  shamrock_linux_acpp:
+    name: Shamrock Test
+    needs: [src_check]
+    uses: ./.github/workflows/shamrock-acpp-clang15.yml
+
+  #shamrock_linux_acpp_macos:
+  #  name: Shamrock Test
+  #  needs: [src_check]
+  #  uses: ./.github/workflows/shamrock-acpp-macos.yml
+
+  shamrock_linux_acpp_asan:
+    name: Shamrock Test
+    needs: [src_check]
+    uses: ./.github/workflows/shamrock-acpp-clang15-asan.yml
+
+  shamrock_linux_acpp_tidy:
+    name: Shamrock Test
+    needs: [src_check]
+    uses: ./.github/workflows/shamrock-acpp-clang15-tidy.yml
+
+  shamrock_linux_acpp_cov:
+    name: Shamrock Test
+    needs: [src_check]
+    uses: ./.github/workflows/shamrock-acpp-clang15-coverage.yml
+    
+  shamrock_linux_dpcpp:
+    name: Shamrock Test
+    needs: [src_check]
+
+    uses: ./.github/workflows/shamrock-dpcpp.yml
+
+  
+  shamrock_linux_acpp_phystests:
+    name: Shamrock Phys Test
+    needs: [shamrock_linux_acpp]
+    uses: ./.github/workflows/shamrock-acpp-phys-test.yml

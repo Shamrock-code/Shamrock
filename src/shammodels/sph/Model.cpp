@@ -36,22 +36,19 @@
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-using Model = shammodels::sph::Model<Tvec, SPHKernel>;
-
-template<class Tvec, template<class> class SPHKernel>
-f64 Model<Tvec, SPHKernel>::evolve_once_time_expl(f64 t_curr, f64 dt_input) {
+f64 shammodels::sph::Model<Tvec, SPHKernel>::evolve_once_time_expl(f64 t_curr, f64 dt_input) {
     auto tmp = solver.evolve_once_time_expl(t_curr, dt_input);
     solver.print_timestep_logs();
     return tmp;
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::timestep() {
+void shammodels::sph::Model<Tvec, SPHKernel>::timestep() {
     solver.evolve_once();
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
+void shammodels::sph::Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
     solver.init_required_fields();
     solver.init_ghost_layout();
     ctx.init_sched(crit_split, crit_merge);
@@ -71,18 +68,18 @@ void Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-u64 Model<Tvec, SPHKernel>::get_total_part_count() {
+u64 shammodels::sph::Model<Tvec, SPHKernel>::get_total_part_count() {
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
     return shamalgs::collective::allreduce_sum(sched.get_rank_count());
 }
 
 template<class Tvec, template<class> class SPHKernel>
-f64 Model<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmass) {
+f64 shammodels::sph::Model<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmass) {
     return totmass / get_total_part_count();
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
+auto shammodels::sph::Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
@@ -133,7 +130,7 @@ auto Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> Tvec {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box)
+auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box)
     -> std::pair<Tvec, Tvec> {
     StackEntry stack_loc{};
     auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(dr, box);
@@ -141,7 +138,7 @@ auto Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> b
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec(Tvec)> map) {
+void shammodels::sph::Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec(Tvec)> map) {
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
@@ -261,7 +258,7 @@ inline void post_insert_data(PatchScheduler &sched) {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::push_particle(
+void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
     std::vector<Tvec> &part_pos_insert,
     std::vector<Tscal> &part_hpart_insert,
     std::vector<Tscal> &part_u_insert) {
@@ -349,7 +346,7 @@ void Model<Tvec, SPHKernel>::push_particle(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _box)
+auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _box)
     -> std::pair<Tvec, Tvec> {
     StackEntry stack_loc{};
 
@@ -367,7 +364,7 @@ auto Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
     shambase::Timer time_setup;time_setup.start();
 
     StackEntry stack_loc{};
@@ -504,6 +501,7 @@ class DiscIterator {
     Tscal p;
     Tscal H_r_in;
     Tscal q;
+    Tscal G;
 
     u64 current_index;
     
@@ -512,6 +510,7 @@ class DiscIterator {
     std::function<Tscal(Tscal)> sigma_profile;
     std::function<Tscal(Tscal)> cs_profile;
     std::function<Tscal(Tscal)> rot_profile;
+    std::function<Tscal(Tscal)> vel_full_corr;
 
     public:
     DiscIterator(
@@ -524,14 +523,16 @@ class DiscIterator {
         Tscal p,
         Tscal H_r_in,
         Tscal q,
+        Tscal G,
         std::mt19937 eng,
         std::function<Tscal(Tscal)> sigma_profile,
         std::function<Tscal(Tscal)> cs_profile,
         std::function<Tscal(Tscal)> rot_profile
     ) : current_index(0), Npart(Npart),
     center(center), central_mass(central_mass), r_in(r_in), r_out(r_out), disc_mass(disc_mass),
-    p(p), H_r_in(H_r_in), q(q),
-    eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile), rot_profile(rot_profile)
+    p(p), H_r_in(H_r_in), q(q), G(G),
+    eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile),
+    rot_profile(rot_profile)
     {
 
         if (Npart == 0) {
@@ -562,8 +563,9 @@ class DiscIterator {
             }
         };
             
-        auto theta = shamalgs::random::mock_value<Tscal>(eng,0, _2pi);
+        auto theta = shamalgs::random::mock_value<Tscal>(eng, 0, _2pi);
         auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng);
+        Tscal aspin = 2.;
 
         Tscal r = find_r();
 
@@ -571,20 +573,26 @@ class DiscIterator {
         Tscal cs = cs_profile(r);
         Tscal sigma = sigma_profile(r);
 
-        Tscal H_r = cs/vk;
-        Tscal H = H_r * r;
+        Tscal Omega_Kep = sycl::sqrt(G * central_mass/ (r * r * r));
+        
+        //Tscal H_r = cs/vk;
+        //Tscal H =  H_r * r;
+        Tscal H = sycl::sqrt(2.) * 3. * cs / Omega_Kep; //factor taken from phantom, to fasten thermalizing
                 
-        Tscal z = H*Gauss;
+        Tscal z = H * Gauss;
 
-        auto pos = sycl::vec<Tscal, 3>{r*sycl::cos(theta),z,r*sycl::sin(theta)};
+        auto pos = sycl::vec<Tscal, 3>{r*sycl::cos(theta),z,r*sycl::sin(theta)}; 
 
         auto etheta = sycl::vec<Tscal, 3>{-pos.z(),0, pos.x()};
         etheta /= sycl::length(etheta);
 
         auto vel = vk*etheta;
 
-        Tscal rho = (sigma / (H * shambase::constants::pi2_sqrt<Tscal>))*
-            sycl::exp(- z*z / (2*H*H));
+        //Tscal rho = (sigma / (H * shambase::constants::pi2_sqrt<Tscal>))*
+        //    sycl::exp(- z*z / (2*H*H));
+
+        Tscal fs = 1. - sycl::sqrt(r_in / r);
+        Tscal rho = (sigma * fs) * sycl::exp(- z*z / (2*H*H));
 
         Out out {
             pos, vel, cs, rho
@@ -616,7 +624,7 @@ class DiscIterator {
 
             
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::add_big_disc_3d(
+void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
                 Tvec center, 
                 Tscal central_mass,
                 u32 Npart,
@@ -654,13 +662,32 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         return sycl::pow(r/r_in, -q);
     };
 
-    auto rot_profile = [&](Tscal r){
+    auto kep_profile = [&](Tscal r){
         Tscal G = solver.solver_config.get_constant_G();
         return sycl::sqrt(G * central_mass/r);
     };
 
+    auto rot_profile = [&] (Tscal r) -> Tscal{
+        //carefull: needs r in cylindrical
+        Tscal G = solver.solver_config.get_constant_G();
+        Tscal c = solver.solver_config.get_constant_c();
+        Tscal aspin = 2.;
+        Tscal term = G * central_mass / r;
+        Tscal term_fs = 1. - sycl::sqrt(r_in / r);
+        Tscal term_pr = - sycl::pown(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
+        Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
+        Tscal det = sycl::pown(term_bh, 2) + 4.*(term + term_pr);
+        Tscal Rg   = G * central_mass / sycl::pown(c, 2);
+        Tscal vkep = sqrt(G * central_mass / r);
+
+        Tscal vphi = 0.5*(term_bh + sycl::sqrt(det));
+
+        return vphi;
+
+    };
+
     auto cs_profile = [&](Tscal r){
-        Tscal cs_in = H_r_in*rot_profile(r_in);
+        Tscal cs_in = (H_r_in * r_in / r )*kep_profile(r_in);//H_r_in*rot_profile(r_in);
         return cs_law(r)*cs_in; 
     };
 
@@ -671,6 +698,8 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
     auto int_rho_h = [&] (Tscal h) -> Tscal{
         return shamrock::sph::rho_h(solver.solver_config.gpart_mass, h, Kernel::hfactd);
     };
+
+
 
     Tscal part_mass = disc_mass/Npart;
 
@@ -685,6 +714,8 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
     using Out = generic::setup::generators::DiscOutput<Tscal>; 
     using DIter = typename BigDiscUtils<Tvec>::DiscIterator;
 
+
+    Tscal G = solver.solver_config.get_constant_G();
     DIter gen = DIter(
         center, 
         central_mass,
@@ -695,6 +726,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
         p,
         H_r_in,
         q,
+        G,
         eng,
         sigma_profile,
         cs_profile,
@@ -846,7 +878,7 @@ void Model<Tvec, SPHKernel>::add_big_disc_3d(
 }
         
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
     StackEntry stack_loc{};
 
     shammath::CoordRange<Tvec> box = _box;
@@ -954,7 +986,7 @@ void Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _bo
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump &phdump, bool bypass_error)
+auto shammodels::sph::Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump &phdump, bool bypass_error)
     -> SolverConfig {
     StackEntry stack_loc{};
     SolverConfig conf{};
@@ -979,7 +1011,7 @@ auto Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump &phdump, b
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
+void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
     StackEntry stack_loc{};
 
     bool has_coord_in_header = true;
@@ -1181,7 +1213,7 @@ void Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(
+void shammodels::sph::Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(
     PhantomDumpBlock &block, shamrock::patch::PatchData &pdat) {
 
     std::vector<Tvec> xyz = pdat.fetch_data<Tvec>("xyz");
@@ -1240,7 +1272,7 @@ void Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-shammodels::sph::PhantomDump Model<Tvec, SPHKernel>::make_phantom_dump() {
+shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phantom_dump() {
     StackEntry stack_loc{};
 
     PhantomDump dump;
@@ -1381,3 +1413,4 @@ using namespace shammath;
 
 template class shammodels::sph::Model<f64_3, M4>;
 template class shammodels::sph::Model<f64_3, M6>;
+template class shammodels::sph::Model<f64_3, M8>;

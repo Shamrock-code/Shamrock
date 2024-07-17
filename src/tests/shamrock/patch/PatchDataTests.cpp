@@ -41,14 +41,14 @@ TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataseri
     PatchData pdat = PatchData::mock_patchdata(0x111, obj, pdl);
 
 
-    shamalgs::SerializeHelper ser;
+    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(pdat.serialize_buf_byte_size());
     pdat.serialize_buf(ser);
 
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(),std::move(recov));
 
         PatchData pdat2 = PatchData::deserialize_buf(ser2, pdl);
 

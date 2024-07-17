@@ -20,55 +20,45 @@ jobs:
   
   #make shamrock documentation
   make_documentation:
-    name: "Documentation"
     needs: [src_check]
     uses: ./.github/workflows/make_documentation.yml
 
   shamrock_linux_acpp:
-    name: Shamrock Test
     needs: [src_check]
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang15.yml
 
   shamrock_linux_acpp_macos:
-    name: Shamrock Test
     needs: [src_check]
     if: contains(github.event.pull_request.labels.*.name, 'test-macos') 
     uses: ./.github/workflows/shamrock-acpp-macos.yml
 
   shamrock_linux_acpp_asan:
-    name: Shamrock Test
     needs: [src_check]
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang15-asan.yml
 
   shamrock_linux_acpp_ubsan:
-    name: Shamrock Test
     needs: [src_check]
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang15-ubsan.yml
 
   shamrock_linux_acpp_tidy:
-    name: Shamrock Test
     needs: [src_check]
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang15-tidy.yml
 
   shamrock_linux_acpp_cov:
-    name: Shamrock Test
     needs: [src_check]
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang15-coverage.yml
     
   shamrock_linux_dpcpp:
-    name: Shamrock Test
     needs: [src_check]
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-dpcpp.yml
-
   
   shamrock_linux_acpp_phystests:
-    name: Shamrock Phys Test
     needs: [shamrock_linux_acpp]
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-phys-test.yml

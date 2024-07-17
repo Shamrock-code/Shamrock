@@ -13,7 +13,6 @@ jobs:
   #  uses: ./.github/workflows/detect_changes.yml
 
   src_check:
-    name: "Src checks"
     #needs: [detect_changes]
     uses: ./.github/workflows/source_checks.yml
 

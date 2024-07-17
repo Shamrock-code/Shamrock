@@ -3,6 +3,8 @@ name: On PR
 # Controls when the workflow will run
 on:
   pull_request:
+
+  #we do not use this one as the job is not launched on the corect branch (aka we cannot test the CI in PRs)
   #pull_request_target:
   #  types: [opened,edited,synchronize,labeled]
 

@@ -18,6 +18,7 @@
 
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
+#include "shambase/integer.hpp"
 #include "shambase/type_traits.hpp"
 #include "shambase/vectors.hpp"
 
@@ -445,18 +446,15 @@ namespace sham {
 
         constexpr T max_signed_p1 = (shambase::get_max<T>()>>1) +1;
 
-        if(v == 0 || v > max_signed_p1){
-            return 0;
-        }
+        bool is_pow2 = shambase::is_pow_of_two(v);
+        bool is_above_max = v > max_signed_p1;
 
-        T clz_val = sham::clz(v);
+        return (is_above_max) ? 
+            0 : 
+            ((is_pow2) ? 
+                v : 
+                1U << (shambase::bitsizeof<T>-sham::clz(v)));
 
-        T val_rounded_pow = 1U << (shambase::bitsizeof<T>-clz_val);
-        if(v == 1U << (shambase::bitsizeof<T>-clz_val-1)){
-            val_rounded_pow = v;
-        }
-
-        return val_rounded_pow; 
     };
 
     /**

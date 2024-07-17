@@ -435,7 +435,8 @@ namespace sham {
 
     /**
      * @brief round up to the next power of two
-     * CLZ version
+     *  0 is rounded up to 1 as it is not a pow of 2
+     *  every input above the maximum power of 2 returns 0
      * 
      * @tparam T 
      * @param v 

@@ -12,16 +12,19 @@ on:
 jobs:
 
   src_check:
+    name: Linting
     #needs: [detect_changes]
     uses: ./.github/workflows/source_checks.yml
 
   #make shamrock documentation
   make_documentation:
+    name: Doc
     needs: [src_check]
     uses: ./.github/workflows/make_documentation.yml
 
   shamrock_linux_acpp:
     needs: [src_check]
+    name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang15.yml
 
   #shamrock_linux_acpp_macos:
@@ -31,26 +34,32 @@ jobs:
 
   shamrock_linux_acpp_asan:
     needs: [src_check]
+    name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang15-asan.yml
 
   shamrock_linux_acpp_ubsan:
     needs: [src_check]
+    name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang15-ubsan.yml
 
   shamrock_linux_acpp_tidy:
     needs: [src_check]
+    name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang15-tidy.yml
 
   shamrock_linux_acpp_cov:
     needs: [src_check]
+    name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang15-coverage.yml
     
   shamrock_linux_dpcpp:
     needs: [src_check]
+    name: Tests
     uses: ./.github/workflows/shamrock-dpcpp.yml
 
   shamrock_linux_acpp_phystests:
     needs: [shamrock_linux_acpp]
+    name: Tests (Phys)
     uses: ./.github/workflows/shamrock-acpp-phys-test.yml
 
 

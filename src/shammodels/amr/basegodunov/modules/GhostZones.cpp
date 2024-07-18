@@ -298,6 +298,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     using InterfaceIdTable    = typename GZData::InterfaceIdTable;
 
     using AMRBlock = typename Config::AMRBlock;
+    u32 ndust; 
 
     // setup ghost layout
     storage.ghost_layout.set(shamrock::patch::PatchDataLayout{});
@@ -309,11 +310,19 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     ghost_layout.add_field<Tscal>("rhoetot", AMRBlock::block_size);
     ghost_layout.add_field<Tvec>("rhovel", AMRBlock::block_size);
 
+    ghost_layout.add_field<Tscal>("rho_dust", (ndust*AMRBlock::block_size));
+    ghost_layout.add_field<Tvec>("rhovel_dust", (ndust*AMRBlock::block_size));
+
+
+
     u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
     u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");
     u32 irho_interf      = ghost_layout.get_field_idx<Tscal>("rho");
     u32 irhoetot_interf     = ghost_layout.get_field_idx<Tscal>("rhoetot");
     u32 irhovel_interf      = ghost_layout.get_field_idx<Tvec>("rhovel");
+
+    u32 irho_dust_interf      = ghost_layout.get_field_idx<Tscal>("rho_dust", ndust);
+    u32 irhovel_dust_interf      = ghost_layout.get_field_idx<Tvec>("rhovel_dust", ndust);
 
     // load layout info
     PatchDataLayout &pdl = scheduler().pdl;
@@ -323,6 +332,9 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     const u32 irho      = pdl.get_field_idx<Tscal>("rho");
     const u32 irhoetot     = pdl.get_field_idx<Tscal>("rhoetot");
     const u32 irhovel      = pdl.get_field_idx<Tvec>("rhovel");
+
+    const u32 irho_dust        = pdl.get_field_idx<Tscal>("rho_dust", ndust);
+    const u32 irhovel_dust     = pdl.get_field_idx<Tvec>("rhovel_dust", ndust);
 
     // generate send buffers
     GZData &gen_ghost = storage.ghost_zone_infos.get();
@@ -348,6 +360,15 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
             sender_patch.get_field<Tvec>(irhovel).append_subset_to(
                 buf_idx, cnt, pdat.get_field<Tvec>(irhovel_interf));
+
+
+
+           sender_patch.get_field<Tscal>(irho_dust).append_subset_to(
+                buf_idx, cnt, pdat.get_field<Tscal>(irho_dust_interf));
+            
+            sender_patch.get_field<Tvec>(irhovel_dust).append_subset_to(
+                buf_idx, cnt, pdat.get_field<Tvec>(irhovel_dust_interf));
+
 
             pdat.check_field_obj_cnt_match();
 
@@ -384,6 +405,9 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
             pdat_new.get_field<Tscal>(irho_interf).insert(pdat.get_field<Tscal>(irho));
             pdat_new.get_field<Tscal>(irhoetot_interf).insert(pdat.get_field<Tscal>(irhoetot));
             pdat_new.get_field<Tvec>(irhovel_interf).insert(pdat.get_field<Tvec>(irhovel));
+
+            pdat_new.get_field<Tscal>(irho_dust_interf).insert(pdat.get_field<Tscal>(irho_dust));
+            pdat_new.get_field<Tvec>(irhovel_dust_interf).insert(pdat.get_field<Tvec>(irhovel_dust));
 
             pdat_new.check_field_obj_cnt_match();
 

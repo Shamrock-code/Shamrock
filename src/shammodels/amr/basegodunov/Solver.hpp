@@ -61,6 +61,7 @@ namespace shammodels::basegodunov {
         }
 
         RiemmanSolverMode riemman_config = HLL;
+        DustRiemannSolverMode dust_riemann_config=DHLL;
         SlopeMode slope_config = VanLeer_sym;
     };
 
@@ -83,6 +84,8 @@ namespace shammodels::basegodunov {
 
         SolverStorage<Tvec,TgridVec, u_morton> storage {};
 
+        u32 ndust = 1;
+
         inline void init_required_fields() {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);
             context.pdata_layout_add_field<TgridVec>("cell_max", 1);
@@ -90,13 +93,12 @@ namespace shammodels::basegodunov {
             context.pdata_layout_add_field<Tvec>("rhovel", AMRBlock::block_size);
             context.pdata_layout_add_field<Tscal>("rhoetot", AMRBlock::block_size);
 
-            /** for (size_t i = 0; i < Ndust; i++)
-                {
-                    sdt::string dsut_id = std::to_string(i+1);
-                    context.pdata_layaout_add_field<TgridVec>("rho_dust"+ dust_id, AMRBlock::bloc_size);
-                    context.pdata_layaout_add_field<TgridVec>("rhov_dust"+ dust_id, AMRBlock::bloc_size);
-                }
-             **/
+
+
+
+            context.pdata_layout_add_field<TgridVec>("rho_dust", (ndust * AMRBlock::block_size));  //the fluid at pos 0 is the gas and the fluid from pos 1 to ndust are dust numbered in that order
+            context.pdata_layout_add_field<TgridVec>("rhovel_dust", (ndust* AMRBlock::block_size));
+        
         }
 
         Solver(ShamrockCtx &context) : context(context) {}

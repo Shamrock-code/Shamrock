@@ -24,12 +24,16 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
 
     StackEntry stack_loc{};
 
+    u32 ndust;
     using MergedPDat = shamrock::MergedPatchData;
 
     shamrock::SchedulerUtility utility(scheduler());
     shamrock::ComputeField<Tscal> cfield_dtrho = utility.make_compute_field<Tscal>("dt rho", AMRBlock::block_size);
     shamrock::ComputeField<Tvec> cfield_dtrhov = utility.make_compute_field<Tvec>("dt rhovel", AMRBlock::block_size);
     shamrock::ComputeField<Tscal> cfield_dtrhoe = utility.make_compute_field<Tscal>("dt rhoe", AMRBlock::block_size);
+    
+    shamrock::ComputeField<Tscal> cfield_dtrho_dust = utility.make_compute_field<Tscal>("dt rho_dust", (ndust * AMRBlock::block_size));
+    shamrock::ComputeField<Tvec> cfield_dtrhov_dust = utility.make_compute_field<Tvec>("dt rhovel_dust ", (ndust * AMRBlock::block_size));
 
     shambase::DistributedData<NGLink<Tscal>> & flux_rho_face_xp  = storage.flux_rho_face_xp .get();
     shambase::DistributedData<NGLink<Tscal>> & flux_rho_face_xm  = storage.flux_rho_face_xm .get();
@@ -49,6 +53,20 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
     shambase::DistributedData<NGLink<Tscal>> & flux_rhoe_face_ym = storage.flux_rhoe_face_ym.get();
     shambase::DistributedData<NGLink<Tscal>> & flux_rhoe_face_zp = storage.flux_rhoe_face_zp.get();
     shambase::DistributedData<NGLink<Tscal>> & flux_rhoe_face_zm = storage.flux_rhoe_face_zm.get();
+
+
+    shambase::DistributedData<NGLink<Tscal>> & flux_rho_dust_face_xp  = storage.flux_rho_dust_face_xp .get();
+    shambase::DistributedData<NGLink<Tscal>> & flux_rho_dust_face_xm  = storage.flux_rho_dust_face_xm .get();
+    shambase::DistributedData<NGLink<Tscal>> & flux_rho_dust_face_yp  = storage.flux_rho_dust_face_yp .get();
+    shambase::DistributedData<NGLink<Tscal>> & flux_rho_dust_face_ym  = storage.flux_rho_dust_face_ym .get();
+    shambase::DistributedData<NGLink<Tscal>> & flux_rho_dust_face_zp  = storage.flux_rho_dust_face_zp .get();
+    shambase::DistributedData<NGLink<Tscal>> & flux_rho_dust_face_zm  = storage.flux_rho_dust_face_zm .get();
+    shambase::DistributedData<NGLink<Tvec>>  & flux_rhov_dust_face_xp = storage.flux_rhov_dust_face_xp.get();
+    shambase::DistributedData<NGLink<Tvec>>  & flux_rhov_dust_face_xm = storage.flux_rhov_dust_face_xm.get();
+    shambase::DistributedData<NGLink<Tvec>>  & flux_rhov_dust_face_yp = storage.flux_rhov_dust_face_yp.get();
+    shambase::DistributedData<NGLink<Tvec>>  & flux_rhov_dust_face_ym = storage.flux_rhov_dust_face_ym.get();
+    shambase::DistributedData<NGLink<Tvec>>  & flux_rhov_dust_face_zp = storage.flux_rhov_dust_face_zp.get();
+    shambase::DistributedData<NGLink<Tvec>>  & flux_rhov_dust_face_zm = storage.flux_rhov_dust_face_zm.get();
 
     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p, shamrock::patch::PatchData & pdat){
 
@@ -79,6 +97,21 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         NGLink<Tscal> & patch_flux_rhoe_face_zp = flux_rhoe_face_zp.get(id);
         NGLink<Tscal> & patch_flux_rhoe_face_zm = flux_rhoe_face_zm.get(id);
 
+        NGLink<Tscal> & patch_flux_rho_dust_face_xp  = flux_rho_dust_face_xp .get(id);
+        NGLink<Tscal> & patch_flux_rho_dust_face_xm  = flux_rho_dust_face_xm .get(id);
+        NGLink<Tscal> & patch_flux_rho_dust_face_yp  = flux_rho_dust_face_yp .get(id);
+        NGLink<Tscal> & patch_flux_rho_dust_face_ym  = flux_rho_dust_face_ym .get(id);
+        NGLink<Tscal> & patch_flux_rho_dust_face_zp  = flux_rho_dust_face_zp .get(id);
+        NGLink<Tscal> & patch_flux_rho_dust_face_zm  = flux_rho_dust_face_zm .get(id);
+
+        NGLink<Tvec>  & patch_flux_rhov_dust_face_xp = flux_rhov_dust_face_xp.get(id);
+        NGLink<Tvec>  & patch_flux_rhov_dust_face_xm = flux_rhov_dust_face_xm.get(id);
+        NGLink<Tvec>  & patch_flux_rhov_dust_face_yp = flux_rhov_dust_face_yp.get(id);
+        NGLink<Tvec>  & patch_flux_rhov_dust_face_ym = flux_rhov_dust_face_ym.get(id);
+        NGLink<Tvec>  & patch_flux_rhov_dust_face_zp = flux_rhov_dust_face_zp.get(id);
+        NGLink<Tvec>  & patch_flux_rhov_dust_face_zm = flux_rhov_dust_face_zm.get(id);
+
+
         sycl::buffer<Tscal> & buf_flux_rho_face_xp  = patch_flux_rho_face_xp .link_graph_field;
         sycl::buffer<Tscal> & buf_flux_rho_face_xm  = patch_flux_rho_face_xm .link_graph_field;
         sycl::buffer<Tscal> & buf_flux_rho_face_yp  = patch_flux_rho_face_yp .link_graph_field;
@@ -98,9 +131,25 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         sycl::buffer<Tscal> & buf_flux_rhoe_face_zp = patch_flux_rhoe_face_zp.link_graph_field;
         sycl::buffer<Tscal> & buf_flux_rhoe_face_zm = patch_flux_rhoe_face_zm.link_graph_field;
 
+
+        sycl::buffer<Tscal> & buf_flux_rho_dust_face_xp  = patch_flux_rho_dust_face_xp .link_graph_field;
+        sycl::buffer<Tscal> & buf_flux_rho_dust_face_xm  = patch_flux_rho_dust_face_xm .link_graph_field;
+        sycl::buffer<Tscal> & buf_flux_rho_dust_face_yp  = patch_flux_rho_dust_face_yp .link_graph_field;
+        sycl::buffer<Tscal> & buf_flux_rho_dust_face_ym  = patch_flux_rho_dust_face_ym .link_graph_field;
+        sycl::buffer<Tscal> & buf_flux_rho_dust_face_zp  = patch_flux_rho_dust_face_zp .link_graph_field;
+        sycl::buffer<Tscal> & buf_flux_rho_dust_face_zm  = patch_flux_rho_dust_face_zm .link_graph_field;
+        sycl::buffer<Tvec>  & buf_flux_rhov_dust_face_xp = patch_flux_rhov_dust_face_xp.link_graph_field;
+        sycl::buffer<Tvec>  & buf_flux_rhov_dust_face_xm = patch_flux_rhov_dust_face_xm.link_graph_field;
+        sycl::buffer<Tvec>  & buf_flux_rhov_dust_face_yp = patch_flux_rhov_dust_face_yp.link_graph_field;
+        sycl::buffer<Tvec>  & buf_flux_rhov_dust_face_ym = patch_flux_rhov_dust_face_ym.link_graph_field;
+        sycl::buffer<Tvec>  & buf_flux_rhov_dust_face_zp = patch_flux_rhov_dust_face_zp.link_graph_field;
+        sycl::buffer<Tvec>  & buf_flux_rhov_dust_face_zm = patch_flux_rhov_dust_face_zm.link_graph_field;
+
         sycl::buffer<Tscal> & dt_rho_patch = cfield_dtrho.get_buf_check(id);
         sycl::buffer<Tvec> & dt_rhov_patch = cfield_dtrhov.get_buf_check(id);
         sycl::buffer<Tscal> & dt_rhoe_patch = cfield_dtrhoe.get_buf_check(id);
+        sycl::buffer<Tscal> & dt_rho_dust_patch = cfield_dtrho_dust.get_buf_check(id);
+        sycl::buffer<Tvec> & dt_rhov_dust_patch = cfield_dtrhov_dust.get_buf_check(id);
 
         AMRGraph &graph_neigh_xp = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
         AMRGraph &graph_neigh_xm = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]);
@@ -144,9 +193,25 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
             sycl::accessor flux_rhoe_face_zp {buf_flux_rhoe_face_zp, cgh, sycl::read_only};
             sycl::accessor flux_rhoe_face_zm {buf_flux_rhoe_face_zm, cgh, sycl::read_only};
 
+            sycl::accessor flux_rho_dust_face_xp  {buf_flux_rho_dust_face_xp , cgh, sycl::read_only};
+            sycl::accessor flux_rho_dust_face_xm  {buf_flux_rho_dust_face_xm , cgh, sycl::read_only};
+            sycl::accessor flux_rho_dust_face_yp  {buf_flux_rho_dust_face_yp , cgh, sycl::read_only};
+            sycl::accessor flux_rho_dust_face_ym  {buf_flux_rho_dust_face_ym , cgh, sycl::read_only};
+            sycl::accessor flux_rho_dust_face_zp  {buf_flux_rho_dust_face_zp , cgh, sycl::read_only};
+            sycl::accessor flux_rho_dust_face_zm  {buf_flux_rho_dust_face_zm , cgh, sycl::read_only};
+            sycl::accessor flux_rhov_dust_face_xp {buf_flux_rhov_dust_face_xp, cgh, sycl::read_only};
+            sycl::accessor flux_rhov_dust_face_xm {buf_flux_rhov_dust_face_xm, cgh, sycl::read_only};
+            sycl::accessor flux_rhov_dust_face_yp {buf_flux_rhov_dust_face_yp, cgh, sycl::read_only};
+            sycl::accessor flux_rhov_dust_face_ym {buf_flux_rhov_dust_face_ym, cgh, sycl::read_only};
+            sycl::accessor flux_rhov_dust_face_zp {buf_flux_rhov_dust_face_zp, cgh, sycl::read_only};
+            sycl::accessor flux_rhov_dust_face_zm {buf_flux_rhov_dust_face_zm, cgh, sycl::read_only};
+
             sycl::accessor acc_dt_rho_patch  {dt_rho_patch, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor acc_dt_rhov_patch {dt_rhov_patch, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor acc_dt_rhoe_patch {dt_rhoe_patch, cgh, sycl::write_only, sycl::no_init};
+
+            sycl::accessor acc_dt_rho_dust_patch  {dt_rho_dust_patch, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor acc_dt_rhov_dust_patch {dt_rhov_dust_patch, cgh, sycl::write_only, sycl::no_init};
 
             auto get_cell_aabb = [=](u32 id) -> shammath::AABB<Tvec>  {
 
@@ -197,12 +262,18 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
                 Tscal dtrho = 0;
                 Tvec dtrhov = {0,0,0};
                 Tscal dtrhoe = 0;
+
+                Tscal dtrho_dust = 0;
+                Tvec  dtrhov_dust = {0,0,0};
                 
                 graph_iter_xp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
                     Tscal S_ij = get_face_surface(id_a, id_b);
                     dtrho -= flux_rho_face_xp[link_id]*S_ij;
                     dtrhov -= flux_rhov_face_xp[link_id]*S_ij;
                     dtrhoe -= flux_rhoe_face_xp[link_id]*S_ij;
+
+                    dtrho_dust -= flux_rho_dust_face_xp[link_id]*S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_xp[link_id]*S_ij;
                 });
                 
                 graph_iter_yp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
@@ -210,6 +281,9 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
                     dtrho -= flux_rho_face_yp[link_id]*S_ij;
                     dtrhov -= flux_rhov_face_yp[link_id]*S_ij;
                     dtrhoe -= flux_rhoe_face_yp[link_id]*S_ij;
+
+                    dtrho_dust -= flux_rho_dust_face_yp[link_id]*S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_yp[link_id]*S_ij;
                 });
                 
                 graph_iter_zp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
@@ -217,6 +291,9 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
                     dtrho -= flux_rho_face_zp[link_id]*S_ij;
                     dtrhov -= flux_rhov_face_zp[link_id]*S_ij;
                     dtrhoe -= flux_rhoe_face_zp[link_id]*S_ij;
+
+                    dtrho_dust -= flux_rho_dust_face_zp[link_id]*S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_zp[link_id]*S_ij;
                 });
                 
                 graph_iter_xm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
@@ -224,6 +301,9 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
                     dtrho -= flux_rho_face_xm[link_id]*S_ij;
                     dtrhov -= flux_rhov_face_xm[link_id]*S_ij;
                     dtrhoe -= flux_rhoe_face_xm[link_id]*S_ij;
+
+                    dtrho_dust -= flux_rho_dust_face_xm[link_id]*S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_xm[link_id]*S_ij;
                 });
                 
                 graph_iter_ym.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
@@ -231,6 +311,9 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
                     dtrho -= flux_rho_face_ym[link_id]*S_ij;
                     dtrhov -= flux_rhov_face_ym[link_id]*S_ij;
                     dtrhoe -= flux_rhoe_face_ym[link_id]*S_ij;
+
+                    dtrho_dust -= flux_rho_dust_face_ym[link_id]*S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_ym[link_id]*S_ij;
                 });
                 
                 graph_iter_zm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
@@ -238,15 +321,24 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
                     dtrho -= flux_rho_face_zm[link_id]*S_ij;
                     dtrhov -= flux_rhov_face_zm[link_id]*S_ij;
                     dtrhoe -= flux_rhoe_face_zm[link_id]*S_ij;
+
+                    dtrho_dust -= flux_rho_dust_face_zm[link_id]*S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_zm[link_id]*S_ij;
                 });
 
                 dtrho /= V_i;
                 dtrhov /= V_i;
                 dtrhoe /= V_i;
+                
+                dtrho_dust /= V_i;
+                dtrhov_dust /= V_i;
 
                 acc_dt_rho_patch[id_a] = dtrho;
                 acc_dt_rhov_patch[id_a] = dtrhov;
                 acc_dt_rhoe_patch[id_a] = dtrhoe;
+
+                acc_dt_rho_dust_patch[id_a] = dtrho_dust;
+                acc_dt_rhov_dust_patch[id_a] = dtrhov_dust;
 
             });
 
@@ -258,6 +350,8 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
     storage.dtrhov.set(std::move(cfield_dtrhov));
     storage.dtrhoe.set(std::move(cfield_dtrhoe));
 
+    storage.dtrho_dust.set(std::move(cfield_dtrho_dust));
+    storage.dtrhov_dust.set(std::move(cfield_dtrhov_dust));
 }
 
 template class shammodels::basegodunov::modules::ComputeTimeDerivative<f64_3, i64_3>;

@@ -82,6 +82,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
     StackEntry stack_loc{};
     shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
 
+    u32 ndust;
     try {
         
         PatchScheduler & sched = shambase::get_check_ref(ctx.sched);
@@ -133,7 +134,8 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
         writer.write_voxel_cells(pos_min_cell,pos_max_cell, num_obj*block_size);
 
         writer.add_cell_data_section();
-        writer.add_field_data_section(3);
+        // writer.add_field_data_section(3);
+        writer.add_field_data_section(5);
 
         std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(2);
         writer.write_field("rho", fields_rho, num_obj*block_size);
@@ -143,6 +145,14 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
 
         std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(4);
         writer.write_field("rhoetot", fields_eint, num_obj*block_size);
+
+        std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust = sched.rankgather_field<Tscal>(5);
+        writer.write_field("rho_dust", fields_rho, ndust*num_obj*block_size);
+
+        std::unique_ptr<sycl::buffer<Tvec>> fields_vel_dust = sched.rankgather_field<Tvec>(6);
+        writer.write_field("rhovel_dust", fields_vel_dust, ndust*num_obj*block_size);
+
+
 
     } catch (std::runtime_error e) {
         logger::err_ln("Godunov", "std::runtime_error catched while MPI file open -> unrecoverable\n what():\n",e.what());

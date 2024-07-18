@@ -48,9 +48,18 @@ namespace shammodels::basegodunov::modules {
 
         void compute_flux();
 
-        private:
+        protected:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
     };
+
+    enum Direction{
+    xp = 0,
+    xm = 1,
+    yp = 2,
+    ym = 3,
+    zp = 4,
+    zm = 5,
+};
 
 } // namespace shammodels::basegodunov::modules

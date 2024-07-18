@@ -94,7 +94,7 @@ namespace shammath {
     }
 
     template<class Tvec_>
-    struct Fluxes {
+    struct DustFluxes {
         using Tvec    = Tvec_;
         using Tscal   = shambase::VecComponent<Tvec>;
         std::array<DustConsState<Tvec>, 3> F;

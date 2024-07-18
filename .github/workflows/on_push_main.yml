@@ -85,6 +85,12 @@ jobs:
         with:
           name: shamrock_documentation
 
+      - name: 'Download coverage report'
+        uses: actions/download-artifact@v3
+        with:
+          name: code-coverage-report-acpp_omp_debug
+          path: coverage
+
       - name: ls local
         run : ls -la
 
@@ -164,7 +170,7 @@ jobs:
           name: code-coverage-list-acpp_omp_debug
           path: code-coverage-list-acpp_omp_debug
 
-      - name: 'Download coverage list'
+      - name: 'Download coverage report'
         uses: actions/download-artifact@v3
         with:
           name: code-coverage-report-acpp_omp_debug

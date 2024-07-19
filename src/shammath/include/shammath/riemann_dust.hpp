@@ -94,7 +94,7 @@ namespace shammath {
     }
 
     template<class Tvec_>
-    struct Fluxes {
+    struct DustFluxes {
         using Tvec    = Tvec_;
         using Tscal   = shambase::VecComponent<Tvec>;
         std::array<DustConsState<Tvec>, 3> F;
@@ -104,8 +104,8 @@ namespace shammath {
     inline constexpr DustConsState<Tvec>
     d_prim_to_cons(const DustPrimState<Tvec> d_prim){
         DustConsState<Tvec> d_cons;
-        d_cons.rho = prim.rho;
-        d_cons.rhovel = (prim.vel * prim.rho);
+        d_cons.rho = d_prim.rho;
+        d_cons.rhovel = (d_prim.vel * d_prim.rho);
         return d_cons;
     }
 
@@ -180,6 +180,8 @@ namespace shammath {
         return d_cst;
     }
 
+    // Krapp et al. 2024, A Fast second-order solver for stiff multifluid dust and gas hydrodynamics
+    // Appendice E
     template<class Tcons> 
     inline constexpr auto 
     d_hll_flux_x(Tcons cL, Tcons cR)
@@ -197,6 +199,9 @@ namespace shammath {
         return 0.5*( (fL + fR) - S * (cR - cL) );
     }
 
+
+    // Huang & Bai, 2022 ,A Multiﬂuid Dust Module in Athena++: Algorithms and Numerical Tests
+    // Equation (32)
     template<class Tcons>
     inline constexpr auto
     huang_bai_flux_x(Tcons cL, Tcons cR)

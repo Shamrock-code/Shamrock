@@ -180,6 +180,8 @@ namespace shammath {
         return d_cst;
     }
 
+//Krapp et al. 2024 , A Fast second-order solver for stiff multifluid dust and gas hydrodynamics
+// Appendix E
     template<class Tcons> 
     inline constexpr auto 
     d_hll_flux_x(Tcons cL, Tcons cR)
@@ -197,6 +199,8 @@ namespace shammath {
         return 0.5*( (fL + fR) - S * (cR - cL) );
     }
 
+//Huang & Bai , A Multiﬂuid Dust Module in Athena++: Algorithms and Numerical Tests, 2022
+// Equation (32)
     template<class Tcons>
     inline constexpr auto
     huang_bai_flux_x(Tcons cL, Tcons cR)

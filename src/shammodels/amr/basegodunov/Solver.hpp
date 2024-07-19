@@ -27,13 +27,9 @@ namespace shammodels::basegodunov {
         HLL = 1
     };
 
-    /**
-    DHLL ====> Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
-    
-    HB   ====> Huang and Bai. This is the pressureless Riemann solver proposed by Huang and Bai (2022) in Athena++ */
     enum DustRiemannSolverMode{
-        DHLL = 0,
-        HB   = 1   
+        DHLL = 0, // Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
+        HB   = 1   // Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
     };
 
     enum SlopeMode{

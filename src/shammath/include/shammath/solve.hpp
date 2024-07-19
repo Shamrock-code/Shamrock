@@ -15,6 +15,7 @@
  *
  */
 
+#include <cmath>
 #include <functional>
 
 namespace shammath {
@@ -32,7 +33,7 @@ namespace shammath {
         while (epsilon > epsilon_c) {
             T xkp1 = iterate_newtown(f(xk), df(xk), xk);
 
-            epsilon = std::abs(xk - xkp1);
+            epsilon = std::fabs(xk - xkp1);
 
             xk = xkp1;
         }

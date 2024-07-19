@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file ComputeGradient.hpp
+ * @file ConsToPrim.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -25,7 +25,7 @@
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
-    class ComputeGradient {
+    class ConsToPrim {
 
         public:
         using Tscal                      = shambase::VecComponent<Tvec>;
@@ -43,19 +43,12 @@ namespace shammodels::basegodunov::modules {
         Config &solver_config;
         Storage &storage;
 
-        ComputeGradient(ShamrockCtx &context, Config &solver_config, Storage &storage)
+        ConsToPrim(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void compute_grad_rho_van_leer();
-        void compute_grad_v_van_leer();
-        void compute_grad_P_van_leer();
+        void cons_to_prim();
 
         private:
-
-        template<SlopeMode mode> void _compute_grad_rho_van_leer();
-        template<SlopeMode mode> void _compute_grad_v_van_leer();
-        template<SlopeMode mode> void _compute_grad_P_van_leer();
-
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
     };

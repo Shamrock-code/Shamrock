@@ -18,8 +18,6 @@
 #include "shambase/sycl_utils.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeFlux.hpp"
 #include "shammath/riemann_dust.hpp"
-#include <hipSYCL/sycl/handler.hpp>
-#include <hipSYCL/sycl/sycl.hpp>
 
 
 using DustRiemannSolverMode =shammodels::basegodunov::DustRiemannSolverMode;

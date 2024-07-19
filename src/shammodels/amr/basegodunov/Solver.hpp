@@ -63,6 +63,7 @@ namespace shammodels::basegodunov {
         RiemmanSolverMode riemman_config = HLL;
         DustRiemannSolverMode dust_riemann_config=DHLL;
         SlopeMode slope_config = VanLeer_sym;
+        u32 ndust;
     };
 
     template<class Tvec, class TgridVec>

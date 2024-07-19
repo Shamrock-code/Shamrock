@@ -147,7 +147,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
         writer.write_field("rhoetot", fields_eint, num_obj*block_size);
 
         std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust = sched.rankgather_field<Tscal>(5);
-        writer.write_field("rho_dust", fields_rho, ndust*num_obj*block_size);
+        writer.write_field("rho_dust", fields_rho_dust, ndust*num_obj*block_size);
 
         std::unique_ptr<sycl::buffer<Tvec>> fields_vel_dust = sched.rankgather_field<Tvec>(6);
         writer.write_field("rhovel_dust", fields_vel_dust, ndust*num_obj*block_size);

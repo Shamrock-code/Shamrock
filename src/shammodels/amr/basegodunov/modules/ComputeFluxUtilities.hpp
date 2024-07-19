@@ -19,8 +19,7 @@
 #include "shammodels/amr/basegodunov/modules/ComputeFlux.hpp"
 
 #include "shammath/riemann.hpp"
-#include <hipSYCL/sycl/handler.hpp>
-#include <hipSYCL/sycl/sycl.hpp>
+
 
 
 

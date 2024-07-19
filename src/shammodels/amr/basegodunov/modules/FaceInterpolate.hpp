@@ -47,8 +47,8 @@ namespace shammodels::basegodunov::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void interpolate_rho_to_face();
-        void interpolate_rhov_to_face();
-        void interpolate_rhoe_to_face();
+        void interpolate_v_to_face();
+        void interpolate_P_to_face();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

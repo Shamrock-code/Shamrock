@@ -19,6 +19,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 
+#include <memory>
 #include <optional>
 #include <utility>
 
@@ -113,6 +114,27 @@ namespace shambase {
             throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
         }
         // Return a reference to the object held by the std::unique_ptr
+        return *ptr;
+    }
+
+    /**
+     * @brief Takes a std::shared_ptr and returns a reference to the object it holds.
+     * It throws a std::runtime_error if the std::shared_ptr does not hold anything.
+     *
+     * @tparam T The type of the object held by the std::shared_ptr.
+     * @param ptr A reference to the std::shared_ptr.
+     * @param loc The source location where this function is called.
+     * @return A reference to the object held by the std::shared_ptr.
+     * @throws std::runtime_error If the std::shared_ptr does not hold anything.
+     */
+    template<class T>
+    inline T &get_check_ref(const std::shared_ptr<T> &ptr, SourceLocation loc = SourceLocation()) {
+        // Check if the std::shared_ptr holds anything
+        if (!bool(ptr)) {
+            // Throw a std::runtime_error with a descriptive message
+            throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
+        }
+        // Return a reference to the object held by the std::shared_ptr
         return *ptr;
     }
 

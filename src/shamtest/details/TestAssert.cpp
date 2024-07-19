@@ -9,7 +9,7 @@
 /**
  * @file TestAssert.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "TestAssert.hpp"
@@ -25,8 +25,8 @@ namespace shamtest::details {
 
         if (!comment.empty()) {
             acc += ",\n"
-                   R"(    "comment" : ")" +
-                   comment + "\"";
+                   R"(    "comment" : ")"
+                   + comment + "\"";
         }
 
         acc += "\n}";

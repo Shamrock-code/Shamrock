@@ -9,7 +9,7 @@
 /**
  * @file TestAssertList.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "TestAssertList.hpp"
@@ -38,10 +38,10 @@ namespace shamtest::details {
         shambase::stream_write_vector(stream, asserts);
     }
 
-    TestAssertList TestAssertList::deserialize(std::basic_stringstream<byte> &stream) { 
+    TestAssertList TestAssertList::deserialize(std::basic_stringstream<byte> &stream) {
         std::vector<TestAssert> tmp;
         shambase::stream_read_vector(stream, tmp);
-        return {std::move(tmp)}; 
+        return {std::move(tmp)};
     }
 
 } // namespace shamtest::details

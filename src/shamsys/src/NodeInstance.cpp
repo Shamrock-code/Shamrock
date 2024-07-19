@@ -12,6 +12,7 @@
  * @brief
  */
 
+#include "shambase/memory.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 #include "shambackends/Device.hpp"
@@ -587,7 +588,7 @@ namespace shamsys::instance {
     void check_dgpu_available() {
 
         using namespace shambase::term_colors;
-        if (syclinit::device_compute->mpi_prop.is_mpi_direct_capable) {
+        if (shambase::get_check_ref(syclinit::device_compute).mpi_prop.is_mpi_direct_capable) {
             logger::raw_ln(" - MPI use Direct Comm :", col8b_green() + "Yes" + reset());
         } else {
             logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "No" + reset());

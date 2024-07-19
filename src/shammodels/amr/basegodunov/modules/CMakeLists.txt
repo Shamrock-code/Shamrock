@@ -10,6 +10,7 @@ set(Sources
     ComputeFlux.cpp
     ComputeTimeDerivative.cpp
     TimeIntegrator.cpp
+    ConsToPrim.cpp
 )
 set(Headers
 )

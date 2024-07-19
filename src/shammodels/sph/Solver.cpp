@@ -22,6 +22,7 @@
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHSolverImpl.hpp"
@@ -486,7 +487,9 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_val
     using SolverBCPeriodic         = typename SolverConfigBC::Periodic;
     using SolverBCShearingPeriodic = typename SolverConfigBC::ShearingPeriodic;
     if (SolverBCFree *c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
-        logger::info_ln("PositionUpdated", "free boundaries skipping geometry update");
+        if(shamcomm::world_rank()==0) {
+            logger::info_ln("PositionUpdated", "free boundaries skipping geometry update");
+        }
     } else if (
         SolverBCPeriodic *c =
             std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {

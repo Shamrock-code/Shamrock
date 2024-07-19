@@ -24,7 +24,359 @@
 using RiemmanSolverMode = shammodels::basegodunov::RiemmanSolverMode;
 using Direction             = shammodels::basegodunov::modules::Direction;
 
+/**
+template<class Tvec, RiemmanSolverMode mode, Direction dir>
+class FluxCompute{
+    public: 
 
+    using Tcons = shammath::ConsState<Tvec>;
+    using Tprim = shammath::PrimState<Tvec>;
+    using Tscal =  typename Tcons::Tscal;
+
+    inline static Tcons flux(Tcons cL, Tcons cR, typename Tcons::Tscal gamma){
+        if constexpr (mode == RiemmanSolverMode::Rusanov){
+            if constexpr (dir == xp){
+                return shammath::rusanov_flux_x(cL, cR, gamma);
+            }
+            if constexpr (dir == yp){
+                return shammath::rusanov_flux_y(cL, cR, gamma);
+            }
+            if constexpr (dir == zp){
+                return shammath::rusanov_flux_z(cL, cR, gamma);
+            }
+            if constexpr (dir == xm){
+                return shammath::rusanov_flux_mx(cL, cR, gamma);
+            }
+            if constexpr (dir == ym){
+                return shammath::rusanov_flux_my(cL, cR, gamma);
+            }
+            if constexpr (dir == zm){
+                return shammath::rusanov_flux_mz(cL, cR, gamma);
+            }
+        }
+        if constexpr (mode == RiemmanSolverMode::HLL){
+            if constexpr (dir == xp){
+                return shammath::hll_flux_x(cL, cR, gamma);
+            }
+            if constexpr (dir == yp){
+                return shammath::hll_flux_y(cL, cR, gamma);
+            }
+            if constexpr (dir == zp){
+                return shammath::hll_flux_z(cL, cR, gamma);
+            }
+            if constexpr (dir == xm){
+                return shammath::hll_flux_mx(cL, cR, gamma);
+            }
+            if constexpr (dir == ym){
+                return shammath::hll_flux_my(cL, cR, gamma);
+            }
+            if constexpr (dir == zm){
+                return shammath::hll_flux_mz(cL, cR, gamma);
+            }
+        }
+    }
+
+    inline static Tcons flux(Tprim pL, Tprim pR, typename Tcons::Tscal gamma){
+
+        Tcons cL = shammath::prim_to_cons(pL, gamma);
+        Tcons cR = shammath::prim_to_cons(pR, gamma);
+
+        if constexpr (mode == RiemmanSolverMode::Rusanov){
+            if constexpr (dir == xp){
+                return shammath::rusanov_flux_x(cL, cR, gamma);
+            }
+            if constexpr (dir == yp){
+                return shammath::rusanov_flux_y(cL, cR, gamma);
+            }
+            if constexpr (dir == zp){
+                return shammath::rusanov_flux_z(cL, cR, gamma);
+            }
+            if constexpr (dir == xm){
+                return shammath::rusanov_flux_mx(cL, cR, gamma);
+            }
+            if constexpr (dir == ym){
+                return shammath::rusanov_flux_my(cL, cR, gamma);
+            }
+            if constexpr (dir == zm){
+                return shammath::rusanov_flux_mz(cL, cR, gamma);
+            }
+        }
+        if constexpr (mode == RiemmanSolverMode::HLL){
+            if constexpr (dir == xp){
+                return shammath::hll_flux_x(cL, cR, gamma);
+            }
+            if constexpr (dir == yp){
+                return shammath::hll_flux_y(cL, cR, gamma);
+            }
+            if constexpr (dir == zp){
+                return shammath::hll_flux_z(cL, cR, gamma);
+            }
+            if constexpr (dir == xm){
+                return shammath::hll_flux_mx(cL, cR, gamma);
+            }
+            if constexpr (dir == ym){
+                return shammath::hll_flux_my(cL, cR, gamma);
+            }
+            if constexpr (dir == zm){
+                return shammath::hll_flux_mz(cL, cR, gamma);
+            }
+        }
+    }
+};
+
+template<RiemmanSolverMode mode, class Tvec, class Tscal>
+void compute_fluxes_xp(
+    sycl::queue &q,
+    u32 link_count,
+    sycl::buffer<std::array<Tscal, 2>> &rho_face_xp,
+    sycl::buffer<std::array<Tvec, 2>> &vel_face_xp,
+    sycl::buffer<std::array<Tscal, 2>> &press_face_xp,
+    sycl::buffer<Tscal> &flux_rho_face_xp,
+    sycl::buffer<Tvec> &flux_vel_face_xp,
+    sycl::buffer<Tscal> &flux_press_face_xp,
+    Tscal gamma) {
+
+    using Flux = FluxCompute<Tvec, mode, xp>;
+
+    q.submit([&, gamma](sycl::handler &cgh) {
+        sycl::accessor rho{rho_face_xp, cgh, sycl::read_only};
+        sycl::accessor vel{vel_face_xp, cgh, sycl::read_only};
+        sycl::accessor press{press_face_xp, cgh, sycl::read_only};
+
+        sycl::accessor flux_rho{flux_rho_face_xp, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhov{flux_vel_face_xp, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhoe{flux_press_face_xp, cgh, sycl::write_only, sycl::no_init};
+
+        shambase::parralel_for(cgh, link_count, "compute rusanov flux xp", [=](u32 id_a) {
+            auto rho_ij  = rho[id_a];
+            auto vel_ij = vel[id_a];
+            auto P_ij = press[id_a];
+
+            using Tprim = shammath::PrimState<Tvec>;
+
+            auto flux_x = Flux::flux(
+                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
+                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
+                gamma);
+
+            flux_rho[id_a]  = flux_x.rho;
+            flux_rhov[id_a] = flux_x.rhovel;
+            flux_rhoe[id_a] = flux_x.rhoe;
+        });
+    });
+}
+
+template<RiemmanSolverMode mode, class Tvec, class Tscal>
+void compute_fluxes_yp(
+    sycl::queue &q,
+    u32 link_count,
+    sycl::buffer<std::array<Tscal, 2>> &rho_face_yp,
+    sycl::buffer<std::array<Tvec, 2>> &vel_face_yp,
+    sycl::buffer<std::array<Tscal, 2>> &press_face_yp,
+    sycl::buffer<Tscal> &flux_rho_face_yp,
+    sycl::buffer<Tvec> &flux_vel_face_yp,
+    sycl::buffer<Tscal> &flux_press_face_yp,
+    Tscal gamma) {
+
+    using Flux = FluxCompute<Tvec, mode, yp>;
+
+    q.submit([&, gamma](sycl::handler &cgh) {
+        sycl::accessor rho{rho_face_yp, cgh, sycl::read_only};
+        sycl::accessor vel{vel_face_yp, cgh, sycl::read_only};
+        sycl::accessor press{press_face_yp, cgh, sycl::read_only};
+
+        sycl::accessor flux_rho{flux_rho_face_yp, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhov{flux_vel_face_yp, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhoe{flux_press_face_yp, cgh, sycl::write_only, sycl::no_init};
+
+        shambase::parralel_for(cgh, link_count, "compute rusanov flux yp", [=](u32 id_a) {
+            auto rho_ij  = rho[id_a];
+            auto vel_ij = vel[id_a];
+            auto P_ij = press[id_a];
+
+            using Tprim = shammath::PrimState<Tvec>;
+
+            auto flux_y = Flux::flux(
+                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
+                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
+                gamma);
+
+            flux_rho[id_a]  = flux_y.rho;
+            flux_rhov[id_a] = flux_y.rhovel;
+            flux_rhoe[id_a] = flux_y.rhoe;
+        });
+    });
+}
+
+template<RiemmanSolverMode mode, class Tvec, class Tscal>
+void compute_fluxes_zp(
+    sycl::queue &q,
+    u32 link_count,
+    sycl::buffer<std::array<Tscal, 2>> &rho_face_zp,
+    sycl::buffer<std::array<Tvec, 2>> &vel_face_zp,
+    sycl::buffer<std::array<Tscal, 2>> &press_face_zp,
+    sycl::buffer<Tscal> &flux_rho_face_zp,
+    sycl::buffer<Tvec> &flux_vel_face_zp,
+    sycl::buffer<Tscal> &flux_press_face_zp,
+    Tscal gamma) {
+
+    using Flux = FluxCompute<Tvec, mode, zp>;
+
+    q.submit([&, gamma](sycl::handler &cgh) {
+        sycl::accessor rho{rho_face_zp, cgh, sycl::read_only};
+        sycl::accessor vel{vel_face_zp, cgh, sycl::read_only};
+        sycl::accessor press{press_face_zp, cgh, sycl::read_only};
+
+        sycl::accessor flux_rho{flux_rho_face_zp, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhov{flux_vel_face_zp, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhoe{flux_press_face_zp, cgh, sycl::write_only, sycl::no_init};
+
+        shambase::parralel_for(cgh, link_count, "compute rusanov flux zp", [=](u32 id_a) {
+            auto rho_ij  = rho[id_a];
+            auto vel_ij = vel[id_a];
+            auto P_ij = press[id_a];
+
+            using Tprim = shammath::PrimState<Tvec>;
+
+            auto flux_z = Flux::flux(
+                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
+                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
+                gamma);
+
+            flux_rho[id_a]  = flux_z.rho;
+            flux_rhov[id_a] = flux_z.rhovel;
+            flux_rhoe[id_a] = flux_z.rhoe;
+        });
+    });
+}
+
+template<RiemmanSolverMode mode, class Tvec, class Tscal>
+void compute_fluxes_xm(
+    sycl::queue &q,
+    u32 link_count,
+    sycl::buffer<std::array<Tscal, 2>> &rho_face_xm,
+    sycl::buffer<std::array<Tvec, 2>> &vel_face_xm,
+    sycl::buffer<std::array<Tscal, 2>> &press_face_xm,
+    sycl::buffer<Tscal> &flux_rho_face_xm,
+    sycl::buffer<Tvec> &flux_vel_face_xm,
+    sycl::buffer<Tscal> &flux_press_face_xm,
+    Tscal gamma) {
+
+    using Flux = FluxCompute<Tvec, mode, xm>;
+
+    q.submit([&, gamma](sycl::handler &cgh) {
+        sycl::accessor rho{rho_face_xm, cgh, sycl::read_only};
+        sycl::accessor vel{vel_face_xm, cgh, sycl::read_only};
+        sycl::accessor press{press_face_xm, cgh, sycl::read_only};
+
+        sycl::accessor flux_rho{flux_rho_face_xm, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhov{flux_vel_face_xm, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhoe{flux_press_face_xm, cgh, sycl::write_only, sycl::no_init};
+
+        shambase::parralel_for(cgh, link_count, "compute rusanov flux xm", [=](u32 id_a) {
+            auto rho_ij  = rho[id_a];
+            auto vel_ij = vel[id_a];
+            auto P_ij = press[id_a];
+
+            using Tprim = shammath::PrimState<Tvec>;
+
+            auto flux_x = Flux::flux(
+                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
+                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
+                gamma);
+
+            flux_rho[id_a]  = flux_x.rho;
+            flux_rhov[id_a] = flux_x.rhovel;
+            flux_rhoe[id_a] = flux_x.rhoe;
+        });
+    });
+}
+
+template<RiemmanSolverMode mode, class Tvec, class Tscal>
+void compute_fluxes_ym(
+    sycl::queue &q,
+    u32 link_count,
+    sycl::buffer<std::array<Tscal, 2>> &rho_face_ym,
+    sycl::buffer<std::array<Tvec, 2>> &vel_face_ym,
+    sycl::buffer<std::array<Tscal, 2>> &press_face_ym,
+    sycl::buffer<Tscal> &flux_rho_face_ym,
+    sycl::buffer<Tvec> &flux_vel_face_ym,
+    sycl::buffer<Tscal> &flux_press_face_ym,
+    Tscal gamma) {
+
+    using Flux = FluxCompute<Tvec, mode, ym>;
+
+    q.submit([&, gamma](sycl::handler &cgh) {
+        sycl::accessor rho{rho_face_ym, cgh, sycl::read_only};
+        sycl::accessor vel{vel_face_ym, cgh, sycl::read_only};
+        sycl::accessor press{press_face_ym, cgh, sycl::read_only};
+
+        sycl::accessor flux_rho{flux_rho_face_ym, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhov{flux_vel_face_ym, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhoe{flux_press_face_ym, cgh, sycl::write_only, sycl::no_init};
+
+        shambase::parralel_for(cgh, link_count, "compute rusanov flux ym", [=](u32 id_a) {
+            auto rho_ij  = rho[id_a];
+            auto vel_ij = vel[id_a];
+            auto P_ij = press[id_a];
+
+            using Tprim = shammath::PrimState<Tvec>;
+
+            auto flux_y = Flux::flux(
+                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
+                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
+                gamma);
+
+            flux_rho[id_a]  = flux_y.rho;
+            flux_rhov[id_a] = flux_y.rhovel;
+            flux_rhoe[id_a] = flux_y.rhoe;
+        });
+    });
+}
+
+template<RiemmanSolverMode mode, class Tvec, class Tscal>
+void compute_fluxes_zm(
+    sycl::queue &q,
+    u32 link_count,
+    sycl::buffer<std::array<Tscal, 2>> &rho_face_zm,
+    sycl::buffer<std::array<Tvec, 2>> &vel_face_zm,
+    sycl::buffer<std::array<Tscal, 2>> &press_face_zm,
+    sycl::buffer<Tscal> &flux_rho_face_zm,
+    sycl::buffer<Tvec> &flux_vel_face_zm,
+    sycl::buffer<Tscal> &flux_press_face_zm,
+    Tscal gamma) {
+
+    using Flux = FluxCompute<Tvec, mode, zm>;
+
+    q.submit([&, gamma](sycl::handler &cgh) {
+        sycl::accessor rho{rho_face_zm, cgh, sycl::read_only};
+        sycl::accessor vel{vel_face_zm, cgh, sycl::read_only};
+        sycl::accessor press{press_face_zm, cgh, sycl::read_only};
+
+        sycl::accessor flux_rho{flux_rho_face_zm, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhov{flux_vel_face_zm, cgh, sycl::write_only, sycl::no_init};
+        sycl::accessor flux_rhoe{flux_press_face_zm, cgh, sycl::write_only, sycl::no_init};
+
+        shambase::parralel_for(cgh, link_count, "compute rusanov flux zm", [=](u32 id_a) {
+            auto rho_ij  = rho[id_a];
+            auto vel_ij = vel[id_a];
+            auto P_ij = press[id_a];
+
+            using Tprim = shammath::PrimState<Tvec>;
+
+            auto flux_z = Flux::flux(
+                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
+                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
+                gamma);
+
+            flux_rho[id_a]  = flux_z.rho;
+            flux_rhov[id_a] = flux_z.rhovel;
+            flux_rhoe[id_a] = flux_z.rhoe;
+        });
+    });
+}
+
+*/
 template<class T>
 using NGLink = shammodels::basegodunov::modules::NeighGraphLinkField<T>;
 
@@ -83,19 +435,19 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         NGLink<std::array<Tscal, 2>> &rho_face_zp = storage.rho_face_zp.get().get(id);
         NGLink<std::array<Tscal, 2>> &rho_face_zm = storage.rho_face_zm.get().get(id);
 
-        NGLink<std::array<Tvec, 2>> &rhov_face_xp = storage.rhov_face_xp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_face_xm = storage.rhov_face_xm.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_face_yp = storage.rhov_face_yp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_face_ym = storage.rhov_face_ym.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_face_zp = storage.rhov_face_zp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_face_zm = storage.rhov_face_zm.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_xp = storage.vel_face_xp.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_xm = storage.vel_face_xm.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_yp = storage.vel_face_yp.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_ym = storage.vel_face_ym.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_zp = storage.vel_face_zp.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_zm = storage.vel_face_zm.get().get(id);
 
-        NGLink<std::array<Tscal, 2>> &rhoe_face_xp = storage.rhoe_face_xp.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rhoe_face_xm = storage.rhoe_face_xm.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rhoe_face_yp = storage.rhoe_face_yp.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rhoe_face_ym = storage.rhoe_face_ym.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rhoe_face_zp = storage.rhoe_face_zp.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rhoe_face_zm = storage.rhoe_face_zm.get().get(id);
+        NGLink<std::array<Tscal, 2>> &press_face_xp = storage.press_face_xp.get().get(id);
+        NGLink<std::array<Tscal, 2>> &press_face_xm = storage.press_face_xm.get().get(id);
+        NGLink<std::array<Tscal, 2>> &press_face_yp = storage.press_face_yp.get().get(id);
+        NGLink<std::array<Tscal, 2>> &press_face_ym = storage.press_face_ym.get().get(id);
+        NGLink<std::array<Tscal, 2>> &press_face_zp = storage.press_face_zp.get().get(id);
+        NGLink<std::array<Tscal, 2>> &press_face_zm = storage.press_face_zm.get().get(id);
 
 
         NGLink<std::array<Tscal, 2>> &rho_dust_face_xp = storage.rho_dust_face_xp.get().get(id);
@@ -166,8 +518,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_xp.link_count,
                 rho_face_xp.link_graph_field,
-                rhov_face_xp.link_graph_field,
-                rhoe_face_xp.link_graph_field,
+                vel_face_xp.link_graph_field,
+                press_face_xp.link_graph_field,
                 buf_flux_rho_face_xp.link_graph_field,
                 buf_flux_rhov_face_xp.link_graph_field,
                 buf_flux_rhoe_face_xp.link_graph_field,
@@ -178,8 +530,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_yp.link_count,
                 rho_face_yp.link_graph_field,
-                rhov_face_yp.link_graph_field,
-                rhoe_face_yp.link_graph_field,
+                vel_face_yp.link_graph_field,
+                press_face_yp.link_graph_field,
                 buf_flux_rho_face_yp.link_graph_field,
                 buf_flux_rhov_face_yp.link_graph_field,
                 buf_flux_rhoe_face_yp.link_graph_field,
@@ -189,8 +541,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_zp.link_count,
                 rho_face_zp.link_graph_field,
-                rhov_face_zp.link_graph_field,
-                rhoe_face_zp.link_graph_field,
+                vel_face_zp.link_graph_field,
+                press_face_zp.link_graph_field,
                 buf_flux_rho_face_zp.link_graph_field,
                 buf_flux_rhov_face_zp.link_graph_field,
                 buf_flux_rhoe_face_zp.link_graph_field,
@@ -200,8 +552,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_xm.link_count,
                 rho_face_xm.link_graph_field,
-                rhov_face_xm.link_graph_field,
-                rhoe_face_xm.link_graph_field,
+                vel_face_xm.link_graph_field,
+                press_face_xm.link_graph_field,
                 buf_flux_rho_face_xm.link_graph_field,
                 buf_flux_rhov_face_xm.link_graph_field,
                 buf_flux_rhoe_face_xm.link_graph_field,
@@ -211,8 +563,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_ym.link_count,
                 rho_face_ym.link_graph_field,
-                rhov_face_ym.link_graph_field,
-                rhoe_face_ym.link_graph_field,
+                vel_face_ym.link_graph_field,
+                press_face_ym.link_graph_field,
                 buf_flux_rho_face_ym.link_graph_field,
                 buf_flux_rhov_face_ym.link_graph_field,
                 buf_flux_rhoe_face_ym.link_graph_field,
@@ -222,8 +574,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_zm.link_count,
                 rho_face_zm.link_graph_field,
-                rhov_face_zm.link_graph_field,
-                rhoe_face_zm.link_graph_field,
+                vel_face_zm.link_graph_field,
+                press_face_zm.link_graph_field,
                 buf_flux_rho_face_zm.link_graph_field,
                 buf_flux_rhov_face_zm.link_graph_field,
                 buf_flux_rhoe_face_zm.link_graph_field,
@@ -235,8 +587,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_xp.link_count,
                 rho_face_xp.link_graph_field,
-                rhov_face_xp.link_graph_field,
-                rhoe_face_xp.link_graph_field,
+                vel_face_xp.link_graph_field,
+                press_face_xp.link_graph_field,
                 buf_flux_rho_face_xp.link_graph_field,
                 buf_flux_rhov_face_xp.link_graph_field,
                 buf_flux_rhoe_face_xp.link_graph_field,
@@ -246,8 +598,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_yp.link_count,
                 rho_face_yp.link_graph_field,
-                rhov_face_yp.link_graph_field,
-                rhoe_face_yp.link_graph_field,
+                vel_face_yp.link_graph_field,
+                press_face_yp.link_graph_field,
                 buf_flux_rho_face_yp.link_graph_field,
                 buf_flux_rhov_face_yp.link_graph_field,
                 buf_flux_rhoe_face_yp.link_graph_field,
@@ -257,8 +609,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_zp.link_count,
                 rho_face_zp.link_graph_field,
-                rhov_face_zp.link_graph_field,
-                rhoe_face_zp.link_graph_field,
+                vel_face_zp.link_graph_field,
+                press_face_zp.link_graph_field,
                 buf_flux_rho_face_zp.link_graph_field,
                 buf_flux_rhov_face_zp.link_graph_field,
                 buf_flux_rhoe_face_zp.link_graph_field,
@@ -268,8 +620,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_xm.link_count,
                 rho_face_xm.link_graph_field,
-                rhov_face_xm.link_graph_field,
-                rhoe_face_xm.link_graph_field,
+                vel_face_xm.link_graph_field,
+                press_face_xm.link_graph_field,
                 buf_flux_rho_face_xm.link_graph_field,
                 buf_flux_rhov_face_xm.link_graph_field,
                 buf_flux_rhoe_face_xm.link_graph_field,
@@ -279,8 +631,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_ym.link_count,
                 rho_face_ym.link_graph_field,
-                rhov_face_ym.link_graph_field,
-                rhoe_face_ym.link_graph_field,
+                vel_face_ym.link_graph_field,
+                press_face_ym.link_graph_field,
                 buf_flux_rho_face_ym.link_graph_field,
                 buf_flux_rhov_face_ym.link_graph_field,
                 buf_flux_rhoe_face_ym.link_graph_field,
@@ -290,8 +642,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_zm.link_count,
                 rho_face_zm.link_graph_field,
-                rhov_face_zm.link_graph_field,
-                rhoe_face_zm.link_graph_field,
+                vel_face_zm.link_graph_field,
+                press_face_zm.link_graph_field,
                 buf_flux_rho_face_zm.link_graph_field,
                 buf_flux_rhov_face_zm.link_graph_field,
                 buf_flux_rhoe_face_zm.link_graph_field,

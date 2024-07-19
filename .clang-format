@@ -37,7 +37,7 @@ IndentPPDirectives: BeforeHash
 #SeparateDefinitionBlocks: Leave
 SpaceAfterTemplateKeyword: false
 SpaceAfterCStyleCast: true
-
+InsertNewlineAtEOF: true
 PenaltyReturnTypeOnItsOwnLine: 1
 
 

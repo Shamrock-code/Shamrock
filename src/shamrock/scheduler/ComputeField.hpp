@@ -76,7 +76,7 @@ namespace shamrock {
             T ret = shambase::VectorProperties<T>::get_zero();
             field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
                 if(!cfield.is_empty()){
-                    ret = sham::min(ret, cfield.compute_min());
+                    ret +=  cfield.compute_sum();
                 }
             });
 

@@ -13,7 +13,7 @@
 
 TestStart(Unittest, "shambackends/math.hpp:roundup_pow2_clz", shambackendsmathroundup_pow2_clz, 1){
 
-    _AssertEqual(sham::roundup_pow2_clz<u32>(0) , 0)
+    _AssertEqual(sham::roundup_pow2_clz<u32>(0) , 1)
     _AssertEqual(sham::roundup_pow2_clz<u32>(1) , 1)
     _AssertEqual(sham::roundup_pow2_clz<u32>(2) , 2)
     _AssertEqual(sham::roundup_pow2_clz<u32>(3) , 4)

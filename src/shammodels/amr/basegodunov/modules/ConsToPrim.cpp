@@ -7,12 +7,12 @@
 // -------------------------------------------------------//
 
 /**
- * @file FaceInterpolate.cpp
+ * @file ConsToPrim.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
  */
- 
+
 #include "shammodels/amr/basegodunov/modules/ConsToPrim.hpp"
 #include "shammath/riemann.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"

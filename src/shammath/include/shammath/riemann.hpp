@@ -324,7 +324,7 @@ namespace shammath {
             }
         };
 
-        return  hll_flux();
+        return hll_flux();
     }
 
 

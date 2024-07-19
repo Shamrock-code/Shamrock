@@ -90,19 +90,24 @@ using Direction             = shammodels::basegodunov::modules::Direction;
 
         using Flux = DustFluxCompute<Tvec, mode, dir>;
         std::string flux_name = (mode == DustRiemannSolverMode::DHLL) ? "hll" : "huang_bai";
-        std::string cur_direction = "";
-        if constexpr(dir == Direction::xp)
-            cur_direction = "xp";
-        if constexpr(dir == Direction::xm)
-            cur_direction = "xm";
-        if constexpr(dir == Direction::yp)
-            cur_direction = "yp";
-        if constexpr(dir == Direction::ym)
-            cur_direction = "ym";
-        if constexpr(dir == Direction::zp)
-            cur_direction = "zp";
-        if constexpr(dir == Direction::zm)
-            cur_direction = "zm";
+auto get_dir_name = [&](){
+    if constexpr(dir == Direction::xp){
+        return "xp";
+    }else if constexpr(dir == Direction::xm){
+        return "xm";
+    }else if constexpr(dir == Direction::yp){
+        return "yp";
+    }else if constexpr(dir == Direction::ym){
+        return "ym";
+    }else if constexpr(dir == Direction::zp){
+        return "zp";
+    }else if constexpr(dir == Direction::zm){
+        return "zm";
+    }else {
+        static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
+    }
+}
+std::string cur_direction = get_dir_name();
         
         std::string kernel_name = "compute flux" + flux_name + "flux" + cur_direction;
         const char* _kernel_name = kernel_name.c_str();

@@ -86,9 +86,9 @@ using Direction             = shammodels::basegodunov::modules::Direction;
     sycl::buffer<Tscal> &flux_rho_dust_face_dir,
     sycl::buffer<Tvec> &flux_rhov_dust_face_dir) {
 
-        using Flux = DustFluxCompute<Tvec, mode, dir>;
-        std::string flux_name = (mode == DustRiemannSolverMode::DHLL) ? "hll" : "huang_bai";
-auto get_dir_name = [&](){
+    using Flux = DustFluxCompute<Tvec, mode, dir>;
+    std::string flux_name = (mode == DustRiemannSolverMode::DHLL) ? "hll" : "huang_bai";
+    auto get_dir_name = [&](){
     if constexpr(dir == Direction::xp){
         return "xp";
     }else if constexpr(dir == Direction::xm){

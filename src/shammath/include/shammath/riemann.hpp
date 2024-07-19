@@ -194,6 +194,7 @@ namespace shammath {
     //     return (fL + fR) * 0.5 - (cR - cL) * S;
     // }
 
+  
     template<class Tcons>
     inline constexpr Tcons rusanov_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
         Tcons flux;
@@ -204,11 +205,13 @@ namespace shammath {
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
 
+        // Equation (10.56) from Toro 3rd Edition , Springer 2009
         const auto S = sham::max( (sham::abs(primL.vel[0]) + csL), (sham::abs(primR.vel[0]) + csR) );
 
         const auto fL = hydro_flux_x(cL, gamma);
         const auto fR = hydro_flux_x(cR, gamma);
-
+        
+        // Equation (10.55) from Toro 3rd Edition , Springer 2009 
         return 0.5 * ((fL + fR) - (cR - cL) * S);
     }
 
@@ -292,6 +295,7 @@ namespace shammath {
         return invert_axis(rusanov_flux_z(invert_axis(cL),invert_axis(cR), gamma));
     }
 
+
     template<class Tcons>
     inline constexpr auto
     hll_flux_x(const Tcons consL, const Tcons consR, const typename Tcons::Tscal gamma) {
@@ -305,13 +309,14 @@ namespace shammath {
         //const auto S_L = sham::min(primL.vel[0], primR.vel[0]) - sham::max(csL, csR);
         //const auto S_R = sham::max(primL.vel[0], primR.vel[0]) + sham::max(csL, csR);
 
-        // Toro form
+        // Toro form Equation (10.48)
         const auto S_L = sham::min(primL.vel[0] - csL, primR.vel[0] - csR);
         const auto S_R = sham::max(primL.vel[0] + csL, primR.vel[0] + csR);
 
         const auto fluxL = hydro_flux_x(consL, gamma);
         const auto fluxR = hydro_flux_x(consR, gamma);
 
+        // Equation (10.26) from Toro 3rd Edition , Springer 2009
         auto hll_flux = [=]() {
             if( S_L >= 0)
                 return fluxL;

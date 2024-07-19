@@ -18,6 +18,8 @@
 
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
+#include "shambase/integer.hpp"
+#include "shambase/type_traits.hpp"
 #include "shambase/vectors.hpp"
 
 
@@ -338,6 +340,137 @@ namespace sham {
         return has;
     }
 
+    /**
+     * @brief generalized pow constexpr
+     * 
+     * @tparam power 
+     * @tparam T 
+     * @param a 
+     * @return constexpr T 
+     */
+    template<i32 power,class T>
+    inline constexpr T pow_constexpr(T a) noexcept {
 
+        if constexpr (power < 0) {
+            return pow_constexpr<-power>(T{1} / a);
+        } else if constexpr (power == 0) {
+            return T{1};
+        } else if constexpr (power == 1) {
+            return a;
+        } else if constexpr (power % 2 == 0) {
+            T tmp = pow_constexpr<power / 2>(a);
+            return tmp * tmp;
+        } else if constexpr (power % 2 == 1) {
+            T tmp = pow_constexpr<(power - 1) / 2>(a);
+            return tmp * tmp * a;
+        }
+
+    }
+
+
+
+    template<class T>
+    inline constexpr T clz(T a) noexcept{
+        #ifdef SYCL2020_FEATURE_CLZ
+            return sycl::clz(a);
+        #else
+            #ifdef SYCL_COMP_ACPP
+
+                if constexpr (std::is_same_v<T,u32>){
+                    
+                    __hipsycl_if_target_host(
+                        return __builtin_clz(a);
+                    )
+
+                    __hipsycl_if_target_hiplike(
+                        return __clz(a);
+                    )
+
+                    __hipsycl_if_target_spirv(
+                        return __spirv_ocl_clz(a);
+                    )
+
+                    __hipsycl_if_target_sscp(
+                        return sycl::clz(a);
+                    )
+                }
+
+                if constexpr (std::is_same_v<T,u64>){
+                    
+                    __hipsycl_if_target_host(
+                        return __builtin_clzll(a);
+                    )
+
+                    __hipsycl_if_target_hiplike(
+                        return __clzll(a);
+                    )
+
+                    __hipsycl_if_target_spirv(
+                        return __spirv_ocl_clz(a);
+                    )
+
+                    __hipsycl_if_target_sscp(
+                        return sycl::clz(a);
+                    )
+                }
+
+            #endif
+        #endif
+    }
+
+    
+
+    /**
+     * @brief give the length of the common prefix
+     *
+     * @tparam T the type
+     * @param v
+     * @return true
+     * @return false
+     */
+    template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+    inline constexpr T clz_xor(T a, T b) noexcept{
+        return sham::clz(a^b);
+    }
+
+    /**
+     * @brief round up to the next power of two
+     *  0 is rounded up to 1 as it is not a pow of 2
+     *  every input above the maximum power of 2 returns 0
+     * 
+     * @tparam T 
+     * @param v 
+     * @return constexpr T 
+     */
+    template<class T, std::enable_if_t<std::is_integral_v<T> || (!std::is_signed_v<T>), int> = 0>
+    inline constexpr T roundup_pow2_clz (T v) noexcept {
+
+        constexpr T max_signed_p1 = (shambase::get_max<T>()>>1) +1;
+
+        bool is_pow2 = shambase::is_pow_of_two(v);
+        bool is_above_max = v > max_signed_p1;
+
+        return (is_above_max) ? 
+            0 : 
+            ((is_pow2) ? 
+                v : 
+                1U << (shambase::bitsizeof<T>-sham::clz(v)));
+
+    };
+
+    /**
+     * @brief delta operator defined in Karras 2012
+     * 
+     * @tparam Acc 
+     * @param x 
+     * @param y 
+     * @param morton_length 
+     * @param m 
+     * @return i32 
+     */
+    template<class Acc>
+    inline i32 karras_delta(i32 x, i32 y, u32 morton_length, Acc m) noexcept {
+        return ((y > morton_length - 1 || y < 0) ? -1 : int(clz_xor(m[x] , m[y])));
+    }
 
 } // namespace sham

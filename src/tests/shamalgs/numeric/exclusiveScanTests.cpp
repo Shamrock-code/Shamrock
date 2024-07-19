@@ -337,14 +337,14 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v4"
 
 }
 */
-
+#ifndef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
 TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5", test_exclusive_sum_atomic_decoupled_v5, 1){
     
     TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v5<u32,512>);
     test.check();
 
 }
-
+#endif
 
 //TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v6", test_exclusive_sum_atomic_decoupled_v6, 1){
 //    
@@ -353,13 +353,14 @@ TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5"
 //
 //}
 
-
+#ifndef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
 TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_sycl_jointalg", test_exclusive_sum_sycl_jointalg, 1){
     
     TestExclScan<u32> test ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_sycl_jointalg<u32,32>);
     test.check();
 
 }
+#endif
 
 
 

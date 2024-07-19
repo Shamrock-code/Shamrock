@@ -11,13 +11,12 @@
 /**
  * @file TestAssertList.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "shambase/SourceLocation.hpp"
-
-#include "TestAssert.hpp"
 #include "shambase/string.hpp"
+#include "TestAssert.hpp"
 #include "shambackends/sycl.hpp"
 
 namespace shamtest::details {
@@ -34,7 +33,8 @@ namespace shamtest::details {
         inline void
         assert_bool(std::string assert_name, bool v, SourceLocation loc = SourceLocation{}) {
 
-            asserts.push_back(TestAssert{v, std::move(assert_name), "failed assert location : "+loc.format_one_line()});
+            asserts.push_back(TestAssert{
+                v, std::move(assert_name), "failed assert location : " + loc.format_one_line()});
         }
 
         template<class T1, class T2>
@@ -51,14 +51,18 @@ namespace shamtest::details {
             asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
         }
 
+        template<class Acca, class Accb>
+        inline void assert_equal_array(
+            std::string assert_name,
+            Acca &acc_a,
+            Accb &acc_b,
+            u32 len,
+            SourceLocation loc = SourceLocation{}) {
 
-        template<class Acca,class Accb>
-        inline void
-        assert_equal_array(std::string assert_name, Acca & acc_a, Accb & acc_b, u32 len, SourceLocation loc = SourceLocation{}) {
+            bool t              = true;
+            std::string comment = "";
 
-            bool t = true;std::string comment = "";
-
-            for(u32 i = 0; i < len; i++){
+            for (u32 i = 0; i < len; i++) {
                 t = t && (acc_a[i] == acc_b[i]);
             }
 
@@ -73,16 +77,15 @@ namespace shamtest::details {
         }
 
         inline void assert_float_equal(
-            std::string assert_name, f64 a, f64 b, f64 eps, SourceLocation loc = SourceLocation{}
-        ) {
+            std::string assert_name, f64 a, f64 b, f64 eps, SourceLocation loc = SourceLocation{}) {
             f64 diff = sycl::fabs(a - b);
 
             bool t              = diff < eps;
             std::string comment = "";
 
             if (!t) {
-                comment = "left=" + std::to_string(a) + " right=" + std::to_string(b) +
-                          " diff=" + std::to_string(diff);
+                comment = "left=" + std::to_string(a) + " right=" + std::to_string(b)
+                          + " diff=" + std::to_string(diff);
             }
 
             asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
@@ -92,8 +95,7 @@ namespace shamtest::details {
             std::string assert_name,
             bool v,
             std::string comment,
-            SourceLocation loc = SourceLocation{}
-        ) {
+            SourceLocation loc = SourceLocation{}) {
             asserts.push_back(TestAssert{v, std::move(assert_name), gen_comment(comment, loc)});
         }
 
@@ -101,15 +103,13 @@ namespace shamtest::details {
         void serialize(std::basic_stringstream<byte> &stream);
         static TestAssertList deserialize(std::basic_stringstream<byte> &reader);
 
-        inline u32 get_assert_count(){
-            return asserts.size();
-        }
+        inline u32 get_assert_count() { return asserts.size(); }
 
-        inline u32 get_assert_success_count(){
+        inline u32 get_assert_success_count() {
             u32 cnt = 0;
-            for(TestAssert & a : asserts){
-                if(a.value){
-                    cnt ++;
+            for (TestAssert &a : asserts) {
+                if (a.value) {
+                    cnt++;
                 }
             }
             return cnt;

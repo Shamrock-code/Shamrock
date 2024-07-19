@@ -14,6 +14,7 @@ P_d = 0.1
 u_g = P_g/((gamma - 1)*rho_g)
 u_d = P_d/((gamma - 1)*rho_d)
 
+resol = 128
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
@@ -29,12 +30,12 @@ cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e6),1)
+model.init_scheduler(int(1e8),1)
 
 
-(xs,ys,zs) = model.get_box_dim_fcc_3d(1,256,24,24)
+(xs,ys,zs) = model.get_box_dim_fcc_3d(1,resol,24,24)
 dr = 1/xs
-(xs,ys,zs) = model.get_box_dim_fcc_3d(dr,256,24,24)
+(xs,ys,zs) = model.get_box_dim_fcc_3d(dr,resol,24,24)
 
 model.resize_simulation_box((-xs,-ys/2,-zs/2),(xs,ys/2,zs/2))
 
@@ -60,27 +61,23 @@ print("Current part mass :", pmass)
 
 
 
-model.set_cfl_cour(0.3)
-model.set_cfl_force(0.25)
+model.set_cfl_cour(0.1)
+model.set_cfl_force(0.1)
 
-
-
-t_sum = 0
 t_target = 0.245
-#t_target = 0.01
-current_dt = 1e-7
-while t_sum < t_target:
 
-    #print("step : t=",t_sum)
-    
-    next_dt = model.evolve(t_sum,current_dt, False, "dump_"+str(0)+".vtk", False)
+model.evolve_until(t_target)
 
-    t_sum += current_dt
-    current_dt = next_dt
+#model.evolve_once()
 
-    if (t_target - t_sum) < next_dt:
-        current_dt = t_target - t_sum
+sod = shamrock.phys.SodTube(gamma = gamma, rho_1 = 1,P_1 = 1,rho_5 = 0.125,P_5 = 0.1)
+sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, 0.0, -0.5,0.5)
+print(sodanalysis.compute_L2_dist())
 
+
+model.do_vtk_dump("end.vtk", True)
+dump = model.make_phantom_dump()
+dump.save_dump("end.phdump")
 
 import numpy as np
 dic = ctx.collect_data()
@@ -90,35 +87,46 @@ vx = dic['vxyz'][:,0]
 uint = dic['uint'][:]
 
 hpart = dic["hpart"]
+alpha = dic["alpha_AV"]
 
 rho = pmass*(model.get_hfact()/hpart)**3
 P = (gamma-1) * rho *uint
 
 
-
-plt.style.use('custom_style.mplstyle')
-fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
-
-axs[0,0].scatter(x, vx,c = 'black',s=1,label = "v")
-axs[1,0].scatter(x, uint,c = 'black',s=1,label = "u")
-axs[0,1].scatter(x, rho,c = 'black',s=1,label = "rho")
-axs[1,1].scatter(x, P,c = 'black',s=1,label = "P")
+plt.plot(x,rho,'.',label="rho")
+plt.plot(x,vx,'.',label="v")
+plt.plot(x,P,'.',label="P")
+plt.plot(x,alpha,'.',label="alpha")
+#plt.plot(x,hpart,'.',label="hpart")
+#plt.plot(x,uint,'.',label="uint")
 
 
-axs[0,0].set_ylabel(r"$v$")
-axs[1,0].set_ylabel(r"$u$")
-axs[0,1].set_ylabel(r"$\rho$")
-axs[1,1].set_ylabel(r"$P$")
+#### add analytical soluce
+x = np.linspace(-0.5,0.5,1000)
 
-axs[0,0].set_xlabel("$x$")
-axs[1,0].set_xlabel("$x$")
-axs[0,1].set_xlabel("$x$")
-axs[1,1].set_xlabel("$x$")
+rho = []
+P = []
+vx = []
 
-axs[0,0].set_xlim(0,0.55)
-axs[1,0].set_xlim(0,0.55)
-axs[0,1].set_xlim(0,0.55)
-axs[1,1].set_xlim(0,0.55)
+for i in range(len(x)):
+    x_ = x[i]
 
-plt.tight_layout()
+    _rho,_vx,_P = sod.get_value(t_target, x_)
+    rho.append(_rho)
+    vx.append(_vx)
+    P.append(_P)
+
+x += 0.5
+plt.plot(x,rho,color = "black",label="analytic")
+plt.plot(x,vx,color = "black")
+plt.plot(x,P,color = "black")
+#######
+
+
+
+plt.legend()
+plt.grid()
+plt.ylim(0,1.1)
+plt.xlim(0,1)
+plt.title("t="+str(t_target))
 plt.show()

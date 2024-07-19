@@ -15,6 +15,8 @@
  
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambase/SourceLocation.hpp"
+#include <string>
 
 namespace shambase {
 
@@ -22,5 +24,4 @@ namespace shambase {
         return loc.format_multiline(fmt_callstack());
     }
 
-
-}
+} // namespace shambase

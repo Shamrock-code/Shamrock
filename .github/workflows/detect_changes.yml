@@ -1,0 +1,38 @@
+name: Identify changed files
+
+on:
+  workflow_call:
+    outputs:
+      filters:
+        description: Matched filters
+        value: ${{ jobs.detect_changes.outputs.filters }}
+
+permissions: read-all
+
+jobs:
+
+  detect_changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    outputs:
+      filters: ${{ steps.changes.outputs.changes }}
+
+    steps:
+      - name: Check file changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            ci: 
+              - '.github/workflows/**'
+            doc:
+              - 'doc/**'
+            src: 
+              - 'src/**'
+              - 'env/**'
+              - 'external/**'
+
+      - run: echo '${{ steps.changes.outputs.changes }}'
+     

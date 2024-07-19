@@ -17,6 +17,7 @@
 #include "shambase/time.hpp"
 #include <sstream>
 #include <vector>
+#include <string>
 
 
 namespace shambase::details {
@@ -106,7 +107,7 @@ namespace shambase::details {
 
 namespace shambase::details {
 
-    auto make_timer = []() -> Timer{
+    auto make_timer = []() -> Timer {
         Timer tmp;
         tmp.start();
         return tmp;

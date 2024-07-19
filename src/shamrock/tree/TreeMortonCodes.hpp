@@ -22,6 +22,7 @@
 #include "shambackends/vec.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include <stdexcept>
 
 namespace shamrock::tree {
@@ -93,8 +94,8 @@ namespace shamrock::tree {
         inline TreeMortonCodes() = default;
 
         inline TreeMortonCodes(const TreeMortonCodes &other)
-            : obj_cnt(other.obj_cnt), buf_morton(shamalgs::memory::duplicate(other.buf_morton)),
-              buf_particle_index_map(shamalgs::memory::duplicate(other.buf_particle_index_map)) {}
+            : obj_cnt(other.obj_cnt), buf_morton(shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(), other.buf_morton)),
+              buf_particle_index_map(shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_particle_index_map)) {}
 
         inline TreeMortonCodes &operator=(TreeMortonCodes &&other) noexcept {
             obj_cnt                = std::move(other.obj_cnt);
@@ -111,8 +112,8 @@ namespace shamrock::tree {
 
             using namespace shamalgs::reduction;
 
-            cmp = cmp && equals(*t1.buf_morton, *t2.buf_morton, t1.obj_cnt);
-            cmp = cmp && equals(*t1.buf_particle_index_map, *t2.buf_particle_index_map, t1.obj_cnt);
+            cmp = cmp && equals(shamsys::instance::get_compute_queue(),*t1.buf_morton, *t2.buf_morton, t1.obj_cnt);
+            cmp = cmp && equals(shamsys::instance::get_compute_queue(),*t1.buf_particle_index_map, *t2.buf_particle_index_map, t1.obj_cnt);
 
             return cmp;
         }

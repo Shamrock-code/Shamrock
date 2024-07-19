@@ -9,7 +9,7 @@
 /**
  * @file DataNode.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "DataNode.hpp"
@@ -38,8 +38,8 @@ namespace shamtest::details {
         acc += R"(    "name" : ")" + name + "\",\n";
 
         acc += R"(    "data" : )"
-               "\n" +
-               serialize_vec(data) + "\n";
+               "\n"
+               + serialize_vec(data) + "\n";
 
         acc += "\n}";
         return acc;

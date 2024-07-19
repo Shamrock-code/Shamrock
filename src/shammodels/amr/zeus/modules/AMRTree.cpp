@@ -15,11 +15,9 @@
  
 #include "shammodels/amr/zeus/modules/AMRTree.hpp"
 
-template<class Tvec, class TgridVec>
-using Module = shammodels::zeus::modules::AMRTree<Tvec, TgridVec>;
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::build_trees(){
+void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_trees(){
 
     StackEntry stack_loc{};
 
@@ -86,7 +84,7 @@ void Module<Tvec, TgridVec>::build_trees(){
 }
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::correct_bounding_box(){
+void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::correct_bounding_box(){
 
     StackEntry stack_loc{};
 
@@ -224,7 +222,7 @@ void Module<Tvec, TgridVec>::correct_bounding_box(){
 }
 
 template<class Tvec, class TgridVec>
-void Module<Tvec, TgridVec>::build_neigh_cache(){
+void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache(){
 
     using MergedPDat = shamrock::MergedPatchData;
     using RTree = typename Storage::RTree;

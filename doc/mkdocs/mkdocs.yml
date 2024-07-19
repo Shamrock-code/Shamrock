@@ -12,6 +12,7 @@ nav:
 
   - 'User Documentation' :
     - 'QuickStart' : 'usermanual/quickstart.md'
+    - 'Environments' : 'usermanual/envs.md'
     - 'Usage' : 'usermanual/usage.md'
     - 'First simulation' : 'usermanual/firstcalculation.md'
     - 'Configuration' : 'usermanual/configuration.md'
@@ -29,6 +30,7 @@ nav:
 
   - 'Develloper Doc' :
     - 'Git guide' : 'devdoc/git_guide.md'
+    - 'VSCode setup' : 'devdoc/vscode-setup.md'
     - 'Using the logs' : 'devdoc/log_system.md'
     - 'Local LLVM' : 'devdoc/using_local_llvm.md'
     - 'Codebase Organisation' : 'devdoc/codebase_org.md'

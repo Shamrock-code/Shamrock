@@ -51,14 +51,14 @@ TestStart(Unittest, "shamrock/tree/TreeCellRanges::serialize", testcellrangesser
     rnge.build1(q, redcodes, strc);
     rnge.build2(q, redcodes.tree_leaf_count + strc.internal_cell_count, {range_coord.lower, range_coord.upper});
 
-    shamalgs::SerializeHelper ser;
+    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(rnge.serialize_byte_size());
     rnge.serialize(ser);
 
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(std::move(recov));
+        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
         TreeRanges outser = TreeRanges::deserialize(ser2);
 

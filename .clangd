@@ -1,12 +1,18 @@
 CompileFlags:
-  Remove: [ -fsycl, -fsycl-targets=*, --hipsycl-targets=*, --hipsycl-platform=*, --hipsycl-config-file=*,--hipsycl-cpu-cxx=*]
+  Remove: [ 
+      -fsycl, 
+      -fsycl-targets=*, 
+      --hipsycl-targets=*, 
+      --hipsycl-platform=*, 
+      --hipsycl-config-file=*,
+      --hipsycl-cpu-cxx=*,
+      --acpp-targets=*
+    ]
   Add: [
-    -Wconversion
+      -Wconversion
     ]
 
 
-# Diagnostics:
-#   ClangTidy:
-#     Add: [
-#       modernize*
-#       ]
+#Diagnostics:
+#  ClangTidy:
+#    Add: 'bugprone-*'

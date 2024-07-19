@@ -20,6 +20,7 @@
 
  
 #include "shambase/SourceLocation.hpp"
+#include <stdexcept>
 
 namespace shambase {
 

@@ -261,8 +261,10 @@ namespace shammodels::sph {
 
     template class SPHUtilities<f64_3, shammath::M4<f64>>;
     template class SPHUtilities<f64_3, shammath::M6<f64>>;
+    template class SPHUtilities<f64_3, shammath::M8<f64>>;
 
     template class SPHTreeUtilities<f64_3, shammath::M4<f64>, u32>;
     template class SPHTreeUtilities<f64_3, shammath::M6<f64>, u64>;
+    template class SPHTreeUtilities<f64_3, shammath::M8<f64>, u64>;
 
 } // namespace shammodels::sph

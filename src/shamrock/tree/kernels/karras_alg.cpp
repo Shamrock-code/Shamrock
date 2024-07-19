@@ -15,7 +15,7 @@
 #include "karras_alg.hpp"
 #include <stdexcept>
 
-#include "shambase/integer_sycl.hpp"
+#include "shambackends/math.hpp"
 #include "shambase/exception.hpp"
 
 #define SGN(x) (x == 0) ? 0 : ((x > 0) ? 1 : -1)
@@ -50,7 +50,7 @@ void __sycl_karras_alg(sycl::queue &queue, u32 internal_cell_count,
             int i = (int)item.get_id(0);
 
             auto DELTA = [=](i32 x, i32 y){
-                return shambase::karras_delta(x,y,morton_length,m);
+                return sham::karras_delta(x,y,morton_length,m);
             };
 
             int ddelta = DELTA(i, i + 1) - DELTA(i, i - 1);

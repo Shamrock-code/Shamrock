@@ -11,7 +11,8 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/SyclMpiTypes.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
+#include "shamsys/MpiWrapper.hpp"
 
 
 template<class T> void bench_memcpy_sycl(std::string dset_name, sycl::queue & q1, sycl::queue & q2, u64 max_byte_sz_cnt){

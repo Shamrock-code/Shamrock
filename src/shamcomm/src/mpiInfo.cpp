@@ -88,4 +88,19 @@ namespace shamcomm {
             logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Forced Yes" + reset());
         }
     }
+
+    std::string get_process_name() {
+
+        // Get the name of the processor
+        char processor_name[MPI_MAX_PROCESSOR_NAME];
+        int name_len;
+
+        int err_code = MPI_Get_processor_name(processor_name, &name_len);
+
+        if (err_code != MPI_SUCCESS) {
+            shambase::throw_with_loc<std::runtime_error>("failed getting the process name");
+        }
+
+        return {processor_name};
+    }
 } // namespace shamcomm

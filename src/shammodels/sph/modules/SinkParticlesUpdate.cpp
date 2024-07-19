@@ -19,11 +19,9 @@
 #include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
 
-template<class Tvec, template<class> class SPHKernel>
-using SinkUpdate = shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>; 
 
 template<class Tvec, template<class> class SPHKernel>
-void SinkUpdate<Tvec, SPHKernel>::accrete_particles(){
+void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_particles(){
     StackEntry stack_loc{};
     
     Tscal gpart_mass = solver_config.gpart_mass;
@@ -117,7 +115,7 @@ void SinkUpdate<Tvec, SPHKernel>::accrete_particles(){
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void SinkUpdate<Tvec, SPHKernel>::predictor_step(Tscal dt){
+void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::predictor_step(Tscal dt){
 
     StackEntry stack_loc{};
 
@@ -148,7 +146,7 @@ void SinkUpdate<Tvec, SPHKernel>::predictor_step(Tscal dt){
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void SinkUpdate<Tvec, SPHKernel>::corrector_step(Tscal dt){
+void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::corrector_step(Tscal dt){
 
     StackEntry stack_loc{};
 
@@ -168,7 +166,7 @@ void SinkUpdate<Tvec, SPHKernel>::corrector_step(Tscal dt){
 
 
 template<class Tvec, template<class> class SPHKernel>
-void SinkUpdate<Tvec, SPHKernel>::compute_sph_forces(){
+void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph_forces(){
 
     StackEntry stack_loc{};
     
@@ -253,7 +251,7 @@ void SinkUpdate<Tvec, SPHKernel>::compute_sph_forces(){
 
 
 template<class Tvec, template<class> class SPHKernel>
-void SinkUpdate<Tvec, SPHKernel>::compute_ext_forces(){
+void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext_forces(){
 
     StackEntry stack_loc{};
 
@@ -286,3 +284,4 @@ void SinkUpdate<Tvec, SPHKernel>::compute_ext_forces(){
 using namespace shammath;
 template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, M4>;
 template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, M6>;
+template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, M8>;

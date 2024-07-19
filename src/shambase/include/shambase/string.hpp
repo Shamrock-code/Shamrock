@@ -15,6 +15,7 @@
  * 
  */
  
+#include "shambase/aliases_int.hpp"
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>

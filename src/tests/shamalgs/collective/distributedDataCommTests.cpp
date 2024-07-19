@@ -61,18 +61,18 @@ void distribdata_sparse_comm_test(std::string prefix){
 
     dat_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
         if (rank_owner[sender] == wrank) {
-            send_data.add_obj(sender, receiver, shamalgs::memory::duplicate(buf));
+            send_data.add_obj(sender, receiver, shamalgs::memory::duplicate(get_compute_queue(), buf));
         }
     });
 
     shamalgs::collective::SerializedDDataComm recv_data;
-    distributed_data_sparse_comm(
+    distributed_data_sparse_comm(get_compute_scheduler_ptr(),
         send_data, recv_data, [&](u64 id) { return rank_owner[id]; });
 
     shamalgs::collective::SerializedDDataComm recv_data_ref;
     dat_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
         if (rank_owner[receiver] == wrank) {
-            recv_data_ref.add_obj(sender, receiver, shamalgs::memory::duplicate(buf));
+            recv_data_ref.add_obj(sender, receiver, shamalgs::memory::duplicate(get_compute_queue(),buf));
         }
     });
 
@@ -87,7 +87,7 @@ void distribdata_sparse_comm_test(std::string prefix){
 
         shamtest::asserts().assert_bool(
             "correct buffer",
-            shamalgs::reduction::equals_ptr(buf, it->second));
+            shamalgs::reduction::equals_ptr(get_compute_queue(), buf, it->second));
     });
 }
 

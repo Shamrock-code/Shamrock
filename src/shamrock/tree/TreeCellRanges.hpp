@@ -22,6 +22,7 @@
 #include "shamrock/sfc/morton.hpp"
 #include "shamrock/tree/TreeReducedMortonCodes.hpp"
 #include "shamrock/tree/TreeStructure.hpp"
+#include "shamsys/NodeInstance.hpp"
 
 namespace shamrock::tree {
 
@@ -140,13 +141,13 @@ namespace shamrock::tree {
 
         inline TreeCellRanges(const TreeCellRanges &other)
             : buf_pos_min_cell(
-                  shamalgs::memory::duplicate(other.buf_pos_min_cell)), // size = total count
+                  shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_pos_min_cell)), // size = total count
               buf_pos_max_cell(
-                  shamalgs::memory::duplicate(other.buf_pos_max_cell)), // size = total count
+                  shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_pos_max_cell)), // size = total count
               buf_pos_min_cell_flt(
-                  shamalgs::memory::duplicate(other.buf_pos_min_cell_flt)), // size = total count
+                  shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_pos_min_cell_flt)), // size = total count
               buf_pos_max_cell_flt(
-                  shamalgs::memory::duplicate(other.buf_pos_max_cell_flt)) // size = total count
+                  shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_pos_max_cell_flt)) // size = total count
         {}
 
         inline TreeCellRanges &operator=(TreeCellRanges &&other) noexcept {
@@ -180,10 +181,10 @@ namespace shamrock::tree {
 
             using namespace shamalgs::reduction;
 
-            cmp = cmp && equals_ptr(t1.buf_pos_min_cell, t2.buf_pos_min_cell);
-            cmp = cmp && equals_ptr(t1.buf_pos_max_cell, t2.buf_pos_max_cell);
-            cmp = cmp && equals_ptr(t1.buf_pos_min_cell_flt, t2.buf_pos_min_cell_flt);
-            cmp = cmp && equals_ptr(t1.buf_pos_max_cell_flt, t2.buf_pos_max_cell_flt);
+            cmp = cmp && equals_ptr(shamsys::instance::get_compute_queue(),t1.buf_pos_min_cell, t2.buf_pos_min_cell);
+            cmp = cmp && equals_ptr(shamsys::instance::get_compute_queue(),t1.buf_pos_max_cell, t2.buf_pos_max_cell);
+            cmp = cmp && equals_ptr(shamsys::instance::get_compute_queue(),t1.buf_pos_min_cell_flt, t2.buf_pos_min_cell_flt);
+            cmp = cmp && equals_ptr(shamsys::instance::get_compute_queue(),t1.buf_pos_max_cell_flt, t2.buf_pos_max_cell_flt);
 
             return cmp;
         }

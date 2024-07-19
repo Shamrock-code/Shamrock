@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
+#include <array>
 
 namespace shambase {
 

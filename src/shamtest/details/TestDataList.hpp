@@ -11,7 +11,7 @@
 /**
  * @file TestDataList.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "TestData.hpp"
@@ -35,4 +35,4 @@ namespace shamtest::details {
         static TestDataList deserialize(std::basic_stringstream<byte> &reader);
     };
 
-}
+} // namespace shamtest::details

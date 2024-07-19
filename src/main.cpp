@@ -21,6 +21,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/cmdopt.hpp"
@@ -160,7 +161,7 @@ int main(int argc, char *argv[]) {
         
     }
 
-    shamsys::instance::validate_comm();
+    shamcomm::validate_comm(shamsys::instance::get_compute_scheduler());
 
     if(opts::has_option("--benchmark-mpi")){
         shamsys::run_micro_benchmark();

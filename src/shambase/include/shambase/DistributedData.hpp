@@ -18,8 +18,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
-
-#include "shamsys/legacy/log.hpp"
+#include "shamcomm/logs.hpp"
 
 #include <functional>
 #include <map>

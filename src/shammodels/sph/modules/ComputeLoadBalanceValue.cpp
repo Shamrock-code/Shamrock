@@ -30,3 +30,4 @@ void shammodels::sph::modules::ComputeLoadBalanceValue<Tvec, SPHKernel>::update_
 using namespace shammath;
 template class shammodels::sph::modules::ComputeLoadBalanceValue<f64_3, M4>;
 template class shammodels::sph::modules::ComputeLoadBalanceValue<f64_3, M6>;
+template class shammodels::sph::modules::ComputeLoadBalanceValue<f64_3, M8>;

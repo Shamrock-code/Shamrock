@@ -81,7 +81,7 @@ namespace shammodels::basegodunov {
 
         SolverStorage<Tvec,TgridVec, u_morton> storage {};
 
-        u32 ndust = 1;
+        u32 ndust = solver_config.ndust;
 
         inline void init_required_fields() {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);
@@ -90,10 +90,7 @@ namespace shammodels::basegodunov {
             context.pdata_layout_add_field<Tvec>("rhovel", AMRBlock::block_size);
             context.pdata_layout_add_field<Tscal>("rhoetot", AMRBlock::block_size);
 
-
-
-
-            context.pdata_layout_add_field<TgridVec>("rho_dust", (ndust * AMRBlock::block_size));  //the fluid at pos 0 is the gas and the fluid from pos 1 to ndust are dust numbered in that order
+            context.pdata_layout_add_field<TgridVec>("rho_dust", (ndust * AMRBlock::block_size));  
             context.pdata_layout_add_field<TgridVec>("rhovel_dust", (ndust* AMRBlock::block_size));
         
         }

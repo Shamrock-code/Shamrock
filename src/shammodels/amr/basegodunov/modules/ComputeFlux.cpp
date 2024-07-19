@@ -457,12 +457,12 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         NGLink<std::array<Tscal, 2>> &rho_dust_face_zp = storage.rho_dust_face_zp.get().get(id);
         NGLink<std::array<Tscal, 2>> &rho_dust_face_zm = storage.rho_dust_face_zm.get().get(id);
 
-        NGLink<std::array<Tvec, 2>> &rhov_dust_face_xp = storage.rhov_dust_face_xp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_dust_face_xm = storage.rhov_dust_face_xm.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_dust_face_yp = storage.rhov_dust_face_yp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_dust_face_ym = storage.rhov_dust_face_ym.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_dust_face_zp = storage.rhov_dust_face_zp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &rhov_dust_face_zm = storage.rhov_dust_face_zm.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_dust_face_xp = storage.vel_dust_face_xp.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_dust_face_xm = storage.vel_dust_face_xm.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_dust_face_yp = storage.vel_dust_face_yp.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_dust_face_ym = storage.vel_dust_face_ym.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_dust_face_zp = storage.vel_dust_face_zp.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_dust_face_zm = storage.vel_dust_face_zm.get().get(id);
 
 
         const u32 ixp = oriented_cell_graph.xp;
@@ -658,7 +658,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_xp.link_count,
                 rho_dust_face_xp.link_graph_field,
-                rhov_dust_face_xp.link_graph_field,
+                vel_dust_face_xp.link_graph_field,
                 buf_flux_rho_dust_face_xp.link_graph_field,
                 buf_flux_rhov_dust_face_xp.link_graph_field);
         
@@ -667,7 +667,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_yp.link_count,
                 rho_dust_face_yp.link_graph_field,
-                rhov_dust_face_yp.link_graph_field,
+                vel_dust_face_yp.link_graph_field,
                 buf_flux_rho_dust_face_yp.link_graph_field,
                 buf_flux_rhov_dust_face_yp.link_graph_field);
 
@@ -676,7 +676,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_zp.link_count,
                 rho_dust_face_zp.link_graph_field,
-                rhov_dust_face_zp.link_graph_field,
+                vel_dust_face_zp.link_graph_field,
                 buf_flux_rho_dust_face_zp.link_graph_field,
                 buf_flux_rhov_dust_face_zp.link_graph_field);
 
@@ -685,7 +685,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_xm.link_count,
                 rho_dust_face_xm.link_graph_field,
-                rhov_dust_face_xm.link_graph_field,
+                vel_dust_face_xm.link_graph_field,
                 buf_flux_rho_dust_face_xm.link_graph_field,
                 buf_flux_rhov_dust_face_xm.link_graph_field);
 
@@ -694,7 +694,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_ym.link_count,
                 rho_dust_face_ym.link_graph_field,
-                rhov_dust_face_ym.link_graph_field,
+                vel_dust_face_ym.link_graph_field,
                 buf_flux_rho_dust_face_ym.link_graph_field,
                 buf_flux_rhov_dust_face_ym.link_graph_field);
                 
@@ -703,7 +703,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_zm.link_count,
                 rho_dust_face_zm.link_graph_field,
-                rhov_dust_face_zm.link_graph_field,
+                vel_dust_face_zm.link_graph_field,
                 buf_flux_rho_dust_face_zm.link_graph_field,
                 buf_flux_rhov_dust_face_zm.link_graph_field);
         }
@@ -714,7 +714,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_xp.link_count,
                 rho_dust_face_xp.link_graph_field,
-                rhov_dust_face_xp.link_graph_field,
+                vel_dust_face_xp.link_graph_field,
                 buf_flux_rho_dust_face_xp.link_graph_field,
                 buf_flux_rhov_dust_face_xp.link_graph_field);
         
@@ -723,7 +723,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_face_yp.link_count,
                 rho_dust_face_yp.link_graph_field,
-                rhov_dust_face_yp.link_graph_field,
+                vel_dust_face_yp.link_graph_field,
                 buf_flux_rho_dust_face_yp.link_graph_field,
                 buf_flux_rhov_dust_face_yp.link_graph_field);
 
@@ -732,7 +732,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_zp.link_count,
                 rho_dust_face_zp.link_graph_field,
-                rhov_dust_face_zp.link_graph_field,
+                vel_dust_face_zp.link_graph_field,
                 buf_flux_rho_dust_face_zp.link_graph_field,
                 buf_flux_rhov_dust_face_zp.link_graph_field);
 
@@ -741,7 +741,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_xm.link_count,
                 rho_dust_face_xm.link_graph_field,
-                rhov_dust_face_xm.link_graph_field,
+                vel_dust_face_xm.link_graph_field,
                 buf_flux_rho_dust_face_xm.link_graph_field,
                 buf_flux_rhov_dust_face_xm.link_graph_field);
 
@@ -750,7 +750,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_ym.link_count,
                 rho_dust_face_ym.link_graph_field,
-                rhov_dust_face_ym.link_graph_field,
+                vel_dust_face_ym.link_graph_field,
                 buf_flux_rho_dust_face_ym.link_graph_field,
                 buf_flux_rhov_dust_face_ym.link_graph_field);
                 
@@ -759,7 +759,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 q,
                 rho_dust_face_zm.link_count,
                 rho_dust_face_zm.link_graph_field,
-                rhov_dust_face_zm.link_graph_field,
+                vel_dust_face_zm.link_graph_field,
                 buf_flux_rho_dust_face_zm.link_graph_field,
                 buf_flux_rhov_dust_face_zm.link_graph_field);
         }

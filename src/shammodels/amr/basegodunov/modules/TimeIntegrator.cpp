@@ -23,7 +23,6 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
     using namespace shamrock::patch;
     using namespace shamrock;
     using namespace shammath;
-    u32 ndust;
 
     shamrock::ComputeField<Tscal> &cfield_dtrho =storage.dtrho.get();
     shamrock::ComputeField<Tvec> &cfield_dtrhov = storage.dtrhov.get();

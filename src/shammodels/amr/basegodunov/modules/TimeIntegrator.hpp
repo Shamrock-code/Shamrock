@@ -42,6 +42,7 @@ namespace shammodels::basegodunov::modules {
         ShamrockCtx &context;
         Config &solver_config;
         Storage &storage;
+        u32 ndust = solver_config.ndust;
 
         TimeIntegrator(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}

@@ -43,6 +43,8 @@ namespace shammodels::basegodunov::modules {
         Config &solver_config;
         Storage &storage;
 
+        u32 ndust = solver_config.ndust;
+
         ConsToPrim(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 

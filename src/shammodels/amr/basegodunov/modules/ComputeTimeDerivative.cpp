@@ -24,7 +24,6 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
 
     StackEntry stack_loc{};
 
-    u32 ndust;
     using MergedPDat = shamrock::MergedPatchData;
 
     shamrock::SchedulerUtility utility(scheduler());

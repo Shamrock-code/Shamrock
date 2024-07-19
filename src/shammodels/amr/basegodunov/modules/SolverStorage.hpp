@@ -62,7 +62,7 @@ namespace shammodels::basegodunov {
 
         Component<shamrock::ComputeField<Tvec>> vel;
         Component<shamrock::ComputeField<Tscal>> press;
-        Component<shamrock::ComputedField<Tvec>> vel_dust;
+        Component<shamrock::ComputeField<Tvec>> vel_dust;
 
         Component<shamrock::ComputeField<Tvec>> grad_rho;
         Component<shamrock::ComputeField<Tvec>> dx_v;

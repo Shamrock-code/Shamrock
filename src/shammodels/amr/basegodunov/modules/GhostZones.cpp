@@ -298,7 +298,6 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     using InterfaceIdTable    = typename GZData::InterfaceIdTable;
 
     using AMRBlock = typename Config::AMRBlock;
-    u32 ndust; 
 
     // setup ghost layout
     storage.ghost_layout.set(shamrock::patch::PatchDataLayout{});

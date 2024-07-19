@@ -210,7 +210,8 @@ namespace shammath {
 
         const auto fL = hydro_flux_x(cL, gamma);
         const auto fR = hydro_flux_x(cR, gamma);
-
+        
+        // Equation (10.55) from Toro 3rd Edition , Springer 2009 
         return 0.5 * ((fL + fR) - (cR - cL) * S);
     }
 
@@ -315,6 +316,7 @@ namespace shammath {
         const auto fluxL = hydro_flux_x(consL, gamma);
         const auto fluxR = hydro_flux_x(consR, gamma);
 
+        // Equation (10.26) from Toro 3rd Edition , Springer 2009
         auto hll_flux = [=]() {
             if( S_L >= 0)
                 return fluxL;

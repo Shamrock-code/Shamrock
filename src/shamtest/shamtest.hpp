@@ -87,6 +87,9 @@ namespace shamtest {
      */
     int run_all_tests(int argc, char *argv[], TestConfig cfg);
 
+    // output test list to a file
+    void gen_test_list(std::string_view outfile);
+
     /**
      * @brief current test asserts
      *

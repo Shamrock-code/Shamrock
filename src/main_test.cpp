@@ -31,6 +31,7 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--benchmark-mpi", {}, "micro benchmark for MPI");
 
     opts::register_opt("--test-list", {}, "print test availables");
+    opts::register_opt("--gen-test-list", {}, "print test availables");
     opts::register_opt("--run-only", {"(test name)"}, "run only this test");
     opts::register_opt("--full-output", {}, "print the assertions in the tests");
 
@@ -44,6 +45,12 @@ int main(int argc, char *argv[]) {
 
     opts::init(argc, argv);
     if (opts::is_help_mode()) {
+        return 0;
+    }
+
+    if (opts::has_option("--gen-test-list")) {
+        std::string_view outfile = opts::get_option("--gen-test-list");
+        shamtest::gen_test_list(outfile);
         return 0;
     }
 

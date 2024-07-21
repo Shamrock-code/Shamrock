@@ -591,4 +591,71 @@ namespace shamtest {
 
         return errcode;
     }
+
+    void gen_test_list(std::string_view outfile){
+        logger::raw_ln("Test list ...", outfile);
+
+        using namespace details;
+
+        std::array rank_list {1,2,3,4};
+
+        auto get_pref_type = [](TestType t) -> std::string {
+            switch (t) {
+            case Benchmark: return "Benchmark";
+            case LongBenchmark: return "LongBenchmark";
+            case ValidationTest: return "ValidationTest";
+            case LongValidationTest: return "LongValidationTest";
+            case Unittest:  return "Unittest";
+            }
+        };
+
+        auto get_arg = [](TestType t) -> std::string {
+            switch (t) {
+            case Benchmark: return "--benchmark";
+            case LongBenchmark: return "--long-test --benchmark";
+            case ValidationTest: return "--validation";
+            case LongValidationTest: return "--long-test --validation";
+            case Unittest:  return "--unittest";
+            }
+        };
+
+        auto get_test_name= [&](Test t, int ranks) -> std::string {
+            std::string name = get_pref_type(t.type) + "/" + t.name + shambase::format(
+                "(ranks={})"
+                //"{}"
+                , ranks);
+            //shambase::replace_all(name, "/", "");
+            return name;
+        };
+
+        auto get_command = [&](Test t, int ranks) -> std::string {
+            std::string ret = "add_test( \"";
+            ret += get_test_name(t, ranks);
+            ret += "\"";
+            ret += "  mpirun -n "+ std::to_string(ranks) + " ../shamrock_test --sycl-cfg 0:0";
+            ret += " --run-only " + std::string(t.name);
+            ret += " " + get_arg(t.type);
+            ret += ")\n";
+            return ret;
+        };
+
+        std::ofstream filestream;
+        filestream.open (std::string(outfile));
+        for (const Test & t : static_init_vec_tests) {
+            if(t.type == Benchmark || t.type == LongBenchmark) continue;
+            if(t.node_count == -1){
+                for(int ncount : rank_list){
+                    filestream << get_command(t, ncount);
+                }
+            }else{
+                filestream << get_command(t, t.node_count);
+            }
+        }
+        filestream.close();
+
+    }
+
 } // namespace shamtest
+
+
+//add_test(NAME "Unittest_rank=1" COMMAND ${MPIEXEC_EXECUTABLE} -n 1 ./shamrock_test --sycl-cfg 0:0 --unittest )

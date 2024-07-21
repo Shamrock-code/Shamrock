@@ -140,6 +140,30 @@ if("${BUILD_TEST}")
     target_precompile_headers(shamrock_test REUSE_FROM shamrock_lib)
     endif()
 
+
+    
+
+
+    ########################################################################################
+    # CTest integration ####################################################################
+    ########################################################################################
+
+    enable_testing ()
+
+    set(ctest_file_list "${CMAKE_CURRENT_BINARY_DIR}/cmake_tests.cmake")
+
+    add_custom_command(
+      TARGET shamrock_test POST_BUILD
+      BYPRODUCTS "${ctest_file_list}"
+      COMMAND shamrock_test --gen-test-list "${ctest_file_list}"
+      VERBATIM
+    )
+
+    # Add the tests to CTest ones
+    set_property(DIRECTORY
+      APPEND PROPERTY TEST_INCLUDE_FILES "${ctest_file_list}"
+    )
+
     #find_package(nlohmann_json 3.2.0 REQUIRED)
     #target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
 

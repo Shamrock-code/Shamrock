@@ -140,10 +140,6 @@ if("${BUILD_TEST}")
     target_precompile_headers(shamrock_test REUSE_FROM shamrock_lib)
     endif()
 
-
-    
-
-
     ########################################################################################
     # CTest integration ####################################################################
     ########################################################################################
@@ -152,6 +148,8 @@ if("${BUILD_TEST}")
 
     set(ctest_file_list "${CMAKE_CURRENT_BINARY_DIR}/cmake_tests.cmake")
 
+    # add execution of a command just after linking of shamrock_test
+    # this call generate the ctest cmake file
     add_custom_command(
       TARGET shamrock_test POST_BUILD
       BYPRODUCTS "${ctest_file_list}"
@@ -159,7 +157,7 @@ if("${BUILD_TEST}")
       VERBATIM
     )
 
-    # Add the tests to CTest ones
+    # add the ctest cmake file to the list of tests
     set_property(DIRECTORY
       APPEND PROPERTY TEST_INCLUDE_FILES "${ctest_file_list}"
     )

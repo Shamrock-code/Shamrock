@@ -140,7 +140,7 @@ namespace shammath {
 
         prim.rho = cons.rho;
 
-        prim.vel[0] = cons.rhovel[0] / cons.rho;   // what will happen if rho is 0 ? 
+        prim.vel[0] = cons.rhovel[0] / cons.rho;
         prim.vel[1] = cons.rhovel[1] / cons.rho;
         prim.vel[2] = cons.rhovel[2] / cons.rho;
 

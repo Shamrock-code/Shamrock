@@ -15,6 +15,7 @@
 
 #include "ComputeGradient.hpp"
 #include "shammath/riemann.hpp"
+#include "shammath/riemann_dust.hpp"
 
 #include "shammath/slopeLimiter.hpp"
 #include "shammodels/amr/NeighGraph.hpp"
@@ -355,7 +356,10 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
                     graph_iter_ym,
                     graph_iter_zp,
                     graph_iter_zm,
-                    rho_dust
+                    [=](u32 id)
+                    {
+                        return rho_dust[id];
+                    }
                 );
                 grad_rho_dust[cell_global_id] = {result[0],result[1], result[2]};
             }); 

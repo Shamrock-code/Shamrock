@@ -426,7 +426,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 cell0block_aabb_lower,
                 block_cell_sizes,buf_vel, buf_dx_vel, buf_dy_vel, buf_dz_vel));
         
-        rhov_dust_face_ym.add_obj(
+        vel_dust_face_ym.add_obj(
             id,
             compute_link_field<VelInterpolate, std::array<Tvec,2>>(
                 q,
@@ -444,7 +444,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 block_cell_sizes,buf_vel, buf_dx_vel, buf_dy_vel, buf_dz_vel));
                
         
-        rhov_dust_face_zp.add_obj(
+        vel_dust_face_zp.add_obj(
             id,
             compute_link_field<VelInterpolate, std::array<Tvec,2>>(
                 q,
@@ -461,7 +461,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 cell0block_aabb_lower,
                 block_cell_sizes,buf_vel, buf_dx_vel, buf_dy_vel, buf_dz_vel));
 
-        rhov_dust_face_zm.add_obj(
+        vel_dust_face_zm.add_obj(
             id,
             compute_link_field<VelInterpolate, std::array<Tvec,2>>(
                 q,

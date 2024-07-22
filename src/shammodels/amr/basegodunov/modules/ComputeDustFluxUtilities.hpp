@@ -104,7 +104,8 @@ using Direction             = shammodels::basegodunov::modules::Direction;
     }else {
         static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
     }
-}
+};
+
 std::string cur_direction = get_dir_name();
         
         std::string kernel_name = "compute flux" + flux_name + "flux" + cur_direction;
@@ -123,7 +124,7 @@ std::string cur_direction = get_dir_name();
                 using Tcons  = shammath::DustConsState<Tvec>;
 
                 auto flux_dust_dir = Flux::flux(Tcons{rho_dust_ij[0], rhov_dust_ij[0]},
-                    Tcons{rho_dust_ij[1]}, rhov_dust_ij[1]);
+                    Tcons{rho_dust_ij[1], rhov_dust_ij[1]});
                 
                 flux_rhov_dust[id_a] = flux_dust_dir.rho;
                 flux_rhov_dust[id_a] = flux_dust_dir.rhovel;

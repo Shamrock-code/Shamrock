@@ -334,22 +334,22 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
 
 
     std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust = sched.rankgather_field<Tscal>(5);
-    writer.write_field("rho_dust", fields_rho_dust, solver.ndust*num_obj*block_size);
+    writer.write_field("rho_dust", fields_rho_dust, Solver::ndust*num_obj*block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> fields_vel_dust = sched.rankgather_field<Tvec>(6);
-    writer.write_field("rhovel_dust", fields_vel_dust, solver.ndust*num_obj*block_size);
+    writer.write_field("rhovel_dust", fields_vel_dust, Solver::ndust*num_obj*block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> grad_rho_dust = storage.grad_rho_dust.get().rankgather_computefield(sched);
-    writer.write_field("grad_rho_dust", grad_rho_dust, solver.ndust*num_obj*block_size);
+    writer.write_field("grad_rho_dust", grad_rho_dust, Solver::ndust*num_obj*block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> dx_v_dust = storage.dx_v_dust.get().rankgather_computefield(sched);
-    writer.write_field("dx_v_dust", dx_v_dust, solver.ndust*num_obj*block_size);
+    writer.write_field("dx_v_dust", dx_v_dust, Solver::ndust*num_obj*block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> dy_v_dust = storage.dy_v_dust.get().rankgather_computefield(sched);
-    writer.write_field("dy_v_dust", dy_v_dust, solver.ndust*num_obj*block_size);
+    writer.write_field("dy_v_dust", dy_v_dust, Solver::ndust*num_obj*block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> dz_v_dust = storage.dz_v_dust.get().rankgather_computefield(sched);
-    writer.write_field("dz_v_dust", dz_v_dust, solver.ndust*num_obj*block_size);
+    writer.write_field("dz_v_dust", dz_v_dust, Solver::ndust*num_obj*block_size);
 
 
     std::unique_ptr<sycl::buffer<Tscal>> dtrho = storage.dtrho.get().rankgather_computefield(sched);
@@ -363,10 +363,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
 
 
     std::unique_ptr<sycl::buffer<Tscal>> dtrho_dust = storage.dtrho_dust.get().rankgather_computefield(sched);
-    writer.write_field("dtrho_dust", dtrho_dust, solver.ndust*num_obj*block_size);
+    writer.write_field("dtrho_dust", dtrho_dust, Solver::ndust*num_obj*block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> dtrhov_dust = storage.dtrhov_dust.get().rankgather_computefield(sched);
-    writer.write_field("dtrhov_dust", dtrhov_dust, solver.ndust*num_obj*block_size);
+    writer.write_field("dtrhov_dust", dtrhov_dust, Solver::ndust*num_obj*block_size);
 
 }
 

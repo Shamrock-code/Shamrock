@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#pragma once
+// #pragma once
 
 /**
  * @file ComputeFlux.cpp
@@ -21,7 +21,7 @@
 #include "shammodels/amr/basegodunov/modules/ComputeFluxUtilities.hpp"
 
 
-using RiemmanSolverMode = shammodels::basegodunov::RiemmanSolverMode;
+// using RiemmanSolverMode = shammodels::basegodunov::RiemmanSolverMode;
 using Direction             = shammodels::basegodunov::modules::Direction;
 
 /**

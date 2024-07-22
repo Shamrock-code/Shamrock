@@ -102,7 +102,7 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
                 
                 auto prim_state_dust = shammath::d_cons_to_prim(cons_state_dust);
                 
-                vel_dust[gid] = prim_state.vel;
+                vel_dust[gid] = prim_state_dust.vel;
             });
 
         });

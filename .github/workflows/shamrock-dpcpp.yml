@@ -76,6 +76,9 @@ jobs:
       - name: compile Shamrock
         run: |
           cd build
+          export DPCPP_HOME=/home/docker/compilers/DPCPP
+          export PATH=$DPCPP_HOME/bin:$PATH
+          export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
           ninja
 
       # no device to run on
@@ -121,6 +124,9 @@ jobs:
       - name: compile Shamrock
         run: |
           cd build
+          export DPCPP_HOME=/home/docker/compilers/DPCPP
+          export PATH=$DPCPP_HOME/bin:$PATH
+          export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
           ninja
 
       # no device to run on

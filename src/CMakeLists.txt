@@ -153,7 +153,7 @@ if("${BUILD_TEST}")
     add_custom_command(
       TARGET shamrock_test POST_BUILD
       BYPRODUCTS "${ctest_file_list}"
-      COMMAND shamrock_test --gen-test-list "${ctest_file_list}"
+      COMMAND shamrock_test --gen-test-list "${ctest_file_list}" || true
       VERBATIM
     )
 

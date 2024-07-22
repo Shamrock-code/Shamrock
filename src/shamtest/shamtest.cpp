@@ -593,7 +593,7 @@ namespace shamtest {
     }
 
     void gen_test_list(std::string_view outfile){
-        logger::raw_ln("Test list ...", outfile);
+        //logger::raw_ln("Test list ...", outfile);
 
         using namespace details;
 
@@ -629,11 +629,15 @@ namespace shamtest {
         };
 
         auto get_command = [&](Test t, int ranks) -> std::string {
-            std::string ret = "add_test( \"";
+            std::string ret = "add_test(\"";
             ret += get_test_name(t, ranks);
             ret += "\"";
-            ret += "  mpirun -n "+ std::to_string(ranks) + " ../shamrock_test --sycl-cfg 0:0";
-            ret += " --run-only " + std::string(t.name);
+            if(ranks > 1){
+                ret += " mpirun -n "+ std::to_string(ranks) + " ../shamrock_test --sycl-cfg 0:0";
+            }else{
+                ret += " ../shamrock_test --sycl-cfg 0:0";
+            }
+            ret += " --run-only \"" + std::string(t.name) + "\"";
             ret += " " + get_arg(t.type);
             ret += ")\n";
             return ret;
@@ -656,6 +660,3 @@ namespace shamtest {
     }
 
 } // namespace shamtest
-
-
-//add_test(NAME "Unittest_rank=1" COMMAND ${MPIEXEC_EXECUTABLE} -n 1 ./shamrock_test --sycl-cfg 0:0 --unittest )

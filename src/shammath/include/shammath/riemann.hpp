@@ -318,6 +318,13 @@ namespace shammath {
 
         // Equation (10.26) from Toro 3rd Edition , Springer 2009
         auto hll_flux = [=]() {
+            // const auto S_L_upwind = sham::min(S_L, 0.0);
+            // const auto S_R_upwind = sham::max(S_R, 0.0);
+            // const auto S_norm     = 1.0 / (S_R_upwind - S_L_upwind);
+            // return (fluxL * S_R_upwind - fluxR * S_L_upwind
+            //         + (consR - consL) * S_R_upwind * S_L_upwind)
+            //        * S_norm;
+
             if( S_L >= 0)
                 return fluxL;
             else if( S_R <= 0)

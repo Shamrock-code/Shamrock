@@ -8,13 +8,14 @@
 
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamtest/shamtest.hpp"
-
+#include "tests/ref_files.hpp"
 
 TestStart(Unittest, "phantom-read-write", pahntomread, 1) {
 
-    std::string fname = "reference-files/blast_00010";
+    std::string fname_in = get_reffile_path("blast_00010");
+    std::string fname_out = get_reffile_path("zout_phantom");
 
-    shambase::FortranIOFile phfile = shambase::load_fortran_file(fname);
+    shambase::FortranIOFile phfile = shambase::load_fortran_file(fname_in);
 
     i32 fortran_byte;
 
@@ -22,9 +23,11 @@ TestStart(Unittest, "phantom-read-write", pahntomread, 1) {
 
     logger::raw_ln(phdump.fileid);
 
-    phdump.gen_file().write_to_file("reference-files/zout_phantom");
+    phdump.gen_file().write_to_file(fname_out);
 
-    int ret = system("cmp reference-files/blast_00010 reference-files/zout_phantom");
+    std::string cmd = "cmp " + fname_in + " " + fname_out;
+
+    int ret = system(cmd.c_str());
 
     _Assert(ret == 0);
 }

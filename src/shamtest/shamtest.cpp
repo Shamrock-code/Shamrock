@@ -16,6 +16,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
+#include "shamsys/EnvVariables.hpp"
 #include <pybind11/embed.h>
 #include <sstream>
 #include <string>
@@ -628,9 +629,19 @@ namespace shamtest {
             return name;
         };
 
-        auto get_command = [&](Test t, int ranks) -> std::string {
+
+        std::ofstream filestream;
+        filestream.open (std::string(outfile));
+
+        std::vector<std::string> cmake_test_list;
+
+        auto add_test = [&](Test t, int ranks) {
+
+            std::string tname = get_test_name(t, ranks);
+            cmake_test_list.push_back(tname);
+
             std::string ret = "add_test(\"";
-            ret += get_test_name(t, ranks);
+            ret += tname;
             ret += "\"";
             if(ranks > 1){
                 ret += " mpirun -n "+ std::to_string(ranks) + " ../shamrock_test --sycl-cfg 0:0";
@@ -640,21 +651,35 @@ namespace shamtest {
             ret += " --run-only \"" + std::string(t.name) + "\"";
             ret += " " + get_arg(t.type);
             ret += ")\n";
-            return ret;
+            filestream << ret;
         };
 
-        std::ofstream filestream;
-        filestream.open (std::string(outfile));
         for (const Test & t : static_init_vec_tests) {
             if(t.type == Benchmark || t.type == LongBenchmark) continue;
             if(t.node_count == -1){
                 for(int ncount : rank_list){
-                    filestream << get_command(t, ncount);
+                    add_test(t, ncount);
                 }
             }else{
-                filestream << get_command(t, t.node_count);
+                add_test(t, t.node_count);
             }
         }
+
+        filestream << "\n";
+
+        auto REF_FILES_PATH = shamsys::env::getenv_str("REF_FILES_PATH");
+
+        if (REF_FILES_PATH) {
+            filestream << "set_tests_properties(\n";
+            for (auto tname : cmake_test_list) {
+                filestream << "    \"" << tname << "\"\n";
+            }
+            filestream << "  PROPERTIES\n";
+            filestream << "    ENVIRONMENT \"REF_FILES_PATH="+*REF_FILES_PATH << "\"\n";
+            filestream << ")\n";
+        }
+
+
         filestream.close();
 
     }

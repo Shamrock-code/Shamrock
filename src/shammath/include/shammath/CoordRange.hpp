@@ -62,7 +62,7 @@ namespace shammath {
         }
 
         inline typename T_prop::component_type get_volume(){
-            return shambase::product_accumulate(upper - lower);
+            return sham::product_accumulate(upper - lower);
         }
 
         static CoordRange max_range();
@@ -88,7 +88,7 @@ namespace shammath {
         }
 
         inline bool is_not_empty(){
-            return shambase::vec_compare_geq(upper , lower);
+            return sham::vec_compare_geq(upper , lower);
         }
 
         inline CoordRange add_offset(T off){

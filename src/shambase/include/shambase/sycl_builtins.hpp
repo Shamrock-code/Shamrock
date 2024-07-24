@@ -17,6 +17,7 @@
  
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
+#include "shambackends/math.hpp"
 #include "shambase/vectors.hpp"
 #include "shambase/integer.hpp"
 
@@ -41,7 +42,7 @@ namespace shambase {
         #ifdef SYCL_COMP_INTEL_LLVM
             return sycl::any(v);
         #else
-            return shambase::sum_accumulate(
+            return sham::sum_accumulate(
                 (v & sycl::vec<T, n>{most_sig_bit_mask<T>()}) >> sycl::vec<T, n>{4}
             );
         #endif

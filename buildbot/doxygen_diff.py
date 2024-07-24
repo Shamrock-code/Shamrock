@@ -34,12 +34,19 @@ make_diff(file1+".sort", file2+".sort")
 
 line_add, line_del = load_diff("out_diff")
 
+print("# Doxygen changes detection")
 print(f"Removed warnings : {len(line_del)}")
 print(f"New warnings : {len(line_add)}")
-print(f"Changes : ")
+print("<details>")
+print("<summary>")
+print("Detailed changes :")
+print("</summary>")
+print(f" ")
 print("```diff")
 for l in line_add:
     print(f"+ {l}")
 for l in line_del:
     print(f"- {l}")
 print("```")
+print("")
+print("</details>")

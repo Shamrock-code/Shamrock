@@ -11,8 +11,7 @@
 /**
  * @file stacktrace.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief
- *
+ * @brief This file contains the definition for the stacktrace related functionality.
  */
 
 #include "shambase/aliases_float.hpp"
@@ -194,9 +193,11 @@ namespace shambase::details {
 namespace shambase {
 
     /**
-     * @brief get the formatted callstack
+     * @brief Get the formatted callstack.
      *
-     * @return std::string
+     * This function returns a formatted string representing the current call stack.
+     *
+     * @return The formatted call stack as a string.
      */
     std::string fmt_callstack();
 

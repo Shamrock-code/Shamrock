@@ -60,11 +60,19 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: doxygen_warning
-          path: PR.dox.warning.txt
+          path: PR_dox_output
 
+      - name: 'ls PR_dox_output'
+        run: |
+          ls PR_dox_output
+
+      - name: 'ls doc/doxygen'
+        run: |
+          ls doc/doxygen
+          
       - name: 'Diff'
         run: |
-          python3 buildbot/doxygen_diff.py PR.dox.warning.txt doc/doxygen/warn_doxygen.txt > out_diff.md
+          python3 buildbot/doxygen_diff.py PR_dox_output/warn_doxygen.txt doc/doxygen/warn_doxygen.txt > out_diff.md
 
       - name: 'cat diff'
         run: |

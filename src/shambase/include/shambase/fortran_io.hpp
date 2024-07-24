@@ -18,12 +18,11 @@
 #include "shambase/aliases_float.hpp"
 #include "shambase/bytestream.hpp"
 #include "shambase/exception.hpp"
-
+#include <array>
 #include <fstream>
 #include <stdexcept>
 #include <utility>
 #include <vector>
-#include <array>
 
 namespace shambase {
 
@@ -69,19 +68,41 @@ namespace shambase {
             return check;
         }
 
+        /// Data stream of the file
         std::basic_stringstream<byte> data;
+
+        /// Lenght of the data stream
         u64 lenght;
 
+        /**
+         * @brief Write a value to the buffer
+         *
+         * @tparam T The type of the value to write
+         * @param arg The value to write
+         */
         template<class T>
         inline void _write(T arg) {
             stream_write(data, arg);
         }
 
+        /**
+         * @brief Read a value from the buffer
+         *
+         * @tparam T The type of the value to read
+         * @param arg The reference to the variable to store the read value
+         */
         template<class T>
         inline void _read(T &arg) {
             stream_read(data, arg);
         }
 
+        /**
+         * @brief Read an array of values from the buffer
+         *
+         * @tparam T The type of the values in the array
+         * @tparam N The size of the array
+         * @param vec The reference to the array to store the read values
+         */
         template<class T, int N>
         inline void _read(std::array<T, N> &vec) {
             for (u32 i = 0; i < N; i++) {
@@ -89,6 +110,13 @@ namespace shambase {
             }
         }
 
+        /**
+         * @brief Write an array of values to the buffer
+         *
+         * @tparam T The type of the values in the array
+         * @tparam N The size of the array
+         * @param vec The reference to the array to write
+         */
         template<class T, int N>
         inline void _write(std::array<T, N> &vec) {
             for (u32 i = 0; i < N; i++) {
@@ -97,8 +125,11 @@ namespace shambase {
         }
 
         public:
+        /// Fortran real type
         using fort_real = f64;
-        using fort_int  = int;
+
+        /// Fortran int type
+        using fort_int = int;
 
         /**
          * @brief Construct a new FortranIOFile object
@@ -115,7 +146,15 @@ namespace shambase {
 
         FortranIOFile() = default;
 
-        inline std::basic_stringstream<byte> &get_internal_buf() { return data; }
+        /**
+         * @brief Get a reference to the internal buffer
+         *
+         * @return std::basic_stringstream<byte>& A reference to the internal buffer
+         */
+        inline std::basic_stringstream<byte> &get_internal_buf() {
+            // Return a reference to the internal buffer
+            return data;
+        }
 
         /**
          * @brief Write a list of arguments to the internal buffer
@@ -247,7 +286,7 @@ namespace shambase {
 
             for (u32 i = 0; i < str_count; i++) {
                 // Write each string to the buffer
-                data.write(reinterpret_cast<byte *>(svec[i].data()), strlen * sizeof(char)); 
+                data.write(reinterpret_cast<byte *>(svec[i].data()), strlen * sizeof(char));
             }
 
             stream_write(data, totlen); // Write the total length again as a 4-byte integer
@@ -268,10 +307,10 @@ namespace shambase {
         template<class T>
         inline void read_val_array(std::vector<T> &vec, u32 val_count) {
 
-            u64 totlen = sizeof(T) * val_count; // Total length of the array
+            u64 totlen = sizeof(T) * val_count;    // Total length of the array
             i32 check  = read_fortran_4byte(data); // Read the total length
 
-            if (check != totlen) { // Make sure the byte count matches
+            if (check != totlen) {                  // Make sure the byte count matches
                 throw_with_loc<std::runtime_error>( // Throw an exception if not
                     "the byte count is not correct");
             }
@@ -315,7 +354,6 @@ namespace shambase {
             stream_write(data, totlen); // Write the total length again
         }
 
-
         /**
          * @brief Check if the end of the file has been reached
          *
@@ -324,9 +362,7 @@ namespace shambase {
          *
          * @return true if the end of the file has been reached
          */
-        inline bool finished_read() {
-            return lenght == data.tellg();
-        }
+        inline bool finished_read() { return lenght == data.tellg(); }
 
         /**
          * @brief Write the Fortran formatted file to disk.

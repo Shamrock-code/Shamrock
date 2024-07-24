@@ -52,4 +52,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: doxygen_warning
-          path: doc/_build/warn_doxygen.txt
+          path: doc/_build/doxygen/warn_doxygen.txt

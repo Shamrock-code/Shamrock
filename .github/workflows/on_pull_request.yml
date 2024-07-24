@@ -27,6 +27,50 @@ jobs:
     needs: [src_check]
     uses: ./.github/workflows/make_documentation.yml
 
+  doxygen_diff:
+    name: Doxygen Diff
+    needs: [make_documentation]
+
+    runs-on: [self-hosted, ubuntu20]
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
+
+      - name : Install pck (doxygen)
+        run: |
+          sudo apt-get install -y -qq doxygen graphviz
+
+      - name : Run doxygen
+        run: |
+          cd doc/doxygen
+          doxygen dox.conf
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 'Download PR doxygen warning'
+        uses: actions/download-artifact@v3
+        with:
+          name: doxygen_warning
+          path: PR.dox.warning.txt
+
+      - name: 'Diff'
+        run: |
+          python3 buildbot/doxygen_diff.py PR.dox.warning.txt doc/doxygen/warn_doxygen.txt > out_diff.md
+
+      - name: 'cat diff'
+        run: |
+          cat out_diff.md
+
+
   shamrock_linux_acpp:
     needs: [src_check]
     name: Tests

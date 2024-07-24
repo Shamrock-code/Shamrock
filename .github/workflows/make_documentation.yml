@@ -47,3 +47,9 @@ jobs:
         with:
           name: shamrock_documentation
           path: documentation.tar.gz
+
+      - name: Archive generated doc (Warning doxygen)
+        uses: actions/upload-artifact@v3
+        with:
+          name: doxygen_warning
+          path: doc/_build/warn_doxygen.txt

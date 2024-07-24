@@ -100,6 +100,14 @@ jobs:
         run: |
           cat out_diff.md
 
+      - name: Comment doxygen diff on PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: out_diff.md
+          comment_tag: doxygen_diff
+          mode: recreate
+          create_if_not_exists: true
+
 
   shamrock_linux_acpp:
     needs: [src_check]

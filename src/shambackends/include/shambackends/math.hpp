@@ -20,7 +20,6 @@
 #include "shambackends/vec.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/type_traits.hpp"
-#include "shambase/vectors.hpp"
 
 
 namespace sham::syclbackport {

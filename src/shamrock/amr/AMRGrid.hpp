@@ -20,7 +20,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambase/DistributedData.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamsys/legacy/log.hpp"

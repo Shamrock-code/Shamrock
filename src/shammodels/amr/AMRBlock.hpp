@@ -15,7 +15,7 @@
  */
 
 #include "shambase/integer.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
 
 #include "shambackends/typeAliasVec.hpp"

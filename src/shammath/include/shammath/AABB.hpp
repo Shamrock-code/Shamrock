@@ -17,7 +17,6 @@
  
 #include "shambase/SourceLocation.hpp"
 #include "shambackends/vec.hpp"
-#include "shambase/vectors.hpp"
 #include "shambackends/math.hpp"
 
 #include <limits>

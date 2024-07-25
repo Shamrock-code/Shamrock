@@ -15,7 +15,7 @@
  * 
  */
  
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shambackends/math.hpp"
 
 namespace shamrock::amr {

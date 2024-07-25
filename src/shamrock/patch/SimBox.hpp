@@ -17,7 +17,7 @@
 #include "shamalgs/collective/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoordTransform.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"

@@ -15,7 +15,7 @@
  
 #include "Model.hpp"
 #include "shambase/memory.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"

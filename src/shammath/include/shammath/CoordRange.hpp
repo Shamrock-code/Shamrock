@@ -20,7 +20,6 @@
 #include "shambase/SourceLocation.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
-#include "shambase/vectors.hpp"
 #include "intervals.hpp"
 
 #include <limits>

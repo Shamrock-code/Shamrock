@@ -15,7 +15,7 @@
 
 #include "shamrock/math/integrators.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include <algorithm>
 
 namespace integ = shamrock::integrators;

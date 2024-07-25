@@ -16,7 +16,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 
 #include "shamalgs/container/ResizableBuffer.hpp"
 #include "shamalgs/memory.hpp"

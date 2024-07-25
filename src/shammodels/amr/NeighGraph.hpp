@@ -16,7 +16,7 @@
  */
 
 #include "shambase/memory.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 
 #include "shambackends/sycl.hpp"
 

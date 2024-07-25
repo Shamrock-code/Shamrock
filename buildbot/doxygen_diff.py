@@ -87,9 +87,9 @@ lst.sort()
 for [a,b] in lst:
     if a.startswith("src"):
         if b == "+":
-            print(f"- {a}")
-        if b == "-":
             print(f"+ {a}")
+        if b == "-":
+            print(f"- {a}")
 
 print("```")
 print("")

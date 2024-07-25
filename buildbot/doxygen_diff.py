@@ -8,7 +8,7 @@ cur_file = os.path.realpath(os.path.expanduser(__file__))
 
 # Get project directory
 abs_proj_dir = os.path.abspath(os.path.join(cur_file, "../.."))
-
+print("projdir", abs_proj_dir + "/")
 def make_sorted_file(filename, sorted_file):
     os.system(f"cat {filename} | sort > {sorted_file}")
 
@@ -28,6 +28,7 @@ def load_diff(file):
 
     for l in lines:
         l = l.replace(abs_proj_dir+"/","")
+        print (l)
         if l.startswith(">"):
             line_add.append(l[2:-1])
         if l.startswith("<"):

@@ -94,7 +94,7 @@ jobs:
           
       - name: 'Diff'
         run: |
-          python3 buildbot/doxygen_diff.py PR_dox_output/warn_doxygen.txt main_dox_output/warn_doxygen.txt > out_diff.md
+          python3 buildbot/doxygen_diff.py main_dox_output/warn_doxygen.txt PR_dox_output/warn_doxygen.txt > out_diff.md
 
       - name: 'cat diff'
         run: |

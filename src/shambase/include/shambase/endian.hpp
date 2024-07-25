@@ -16,7 +16,6 @@
  */
  
 #include "shambase/integer.hpp"
-#include "shambackends/typeAliasVec.hpp"
 
 namespace shambase {
 

@@ -15,10 +15,7 @@
  * 
  */
  
-#include "shambackends/typeAliasVec.hpp"
-#include "shambase/type_traits.hpp"
-#include "shambackends/sycl.hpp"
-#include "shambase/vectors.hpp"
+#include "shambase/aliases_int.hpp"
 
 namespace shambase {
 

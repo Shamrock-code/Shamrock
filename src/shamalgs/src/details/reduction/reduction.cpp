@@ -21,7 +21,6 @@
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
-#include "shambase/sycl_builtins.hpp"
 #include "shambase/floats.hpp"
 
 namespace shamalgs::reduction {

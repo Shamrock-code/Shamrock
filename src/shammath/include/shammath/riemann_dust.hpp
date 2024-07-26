@@ -220,6 +220,7 @@ namespace shammath {
         else if(d_primL.vel[0] < 0 && d_primR.vel[0] > 0)
             d_flux *=0;
         else if(d_primL.vel[0] > 0 && d_primR.vel[0] < 0)
+
             d_flux = (fL + fR) ;
         
         return d_flux;
@@ -236,6 +237,7 @@ namespace shammath {
     inline constexpr Tcons d_hll_flux_z(Tcons cL, Tcons cR)
     {
         return d_x_to_z(d_hll_flux_x(d_z_to_x(cL), d_z_to_x(cR)));
+
     }
 
     template<class Tcons>

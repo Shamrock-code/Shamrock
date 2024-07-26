@@ -16,6 +16,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
+#include "shamsys/EnvVariables.hpp"
 #include <pybind11/embed.h>
 #include <sstream>
 #include <string>
@@ -591,4 +592,96 @@ namespace shamtest {
 
         return errcode;
     }
+
+    void gen_test_list(std::string_view outfile){
+        //logger::raw_ln("Test list ...", outfile);
+
+        using namespace details;
+
+        std::array rank_list {1,2,3,4};
+
+        auto get_pref_type = [](TestType t) -> std::string {
+            switch (t) {
+            case Benchmark: return "Benchmark";
+            case LongBenchmark: return "LongBenchmark";
+            case ValidationTest: return "ValidationTest";
+            case LongValidationTest: return "LongValidationTest";
+            case Unittest:  return "Unittest";
+            }
+        };
+
+        auto get_arg = [](TestType t) -> std::string {
+            switch (t) {
+            case Benchmark: return "--benchmark";
+            case LongBenchmark: return "--long-test --benchmark";
+            case ValidationTest: return "--validation";
+            case LongValidationTest: return "--long-test --validation";
+            case Unittest:  return "--unittest";
+            }
+        };
+
+        auto get_test_name= [&](Test t, int ranks) -> std::string {
+            std::string name = get_pref_type(t.type) + "/" + t.name + shambase::format(
+                "(ranks={})"
+                //"{}"
+                , ranks);
+            //shambase::replace_all(name, "/", "");
+            return name;
+        };
+
+
+        std::ofstream filestream;
+        filestream.open (std::string(outfile));
+
+        std::vector<std::string> cmake_test_list;
+
+        auto add_test = [&](Test t, int ranks) {
+
+            std::string tname = get_test_name(t, ranks);
+            cmake_test_list.push_back(tname);
+
+            std::string ret = "add_test(\"";
+            ret += tname;
+            ret += "\"";
+            if(ranks > 1){
+                ret += " mpirun -n "+ std::to_string(ranks) + " ../shamrock_test --sycl-cfg 0:0";
+            }else{
+                ret += " ../shamrock_test --sycl-cfg 0:0";
+            }
+            ret += " --run-only \"" + std::string(t.name) + "\"";
+            ret += " " + get_arg(t.type);
+            ret += ")\n";
+            filestream << ret;
+        };
+
+        for (const Test & t : static_init_vec_tests) {
+            if(t.type == Benchmark || t.type == LongBenchmark) continue;
+            if(t.node_count == -1){
+                for(int ncount : rank_list){
+                    add_test(t, ncount);
+                }
+            }else{
+                add_test(t, t.node_count);
+            }
+        }
+
+        filestream << "\n";
+
+        auto REF_FILES_PATH = shamsys::env::getenv_str("REF_FILES_PATH");
+
+        if (REF_FILES_PATH) {
+            filestream << "set_tests_properties(\n";
+            for (auto tname : cmake_test_list) {
+                filestream << "    \"" << tname << "\"\n";
+            }
+            filestream << "  PROPERTIES\n";
+            filestream << "    ENVIRONMENT \"REF_FILES_PATH="+*REF_FILES_PATH << "\"\n";
+            filestream << ")\n";
+        }
+
+
+        filestream.close();
+
+    }
+
 } // namespace shamtest

@@ -9,7 +9,7 @@
 
 #include "shamalgs/details/random/random.hpp"
 #include "shambase/constants.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shambase/time.hpp"
 #include "shammath/derivatives.hpp"
 #include "shammath/integrator.hpp"

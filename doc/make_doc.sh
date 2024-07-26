@@ -17,6 +17,7 @@ cd _build
 mkdir doxygen
 mkdir mkdocs
 
+cp ../doxygen/warn_doxygen.txt doxygen
 cp -r ../doxygen/html/* doxygen
 cp -r ../mkdocs/site/* mkdocs
 

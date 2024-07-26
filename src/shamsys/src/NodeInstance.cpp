@@ -24,7 +24,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiInfo.hpp"

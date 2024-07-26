@@ -18,7 +18,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shammath/AABB.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammodels/amr/basegodunov/GhostZoneData.hpp"

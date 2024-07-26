@@ -15,8 +15,10 @@
  *
  */
 
-using f32 = float;
-using f64 = double;
+using f32 = float;  ///< Alias for float
+using f64 = double; ///< Alias for double
 
+/// Literal suffix for 32 bit float
 constexpr f32 operator""_f32(long double n) { return f32(n); }
+/// Literal suffix for 64 bit float
 constexpr f64 operator""_f64(long double n) { return f64(n); }

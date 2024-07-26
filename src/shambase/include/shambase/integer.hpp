@@ -115,32 +115,62 @@ namespace shambase {
     };
 
 
-
+    /**
+     * @brief Calculates the number of groups based on the length and group size
+     * 
+     * @param len The total length
+     * @param group_size The size of each group
+     * @return constexpr u32 The number of groups
+     */
     inline constexpr u32 group_count(u32 len, u32 group_size){
         return (len+group_size-1)/group_size;
     }
 
+    /**
+     * @brief Selects and returns the bit at a specific position in the given value
+     * 
+     * @tparam T The type of the value
+     * @param value The value from which to select the bit
+     * @param bitnum The position of the bit to select
+     * @return T The selected bit
+     */
     template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
     inline T select_bit(T value, T bitnum){
         return (value >> bitnum) & 1;
     }
 
-
-
-
-    
+    /**
+     * @brief Generates a mask with only the most significant bit set
+     * 
+     * @tparam T The type of the value
+     * @return constexpr T The mask with only the most significant bit set
+     */
     template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0> 
     inline constexpr T most_sig_bit_mask() noexcept {
         return T(std::make_unsigned_t<T>(1) << (sizeof(T) * 8 - 1));
     }
 
-    
+    /**
+     * @brief Checks if the most significant bit is set in the given value
+     * 
+     * @tparam T The type of the value
+     * @param x The value to check
+     * @return constexpr bool True if the most significant bit is set, false otherwise
+     */
     template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0> 
     inline constexpr bool is_most_sig_bit_set(const T x)noexcept{
         return (x & most_sig_bit_mask<T>());
     }
 
 
+    /**
+     * @brief Calculates the power of a number at compile time
+     * 
+     * @tparam power The power to raise the number to
+     * @tparam T The type of the number
+     * @param a The number to raise to the power
+     * @return constexpr T The result of the power calculation
+     */
     template<i32 power,class T>
     inline constexpr T pow_constexpr(T a) noexcept {
 

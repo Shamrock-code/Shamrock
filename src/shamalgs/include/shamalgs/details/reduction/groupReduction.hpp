@@ -18,7 +18,7 @@
 #include "shamalgs/memory.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
 

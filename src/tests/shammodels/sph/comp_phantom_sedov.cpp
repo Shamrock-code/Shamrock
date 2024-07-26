@@ -19,6 +19,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
+#include "tests/ref_files.hpp"
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -317,11 +318,11 @@ void do_test(bool long_version) {
 
     f64 end_t = 0.001;
 
-    std::string ref_file_start = "reference-files/sedov_blast_phantom/blast_00000";
-    std::string ref_file_0001  = "reference-files/sedov_blast_phantom/blast_00001";
-    std::string ref_file_0010  = "reference-files/sedov_blast_phantom/blast_00010";
-    std::string ref_file_0100  = "reference-files/sedov_blast_phantom/blast_00100";
-    std::string ref_file_1000  = "reference-files/sedov_blast_phantom/blast_01000";
+    std::string ref_file_start = get_reffile_path("sedov_blast_phantom/blast_00000");
+    std::string ref_file_0001  = get_reffile_path("sedov_blast_phantom/blast_00001");
+    std::string ref_file_0010  = get_reffile_path("sedov_blast_phantom/blast_00010");
+    std::string ref_file_0100  = get_reffile_path("sedov_blast_phantom/blast_00100");
+    std::string ref_file_1000  = get_reffile_path("sedov_blast_phantom/blast_01000");
 
     using namespace shammodels::sph;
 

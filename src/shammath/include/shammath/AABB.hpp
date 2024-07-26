@@ -17,7 +17,6 @@
  
 #include "shambase/SourceLocation.hpp"
 #include "shambackends/vec.hpp"
-#include "shambase/vectors.hpp"
 #include "shambackends/math.hpp"
 
 #include <limits>
@@ -39,8 +38,8 @@ namespace shammath {
 
         using T_prop = shambase::VectorProperties<T>;
 
-        T lower;
-        T upper;
+        T lower; ///< Lower bound of the AABB
+        T upper; ///< Upper bound of the AABB
 
         inline AABB() = default;
 
@@ -55,7 +54,7 @@ namespace shammath {
         inline T delt() const { return upper - lower; }
 
         inline typename T_prop::component_type get_volume(){
-            return shambase::product_accumulate(upper - lower);
+            return sham::product_accumulate(upper - lower);
         }
 
         inline T get_center() const noexcept{
@@ -87,19 +86,19 @@ namespace shammath {
         }
 
         [[nodiscard]] inline bool is_not_empty() const noexcept{
-            return shambase::vec_compare_geq(upper , lower);
+            return sham::vec_compare_geq(upper , lower);
         }
 
         [[nodiscard]] inline bool is_volume_not_null() const noexcept{
-            return shambase::vec_compare_g(upper , lower);
+            return sham::vec_compare_g(upper , lower);
         }
 
         [[nodiscard]] inline bool is_surface() const noexcept{
-            return shambase::component_have_only_one_zero(delt()) && (is_not_empty());
+            return sham::component_have_only_one_zero(delt()) && (is_not_empty());
         }
 
         [[nodiscard]] inline bool is_surface_or_volume() const noexcept{
-            return shambase::component_have_at_most_one_zero(delt()) && (is_not_empty());
+            return sham::component_have_at_most_one_zero(delt()) && (is_not_empty());
         }
     };
 

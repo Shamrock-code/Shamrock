@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/details/TestResult.hpp"

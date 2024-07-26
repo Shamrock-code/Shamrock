@@ -19,7 +19,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambase/sycl_utils.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
 
 namespace shamalgs::memory {

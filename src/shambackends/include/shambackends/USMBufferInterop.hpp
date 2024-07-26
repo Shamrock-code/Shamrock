@@ -15,8 +15,7 @@
  *
  */
 
-#include "shambase/sycl_utils.hpp"
-
+#include "shambackends/sycl_utils.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shamcomm/logs.hpp"

@@ -11,6 +11,7 @@ set(Sources
     ComputeTimeDerivative.cpp
     TimeIntegrator.cpp
     ConsToPrim.cpp
+    ComputeCFL.cpp
 )
 set(Headers
 )

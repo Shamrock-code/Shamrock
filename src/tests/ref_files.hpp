@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "shamsys/EnvVariables.hpp"
+#include "shamcmdopt/env.hpp"
 
-inline const std::optional<std::string> REF_FILES_PATH = shamsys::env::getenv_str("REF_FILES_PATH");
+inline const std::optional<std::string> REF_FILES_PATH = shamcmdopt::getenv_str("REF_FILES_PATH");
 
 /**
  * @brief Get the path of a reference file

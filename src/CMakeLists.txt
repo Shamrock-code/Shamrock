@@ -13,7 +13,16 @@ add_custom_command(
 
 
 
-set(as_subproject shamunits shambase shamcomm shambackends shammath shamalgs shamsys shamphys)
+set(as_subproject 
+  shamunits 
+  shambase 
+  shamcomm 
+  shambackends 
+  shammath 
+  shamalgs 
+  shamsys 
+  shamphys 
+  shamcmdopt)
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -32,6 +41,7 @@ add_subdirectory(shammath)
 add_subdirectory(shamalgs)
 add_subdirectory(shamsys)
 add_subdirectory(shamphys)
+add_subdirectory(shamcmdopt)
 
 
 

@@ -24,7 +24,7 @@
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/legacy/cmdopt.hpp"
+#include "shamcmdopt/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"

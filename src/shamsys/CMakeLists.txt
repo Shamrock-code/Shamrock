@@ -6,11 +6,9 @@ set(Sources
         src/NodeInstance.cpp
         src/SyclHelper.cpp
         src/SignalCatch.cpp
-        src/EnvVariables.cpp
         src/MicroBenchmark.cpp
         src/legacy/sycl_handler.cpp
         src/legacy/sycl_mpi_interop.cpp
-        src/legacy/cmdopt.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)
@@ -27,6 +25,7 @@ target_link_libraries(shamsys PUBLIC shambase)
 target_link_libraries(shamsys PUBLIC shamcomm)
 target_link_libraries(shamsys PUBLIC shambackends)
 target_link_libraries(shamsys PUBLIC shamalgs) #TODO shamsys should not depends on algs
+target_link_libraries(shamsys PUBLIC shamcmdopt)
 
 target_include_directories(shamsys PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"

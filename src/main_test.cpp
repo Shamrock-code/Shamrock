@@ -16,7 +16,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/legacy/cmdopt.hpp"
+#include "shamcmdopt/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 #include "version.hpp"

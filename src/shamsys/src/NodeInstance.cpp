@@ -31,7 +31,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/EnvVariables.hpp"
 #include "shamsys/MpiWrapper.hpp"
-#include "shamsys/legacy/cmdopt.hpp"
+#include "shamcmdopt/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 

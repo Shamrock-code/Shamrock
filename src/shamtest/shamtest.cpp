@@ -16,7 +16,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
-#include "shamsys/EnvVariables.hpp"
+#include "shamcmdopt/env.hpp"
 #include <pybind11/embed.h>
 #include <sstream>
 #include <string>
@@ -667,7 +667,7 @@ namespace shamtest {
 
         filestream << "\n";
 
-        auto REF_FILES_PATH = shamsys::env::getenv_str("REF_FILES_PATH");
+        auto REF_FILES_PATH = shamcmdopt::getenv_str("REF_FILES_PATH");
 
         if (REF_FILES_PATH) {
             filestream << "set_tests_properties(\n";

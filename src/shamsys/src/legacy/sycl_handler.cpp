@@ -24,7 +24,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
-#include "shamsys/legacy/cmdopt.hpp"
+#include "shamcmdopt/cmdopt.hpp"
 
 #include "shamsys/legacy/log.hpp"
 #include "shambase/string.hpp"

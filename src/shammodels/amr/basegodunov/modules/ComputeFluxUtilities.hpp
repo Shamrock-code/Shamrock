@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file ComputeDustFluxUtilities.hpp
+ * @file ComputeFluxUtilities.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *

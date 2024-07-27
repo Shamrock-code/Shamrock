@@ -15,6 +15,7 @@
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
 #include "shamcmdopt/cmdopt.hpp"
+#include "shamcmdopt/env.hpp"
 #include <string_view>
 #include <iostream>
 #include <optional>
@@ -174,6 +175,7 @@ namespace shamcmdopt {
             fmt::println(shambase::format_printf(
                 "%-15s %-15s : %s", n.c_str(), arg_print.c_str(), desc.c_str()));
         }
+        print_help_env_var();
     }
 
     bool is_help_mode() {

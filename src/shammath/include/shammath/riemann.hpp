@@ -10,7 +10,8 @@
 
 /**
  * @file riemann.hpp
- * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk)
+ * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */

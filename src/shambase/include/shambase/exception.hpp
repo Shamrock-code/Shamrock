@@ -10,7 +10,7 @@
 
 /**
  * @file exception.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  *
  * @brief This header file contains utility functions related to exception handling in the code.
  *

@@ -10,7 +10,7 @@
 
 /**
  * @file SourceLocation.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Source location utility
  * @date 2023-02-24
  */

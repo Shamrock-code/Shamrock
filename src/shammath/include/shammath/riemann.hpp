@@ -12,8 +12,9 @@
  * @file riemann.hpp
  * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk)
  * @brief
- *
+ * From original version by Thomas Guillet (T.A.Guillet@exeter.ac.uk)
  */
 
 #include "shambackends/vec.hpp"

@@ -274,7 +274,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
     storage.grad_rho.set(std::move(result));
 }
 
-
+/*
 template<class Tvec, class TgridVec>
 template<SlopeMode mode>
 void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute_grad_rho_dust_van_leer()
@@ -368,7 +368,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
     storage.grad_rho_dust.set(std::move(result));
 
 }
-
+*/
 
 
 
@@ -482,6 +482,8 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
     storage.dz_v.set(std::move(resultz));
 }
 
+
+/*
 template<class Tvec, class TgridVec>
 template<SlopeMode mode>
 void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
@@ -596,6 +598,8 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
 
     }
 
+*/
+
 
 template<class Tvec, class TgridVec>
 template<SlopeMode mode>
@@ -709,6 +713,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
     }
 }
 
+/*
 template <class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_rho_dust_van_leer() {
     if(solver_config.slope_config == SlopeMode::None) {_compute_grad_rho_dust_van_leer<SlopeMode::None>();}
@@ -719,6 +724,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_
     else { shambase::throw_unimplemented();}
 
 }
+*/
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_v_van_leer() {
@@ -737,6 +743,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_
     }
 }
 
+/*
 template <class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_v_dust_van_leer() {
     if(solver_config.slope_config == SlopeMode::None) {_compute_grad_v_dust_van_leer<SlopeMode::None>();}
@@ -747,6 +754,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_
     else { shambase::throw_unimplemented();}
 
 }
+*/
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_P_van_leer() {

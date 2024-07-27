@@ -42,14 +42,14 @@ namespace shammodels::basegodunov::modules {
         ShamrockCtx &context;
         Config &solver_config;
         Storage &storage;
-        u32 ndust = solver_config.ndust;
+        // u32 ndust = solver_config.ndust;
 
         ComputeFlux(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void compute_flux();
 
-        protected:
+        private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
     };

@@ -17,14 +17,13 @@
 
 #include "shammodels/amr/basegodunov/modules/ComputeFlux.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
-#include "shammodels/amr/basegodunov/modules/ComputeDustFluxUtilities.hpp"
-#include "shammodels/amr/basegodunov/modules/ComputeFluxUtilities.hpp"
+// #include "shammodels/amr/basegodunov/modules/ComputeDustFluxUtilities.hpp"
+// #include "shammodels/amr/basegodunov/modules/ComputeFluxUtilities.hpp"
 
 
-// using RiemmanSolverMode = shammodels::basegodunov::RiemmanSolverMode;
+using RiemmanSolverMode = shammodels::basegodunov::RiemmanSolverMode;
 using Direction             = shammodels::basegodunov::modules::Direction;
 
-/**
 template<class Tvec, RiemmanSolverMode mode, Direction dir>
 class FluxCompute{
     public: 
@@ -376,7 +375,8 @@ void compute_fluxes_zm(
     });
 }
 
-*/
+
+
 template<class T>
 using NGLink = shammodels::basegodunov::modules::NeighGraphLinkField<T>;
 
@@ -408,19 +408,19 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
 
 
 
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_xp;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_xm;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_yp;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_ym;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_zp;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_zm;
+    // shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_xp;
+    // shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_xm;
+    // shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_yp;
+    // shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_ym;
+    // shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_zp;
+    // shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_zm;
 
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_xp;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_xm;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_yp;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_ym;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_zp;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_zm;
+    // shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_xp;
+    // shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_xm;
+    // shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_yp;
+    // shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_ym;
+    // shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_zp;
+    // shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_zm;
 
 
     Tscal gamma = solver_config.eos_gamma;
@@ -450,19 +450,19 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         NGLink<std::array<Tscal, 2>> &press_face_zm = storage.press_face_zm.get().get(id);
 
 
-        NGLink<std::array<Tscal, 2>> &rho_dust_face_xp = storage.rho_dust_face_xp.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_dust_face_xm = storage.rho_dust_face_xm.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_dust_face_yp = storage.rho_dust_face_yp.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_dust_face_ym = storage.rho_dust_face_ym.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_dust_face_zp = storage.rho_dust_face_zp.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_dust_face_zm = storage.rho_dust_face_zm.get().get(id);
+        // NGLink<std::array<Tscal, 2>> &rho_dust_face_xp = storage.rho_dust_face_xp.get().get(id);
+        // NGLink<std::array<Tscal, 2>> &rho_dust_face_xm = storage.rho_dust_face_xm.get().get(id);
+        // NGLink<std::array<Tscal, 2>> &rho_dust_face_yp = storage.rho_dust_face_yp.get().get(id);
+        // NGLink<std::array<Tscal, 2>> &rho_dust_face_ym = storage.rho_dust_face_ym.get().get(id);
+        // NGLink<std::array<Tscal, 2>> &rho_dust_face_zp = storage.rho_dust_face_zp.get().get(id);
+        // NGLink<std::array<Tscal, 2>> &rho_dust_face_zm = storage.rho_dust_face_zm.get().get(id);
 
-        NGLink<std::array<Tvec, 2>> &vel_dust_face_xp = storage.vel_dust_face_xp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_dust_face_xm = storage.vel_dust_face_xm.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_dust_face_yp = storage.vel_dust_face_yp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_dust_face_ym = storage.vel_dust_face_ym.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_dust_face_zp = storage.vel_dust_face_zp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_dust_face_zm = storage.vel_dust_face_zm.get().get(id);
+        // NGLink<std::array<Tvec, 2>> &vel_dust_face_xp = storage.vel_dust_face_xp.get().get(id);
+        // NGLink<std::array<Tvec, 2>> &vel_dust_face_xm = storage.vel_dust_face_xm.get().get(id);
+        // NGLink<std::array<Tvec, 2>> &vel_dust_face_yp = storage.vel_dust_face_yp.get().get(id);
+        // NGLink<std::array<Tvec, 2>> &vel_dust_face_ym = storage.vel_dust_face_ym.get().get(id);
+        // NGLink<std::array<Tvec, 2>> &vel_dust_face_zp = storage.vel_dust_face_zp.get().get(id);
+        // NGLink<std::array<Tvec, 2>> &vel_dust_face_zm = storage.vel_dust_face_zm.get().get(id);
 
 
         const u32 ixp = oriented_cell_graph.xp;
@@ -495,26 +495,26 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         NGLink<Tscal> buf_flux_rhoe_face_zm{*oriented_cell_graph.graph_links[izm]};
 
 
-        NGLink<Tscal> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
-        NGLink<Tscal> buf_flux_rho_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
-        NGLink<Tscal> buf_flux_rho_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
-        NGLink<Tscal> buf_flux_rho_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
-        NGLink<Tscal> buf_flux_rho_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
-        NGLink<Tscal> buf_flux_rho_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
+        // NGLink<Tscal> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
+        // NGLink<Tscal> buf_flux_rho_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
+        // NGLink<Tscal> buf_flux_rho_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
+        // NGLink<Tscal> buf_flux_rho_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
+        // NGLink<Tscal> buf_flux_rho_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
+        // NGLink<Tscal> buf_flux_rho_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
 
 
-        NGLink<Tvec> buf_flux_rhov_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
+        // NGLink<Tvec> buf_flux_rhov_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
+        // NGLink<Tvec> buf_flux_rhov_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
+        // NGLink<Tvec> buf_flux_rhov_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
+        // NGLink<Tvec> buf_flux_rhov_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
+        // NGLink<Tvec> buf_flux_rhov_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
+        // NGLink<Tvec> buf_flux_rhov_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
 
 
         if(solver_config.riemman_config == Rusanov){
             constexpr RiemmanSolverMode mode = Rusanov;
             logger::debug_ln("[AMR Flux]", "compute rusanov xp patch", id);
-            compute_fluxes_dir<mode,Tvec, Tscal, Direction::xp>(
+            compute_fluxes_xp<mode,Tvec, Tscal>(
                 q,
                 rho_face_xp.link_count,
                 rho_face_xp.link_graph_field,
@@ -526,7 +526,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 gamma);
         
             logger::debug_ln("[AMR Flux]", "compute rusanov yp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
+            compute_fluxes_yp<mode, Tvec, Tscal>(
                 q,
                 rho_face_yp.link_count,
                 rho_face_yp.link_graph_field,
@@ -537,7 +537,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_yp.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute rusanov zp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
+            compute_fluxes_zp<mode, Tvec, Tscal>(
                 q,
                 rho_face_zp.link_count,
                 rho_face_zp.link_graph_field,
@@ -548,7 +548,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_zp.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute rusanov xm patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
+            compute_fluxes_xm<mode, Tvec, Tscal>(
                 q,
                 rho_face_xm.link_count,
                 rho_face_xm.link_graph_field,
@@ -559,7 +559,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_xm.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute rusanov ym patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
+            compute_fluxes_ym<mode, Tvec, Tscal>(
                 q,
                 rho_face_ym.link_count,
                 rho_face_ym.link_graph_field,
@@ -570,7 +570,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_ym.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute rusanov zm patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
+            compute_fluxes_zm<mode, Tvec, Tscal>(
                 q,
                 rho_face_zm.link_count,
                 rho_face_zm.link_graph_field,
@@ -583,7 +583,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         }else if(solver_config.riemman_config == HLL){
             constexpr RiemmanSolverMode mode = HLL;
             logger::debug_ln("[AMR Flux]", "compute HLL xp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
+            compute_fluxes_xp<mode, Tvec, Tscal>(
                 q,
                 rho_face_xp.link_count,
                 rho_face_xp.link_graph_field,
@@ -594,7 +594,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_xp.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL yp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
+            compute_fluxes_yp<mode, Tvec, Tscal>(
                 q,
                 rho_face_yp.link_count,
                 rho_face_yp.link_graph_field,
@@ -605,7 +605,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_yp.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL zp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
+            compute_fluxes_zp<mode, Tvec, Tscal>(
                 q,
                 rho_face_zp.link_count,
                 rho_face_zp.link_graph_field,
@@ -616,7 +616,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_zp.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL xm patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
+            compute_fluxes_xm<mode, Tvec, Tscal>(
                 q,
                 rho_face_xm.link_count,
                 rho_face_xm.link_graph_field,
@@ -627,7 +627,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_xm.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL ym patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
+            compute_fluxes_ym<mode, Tvec, Tscal>(
                 q,
                 rho_face_ym.link_count,
                 rho_face_ym.link_graph_field,
@@ -638,7 +638,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_ym.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL zm patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
+            compute_fluxes_zm<mode, Tvec, Tscal>(
                 q,
                 rho_face_zm.link_count,
                 rho_face_zm.link_graph_field,
@@ -650,6 +650,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 gamma);
         }
 
+/*
         if(solver_config.dust_riemann_config == DHLL)
         {
             constexpr DustRiemannSolverMode mode = DHLL;
@@ -763,7 +764,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rho_dust_face_zm.link_graph_field,
                 buf_flux_rhov_dust_face_zm.link_graph_field);
         }
-
+*/
         flux_rho_face_xp.add_obj(id, std::move(buf_flux_rho_face_xp));
         flux_rho_face_xm.add_obj(id, std::move(buf_flux_rho_face_xm));
         flux_rho_face_yp.add_obj(id, std::move(buf_flux_rho_face_yp));
@@ -785,19 +786,19 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         flux_rhoe_face_zp.add_obj(id, std::move(buf_flux_rhoe_face_zp));
         flux_rhoe_face_zm.add_obj(id, std::move(buf_flux_rhoe_face_zm));
 
-        flux_rho_dust_face_xp.add_obj(id, std::move(buf_flux_rho_dust_face_xp));
-        flux_rho_dust_face_xm.add_obj(id, std::move(buf_flux_rho_dust_face_xm));
-        flux_rho_dust_face_yp.add_obj(id, std::move(buf_flux_rho_dust_face_yp));
-        flux_rho_dust_face_ym.add_obj(id, std::move(buf_flux_rho_dust_face_ym));
-        flux_rho_dust_face_zp.add_obj(id, std::move(buf_flux_rho_dust_face_zp));
-        flux_rho_dust_face_zm.add_obj(id, std::move(buf_flux_rho_dust_face_zm));
+        // flux_rho_dust_face_xp.add_obj(id, std::move(buf_flux_rho_dust_face_xp));
+        // flux_rho_dust_face_xm.add_obj(id, std::move(buf_flux_rho_dust_face_xm));
+        // flux_rho_dust_face_yp.add_obj(id, std::move(buf_flux_rho_dust_face_yp));
+        // flux_rho_dust_face_ym.add_obj(id, std::move(buf_flux_rho_dust_face_ym));
+        // flux_rho_dust_face_zp.add_obj(id, std::move(buf_flux_rho_dust_face_zp));
+        // flux_rho_dust_face_zm.add_obj(id, std::move(buf_flux_rho_dust_face_zm));
 
-        flux_rhov_dust_face_xp.add_obj(id, std::move(buf_flux_rhov_dust_face_xp));
-        flux_rhov_dust_face_xm.add_obj(id, std::move(buf_flux_rhov_dust_face_xm));
-        flux_rhov_dust_face_yp.add_obj(id, std::move(buf_flux_rhov_dust_face_yp));
-        flux_rhov_dust_face_ym.add_obj(id, std::move(buf_flux_rhov_dust_face_ym));
-        flux_rhov_dust_face_zp.add_obj(id, std::move(buf_flux_rhov_dust_face_zp));
-        flux_rhov_dust_face_zm.add_obj(id, std::move(buf_flux_rhov_dust_face_zm));
+        // flux_rhov_dust_face_xp.add_obj(id, std::move(buf_flux_rhov_dust_face_xp));
+        // flux_rhov_dust_face_xm.add_obj(id, std::move(buf_flux_rhov_dust_face_xm));
+        // flux_rhov_dust_face_yp.add_obj(id, std::move(buf_flux_rhov_dust_face_yp));
+        // flux_rhov_dust_face_ym.add_obj(id, std::move(buf_flux_rhov_dust_face_ym));
+        // flux_rhov_dust_face_zp.add_obj(id, std::move(buf_flux_rhov_dust_face_zp));
+        // flux_rhov_dust_face_zm.add_obj(id, std::move(buf_flux_rhov_dust_face_zm));
 });
 
     storage.flux_rho_face_xp.set(std::move(flux_rho_face_xp));
@@ -819,18 +820,18 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
     storage.flux_rhoe_face_zp.set(std::move(flux_rhoe_face_zp));
     storage.flux_rhoe_face_zm.set(std::move(flux_rhoe_face_zm));
 
-    storage.flux_rho_dust_face_xp.set(std::move(flux_rho_dust_face_xp));
-    storage.flux_rho_dust_face_xm.set(std::move(flux_rho_dust_face_xm));
-    storage.flux_rho_dust_face_yp.set(std::move(flux_rho_dust_face_yp));
-    storage.flux_rho_dust_face_ym.set(std::move(flux_rho_dust_face_ym));
-    storage.flux_rho_dust_face_zp.set(std::move(flux_rho_dust_face_zp));
-    storage.flux_rho_dust_face_zm.set(std::move(flux_rho_dust_face_zm));
-    storage.flux_rhov_dust_face_xp.set(std::move(flux_rhov_dust_face_xp));
-    storage.flux_rhov_dust_face_xm.set(std::move(flux_rhov_dust_face_xm));
-    storage.flux_rhov_dust_face_yp.set(std::move(flux_rhov_dust_face_yp));
-    storage.flux_rhov_dust_face_ym.set(std::move(flux_rhov_dust_face_ym));
-    storage.flux_rhov_dust_face_zp.set(std::move(flux_rhov_dust_face_zp));
-    storage.flux_rhov_dust_face_zm.set(std::move(flux_rhov_dust_face_zm));
+    // storage.flux_rho_dust_face_xp.set(std::move(flux_rho_dust_face_xp));
+    // storage.flux_rho_dust_face_xm.set(std::move(flux_rho_dust_face_xm));
+    // storage.flux_rho_dust_face_yp.set(std::move(flux_rho_dust_face_yp));
+    // storage.flux_rho_dust_face_ym.set(std::move(flux_rho_dust_face_ym));
+    // storage.flux_rho_dust_face_zp.set(std::move(flux_rho_dust_face_zp));
+    // storage.flux_rho_dust_face_zm.set(std::move(flux_rho_dust_face_zm));
+    // storage.flux_rhov_dust_face_xp.set(std::move(flux_rhov_dust_face_xp));
+    // storage.flux_rhov_dust_face_xm.set(std::move(flux_rhov_dust_face_xm));
+    // storage.flux_rhov_dust_face_yp.set(std::move(flux_rhov_dust_face_yp));
+    // storage.flux_rhov_dust_face_ym.set(std::move(flux_rhov_dust_face_ym));
+    // storage.flux_rhov_dust_face_zp.set(std::move(flux_rhov_dust_face_zp));
+    // storage.flux_rhov_dust_face_zm.set(std::move(flux_rhov_dust_face_zm));
 }
 
 template class shammodels::basegodunov::modules::ComputeFlux<f64_3, i64_3>;

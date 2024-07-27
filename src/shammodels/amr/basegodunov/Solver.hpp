@@ -59,7 +59,7 @@ namespace shammodels::basegodunov {
         RiemmanSolverMode riemman_config = HLL;
         DustRiemannSolverMode dust_riemann_config=DHLL;
         SlopeMode slope_config = VanLeer_sym;
-        u32 ndust;
+        u32 ndust = 0;
     };
 
     template<class Tvec, class TgridVec>
@@ -90,8 +90,11 @@ namespace shammodels::basegodunov {
             context.pdata_layout_add_field<Tvec>("rhovel", AMRBlock::block_size);
             context.pdata_layout_add_field<Tscal>("rhoetot", AMRBlock::block_size);
 
-            context.pdata_layout_add_field<TgridVec>("rho_dust", (ndust * AMRBlock::block_size));  
-            context.pdata_layout_add_field<TgridVec>("rhovel_dust", (ndust* AMRBlock::block_size));
+            if constexpr (ndust > 0)
+            {
+                context.pdata_layout_add_field<TgridVec>("rho_dust", (ndust * AMRBlock::block_size));  
+                context.pdata_layout_add_field<TgridVec>("rhovel_dust", (ndust* AMRBlock::block_size));
+            }
         
         }
 

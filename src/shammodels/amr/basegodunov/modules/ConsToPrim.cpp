@@ -38,17 +38,17 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
         });
 
 
-    shamrock::ComputeField<Tvec> v_dust_ghost = utility.make_compute_field<Tvec>(
-        "vel_dust", ndust*AMRBlock::block_size, [&](u64 id) {
-            return storage.merged_patchdata_ghost.get().get(id).total_elements;
-        });
+    // shamrock::ComputeField<Tvec> v_dust_ghost = utility.make_compute_field<Tvec>(
+    //     "vel_dust", ndust*AMRBlock::block_size, [&](u64 id) {
+    //         return storage.merged_patchdata_ghost.get().get(id).total_elements;
+    //     });
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
     u32 irhov_ghost                                = ghost_layout.get_field_idx<Tvec>("rhovel");
     u32 irhoe_ghost                                = ghost_layout.get_field_idx<Tscal>("rhoetot");
 
-    u32 irho_dust_ghost                            = ghost_layout.get_field_idx<Tscal>("rho", ndust);
-    u32 irhov_dust_ghost                           = ghost_layout.get_field_idx<Tvec>("rhovel_dust", ndust);
+    // u32 irho_dust_ghost                            = ghost_layout.get_field_idx<Tscal>("rho", ndust);
+    // u32 irhov_dust_ghost                           = ghost_layout.get_field_idx<Tvec>("rhovel_dust", ndust);
 
     storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPDat &mpdat) {
 
@@ -61,8 +61,8 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
         sycl::buffer<Tvec> &buf_rhov  = mpdat.pdat.get_field_buf_ref<Tvec>(irhov_ghost);
         sycl::buffer<Tscal> &buf_rhoe = mpdat.pdat.get_field_buf_ref<Tscal>(irhoe_ghost);
 
-        sycl::buffer<Tscal> &buf_rho_dust  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
-        sycl::buffer<Tvec> &buf_rhov_dust  = mpdat.pdat.get_field_buf_ref<Tvec>(irhov_dust_ghost);
+        // sycl::buffer<Tscal> &buf_rho_dust  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
+        // sycl::buffer<Tvec> &buf_rhov_dust  = mpdat.pdat.get_field_buf_ref<Tvec>(irhov_dust_ghost);
 
         q.submit([&](sycl::handler &cgh) {
 
@@ -70,8 +70,8 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
             sycl::accessor rhovel{buf_rhov, cgh, sycl::read_only};
             sycl::accessor rhoe{buf_rhoe, cgh, sycl::read_only};
 
-            sycl::accessor rho_dust{buf_rho_dust, cgh, sycl::read_only};
-            sycl::accessor rhovel_dust{buf_rhov_dust, cgh, sycl::read_only};
+            // sycl::accessor rho_dust{buf_rho_dust, cgh, sycl::read_only};
+            // sycl::accessor rhovel_dust{buf_rhov_dust, cgh, sycl::read_only};
 
             sycl::accessor vel{
                 shambase::get_check_ref(v_ghost.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
@@ -79,8 +79,8 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
                 shambase::get_check_ref(P_ghost.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
             
 
-            sycl::accessor vel_dust{
-                shambase::get_check_ref(v_dust_ghost.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
+            // sycl::accessor vel_dust{
+            //     shambase::get_check_ref(v_dust_ghost.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
 
             Tscal gamma  = solver_config.eos_gamma;
 
@@ -111,7 +111,7 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
 
     storage.vel.set(std::move(v_ghost));
     storage.press.set(std::move(P_ghost));
-    storage.vel_dust.set(std::move(v_dust_ghost));
+    // storage.vel_dust.set(std::move(v_dust_ghost));
 }
 
 template class shammodels::basegodunov::modules::ConsToPrim<f64_3, i64_3>;

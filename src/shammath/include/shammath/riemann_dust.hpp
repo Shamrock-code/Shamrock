@@ -10,7 +10,8 @@
 
 /**
  * @file riemann_dust.hpp
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This file contain states and Riemann solvers for dust
  */
 

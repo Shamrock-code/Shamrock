@@ -10,7 +10,7 @@
 
 /**
  * @file constants.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Class holding the value of numerous constants
  * generated from the following source
 

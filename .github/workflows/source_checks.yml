@@ -17,4 +17,8 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v3
     - uses: pre-commit/action@v3.0.1
-
+    - name: suggest changes
+      if: always() && github.event_name == 'pull_request'
+      uses: reviewdog/action-suggester@v1
+      with:
+        tool_name: git-pre-commit

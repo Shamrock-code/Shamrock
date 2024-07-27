@@ -10,7 +10,7 @@
 
 /**
  * @file type_traits.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Traits for C++ types
  *
  * This file contains utility traits classes for C++ types.

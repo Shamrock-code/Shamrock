@@ -66,7 +66,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
             
             sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
 
-            Tscal C_safe = 0.5; // TODO move to config
+            Tscal C_safe = 0.9; // TODO move to config
             Tscal gamma = solver_config.eos_gamma;
 
             
@@ -82,9 +82,11 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
                 
                 auto prim_state = shammath::cons_to_prim(conststate, gamma);
 
+                constexpr Tscal div = 1./3.;
+
                 Tscal cs = sound_speed(prim_state, gamma);
                 Tscal vnorm = sycl::length(prim_state.vel);
-                Tscal dt = C_safe * dx / ( cs+ vnorm);
+                Tscal dt = C_safe * dx * div/ ( cs+ vnorm);
                 
                 cfl_dt[gid] = dt;
             });

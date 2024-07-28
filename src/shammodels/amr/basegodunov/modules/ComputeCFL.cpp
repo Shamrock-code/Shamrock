@@ -66,7 +66,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
             
             sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
 
-            Tscal C_safe = 0.9; // TODO move to config
+            Tscal C_safe = solver_config.Csafe;
             Tscal gamma = solver_config.eos_gamma;
 
             

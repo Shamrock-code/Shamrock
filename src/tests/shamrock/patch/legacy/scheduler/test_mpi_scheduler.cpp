@@ -26,7 +26,7 @@
 
 #include "test_patch_utils.hpp"
 
-#include "shamrock/sfc/hilbert.hpp"
+#include "shammath/sfc/hilbert.hpp"
 
 
 

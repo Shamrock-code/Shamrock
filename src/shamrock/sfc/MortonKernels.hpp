@@ -14,7 +14,7 @@
  * @brief
  */
 
-#include "shamrock/sfc/morton.hpp"
+#include "shammath/sfc/morton.hpp"
 
 namespace shamrock::sfc{
 

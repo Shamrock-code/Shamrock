@@ -16,7 +16,7 @@
  */
 
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/sfc/hilbert.hpp"
+#include "shammath/sfc/hilbert.hpp"
 
 #include <vector>
 #include <tuple>

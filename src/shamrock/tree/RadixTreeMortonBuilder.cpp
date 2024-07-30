@@ -17,8 +17,8 @@
 #include "shamalgs/algorithm.hpp"
 #include "shambase/exception.hpp"
 #include "shambackends/math.hpp"
-#include "shamrock/sfc/MortonKernels.hpp"
-#include "shamrock/sfc/morton.hpp"
+#include "shammath/sfc/MortonKernels.hpp"
+#include "shammath/sfc/morton.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template<class morton_t, class pos_t, u32 dim>

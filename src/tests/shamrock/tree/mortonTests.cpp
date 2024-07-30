@@ -8,7 +8,7 @@
 
 #include "shamtest/shamtest.hpp"
 
-#include "shamrock/sfc/morton.hpp"
+#include "shammath/sfc/morton.hpp"
 #include <memory>
 #include <vector>
 

@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/sfc/morton.hpp"
+#include "shammath/sfc/morton.hpp"
 #include "shamtest/shamtest.hpp"
 
 

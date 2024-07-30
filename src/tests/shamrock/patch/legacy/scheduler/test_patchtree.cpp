@@ -13,7 +13,7 @@
 #include <random>
 #include <vector>
 #include "shamrock/scheduler/scheduler_patch_list.hpp"
-#include "shamrock/sfc/hilbert.hpp"
+#include "shammath/sfc/hilbert.hpp"
 
 
 #if false

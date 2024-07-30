@@ -8,7 +8,7 @@
 
 #include "shamtest/shamtest.hpp"
 
-#include "shamrock/sfc/hilbert.hpp"
+#include "shammath/sfc/hilbert.hpp"
 #if false
 
 Test_start("sfc::", hilbert, 1) {

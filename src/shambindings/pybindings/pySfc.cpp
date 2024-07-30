@@ -16,9 +16,9 @@
 
 #include "shambindings/pybind11_stl.hpp"
 
-#include "shamrock/sfc/bmi.hpp"
-#include "shamrock/sfc/morton.hpp"
-#include "shamrock/sfc/hilbert.hpp"
+#include "shammath/sfc/bmi.hpp"
+#include "shammath/sfc/morton.hpp"
+#include "shammath/sfc/hilbert.hpp"
 #include <variant>
 
 using namespace shamrock::sfc;

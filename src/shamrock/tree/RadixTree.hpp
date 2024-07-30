@@ -30,7 +30,7 @@
 #include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamsys/legacy/log.hpp"
 
-#include "shamrock/sfc/morton.hpp"
+#include "shammath/sfc/morton.hpp"
 #include "kernels/compute_ranges.hpp"
 #include "kernels/convert_ranges.hpp"
 #include "kernels/karras_alg.hpp"

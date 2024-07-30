@@ -17,7 +17,6 @@
 #include "fmt/core.h"
 #include "shammath/riemann.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
 
 template<class Tvec, class TgridVec>
 auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl() -> Tscal {

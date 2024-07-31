@@ -1,6 +1,6 @@
 ignore_list = [
     "src/shambackends/include/shambackends/sycl.hpp",
-    "src/shambackends/include/shambackends/typeAliasFp16.hpp"
+    #"src/shambackends/include/shambackends/typeAliasFp16.hpp"
 ]
 
 

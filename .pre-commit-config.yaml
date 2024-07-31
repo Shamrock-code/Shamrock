@@ -5,17 +5,30 @@ repos:
   #- id: trailing-whitespace 
   #- id: end-of-file-fixer  # add EOF "\n" if missing
   - id: check-merge-conflict
+    log_file: log_precommit_check-merge-conflict
+
   - id: check-executables-have-shebangs
+    log_file: log_precommit_check-executables-have-shebangs
+
   - id: check-shebang-scripts-are-executable
+    log_file: log_precommit_check-shebang-scripts-are-executable
+
   - id: check-added-large-files
     args: ['--maxkb=50'] 
+    log_file: log_precommit_check-added-large-files
+
   - id: check-case-conflict
+    log_file: log_precommit_check-case-conflict
+
   #- id: check-symlinks
   #- id: check-xml
   - id: check-yaml
     args: [--unsafe]
     log_file: log_precommit_check-yaml
+    
   - id: detect-private-key
+    log_file: log_precommit_detect-private-key
+
   #- id: pretty-format-json
 
 #- repo: https://github.com/Lucas-C/pre-commit-hooks
@@ -43,6 +56,7 @@ repos:
   rev: 0.28.6
   hooks:
   - id: check-github-workflows
+    log_file: log_precommit_check-github-workflows
 
 
 # Clang format the codebase automatically

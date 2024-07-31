@@ -13,8 +13,6 @@
  */
 
 #include "shambase/string.hpp"
-#include "fmt/core.h"
-#include "fmt/std.h"
 #include "shamcmdopt/env.hpp"
 #include <optional>
 #include <utility>

@@ -21,6 +21,27 @@ jobs:
 
     - uses: pre-commit/action@v3.0.1
 
+
+    - name: rerun precommit for logs
+      if: success()
+      run: pre-commit run --all-files > out
+
+    - name: make file comment
+      if: success()
+      run: |
+        echo "Pre-commit : ✅ check \n\`\`\`$(pre-commit run --all-files)\`\`\`\n\n Starting test CI pipeline." > message.md
+
+    - name: Comment doxygen diff on PR
+      if: success()
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: message.md
+        comment_tag: pre-commit-comment
+        mode: recreate
+        create_if_not_exists: true
+
+        
+
     - name : Generate diff
       if: failure()
       run: git diff > diff-pre-commit
@@ -38,15 +59,6 @@ jobs:
       uses: thollander/actions-comment-pull-request@v2
       with:
         filePath: out.md
-        comment_tag: pre-commit-comment
-        mode: recreate
-        create_if_not_exists: true
-    
-    - name: Comment doxygen diff on PR
-      if: success()
-      uses: thollander/actions-comment-pull-request@v2
-      with:
-        message: "Pre-commit check : ✅"
         comment_tag: pre-commit-comment
         mode: recreate
         create_if_not_exists: true

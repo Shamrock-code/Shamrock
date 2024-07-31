@@ -52,7 +52,7 @@ jobs:
           doxygen dox.conf
 
       - name: Archive doxygen warnings
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: doxygen_warning_main
           path: doc/doxygen/warn_doxygen.txt
@@ -73,13 +73,13 @@ jobs:
           python-version: '3.10' 
 
       - name: 'Download PR doxygen warning'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: doxygen_warning
           path: PR_dox_output
 
       - name: 'Download PR doxygen warning'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: doxygen_warning_main
           path: main_dox_output

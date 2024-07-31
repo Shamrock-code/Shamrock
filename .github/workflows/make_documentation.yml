@@ -43,13 +43,13 @@ jobs:
         run: tar -cvf documentation.tar.gz doc/_build
 
       - name: Archive generated doc
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: shamrock_documentation
           path: documentation.tar.gz
 
       - name: Archive generated doc (Warning doxygen)
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: doxygen_warning
           path: doc/_build/doxygen/warn_doxygen.txt

@@ -96,13 +96,13 @@ jobs:
               -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp"\
 
       - name: Archive code coverage results 1
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: code-coverage-list-acpp_omp_debug
           path: acpp_omp_debug/coverage_list.txt
 
       - name: Archive code coverage results 2
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: code-coverage-report-acpp_omp_debug
           path: acpp_omp_debug/out_cov/

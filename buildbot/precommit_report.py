@@ -1,6 +1,21 @@
 import glob
 import sys
 
+import yaml
+
+precommit_yaml = {}
+with open('.pre-commit-config.yaml', 'r') as file:
+   precommit_yaml = yaml.safe_load(file)
+
+logfiles_map = {}
+for repos in precommit_yaml["repos"]:
+    for hooks in repos["hooks"]:
+        if "log_file" in hooks:
+            logfiles_map[hooks["log_file"]] = {
+                    "id" : hooks["id"]
+                }
+#print(logfiles_map)
+
 file_list = glob.glob("log_precommit_*",recursive=True)
 
 def load_file(fname):
@@ -29,6 +44,7 @@ for f in file_list:
     elif f == "log_precommit_doxygen_header":
         print(log_f)
     else:
+        print("# ❌",logfiles_map[f]["id"])
         print("```")
         print(log_f)
         print("```")

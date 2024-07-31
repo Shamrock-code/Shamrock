@@ -29,7 +29,13 @@ jobs:
     - name: make file comment
       if: success()
       run: |
-        echo "Pre-commit : ✅ check \n\`\`\`$(pre-commit run --all-files)\`\`\`\n\n Starting test CI pipeline." > message.md
+        echo "Pre-commit : ✅ check 
+        \`\`\`
+        $(pre-commit run --all-files)
+        \`\`\`
+        
+        Test pipeline can run.
+        " > message.md
 
     - name: Comment doxygen diff on PR
       if: success()
@@ -40,7 +46,7 @@ jobs:
         mode: recreate
         create_if_not_exists: true
 
-        
+
 
     - name : Generate diff
       if: failure()

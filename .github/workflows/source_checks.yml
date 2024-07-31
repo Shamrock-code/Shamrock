@@ -21,8 +21,13 @@ jobs:
 
     - uses: pre-commit/action@v3.0.1
 
-    - run: git diff > diff-pre-commit
-    - run: cat diff-pre-commit
+    - name : Generate diff
+      if: failure()
+      run: git diff > diff-pre-commit
+      
+    - name : Cat diff
+      if: failure()
+      run: cat diff-pre-commit
 
     #- name: suggest changes
     #  if: always() && github.event_name == 'pull_request'

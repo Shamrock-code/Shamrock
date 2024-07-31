@@ -61,7 +61,7 @@ Any line break before this header or change in its formatting will trigger the f
 
     rep += "List of files with errors :\n\n"
     for i in missing_licence:
-        rep += (" - "+i.split(abs_proj_dir)[-1])
+        rep += (" - `"+i.split(abs_proj_dir)[-1]+"`\n")
 
     write_file("log_precommit_license_check", rep)
 

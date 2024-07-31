@@ -120,7 +120,7 @@ At some point we will refer to a guide in the doc about this
     rep += "List of files with errors :\n\n"
     
     for i in missing_doxygenfilehead:
-        rep += (" - "+i.split(abs_proj_dir)[-1])
+        rep += (" - `"+i.split(abs_proj_dir)[-1]+"`\n")
 
     write_file("log_precommit_doxygen_header", rep)
 

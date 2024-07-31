@@ -6,9 +6,10 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
 
 /**
- * @file typeAliasF6.hpp
+ * @file typeAliasFp16.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *

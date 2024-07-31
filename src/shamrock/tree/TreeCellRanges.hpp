@@ -18,7 +18,7 @@
 #include "kernels/convert_ranges.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/sycl.hpp"
-#include "shammath/sfc/MortonKernels.hpp"
+#include "shamrock/sfc/MortonKernels.hpp"
 #include "shammath/sfc/morton.hpp"
 #include "shamrock/tree/TreeReducedMortonCodes.hpp"
 #include "shamrock/tree/TreeStructure.hpp"

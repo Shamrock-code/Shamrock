@@ -24,7 +24,7 @@
 #include "shamalgs/memory.hpp"
 #include "shambase/floats.hpp"
 #include "shambase/integer.hpp"
-#include "shammath/sfc/MortonKernels.hpp"
+#include "shamrock/sfc/MortonKernels.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 

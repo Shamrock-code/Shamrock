@@ -19,7 +19,7 @@
 #include "shamalgs/random.hpp"
 
 #include "tests/shamrock/tree/TreeTests.hpp"
-#include "shammath/sfc/MortonKernels.hpp"
+#include "shamrock/sfc/MortonKernels.hpp"
 #include "shammath/sfc/morton.hpp"
 
 

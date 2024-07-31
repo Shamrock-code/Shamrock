@@ -17,7 +17,7 @@
 #include "shamalgs/algorithm.hpp"
 #include "shambase/exception.hpp"
 #include "shambackends/math.hpp"
-#include "shammath/sfc/MortonKernels.hpp"
+#include "shamrock/sfc/MortonKernels.hpp"
 #include "shammath/sfc/morton.hpp"
 #include "shamsys/legacy/log.hpp"
 

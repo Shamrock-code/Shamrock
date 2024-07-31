@@ -29,11 +29,24 @@ jobs:
       if: failure()
       run: cat diff-pre-commit
 
+    - name: Run pre-commit-report
+      if: failure()
+      run: python3 buildbot/precommit_report.py > out.md
+
+    - name: Comment doxygen diff on PR
+      if: failure()
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        filePath: out.md
+        comment_tag: pre-commit-comment
+        mode: recreate
+        create_if_not_exists: true
+
     - name: rm tmpfiles
       if: failure()
       run: rm diff-pre-commit log_precommit_*
     
-    - name : Show diff
+    - name: Show diff
       if: failure()
       run: git diff
 

@@ -41,6 +41,15 @@ jobs:
         comment_tag: pre-commit-comment
         mode: recreate
         create_if_not_exists: true
+    
+    - name: Comment doxygen diff on PR
+      if: success()
+      uses: thollander/actions-comment-pull-request@v2
+      with:
+        message: "Pre-commit check : ✅"
+        comment_tag: pre-commit-comment
+        mode: recreate
+        create_if_not_exists: true
 
     - name: rm tmpfiles
       if: failure()

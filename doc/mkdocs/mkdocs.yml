@@ -11,7 +11,7 @@ nav:
   - 'Doxygen documentation': 'doxygen.md'
 
   - 'User Documentation' :
-- 'QuickStart' : 'usermanual/quickstart.md'
+    - 'QuickStart' : 'usermanual/quickstart.md'
     - 'Environments' : 'usermanual/envs.md'
     - 'Usage' : 'usermanual/usage.md'
     - 'First simulation' : 'usermanual/firstcalculation.md'

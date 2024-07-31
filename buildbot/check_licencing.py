@@ -34,7 +34,40 @@ for fname in file_list:
         missing_licence.append(fname)
 
 
+
+def write_file(fname, source):
+    f = open(fname,'w')
+    f.write(source)
+    f.close()
+
+def make_check_pr_report():
+    rep = ""
+    rep += ("## ❌ Check license headers")
+    rep += ("""
+
+The pre-commit checks have found some missing or ill formed license header.
+All C++ files (headers or sources) should start with : 
+```
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+```
+Any line break before this header or change in its formatting will trigger the fail of this test
+        """)
+
+    rep += "List of files with errors :\n\n"
+    for i in missing_licence:
+        rep += (" - "+i.split(abs_proj_dir)[-1])
+
+    write_file("log_precommit_license_check", rep)
+
+
 if len(missing_licence) > 0:
+    make_check_pr_report()
     print(" => \033[1;34mlicence missing in \033[0;0m: ")
 
     for i in missing_licence:

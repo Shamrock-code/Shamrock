@@ -64,7 +64,27 @@ for fname in file_list:
             write_file(fname, source)
 
 
+
+def make_check_pr_report():
+    rep = ""
+
+    rep +="## ❌ Check SYCL `#include`"
+    rep +="""
+
+The pre-commit checks have found some #include of non-standard SYCL headers
+
+It is recommended to replace instances of `#include <hipSYCL...` by `#include <shambackends/sycl.hpp>` 
+which will include the sycl headers.
+
+At some point we will refer to a guide in the doc about this
+
+"""
+    write_file("log_precommit_check_sycl_include", rep)
+
+
+
 if has_found_errors:
+    make_check_pr_report()
     print("Autocorect done !")
     print()
     sys.exit("Exitting with check failure")

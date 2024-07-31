@@ -43,7 +43,42 @@ for fname in file_list:
         pragma_once_missing.append(fname)
 
 
+def write_file(fname, source):
+    f = open(fname,'w')
+    f.write(source)
+    f.close()
+
+def make_check_pr_report():
+
+
+    rep = ""
+    rep +=("## ❌ Check #pragma once")
+    rep += ("""
+
+The pre-commit checks have found some headers that are not starting with `#pragma once`.
+This indicates to the compiler that this header should only be included once per source files avoid double definitions of function or variables
+
+All headers files should have, just below the license header the following line :
+```
+#pragma once
+```
+
+At some point we will refer to a guide in the doc about this
+""")
+
+    rep += "List of files with errors :\n\n"
+    
+    for i in pragma_once_missing:
+        rep += (" - "+i.split(abs_proj_dir)[-1])
+
+
+    write_file("log_precommit_pragma_once_check", rep)
+
+
+
+
 if len(pragma_once_missing) > 0:
+    make_check_pr_report()
     print(" => \033[1;34m#pragma once missing in \033[0;0m: ")
 
     for i in pragma_once_missing:

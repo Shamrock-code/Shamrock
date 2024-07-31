@@ -53,6 +53,8 @@ namespace shammodels::basegodunov {
 
         RiemmanSolverMode riemman_config = HLL;
         SlopeMode slope_config = VanLeer_sym;
+
+        Tscal Csafe = 0.9;
     };
 
     template<class Tvec, class TgridVec>

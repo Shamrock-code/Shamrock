@@ -68,3 +68,8 @@ repos:
       entry: python buildbot/check_pragma_once.py
       language: python
       pass_filenames: false
+    - id: check_sycl_include
+      name: "Check SYCL #include"
+      entry: python buildbot/check_sycl_include.py
+      language: python
+      pass_filenames: false

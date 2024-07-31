@@ -81,12 +81,12 @@ jobs:
         uses: actions/configure-pages@v3
         
       - name: 'Download Doc'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: shamrock_documentation
 
       - name: 'Download coverage report'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: code-coverage-report-acpp_omp_debug
           path: coverage
@@ -156,24 +156,24 @@ jobs:
 
     steps:
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
 
 
       - name: 'Download Doc'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: shamrock_documentation
 
       - name: 'Download coverage list'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: code-coverage-list-acpp_omp_debug
           path: code-coverage-list-acpp_omp_debug
 
       - name: 'Download coverage report'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: code-coverage-report-acpp_omp_debug
           path: code-coverage-report-acpp_omp_debug

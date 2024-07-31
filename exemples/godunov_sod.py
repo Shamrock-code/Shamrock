@@ -76,17 +76,25 @@ model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 #model.evolve_once(0,0.1)
 freq = 50
-dt = 0.0010
+dt = 0.0000
 t = 0
+tend = 0.245
+
 for i in range(701):
     
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 
-    model.evolve_once(i*dt,dt)
-    t = i*dt
-    if i*dt >= 2.45e-1:
+    next_dt = model.evolve_once(t,dt)
+
+    t += dt
+    dt = next_dt
+
+    if tend < t + next_dt:
+        dt = tend - t
+    if t == tend:
         break
+
 
 
 def convert_to_cell_coords(dic):

@@ -17,6 +17,7 @@
 #include "shamcomm/collectives.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRGraphGen.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
+#include "shammodels/amr/basegodunov/modules/ComputeCFL.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeCellInfos.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeFlux.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeGradient.hpp"
@@ -112,6 +113,9 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
         cnt_debug ++;
     }
 
+    modules::ComputeCFL cfl_compute(context,solver_config,storage);
+    f64 new_dt = cfl_compute.compute_cfl();
+
     storage.dtrho .reset();
     storage.dtrhov.reset();
     storage.dtrhoe.reset();
@@ -205,7 +209,7 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
 
     storage.timings_details.reset();
 
-    return 0;
+    return new_dt;
 }
 
 

@@ -22,7 +22,7 @@ for f in file_list:
 
     if f == "log_precommit_check_sycl_include":
 
-        print("## Check SYCL `#include`")
+        print("## ❌ Check SYCL `#include`")
         print("""
 
 The pre-commit checks have found some #include of non-standard SYCL headers
@@ -35,7 +35,7 @@ At some point we will refer to a guide in the doc about this
         """)
     if f == "log_precommit_license_check":
 
-        print("## Check license headers")
+        print("## ❌ Check license headers")
         print("""
 
 The pre-commit checks have found some missing or ill formed license header.
@@ -54,7 +54,7 @@ Any line break before this header or change in its formatting will trigger the f
 
     if f == "log_precommit_pragma_once_check":
 
-        print("## Check #pragma once")
+        print("## ❌ Check #pragma once")
         print("""
 
 The pre-commit checks have found some headers that are not starting with `#pragma once`.
@@ -70,27 +70,7 @@ At some point we will refer to a guide in the doc about this
         """)
         
     if f == "log_precommit_doxygen_header":
-
-        print("## Check doxygen headers")
-        print("""
-
-The pre-commit checks have found some files without or with a wrong doxygen file header
-
-A properly formed doxygen header should be like and placed just below `#pragma once` in headers or below the license in source files:
-```
-/**
- * @file <filename>
- * @author <Author name> (<email>)
- * @brief <Description of the file content>
- * 
- */
-```
-
-This test is triggered if the doxygen header is missing or with the wrong file name
-
-At some point we will refer to a guide in the doc about this
-
-        """)
+        print(log_f)
 
 
 print("## Suggested changes")

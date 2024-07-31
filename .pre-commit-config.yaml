@@ -58,7 +58,6 @@ repos:
       entry: python buildbot/check_doxygen_fileheader.py
       language: python
       pass_filenames: false
-      log_file: log_precommit_doxygen_header
 
     - id: license_check
       name: "Check license headers"

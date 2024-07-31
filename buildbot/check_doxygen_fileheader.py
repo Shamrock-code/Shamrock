@@ -90,6 +90,40 @@ def run_autocorect():
 
 
 
+def write_file(fname, source):
+    f = open(fname,'w')
+    f.write(source)
+    f.close()
+
+def make_check_pr_report():
+    rep = ""
+    rep += "## ❌ Check doxygen headers"
+    rep +="""
+
+The pre-commit checks have found some files without or with a wrong doxygen file header
+
+A properly formed doxygen header should be like and placed just below `#pragma once` in headers or below the license in source files:
+```
+/**
+ * @file <filename>
+ * @author <Author name> (<email>)
+ * @brief <Description of the file content>
+ * 
+ */
+```
+
+This test is triggered if the doxygen header is missing or with the wrong file name
+
+At some point we will refer to a guide in the doc about this
+\n"""
+
+    rep += "List of files with errors :\n\n"
+    
+    for i in missing_doxygenfilehead:
+        rep += (" - "+i.split(abs_proj_dir)[-1])
+
+    write_file("log_precommit_doxygen_header", rep)
+
 
 
 if len(missing_doxygenfilehead) > 0:
@@ -111,6 +145,7 @@ if len(missing_doxygenfilehead) > 0:
     """)
 
     run_autocorect()
+    make_check_pr_report()
 
     sys.exit("Missing doxygen header for some source files")
 else : 

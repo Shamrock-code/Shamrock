@@ -29,7 +29,7 @@ jobs:
     - name: make file comment
       if: success()
       run: |
-        echo "Pre-commit : ✅ check 
+        echo "Pre-commit check: ✅ 
         \`\`\`
         $(pre-commit run --all-files)
         \`\`\`

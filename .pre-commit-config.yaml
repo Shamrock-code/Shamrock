@@ -58,18 +58,25 @@ repos:
       entry: python buildbot/check_doxygen_fileheader.py
       language: python
       pass_filenames: false
+      log_file: log_precommit_doxygen_header
+
     - id: license_check
       name: "Check license headers"
       entry: python buildbot/check_licencing.py
       language: python
       pass_filenames: false
+      log_file: log_precommit_license_check
+
     - id: pragma_once_check
       name: "Check #pragma once"
       entry: python buildbot/check_pragma_once.py
       language: python
       pass_filenames: false
+      log_file: log_precommit_pragma_once_check
+
     - id: check_sycl_include
       name: "Check SYCL #include"
       entry: python buildbot/check_sycl_include.py
       language: python
       pass_filenames: false
+      log_file: log_precommit_check_sycl_include

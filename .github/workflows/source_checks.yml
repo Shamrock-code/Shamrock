@@ -24,10 +24,18 @@ jobs:
     - name : Generate diff
       if: failure()
       run: git diff > diff-pre-commit
-      
+
     - name : Cat diff
       if: failure()
       run: cat diff-pre-commit
+
+    - name: rm tmpfiles
+      if: failure()
+      run: rm diff-pre-commit log_precommit_*
+    
+    - name : Show diff
+      if: failure()
+      run: git diff
 
     #- name: suggest changes
     #  if: always() && github.event_name == 'pull_request'

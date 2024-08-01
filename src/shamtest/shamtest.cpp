@@ -26,7 +26,7 @@
 #include "shambase/bytestream.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
-#include "shambase/term_colors.hpp"
+#include "shamcmdopt/term_colors.hpp"
 #include "shambase/time.hpp"
 #include "shamsys/legacy/log.hpp"
 

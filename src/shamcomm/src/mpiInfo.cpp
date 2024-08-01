@@ -15,7 +15,7 @@
 
 #include "shamcomm/mpiInfo.hpp"
 #include "fmt/core.h"
-#include "shambase/term_colors.hpp"
+#include "shamcmdopt/term_colors.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
 

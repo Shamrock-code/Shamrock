@@ -21,6 +21,7 @@ endif()
 add_library(shamcomm::shamcomm ALIAS shamcomm)
 
 target_link_libraries(shamcomm PUBLIC shambase)
+target_link_libraries(shamcomm PUBLIC shamcmdopt)
 target_link_libraries(shamcomm PUBLIC MPI::MPI_C)
 
 target_include_directories(shamcomm PUBLIC

@@ -5,6 +5,7 @@ project(Shamcmdopt CXX C)
 set(Sources
         src/cmdopt.cpp
         src/env.cpp
+        src/term_colors.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

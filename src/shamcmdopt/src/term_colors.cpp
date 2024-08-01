@@ -13,7 +13,7 @@
  * 
  */
 
-#include "shambase/term_colors.hpp"
+#include "shamcmdopt/term_colors.hpp"
 
 namespace shambase::details {
     TermColors _int_term_colors = TermColors::get_config_colors();

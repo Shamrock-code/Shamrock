@@ -17,7 +17,7 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/string.hpp"
-#include "shambase/term_colors.hpp"
+#include "shamcmdopt/term_colors.hpp"
 #include <iostream>
 #include <string>
 
@@ -102,7 +102,8 @@ namespace shamcomm::logs {
     inline void print_faint_row() {
         raw_ln(
             shambase::term_colors::faint() +
-            "-----------------------------------------------------" +
+            "─────────────────────────────────────────────────────" + 
+            //"-----------------------------------------------------" +
             shambase::term_colors::reset());
     }
 

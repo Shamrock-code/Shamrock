@@ -13,7 +13,7 @@
  */
 
 #include "shambase/string.hpp"
-#include "shambase/term_colors.hpp"
+#include "shamcmdopt/term_colors.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
 #include <string_view>

@@ -23,11 +23,11 @@ jobs:
 
 
     - name: rerun precommit for logs
-      if: success()
+      if: success() && github.event_name == 'pull_request'
       run: pre-commit run --all-files > out
 
     - name: make file comment
-      if: success()
+      if: success() && github.event_name == 'pull_request'
       run: |
         echo "Pre-commit check: ✅ 
         \`\`\`
@@ -38,7 +38,7 @@ jobs:
         " > message.md
 
     - name: Comment doxygen diff on PR
-      if: success()
+      if: success() && github.event_name == 'pull_request'
       uses: thollander/actions-comment-pull-request@v2
       with:
         filePath: message.md
@@ -49,19 +49,19 @@ jobs:
 
 
     - name : Generate diff
-      if: failure()
+      if: failure() && github.event_name == 'pull_request'
       run: git diff > diff-pre-commit
 
     - name : Cat diff
-      if: failure()
+      if: failure() && github.event_name == 'pull_request'
       run: cat diff-pre-commit
 
     - name: Run pre-commit-report
-      if: failure()
+      if: failure() && github.event_name == 'pull_request'
       run: python3 buildbot/precommit_report.py > out.md
 
     - name: Comment doxygen diff on PR
-      if: failure()
+      if: failure() && github.event_name == 'pull_request'
       uses: thollander/actions-comment-pull-request@v2
       with:
         filePath: out.md
@@ -70,11 +70,11 @@ jobs:
         create_if_not_exists: true
 
     - name: rm tmpfiles
-      if: failure()
+      if: failure() && github.event_name == 'pull_request'
       run: rm diff-pre-commit log_precommit_*
     
     - name: Show diff
-      if: failure()
+      if: failure() && github.event_name == 'pull_request'
       run: git diff
 
     #- name: suggest changes

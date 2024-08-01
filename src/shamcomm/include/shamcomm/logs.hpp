@@ -102,8 +102,7 @@ namespace shamcomm::logs {
     inline void print_faint_row() {
         raw_ln(
             shambase::term_colors::faint() +
-            "─────────────────────────────────────────────────────" + 
-            //"-----------------------------------------------------" +
+            "-----------------------------------------------------" +
             shambase::term_colors::reset());
     }
 

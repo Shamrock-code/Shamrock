@@ -30,6 +30,11 @@ jobs:
     name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang15.yml
 
+  shamrock_linux_acpp_pylib:
+    needs: [src_check]
+    name: Tests
+    uses: ./.github/workflows/shamrock-acpp-clang15-py.yml
+    
   #shamrock_linux_acpp_macos:
   #  name: Shamrock Test
   #  needs: [src_check]

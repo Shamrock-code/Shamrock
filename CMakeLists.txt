@@ -31,7 +31,7 @@ endif()
 ################################
 # Shamrock configuration
 ################################  
-project(Shamrock VERSION 2023.0)
+project(Shamrock VERSION 2024.0)
 
 
 
@@ -118,7 +118,8 @@ find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
 add_subdirectory(external)
 
 if("${BUILD_PYLIB}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LIB_BUILD")
+    # We must force fPIC because for unknown reasons cmake doesn't on those shared lib
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LIB_BUILD -fPIC")
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_EXECUTABLE_BUILD")
 endif()

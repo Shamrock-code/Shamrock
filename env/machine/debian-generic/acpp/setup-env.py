@@ -12,7 +12,7 @@ PATH = "machine/debian-generic/acpp"
 def is_acpp_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/acpp")
 
-def setup(argv,builddir, shamrockdir,buildtype):
+def setup(argv,builddir, shamrockdir,buildtype,pylib):
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)
@@ -56,11 +56,21 @@ def setup(argv,builddir, shamrockdir,buildtype):
     ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
     ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
 
-    ENV_SCRIPT_HEADER += "export SHAMROCK_BUILD_TYPE=\""+cmake_build_type+"\"\n"
-    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='"+acpp_target+"'\"\n"
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
+
+    cmake_extra_args = ""
+    if pylib:
+        cmake_extra_args += "-DBUILD_PYLIB=True"
+        os.system("cp "+os.path.abspath(os.path.join(cur_file, "../"+"_pysetup.py")) +" "+ builddir+"/setup.py")
+
+    ENV_SCRIPT_HEADER += "export CMAKE_OPT=("+cmake_extra_args+")\n"
+
+    ENV_SCRIPT_HEADER += "export SHAMROCK_BUILD_TYPE=\""+cmake_build_type+"\"\n"
+    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='"+acpp_target+"'\"\n"
+
+
     source_file = "env_built_acpp.sh"
     source_path = os.path.abspath(os.path.join(cur_file, "../"+source_file))
 
@@ -68,6 +78,7 @@ def setup(argv,builddir, shamrockdir,buildtype):
         source_path = source_path, 
         header = ENV_SCRIPT_HEADER, 
         path_write = ENV_SCRIPT_PATH)
+
 
     if is_acpp_already_installed(ACPP_INSTALL_DIR):
         print("-- acpp already installed => skipping")

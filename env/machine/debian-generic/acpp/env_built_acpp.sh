@@ -21,7 +21,8 @@ function shamconfigure {
         -DCMAKE_CXX_FLAGS="${SHAMROCK_CXX_FLAGS}" \
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
-        -DBUILD_TEST=Yes
+        -DBUILD_TEST=Yes \
+        "${CMAKE_OPT[@]}"
 }
 
 function shammake {

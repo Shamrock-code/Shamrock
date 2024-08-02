@@ -12,12 +12,16 @@ PATH = "machine/dgx-cbp/acpp-cuda"
 def is_acpp_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/acpp")
 
-def setup(argv,builddir, shamrockdir,buildtype):
+def setup(argv,builddir, shamrockdir,buildtype,pylib):
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)
     print("------------------------------------------")
 
+    if(pylib):
+        print("this env does not support --pylib")
+        raise ""
+        
     parser = argparse.ArgumentParser(prog=PATH,description= NAME+' env for Shamrock')
 
     parser.add_argument("--gen", action='store', help="generator to use (ninja or make)")

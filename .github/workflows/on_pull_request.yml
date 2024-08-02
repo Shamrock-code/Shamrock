@@ -3,7 +3,13 @@ name: On PR
 # Controls when the workflow will run
 on:
   pull_request:
-    types: [opened,edited,synchronize,labeled]
+    types: [
+      opened, # pull request is created
+      #edited, # title, body, or the base branch of the PR is modified
+      synchronize, # if commit pushed
+      labeled, # a label is applied to the pull request
+      unlabeled # a label is removed from the pull request
+      ]
 
   #we do not use this one as the job is not launched on the corect branch (aka we cannot test the CI in PRs)
   #pull_request_target:

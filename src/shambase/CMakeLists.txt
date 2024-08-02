@@ -6,6 +6,7 @@ set(Sources
     src/exception.cpp
     src/stacktrace.cpp
     src/SourceLocation.cpp
+    src/print.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

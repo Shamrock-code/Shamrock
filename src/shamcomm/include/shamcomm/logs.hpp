@@ -16,20 +16,20 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shamcmdopt/term_colors.hpp"
-#include <iostream>
 #include <string>
 
 #define LIST_LEVEL                                                                                 \
-    X(debug_alloc, shambase::term_colors::col8b_red(), "Debug Alloc ", 127)                        \
-    X(debug_mpi, shambase::term_colors::col8b_blue(), "Debug MPI ", 100)                           \
+    X(debug_alloc, shambase::term_colors::col8b_red(), "Debug Alloc", 127)                        \
+    X(debug_mpi, shambase::term_colors::col8b_blue(), "Debug MPI", 100)                           \
     X(debug_sycl, shambase::term_colors::col8b_magenta(), "Debug SYCL", 11)                        \
-    X(debug, shambase::term_colors::col8b_green(), "Debug ", 10)                                   \
+    X(debug, shambase::term_colors::col8b_green(), "Debug", 10)                                   \
     X(info, shambase::term_colors::col8b_cyan(), "", 1)                                            \
     X(normal, shambase::term_colors::empty(), "", 0)                                               \
-    X(warn, shambase::term_colors::col8b_yellow(), "Warning ", -1)                                 \
-    X(err, shambase::term_colors::col8b_red(), "Error ", -10)
+    X(warn, shambase::term_colors::col8b_yellow(), "Warning", -1)                                 \
+    X(err, shambase::term_colors::col8b_red(), "Error", -10)
 
 namespace shamcomm::logs {
     namespace details {
@@ -75,14 +75,15 @@ namespace shamcomm::logs {
 
     template<typename T, typename... Types>
     void print(T var1, Types... var2) {
-        std::cout << shamcomm::logs::format_message(var1, var2...);
+        shambase::print(shamcomm::logs::format_message(var1, var2...));
     }
 
     inline void print_ln() {}
 
     template<typename T, typename... Types>
     void print_ln(T var1, Types... var2) {
-        std::cout << shamcomm::logs::format_message(var1, var2...) << std::endl;
+        shambase::println(shamcomm::logs::format_message(var1, var2...));
+        shambase::flush();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,73 +102,69 @@ namespace shamcomm::logs {
 
     inline void print_faint_row() {
         raw_ln(
-            shambase::term_colors::faint() +
-            "-----------------------------------------------------" +
-            shambase::term_colors::reset());
+            shambase::term_colors::faint() + "-----------------------------------------------------"
+            + shambase::term_colors::reset());
     }
-
-
-
-
-
-
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Log levels
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    #define DECLARE_LOG_LEVEL(_name, color, loginf, logval)                                                                     \
-                                                                                                                            \
-    constexpr i8 log_##_name = (logval);                                                                                              \
-                                                                                                                            \
-    template <typename... Types> inline void _name(std::string module_name, Types... var2) {                                \
-        if (details::loglevel >= log_##_name) {                                                                                      \
-            std::cout << "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color) + (loginf) +          \
-                             shambase::term_colors::reset() + ": ";                                                                \
-            shamcomm::logs::print(var2...);                                                                                         \
-        }                                                                                                                   \
-    }                                                                                                                       \
-                                                                                                                            \
-    template <typename... Types> inline void _name##_ln(std::string module_name, Types... var2) {                           \
-        if (details::loglevel >= log_##_name) {                                                                                      \
-            std::cout << "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color) + (loginf) +          \
-                             shambase::term_colors::reset() + ": ";                                                                \
-            shamcomm::logs::print_ln(var2...);                                                                                         \
-        }                                                                                                                     \
+#define DECLARE_LOG_LEVEL(_name, color, loginf, logval)                                            \
+                                                                                                   \
+    constexpr i8 log_##_name = (logval);                                                           \
+                                                                                                   \
+    template<typename... Types>                                                                    \
+    inline void _name(std::string module_name, Types... var2) {                                    \
+        if (details::loglevel >= log_##_name) {                                                    \
+            shamcomm::logs::print(                                                                 \
+                "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color)      \
+                    + (loginf) + shambase::term_colors::reset() + ":",                             \
+                var2...);                                                                          \
+        }                                                                                          \
+    }                                                                                              \
+                                                                                                   \
+    template<typename... Types>                                                                    \
+    inline void _name##_ln(std::string module_name, Types... var2) {                               \
+        if (details::loglevel >= log_##_name) {                                                    \
+            shamcomm::logs::print_ln(                                                              \
+                "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color)      \
+                    + (loginf) + shambase::term_colors::reset() + ":",                             \
+                var2...);                                                                          \
+        }                                                                                          \
     }
 
-    #define X DECLARE_LOG_LEVEL
+#define X DECLARE_LOG_LEVEL
     LIST_LEVEL
-    #undef X
+#undef X
 
-    #undef DECLARE_LOG_LEVEL
+#undef DECLARE_LOG_LEVEL
     ///////////////////////////////////
     // log level declared
     ///////////////////////////////////
 
+#define IsActivePrint(_name, color, loginf, logval)                                                \
+    if (details::loglevel >= log_##_name) {                                                        \
+        shamcomm::logs::raw("    ");                                                               \
+    }                                                                                              \
+    _name##_ln("xxx", "xxx", "(", "logger::" #_name, ")");
 
+    inline void print_active_level() {
 
-    #define IsActivePrint(_name, color, loginf, logval) \
-        if (details::loglevel >= log_##_name) {shamcomm::logs::raw("    ");} _name##_ln("xxx", "xxx","(","logger::" #_name,")");
-
-    inline void print_active_level(){
-
-        //logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
-        #define X IsActivePrint
+// logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+#define X IsActivePrint
         LIST_LEVEL
-        #undef X
-        //logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
-
+#undef X
+        // logger::raw_ln(terminal_effects::faint + "----------------------" +
+        // terminal_effects::reset);
     }
 
-    #undef IsActivePrint
+#undef IsActivePrint
 
 } // namespace shamcomm::logs
-
 
 namespace logger {
 
     using namespace shamcomm::logs;
-    
-}
 
+}

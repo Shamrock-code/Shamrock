@@ -13,19 +13,27 @@
  * 
  */
  
+#include "shambase/print.hpp"
 #include "pybindaliases.hpp"
 
 #include <pybind11/iostream.h>
+#include <pybind11/pybind11.h>
 
+
+void py_func_printer_normal(std::string s){
+    using namespace pybind11;
+    py::print(s,"end"_a="");
+}
+void py_func_printer_ln(std::string s){
+    using namespace pybind11;
+    py::print(s);
+}
+void py_func_flush_func(){}
 
 SHAMROCK_PY_MODULE(shamrock,m){
 
     #ifdef SHAMROCK_LIB_BUILD
-    m.attr("redirect_output") = py::capsule(new py::scoped_ostream_redirect(
-        std::cout,                               // std::ostream&
-        py::module_::import("sys").attr("stdout") // Python output
-    ),
-    [](void *sor) { delete static_cast<py::scoped_ostream_redirect *>(sor); });
+    shambase::change_printer(&py_func_printer_normal, &py_func_printer_ln, &py_func_flush_func);
     #endif
 
     for(auto fct : static_init_shamrock_pybind){

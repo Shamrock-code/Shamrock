@@ -13,7 +13,7 @@ jobs:
   make_documentation:
     name: "Build : Documentation"
 
-    runs-on: [self-hosted, ubuntu20]
+    runs-on: ubuntu-latest
     
     steps:
       - uses: actions/checkout@v4

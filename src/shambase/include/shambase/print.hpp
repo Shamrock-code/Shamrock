@@ -19,15 +19,49 @@
 
 namespace shambase {
 
+    /**
+     * @brief Prints a string to the console.
+     *
+     * @param s The string to be printed.
+     */
     void print(std::string s);
+
+    /**
+     * @brief Prints a string to the console followed by a newline.
+     *
+     * @param s The string to be printed.
+     */
     void println(std::string s);
+
+    /**
+     * @brief Flushes the output buffer.
+     *
+     * This function forces the output buffer to be written to the console
+     * immediately, rather than waiting for the buffer to fill up.
+     */
     void flush();
 
+    /**
+     * @brief Changes the behavior of the print, println and flush functions.
+     *
+     * @param func_printer_normal The function to be used for printing a string
+     *                           to the console.
+     * @param func_printer_ln The function to be used for printing a string to
+     *                        the console followed by a newline.
+     * @param func_flush_func The function to be used for flushing the output
+     *                       buffer.
+     */
     void change_printer(
         void (*func_printer_normal)(std::string),
         void (*func_printer_ln)(std::string),
         void (*func_flush_func)());
 
+    /**
+     * @brief Restores the default behavior of the print and println functions.
+     *
+     * This function resets the behavior of the print and println functions to
+     * their default behavior, which is to print to the standard output stream.
+     */
     void reset_std_behavior();
 
 } // namespace shambase

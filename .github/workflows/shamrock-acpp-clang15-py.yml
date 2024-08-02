@@ -1,0 +1,42 @@
+name: Acpp/clang15 (pylib)
+
+
+on:
+  workflow_call:
+  
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+
+
+  shamrock_acpp:
+    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} (pylib)
+    runs-on: [self-hosted, ubuntu20]
+
+    strategy:
+      matrix:
+        include: 
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: omp
+            arch: none
+            runtest: yes
+  
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+  
+      - name: ls local
+        run : ls -la
+
+      - name: Setup env
+        run : ./env/new-env --machine debian-generic.acpp --builddir build --pylib -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
+
+      - name: Pip install Shamrock
+        run : |
+          cd build
+          pip install --verbose -e .

@@ -115,6 +115,12 @@ jobs:
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang15.yml
 
+  shamrock_linux_acpp_pylib:
+    needs: [src_check]
+    name: Tests
+    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
+    uses: ./.github/workflows/shamrock-acpp-clang15-py.yml
+
   shamrock_linux_acpp_macos:
     needs: [src_check]
     name: Tests

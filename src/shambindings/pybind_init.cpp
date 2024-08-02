@@ -19,15 +19,19 @@
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 
-
+/// With pybind we print using python out stream
 void py_func_printer_normal(std::string s){
     using namespace pybind11;
     py::print(s,"end"_a="");
 }
+
+/// With pybind we print using python out stream
 void py_func_printer_ln(std::string s){
     using namespace pybind11;
     py::print(s);
 }
+
+/// Python print performs already a flush so we need nothing here
 void py_func_flush_func(){}
 
 SHAMROCK_PY_MODULE(shamrock,m){

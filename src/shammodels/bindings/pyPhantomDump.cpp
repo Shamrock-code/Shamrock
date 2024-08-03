@@ -23,7 +23,7 @@ Register_pymod(pyphantomdump) {
 
     using T = shammodels::sph::PhantomDump;
 
-    shamcomm::logs::debug_ln("Bindings","registering shamrock.PhantomDump");
+    shamcomm::logs::debug_ln("[Py]","registering shamrock.PhantomDump");
     py::class_<T>(m, "PhantomDump")
         .def("save_dump",[](T & self, std::string fname){
             auto file = self.gen_file();

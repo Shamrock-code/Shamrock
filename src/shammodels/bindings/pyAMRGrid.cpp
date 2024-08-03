@@ -23,7 +23,7 @@ Register_pymod(pyamrgridinit) {
 
     using Grid = shamrock::amr::AMRGrid<u64_3, 3>;
 
-    shamcomm::logs::debug_ln("Bindings","registering shamrock.AMRGrid");
+    shamcomm::logs::debug_ln("[Py]","registering shamrock.AMRGrid");
     py::class_<Grid>(m, "AMRGrid")
         .def(py::init([](ShamrockCtx &ctx) {
             return std::make_unique<Grid>(*ctx.sched);

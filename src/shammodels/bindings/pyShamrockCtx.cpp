@@ -222,7 +222,7 @@ template<class T> void append_to_map(
 
 Register_pymod(pyshamrockctxinit){
 
-    logger::debug_ln("Bindings", "registering Context");
+    logger::debug_ln("[Py]", "registering shamrock.Context");
 
     py::class_<ShamrockCtx>(m, "Context")
         .def(py::init<>())

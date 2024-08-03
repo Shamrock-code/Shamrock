@@ -25,7 +25,7 @@
 Register_pymod(pyamrtestmode){
 
 
-    shamcomm::logs::debug_ln("Bindings","registering shamrock.AMRTestModel");
+    shamcomm::logs::debug_ln("[Py]","registering shamrock.AMRTestModel");
     py::class_<AMRTestModel>(m, "AMRTestModel")
         .def(py::init([](AMRTestModel::Grid & grd) {
                 return std::make_unique<AMRTestModel>(grd);

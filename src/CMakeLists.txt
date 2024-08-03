@@ -77,6 +77,7 @@ target_link_libraries(shamrock_lib PUBLIC shamalgs)
 target_link_libraries(shamrock_lib PUBLIC shamsys)
 target_link_libraries(shamrock_lib PUBLIC shamphys)
 target_link_libraries(shamrock_lib PUBLIC shamcmdopt)
+target_link_libraries(shamrock_lib PUBLIC shambindings)
 
 
 
@@ -106,6 +107,7 @@ target_link_libraries(shamrock PUBLIC shammath)
 target_link_libraries(shamrock PUBLIC shamsys)
 target_link_libraries(shamrock PUBLIC shamphys)
 target_link_libraries(shamrock PUBLIC shamcmdopt)
+target_link_libraries(shamrock PUBLIC shambindings)
 
 
 
@@ -144,6 +146,7 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC shamsys)
     target_link_libraries(shamrock_test PUBLIC shamphys)
     target_link_libraries(shamrock_test PUBLIC shamcmdopt)
+    target_link_libraries(shamrock_test PUBLIC shambindings)
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")

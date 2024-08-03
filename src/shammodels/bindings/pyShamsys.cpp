@@ -12,7 +12,7 @@
  * @brief
  */
 
-#include "pyNodeInstance.hpp"
+#include "shambindings/pyNodeInstance.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambindings/pybindaliases.hpp"

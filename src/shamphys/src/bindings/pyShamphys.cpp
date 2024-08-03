@@ -14,6 +14,7 @@
 
 #include "shambase/aliases_float.hpp"
 #include "shambindings/pybind11_stl.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamphys/SodTube.hpp"
 #include <pybind11/complex.h>
 #include "shambindings/pybindaliases.hpp"
@@ -107,6 +108,7 @@ Register_pymod(shamphyslibinit) {
         units : unit system
     )pbdoc");
 
+    shamcomm::logs::debug_ln("Bindings","registering shamrock.phys.HydroSoundwave");
     py::class_<shamphys::HydroSoundwave>(shamphys_module, "HydroSoundwave")
         .def(py::init([](f64 cs, f64 k, std::complex<f64> rho_tilde, std::complex<f64> v_tilde) {
             return std::make_unique<shamphys::HydroSoundwave>(
@@ -123,6 +125,7 @@ Register_pymod(shamphyslibinit) {
             return std::pair<f64,f64>{ret.rho, ret.v};
         });
 
+    shamcomm::logs::debug_ln("Bindings","registering shamrock.phys.SodTube");
     py::class_<shamphys::SodTube>(shamphys_module, "SodTube")
         .def(py::init([](f64 gamma, f64 rho_1, f64 P_1, f64 rho_5, f64 P_5) {
             return std::make_unique<shamphys::SodTube>(

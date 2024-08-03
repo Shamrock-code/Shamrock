@@ -29,16 +29,15 @@
 
 namespace py = pybind11;
 
-
 using fct_sig = std::function<void(py::module &)>;
-inline std::vector<fct_sig> static_init_shamrock_pybind{};
+
+void register_pybind_init_func(fct_sig);
 
 struct PyBindStaticInit{
     inline explicit PyBindStaticInit(fct_sig t){
-        static_init_shamrock_pybind.push_back(std::move(t));
+        register_pybind_init_func(std::move(t));
     }
 };
-
 
 #define Register_pymod(placeholdername) void pymod_##placeholdername (py::module & m);\
 void (*pymod_ptr_##placeholdername)(py::module & m) = pymod_##placeholdername;\

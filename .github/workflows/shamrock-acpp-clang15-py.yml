@@ -40,3 +40,9 @@ jobs:
         run : |
           cd build
           pip install --verbose -e .
+
+      - name: Try shamrock startup
+        run: |
+          ACPP_VISIBILITY_MASK=omp \
+          ACPP_DEBUG_LEVEL=3 \
+          python -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init(0,0)"

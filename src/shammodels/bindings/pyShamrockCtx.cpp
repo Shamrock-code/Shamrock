@@ -15,6 +15,7 @@
 #include "shambindings/pybindaliases.hpp"
 
 #include "shambindings/pybind11_stl.hpp"
+#include "shamcomm/logs.hpp"
 #include <pybind11/numpy.h>
 
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -219,8 +220,9 @@ template<class T> void append_to_map(
 
 
 
-
 Register_pymod(pyshamrockctxinit){
+
+    logger::debug_ln("Bindings", "registering Context");
 
     py::class_<ShamrockCtx>(m, "Context")
         .def(py::init<>())

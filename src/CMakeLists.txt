@@ -22,7 +22,8 @@ set(as_subproject
   shamalgs 
   shamsys 
   shamphys 
-  shamcmdopt)
+  shamcmdopt
+  shambindings)
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -35,14 +36,14 @@ endmacro()
 
 add_subdirectory(shamunits)
 add_subdirectory(shambase)
+add_subdirectory(shambindings)
+add_subdirectory(shamcmdopt)
 add_subdirectory(shamcomm)
 add_subdirectory(shambackends)
 add_subdirectory(shammath)
 add_subdirectory(shamalgs)
-add_subdirectory(shamsys)
 add_subdirectory(shamphys)
-add_subdirectory(shamcmdopt)
-
+add_subdirectory(shamsys)
 
 
 
@@ -213,7 +214,6 @@ endif()
 
 
 add_subdirectory(shamtest)
-add_subdirectory(shambindings)
 
 
 add_subdirectory(shamrock)

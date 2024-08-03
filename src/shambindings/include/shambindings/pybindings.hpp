@@ -19,6 +19,11 @@
 
 namespace shambindings {
 
+    /**
+     * @brief Init python bindings and register them to Python API
+     * 
+     * @param m the python module to bind definitions on
+     */
     void init(py::module & m);
 
 }

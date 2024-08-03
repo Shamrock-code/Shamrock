@@ -24,7 +24,7 @@ jobs:
             arch: none
             runtest: yes
   
-    timeout-minutes: 60
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,4 +45,4 @@ jobs:
         run: |
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
-          python -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init(0,0)"
+          python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init(0,0)"

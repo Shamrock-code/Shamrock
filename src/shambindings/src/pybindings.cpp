@@ -35,9 +35,10 @@ void py_func_printer_ln(std::string s){
 /// Python print performs already a flush so we need nothing here
 void py_func_flush_func(){}
 
-
+/// Statically initialized python module init function
 std::vector<fct_sig> static_init_shamrock_pybind = {};
 
+/// Add a python module init function to the init list
 void register_pybind_init_func(fct_sig fct){
     static_init_shamrock_pybind.push_back(std::move(fct));
 }
@@ -56,6 +57,7 @@ namespace shambindings {
 
 }
 
+/// Call bindings init for the shamrock python module
 SHAMROCK_PY_MODULE(shamrock,m){
     shambindings::init(m);
 }

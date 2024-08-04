@@ -29,7 +29,8 @@ function shamconfigure {
         -DCMAKE_CXX_COMPILER="${ACPP_INSTALL_DIR}/bin/acpp" \
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
-        -DBUILD_TEST=Yes
+        -DBUILD_TEST=Yes \
+        "${CMAKE_OPT[@]}"
 }
 
 function shammake {

@@ -16,8 +16,9 @@ message("-- adding shamcmdopt target (object lib)")
 add_library(shamcmdopt OBJECT ${Sources})
 endif()
 
+target_link_libraries(shamcmdopt PUBLIC shambase)
+
 target_include_directories(shamcmdopt PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
 
-target_link_libraries(shamcmdopt PUBLIC shambase)

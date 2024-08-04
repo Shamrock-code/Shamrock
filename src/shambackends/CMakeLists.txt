@@ -26,7 +26,6 @@ endif()
 
 add_library(shambackends::shambackends ALIAS shambackends)
 
-target_link_libraries(shambackends PUBLIC shambase)
 target_link_libraries(shambackends PUBLIC shamcomm)
 
 target_include_directories(shambackends PUBLIC

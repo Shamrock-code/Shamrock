@@ -12,7 +12,7 @@ PATH = "machine/debian-generic/acpp"
 def is_acpp_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/acpp")
 
-def setup(argv,builddir, shamrockdir,buildtype,pylib):
+def setup(argv,builddir, shamrockdir,buildtype,pylib,lib_mode):
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)
@@ -62,8 +62,13 @@ def setup(argv,builddir, shamrockdir,buildtype,pylib):
 
     cmake_extra_args = ""
     if pylib:
-        cmake_extra_args += "-DBUILD_PYLIB=True"
+        cmake_extra_args += " -DBUILD_PYLIB=True"
         os.system("cp "+os.path.abspath(os.path.join(cur_file, "../"+"_pysetup.py")) +" "+ builddir+"/setup.py")
+
+    if lib_mode == "shared":
+        cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=On"
+    elif lib_mode == "object":
+        cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=Off"
 
     ENV_SCRIPT_HEADER += "export CMAKE_OPT=("+cmake_extra_args+")\n"
 

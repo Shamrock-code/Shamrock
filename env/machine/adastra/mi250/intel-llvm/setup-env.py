@@ -11,7 +11,7 @@ PATH = "machine/debian-generic/intel-llvm"
 def is_intel_llvm_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/clang++")
 
-def setup(argv,builddir, shamrockdir,buildtype,pylib):
+def setup(argv,builddir, shamrockdir,buildtype,pylib,lib_mode):
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)

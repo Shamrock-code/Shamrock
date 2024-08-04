@@ -33,8 +33,6 @@ endif()
 
 add_library(shamalgs::shamalgs ALIAS shamalgs)
 
-target_link_libraries(shamalgs PUBLIC shambase)
-target_link_libraries(shamalgs PUBLIC shamcomm)
 target_link_libraries(shamalgs PUBLIC shambackends)
 
 target_include_directories(shamalgs PUBLIC

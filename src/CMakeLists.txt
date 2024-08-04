@@ -28,7 +28,7 @@ set(as_subproject
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
 macro(find_package)
-  if(NOT "${ARGV0}" IN_LIST as_subproject)
+  if(NOT "${ARGV0}" IN LISTS as_subproject)
     message(STATUS "using native find_package for ${ARGV0}: ${ARGV}")
     _find_package(${ARGV})
   endif()
@@ -68,19 +68,7 @@ else()
 endif()
 
 
-target_link_libraries(shamrock_lib PUBLIC shamunits)
-target_link_libraries(shamrock_lib PUBLIC shambase)
-target_link_libraries(shamrock_lib PUBLIC shamcomm)
-target_link_libraries(shamrock_lib PUBLIC shambackends)
-target_link_libraries(shamrock_lib PUBLIC shammath)
-target_link_libraries(shamrock_lib PUBLIC shamalgs)
-target_link_libraries(shamrock_lib PUBLIC shamsys)
-target_link_libraries(shamrock_lib PUBLIC shamphys)
-target_link_libraries(shamrock_lib PUBLIC shamcmdopt)
-target_link_libraries(shamrock_lib PUBLIC shambindings)
-
-
-
+target_link_libraries(shamrock_lib PUBLIC ${as_subproject})
 
 
 
@@ -96,18 +84,9 @@ target_link_libraries(shamrock PUBLIC pybind11::embed)
 endif()
 
 target_link_libraries(shamrock PUBLIC shamrock_lib)
-target_link_libraries(shamrock PUBLIC shamalgs)
 
 
-target_link_libraries(shamrock PUBLIC shamunits)
-target_link_libraries(shamrock PUBLIC shambase)
-target_link_libraries(shamrock PUBLIC shamcomm)
-target_link_libraries(shamrock PUBLIC shambackends)
-target_link_libraries(shamrock PUBLIC shammath)
-target_link_libraries(shamrock PUBLIC shamsys)
-target_link_libraries(shamrock PUBLIC shamphys)
-target_link_libraries(shamrock PUBLIC shamcmdopt)
-target_link_libraries(shamrock PUBLIC shambindings)
+target_link_libraries(shamrock PUBLIC ${as_subproject})
 
 
 
@@ -137,16 +116,8 @@ if("${BUILD_TEST}")
     target_link_libraries(shamrock_test PUBLIC pybind11::embed)
 
     target_link_libraries(shamrock_test PUBLIC shamrock_lib)
-    target_link_libraries(shamrock_test PUBLIC shamalgs)
-    target_link_libraries(shamrock_test PUBLIC shamunits)
-    target_link_libraries(shamrock_test PUBLIC shambase)
-    target_link_libraries(shamrock_test PUBLIC shamcomm)
-    target_link_libraries(shamrock_test PUBLIC shambackends)
-    target_link_libraries(shamrock_test PUBLIC shammath)
-    target_link_libraries(shamrock_test PUBLIC shamsys)
-    target_link_libraries(shamrock_test PUBLIC shamphys)
-    target_link_libraries(shamrock_test PUBLIC shamcmdopt)
-    target_link_libraries(shamrock_test PUBLIC shambindings)
+
+    target_link_libraries(shamrock_test PUBLIC ${as_subproject})
 
     
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")

@@ -21,8 +21,6 @@ endif()
 
 add_library(shamsys::shamsys ALIAS shamsys)
 
-target_link_libraries(shamsys PUBLIC shambase)
-target_link_libraries(shamsys PUBLIC shamcomm)
 target_link_libraries(shamsys PUBLIC shambackends)
 target_link_libraries(shamsys PUBLIC shamalgs) #TODO shamsys should not depends on algs
 target_link_libraries(shamsys PUBLIC shamcmdopt)

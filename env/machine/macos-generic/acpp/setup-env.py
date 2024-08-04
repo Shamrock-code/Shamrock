@@ -10,7 +10,7 @@ PATH = "machine/macos-generic/acpp"
 def is_acpp_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/acpp")
 
-def setup(argv,builddir, shamrockdir,buildtype,pylib):
+def setup(argv,builddir, shamrockdir,buildtype,pylib,lib_mode):
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)

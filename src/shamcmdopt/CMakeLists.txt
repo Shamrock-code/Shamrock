@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.9)
 project(Shamcmdopt CXX C)
 
 set(Sources
+        src/details/generic_opts.cpp
         src/cmdopt.cpp
         src/env.cpp
         src/term_colors.cpp

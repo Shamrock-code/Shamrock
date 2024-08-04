@@ -13,6 +13,7 @@
  */
 
 #include "shambase/string.hpp"
+#include "fmt/core.h"
 #include "shamcmdopt/env.hpp"
 #include <optional>
 #include <utility>
@@ -28,29 +29,31 @@ std::optional<std::string> shamcmdopt::getenv_str(const char *env_var) {
 
 std::vector<std::pair<std::string, std::string>> env_var_reg = {};
 
-void shamcmdopt::register_env_var_doc(std::string env_var, std::string desc){
+void shamcmdopt::register_env_var_doc(std::string env_var, std::string desc) {
     env_var_reg.push_back({env_var, desc});
 }
 
-void shamcmdopt::print_help_env_var(){
+void shamcmdopt::print_help_env_var() {
 
-    if(env_var_reg.empty()) {
+    if (env_var_reg.empty()) {
         return;
     }
 
     auto stringify = [](std::optional<std::string> val) -> std::string {
-        if (val){
+        if (val) {
             return shambase::format("= {}", *val);
         }
         return "";
     };
 
     fmt::println("\nEnv variables :");
-    for(const auto & [var, desc] : env_var_reg){
+    for (const auto &[var, desc] : env_var_reg) {
         auto val = getenv_str(var.c_str());
 
-        fmt::println(
-            shambase::format("{:<50} : {}", shambase::format("{} {}",var, stringify(val)), desc)
-        );
+        fmt::println(shambase::format("  {:<29} : {}", var, desc));
+
+        if (val) {
+            fmt::println(shambase::format("    = {}", *val));
+        }
     }
 }

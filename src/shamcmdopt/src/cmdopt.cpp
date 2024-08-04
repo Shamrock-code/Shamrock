@@ -12,13 +12,17 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/string.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include "shamcmdopt/cmdopt.hpp"
+#include "shamcmdopt/details/generic_opts.hpp"
 #include "shamcmdopt/env.hpp"
+#include "shamcmdopt/term_colors.hpp"
 #include <string_view>
+#include <algorithm>
 #include <iostream>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -133,21 +137,34 @@ namespace shamcmdopt {
 
     void register_opt(std::string name, std::optional<std::string> args, std::string description) {
 
+        for (auto &[n, arg, desc] : registered_opts) {
+            if (name == n) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    shambase::format("The option {} is already registered", name));
+            }
+        }
+
         registered_opts.push_back({name, args, description});
     }
 
-    int argc;
+    /// supplied argc from main
+    int argc; 
+
+    /// supplied argv from main
     char **argv;
 
     void init(int _argc, char *_argv[]) {
         argc = _argc;
         argv = _argv;
 
-        shamcmdopt::register_opt("--help", {}, "show this message");
+        register_cmdopt_generic_opts();
+
         executable_name = std::string_view(argv[0]);
         args            = std::vector<std::string_view>(argv + 1, argv + argc);
         init_done       = true;
         check_args_registered();
+
+        process_cmdopt_generic_opts();
     }
 
     int get_argc() {
@@ -168,6 +185,11 @@ namespace shamcmdopt {
 
         fmt::println("\nUsage :");
 
+        std::sort(
+            registered_opts.begin(), registered_opts.end(), [](const auto &lhs, const auto &rhs) {
+                return lhs.name < rhs.name;
+            });
+
         for (auto &[n, arg, desc] : registered_opts) {
 
             std::string arg_print = arg.value_or("");
@@ -180,7 +202,6 @@ namespace shamcmdopt {
 
     bool is_help_mode() {
         if (has_option("--help")) {
-            print_help();
             return true;
         } else {
             return false;

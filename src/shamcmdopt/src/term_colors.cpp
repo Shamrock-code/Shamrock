@@ -9,8 +9,8 @@
 /**
  * @file term_colors.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "shamcmdopt/term_colors.hpp"

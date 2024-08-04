@@ -98,7 +98,6 @@ namespace shamcmdopt {
         register_opt("--color", {}, "force colored ouput");
         register_opt("--help", {}, "show this message");
 
-        // those two are not yet used for detection
         register_env_var_doc("NO_COLOR", "Disable colors (if no color cli args are passed)");
         register_env_var_doc("CLICOLOR_FORCE", "Enable colors (if no color cli args are passed)");
         register_env_var_doc("TERM", "Terminal emulator identifier");

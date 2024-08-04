@@ -72,6 +72,18 @@ jobs:
         run: |
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
+      
+      - name: run Shamrock help
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock --help
+
+      - name: run Shamrock Test help
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock_test --help
 
       - name: run Shamrock Unittests world_size = 1
         if: matrix.runtest

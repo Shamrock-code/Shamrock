@@ -104,6 +104,20 @@ namespace shamcmdopt {
         register_env_var_doc("COLORTERM", "Terminal color support identifier");
     }
 
+    /**
+     * @brief Detect if the current process should use colored output or not
+     *
+     * Colors are disabled by the cli flag `--nocolor` or env variable `NO_COLOR`
+     * Colors are enabled by the cli flag `--color` or env variable `CLICOLOR_FORCE`
+     * If no options are set we enable colors if in tty mode and 
+     *   if the terminal support colored output
+     *
+     * - We first check cli args as they are dominant over env variables
+     * - We then check if some env variables are set
+     * - If nothing is set we enable color if term_support_color() and is_a_tty() 
+     *     returns true
+     *
+     */
     void process_colors() {
 
         bool has_opt_nocolor = has_option("--nocolor");

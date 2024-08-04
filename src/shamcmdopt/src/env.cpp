@@ -27,6 +27,7 @@ std::optional<std::string> shamcmdopt::getenv_str(const char *env_var) {
     return {};
 }
 
+/// List of documented env variables
 std::vector<std::pair<std::string, std::string>> env_var_reg = {};
 
 void shamcmdopt::register_env_var_doc(std::string env_var, std::string desc) {

@@ -26,39 +26,58 @@
 #include <string>
 #include <vector>
 
+/**
+ * @brief Exception handler for exeption in this lib
+ */
 class ShamCmdOptException : public std::exception {
     public:
+
+    /// Exception CTOR from a message (cstring)
     explicit ShamCmdOptException(const char *message) : msg_(message) {}
 
+    /// Exception CTOR from a message (string)
     explicit ShamCmdOptException(const std::string &message) : msg_(message) {}
 
+    /// Destructor
     virtual ~ShamCmdOptException() noexcept {}
 
+    /// Get the message attached to the exception
     virtual const char *what() const noexcept { return msg_.c_str(); }
 
     protected:
+    /// Held message
     std::string msg_;
 };
 
 namespace shamcmdopt {
 
+    /// Error string to be printed in case of failure
     auto err_str = []() {
         return "[" + shambase::term_colors::col8b_red() + "Error" + shambase::term_colors::reset()
                + "]";
     };
 
-    std::string_view executable_name;
-    std::vector<std::string_view> args;
-    bool init_done;
+    std::string_view executable_name; ///< Executable name
+    std::vector<std::string_view> args; ///< Executable argument list (mapped from argv)
+    bool init_done; ///< Has cmdopt init been called
 
+    /// Struct for data related to an option
     struct Opts {
-        std::string name;
-        std::optional<std::string> args;
-        std::string description;
+        std::string name; ///< Name of the option (including dashes)
+        std::optional<std::string> args; ///< Documention of the option argument
+        std::string description; ///< Description of the otion
     };
 
+    /// Registered cli options
     std::vector<Opts> registered_opts;
 
+    /**
+     * @brief Check if the option name is registered
+     * 
+     * @param name the option name (including dashes)
+     * @return true the option is registered
+     * @return false  the option is not registered
+     */
     bool is_name_registered(const std::string_view &name) {
         for (auto opt : registered_opts) {
             if (opt.name == name) {
@@ -68,6 +87,9 @@ namespace shamcmdopt {
         return false;
     }
 
+    /**
+     * @brief Check if all argument passed to shamrock where registered otherwise throw
+     */
     void check_args_registered() {
         bool error = false;
 
@@ -93,13 +115,16 @@ namespace shamcmdopt {
         }
     }
 
+    /**
+     * @brief Check if init has been performed otherwise throw
+     */
     void check_init() {
         if (!init_done)
             throw ShamCmdOptException("Cmdopt uninitialized");
     }
 
     bool has_option(const std::string_view &option_name) {
-        check_init();
+        check_init(); // We must init the cmdopt before checking if an option is there
 
         if (!is_name_registered(option_name)) {
             fmt::println(

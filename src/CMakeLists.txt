@@ -156,37 +156,6 @@ if("${BUILD_TEST}")
 endif()
 
 
-
-
-execute_process(
-  COMMAND
-    "${Python_EXECUTABLE}" "-c" "
-import sys;print(sys.path, end= '')
-"
-  RESULT_VARIABLE __PYTHON_SYS_PATH_RESULT
-  OUTPUT_VARIABLE __PYTHON_SYS_PATH_OUT
-  ERROR_VARIABLE __PYTHON_SYS_PATH_ERROR)
-
-  #message(status " Python_EXECUTABLE        : ${Python_EXECUTABLE}")
-  #message(status " __PYTHON_SYS_PATH_RESULT : ${__PYTHON_SYS_PATH_RESULT}")
-  #message(status " __PYTHON_SYS_PATH_OUT    : ${__PYTHON_SYS_PATH_OUT}")
-  #message(status " __PYTHON_SYS_PATH_ERROR  : ${__PYTHON_SYS_PATH_ERROR}")
-
-file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp
-  "const char* ipython_run_src() { return \"${__PYTHON_SYS_PATH_OUT}\"; }"
-)
-
-target_sources(shamrock PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp)
-
-if("${BUILD_TEST}")
-  target_sources(shamrock_test PRIVATE  ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp)
-endif()
-
-
-
-
-
-
 add_subdirectory(shamtest)
 
 

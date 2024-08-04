@@ -22,6 +22,9 @@
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shambindings/start_python.hpp"
+#include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamcmdopt/cmdopt.hpp"
@@ -30,7 +33,6 @@
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamsys/SignalCatch.hpp"
 #include "shambase/time.hpp"
-#include "shamtest/shamtest.hpp"
 #include <array>
 #include <cstdlib>
 #include <filesystem>
@@ -47,47 +49,6 @@
 #include "version.hpp"
 
 //%Impl status : Should rewrite
-
-extern const char* ipython_run_src();
-
-const std::string run_ipython_src = 
-R"(
-
-from IPython import start_ipython
-from traitlets.config.loader import Config
-
-import signal
-
-# here the signal interup for sigint is None
-# this make ipython freaks out for weird reasons
-# registering the handler fix it ...
-# i swear python c api is horrible to works with
-import shamrock.sys
-signal.signal(signal.SIGINT, shamrock.sys.signal_handler)
-
-c = Config()
-
-banner ="SHAMROCK Ipython terminal\n" + "Python %s\n"%sys.version.split("\n")[0]
-
-c.TerminalInteractiveShell.banner1 = banner
-
-c.TerminalInteractiveShell.banner2 = """### 
-import shamrock
-###
-"""
-
-start_ipython(config=c)
-
-)";
-
-
-const std::string modify_path = 
-std::string("paths = ")+ ipython_run_src()+"\n"+
-R"(
-import sys
-sys.path = paths
-)";
-
 
 int main(int argc, char *argv[]) {
     
@@ -215,10 +176,7 @@ int main(int argc, char *argv[]) {
     }
 
     shamsys::register_signals();
-    //*
     {
-        namespace py = pybind11;
-        //RunScriptHandler rscript;
         
         if(opts::has_option("--ipython")){
             StackEntry stack_loc{};
@@ -227,50 +185,19 @@ int main(int argc, char *argv[]) {
                 throw shambase::make_except_with_loc<std::runtime_error>("cannot run ipython mode with > 1 processes");
             }
 
-            py::scoped_interpreter guard{};
-            py::exec(modify_path);
-            
-            std::cout << "--------------------------------------------" << std::endl;
-            std::cout << "-------------- ipython ---------------------" << std::endl;
-            std::cout << "--------------------------------------------" << std::endl;
-            py::exec(run_ipython_src);
-            std::cout << "--------------------------------------------" << std::endl;
-            std::cout << "------------ ipython end -------------------" << std::endl;
-            std::cout << "--------------------------------------------\n" << std::endl;
+            shambindings::start_ipython(true);
 
-            //rscript.run_ipython();
         }else if(opts::has_option("--rscript")){
             StackEntry stack_loc{};
             std::string fname = std::string(opts::get_option("--rscript"));
-            //RunScriptHandler rscript;
-            //rscript.run_file(fname);
 
-            py::scoped_interpreter guard{};
-            py::exec(modify_path);
-
-            if(shamcomm::world_rank() == 0){
-            std::cout << "-----------------------------------" << std::endl;
-            std::cout << "running pyscript : " << fname << std::endl;
-            std::cout << "-----------------------------------" << std::endl;
-            }
-            py::eval_file(fname);
-            if(shamcomm::world_rank() == 0){
-            std::cout << "-----------------------------------" << std::endl;
-            std::cout << "pyscript end" << std::endl;
-            std::cout << "-----------------------------------" << std::endl;
-            }
-
+            shambindings::run_py_file(fname, shamcomm::world_rank() == 0);
 
         }else{
-
-
-
-            //SimulationSPH<TestTimestepper, TestSimInfo>::run_sim();
-            //SimulationSPH<TestTimestepperSync, TestSimInfo>::run_sim();
+            logger::raw_ln("Nothing to do ... exiting");
         }
         
     }
-    //*/
 
 
 

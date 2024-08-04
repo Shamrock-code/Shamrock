@@ -4,6 +4,7 @@ import utils.intel_llvm
 import utils.sysinfo
 import utils.envscript
 import utils.amd_arch
+from utils.setuparg import *
 
 NAME = "Adastra mi250x Intel LLVM ROCM"
 PATH = "machine/debian-generic/intel-llvm"
@@ -11,7 +12,13 @@ PATH = "machine/debian-generic/intel-llvm"
 def is_intel_llvm_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/clang++")
 
-def setup(argv,builddir, shamrockdir,buildtype,pylib,lib_mode):
+def setup(arg : SetupArg):
+    argv = arg.argv
+    builddir = arg.builddir
+    shamrockdir = arg.shamrockdir
+    buildtype = arg.buildtype
+    pylib = arg.pylib
+    lib_mode = arg.lib_mode
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)

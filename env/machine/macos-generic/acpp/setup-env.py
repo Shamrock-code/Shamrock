@@ -3,6 +3,7 @@ import os
 import utils.acpp
 import utils.sysinfo
 import utils.envscript
+from utils.setuparg import *
 
 NAME = "MacOS generic AdaptiveCpp"
 PATH = "machine/macos-generic/acpp"
@@ -10,7 +11,13 @@ PATH = "machine/macos-generic/acpp"
 def is_acpp_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/acpp")
 
-def setup(argv,builddir, shamrockdir,buildtype,pylib,lib_mode):
+def setup(arg : SetupArg):
+    argv = arg.argv
+    builddir = arg.builddir
+    shamrockdir = arg.shamrockdir
+    buildtype = arg.buildtype
+    pylib = arg.pylib
+    lib_mode = arg.lib_mode
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)

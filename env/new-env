@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 import importlib
-
+from utils.setuparg import *
 
 # Get current file path
 cur_file = os.path.realpath(os.path.expanduser(__file__))
@@ -78,11 +78,13 @@ if __name__ == "__main__":
     importlib.invalidate_caches()
     mod = importlib.import_module("machine."+args.machine+".setup-env")
     mod.setup(
-        argv = underlying_tool_args,
-        builddir = os.path.abspath(os.path.expanduser(args.builddir)),
-        shamrockdir = abs_proj_dir,
-        buildtype = args.type,
-        pylib = args.pylib,
-        lib_mode = args.lib
+            SetupArg(
+                argv = underlying_tool_args,
+                builddir = os.path.abspath(os.path.expanduser(args.builddir)),
+                shamrockdir = abs_proj_dir,
+                buildtype = args.type,
+                pylib = args.pylib,
+                lib_mode = args.lib
+            )
         )
 

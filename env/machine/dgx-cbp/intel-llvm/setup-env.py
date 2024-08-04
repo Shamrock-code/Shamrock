@@ -5,6 +5,7 @@ import utils.sysinfo
 import utils.envscript
 import utils.cuda_arch
 import utils.amd_arch
+from utils.setuparg import *
 
 NAME = "CBP Nvidia DGX A100 Intel LLVM CUDA"
 PATH = "machine/debian-generic/intel-llvm"
@@ -12,7 +13,13 @@ PATH = "machine/debian-generic/intel-llvm"
 def is_intel_llvm_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/clang++")
 
-def setup(argv,builddir, shamrockdir,buildtype,pylib,lib_mode):
+def setup(arg : SetupArg):
+    argv = arg.argv
+    builddir = arg.builddir
+    shamrockdir = arg.shamrockdir
+    buildtype = arg.buildtype
+    pylib = arg.pylib
+    lib_mode = arg.lib_mode
 
     print("------------------------------------------")
     print("Running env setup for : "+NAME)

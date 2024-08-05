@@ -23,9 +23,9 @@ namespace shamtest::details {
 
     /// Informations about a test
     struct Test {
-        TestType type; ///< Type of test
-        std::string name; ///< Name of the test
-        i32 node_count; ///< Node count of the test
+        TestType type;          ///< Type of test
+        std::string name;       ///< Name of the test
+        i32 node_count;         ///< Node count of the test
         void (*test_functor)(); ///< Test function
 
         /// CTOR of the test

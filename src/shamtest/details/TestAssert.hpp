@@ -21,8 +21,8 @@ namespace shamtest::details {
 
     /// A test assertion
     struct TestAssert {
-        bool value; ///< Value of the assert
-        std::string name; ///< Name of the assert
+        bool value;          ///< Value of the assert
+        std::string name;    ///< Name of the assert
         std::string comment; ///< Comment attached to the assert
 
         /// Serialize the assertion in JSON

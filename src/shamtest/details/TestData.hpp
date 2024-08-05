@@ -18,10 +18,12 @@
 
 namespace shamtest::details {
 
+    ///< Test data
     struct TestData {
-        std::string dataset_name;
-        std::vector<DataNode> dataset;
+        std::string dataset_name;      ///< Name of the dataset
+        std::vector<DataNode> dataset; ///< Dataset
 
+        /// Add some data to the dataset
         inline void add_data(std::string name, const std::vector<f64> &v) {
             std::vector<f64> new_vec;
             for (f64 f : v) {
@@ -30,9 +32,11 @@ namespace shamtest::details {
             dataset.push_back(DataNode{std::move(name), std::move(new_vec)});
         }
 
+        /// Serialize the assertion in JSON
         std::string serialize_json();
-
+        /// Serialize the assertion in binary format
         void serialize(std::basic_stringstream<byte> &stream);
+        /// DeSerialize the assertion from binary format
         static TestData deserialize(std::basic_stringstream<byte> &stream);
     };
 

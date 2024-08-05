@@ -48,6 +48,7 @@ namespace shamtest::details {
         inline TestResult(const TestType &type, std::string name, const u32 &world_rank)
             : type(type), name(std::move(name)), world_rank(world_rank), asserts{}, test_data() {}
 
+        /// CTOR of a test result
         inline TestResult(
             TestType type,
             std::string name,
@@ -58,14 +59,12 @@ namespace shamtest::details {
             : type(type), name(std::move(name)), world_rank(world_rank),
               asserts(std::forward<TestAssertList>(asserts)),
               test_data(std::forward<TestDataList>(test_data)), tex_output(std::move(tex_output)) {}
-        /**
-         * @brief serialize the result of the test
-         *
-         * @return std::string the serialized results
-         */
-        std::string serialize_json();
 
+        /// Serialize the assertion in JSON
+        std::string serialize_json();
+        /// Serialize the assertion in binary format
         void serialize(std::basic_stringstream<byte> &stream);
+        /// DeSerialize the assertion from binary format
         static TestResult deserialize(std::basic_stringstream<byte> &reader);
     };
 

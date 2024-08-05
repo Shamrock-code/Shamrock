@@ -83,13 +83,11 @@ namespace shamtest {
 
     /**
      * @brief run all the tests
-     *
-     * @param argc main arg
-     * @param argv  main arg
-     * @param run_bench run benchmarks ?
-     * @param run_analysis run analysis tests ?
-     * @param run_unittest run unittests ?
-     * @return int
+     * 
+     * @param argc main argc
+     * @param argv  main argv
+     * @param cfg test run configuration
+     * @return int exit code
      */
     int run_all_tests(int argc, char *argv[], TestConfig cfg);
 
@@ -114,6 +112,7 @@ namespace shamtest {
         return shamtest::details::current_test.test_data;
     };
 
+    /// Get current tex output from a test
     inline std::string &test_tex_out() { return shamtest::details::current_test.tex_output; }
 
 } // namespace shamtest
@@ -224,5 +223,8 @@ namespace shamtest {
  */
 #define TEX_REPORT(src) shamtest::details::current_test.tex_output += src;
 
+/// REQUIRE macro alias to _Assert
 #define REQUIRE(a) _Assert(a)
+
+/// REQUIRE macro alias to _Assert_throw
 #define REQUIRE_THROW_AS(call, expt_type) _Assert_throw(call, expt_type)

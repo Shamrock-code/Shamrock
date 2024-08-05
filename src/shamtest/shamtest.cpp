@@ -43,8 +43,8 @@
 
 namespace shamtest {
 
-    bool is_run_only         = false;
-    bool is_full_output_mode = false;
+    bool is_run_only         = false; ///< Is in run only mode
+    bool is_full_output_mode = false; ///< Is in full output mode
 
     /**
      * @brief print the line in terminal when a test start
@@ -136,6 +136,12 @@ namespace shamtest {
         return false;
     }
 
+    /**
+     * @brief Generate a failure log at the end of the tests
+     * 
+     * @param res 
+     * @return std::string 
+     */
     std::string gen_fail_log(details::TestResult &res) {
         std::string out = "";
 
@@ -166,6 +172,11 @@ namespace shamtest {
         return out;
     }
 
+    /**
+     * @brief Print summary of the test run
+     * 
+     * @param results 
+     */
     void _print_summary(std::vector<details::TestResult> &results) {
         if (shamcomm::world_rank() > 0) {
             return;

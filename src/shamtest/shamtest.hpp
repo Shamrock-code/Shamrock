@@ -58,21 +58,27 @@ namespace shamtest {
 
     } // namespace details
 
+    /// Configuration of the test runner
     struct TestConfig {
 
+        /// Should print test list and then exit
         bool print_test_list_exit = false;
 
+        /// Should display all logs including all asserts
         bool full_output = false;
 
+        /// Should output a tex report
         bool output_tex                        = true;
+
+        /// Should output a json report
         std::optional<std::string> json_output = {};
 
-        bool run_long_tests = false;
-        bool run_unittest   = true;
-        bool run_validation = true;
-        bool run_benchmark  = false;
+        bool run_long_tests = false; ///< run also long tests
+        bool run_unittest   = true; ///< run unittests
+        bool run_validation = true; ///< run validation tests
+        bool run_benchmark  = false; ///< run benchmarks
 
-        std::optional<std::string> run_only = {};
+        std::optional<std::string> run_only = {}; ///< Run only regex to select tests
     };
 
     /**
@@ -87,7 +93,7 @@ namespace shamtest {
      */
     int run_all_tests(int argc, char *argv[], TestConfig cfg);
 
-    // output test list to a file
+    /// output test list to a file
     void gen_test_list(std::string_view outfile);
 
     /**

@@ -216,6 +216,7 @@ namespace shamtest {
         logger::print_faint_row();
     }
 
+    /// Gather a string from all MPI ranks
     std::basic_string<byte> gather_basic_string(std::basic_string<byte> in) {
         using namespace shamsys;
 
@@ -270,6 +271,7 @@ namespace shamtest {
         return out_res_string;
     }
 
+    /// Gather test results from all MPI ranks
     std::vector<details::TestResult> gather_tests(std::vector<details::TestResult> rank_result) {
         if (shamcomm::world_size() == 1) {
             return rank_result;
@@ -346,6 +348,7 @@ namespace shamtest {
         print_list(Unittest);
     }
 
+    /// Write the JSON report
     void write_json_report(std::vector<details::TestResult> &results, std::string outfile) {
         if (shamcomm::world_rank() > 0) {
             return;
@@ -395,6 +398,7 @@ namespace shamtest {
         shambase::write_string_to_file(outfile, s_out);
     }
 
+    /// Write the tex report
     void write_tex_report(std::vector<details::TestResult> &results, bool mark_fail) {
         if (shamcomm::world_rank() > 0) {
             return;

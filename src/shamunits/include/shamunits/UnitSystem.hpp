@@ -11,27 +11,66 @@
 /**
  * @file UnitSystem.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
-#include "Names.hpp"
 #include "ConvertionConstants.hpp"
+#include "Names.hpp"
 #include <cmath>
 
+/// Macro to add a unit getter
 #define addget(uname)                                                                              \
-    template<UnitPrefix pref = None,                                                               \
-             units::UnitName u,                                                                    \
-             int power                                = 1,                                         \
-             std::enable_if_t<u == units::uname, int> = 0>                                         \
+    template<                                                                                      \
+        UnitPrefix pref = None,                                                                    \
+        units::UnitName u,                                                                         \
+        int power                                = 1,                                              \
+        std::enable_if_t<u == units::uname, int> = 0>                                              \
     inline constexpr T get() const noexcept
 
-#define Uget(unitname, mult_pow) get<pref,units::unitname, (mult_pow)*power>()
+/// Shorthand for unit getter
+#define Uget(unitname, mult_pow) get<pref, units::unitname, (mult_pow) * power>()
+/// Shorthand for constant getter
 #define Cget(constant_name, mult_pow)                                                              \
-    details::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name, T(1) / constant_name)
-#define PREF Cget((get_prefix_val<T,pref>()), 1)
+    details::pow_constexpr_fast_inv<(mult_pow) * power>(constant_name, T(1) / constant_name)
+/// Shorthand for prefix handling
+#define PREF Cget((get_prefix_val<T, pref>()), 1)
 
 namespace shamunits {
 
+    /// \brief Defines a unit system
+    ///
+    /// Exemple of usage :
+    /// \code {.cpp}
+    ///    using namespace shamunits;
+    ///
+    ///    //create si units
+    ///    UnitSystem<double> si {};
+    ///
+    ///    // get the value of au^2 in the unit system
+    ///    // but it is quite big :)
+    ///    std::cout << si.get<units::astronomical_unit,2>() << std::endl;
+    ///
+    ///    double sol_mass = Constants<double>(si).sol_mass();
+    ///
+    ///    /*
+    ///    * create a unit system with time in Myr, length in au, mass in solar masses
+    ///    */
+    ///    UnitSystem<double> astro_units {
+    ///        si.get<mega, units::years>(),
+    ///        si.get<units::astronomical_unit>(),
+    ///        si.get<units::kilogramm>()*sol_mass,
+    ///    };
+    ///
+    ///    //this time it returns 1 because the base length is the astronomical unit
+    ///    std::cout << astro_units.get<units::astronomical_unit,2>() << std::endl;
+    ///
+    ///    Constants<double> astro_cte {astro_units};
+    ///
+    ///    // in those units G is 3.94781e+25
+    ///    std::cout << astro_cte.G() << std::endl;
+    /// @endcode
+    ///
+    ///
     template<class T>
     class UnitSystem {
 
@@ -40,28 +79,95 @@ namespace shamunits {
             return details::pow_constexpr_fast_inv<power>(a, a_inv);
         }
 
-        inline T pown(T a, int n){
-            return std::pow(a,n);
-        }
+        inline T pown(T a, int n) { return std::pow(a, n); }
 
         using Uconvert = ConvertionConstants<T>;
 
         public:
+        /**
+         * @fn s
+         * \brief value of a second in this system
+         *
+         * @fn m
+         * \brief value of a meter in this system
+         *
+         * @fn kg
+         * \brief value of a kilogramm in this system
+         *
+         * @fn A
+         * \brief value of a Ampere in this system
+         *
+         * @fn K
+         * \brief value of a Kelvin in this system
+         *
+         * @fn mol
+         * \brief value of a mol in this system
+         *
+         * @fn cd
+         * \brief value of a candela in this system
+         *
+         * @fn s_inv
+         * \brief inverse value of a second in this system
+         *
+         * @fn m_inv
+         * \brief inverse value of a meter in this system
+         *
+         * @fn kg_inv
+         * \brief inverse value of a kilogramm in this system
+         *
+         * @fn A_inv
+         * \brief inverse value of a Ampere in this system
+         *
+         * @fn K_inv
+         * \brief inverse value of a Kelvin in this system
+         *
+         * @fn mol_inv
+         * \brief inverse value of a mol in this system
+         *
+         * @fn cd_inv
+         * \brief inverse value of a candela in this system
+         *
+         */
 
         T s, m, kg, A, K, mol, cd;
         T s_inv, m_inv, kg_inv, A_inv, K_inv, mol_inv, cd_inv;
 
-        explicit UnitSystem(T unit_time = 1 ,
-                   T unit_length = 1 ,
-                   T unit_mass = 1 ,
-                   T unit_current = 1 ,
-                   T unit_temperature = 1 ,
-                   T unit_qte = 1 ,
-                   T unit_lumint = 1 )
+        /**
+         * @brief Construct a new UnitSystem from either supplied base units or SI by default
+         *
+         * @param unit_time
+         * @param unit_length
+         * @param unit_mass
+         * @param unit_current
+         * @param unit_temperature
+         * @param unit_qte
+         * @param unit_lumint
+         */
+        explicit UnitSystem(
+            T unit_time        = 1,
+            T unit_length      = 1,
+            T unit_mass        = 1,
+            T unit_current     = 1,
+            T unit_temperature = 1,
+            T unit_qte         = 1,
+            T unit_lumint      = 1)
             : s(1 / unit_time), m(1 / unit_length), kg(1 / unit_mass), A(1 / unit_current),
               K(1 / unit_temperature), mol(1 / unit_qte), cd(1 / unit_lumint), s_inv(unit_time),
               m_inv(unit_length), kg_inv(unit_mass), A_inv(unit_current), K_inv(unit_temperature),
               mol_inv(unit_qte), cd_inv(unit_lumint) {}
+
+        #ifdef DOXYGEN
+        /**
+         * @brief get the value of a units in the current system
+         * \todo better doc with exemple
+         * @tparam pref unit prefix (default to none)
+         * @tparam u the units
+         * @tparam power the power of the units (also applied to the prefix)
+         * @return constexpr T the value in this system
+         */
+        template<UnitPrefix pref = None, units::UnitName u, int power = 1>
+        inline constexpr T get() const noexcept;
+        #else
 
         // clang-format off
         addget(second)    { return PREF* pow_constexpr<power>(s  , s_inv);   }
@@ -108,34 +214,38 @@ namespace shamunits {
         addget(erg) {return PREF* Uget(Joule, 1) * Cget(Uconvert::erg_to_J,1);}
 
         addget(pint) {return PREF* Uget(m, 3) * Cget(Uconvert::litre_to_pint/1000,1);}
+        #endif
 
         // clang-format on
 
-        template<UnitPrefix pref = None,                                                             
-             units::UnitName u,                                                                    
-             int power                                = 1>  
+        /**
+         * @brief To the si units (convert a system unit to si ones). This function is the inverse of get
+         * \todo better doc with exemple
+         * @tparam pref unit prefix (default to none)
+         * @tparam u the units
+         * @tparam power the power of the units (also applied to the prefix)
+         * @return constexpr T the value in si units
+         */
+        template<UnitPrefix pref = None, units::UnitName u, int power = 1>
         inline constexpr T to() {
             return get<u, -power>();
         }
 
-        template<                                                             
-             units::UnitName u,                                                                    
-             int power                                = 1>  
-        inline constexpr T get(){
-            return get<None,u,power>();
+        /// Simplified signature for \ref get without prefix
+        template<units::UnitName u, int power = 1>
+        inline constexpr T get() {
+            return get<None, u, power>();
         }
 
-        template<                                                             
-             units::UnitName u,                                                                    
-             int power                                = 1>  
-        inline constexpr T to(){
-            return to<None,u,power>();
+        /// Simplified signature for \ref to without prefix
+        template<units::UnitName u, int power = 1>
+        inline constexpr T to() {
+            return to<None, u, power>();
         }
 
         private:
-
         template<UnitPrefix pref = None>
-        inline T getter_1(units::UnitName name){
+        inline T getter_1(units::UnitName name) {
             switch (name) {
 
             case units::second: return get<pref, units::second>(); break;
@@ -145,7 +255,7 @@ namespace shamunits {
             case units::Kelvin: return get<pref, units::Kelvin>(); break;
             case units::mole: return get<pref, units::mole>(); break;
             case units::candela: return get<pref, units::candela>(); break;
-            //case units::mps: return get<pref, units::mps>(); break;
+            // case units::mps: return get<pref, units::mps>(); break;
             case units::Hertz: return get<pref, units::Hertz>(); break;
             case units::Newtown: return get<pref, units::Newtown>(); break;
             case units::Pascal: return get<pref, units::Pascal>(); break;
@@ -173,12 +283,12 @@ namespace shamunits {
             case units::light_year: return get<pref, units::light_year>(); break;
             case units::parsec: return get<pref, units::parsec>(); break;
             case units::eV: return get<pref, units::eV>(); break;
-            case units::erg:  return get<pref, units::erg>(); break;
-            case units::pint:  return get<pref, units::pint>(); break;
+            case units::erg: return get<pref, units::erg>(); break;
+            case units::pint: return get<pref, units::pint>(); break;
             }
         }
 
-        inline T getter_2(UnitPrefix pref ,units::UnitName name){
+        inline T getter_2(UnitPrefix pref, units::UnitName name) {
             switch (pref) {
 
             case tera: return getter_1<tera>(name); break;
@@ -188,24 +298,25 @@ namespace shamunits {
             case hecto: return getter_1<hecto>(name); break;
             case deca: return getter_1<deca>(name); break;
             case None: return getter_1<None>(name); break;
-            //case deci: return getter_1<deci>(name); break;
+            // case deci: return getter_1<deci>(name); break;
             case centi: return getter_1<centi>(name); break;
             case milli: return getter_1<milli>(name); break;
             case micro: return getter_1<micro>(name); break;
             case nano: return getter_1<nano>(name); break;
             case pico: return getter_1<pico>(name); break;
-            case femto:  return getter_1<femto>(name); break;
+            case femto: return getter_1<femto>(name); break;
             }
         }
 
         public:
-
-        inline T runtime_get(UnitPrefix pref ,units::UnitName name, int power){
-            return pown(getter_2(pref, name),power);
+        /// Non templated version of \ref get
+        inline T runtime_get(UnitPrefix pref, units::UnitName name, int power) {
+            return pown(getter_2(pref, name), power);
         }
 
-        inline T runtime_to(UnitPrefix pref ,units::UnitName name, int power){
-            return pown(getter_2(pref, name),-power);
+        /// Non templated version of \ref to
+        inline T runtime_to(UnitPrefix pref, units::UnitName name, int power) {
+            return pown(getter_2(pref, name), -power);
         }
     };
 

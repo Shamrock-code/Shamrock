@@ -13,6 +13,8 @@
  *
  */
 
+#if defined(DOXYGEN) || defined(SHAMROCK_EXECUTABLE_BUILD)
+
 #include "shambase/print.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/start_python.hpp"
@@ -105,3 +107,5 @@ namespace shambindings {
         }
     }
 } // namespace shambindings
+
+#endif

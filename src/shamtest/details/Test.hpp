@@ -18,17 +18,21 @@
 
 namespace shamtest::details {
 
+    /// Current test being run
     extern TestResult current_test;
 
+    /// Informations about a test
     struct Test {
-        TestType type;
-        std::string name;
-        i32 node_count;
-        void (*test_functor)();
+        TestType type;          ///< Type of test
+        std::string name;       ///< Name of the test
+        i32 node_count;         ///< Node count of the test
+        void (*test_functor)(); ///< Test function
 
+        /// CTOR of the test
         inline Test(const TestType &type, std::string name, const i32 &node_count, void (*func)())
             : type(type), name(std::move(name)), node_count(node_count), test_functor(func) {}
 
+        /// Run the test
         TestResult run();
     };
 

@@ -11,38 +11,62 @@
 /**
  * @file Constants.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "ConvertionConstants.hpp"
 #include "Names.hpp"
 #include "UnitSystem.hpp"
-#include <stdexcept>
 #include "details/utils.hpp"
+#include <stdexcept>
 
+/// @brief Macro to add a constant to the \ref shamunits::Constants class
+/// For exemple one can add a new constant by adding the following statment inside
+/// shamunits::Constants \code{.cpp} addconstant(delta_nu_cs) { return Cget(Si::delta_nu_cs,1) *
+/// Uget(Hertz, 1); } \endcode
+///
 #define addconstant(name)                                                                          \
     template<int power = 1>                                                                        \
     inline constexpr T name()
-#define Uget(unitname, mult_pow) units.template get<None, units::unitname, (mult_pow)*power>()
+
+/// Utility macro to get the value of a unit in the current unit system with its power
+#define Uget(unitname, mult_pow) units.template get<None, units::unitname, (mult_pow) * power>()
+
+/// Utility macro to get the value of a constant in the current unit system with its power
 #define Cget(constant_name, mult_pow)                                                              \
-    details::pow_constexpr_fast_inv<(mult_pow)*power>(constant_name, 1 / constant_name)
+    details::pow_constexpr_fast_inv<(mult_pow) * power>(constant_name, 1 / constant_name)
 
 namespace shamunits {
 
+    /**
+     * @brief Value of pi
+     * Usage : `auto pi = shamunits::pi<T>;`
+     */
     template<class T>
     constexpr T pi = 3.141592653589793116;
+
+    /// Fine structure constant
     template<class T>
     constexpr T fine_structure = 0.0072973525693;
+
+    /// Mass ration between the proton and electron
     template<class T>
     constexpr T proton_electron_ratio = 1836.1526734311;
+
+    /// Mass ration between the electron and proton
     template<class T>
     constexpr T electron_proton_ratio = 1 / proton_electron_ratio<T>;
 
+    /**
+     * @brief Physical constants
+     */
     template<class T>
     struct Constants {
 
+        /// Alias to the conversion constants
         using Conv = ConvertionConstants<T>;
 
+        /// Physical constant in SI units
         struct Si {
 
             // si system base constants
@@ -78,13 +102,17 @@ namespace shamunits {
             static constexpr T sol_mass      = 1.98847e30;                             //(kg)
             static constexpr T planck_mass   = 2.17643424e-8;                          //(kg)
 
-            static constexpr T guiness_density = Conv::gcm3_to_guiness_density*1000;  //(kg.m-3)
+            static constexpr T guiness_density = Conv::gcm3_to_guiness_density * 1000; //(kg.m-3)
         };
 
+        /// Current unit system of the constants
         const UnitSystem<T> units;
+
+        /// Construct the \ref shamunits::Constants class with a unit system
         explicit Constants(const UnitSystem<T> units) : units(units) {}
 
         // clang-format off
+        
         addconstant(delta_nu_cs) { return Cget(Si::delta_nu_cs,1) * Uget(Hertz, 1); }
         addconstant(c)           { return Cget(Si::c,1)   * Uget(m, 1)* Uget(s, -1); }
         addconstant(h)           { return Cget(Si::h,1)   * Uget(Joule, 1) * Uget(s, -1); }
@@ -109,6 +137,133 @@ namespace shamunits {
     };
 
 } // namespace shamunits
+
+/**
+ * \fn shamunits::Constants::delta_nu_cs()
+ * \brief get delta_nu_cs in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::delta_nu_cs()
+ * \brief get delta_nu_cs in the si unit system
+ *
+ * \fn shamunits::Constants::c()
+ * \brief get c in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::c()
+ * \brief get c in the si unit system
+ *
+ * \fn shamunits::Constants::h()
+ * \brief get h in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::h()
+ * \brief get h in the si unit system
+ *
+ * \fn shamunits::Constants::e()
+ * \brief get e in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::e()
+ * \brief get e in the si unit system
+ *
+ * \fn shamunits::Constants::k()
+ * \brief get k in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::k()
+ * \brief get k in the si unit system
+ *
+ * \fn shamunits::Constants::Na()
+ * \brief get Na in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::Na()
+ * \brief get Na in the si unit system
+ *
+ * \fn shamunits::Constants::Kcd()
+ * \brief get Kcd in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::Kcd()
+ * \brief get Kcd in the si unit system
+ *
+ * \fn shamunits::Constants::year()
+ * \brief get the value of a year in the time unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::year()
+ * \brief get the value of a year in the time unit of the si unit system
+ *
+ * \fn shamunits::Constants::au()
+ * \brief get the value of an au in the distance unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::astronomical_unit()
+ * \brief get the value of an au in the distance unit of the si unit system
+ *
+ * \fn shamunits::Constants::G()
+ * \brief get the value of G in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::G()
+ * \brief get the value of G in the si unit system
+ *
+ * \fn shamunits::Constants::earth_mass()
+ * \brief get the value of a earth_mass in the mass unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::earth_mass()
+ * \brief get the value of a earth_mass in the mass unit of the si unit system
+ *
+ * \fn shamunits::Constants::jupiter_mass()
+ * \brief get the value of a jupiter_mass in the mass unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::jupiter_mass()
+ * \brief get the value of a jupiter_mass in the mass unit of the si unit system
+ *
+ * \fn shamunits::Constants::sol_mass()
+ * \brief get the value of a sol_mass in the mass unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::sol_mass()
+ * \brief get the value of a sol_mass in the mass unit of the si unit system
+ *
+ * \fn shamunits::Constants::guiness_density()
+ * \brief get the value of the guiness density in the density unit of the current unit system @ref
+ * units
+ *
+ * \fn shamunits::Constants::Si::guiness_density()
+ * \brief get the value of a guiness_density in the density of the si unit system
+ *
+ * \fn shamunits::Constants::Si::hbar()
+ * \brief get the value of a hbar in the si unit system
+ *
+ * \fn shamunits::Constants::Si::mu_0()
+ * \brief get the value of a mu_0 in the si unit system
+ *
+ * \fn shamunits::Constants::Si::Z_0()
+ * \brief get the value of a Z_0 in the si unit system
+ *
+ * \fn shamunits::Constants::Si::epsilon_0()
+ * \brief get the value of a epsilon_0 in the si unit system
+ *
+ * \fn shamunits::Constants::Si::ke()
+ * \brief get the value of a ke in the si unit system
+ *
+ * \fn shamunits::Constants::Si::hour()
+ * \brief get the duration of an hour in the si unit system
+ *
+ * \fn shamunits::Constants::Si::day()
+ * \brief get the duration of a day in the si unit system
+ *
+ * \fn shamunits::Constants::Si::light_year()
+ * \brief get the lenght of a light_year in the si unit system
+ *
+ * \fn shamunits::Constants::Si::parsec()
+ * \brief get the lenght of a parsec in the si unit system
+ *
+ * \fn shamunits::Constants::Si::planck_length()
+ * \brief get the lenght of a planck_length in the si unit system
+ *
+ * \fn shamunits::Constants::Si::proton_mass()
+ * \brief get the mass of a proton in the si unit system
+ *
+ * \fn shamunits::Constants::Si::electron_mass()
+ * \brief get the mass of a electron in the si unit system
+ *
+ * \fn shamunits::Constants::Si::planck_mass()
+ * \brief get the value of a planck mass in the si unit system
+ *
+ */
 
 #undef Uget
 #undef addconstant

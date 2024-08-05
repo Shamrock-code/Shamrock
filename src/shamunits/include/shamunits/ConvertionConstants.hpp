@@ -11,11 +11,13 @@
 /**
  * @file ConvertionConstants.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 namespace shamunits {
 
+    /// Conversion constants from a units to another one
+    /// \todo Could be also a XMacro next to names definitions
     template<class T>
     struct ConvertionConstants {
 
@@ -37,18 +39,62 @@ namespace shamunits {
 
         static constexpr T litre_to_pint = 0.568;
 
-        // we want to thanks E. Lynch for his usefull contribution to the devellopement of 
-        //   numerical methods and new standard of measurment
-        //todo find a more precise measurment of the guiness density (shall be done in ireland)
-        //protocol : 
-        // 1 - start by ordering the most precise pint of guiness (in ireland)
-        // 2 - weight the pint 
-        // 4 - proceed to drink the beer (including any leftover foam)
-        // 54 - weight the pint again
-        // 745 - proceed to compute the dedzabfgzi if the zad beer
-        // current estimation is sourced from 
-        //    - Tinseth, Glenn. Javascript Beer Specs Calculator. The Real Beer Page. 1997.
+        /// We first want to thanks E. Lynch for his usefull contribution to the devellopement of
+        ///    numerical methods and new standard of measurment
+        /// \verbatim
+        /// todo find a more precise measurment of the guiness density (shall be done in ireland)
+        /// protocol :
+        ///  1 - start by ordering the most precise pint of guiness (in ireland)
+        ///  2 - weight the pint
+        ///  4 - proceed to drink the beer (including any leftover foam)
+        ///  54 - weight the pint again
+        ///  745 - proceed to compute the dedzabfgzi if the zad beer
+        ///  current estimation is sourced from
+        ///     - Tinseth, Glenn. Javascript Beer Specs Calculator. The Real Beer Page. 1997.
+        /// \endverbatim
         static constexpr T gcm3_to_guiness_density = 1.017; // in g.cm-3
     };
 
 } // namespace shamunits
+
+/**
+ * @fn shamunits::ConvertionConstants::au_to_m()
+ * @brief conversion factor from au to meters
+ *
+ * @fn shamunits::ConvertionConstants::ly_to_m()
+ * @brief conversion factor from light years to meters
+ *
+ * @fn shamunits::ConvertionConstants::pc_to_m()
+ * @brief conversion factor from parsecs to meters
+ *
+ * @fn shamunits::ConvertionConstants::mn_to_s()
+ * @brief conversion factor from minutes to seconds
+ *
+ * @fn shamunits::ConvertionConstants::hr_to_s()
+ * @brief conversion factor from hours to seconds
+ *
+ * @fn shamunits::ConvertionConstants::dy_to_s()
+ * @brief conversion factor from days to seconds
+ *
+ * @fn shamunits::ConvertionConstants::yr_to_s()
+ * @brief conversion factor from years to seconds
+ *
+ * @fn shamunits::ConvertionConstants::Myr_to_s()
+ * @brief conversion factor from $10^6$ years to seconds
+ *
+ * @fn shamunits::ConvertionConstants::Gyr_to_s()
+ * @brief conversion factor from $10^9$ years to seconds
+ *
+ * @fn shamunits::ConvertionConstants::eV_to_J()
+ * @brief conversion factor from electron volts to joules
+ *
+ * @fn shamunits::ConvertionConstants::erg_to_J()
+ * @brief conversion factor from ergs to joules
+ *
+ * @fn shamunits::ConvertionConstants::K_degC_offset()
+ * @brief conversion offset from kelvin degrees to celsius
+ *
+ * @fn shamunits::ConvertionConstants::litre_to_pint()
+ * @brief conversion offset from litre to british pint
+ *
+ */

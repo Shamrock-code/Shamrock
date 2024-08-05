@@ -58,36 +58,40 @@ namespace shamtest {
 
     } // namespace details
 
+    /// Configuration of the test runner
     struct TestConfig {
 
+        /// Should print test list and then exit
         bool print_test_list_exit = false;
 
+        /// Should display all logs including all asserts
         bool full_output = false;
 
+        /// Should output a tex report
         bool output_tex                        = true;
+
+        /// Should output a json report
         std::optional<std::string> json_output = {};
 
-        bool run_long_tests = false;
-        bool run_unittest   = true;
-        bool run_validation = true;
-        bool run_benchmark  = false;
+        bool run_long_tests = false; ///< run also long tests
+        bool run_unittest   = true; ///< run unittests
+        bool run_validation = true; ///< run validation tests
+        bool run_benchmark  = false; ///< run benchmarks
 
-        std::optional<std::string> run_only = {};
+        std::optional<std::string> run_only = {}; ///< Run only regex to select tests
     };
 
     /**
      * @brief run all the tests
-     *
-     * @param argc main arg
-     * @param argv  main arg
-     * @param run_bench run benchmarks ?
-     * @param run_analysis run analysis tests ?
-     * @param run_unittest run unittests ?
-     * @return int
+     * 
+     * @param argc main argc
+     * @param argv  main argv
+     * @param cfg test run configuration
+     * @return int exit code
      */
     int run_all_tests(int argc, char *argv[], TestConfig cfg);
 
-    // output test list to a file
+    /// output test list to a file
     void gen_test_list(std::string_view outfile);
 
     /**
@@ -108,6 +112,7 @@ namespace shamtest {
         return shamtest::details::current_test.test_data;
     };
 
+    /// Get current tex output from a test
     inline std::string &test_tex_out() { return shamtest::details::current_test.tex_output; }
 
 } // namespace shamtest
@@ -218,5 +223,8 @@ namespace shamtest {
  */
 #define TEX_REPORT(src) shamtest::details::current_test.tex_output += src;
 
+/// REQUIRE macro alias to _Assert
 #define REQUIRE(a) _Assert(a)
+
+/// REQUIRE macro alias to _Assert_throw
 #define REQUIRE_THROW_AS(call, expt_type) _Assert_throw(call, expt_type)

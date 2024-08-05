@@ -9,23 +9,28 @@
 #pragma once
 
 /**
- * @file texTestReport.hpp
+ * @file generic_opts.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief
+ * @brief This file handler generic cli & env options
+ *
  */
 
-#include "shamtest/details/TestResult.hpp"
-#include <vector>
-
-namespace shamtest::details {
+namespace shamcmdopt {
 
     /**
-     * @brief Make a tex report from the list of test results
+     * @brief Register generic cli and env variables options
      *
-     * @param results
-     * @param mark_fail
-     * @return std::string
      */
-    std::string make_test_report_tex(std::vector<TestResult> &results, bool mark_fail);
+    void register_cmdopt_generic_opts();
 
-} // namespace shamtest::details
+    /**
+     * @brief Process generic cli and env variables options
+     */
+    void process_cmdopt_generic_opts();
+
+    /**
+     * @brief Print the help message.
+     */
+    void print_help();
+
+} // namespace shamcmdopt

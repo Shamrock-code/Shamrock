@@ -125,11 +125,12 @@ namespace shammodels::zeus {
          */
         Component<shamrock::ComputeField<Tvec>> gradu;
         
-        struct {
+        struct Timings {
             f64 interface = 0;
             f64 neighbors = 0;
             f64 io = 0;
 
+            /// Reset the timings logged in the storage
             void reset(){
                 *this = {};
             }

@@ -68,8 +68,6 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--sycl-cfg","(idcomp:idalt) ", "specify the compute & alt queue index");
     opts::register_opt("--loglevel","(logvalue)", "specify a log level");
 
-    opts::register_opt("--nocolor",{}, "disable colored ouput");
-
     opts::register_opt("--rscript","(filepath)", "run shamrock with python runscirpt");
     opts::register_opt("--ipython",{}, "run shamrock in Ipython mode");
     opts::register_opt("--force-dgpu",{}, "for direct mpi comm on");
@@ -78,10 +76,6 @@ int main(int argc, char *argv[]) {
 
     if(opts::is_help_mode()){
         return 0;
-    }
-
-    if(opts::has_option("--nocolor")){
-        shambase::term_colors::disable_colors();
     }
 
 

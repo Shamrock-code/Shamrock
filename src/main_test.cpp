@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--sycl-ls", {}, "list available devices");
     opts::register_opt("--sycl-ls-map", {}, "list available devices & list of queue bindings");
     opts::register_opt("--loglevel", "(logvalue)", "specify a log level");
-    opts::register_opt("--nocolor", {}, "disable colored ouput");
     opts::register_opt("--benchmark-mpi", {}, "micro benchmark for MPI");
 
     opts::register_opt("--test-list", {}, "print test availables");

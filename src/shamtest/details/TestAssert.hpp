@@ -19,13 +19,19 @@
 
 namespace shamtest::details {
 
+    /// A test assertion
     struct TestAssert {
-        bool value;
-        std::string name;
-        std::string comment;
+        bool value;          ///< Value of the assert
+        std::string name;    ///< Name of the assert
+        std::string comment; ///< Comment attached to the assert
 
+        /// Serialize the assertion in JSON
         std::string serialize_json();
+
+        /// Serialize the assertion in binary format
         void serialize(std::basic_stringstream<byte> &stream);
+
+        /// DeSerialize the assertion from binary format
         static TestAssert deserialize(std::basic_stringstream<byte> &reader);
     };
 

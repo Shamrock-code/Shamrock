@@ -50,6 +50,7 @@ namespace shamcmdopt {
 
     /**
      * @brief Initialize the command line option parser.
+     * We also process generic options in this call (color detection typically)
      *
      * @param argc The number of command line arguments.
      * @param argv The command line arguments.

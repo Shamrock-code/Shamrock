@@ -1,8 +1,3 @@
-<picture>
-   <source media="(prefers-color-scheme: dark)" srcset="doc/shamrock-doc/src/images/no_background_nocolor.png"  width="600">
-   <img alt="text" src="doc/logosham_white.png" width="600">
- </picture>
-
 # Shamrock units library
 
 This is the units library in use in the Shamrock code, this repository will be updated when change are made to this library in the Shamrock monorepo. 

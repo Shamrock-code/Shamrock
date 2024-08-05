@@ -20,16 +20,22 @@
 #include "shambackends/sycl.hpp"
 
 namespace shamtest::details {
+
+    /// Class to hold the list of assertion related to a test
     struct TestAssertList {
+
+        /// List of assertion held by the class
         std::vector<TestAssert> asserts;
 
         // define member function here
         // to register asserts
 
+        /// Append the source location to the the supplied string to generate a comment
         inline static std::string gen_comment(std::string s, SourceLocation loc) {
             return s + "\n" + loc.format_multiline();
         }
 
+        /// Test if the supplied boolean is true
         inline void
         assert_bool(std::string assert_name, bool v, SourceLocation loc = SourceLocation{}) {
 
@@ -37,6 +43,7 @@ namespace shamtest::details {
                 v, std::move(assert_name), "failed assert location : " + loc.format_one_line()});
         }
 
+        /// Test for an equality
         template<class T1, class T2>
         inline void
         assert_equal(std::string assert_name, T1 a, T2 b, SourceLocation loc = SourceLocation{}) {
@@ -51,6 +58,7 @@ namespace shamtest::details {
             asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
         }
 
+        /// Assert equal on an array of values
         template<class Acca, class Accb>
         inline void assert_equal_array(
             std::string assert_name,
@@ -76,6 +84,15 @@ namespace shamtest::details {
             asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
         }
 
+        /**
+         * @brief Add an assertion testing a floating point equality up to precision eps
+         *
+         * @param assert_name name of the assertion
+         * @param a value a
+         * @param b value b
+         * @param eps precision of the test
+         * @param loc source location of the call
+         */
         inline void assert_float_equal(
             std::string assert_name, f64 a, f64 b, f64 eps, SourceLocation loc = SourceLocation{}) {
             f64 diff = sycl::fabs(a - b);
@@ -91,6 +108,7 @@ namespace shamtest::details {
             asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
         }
 
+        /// add an assertion with a comment
         inline void assert_add_comment(
             std::string assert_name,
             bool v,
@@ -99,12 +117,17 @@ namespace shamtest::details {
             asserts.push_back(TestAssert{v, std::move(assert_name), gen_comment(comment, loc)});
         }
 
+        /// Serialize the assertion in JSON
         std::string serialize_json();
+        /// Serialize the assertion in binary format
         void serialize(std::basic_stringstream<byte> &stream);
+        /// DeSerialize the assertion from binary format
         static TestAssertList deserialize(std::basic_stringstream<byte> &reader);
 
+        /// Get number of assertion in the list
         inline u32 get_assert_count() { return asserts.size(); }
 
+        /// Get the number of successfull assertions
         inline u32 get_assert_success_count() {
             u32 cnt = 0;
             for (TestAssert &a : asserts) {

@@ -12,8 +12,8 @@
  * @brief implementation of the Tex test report generation
  */
 
-#include "texTestReport.hpp"
 #include "shambase/string.hpp"
+#include "texTestReport.hpp"
 #include "shambackends/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+/// Tex report template to be used
 std::string tex_template = R"==(
 
 \documentclass[10pt]{article}
@@ -85,12 +86,14 @@ hyperfigures=false]
 
 )==";
 
+/// Footer of the document
 std::string tex_template_end = R"(
     \end{document}
 )";
 
 namespace shamtest::details {
 
+    /// Add the unittest section to the Tex report
     void add_unittest_section(std::stringstream &output, std::vector<TestResult> &results) {
 
         output << R"(\section{Unittests})"
@@ -179,8 +182,8 @@ namespace shamtest::details {
                         output << R"(\FAIL)";
                     }
 
-                    if ((!res.asserts.asserts[j].value) &&
-                        !res.asserts.asserts[j].comment.empty()) {
+                    if ((!res.asserts.asserts[j].value)
+                        && !res.asserts.asserts[j].comment.empty()) {
                         output << "\n\n $\\rightarrow$ failed assert logs :\n\n";
                         output << R"(\begin{verbatim})" << res.asserts.asserts[j].comment
                                << R"(\end{verbatim})";
@@ -193,6 +196,7 @@ namespace shamtest::details {
         }
     }
 
+    /// Add tex outputs from the tests to the report
     void add_tex_output_section(std::stringstream &output, std::vector<TestResult> &results) {
 
         output << R"(\section{Tex report})";
@@ -203,8 +207,8 @@ namespace shamtest::details {
             if (!tex_out.empty()) {
 
                 output << R"==(
-                \cprotect\subsection{ \verb+)==" +
-                              res.name + R"==(+}
+                \cprotect\subsection{ \verb+)=="
+                              + res.name + R"==(+}
                 )==";
 
                 output << tex_out;
@@ -212,6 +216,7 @@ namespace shamtest::details {
         }
     }
 
+    /// Document details about the SYCL queues status in the report
     void add_queue_section(std::stringstream &output, sycl::queue &q) {
 
         sycl::device d = q.get_device();
@@ -230,15 +235,13 @@ namespace shamtest::details {
                       d.get_info<sycl::info::device::global_mem_cache_line_size>())
                << "\n";
         output << "local_mem_size : "
-               << shambase::readable_sizeof(
-                      d.get_info<sycl::info::device::local_mem_size>())
+               << shambase::readable_sizeof(d.get_info<sycl::info::device::local_mem_size>())
                << "\n";
-        output << "is_endian_little : "
-                     << d.get_info<sycl::info::device::is_endian_little>()
+        output << "is_endian_little : " << d.get_info<sycl::info::device::is_endian_little>()
                << "\n";
-
     }
 
+    /// Document details about the Shamrock status in the report
     void add_config_section(std::stringstream &output) {
 
         std::string cxxflags = compile_arg;
@@ -289,6 +292,7 @@ namespace shamtest::details {
         output << "\n\n";
     }
 
+    /// Make the tex report
     std::string make_test_report_tex(std::vector<TestResult> &results, bool mark_fail) {
 
         std::stringstream output;

@@ -100,6 +100,9 @@ namespace shambase {
         /// Disable all colors
         void disable_colors();
 
+        /// Are colors enabled
+        inline bool colors_enabled() { return details::_int_term_colors.colors_on; }
+
         /// Get the empty terminal escape
         inline const std::string empty() { return ""; };
         /// Get the reset terminal escape char

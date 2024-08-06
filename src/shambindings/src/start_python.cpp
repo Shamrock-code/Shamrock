@@ -25,47 +25,19 @@
  * 
  * @return const char* 
  */
-extern const char *ipython_run_src();
+extern const char *change_py_sys_path();
 
 /**
  * @brief Script to run ipython
  * 
  */
-const std::string run_ipython_src =
-    R"(
-
-from IPython import start_ipython
-from traitlets.config.loader import Config
-
-import signal
-
-# here the signal interup for sigint is None
-# this make ipython freaks out for weird reasons
-# registering the handler fix it ...
-# i swear python c api is horrible to works with
-import shamrock.sys
-signal.signal(signal.SIGINT, shamrock.sys.signal_handler)
-
-c = Config()
-
-banner ="SHAMROCK Ipython terminal\n" + "Python %s\n"%sys.version.split("\n")[0]
-
-c.TerminalInteractiveShell.banner1 = banner
-
-c.TerminalInteractiveShell.banner2 = """### 
-import shamrock
-###
-"""
-
-start_ipython(config=c)
-
-)";
+extern const char * run_ipython_src();
 
 /**
  * @brief Python script to modify sys.path to point to the correct libraries
  * 
  */
-const std::string modify_path = std::string("paths = ") + ipython_run_src() + "\n" +
+const std::string modify_path = std::string("paths = ") + change_py_sys_path() + "\n" +
                                 R"(
 import sys
 sys.path = paths
@@ -82,7 +54,7 @@ namespace shambindings {
             shambase::println("-------------- ipython ---------------------");
             shambase::println("--------------------------------------------");
         }
-        py::exec(run_ipython_src);
+        py::exec(run_ipython_src());
         if (do_print) {
             shambase::println("--------------------------------------------");
             shambase::println("------------ ipython end -------------------");

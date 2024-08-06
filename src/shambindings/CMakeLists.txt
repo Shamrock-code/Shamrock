@@ -36,9 +36,7 @@ target_include_directories(shambindings PUBLIC
 if(NOT "${BUILD_PYLIB}")
   execute_process(
     COMMAND
-      "${Python_EXECUTABLE}" "-c" "
-  import sys;print(sys.path, end= '')
-  "
+      "${Python_EXECUTABLE}" "-c" "import sys;print(sys.path, end= '')"
     RESULT_VARIABLE __PYTHON_SYS_PATH_RESULT
     OUTPUT_VARIABLE __PYTHON_SYS_PATH_OUT
     ERROR_VARIABLE __PYTHON_SYS_PATH_ERROR)
@@ -48,9 +46,19 @@ if(NOT "${BUILD_PYLIB}")
     #message(status " __PYTHON_SYS_PATH_OUT    : ${__PYTHON_SYS_PATH_OUT}")
     #message(status " __PYTHON_SYS_PATH_ERROR  : ${__PYTHON_SYS_PATH_ERROR}")
 
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp
-    "const char* ipython_run_src() { return \"${__PYTHON_SYS_PATH_OUT}\"; }"
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/change_py_sys_path.cpp
+    "const char* change_py_sys_path() { return \"${__PYTHON_SYS_PATH_OUT}\"; }"
   )
 
-  target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ipython_run_src.cpp)
+  target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/change_py_sys_path.cpp)
+
+  file(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/run_ipython.py __CAT_RUNIPYTHON_OUT)
+  
+  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/run_ipython_src.cpp
+    "const char* run_ipython_src() { return R\"=(\n${__CAT_RUNIPYTHON_OUT}\n)=\"; }"
+  )
+
+  target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/run_ipython_src.cpp)
+
+
 endif()

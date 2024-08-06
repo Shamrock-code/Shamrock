@@ -9,4 +9,9 @@ if(SHAMROCK_USE_NVTX)
 endif()
 
 
-#find_package(pybind11 CONFIG REQUIRED)
+if(SHAMROCK_EXTERNAL_JSON)
+    find_package(nlohmann_json 3.11.3 REQUIRED)
+else()
+    set(JSON_BuildTests OFF CACHE INTERNAL "")
+    add_subdirectory(nlohmann_json)
+endif()

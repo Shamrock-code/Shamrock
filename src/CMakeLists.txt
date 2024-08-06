@@ -67,6 +67,7 @@ else()
     target_link_libraries(shamrock_lib PUBLIC pybind11::embed)
 endif()
 
+target_link_libraries(shamrock_lib PUBLIC nlohmann_json::nlohmann_json)
 
 target_link_libraries(shamrock_lib PUBLIC ${as_subproject})
 
@@ -82,6 +83,8 @@ else()
 add_executable(shamrock main.cpp)
 target_link_libraries(shamrock PUBLIC pybind11::embed)
 endif()
+
+target_link_libraries(shamrock PUBLIC nlohmann_json::nlohmann_json)
 
 target_link_libraries(shamrock PUBLIC shamrock_lib)
 
@@ -114,6 +117,7 @@ if("${BUILD_TEST}")
     add_executable(shamrock_test main_test.cpp  )
 
     target_link_libraries(shamrock_test PUBLIC pybind11::embed)
+    target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
 
     target_link_libraries(shamrock_test PUBLIC shamrock_lib)
 

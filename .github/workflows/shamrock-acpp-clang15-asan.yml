@@ -12,7 +12,11 @@ jobs:
 
   shamrock_acpp_omp_asan:
     name: AdaptiveCpp omp asan clang-${{ matrix.clang }}
-    runs-on: [self-hosted, ubuntu20]
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ${{ matrix.container }}
+      
 
     strategy:
       matrix:

@@ -8,7 +8,11 @@ jobs:
 
   shamrock_acpp:
     name: test ${{ matrix.testfile }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} 
-    runs-on: [self-hosted, ubuntu20]
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ${{ matrix.container }}
+      
 
     strategy:
       matrix:

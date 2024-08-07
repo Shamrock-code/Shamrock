@@ -154,7 +154,11 @@ jobs:
 
   publish_release:
 
-    runs-on: [self-hosted, ubuntu20]
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ${{ matrix.container }}
+      
     
     needs: [shamrock_linux_acpp_cov, make_documentation]
 

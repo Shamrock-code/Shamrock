@@ -11,7 +11,11 @@ on:
 jobs:
   shamrock_dpcpp_nativecpu:
     name: DPCPP Native CPU
-    runs-on: [self-hosted, ubuntu20]
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ${{ matrix.container }}
+      
 
     #for now this is quite buggy
     if: false
@@ -46,7 +50,11 @@ jobs:
 
   shamrock_dpcpp_cuda:
     name: DPCPP CUDA ${{ matrix.cuda }}
-    runs-on: [self-hosted, ubuntu20]
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ${{ matrix.container }}
+      
 
     strategy:
       matrix:
@@ -94,7 +102,11 @@ jobs:
 
   shamrock_dpcpp_hip:
     name: DPCPP HIP ROCM ${{ matrix.rocm }}
-    runs-on: [self-hosted, ubuntu20]
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ${{ matrix.container }}
+      
     strategy:
       matrix:
         rocm: [5.4.3]

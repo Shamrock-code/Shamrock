@@ -20,17 +20,30 @@
 
 namespace shamphys {
 
+    /**
+     * @brief Configuration struct for adiabatic equation of state
+     *
+     * @tparam Tscal Scalar type
+     */
     template<class Tscal>
     struct EOS_Config_Adiabatic {
         Tscal gamma;
     };
 
+    /**
+     * @brief equal operator for EOS_Config_Adiabatic
+     */
     template<class Tscal>
     inline bool
     operator==(const EOS_Config_Adiabatic<Tscal> &lhs, const EOS_Config_Adiabatic<Tscal> &rhs) {
         return lhs.gamma == rhs.gamma;
     }
 
+    /**
+     * @brief Configuration struct for locally isothermal equation of state from Lodato Price 2007
+     *
+     * @tparam Tscal Scalar type
+     */
     template<class Tscal>
     struct EOS_Config_LocallyIsothermal_LP07 {
         Tscal cs0 = 0.005;
@@ -38,11 +51,14 @@ namespace shamphys {
         Tscal r0  = 10;
     };
 
+    /**
+     * @brief equal operator for EOS_Config_LocallyIsothermal_LP07
+     */
     template<class Tscal>
     inline bool operator==(
         const EOS_Config_LocallyIsothermal_LP07<Tscal> &lhs,
         const EOS_Config_LocallyIsothermal_LP07<Tscal> &rhs) {
         return (lhs.cs0 == rhs.cs0) && (lhs.q == rhs.q) && (lhs.r0 == rhs.r0);
     }
-    
+
 } // namespace shamphys

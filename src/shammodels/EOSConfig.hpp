@@ -51,12 +51,18 @@ namespace shammodels {
 
         Variant config = Adiabatic{};
 
+        /// Set the config to an adiabatic equation of state
         inline void set_adiabatic(Tscal gamma) { config = Adiabatic{gamma}; }
+
+        /// Set the config to a locally isothermal equation of state
         inline void set_locally_isothermal() { config = LocallyIsothermal{}; }
+
+        /// Set the config to a locally isothermal (Lodato Price 2007) equation of state
         inline void set_locally_isothermalLP07(Tscal cs0, Tscal q, Tscal r0) {
             config = LocallyIsothermalLP07{cs0, q, r0};
         }
 
+        /// Print current status of the EOSConfig
         inline void print_status();
     };
 

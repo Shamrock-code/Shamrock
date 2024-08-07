@@ -14,13 +14,13 @@ jobs:
     container:
       image: ${{ matrix.container }}
       
-
     strategy:
       matrix:
-        clang: [15]
-        cuda: [11.0.2]
-        rocm: [5.4.3]
-        container: ghcr.io/shamrock-code/ci-ubuntu20:main
+        include: 
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
 
     steps:
       - uses: actions/checkout@v4

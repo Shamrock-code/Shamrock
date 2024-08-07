@@ -47,11 +47,13 @@ jobs:
           ./env/new-env --machine debian-generic.acpp --builddir acpp_omp_debug --type coverage -- --backend omp
 
       - name: Configure
+        shell: bash // In docker container github action default to sh
         run: |
           cd acpp_omp_debug
           source activate && shamconfigure
 
       - name: Build
+        shell: bash // In docker container github action default to sh
         run: |
           cd acpp_omp_debug
           source activate && shammake

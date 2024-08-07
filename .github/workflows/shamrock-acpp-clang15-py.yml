@@ -27,6 +27,7 @@ jobs:
             backend: omp
             arch: none
             runtest: yes
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
   
     timeout-minutes: 20
     steps:

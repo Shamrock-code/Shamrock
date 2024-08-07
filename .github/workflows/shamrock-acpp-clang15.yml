@@ -27,27 +27,32 @@ jobs:
             arch: none
             runtest: yes
             uploadartifact: yes
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
             backend: generic
             arch: none
             runtest: yes
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
             backend: cuda.explicit-multipass
             arch: sm_80
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
             backend: cuda.integrated-multipass
             arch: sm_80
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
             backend: hip
             arch: gfx906
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
   
     timeout-minutes: 60
     steps:

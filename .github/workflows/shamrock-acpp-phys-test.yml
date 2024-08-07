@@ -12,7 +12,6 @@ jobs:
 
     container:
       image: ${{ matrix.container }}
-      
 
     strategy:
       matrix:
@@ -24,6 +23,7 @@ jobs:
             arch: none
             runtest: yes
             testfile: sod_tube.py
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
 
 
     timeout-minutes: 60

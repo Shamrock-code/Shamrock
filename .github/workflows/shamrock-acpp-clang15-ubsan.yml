@@ -16,7 +16,7 @@ jobs:
 
     container:
       image: ${{ matrix.container }}
-      
+
     if: false
 
     strategy:
@@ -24,6 +24,7 @@ jobs:
         clang: [15]
         cuda: [11.0.2]
         rocm: [5.4.3]
+        container: ghcr.io/shamrock-code/ci-ubuntu20:main
     #if: false
   
     timeout-minutes: 60

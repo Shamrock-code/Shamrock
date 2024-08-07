@@ -105,7 +105,7 @@ jobs:
     runs-on: [self-hosted,  docker-runner]
 
     container:
-      image: ghcr.io/shamrock-code/ci-ubuntu20rocm543:main
+      image: ghcr.io/shamrock-code/ci-ubuntu20rocm543dpcpp:main
       
     strategy:
       matrix:

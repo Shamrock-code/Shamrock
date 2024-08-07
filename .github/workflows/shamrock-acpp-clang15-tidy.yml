@@ -53,7 +53,7 @@ jobs:
           ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp
   
       - name: Configure
-        shell: bash // In docker container github action default to sh
+        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source activate && shamconfigure

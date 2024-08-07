@@ -78,13 +78,13 @@ jobs:
         run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
   
       - name: Configure
-        shell: bash // In docker container github action default to sh
+        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source activate && shamconfigure
 
       - name: Build
-        shell: bash // In docker container github action default to sh
+        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source activate && shammake

@@ -62,12 +62,12 @@ namespace shamphys {
     template<class T>
     struct EOS_LocallyIsothermal{
 
-        static constexpr T soundspeed_sq(T cs0sq,T Rsq, T q){
-            return cs0sq * sycl::pow(Rsq,q);
+        static constexpr T soundspeed_sq(T cs0sq,T Rsq, T mq){
+            return cs0sq * sycl::pow(Rsq,mq);
         }
 
-        static constexpr T pressure(T cs0sq,T Rsq, T q, T rho){
-            return soundspeed_sq(cs0sq, Rsq, q)*rho;
+        static constexpr T pressure(T cs0sq,T Rsq, T mq, T rho){
+            return soundspeed_sq(cs0sq, Rsq, mq)*rho;
         }
 
         static constexpr T pressure_from_cs(T cs0sq, T rho){

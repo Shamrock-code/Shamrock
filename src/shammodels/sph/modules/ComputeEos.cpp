@@ -134,7 +134,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                 sycl::accessor h{mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
                 
                 Tscal cs0   = eos_config->cs0;
-                Tscal q     = eos_config->q;
+                Tscal mq     = - eos_config->q;
                 Tscal r0sq    = eos_config->r0 * eos_config->r0;
                 Tscal pmass = gpart_mass;
 
@@ -144,7 +144,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                     Tvec R = xyz[item];
 
                     Tscal Rsq = sycl::dot(R, R);
-                    Tscal cs_sq = EOS::soundspeed_sq(cs0*cs0, Rsq/r0sq, q);
+                    Tscal cs_sq = EOS::soundspeed_sq(cs0*cs0, Rsq/r0sq, mq);
                     Tscal cs_out = sycl::sqrt(cs_sq);
                     Tscal rho_a = rho_h(pmass, h[item], Kernel::hfactd);
 

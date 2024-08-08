@@ -12,9 +12,11 @@ jobs:
   #make shamrock documentation
   make_documentation:
     name: "Build : Documentation"
+    runs-on: [self-hosted,  docker-runner]
 
-    runs-on: [self-hosted, ubuntu20]
-    
+    container:
+      image: ghcr.io/shamrock-code/ci-ubuntu20:main
+      
     steps:
       - uses: actions/checkout@v4
         with:

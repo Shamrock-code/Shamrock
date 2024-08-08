@@ -8,7 +8,10 @@ jobs:
 
   shamrock_acpp:
     name: test ${{ matrix.testfile }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} 
-    runs-on: [self-hosted, ubuntu20]
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ${{ matrix.container }}
 
     strategy:
       matrix:
@@ -20,6 +23,7 @@ jobs:
             arch: none
             runtest: yes
             testfile: sod_tube.py
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
 
 
     timeout-minutes: 60
@@ -30,16 +34,33 @@ jobs:
   
       - name: ls local
         run : ls -la
+      
+      - name: install LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{matrix.clang}}
+          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
+          if [[ "${{matrix.clang}}" == "16" ]]; then
+            sudo rm -r /usr/lib/clang/16*
+            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
+          fi
+          
+      - name: install python packages
+        run: |
+          pip install matplotlib numpy scipy
 
       - name: Setup env
         run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
   
       - name: Configure
+        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source activate && shamconfigure
 
       - name: Build
+        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source activate && shammake

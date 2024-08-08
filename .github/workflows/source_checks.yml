@@ -21,7 +21,7 @@ jobs:
         ref: "${{ github.event.pull_request.merge_commit_sha }}"
 
     - name: Show diff against main
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request_target'
       run: git diff ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}
 
     - uses: actions/setup-python@v5
@@ -32,11 +32,11 @@ jobs:
 
 
     - name: rerun precommit for logs
-      if: success() && github.event_name == 'pull_request'
+      if: success() && github.event_name == 'pull_request_target'
       run: pre-commit run --all-files > out
 
     - name: make file comment
-      if: success() && github.event_name == 'pull_request'
+      if: success() && github.event_name == 'pull_request_target'
       run: |
         echo "Pre-commit check: ✅ 
         \`\`\`
@@ -47,7 +47,7 @@ jobs:
         " > message.md
 
     - name: Comment doxygen diff on PR
-      if: success() && github.event_name == 'pull_request'
+      if: success() && github.event_name == 'pull_request_target'
       uses: thollander/actions-comment-pull-request@v2
       with:
         filePath: message.md
@@ -58,19 +58,19 @@ jobs:
 
 
     - name : Generate diff
-      if: failure() && github.event_name == 'pull_request'
+      if: failure() && github.event_name == 'pull_request_target'
       run: git diff > diff-pre-commit
 
     - name : Cat diff
-      if: failure() && github.event_name == 'pull_request'
+      if: failure() && github.event_name == 'pull_request_target'
       run: cat diff-pre-commit
 
     - name: Run pre-commit-report
-      if: failure() && github.event_name == 'pull_request'
+      if: failure() && github.event_name == 'pull_request_target'
       run: python3 buildbot/precommit_report.py > out.md
 
     - name: Comment doxygen diff on PR
-      if: failure() && github.event_name == 'pull_request'
+      if: failure() && github.event_name == 'pull_request_target'
       uses: thollander/actions-comment-pull-request@v2
       with:
         filePath: out.md
@@ -79,15 +79,15 @@ jobs:
         create_if_not_exists: true
 
     - name: rm tmpfiles
-      if: failure() && github.event_name == 'pull_request'
+      if: failure() && github.event_name == 'pull_request_target'
       run: rm diff-pre-commit log_precommit_*
     
     - name: Show diff
-      if: failure() && github.event_name == 'pull_request'
+      if: failure() && github.event_name == 'pull_request_target'
       run: git diff
 
     #- name: suggest changes
-    #  if: always() && github.event_name == 'pull_request'
+    #  if: always() && github.event_name == 'pull_request_target'
     #  uses: reviewdog/action-suggester@v1
     #  with:
     #    tool_name: git-pre-commit

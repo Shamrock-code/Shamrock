@@ -46,6 +46,9 @@ jobs:
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
           
+      - name: install python packages
+        run: |
+          pip install matplotlib numpy scipy
 
       - name: Setup env
         run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}

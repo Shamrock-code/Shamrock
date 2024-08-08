@@ -21,12 +21,9 @@ list(APPEND CMAKE_MODULE_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake
     )
 
-option(EXPORT_COMPILE_COMMANDS "export the compile_commands.json" ON)
-
-# Necessary for clangd to work properly
-if(EXPORT_COMPILE_COMMANDS)
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-endif()
+# I don't know why in CI containers using an option to trigger 
+# this has effect only at second configure call
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ################################
 # Shamrock configuration

@@ -24,14 +24,14 @@ jobs:
         ref: "${{ github.event.pull_request.merge_commit_sha }}"
 
     - uses: actions/checkout@v4
-      if: github.event_name == 'push'
+      if: github.event_name != 'pull_request_target'
       with:
         fetch-depth: 0
-    #### End Checkout part ####
 
     - name: Show diff against main
       if: github.event_name == 'pull_request_target'
       run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+    #### End Checkout part ####
 
     - uses: actions/setup-python@v5
       with:

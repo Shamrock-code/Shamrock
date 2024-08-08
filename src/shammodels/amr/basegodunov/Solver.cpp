@@ -86,9 +86,9 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
     grad_compute.compute_grad_rho_van_leer();
     grad_compute.compute_grad_v_van_leer();
     grad_compute.compute_grad_P_van_leer();
-
-    if constexpr (ndust > 0)
-    {
+    
+    if (solver_config.is_dust_on()) {
+        
         grad_compute.compute_grad_rho_dust_van_leer();
         grad_compute.compute_grad_v_dust_van_leer();
     }
@@ -187,8 +187,8 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
     storage.serial_patch_tree.reset();
 
 
-    if(Solver::ndust > 0)
-    {
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
 
             
         storage.dtrho_dust.reset();
@@ -319,7 +319,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     writer.add_cell_data_section();
     // writer.add_field_data_section(11);
     u32  fileds_num = 11;
-    if (Solver::ndust > 0) fileds_num += 8;
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
+         fileds_num += 8;
+    }
     writer.add_field_data_section(fileds_num);
 
     std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(2);
@@ -330,14 +333,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
 
     std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(4);
 
-    if(Solver::ndust > 0)
-    {
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
 
         std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust = sched.rankgather_field<Tscal>(5);
-        writer.write_field("rho_dust", fields_rho_dust, Solver::ndust*num_obj*block_size);
+        writer.write_field("rho_dust", fields_rho_dust, ndust*num_obj*block_size);
 
         std::unique_ptr<sycl::buffer<Tvec>> fields_vel_dust = sched.rankgather_field<Tvec>(6);
-        writer.write_field("rhovel_dust", fields_vel_dust, Solver::ndust*num_obj*block_size);
+        writer.write_field("rhovel_dust", fields_vel_dust, ndust*num_obj*block_size);
 
     }
 
@@ -368,25 +371,25 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     writer.write_field("dtrhoe", dtrhoe, num_obj*block_size);
 
 
-    if(Solver::ndust > 0)
-    {
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
         std::unique_ptr<sycl::buffer<Tvec>> grad_rho_dust = storage.grad_rho_dust.get().rankgather_computefield(sched);
-        writer.write_field("grad_rho_dust", grad_rho_dust, Solver::ndust*num_obj*block_size);
+        writer.write_field("grad_rho_dust", grad_rho_dust, ndust*num_obj*block_size);
 
         std::unique_ptr<sycl::buffer<Tvec>> dx_v_dust = storage.dx_v_dust.get().rankgather_computefield(sched);
-        writer.write_field("dx_v_dust", dx_v_dust, Solver::ndust*num_obj*block_size);
+        writer.write_field("dx_v_dust", dx_v_dust, ndust*num_obj*block_size);
 
         std::unique_ptr<sycl::buffer<Tvec>> dy_v_dust = storage.dy_v_dust.get().rankgather_computefield(sched);
-        writer.write_field("dy_v_dust", dy_v_dust, Solver::ndust*num_obj*block_size);
+        writer.write_field("dy_v_dust", dy_v_dust, ndust*num_obj*block_size);
 
         std::unique_ptr<sycl::buffer<Tvec>> dz_v_dust = storage.dz_v_dust.get().rankgather_computefield(sched);
-        writer.write_field("dz_v_dust", dz_v_dust, Solver::ndust*num_obj*block_size);
+        writer.write_field("dz_v_dust", dz_v_dust, ndust*num_obj*block_size);
 
         std::unique_ptr<sycl::buffer<Tscal>> dtrho_dust = storage.dtrho_dust.get().rankgather_computefield(sched);
-        writer.write_field("dtrho_dust", dtrho_dust, Solver::ndust*num_obj*block_size);
+        writer.write_field("dtrho_dust", dtrho_dust, ndust*num_obj*block_size);
 
         std::unique_ptr<sycl::buffer<Tvec>> dtrhov_dust = storage.dtrhov_dust.get().rankgather_computefield(sched);
-        writer.write_field("dtrhov_dust", dtrhov_dust, Solver::ndust*num_obj*block_size);
+        writer.write_field("dtrhov_dust", dtrhov_dust, ndust*num_obj*block_size);
     }
 
 }

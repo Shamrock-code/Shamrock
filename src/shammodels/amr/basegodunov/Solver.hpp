@@ -33,6 +33,29 @@ namespace shammodels::basegodunov {
         VanLeer_std = 2,
         VanLeer_sym = 3,
         Minmod = 4,
+    };   
+    
+    enum DustRiemannSolverMode{
+        NoDust = 0,
+        DHLL = 1, // Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
+        HB   = 2   // Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
+    };
+
+    struct DustConfig{
+        DustRiemannSolverMode dust_riemann_config=NoDust;
+        u32 ndust = 0;
+
+        bool is_dust_on(){
+            if (dust_riemann_config != NoDust) {
+                u32 ndust = ndust;
+                if(ndust == 0){
+                    throw shambase::make_except_with_loc<std::runtime_error>("Dust is on with ndust == 0");
+                }
+                return true;
+            }
+
+            return false;
+        }
     };
 
     template<class Tvec,class TgridVec>
@@ -53,6 +76,11 @@ namespace shammodels::basegodunov {
 
         RiemmanSolverMode riemman_config = HLL;
         SlopeMode slope_config = VanLeer_sym;
+        DustConfig dust_config {};
+
+        bool is_dust_on(){
+            return dust_config.is_dust_on();
+        }
 
         Tscal Csafe = 0.9;
     };
@@ -82,6 +110,14 @@ namespace shammodels::basegodunov {
             context.pdata_layout_add_field<Tscal>("rho", AMRBlock::block_size);
             context.pdata_layout_add_field<Tvec>("rhovel", AMRBlock::block_size);
             context.pdata_layout_add_field<Tscal>("rhoetot", AMRBlock::block_size);
+        
+            if (solver_config.is_dust_on()) {
+                u32 ndust = solver_config.dust_config.ndust;
+
+                context.pdata_layout_add_field<TgridVec>("rho_dust", (ndust * AMRBlock::block_size));  
+                context.pdata_layout_add_field<TgridVec>("rhovel_dust", (ndust* AMRBlock::block_size));
+            }
+
         }
 
         Solver(ShamrockCtx &context) : context(context) {}

@@ -54,9 +54,11 @@ jobs:
   
       - name: Configure
         shell: bash # In docker container github action default to sh
+        # we need to run shamconfigure twice because compile_commands is not generated otherwise
+        # with this docker image, i never saw this behavior before
         run: |
           cd build
-          source activate && shamconfigure
+          source activate && shamconfigure && shamconfigure
 
       - name: Generate version file
         run: |

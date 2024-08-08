@@ -87,6 +87,11 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
     grad_compute.compute_grad_rho_van_leer();
     grad_compute.compute_grad_v_van_leer();
     grad_compute.compute_grad_P_van_leer();
+    if (solver_config.is_dust_on()) {
+        
+        grad_compute.compute_grad_rho_dust_van_leer();
+        grad_compute.compute_grad_v_dust_van_leer();
+    }
 
     // shift values
     modules::FaceInterpolate face_interpolator(context,solver_config,storage);
@@ -180,6 +185,47 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
     storage.ghost_zone_infos.reset();
 
     storage.serial_patch_tree.reset();
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
+
+        storage.dtrho_dust.reset();
+        storage.dtrhov_dust.reset();
+
+        storage.flux_rho_dust_face_xp .reset();
+        storage.flux_rho_dust_face_xm .reset();
+        storage.flux_rho_dust_face_yp .reset();
+        storage.flux_rho_dust_face_ym .reset();
+        storage.flux_rho_dust_face_zp .reset();
+        storage.flux_rho_dust_face_zm .reset();
+        storage.flux_rhov_dust_face_xp.reset();
+        storage.flux_rhov_dust_face_xm.reset();
+        storage.flux_rhov_dust_face_yp.reset();
+        storage.flux_rhov_dust_face_ym.reset();
+        storage.flux_rhov_dust_face_zp.reset();
+        storage.flux_rhov_dust_face_zm.reset();
+
+        storage.rho_dust_face_xp.reset();
+        storage.rho_dust_face_xm.reset();
+        storage.rho_dust_face_yp.reset();
+        storage.rho_dust_face_ym.reset();
+        storage.rho_dust_face_zp.reset();
+        storage.rho_dust_face_zm.reset();
+
+        storage.vel_dust_face_xp.reset();
+        storage.vel_dust_face_xm.reset();
+        storage.vel_dust_face_yp.reset();
+        storage.vel_dust_face_ym.reset();
+        storage.vel_dust_face_zp.reset();
+        storage.vel_dust_face_zm.reset();
+
+        storage.vel_dust.reset();
+
+        storage.grad_rho_dust.reset();
+        storage.dx_v_dust.reset();
+        storage.dy_v_dust.reset();
+        storage.dz_v_dust.reset();
+
+    }
 
     tstep.end();
 
@@ -204,7 +250,7 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
         print+=("---------------------------------------------------------------------------------");
         print+=(gathered) + "\n";
         print+=("---------------------------------------------------------------------------------");
-        logger::info_ln("amr::Zeus",print);
+        logger::info_ln("amr::Godunov",print);
     }
 
     storage.timings_details.reset();
@@ -267,7 +313,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     writer.write_voxel_cells(pos_min_cell,pos_max_cell, num_obj*block_size);
 
     writer.add_cell_data_section();
-    writer.add_field_data_section(11);
+    // writer.add_field_data_section(11);
+    u32  fileds_num = 11;
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
+         fileds_num += 8;
+    }
+    writer.add_field_data_section(fileds_num);
 
     std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(2);
     writer.write_field("rho", fields_rho, num_obj*block_size);
@@ -277,6 +329,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
 
     std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(4);
     writer.write_field("rhoetot", fields_eint, num_obj*block_size);
+
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
+
+        std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust = sched.rankgather_field<Tscal>(5);
+        writer.write_field("rho_dust", fields_rho_dust, ndust*num_obj*block_size);
+
+        std::unique_ptr<sycl::buffer<Tvec>> fields_vel_dust = sched.rankgather_field<Tvec>(6);
+        writer.write_field("rhovel_dust", fields_vel_dust, ndust*num_obj*block_size);
+
+    }
 
     std::unique_ptr<sycl::buffer<Tvec>> grad_rho = storage.grad_rho.get().rankgather_computefield(sched);
     writer.write_field("grad_rho", grad_rho, num_obj*block_size);
@@ -303,6 +366,27 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
 
     std::unique_ptr<sycl::buffer<Tscal>> dtrhoe = storage.dtrhoe.get().rankgather_computefield(sched);
     writer.write_field("dtrhoe", dtrhoe, num_obj*block_size);
+
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
+        std::unique_ptr<sycl::buffer<Tvec>> grad_rho_dust = storage.grad_rho_dust.get().rankgather_computefield(sched);
+        writer.write_field("grad_rho_dust", grad_rho_dust, ndust*num_obj*block_size);
+
+        std::unique_ptr<sycl::buffer<Tvec>> dx_v_dust = storage.dx_v_dust.get().rankgather_computefield(sched);
+        writer.write_field("dx_v_dust", dx_v_dust, ndust*num_obj*block_size);
+
+        std::unique_ptr<sycl::buffer<Tvec>> dy_v_dust = storage.dy_v_dust.get().rankgather_computefield(sched);
+        writer.write_field("dy_v_dust", dy_v_dust, ndust*num_obj*block_size);
+
+        std::unique_ptr<sycl::buffer<Tvec>> dz_v_dust = storage.dz_v_dust.get().rankgather_computefield(sched);
+        writer.write_field("dz_v_dust", dz_v_dust, ndust*num_obj*block_size);
+
+        std::unique_ptr<sycl::buffer<Tscal>> dtrho_dust = storage.dtrho_dust.get().rankgather_computefield(sched);
+        writer.write_field("dtrho_dust", dtrho_dust, ndust*num_obj*block_size);
+
+        std::unique_ptr<sycl::buffer<Tvec>> dtrhov_dust = storage.dtrhov_dust.get().rankgather_computefield(sched);
+        writer.write_field("dtrhov_dust", dtrhov_dust, ndust*num_obj*block_size);
+    }
 
 }
 

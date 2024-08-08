@@ -113,6 +113,38 @@ namespace shammodels::basegodunov {
         Component<shamrock::ComputeField<Tscal>> dtrho;
         Component<shamrock::ComputeField<Tvec>> dtrhov;
         Component<shamrock::ComputeField<Tscal>> dtrhoe;
+
+
+        Component<shamrock::ComputeField<Tvec>> vel_dust;
+        Component<shamrock::ComputeField<Tvec>> grad_rho_dust;
+        Component<shamrock::ComputeField<Tvec>> dx_v_dust;
+        Component<shamrock::ComputeField<Tvec>> dy_v_dust;
+        Component<shamrock::ComputeField<Tvec>> dz_v_dust;
+
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_dust_face_xp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_dust_face_xm;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_dust_face_yp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_dust_face_ym;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_dust_face_zp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal,2>>>> rho_dust_face_zm;
+
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> vel_dust_face_xp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> vel_dust_face_xm;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> vel_dust_face_yp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> vel_dust_face_ym;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> vel_dust_face_zp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec,2>>>> vel_dust_face_zm;
+
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>> flux_rho_dust_face_xp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>> flux_rho_dust_face_xm;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>> flux_rho_dust_face_yp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>> flux_rho_dust_face_ym;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>> flux_rho_dust_face_zp;
+        Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>> flux_rho_dust_face_zm;
+
+        Component<shamrock::ComputeField<Tscal>> dtrho_dust;
+        Component<shamrock::ComputeField<Tvec>> dtrhov_dust;
+
         
         struct Timings{
             f64 interface = 0;

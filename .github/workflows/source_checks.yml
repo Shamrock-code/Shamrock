@@ -13,11 +13,6 @@ jobs:
   pre-commit:
     name: "Pre-commit CI"
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-      issues: write
-      pull-requests: write
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5

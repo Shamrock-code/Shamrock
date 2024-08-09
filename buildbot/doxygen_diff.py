@@ -20,6 +20,7 @@ def line_count_file(file):
 
 def shorten_file_path(l):
     l = l.replace(abs_proj_dir+"/","")
+    l = l.replace("/__w/Shamrock/Shamrock/","")
     l = l.replace("/home/docker/actions-runner/_work/Shamrock/Shamrock/","")
     return l
 

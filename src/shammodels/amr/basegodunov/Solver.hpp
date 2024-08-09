@@ -48,6 +48,7 @@ namespace shammodels::basegodunov {
 
         inline bool is_dust_on(){
             if (dust_riemann_config != NoDust) {
+
                 if(ndust == 0){
                     throw shambase::make_except_with_loc<std::runtime_error>("Dust is on with ndust == 0");
                 }
@@ -116,6 +117,7 @@ namespace shammodels::basegodunov {
 
                 context.pdata_layout_add_field<Tscal>("rho_dust", (ndust * AMRBlock::block_size));  
                 context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust* AMRBlock::block_size));
+
             }
 
         }

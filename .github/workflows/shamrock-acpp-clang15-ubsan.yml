@@ -12,35 +12,71 @@ jobs:
 
   shamrock_acpp_omp_ubsan:
     name: AdaptiveCpp omp ubsan clang-${{ matrix.clang }}
-    runs-on: [self-hosted, ubuntu20]
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ${{ matrix.container }}
+
     if: false
 
     strategy:
       matrix:
-        clang: [15]
-        cuda: [11.0.2]
-        rocm: [5.4.3]
+        include: 
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
     #if: false
   
     timeout-minutes: 60
     steps:
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
       - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
         with:
+          fetch-depth: 0
           submodules: recursive
-  
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+      #### End Checkout part ####
+      
       - name: ls local
         run : ls -la
+      
+      - name: install LLVM
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh ${{matrix.clang}}
+          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
+          if [[ "${{matrix.clang}}" == "16" ]]; then
+            sudo rm -r /usr/lib/clang/16*
+            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
+          fi
+          
 
       - name: configure Shamrock
         run: |
           ./env/new-env --machine debian-generic.acpp --builddir build --type ubsan -- --backend omp
   
       - name: Configure
+        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source activate && shamconfigure
 
       - name: Build
+        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source activate && shammake

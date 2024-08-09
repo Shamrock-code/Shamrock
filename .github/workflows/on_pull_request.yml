@@ -2,7 +2,7 @@ name: On PR
 
 # Controls when the workflow will run
 on:
-  pull_request:
+  pull_request_target:
     types: [
       opened, # pull request is created
       #edited, # title, body, or the base branch of the PR is modified
@@ -36,8 +36,11 @@ jobs:
   doxygen_warn_main:
     name: Doxygen Main branch
     needs: [make_documentation]
-    runs-on: [self-hosted, ubuntu20]
-    
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: ghcr.io/shamrock-code/ci-ubuntu20:main
+      
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,9 +73,25 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
       - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
+          submodules: recursive
+          ref: "${{ github.event.pull_request.merge_commit_sha }}"
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+      #### End Checkout part ####
 
       - uses: actions/setup-python@v5
         with:

@@ -19,6 +19,7 @@
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include <string>
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Model<Tvec, TgridVec>::init_scheduler(u32 crit_split, u32 crit_merge){
@@ -133,7 +134,13 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
         writer.write_voxel_cells(pos_min_cell,pos_max_cell, num_obj*block_size);
 
         writer.add_cell_data_section();
-        writer.add_field_data_section(3);
+
+        u32 fieldnum = 3;
+        if (solver.solver_config.is_dust_on()) {
+            u32 ndust = solver.solver_config.dust_config.ndust;
+            fieldnum += 2*ndust;
+        }
+        writer.add_field_data_section(fieldnum);
 
         std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(2);
         writer.write_field("rho", fields_rho, num_obj*block_size);
@@ -143,6 +150,72 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
 
         std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(4);
         writer.write_field("rhoetot", fields_eint, num_obj*block_size);
+
+
+        if (solver.solver_config.is_dust_on()) {
+            u32 ndust = solver.solver_config.dust_config.ndust;
+
+            shamrock::patch::PatchDataLayout &pdl = solver.scheduler().pdl;
+            const u32 irho_dust      = pdl.get_field_idx<Tscal>("rho_dust");
+            const u32 irhovel_dust      = pdl.get_field_idx<Tvec>("rhovel_dust");
+
+            std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust = sched.rankgather_field<Tscal>(irho_dust);
+            //writer.write_field("rho_dust", fields_rho_dust, ndust*num_obj*block_size);
+
+            if(fields_rho_dust){
+                u32 nobj = fields_rho_dust->size();
+                u32 nsplit = ndust;
+                
+                for(u32 off = 0; off < nsplit ; off++){
+                    
+                    sycl::buffer<Tscal> partition(nobj / nsplit);
+
+
+                    shamsys::instance::get_compute_queue().submit([&, off, nsplit](sycl::handler & cgh){
+                        sycl::accessor out {partition, cgh, sycl::write_only, sycl::no_init};
+                        sycl::accessor in {*fields_rho_dust, cgh, sycl::read_only};
+
+                        shambase::parralel_for(cgh, nobj / nsplit, "split field for dump", [=](u64 i){
+                            out[i] = in[i*nsplit + off];
+                        });
+                    
+                    }).wait();                
+                    
+                    writer.write_field(std::string("rho_dust") + std::to_string(off), partition, num_obj*block_size);
+
+                }
+
+
+            }
+
+            std::unique_ptr<sycl::buffer<Tvec>> fields_vel_dust = sched.rankgather_field<Tvec>(irhovel_dust);
+            if(fields_vel_dust){
+                u32 nobj = fields_vel_dust->size();
+                u32 nsplit = ndust;
+                
+                for(u32 off = 0; off < nsplit ; off++){
+                    
+                    sycl::buffer<Tvec> partition(nobj / nsplit);
+
+
+                    shamsys::instance::get_compute_queue().submit([&, off, nsplit](sycl::handler & cgh){
+                        sycl::accessor out {partition, cgh, sycl::write_only, sycl::no_init};
+                        sycl::accessor in {*fields_vel_dust, cgh, sycl::read_only};
+
+                        shambase::parralel_for(cgh, nobj / nsplit, "split field for dump", [=](u64 i){
+                            out[i] = in[i*nsplit + off];
+                        });
+                    
+                    }).wait();                
+                    
+                    writer.write_field(std::string("rhovel_dust") + std::to_string(off), partition, num_obj*block_size);
+
+                }
+
+
+            }
+        }
+
 
     } catch (std::runtime_error e) {
         logger::err_ln("Godunov", "std::runtime_error catched while MPI file open -> unrecoverable\n what():\n",e.what());

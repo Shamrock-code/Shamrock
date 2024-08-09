@@ -87,10 +87,11 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
     grad_compute.compute_grad_rho_van_leer();
     grad_compute.compute_grad_v_van_leer();
     grad_compute.compute_grad_P_van_leer();
-    if (solver_config.is_dust_on()) {
+    if (solver_config.is_dust_on()) { 
+        // TODO : Implement grad for dust
         
-        grad_compute.compute_grad_rho_dust_van_leer();
-        grad_compute.compute_grad_v_dust_van_leer();
+        // grad_compute.compute_grad_rho_dust_van_leer();
+        // grad_compute.compute_grad_v_dust_van_leer();
     }
 
     // shift values
@@ -185,6 +186,7 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
     storage.ghost_zone_infos.reset();
 
     storage.serial_patch_tree.reset();
+    /*
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
 
@@ -226,6 +228,7 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
         storage.dz_v_dust.reset();
 
     }
+    */
 
     tstep.end();
 
@@ -317,26 +320,34 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     u32  fileds_num = 11;
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
-         fileds_num += 8;
+         fileds_num += 2;
     }
     writer.add_field_data_section(fileds_num);
 
-    std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(2);
+    // load layout info
+    shamrock::patch::PatchDataLayout &pdl = scheduler().pdl;
+    const u32 irho      = pdl.get_field_idx<Tscal>("rho");
+    const u32 irhoetot     = pdl.get_field_idx<Tscal>("rhoetot");
+    const u32 irhovel      = pdl.get_field_idx<Tvec>("rhovel");
+    std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(irho);
     writer.write_field("rho", fields_rho, num_obj*block_size);
 
-    std::unique_ptr<sycl::buffer<Tvec>> fields_vel = sched.rankgather_field<Tvec>(3);
+    std::unique_ptr<sycl::buffer<Tvec>> fields_vel = sched.rankgather_field<Tvec>(irhovel);
     writer.write_field("rhovel", fields_vel, num_obj*block_size);
 
-    std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(4);
+    std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(irhoetot);
     writer.write_field("rhoetot", fields_eint, num_obj*block_size);
 
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
 
-        std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust = sched.rankgather_field<Tscal>(5);
+        const u32 irho_dust      = pdl.get_field_idx<Tscal>("rho_dust");
+        const u32 irhovel_dust      = pdl.get_field_idx<Tvec>("rhovel_dust");
+
+        std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust = sched.rankgather_field<Tscal>(irho_dust);
         writer.write_field("rho_dust", fields_rho_dust, ndust*num_obj*block_size);
 
-        std::unique_ptr<sycl::buffer<Tvec>> fields_vel_dust = sched.rankgather_field<Tvec>(6);
+        std::unique_ptr<sycl::buffer<Tvec>> fields_vel_dust = sched.rankgather_field<Tvec>(irhovel_dust);
         writer.write_field("rhovel_dust", fields_vel_dust, ndust*num_obj*block_size);
 
     }
@@ -367,6 +378,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     std::unique_ptr<sycl::buffer<Tscal>> dtrhoe = storage.dtrhoe.get().rankgather_computefield(sched);
     writer.write_field("dtrhoe", dtrhoe, num_obj*block_size);
 
+    /*
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
         std::unique_ptr<sycl::buffer<Tvec>> grad_rho_dust = storage.grad_rho_dust.get().rankgather_computefield(sched);
@@ -387,6 +399,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
         std::unique_ptr<sycl::buffer<Tvec>> dtrhov_dust = storage.dtrhov_dust.get().rankgather_computefield(sched);
         writer.write_field("dtrhov_dust", dtrhov_dust, ndust*num_obj*block_size);
     }
+    */
 
 }
 

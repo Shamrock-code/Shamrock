@@ -18,6 +18,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/amr/basegodunov/Model.hpp"
+#include "shammodels/amr/basegodunov/Solver.hpp"
 #include <pybind11/functional.h>
 
 namespace shammodels::basegodunov {
@@ -63,6 +64,16 @@ namespace shammodels::basegodunov {
             })
             .def("set_slope_lim_minmod",[](TConfig & self){
                 self.slope_config = Minmod;
+            })
+            
+            .def("set_dust_mode_dhll",[](TConfig & self, u32 ndust){
+                self.dust_config = {DHLL, ndust};
+            })
+            .def("set_dust_mode_hb",[](TConfig & self, u32 ndust){
+                self.dust_config = {HB, ndust};
+            })
+            .def("set_dust_mode_none",[](TConfig & self){
+                self.dust_config = {NoDust, 0};
             });
 
         py::class_<T>(m, name_model.c_str())

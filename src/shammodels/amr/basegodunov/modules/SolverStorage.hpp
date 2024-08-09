@@ -115,6 +115,7 @@ namespace shammodels::basegodunov {
         Component<shamrock::ComputeField<Tscal>> dtrhoe;
 
 
+        /*
         Component<shamrock::ComputeField<Tvec>> vel_dust;
         Component<shamrock::ComputeField<Tvec>> grad_rho_dust;
         Component<shamrock::ComputeField<Tvec>> dx_v_dust;
@@ -144,6 +145,7 @@ namespace shammodels::basegodunov {
 
         Component<shamrock::ComputeField<Tscal>> dtrho_dust;
         Component<shamrock::ComputeField<Tvec>> dtrhov_dust;
+        */
 
         
         struct Timings{

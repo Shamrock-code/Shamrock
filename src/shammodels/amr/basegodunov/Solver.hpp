@@ -16,6 +16,7 @@
  */
  
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/amr/AMRBlock.hpp"
 #include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
@@ -45,9 +46,8 @@ namespace shammodels::basegodunov {
         DustRiemannSolverMode dust_riemann_config=NoDust;
         u32 ndust = 0;
 
-        bool is_dust_on(){
+        inline bool is_dust_on(){
             if (dust_riemann_config != NoDust) {
-                u32 ndust = ndust;
                 if(ndust == 0){
                     throw shambase::make_except_with_loc<std::runtime_error>("Dust is on with ndust == 0");
                 }
@@ -78,7 +78,7 @@ namespace shammodels::basegodunov {
         SlopeMode slope_config = VanLeer_sym;
         DustConfig dust_config {};
 
-        bool is_dust_on(){
+        inline bool is_dust_on(){
             return dust_config.is_dust_on();
         }
 
@@ -110,12 +110,12 @@ namespace shammodels::basegodunov {
             context.pdata_layout_add_field<Tscal>("rho", AMRBlock::block_size);
             context.pdata_layout_add_field<Tvec>("rhovel", AMRBlock::block_size);
             context.pdata_layout_add_field<Tscal>("rhoetot", AMRBlock::block_size);
-        
+
             if (solver_config.is_dust_on()) {
                 u32 ndust = solver_config.dust_config.ndust;
 
-                context.pdata_layout_add_field<TgridVec>("rho_dust", (ndust * AMRBlock::block_size));  
-                context.pdata_layout_add_field<TgridVec>("rhovel_dust", (ndust* AMRBlock::block_size));
+                context.pdata_layout_add_field<Tscal>("rho_dust", (ndust * AMRBlock::block_size));  
+                context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust* AMRBlock::block_size));
             }
 
         }

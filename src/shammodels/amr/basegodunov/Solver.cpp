@@ -316,41 +316,16 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     writer.write_voxel_cells(pos_min_cell,pos_max_cell, num_obj*block_size);
 
     writer.add_cell_data_section();
-    // writer.add_field_data_section(11);
-    u32  fileds_num = 11;
-    if (solver_config.is_dust_on()) {
-        u32 ndust = solver_config.dust_config.ndust;
-         fileds_num += 2;
-    }
-    writer.add_field_data_section(fileds_num);
+    writer.add_field_data_section(11);
 
-    // load layout info
-    shamrock::patch::PatchDataLayout &pdl = scheduler().pdl;
-    const u32 irho      = pdl.get_field_idx<Tscal>("rho");
-    const u32 irhoetot     = pdl.get_field_idx<Tscal>("rhoetot");
-    const u32 irhovel      = pdl.get_field_idx<Tvec>("rhovel");
-    std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(irho);
+     std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(2);
     writer.write_field("rho", fields_rho, num_obj*block_size);
 
-    std::unique_ptr<sycl::buffer<Tvec>> fields_vel = sched.rankgather_field<Tvec>(irhovel);
+    std::unique_ptr<sycl::buffer<Tvec>> fields_vel = sched.rankgather_field<Tvec>(3);
     writer.write_field("rhovel", fields_vel, num_obj*block_size);
 
-    std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(irhoetot);
+    std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(4);
     writer.write_field("rhoetot", fields_eint, num_obj*block_size);
-
-    if (solver_config.is_dust_on()) {
-        u32 ndust = solver_config.dust_config.ndust;
-
-        const u32 irho_dust      = pdl.get_field_idx<Tscal>("rho_dust");
-        const u32 irhovel_dust      = pdl.get_field_idx<Tvec>("rhovel_dust");
-
-        std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust = sched.rankgather_field<Tscal>(irho_dust);
-        writer.write_field("rho_dust", fields_rho_dust, ndust*num_obj*block_size);
-
-        std::unique_ptr<sycl::buffer<Tvec>> fields_vel_dust = sched.rankgather_field<Tvec>(irhovel_dust);
-        writer.write_field("rhovel_dust", fields_vel_dust, ndust*num_obj*block_size);
-
-    }
 
     std::unique_ptr<sycl::buffer<Tvec>> grad_rho = storage.grad_rho.get().rankgather_computefield(sched);
     writer.write_field("grad_rho", grad_rho, num_obj*block_size);
@@ -377,29 +352,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
 
     std::unique_ptr<sycl::buffer<Tscal>> dtrhoe = storage.dtrhoe.get().rankgather_computefield(sched);
     writer.write_field("dtrhoe", dtrhoe, num_obj*block_size);
-
-    /*
-    if (solver_config.is_dust_on()) {
-        u32 ndust = solver_config.dust_config.ndust;
-        std::unique_ptr<sycl::buffer<Tvec>> grad_rho_dust = storage.grad_rho_dust.get().rankgather_computefield(sched);
-        writer.write_field("grad_rho_dust", grad_rho_dust, ndust*num_obj*block_size);
-
-        std::unique_ptr<sycl::buffer<Tvec>> dx_v_dust = storage.dx_v_dust.get().rankgather_computefield(sched);
-        writer.write_field("dx_v_dust", dx_v_dust, ndust*num_obj*block_size);
-
-        std::unique_ptr<sycl::buffer<Tvec>> dy_v_dust = storage.dy_v_dust.get().rankgather_computefield(sched);
-        writer.write_field("dy_v_dust", dy_v_dust, ndust*num_obj*block_size);
-
-        std::unique_ptr<sycl::buffer<Tvec>> dz_v_dust = storage.dz_v_dust.get().rankgather_computefield(sched);
-        writer.write_field("dz_v_dust", dz_v_dust, ndust*num_obj*block_size);
-
-        std::unique_ptr<sycl::buffer<Tscal>> dtrho_dust = storage.dtrho_dust.get().rankgather_computefield(sched);
-        writer.write_field("dtrho_dust", dtrho_dust, ndust*num_obj*block_size);
-
-        std::unique_ptr<sycl::buffer<Tvec>> dtrhov_dust = storage.dtrhov_dust.get().rankgather_computefield(sched);
-        writer.write_field("dtrhov_dust", dtrhov_dust, ndust*num_obj*block_size);
-    }
-    */
 
 }
 

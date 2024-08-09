@@ -1411,6 +1411,9 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
 using namespace shammath;
 
-template class shammodels::sph::Model<f64_3, M4>;
-template class shammodels::sph::Model<f64_3, M6>;
-template class shammodels::sph::Model<f64_3, M8>;
+// define the class for all vector type and SPH kernels
+// the choice of enabled ones is done in CMake
+#include "_sph_xmacros.hpp"
+#define  X(vec, kernel) template class shammodels::sph::Model<vec, kernel>;
+XMAC_SPH_VECTYPE_KERNEL
+#undef X

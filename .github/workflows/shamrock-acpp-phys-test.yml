@@ -1,4 +1,4 @@
-name: Acpp/clang ${{matrix.clang}}
+name: Acpp/clang
 
 on:
   workflow_call:

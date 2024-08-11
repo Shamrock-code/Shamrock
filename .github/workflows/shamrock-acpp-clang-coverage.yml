@@ -1,4 +1,4 @@
-name: Acpp/clang ${{matrix.clang}} (Coverage)
+name: Acpp/clang (Coverage)
 
 
 on:

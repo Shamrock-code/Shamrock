@@ -1,4 +1,4 @@
-name: Acpp/clang ${{matrix.clang}} (Clang-tidy)
+name: Acpp/clang (Clang-tidy)
 
 
 on:

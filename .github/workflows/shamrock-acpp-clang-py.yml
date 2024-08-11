@@ -1,4 +1,4 @@
-name: Acpp/clang ${{matrix.clang}} (pylib)
+name: Acpp/clang (pylib)
 
 
 on:

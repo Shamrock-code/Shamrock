@@ -1,4 +1,4 @@
-name: Acpp/clang ${{matrix.clang}} (Asan)
+name: Acpp/clang (Asan)
 
 
 on:

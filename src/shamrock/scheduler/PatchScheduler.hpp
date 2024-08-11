@@ -492,7 +492,6 @@ class PatchScheduler{
 
     nlohmann::json serialize_patch_metadata();
 
-
     private:
 
 

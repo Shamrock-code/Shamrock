@@ -41,6 +41,16 @@ namespace shamrock::scheduler {
         bool child_are_all_leafs = false;
     };
 
+    inline bool operator==(const LinkedTreeNode& lhs, const LinkedTreeNode& rhs) { 
+        return 
+            (lhs.level == rhs.level) && 
+            (lhs.parent_nid == rhs.parent_nid) && 
+            (lhs.childs_nid == rhs.childs_nid) && 
+            (lhs.is_leaf == rhs.is_leaf) && 
+            (lhs.child_are_all_leafs == rhs.child_are_all_leafs) 
+            ; 
+    }
+
     /**
      * @brief Node information in the patchtree + held patch info
      *
@@ -87,6 +97,15 @@ namespace shamrock::scheduler {
             return n;
         }
     };
+
+    inline bool operator==(const PatchTreeNode& lhs, const PatchTreeNode& rhs) { 
+        return 
+            (lhs.patch_coord == rhs.patch_coord) && 
+            (lhs.tree_node == rhs.tree_node) && 
+            (lhs.linked_patchid == rhs.linked_patchid) && 
+            (lhs.load_value == rhs.load_value)
+            ; 
+    }
 
     inline auto PatchTreeNode::get_split_nodes() -> std::array<PatchTreeNode, split_count> {
         std::array<PatchCoord, split_count> splt_coord = patch_coord.split();

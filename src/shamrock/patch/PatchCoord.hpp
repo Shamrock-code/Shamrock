@@ -159,4 +159,13 @@ namespace shamrock::patch {
             return {min_bound, max_bound};
         }
     };
+
+    
+    template<u32 dim = 3U>
+    inline bool operator==(const PatchCoord<dim>& lhs, const PatchCoord<dim>& rhs) { 
+        return 
+            (lhs.coord_min == rhs.coord_min) && 
+            (lhs.coord_max == rhs.coord_max)
+            ; 
+    }
 } // namespace shamrock::patch

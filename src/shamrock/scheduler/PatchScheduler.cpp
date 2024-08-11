@@ -970,11 +970,11 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
 
 nlohmann::json PatchScheduler::serialize_patch_metadata(){
 
-
     return {
         {"patchtree",patch_tree},
         {"patchlist",patch_list},
         {"crit_patch_split",crit_patch_split},
         {"crit_patch_merge",crit_patch_merge}
         };
+
 }

@@ -10,10 +10,10 @@ on:
       labeled, # a label is applied to the pull request
       unlabeled # a label is removed from the pull request
       ]
-      
+
   pull_request:
     paths:
-        - '.github'
+        - '.github/**'
   #we do not use this one as the job is not launched on the corect branch (aka we cannot test the CI in PRs)
   #pull_request_target:
   #  types: [opened,edited,synchronize,labeled]

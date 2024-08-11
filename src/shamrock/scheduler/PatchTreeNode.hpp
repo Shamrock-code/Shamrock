@@ -14,6 +14,7 @@
  * @brief
  */
 
+#include <nlohmann/json.hpp>
 #include "shamrock/patch/PatchCoord.hpp"
 #include "shamrock/patch/PatchCoordTransform.hpp"
 
@@ -103,7 +104,39 @@ namespace shamrock::scheduler {
         
     }
 
-
+    inline void to_json(nlohmann::json &j, const LinkedTreeNode &p) {
+        
+        // u32 level;
+        // u64 parent_nid;
+        // std::array<u64,8> childs_nid {u64_max};
+        // bool is_leaf             = true;
+        // bool child_are_all_leafs = false;
+        
+        j = nlohmann::json{
+            {"level",p.level},
+            {"parent_nid",p.parent_nid},
+            {"childs_nid",p.childs_nid},
+            {"is_leaf",p.is_leaf},
+            {"child_are_all_leafs",p.child_are_all_leafs}
+        };
+    }
+    inline void to_json(nlohmann::json &j, const PatchTreeNode &p) {
+        
+        // PatchCoord patch_coord;
+        // LinkedTreeNode tree_node;
+        // u64 linked_patchid;
+        // u64 load_value = u64_max;
+        
+        j = nlohmann::json{
+            {"linked_patchid",p.linked_patchid},
+            {"load_value",p.load_value},
+            {"tree_node",p.tree_node},
+            {"patch_coord",{
+                {"min",p.patch_coord.coord_min},
+                {"max",p.patch_coord.coord_max},
+            }},
+        };
+    }
     
 
 } // namespace shamrock::scheduler

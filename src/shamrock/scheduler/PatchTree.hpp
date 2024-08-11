@@ -14,6 +14,7 @@
  * @brief
  */
 
+#include <nlohmann/json.hpp>
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/scheduler/PatchTreeNode.hpp"
 #include <unordered_set>
@@ -111,6 +112,8 @@ namespace shamrock::scheduler {
         std::unordered_set<u64> get_merge_request(u64 crit_load_merge);
 
         void insert_root_node(u32 patch_id,patch::PatchCoord<3> coords);
+
+        nlohmann::json serialize_patch_metadata();
 
         private:
         u64 next_id = 0;

@@ -18,6 +18,7 @@
 
 #include <stdexcept>
 #include <vector>
+#include <nlohmann/json.hpp>
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shambase/exception.hpp"
@@ -325,5 +326,37 @@ std::unordered_set<u64> PatchTree::get_merge_request(u64 crit_load_merge){
 }
 
 
+nlohmann::json PatchTree::serialize_patch_metadata(){
+
+    // Serialized fields : 
+    // - std::unordered_set<u64> roots_id;
+    // - std::unordered_map<u64, Node> tree;
+    // - std::unordered_set<u64> leaf_key;
+    // - std::unordered_set<u64> parent_of_only_leaf_key;
+
+    auto ser1 = [](std::unordered_set<u64> & roots_id){
+        std::vector<u64> lst {};
+        for (u64 i : roots_id){
+            lst.push_back(i);
+        }
+        return lst;
+    };
+
+    auto ser2 = [](std::unordered_map<u64, Node> & tree){
+        nlohmann::json ret {};
+        for (auto & [k,n] : tree){
+            ret[k] = n;
+        }
+        return ret;
+    };
+
+    return {
+       {"roots_id",ser1(roots_id)},
+       {"tree",ser2(tree)},
+       {"leaf_key",ser1(leaf_key)},
+       {"parent_of_only_leaf_key",ser1(parent_of_only_leaf_key)},
+       {"next_id",next_id}
+        };
+}
 
 }

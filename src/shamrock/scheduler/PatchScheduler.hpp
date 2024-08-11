@@ -25,6 +25,7 @@
 #include <memory>
 #include <stdexcept>
 #include <tuple>
+#include <nlohmann/json.hpp>
 #include <unordered_set>
 #include <vector>
 
@@ -488,6 +489,8 @@ class PatchScheduler{
     shamrock::patch::SimulationBoxInfo & get_sim_box(){
         return patch_data.sim_box;
     }
+
+    nlohmann::json serialize_patch_metadata();
 
 
     private:

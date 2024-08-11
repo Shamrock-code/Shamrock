@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <tuple>
 #include <vector>
+#include <nlohmann/json.hpp>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -137,6 +138,7 @@ class SchedulerPatchList{public:
     void merge_patch( u64 idx0, u64 idx1, u64 idx2, u64 idx3, u64 idx4, u64 idx5, u64 idx6, u64 idx7);
 
     
+    nlohmann::json serialize_patch_metadata();
 
 };
 

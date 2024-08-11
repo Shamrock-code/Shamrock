@@ -203,8 +203,44 @@ void SchedulerPatchList::merge_patch(
 
 
 
+namespace shamrock::patch {
+    
+    inline void to_json(nlohmann::json &j, const Patch &p) {
+        
+        // u64 id_patch;
+        // u64 pack_node_index;
+        // u64 load_value;
+        // std::array<u64,dim> coord_min;
+        // std::array<u64,dim> coord_max;
+        // u32 node_owner_id;
+        
+        j = nlohmann::json{
+            {"id_patch",p.id_patch},
+            {"pack_node_index",p.pack_node_index},
+            {"load_value",p.load_value},
+            {"coord_min",p.coord_min},
+            {"coord_max",p.coord_max},
+            {"node_owner_id",p.node_owner_id},
+        };
+    }
+
+}
 
 
+nlohmann::json SchedulerPatchList::serialize_patch_metadata(){
+
+    // u64 _next_patch_id = 0;
+    // std::vector<shamrock::patch::Patch> global;
+    // std::vector<shamrock::patch::Patch> local;
+    // bool is_load_values_up_to_date = false;
+
+    return {
+            {"_next_patch_id",_next_patch_id},
+            {"global",global},
+            {"local",local},
+            {"is_load_values_up_to_date",is_load_values_up_to_date},
+        };
+}
 
 
 // TODO move in a separate file
@@ -438,3 +474,4 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt,u64 div
 
     return plist;
 }
+

@@ -966,3 +966,15 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     return ret;
 
 }
+
+
+nlohmann::json PatchScheduler::serialize_patch_metadata(){
+
+
+    return {
+        {"patchtree",patch_tree.serialize_patch_metadata()},
+        {"patchlist",patch_list.serialize_patch_metadata()},
+        {"crit_patch_split",crit_patch_split},
+        {"crit_patch_merge",crit_patch_merge}
+        };
+}

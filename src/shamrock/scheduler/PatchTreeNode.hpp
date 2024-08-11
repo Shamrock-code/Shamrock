@@ -120,6 +120,16 @@ namespace shamrock::scheduler {
             {"child_are_all_leafs",p.child_are_all_leafs}
         };
     }
+
+
+    inline void from_json(const nlohmann::json &j, LinkedTreeNode &p){
+        j.at("level").get_to(p.level);
+        j.at("parent_nid").get_to(p.parent_nid);
+        j.at("childs_nid").get_to(p.childs_nid);
+        j.at("is_leaf").get_to(p.is_leaf);
+        j.at("child_are_all_leafs").get_to(p.child_are_all_leafs);
+    }
+
     inline void to_json(nlohmann::json &j, const PatchTreeNode &p) {
         
         // PatchCoord patch_coord;
@@ -136,6 +146,14 @@ namespace shamrock::scheduler {
                 {"max",p.patch_coord.coord_max},
             }},
         };
+    }
+
+    inline void from_json(const nlohmann::json &j, PatchTreeNode &p){
+        j.at("linked_patchid").get_to(p.linked_patchid);
+        j.at("load_value").get_to(p.load_value);
+        j.at("tree_node").get_to(p.tree_node);
+        j.at("patch_coord").at("min").get_to(p.patch_coord.coord_min);
+        j.at("patch_coord").at("max").get_to(p.patch_coord.coord_max);
     }
     
 

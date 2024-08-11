@@ -972,8 +972,8 @@ nlohmann::json PatchScheduler::serialize_patch_metadata(){
 
 
     return {
-        {"patchtree",patch_tree.serialize_patch_metadata()},
-        {"patchlist",patch_list.serialize_patch_metadata()},
+        {"patchtree",patch_tree},
+        {"patchlist",patch_list},
         {"crit_patch_split",crit_patch_split},
         {"crit_patch_merge",crit_patch_merge}
         };

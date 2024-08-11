@@ -326,37 +326,40 @@ std::unordered_set<u64> PatchTree::get_merge_request(u64 crit_load_merge){
 }
 
 
-nlohmann::json PatchTree::serialize_patch_metadata(){
+    nlohmann::json PatchTree::serialize_patch_metadata() const {
 
-    // Serialized fields : 
-    // - std::unordered_set<u64> roots_id;
-    // - std::unordered_map<u64, Node> tree;
-    // - std::unordered_set<u64> leaf_key;
-    // - std::unordered_set<u64> parent_of_only_leaf_key;
+        // Serialized fields : 
+        // - std::unordered_set<u64> roots_id;
+        // - std::unordered_map<u64, Node> tree;
+        // - std::unordered_set<u64> leaf_key;
+        // - std::unordered_set<u64> parent_of_only_leaf_key;
 
-    auto ser1 = [](std::unordered_set<u64> & roots_id){
-        std::vector<u64> lst {};
-        for (u64 i : roots_id){
-            lst.push_back(i);
-        }
-        return lst;
-    };
-
-    auto ser2 = [](std::unordered_map<u64, Node> & tree){
-        nlohmann::json ret {};
-        for (auto & [k,n] : tree){
-            ret[k] = n;
-        }
-        return ret;
-    };
-
-    return {
-       {"roots_id",ser1(roots_id)},
-       {"tree",ser2(tree)},
-       {"leaf_key",ser1(leaf_key)},
-       {"parent_of_only_leaf_key",ser1(parent_of_only_leaf_key)},
-       {"next_id",next_id}
+        return {
+            {"roots_id",roots_id},
+            {"tree",tree},
+            {"leaf_key",leaf_key},
+            {"parent_of_only_leaf_key",parent_of_only_leaf_key},
+            {"next_id",next_id}
         };
-}
+    }
+
+    void PatchTree::load_json(const nlohmann::json &j){
+
+        j.at("roots_id").get_to(roots_id);
+        j.at("tree").get_to(tree);
+        j.at("leaf_key").get_to(leaf_key);
+        j.at("parent_of_only_leaf_key").get_to(parent_of_only_leaf_key);
+        j.at("next_id").get_to(next_id);
+        
+    }
+
+
+    void to_json(nlohmann::json &j, const PatchTree &p){
+        j = p.serialize_patch_metadata();
+    }
+
+    void from_json(const nlohmann::json &j, PatchTree &p){
+        p.load_json(j);
+    }
 
 }

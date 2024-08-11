@@ -113,7 +113,9 @@ namespace shamrock::scheduler {
 
         void insert_root_node(u32 patch_id,patch::PatchCoord<3> coords);
 
-        nlohmann::json serialize_patch_metadata();
+        nlohmann::json serialize_patch_metadata() const ;
+
+        void load_json(const nlohmann::json &j);
 
         private:
         u64 next_id = 0;
@@ -125,5 +127,11 @@ namespace shamrock::scheduler {
             Node &n, std::vector<Patch> &plist, const std::unordered_map<u64, u64>& id_patch_to_global_idx
         );
     };
+
+
+    void to_json(nlohmann::json &j, const PatchTree &p);
+
+    void from_json(const nlohmann::json &j, PatchTree &p);
+
 
 } // namespace shamrock::scheduler

@@ -1,4 +1,4 @@
-name: Acpp/clang15 (UBsan)
+name: Acpp/clang ${{matrix.clang}}
 
 
 on:
@@ -7,17 +7,15 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-
 jobs:
 
-  shamrock_acpp_omp_ubsan:
-    name: AdaptiveCpp omp ubsan clang-${{ matrix.clang }}
+
+  shamrock_acpp:
+    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} 
     runs-on: [self-hosted,  docker-runner]
 
     container:
       image: ${{ matrix.container }}
-
-    if: false
 
     strategy:
       matrix:
@@ -25,8 +23,36 @@ jobs:
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
+            backend: omp
+            arch: none
+            runtest: yes
+            uploadartifact: yes
             container: ghcr.io/shamrock-code/ci-ubuntu20:main
-    #if: false
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: generic
+            arch: none
+            runtest: yes
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: cuda.explicit-multipass
+            arch: sm_80
+            container: ghcr.io/shamrock-code/ci-ubuntu20cuda11:main
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: cuda.integrated-multipass
+            arch: sm_80
+            container: ghcr.io/shamrock-code/ci-ubuntu20cuda11:main
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: hip
+            arch: gfx906
+            container: ghcr.io/shamrock-code/ci-ubuntu20rocm543:main
   
     timeout-minutes: 60
     steps:
@@ -49,10 +75,7 @@ jobs:
         if: github.event_name == 'pull_request_target'
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
       #### End Checkout part ####
-      
-      - name: ls local
-        run : ls -la
-      
+  
       - name: install LLVM
         run: |
           wget https://apt.llvm.org/llvm.sh
@@ -63,11 +86,12 @@ jobs:
             sudo rm -r /usr/lib/clang/16*
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
-          
 
-      - name: configure Shamrock
-        run: |
-          ./env/new-env --machine debian-generic.acpp --builddir build --type ubsan -- --backend omp
+      - name: ls local
+        run : ls -la
+
+      - name: Setup env
+        run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
   
       - name: Configure
         shell: bash # In docker container github action default to sh
@@ -85,24 +109,41 @@ jobs:
         run: |
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
-  
-      - name: run Shamrock Unittests world_size = 1
+      
+      - name: run Shamrock help
+        if: matrix.runtest
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ./shamrock --help
+          ./shamrock --help --color
+
+      - name: run Shamrock Test help
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock_test --help
+          ./shamrock_test --help --color
+
+      - name: run Shamrock Unittests world_size = 1
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
   
       - name: run Shamrock Unittests world_size = 2
+        if: matrix.runtest
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun -n 2 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
       
       - name: run Shamrock Unittests world_size = 3
+        if: matrix.runtest
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --oversubscribe -n 3 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
   
       - name: run Shamrock Unittests world_size = 4
+        if: matrix.runtest
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-
+          mpirun --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi

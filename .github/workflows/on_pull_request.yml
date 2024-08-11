@@ -10,7 +10,10 @@ on:
       labeled, # a label is applied to the pull request
       unlabeled # a label is removed from the pull request
       ]
-
+      
+  pull_request:
+    paths:
+        - '.github'
   #we do not use this one as the job is not launched on the corect branch (aka we cannot test the CI in PRs)
   #pull_request_target:
   #  types: [opened,edited,synchronize,labeled]
@@ -138,13 +141,13 @@ jobs:
     needs: [src_check]
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang15.yml
+    uses: ./.github/workflows/shamrock-acpp-clang.yml
 
   shamrock_linux_acpp_pylib:
     needs: [src_check]
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang15-py.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-py.yml
 
   shamrock_linux_acpp_macos:
     needs: [src_check]
@@ -156,25 +159,25 @@ jobs:
     needs: [src_check]
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang15-asan.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-asan.yml
 
   shamrock_linux_acpp_ubsan:
     needs: [src_check]
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang15-ubsan.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-ubsan.yml
 
   shamrock_linux_acpp_tidy:
     needs: [src_check]
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang15-tidy.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-tidy.yml
 
   shamrock_linux_acpp_cov:
     needs: [src_check]
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang15-coverage.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
     
   shamrock_linux_dpcpp:
     needs: [src_check]

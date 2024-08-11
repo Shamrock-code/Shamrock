@@ -25,12 +25,12 @@ jobs:
   shamrock_linux_acpp:
     needs: [src_check]
     name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang15.yml
+    uses: ./.github/workflows/shamrock-acpp-clang.yml
 
   shamrock_linux_acpp_pylib:
     needs: [src_check]
     name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang15-py.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-py.yml
 
 
   #shamrock_linux_acpp_macos:
@@ -41,22 +41,22 @@ jobs:
   shamrock_linux_acpp_asan:
     needs: [src_check]
     name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang15-asan.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-asan.yml
 
   shamrock_linux_acpp_ubsan:
     needs: [src_check]
     name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang15-ubsan.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-ubsan.yml
 
   shamrock_linux_acpp_tidy:
     needs: [src_check]
     name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang15-tidy.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-tidy.yml
 
   shamrock_linux_acpp_cov:
     needs: [src_check]
     name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang15-coverage.yml
+    uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
     
   shamrock_linux_dpcpp:
     needs: [src_check]

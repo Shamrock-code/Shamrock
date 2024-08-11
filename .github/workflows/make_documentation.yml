@@ -18,7 +18,25 @@ jobs:
       image: ghcr.io/shamrock-code/ci-ubuntu20:main
       
     steps:
-      - uses: ./.github/actions/checkout/
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+      #### End Checkout part ####
 
       - uses: actions/setup-python@v5
         with:

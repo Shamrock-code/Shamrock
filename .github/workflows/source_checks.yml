@@ -15,88 +15,88 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    #### Checkout part ####
-    # Checkout merge commit if PR otherwise default
-    - uses: actions/checkout@v4
-      if: github.event_name == 'pull_request_target'
-      with:
-        fetch-depth: 0
-        ref: "refs/pull/${{ github.event.number }}/merge"
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          ref: "refs/pull/${{ github.event.number }}/merge"
 
-    - uses: actions/checkout@v4
-      if: github.event_name != 'pull_request_target'
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
 
-    - name: Show diff against main
-      if: github.event_name == 'pull_request_target'
-      run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
-    #### End Checkout part ####
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+      #### End Checkout part ####
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '>=3.10'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '>=3.10'
 
-    - uses: pre-commit/action@v3.0.1
-
-
-    - name: rerun precommit for logs
-      if: success() && github.event_name == 'pull_request_target'
-      run: pre-commit run --all-files > out
-
-    - name: make file comment
-      if: success() && github.event_name == 'pull_request_target'
-      run: |
-        echo "Pre-commit check: ✅ 
-        \`\`\`
-        $(pre-commit run --all-files)
-        \`\`\`
-        
-        Test pipeline can run.
-        " > message.md
-
-    - name: Comment doxygen diff on PR
-      if: success() && github.event_name == 'pull_request_target'
-      uses: thollander/actions-comment-pull-request@v2
-      with:
-        filePath: message.md
-        comment_tag: pre-commit-comment
-        mode: recreate
-        create_if_not_exists: true
+      - uses: pre-commit/action@v3.0.1
 
 
+      - name: rerun precommit for logs
+        if: success() && github.event_name == 'pull_request_target'
+        run: pre-commit run --all-files > out
 
-    - name : Generate diff
-      if: failure() && github.event_name == 'pull_request_target'
-      run: git diff > diff-pre-commit
+      - name: make file comment
+        if: success() && github.event_name == 'pull_request_target'
+        run: |
+          echo "Pre-commit check: ✅ 
+          \`\`\`
+          $(pre-commit run --all-files)
+          \`\`\`
+          
+          Test pipeline can run.
+          " > message.md
 
-    - name : Cat diff
-      if: failure() && github.event_name == 'pull_request_target'
-      run: cat diff-pre-commit
+      - name: Comment doxygen diff on PR
+        if: success() && github.event_name == 'pull_request_target'
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: message.md
+          comment_tag: pre-commit-comment
+          mode: recreate
+          create_if_not_exists: true
 
-    - name: Run pre-commit-report
-      if: failure() && github.event_name == 'pull_request_target'
-      run: python3 buildbot/precommit_report.py > out.md
 
-    - name: Comment doxygen diff on PR
-      if: failure() && github.event_name == 'pull_request_target'
-      uses: thollander/actions-comment-pull-request@v2
-      with:
-        filePath: out.md
-        comment_tag: pre-commit-comment
-        mode: recreate
-        create_if_not_exists: true
 
-    - name: rm tmpfiles
-      if: failure() && github.event_name == 'pull_request_target'
-      run: rm diff-pre-commit log_precommit_*
-    
-    - name: Show diff
-      if: failure() && github.event_name == 'pull_request_target'
-      run: git diff
+      - name : Generate diff
+        if: failure() && github.event_name == 'pull_request_target'
+        run: git diff > diff-pre-commit
 
-    #- name: suggest changes
-    #  if: always() && github.event_name == 'pull_request_target'
-    #  uses: reviewdog/action-suggester@v1
-    #  with:
-    #    tool_name: git-pre-commit
+      - name : Cat diff
+        if: failure() && github.event_name == 'pull_request_target'
+        run: cat diff-pre-commit
+
+      - name: Run pre-commit-report
+        if: failure() && github.event_name == 'pull_request_target'
+        run: python3 buildbot/precommit_report.py > out.md
+
+      - name: Comment doxygen diff on PR
+        if: failure() && github.event_name == 'pull_request_target'
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: out.md
+          comment_tag: pre-commit-comment
+          mode: recreate
+          create_if_not_exists: true
+
+      - name: rm tmpfiles
+        if: failure() && github.event_name == 'pull_request_target'
+        run: rm diff-pre-commit log_precommit_*
+      
+      - name: Show diff
+        if: failure() && github.event_name == 'pull_request_target'
+        run: git diff
+
+      #- name: suggest changes
+      #  if: always() && github.event_name == 'pull_request_target'
+      #  uses: reviewdog/action-suggester@v1
+      #  with:
+      #    tool_name: git-pre-commit

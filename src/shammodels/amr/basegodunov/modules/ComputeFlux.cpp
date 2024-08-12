@@ -17,7 +17,7 @@
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeFlux.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeFluxUtilities.hpp"
-#include <hipSYCL/sycl/queue.hpp>
+#include "shambackends/sycl.hpp"
 #include <array>
 
 

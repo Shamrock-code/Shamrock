@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file ComputeFluxUtilities
+ * @file ComputeFluxUtilities.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *
@@ -20,9 +20,7 @@
 #include "shammodels/amr/basegodunov/modules/ComputeFlux.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
-#include <hipSYCL/sycl/handler.hpp>
-#include <hipSYCL/sycl/queue.hpp>
-#include <hipSYCL/sycl/sycl.hpp>
+#include "shambackends/sycl.hpp"
 #include <array>
 
 

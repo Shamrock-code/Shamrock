@@ -221,7 +221,8 @@ void dust_compute_fluxes_dir(
                 static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
             }
         };
-        std::string kernel_name = "compute " + flux_name + get_dir_name();
+        std::string cur_direction = get_dir_name();
+        std::string kernel_name = (std::string)"compute " + flux_name + cur_direction;
         const char* _kernel_name = kernel_name.c_str();
 
         q.submit([&](sycl::handler &cgh) {

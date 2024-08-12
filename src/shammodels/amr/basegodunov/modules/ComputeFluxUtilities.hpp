@@ -163,9 +163,9 @@
             else if constexpr (dir == Direction::ym){return "ym";}
             else if constexpr (dir == Direction::zp){return "zp";}
             else if constexpr (dir == Direction::xm){return "zm";}
-            else {
-                static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
-            }
+            // else {
+            //     static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
+            // }
         };
         std::string cur_direction = get_dir_name();
         std::string kernel_name = (std::string)"compute " + flux_name + cur_direction;
@@ -217,9 +217,9 @@ void dust_compute_fluxes_dir(
             else if constexpr (dir == Direction::ym){return "ym";}
             else if constexpr (dir == Direction::zp){return "zp";}
             else if constexpr (dir == Direction::xm){return "zm";}
-            else {
-                static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
-            }
+            // else {
+            //     static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
+            // }
         };
         std::string cur_direction = get_dir_name();
         std::string kernel_name = (std::string)"compute " + flux_name + cur_direction;

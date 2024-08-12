@@ -22,6 +22,7 @@
 #include "shammath/riemann_dust.hpp"
 #include "shambackends/sycl.hpp"
 #include <array>
+#include <string>
 
 
 
@@ -166,7 +167,8 @@
                 static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
             }
         };
-        std::string kernel_name = "compute " + flux_name + get_dir_name();
+        std::string cur_direction = get_dir_name();
+        std::string kernel_name = (std::string)"compute " + flux_name + cur_direction;
         const char* _kernel_name = kernel_name.c_str();
 
         q.submit([&, gamma](sycl::handler &cgh) {
@@ -233,7 +235,7 @@ void dust_compute_fluxes_dir(
                 auto rho_ij = rho_dust[id_a];
                 auto vel_ij = vel_dust[id_a];
 
-                using Tprim = shammath::PrimState<Tvec>;
+                using Tprim = shammath::DustPrimState<Tvec>;
                 auto flux_dust_dir = d_Flux::dustflux(
                     Tprim{rho_ij[0], vel_ij[0]},
                     Tprim{rho_ij[1], vel_ij[1]}

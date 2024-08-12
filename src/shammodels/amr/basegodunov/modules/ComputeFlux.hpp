@@ -47,10 +47,22 @@ namespace shammodels::basegodunov::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void compute_flux();
+        void compute_flux_dust();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
 
     };
+
+    // We move DIrection here because it'll be use in more than one file
+    enum Direction{
+    xp = 0,
+    xm = 1,
+    yp = 2,
+    ym = 3,
+    zp = 4,
+    zm = 5,
+};
+
 
 } // namespace shammodels::basegodunov::modules

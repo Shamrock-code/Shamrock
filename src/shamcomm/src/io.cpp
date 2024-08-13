@@ -19,10 +19,7 @@
 #include "shamcomm/worldInfo.hpp"
 
 namespace shamcomm {
-    /**
-     * @brief open a mpi file and remove its content
-     *
-     */
+    
     void open_reset_file(MPI_File &fh, std::string fname) {
 
         int rc = MPI_File_open(

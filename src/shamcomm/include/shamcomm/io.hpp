@@ -31,6 +31,9 @@ namespace shamcomm {
      */
     void open_reset_file(MPI_File &fh, std::string fname);
 
+    /**
+     * @brief Open a mpi file in read only mode
+     */
     void open_read_only_file(MPI_File &fh, std::string fname);
 
 } // namespace shamcomm

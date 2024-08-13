@@ -77,6 +77,16 @@ namespace shamalgs::collective {
         file_head_ptr = view.total_byte_count + file_head_ptr;
     }
 
+
+    /**
+     * @brief Writes a string to a file using MPI and updates the file head pointer.
+     *
+     * Note that all processes should call this function with the same content
+     *
+     * @param fh MPI file handle
+     * @param s string to write
+     * @param file_head_ptr file head pointer
+     */
     inline void write_header_raw(MPI_File fh, std::string s, u64 &file_head_ptr) {
 
         MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
@@ -88,6 +98,14 @@ namespace shamalgs::collective {
         file_head_ptr = file_head_ptr + s.size();
     }
 
+    /**
+     * @brief Reads a string of lenght #len from a file using MPI and updates the file head pointer.
+     *
+     * @param fh MPI file handle
+     * @param len length of string to read
+     * @param file_head_ptr file head pointer
+     * @return string read from file
+     */
     inline std::string read_header_raw(MPI_File fh, size_t len, u64 &file_head_ptr) {
 
         MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
@@ -101,6 +119,13 @@ namespace shamalgs::collective {
         return s;
     }
 
+    /**
+     * @brief Writes a size_t to a file using MPI and updates the file head pointer.
+     *
+     * @param fh MPI file handle
+     * @param val value to write
+     * @param file_head_ptr file head pointer
+     */
     inline void write_header_val(MPI_File fh, size_t val, u64 &file_head_ptr) {
 
         MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
@@ -112,6 +137,13 @@ namespace shamalgs::collective {
         file_head_ptr = file_head_ptr + sizeof(size_t);
     }
 
+    /**
+     * @brief Reads a size_t from a file using MPI and updates the file head pointer.
+     *
+     * @param fh MPI file handle
+     * @param file_head_ptr file head pointer
+     * @return size_t read from file
+     */
     inline size_t read_header_val(MPI_File fh, u64 &file_head_ptr) {
 
         size_t val = 0;
@@ -124,12 +156,28 @@ namespace shamalgs::collective {
         return val;
     }
 
+    /**
+     * @brief Writes a string to a file using MPI and updates the file head pointer.
+     *        The string is preceded by its length.
+     *
+     * @param fh MPI file handle
+     * @param s string to write
+     * @param file_head_ptr file head pointer
+     */
     inline void write_header(MPI_File fh, std::string s, u64 &file_head_ptr) {
 
         write_header_val(fh, s.size(), file_head_ptr);
         write_header_raw(fh, s, file_head_ptr);
     }
 
+    /**
+     * @brief Reads a string from a file using MPI and updates the file head pointer.
+     *        The string is preceded by its length.
+     *
+     * @param fh MPI file handle
+     * @param file_head_ptr file head pointer
+     * @return string read from file
+     */
     inline std::string read_header(MPI_File fh, u64 &file_head_ptr) {
 
         size_t len    = read_header_val(fh, file_head_ptr);

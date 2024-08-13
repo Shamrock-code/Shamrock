@@ -326,23 +326,33 @@ std::unordered_set<u64> PatchTree::get_merge_request(u64 crit_load_merge){
 }
 
 
+    /**
+     * @brief Serialize the metadata of the patch tree.
+     *
+     * @return The serialized metadata as a JSON object.
+     */
     nlohmann::json PatchTree::serialize_patch_metadata() const {
-
         // Serialized fields : 
         // - std::unordered_set<u64> roots_id;
         // - std::unordered_map<u64, Node> tree;
         // - std::unordered_set<u64> leaf_key;
         // - std::unordered_set<u64> parent_of_only_leaf_key;
 
+        // Note it is not possible to serialize STL containers if this function is not marked const
         return {
-            {"roots_id",roots_id},
-            {"tree",tree},
-            {"leaf_key",leaf_key},
-            {"parent_of_only_leaf_key",parent_of_only_leaf_key},
-            {"next_id",next_id}
+            {"roots_id", roots_id}, 
+            {"tree", tree},         
+            {"leaf_key", leaf_key}, 
+            {"parent_of_only_leaf_key", parent_of_only_leaf_key},
+            {"next_id", next_id} 
         };
     }
 
+    /**
+     * @brief Load the metadata of the patch tree from a JSON object.
+     *
+     * @param j The JSON object containing the metadata.
+     */
     void PatchTree::load_json(const nlohmann::json &j){
 
         j.at("roots_id").get_to(roots_id);
@@ -354,10 +364,22 @@ std::unordered_set<u64> PatchTree::get_merge_request(u64 crit_load_merge){
     }
 
 
+    /**
+     * @brief Serializes a PatchTree object into a JSON object.
+     *
+     * @param j The JSON object to serialize the PatchTree into.
+     * @param p The PatchTree object to serialize.
+     */
     void to_json(nlohmann::json &j, const PatchTree &p){
         j = p.serialize_patch_metadata();
     }
 
+    /**
+     * @brief Deserializes a JSON object into a PatchTree object.
+     *
+     * @param j The JSON object to deserialize.
+     * @param p The PatchTree object to deserialize into.
+     */
     void from_json(const nlohmann::json &j, PatchTree &p){
         p.load_json(j);
     }

@@ -206,6 +206,15 @@ void SchedulerPatchList::merge_patch(
 
 namespace shamrock::patch {
 
+    /**
+     * @brief Serializes a Patch object to a JSON object.
+     * 
+     * Note that this function is implemented here as it is the only place where we need it, 
+     * thus helping a bit with compile time
+     *
+     * @param j The JSON object to serialize to.
+     * @param p The Patch object to serialize from.
+     */
     inline void to_json(nlohmann::json &j, const Patch &p) {
         
         // u64 id_patch;
@@ -225,6 +234,15 @@ namespace shamrock::patch {
         };
     }
 
+    /**
+     * @brief Deserializes a JSON object to a Patch object.
+     * 
+     * Note that this function is implemented here as it is the only place where we need it, 
+     * thus helping a bit with compile time
+     *
+     * @param j The JSON object to deserialize from.
+     * @param p The Patch object to deserialize to.
+     */
     inline void from_json(const nlohmann::json &j, Patch &p) {
         j.at("id_patch").get_to(p.id_patch);
         j.at("pack_node_index").get_to(p.pack_node_index);

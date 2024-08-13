@@ -29,18 +29,33 @@ namespace shamrock::scheduler {
 
     /**
      * @brief Node information in the PatchTree link list
-     *
      */
     class LinkedTreeNode {
         public:
-        u32 level;
-        u64 parent_nid;
+        u32 level; ///< Level of the tree node
+        u64 parent_nid; ///< Parent node id 
+
+        /**
+         * @brief Array of childs node ids
+         *
+         * Childs nodes are stored in a fixed size array.
+         *
+         * If the node has no child the `[0] == u64_max`.
+         * Otherwise the 8 childs ids are valid.
+         */
         std::array<u64,8> childs_nid {u64_max};
 
-        bool is_leaf             = true;
+        bool is_leaf             = true; ///< Is this node a leaf
+
+        /**
+         * @brief Store true if all childrens of this node are leafs
+         * 
+         * This condition is mandatory for a merge to be possible
+         */
         bool child_are_all_leafs = false;
     };
 
+    /// Equal operator for LinkedTreeNode
     inline bool operator==(const LinkedTreeNode& lhs, const LinkedTreeNode& rhs) { 
         return 
             (lhs.level == rhs.level) && 
@@ -78,10 +93,18 @@ namespace shamrock::scheduler {
             return tree_node.childs_nid[id];
         }
 
+        /**
+         * @brief Convert PatchTreeNode to SerialPatchNode using given coordinate transform
+         *
+         * @tparam vec The vector type
+         * @param box_transform Coordinate transform from patch coordinate space to real one
+         * @return SerialPatchNode<vec> Converted patch node
+         */
         template<class vec>
         inline SerialPatchNode<vec> convert(const shamrock::patch::PatchCoordTransform<vec> box_transform){
             SerialPatchNode<vec> n;
 
+            // Convert patch range to object coordinates using given coordinate transform
             auto [bmin,bmax] = box_transform.to_obj_coord(patch_coord.get_patch_range());
 
             n.box_min    = bmin;
@@ -98,6 +121,7 @@ namespace shamrock::scheduler {
         }
     };
 
+    /// Equal operator for PatchTreeNode
     inline bool operator==(const PatchTreeNode& lhs, const PatchTreeNode& rhs) { 
         return 
             (lhs.patch_coord == rhs.patch_coord) && 
@@ -123,13 +147,13 @@ namespace shamrock::scheduler {
         
     }
 
+    /**
+     * @brief Serializes a LinkedTreeNode object to a JSON object.
+     * 
+     * @param j The JSON object to serialize to.
+     * @param p The LinkedTreeNode object to serialize.
+     */
     inline void to_json(nlohmann::json &j, const LinkedTreeNode &p) {
-        
-        // u32 level;
-        // u64 parent_nid;
-        // std::array<u64,8> childs_nid {u64_max};
-        // bool is_leaf             = true;
-        // bool child_are_all_leafs = false;
         
         j = nlohmann::json{
             {"level",p.level},
@@ -140,7 +164,12 @@ namespace shamrock::scheduler {
         };
     }
 
-
+    /**
+     * @brief Deserializes a JSON object to a LinkedTreeNode object.
+     * 
+     * @param j The JSON object to deserialize from.
+     * @param p The LinkedTreeNode object to deserialize to.
+     */
     inline void from_json(const nlohmann::json &j, LinkedTreeNode &p){
         j.at("level").get_to(p.level);
         j.at("parent_nid").get_to(p.parent_nid);
@@ -149,12 +178,13 @@ namespace shamrock::scheduler {
         j.at("child_are_all_leafs").get_to(p.child_are_all_leafs);
     }
 
+    /**
+     * @brief Serializes a PatchTreeNode object to a JSON object.
+     * 
+     * @param j The JSON object to serialize to.
+     * @param p The PatchTreeNode object to serialize.
+     */
     inline void to_json(nlohmann::json &j, const PatchTreeNode &p) {
-        
-        // PatchCoord patch_coord;
-        // LinkedTreeNode tree_node;
-        // u64 linked_patchid;
-        // u64 load_value = u64_max;
         
         j = nlohmann::json{
             {"linked_patchid",p.linked_patchid},
@@ -167,6 +197,12 @@ namespace shamrock::scheduler {
         };
     }
 
+    /**
+     * @brief Deserializes a JSON object to a PatchTreeNode object.
+     * 
+     * @param j The JSON object to deserialize from.
+     * @param p The PatchTreeNode object to deserialize to.
+     */
     inline void from_json(const nlohmann::json &j, PatchTreeNode &p){
         j.at("linked_patchid").get_to(p.linked_patchid);
         j.at("load_value").get_to(p.load_value);

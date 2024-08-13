@@ -23,13 +23,15 @@
 namespace shamalgs::collective {
 
     /**
-     * @brief
+     * @brief Writes data to an MPI file in a collective manner.
      *
-     * @tparam T
-     * @param ptr_data
-     * @param data_cnt
-     * @param file_head_ptr
-     * @return u64 the new file head ptr
+     * @tparam T The type of data to be written.
+     * @param fh The MPI file handle.
+     * @param ptr_data Pointer to the data to be written.
+     * @param data_cnt Number of elements of type T to be written.
+     * @param file_head_ptr The current file head pointer, which is updated after the write
+     * operation.
+     *
      */
     template<class T>
     void viewed_write_all_fetch(MPI_File fh, T *ptr_data, u64 data_cnt, u64 &file_head_ptr) {
@@ -50,13 +52,16 @@ namespace shamalgs::collective {
     }
 
     /**
-     * @brief
+     * @brief Writes data to an MPI file in a collective manner and updates the file head pointer.
      *
-     * @tparam T
-     * @param ptr_data
-     * @param data_cnt
-     * @param file_head_ptr
-     * @return u64 the new file head ptr
+     * @tparam T The type of data to be written.
+     * @param fh The MPI file handle.
+     * @param ptr_data Pointer to the data to be written.
+     * @param data_cnt Number of elements of type T to be written.
+     * @param total_cnt Total number of elements of type T in the file.
+     * @param file_head_ptr The current file head pointer, which is updated after the write
+     * operation.
+     *
      */
     template<class T>
     void viewed_write_all_fetch_known_total_size(
@@ -76,7 +81,6 @@ namespace shamalgs::collective {
 
         file_head_ptr = view.total_byte_count + file_head_ptr;
     }
-
 
     /**
      * @brief Writes a string to a file using MPI and updates the file head pointer.
@@ -99,7 +103,7 @@ namespace shamalgs::collective {
     }
 
     /**
-     * @brief Reads a string of lenght #len from a file using MPI and updates the file head pointer.
+     * @brief Reads a string of lenght len from a file using MPI and updates the file head pointer.
      *
      * @param fh MPI file handle
      * @param len length of string to read

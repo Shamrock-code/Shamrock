@@ -125,7 +125,7 @@ namespace shamrock {
         private:
 
         inline void head_write(std::string s){
-            shamalgs::collective::write_header(mfile , s, file_head_ptr);
+            shamalgs::collective::write_header_raw(mfile , s, file_head_ptr);
         }
 
         template<class T>

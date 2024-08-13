@@ -80,7 +80,7 @@ namespace shamalgs::collective {
 
 
 
-    inline void write_header(MPI_File fh, std::string s, u64 & file_head_ptr) {
+    inline void write_header_raw(MPI_File fh, std::string s, u64 & file_head_ptr) {
 
         MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
 
@@ -91,7 +91,57 @@ namespace shamalgs::collective {
         file_head_ptr = file_head_ptr + s.size();
     }
 
+    inline std::string read_header_raw(MPI_File fh, size_t len, u64 & file_head_ptr) {
 
+        MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
+        std::string s;
+        s.resize(len);
+
+            MPICHECK(MPI_File_read(fh, s.data(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE));
+
+        file_head_ptr = file_head_ptr + s.size();
+
+        return s;
+    }
+
+
+    inline void write_header_val(MPI_File fh, size_t val, u64 & file_head_ptr){
+
+        MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
+
+        if (shamcomm::world_rank() == 0) {
+            MPICHECK(MPI_File_write(fh, &val, 1, get_mpi_type<size_t>(), MPI_STATUS_IGNORE));
+        }
+
+        file_head_ptr = file_head_ptr + sizeof(size_t);
+    }
+
+    inline size_t read_header_val(MPI_File fh, u64 & file_head_ptr){
+        
+        size_t val = 0;
+        MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
+
+        MPICHECK(MPI_File_read(fh, &val, 1, get_mpi_type<size_t>(), MPI_STATUS_IGNORE));
+
+        file_head_ptr = file_head_ptr + sizeof(size_t);
+
+        return val;
+    }
+
+
+    inline void write_header(MPI_File fh,std::string s, u64 & file_head_ptr){
+
+        write_header_val(fh, s.size(), file_head_ptr);
+        write_header_raw(fh, s, file_head_ptr);
+    }
+
+    inline std::string read_header(MPI_File fh, u64 & file_head_ptr){
+
+        size_t len = read_header_val(fh, file_head_ptr);
+        std::string s = read_header_raw(fh, len, file_head_ptr);
+        return s;
+
+    }
 
     
 

@@ -25,7 +25,7 @@ TestStart(Unittest, "shamalgs/collective/io/header_val", test_collective_io_head
         shamalgs::collective::write_header_val(mfile, TEST_VAL1, head_ptr);
         shamalgs::collective::write_header_val(mfile, TEST_VAL2, head_ptr);
 
-        MPI_File_close(&mfile); 
+        MPI_File_close(&mfile);
     }
 
     { // Read
@@ -36,13 +36,11 @@ TestStart(Unittest, "shamalgs/collective/io/header_val", test_collective_io_head
         shamcomm::open_read_only_file(mfile, TEST_FILE_NAME);
         auto read_val1 = shamalgs::collective::read_header_val(mfile, head_ptr);
         auto read_val2 = shamalgs::collective::read_header_val(mfile, head_ptr);
-        _AssertEqual(read_val1 , TEST_VAL1)
-        _AssertEqual(read_val2 , TEST_VAL2)
+        _AssertEqual(read_val1, TEST_VAL1) _AssertEqual(read_val2, TEST_VAL2);
 
-        MPI_File_close(&mfile); 
+        MPI_File_close(&mfile);
     }
 }
-
 
 TestStart(Unittest, "shamalgs/collective/io/header_read_write", test_collective_io_header_rw, -1) {
 
@@ -56,7 +54,7 @@ TestStart(Unittest, "shamalgs/collective/io/header_read_write", test_collective_
         shamcomm::open_reset_file(mfile, TEST_FILE_NAME);
         shamalgs::collective::write_header(mfile, ref_str, head_ptr);
 
-        MPI_File_close(&mfile); 
+        MPI_File_close(&mfile);
     }
 
     { // Read
@@ -66,9 +64,8 @@ TestStart(Unittest, "shamalgs/collective/io/header_read_write", test_collective_
 
         shamcomm::open_read_only_file(mfile, TEST_FILE_NAME);
         auto read_str = shamalgs::collective::read_header(mfile, head_ptr);
-        REQUIRE(read_str == ref_str)
+        REQUIRE(read_str == ref_str);
 
-        MPI_File_close(&mfile); 
+        MPI_File_close(&mfile);
     }
 }
-

@@ -26,15 +26,39 @@
 
 namespace shamrock::patch {
 
+
+    /**
+     * @brief Structure describing a field in a patch data layout.
+     *
+     * The field descriptor contains the name of the field and the number of
+     * variables of the field.
+     */
     template<class T>
     class FieldDescriptor {
         public:
+        /// The type of the field mirrored from the template type
         using field_T = T;
 
+        /// The name of the field
         std::string name;
+
+        /// The number of variables of the field per object
         u32 nvar;
 
+        /**
+         * @brief Default constructor.
+         *
+         * The default constructor initializes the field descriptor with an
+         * empty name and 1 variable.
+         */
         inline FieldDescriptor() : name(""), nvar(1){};
+
+        /**
+         * @brief Constructor with a given name and number of variables.
+         *
+         * @param name The name of the field.
+         * @param nvar The number of variables of the field.
+         */
         inline FieldDescriptor(std::string name, u32 nvar) : nvar(nvar), name(name) {}
     };
     
@@ -158,6 +182,13 @@ namespace shamrock::patch {
             }
         }
 
+        /**
+         * @brief Add a field with type specified as a string
+         * 
+         * @param fname the name of the field
+         * @param nvar the number of variables
+         * @param type the type of the field as a string
+         */
         inline void add_field_t(std::string fname, u32 nvar, std::string type){
             if (type == "f32"){
                 add_field<f32>(fname, nvar);
@@ -192,18 +223,60 @@ namespace shamrock::patch {
             }else if (type == "u64_3"){
                 add_field<u64_3>(fname, nvar);
             }else{
-                throw shambase::make_except_with_loc<std::invalid_argument>("the select type is not registered");
+                throw shambase::make_except_with_loc<std::invalid_argument>("the select type is not recognized");
             }
         }
 
+        /**
+         * @brief Overloaded equality operator for PatchDataLayout class
+         *
+         * This operator is used to check if two PatchDataLayout objects are equal.
+         * It compares the fields of the objects and returns true if they are equal,
+         * and false otherwise.
+         *
+         * @param lhs The first PatchDataLayout object to compare
+         * @param rhs The second PatchDataLayout object to compare
+         *
+         * @return true if the two objects are equal, false otherwise
+         */
         friend bool operator==(const PatchDataLayout& lhs, const PatchDataLayout& rhs);
 
     };
-
+    
+    /**
+     * @brief Serialize a PatchDataLayout object to a JSON object
+     *
+     * This function takes a PatchDataLayout object and serializes it to a JSON object.
+     * It is used to convert the PatchDataLayout object to a JSON string.
+     *
+     * @param j The JSON object to serialize the PatchDataLayout object to
+     * @param p The PatchDataLayout object to serialize
+     */
     void to_json(nlohmann::json &j, const PatchDataLayout &p);
 
+    /**
+     * @brief Deserialize a PatchDataLayout object from a JSON object
+     *
+     * This function takes a JSON object and deserializes it to a PatchDataLayout object.
+     * It is used to convert a JSON string to a PatchDataLayout object.
+     *
+     * @param j The JSON object to deserialize the PatchDataLayout object from
+     * @param p The PatchDataLayout object to deserialize
+     */
     void from_json(const nlohmann::json &j, PatchDataLayout &p);
 
+    /**
+     * @brief Overloaded equality operator for PatchDataLayout class
+     *
+     * This operator is used to check if two PatchDataLayout objects are equal.
+     * It compares the fields of the objects and returns true if they are equal,
+     * and false otherwise.
+     *
+     * @param lhs The first PatchDataLayout object to compare
+     * @param rhs The second PatchDataLayout object to compare
+     *
+     * @return true if the two objects are equal, false otherwise
+     */
     bool operator==(const PatchDataLayout& lhs, const PatchDataLayout& rhs);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -36,7 +36,7 @@ TestStart(Unittest, "shamrock/patch/PatchDataLayout::serialize_json", testpdlser
 
     nlohmann::json j = pdl;
 
-    logger::raw_ln(j.dump(4));
+    //logger::raw_ln(j.dump(4));
 
     PatchDataLayout pdl_out = j.get<PatchDataLayout>();
 

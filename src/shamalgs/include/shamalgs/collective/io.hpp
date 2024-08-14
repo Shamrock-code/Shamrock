@@ -141,6 +141,20 @@ namespace shamalgs::collective {
         file_head_ptr = file_head_ptr + sizeof(size_t);
     }
 
+    template<class T>
+    inline void write_at(MPI_File fh, const void * buf, size_t len, u64 file_head_ptr){
+
+        MPICHECK(MPI_File_write_at(fh, file_head_ptr,buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE));
+        
+    }
+
+    template<class T>
+    inline void read_at(MPI_File fh, const void * buf, size_t len, u64 file_head_ptr){
+
+        MPICHECK(MPI_File_read_at(fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE));
+        
+    }
+
     /**
      * @brief Reads a size_t from a file using MPI and updates the file head pointer.
      *

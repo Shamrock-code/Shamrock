@@ -83,44 +83,11 @@ class ShamrockCtx{public:
         pdl->add_field<T>(fname, nvar);
     }
 
-
-
     inline void pdata_layout_add_field_t(std::string fname, u32 nvar, std::string type){
-        if (type == "f32"){
-            pdata_layout_add_field<f32>(fname, nvar);
-        }else if (type == "f32_2"){
-            pdata_layout_add_field<f32_2>(fname, nvar);
-        }else if (type == "f32_3"){
-            pdata_layout_add_field<f32_3>(fname, nvar);
-        }else if (type == "f32_4"){
-            pdata_layout_add_field<f32_4>(fname, nvar);
-        }else if (type == "f32_8"){
-            pdata_layout_add_field<f32_8>(fname, nvar);
-        }else if (type == "f32_16"){
-            pdata_layout_add_field<f32_16>(fname, nvar);
-        }else if (type == "f64"){
-            pdata_layout_add_field<f64>(fname, nvar);
-        }else if (type == "f64_2"){
-            pdata_layout_add_field<f64_2>(fname, nvar);
-        }else if (type == "f64_3"){
-            pdata_layout_add_field<f64_3>(fname, nvar);
-        }else if (type == "f64_4"){
-            pdata_layout_add_field<f64_4>(fname, nvar);
-        }else if (type == "f64_8"){
-            pdata_layout_add_field<f64_8>(fname, nvar);
-        }else if (type == "f64_16"){
-            pdata_layout_add_field<f64_16>(fname, nvar);
-        }else if (type == "u32"){
-            pdata_layout_add_field<u32>(fname, nvar);
-        }else if (type == "u64"){
-            pdata_layout_add_field<u64>(fname, nvar);
-        }else if (type == "u32_3"){
-            pdata_layout_add_field<u32_3>(fname, nvar);
-        }else if (type == "u64_3"){
-            pdata_layout_add_field<u64_3>(fname, nvar);
-        }else{
-            throw shambase::make_except_with_loc<std::invalid_argument>("the select type is not registered");
+        if(sched){
+            throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
+        pdl->add_field_t(fname, nvar, type);
     }
 
     inline void pdata_layout_print(){

@@ -17,6 +17,7 @@
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
+#include <nlohmann/json.hpp>
 #include "shamrock/patch/FieldVariant.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <sstream>
@@ -24,20 +25,23 @@
 #include <vector>
 
 namespace shamrock::patch {
+
+    template<class T>
+    class FieldDescriptor {
+        public:
+        using field_T = T;
+
+        std::string name;
+        u32 nvar;
+
+        inline FieldDescriptor() : name(""), nvar(1){};
+        inline FieldDescriptor(std::string name, u32 nvar) : nvar(nvar), name(name) {}
+    };
+    
     class PatchDataLayout {
 
         template<class T>
-        class FieldDescriptor {
-            public:
-            using field_T = T;
-
-            std::string name;
-            u32 nvar;
-
-            inline FieldDescriptor() : name(""), nvar(1){};
-            inline FieldDescriptor(std::string name, u32 nvar) : nvar(nvar), name(name) {}
-        };
-        
+        using FieldDescriptor = shamrock::patch::FieldDescriptor<T>;
 
         //using var_t = var_t_template<FieldDescriptor>;
         using var_t = FieldVariant<FieldDescriptor>;
@@ -148,12 +152,59 @@ namespace shamrock::patch {
          * @param func 
          */
         template<class Functor>
-        inline void for_each_field_any(Functor &&func) {
+        inline void for_each_field_any(Functor &&func) const {
             for (auto &f : fields) {
                 f.visit([&](auto &arg) { func(arg); });
             }
         }
+
+        inline void add_field_t(std::string fname, u32 nvar, std::string type){
+            if (type == "f32"){
+                add_field<f32>(fname, nvar);
+            }else if (type == "f32_2"){
+                add_field<f32_2>(fname, nvar);
+            }else if (type == "f32_3"){
+                add_field<f32_3>(fname, nvar);
+            }else if (type == "f32_4"){
+                add_field<f32_4>(fname, nvar);
+            }else if (type == "f32_8"){
+                add_field<f32_8>(fname, nvar);
+            }else if (type == "f32_16"){
+                add_field<f32_16>(fname, nvar);
+            }else if (type == "f64"){
+                add_field<f64>(fname, nvar);
+            }else if (type == "f64_2"){
+                add_field<f64_2>(fname, nvar);
+            }else if (type == "f64_3"){
+                add_field<f64_3>(fname, nvar);
+            }else if (type == "f64_4"){
+                add_field<f64_4>(fname, nvar);
+            }else if (type == "f64_8"){
+                add_field<f64_8>(fname, nvar);
+            }else if (type == "f64_16"){
+                add_field<f64_16>(fname, nvar);
+            }else if (type == "u32"){
+                add_field<u32>(fname, nvar);
+            }else if (type == "u64"){
+                add_field<u64>(fname, nvar);
+            }else if (type == "u32_3"){
+                add_field<u32_3>(fname, nvar);
+            }else if (type == "u64_3"){
+                add_field<u64_3>(fname, nvar);
+            }else{
+                throw shambase::make_except_with_loc<std::invalid_argument>("the select type is not registered");
+            }
+        }
+
+        friend bool operator==(const PatchDataLayout& lhs, const PatchDataLayout& rhs);
+
     };
+
+    void to_json(nlohmann::json &j, const PatchDataLayout &p);
+
+    void from_json(const nlohmann::json &j, PatchDataLayout &p);
+
+    bool operator==(const PatchDataLayout& lhs, const PatchDataLayout& rhs);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // out of line implementation of the PatchDataLayout

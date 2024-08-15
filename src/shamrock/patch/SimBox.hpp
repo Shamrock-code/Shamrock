@@ -148,6 +148,21 @@ namespace shamrock::patch {
             return PatchCoordTransform<T>{ patch_coord_bounding_box , shammath::CoordRange<T>{bmin,bmax} };
         }
 
+        /**
+         * @brief Serializes a SimulationBoxInfo object to a JSON object.
+         *
+         * @param j The JSON object to serialize to.
+         * @param p The SimulationBoxInfo object to serialize.
+         */
+        void to_json(nlohmann::json &j);
+ 
+         /**
+         * @brief Deserializes a JSON object into a SimulationBoxInfo object.
+         *
+         * @param j The JSON object to deserialize from.
+         * @param p The SimulationBoxInfo object to deserialize into.
+         */
+        void from_json(const nlohmann::json &j);
         
     };
 
@@ -232,5 +247,7 @@ namespace shamrock::patch {
         } else {
             throw shambase::make_except_with_loc<std::runtime_error>("the chosen type for the main field is not handled");
         }
+
     }
+
 } // namespace shamrock::patch

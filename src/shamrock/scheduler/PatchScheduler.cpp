@@ -970,9 +970,14 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
 
 nlohmann::json PatchScheduler::serialize_patch_metadata(){
 
+    nlohmann::json jsim_box;
+    patch_data.sim_box.to_json(jsim_box);
+
     return {
         {"patchtree",patch_tree},
         {"patchlist",patch_list},
+        {"patchdata_layout",pdl},
+        {"sim_box",jsim_box},
         {"crit_patch_split",crit_patch_split},
         {"crit_patch_merge",crit_patch_merge}
         };

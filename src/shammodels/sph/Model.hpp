@@ -34,6 +34,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <vector>
+#include "shamrock/io/ShamrockDump.hpp"
 
 #include <pybind11/functional.h>
 
@@ -704,6 +705,20 @@ namespace shammodels::sph {
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// I/O
         ////////////////////////////////////////////////////////////////////////////////////////////
+
+        inline void load_from_dump(std::string fname){
+            logger::info_ln("SPH", "Loading state from dump",fname);
+            std::string metadata_user {};
+            shamrock::load_shamrock_dump(fname, metadata_user, ctx);
+
+            /// Load config
+        }
+
+        inline void dump(std::string fname){
+            logger::info_ln("SPH", "Dumping state to",fname);
+            // todo add config
+            shamrock::write_shamrock_dump(fname, "aa", shambase::get_check_ref(ctx.sched));
+        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// Simulation control

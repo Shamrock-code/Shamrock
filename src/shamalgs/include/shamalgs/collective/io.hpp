@@ -149,7 +149,7 @@ namespace shamalgs::collective {
     }
 
     template<class T>
-    inline void read_at(MPI_File fh, const void * buf, size_t len, u64 file_head_ptr){
+    inline void read_at(MPI_File fh, void * buf, size_t len, u64 file_head_ptr){
 
         MPICHECK(MPI_File_read_at(fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE));
         

@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file LegacyVtkWritter.hpp
+ * @file ShamrockDump.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *

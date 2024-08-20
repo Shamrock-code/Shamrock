@@ -13,6 +13,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 #include "shambackends/Device.hpp"
@@ -40,6 +41,31 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+
+namespace logformatter {
+    std::string formatter_full(const logger::ReformatArgs & args){
+        return shambase::format(
+        "{5:}rank={6:<4}{2:} {5:}({3:^20}){2:} {0:}{1:}{2:}: {4:}",
+        args.color,
+        args.level_name,
+        shambase::term_colors::reset(),
+        args.module_name,
+        args.content,
+        shambase::term_colors::faint(),
+        shamcomm::world_rank());
+    }
+
+    std::string formatter_simple(const logger::ReformatArgs & args){
+        return shambase::format(
+        "{5:}({3:}){2:} : {4:}",
+        args.color,
+        args.level_name,
+        shambase::term_colors::reset(),
+        args.module_name,
+        args.content,
+        shambase::term_colors::faint());
+    }
+}
 
 namespace shamsys::instance::details {
 
@@ -443,6 +469,13 @@ namespace shamsys::instance {
         mpi::init(&mpi_info.argc, &mpi_info.argv);
 
         shamcomm::fetch_world_info();
+
+        // now that MPI is started we can use the formatter with rank info
+
+        logger::debug_ln(
+            "Sys",
+            "changing formatter to MPI form");
+        logger::change_formaters(logformatter::formatter_full, logformatter::formatter_simple);
 
 #ifdef MPI_LOGGER_ENABLED
         std::cout << "%MPI_VALUE:world_size=" << world_size << "\n";

@@ -21,16 +21,6 @@
 #include "shamcmdopt/term_colors.hpp"
 #include <string>
 
-#define LIST_LEVEL                                                                                 \
-    X(debug_alloc, shambase::term_colors::col8b_red(), "Debug Alloc", 127)                        \
-    X(debug_mpi, shambase::term_colors::col8b_blue(), "Debug MPI", 100)                           \
-    X(debug_sycl, shambase::term_colors::col8b_magenta(), "Debug SYCL", 11)                        \
-    X(debug, shambase::term_colors::col8b_green(), "Debug", 10)                                   \
-    X(info, shambase::term_colors::col8b_cyan(), "", 1)                                            \
-    X(normal, shambase::term_colors::empty(), "", 0)                                               \
-    X(warn, shambase::term_colors::col8b_yellow(), "Warning", -1)                                 \
-    X(err, shambase::term_colors::col8b_red(), "Error", -10)
-
 namespace shamcomm::logs {
     namespace details {
         inline i8 loglevel = 0;
@@ -42,6 +32,9 @@ namespace shamcomm::logs {
 
     inline void set_loglevel(i8 val) { details::loglevel = val; }
     inline i8 get_loglevel() { return details::loglevel; }
+} // namespace shamcomm::logs
+
+namespace shamcomm::logs {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Log message formatting
@@ -85,6 +78,69 @@ namespace shamcomm::logs {
         shambase::println(shamcomm::logs::format_message(var1, var2...));
         shambase::flush();
     }
+} // namespace shamcomm::logs
+
+struct LogLevel_DebugAlloc {
+    constexpr static i8 logval              = 127;
+    constexpr static const char *level_name = "Debug Alloc";
+
+    static std::string reformat(const std::string &in, std::string module_name);
+};
+
+struct LogLevel_DebugMPI {
+    constexpr static i8 logval              = 100;
+    constexpr static const char *level_name = "Debug MPI";
+
+    static std::string reformat(const std::string &in, std::string module_name);
+};
+struct LogLevel_DebugSYCL {
+    constexpr static i8 logval              = 11;
+    constexpr static const char *level_name = "Debug SYCL";
+
+    static std::string reformat(const std::string &in, std::string module_name);
+};
+struct LogLevel_Debug {
+    constexpr static i8 logval              = 10;
+    constexpr static const char *level_name = "Debug";
+
+    static std::string reformat(const std::string &in, std::string module_name);
+};
+struct LogLevel_Info {
+    constexpr static i8 logval              = 1;
+    constexpr static const char *level_name = "";
+
+    static std::string reformat(const std::string &in, std::string module_name);
+};
+struct LogLevel_Normal {
+    constexpr static i8 logval              = 0;
+    constexpr static const char *level_name = "";
+
+    static std::string reformat(const std::string &in, std::string module_name);
+};
+struct LogLevel_Warning {
+    constexpr static i8 logval              = -1;
+    constexpr static const char *level_name = "Warning";
+
+    static std::string reformat(const std::string &in, std::string module_name);
+};
+struct LogLevel_Error {
+    constexpr static i8 logval              = -10;
+    constexpr static const char *level_name = "Error";
+
+    static std::string reformat(const std::string &in, std::string module_name);
+};
+
+#define LIST_LEVEL                                                                                 \
+    X(debug_alloc, LogLevel_DebugAlloc)                                                            \
+    X(debug_mpi, LogLevel_DebugMPI)                                                                \
+    X(debug_sycl, LogLevel_DebugSYCL)                                                              \
+    X(debug, LogLevel_Debug)                                                                       \
+    X(info, LogLevel_Info)                                                                         \
+    X(normal, LogLevel_Normal)                                                                     \
+    X(warn, LogLevel_Warning)                                                                      \
+    X(err, LogLevel_Error)
+
+namespace shamcomm::logs {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Base print without decoration
@@ -110,17 +166,15 @@ namespace shamcomm::logs {
     // Log levels
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define DECLARE_LOG_LEVEL(_name, color, loginf, logval)                                            \
+#define DECLARE_LOG_LEVEL(_name, StructREF)                                                        \
                                                                                                    \
-    constexpr i8 log_##_name = (logval);                                                           \
+    constexpr i8 log_##_name = (StructREF::logval);                                                \
                                                                                                    \
     template<typename... Types>                                                                    \
     inline void _name(std::string module_name, Types... var2) {                                    \
         if (details::loglevel >= log_##_name) {                                                    \
             shamcomm::logs::print(                                                                 \
-                "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color)      \
-                    + (loginf) + shambase::term_colors::reset() + ":",                             \
-                var2...);                                                                          \
+                StructREF::reformat(shamcomm::logs::format_message(var2...), module_name));        \
         }                                                                                          \
     }                                                                                              \
                                                                                                    \
@@ -128,9 +182,7 @@ namespace shamcomm::logs {
     inline void _name##_ln(std::string module_name, Types... var2) {                               \
         if (details::loglevel >= log_##_name) {                                                    \
             shamcomm::logs::print_ln(                                                              \
-                "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color)      \
-                    + (loginf) + shambase::term_colors::reset() + ":",                             \
-                var2...);                                                                          \
+                StructREF::reformat(shamcomm::logs::format_message(var2...), module_name));        \
         }                                                                                          \
     }
 
@@ -143,7 +195,7 @@ namespace shamcomm::logs {
     // log level declared
     ///////////////////////////////////
 
-#define IsActivePrint(_name, color, loginf, logval)                                                \
+#define IsActivePrint(_name, StructREF)                                                            \
     if (details::loglevel >= log_##_name) {                                                        \
         shamcomm::logs::raw("    ");                                                               \
     }                                                                                              \

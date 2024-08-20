@@ -162,7 +162,7 @@
             else if constexpr (dir == Direction::yp){return "yp";}
             else if constexpr (dir == Direction::ym){return "ym";}
             else if constexpr (dir == Direction::zp){return "zp";}
-            else if constexpr (dir == Direction::xm){return "zm";}
+            else if constexpr (dir == Direction::zm){return "zm";}
             else {
                 static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
             }
@@ -217,7 +217,7 @@ void dust_compute_fluxes_dir(
             else if constexpr (dir == Direction::yp){return "yp";}
             else if constexpr (dir == Direction::ym){return "ym";}
             else if constexpr (dir == Direction::zp){return "zp";}
-            else if constexpr (dir == Direction::xm){return "zm";}
+            else if constexpr (dir == Direction::zm){return "zm";}
             else {
                 static_assert(shambase::always_false_v<decltype(dir)>, "non-exhaustive visitor!");
             }

@@ -706,17 +706,33 @@ namespace shammodels::sph {
         /////// I/O
         ////////////////////////////////////////////////////////////////////////////////////////////
 
+
+        /**
+         * @brief Load the state of the SPH model from a dump file.
+         *
+         * @param fname The name of the dump file.
+         */
         inline void load_from_dump(std::string fname){
             logger::info_ln("SPH", "Loading state from dump",fname);
+
+            // Load the context state and recover user metadata
             std::string metadata_user {};
             shamrock::load_shamrock_dump(fname, metadata_user, ctx);
 
-            /// Load config
+            /// TODO: load solver config from metadata
         }
 
+
+        /**
+         * @brief Dump the state of the SPH model to a file.
+         *
+         * @param fname The name of the dump file.
+         */
         inline void dump(std::string fname){
             logger::info_ln("SPH", "Dumping state to",fname);
-            // todo add config
+
+            // Dump the state of the SPH model to a file
+            /// TODO: replace supplied metadata by solver config json
             shamrock::write_shamrock_dump(fname, "aa", shambase::get_check_ref(ctx.sched));
         }
 

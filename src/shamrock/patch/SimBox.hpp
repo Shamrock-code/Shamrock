@@ -80,6 +80,17 @@ namespace shamrock::patch {
          */
         template <class T> void set_bounding_box(shammath::CoordRange<T> new_box);
 
+        /**
+         * @brief Set the stored bounding box after an all-reduce operation on the supplied bounds.
+         *
+         * @details This function is used in the context of a distributed simulation.
+         * It will all-reduce the bounding box of the domain over all the MPI ranks.
+         * The all-reduce operation is done with the shamalgs::collective::allreduce_bounds
+         * function.
+         *
+         * @tparam T type of position vector
+         * @param new_box the new bounding box to be all_reduced accros ranks
+         */
         template<class T> inline void allreduce_set_bounding_box(shammath::CoordRange<T> new_box){
             std::pair<T,T> reduced = shamalgs::collective::allreduce_bounds(std::pair<T,T>{new_box.lower,new_box.upper});
             set_bounding_box<>(shammath::CoordRange<T>(reduced));

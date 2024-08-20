@@ -26,8 +26,7 @@
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include <hipSYCL/sycl/queue.hpp>
-#include <hipSYCL/sycl/sycl.hpp>
+#include <shambackends/sycl.hpp>
 #include <utility>
 
 using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraphLinkiterator;

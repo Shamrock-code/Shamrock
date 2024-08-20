@@ -143,6 +143,13 @@ namespace shammodels::basegodunov {
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>> flux_rhov_dust_face_ym;
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>> flux_rhov_dust_face_zp;
         Component<shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>> flux_rhov_dust_face_zm;
+
+        Component<shamrock::ComputeField<Tvec>> vel_dust;    
+        
+        Component<shamrock::ComputeField<Tvec>> grad_rho_dust;
+        Component<shamrock::ComputeField<Tvec>> dx_v_dust;
+        Component<shamrock::ComputeField<Tvec>> dy_v_dust;
+        Component<shamrock::ComputeField<Tvec>> dz_v_dust;
         
         struct Timings{
             f64 interface = 0;

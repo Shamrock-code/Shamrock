@@ -129,15 +129,23 @@ namespace shamcmdopt {
         }
     }
 
+    /**
+     * @brief Process the SHAMTTYCOL environment variable to set the number of columns for the
+     * terminal.
+     *
+     * If the variable is set, its value is parsed as an integer and used to set the terminal
+     * columns. If the value is less than the minimum size (10), it is set to the minimum size. If
+     * the value is not an integer or is out of range, an error message is printed.
+     */
     void process_tty() {
         auto res = getenv_str("SHAMTTYCOL");
-        
+
         int min_sz = 10;
         if (res) {
             try {
                 try {
                     int val = std::stoi(*res);
-                    if(val < min_sz) {
+                    if (val < min_sz) {
                         val = min_sz;
                     }
                     set_tty_columns(val);

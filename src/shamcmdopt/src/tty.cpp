@@ -49,6 +49,9 @@ namespace shamcmdopt {
         struct winsize w;
         ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
+        if(w.ws_col == 0 || w.ws_row == 0) {
+            return {10, 100};
+        }
         return {w.ws_row, w.ws_col};
 #else
         return {10, 100};

@@ -7,6 +7,7 @@ set(Sources
         src/cmdopt.cpp
         src/env.cpp
         src/term_colors.cpp
+        src/tty.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

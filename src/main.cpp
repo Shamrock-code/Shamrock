@@ -23,6 +23,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambindings/start_python.hpp"
+#include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/MicroBenchmark.hpp"
@@ -71,6 +72,8 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--rscript","(filepath)", "run shamrock with python runscirpt");
     opts::register_opt("--ipython",{}, "run shamrock in Ipython mode");
     opts::register_opt("--force-dgpu",{}, "for direct mpi comm on");
+
+    shamcmdopt::register_env_var_doc("SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
     opts::init(argc, argv);
 

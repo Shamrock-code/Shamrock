@@ -513,17 +513,23 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
 
     bool has_warn = false;
 
+    std::string warn_log = "";
+
     for (auto &[k, v] : send_count_stats) {
         if (v > 0.2) {
-            logger::warn_ln("InterfaceGen", "patch", k, " high ratio volume/interf:", v);
+            warn_log += shambase::format ("\n    patch {} high interf/patch volume: {}", k, v);
             has_warn = true;
         }
     }
 
     if (has_warn && shamcomm::world_rank() == 0) {
-        logger::warn_ln("InterfaceGen",
-                        "the ratio patch/interface is high, which can lead to high mpi "
-                        "overhead, try incresing the patch split crit");
+        warn_log = "\n    This can lead to high mpi "
+                        "overhead, try to increase the patch split crit" + warn_log;
+       
+    }
+
+    if (has_warn) { 
+        logger::warn_ln("InterfaceGen","High interface/patch volume ratio."+warn_log);
     }
 
     return res;

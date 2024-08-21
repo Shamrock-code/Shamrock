@@ -8,6 +8,7 @@ set(Sources
     src/mpiInfo.cpp
     src/collectives.cpp
     src/io.cpp
+    src/logs.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

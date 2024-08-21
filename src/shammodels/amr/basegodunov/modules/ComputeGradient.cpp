@@ -592,9 +592,12 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
                     shambase::get_check_ref(result.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
 
                 u32 cell_count  = (mpdat.total_elements) * AMRBlock::block_size;
+                u32 nvar_dust = ndust;
 
-                shambase::parralel_for(cgh, cell_count, "compute_grad_rho_dust", [=](u64 gid) {
-                    const u32 cell_global_id = (u32) gid;
+                shambase::parralel_for(cgh, cell_count*nvar_dust, "compute_grad_rho_dust", [=](u64 gid) {
+                    const u32 tmp_gid = (u32) gid;
+                    const u32 cell_global_id = tmp_gid/nvar_dust;
+                    const u32 ndust_off_loc  = tmp_gid % nvar_dust;
 
                     const u32 block_id       = cell_global_id / AMRBlock::block_size;
                     const u32 cell_loc_id    = cell_global_id % AMRBlock::block_size;
@@ -611,9 +614,9 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
                         graph_iter_zp,
                         graph_iter_zm,
                         [=](u32 id) {
-                            return rho_dust[id];
+                            return rho_dust[nvar_dust * id + ndust_off_loc];
                         });
-                    grad_rho_dust[cell_global_id] = {result[0], result[1], result[2]};
+                    grad_rho_dust[nvar_dust * cell_global_id + ndust_off_loc] = {result[0], result[1], result[2]};
                 });                
             });
         });
@@ -671,6 +674,8 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
         sycl::buffer<Tvec> &cell0block_aabb_lower
             = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+        
+        u32  ndust = solver_config.dust_config.ndust;
 
         q.submit([&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
@@ -694,13 +699,12 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
-            /***
-            Not used
-             */
-            // Tscal dxfact = solver_config.grid_coord_to_pos_fact;
-
-            shambase::parralel_for(cgh, cell_count, "compute_grad_v_dust", [=](u64 gid) {
-                const u32 cell_global_id = (u32) gid;
+            u32 nvar_dust = ndust;
+            shambase::parralel_for(cgh, cell_count*nvar_dust, "compute_grad_v_dust", [=](u64 gid) {
+                
+                const u32 tmp_gid = (u32) gid;
+                const u32 cell_global_id = tmp_gid/nvar_dust;
+                const u32 ndust_off_loc  = tmp_gid % nvar_dust;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
                 const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
@@ -717,12 +721,12 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
                     graph_iter_zp,
                     graph_iter_zm,
                     [=](u32 id) {
-                        return vel_dust[id];
+                        return vel_dust[id*nvar_dust + ndust_off_loc];
                     });
 
-                dx_vel_dust[cell_global_id] = result[0];
-                dy_vel_dust[cell_global_id] = result[1];
-                dz_vel_dust[cell_global_id] = result[2];
+                dx_vel_dust[cell_global_id*nvar_dust + ndust_off_loc] = result[0];
+                dy_vel_dust[cell_global_id*nvar_dust + ndust_off_loc] = result[1];
+                dz_vel_dust[cell_global_id*nvar_dust + ndust_off_loc] = result[2];
             });
         });
     });

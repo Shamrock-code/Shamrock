@@ -577,7 +577,7 @@ namespace shamcomm::logs {
  */
 
 /**
- * @var shamcomm::logs::log_debug_alloc
+ * @fn shamcomm::logs::log_debug_alloc
  * @brief the log level value associated with debug_alloc
  */
 
@@ -598,7 +598,7 @@ namespace shamcomm::logs {
  */
 
 /**
- * @var shamcomm::logs::log_debug_mpi
+ * @fn shamcomm::logs::log_debug_mpi
  * @brief the log level value associated with debug_mpi
  */
 
@@ -619,7 +619,7 @@ namespace shamcomm::logs {
  */
 
 /**
- * @var shamcomm::logs::log_debug_sycl
+ * @fn shamcomm::logs::log_debug_sycl
  * @brief the log level value associated with debug_sycl
  */
 
@@ -640,7 +640,7 @@ namespace shamcomm::logs {
  */
 
 /**
- * @var shamcomm::logs::log_debug
+ * @fn shamcomm::logs::log_debug
  * @brief the log level value associated with debug
  */
 
@@ -661,7 +661,7 @@ namespace shamcomm::logs {
  */
 
 /**
- * @var shamcomm::logs::log_info
+ * @fn shamcomm::logs::log_info
  * @brief the log level value associated with info
  */
 
@@ -682,7 +682,7 @@ namespace shamcomm::logs {
  */
 
 /**
- * @var shamcomm::logs::log_normal
+ * @fn shamcomm::logs::log_normal
  * @brief the log level value associated with normal
  */
 
@@ -703,7 +703,7 @@ namespace shamcomm::logs {
  */
 
 /**
- * @var shamcomm::logs::log_warn
+ * @fn shamcomm::logs::log_warn
  * @brief the log level value associated with warn
  */
 
@@ -724,7 +724,7 @@ namespace shamcomm::logs {
  */
 
 /**
- * @var shamcomm::logs::log_err
+ * @fn shamcomm::logs::log_err
  * @brief the log level value associated with err
  */
 

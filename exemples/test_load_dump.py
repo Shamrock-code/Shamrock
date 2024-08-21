@@ -21,50 +21,8 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 
-cfg = model.gen_default_config()
-#cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
-#cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_boundary_periodic()
-cfg.set_eos_adiabatic(gamma)
-cfg.print_status()
-model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e8),1)
-
-
-(xs,ys,zs) = model.get_box_dim_fcc_3d(1,resol,24,24)
-dr = 1/xs
-(xs,ys,zs) = model.get_box_dim_fcc_3d(dr,resol,24,24)
-
-model.resize_simulation_box((-xs,-ys/2,-zs/2),(xs,ys/2,zs/2))
-
-
-model.add_cube_fcc_3d(dr, (-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
-model.add_cube_fcc_3d(dr*fact, (0,-ys/2,-zs/2),(xs,ys/2,zs/2))
-
-model.set_value_in_a_box("uint", "f64", u_g ,(-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
-model.set_value_in_a_box("uint", "f64", u_d ,(0,-ys/2,-zs/2),(xs,ys/2,zs/2))
-
-
-
-vol_b = xs*ys*zs
-
-totmass = (rho_d*vol_b) + (rho_g*vol_b)
-
-print("Total mass :", totmass)
-
-
-pmass = model.total_mass_to_part_mass(totmass)
-model.set_particle_mass(pmass)
-print("Current part mass :", pmass)
-
-
-
-model.set_cfl_cour(0.1)
-model.set_cfl_force(0.1)
-
-model.dump("outfile")
+model.load_from_dump("outfile")
 
 t_target = 0.245
 

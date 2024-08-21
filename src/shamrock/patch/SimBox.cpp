@@ -94,10 +94,10 @@ namespace shamrock::patch {
         j.at("patchcoormax").get_to(pcoord.coord_max);
         patch_coord_bounding_box = pcoord;
 
-        logger::raw_ln(
-            pdl.check_main_field_type<f64_3>(),
-            j.at("coordtype").get<std::string>(),
-            j.at("coordtype").get<std::string>() == "f64_3");
+        // logger::raw_ln(
+        //     pdl.check_main_field_type<f64_3>(),
+        //     j.at("coordtype").get<std::string>(),
+        //     j.at("coordtype").get<std::string>() == "f64_3");
         if (pdl.check_main_field_type<f32_3>()
             && (j.at("coordtype").get<std::string>() == "f32_3")) {
             bounding_box.value = shammath::CoordRange<f32_3>{

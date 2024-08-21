@@ -83,6 +83,7 @@ model.set_cfl_force(0.1)
 
 model.timestep()
 model.do_vtk_dump("init.vtk", True)
+model.dump("outfile")
 
 t_target = 0.1
 model.evolve_until(t_target)

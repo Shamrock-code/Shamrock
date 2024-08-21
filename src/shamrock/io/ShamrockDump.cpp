@@ -69,6 +69,9 @@ namespace shamrock {
 
         shamcomm::open_reset_file(mfile, fname);
 
+        shambase::Timer timer;
+        timer.start();
+
         shamalgs::collective::write_header(mfile, metadata_user, head_ptr);
         shamalgs::collective::write_header(mfile, metadata_patch, head_ptr);
         shamalgs::collective::write_header(mfile, sout, head_ptr);
@@ -96,6 +99,19 @@ namespace shamrock {
         // write data to file
 
         MPI_File_close(&mfile);
+        timer.end();
+
+        if (shamcomm::world_rank() == 0) {
+            size_t plist_len = all_offsets.size();
+            size_t max_head = all_offsets[plist_len - 1] + all_bytecounts[plist_len - 1] + head_ptr;
+            logger::info_ln(
+                "Shamrock Dump",
+                shambase::format(
+                    "dump to {}\n              - took {}, bandwidth = {}/s",
+                    fname,
+                    timer.get_time_str(),
+                    shambase::readable_sizeof(max_head / timer.elasped_sec())));
+        }
     }
 
     void load_shamrock_dump(std::string fname, std::string &metadata_user, ShamrockCtx &ctx) {
@@ -104,6 +120,9 @@ namespace shamrock {
         MPI_File mfile{};
 
         shamcomm::open_read_only_file(mfile, fname);
+
+        shambase::Timer timer;
+        timer.start();
 
         std::string metadata_patch{};
         std::string patchdata_infos{};
@@ -184,6 +203,19 @@ namespace shamrock {
         }
 
         MPI_File_close(&mfile);
+        timer.end();
+
+        if (shamcomm::world_rank() == 0) {
+            size_t plist_len = all_offsets.size();
+            size_t max_head = all_offsets[plist_len - 1] + all_bytecounts[plist_len - 1] + head_ptr;
+            logger::info_ln(
+                "Shamrock Dump",
+                shambase::format(
+                    "load dump from {}\n              - took {}, bandwidth = {}/s",
+                    fname,
+                    timer.get_time_str(),
+                    shambase::readable_sizeof(max_head / timer.elasped_sec())));
+        }
     }
 
 } // namespace shamrock

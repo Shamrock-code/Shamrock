@@ -13,6 +13,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shamcmdopt/tty.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -43,7 +44,17 @@
 #include <string>
 
 namespace logformatter {
-    std::string formatter_full(const logger::ReformatArgs & args){
+    std::string style0_formatter_full(const logger::ReformatArgs & args){
+        return "[" + (args.color) + args.module_name + shambase::term_colors::reset() + "] " + (args.color)
+               + (args.level_name) + shambase::term_colors::reset() + ": " + args.content;
+    }
+
+    std::string style0_formatter_simple(const logger::ReformatArgs & args){
+        return "[" + (args.color) + args.module_name + shambase::term_colors::reset() + "] " + (args.color)
+               + (args.level_name) + shambase::term_colors::reset() + ": " + args.content;
+    }
+
+    std::string style1_formatter_full(const logger::ReformatArgs & args){
         return shambase::format(
         "{5:}rank={6:<4}{2:} {5:}({3:^20}){2:} {0:}{1:}{2:}: {4:}",
         args.color,
@@ -55,7 +66,84 @@ namespace logformatter {
         shamcomm::world_rank());
     }
 
-    std::string formatter_simple(const logger::ReformatArgs & args){
+    std::string style1_formatter_simple(const logger::ReformatArgs & args){
+        return shambase::format(
+        "{5:}({3:}){2:} : {4:}",
+        args.color,
+        args.level_name,
+        shambase::term_colors::reset(),
+        args.module_name,
+        args.content,
+        shambase::term_colors::faint());
+    }
+
+
+    std::string style2_formatter_full(const logger::ReformatArgs & args){
+
+        return shambase::format("{0:}{1:}{2:}: {4:}{5:} | ({3:}) rank={6:<4}{2:}",
+        args.color,
+        args.level_name,
+        shambase::term_colors::reset(),
+        args.module_name,
+        args.content,
+        shambase::term_colors::faint(),
+        shamcomm::world_rank());
+
+    }
+
+    std::string style2_formatter_simple(const logger::ReformatArgs & args){
+        return shambase::format(
+        "{5:}({3:}){2:} : {4:}",
+        args.color,
+        args.level_name,
+        shambase::term_colors::reset(),
+        args.module_name,
+        args.content,
+        shambase::term_colors::faint());
+    }
+    
+    std::string style3_formatter_full(const logger::ReformatArgs & args){
+
+        u32 tty_width = shamcmdopt::get_tty_columns();
+
+        std::string ansi_reset = shambase::term_colors::reset();
+        std::string ansi_faint = shambase::term_colors::faint();
+
+        std::string lineend = shambase::format(
+        "{5:} [{3:}][rank={6:}]{2:}",
+        args.color,
+        args.level_name,
+        ansi_reset,
+        args.module_name,
+        args.content,
+        ansi_faint,
+        shamcomm::world_rank());
+
+        std::string log = shambase::format("{0:}{1:}{2:}: {4:}",
+        args.color,
+        args.level_name,
+        ansi_reset,
+        args.module_name,
+        args.content,
+        ansi_faint,
+        shamcomm::world_rank());
+
+        std::string log_line1, log_line2;
+        size_t first_nl = log.find_first_of('\n');
+        if (first_nl != std::string::npos) {
+            log_line1 = log.substr(0, first_nl);
+            log_line2 = log.substr(first_nl);
+        } else {
+            log_line1 = log;
+            log_line2 = "";
+        }
+
+        u32 ansi_count = ansi_reset.size()*2 + ansi_faint.size() + args.color.size();
+
+        return shambase::format("{:<{}}",log_line1, tty_width - lineend.size() + ansi_count -1 )+ lineend + log_line2 ;
+    }
+
+    std::string style3_formatter_simple(const logger::ReformatArgs & args){
         return shambase::format(
         "{5:}({3:}){2:} : {4:}",
         args.color,
@@ -474,9 +562,26 @@ namespace shamsys::instance {
 
         logger::debug_ln(
             "Sys",
-            "changing formatter to MPI form");
-        logger::change_formaters(logformatter::formatter_full, logformatter::formatter_simple);
+            "changing formatter to MPI form");  
 
+        auto env_formatter = shamcmdopt::getenv_str("SHAMLOGFORMATTER");
+        if(env_formatter){
+            if(*env_formatter == "0"){
+                logger::change_formaters(logformatter::style0_formatter_full, logformatter::style0_formatter_simple);
+            }else if (*env_formatter == "1"){
+                logger::change_formaters(logformatter::style1_formatter_full, logformatter::style1_formatter_simple);
+            }else if (*env_formatter == "2"){
+                logger::change_formaters(logformatter::style2_formatter_full, logformatter::style2_formatter_simple);
+            }else if (*env_formatter == "3"){
+                logger::change_formaters(logformatter::style3_formatter_full, logformatter::style3_formatter_simple);
+            }else{
+                logger::err_ln("Log", "Unknown formatter");
+                throw ShamsysInstanceException("Unknown formatter");
+            }
+        }else{
+            logger::change_formaters(logformatter::style3_formatter_full, logformatter::style3_formatter_simple);
+        }
+        
 #ifdef MPI_LOGGER_ENABLED
         std::cout << "%MPI_VALUE:world_size=" << world_size << "\n";
         std::cout << "%MPI_VALUE:world_rank=" << world_rank << "\n";

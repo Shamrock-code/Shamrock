@@ -44,6 +44,7 @@ int main(int argc, char *argv[]) {
     opts::register_opt("-o", {"(filepath)"}, "output test report in that file");
 
     opts::register_env_var_doc("REF_FILES_PATH", "reference test files path");
+    shamcmdopt::register_env_var_doc("SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
     opts::init(argc, argv);
     if (opts::is_help_mode()) {

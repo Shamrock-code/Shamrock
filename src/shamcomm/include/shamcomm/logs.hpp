@@ -536,9 +536,6 @@ namespace shamcomm::logs {
     ///////////////////////////////////
 
 #define IsActivePrint(_name, StructREF)                                                            \
-    if (details::loglevel >= log_##_name) {                                                        \
-        shamcomm::logs::raw("    ");                                                               \
-    }                                                                                              \
     _name##_ln("xxx", "xxx", "(", "logger::" #_name, ")");
 
     inline void print_active_level() {

@@ -17,6 +17,7 @@
 
 #include "shambackends/vec.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <variant>
 
 namespace shammodels::sph {
 

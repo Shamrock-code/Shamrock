@@ -16,20 +16,21 @@
  *
  */
 
-#include "shambackends/math.hpp"
 #include "shambase/exception.hpp"
+#include "config/AVConfig.hpp"
+#include "config/BCConfig.hpp"
+#include "shambackends/math.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
+#include "shammath/sphkernels.hpp"
+#include "shammodels/EOSConfig.hpp"
 #include "shammodels/ExtForceConfig.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include "shambackends/type_traits.hpp"
 #include <variant>
-
-#include "config/AVConfig.hpp"
-#include "config/BCConfig.hpp"
-#include "shambackends/typeAliasVec.hpp"
-#include "shammodels/EOSConfig.hpp"
 
 namespace shammodels::sph {
     template<class Tvec, template<class> class SPHKernel>
@@ -61,12 +62,10 @@ struct shammodels::sph::SolverConfig {
 
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-
     Tscal gpart_mass;
     Tscal cfl_cour;
     Tscal cfl_force;
     Tscal cfl_multiplier_stiffness = 2;
-
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -114,11 +113,11 @@ struct shammodels::sph::SolverConfig {
     inline Tscal get_time() { return time_state.time; }
     inline Tscal get_dt_sph() { return time_state.dt_sph; }
 
-    inline void set_cfl_multipler(Tscal lambda){time_state.cfl_multiplier = lambda;}
-    inline Tscal get_cfl_multipler(){return time_state.cfl_multiplier;}
+    inline void set_cfl_multipler(Tscal lambda) { time_state.cfl_multiplier = lambda; }
+    inline Tscal get_cfl_multipler() { return time_state.cfl_multiplier; }
 
-    inline void set_cfl_mult_stiffness(Tscal cstiff){cfl_multiplier_stiffness = cstiff;}
-    inline Tscal get_cfl_mult_stiffness(){return cfl_multiplier_stiffness;}
+    inline void set_cfl_mult_stiffness(Tscal cstiff) { cfl_multiplier_stiffness = cstiff; }
+    inline Tscal get_cfl_mult_stiffness() { return cfl_multiplier_stiffness; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
@@ -130,7 +129,7 @@ struct shammodels::sph::SolverConfig {
 
     u32 tree_reduction_level  = 3;
     bool use_two_stage_search = true;
-    u64 max_neigh_cache_size = 10e9;
+    u64 max_neigh_cache_size  = 10e9;
 
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
@@ -145,11 +144,11 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     bool combined_dtdiv_divcurlv_compute = false;
-    Tscal htol_up_tol   = 1.1;
-    Tscal htol_up_iter  = 1.1;
-    Tscal epsilon_h = 1e-6;
-    u32 h_iter_per_subcycles = 50;
-    u32 h_max_subcycles_count = 100; 
+    Tscal htol_up_tol                    = 1.1;
+    Tscal htol_up_iter                   = 1.1;
+    Tscal epsilon_h                      = 1e-6;
+    u32 h_iter_per_subcycles             = 50;
+    u32 h_max_subcycles_count            = 100;
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
@@ -175,7 +174,9 @@ struct shammodels::sph::SolverConfig {
 
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
     inline void set_eos_locally_isothermal() { eos_config.set_locally_isothermal(); }
-    inline void set_eos_locally_isothermalLP07(Tscal cs0, Tscal q, Tscal r0) { eos_config.set_locally_isothermalLP07(cs0, q, r0); }
+    inline void set_eos_locally_isothermalLP07(Tscal cs0, Tscal q, Tscal r0) {
+        eos_config.set_locally_isothermalLP07(cs0, q, r0);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)
@@ -217,7 +218,7 @@ struct shammodels::sph::SolverConfig {
     // Boundary Config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    using BCConfig       = BCConfig<Tvec>;
+    using BCConfig = BCConfig<Tvec>;
 
     BCConfig boundary_config;
 
@@ -258,25 +259,21 @@ struct shammodels::sph::SolverConfig {
     // Ext force Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Ext force Config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    bool do_debug_dump = false;
+    bool do_debug_dump              = false;
     std::string debug_dump_filename = "";
 
-    inline void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename){
-        this->do_debug_dump = _do_debug_dump;
+    inline void set_debug_dump(bool _do_debug_dump, std::string _debug_dump_filename) {
+        this->do_debug_dump       = _do_debug_dump;
         this->debug_dump_filename = _debug_dump_filename;
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Ext force Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 
     inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
 
@@ -291,9 +288,7 @@ struct shammodels::sph::SolverConfig {
     inline bool has_field_dtdivv() { return artif_viscosity.has_dtdivv_field(); }
     inline bool has_field_curlv() { return artif_viscosity.has_curlv_field() && (dim == 3); }
 
-    inline bool has_axyz_in_ghost(){
-        return has_field_dtdivv();
-    }
+    inline bool has_axyz_in_ghost() { return has_field_dtdivv(); }
 
     inline bool has_field_soundspeed() {
         return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
@@ -327,5 +322,64 @@ struct shammodels::sph::SolverConfig {
 
         logger::raw_ln("------------------------------------");
     }
-
 };
+
+
+namespace shammodels::sph {
+
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
+        j = nlohmann::json{
+            {"time", p.time}, {"dt_sph", p.dt_sph}, {"cfl_multiplier", p.cfl_multiplier}};
+    }
+
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, SolverStatusVar<Tvec> &p) {
+        using Tscal = typename SolverStatusVar<Tvec>::Tscal;
+        j.at("time").get_to<Tscal>(p.time);
+        j.at("dt_sph").get_to<Tscal>(p.dt_sph);
+        j.at("cfl_multiplier").get_to<Tscal>(p.cfl_multiplier);
+    }
+
+    template<class Tvec, template<class> class SPHKernel>
+    inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, SPHKernel> &p) {
+        using T       = SolverConfig<Tvec, SPHKernel>;
+        using Tkernel = typename T::Kernel;
+
+        std::string kernel_id = shambase::get_type_name<Tkernel>();
+        std::string type_id = shambase::get_type_name<Tvec>();
+
+        j = nlohmann::json{
+            {"kernel_id", kernel_id},
+            {"type_id", type_id},
+            {"time_state", p.time_state},
+            {"eos_config", p.eos_config},
+        };
+    }
+
+    template<class Tvec, template<class> class SPHKernel>
+    inline void from_json(const nlohmann::json &j, SolverConfig<Tvec, SPHKernel> &p) {
+        using T       = SolverConfig<Tvec, SPHKernel>;
+        using Tkernel = typename T::Kernel;
+
+        std::string kernel_id = j.at("kernel_id").get<std::string>();
+
+        if (kernel_id != shambase::get_type_name<Tkernel>()) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tkernel>()
+                + " but got " + kernel_id);
+        }
+
+        std::string type_id = j.at("type_id").get<std::string>();
+
+        if (type_id != shambase::get_type_name<Tvec>()) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                + " but got " + type_id);
+        }
+
+        j.at("time_state").get_to(p.time_state);
+        j.at("eos_config").get_to(p.eos_config);
+    }
+
+} // namespace shammodels::sph

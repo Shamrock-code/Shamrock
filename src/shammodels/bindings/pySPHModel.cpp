@@ -49,6 +49,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
         .def("set_eos_locally_isothermalLP07", &TConfig::set_eos_locally_isothermalLP07)
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
+        .def("to_json", [](TConfig & self){
+            return nlohmann::json{self}.dump(4);
+        })
         .def(
             "set_artif_viscosity_Constant",
             [](TConfig &self, Tscal alpha_u, Tscal alpha_AV, Tscal beta_AV) {
@@ -296,6 +299,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             return self.get_closest_part_to(pos);
         })
         .def("gen_default_config", [](T &self) { return typename T::Solver::Config{}; })
+        .def("get_current_config", [](T &self) { return self.solver.solver_config; })
         .def("set_solver_config", &T::set_solver_config)
         .def("add_sink", &T::add_sink)
         .def("gen_config_from_phantom_dump",

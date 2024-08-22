@@ -720,6 +720,10 @@ namespace shammodels::sph {
             shamrock::load_shamrock_dump(fname, metadata_user, ctx);
 
             /// TODO: load solver config from metadata
+            nlohmann::json j = nlohmann::json::parse(metadata_user);
+            //std::cout << j << std::endl;
+            j.get_to(solver.solver_config);
+
         }
 
 
@@ -733,7 +737,8 @@ namespace shammodels::sph {
 
             // Dump the state of the SPH model to a file
             /// TODO: replace supplied metadata by solver config json
-            shamrock::write_shamrock_dump(fname, "aa", shambase::get_check_ref(ctx.sched));
+            shamrock::write_shamrock_dump(fname, nlohmann::json(solver.solver_config).dump(4), 
+                shambase::get_check_ref(ctx.sched));
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////

@@ -17,6 +17,7 @@
 //%Impl status : Good
 
 #include "shambase/constants.hpp"
+#include "shambase/type_name_info.hpp"
 #include "shambackends/math.hpp"
 
 namespace shammath::details {
@@ -207,8 +208,6 @@ namespace shammath::details {
         }
     };
 
-
-
     template<class Tscal>
     class KernelDefM7 {
         public:
@@ -252,7 +251,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -273,10 +271,10 @@ namespace shammath::details {
             t3 = sham::pow_constexpr<5>(t3);
             t4 = sham::pow_constexpr<5>(t4);
 
-            t1 *= (-6.)*(1.);
-            t2 *= (-6.)*(-7.);
-            t3 *= (-6.)*(21.);
-            t4 *= (-6.)*(-35.);
+            t1 *= (-6.) * (1.);
+            t2 *= (-6.) * (-7.);
+            t3 *= (-6.) * (21.);
+            t4 *= (-6.) * (-35.);
 
             if (q < div1_2) {
                 return t1 + t2 + t3 + t4;
@@ -328,7 +326,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -343,10 +340,10 @@ namespace shammath::details {
             t3 = sham::pow_constexpr<6>(t3);
             t4 = sham::pow_constexpr<6>(t4);
 
-            t1 *= (-7.)*(1.);
-            t2 *= (-7.)*(-8.);
-            t3 *= (-7.)*(28.);
-            t4 *= (-7.)*(-56.);
+            t1 *= (-7.) * (1.);
+            t2 *= (-7.) * (-8.);
+            t3 *= (-7.) * (28.);
+            t4 *= (-7.) * (-56.);
 
             if (q < 1) {
                 return t1 + t2 + t3 + t4;
@@ -360,10 +357,6 @@ namespace shammath::details {
                 return 0;
         }
     };
-
-
-
-
 
     template<class Tscal>
     class KernelDefM9 {
@@ -413,7 +406,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -436,11 +428,11 @@ namespace shammath::details {
             t4 = sham::pow_constexpr<7>(t4);
             t5 = sham::pow_constexpr<7>(t5);
 
-            t1 *= (-8.)*(1.);
-            t2 *= (-8.)*(-9.);
-            t3 *= (-8.)*(36.);
-            t4 *= (-8.)*(-84.);
-            t5 *= (-8.)*(126.);
+            t1 *= (-8.) * (1.);
+            t2 *= (-8.) * (-9.);
+            t3 *= (-8.) * (36.);
+            t4 *= (-8.) * (-84.);
+            t5 *= (-8.) * (126.);
 
             if (q < div1_2) {
                 return t1 + t2 + t3 + t4 + t5;
@@ -456,7 +448,6 @@ namespace shammath::details {
                 return 0;
         }
     };
-
 
     template<class Tscal>
     class KernelDefM10 {
@@ -500,7 +491,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -517,11 +507,11 @@ namespace shammath::details {
             t4 = sham::pow_constexpr<8>(t4);
             t5 = sham::pow_constexpr<8>(t5);
 
-            t1 *= (-9.)*(1.);
-            t2 *= (-9.)*(-10.);
-            t3 *= (-9.)*(45.);
-            t4 *= (-9.)*(-120.);
-            t5 *= (-9.)*(210.);
+            t1 *= (-9.) * (1.);
+            t2 *= (-9.) * (-10.);
+            t3 *= (-9.) * (45.);
+            t4 *= (-9.) * (-120.);
+            t5 *= (-9.) * (210.);
 
             if (q < 1) {
                 return t1 + t2 + t3 + t4 + t5;
@@ -681,8 +671,8 @@ namespace shammath {
         using Generator                     = BaseKernel;
         using Tscal                         = Tscal_;
         inline static constexpr Tscal Rkern = BaseKernel::Rkern; /*!< Radius of the support */
-        inline static constexpr Tscal hfactd =
-            BaseKernel::hfactd; /*!< default $h_{\rm fact}$ for this kernel*/
+        inline static constexpr Tscal hfactd
+            = BaseKernel::hfactd; /*!< default $h_{\rm fact}$ for this kernel*/
 
         /**
          * @brief the base function for this SPH kernel
@@ -821,3 +811,49 @@ namespace shammath {
     using C6 = SPHKernelGen<flt_type, details::KernelDefC6<flt_type>>;
 
 } // namespace shammath
+
+namespace shambase {
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M4<flt_type>> {
+        inline static const std::string name = "M4<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M5<flt_type>> {
+        inline static const std::string name = "M5<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M6<flt_type>> {
+        inline static const std::string name = "M6<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M7<flt_type>> {
+        inline static const std::string name = "M7<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M8<flt_type>> {
+        inline static const std::string name = "M8<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M9<flt_type>> {
+        inline static const std::string name = "M9<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M10<flt_type>> {
+        inline static const std::string name = "M10<" + get_type_name<flt_type>() + ">";
+    };
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::C2<flt_type>> {
+        inline static const std::string name = "C2<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::C4<flt_type>> {
+        inline static const std::string name = "C4<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::C6<flt_type>> {
+        inline static const std::string name = "C6<" + get_type_name<flt_type>() + ">";
+    };
+
+} // namespace shambase

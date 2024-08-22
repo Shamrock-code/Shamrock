@@ -17,6 +17,7 @@ jobs:
 
     #### Checkout part ####
     # Checkout merge commit if PR otherwise default
+    - run: git config --global --list
     - uses: actions/checkout@v4
       if: github.event_name == 'pull_request_target'
       with:

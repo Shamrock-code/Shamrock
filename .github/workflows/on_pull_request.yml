@@ -29,7 +29,7 @@ jobs:
     #needs: [detect_changes]
     uses: ./.github/workflows/source_checks.yml
 
-  
+
   #make shamrock documentation
   make_documentation:
     name: Doc
@@ -43,7 +43,7 @@ jobs:
 
     container:
       image: ghcr.io/shamrock-code/ci-ubuntu-latest:main
-      
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,7 +52,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10' 
+          python-version: '3.10'
 
       - name : Install pck (doxygen)
         run: |
@@ -74,7 +74,7 @@ jobs:
     needs: [doxygen_warn_main]
 
     runs-on: ubuntu-latest
-    
+
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
@@ -95,12 +95,12 @@ jobs:
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10' 
+          python-version: '3.10'
 
       - name: 'Download PR doxygen warning'
         uses: actions/download-artifact@v4
@@ -121,7 +121,7 @@ jobs:
       - name: 'ls main_dox_output'
         run: |
           ls main_dox_output
-          
+
       - name: 'Diff'
         run: |
           python3 buildbot/doxygen_diff.py main_dox_output/warn_doxygen.txt PR_dox_output/warn_doxygen.txt > out_diff.md
@@ -154,7 +154,7 @@ jobs:
   shamrock_linux_acpp_macos:
     needs: [src_check]
     name: Tests
-    if: contains(github.event.pull_request.labels.*.name, 'test-macos') 
+    if: contains(github.event.pull_request.labels.*.name, 'test-macos')
     uses: ./.github/workflows/shamrock-acpp-macos.yml
 
   shamrock_linux_acpp_asan:
@@ -180,13 +180,13 @@ jobs:
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
-    
+
   shamrock_linux_dpcpp:
     needs: [src_check]
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-dpcpp.yml
-  
+
   shamrock_linux_acpp_phystests:
     needs: [shamrock_linux_acpp]
     name: Tests (Phys)

@@ -30,7 +30,7 @@ endif()
 
 ################################
 # Shamrock configuration
-################################  
+################################
 project(Shamrock VERSION 2024.0)
 
 
@@ -49,7 +49,7 @@ set(SHAMROCK_USE_SHARED_LIB Off)
 endif()
 
 ######################
-#checking compiler flag support 
+#checking compiler flag support
 ######################
 include(ShamConfigureCXX)
 
@@ -64,7 +64,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${ValidShamBuildType})
 endif()
 if(NOT "${CMAKE_BUILD_TYPE}" IN_LIST ValidShamBuildType)
-    message(FATAL_ERROR 
+    message(FATAL_ERROR
         "The required build type in unknown -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}. "
         "please use a build type in the following list (case-sensitive) "
         "${ValidShamBuildType}")
@@ -144,5 +144,3 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 
 add_subdirectory(src)
-
-

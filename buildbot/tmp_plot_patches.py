@@ -13,11 +13,11 @@ def get_cube(xm,ym,zm,xp,yp,zp):
          [xp,ym,zp],
          [xp,yp,zm],
          [xp,yp,zp]]
-    
+
     verts = [[Z[0],Z[1],Z[3],Z[2]],
-        [Z[4],Z[5],Z[7],Z[6]], 
-        [Z[0],Z[1],Z[5],Z[4]], 
-        [Z[2],Z[3],Z[7],Z[6]], 
+        [Z[4],Z[5],Z[7],Z[6]],
+        [Z[0],Z[1],Z[5],Z[4]],
+        [Z[2],Z[3],Z[7],Z[6]],
         [Z[1],Z[3],Z[7],Z[5]],
         [Z[4],Z[6],Z[2],Z[0]]
         ]
@@ -69,7 +69,7 @@ for a in patch_filelist:
         id = int(ll[0])
 
         patch_dic[id] = (xmin, ymin, zmin, xmax, ymax, zmax,it)
-        
+
     fil.close()
 
     it = it +1
@@ -109,7 +109,7 @@ for a in interf_filelist:
         interfaces_dic[psend_id].append((psend_id,precv_id,xmin, ymin, zmin, xmax, ymax, zmax))
 
         print((psend_id,precv_id,xmin, ymin, zmin, xmax, ymax, zmax))
-        
+
     fil.close()
 
     it = it +1

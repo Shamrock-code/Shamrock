@@ -11,17 +11,16 @@
 #include "shamrock/legacy/patch/interfaces/interface_generator.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-
 #include "shamtest/shamtest.hpp"
 #include <string>
 
 class Reduce_DataCount {
-  public:
+    public:
     static u64 reduce(u64 v0, u64 v1, u64 v2, u64 v3, u64 v4, u64 v5, u64 v6, u64 v7) {
         return v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
     }
@@ -30,7 +29,7 @@ class Reduce_DataCount {
 #if false
 Test_start("patch::patch_reduc_tree::", generation, -1) {
 
-    
+
 
     SchedulerMPI sched = SchedulerMPI(2500, 1);
     sched.init_mpi_required_types();
@@ -130,7 +129,7 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
         interface_hndl.comm_interfaces(sched,false);
         interface_hndl.print_current_interf_map();
 
-        
+
 
         sched.dump_local_patches(format("patches_%d_node%d", 0, shamcomm::world_rank()));
     }
@@ -193,8 +192,8 @@ Test_start("patch::patch_reduc_tree::", generation, -1) {
                     sycl::buffer<f32_3> pos(pdat.pos_s.data(),pdat.pos_s.size());
 
                     sycl::buffer<u64> newid = __compute_object_patch_owner<f32_3, class ComputeObejctPatchOwners>(
-                        shamsys::instance::get_compute_queue(), 
-                        pos, 
+                        shamsys::instance::get_compute_queue(),
+                        pos,
                         sptree);
 
                     {

@@ -15,7 +15,6 @@
  */
 
 #include "shambase/exception.hpp"
-
 #include "shambackends/sycl.hpp"
 
 namespace sham {
@@ -35,8 +34,9 @@ namespace sham {
         case Vendor::AMD: return "AMD";
         case Vendor::INTEL: return "Intel";
         case Vendor::APPLE: return "Apple";
-        default: shambase::throw_unimplemented(
-            "Unknown vendor"); // Throw an exception if the vendor is not recognized
+        default:
+            shambase::throw_unimplemented(
+                "Unknown vendor"); // Throw an exception if the vendor is not recognized
         }
     }
 
@@ -51,12 +51,13 @@ namespace sham {
      */
     inline std::string backend_name(Backend b) {
         switch (b) {
-        case Backend::UNKNOWN: return "Unknown"; 
-        case Backend::CUDA: return "CUDA";       
-        case Backend::ROCM: return "ROCm";        
-        case Backend::OPENMP: return "OpenMP";   
-        default: shambase::throw_unimplemented(
-            "Unknown backend"); // Throw an exception if the backend is not recognized
+        case Backend::UNKNOWN: return "Unknown";
+        case Backend::CUDA: return "CUDA";
+        case Backend::ROCM: return "ROCm";
+        case Backend::OPENMP: return "OpenMP";
+        default:
+            shambase::throw_unimplemented(
+                "Unknown backend"); // Throw an exception if the backend is not recognized
         }
     }
 
@@ -67,12 +68,14 @@ namespace sham {
      * amount of global memory and local memory, and cache size.
      */
     struct DeviceProperties {
-        Vendor vendor; /**< The vendor of the device */
-        Backend backend; /**< The backend of the device */
-        usize global_mem_size; /**< The amount of global memory on the device in bytes */
-        usize global_mem_cache_line_size; /**< The size of the cache line used by the device in bytes */
-        usize global_mem_cache_size; /**< The amount of global memory cache on the device in bytes */
-        usize local_mem_size; /**< The amount of shared local memory on the device in bytes */
+        Vendor vendor;                    /**< The vendor of the device */
+        Backend backend;                  /**< The backend of the device */
+        usize global_mem_size;            /**< The amount of global memory on the device in bytes */
+        usize global_mem_cache_line_size; /**< The size of the cache line used by the device in
+                                             bytes */
+        usize
+            global_mem_cache_size; /**< The amount of global memory cache on the device in bytes */
+        usize local_mem_size;      /**< The amount of shared local memory on the device in bytes */
     };
 
     struct DeviceMPIProperties {
@@ -126,7 +129,6 @@ namespace sham {
          */
         void print_info();
     };
-
 
     std::vector<std::unique_ptr<Device>> get_device_list();
 

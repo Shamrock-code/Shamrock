@@ -1,4 +1,4 @@
-from lib.buildbot import * 
+from lib.buildbot import *
 import json
 
 import argparse
@@ -79,7 +79,7 @@ for (dir_,desc) in zip(conf_dir_lst,conf_dir_desc):
 
 
     dic_test_res_load[dir_] = conf_dic
-    
+
 print(dic_test_res_load)
 
 out_file = open(abs_test_pipeline_dir+"/test_result_list.json", "w")
@@ -91,4 +91,3 @@ from lib.make_report import *
 make_report(ReportFormat.Tex, abs_test_pipeline_dir+"/test_result_list.json")
 
 #TODO compile and show pdf report
-

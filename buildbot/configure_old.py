@@ -1,7 +1,7 @@
 import os
 import argparse
 
-from lib.buildbot import * 
+from lib.buildbot import *
 
 
 parser = argparse.ArgumentParser(description='Configure utility for the code')
@@ -74,7 +74,7 @@ if args.interactive:
         print("    test       =",args.test)
         #print("    visu       =",args.visu)
 
-        
+
 
         print()
         if input("confirm choices (y/N)") == "y":
@@ -111,7 +111,7 @@ elif args.backend == "cuda":
 target_buildmode = BuildMode.Normal
 if args.buildmode == "Normal":
     target_buildmode = BuildMode.Normal
-    
+
 elif args.buildmode == "Release":
     target_buildmode = BuildMode.Release
     abs_build_dir += "_release"
@@ -139,7 +139,7 @@ if args.visu:
 
 
 configure(
-    abs_src_dir, 
+    abs_src_dir,
     abs_build_dir,
     sycl_cmp,
     sycl_be,

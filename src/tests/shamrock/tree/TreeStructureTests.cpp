@@ -50,7 +50,8 @@ TestStart(Unittest, "shamrock/tree/TreeStructure::serialize", teststructureseria
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(),std::move(recov));
+        shamalgs::SerializeHelper ser2(
+            shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
         TreeStruct outser = TreeStruct::deserialize(ser2);
 

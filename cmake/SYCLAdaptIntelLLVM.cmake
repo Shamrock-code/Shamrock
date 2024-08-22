@@ -73,4 +73,3 @@ message("  INTEL_LLVM_FAST_MATH : ${INTEL_LLVM_FAST_MATH}")
 message("  INTEL_LLVM_SYCL_ID_INT32 : ${INTEL_LLVM_SYCL_ID_INT32}")
 message("  INTEL_LLVM_NO_RDC : ${INTEL_LLVM_NO_RDC}")
 message(" ------------------------------------- ")
-

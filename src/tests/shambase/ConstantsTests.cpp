@@ -6,16 +6,13 @@
 //
 // -------------------------------------------------------//
 
-
+#include "shambase/constants.hpp"
 #include "shamtest/shamtest.hpp"
 
-#include "shambase/constants.hpp"
-
-
-TestStart(Unittest, "shambase/constants", checkconstantmatchsycl, 1){
+TestStart(Unittest, "shambase/constants", checkconstantmatchsycl, 1) {
 
     using namespace shambase::constants;
 
-    _AssertFloatEqual(pi<f32>, 4*sycl::atan(unity<f32>), 1e-25);
-    _AssertFloatEqual(pi<f64>, 4*sycl::atan(unity<f64>), 1e-25);
+    _AssertFloatEqual(pi<f32>, 4 * sycl::atan(unity<f32>), 1e-25);
+    _AssertFloatEqual(pi<f64>, 4 * sycl::atan(unity<f64>), 1e-25);
 }

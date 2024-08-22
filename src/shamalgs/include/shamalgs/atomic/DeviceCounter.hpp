@@ -11,20 +11,20 @@
 /**
  * @file DeviceCounter.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shamalgs/memory.hpp"
+
 #include "shambase/integer.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambackends/sycl.hpp"
 
 namespace shamalgs::atomic {
 
     /**
      * @brief Utility to count group id on device
-     * 
-     * @tparam int_t 
+     *
+     * @tparam int_t
      */
     template<class int_t>
     class DeviceCounter;
@@ -39,15 +39,17 @@ namespace shamalgs::atomic {
             : counter{gen.counter, cgh, sycl::read_write} {}
 
         template<sycl::memory_order order>
-        inline sycl::atomic_ref<int_t,
-                                order,
-                                sycl::memory_scope_device,
-                                sycl::access::address_space::global_space>
+        inline sycl::atomic_ref<
+            int_t,
+            order,
+            sycl::memory_scope_device,
+            sycl::access::address_space::global_space>
         attach_atomic() const {
-            return sycl::atomic_ref<int_t,
-                                    order,
-                                    sycl::memory_scope_device,
-                                    sycl::access::address_space::global_space>(counter[0]);
+            return sycl::atomic_ref<
+                int_t,
+                order,
+                sycl::memory_scope_device,
+                sycl::access::address_space::global_space>(counter[0]);
         }
     };
 

@@ -22,7 +22,7 @@ First start by checking that you have the right packages installed on your syste
     To install recommanded package to compile AdaptiveCpp
     === "Linux (debian)"
 
-        If you don't have llvm (...) : 
+        If you don't have llvm (...) :
 
         ```bash
         wget --progress=bar:force https://apt.llvm.org/llvm.sh
@@ -64,7 +64,7 @@ Now you can initialise a Shamrock environment:
 
 And then to configure & compile Shamrock:
 ```bash
-# Now move in the build directory 
+# Now move in the build directory
 cd build
 # Activate the workspace, which will define some utility functions
 source activate
@@ -89,7 +89,7 @@ Running env setup for : Debian generic AdaptiveCpp
 -- generator not specified, defaulting to : ninja
 -- clonning https://github.com/AdaptiveCpp/AdaptiveCpp.git
 ```
-And then it will go on configuring & compiling AdaptiveCpp and give you a handy little script ... `activate` available in the build folder. 
+And then it will go on configuring & compiling AdaptiveCpp and give you a handy little script ... `activate` available in the build folder.
 
 Now move in the build directory :
 ```sh
@@ -116,7 +116,7 @@ Does the executable start ?
 ```
 ./shamrock --help
 ```
-or 
+or
 ```
 ./shamrock_test --help
 ```
@@ -127,7 +127,7 @@ Both commands should just print the help.
 ### Error while loading shared libraries
 If you get something like :
 ```
-> ./shamrock                                                                                      
+> ./shamrock
 ./shamrock: error while loading shared libraries: libsycl.so.7: cannot open shared object file: No such file or directory
 ```
 
@@ -146,7 +146,7 @@ if any libraries are not in the path it will print something like:
     libsycl.so.7 => not found
 ```
 
-just do `export LD_LIBRARY_PATH=<path to lib>:$LD_LIBRARY_PATH` with `<path to lib>` 
+just do `export LD_LIBRARY_PATH=<path to lib>:$LD_LIBRARY_PATH` with `<path to lib>`
 replaced by the path to the missing libraries.
 
 ## Remarks

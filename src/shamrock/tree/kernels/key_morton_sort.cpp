@@ -13,36 +13,25 @@
  */
 
 #include "key_morton_sort.hpp"
-#include "shamsys/legacy/log.hpp"
-
 #include "shamalgs/algorithm.hpp"
+#include "shamsys/legacy/log.hpp"
 
 template<>
 void sycl_sort_morton_key_pair<u32, MultiKernel>(
-    sycl::queue & queue,
+    sycl::queue &queue,
     u32 morton_count_rounded_pow,
-    std::unique_ptr<sycl::buffer<u32>>      & buf_index,
-    std::unique_ptr<sycl::buffer<u32>> & buf_morton
-    ){
-        
+    std::unique_ptr<sycl::buffer<u32>> &buf_index,
+    std::unique_ptr<sycl::buffer<u32>> &buf_morton) {
+
     shamalgs::algorithm::sort_by_key(queue, *buf_morton, *buf_index, morton_count_rounded_pow);
-
-
 }
-
-
 
 template<>
 void sycl_sort_morton_key_pair<u64, MultiKernel>(
-    sycl::queue & queue,
+    sycl::queue &queue,
     u32 morton_count_rounded_pow,
-    std::unique_ptr<sycl::buffer<u32>>      & buf_index,
-    std::unique_ptr<sycl::buffer<u64>> & buf_morton
-    ){
-        
-    
+    std::unique_ptr<sycl::buffer<u32>> &buf_index,
+    std::unique_ptr<sycl::buffer<u64>> &buf_morton) {
+
     shamalgs::algorithm::sort_by_key(queue, *buf_morton, *buf_index, morton_count_rounded_pow);
-
-
-
 }

@@ -11,10 +11,10 @@
 /**
  * @file reduction.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambase/exception.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
@@ -38,7 +38,7 @@ namespace shamalgs::reduction {
     bool is_all_true(sycl::buffer<u8> &buf, u32 cnt);
 
     template<class T>
-    bool equals(sycl::queue & q, sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt) {
+    bool equals(sycl::queue &q, sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt) {
 
         if (buf1.size() < cnt) {
             throw shambase::make_except_with_loc<std::invalid_argument>("buf 1 is larger than cnt");
@@ -73,7 +73,7 @@ namespace shamalgs::reduction {
     bool has_nan_or_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>
-    bool equals(sycl::queue &q,sycl::buffer<T> &buf1, sycl::buffer<T> &buf2) {
+    bool equals(sycl::queue &q, sycl::buffer<T> &buf1, sycl::buffer<T> &buf2) {
         bool same_size = buf1.size() == buf2.size();
         if (!same_size) {
             return false;
@@ -83,10 +83,11 @@ namespace shamalgs::reduction {
     }
 
     template<class T>
-    bool equals_ptr_s(sycl::queue &q,
-    const std::unique_ptr<sycl::buffer<T>> &buf1,
-                      const std::unique_ptr<sycl::buffer<T>> &buf2,
-                      u32 cnt) {
+    bool equals_ptr_s(
+        sycl::queue &q,
+        const std::unique_ptr<sycl::buffer<T>> &buf1,
+        const std::unique_ptr<sycl::buffer<T>> &buf2,
+        u32 cnt) {
         bool same_alloc = bool(buf1) == bool(buf2);
 
         if (!same_alloc) {
@@ -104,7 +105,7 @@ namespace shamalgs::reduction {
     bool equals_ptr(
         sycl::queue &q,
         const std::unique_ptr<sycl::buffer<T>> &buf1,
-                    const std::unique_ptr<sycl::buffer<T>> &buf2) {
+        const std::unique_ptr<sycl::buffer<T>> &buf2) {
         bool same_alloc = bool(buf1) == bool(buf2);
 
         if (!same_alloc) {

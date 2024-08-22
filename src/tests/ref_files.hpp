@@ -14,7 +14,7 @@ inline const std::optional<std::string> REF_FILES_PATH = shamcmdopt::getenv_str(
 
 /**
  * @brief Get the path of a reference file
- * 
+ *
  * @param locpath path inside the reference file repo
  * @return std::string the absolute path
  */

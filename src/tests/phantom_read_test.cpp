@@ -12,7 +12,7 @@
 
 TestStart(Unittest, "phantom-read-write", pahntomread, 1) {
 
-    std::string fname_in = get_reffile_path("blast_00010");
+    std::string fname_in  = get_reffile_path("blast_00010");
     std::string fname_out = get_reffile_path("zout_phantom");
 
     shambase::FortranIOFile phfile = shambase::load_fortran_file(fname_in);

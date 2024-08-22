@@ -6,15 +6,13 @@
 //
 // -------------------------------------------------------//
 
+#include "shammath/sfc/hilbert.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
-
+#include "shamrock/scheduler/scheduler_patch_list.hpp"
 #include "shamtest/shamtest.hpp"
 #include <map>
 #include <random>
 #include <vector>
-#include "shamrock/scheduler/scheduler_patch_list.hpp"
-#include "shammath/sfc/hilbert.hpp"
-
 
 #if false
 
@@ -29,9 +27,9 @@ void recursprint(PatchTree &pt,std::vector<Patch>& plist,std::unordered_map<u64,
     std::cout << "nodeid : " << idx << " level : " << ptnode.level << " parent id : " << ptnode.parent_id << ","<< ptnode.is_leaf <<","<< ptnode.child_are_all_leafs <<
                 " -> " << ptnode.data_count << ","<< ptnode.load_value <<
                 " ( " <<
-                "[" << ptnode.x_min << "," << ptnode.x_max << "] " << 
-                "[" << ptnode.y_min << "," << ptnode.y_max << "] " << 
-                "[" << ptnode.z_min << "," << ptnode.z_max << "] " << 
+                "[" << ptnode.x_min << "," << ptnode.x_max << "] " <<
+                "[" << ptnode.y_min << "," << ptnode.y_max << "] " <<
+                "[" << ptnode.z_min << "," << ptnode.z_max << "] " <<
                 " ) ";
 
 
@@ -43,14 +41,14 @@ void recursprint(PatchTree &pt,std::vector<Patch>& plist,std::unordered_map<u64,
     }else if(ptnode.linked_patchid != u64_max){
         Patch & p = plist[idx_map[ptnode.linked_patchid]];
         std::cout << " node : " <<ptnode.linked_patchid<<" ( " <<
-                "[" << p.x_min << "," << p.x_max << "] " << 
-                "[" << p.y_min << "," << p.y_max << "] " << 
-                "[" << p.z_min << "," << p.z_max << "] " << 
+                "[" << p.x_min << "," << p.x_max << "] " <<
+                "[" << p.y_min << "," << p.y_max << "] " <<
+                "[" << p.z_min << "," << p.z_max << "] " <<
                 " ) " << std::endl;
     }else{
         std::cout << std::endl;
     }
-    
+
 
 }
 
@@ -61,15 +59,15 @@ Test_start("", testpatchtree, 1){
 
 
     for(Patch & p : global){
-        std::cout << p.id_patch << 
-        
+        std::cout << p.id_patch <<
+
             " -> " << p.data_count << ","<< p.load_value <<
             " ( " <<
-            "[" << p.x_min << "," << p.x_max << "] " << 
-            "[" << p.y_min << "," << p.y_max << "] " << 
-            "[" << p.z_min << "," << p.z_max << "] " << 
-            " ) " << "("<<p.x_max - p.x_min<<","<<p.y_max - p.y_min<<","<<p.z_max - p.z_min<<")" 
-            
+            "[" << p.x_min << "," << p.x_max << "] " <<
+            "[" << p.y_min << "," << p.y_max << "] " <<
+            "[" << p.z_min << "," << p.z_max << "] " <<
+            " ) " << "("<<p.x_max - p.x_min<<","<<p.y_max - p.y_min<<","<<p.z_max - p.z_min<<")"
+
             << std::endl;
     }
 
@@ -86,7 +84,7 @@ Test_start("", testpatchtree, 1){
 
     pt.update_values_node(plist.global, plist.id_patch_to_global_idx);
 
-    
+
 
     recursprint(pt,global,plist.id_patch_to_global_idx, 0, 0);
 
@@ -123,7 +121,7 @@ Test_start("", testpatchtree, 1){
 
 
     for(auto & [key,ptnode] : pt.tree){
-        
+
         if(ptnode.is_leaf){
             if(pt.leaf_key.count(key)){
                 Test_assert("leaf in leaf_key set", true);

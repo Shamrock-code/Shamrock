@@ -11,8 +11,6 @@
 #include "shambackends/vec.hpp"
 #include "shammath/CoordRange.hpp"
 
-
-
 template<class vec>
 shammath::CoordRange<vec> get_test_coord_ranges();
 

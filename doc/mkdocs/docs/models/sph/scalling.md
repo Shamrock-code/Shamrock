@@ -1,6 +1,6 @@
 # SPH scalling tests
 
-## Sedov blast 
+## Sedov blast
 
 
 ![Sedov scalling CPU](../../assets/figures/sedov_scalling_cpu.svg)
@@ -41,8 +41,8 @@ mpirun -machinefile $OAR_NODEFILE --bind-to socket -npernode 2 sh runscript.sh
 ```
 
 ```sh linenums="1" title="runscript.sh"
-export ACPP_DEBUG_LEVEL=0 
-export LD_LIBRARY_PATH=/grid5000/spack/v1/opt/spack/linux-debian11-x86_64_v2/gcc-10.4.0/llvm-13.0.1-i53qugtbmlvnfi6tppnc7bresushxg2j/lib:$LD_LIBRARY_PATH 
+export ACPP_DEBUG_LEVEL=0
+export LD_LIBRARY_PATH=/grid5000/spack/v1/opt/spack/linux-debian11-x86_64_v2/gcc-10.4.0/llvm-13.0.1-i53qugtbmlvnfi6tppnc7bresushxg2j/lib:$LD_LIBRARY_PATH
 export OMP_SCHEDULE="dynamic"
 export OMP_NUM_THREADS=32
 
@@ -150,7 +150,7 @@ i_dump = 0
 while t_sum < t_target:
 
     #print("step : t=",t_sum)
-    
+
     next_dt = model.evolve(t_sum,current_dt, False, "dump_"+str(i_dump)+".vtk", False)
 
     if i % 1 == 0:

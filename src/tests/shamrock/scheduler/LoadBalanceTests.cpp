@@ -21,8 +21,7 @@ void add_strategy_plot(
     std::string filename,
     const std::vector<LBTile> &vec_test,
     const std::vector<i32> &result,
-    i32 wsize) 
-{
+    i32 wsize) {
 
     std::vector<f64> load_values;
     std::vector<f64> order_values;
@@ -36,11 +35,11 @@ void add_strategy_plot(
 
     PyScriptHandle hndl{};
 
-    hndl.data()["wsize"] = wsize;
-    hndl.data()["loads"] = load_values;
-    hndl.data()["order"] = order_values;
+    hndl.data()["wsize"]      = wsize;
+    hndl.data()["loads"]      = load_values;
+    hndl.data()["order"]      = order_values;
     hndl.data()["node_owner"] = node_owner;
-    hndl.data()["filename"] = std::string("tests/figures/load_balance_strat")+filename+".pdf";
+    hndl.data()["filename"]   = std::string("tests/figures/load_balance_strat") + filename + ".pdf";
     hndl.data()["strat_name"] = strat_name;
 
     hndl.exec(R"py(
@@ -86,17 +85,17 @@ void add_strategy_plot(
 
     )py");
 
-
-    TEX_REPORT(R"tex(
+    TEX_REPORT(
+        R"tex(
 
         \begin{figure}[ht!]
         \center
-        \includegraphics[width=0.95\linewidth]{figures/load_balance_strat)tex"+filename+R"tex(.pdf}
+        \includegraphics[width=0.95\linewidth]{figures/load_balance_strat)tex"
+        + filename + R"tex(.pdf}
         \caption{Load balancing strategy}
         \end{figure}
 
     )tex")
-
 }
 
 TestStart(TestType::ValidationTest, "shamrock/scheduler/loadbalance", testloadbalancestrat, 1) {
@@ -117,13 +116,13 @@ TestStart(TestType::ValidationTest, "shamrock/scheduler/loadbalance", testloadba
         return res;
     };
 
-    std::vector<LBTile> vec_test = make_tile_list(64*4, 1000000, 1200000);
+    std::vector<LBTile> vec_test = make_tile_list(64 * 4, 1000000, 1200000);
 
-    std::vector<i32> result1 = details::lb_startegy_parralel_sweep(vec_test, fake_world_size);
-    std::vector<i32> result2 = details::lb_startegy_roundrobin(vec_test, fake_world_size);
+    std::vector<i32> result1     = details::lb_startegy_parralel_sweep(vec_test, fake_world_size);
+    std::vector<i32> result2     = details::lb_startegy_roundrobin(vec_test, fake_world_size);
     std::vector<i32> result_best = load_balance(std::vector(vec_test), fake_world_size);
 
-    add_strategy_plot("parralel sweep", "psweep", vec_test, result1,fake_world_size);
-    add_strategy_plot("round robin", "rrobin", vec_test, result2,fake_world_size);
-    add_strategy_plot("best", "rrobin", vec_test, result_best,fake_world_size);
+    add_strategy_plot("parralel sweep", "psweep", vec_test, result1, fake_world_size);
+    add_strategy_plot("round robin", "rrobin", vec_test, result2, fake_world_size);
+    add_strategy_plot("best", "rrobin", vec_test, result_best, fake_world_size);
 }

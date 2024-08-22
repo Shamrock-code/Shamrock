@@ -11,13 +11,13 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataserialize, 1){
+TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataserialize, 1) {
     using namespace shamrock::patch;
-    
+
     u32 obj = 1000;
 
     PatchDataLayout pdl;
-    
+
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);
 
@@ -40,7 +40,6 @@ TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataseri
 
     PatchData pdat = PatchData::mock_patchdata(0x111, obj, pdl);
 
-
     shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(pdat.serialize_buf_byte_size());
     pdat.serialize_buf(ser);
@@ -48,11 +47,11 @@ TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataseri
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(),std::move(recov));
+        shamalgs::SerializeHelper ser2(
+            shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
         PatchData pdat2 = PatchData::deserialize_buf(ser2, pdl);
 
         shamtest::asserts().assert_bool("input match out", pdat == pdat2);
     }
-
 }

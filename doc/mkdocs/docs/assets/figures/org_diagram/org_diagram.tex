@@ -44,18 +44,18 @@
               every node/.style={fill=white,circle},
               every edge/.style={draw=red,very thick}]
 
-    \path [->] (SYCL) edge  (shambase); 
-    \path [->] (MPI) edge  (shambase);  
-    \path [->] (shambase) edge  (shamsys);  
-    \path [->] (shambase) edge  (shammath);  
-    \path [->] (shambase) edge[bend left=15]  (shamalgs);   
-    \path [->] (shamsys) edge  (shamalgs);  
-    \path [->] (shamsys) edge  (shamtest);  
-    \path [->] (shamalgs) edge  (shamrock); 
-    \path [->] (shammath) edge[bend right=15]  (shamrock);  
-    \path [->] (shamrock) edge  (shammodels); 
-    \path [->] (shambindings) edge  (shammodels);   
-    \path [->] (Pybind11) edge  (shambindings);    
+    \path [->] (SYCL) edge  (shambase);
+    \path [->] (MPI) edge  (shambase);
+    \path [->] (shambase) edge  (shamsys);
+    \path [->] (shambase) edge  (shammath);
+    \path [->] (shambase) edge[bend left=15]  (shamalgs);
+    \path [->] (shamsys) edge  (shamalgs);
+    \path [->] (shamsys) edge  (shamtest);
+    \path [->] (shamalgs) edge  (shamrock);
+    \path [->] (shammath) edge[bend right=15]  (shamrock);
+    \path [->] (shamrock) edge  (shammodels);
+    \path [->] (shambindings) edge  (shammodels);
+    \path [->] (Pybind11) edge  (shambindings);
 
 \end{scope}
 \end{tikzpicture}

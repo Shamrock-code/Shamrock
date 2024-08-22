@@ -31,7 +31,7 @@ function setupcompiler {
     pip3 install -U cmake ninja
 
     module load PrgEnv-amd
-    module load cray-python 
+    module load cray-python
     module load CCE-GPU-2.1.0
     module load rocm/5.7.1 # 5.5.1 -> 5.7.1
 

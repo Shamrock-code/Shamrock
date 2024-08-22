@@ -19,7 +19,6 @@
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
 #include "shambackends/details/memoryHandle.hpp"
-
 #include <memory>
 
 namespace sham {

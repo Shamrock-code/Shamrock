@@ -1,4 +1,4 @@
-from lib.buildbot import * 
+from lib.buildbot import *
 import glob
 import sys
 
@@ -22,7 +22,7 @@ for fname in file_list:
 
     f = open(fname,'r')
     res = f.readlines()
-    
+
     has_pragma = False
     has_line_before_guard = False
     for l in res:
@@ -39,7 +39,7 @@ for fname in file_list:
 
     f.close()
 
-    if has_line_before_guard : 
+    if has_line_before_guard :
         pragma_once_missing.append(fname)
 
 
@@ -67,7 +67,7 @@ At some point we will refer to a guide in the doc about this
 """)
 
     rep += "List of files with errors :\n\n"
-    
+
     for i in pragma_once_missing:
         rep += (" - `"+i.split(abs_proj_dir)[-1]+"`\n")
 
@@ -85,5 +85,5 @@ if len(pragma_once_missing) > 0:
         print(" -",i.split(abs_proj_dir)[-1])
 
     sys.exit("Missing include guard for some source files")
-else : 
+else :
     print(" => \033[1;34mInclude guard status \033[0;0m: OK !")

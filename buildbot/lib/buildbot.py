@@ -1,5 +1,5 @@
 import subprocess
-import os 
+import os
 import re
 from pathlib import Path
 
@@ -8,20 +8,20 @@ from enum import Enum
 
 title_wide = """
   █████████  █████   █████   █████████   ██████   ██████ ███████████      ███████      █████████  █████   ████
- ███░░░░░███░░███   ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███   ███░░░░░███   ███░░░░░███░░███   ███░ 
-░███    ░░░  ░███    ░███  ░███    ░███  ░███░█████░███  ░███    ░███  ███     ░░███ ███     ░░░  ░███  ███   
-░░█████████  ░███████████  ░███████████  ░███░░███ ░███  ░██████████  ░███      ░███░███          ░███████    
- ░░░░░░░░███ ░███░░░░░███  ░███░░░░░███  ░███ ░░░  ░███  ░███░░░░░███ ░███      ░███░███          ░███░░███   
- ███    ░███ ░███    ░███  ░███    ░███  ░███      ░███  ░███    ░███ ░░███     ███ ░░███     ███ ░███ ░░███  
+ ███░░░░░███░░███   ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███   ███░░░░░███   ███░░░░░███░░███   ███░
+░███    ░░░  ░███    ░███  ░███    ░███  ░███░█████░███  ░███    ░███  ███     ░░███ ███     ░░░  ░███  ███
+░░█████████  ░███████████  ░███████████  ░███░░███ ░███  ░██████████  ░███      ░███░███          ░███████
+ ░░░░░░░░███ ░███░░░░░███  ░███░░░░░███  ░███ ░░░  ░███  ░███░░░░░███ ░███      ░███░███          ░███░░███
+ ███    ░███ ░███    ░███  ░███    ░███  ░███      ░███  ░███    ░███ ░░███     ███ ░░███     ███ ░███ ░░███
 ░░█████████  █████   █████ █████   █████ █████     █████ █████   █████ ░░░███████░   ░░█████████  █████ ░░████
- ░░░░░░░░░  ░░░░░   ░░░░░ ░░░░░   ░░░░░ ░░░░░     ░░░░░ ░░░░░   ░░░░░    ░░░░░░░      ░░░░░░░░░  ░░░░░   ░░░░ 
+ ░░░░░░░░░  ░░░░░   ░░░░░ ░░░░░   ░░░░░ ░░░░░     ░░░░░ ░░░░░   ░░░░░    ░░░░░░░      ░░░░░░░░░  ░░░░░   ░░░░
 """
 
 title_normal = """
 ███████╗██╗  ██╗ █████╗ ███╗   ███╗██████╗  ██████╗  ██████╗██╗  ██╗
 ██╔════╝██║  ██║██╔══██╗████╗ ████║██╔══██╗██╔═══██╗██╔════╝██║ ██╔╝
-███████╗███████║███████║██╔████╔██║██████╔╝██║   ██║██║     █████╔╝ 
-╚════██║██╔══██║██╔══██║██║╚██╔╝██║██╔══██╗██║   ██║██║     ██╔═██╗ 
+███████╗███████║███████║██╔████╔██║██████╔╝██║   ██║██║     █████╔╝
+╚════██║██╔══██║██╔══██║██║╚██╔╝██║██╔══██╗██║   ██║██║     ██╔═██╗
 ███████║██║  ██║██║  ██║██║ ╚═╝ ██║██║  ██║╚██████╔╝╚██████╗██║  ██╗
 ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝ ╚═════╝  ╚═════╝╚═╝  ╚═╝
 """
@@ -44,9 +44,9 @@ def print_buildbot_info(utility_name):
 
     col_cnt = 100
 
-    try: 
+    try:
         col_cnt = os.get_terminal_size().columns
-    except : 
+    except :
         print("Warn : couldn't get terminal size")
 
     if(col_cnt > 112):
@@ -61,7 +61,7 @@ def print_buildbot_info(utility_name):
     print("\033[1;34mCurrent tool      \033[0;0m: ", utility_name)
     print("\033[1;34mProject directory \033[0;0m: ", abs_proj_dir)
     print("\033[1;34mSource  directory \033[0;0m: ", abs_src_dir)
-    
+
     print()
 
     str_git = os.popen("git log -n 1 --decorate=full").read()
@@ -91,9 +91,9 @@ def run_cmd(str):
 
     col_cnt = 64
 
-    try: 
+    try:
         col_cnt = os.get_terminal_size().columns
-    except : 
+    except :
         print("Warn : couldn't get terminal size")
 
     print("\033[1;34mRunning \033[0;0m: " + str)
@@ -190,12 +190,12 @@ def compile_prog(abs_build_dir):
 def get_current_buildsystem(abs_build_dir) -> BuildSystem:
 
     if os.path.isfile(abs_build_dir + "/build.ninja"):
-        return BuildSystem.Ninja 
+        return BuildSystem.Ninja
     if os.path.isfile(abs_build_dir + "/Makefile"):
         return BuildSystem.Makefiles
 
-    raise "buildsystem not recognized" 
-    
+    raise "buildsystem not recognized"
+
 
 
 def clean_build_dir(abs_build_dir):
@@ -265,7 +265,7 @@ def configure(src_dir :str, build_dir:str ,compiler : SyclCompiler, backend : Sy
         if(backend == SyCLBE.CUDA):
             cmake_cmd += " -DSyCL_Compiler_BE=CUDA"
         cmake_cmd += " -DCMAKE_CXX_COMPILER=" + str(os.path.abspath(compiler_dir)) + "/bin/clang++"
-        
+
 
     elif(compiler == SyclCompiler.HipSYCL):
         cmake_cmd += " -DSyCL_Compiler=HIPSYCL"
@@ -274,13 +274,13 @@ def configure(src_dir :str, build_dir:str ,compiler : SyclCompiler, backend : Sy
 
         if(backend == SyCLBE.OpenMP):
             cmake_cmd += " -DSyCL_Compiler_BE=OMP"
-        
-        
+
+
         cmake_cmd += " -DCMAKE_CXX_COMPILER=" + str(os.path.abspath(compiler_dir)) + "/bin/syclcc"
         compiler_arg = "--hipsycl-cpu-cxx=g++ --hipsycl-config-file="+str(os.path.abspath(compiler_dir))+"/etc/hipSYCL/syclcc.json --hipsycl-targets='omp' --hipsycl-platform=cpu"
         cmake_cmd += " -DCMAKE_CXX_FLAGS=\"" +compiler_arg+ "\""
 
-    
+
 
     cmake_cmd += " -DCOMP_ROOT_DIR="+str(os.path.abspath(compiler_dir))
 
@@ -358,7 +358,7 @@ def configure_dpcpp(src_dir, build_dir,llvm_root, target_build_mode ,build_sys,s
     if Targets.Visu in target_lst:
         cmake_cmd += " -DBUILD_VISU=true"
 
-    
+
 
 
     if morton_prec == PrecisionMode.Single:
@@ -390,41 +390,41 @@ def configure_dpcpp(src_dir, build_dir,llvm_root, target_build_mode ,build_sys,s
     run_cmd(cmake_cmd)
 
 
-# regex to fin all new 
+# regex to fin all new
 # /\s+([^ ]+)\s*(=\s*new [^;]+;)/g
-# replace by 
+# replace by
 #  $1 $2 \n      log_new($1,log_alloc_ln);\n
 
 #regex to find all delete []
 # /delete\s*\[\]\s*([^ ]+)\s*;/g
-# replace by 
+# replace by
 # delete [] $1; log_delete($1);
 
 #regex to find all delete
 # /delete\s*([^ ]+)\s*;/g
-# replace by 
+# replace by
 # delete $1; log_delete($1);
 
 
 
 def patch_file(file,header_loc):
-    
+
     incl_loc_head = str(os.path.relpath(header_loc,Path(file).parent))
     str_incl = "#include \""+incl_loc_head+"\"\n\n"
-    
+
     lines_in = ""
     with open(file, "r") as f_in:
             lines_in = f_in.read()
 
-            
+
 
     #lines_in = re.sub(r"//[^\n]+",r"", lines_in)
-    #lines_in = re.sub(r"\A(?s).*?\*\/(?-s)",r"", lines_in) 
+    #lines_in = re.sub(r"\A(?s).*?\*\/(?-s)",r"", lines_in)
 
     lines_in = re.sub(r"(?<!_)delete\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete \g<1>;}", lines_in)
 
     lines_in = re.sub(r"(?<!_)delete\s*\[\]\s*([^ ]+)\s*;", "{log_delete(\g<1>,log_alloc_ln);delete[] \g<1>;}", lines_in)
-    
+
     lines_in = re.sub(r"=\s*new\s+([^\[(]+)(.*?);", r"= (\g<1> *) log_new(new \g<1>\g<2>,log_alloc_ln);", lines_in)
 
 
@@ -458,14 +458,14 @@ def patch_file(file,header_loc):
 
     with open(file, "w") as f_out:
             f_out.write(lines_in)
-            
+
 
 def gen_mem_patched_dir(abs_src_dir,abs_patchedsrc_dir):
     run_cmd("rm -r " + abs_patchedsrc_dir)
     run_cmd("mkdir " + abs_patchedsrc_dir)
     run_cmd("cp -r "+abs_src_dir+"/* "+abs_patchedsrc_dir)
 
-    lst = [path for path in Path(abs_patchedsrc_dir).rglob('*.cpp')] + [path for path in Path(abs_patchedsrc_dir).rglob('*.hpp')] 
+    lst = [path for path in Path(abs_patchedsrc_dir).rglob('*.cpp')] + [path for path in Path(abs_patchedsrc_dir).rglob('*.hpp')]
 
     for path in lst:
 
@@ -484,7 +484,7 @@ def gen_mem_patched_dir(abs_src_dir,abs_patchedsrc_dir):
 
 def run_test(node_cnt, run_only = "", oversubscribe = False,supargs=""):
 
-    args = " --run-only " + run_only 
+    args = " --run-only " + run_only
 
     if run_only == "":
         args = ""

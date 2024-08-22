@@ -13,12 +13,12 @@
  */
 
 #include "RadixTreeMortonBuilder.hpp"
+#include "shambase/exception.hpp"
 #include "kernels/key_morton_sort.hpp"
 #include "shamalgs/algorithm.hpp"
-#include "shambase/exception.hpp"
 #include "shambackends/math.hpp"
-#include "shamrock/sfc/MortonKernels.hpp"
 #include "shammath/sfc/morton.hpp"
+#include "shamrock/sfc/MortonKernels.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template<class morton_t, class pos_t, u32 dim>
@@ -45,12 +45,13 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build(
     debug_sycl_ln("RadixTree", "morton buffer length :", morton_len);
     out_buf_morton = std::make_unique<sycl::buffer<morton_t>>(morton_len);
 
-    MortonKernels<morton_t, pos_t, dim>::sycl_xyz_to_morton(queue,
-                                                            cnt_obj,
-                                                            pos_buf,
-                                                            std::get<0>(bounding_box),
-                                                            std::get<1>(bounding_box),
-                                                            out_buf_morton);
+    MortonKernels<morton_t, pos_t, dim>::sycl_xyz_to_morton(
+        queue,
+        cnt_obj,
+        pos_buf,
+        std::get<0>(bounding_box),
+        std::get<1>(bounding_box),
+        out_buf_morton);
 
     MortonKernels<morton_t, pos_t, dim>::sycl_fill_trailling_buffer(
         queue, cnt_obj, morton_len, out_buf_morton);
@@ -82,12 +83,13 @@ void RadixTreeMortonBuilder<morton_t, pos_t, dim>::build_raw(
     debug_sycl_ln("RadixTree", "morton buffer length :", cnt_obj);
     out_buf_morton = std::make_unique<sycl::buffer<morton_t>>(cnt_obj);
 
-    MortonKernels<morton_t, pos_t, dim>::sycl_xyz_to_morton(queue,
-                                                            cnt_obj,
-                                                            pos_buf,
-                                                            std::get<0>(bounding_box),
-                                                            std::get<1>(bounding_box),
-                                                            out_buf_morton);
+    MortonKernels<morton_t, pos_t, dim>::sycl_xyz_to_morton(
+        queue,
+        cnt_obj,
+        pos_buf,
+        std::get<0>(bounding_box),
+        std::get<1>(bounding_box),
+        out_buf_morton);
 }
 
 template class RadixTreeMortonBuilder<u32, f32_3, 3>;

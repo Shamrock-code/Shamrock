@@ -6,16 +6,11 @@
 //
 // -------------------------------------------------------//
 
-
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/Log.hpp"
 #include "shamtest/shamtest.hpp"
 
-#include "shambackends/typeAliasVec.hpp"
-#include "shambackends/typeAliasVec.hpp"
+TestStart(Unittest, "shamsys/Log", test_format, 1) {
 
-TestStart(Unittest, "shamsys/Log", test_format, 1){
-
-
-    std::cout << shambase::format("{} 1", f64_3{0,1,2}) << std::endl;
-
+    std::cout << shambase::format("{} 1", f64_3{0, 1, 2}) << std::endl;
 }

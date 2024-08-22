@@ -68,14 +68,14 @@ namespace shamtest {
         bool full_output = false;
 
         /// Should output a tex report
-        bool output_tex                        = true;
+        bool output_tex = true;
 
         /// Should output a json report
         std::optional<std::string> json_output = {};
 
         bool run_long_tests = false; ///< run also long tests
-        bool run_unittest   = true; ///< run unittests
-        bool run_validation = true; ///< run validation tests
+        bool run_unittest   = true;  ///< run unittests
+        bool run_validation = true;  ///< run validation tests
         bool run_benchmark  = false; ///< run benchmarks
 
         std::optional<std::string> run_only = {}; ///< Run only regex to select tests
@@ -83,7 +83,7 @@ namespace shamtest {
 
     /**
      * @brief run all the tests
-     * 
+     *
      * @param argc main argc
      * @param argv  main argv
      * @param cfg test run configuration
@@ -186,7 +186,7 @@ namespace shamtest {
  */
 #define _Assert_throw(call, exception_type)                                                        \
     try {                                                                                          \
-        /* Try to call the function that is expected to throw */                                                                                                \
+        /* Try to call the function that is expected to throw */                                   \
         call;                                                                                      \
         /* If no exception is thrown, assert that the test failed                               */ \
         shamtest::asserts().assert_bool(                                                           \
@@ -194,7 +194,7 @@ namespace shamtest {
             false,                                                                                 \
             SourceLocation{});                                                                     \
     } catch (const exception_type &ex) {                                                           \
-        /* If wanted exception is thrown, assert that the test pass */                                                                                                \
+        /* If wanted exception is thrown, assert that the test pass */                             \
         shamtest::asserts().assert_bool(                                                           \
             "Found wanted throw of type " #exception_type, true, SourceLocation{});                \
     } catch (const std::exception &e) {                                                            \

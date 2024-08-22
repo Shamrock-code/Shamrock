@@ -14,12 +14,12 @@
  * @brief
  */
 
-#include <memory>
 #include "shambackends/sycl.hpp"
+#include <memory>
 
 /**
  * @brief Karras 2012 algorithm with addition endrange buffer
- * 
+ *
  * @param internal_cell_count internal cell count
  * @param in_morton input morton set
  * @param buf_lchild_id output
@@ -30,11 +30,11 @@
  */
 template<class u_morton>
 void sycl_karras_alg(
-    sycl::queue & queue,
+    sycl::queue &queue,
     u32 internal_cell_count,
-    sycl::buffer<u_morton> & in_morton,
-    sycl::buffer<u32> & out_buf_lchild_id   ,
-    sycl::buffer<u32> & out_buf_rchild_id   ,
-    sycl::buffer<u8 > & out_buf_lchild_flag ,
-    sycl::buffer<u8 > & out_buf_rchild_flag,
-    sycl::buffer<u32> & out_buf_endrange    );
+    sycl::buffer<u_morton> &in_morton,
+    sycl::buffer<u32> &out_buf_lchild_id,
+    sycl::buffer<u32> &out_buf_rchild_id,
+    sycl::buffer<u8> &out_buf_lchild_flag,
+    sycl::buffer<u8> &out_buf_rchild_flag,
+    sycl::buffer<u32> &out_buf_endrange);

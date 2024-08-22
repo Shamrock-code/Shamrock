@@ -7,7 +7,7 @@ jobs:
 
 
   shamrock_acpp:
-    name: test ${{ matrix.testfile }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} 
+    name: test ${{ matrix.testfile }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}}
     runs-on: [self-hosted,  docker-runner]
 
     container:
@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        include: 
+        include:
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
@@ -49,12 +49,12 @@ jobs:
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
-  
+
       - name: ls local
         run : ls -la
-      
+
       - name: install LLVM
         run: |
           wget https://apt.llvm.org/llvm.sh
@@ -65,14 +65,14 @@ jobs:
             sudo rm -r /usr/lib/clang/16*
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
-          
+
       - name: install python packages
         run: |
           pip install matplotlib numpy scipy
 
       - name: Setup env
         run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
-  
+
       - name: Configure
         shell: bash # In docker container github action default to sh
         run: |

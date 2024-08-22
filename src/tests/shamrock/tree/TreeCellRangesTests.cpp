@@ -17,8 +17,7 @@
 
 TestStart(Unittest, "shamrock/tree/TreeCellRanges::serialize", testcellrangesserialize, 1) {
 
-
-    using pos_t = f32_3;
+    using pos_t    = f32_3;
     using u_morton = u32;
 
     u32 cnt = 1000;
@@ -49,7 +48,10 @@ TestStart(Unittest, "shamrock/tree/TreeCellRanges::serialize", testcellrangesser
 
     TreeRanges rnge;
     rnge.build1(q, redcodes, strc);
-    rnge.build2(q, redcodes.tree_leaf_count + strc.internal_cell_count, {range_coord.lower, range_coord.upper});
+    rnge.build2(
+        q,
+        redcodes.tree_leaf_count + strc.internal_cell_count,
+        {range_coord.lower, range_coord.upper});
 
     shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(rnge.serialize_byte_size());
@@ -58,11 +60,11 @@ TestStart(Unittest, "shamrock/tree/TreeCellRanges::serialize", testcellrangesser
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
+        shamalgs::SerializeHelper ser2(
+            shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
         TreeRanges outser = TreeRanges::deserialize(ser2);
 
         shamtest::asserts().assert_bool("input match out", outser == rnge);
     }
-
 }

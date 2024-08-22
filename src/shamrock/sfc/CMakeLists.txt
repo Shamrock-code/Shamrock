@@ -29,9 +29,3 @@ target_sources(shamrock_test
      ${HeadersTest}
     )
 endif()
-
-
-
-
-
-

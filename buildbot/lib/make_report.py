@@ -96,7 +96,7 @@ def load_test_report(file):
 
     cur_assert_log_state = False
 
-    
+
 
 
     dic_loaded = {}
@@ -163,7 +163,7 @@ def load_test_report(file):
 
         elif cur_assert_log_state:
             cur_assert_log += l + "\n"
-        
+
 
     return (dic_loaded)
 
@@ -192,8 +192,8 @@ def get_succes_count_data(dt):
             #print("test ",k_cur_test, "world size =",k_cur_wrk,"| succes rate =",cnt_succes,"/",len(dt[k_cur_test][k_cur_wrk]))
             tmp[k_cur_wrk] = {"suc_cnt":cnt_succes,"assert_cnt":cnt_assert}
 
-            
-        
+
+
         tmp["suc_cnt"] = sum_cnt_succes
         tmp["assert_cnt"] = sum_cnt_assert
 
@@ -209,8 +209,8 @@ def get_succes_count_data(dt):
 def make_tex_repport(dat):
 
 
-    
-    
+
+
 
 
     dic_int = {}
@@ -224,7 +224,7 @@ def make_tex_repport(dat):
 
                 dic_int["world size = " + str(wsz)] = {}
 
-    
+
 
 
     for config_k in dat.keys():
@@ -254,7 +254,7 @@ def make_tex_repport(dat):
                     "global_test_cnt" : cnt_test
                 }
 
-    
+
 
     out_file = open("tmp.json", "w")
     json.dump(dic_int, out_file, indent = 6)
@@ -384,12 +384,12 @@ def make_tex_repport(dat):
                 \end{tabular}\end{center}
             """
 
-            
+
 
 
 
     out_tex = Tex_template.replace(r"%%tabl_world_sz_res%%",tabl_world_sz_res).replace(r"%%content%%",str_file)
-    
+
     print(out_tex)
 
     out_file = open("test_repport.tex", "w")

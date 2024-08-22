@@ -14,10 +14,10 @@
  * @brief
  */
 
+#include "shambase/string.hpp"
 #include "kernels/reduction_alg.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/reduction.hpp"
-#include "shambase/string.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
 #include "shamrock/tree/TreeMortonCodes.hpp"
@@ -32,12 +32,13 @@ namespace shamrock::tree {
         std::unique_ptr<sycl::buffer<u32>> buf_reduc_index_map;
         std::unique_ptr<sycl::buffer<u_morton>> buf_tree_morton; // size = leaf cnt
 
-        inline void build(sycl::queue &queue,
-                          u32 obj_cnt,
-                          u32 reduc_level,
-                          TreeMortonCodes<u_morton> &morton_codes,
+        inline void build(
+            sycl::queue &queue,
+            u32 obj_cnt,
+            u32 reduc_level,
+            TreeMortonCodes<u_morton> &morton_codes,
 
-                          bool &one_cell_mode) {
+            bool &one_cell_mode) {
 
             // return a sycl buffer from reduc index map instead
             logger::debug_sycl_ln(
@@ -46,12 +47,13 @@ namespace shamrock::tree {
             // TODO document that the layout of reduc_index_map is in the end {0 .. ,i .. ,N ,0}
             // with the trailling 0 to invert the range for the walk in one cell mode
 
-            reduction_alg(queue,
-                          obj_cnt,
-                          morton_codes.buf_morton,
-                          reduc_level,
-                          buf_reduc_index_map,
-                          tree_leaf_count);
+            reduction_alg(
+                queue,
+                obj_cnt,
+                morton_codes.buf_morton,
+                reduc_level,
+                buf_reduc_index_map,
+                tree_leaf_count);
 
             logger::debug_sycl_ln(
                 "RadixTree",
@@ -67,11 +69,12 @@ namespace shamrock::tree {
                 logger::debug_sycl_ln("RadixTree", "sycl_morton_remap_reduction");
                 buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
 
-                sycl_morton_remap_reduction(queue,
-                                            tree_leaf_count,
-                                            buf_reduc_index_map,
-                                            morton_codes.buf_morton,
-                                            buf_tree_morton);
+                sycl_morton_remap_reduction(
+                    queue,
+                    tree_leaf_count,
+                    buf_reduc_index_map,
+                    morton_codes.buf_morton,
+                    buf_tree_morton);
 
                 one_cell_mode = false;
 
@@ -81,12 +84,14 @@ namespace shamrock::tree {
                 one_cell_mode   = true;
 
                 buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(
-                    shamalgs::memory::vector_to_buf(shamsys::instance::get_compute_queue(),std::vector<u_morton>{0, 0})
+                    shamalgs::memory::vector_to_buf(
+                        shamsys::instance::get_compute_queue(), std::vector<u_morton>{0, 0})
                     // tree morton = {0,0} is a flag for the one cell mode
                 );
 
             } else {
-                throw shambase::make_except_with_loc<std::runtime_error>("0 leaf tree cannot exists");
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "0 leaf tree cannot exists");
             }
         }
 
@@ -111,13 +116,15 @@ namespace shamrock::tree {
 
         inline TreeReducedMortonCodes(const TreeReducedMortonCodes &other)
             : tree_leaf_count(other.tree_leaf_count),
-              buf_reduc_index_map(shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_reduc_index_map)),
-              buf_tree_morton(shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_tree_morton)) {}
+              buf_reduc_index_map(shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(), other.buf_reduc_index_map)),
+              buf_tree_morton(shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(), other.buf_tree_morton)) {}
 
         inline TreeReducedMortonCodes &operator=(TreeReducedMortonCodes &&other) noexcept {
-            tree_leaf_count     = std::move(other.tree_leaf_count    );
-            buf_reduc_index_map     = std::move(other.buf_reduc_index_map    );
-            buf_tree_morton = std::move(other.buf_tree_morton);
+            tree_leaf_count     = std::move(other.tree_leaf_count);
+            buf_reduc_index_map = std::move(other.buf_reduc_index_map);
+            buf_tree_morton     = std::move(other.buf_tree_morton);
 
             return *this;
         } // move assignment
@@ -132,10 +139,18 @@ namespace shamrock::tree {
 
             cmp = cmp && (t1.buf_reduc_index_map->size() == t2.buf_reduc_index_map->size());
 
-            cmp = cmp && equals(shamsys::instance::get_compute_queue(),*t1.buf_reduc_index_map,
-                                *t2.buf_reduc_index_map,
-                                t1.buf_reduc_index_map->size());
-            cmp = cmp && equals(shamsys::instance::get_compute_queue(),*t1.buf_tree_morton, *t2.buf_tree_morton, t1.tree_leaf_count);
+            cmp = cmp
+                  && equals(
+                      shamsys::instance::get_compute_queue(),
+                      *t1.buf_reduc_index_map,
+                      *t2.buf_reduc_index_map,
+                      t1.buf_reduc_index_map->size());
+            cmp = cmp
+                  && equals(
+                      shamsys::instance::get_compute_queue(),
+                      *t1.buf_tree_morton,
+                      *t2.buf_tree_morton,
+                      t1.tree_leaf_count);
 
             return cmp;
         }
@@ -180,13 +195,11 @@ namespace shamrock::tree {
 
         inline shamalgs::SerializeSize serialize_byte_size() {
 
-
             using H = shamalgs::SerializeHelper;
 
-            return H::serialize_byte_size<u32>()*2 
-                + H::serialize_byte_size<u32>(buf_reduc_index_map->size()) 
-                + H::serialize_byte_size<u_morton>(tree_leaf_count);
-            
+            return H::serialize_byte_size<u32>() * 2
+                   + H::serialize_byte_size<u32>(buf_reduc_index_map->size())
+                   + H::serialize_byte_size<u_morton>(tree_leaf_count);
         }
     };
 

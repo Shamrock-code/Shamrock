@@ -6,9 +6,8 @@
 //
 // -------------------------------------------------------//
 
-#include "shamtest/shamtest.hpp"
-
 #include "shammodels/amr/AMRBlock.hpp"
+#include "shamtest/shamtest.hpp"
 
 TestStart(Unittest, "shammodels/amr/AMRBlock", test_amr_block_coords, 1) {
 
@@ -20,18 +19,14 @@ TestStart(Unittest, "shammodels/amr/AMRBlock", test_amr_block_coords, 1) {
         for (u32 iy = 0; iy < Block::Nside; iy++) {
             for (u32 iz = 0; iz < Block::Nside; iz++) {
 
-                std::array<u32, 3> res = Block::get_coord(Block::get_index({ix,iy,iz}));
-                _AssertEqual(res[0] , ix)
-                _AssertEqual(res[1] , iy)
-                _AssertEqual(res[2] , iz)
-
+                std::array<u32, 3> res = Block::get_coord(Block::get_index({ix, iy, iz}));
+                _AssertEqual(res[0], ix) _AssertEqual(res[1], iy) _AssertEqual(res[2], iz)
             }
         }
     }
 
     for (u32 i = 0; i < Block::block_size; i++) {
         u32 j = Block::get_index(Block::get_coord(i));
-        _AssertEqual(i,j)
+        _AssertEqual(i, j)
     }
-
 }

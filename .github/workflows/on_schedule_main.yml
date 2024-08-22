@@ -10,7 +10,7 @@ on:
     # At 02:00 on Monday, Wednesday, and Friday.
     - cron:  '0 2 * * 1,3,5'
 
-  
+
 jobs:
 
   src_check:
@@ -18,7 +18,7 @@ jobs:
     #needs: [detect_changes]
     uses: ./.github/workflows/source_checks.yml
 
-  
+
   #make shamrock documentation
   make_documentation:
     needs: [src_check]
@@ -34,7 +34,7 @@ jobs:
     needs: [src_check]
     name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang-py.yml
-    
+
   #shamrock_linux_acpp_macos:
   #  name: Shamrock Test
   #  needs: [src_check]
@@ -59,13 +59,13 @@ jobs:
     needs: [src_check]
     name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
-    
+
   shamrock_linux_dpcpp:
     needs: [src_check]
     name: Tests
     uses: ./.github/workflows/shamrock-dpcpp.yml
 
-  
+
   shamrock_linux_acpp_phystests:
     needs: [shamrock_linux_acpp]
     name: Tests (Phys)

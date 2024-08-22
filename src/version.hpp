@@ -14,11 +14,11 @@
  * @brief typedefs and macros
  * @date 2021-09-17
  * @copyright Copyright Timothée David--Cléris (c) 2021
- * 
+ *
  */
 
-#include <string>
 #include "shambase/aliases_int.hpp"
+#include <string>
 
 extern const std::string git_info_str;
 extern const std::string git_commit_hash;
@@ -37,10 +37,9 @@ inline std::string shamrock_title_bar_big = "\n\
  ░░░░░░░░░  ░░░░░   ░░░░░ ░░░░░   ░░░░░ ░░░░░     ░░░░░ ░░░░░   ░░░░░    ░░░░░░░      ░░░░░░░░░  ░░░░░   ░░░░ \n\
 ";
 
-inline void print_title_bar(){
-    printf("%s\n",shamrock_title_bar_big.c_str());
+inline void print_title_bar() {
+    printf("%s\n", shamrock_title_bar_big.c_str());
     printf("---------------------------------------------------------------------------------");
-    printf("%s\n",git_info_str.c_str());
+    printf("%s\n", git_info_str.c_str());
     printf("---------------------------------------------------------------------------------\n");
-
 }

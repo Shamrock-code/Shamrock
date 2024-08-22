@@ -34,7 +34,7 @@ def setup(arg : SetupArg):
     args.gen = "ninja"
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
-    
+
     INTELLLVM_GIT_DIR = builddir+"/.env/intel-llvm-git"
     INTELLLVM_INSTALL_DIR = builddir + "/.env/intel-llvm-installdir"
 
@@ -63,8 +63,8 @@ def setup(arg : SetupArg):
     source_path = os.path.abspath(os.path.join(cur_file, "../"+source_file))
 
     utils.envscript.write_env_file(
-        source_path = source_path, 
-        header = ENV_SCRIPT_HEADER, 
+        source_path = source_path,
+        header = ENV_SCRIPT_HEADER,
         path_write = ENV_SCRIPT_PATH)
 
     if is_intel_llvm_already_installed(INTELLLVM_INSTALL_DIR):

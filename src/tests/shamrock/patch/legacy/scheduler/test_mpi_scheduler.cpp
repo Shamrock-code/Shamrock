@@ -6,30 +6,17 @@
 //
 // -------------------------------------------------------//
 
+#include "shammath/sfc/hilbert.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtest/shamtest.hpp"
-
+#include "test_patch_utils.hpp"
+#include <unordered_set>
 #include <algorithm>
 #include <iterator>
 #include <random>
-#include <unordered_set>
 #include <utility>
 #include <vector>
-
-
-
-#include "shamrock/scheduler/PatchScheduler.hpp"
-
-#include "shamsys/legacy/sycl_mpi_interop.hpp"
-
-
-
-
-#include "test_patch_utils.hpp"
-
-#include "shammath/sfc/hilbert.hpp"
-
-
-
 
 /*
 
@@ -37,8 +24,8 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
 
 
     std::mt19937 dummy_patch_eng(0x1234);
-    std::mt19937 eng(0x1111);  
-    
+    std::mt19937 eng(0x1111);
+
 
     //in the end this vector should be recovered in recv_vec
     std::vector<Patch> check_vec;
@@ -69,7 +56,7 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
     for(const u64 a : sche.owned_patch_id){
         sche.patch_data.owned_data[a] = check_patchdata[a];
     }
-    
+
 
 
 
@@ -90,7 +77,7 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
     //dummy load balancing
     std::vector<std::tuple<u64, i32, i32,i32>> change_list;
 
-    {   
+    {
         std::uniform_int_distribution<u32> distrank(0,shamcomm::world_size()-1);
         std::vector<i32> tags_it_node(shamcomm::world_size());
         for(u64 i = 0 ; i < sche.patch_list.global.size(); i++){
@@ -102,9 +89,9 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
                 change_list.push_back({i,old_owner,new_owner,tags_it_node[old_owner]});
                 tags_it_node[old_owner] ++;
             }
-            
+
         }
-        
+
     }
 
 
@@ -128,7 +115,8 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
 
     //check corectness of patchdata contents
     for(const u64 a : sche.owned_patch_id){
-        Test_assert("match data", patch_data_check_match( sche.patch_data.owned_data[a], check_patchdata[a])) ;
+        Test_assert("match data", patch_data_check_match( sche.patch_data.owned_data[a],
+check_patchdata[a])) ;
     }
 
 
@@ -142,8 +130,8 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
 Test_start("mpi_scheduler::", testLB, -1){
 
     std::mt19937 dummy_patch_eng(0x1234);
-    std::mt19937 eng(0x1111);  
-    
+    std::mt19937 eng(0x1111);
+
 
     //in the end this vector should be recovered in recv_vec
     std::vector<Patch> check_vec;
@@ -155,7 +143,7 @@ Test_start("mpi_scheduler::", testLB, -1){
 
 
 
-    
+
 
 
     SchedulerMPI sche = SchedulerMPI(-1,-1);
@@ -177,7 +165,7 @@ Test_start("mpi_scheduler::", testLB, -1){
     for(const u64 a : sche.owned_patch_id){
         sche.patch_data.owned_data[a] = check_patchdata[a];
     }
-    
+
 
 
 
@@ -196,7 +184,7 @@ Test_start("mpi_scheduler::", testLB, -1){
     sche.sync_build_LB(false, true);
 
 
-    
+
 
 
     //check for mismatch
@@ -211,7 +199,8 @@ Test_start("mpi_scheduler::", testLB, -1){
 
     //check corectness of patchdata contents
     for(const u64 a : sche.owned_patch_id){
-         Test_assert("match data", patch_data_check_match( sche.patch_data.owned_data[a], check_patchdata[a])) ;
+         Test_assert("match data", patch_data_check_match( sche.patch_data.owned_data[a],
+check_patchdata[a])) ;
     }
 
 
@@ -219,7 +208,6 @@ Test_start("mpi_scheduler::", testLB, -1){
 
 }
 */
-
 
 /*
 Test_start("mpi_scheduler::", test_split, -1){
@@ -237,7 +225,7 @@ Test_start("mpi_scheduler::", test_split, -1){
         p.data_count = 200;
         p.load_value = 200;
         p.node_owner_id = shamcomm::world_rank();
-        
+
         p.x_min = 0;
         p.y_min = 0;
         p.z_min = 0;
@@ -249,25 +237,25 @@ Test_start("mpi_scheduler::", test_split, -1){
         p.pack_node_index = u64_max;
 
 
-        
+
         PatchData pdat;
 
-        std::mt19937 eng(0x1111); 
-        std::uniform_real_distribution<f32> distpos(-1,1);  
+        std::mt19937 eng(0x1111);
+        std::uniform_real_distribution<f32> distpos(-1,1);
 
         for(u32 part_id = 0 ; part_id < p.data_count ; part_id ++)
             pdat.pos_s.push_back({distpos(eng),distpos(eng),distpos(eng)});
 
-        
+
 
         sched.add_patch(p, pdat);
 
-        
-        
+
+
     }else{
         sched.patch_list._next_patch_id ++;
     }
-    
+
     sched.owned_patch_id = sched.patch_list.build_local();
 
     //std::cout << sched.dump_status() << std::endl;
@@ -280,7 +268,7 @@ Test_start("mpi_scheduler::", test_split, -1){
     //sched.patch_data.sim_box.min_box_sim_s = {-1};
     //sched.patch_data.sim_box.max_box_sim_s = {1};
 
-    
+
     //std::cout << sched.dump_status() << std::endl;
 
     //std::cout << "build local" <<std::endl;
@@ -294,7 +282,7 @@ Test_start("mpi_scheduler::", test_split, -1){
     //    std::cout << "step : " <<stepi<< std::endl;
     //    //std::cout << sched.dump_status() << std::endl;
     //    sched.scheduler_step(true, true);
-    //    
+    //
     //}
 //
     ////std::cout << sched.dump_status() << std::endl;

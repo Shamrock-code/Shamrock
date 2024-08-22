@@ -14,7 +14,6 @@
 
 #include "shammath/DiscontinuousIterator.hpp"
 #include "shamtest/shamtest.hpp"
-
 #include <set>
 
 template<typename Set>

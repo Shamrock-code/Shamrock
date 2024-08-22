@@ -23,10 +23,10 @@ options:
                         additional cmake configuration flags
 ```
 
-Essentially for each compiler we define several profiles, which holds corresponding compilation flags. 
+Essentially for each compiler we define several profiles, which holds corresponding compilation flags.
 One exemple could be :
 ```bash
-python buildbot/configure.py 
+python buildbot/configure.py
     --gen ninja                     #to compile with ninja instead of make
     --build debug                   #to compile the code in debug mode
     --tests                         #compile also the test

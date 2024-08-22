@@ -22,8 +22,8 @@ def read_header_field(header_f,dic_res):
         obj_cntb = tmp_in[68:72]
 
         name = str(nb.decode('utf-8')).rstrip("\x00")
-        nvar = int.from_bytes(nvarb, "little") 
-        obj_cnt = int.from_bytes(obj_cntb, "little") 
+        nvar = int.from_bytes(nvarb, "little")
+        obj_cnt = int.from_bytes(obj_cntb, "little")
 
         dic_res.append({"name":name, "nvar":nvar, "obj_cnt":obj_cnt})
 
@@ -60,7 +60,7 @@ def get_plot_patchdata(filename):
     dic_fields = {
         "f32"    : [],
         "f32_2"  : [],
-        "f32_3"  : [],    
+        "f32_3"  : [],
         "f32_4"  : [],
         "f32_8"  : [],
         "f32_16" : [],
@@ -267,7 +267,7 @@ def plot_soundwave(idx : int, toff : float):
 f = open("./step"+str(4)+"/timeval.bin","rb")
 toff, = struct.unpack("d",f.read(8))
 f.close()
-    
+
 plot_soundwave(5,toff)
 
 plot_soundwave(25,toff)

@@ -57,7 +57,7 @@ jobs:
     needs: [src_check]
     name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
-    
+
   shamrock_linux_dpcpp:
     needs: [src_check]
     name: Tests
@@ -85,7 +85,7 @@ jobs:
     steps:
       - name: Setup Pages
         uses: actions/configure-pages@v3
-        
+
       - name: 'Download Doc'
         uses: actions/download-artifact@v4
         with:
@@ -158,18 +158,22 @@ jobs:
 
     container:
       image: ghcr.io/shamrock-code/ci-ubuntu20:main
-      
-    
+
+
     needs: [shamrock_linux_acpp_cov, make_documentation]
 
     if: github.ref == 'refs/heads/main'
 
     steps:
 
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-
 
       - name: 'Download Doc'
         uses: actions/download-artifact@v4
@@ -188,7 +192,7 @@ jobs:
           name: code-coverage-report-acpp_omp_debug
           path: code-coverage-report-acpp_omp_debug
 
-      
+
       - name: 'Tar coverage'
         run: tar -cvf coverage.tar.gz code-coverage-list-acpp_omp_debug code-coverage-report-acpp_omp_debug
 

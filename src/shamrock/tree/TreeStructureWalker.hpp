@@ -14,7 +14,6 @@
  * @brief
  */
 
-
 #include "TreeStructure.hpp"
 
 namespace shamrock::tree {
@@ -48,8 +47,7 @@ namespace shamrock::tree {
     static TreeStructureWalker<policy, u_morton, InteractCrit>
     generate_walk(TreeStructure<u_morton> &str, u32 walker_count, InteractCrit &&crit) {
         TreeStructureWalker<policy, u_morton, InteractCrit> walk(
-            str, walker_count, std::forward<InteractCrit>(crit)
-        );
+            str, walker_count, std::forward<InteractCrit>(crit));
         walk.generate();
         return walk;
     }
@@ -68,12 +66,10 @@ namespace shamrock::tree::details {
         class Accessed {
 
             public:
-
-            using IntCritAcc      = typename InteractCrit::Access;
-            using IntCritVals     = typename IntCritAcc::ObjectValues;
+            using IntCritAcc  = typename InteractCrit::Access;
+            using IntCritVals = typename IntCritAcc::ObjectValues;
 
             private:
-
             sycl::range<1> walkers_range;
 
             u32 leaf_offset;
@@ -82,8 +78,6 @@ namespace shamrock::tree::details {
             sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> lchild_id;
             sycl::accessor<u8, 1, sycl::access::mode::read, sycl::target::device> rchild_flag;
             sycl::accessor<u8, 1, sycl::access::mode::read, sycl::target::device> lchild_flag;
-
-            
 
             IntCritAcc criterion_acc;
 
@@ -107,8 +101,7 @@ namespace shamrock::tree::details {
                 TreeStructure<u_morton> &tree_struct,
                 u32 walker_count,
                 sycl::handler &device_handle,
-                InteractCrit crit
-            )
+                InteractCrit crit)
                 : rchild_id{*tree_struct.buf_rchild_id, device_handle, sycl::read_only},
                   lchild_id{*tree_struct.buf_lchild_id, device_handle, sycl::read_only},
                   rchild_flag{*tree_struct.buf_rchild_flag, device_handle, sycl::read_only},
@@ -119,21 +112,20 @@ namespace shamrock::tree::details {
 
             inline sycl::range<1> get_sycl_range() { return walkers_range; }
 
-            inline IntCritAcc criterion() const{
-                return criterion_acc;
-            }
+            inline IntCritAcc criterion() const { return criterion_acc; }
 
             template<class FuncNodeFound, class FuncNodeReject>
             inline void for_each_node(
-                sycl::item<1> id, IntCritVals int_values, FuncNodeFound &&found_case, FuncNodeReject &&reject_case
-            ) const;
+                sycl::item<1> id,
+                IntCritVals int_values,
+                FuncNodeFound &&found_case,
+                FuncNodeReject &&reject_case) const;
         };
 
         inline void generate() {}
 
         TreeStructureWalkerPolicy(
-            TreeStructure<u_morton> &str, u32 walker_count, InteractCrit &&crit
-        )
+            TreeStructure<u_morton> &str, u32 walker_count, InteractCrit &&crit)
             : tree_struct(str), walker_count(walker_count), crit(crit) {}
 
         inline Accessed get_access(sycl::handler &device_handle) {
@@ -146,25 +138,28 @@ template<class u_morton, class InteractCrit>
 template<class FuncNodeFound, class FuncNodeReject>
 inline void shamrock::tree::details::
     TreeStructureWalkerPolicy<shamrock::tree::Recompute, u_morton, InteractCrit>::Accessed::
-        for_each_node(sycl::item<1> id, IntCritVals int_values, FuncNodeFound &&found_case, FuncNodeReject &&reject_case)
-            const {
+        for_each_node(
+            sycl::item<1> id,
+            IntCritVals int_values,
+            FuncNodeFound &&found_case,
+            FuncNodeReject &&reject_case) const {
 
     u32 stack_cursor = tree_depth - 1;
     std::array<u32, tree_depth> id_stack;
 
-    //Should be unrequired considering the change made to the tree building
-    //if (one_cell_mode) {
+    // Should be unrequired considering the change made to the tree building
+    // if (one_cell_mode) {
     //
-    //    bool valid_root = InteractCrit::criterion(0, criterion_tree_f_acc, int_values);
+    //     bool valid_root = InteractCrit::criterion(0, criterion_tree_f_acc, int_values);
     //
-    //    if (valid_root) {
-    //        found_case(leaf_offset, 0);
-    //    } else {
-    //        reject_case(0);
-    //    }
+    //     if (valid_root) {
+    //         found_case(leaf_offset, 0);
+    //     } else {
+    //         reject_case(0);
+    //     }
     //
-    //    return;
-    //}
+    //     return;
+    // }
 
     id_stack[stack_cursor] = 0;
 
@@ -174,8 +169,7 @@ inline void shamrock::tree::details::
         id_stack[stack_cursor] = _nindex;
         stack_cursor++;
 
-        bool cur_id_valid =
-            InteractCrit::criterion(current_node_id, criterion_acc, int_values);
+        bool cur_id_valid = InteractCrit::criterion(current_node_id, criterion_acc, int_values);
 
         if (cur_id_valid) {
 

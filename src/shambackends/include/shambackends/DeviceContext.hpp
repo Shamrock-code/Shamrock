@@ -25,7 +25,7 @@ namespace sham {
      * object, as well as providing methods for accessing it.
      */
     class DeviceContext {
-    public:
+        public:
         /**
          * The device(s) associated with this context
          */
@@ -48,6 +48,5 @@ namespace sham {
          */
         explicit DeviceContext(std::shared_ptr<Device> device);
     };
-
 
 } // namespace sham

@@ -31,19 +31,19 @@ export PATH=/opt/openmpi_cuda/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/opt/openmpi_cuda/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```
 
-Now if you build shamrock you should see this mpi used. 
+Now if you build shamrock you should see this mpi used.
 
 To check run : `cmake .` in the build folder, the begining of the outputs contain the path to the MPI in use.
 
-Also when shamrock (or the tests) starts if MPI is CUDA aware during startup it should print : 
+Also when shamrock (or the tests) starts if MPI is CUDA aware during startup it should print :
 
 ```
------------------------------------------------------ 
-MPI status :  
- - MPI & SYCL init : Ok 
- - MPI CUDA-AWARE : Yes 
- - MPI ROCM-AWARE : Unknown 
- - MPI use Direct Comm : Yes 
- - MPI use Direct Comm : Working 
+-----------------------------------------------------
+MPI status :
+ - MPI & SYCL init : Ok
+ - MPI CUDA-AWARE : Yes
+ - MPI ROCM-AWARE : Unknown
+ - MPI use Direct Comm : Yes
+ - MPI use Direct Comm : Working
 -----------------------------------------------------
 ```

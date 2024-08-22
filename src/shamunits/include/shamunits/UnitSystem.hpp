@@ -156,7 +156,7 @@ namespace shamunits {
               m_inv(unit_length), kg_inv(unit_mass), A_inv(unit_current), K_inv(unit_temperature),
               mol_inv(unit_qte), cd_inv(unit_lumint) {}
 
-        #ifdef DOXYGEN
+#ifdef DOXYGEN
         /**
          * @brief get the value of a units in the current system
          * \todo better doc with exemple
@@ -167,7 +167,7 @@ namespace shamunits {
          */
         template<UnitPrefix pref = None, units::UnitName u, int power = 1>
         inline constexpr T get() const noexcept;
-        #else
+#else
 
         // clang-format off
         addget(second)    { return PREF* pow_constexpr<power>(s  , s_inv);   }
@@ -177,7 +177,7 @@ namespace shamunits {
         addget(Kelvin)    { return PREF* pow_constexpr<power>(K  , K_inv);   }
         addget(mole)      { return PREF* pow_constexpr<power>(mol, mol_inv); }
         addget(candela)   { return PREF* pow_constexpr<power>(cd , cd_inv);  }
-        
+
         addget(Hertz)   { return PREF* Uget(s, -1); }
         //addget(mps)     { return PREF* Uget(m, 1)       * Uget(s, -1); }
         addget(Newtown) { return PREF* Uget(kg, 1)      * Uget(m, 1)  * Uget(s, -2); }
@@ -198,7 +198,7 @@ namespace shamunits {
         addget(Gray)    { return PREF* Uget(m, 2)       *Uget(s, -2)  ; }
         addget(Sievert) { return PREF* Uget(m, 2)       *Uget(s, -2)  ; }
         addget(katal)   { return PREF* Uget(mol, 1)     *Uget(s, -1)  ; }
-        
+
 
         // alternative base units
         addget(minutes){ return PREF* Uget(s, 1) * Cget(Uconvert::mn_to_s, 1); }
@@ -219,8 +219,8 @@ namespace shamunits {
         // clang-format on
 
         /**
-         * @brief To the si units (convert a system unit to si ones). This function is the inverse of get
-         * \todo better doc with exemple
+         * @brief To the si units (convert a system unit to si ones). This function is the inverse
+         * of get \todo better doc with exemple
          * @tparam pref unit prefix (default to none)
          * @tparam u the units
          * @tparam power the power of the units (also applied to the prefix)

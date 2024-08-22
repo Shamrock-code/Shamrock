@@ -6,15 +6,12 @@
 //
 // -------------------------------------------------------//
 
+#include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtest/shamtest.hpp"
-
 #include <random>
 #include <vector>
-
-
-#include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
 
 /*
 Test_start("patchdata::", sync_patchdata_layout, -1) {
@@ -35,53 +32,43 @@ Test_start("patchdata::", sync_patchdata_layout, -1) {
 }
 */
 
-
-TestStart(Unittest,"patchdata::", send_recv_patchdata, 2){
+TestStart(Unittest, "patchdata::", send_recv_patchdata, 2) {
 
     using namespace shamrock::patch;
 
-    std::mt19937 eng(0x1111);  
-
+    std::mt19937 eng(0x1111);
 
     PatchDataLayout pdl;
 
     pdl.add_field<f32_3>("xyz", 1);
 
     pdl.add_field<f64_8>("test", 2);
-    
 
-
-
-    PatchData d1_check = patchdata_gen_dummy_data (pdl,eng);
-    PatchData d2_check = patchdata_gen_dummy_data (pdl,eng);
-
-
+    PatchData d1_check = patchdata_gen_dummy_data(pdl, eng);
+    PatchData d2_check = patchdata_gen_dummy_data(pdl, eng);
 
     std::vector<PatchDataMpiRequest> rq_lst;
     PatchData recv_d(pdl);
 
-    if(shamcomm::world_rank() == 0){
+    if (shamcomm::world_rank() == 0) {
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);
-        patchdata_irecv_probe(recv_d,rq_lst, 1, 0, MPI_COMM_WORLD);
+        patchdata_irecv_probe(recv_d, rq_lst, 1, 0, MPI_COMM_WORLD);
     }
 
-    if(shamcomm::world_rank() == 1){
+    if (shamcomm::world_rank() == 1) {
         patchdata_isend(d2_check, rq_lst, 0, 0, MPI_COMM_WORLD);
-        patchdata_irecv_probe(recv_d,rq_lst, 0, 0, MPI_COMM_WORLD);
+        patchdata_irecv_probe(recv_d, rq_lst, 0, 0, MPI_COMM_WORLD);
     }
 
     waitall_pdat_mpi_rq(rq_lst);
 
-    
-
-
-    if(shamcomm::world_rank() == 0){
-        shamtest::asserts().assert_bool("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
+    if (shamcomm::world_rank() == 0) {
+        shamtest::asserts().assert_bool(
+            "recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
-    if(shamcomm::world_rank() == 1){
-        shamtest::asserts().assert_bool("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
+    if (shamcomm::world_rank() == 1) {
+        shamtest::asserts().assert_bool(
+            "recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
-
-
 }

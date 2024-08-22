@@ -14,8 +14,8 @@
  * @brief
  */
 
-#include "shamalgs/numeric.hpp"
 #include "shambase/DistributedData.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shambackends/sycl.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
@@ -32,30 +32,26 @@ namespace shamrock::tree {
 
         u64 max_device_memsize;
         u64 current_device_memsize = 0;
-        u64 current_host_memsize = 0;
+        u64 current_host_memsize   = 0;
 
         public:
         ObjectCacheHandler(u64 max_memsize, std::function<ObjectCache(u64)> &&generator)
             : max_device_memsize(max_memsize), generator(generator) {}
 
         private:
-        inline bool offload_exist(u64 id){
-            return cache_offload.has_key(id);
-        }
+        inline bool offload_exist(u64 id) { return cache_offload.has_key(id); }
 
-        inline bool cache_entry_exist(u64 id){
-            return cache.has_key(id);
-        }
+        inline bool cache_entry_exist(u64 id) { return cache.has_key(id); }
 
-        inline ObjectCache pop_offload(u64 id){
+        inline ObjectCache pop_offload(u64 id) {
             ObjectCache tmp = ObjectCache::build_from_host(cache_offload.get(id));
             cache_offload.erase(id);
             current_host_memsize -= tmp.get_memsize();
             return tmp;
         }
 
-        inline HostObjectCache pop_cache(u64 id){
-            ObjectCache & tmp = cache.get(id);
+        inline HostObjectCache pop_cache(u64 id) {
+            ObjectCache &tmp = cache.get(id);
 
             HostObjectCache ret = tmp.copy_to_host();
 
@@ -63,34 +59,31 @@ namespace shamrock::tree {
             cache.erase(id);
 
             return ret;
-
         }
 
-        inline void push_offload(u64 id,HostObjectCache && c){
+        inline void push_offload(u64 id, HostObjectCache &&c) {
             current_host_memsize += c.get_memsize();
             cache_offload.add_obj(id, std::forward<HostObjectCache>(c));
         }
 
-        inline void push_cache(u64 id,ObjectCache && c){
+        inline void push_cache(u64 id, ObjectCache &&c) {
             current_device_memsize += c.get_memsize();
             cache.add_obj(id, std::forward<ObjectCache>(c));
             last_device_builds.push_back(id);
         }
-        
 
-        inline void offload_entry(u64 id){
+        inline void offload_entry(u64 id) {
             HostObjectCache tmp = pop_cache(id);
             push_offload(id, std::move(tmp));
         }
 
-        inline ObjectCache load_or_build_cache(u64 id){
-            if(cache_offload.has_key(id)){
+        inline ObjectCache load_or_build_cache(u64 id) {
+            if (cache_offload.has_key(id)) {
                 return pop_offload(id);
-            }else{
+            } else {
                 return generator(id);
             }
         }
-
 
         /**
          * @brief pop oldest entry in the cache
@@ -114,13 +107,14 @@ namespace shamrock::tree {
                     offload_entry(last_id);
 
                     successfull_pop = true;
-                    logger::debug_ln("ObjectCacheHandler",
-                                     "offloaded cache for id =",
-                                     last_id,
-                                     "cachesize =",
-                                     shambase::readable_sizeof(current_device_memsize),
-                                     "hostsize =",
-                                     shambase::readable_sizeof(current_host_memsize));
+                    logger::debug_ln(
+                        "ObjectCacheHandler",
+                        "offloaded cache for id =",
+                        last_id,
+                        "cachesize =",
+                        shambase::readable_sizeof(current_device_memsize),
+                        "hostsize =",
+                        shambase::readable_sizeof(current_host_memsize));
                 }
 
             } while (!successfull_pop);
@@ -146,7 +140,6 @@ namespace shamrock::tree {
         }
 
         public:
-
         /**
          * @brief build a new entry in the cache and free enough
          * entry to make space for it if necessary
@@ -165,25 +158,23 @@ namespace shamrock::tree {
                         "their no space left to allocate a cache, try with smaller objects, or "
                         "increase the size limit");
                 }
-                logger::warn_ln("ObjectCacheHandler",
-                                "The cache is too small, or the objects too big, some caches will "
-                                "have to be recomputed on the fly");
+                logger::warn_ln(
+                    "ObjectCacheHandler",
+                    "The cache is too small, or the objects too big, some caches will "
+                    "have to be recomputed on the fly");
                 offload_oldest();
             }
 
             push_new(id, std::move(new_cache));
-            logger::debug_ln("ObjectCacheHandler",
-                             "built cache for id =",
-                             id,
-                             "cachesize =",
-                             shambase::readable_sizeof(current_device_memsize),
-                             "hostsize =",
-                             shambase::readable_sizeof(current_host_memsize));
+            logger::debug_ln(
+                "ObjectCacheHandler",
+                "built cache for id =",
+                id,
+                "cachesize =",
+                shambase::readable_sizeof(current_device_memsize),
+                "hostsize =",
+                shambase::readable_sizeof(current_host_memsize));
         }
-
-
-
-
 
         /**
          * @brief Get a cache entry and build it if it is not already in the cache
@@ -200,16 +191,14 @@ namespace shamrock::tree {
             }
         }
 
-        inline void preload(u64 id){
-            get_cache(id);
-        }
+        inline void preload(u64 id) { get_cache(id); }
 
         inline void reset() {
             last_device_builds.clear();
             cache.reset();
             cache_offload.reset();
             current_device_memsize = 0;
-            current_host_memsize = 0;
+            current_host_memsize   = 0;
         }
     };
 

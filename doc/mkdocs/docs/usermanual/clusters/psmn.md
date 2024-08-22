@@ -1,6 +1,6 @@
 # PSMN guide
 
-Sorry if this is complicated but the PSMN does not really help the process, sadly ... 
+Sorry if this is complicated but the PSMN does not really help the process, sadly ...
 It is definitely harder than on most clusters out there
 
 ## Getting a copy of shamrock on the PSMN
@@ -20,21 +20,21 @@ Now log on the psmn :
 ```bash
 ssh <psmn username>@allo-psmn
 ```
-And untar shamrock : 
+And untar shamrock :
 ```bash
 tar -xvf Shamrock.tar.gz
 ```
 
 ## Setup of the enviroment
 
-Ok now we are getting into the tricky part, there is multiple steps : 
+Ok now we are getting into the tricky part, there is multiple steps :
 
  - Compiler toolchain setup (LLVM 17)
  - boost setup
  - Adaptive Cpp setup
  - Shamrock setup
 
-First log on a compilation node (ex : `ssh s92node0` for cascade lake) : 
+First log on a compilation node (ex : `ssh s92node0` for cascade lake) :
 
 ```bash
 ssh <compilation node>
@@ -56,7 +56,7 @@ module load Boost/1.77.0-GCC-11.2.0
 
 ### LLVM 17
 
-Trust me bro moment, just run this : 
+Trust me bro moment, just run this :
 ```bash
 cd $HOME
 
@@ -78,23 +78,23 @@ cmake \
 make -j install
 ```
 
-### ShamrockWorkspace 
+### ShamrockWorkspace
 
 ```bash
 git clone https://github.com/Shamrock-code/ShamrockWorkspace.git
 ```
 
-cd into it : 
+cd into it :
 ```bash
 cd ShamrockWorkspace
 ```
 
-activate it to register some script binary in the path : 
+activate it to register some script binary in the path :
 ```bash
 source activate
 ```
 
-then run this : 
+then run this :
 ```bash
 cd $HOME/ShamrockWorkspace/sycl_compiler_gits
 git clone https://github.com/AdaptiveCpp/AdaptiveCpp.git
@@ -130,7 +130,7 @@ mv $HOME/Shamrock $HOME/ShamrockWorkspace
 
 ### Configure shamrock
 
-Because of the PSMN weirdness we have to use a weird config : 
+Because of the PSMN weirdness we have to use a weird config :
 ```bash
 python3 Shamrock/buildbot/configure.py --gen make --tests --build release \
     --builddir Shamrock/build_config/acpp_omp_release \
@@ -154,15 +154,15 @@ export omp path :
 export LD_LIBRARY_PATH=$HOME/llvm-17.x-local/lib:$LD_LIBRARY_PATH
 ```
 
-run the tests : 
+run the tests :
 ```bash
 ./shamrock_test --sycl-cfg 0:0
 ```
 
 
-## Slurm scripts : 
+## Slurm scripts :
 
-Slurm script exemple : 
+Slurm script exemple :
 
 ```bash linenums="1" title="slurm_script"
 #!/bin/bash

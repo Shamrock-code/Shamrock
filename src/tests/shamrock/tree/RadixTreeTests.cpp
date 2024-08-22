@@ -13,8 +13,6 @@
 
 TestStart(Unittest, "shamrock/tree/RadixTree::serialize", testradixtreeserialize, 1) {
 
-
-
     u32 cnt = 1000;
     shammath::CoordRange<f32_3> range_coord{f32_3{0, 0, 0}, f32_3{1, 1, 1}};
 
@@ -24,11 +22,7 @@ TestStart(Unittest, "shamrock/tree/RadixTree::serialize", testradixtreeserialize
 
     using u_morton = u32;
 
-    RadixTree<u_morton, f32_3> tree (
-        q, 
-        {range_coord.lower, range_coord.upper},
-        buf, 
-        cnt, 0);
+    RadixTree<u_morton, f32_3> tree(q, {range_coord.lower, range_coord.upper}, buf, cnt, 0);
 
     shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(tree.serialize_byte_size());
@@ -37,11 +31,11 @@ TestStart(Unittest, "shamrock/tree/RadixTree::serialize", testradixtreeserialize
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
+        shamalgs::SerializeHelper ser2(
+            shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
         RadixTree<u_morton, f32_3> outser = RadixTree<u_morton, f32_3>::deserialize(ser2);
 
         shamtest::asserts().assert_bool("input match out", outser == tree);
     }
-
 }

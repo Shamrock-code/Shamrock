@@ -17,7 +17,7 @@ NVIDIA_ARCH_DESC = {
     "sm_87" : "Nvidia Ampere: Jetson AGX Orin and Drive AGX Orin only",
 
     "sm_89" : "Nvidia Ada Lovelace: NVIDIA GeForce RTX 4090, RTX 4080, RTX 6000 Ada, Tesla L40, L40s Ada, L4 Ada",
-    
+
     "sm_90" : "Nvidia Hopper: NVIDIA H100 (GH100), NVIDIA H200",
     "sm_90a" : "Nvidia Hopper: NVIDIA H100 (GH100), NVIDIA H200 (for PTX ISA version 8.0)",
 

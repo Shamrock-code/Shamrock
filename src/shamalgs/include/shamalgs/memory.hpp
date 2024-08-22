@@ -12,7 +12,7 @@
  * @file memory.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief main include file for memory algorithms
- * 
+ *
  */
 
 #include <shamalgs/details/memory/memory.hpp>

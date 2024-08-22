@@ -22,7 +22,7 @@ def load_file(fname):
     f = open(fname,'r')
     source = f.read()
     f.close()
-    return source 
+    return source
 
 dic = []
 

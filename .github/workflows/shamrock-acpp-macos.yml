@@ -3,7 +3,7 @@ name: Acpp/ Apple clang (Macos)
 
 on:
   workflow_call:
-  
+
   #push:
   #  branches: [ "main" ]
 
@@ -20,7 +20,7 @@ jobs:
   shamrock_acpp:
     name: AdaptiveCpp macos
     runs-on: macos-latest
-  
+
     timeout-minutes: 60
     steps:
       #### Checkout part ####
@@ -44,9 +44,9 @@ jobs:
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
-  
+
       - name: ls local
         run : ls -la
 
@@ -61,8 +61,8 @@ jobs:
           set -e
 
       - name: Setup env
-        run : ./env/new-env --machine macos-generic.acpp --builddir build -- 
-  
+        run : ./env/new-env --machine macos-generic.acpp --builddir build --
+
       - name: Configure
         run: |
           cd build
@@ -82,17 +82,17 @@ jobs:
         run: |
           cd build
           ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-  
+
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
           mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-      
+
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
           mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-  
+
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build

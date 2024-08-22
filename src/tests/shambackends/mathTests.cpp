@@ -6,22 +6,18 @@
 //
 // -------------------------------------------------------//
 
-
+#include "shambackends/math.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shambackends/math.hpp"
 
-TestStart(Unittest, "shambackends/math.hpp:roundup_pow2_clz", shambackendsmathroundup_pow2_clz, 1){
+TestStart(Unittest, "shambackends/math.hpp:roundup_pow2_clz", shambackendsmathroundup_pow2_clz, 1) {
 
-    _AssertEqual(sham::roundup_pow2_clz<u32>(0) , 1)
-    _AssertEqual(sham::roundup_pow2_clz<u32>(1) , 1)
-    _AssertEqual(sham::roundup_pow2_clz<u32>(2) , 2)
-    _AssertEqual(sham::roundup_pow2_clz<u32>(3) , 4)
+    _AssertEqual(sham::roundup_pow2_clz<u32>(0), 1) _AssertEqual(sham::roundup_pow2_clz<u32>(1), 1)
+        _AssertEqual(sham::roundup_pow2_clz<u32>(2), 2)
+            _AssertEqual(sham::roundup_pow2_clz<u32>(3), 4)
 
-
-    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483647) , 2147483648)
-    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483648) , 2147483648)
-    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483649) , 0)
-    _AssertEqual(sham::roundup_pow2_clz<u32>(4294967295) , 0)
-
+                _AssertEqual(sham::roundup_pow2_clz<u32>(2147483647), 2147483648)
+                    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483648), 2147483648)
+                        _AssertEqual(sham::roundup_pow2_clz<u32>(2147483649), 0)
+                            _AssertEqual(sham::roundup_pow2_clz<u32>(4294967295), 0)
 }

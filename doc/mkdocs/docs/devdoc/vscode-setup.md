@@ -5,7 +5,7 @@
 We assume in this guide that you have clonned the repository.
 In order for this to work you need to have a build directory in the root folder named `build`, otherwise vscode will crap itself because it does not understand build directories not named build ...
 
-In summary we assume the following commands 
+In summary we assume the following commands
 
 ```bash
 git clone --recurse-submodules git@github.com:tdavidcl/Shamrock.git
@@ -24,7 +24,7 @@ Many flavors of VScode are available. Either the spyware version [VScode](https:
 
 In the `Shamrock` folder run either `code` (how can microsoft reserve such command name btw !!!) or `codium` to start the IDE in the corect folder.
 
-Initially you should see something like this 
+Initially you should see something like this
 
 ![VScode blank](../assets/figures/vscode/vscode_blank.png)
 
@@ -38,7 +38,7 @@ Select your options to create the profile and click on `Create`
 ![VScode blank](../assets/figures/vscode/create_profile2.png)
 
 Now that you have created a profile, go to the extension tab,
-![VScode blank](../assets/figures/vscode/go_to_ext.png) 
+![VScode blank](../assets/figures/vscode/go_to_ext.png)
 and install the `clangd` C++ language server to get autocompletion and syntax highlight/checking.
 ![VScode blank](../assets/figures/vscode/install_clangd.png)
 
@@ -48,4 +48,4 @@ Clangd will be looking at the file `build/compile_commands.json` from the root d
 You can now go on the menu bar in the terminal tab and open a new terminal and you can start working normally.
 ![VScode blank](../assets/figures/vscode/compile.png)
 
-You can then install whatever VSCode extensions of your liking, just avoid any intelisense c++ extensions as they conflict with Clangd (which is arguably better btw 😄). 
+You can then install whatever VSCode extensions of your liking, just avoid any intelisense c++ extensions as they conflict with Clangd (which is arguably better btw 😄).

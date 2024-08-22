@@ -11,15 +11,14 @@
 /**
  * @file groupReduction.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shamalgs/memory.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
-#include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
 
 template<class T, u32 work_group_size>
@@ -64,15 +63,11 @@ struct _tmp_min {
 #ifdef SYCL_COMP_SYCLUNKNOWN
 template<typename T = void>
 struct _tmp_max {
-    inline T operator()(const T &lhs, const T &rhs) const {
-        return sham::max(lhs, rhs);
-    }
+    inline T operator()(const T &lhs, const T &rhs) const { return sham::max(lhs, rhs); }
 };
 template<typename T = void>
 struct _tmp_min {
-    inline T operator()(const T &lhs, const T &rhs) const {
-        return sham::max(lhs, rhs);
-    }
+    inline T operator()(const T &lhs, const T &rhs) const { return sham::max(lhs, rhs); }
 };
     #define SYCL_SUM_OP                                                                            \
         sycl::plus<T> {}
@@ -95,10 +90,8 @@ namespace shamalgs::reduction::details {
     };
 
     template<class T, u32 work_group_size>
-    inline T GroupReduction<T, work_group_size>::sum(sycl::queue &q,
-                                                     sycl::buffer<T> &buf1,
-                                                     u32 start_id,
-                                                     u32 end_id) {
+    inline T GroupReduction<T, work_group_size>::sum(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
         u32 len = end_id - start_id;
 
         sycl::buffer<T> buf_int(len);
@@ -127,10 +120,11 @@ namespace shamalgs::reduction::details {
                         u64 iread  = gid * slice_read_size;
                         u64 iwrite = group_tile_id * slice_write_size;
 
-                        T val_read = (iread < max_id) ? global_mem[iread] : shambase::VectorProperties<T>::get_zero();
+                        T val_read = (iread < max_id) ? global_mem[iread]
+                                                      : shambase::VectorProperties<T>::get_zero();
 
-                        T local_red =
-                            sycl::reduce_over_group(item.get_group(), val_read, SYCL_SUM_OP);
+                        T local_red
+                            = sycl::reduce_over_group(item.get_group(), val_read, SYCL_SUM_OP);
 
                         // can be removed if i change the index in the look back ?
                         if (lid == 0) {
@@ -179,10 +173,8 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T, u32 work_group_size>
-    inline T GroupReduction<T, work_group_size>::min(sycl::queue &q,
-                                                     sycl::buffer<T> &buf1,
-                                                     u32 start_id,
-                                                     u32 end_id) {
+    inline T GroupReduction<T, work_group_size>::min(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
         u32 len = end_id - start_id;
 
         sycl::buffer<T> buf_int(len);
@@ -214,8 +206,8 @@ namespace shamalgs::reduction::details {
                         T val_read = (iread < max_id) ? global_mem[iread]
                                                       : shambase::VectorProperties<T>::get_max();
 
-                        T local_red =
-                            sycl::reduce_over_group(item.get_group(), val_read, SYCL_MIN_OP);
+                        T local_red
+                            = sycl::reduce_over_group(item.get_group(), val_read, SYCL_MIN_OP);
 
                         // can be removed if i change the index in the look back ?
                         if (lid == 0) {
@@ -264,10 +256,8 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T, u32 work_group_size>
-    inline T GroupReduction<T, work_group_size>::max(sycl::queue &q,
-                                                     sycl::buffer<T> &buf1,
-                                                     u32 start_id,
-                                                     u32 end_id) {
+    inline T GroupReduction<T, work_group_size>::max(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
         u32 len = end_id - start_id;
 
         sycl::buffer<T> buf_int(len);
@@ -299,8 +289,8 @@ namespace shamalgs::reduction::details {
                         T val_read = (iread < max_id) ? global_mem[iread]
                                                       : shambase::VectorProperties<T>::get_min();
 
-                        T local_red =
-                            sycl::reduce_over_group(item.get_group(), val_read, SYCL_MAX_OP);
+                        T local_red
+                            = sycl::reduce_over_group(item.get_group(), val_read, SYCL_MAX_OP);
 
                         // can be removed if i change the index in the look back ?
                         if (lid == 0) {

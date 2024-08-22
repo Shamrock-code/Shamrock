@@ -7,7 +7,7 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-    
+
 jobs:
   shamrock_dpcpp_nativecpu:
     name: DPCPP Native CPU
@@ -15,11 +15,11 @@ jobs:
 
     container:
       image: ghcr.io/shamrock-code/ci-ubuntu20cuda11dpcpp:main
-      
+
 
     #for now this is quite buggy
     if: false
-    
+
     steps:
 
       #### Checkout part ####
@@ -43,13 +43,13 @@ jobs:
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
       - name : Check binary
         run: |
           /home/docker/compilers/DPCPP/bin/clang++ --version
-      
+
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
@@ -75,14 +75,14 @@ jobs:
 
     container:
       image: ghcr.io/shamrock-code/ci-ubuntu20cuda11dpcpp:main
-      
+
 
     strategy:
       matrix:
         cuda: [11.0.2]
-    
+
     steps:
-    
+
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
       - name : Reconfigure git
@@ -104,7 +104,7 @@ jobs:
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
       - name : Check binary
@@ -147,13 +147,13 @@ jobs:
 
     container:
       image: ghcr.io/shamrock-code/ci-ubuntu20rocm543dpcpp:main
-      
+
     strategy:
       matrix:
         rocm: [5.4.3]
-    
+
     steps:
-    
+
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
       - name : Reconfigure git
@@ -175,14 +175,14 @@ jobs:
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
       - name : Check binary
         run: |
           /home/docker/compilers/DPCPP/bin/clang++ --version
 
-      
+
       - name: configure Shamrock
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \

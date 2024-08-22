@@ -9,7 +9,7 @@ class VariantContainer {
 }
 ```
 
-Such Variant container can be used as such 
+Such Variant container can be used as such
 
 ```cpp
 template<class T>
@@ -20,7 +20,7 @@ struct Field{
 using VariantField = VariantContainer<Field>;
 ```
 
-here VariantField is equivalent to a type like this : 
+here VariantField is equivalent to a type like this :
 
 ```cpp
 class VariantField {
@@ -61,9 +61,9 @@ void func(){
 }
 ```
 
-since this if is marked as `constexpr` it will be evaluated at compile time, even without optimisation: 
+since this if is marked as `constexpr` it will be evaluated at compile time, even without optimisation:
 
-For `clang 13.0.1` without any flags : 
+For `clang 13.0.1` without any flags :
 
 ```x86asm
 func():                               # @func()

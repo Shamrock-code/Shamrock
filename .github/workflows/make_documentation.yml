@@ -16,9 +16,9 @@ jobs:
 
     container:
       image: ghcr.io/shamrock-code/ci-ubuntu-latest:main
-      
+
     steps:
-      
+
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
       - name : Reconfigure git
@@ -40,12 +40,12 @@ jobs:
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.10' 
+          python-version: '3.10'
 
       - name: pip install packages (Jupyter book)
         run: pip install -U jupyter-book sphinx_proof matplotlib numpy

@@ -11,12 +11,12 @@
 /**
  * @file DynamicIdGenerator.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shamalgs/memory.hpp"
+
 #include "shambase/integer.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambackends/sycl.hpp"
 
 namespace shamalgs::atomic {
@@ -27,7 +27,7 @@ namespace shamalgs::atomic {
      * The goal is to affect each worker with a unique id in growing order,
      * e.g. worker group 2 can not start if worker group 1 is not started
      * The performance overhead is minimal (10^-11 s/element on A100)
-     * 
+     *
      * \todo add figure for overhead measurment
      *
      * Exemple :
@@ -87,13 +87,13 @@ namespace shamalgs::atomic {
 
         sycl::local_accessor<int_t, 1> local_group_id;
 
-        inline AccessedDynamicIdGenerator(sycl::handler &cgh,
-                                          DynamicIdGenerator<int_t, group_size> &gen)
+        inline AccessedDynamicIdGenerator(
+            sycl::handler &cgh, DynamicIdGenerator<int_t, group_size> &gen)
             : group_id{gen.group_id, cgh, sycl::read_write}, local_group_id(1, cgh) {}
 
         /**
          * @brief compute the local ids and return the result `DynamicId`
-         * 
+         *
          * @param it the nd_item given by SYCL
          * @return DynamicId<int_t> the dynamic id
          */
@@ -104,10 +104,11 @@ namespace shamalgs::atomic {
 
             if (ret.is_main_thread) {
 
-                sycl::atomic_ref<int_t,
-                                 sycl::memory_order_relaxed,
-                                 sycl::memory_scope_device,
-                                 sycl::access::address_space::global_space>
+                sycl::atomic_ref<
+                    int_t,
+                    sycl::memory_order_relaxed,
+                    sycl::memory_scope_device,
+                    sycl::access::address_space::global_space>
                     atomic_group_id(group_id[0]);
 
                 ret.dyn_group_id  = atomic_group_id.fetch_add(1);

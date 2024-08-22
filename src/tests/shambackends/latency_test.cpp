@@ -8,13 +8,11 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
-
 #include "shambackends/sycl.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
-
 #include <memory>
 #include <vector>
 
@@ -171,33 +169,28 @@ f64 test_buffer_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_
     return timer.elasped_sec();
 }
 
-
-
 f64 test_usm_in_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
 
     StackEntry stack_loc{};
 
-    
     sycl::queue q = sycl::queue{
         shamsys::instance::get_compute_scheduler().ctx->ctx,
         shamsys::instance::get_compute_scheduler().ctx->device->dev,
         sycl::property::queue::in_order{}};
 
-    std::vector<f64*> bufs{};
+    std::vector<f64 *> bufs{};
 
     // allocate and init
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
-        f64* buf = sycl::malloc_device<f64>(buf_size, q);
+        f64 *buf = sycl::malloc_device<f64>(buf_size, q);
 
         q.submit([&](sycl::handler &cgh) {
+             cgh.parallel_for(sycl::range<1>{buf_size}, [=](sycl::item<1> id) {
+                 u32 gid = id.get_linear_id();
 
-                cgh.parallel_for(sycl::range<1>{buf_size}, [=](sycl::item<1> id) {
-                    u32 gid = id.get_linear_id();
-
-                    buf[gid] = gid;
-                });
-            })
-            .wait();
+                 buf[gid] = gid;
+             });
+         }).wait();
 
         bufs.push_back(std::move(buf));
     }
@@ -207,9 +200,8 @@ f64 test_usm_in_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
 
     for (u32 irepeat = 0; irepeat < repeat_count; irepeat++) {
         for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
-            f64* buf = bufs[ibuf];
+            f64 *buf = bufs[ibuf];
             q.submit([&](sycl::handler &cgh) {
-
                 cgh.parallel_for(sycl::range<1>{buf_size}, [=](sycl::item<1> id) {
                     u32 gid = id.get_linear_id();
 
@@ -223,7 +215,7 @@ f64 test_usm_in_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
     timer.end();
 
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
-        f64* buf = bufs[ibuf];
+        f64 *buf = bufs[ibuf];
         sycl::free(buf, q);
     }
     return timer.elasped_sec();
@@ -241,15 +233,14 @@ f64 test_usm_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_cou
             sycl::property::queue::in_order{}}));
     }
 
-    std::vector<f64*> bufs{};
+    std::vector<f64 *> bufs{};
 
     // allocate and init
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
-        f64* buf = sycl::malloc_device<f64>(buf_size, *queues[ibuf]);
+        f64 *buf = sycl::malloc_device<f64>(buf_size, *queues[ibuf]);
 
         queues[ibuf]
             ->submit([&](sycl::handler &cgh) {
-
                 cgh.parallel_for(sycl::range<1>{buf_size}, [=](sycl::item<1> id) {
                     u32 gid = id.get_linear_id();
 
@@ -266,9 +257,8 @@ f64 test_usm_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_cou
 
     for (u32 irepeat = 0; irepeat < repeat_count; irepeat++) {
         for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
-            f64* buf = bufs[ibuf];
+            f64 *buf = bufs[ibuf];
             queues[ibuf]->submit([&](sycl::handler &cgh) {
-
                 cgh.parallel_for(sycl::range<1>{buf_size}, [=](sycl::item<1> id) {
                     u32 gid = id.get_linear_id();
 
@@ -284,7 +274,7 @@ f64 test_usm_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_cou
     timer.end();
 
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
-        f64* buf = bufs[ibuf];
+        f64 *buf = bufs[ibuf];
         sycl::free(buf, *queues[ibuf]);
     }
     return timer.elasped_sec();

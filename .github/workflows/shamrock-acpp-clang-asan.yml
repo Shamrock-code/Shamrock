@@ -33,7 +33,7 @@ jobs:
       # Checkout merge commit if PR otherwise default
       - name : Reconfigure git
         run:  |
-          git config --global --add safe.directory '*'
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config --global --list
       - uses: actions/checkout@v4
         if: github.event_name == 'pull_request_target'
@@ -96,16 +96,16 @@ jobs:
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --allow-run-as-root -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
       
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --allow-run-as-root --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
   
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --allow-run-as-root --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
 

@@ -32,7 +32,7 @@ jobs:
       # Checkout merge commit if PR otherwise default
       - name : Reconfigure git
         run:  |
-          git config --global --add safe.directory '*'
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config --global --list
       - uses: actions/checkout@v4
         if: github.event_name == 'pull_request_target'

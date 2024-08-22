@@ -60,7 +60,7 @@ jobs:
       # Checkout merge commit if PR otherwise default
       - name : Reconfigure git
         run:  |
-          git config --global --add safe.directory '*'
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git config --global --list
       - uses: actions/checkout@v4
         if: github.event_name == 'pull_request_target'
@@ -138,16 +138,16 @@ jobs:
         if: matrix.runtest
         run: |
           cd build
-          mpirun -n 2 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root -n 2 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
       
       - name: run Shamrock Unittests world_size = 3
         if: matrix.runtest
         run: |
           cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root --oversubscribe -n 3 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
   
       - name: run Shamrock Unittests world_size = 4
         if: matrix.runtest
         run: |
           cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi

@@ -2,8 +2,10 @@ repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
   rev: v4.4.0
   hooks:
-  #- id: trailing-whitespace 
-  #- id: end-of-file-fixer  # add EOF "\n" if missing
+  - id: trailing-whitespace
+    log_file: log_precommit_trailing-whitespace
+  - id: end-of-file-fixer  # add EOF "\n" if missing
+    log_file: log_precommit_end-of-file-fixer
   - id: check-merge-conflict
     log_file: log_precommit_check-merge-conflict
 
@@ -14,7 +16,7 @@ repos:
     log_file: log_precommit_check-shebang-scripts-are-executable
 
   - id: check-added-large-files
-    args: ['--maxkb=50'] 
+    args: ['--maxkb=50']
     log_file: log_precommit_check-added-large-files
 
   - id: check-case-conflict
@@ -25,7 +27,7 @@ repos:
   - id: check-yaml
     args: [--unsafe]
     log_file: log_precommit_check-yaml
-    
+
   - id: detect-private-key
     log_file: log_precommit_detect-private-key
 
@@ -60,11 +62,13 @@ repos:
 
 
 # Clang format the codebase automatically
-#- repo: https://github.com/pre-commit/mirrors-clang-format
-#  rev: "v18.1.8"
-#  hooks:
-#  - id: clang-format
-#    types_or: [c++, c, cuda]
+- repo: https://github.com/pre-commit/mirrors-clang-format
+  rev: "v18.1.8"
+  hooks:
+  - id: clang-format
+    types_or: [c++, c, cuda]
+    log_file: log_precommit_clang-format
+
 
 - repo: local
   hooks:

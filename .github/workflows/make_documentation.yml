@@ -15,11 +15,16 @@ jobs:
     runs-on: [self-hosted,  docker-runner]
 
     container:
-      image: ghcr.io/shamrock-code/ci-ubuntu20:main
+      image: ghcr.io/shamrock-code/ci-ubuntu-latest:main
       
     steps:
+      
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
       - uses: actions/checkout@v4
         if: github.event_name == 'pull_request_target'
         with:

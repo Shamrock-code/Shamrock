@@ -115,7 +115,7 @@ jobs:
         run: |
           python3 buildbot/configure.py --gen ninja --tests --build release \
             --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile cuda \
-            --cxxflags="--cuda-path=/home/docker/opt/cuda" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
+            --cxxflags="--cuda-path=/opt/cuda" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
 
       - name: Pull reference files
         run: |

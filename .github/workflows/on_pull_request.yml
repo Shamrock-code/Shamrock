@@ -78,18 +78,20 @@ jobs:
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
       - uses: actions/checkout@v4
         if: github.event_name == 'pull_request_target'
         with:
           fetch-depth: 0
-          submodules: recursive
           ref: "refs/pull/${{ github.event.number }}/merge"
 
       - uses: actions/checkout@v4
         if: github.event_name != 'pull_request_target'
         with:
           fetch-depth: 0
-          submodules: recursive
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'

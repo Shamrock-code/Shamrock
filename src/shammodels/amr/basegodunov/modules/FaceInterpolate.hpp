@@ -49,6 +49,8 @@ namespace shammodels::basegodunov::modules {
         void interpolate_rho_to_face();
         void interpolate_v_to_face();
         void interpolate_P_to_face();
+        void interpolate_rho_dust_to_face();
+        void interpolate_v_dust_to_face();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

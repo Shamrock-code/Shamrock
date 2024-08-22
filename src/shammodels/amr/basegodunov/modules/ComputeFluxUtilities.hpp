@@ -25,7 +25,7 @@
 #include <string>
 
 
-
+namespace {
  using  RiemannSolverMode     = shammodels::basegodunov::RiemmanSolverMode;
  using  DustRiemannSolverMode = shammodels::basegodunov::DustRiemannSolverMode;
  using  Direction             = shammodels::basegodunov::modules::Direction;
@@ -207,7 +207,7 @@ void dust_compute_fluxes_dir(
     sycl::buffer<std::array<Tscal, 2>> &rho_dust_dir,
     sycl::buffer<std::array<Tvec,2>> &vel_dust_dir,
     sycl::buffer<Tscal> &flux_rho_dust_dir,
-    sycl::buffer<Tvec> &flux_rhov_dust_dir) {
+    sycl::buffer<Tvec> &flux_rhov_dust_dir, u32 nvar) {
 
         using d_Flux = DustFluxCompute<Tvec, mode, dir>;
         std::string flux_name = (mode == DustRiemannSolverMode::DHLL) ? "dust hll flux " : "dust huang-bai flux ";
@@ -226,6 +226,7 @@ void dust_compute_fluxes_dir(
         std::string cur_direction = get_dir_name();
         std::string kernel_name = (std::string)"compute " + flux_name + cur_direction;
         const char* _kernel_name = kernel_name.c_str();
+        
 
         q.submit([&](sycl::handler &cgh) {
             sycl::accessor rho_dust{rho_dust_dir, cgh, sycl::read_only};
@@ -233,8 +234,10 @@ void dust_compute_fluxes_dir(
 
             sycl::accessor flux_rho_dust{flux_rho_dust_dir, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor flux_rhov_dust{flux_rhov_dust_dir, cgh, sycl::write_only, sycl::no_init};
+            
+            u32 ndust = nvar;
+            shambase::parralel_for(cgh, ndust *link_count, _kernel_name, [=](u32 id_a) {
 
-            shambase::parralel_for(cgh, link_count, _kernel_name, [=](u32 id_a) {
                 auto rho_ij = rho_dust[id_a];
                 auto vel_ij = vel_dust[id_a];
 
@@ -249,3 +252,4 @@ void dust_compute_fluxes_dir(
             });
         });
     }
+}

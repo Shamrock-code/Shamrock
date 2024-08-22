@@ -536,14 +536,13 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
         StackEntry stack_loc{};
 
         using MergedPDat = shamrock::MergedPatchData;
-
+        u32  ndust = solver_config.dust_config.ndust;
         shamrock::SchedulerUtility utility(scheduler());
         shamrock::ComputeField<Tvec> result
-            = utility.make_compute_field<Tvec>("gradient rho dust", AMRBlock::block_size, [&](u64 id) {
+            = utility.make_compute_field<Tvec>("gradient rho dust", ndust*AMRBlock::block_size, [&](u64 id) {
                 return storage.merged_patchdata_ghost.get().get(id).total_elements;
             });
 
-        u32  ndust = solver_config.dust_config.ndust;
         shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
         u32 irho_dust_ghost                            = ghost_layout.get_field_idx<Tscal>("rho_dust", ndust);
 
@@ -632,18 +631,19 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
     StackEntry stack_loc{};
 
     using MergedPDat = shamrock::MergedPatchData;
+    u32  ndust = solver_config.dust_config.ndust;
 
     shamrock::SchedulerUtility utility(scheduler());
     shamrock::ComputeField<Tvec> resultx
-        = utility.make_compute_field<Tvec>("gradient dx v dust", AMRBlock::block_size, [&](u64 id) {
+        = utility.make_compute_field<Tvec>("gradient dx v dust", ndust*AMRBlock::block_size, [&](u64 id) {
               return storage.merged_patchdata_ghost.get().get(id).total_elements;
           });
     shamrock::ComputeField<Tvec> resulty
-        = utility.make_compute_field<Tvec>("gradient dy v dust", AMRBlock::block_size, [&](u64 id) {
+        = utility.make_compute_field<Tvec>("gradient dy v dust", ndust*AMRBlock::block_size, [&](u64 id) {
               return storage.merged_patchdata_ghost.get().get(id).total_elements;
           });
     shamrock::ComputeField<Tvec> resultz
-        = utility.make_compute_field<Tvec>("gradient dz v dust", AMRBlock::block_size, [&](u64 id) {
+        = utility.make_compute_field<Tvec>("gradient dz v dust", ndust*AMRBlock::block_size, [&](u64 id) {
               return storage.merged_patchdata_ghost.get().get(id).total_elements;
           });
 
@@ -675,8 +675,6 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
         sycl::buffer<Tvec> &cell0block_aabb_lower
             = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
         
-        u32  ndust = solver_config.dust_config.ndust;
-
         q.submit([&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};

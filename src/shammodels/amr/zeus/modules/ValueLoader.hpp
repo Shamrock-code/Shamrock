@@ -11,10 +11,10 @@
 /**
  * @file ValueLoader.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/vec.hpp"
 #include "shammodels/amr/zeus/Solver.hpp"
 #include "shammodels/amr/zeus/modules/SolverStorage.hpp"
@@ -52,7 +52,9 @@ namespace shammodels::zeus::modules {
             std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name);
 
         shamrock::ComputeField<T> load_value_with_gz(
-            shamrock::ComputeField<T> & compute_field, std::array<Tgridscal, dim> offset, std::string result_name);
+            shamrock::ComputeField<T> &compute_field,
+            std::array<Tgridscal, dim> offset,
+            std::string result_name);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
@@ -217,7 +219,5 @@ namespace shammodels::zeus::modules {
             sycl::buffer<T> &src,
             sycl::buffer<T> &dest);
     };
-
-    
 
 } // namespace shammodels::zeus::modules

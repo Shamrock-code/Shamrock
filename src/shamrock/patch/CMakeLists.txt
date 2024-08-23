@@ -7,7 +7,7 @@ PatchDataField.cpp
 SimBox.cpp
 )
 set(SourcesTest
-    
+
 )
 set(Headers
     Patch.hpp

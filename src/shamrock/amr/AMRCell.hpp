@@ -11,12 +11,12 @@
 /**
  * @file AMRCell.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shambackends/sycl_utils.hpp"
+
 #include "shambackends/math.hpp"
+#include "shambackends/sycl_utils.hpp"
 
 namespace shamrock::amr {
 
@@ -107,13 +107,10 @@ namespace shamrock::amr {
             return AMRCellCoord::get_merge(
                 AMRCellCoord::get_merge(
                     AMRCellCoord::get_merge(others[0], others[1]),
-                    AMRCellCoord::get_merge(others[2], others[3])
-                ),
+                    AMRCellCoord::get_merge(others[2], others[3])),
                 AMRCellCoord::get_merge(
                     AMRCellCoord::get_merge(others[4], others[5]),
-                    AMRCellCoord::get_merge(others[6], others[7])
-                )
-            );
+                    AMRCellCoord::get_merge(others[6], others[7])));
         }
 
         inline static bool are_mergeable(std::array<AMRCellCoord, splts_count> others) {
@@ -128,9 +125,8 @@ namespace shamrock::amr {
 
             if constexpr (dim == 3) {
                 for (u32 i = 0; i < splts_count; i++) {
-                    are_same = are_same &&
-                               sham::equals(others[i].bmin, splitted[i].bmin) &&
-                               sham::equals(others[i].bmax, splitted[i].bmax);
+                    are_same = are_same && sham::equals(others[i].bmin, splitted[i].bmin)
+                               && sham::equals(others[i].bmax, splitted[i].bmax);
                 }
             }
 

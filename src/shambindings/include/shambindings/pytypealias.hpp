@@ -6,149 +6,141 @@
 //
 // -------------------------------------------------------//
 
-
 #pragma once
 
 /**
  * @file pytypealias.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/typeAliasVec.hpp"
-#include "shambindings/pybindaliases.hpp"
 #include "shambindings/pybind11_stl.hpp"
+#include "shambindings/pybindaliases.hpp"
 
-#include "shambackends/typeAliasVec.hpp"
+namespace PYBIND11_NAMESPACE {
+    namespace detail {
 
+        template<>
+        struct type_caster<f64_3> {
+            public:
+            PYBIND11_TYPE_CASTER(f64_3, const_name("f64_3"));
 
-namespace PYBIND11_NAMESPACE { namespace detail {
+            bool load(handle src, bool) {
+                PyObject *source = src.ptr();
 
+                f64 x, y, z;
 
+                if (!PyArg_ParseTuple(source, "ddd", &x, &y, &z)) {
+                    return false;
+                }
 
+                value = {x, y, z};
 
-    template <> struct type_caster<f64_3> {
-    public:
-        PYBIND11_TYPE_CASTER(f64_3, const_name("f64_3"));
-
-        bool load(handle src, bool) {
-            PyObject *source = src.ptr();
-
-            f64 x,y,z;
-
-            if(!PyArg_ParseTuple(source, "ddd",&x,&y,&z)) {
-                return false;
+                return !PyErr_Occurred();
             }
 
-            value = {x,y,z};
+            static handle cast(f64_3 src, return_value_policy /* policy */, handle /* parent */) {
+                return Py_BuildValue("ddd", src.x(), src.y(), src.z());
+            }
+        };
 
-            return !PyErr_Occurred();
-        }
+        template<>
+        struct type_caster<i32_3> {
+            public:
+            PYBIND11_TYPE_CASTER(i32_3, const_name("i32_3"));
 
-        static handle cast(f64_3 src, return_value_policy /* policy */, handle /* parent */) {
-            return Py_BuildValue("ddd", src.x(), src.y(), src.z());
-        }
-    };
+            bool load(handle src, bool) {
+                PyObject *source = src.ptr();
 
+                i32 x, y, z;
 
+                if (!PyArg_ParseTuple(source, "iii", &x, &y, &z)) {
+                    return false;
+                }
 
-    template <> struct type_caster<i32_3> {
-    public:
-        PYBIND11_TYPE_CASTER(i32_3, const_name("i32_3"));
+                value = {x, y, z};
 
-        bool load(handle src, bool) {
-            PyObject *source = src.ptr();
-
-            i32 x,y,z;
-
-            if(!PyArg_ParseTuple(source, "iii",&x,&y,&z)) {
-                return false;
+                return !PyErr_Occurred();
             }
 
-            value = {x,y,z};
+            static handle cast(i32_3 src, return_value_policy /* policy */, handle /* parent */) {
+                return Py_BuildValue("iii", src.x(), src.y(), src.z());
+            }
+        };
 
-            return !PyErr_Occurred();
-        }
+        template<>
+        struct type_caster<i64_3> {
+            public:
+            PYBIND11_TYPE_CASTER(i64_3, const_name("i64_3"));
 
-        static handle cast(i32_3 src, return_value_policy /* policy */, handle /* parent */) {
-            return Py_BuildValue("iii", src.x(), src.y(), src.z());
-        }
-    };
+            bool load(handle src, bool) {
+                PyObject *source = src.ptr();
 
+                i64 x, y, z;
 
-    template <> struct type_caster<i64_3> {
-    public:
-        PYBIND11_TYPE_CASTER(i64_3, const_name("i64_3"));
+                if (!PyArg_ParseTuple(source, "LLL", &x, &y, &z)) {
+                    return false;
+                }
 
-        bool load(handle src, bool) {
-            PyObject *source = src.ptr();
+                value = {x, y, z};
 
-            i64 x,y,z;
-
-            if(!PyArg_ParseTuple(source, "LLL",&x,&y,&z)) {
-                return false;
+                return !PyErr_Occurred();
             }
 
-            value = {x,y,z};
+            static handle cast(i64_3 src, return_value_policy /* policy */, handle /* parent */) {
+                return Py_BuildValue("LLL", src.x(), src.y(), src.z());
+            }
+        };
 
-            return !PyErr_Occurred();
-        }
+        template<>
+        struct type_caster<u32_3> {
+            public:
+            PYBIND11_TYPE_CASTER(u32_3, const_name("u32_3"));
 
-        static handle cast(i64_3 src, return_value_policy /* policy */, handle /* parent */) {
-            return Py_BuildValue("LLL", src.x(), src.y(), src.z());
-        }
-    };
+            bool load(handle src, bool) {
+                PyObject *source = src.ptr();
 
+                u32 x, y, z;
 
-    template <> struct type_caster<u32_3> {
-    public:
-        PYBIND11_TYPE_CASTER(u32_3, const_name("u32_3"));
+                if (!PyArg_ParseTuple(source, "III", &x, &y, &z)) {
+                    return false;
+                }
 
-        bool load(handle src, bool) {
-            PyObject *source = src.ptr();
+                value = {x, y, z};
 
-            u32 x,y,z;
-
-            if(!PyArg_ParseTuple(source, "III",&x,&y,&z)) {
-                return false;
+                return !PyErr_Occurred();
             }
 
-            value = {x,y,z};
+            static handle cast(u32_3 src, return_value_policy /* policy */, handle /* parent */) {
+                return Py_BuildValue("III", src.x(), src.y(), src.z());
+            }
+        };
 
-            return !PyErr_Occurred();
-        }
+        template<>
+        struct type_caster<u64_3> {
+            public:
+            PYBIND11_TYPE_CASTER(u64_3, const_name("u64_3"));
 
-        static handle cast(u32_3 src, return_value_policy /* policy */, handle /* parent */) {
-            return Py_BuildValue("III", src.x(), src.y(), src.z());
-        }
-    };
+            bool load(handle src, bool) {
+                PyObject *source = src.ptr();
 
+                i64 x, y, z;
 
-    template <> struct type_caster<u64_3> {
-    public:
-        PYBIND11_TYPE_CASTER(u64_3, const_name("u64_3"));
+                if (!PyArg_ParseTuple(source, "KKK", &x, &y, &z)) {
+                    return false;
+                }
 
-        bool load(handle src, bool) {
-            PyObject *source = src.ptr();
+                value = {x, y, z};
 
-            i64 x,y,z;
-
-            if(!PyArg_ParseTuple(source, "KKK",&x,&y,&z)) {
-                return false;
+                return !PyErr_Occurred();
             }
 
-            value = {x,y,z};
+            static handle cast(u64_3 src, return_value_policy /* policy */, handle /* parent */) {
+                return Py_BuildValue("KKK", src.x(), src.y(), src.z());
+            }
+        };
 
-            return !PyErr_Occurred();
-        }
-
-        static handle cast(u64_3 src, return_value_policy /* policy */, handle /* parent */) {
-            return Py_BuildValue("KKK", src.x(), src.y(), src.z());
-        }
-    };
-
-
-
-}} // namespace PYBIND11_NAMESPACE::detail
-
+    } // namespace detail
+} // namespace PYBIND11_NAMESPACE

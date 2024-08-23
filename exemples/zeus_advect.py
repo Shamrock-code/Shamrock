@@ -1,6 +1,6 @@
 import shamrock
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import os
 
 tmax = 1
@@ -9,7 +9,7 @@ def run_sim(ctp = False, vanleer = False, label = "none"):
     ctx.pdata_layout_new()
 
     model = shamrock.get_AMRZeus(
-        context = ctx, 
+        context = ctx,
         vector_type = "f64_3",
         grid_repr = "i64_3")
 
@@ -20,7 +20,7 @@ def run_sim(ctp = False, vanleer = False, label = "none"):
     multz = 1
 
     sz = 1 << 1
-    base = 32 
+    base = 32
     model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
     cfg = model.gen_default_config()
@@ -43,7 +43,7 @@ def run_sim(ctp = False, vanleer = False, label = "none"):
         if x < 0.6 and x > 0.4:
             return 2
 
-        return 1. 
+        return 1.
 
     def eint_map(rmin,rmax):
 
@@ -65,7 +65,7 @@ def run_sim(ctp = False, vanleer = False, label = "none"):
 
     dt = 1/128
     for i in range(1000):
-        
+
         if i % freq == 0:
             model.dump_vtk("test"+str(i//freq)+".vtk")
 
@@ -134,7 +134,7 @@ def run_sim(ctp = False, vanleer = False, label = "none"):
         velx.append(dic["vel"][i][0])
 
     plt.plot(X,rho,'.',label=label)
-    
+
 
 run_sim(ctp = False, vanleer = False, label = "no consistent transp donor cell")
 run_sim(ctp = False, vanleer = True, label = "no consistent transp van leer")

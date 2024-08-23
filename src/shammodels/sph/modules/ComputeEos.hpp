@@ -12,12 +12,12 @@
  * @file ComputeEos.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shambackends/vec.hpp"
+
 #include "shambackends/typeAliasVec.hpp"
+#include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -46,6 +46,5 @@ namespace shammodels::sph::modules {
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };
-
 
 } // namespace shammodels::sph::modules

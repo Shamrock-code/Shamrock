@@ -73,7 +73,7 @@ namespace shambase {
         std::chrono::steady_clock::time_point t_start, t_end;
         f64 nanosec;
 
-        Timer(){};
+        Timer() {};
 
         inline void start() { t_start = std::chrono::steady_clock::now(); }
 
@@ -98,7 +98,7 @@ namespace shambase {
 
         f64 nanosec; ///< Time in nanosecond
 
-        Timer(){};
+        Timer() {};
         /**
          * @brief Starts the timer.
          */

@@ -24,10 +24,10 @@
 namespace shamsys::env {
 
     // rank related env variable
-    const std::optional<std::string> MV2_COMM_WORLD_LOCAL_RANK =
-        shamcmdopt::getenv_str("MV2_COMM_WORLD_LOCAL_RANK");
-    const std::optional<std::string> OMPI_COMM_WORLD_LOCAL_RANK =
-        shamcmdopt::getenv_str("OMPI_COMM_WORLD_LOCAL_RANK");
+    const std::optional<std::string> MV2_COMM_WORLD_LOCAL_RANK
+        = shamcmdopt::getenv_str("MV2_COMM_WORLD_LOCAL_RANK");
+    const std::optional<std::string> OMPI_COMM_WORLD_LOCAL_RANK
+        = shamcmdopt::getenv_str("OMPI_COMM_WORLD_LOCAL_RANK");
     const std::optional<std::string> MPI_LOCALRANKID = shamcmdopt::getenv_str("MPI_LOCALRANKID");
     const std::optional<std::string> SLURM_PROCID    = shamcmdopt::getenv_str("SLURM_PROCID");
     const std::optional<std::string> LOCAL_RANK      = shamcmdopt::getenv_str("LOCAL_RANK");

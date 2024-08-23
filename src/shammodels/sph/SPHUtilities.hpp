@@ -11,13 +11,13 @@
 /**
  * @file SPHUtilities.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
 
@@ -32,8 +32,8 @@ namespace shammodels::sph {
         static constexpr flt Rkern = SPHKernel::Rkern;
 
         using GhostHndl = BasicSPHGhostHandler<vec>;
-        using InterfBuildCache =
-            shambase::DistributedDataShared<typename GhostHndl::InterfaceIdTable>;
+        using InterfBuildCache
+            = shambase::DistributedDataShared<typename GhostHndl::InterfaceIdTable>;
 
         PatchScheduler &sched;
 
@@ -68,8 +68,8 @@ namespace shammodels::sph {
         static constexpr flt Rkern = SPHKernel::Rkern;
 
         using GhostHndl = BasicSPHGhostHandler<vec>;
-        using InterfBuildCache =
-            shambase::DistributedDataShared<typename GhostHndl::InterfaceIdTable>;
+        using InterfBuildCache
+            = shambase::DistributedDataShared<typename GhostHndl::InterfaceIdTable>;
 
         PatchScheduler &sched;
 
@@ -144,12 +144,13 @@ namespace shammodels::sph {
                 h_evol_iter_max);
         }
 
-        static void compute_omega(sycl::buffer<vec> &merged_r,
-                                  sycl::buffer<flt> &h_part,
-                                  sycl::buffer<flt> &omega_h,
-                                  sycl::range<1> part_range,
-                                  shamrock::tree::ObjectCache &neigh_cache,
-                                  flt gpart_mass);
+        static void compute_omega(
+            sycl::buffer<vec> &merged_r,
+            sycl::buffer<flt> &h_part,
+            sycl::buffer<flt> &omega_h,
+            sycl::range<1> part_range,
+            shamrock::tree::ObjectCache &neigh_cache,
+            flt gpart_mass);
     };
 
 } // namespace shammodels::sph

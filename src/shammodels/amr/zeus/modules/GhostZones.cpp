@@ -9,15 +9,15 @@
 /**
  * @file GhostZones.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shammodels/amr/zeus/modules/GhostZones.hpp"
-#include "shamalgs/numeric.hpp"
+
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "shammodels/amr/zeus/modules/GhostZones.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shammath/AABB.hpp"
 #include "shammath/CoordRange.hpp"
@@ -62,14 +62,14 @@ namespace shammodels::zeus::modules {
                 for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
 
                     // sender translation
-                    TgridVec periodic_offset =
-                        TgridVec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
+                    TgridVec periodic_offset
+                        = TgridVec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
 
                     sched.for_each_local_patch([&](const Patch psender) {
-                        CoordRange<TgridVec> sender_bsize =
-                            patch_coord_transf.to_obj_coord(psender);
-                        CoordRange<TgridVec> sender_bsize_off =
-                            sender_bsize.add_offset(periodic_offset);
+                        CoordRange<TgridVec> sender_bsize
+                            = patch_coord_transf.to_obj_coord(psender);
+                        CoordRange<TgridVec> sender_bsize_off
+                            = sender_bsize.add_offset(periodic_offset);
 
                         shammath::AABB<TgridVec> sender_bsize_off_aabb{
                             sender_bsize_off.lower, sender_bsize_off.upper};
@@ -87,14 +87,14 @@ namespace shammodels::zeus::modules {
                             [&](u64 tree_id, PtNode n) {
                                 shammath::AABB<TgridVec> tree_cell{n.box_min, n.box_max};
 
-                                bool result =
-                                    tree_cell.get_intersect(sender_bsize_off_aabb).is_not_empty();
+                                bool result
+                                    = tree_cell.get_intersect(sender_bsize_off_aabb).is_not_empty();
 
                                 return result;
                             },
                             [&](u64 id_found, PtNode n) {
-                                if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0) &&
-                                    (zoff == 0)) {
+                                if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0)
+                                    && (zoff == 0)) {
                                     return;
                                 }
 
@@ -129,8 +129,8 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
     // for cells corresponding to fixed boundary they will be generated after the exhange
     // and appended to the interface list a poosteriori
 
-    gen_ghost.ghost_gen_infos =
-        find_interfaces<Tvec, TgridVec>(scheduler(), storage.serial_patch_tree.get());
+    gen_ghost.ghost_gen_infos
+        = find_interfaces<Tvec, TgridVec>(scheduler(), storage.serial_patch_tree.get());
 
     using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
     using InterfaceIdTable    = typename GZData::InterfaceIdTable;
@@ -185,8 +185,8 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
 
         logger::debug_ln("AMR interf", s);
 
-        std::unique_ptr<sycl::buffer<u32>> ids =
-            std::make_unique<sycl::buffer<u32>>(shambase::extract_value(std::get<0>(resut)));
+        std::unique_ptr<sycl::buffer<u32>> ids
+            = std::make_unique<sycl::buffer<u32>>(shambase::extract_value(std::get<0>(resut)));
 
         gen_ghost.ghost_id_build_map.add_obj(
             sender, receiver, InterfaceIdTable{build, std::move(ids), ratio});
@@ -217,7 +217,9 @@ shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
         },
         [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
-            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            shamalgs::SerializeHelper ser(
+                shamsys::instance::get_compute_scheduler_ptr(),
+                std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         });
 
@@ -226,7 +228,8 @@ shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
 
 template<class Tvec, class TgridVec>
 template<class T>
-shambase::DistributedDataShared<PatchDataField<T>> shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat_field(
+shambase::DistributedDataShared<PatchDataField<T>>
+shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat_field(
     shambase::DistributedDataShared<PatchDataField<T>> &&interf) {
     StackEntry stack_loc{};
 
@@ -247,7 +250,9 @@ shambase::DistributedDataShared<PatchDataField<T>> shammodels::zeus::modules::Gh
         },
         [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
-            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            shamalgs::SerializeHelper ser(
+                shamsys::instance::get_compute_scheduler_ptr(),
+                std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
             return PatchDataField<T>::deserialize_full(ser);
         });
 
@@ -256,7 +261,8 @@ shambase::DistributedDataShared<PatchDataField<T>> shammodels::zeus::modules::Gh
 
 template<class Tvec, class TgridVec>
 template<class T, class Tmerged>
-shambase::DistributedData<Tmerged> shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::merge_native(
+shambase::DistributedData<Tmerged>
+shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::merge_native(
     shambase::DistributedDataShared<T> &&interfs,
     std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> init,
     std::function<void(Tmerged &, T &)> appender) {
@@ -358,8 +364,8 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
         });
 
     // communicate buffers
-    shambase::DistributedDataShared<PatchData> interf_pdat =
-        communicate_pdat(ghost_layout, std::move(pdat_interf));
+    shambase::DistributedDataShared<PatchData> interf_pdat
+        = communicate_pdat(ghost_layout, std::move(pdat_interf));
 
     std::map<u64, u64> sz_interf_map;
     interf_pdat.for_each([&](u64 s, u64 r, PatchData &pdat_interf) {
@@ -406,7 +412,8 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
 template<class Tvec, class TgridVec>
 template<class T>
 shamrock::ComputeField<T>
-shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_compute_field(shamrock::ComputeField<T> &in) {
+shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_compute_field(
+    shamrock::ComputeField<T> &in) {
 
     StackEntry stack_loc{};
 
@@ -435,8 +442,8 @@ shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_compute_field(sh
         });
 
     // communicate buffers
-    shambase::DistributedDataShared<PatchDataField<T>> interf_pdat =
-        communicate_pdat_field<T>(std::move(pdat_interf));
+    shambase::DistributedDataShared<PatchDataField<T>> interf_pdat
+        = communicate_pdat_field<T>(std::move(pdat_interf));
 
     std::map<u64, u64> sz_interf_map;
     interf_pdat.for_each([&](u64 s, u64 r, PatchDataField<T> &pdat_interf) {

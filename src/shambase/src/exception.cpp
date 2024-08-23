@@ -9,18 +9,18 @@
 /**
  * @file exception.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
+#include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/SourceLocation.hpp"
 #include <string>
 
 namespace shambase {
 
-    std::string exception_format(SourceLocation loc){
+    std::string exception_format(SourceLocation loc) {
         return loc.format_multiline(fmt_callstack());
     }
 

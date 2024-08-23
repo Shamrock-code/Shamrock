@@ -16,7 +16,6 @@
  */
 
 #include "shambackends/vec.hpp"
-
 #include "shammodels/amr/AMRBlockStencil.hpp"
 #include "shammodels/amr/AMRCellStencil.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
@@ -59,8 +58,10 @@ namespace shammodels::basegodunov::modules {
         using block_stencil_el_buf = sycl::buffer<amr::block::StencilElement>;
         using cell_stencil_el_buf  = sycl::buffer<amr::cell::StencilElement>;
 
-        using dd_block_stencil_el_buf = shambase::DistributedData<std::unique_ptr<block_stencil_el_buf>>;
-        using dd_cell_stencil_el_buf  = shambase::DistributedData<std::unique_ptr<cell_stencil_el_buf>>;
+        using dd_block_stencil_el_buf
+            = shambase::DistributedData<std::unique_ptr<block_stencil_el_buf>>;
+        using dd_cell_stencil_el_buf
+            = shambase::DistributedData<std::unique_ptr<cell_stencil_el_buf>>;
 
         dd_block_stencil_el_buf
         compute_block_stencil_slot(i64_3 relative_pos, StencilOffsets result_offset);

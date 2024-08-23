@@ -6,9 +6,7 @@ target_sources(shamrock_lib
         interface_generator.cpp
         interface_handler.cpp
     PUBLIC
-        
+
         #patchdata.hpp
         #scheduler.hpp
     )
-
-

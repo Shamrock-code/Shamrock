@@ -10,52 +10,48 @@
 /**
  * @file patch_field.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
-
-#include <vector>
 
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambackends/sycl.hpp"
+#include <vector>
 
 template<class type>
-class BufferedPField{public:
+class BufferedPField {
+    public:
     sycl::buffer<type> buf_local;
     sycl::buffer<type> buf_global;
 };
 
 namespace legacy {
 
+    /**
+     * @brief Define a field attached to a patch (exemple: FMM multipoles, hmax in SPH)
+     *
+     * @tparam type type of object to store
+     */
+    template<class type>
+    class PatchField {
+        public:
+        using T = type;
 
-/**
- * @brief Define a field attached to a patch (exemple: FMM multipoles, hmax in SPH)
- * 
- * @tparam type type of object to store
- */
-template<class type>
-class PatchField{public:
+        std::vector<type> local_nodes_value;
 
-    using T = type;
+        std::vector<type> global_values;
 
-    std::vector<type> local_nodes_value;
+        inline void build_global(MPI_Datatype &dtype) {
+            shamalgs::collective::vector_allgatherv(
+                local_nodes_value, dtype, global_values, dtype, MPI_COMM_WORLD);
+        }
 
-    std::vector<type> global_values;
+        inline BufferedPField<type> get_buffers() {
+            return BufferedPField<type>{
+                sycl::buffer<type>(local_nodes_value.data(), local_nodes_value.size()),
+                sycl::buffer<type>(global_values.data(), global_values.size()),
+            };
+        }
+    };
 
-    inline void build_global(MPI_Datatype & dtype){
-        shamalgs::collective::vector_allgatherv(local_nodes_value, dtype, global_values, dtype, MPI_COMM_WORLD);
-    }
-
-
-    
-
-    inline BufferedPField<type> get_buffers(){
-        return BufferedPField<type>{
-            sycl::buffer<type>(local_nodes_value.data(),local_nodes_value.size()),
-            sycl::buffer<type>(global_values.data(),global_values.size()),
-        };
-    }
-
-};
-
-}
+} // namespace legacy

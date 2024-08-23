@@ -206,7 +206,7 @@ def comp_state(i, savename ):
     axs[0,0].legend()
 
 
-    plt.tight_layout()  
+    plt.tight_layout()
 
     plt.savefig(savename, dpi = 300)
 

@@ -12,7 +12,7 @@
  * @file slopeLimiter.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Math header to compute slope limiters
- * 
+ *
  */
 
 #include "shambackends/math.hpp"
@@ -27,25 +27,26 @@ namespace shammath {
      *   \\phi(f,g) = \frac{f g + \vert f g \vert}{f + g + \epsilon}
      * \f]
      *
-     * \todo clarify the definition, normally this is done as adimensionalized function but here it is not.
+     * \todo clarify the definition, normally this is done as adimensionalized function but here it
+     * is not.
      *
-     * @tparam T 
-     * @param f 
-     * @param g 
-     * @return T 
+     * @tparam T
+     * @param f
+     * @param g
+     * @return T
      */
     template<class T>
     inline T van_leer_slope(T f, T g) {
         T tmp = f * g;
-        if(tmp > 0){
-            return 2*tmp/(f+g);
-        }else{
+        if (tmp > 0) {
+            return 2 * tmp / (f + g);
+        } else {
             return 0;
         }
     }
 
     template<class T>
-    inline T van_leer_slope_symetric(T sR, T sL){
+    inline T van_leer_slope_symetric(T sR, T sL) {
         T abs_sR = sham::abs(sR);
         T abs_sL = sham::abs(sL);
         T sgn_sR = sycl::sign(sR);
@@ -53,19 +54,17 @@ namespace shammath {
 
         T tmp = abs_sR * abs_sL;
 
-        if(tmp > 0){
+        if (tmp > 0) {
             return tmp * (sgn_sL + sgn_sR) / (abs_sL + abs_sR);
-        }else{
+        } else {
             return 0;
-        } 
+        }
     }
 
     template<class T>
-    inline T minmod(T sR, T sL){
+    inline T minmod(T sR, T sL) {
         T r = sL / sR;
-        return ((r > 0) ? (
-            (r < 1) ? r : 1
-        ) : 0) * sR;
+        return ((r > 0) ? ((r < 1) ? r : 1) : 0) * sR;
     }
 
 } // namespace shammath

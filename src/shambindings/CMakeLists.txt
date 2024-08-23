@@ -53,7 +53,7 @@ if(NOT "${BUILD_PYLIB}")
   target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/change_py_sys_path.cpp)
 
   file(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/run_ipython.py __CAT_RUNIPYTHON_OUT)
-  
+
   file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/run_ipython_src.cpp
     "const char* run_ipython_src() { return R\"=(\n${__CAT_RUNIPYTHON_OUT}\n)=\"; }"
   )

@@ -11,8 +11,8 @@
 /**
  * @file SinkPartStruct.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "shambackends/vec.hpp"

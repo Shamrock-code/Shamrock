@@ -16,41 +16,35 @@
 
 #include "shamalgs/memory.hpp"
 #include "shamrock/patch/PatchData.hpp"
-#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <vector>
 
 namespace shamrock {
 
     template<class T>
-    class MergedPatchDataField{public:
+    class MergedPatchDataField {
+        public:
         std::optional<shammath::CoordRange<T>> bounds;
         u32 original_elements;
         u32 total_elements;
         PatchDataField<T> field;
 
-        bool has_bound_info(){
-            return bounds.has_value();
-        }
+        bool has_bound_info() { return bounds.has_value(); }
     };
 
-    class MergedPatchData{public:
-    
+    class MergedPatchData {
+        public:
         u32 original_elements;
         u32 total_elements;
         patch::PatchData pdat;
-        patch::PatchDataLayout & pdl;
-
+        patch::PatchDataLayout &pdl;
     };
-
-
 
     class InterfacesUtility {
         PatchScheduler &sched;
 
         public:
         InterfacesUtility(PatchScheduler &sched) : sched(sched) {}
-
-        
     };
 } // namespace shamrock

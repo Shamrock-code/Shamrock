@@ -8,27 +8,24 @@
 
 #pragma once
 
-
 /**
  * @file CoordRange.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shambackends/typeAliasVec.hpp"
-#include "shambase/SourceLocation.hpp"
-#include "shambackends/math.hpp"
-#include "shambackends/vec.hpp"
-#include "intervals.hpp"
 
+#include "shambase/SourceLocation.hpp"
+#include "intervals.hpp"
+#include "shambackends/math.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/vec.hpp"
 #include <limits>
 
 namespace shammath {
 
     template<class T>
     struct CoordRange {
-
 
         using T_prop = shambase::VectorProperties<T>;
 
@@ -37,7 +34,7 @@ namespace shammath {
 
         inline CoordRange() = default;
 
-        inline CoordRange(T lower, T upper) : lower(lower), upper(upper){};
+        inline CoordRange(T lower, T upper) : lower(lower), upper(upper) {};
 
         inline CoordRange(std::tuple<T, T> range)
             : lower(std::get<0>(range)), upper(std::get<1>(range)) {}
@@ -47,7 +44,7 @@ namespace shammath {
 
         inline T delt() const { return upper - lower; }
 
-        inline CoordRange expand_all(typename T_prop::component_type value){
+        inline CoordRange expand_all(typename T_prop::component_type value) {
             return CoordRange{lower - value, upper + value};
         }
 
@@ -60,7 +57,7 @@ namespace shammath {
             upper = center + cur_delt;
         }
 
-        inline typename T_prop::component_type get_volume(){
+        inline typename T_prop::component_type get_volume() {
             return sham::product_accumulate(upper - lower);
         }
 
@@ -69,57 +66,35 @@ namespace shammath {
         void check_throw_ranges(SourceLocation loc = SourceLocation{});
 
         inline CoordRange get_intersect(CoordRange other) const {
-            return {
-                sham::max(lower, other.lower),
-                sham::min(upper, other.upper)
-                };
+            return {sham::max(lower, other.lower), sham::min(upper, other.upper)};
         }
 
         inline CoordRange get_union(CoordRange other) const {
-            return {
-                sham::min(lower, other.lower),
-                sham::max(upper, other.upper)
-                };
+            return {sham::min(lower, other.lower), sham::max(upper, other.upper)};
         }
 
-        inline bool contain_pos(T pos){
-            return is_in_half_open(pos,lower,upper);
-        }
+        inline bool contain_pos(T pos) { return is_in_half_open(pos, lower, upper); }
 
-        inline bool is_not_empty(){
-            return sham::vec_compare_geq(upper , lower);
-        }
+        inline bool is_not_empty() { return sham::vec_compare_geq(upper, lower); }
 
-        inline CoordRange add_offset(T off){
-            return CoordRange{lower + off, upper + off};
-        }
-        
-        inline bool is_err_mode(){
+        inline CoordRange add_offset(T off) { return CoordRange{lower + off, upper + off}; }
+
+        inline bool is_err_mode() {
 
             auto tmp = max_range();
 
-            return sham::equals(tmp.lower , lower) && sham::equals(tmp.upper , upper);
+            return sham::equals(tmp.lower, lower) && sham::equals(tmp.upper, upper);
         }
     };
-
-    
-
-
 
     template<>
     inline CoordRange<f32_3> CoordRange<f32_3>::max_range() {
 
         CoordRange<f32_3> ret;
 
-        ret.lower = {
-            shambase::get_min<f32>(),
-            shambase::get_min<f32>(),
-            shambase::get_min<f32>()};
+        ret.lower = {shambase::get_min<f32>(), shambase::get_min<f32>(), shambase::get_min<f32>()};
 
-        ret.upper = {
-            shambase::get_max<f32>(),
-            shambase::get_max<f32>(),
-            shambase::get_max<f32>()};
+        ret.upper = {shambase::get_max<f32>(), shambase::get_max<f32>(), shambase::get_max<f32>()};
 
         return ret;
     }
@@ -129,15 +104,9 @@ namespace shammath {
 
         CoordRange<f64_3> ret;
 
-        ret.lower = {
-            shambase::get_min<f64>(),
-            shambase::get_min<f64>(),
-            shambase::get_min<f64>()};
+        ret.lower = {shambase::get_min<f64>(), shambase::get_min<f64>(), shambase::get_min<f64>()};
 
-        ret.upper = {
-            shambase::get_max<f64>(),
-            shambase::get_max<f64>(),
-            shambase::get_max<f64>()};
+        ret.upper = {shambase::get_max<f64>(), shambase::get_max<f64>(), shambase::get_max<f64>()};
 
         return ret;
     }
@@ -147,15 +116,9 @@ namespace shammath {
 
         CoordRange<u32_3> ret;
 
-        ret.lower = {
-            shambase::get_min<u32>(),
-            shambase::get_min<u32>(),
-            shambase::get_min<u32>()};
+        ret.lower = {shambase::get_min<u32>(), shambase::get_min<u32>(), shambase::get_min<u32>()};
 
-        ret.upper = {
-            shambase::get_max<u32>(),
-            shambase::get_max<u32>(),
-            shambase::get_max<u32>()};
+        ret.upper = {shambase::get_max<u32>(), shambase::get_max<u32>(), shambase::get_max<u32>()};
 
         return ret;
     }
@@ -165,15 +128,9 @@ namespace shammath {
 
         CoordRange<u64_3> ret;
 
-        ret.lower = {
-            shambase::get_min<u64>(),
-            shambase::get_min<u64>(),
-            shambase::get_min<u64>()};
+        ret.lower = {shambase::get_min<u64>(), shambase::get_min<u64>(), shambase::get_min<u64>()};
 
-        ret.upper = {
-            shambase::get_max<u64>(),
-            shambase::get_max<u64>(),
-            shambase::get_max<u64>()};
+        ret.upper = {shambase::get_max<u64>(), shambase::get_max<u64>(), shambase::get_max<u64>()};
 
         return ret;
     }
@@ -183,15 +140,9 @@ namespace shammath {
 
         CoordRange<i64_3> ret;
 
-        ret.lower = {
-            shambase::get_min<i64>(),
-            shambase::get_min<i64>(),
-            shambase::get_min<i64>()};
+        ret.lower = {shambase::get_min<i64>(), shambase::get_min<i64>(), shambase::get_min<i64>()};
 
-        ret.upper = {
-            shambase::get_max<i64>(),
-            shambase::get_max<i64>(),
-            shambase::get_max<i64>()};
+        ret.upper = {shambase::get_max<i64>(), shambase::get_max<i64>(), shambase::get_max<i64>()};
 
         return ret;
     }

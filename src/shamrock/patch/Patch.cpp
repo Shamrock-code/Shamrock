@@ -19,7 +19,10 @@ namespace shamrock::patch {
 
     MPI_Datatype patch_3d_MPI_type;
 
-    template <> MPI_Datatype get_patch_mpi_type<3>() { return patch_3d_MPI_type; }
+    template<>
+    MPI_Datatype get_patch_mpi_type<3>() {
+        return patch_3d_MPI_type;
+    }
 } // namespace shamrock::patch
 
 /////////////////////////////////////////////
@@ -43,8 +46,11 @@ Register_MPIDtypeInit(init_patch_type, "mpi patch type") {
     patch_3d_MPI_offset[1] = offsetof(shamrock::patch::Patch, node_owner_id);
 
     mpi::type_create_struct(
-        2, patch_3d_MPI_block_lens, patch_3d_MPI_offset, patch_3d_MPI_types_list, &patch_3d_MPI_type
-    );
+        2,
+        patch_3d_MPI_block_lens,
+        patch_3d_MPI_offset,
+        patch_3d_MPI_types_list,
+        &patch_3d_MPI_type);
     mpi::type_commit(&patch_3d_MPI_type);
 }
 

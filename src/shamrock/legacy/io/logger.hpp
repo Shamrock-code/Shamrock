@@ -6,17 +6,14 @@
 //
 // -------------------------------------------------------//
 
-
-#pragma once 
+#pragma once
 
 /**
  * @file logger.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
-
-
 
 #include <cstdarg>
 #include <stdio.h>
@@ -25,11 +22,10 @@
 
 /**
  * @brief Logger class to pipe printf like outputs to files
- * 
+ *
  */
-class Logger{
+class Logger {
     public:
-
     /**
      * @brief log file name
      */
@@ -38,43 +34,35 @@ class Logger{
     /**
      * @brief internal pointer to FILE object
      */
-    FILE * log_file;
+    FILE *log_file;
 
     /**
      * @brief Construct a new Logger object
-     * 
+     *
      * @param filename filename which output would be piped to using log()
      */
-    inline Logger(std::string filename){
+    inline Logger(std::string filename) {
         log_file_name = filename;
-        log_file = fopen (log_file_name.c_str(), "w+");
+        log_file      = fopen(log_file_name.c_str(), "w+");
     }
 
     /**
      * @brief Destroy the Logger object
      */
-    inline ~Logger(){
-        fclose(log_file);
-    }
+    inline ~Logger() { fclose(log_file); }
 
     /**
      * @brief printf like syntax to log to file
-     * 
-     * @param aFormat 
-     * @param ... 
+     *
+     * @param aFormat
+     * @param ...
      */
-    inline void log(const char* aFormat, ...){
+    inline void log(const char *aFormat, ...) {
         va_list argptr;
         va_start(argptr, aFormat);
-        
-        
-        vfprintf(log_file, aFormat, argptr) ;
-        
-        
+
+        vfprintf(log_file, aFormat, argptr);
+
         va_end(argptr);
-    
     }
-    
 };
-
-

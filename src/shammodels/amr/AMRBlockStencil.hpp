@@ -16,7 +16,6 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/type_traits.hpp"
-
 #include <array>
 #include <variant>
 namespace shammodels::amr::block {

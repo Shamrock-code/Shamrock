@@ -62,14 +62,14 @@ void _kernel(
         = shammath::AABB<TgridVec>{cell_min[found_cells[0]], cell_max[found_cells[0]]};
 
     // delt is the linear delta, so it's a factor 2 instead of 8
-    bool check_levelp1 = sham::equals(cell_found_0_aabb.delt() * 2, cell_aabb.delt())
-                         && (cell_found_count == 8);
+    bool check_levelp1
+        = sham::equals(cell_found_0_aabb.delt() * 2, cell_aabb.delt()) && (cell_found_count == 8);
 
-    bool check_levelm1 = sham::equals(cell_found_0_aabb.delt(), cell_aabb.delt() * 2)
-                         && (cell_found_count == 1);
+    bool check_levelm1
+        = sham::equals(cell_found_0_aabb.delt(), cell_aabb.delt() * 2) && (cell_found_count == 1);
 
-    bool check_levelsame = sham::equals(cell_found_0_aabb.delt(), cell_aabb.delt())
-                           && (cell_found_count == 1);
+    bool check_levelsame
+        = sham::equals(cell_found_0_aabb.delt(), cell_aabb.delt()) && (cell_found_count == 1);
 
     i32 state = i32(check_levelsame) + i32(check_levelm1) * 2 + i32(check_levelp1) * 4;
 
@@ -110,8 +110,7 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
         sycl::buffer<TgridVec> &tree_bmax
             = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_max_cell_flt);
 
-        sycl::buffer<amr::block::StencilElement> stencil_block_info(
-            mpdat.total_elements);
+        sycl::buffer<amr::block::StencilElement> stencil_block_info(mpdat.total_elements);
 
         sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
         sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
@@ -148,8 +147,9 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
 
 template<class Tvec, class TgridVec>
 auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_block_slot_to_cell(
-    i64_3 relative_pos, StencilOffsets result_offset, dd_block_stencil_el_buf &block_stencil_el)
-    -> dd_cell_stencil_el_buf {
+    i64_3 relative_pos,
+    StencilOffsets result_offset,
+    dd_block_stencil_el_buf &block_stencil_el) -> dd_cell_stencil_el_buf {
 
     return block_stencil_el.map<std::unique_ptr<cell_stencil_el_buf>>(
         [&](u64 id, std::unique_ptr<block_stencil_el_buf> &block_stencil_el_b) {
@@ -229,7 +229,7 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
                     block_id_neigh   = st.block_idx;
                 },
                 [&](amr::block::Levelp1 st) {
-                    
+
                     #pragma unroll
                     for (u32 i = 0; i < split_count; i++) {
                         TgridVec tmp_cblock_neigh_min = acc_block_min[st.block_child_idxs[i]];
@@ -242,7 +242,7 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
                             block_id_neigh   = st.block_child_idxs[i];
                         }
                     }
-                    
+
 
                     // if none are found (which should be impossible anyway) block_id_neigh =
                     // u64_max so it will give none

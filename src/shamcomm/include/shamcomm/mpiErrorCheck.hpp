@@ -21,9 +21,8 @@
  * The function `check_mpi_return` is the only function provided in this file.
  */
 
+namespace shamcomm {
 
-namespace shamcomm {    
-    
     /**
      * @brief Check a MPI return code
      *
@@ -34,7 +33,7 @@ namespace shamcomm {
      * @param ret The MPI return code to check
      * @param log A string indicating where the error occured
      */
-    void check_mpi_return(int ret, const char* log);
+    void check_mpi_return(int ret, const char *log);
 
 } // namespace shamcomm
 

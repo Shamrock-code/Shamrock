@@ -16,12 +16,10 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "shambackends/vec.hpp"
-
 #include "shambackends/sycl.hpp"
+#include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
-
 #include <vector>
 
 namespace shamrock::scheduler {
@@ -210,7 +208,9 @@ namespace shamrock::scheduler {
      * @return std::vector<i32> The new owner list
      */
     template<class Torder, class Tweight>
-    inline std::vector<i32> load_balance(std::vector<TileWithLoad<Torder, Tweight>> &&lb_vector, i32 world_size =  shamcomm::world_size()) {
+    inline std::vector<i32> load_balance(
+        std::vector<TileWithLoad<Torder, Tweight>> &&lb_vector,
+        i32 world_size = shamcomm::world_size()) {
 
         auto tmpres        = details::lb_startegy_parralel_sweep(lb_vector, world_size);
         auto metric_psweep = details::compute_LB_metric(lb_vector, tmpres, world_size);

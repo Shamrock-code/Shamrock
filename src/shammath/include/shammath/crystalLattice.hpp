@@ -18,8 +18,8 @@
 #include "shambase/aliases_int.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
-#include "shammath/DiscontinuousIterator.hpp"
 #include "shammath/CoordRange.hpp"
+#include "shammath/DiscontinuousIterator.hpp"
 #include <array>
 #include <functional>
 #include <utility>
@@ -69,10 +69,10 @@ namespace shammath {
             i32 j = coord[1];
             i32 k = coord[2];
 
-            Tvec r_a = {
-                2 * i + (sycl::abs(j + k) % 2),
-                sycl::sqrt(3.) * (j + (1. / 3.) * (sycl::abs(k) % 2)),
-                2 * sycl::sqrt(6.) * k / 3};
+            Tvec r_a
+                = {2 * i + (sycl::abs(j + k) % 2),
+                   sycl::sqrt(3.) * (j + (1. / 3.) * (sycl::abs(k) % 2)),
+                   2 * sycl::sqrt(6.) * k / 3};
 
             return dr * r_a;
         }
@@ -133,35 +133,28 @@ namespace shammath {
             return {Tvec{xmin, ymin, zmin} * dr, Tvec{xmax, ymax, zmax} * dr};
         }
 
-
         static inline constexpr std::pair<std::array<i32, dim>, std::array<i32, dim>>
         get_box_index_bounds(Tscal dr, Tvec box_min, Tvec box_max) {
-            
+
             Tvec coord_min;
             Tvec coord_max;
 
-            coord_min[0]= box_min[0] / 2.;
-            coord_max[0]= box_max[0] / 2.;
+            coord_min[0] = box_min[0] / 2.;
+            coord_max[0] = box_max[0] / 2.;
 
             coord_min[1] = box_min[1] / sycl::sqrt(3.);
             coord_max[1] = box_max[1] / sycl::sqrt(3.);
 
-            coord_min[2] = box_min[2] / (2 * sycl::sqrt(6.)/ 3);
-            coord_max[2] = box_max[2] / (2 * sycl::sqrt(6.)/ 3);
+            coord_min[2] = box_min[2] / (2 * sycl::sqrt(6.) / 3);
+            coord_max[2] = box_max[2] / (2 * sycl::sqrt(6.) / 3);
 
             coord_min /= dr;
             coord_max /= dr;
 
-            std::array<i32, 3> ret_coord_min = {
-                i32 (coord_min.x())-1,
-                i32 (coord_min.y())-1,
-                i32 (coord_min.z())-1
-            };
-            std::array<i32, 3> ret_coord_max = {
-                i32 (coord_max.x()) +1 ,
-                i32 (coord_max.y()) +1 ,
-                i32 (coord_max.z()) +1 
-            };
+            std::array<i32, 3> ret_coord_min
+                = {i32(coord_min.x()) - 1, i32(coord_min.y()) - 1, i32(coord_min.z()) - 1};
+            std::array<i32, 3> ret_coord_max
+                = {i32(coord_max.x()) + 1, i32(coord_max.y()) + 1, i32(coord_max.z()) + 1};
 
             return {ret_coord_min, ret_coord_max};
         }
@@ -215,10 +208,7 @@ namespace shammath {
             bool done = false;
 
             public:
-            Iterator(
-                Tscal dr,
-                std::array<i32, dim> coord_min,
-                std::array<i32, dim> coord_max)
+            Iterator(Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
                 : dr(dr), coord_min(coord_min), coord_max(coord_max), current(coord_min) {
 
                 if (coord_min == coord_max) {
@@ -264,7 +254,7 @@ namespace shammath {
 
         /**
          * @brief Iterator utility to generate the lattice
-         * 
+         *
          */
         class IteratorDiscontinuous {
             Tscal dr;
@@ -276,16 +266,16 @@ namespace shammath {
 
             bool done = false;
 
-            void update_next(){
-                if(!done){
+            void update_next() {
+                if (!done) {
 
                     it[0].advance_it();
                     if (it[0].is_done()) {
-                    it[0] = DiscontinuousIterator<i32>(coord_min[0],coord_max[0]);
+                        it[0] = DiscontinuousIterator<i32>(coord_min[0], coord_max[0]);
 
                         it[1].advance_it();
                         if (it[1].is_done()) {
-                    it[1] = DiscontinuousIterator<i32>(coord_min[1],coord_max[1]);
+                            it[1] = DiscontinuousIterator<i32>(coord_min[1], coord_max[1]);
 
                             it[2].advance_it();
                             if (it[2].is_done()) {
@@ -293,20 +283,16 @@ namespace shammath {
                             }
                         }
                     }
-
                 }
             }
 
             public:
             IteratorDiscontinuous(
-                Tscal dr,
-                std::array<i32, dim> coord_min,
-                std::array<i32, dim> coord_max)
+                Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
                 : dr(dr), coord_min(coord_min), coord_max(coord_max), current(coord_min),
-                it {DiscontinuousIterator<i32>(coord_min[0],coord_max[0])
-                     ,DiscontinuousIterator<i32>(coord_min[1],coord_max[1])
-                     ,DiscontinuousIterator<i32>(coord_min[2],coord_max[2])} {
-
+                  it{DiscontinuousIterator<i32>(coord_min[0], coord_max[0]),
+                     DiscontinuousIterator<i32>(coord_min[1], coord_max[1]),
+                     DiscontinuousIterator<i32>(coord_min[2], coord_max[2])} {
 
                 if (coord_min == coord_max) {
                     done = true;

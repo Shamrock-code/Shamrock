@@ -9,8 +9,8 @@
 /**
  * @file AsciiSplitDump.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "AsciiSplitDump.hpp"
@@ -18,8 +18,8 @@
 template<class T>
 void AsciiSplitDump::PatchDump::write_val(T val) {
     if constexpr (
-        std::is_same_v<T, u32> || std::is_same_v<T, i32> || std::is_same_v<T, u64> ||
-        std::is_same_v<T, i64>) {
+        std::is_same_v<T, u32> || std::is_same_v<T, i32> || std::is_same_v<T, u64>
+        || std::is_same_v<T, i64>) {
         file << shambase::format("{:}\n", val);
     } else if constexpr (std::is_same_v<T, i64_3> || std::is_same_v<T, i32_3>) {
         file << shambase::format("{:} {:} {:}\n", val.x(), val.y(), val.z());
@@ -28,8 +28,16 @@ void AsciiSplitDump::PatchDump::write_val(T val) {
     } else if constexpr (std::is_same_v<T, f64_3> || std::is_same_v<T, f32_3>) {
         file << shambase::format("{:0.9f} {:0.9f} {:0.9f}\n", val.x(), val.y(), val.z());
     } else if constexpr (std::is_same_v<T, f64_8> || std::is_same_v<T, f32_8>) {
-        file << shambase::format("{:0.9f} {:0.9f} {:0.9f} {:0.9f} {:0.9f} {:0.9f} {:0.9f} {:0.9f}\n"
-        , val.s0(), val.s1(), val.s2(), val.s3(), val.s4(), val.s5(), val.s6(), val.s7());
+        file << shambase::format(
+            "{:0.9f} {:0.9f} {:0.9f} {:0.9f} {:0.9f} {:0.9f} {:0.9f} {:0.9f}\n",
+            val.s0(),
+            val.s1(),
+            val.s2(),
+            val.s3(),
+            val.s4(),
+            val.s5(),
+            val.s6(),
+            val.s7());
     } else {
         shambase::throw_unimplemented();
     }

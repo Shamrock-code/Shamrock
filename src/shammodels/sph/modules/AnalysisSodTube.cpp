@@ -53,7 +53,7 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
     Tscal sum_L2_rho = 0;
     Tvec sum_L2_v    = {0, 0, 0};
     Tscal sum_L2_P   = 0;
-    Tscal N = 0;
+    Tscal N          = 0;
 
     scheduler().for_each_patchdata_nonempty(
         [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
@@ -82,7 +82,7 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
 
                     Tscal x = sham::dot(xyz, direction) - x_ref;
 
-                    if ((x + x_ref) > x_min && (x+ x_ref) < x_max){
+                    if ((x + x_ref) > x_min && (x + x_ref) < x_max) {
 
                         auto result_sod = solution.get_value(time_val, x);
 
@@ -94,7 +94,6 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
                         sum_L2_P += d_P * d_P;
                         sum_L2_v += d_vxyz * d_vxyz;
                         N += 1;
-
                     }
                 }
             }
@@ -102,7 +101,7 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
 
     Tscal tot_N = shamalgs::collective::allreduce_sum(N);
 
-    if(tot_N == 0){
+    if (tot_N == 0) {
         shambase::throw_with_loc<std::runtime_error>("no particle in wanted region");
     }
 

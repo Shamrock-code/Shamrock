@@ -72,8 +72,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
 
-        sycl::buffer<Tvec> &buf_xyz =
-            shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+        sycl::buffer<Tvec> &buf_xyz
+            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
         sycl::buffer<Tvec> &buf_axyz      = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sycl::buffer<Tscal> &buf_duint    = pdat.get_field_buf_ref<Tscal>(iduint);
         sycl::buffer<Tvec> &buf_vxyz      = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
@@ -123,7 +123,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force cte AV", [=](u64 gid) {
-                u32 id_a = (u32)gid;
+                u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
 
@@ -242,8 +242,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
-        sycl::buffer<Tvec> &buf_xyz =
-            shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+        sycl::buffer<Tvec> &buf_xyz
+            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
         sycl::buffer<Tvec> &buf_axyz      = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sycl::buffer<Tscal> &buf_duint    = pdat.get_field_buf_ref<Tscal>(iduint);
         sycl::buffer<Tvec> &buf_vxyz      = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
@@ -251,7 +251,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         sycl::buffer<Tscal> &buf_omega    = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sycl::buffer<Tscal> &buf_alpha_AV = shambase::get_check_ref(storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf());
+        sycl::buffer<Tscal> &buf_alpha_AV
+            = shambase::get_check_ref(storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf());
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -293,7 +294,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force MM97 AV", [=](u64 gid) {
-                u32 id_a = (u32)gid;
+                u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
 
@@ -399,12 +400,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
     PatchDataLayout &pdl = scheduler().pdl;
 
-    const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz     = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
-    const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
+    const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
@@ -419,8 +420,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
-        sycl::buffer<Tvec> &buf_xyz =
-            shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+        sycl::buffer<Tvec> &buf_xyz
+            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
         sycl::buffer<Tvec> &buf_axyz      = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sycl::buffer<Tscal> &buf_duint    = pdat.get_field_buf_ref<Tscal>(iduint);
         sycl::buffer<Tvec> &buf_vxyz      = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
@@ -428,7 +429,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         sycl::buffer<Tscal> &buf_omega    = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sycl::buffer<Tscal> &buf_uint     = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sycl::buffer<Tscal> &buf_pressure = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sycl::buffer<Tscal> &buf_alpha_AV = shambase::get_check_ref(storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf());
+        sycl::buffer<Tscal> &buf_alpha_AV
+            = shambase::get_check_ref(storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf());
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -470,7 +472,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force CD10 AV", [=](u64 gid) {
-                u32 id_a = (u32)gid;
+                u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
 
@@ -578,8 +580,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
-        sycl::buffer<Tvec> &buf_xyz =
-            shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+        sycl::buffer<Tvec> &buf_xyz
+            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
         sycl::buffer<Tvec> &buf_axyz      = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sycl::buffer<Tscal> &buf_duint    = pdat.get_field_buf_ref<Tscal>(iduint);
         sycl::buffer<Tvec> &buf_vxyz      = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
@@ -629,7 +631,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force disc", [=](u64 gid) {
-                u32 id_a = (u32)gid;
+                u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
 

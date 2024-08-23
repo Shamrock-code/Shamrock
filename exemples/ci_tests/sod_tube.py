@@ -79,7 +79,7 @@ sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, 0.0, -0.5,0.5)
 rho, v, P = sodanalysis.compute_L2_dist()
 vx,vy,vz = v
 
-# normally : 
+# normally :
 # rho 0.0001615491818848632
 # v (0.0011627047434807855, 2.9881306160215856e-05, 1.7413547093275864e-07)
 # P0.0001248364612976704

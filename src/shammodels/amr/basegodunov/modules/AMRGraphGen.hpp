@@ -16,10 +16,9 @@
  */
 
 #include "shambackends/vec.hpp"
-
+#include "shammodels/amr/NeighGraph.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
-#include "shammodels/amr/NeighGraph.hpp"
 
 namespace shammodels::basegodunov::modules {
 
@@ -37,7 +36,7 @@ namespace shammodels::basegodunov::modules {
 
         using Config           = SolverConfig<Tvec, TgridVec>;
         using Storage          = SolverStorage<Tvec, TgridVec, u64>;
-        using u_morton = u64;
+        using u_morton         = u64;
         using AMRBlock         = typename Config::AMRBlock;
         using OrientedAMRGraph = OrientedAMRGraph<Tvec, TgridVec>;
 
@@ -47,7 +46,6 @@ namespace shammodels::basegodunov::modules {
 
         AMRGraphGen(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
-
 
         /**
          * @brief Return the AMR graph for the block links (two blocks having a common face).

@@ -11,14 +11,14 @@
 /**
  * @file sycl.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "typeAliasBase.hpp" // IWYU pragma: export
 #include "typeAliasFp16.hpp" // IWYU pragma: export
-#include "typeAliasVec.hpp" // IWYU pragma: export
-#include <sycl/sycl.hpp> /// IWYU pragma: export
+#include "typeAliasVec.hpp"  // IWYU pragma: export
+#include <sycl/sycl.hpp>     /// IWYU pragma: export
 
 enum SYCLImplementation { ACPP, DPCPP, UNKNOWN };
 
@@ -31,5 +31,3 @@ constexpr SYCLImplementation sycl_implementation = DPCPP;
 constexpr SYCLImplementation sycl_implementation = UNKNOWN;
     #endif
 #endif
-
-

@@ -6,26 +6,19 @@
 //
 // -------------------------------------------------------//
 
-#pragma once 
+#pragma once
 
 /**
  * @file log.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "shambackends/typeAliasVec.hpp"
-#include <chrono>
-#include <fstream>
-#include <string>
-#include <iostream>
-
-#include "shamsys/Log.hpp"
-
-
 #include "shamcmdopt/term_colors.hpp"
 #include "shamcomm/logs.hpp"
-
-
-
-
+#include "shamsys/Log.hpp"
+#include <chrono>
+#include <fstream>
+#include <iostream>
+#include <string>

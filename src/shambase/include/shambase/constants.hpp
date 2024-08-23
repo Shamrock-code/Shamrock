@@ -66,5 +66,5 @@ namespace shambase::constants {
     template<class T> constexpr T sqrt_2 = 1.4142135623730951455;
     template<class T> constexpr T e = 2.7182818284590450908;
     // clang-format on
-    
+
 } // namespace shambase::constants

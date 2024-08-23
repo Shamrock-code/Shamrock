@@ -9,12 +9,11 @@
 /**
  * @file ValueLoader.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "ValueLoader.hpp"
 
+#include "ValueLoader.hpp"
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
@@ -271,9 +270,9 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
                     if (nV == Va) { // same level
-                        val_out[base_idx] =
-                            src[block_id_b * Block::block_size +
-                                Block::get_index({Block::Nside - 1, lid_coord[1], lid_coord[2]})];
+                        val_out[base_idx] = src
+                            [block_id_b * Block::block_size
+                             + Block::get_index({Block::Nside - 1, lid_coord[1], lid_coord[2]})];
                     }
                 });
             }
@@ -316,7 +315,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[0] == Block::Nside -1 ) {
+            if (lid_coord[0] == Block::Nside - 1) {
                 auto tmp = cell_max[block_id] - cell_min[block_id];
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
@@ -326,16 +325,18 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
                     if (nV == Va) { // same level
-                        auto val = src[block_id_b * Block::block_size +
-                                Block::get_index({0, lid_coord[1], lid_coord[2]})];
+                        auto val = src
+                            [block_id_b * Block::block_size
+                             + Block::get_index({0, lid_coord[1], lid_coord[2]})];
 
-                        //if constexpr (std::is_same_v<T, Tvec>){
-                        //sycl::ext::oneapi::experimental::printf("%d %f %f %f\n",block_id_b * Block::block_size +
-                        //        Block::get_index({0, lid_coord[1], lid_coord[2]}),val.x(),val.y(),val.z());
-                        //}
-                        
+                        // if constexpr (std::is_same_v<T, Tvec>){
+                        // sycl::ext::oneapi::experimental::printf("%d %f %f %f\n",block_id_b *
+                        // Block::block_size +
+                        //         Block::get_index({0, lid_coord[1],
+                        //         lid_coord[2]}),val.x(),val.y(),val.z());
+                        // }
+
                         val_out[base_idx] = val;
-                            
                     }
                 });
             }
@@ -388,9 +389,9 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
                     if (nV == Va) { // same level
-                        val_out[base_idx] =
-                            src[block_id_b * Block::block_size +
-                                Block::get_index({lid_coord[0], Block::Nside - 1, lid_coord[2]})];
+                        val_out[base_idx] = src
+                            [block_id_b * Block::block_size
+                             + Block::get_index({lid_coord[0], Block::Nside - 1, lid_coord[2]})];
                     }
                 });
             }
@@ -433,7 +434,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[1] == Block::Nside -1 ) {
+            if (lid_coord[1] == Block::Nside - 1) {
                 auto tmp = cell_max[block_id] - cell_min[block_id];
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
@@ -443,9 +444,9 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
                     if (nV == Va) { // same level
-                        val_out[base_idx] =
-                            src[block_id_b * Block::block_size +
-                                Block::get_index({lid_coord[0], 0, lid_coord[2]})];
+                        val_out[base_idx] = src
+                            [block_id_b * Block::block_size
+                             + Block::get_index({lid_coord[0], 0, lid_coord[2]})];
                     }
                 });
             }
@@ -498,9 +499,9 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
                     if (nV == Va) { // same level
-                        val_out[base_idx] =
-                            src[block_id_b * Block::block_size +
-                                Block::get_index({lid_coord[0], lid_coord[1], Block::Nside - 1})];
+                        val_out[base_idx] = src
+                            [block_id_b * Block::block_size
+                             + Block::get_index({lid_coord[0], lid_coord[1], Block::Nside - 1})];
                     }
                 });
             }
@@ -543,7 +544,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
             std::array<u32, 3> lid_coord = Block::get_coord(lid);
 
-            if (lid_coord[2] == Block::Nside -1 ) {
+            if (lid_coord[2] == Block::Nside - 1) {
                 auto tmp = cell_max[block_id] - cell_min[block_id];
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
@@ -553,9 +554,9 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
                     if (nV == Va) { // same level
-                        val_out[base_idx] =
-                            src[block_id_b * Block::block_size +
-                                Block::get_index({lid_coord[0], lid_coord[1], 0})];
+                        val_out[base_idx] = src
+                            [block_id_b * Block::block_size
+                             + Block::get_index({lid_coord[0], lid_coord[1], 0})];
                     }
                 });
             }
@@ -748,7 +749,8 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, class TgridVec, class T>
-shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
+shamrock::ComputeField<T>
+shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name) {
 
     StackEntry stack_loc{};
@@ -761,10 +763,10 @@ shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec,
     using Block      = typename Config::AMRBlock;
 
     shamrock::SchedulerUtility utility(scheduler());
-    ComputeField<T> tmp =
-        utility.make_compute_field<T>(result_name, Block::block_size, [&](u64 id) {
-            return storage.merged_patchdata_ghost.get().get(id).total_elements;
-        });
+    ComputeField<T> tmp
+        = utility.make_compute_field<T>(result_name, Block::block_size, [&](u64 id) {
+              return storage.merged_patchdata_ghost.get().get(id).total_elements;
+          });
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ifield                                     = ghost_layout.get_field_idx<T>(field_name);
@@ -788,8 +790,8 @@ shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec,
         sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
         sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
-        shammodels::zeus::NeighFaceList<Tvec> &face_lists =
-            storage.face_lists.get().get(p.id_patch);
+        shammodels::zeus::NeighFaceList<Tvec> &face_lists
+            = storage.face_lists.get().get(p.id_patch);
 
         load_patch_neigh_same_level(
             offset,
@@ -811,8 +813,8 @@ shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec,
         sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
         sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
-        shammodels::zeus::NeighFaceList<Tvec> &face_lists =
-            storage.face_lists.get().get(p.id_patch);
+        shammodels::zeus::NeighFaceList<Tvec> &face_lists
+            = storage.face_lists.get().get(p.id_patch);
 
         load_patch_neigh_level_up(
             offset,
@@ -834,8 +836,8 @@ shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec,
         sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
         sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
-        shammodels::zeus::NeighFaceList<Tvec> &face_lists =
-            storage.face_lists.get().get(p.id_patch);
+        shammodels::zeus::NeighFaceList<Tvec> &face_lists
+            = storage.face_lists.get().get(p.id_patch);
 
         load_patch_neigh_level_down(
             offset,
@@ -852,7 +854,8 @@ shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec,
 }
 
 template<class Tvec, class TgridVec, class T>
-shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
+shamrock::ComputeField<T>
+shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     shamrock::ComputeField<T> &compute_field,
     std::array<Tgridscal, dim> offset,
     std::string result_name) {
@@ -867,10 +870,10 @@ shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec,
     using Block      = typename Config::AMRBlock;
 
     shamrock::SchedulerUtility utility(scheduler());
-    ComputeField<T> tmp =
-        utility.make_compute_field<T>(result_name, Block::block_size, [&](u64 id) {
-            return storage.merged_patchdata_ghost.get().get(id).total_elements;
-        });
+    ComputeField<T> tmp
+        = utility.make_compute_field<T>(result_name, Block::block_size, [&](u64 id) {
+              return storage.merged_patchdata_ghost.get().get(id).total_elements;
+          });
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -895,8 +898,8 @@ shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec,
         sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
         sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
-        shammodels::zeus::NeighFaceList<Tvec> &face_lists =
-            storage.face_lists.get().get(p.id_patch);
+        shammodels::zeus::NeighFaceList<Tvec> &face_lists
+            = storage.face_lists.get().get(p.id_patch);
 
         load_patch_neigh_same_level(
             offset,
@@ -918,8 +921,8 @@ shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec,
         sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
         sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
-        shammodels::zeus::NeighFaceList<Tvec> &face_lists =
-            storage.face_lists.get().get(p.id_patch);
+        shammodels::zeus::NeighFaceList<Tvec> &face_lists
+            = storage.face_lists.get().get(p.id_patch);
 
         load_patch_neigh_level_up(
             offset,
@@ -941,8 +944,8 @@ shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec,
         sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
         sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
-        shammodels::zeus::NeighFaceList<Tvec> &face_lists =
-            storage.face_lists.get().get(p.id_patch);
+        shammodels::zeus::NeighFaceList<Tvec> &face_lists
+            = storage.face_lists.get().get(p.id_patch);
 
         load_patch_neigh_level_down(
             offset,

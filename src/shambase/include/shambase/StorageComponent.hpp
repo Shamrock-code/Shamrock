@@ -11,10 +11,10 @@
 /**
  * @file StorageComponent.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambase/SourceLocation.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
@@ -92,9 +92,7 @@ namespace shambase {
          * @return true if the storage component does not hold anything, false
          * otherwise.
          */
-        bool is_empty() {
-            return !bool(hndl);
-        }
+        bool is_empty() { return !bool(hndl); }
     };
 
 } // namespace shambase

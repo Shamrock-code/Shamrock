@@ -11,8 +11,8 @@
 /**
  * @file pybindings.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include <shambindings/pybindaliases.hpp>
@@ -21,9 +21,9 @@ namespace shambindings {
 
     /**
      * @brief Init python bindings and register them to Python API
-     * 
+     *
      * @param m the python module to bind definitions on
      */
-    void init(py::module & m);
+    void init(py::module &m);
 
-}
+} // namespace shambindings

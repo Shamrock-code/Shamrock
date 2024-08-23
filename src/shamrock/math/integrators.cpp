@@ -14,8 +14,8 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shamrock/math/integrators.hpp"
 #include "shambackends/sycl_utils.hpp"
+#include "shamrock/math/integrators.hpp"
 #include <algorithm>
 
 namespace integ = shamrock::integrators;

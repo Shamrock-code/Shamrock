@@ -14,9 +14,9 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shammath/CoordRangeTransform.hpp"
 #include "shambackends/fmt_bindings/fmt_defs.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammath/CoordRangeTransform.hpp"
 #include <stdexcept>
 
 namespace shammath {

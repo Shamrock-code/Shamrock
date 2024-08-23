@@ -13,9 +13,9 @@
  */
 
 #include "shambase/string.hpp"
-#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <unordered_map>
 #include <memory>

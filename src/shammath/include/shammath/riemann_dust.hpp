@@ -200,15 +200,15 @@ namespace shammath {
         const auto fL = d_hydro_flux_x(cL);
         const auto fR = d_hydro_flux_x(cR);
 
-        if(d_primL.vel[0] > 0 && d_primR.vel[0] > 0)
+        if (d_primL.vel[0] > 0 && d_primR.vel[0] > 0)
             d_flux = fL;
-        else if(d_primL.vel[0] < 0 && d_primR.vel[0] < 0)
+        else if (d_primL.vel[0] < 0 && d_primR.vel[0] < 0)
             d_flux = fR;
-        else if(d_primL.vel[0] < 0 && d_primR.vel[0] > 0)
-            d_flux *=0;
-        else if(d_primL.vel[0] > 0 && d_primR.vel[0] < 0)
-            d_flux = (fL + fR) ;
-        
+        else if (d_primL.vel[0] < 0 && d_primR.vel[0] > 0)
+            d_flux *= 0;
+        else if (d_primL.vel[0] > 0 && d_primR.vel[0] < 0)
+            d_flux = (fL + fR);
+
         return d_flux;
     }
 
@@ -218,8 +218,7 @@ namespace shammath {
     }
 
     template<class Tcons>
-    inline constexpr Tcons d_hll_flux_z(Tcons cL, Tcons cR)
-    {
+    inline constexpr Tcons d_hll_flux_z(Tcons cL, Tcons cR) {
         return d_x_to_z(d_hll_flux_x(d_z_to_x(cL), d_z_to_x(cR)));
     }
 

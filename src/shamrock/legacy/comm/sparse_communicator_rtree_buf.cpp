@@ -91,10 +91,11 @@ struct SparseCommExchanger<RadixTreeField<T>> {
 
                             recv_obj[precv.id_patch].push_back(
                                 {psend.id_patch,
-                                 std::make_unique<RadixTreeField<T>>()}); // patchdata_irecv(recv_rq,
-                                                                          // psend.node_owner_id,
-                                                                          // global_comm_tag[i],
-                                                                          // MPI_COMM_WORLD)}
+                                 std::make_unique<
+                                     RadixTreeField<T>>()}); // patchdata_irecv(recv_rq,
+                                                             // psend.node_owner_id,
+                                                             // global_comm_tag[i],
+                                                             // MPI_COMM_WORLD)}
 
                             auto &ref_write = std::get<1>(
                                 recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]);

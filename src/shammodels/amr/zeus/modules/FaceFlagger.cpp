@@ -15,8 +15,8 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/SourceLocation.hpp"
-#include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shammodels/amr/zeus/NeighFaceList.hpp"
+#include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"

@@ -13,8 +13,8 @@
  */
 
 #include "shambase/memory.hpp"
-#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
+#include "shamsys/legacy/sycl_mpi_interop.hpp"
 
 namespace impl::copy_to_host {
 

@@ -14,9 +14,9 @@
  */
 
 #include "shambase/stacktrace.hpp"
-#include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 
 template<class Tvec, template<class> class SPHKernel>

@@ -16,9 +16,8 @@
  */
 
 #include "shambase/memory.hpp"
-#include "shambackends/sycl_utils.hpp"
-
 #include "shambackends/sycl.hpp"
+#include "shambackends/sycl_utils.hpp"
 
 namespace shammodels::basegodunov::modules {
 
@@ -67,7 +66,7 @@ namespace shammodels::basegodunov::modules {
                 func_it(node_links[id_s]);
             }
         }
-        
+
         template<class Functor_iter>
         inline void for_each_object_link_id(const u32 &cell_id, Functor_iter &&func_it) const {
             u32 min_ids = node_link_offset[cell_id];

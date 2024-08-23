@@ -14,10 +14,10 @@
  */
 
 #include "shambase/memory.hpp"
-#include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammath/matrix.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 

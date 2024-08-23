@@ -210,7 +210,7 @@ namespace shammodels::basegodunov::modules {
         sycl::buffer<std::array<Tscal, 2>> &rho_dust_dir,
         sycl::buffer<std::array<Tvec, 2>> &vel_dust_dir,
         sycl::buffer<Tscal> &flux_rho_dust_dir,
-        sycl::buffer<Tvec> &flux_rhov_dust_dir) {
+        sycl::buffer<Tvec> &flux_rhov_dust_dir, u32 nvar) {
 
         using d_Flux = DustFluxCompute<Tvec, mode, dir>;
         std::string flux_name
@@ -244,6 +244,7 @@ namespace shammodels::basegodunov::modules {
             sycl::accessor flux_rho_dust{flux_rho_dust_dir, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor flux_rhov_dust{flux_rhov_dust_dir, cgh, sycl::write_only, sycl::no_init};
 
+            u32 ndust = nvar;
             shambase::parralel_for(cgh, link_count*nvar, _kernel_name, [=](u32 id_var_a) {
                 auto rho_ij = rho_dust[id_var_a];
                 auto vel_ij = vel_dust[id_var_a];

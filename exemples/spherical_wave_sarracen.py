@@ -127,7 +127,7 @@ with open(ev_f, 'r') as phantom_ev:
     #columns = phantom_ev.readline().strip().split()
     #print(columns)
 
-    columns = ['time', 
+    columns = ['time',
                'ekin',
                'etherm',
                'emag',
@@ -165,7 +165,7 @@ i_dump = 0
 for next_dt in ev_dic['dt'][1:]:
 
     print("step : t=",t_sum)
-    
+
     next_sh_dt = model.evolve(t_sum, current_dt, True, output_dir + "dump_oui_"+str(i_dump)+".vtk", True)
 
     if i % 1 == 0:
@@ -221,4 +221,3 @@ axs[1,1].set_xlim(0,0.55)
 
 plt.tight_layout()
 plt.show() """
-

@@ -4,12 +4,12 @@ PatchTree.cpp
 HilbertLoadBalance.cpp
 SchedulerPatchData.cpp
 SerialPatchTree.cpp
-        
-PatchScheduler.cpp 
-scheduler_patch_list.cpp 
+
+PatchScheduler.cpp
+scheduler_patch_list.cpp
 )
 set(SourcesTest
-    
+
 )
 set(Headers
 

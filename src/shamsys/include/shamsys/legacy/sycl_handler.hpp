@@ -18,25 +18,27 @@
 #include <sycl/sycl.hpp>
 
 class ShamrockSyclException : public std::exception {
-  public:
+    public:
     explicit ShamrockSyclException(const char *message) : msg_(message) {}
 
     explicit ShamrockSyclException(const std::string &message) : msg_(message) {}
 
-     ~ShamrockSyclException() noexcept override = default;
+    ~ShamrockSyclException() noexcept override = default;
 
-    [[nodiscard]] 
-     const char *what() const noexcept override { return msg_.c_str(); }
+    [[nodiscard]]
+    const char *what() const noexcept override {
+        return msg_.c_str();
+    }
 
-  protected:
+    protected:
     std::string msg_;
 };
 
 namespace sycl_handler {
 
-    //void init();
-//
-    //sycl::queue &get_compute_queue();
-    //sycl::queue &get_alt_queue();
+    // void init();
+    //
+    // sycl::queue &get_compute_queue();
+    // sycl::queue &get_alt_queue();
 
 } // namespace sycl_handler

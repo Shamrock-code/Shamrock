@@ -9,10 +9,10 @@
 /**
  * @file SourceStep.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shammodels/amr/zeus/modules/SourceStep.hpp"
 #include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shammodels/amr/zeus/modules/ValueLoader.hpp"
@@ -88,9 +88,9 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
             shambase::parralel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute grad p", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     // clang-format off
                     Tscal rho_i_j_k   = rho[id_a];
@@ -105,15 +105,15 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
 
                     Tvec dp = {
                         p_i_j_k - p_im1_j_k,
-                        p_i_j_k - p_i_jm1_k, 
+                        p_i_j_k - p_i_jm1_k,
                         p_i_j_k - p_i_j_km1
                     };
 
 
                     Tvec avg_rho =
                         Tvec{
-                            rho_i_j_k + rho_im1_j_k, 
-                            rho_i_j_k + rho_i_jm1_k, 
+                            rho_i_j_k + rho_im1_j_k,
+                            rho_i_j_k + rho_i_jm1_k,
                             rho_i_j_k + rho_i_j_km1
                             } * Tscal{0.5};
 
@@ -270,9 +270,9 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_AV() {
             shambase::parralel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     // clang-format off
                     Tscal rho_i_j_k   = rho[id_a];
@@ -373,9 +373,9 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
             shambase::parralel_for(
                 cgh, mpdat.total_elements * Block::block_size, "add vel AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     // clang-format off
                     Tscal rho_i_j_k   = rho[id_a];
@@ -390,11 +390,11 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
 
                     Tvec avg_rho =
                         Tvec{
-                            rho_i_j_k + rho_im1_j_k, 
-                            rho_i_j_k + rho_i_jm1_k, 
+                            rho_i_j_k + rho_im1_j_k,
+                            rho_i_j_k + rho_i_jm1_k,
                             rho_i_j_k + rho_i_j_km1
                             } * Tscal{0.5};
-                    
+
                     Tvec dq = {
                         q_i_j_k.x()-q_im1_j_k.x(),
                         q_i_j_k.y()-q_i_jm1_k.y(),
@@ -446,9 +446,9 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
             shambase::parralel_for(
                 cgh, pdat.get_obj_cnt() * Block::block_size, "add eint AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     // clang-format off
                     Tvec vel_i_j_k = vel[id_a];
@@ -525,9 +525,9 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_div_v() {
             shambase::parralel_for(
                 cgh, pdat.get_obj_cnt() * Block::block_size, "compute divv", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     // clang-format off
                     Tvec vel_i_j_k = vel[id_a];
@@ -590,9 +590,9 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::update_eint_eos(Tsca
             shambase::parralel_for(
                 cgh, pdat.get_obj_cnt() * Block::block_size, "evolve eint", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     Tscal factdivv = divv[id_a] * fact;
 

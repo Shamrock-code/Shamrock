@@ -12,7 +12,7 @@
  * @file pybindaliases.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief Pybind11 include and definitions
- * 
+ *
  * If we build shamrock executable we embed python in Shamrock
  * hence the include pybind11/embed.h.
  * If we build shamrock as python lib we import pybind11/pybind11.h.
@@ -21,13 +21,13 @@
  */
 
 #if defined(DOXYGEN)
-/**
- * @brief Alias to PYBIND11_EMBEDDED_MODULE in shamrock executable, 
- * or to PYBIND11_MODULE in python library mode
- * @param name module definition name
- * @param module py::module object
- */
-#define SHAMROCK_PY_MODULE(name, module)
+    /**
+     * @brief Alias to PYBIND11_EMBEDDED_MODULE in shamrock executable,
+     * or to PYBIND11_MODULE in python library mode
+     * @param name module definition name
+     * @param module py::module object
+     */
+    #define SHAMROCK_PY_MODULE(name, module)
 #endif
 
 #ifdef SHAMROCK_EXECUTABLE_BUILD
@@ -60,13 +60,13 @@ struct PyBindStaticInit {
  *
  * Usage (in any source files) :
  * @code{.cpp}
- * 
+ *
  * Register_pymod(<python init module name>){
  *
  *    // You can define stuff in the python module object `m` like so :
  *    py::class_<ShamrockCtx>(m, "Context")
  *        .def(py::init<>())
- * 
+ *
  * }
  * @endcode
  */

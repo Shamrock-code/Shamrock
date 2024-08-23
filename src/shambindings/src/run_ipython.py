@@ -16,7 +16,7 @@ banner ="SHAMROCK Ipython terminal\n" + "Python %s\n"%sys.version.split("\n")[0]
 
 c.TerminalInteractiveShell.banner1 = banner
 
-c.TerminalInteractiveShell.banner2 = """### 
+c.TerminalInteractiveShell.banner2 = """###
 import shamrock
 ###
 """

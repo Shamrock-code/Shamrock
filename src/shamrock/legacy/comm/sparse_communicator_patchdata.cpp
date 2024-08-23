@@ -9,26 +9,25 @@
 /**
  * @file sparse_communicator_patchdata.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "sparse_communicator.hpp"
 
-
 #if false
-#include "shamrock/legacy/patch/base/patchdata.hpp"
+    #include "shamrock/legacy/patch/base/patchdata.hpp"
 
-template <> 
+template <>
 struct SparseCommExchanger<PatchData>{
     static SparseCommResult<PatchData> sp_xchg(SparsePatchCommunicator & communicator, const SparseCommSource<PatchData> &send_comm_pdat){
 
-        
+
 
         SparseCommResult<PatchData> recv_obj;
 
         if(!send_comm_pdat.empty()){
-        
+
             PatchDataLayout & pdl = send_comm_pdat[0]->pdl;
 
             std::vector<PatchDataMpiRequest> rq_lst;
@@ -47,7 +46,7 @@ struct SparseCommExchanger<PatchData>{
                         dtcnt += send_comm_pdat[i]->memsize();
                         vec.push_back({psend.id_patch, send_comm_pdat[i]->duplicate_to_ptr()});
                     } else {
-                        
+
                         dtcnt += patchdata_isend(*send_comm_pdat[i], rq_lst, precv.node_owner_id, communicator.local_comm_tag[i], MPI_COMM_WORLD);
                     }
 
@@ -64,7 +63,7 @@ struct SparseCommExchanger<PatchData>{
                     if (precv.node_owner_id == shamcomm::world_rank()) {
 
                         if (psend.node_owner_id != precv.node_owner_id) {
-                            recv_obj[precv.id_patch].push_back({psend.id_patch, std::make_unique<PatchData>(pdl)}); 
+                            recv_obj[precv.id_patch].push_back({psend.id_patch, std::make_unique<PatchData>(pdl)});
                             patchdata_irecv_probe(*std::get<1>(recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),
                                             rq_lst, psend.node_owner_id, communicator.global_comm_tag[i], MPI_COMM_WORLD);
                         }

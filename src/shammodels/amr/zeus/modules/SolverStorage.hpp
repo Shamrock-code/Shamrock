@@ -11,22 +11,22 @@
 /**
  * @file SolverStorage.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
+#include "shambase/StorageComponent.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/amr/zeus/GhostZoneData.hpp"
 #include "shammodels/amr/zeus/NeighFaceList.hpp"
+#include "shamrock/scheduler/ComputeField.hpp"
+#include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversalCache.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shambase/StorageComponent.hpp"
-#include "shamrock/scheduler/InterfacesUtility.hpp"
-#include "shamrock/scheduler/ComputeField.hpp"
 namespace shammodels::zeus {
 
     template<class T>
@@ -65,15 +65,11 @@ namespace shammodels::zeus {
          * 3 = y+
          * 4 = z-
          * 5 = z+
-         * 
+         *
          */
         Component<shambase::DistributedData<sycl::buffer<u8>>> face_normals_lookup;
 
         Component<shambase::DistributedData<NeighFaceList<Tvec>>> face_lists;
-
-
-
-
 
         Component<shamrock::ComputeField<Tvec>> vel_n;
         Component<shamrock::ComputeField<Tvec>> vel_n_xp;
@@ -88,7 +84,6 @@ namespace shammodels::zeus {
         Component<shamrock::ComputeField<Tscal>> pres_n_ym;
         Component<shamrock::ComputeField<Tscal>> pres_n_zm;
 
-
         Component<shamrock::ComputeField<Tvec>> q_AV_n_xm;
         Component<shamrock::ComputeField<Tvec>> q_AV_n_ym;
         Component<shamrock::ComputeField<Tvec>> q_AV_n_zm;
@@ -98,42 +93,39 @@ namespace shammodels::zeus {
         Component<shamrock::ComputeField<Tvec>> q_AV;
         Component<shamrock::ComputeField<Tscal>> div_v_n;
 
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Q;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> a_x;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> a_y;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> a_z;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Q;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> a_x;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> a_y;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> a_z;
 
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Q_xm;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Q_ym;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Q_zm;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Q_xm;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Q_ym;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Q_zm;
 
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Qstar_x;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Qstar_y;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Qstar_z;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Qstar_x;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Qstar_y;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Qstar_z;
 
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Flux_x;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Flux_y;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Flux_z;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Flux_xp;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Flux_yp;
-        Component<shamrock::ComputeField<sycl::vec<Tscal,8>>> Flux_zp;
-
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Flux_x;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Flux_y;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Flux_z;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Flux_xp;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Flux_yp;
+        Component<shamrock::ComputeField<sycl::vec<Tscal, 8>>> Flux_zp;
 
         /**
          * @brief derivatives of the velocity
          * layout : \f$ [\partial_i u_x, \partial_i u_y, \partial_i u_z] \f$
          */
         Component<shamrock::ComputeField<Tvec>> gradu;
-        
+
         struct Timings {
             f64 interface = 0;
             f64 neighbors = 0;
-            f64 io = 0;
+            f64 io        = 0;
 
             /// Reset the timings logged in the storage
-            void reset(){
-                *this = {};
-            }
+            void reset() { *this = {}; }
         } timings_details;
     };
 

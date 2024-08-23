@@ -55,7 +55,7 @@ namespace shamcomm {
      *
      * @param force_aware Force the MPI CUDA & ROCM aware capability to be reported as @c Yes
      */
-    void fetch_mpi_capabilities(bool force_aware) ;
+    void fetch_mpi_capabilities(bool force_aware);
 
     /**
      * @brief Print the MPI capabilities
@@ -64,7 +64,7 @@ namespace shamcomm {
 
     /**
      * @brief Get the process name
-     * 
+     *
      * @return std::string the process name
      */
     std::string get_process_name();

@@ -15,27 +15,27 @@
 
 #if defined(DOXYGEN) || defined(SHAMROCK_EXECUTABLE_BUILD)
 
-#include "shambase/print.hpp"
-#include "shambindings/pybindaliases.hpp"
-#include "shambindings/start_python.hpp"
-#include <string>
+    #include "shambase/print.hpp"
+    #include "shambindings/pybindaliases.hpp"
+    #include "shambindings/start_python.hpp"
+    #include <string>
 
 /**
  * @brief path of the script to generate sys.path
- * 
- * @return const char* 
+ *
+ * @return const char*
  */
 extern const char *change_py_sys_path();
 
 /**
  * @brief Script to run ipython
- * 
+ *
  */
-extern const char * run_ipython_src();
+extern const char *run_ipython_src();
 
 /**
  * @brief Python script to modify sys.path to point to the correct libraries
- * 
+ *
  */
 const std::string modify_path = std::string("paths = ") + change_py_sys_path() + "\n" +
                                 R"(

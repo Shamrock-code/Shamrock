@@ -22,58 +22,41 @@
 namespace shamphys {
 
     template<class T>
-    struct EOS_Adiabatic{
+    struct EOS_Adiabatic {
 
-
-        static constexpr T pressure(T gamma, T rho, T u){
-            return (gamma - 1) * rho * u;
-        }
+        static constexpr T pressure(T gamma, T rho, T u) { return (gamma - 1) * rho * u; }
 
         static constexpr T soundspeed(T gamma, T rho, T u) {
             return sycl::sqrt(gamma * eos_adiabatic(gamma, rho, u) / rho);
         }
 
-        static constexpr T cs_from_p(T gamma, T rho, T P) {
-            return sycl::sqrt(gamma * P / rho);
-        }
-
+        static constexpr T cs_from_p(T gamma, T rho, T P) { return sycl::sqrt(gamma * P / rho); }
     };
 
-
     template<class T>
-    struct EOS_Polytropic{
+    struct EOS_Polytropic {
 
-
-        static constexpr T pressure(T gamma, T K, T rho){
-            return K * sycl::pow(rho, gamma);
-        }
+        static constexpr T pressure(T gamma, T K, T rho) { return K * sycl::pow(rho, gamma); }
 
         static constexpr T soundspeed(T gamma, T K, T rho) {
             return sycl::sqrt(gamma * eos_adiabatic(gamma, K, rho) / rho);
         }
 
-        static constexpr T polytropic_index(T n){
-            return 1. + 1./n;
-        }
-
+        static constexpr T polytropic_index(T n) { return 1. + 1. / n; }
     };
-
 
     template<class T>
-    struct EOS_LocallyIsothermal{
+    struct EOS_LocallyIsothermal {
 
-        static constexpr T soundspeed_sq(T cs0sq,T Rsq, T mq){
-            return cs0sq * sycl::pow(Rsq,mq);
+        static constexpr T soundspeed_sq(T cs0sq, T Rsq, T mq) {
+            return cs0sq * sycl::pow(Rsq, mq);
         }
 
-        static constexpr T pressure(T cs0sq,T Rsq, T mq, T rho){
-            return soundspeed_sq(cs0sq, Rsq, mq)*rho;
+        static constexpr T pressure(T cs0sq, T Rsq, T mq, T rho) {
+            return soundspeed_sq(cs0sq, Rsq, mq) * rho;
         }
 
-        static constexpr T pressure_from_cs(T cs0sq, T rho){
-            return cs0sq*rho;
-        }
+        static constexpr T pressure_from_cs(T cs0sq, T rho) { return cs0sq * rho; }
     };
-
 
 } // namespace shamphys

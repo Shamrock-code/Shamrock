@@ -17,10 +17,10 @@
 
 #ifdef SYCL_COMP_ACPP
 
-#include <hipSYCL/sycl/libkernel/vec.hpp>
-#include <hipSYCL/sycl/types.hpp>
+    #include <hipSYCL/sycl/libkernel/vec.hpp>
+    #include <hipSYCL/sycl/types.hpp>
 
-//copied from hipsycl sycl/sycl.hpp
+// copied from hipsycl sycl/sycl.hpp
 namespace sycl {
     using namespace hipsycl::sycl;
 }
@@ -29,13 +29,12 @@ using f16 = sycl::detail::hp_float; // issue with hipsycl not supporting half
 #endif
 
 #ifdef SYCL_COMP_INTEL_LLVM
-#include <cstdint>
-#include <detail/generic_type_lists.hpp>
-#include <sycl/types.hpp>
-using f16 = sycl::half    ;
+    #include <detail/generic_type_lists.hpp>
+    #include <sycl/types.hpp>
+    #include <cstdint>
+using f16 = sycl::half;
 
 #endif
 
-//error with hipsycl half not constexpr
-//constexpr f16 operator""_f16(long double n){return f16(n);}
-
+// error with hipsycl half not constexpr
+// constexpr f16 operator""_f16(long double n){return f16(n);}

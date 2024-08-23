@@ -11,10 +11,10 @@
 /**
  * @file AMRTree.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/vec.hpp"
 #include "shammodels/amr/zeus/Solver.hpp"
 #include "shammodels/amr/zeus/modules/SolverStorage.hpp"
@@ -28,7 +28,7 @@ namespace shammodels::zeus::modules {
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using Config  = SolverConfig<Tvec,TgridVec>;
+        using Config  = SolverConfig<Tvec, TgridVec>;
         using Storage = SolverStorage<Tvec, TgridVec, u64>;
 
         ShamrockCtx &context;

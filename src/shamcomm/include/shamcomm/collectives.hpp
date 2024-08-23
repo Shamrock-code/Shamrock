@@ -11,7 +11,7 @@
 /**
  * @file collectives.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include <string>
@@ -20,13 +20,13 @@ namespace shamcomm {
 
     /**
      * @brief Gathers a string from all nodes and store the result in a std::string
-     * 
+     *
      * This function gathers the string `send_vec` from all nodes and concatenate
      * the result in `recv_vec`. The result is ordered by the order of the nodes in
      * the communicator, i.e. the string is ordered by rank.
-     * 
+     *
      * \todo add fault tolerance
-     * 
+     *
      * @param send_vec The string to gather from all nodes
      * @param recv_vec The result of the gather. It will contain a concatenation
      *                of all the strings gathered from the nodes.

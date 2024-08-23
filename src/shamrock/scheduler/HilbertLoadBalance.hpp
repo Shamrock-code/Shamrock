@@ -12,23 +12,18 @@
  * @file HilbertLoadBalance.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief function to run load balancing with the hilbert curve
- * 
+ *
  */
 
-#include "shamrock/patch/Patch.hpp"
 #include "shammath/sfc/hilbert.hpp"
-
-#include <vector>
+#include "shamrock/patch/Patch.hpp"
 #include <tuple>
-
-
-
-
+#include <vector>
 
 namespace shamrock::scheduler {
 
-    struct LoadBalancingChangeList{
-        struct ChangeOp{
+    struct LoadBalancingChangeList {
+        struct ChangeOp {
             u64 patch_id;
             u64 patch_idx;
             i32 rank_owner_old;
@@ -40,34 +35,34 @@ namespace shamrock::scheduler {
     };
 
     /**
-    * @brief hilbert load balancing
-    * 
-    */
+     * @brief hilbert load balancing
+     *
+     */
     template<class hilbert_num>
-    class HilbertLoadBalance{
-        
+    class HilbertLoadBalance {
+
         using SFC = shamrock::sfc::HilbertCurve<hilbert_num, 3>;
 
-        public : 
-
+        public:
         /**
-        * @brief maximal value along an axis for the patch coordinate
-        * 
-        */
+         * @brief maximal value along an axis for the patch coordinate
+         *
+         */
         static constexpr u64 max_box_sz = shamrock::sfc::HilbertCurve<hilbert_num, 3>::max_val;
 
         /**
-        * @brief generate the change list from the list of patch to run the load balancing
-        * 
-        * @param global_patch_list the global patch list
-        * @return LoadBalancingChangeList list of changes to apply
-        *    format = (index of the patch in global list,old owner rank,new owner rank,mpi communication tag)
-        */
-        static LoadBalancingChangeList make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list);
-
+         * @brief generate the change list from the list of patch to run the load balancing
+         *
+         * @param global_patch_list the global patch list
+         * @return LoadBalancingChangeList list of changes to apply
+         *    format = (index of the patch in global list,old owner rank,new owner rank,mpi
+         * communication tag)
+         */
+        static LoadBalancingChangeList
+        make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list);
     };
 
-    using HilbertLB = HilbertLoadBalance<u64>;
+    using HilbertLB     = HilbertLoadBalance<u64>;
     using HilbertLBQuad = HilbertLoadBalance<shamrock::sfc::quad_hilbert_num>;
 
-}
+} // namespace shamrock::scheduler

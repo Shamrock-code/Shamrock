@@ -15,9 +15,9 @@
  */
 
 #include "shambindings/pybindaliases.hpp"
+#include "shamcmdopt/cmdopt.hpp"
 #include "shamcomm/mpiInfo.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamcmdopt/cmdopt.hpp"
 
 namespace shamsys::instance {
     void register_pymodules(py::module &m) {

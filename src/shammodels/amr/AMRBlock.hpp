@@ -16,12 +16,10 @@
 
 #include "shambase/integer.hpp"
 #include "shambackends/sycl_utils.hpp"
-#include "shambackends/vec.hpp"
-
 #include "shambackends/typeAliasVec.hpp"
+#include "shambackends/vec.hpp"
 #include "shammath/AABB.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"
-
 #include <array>
 
 namespace shammodels::amr {
@@ -32,7 +30,8 @@ namespace shammodels::amr {
      * @tparam Tvec
      * @tparam NsideBlockPow
      */
-    template<class Tvec, class TgridVec, u32 NsideBlockPow> struct AMRBlock {
+    template<class Tvec, class TgridVec, u32 NsideBlockPow>
+    struct AMRBlock {
         using Tscal = shambase::VecComponent<Tvec>;
 
         static constexpr u32 dim = shambase::VectorProperties<TgridVec>::dimension;

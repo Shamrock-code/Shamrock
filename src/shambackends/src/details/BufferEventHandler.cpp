@@ -12,20 +12,21 @@
  * @brief
  *
  */
- 
+
 #include "shambase/exception.hpp"
 #include <shambackends/details/BufferEventHandler.hpp>
 #include <stdexcept>
 
 namespace sham::details {
 
-    void BufferEventHandler::read_access(std::vector<sycl::event> &depends_list, SourceLocation src_loc) {
+    void BufferEventHandler::read_access(
+        std::vector<sycl::event> &depends_list, SourceLocation src_loc) {
 
         if (!up_to_date_events) {
             shambase::throw_with_loc<std::runtime_error>(
                 "you have requested a read access on a buffer in an incomplete state"
-                "read_access call location" + src_loc.format_one_line()
-                );
+                "read_access call location"
+                + src_loc.format_one_line());
         }
 
         up_to_date_events = false;
@@ -34,16 +35,16 @@ namespace sham::details {
         for (sycl::event e : write_events) {
             depends_list.push_back(e);
         }
-
     }
 
-    void BufferEventHandler::write_access(std::vector<sycl::event> &depends_list, SourceLocation src_loc) {
+    void BufferEventHandler::write_access(
+        std::vector<sycl::event> &depends_list, SourceLocation src_loc) {
 
         if (!up_to_date_events) {
             shambase::throw_with_loc<std::runtime_error>(
                 "you have requested a write access on a buffer in an incomplete state"
-                "write_access call location : " + src_loc.format_one_line()
-                );
+                "write_access call location : "
+                + src_loc.format_one_line());
         }
 
         up_to_date_events = false;
@@ -55,15 +56,14 @@ namespace sham::details {
         for (sycl::event e : read_events) {
             depends_list.push_back(e);
         }
-
     }
 
     void BufferEventHandler::complete_state(sycl::event e, SourceLocation src_loc) {
         if (up_to_date_events) {
             shambase::throw_with_loc<std::runtime_error>(
                 "the event state of that buffer is already complete"
-                "complete_state call location : " + src_loc.format_one_line()
-                );
+                "complete_state call location : "
+                + src_loc.format_one_line());
         }
 
         if (last_access == READ) {

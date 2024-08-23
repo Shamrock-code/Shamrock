@@ -31,7 +31,6 @@
  */
 class ShamCmdOptException : public std::exception {
     public:
-
     /// Exception CTOR from a message (cstring)
     explicit ShamCmdOptException(const char *message) : msg_(message) {}
 
@@ -57,15 +56,15 @@ namespace shamcmdopt {
                + "]";
     };
 
-    std::string_view executable_name; ///< Executable name
+    std::string_view executable_name;   ///< Executable name
     std::vector<std::string_view> args; ///< Executable argument list (mapped from argv)
-    bool init_done; ///< Has cmdopt init been called
+    bool init_done;                     ///< Has cmdopt init been called
 
     /// Struct for data related to an option
     struct Opts {
-        std::string name; ///< Name of the option (including dashes)
+        std::string name;                ///< Name of the option (including dashes)
         std::optional<std::string> args; ///< Documention of the option argument
-        std::string description; ///< Description of the otion
+        std::string description;         ///< Description of the otion
     };
 
     /// Registered cli options
@@ -73,7 +72,7 @@ namespace shamcmdopt {
 
     /**
      * @brief Check if the option name is registered
-     * 
+     *
      * @param name the option name (including dashes)
      * @return true the option is registered
      * @return false  the option is not registered
@@ -173,7 +172,7 @@ namespace shamcmdopt {
     }
 
     /// supplied argc from main
-    int argc; 
+    int argc;
 
     /// supplied argv from main
     char **argv;

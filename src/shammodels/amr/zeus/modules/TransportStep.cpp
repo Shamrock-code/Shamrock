@@ -97,8 +97,8 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_cell_cent
                         Tscal tmp_y = vyp.y();
                         Tscal tmp_z = vzp.z();
 
-                        Q[cell_gid] = {
-                            r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e / r};
+                        Q[cell_gid]
+                            = {r, tmp_m.x(), tmp_m.y(), tmp_m.z(), tmp_x, tmp_y, tmp_z, e / r};
                     }
                 });
         });
@@ -183,9 +183,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_limiter()
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_x", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().x() *
-                        coord_conv_fact;
+                    Tscal d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().x()
+                          * coord_conv_fact;
 
                     Tscal8 Qi  = Q[cell_gid];
                     Tscal8 Qim = Q_xm[cell_gid];
@@ -219,9 +219,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_limiter()
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_y", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().y() *
-                        coord_conv_fact;
+                    Tscal d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().y()
+                          * coord_conv_fact;
 
                     Tscal8 Qi  = Q[cell_gid];
                     Tscal8 Qim = Q_ym[cell_gid];
@@ -255,9 +255,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_limiter()
 
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().z() *
-                        coord_conv_fact;
+                    Tscal d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().z()
+                          * coord_conv_fact;
 
                     Tscal8 Qi  = Q[cell_gid];
                     Tscal8 Qim = Q_zm[cell_gid];
@@ -296,7 +296,8 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_limiter()
 }
 
 template<class Tvec, class TgridVec>
-void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_face_centered_moments(Tscal dt_in) {
+void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_face_centered_moments(
+    Tscal dt_in) {
 
     StackEntry stack_loc{};
 
@@ -390,9 +391,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_face_cent
             bool enable_vanleer   = solver_config.use_van_leer;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().x() *
-                        coord_conv_fact;
+                    Tscal d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().x()
+                          * coord_conv_fact;
 
                     Tscal8 Qi  = Q[cell_gid];
                     Tscal8 Qim = Q_xm[cell_gid];
@@ -437,9 +438,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_face_cent
             bool enable_vanleer   = solver_config.use_van_leer;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().y() *
-                        coord_conv_fact;
+                    Tscal d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().y()
+                          * coord_conv_fact;
 
                     Tscal8 Qi  = Q[cell_gid];
                     Tscal8 Qim = Q_ym[cell_gid];
@@ -483,9 +484,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_face_cent
             bool enable_vanleer   = solver_config.use_van_leer;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().z() *
-                        coord_conv_fact;
+                    Tscal d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().z()
+                          * coord_conv_fact;
 
                     Tscal8 Qi  = Q[cell_gid];
                     Tscal8 Qim = Q_zm[cell_gid];
@@ -611,9 +612,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_flux() {
             bool const_transp = solver_config.use_consistent_transport;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     Tscal8 Qstari = Qstar_x[cell_gid];
                     Tscal vx      = vel[cell_gid].x();
@@ -647,9 +648,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_flux() {
             bool const_transp = solver_config.use_consistent_transport;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     Tscal8 Qstari = Qstar_y[cell_gid];
                     Tscal vy      = vel[cell_gid].y();
@@ -681,9 +682,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_flux() {
             bool const_transp = solver_config.use_consistent_transport;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     Tscal8 Qstari = Qstar_z[cell_gid];
                     Tscal vz      = vel[cell_gid].z();
@@ -786,9 +787,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::update_Q(Tscal dt
             bool const_transp = solver_config.use_consistent_transport;
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tvec d_cell =
-                        (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>() *
-                        coord_conv_fact;
+                    Tvec d_cell
+                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                          * coord_conv_fact;
 
                     Tscal V = d_cell.x() * d_cell.y() * d_cell.z();
 

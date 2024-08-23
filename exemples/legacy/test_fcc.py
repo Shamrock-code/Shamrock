@@ -13,7 +13,7 @@ def get_pos(i: int,j: int,k: int):
 
 def get_dim(i: int,j: int,k: int):
 
-    
+
 
     x = 2*i + ((j+k) % 2)
     y = (3.**0.5)*(j + (1./3.)*(k % 2))

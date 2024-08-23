@@ -11,7 +11,7 @@
 /**
  * @file format.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
+ * @brief
  */
 
 #include <fmt/core.h>
@@ -19,7 +19,7 @@
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 
-namespace shambase{
+namespace shambase {
 
     /**
      * @brief Formatter alias for `fmt::formatter`

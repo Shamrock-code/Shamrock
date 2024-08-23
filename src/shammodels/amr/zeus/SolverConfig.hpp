@@ -11,10 +11,10 @@
 /**
  * @file SolverConfig.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/vec.hpp"
 #include "shammodels/amr/AMRBlock.hpp"
 #include "shammodels/amr/zeus/modules/SolverStorage.hpp"
@@ -25,23 +25,20 @@ namespace shammodels::zeus {
 
     template<class Tvec, class TgridVec>
     struct SolverConfig {
-        
-        using Tscal              = shambase::VecComponent<Tvec>;
 
-        Tscal eos_gamma = 5./3.;
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        Tscal eos_gamma = 5. / 3.;
 
         Tscal grid_coord_to_pos_fact = 1;
 
         static constexpr u32 NsideBlockPow = 1;
-        using AMRBlock = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>; 
+        using AMRBlock                     = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>;
 
-        inline void set_eos_gamma(Tscal gamma){
-            eos_gamma = gamma;
-        }
+        inline void set_eos_gamma(Tscal gamma) { eos_gamma = gamma; }
 
         bool use_consistent_transport = false;
-        bool use_van_leer = true;
+        bool use_van_leer             = true;
     };
 
-
-}
+} // namespace shammodels::zeus

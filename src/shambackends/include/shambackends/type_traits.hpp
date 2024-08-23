@@ -20,7 +20,6 @@
 
 #include "shambase/aliases_float.hpp"
 #include "shambase/type_traits.hpp"
-
 #include "shambackends/typeAliasFp16.hpp"
 
 namespace sham {

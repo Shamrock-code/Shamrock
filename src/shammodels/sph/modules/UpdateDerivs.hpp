@@ -11,12 +11,12 @@
 /**
  * @file UpdateDerivs.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shambackends/vec.hpp"
+
 #include "shambackends/typeAliasVec.hpp"
+#include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -47,10 +47,10 @@ namespace shammodels::sph::modules {
 
         using Cfg_AV = typename Config::AVConfig;
 
-        using None        = typename Cfg_AV::None;
-        using Constant    = typename Cfg_AV::Constant;
-        using VaryingMM97 = typename Cfg_AV::VaryingMM97;
-        using VaryingCD10 = typename Cfg_AV::VaryingCD10;
+        using None         = typename Cfg_AV::None;
+        using Constant     = typename Cfg_AV::Constant;
+        using VaryingMM97  = typename Cfg_AV::VaryingMM97;
+        using VaryingCD10  = typename Cfg_AV::VaryingCD10;
         using ConstantDisc = typename Cfg_AV::ConstantDisc;
 
         void update_derivs_noAV(None cfg);
@@ -59,6 +59,5 @@ namespace shammodels::sph::modules {
         void update_derivs_cd10(VaryingCD10 cfg);
         void update_derivs_disc_visco(ConstantDisc cfg);
     };
-
 
 } // namespace shammodels::sph::modules

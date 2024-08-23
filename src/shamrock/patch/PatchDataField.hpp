@@ -16,16 +16,14 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambackends/sycl_utils.hpp"
-
 #include "shamalgs/container/ResizableBuffer.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shamalgs/serialize.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-
 #include <array>
 #include <memory>
 #include <random>
@@ -109,10 +107,12 @@ class PatchDataField {
     using Field_type = T;
 
     inline PatchDataField(std::string name, u32 nvar)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(0), buf(shamsys::instance::get_compute_scheduler_ptr(),0){};
+        : field_name(std::move(name)), nvar(nvar), obj_cnt(0),
+          buf(shamsys::instance::get_compute_scheduler_ptr(), 0) {};
 
     inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt), buf(shamsys::instance::get_compute_scheduler_ptr(), obj_cnt * nvar){};
+        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt),
+          buf(shamsys::instance::get_compute_scheduler_ptr(), obj_cnt * nvar) {};
 
     inline PatchDataField(const PatchDataField &other)
         : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {}
@@ -124,7 +124,9 @@ class PatchDataField {
 
     inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
         : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(shamsys::instance::get_compute_scheduler_ptr(),std::forward<sycl::buffer<T>>(moved_buf), obj_cnt * nvar) {}
+          buf(shamsys::instance::get_compute_scheduler_ptr(),
+              std::forward<sycl::buffer<T>>(moved_buf),
+              obj_cnt * nvar) {}
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
@@ -257,7 +259,7 @@ class PatchDataField {
         StackEntry stack_loc{};
 
         if (get_obj_cnt() > 0) {
-        
+
             // buffer of booleans to store result of the condition
             sycl::buffer<u32> mask(get_obj_cnt());
 
@@ -274,7 +276,7 @@ class PatchDataField {
 
             return shamalgs::numeric::stream_compact(
                 shamsys::instance::get_compute_queue(), mask, get_obj_cnt());
-        }else{
+        } else {
             return {std::nullopt, 0};
         }
     }

@@ -33,28 +33,28 @@ namespace shambase {
         using T = _T;
 
         /// @brief Whether the type is a specialized primitive type (i.e. not a float)
-        static constexpr bool is_specialized = false; 
+        static constexpr bool is_specialized = false;
 
         /// @brief Whether the type is a float type
-        static constexpr bool is_float       = false;
+        static constexpr bool is_float = false;
 
         /// @brief Whether the type is an integer type
-        static constexpr bool is_int         = false;
+        static constexpr bool is_int = false;
 
         /// @brief Whether the type is an unsigned integer type
-        static constexpr bool is_unsigned    = false;
+        static constexpr bool is_unsigned = false;
 
         /// @brief The maximum value of the type
-        static constexpr T max     = std::numeric_limits<T>::max();
+        static constexpr T max = std::numeric_limits<T>::max();
 
         /// @brief The minimum value of the type (negative if float)
-        static constexpr T min     = std::numeric_limits<T>::lowest();
+        static constexpr T min = std::numeric_limits<T>::lowest();
 
         /// @brief The smallest value of the type that can be represented exactly
         static constexpr T epsilon = std::numeric_limits<T>::epsilon();
 
         /// @brief Infinity if the type can represent it
-        static constexpr T infty   = std::numeric_limits<T>::infinity();
+        static constexpr T infty = std::numeric_limits<T>::infinity();
     };
 #else
 

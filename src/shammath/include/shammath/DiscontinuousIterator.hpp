@@ -20,12 +20,11 @@
  */
 
 #include "shambase/aliases_int.hpp"
-
 #include <bitset>
 
 namespace shammath {
     /**
-     * @brief Discontinuous Iterator 
+     * @brief Discontinuous Iterator
      * will iterate over every values in an integer set in the most discontinuous way possible
      *
      * Usage :
@@ -38,8 +37,8 @@ namespace shammath {
      *     // do something with the value
      * }
      * \endcode
-     * 
-     * @tparam T 
+     *
+     * @tparam T
      */
     template<class T>
     class DiscontinuousIterator {
@@ -54,7 +53,8 @@ namespace shammath {
         int firstbit;
         bool done;
 
-        DiscontinuousIterator(T tmin, T tmax) : offset(tmin), tmax(tmax - tmin), max(tmax - tmin), current(0) {
+        DiscontinuousIterator(T tmin, T tmax)
+            : offset(tmin), tmax(tmax - tmin), max(tmax - tmin), current(0) {
 
             done = !(tmin < tmax);
 
@@ -76,7 +76,7 @@ namespace shammath {
         T get() { return current.to_ullong() + offset; }
 
         void advance_it() {
-            if(!done){
+            if (!done) {
                 do {
                     bool carry  = true; // backward
                     int pointer = firstbit;
@@ -96,5 +96,5 @@ namespace shammath {
             }
         }
     };
-    
+
 } // namespace shammath

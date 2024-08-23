@@ -23,4 +23,3 @@ target_link_libraries(shamcmdopt PUBLIC shambase)
 target_include_directories(shamcmdopt PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
-

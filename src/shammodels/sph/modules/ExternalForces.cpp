@@ -14,7 +14,6 @@
  */
 
 #include "ExternalForces.hpp"
-
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -107,7 +106,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                     shambase::parralel_for(
                         cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
                             Tvec r_a = xyz[gid];
-                            axyz_ext[gid] += Tvec{r_a.x() * two_eta,0,0};
+                            axyz_ext[gid] += Tvec{r_a.x() * two_eta, 0, 0};
                         });
                 });
             });
@@ -186,9 +185,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                             Tscal abs_ra_3 = abs_ra_2 * abs_ra;
                             Tscal abs_ra_5 = abs_ra_2 * abs_ra_2 * abs_ra;
 
-                            Tvec omega_a =
-                                (S * (2 / abs_ra_3)) -
-                                (6 * sham::dot(S, r_a) * r_a) / abs_ra_5;
+                            Tvec omega_a
+                                = (S * (2 / abs_ra_3)) - (6 * sham::dot(S, r_a) * r_a) / abs_ra_5;
                             Tvec acc_lt = sycl::cross(v_a, omega_a);
                             axyz[gid] += acc_lt;
                         });
@@ -198,9 +196,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
             shamrock::patch::SimulationBoxInfo &sim_box = scheduler().get_sim_box();
             Tvec bsize                                  = sim_box.get_bounding_box_size<Tvec>();
-            Tscal bsize_dir                             = bsize.x() * ext_force->shear_base.x() +
-                              bsize.y() * ext_force->shear_base.y() +
-                              bsize.z() * ext_force->shear_base.z();
+            Tscal bsize_dir                             = bsize.x() * ext_force->shear_base.x()
+                              + bsize.y() * ext_force->shear_base.y()
+                              + bsize.z() * ext_force->shear_base.z();
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 sycl::buffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(0);
@@ -211,21 +209,20 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                     sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
                     sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
                     sycl::accessor axyz{buf_axyz, cgh, sycl::read_write};
-                    
-                    Tscal Omega_0 = ext_force->Omega_0;
-                    Tscal Omega_0_sq = Omega_0*Omega_0;
-                    Tscal q = ext_force->q;
+
+                    Tscal Omega_0    = ext_force->Omega_0;
+                    Tscal Omega_0_sq = Omega_0 * Omega_0;
+                    Tscal q          = ext_force->q;
 
                     shambase::parralel_for(
                         cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
-                            Tvec r_a       = xyz[gid];
+                            Tvec r_a = xyz[gid];
                             Tvec v_a = vxyz[gid];
                             axyz[gid] += Tvec{
-                                2*Omega_0*(q*Omega_0*r_a.x() + v_a.y()),
-                                -2*Omega_0*v_a.x(),
-                                -Omega_0_sq*r_a.z()
-                            };
-                            
+                                2 * Omega_0 * (q * Omega_0 * r_a.x() + v_a.y()),
+                                -2 * Omega_0 * v_a.x(),
+                                -Omega_0_sq * r_a.z()};
+
                             ;
                         });
                 });
@@ -297,11 +294,11 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
                 });
             });
 
-            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_keep =
-                shamalgs::numeric::stream_compact(q, not_accreted, Nobj);
+            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_keep
+                = shamalgs::numeric::stream_compact(q, not_accreted, Nobj);
 
-            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_accrete =
-                shamalgs::numeric::stream_compact(q, accreted, Nobj);
+            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_accrete
+                = shamalgs::numeric::stream_compact(q, accreted, Nobj);
 
             // sum accreted values onto sink
 

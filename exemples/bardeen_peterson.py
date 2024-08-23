@@ -88,7 +88,7 @@ def plot_vertical_profile(r, rrange, label = ""):
     ysel = np.array(ysel)
 
     rhobar = np.mean(rhosel)
-    
+
     plt.scatter(ysel, rhosel/rhobar, s=1, label = label)
 
 print("Run")

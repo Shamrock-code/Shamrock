@@ -9,40 +9,33 @@
 /**
  * @file pyAMRTestModel.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
- 
-
-#include "shambindings/pybindaliases.hpp"
 
 #include "shambindings/pybind11_stl.hpp"
+#include "shambindings/pybindaliases.hpp"
+#include "shammodels/amr/AMROverheadtest.hpp"
 #include <pybind11/numpy.h>
-
 #include <memory>
 
-#include "shammodels/amr/AMROverheadtest.hpp"
+Register_pymod(pyamrtestmode) {
 
-Register_pymod(pyamrtestmode){
-
-
-    shamcomm::logs::debug_ln("[Py]","registering shamrock.AMRTestModel");
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.AMRTestModel");
     py::class_<AMRTestModel>(m, "AMRTestModel")
-        .def(py::init([](AMRTestModel::Grid & grd) {
-                return std::make_unique<AMRTestModel>(grd);
-            }))
-        .def("refine",
-        [](AMRTestModel& obj){
+        .def(py::init([](AMRTestModel::Grid &grd) {
+            return std::make_unique<AMRTestModel>(grd);
+        }))
+        .def(
+            "refine",
+            [](AMRTestModel &obj) {
                 obj.refine();
-        }).def("derefine",
-        [](AMRTestModel& obj){
+            })
+        .def(
+            "derefine",
+            [](AMRTestModel &obj) {
                 obj.derefine();
-        }).def("step",
-        [](AMRTestModel& obj){
-                obj.step();
+            })
+        .def("step", [](AMRTestModel &obj) {
+            obj.step();
         });
-
-
-
-
-
 }

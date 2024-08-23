@@ -11,14 +11,13 @@
 /**
  * @file AsciiSplitDump.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include <filesystem>
 #include <fstream>

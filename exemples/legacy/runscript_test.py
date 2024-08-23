@@ -1,7 +1,7 @@
 import shamrock
 
 import numpy
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
 
 
@@ -31,7 +31,7 @@ def write_dic_to_vtk(dic,filename):
     for k in dic.keys():
 
         if not (k == "xyz"):
-            
+
             if type(dic[k][0]) == list:
 
                 vect = vtk.vtkDoubleArray()
@@ -106,7 +106,7 @@ def sim_setup(ctx : shamrock.Context):
 
     #todo set box size to otherwise split patchdata won't work in the setup
 
-    dr = 1/xs 
+    dr = 1/xs
 
     (xs,ys,zs) = setup.get_box_dim_icnt(dr,bdim)
 
@@ -148,7 +148,7 @@ def print_dist(ctx : shamrock.Context, cname : str,fname : str):
     hpart = numpy.array(dic["hpart"])
 
     plt.plot(xyz[:,0], hpart,".",label = cname)
- 
+
 
 
 

@@ -8,142 +8,76 @@
 
 #pragma once
 
-
 /**
  * @file merged_patch.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
-//#include "shamrock/legacy/patch/patchdata_buffer.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
+// #include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 
-
-
 template<class flt>
-class MergedPatchData {public:
-
+class MergedPatchData {
+    public:
     using vec = sycl::vec<flt, 3>;
 
     u32 or_element_cnt = 0;
     shamrock::patch::PatchData data;
-    std::tuple<vec,vec> box;
+    std::tuple<vec, vec> box;
 
-    MergedPatchData(shamrock::patch::PatchDataLayout & pdl) : data(pdl){};
+    MergedPatchData(shamrock::patch::PatchDataLayout &pdl) : data(pdl) {};
 
     [[nodiscard]]
-    static std::unordered_map<u64,MergedPatchData<flt>> merge_patches(
-        PatchScheduler & sched,
-        LegacyInterfacehandler<vec, flt> & interface_hndl);
+    static std::unordered_map<u64, MergedPatchData<flt>>
+    merge_patches(PatchScheduler &sched, LegacyInterfacehandler<vec, flt> &interface_hndl);
 
-    inline void write_back(shamrock::patch::PatchData & pdat){
+    inline void write_back(shamrock::patch::PatchData &pdat) {
         pdat.overwrite(data, or_element_cnt);
     }
-
 };
-
 
 template<class flt>
 inline void write_back_merge_patches(
-    PatchScheduler & sched,
-    std::unordered_map<u64,MergedPatchData<flt>> & merge_pdat){
+    PatchScheduler &sched, std::unordered_map<u64, MergedPatchData<flt>> &merge_pdat) {
 
-        using namespace shamrock::patch;
-    logger::debug_sycl_ln("Merged Patch","write back merged buffers");
+    using namespace shamrock::patch;
+    logger::debug_sycl_ln("Merged Patch", "write back merged buffers");
 
-    
+    sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        if (merge_pdat.at(id_patch).or_element_cnt == 0)
+            std::cout << " empty => skipping" << std::endl;
 
-    sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData & pdat) {
-        if(merge_pdat.at(id_patch).or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
-
-
-        logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> write back merge buf");
-
+        logger::debug_sycl_ln("Merged Patch", "patch : n°", id_patch, "-> write back merge buf");
 
         merge_pdat.at(id_patch).write_back(pdat);
-
     });
-
 }
 
-template<class flt,class T>
-class MergedPatchCompField {public:
-
+template<class flt, class T>
+class MergedPatchCompField {
+    public:
     using vec = sycl::vec<flt, 3>;
 
     u32 or_element_cnt = 0;
     PatchDataField<T> buf;
 
-    MergedPatchCompField() : buf("comp_field",1) {};
+    MergedPatchCompField() : buf("comp_field", 1) {};
 
     [[nodiscard]]
-    static std::unordered_map<u64,MergedPatchCompField<flt,T>> merge_patches_cfield(  
-        PatchScheduler & sched,
-        LegacyInterfacehandler<vec, flt> & interface_hndl,
-        PatchComputeField<T> & comp_field,
-        PatchComputeFieldInterfaces<T> & comp_field_interf);
+    static std::unordered_map<u64, MergedPatchCompField<flt, T>> merge_patches_cfield(
+        PatchScheduler &sched,
+        LegacyInterfacehandler<vec, flt> &interface_hndl,
+        PatchComputeField<T> &comp_field,
+        PatchComputeFieldInterfaces<T> &comp_field_interf);
 
-    inline void write_back(PatchDataField<T> & field){
-        field.overwrite(buf, or_element_cnt);
-    }
-
+    inline void write_back(PatchDataField<T> &field) { field.overwrite(buf, or_element_cnt); }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #if false
 
@@ -168,14 +102,14 @@ template<class pos_prec,class pos_vec>
 inline void make_merge_patches(
     PatchScheduler & sched,
     InterfaceHandler<pos_vec, pos_prec> & interface_hndl,
-    
+
     std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merge_pdat_buf){
 
     logger::debug_sycl_ln("Merged Patch","make_merge_patches");
 
     sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
-        
+
 
         auto tmp_box = sched.patch_data.sim_box.get_box<pos_prec>(cur_p);
 
@@ -199,13 +133,13 @@ inline void make_merge_patches(
                 len_main += (cnt);
             }
         }
-        
+
         u32 total_element = len_main;
         //merge_pdat_buf[id_patch].data.element_count = len_main;
 
-        
 
-        
+
+
         std::unique_ptr<PatchDataBuffer> merged_buf = std::make_unique<PatchDataBuffer>(pdat_buf.pdl, total_element);
 
 
@@ -287,46 +221,31 @@ inline void make_merge_patches(
             fields_u64_offset.push_back(0);
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        #define X(arg)\
-        for(u32 idx = 0; idx < pdat_buf.pdl.fields_##arg.size(); idx++){\
-            u32 nvar = merged_buf->pdl.fields_##arg[idx].nvar;\
-            syclalgs::basic::write_with_offset_into(*merged_buf->fields_##arg[idx],*pdat_buf.fields_##arg[idx],0,pdat_buf.element_count*nvar);\
-            fields_##arg##_offset[idx] += pdat_buf.element_count  *  nvar ;\
+    #define X(arg)                                                                                 \
+        for (u32 idx = 0; idx < pdat_buf.pdl.fields_##arg.size(); idx++) {                         \
+            u32 nvar = merged_buf->pdl.fields_##arg[idx].nvar;                                     \
+            syclalgs::basic::write_with_offset_into(                                               \
+                *merged_buf->fields_##arg[idx],                                                    \
+                *pdat_buf.fields_##arg[idx],                                                       \
+                0,                                                                                 \
+                pdat_buf.element_count *nvar);                                                     \
+            fields_##arg##_offset[idx] += pdat_buf.element_count * nvar;                           \
         }
         XMAC_LIST_ENABLED_FIELD
-        #undef X
+    #undef X
 
 
 
 
 
 
-        
 
-        
+
+
 
         interface_hndl.for_each_interface_buf(
-            id_patch, 
-            shamsys::instance::get_compute_queue(), 
+            id_patch,
+            shamsys::instance::get_compute_queue(),
             [&](u64 patch_id, u64 interf_patch_id, PatchDataBuffer & interfpdat, std::tuple<f32_3,f32_3> box){
 
                 //std::cout <<  "patch : n°"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
@@ -334,19 +253,18 @@ inline void make_merge_patches(
                 min_box = sycl::min(std::get<0>(box),min_box);
                 max_box = sycl::max(std::get<1>(box),max_box);
 
-
-
-
-
-
-                #define X(arg)\
-                for(u32 idx = 0; idx < interfpdat.pdl.fields_##arg.size(); idx++){\
-                    u32 nvar = merged_buf->pdl.fields_##arg[idx].nvar;\
-                    syclalgs::basic::write_with_offset_into(*merged_buf->fields_##arg[idx],*interfpdat.fields_##arg[idx],fields_##arg##_offset[idx],interfpdat.element_count*nvar);\
-                    fields_##arg##_offset[idx] += interfpdat.element_count  *  nvar ;\
-                }
+    #define X(arg)                                                                                 \
+        for (u32 idx = 0; idx < interfpdat.pdl.fields_##arg.size(); idx++) {                       \
+            u32 nvar = merged_buf->pdl.fields_##arg[idx].nvar;                                     \
+            syclalgs::basic::write_with_offset_into(                                               \
+                *merged_buf->fields_##arg[idx],                                                    \
+                *interfpdat.fields_##arg[idx],                                                     \
+                fields_##arg##_offset[idx],                                                        \
+                interfpdat.element_count *nvar);                                                   \
+            fields_##arg##_offset[idx] += interfpdat.element_count * nvar;                         \
+        }
                 XMAC_LIST_ENABLED_FIELD
-                #undef X
+    #undef X
 
 
             }
@@ -371,13 +289,13 @@ template<class pos_prec,class pos_vec>
 inline void write_back_merge_patches(
     PatchScheduler & sched,
     InterfaceHandler<pos_vec, pos_prec> & interface_hndl,
-    
+
     std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merge_pdat_buf){
 
 
     logger::debug_sycl_ln("Merged Patch","write back merged buffers");
 
-    
+
 
     sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
         if(merge_pdat_buf.at(id_patch).or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
@@ -385,14 +303,17 @@ inline void write_back_merge_patches(
 
         logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> write back merge buf");
 
-
-        #define X(arg)\
-        for(u32 idx = 0; idx < pdat_buf.pdl.fields_##arg.size(); idx++){\
-            u32 nvar = pdat_buf.pdl.fields_##arg[idx].nvar;\
-            syclalgs::basic::write_with_offset_into(*pdat_buf.fields_##arg[idx],* merge_pdat_buf.at(id_patch).data->fields_##arg[idx],0,pdat_buf.element_count*nvar);\
+    #define X(arg)                                                                                 \
+        for (u32 idx = 0; idx < pdat_buf.pdl.fields_##arg.size(); idx++) {                         \
+            u32 nvar = pdat_buf.pdl.fields_##arg[idx].nvar;                                        \
+            syclalgs::basic::write_with_offset_into(                                               \
+                *pdat_buf.fields_##arg[idx],                                                       \
+                *merge_pdat_buf.at(id_patch).data->fields_##arg[idx],                              \
+                0,                                                                                 \
+                pdat_buf.element_count *nvar);                                                     \
         }
         XMAC_LIST_ENABLED_FIELD
-        #undef X
+    #undef X
 
 
     });
@@ -416,7 +337,7 @@ inline void make_merge_patches_comp_field(
 
     sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
 
-        
+
 
         auto compfield_buf = comp_field.get_sub_buf(id_patch);
 
@@ -426,7 +347,7 @@ inline void make_merge_patches_comp_field(
         merge_pdat_comp_field[id_patch].or_element_cnt = len_main;
 
         {
-            
+
             const std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
             for (auto & [int_pid, pdat_ptr] : p_interf_lst) {
                 len_main += (pdat_ptr->size());
@@ -439,7 +360,7 @@ inline void make_merge_patches_comp_field(
 
         u32 offset_buf = 0;
 
-        
+
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             auto source = compfield_buf->get_access<sycl::access::mode::read>(cgh);
             auto dest = merge_pdat_comp_field[id_patch].buf->template get_access<sycl::access::mode::discard_write>(cgh);
@@ -448,7 +369,7 @@ inline void make_merge_patches_comp_field(
             }, [=](sycl::item<1> item) { dest[item] = source[item]; });
         });
         offset_buf += compfield_buf->size();// TODO remove ref to size
-        
+
 
         std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>> & p_interf_lst = comp_field_interf.interface_map[id_patch];
 
@@ -468,14 +389,14 @@ inline void make_merge_patches_comp_field(
                     cgh.parallel_for( sycl::range{len_int}, [=](sycl::item<1> item) { dest[item.get_id(0) + off] = source[item]; });
                 });
                 offset_buf += len_int;
-                
+
             }
         }
 
 
 
-        
-        
+
+
 
     });
 

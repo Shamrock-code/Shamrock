@@ -37,7 +37,8 @@ namespace shamcomm {
     /**
      * @brief Gets the information about the MPI communicator
      *
-     * This function queries the MPI communicator size and rank. It should be called once in the program.
+     * This function queries the MPI communicator size and rank. It should be called once in the
+     * program.
      */
     void fetch_world_info();
 

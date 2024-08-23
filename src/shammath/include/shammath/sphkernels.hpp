@@ -207,8 +207,6 @@ namespace shammath::details {
         }
     };
 
-
-
     template<class Tscal>
     class KernelDefM7 {
         public:
@@ -252,7 +250,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -273,10 +270,10 @@ namespace shammath::details {
             t3 = sham::pow_constexpr<5>(t3);
             t4 = sham::pow_constexpr<5>(t4);
 
-            t1 *= (-6.)*(1.);
-            t2 *= (-6.)*(-7.);
-            t3 *= (-6.)*(21.);
-            t4 *= (-6.)*(-35.);
+            t1 *= (-6.) * (1.);
+            t2 *= (-6.) * (-7.);
+            t3 *= (-6.) * (21.);
+            t4 *= (-6.) * (-35.);
 
             if (q < div1_2) {
                 return t1 + t2 + t3 + t4;
@@ -328,7 +325,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -343,10 +339,10 @@ namespace shammath::details {
             t3 = sham::pow_constexpr<6>(t3);
             t4 = sham::pow_constexpr<6>(t4);
 
-            t1 *= (-7.)*(1.);
-            t2 *= (-7.)*(-8.);
-            t3 *= (-7.)*(28.);
-            t4 *= (-7.)*(-56.);
+            t1 *= (-7.) * (1.);
+            t2 *= (-7.) * (-8.);
+            t3 *= (-7.) * (28.);
+            t4 *= (-7.) * (-56.);
 
             if (q < 1) {
                 return t1 + t2 + t3 + t4;
@@ -360,10 +356,6 @@ namespace shammath::details {
                 return 0;
         }
     };
-
-
-
-
 
     template<class Tscal>
     class KernelDefM9 {
@@ -413,7 +405,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -436,11 +427,11 @@ namespace shammath::details {
             t4 = sham::pow_constexpr<7>(t4);
             t5 = sham::pow_constexpr<7>(t5);
 
-            t1 *= (-8.)*(1.);
-            t2 *= (-8.)*(-9.);
-            t3 *= (-8.)*(36.);
-            t4 *= (-8.)*(-84.);
-            t5 *= (-8.)*(126.);
+            t1 *= (-8.) * (1.);
+            t2 *= (-8.) * (-9.);
+            t3 *= (-8.) * (36.);
+            t4 *= (-8.) * (-84.);
+            t5 *= (-8.) * (126.);
 
             if (q < div1_2) {
                 return t1 + t2 + t3 + t4 + t5;
@@ -456,7 +447,6 @@ namespace shammath::details {
                 return 0;
         }
     };
-
 
     template<class Tscal>
     class KernelDefM10 {
@@ -500,7 +490,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -517,11 +506,11 @@ namespace shammath::details {
             t4 = sham::pow_constexpr<8>(t4);
             t5 = sham::pow_constexpr<8>(t5);
 
-            t1 *= (-9.)*(1.);
-            t2 *= (-9.)*(-10.);
-            t3 *= (-9.)*(45.);
-            t4 *= (-9.)*(-120.);
-            t5 *= (-9.)*(210.);
+            t1 *= (-9.) * (1.);
+            t2 *= (-9.) * (-10.);
+            t3 *= (-9.) * (45.);
+            t4 *= (-9.) * (-120.);
+            t5 *= (-9.) * (210.);
 
             if (q < 1) {
                 return t1 + t2 + t3 + t4 + t5;
@@ -681,8 +670,8 @@ namespace shammath {
         using Generator                     = BaseKernel;
         using Tscal                         = Tscal_;
         inline static constexpr Tscal Rkern = BaseKernel::Rkern; /*!< Radius of the support */
-        inline static constexpr Tscal hfactd =
-            BaseKernel::hfactd; /*!< default $h_{\rm fact}$ for this kernel*/
+        inline static constexpr Tscal hfactd
+            = BaseKernel::hfactd; /*!< default $h_{\rm fact}$ for this kernel*/
 
         /**
          * @brief the base function for this SPH kernel

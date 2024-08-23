@@ -12,5 +12,5 @@
  * @brief
  *
  */
- 
+
 #include <shambackends/DeviceBuffer.hpp>

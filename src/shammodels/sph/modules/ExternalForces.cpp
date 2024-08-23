@@ -42,7 +42,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
     sink_update.compute_sph_forces();
 
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
-        if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force)) {
+        if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 
             Tscal cmass = ext_force->central_mass;
             Tscal G     = solver_config.get_constant_G();
@@ -67,7 +67,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                 });
             });
 
-        } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force)) {
+        } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
 
             Tscal cmass = ext_force->central_mass;
             Tscal G     = solver_config.get_constant_G();
@@ -91,7 +91,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                         });
                 });
             });
-        } else if (EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force)) {
+        } else if (
+            EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 sycl::buffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
@@ -153,9 +154,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
     using EF_LenseThirring     = typename SolverConfigExtForce::LenseThirring;
 
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
-        if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force)) {
+        if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 
-        } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force)) {
+        } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
 
             Tscal cmass = ext_force->central_mass;
             Tscal G     = solver_config.get_constant_G();
@@ -192,7 +193,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                         });
                 });
             });
-        } else if (EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force)) {
+        } else if (
+            EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
 
             shamrock::patch::SimulationBoxInfo &sim_box = scheduler().get_sim_box();
             Tvec bsize                                  = sim_box.get_bounding_box_size<Tvec>();
@@ -259,10 +261,10 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
         Tvec pos_accretion;
         Tscal Racc;
 
-        if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force)) {
+        if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
             pos_accretion = {0, 0, 0};
             Racc          = ext_force->Racc;
-        } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force)) {
+        } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
             pos_accretion = {0, 0, 0};
             Racc          = ext_force->Racc;
         } else {

@@ -14,47 +14,73 @@
  * @brief
  *
  */
- 
+
 #include "shambackends/sycl.hpp"
 #include "shammodels/amr/NeighGraph.hpp"
 
 namespace shammodels::basegodunov::modules {
 
     template<class T>
-    class NeighGraphLinkField{
+    class NeighGraphLinkField {
         public:
-
         sycl::buffer<T> link_graph_field;
         u32 link_count;
+        u32 nvar;
 
-        NeighGraphLinkField(NeighGraph & graph): 
-        link_graph_field(graph.link_count), 
-        link_count(graph.link_count) {}
+        NeighGraphLinkField(NeighGraph &graph)
+            : link_graph_field(graph.link_count), link_count(graph.link_count), nvar(1) {}
 
+        NeighGraphLinkField(NeighGraph &graph, u32 nvar)
+            : link_graph_field(graph.link_count * nvar), link_count(graph.link_count), nvar(nvar) {}
     };
 
     template<class LinkFieldCompute, class T, class... Args>
-    NeighGraphLinkField<T> compute_link_field(sycl::queue &q,NeighGraph & graph, Args &&...args){
+    NeighGraphLinkField<T> compute_link_field(sycl::queue &q, NeighGraph &graph, Args &&...args) {
 
-        NeighGraphLinkField<T> result {graph};
+        NeighGraphLinkField<T> result{graph};
 
         q.submit([&](sycl::handler &cgh) {
-            NeighGraphLinkiterator link_iter {graph, cgh};
-            LinkFieldCompute compute (cgh, std::forward<Args>(args)...);
-            
-            sycl::accessor acc_link_field {result.link_graph_field, cgh, sycl::write_only, sycl::no_init};
+            NeighGraphLinkiterator link_iter{graph, cgh};
+            LinkFieldCompute compute(cgh, std::forward<Args>(args)...);
+
+            sycl::accessor acc_link_field{
+                result.link_graph_field, cgh, sycl::write_only, sycl::no_init};
 
             shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
-                
-                link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id){
+                link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
                 });
-
             });
         });
 
         return result;
+    }
+    template<class LinkFieldCompute, class T, class... Args>
+    NeighGraphLinkField<T>
+    compute_link_field_indep_nvar(sycl::queue &q, NeighGraph &graph, u32 nvar, Args &&...args) {
 
+        NeighGraphLinkField<T> result{graph, nvar};
+
+        q.submit([&](sycl::handler &cgh) {
+            NeighGraphLinkiterator link_iter{graph, cgh};
+            LinkFieldCompute compute(cgh, std::forward<Args>(args)...);
+
+            sycl::accessor acc_link_field{
+                result.link_graph_field, cgh, sycl::write_only, sycl::no_init};
+
+            shambase::parralel_for(
+                cgh, graph.obj_cnt * nvar, "compute link field indep nvar", [=](u32 idvar_a) {
+                    const u32 id_cell_a = idvar_a / nvar;
+                    const u32 nvar_loc  = idvar_a % nvar;
+
+                    link_iter.for_each_object_link_id(id_cell_a, [&](u32 id_cell_b, u32 link_id) {
+                        acc_link_field[link_id * nvar + nvar_loc] = compute.get_link_field_val(
+                            id_cell_a * nvar + nvar_loc, id_cell_b * nvar + nvar_loc);
+                    });
+                });
+        });
+
+        return result;
     }
 
     /*
@@ -64,9 +90,9 @@ namespace shammodels::basegodunov::modules {
         sycl::buffer<Tvec> link_shift_b;
         u32 link_count;
 
-        FaceShiftInfo(NeighGraph & graph): 
-        link_shift_a(graph.link_count), 
-        link_shift_b(graph.link_count), 
+        FaceShiftInfo(NeighGraph & graph):
+        link_shift_a(graph.link_count),
+        link_shift_b(graph.link_count),
         link_count(graph.link_count) {}
     };
 
@@ -81,11 +107,12 @@ namespace shammodels::basegodunov::modules {
         q.submit([&](sycl::handler &cgh) {
             NeighGraphLinkiterator link_iter {graph, cgh};
             LinkFieldCompute compute (cgh, std::forward<Args>(args)...);
-            
-            sycl::accessor acc_link_field {result.template link_graph_field, cgh, sycl::write_only, sycl::no_init};
+
+            sycl::accessor acc_link_field {result.template link_graph_field, cgh, sycl::write_only,
+    sycl::no_init};
 
             shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
-                
+
                 link_iter.for_each_object_link(id_a, [&](u32 id_b, u32 link_id){
                     acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
                 });

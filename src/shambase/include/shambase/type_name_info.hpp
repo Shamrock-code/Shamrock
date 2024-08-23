@@ -9,9 +9,9 @@
 #pragma once
 
 /**
- * @file type_traits.hpp
+ * @file type_name_info.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
+ * @brief
  *
  */
 
@@ -37,19 +37,48 @@ namespace shambase {
 
 } // namespace shambase
 
-
 namespace shambase {
 
-    template<> struct TypeNameInfo<i64 > {inline static const std::string name = "i64";};
-    template<> struct TypeNameInfo<i32 > {inline static const std::string name = "i32";};
-    template<> struct TypeNameInfo<i16 > {inline static const std::string name = "i16";};
-    template<> struct TypeNameInfo<i8  > {inline static const std::string name = "i8";};
-    template<> struct TypeNameInfo<u64 > {inline static const std::string name = "u64";};
-    template<> struct TypeNameInfo<u32 > {inline static const std::string name = "u32";};
-    template<> struct TypeNameInfo<u16 > {inline static const std::string name = "u16";};
-    template<> struct TypeNameInfo<u8  > {inline static const std::string name = "u8";};
+    template<>
+    struct TypeNameInfo<i64> {
+        inline static const std::string name = "i64";
+    };
+    template<>
+    struct TypeNameInfo<i32> {
+        inline static const std::string name = "i32";
+    };
+    template<>
+    struct TypeNameInfo<i16> {
+        inline static const std::string name = "i16";
+    };
+    template<>
+    struct TypeNameInfo<i8> {
+        inline static const std::string name = "i8";
+    };
+    template<>
+    struct TypeNameInfo<u64> {
+        inline static const std::string name = "u64";
+    };
+    template<>
+    struct TypeNameInfo<u32> {
+        inline static const std::string name = "u32";
+    };
+    template<>
+    struct TypeNameInfo<u16> {
+        inline static const std::string name = "u16";
+    };
+    template<>
+    struct TypeNameInfo<u8> {
+        inline static const std::string name = "u8";
+    };
 
-    template<> struct TypeNameInfo<f64> {inline static const std::string name = "f64";};
-    template<> struct TypeNameInfo<f32> {inline static const std::string name = "f32";};
+    template<>
+    struct TypeNameInfo<f64> {
+        inline static const std::string name = "f64";
+    };
+    template<>
+    struct TypeNameInfo<f32> {
+        inline static const std::string name = "f32";
+    };
 
-}
+} // namespace shambase

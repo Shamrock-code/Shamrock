@@ -15,8 +15,10 @@
  *
  */
 
+#include "shambackends/type_traits.hpp"
 #include "shambackends/vec.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <nlohmann/json.hpp>
 #include <variant>
 
 namespace shammodels::sph {
@@ -83,14 +85,14 @@ struct shammodels::sph::AVConfig {
     }
 
     inline bool has_alphaAV_field() {
-        bool is_varying_alpha =
-            bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
+        bool is_varying_alpha
+            = bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
         return is_varying_alpha;
     }
 
     inline bool has_divv_field() {
-        bool is_varying_alpha =
-            bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
+        bool is_varying_alpha
+            = bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
         return is_varying_alpha;
     }
     inline bool has_curlv_field() {
@@ -110,8 +112,8 @@ struct shammodels::sph::AVConfig {
         // cf eos module there is another soundspeed field available as a Compute field
         // unifying the patchdata and the ghosts is really needed ...
 
-        bool is_varying_alpha =
-            bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
+        bool is_varying_alpha
+            = bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
         return is_varying_alpha;
     }
 
@@ -153,3 +155,106 @@ struct shammodels::sph::AVConfig {
         logger::raw_ln("-------------");
     }
 };
+
+namespace shammodels::sph {
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const AVConfig<Tvec> &p) {
+        using T = AVConfig<Tvec>;
+
+        using None         = typename T::None;
+        using Constant     = typename T::Constant;
+        using VaryingMM97  = typename T::VaryingMM97;
+        using VaryingCD10  = typename T::VaryingCD10;
+        using ConstantDisc = typename T::ConstantDisc;
+
+        if (const None *v = std::get_if<None>(&p.config)) {
+            j = {
+                {"av_type", "none"},
+            };
+        } else if (const Constant *v = std::get_if<Constant>(&p.config)) {
+            j = {
+                {"av_type", "constant"},
+                {"alpha_u", v->alpha_u},
+                {"alpha_AV", v->alpha_AV},
+                {"beta_AV", v->beta_AV},
+            };
+        } else if (const VaryingMM97 *v = std::get_if<VaryingMM97>(&p.config)) {
+            j = {
+                {"av_type", "varying_mm97"},
+                {"alpha_min", v->alpha_min},
+                {"alpha_max", v->alpha_max},
+                {"sigma_decay", v->sigma_decay},
+                {"alpha_u", v->alpha_u},
+                {"beta_AV", v->beta_AV},
+            };
+        } else if (const VaryingCD10 *v = std::get_if<VaryingCD10>(&p.config)) {
+            j = {
+                {"av_type", "varying_cd10"},
+                {"alpha_min", v->alpha_min},
+                {"alpha_max", v->alpha_max},
+                {"sigma_decay", v->sigma_decay},
+                {"alpha_u", v->alpha_u},
+                {"beta_AV", v->beta_AV},
+            };
+        } else if (const ConstantDisc *v = std::get_if<ConstantDisc>(&p.config)) {
+            j = {
+                {"av_type", "constant_disc"},
+                {"alpha_u", v->alpha_u},
+                {"alpha_AV", v->alpha_AV},
+                {"beta_AV", v->beta_AV},
+            };
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, AVConfig<Tvec> &p) {
+        using T = AVConfig<Tvec>;
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        if (!j.contains("av_type")) {
+            shambase::throw_with_loc<std::runtime_error>("no field eos_type is found in this json");
+        }
+
+        std::string av_type;
+        j.at("av_type").get_to(av_type);
+
+        using None         = typename T::None;
+        using Constant     = typename T::Constant;
+        using VaryingMM97  = typename T::VaryingMM97;
+        using VaryingCD10  = typename T::VaryingCD10;
+        using ConstantDisc = typename T::ConstantDisc;
+
+        if (av_type == "none") {
+            p.set(None{});
+        } else if (av_type == "constant") {
+            p.set(Constant{
+                j.at("alpha_u").get<Tscal>(),
+                j.at("alpha_AV").get<Tscal>(),
+                j.at("beta_AV").get<Tscal>()});
+        } else if (av_type == "varying_mm97") {
+            p.set(VaryingMM97{
+                j.at("alpha_min").get<Tscal>(),
+                j.at("alpha_max").get<Tscal>(),
+                j.at("sigma_decay").get<Tscal>(),
+                j.at("alpha_u").get<Tscal>(),
+                j.at("beta_AV").get<Tscal>()});
+        } else if (av_type == "varying_cd10") {
+            p.set(VaryingCD10{
+                j.at("alpha_min").get<Tscal>(),
+                j.at("alpha_max").get<Tscal>(),
+                j.at("sigma_decay").get<Tscal>(),
+                j.at("alpha_u").get<Tscal>(),
+                j.at("beta_AV").get<Tscal>()});
+        } else if (av_type == "constant_disc") {
+            p.set(ConstantDisc{
+                j.at("alpha_AV").get<Tscal>(),
+                j.at("alpha_u").get<Tscal>(),
+                j.at("beta_AV").get<Tscal>()});
+        } else {
+            shambase::throw_unimplemented("wtf !");
+        }
+    }
+} // namespace shammodels::sph

@@ -21,6 +21,7 @@
 #include "config/BCConfig.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
+#include "shambackends/type_traits.hpp"
 #include "shambackends/vec.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/EOSConfig.hpp"
@@ -29,7 +30,6 @@
 #include "shamsys/legacy/log.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
-#include "shambackends/type_traits.hpp"
 #include <variant>
 
 namespace shammodels::sph {
@@ -38,6 +38,14 @@ namespace shammodels::sph {
 
     template<class Tvec>
     struct SolverStatusVar;
+
+    template<class Tscal>
+    struct CFLConfig {
+
+        Tscal cfl_cour;
+        Tscal cfl_force;
+        Tscal cfl_multiplier_stiffness = 2;
+    };
 
 } // namespace shammodels::sph
 
@@ -63,9 +71,7 @@ struct shammodels::sph::SolverConfig {
     static constexpr Tscal Rkern = Kernel::Rkern;
 
     Tscal gpart_mass;
-    Tscal cfl_cour;
-    Tscal cfl_force;
-    Tscal cfl_multiplier_stiffness = 2;
+    CFLConfig<Tscal> cfl_config;
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -116,8 +122,10 @@ struct shammodels::sph::SolverConfig {
     inline void set_cfl_multipler(Tscal lambda) { time_state.cfl_multiplier = lambda; }
     inline Tscal get_cfl_multipler() { return time_state.cfl_multiplier; }
 
-    inline void set_cfl_mult_stiffness(Tscal cstiff) { cfl_multiplier_stiffness = cstiff; }
-    inline Tscal get_cfl_mult_stiffness() { return cfl_multiplier_stiffness; }
+    inline void set_cfl_mult_stiffness(Tscal cstiff) {
+        cfl_config.cfl_multiplier_stiffness = cstiff;
+    }
+    inline Tscal get_cfl_mult_stiffness() { return cfl_config.cfl_multiplier_stiffness; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
@@ -260,7 +268,7 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Ext force Config
+    // Debug dump config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     bool do_debug_dump              = false;
@@ -272,7 +280,7 @@ struct shammodels::sph::SolverConfig {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Ext force Config (END)
+    // Debug dump config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     inline bool ghost_has_soundspeed() { return is_eos_locally_isothermal(); }
@@ -313,8 +321,8 @@ struct shammodels::sph::SolverConfig {
         }
 
         logger::raw_ln("part mass", gpart_mass, "( can be changed using .set_part_mass() )");
-        logger::raw_ln("cfl force", cfl_force);
-        logger::raw_ln("cfl courant", cfl_cour);
+        logger::raw_ln("cfl force", cfl_config.cfl_force);
+        logger::raw_ln("cfl courant", cfl_config.cfl_cour);
 
         artif_viscosity.print_status();
         eos_config.print_status();
@@ -324,8 +332,66 @@ struct shammodels::sph::SolverConfig {
     }
 };
 
+namespace shamunits {
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const UnitSystem<Tscal> &p) {
+        j = nlohmann::json{
+            {"unit_time", p.s_inv},
+            {"unit_length", p.m_inv},
+            {"unit_mass", p.kg_inv},
+            {"unit_current", p.A_inv},
+            {"unit_temperature", p.K_inv},
+            {"unit_qte", p.mol_inv},
+            {"unit_lumint", p.cd_inv}};
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, UnitSystem<Tscal> &p) {
+        p = UnitSystem<Tscal>(
+            j.at("unit_time").get<Tscal>(),
+            j.at("unit_length").get<Tscal>(),
+            j.at("unit_mass").get<Tscal>(),
+            j.at("unit_current").get<Tscal>(),
+            j.at("unit_temperature").get<Tscal>(),
+            j.at("unit_qte").get<Tscal>(),
+            j.at("unit_lumint").get<Tscal>());
+    }
+} // namespace shamunits
 
 namespace shammodels::sph {
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const CFLConfig<Tscal> &p) {
+        j = nlohmann::json{
+            {"cfl_cour", p.cfl_cour},
+            {"cfl_force", p.cfl_force},
+            {"cfl_multiplier_stiffness", p.cfl_multiplier_stiffness}};
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, CFLConfig<Tscal> &p) {
+        j.at("cfl_cour").get_to<Tscal>(p.cfl_cour);
+        j.at("cfl_force").get_to<Tscal>(p.cfl_force);
+        j.at("cfl_multiplier_stiffness").get_to<Tscal>(p.cfl_multiplier_stiffness);
+    }
+
+    template<class T>
+    inline void to_json_optional(nlohmann::json &j, const std::optional<T> &p) {
+        if (p) {
+            j = *p;
+        } else {
+            j = {};
+        }
+    }
+
+    template<class T>
+    inline void from_json_optional(const nlohmann::json &j, std::optional<T> &p) {
+        if (j.is_null()) {
+            p = std::nullopt;
+        } else {
+            p = j.get<T>();
+        }
+    }
 
     template<class Tvec>
     inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
@@ -347,13 +413,40 @@ namespace shammodels::sph {
         using Tkernel = typename T::Kernel;
 
         std::string kernel_id = shambase::get_type_name<Tkernel>();
-        std::string type_id = shambase::get_type_name<Tvec>();
+        std::string type_id   = shambase::get_type_name<Tvec>();
+
+        nlohmann::json junit;
+        to_json_optional(junit, p.unit_sys);
 
         j = nlohmann::json{
+            // used for type checking
             {"kernel_id", kernel_id},
             {"type_id", type_id},
+            // actual data stored in the json
+            {"gpart_mass", p.gpart_mass},
+            {"cfl_config", p.cfl_config},
+            {"unit_sys", junit},
             {"time_state", p.time_state},
+            // tree config
+            {"tree_reduction_level", p.tree_reduction_level},
+            {"use_two_stage_search", p.use_two_stage_search},
+            {"max_neigh_cache_size", p.max_neigh_cache_size},
+            // solver behavior config
+            {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
+            {"htol_up_tol", p.htol_up_tol},
+            {"htol_up_iter", p.htol_up_iter},
+            {"epsilon_h", p.epsilon_h},
+            {"h_iter_per_subcycles", p.h_iter_per_subcycles},
+            {"h_max_subcycles_count", p.h_max_subcycles_count},
+
             {"eos_config", p.eos_config},
+
+            {"artif_viscosity", p.artif_viscosity},
+            {"boundary_config", p.boundary_config},
+            {"ext_force_config", p.ext_force_config},
+
+            {"do_debug_dump", p.do_debug_dump},
+            {"debug_dump_filename", p.debug_dump_filename},
         };
     }
 
@@ -362,6 +455,7 @@ namespace shammodels::sph {
         using T       = SolverConfig<Tvec, SPHKernel>;
         using Tkernel = typename T::Kernel;
 
+        // type checking
         std::string kernel_id = j.at("kernel_id").get<std::string>();
 
         if (kernel_id != shambase::get_type_name<Tkernel>()) {
@@ -378,8 +472,32 @@ namespace shammodels::sph {
                 + " but got " + type_id);
         }
 
+        // actual data stored in the json
+        j.at("gpart_mass").get_to(p.gpart_mass);
+        j.at("cfl_config").get_to(p.cfl_config);
+
+        from_json_optional(j.at("unit_sys"), p.unit_sys);
+
         j.at("time_state").get_to(p.time_state);
+
+        j.at("tree_reduction_level").get_to(p.tree_reduction_level);
+        j.at("use_two_stage_search").get_to(p.use_two_stage_search);
+        j.at("max_neigh_cache_size").get_to(p.max_neigh_cache_size);
+
+        j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
+        j.at("htol_up_tol").get_to(p.htol_up_tol);
+        j.at("htol_up_iter").get_to(p.htol_up_iter);
+        j.at("epsilon_h").get_to(p.epsilon_h);
+        j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
+        j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
+
         j.at("eos_config").get_to(p.eos_config);
+        j.at("artif_viscosity").get_to(p.artif_viscosity);
+        j.at("boundary_config").get_to(p.boundary_config);
+        j.at("ext_force_config").get_to(p.ext_force_config);
+
+        j.at("do_debug_dump").get_to(p.do_debug_dump);
+        j.at("debug_dump_filename").get_to(p.debug_dump_filename);
     }
 
 } // namespace shammodels::sph

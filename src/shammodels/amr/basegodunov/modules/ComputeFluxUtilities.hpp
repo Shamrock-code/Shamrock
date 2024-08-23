@@ -244,16 +244,16 @@ namespace shammodels::basegodunov::modules {
             sycl::accessor flux_rho_dust{flux_rho_dust_dir, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor flux_rhov_dust{flux_rhov_dust_dir, cgh, sycl::write_only, sycl::no_init};
 
-            shambase::parralel_for(cgh, link_count, _kernel_name, [=](u32 id_a) {
-                auto rho_ij = rho_dust[id_a];
-                auto vel_ij = vel_dust[id_a];
+            shambase::parralel_for(cgh, link_count*nvar, _kernel_name, [=](u32 id_var_a) {
+                auto rho_ij = rho_dust[id_var_a];
+                auto vel_ij = vel_dust[id_var_a];
 
                 using Tprim = shammath::DustPrimState<Tvec>;
                 auto flux_dust_dir
                     = d_Flux::dustflux(Tprim{rho_ij[0], vel_ij[0]}, Tprim{rho_ij[1], vel_ij[1]});
 
-                flux_rho_dust[id_a]  = flux_dust_dir.rho;
-                flux_rhov_dust[id_a] = flux_dust_dir.rhovel;
+                flux_rho_dust[id_var_a]  = flux_dust_dir.rho;
+                flux_rhov_dust[id_var_a] = flux_dust_dir.rhovel;
             });
         });
     }

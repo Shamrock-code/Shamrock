@@ -6,10 +6,9 @@
 //
 // -------------------------------------------------------//
 
-#include "shamtest/shamtest.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
+#include "shamtest/shamtest.hpp"
 
-
-//TestStart(Unittest, "shamcomm/???", shamcommtest, 1) {
-//    
-//}
+// TestStart(Unittest, "shamcomm/???", shamcommtest, 1) {
+//
+// }

@@ -11,10 +11,10 @@
 /**
  * @file FaceFlagger.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/vec.hpp"
 #include "shammodels/amr/zeus/NeighFaceList.hpp"
 #include "shammodels/amr/zeus/Solver.hpp"
@@ -41,7 +41,7 @@ namespace shammodels::zeus::modules {
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using Config  = SolverConfig<Tvec,TgridVec>;
+        using Config  = SolverConfig<Tvec, TgridVec>;
         using Storage = SolverStorage<Tvec, TgridVec, u64>;
 
         ShamrockCtx &context;
@@ -76,9 +76,10 @@ namespace shammodels::zeus::modules {
         void compute_neigh_ids();
 
         private:
-        shamrock::tree::ObjectCache isolate_lookups(shamrock::tree::ObjectCache & cache,
-                                                    sycl::buffer<u8> &face_normals_lookup,
-                                                    u8 lookup_value);
+        shamrock::tree::ObjectCache isolate_lookups(
+            shamrock::tree::ObjectCache &cache,
+            sycl::buffer<u8> &face_normals_lookup,
+            u8 lookup_value);
 
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

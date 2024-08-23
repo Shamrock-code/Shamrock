@@ -85,7 +85,7 @@ config_names = [
         "dm",
         "sd",
         "dd"]
-        
+
 flags_list = [
      "-DMorton_precision=single -DPhysics_precision=single"
     ,"-DMorton_precision=double -DPhysics_precision=single"
@@ -98,7 +98,7 @@ process_cnt = [4 for i in range(len(config_names))]
 
 
 
-#prepare tmp folders 
+#prepare tmp folders
 for cid in range(len(config_names)):
     os.system("mkdir coverage_src_"+config_names[cid])
 
@@ -135,7 +135,7 @@ for cid in range(len(config_names)):
 
         if i < process_cnt[cid]-1:
             runcmd += " : "
-    
+
     print("\n"+ Fore.BLUE + Style.BRIGHT + "Running : "+ Style.RESET_ALL + runcmd + "\n")
     os.system(runcmd)
 
@@ -166,11 +166,11 @@ for cid in range(len(config_names)):
     llvmcovshow = abs_llvm_dir+"/build/bin/llvm-cov show "
 
 
-    abs_build_dir = abs_build_dir_src + "/conf_" + config_names[cid] 
+    abs_build_dir = abs_build_dir_src + "/conf_" + config_names[cid]
 
     llvmcovshow += " " + abs_build_dir+"/"+test_exe_filename + " "
 
-    llvmcovshow += " -instr-profile=" + abs_build_dir+"/program.profdata -use-color --format html --ignore-filename-regex=/tmp/* -output-dir=coverage_src_"+config_names[cid] 
+    llvmcovshow += " -instr-profile=" + abs_build_dir+"/program.profdata -use-color --format html --ignore-filename-regex=/tmp/* -output-dir=coverage_src_"+config_names[cid]
 
     print("\n"+ Fore.BLUE + Style.BRIGHT + "Running : "+ Style.RESET_ALL + llvmcovshow + "\n")
     os.system(llvmcovshow)
@@ -224,13 +224,13 @@ for cid in range(len(config_names)):
     header_info_clang += (etree.tostring(body_result[1], pretty_print=True, method="html")).decode('ASCII')
     header_info_clang += (etree.tostring(body_result[2], pretty_print=True, method="html")).decode('ASCII')
 
-    html_tables.append( 
+    html_tables.append(
         ("<h4>"+ flags_list[cid] +"</h4>\n" + (etree.tostring(body_result[3], pretty_print=True, method="html")).decode('ASCII'))
             .replace(str(abs_src_dir), "_"+config_names[cid])
     )
 
     version_clang_info = (etree.tostring(body_result[4], pretty_print=True, method="html")).decode('ASCII')
-    
+
     result = etree.tostring(html_in, pretty_print=True, method="html")
     #print(result)
 
@@ -248,13 +248,13 @@ final_str_html += ("<!doctype html><html>\n" + head + "<body>" )
 
 #add test_result info
 
-import json 
+import json
 
 final_str_html += "<h2>Test Report</h2>"
 
 
 for cid in config_names:
-    fold_n = folder_report + "/test_" + cid 
+    fold_n = folder_report + "/test_" + cid
     try:
         os.mkdir(fold_n)
     except :
@@ -341,7 +341,7 @@ for cid in range(len(config_names)):
                 '''
 
             for ass in asserts_:
-                
+
 
 
                 for jj in range(len(jsn[k]["asserts"][ass])):
@@ -358,7 +358,7 @@ for cid in range(len(config_names)):
                     subfile_assert_html += pref + "<pre>" + str(ass) +"</pre></td>"
                     subfile_assert_html += pref + "<pre>" + str(jj) +"</pre></td>"
                     subfile_assert_html += pref + "<pre>" + str(jsn[k]["asserts"][ass][jj]) +"</pre></td>"
-                
+
 
                     subfile_assert_html += '</tr>'
 
@@ -419,7 +419,7 @@ for root, dirs, files in os.walk(folder_report):
                 str_out = str_out.replace(abs_src_dir,"src")
 
                 str_file = open(root + "/" + str(file) ,'w').write(str_out)
-    
+
 
 exit()
 #python test_pipeline.py --ninja --cuda ../../llvm

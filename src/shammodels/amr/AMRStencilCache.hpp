@@ -16,7 +16,6 @@
  */
 
 #include "shambase/DistributedData.hpp"
-
 #include "shambackends/sycl.hpp"
 #include "shammodels/amr/AMRBlockStencil.hpp"
 #include "shammodels/amr/AMRCellStencil.hpp"
@@ -31,7 +30,7 @@ namespace shammodels::basegodunov {
         std::unordered_map<u32, dd_cell_stencil_el_buf> storage;
 
         void insert_data(u32 map_id, dd_cell_stencil_el_buf &&stencil_element) {
-            storage.emplace(map_id,std::forward<dd_cell_stencil_el_buf>(stencil_element));
+            storage.emplace(map_id, std::forward<dd_cell_stencil_el_buf>(stencil_element));
         }
 
         sycl::buffer<amr::cell::StencilElement> &get_stencil_element(u64 patch_id, u32 map_id) {

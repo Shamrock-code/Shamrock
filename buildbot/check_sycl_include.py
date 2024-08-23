@@ -4,7 +4,7 @@ ignore_list = [
 ]
 
 
-from lib.buildbot import * 
+from lib.buildbot import *
 import glob
 import sys
 import re
@@ -39,7 +39,7 @@ def should_corect(source):
 def autocorect(source):
     source = re.sub(r"#include <hipSYCL(.+)\n", r"#include <shambackends/sycl.hpp>\n",source)
     return source
-        
+
 
 has_found_errors = False
 
@@ -48,7 +48,7 @@ for fname in file_list:
         source = load_file(fname)
 
         if should_corect(source):
-            
+
             if not has_found_errors:
                 print(" => \033[1;34mNon standard SYCL #include found \033[0;0m: ")
                 print("The check found so instances of sycl inclusion using non standard headers")
@@ -73,7 +73,7 @@ def make_check_pr_report():
 
 The pre-commit checks have found some #include of non-standard SYCL headers
 
-It is recommended to replace instances of `#include <hipSYCL...` by `#include <shambackends/sycl.hpp>` 
+It is recommended to replace instances of `#include <hipSYCL...` by `#include <shambackends/sycl.hpp>`
 which will include the sycl headers.
 
 At some point we will refer to a guide in the doc about this
@@ -88,5 +88,5 @@ if has_found_errors:
     print("Autocorect done !")
     print()
     sys.exit("Exitting with check failure")
-else : 
+else :
     print(" => \033[1;34mSYCL #includes status \033[0;0m: OK !")

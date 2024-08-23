@@ -14,7 +14,6 @@
  */
 
 #include "ParticleReordering.hpp"
-
 #include "shammath/sphkernels.hpp"
 
 template<class Tvec, class Tmorton, template<class> class SPHKernel>

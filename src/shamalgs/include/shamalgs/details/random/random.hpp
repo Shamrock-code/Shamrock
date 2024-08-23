@@ -11,58 +11,66 @@
 /**
  * @file random.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shambackends/typeAliasVec.hpp"
+
 #include "shambase/constants.hpp"
+#include "shambackends/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
 #include <random>
-#include "shambackends/sycl.hpp"
 
 /**
  * @brief namespace to contain utility related to random number generation in shamalgs
- * 
+ *
  */
 namespace shamalgs::random {
 
-    template<class T> T mock_value(std::mt19937 & eng, T min_bound, T max_bound);
+    template<class T>
+    T mock_value(std::mt19937 &eng, T min_bound, T max_bound);
 
-    template<class T> T mock_gaussian(std::mt19937 & eng){
+    template<class T>
+    T mock_gaussian(std::mt19937 &eng) {
         using namespace shambase::constants;
 
-        constexpr T _2pi = pi<T>*2;
-        T r_3 = shamalgs::random::mock_value<T>(eng,0, 1);
-        T r_4 = shamalgs::random::mock_value<T>(eng,0, 1);
-        return sycl::sqrt(-2*sycl::log(r_3))*sycl::cos(_2pi*r_4);
-    }
-    
-    template<class T> inline T mock_value(std::mt19937 & eng){
-        using Prop = shambase::VectorProperties<T>;
-        return mock_value<T>(eng,Prop::get_min(),Prop::get_max());
+        constexpr T _2pi = pi<T> * 2;
+        T r_3            = shamalgs::random::mock_value<T>(eng, 0, 1);
+        T r_4            = shamalgs::random::mock_value<T>(eng, 0, 1);
+        return sycl::sqrt(-2 * sycl::log(r_3)) * sycl::cos(_2pi * r_4);
     }
 
-
-    template<class T> std::vector<T> mock_vector(u64 seed,u32 len, T min_bound, T max_bound);
-    template<class T> sycl::buffer<T> mock_buffer(u64 seed,u32 len, T min_bound, T max_bound);
-    
-
-    template<class T> inline std::vector<T> mock_vector(u64 seed,u32 len){
+    template<class T>
+    inline T mock_value(std::mt19937 &eng) {
         using Prop = shambase::VectorProperties<T>;
-        return mock_vector(seed,len, Prop::get_min(),Prop::get_max());
-    }
-    template<class T> inline sycl::buffer<T> mock_buffer(u64 seed,u32 len){
-        using Prop = shambase::VectorProperties<T>;
-        return mock_buffer(seed,len, Prop::get_min(),Prop::get_max());
+        return mock_value<T>(eng, Prop::get_min(), Prop::get_max());
     }
 
-    template<class T> inline std::unique_ptr<sycl::buffer<T>> mock_buffer_ptr(u64 seed,u32 len, T min_bound, T max_bound){
-        return std::make_unique<sycl::buffer<T>>(mock_buffer(seed,len,min_bound,max_bound));
-    }
-    template<class T> inline std::unique_ptr<sycl::buffer<T>> mock_buffer_ptr(u64 seed,u32 len){
+    template<class T>
+    std::vector<T> mock_vector(u64 seed, u32 len, T min_bound, T max_bound);
+    template<class T>
+    sycl::buffer<T> mock_buffer(u64 seed, u32 len, T min_bound, T max_bound);
+
+    template<class T>
+    inline std::vector<T> mock_vector(u64 seed, u32 len) {
         using Prop = shambase::VectorProperties<T>;
-        return mock_buffer_ptr(seed,len, Prop::get_min(),Prop::get_max());
+        return mock_vector(seed, len, Prop::get_min(), Prop::get_max());
+    }
+    template<class T>
+    inline sycl::buffer<T> mock_buffer(u64 seed, u32 len) {
+        using Prop = shambase::VectorProperties<T>;
+        return mock_buffer(seed, len, Prop::get_min(), Prop::get_max());
+    }
+
+    template<class T>
+    inline std::unique_ptr<sycl::buffer<T>>
+    mock_buffer_ptr(u64 seed, u32 len, T min_bound, T max_bound) {
+        return std::make_unique<sycl::buffer<T>>(mock_buffer(seed, len, min_bound, max_bound));
+    }
+    template<class T>
+    inline std::unique_ptr<sycl::buffer<T>> mock_buffer_ptr(u64 seed, u32 len) {
+        using Prop = shambase::VectorProperties<T>;
+        return mock_buffer_ptr(seed, len, Prop::get_min(), Prop::get_max());
     }
 
     template<class T>

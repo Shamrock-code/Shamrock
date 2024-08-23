@@ -6,12 +6,12 @@
 //
 // -------------------------------------------------------//
 
-#include "shambackends/math.hpp"
-#include "shambackends/typeAliasVec.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/fortran_io.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/time.hpp"
+#include "shambackends/math.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
@@ -73,7 +73,8 @@ f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2) {
     return sqrt(sum / v1.size());
 }
 
-f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2, std::vector<f64> & ref_trunc, f64 truncval) {
+f64 compute_L2(
+    std::vector<f64> &v1, std::vector<f64> &v2, std::vector<f64> &ref_trunc, f64 truncval) {
     f64 sum = 0;
     u32 cnt = 0;
     f64 max = 0;
@@ -81,11 +82,11 @@ f64 compute_L2(std::vector<f64> &v1, std::vector<f64> &v2, std::vector<f64> & re
     if (v1.size() == v2.size()) {
 
         for (u32 i = 0; i < v1.size(); i++) {
-            if(ref_trunc[i] < truncval){
+            if (ref_trunc[i] < truncval) {
                 sum += (v1[i] - v2[i]) * (v1[i] - v2[i]);
 
                 max = sham::max(max, v2[i]);
-                cnt ++;
+                cnt++;
             }
         }
 
@@ -132,7 +133,8 @@ void compare_results(
     std::string name,
     shamrock::patch::PatchData &pdat,
     shammodels::sph::PhantomDump &ref_file,
-    f64 pmass, f64 time) {
+    f64 pmass,
+    f64 time) {
 
     std::vector<f64> sham_uint  = fetch_data<f64>("uint", pdat);
     std::vector<f64> sham_hpart = fetch_data<f64>("hpart", pdat);
@@ -196,8 +198,6 @@ void compare_results(
     multisort(sham_r, sham_vr, sham_hpart, sham_uint, sham_alpha);
     multisort(ph_r, ph_vr, h, u, alpha);
 
-    
-
     PyScriptHandle hdnl{};
 
     hdnl.data()["pmass"] = pmass;
@@ -252,7 +252,7 @@ void compare_results(
         axs[1,0].scatter(sham_r,sham_vr,s=smarker,c = 'black', rasterized=True)
         axs[1,1].scatter(sham_r,sham_alpha, s=smarker,c = 'black', rasterized=True)
 
-        
+
         axs[0,0].set_ylabel(r"$\rho$")
         axs[1,0].set_ylabel(r"$v_r$")
         axs[0,1].set_ylabel(r"$u$")
@@ -270,45 +270,45 @@ void compare_results(
 
         axs[0,0].legend()
 
-        plt.tight_layout()  
+        plt.tight_layout()
 
         plt.savefig("tests/figures/"+name, dpi = 300)
 
     )");
 
-    TEX_REPORT(R"==(
-    
+    TEX_REPORT(
+        R"==(
+
         \begin{figure}[ht!]
         \center
-        \includegraphics[width=0.8\linewidth]{ figures/)=="+name+R"==( }
+        \includegraphics[width=0.8\linewidth]{ figures/)=="
+        + name + R"==( }
         \caption{Shamrock vs phantom on sedov blast}
         \end{figure}
 
     )==")
 
-    f64 l2_r = compute_L2(sham_r, ph_r, sham_r, 0.4);
+    f64 l2_r  = compute_L2(sham_r, ph_r, sham_r, 0.4);
     f64 l2_vr = compute_L2(sham_vr, ph_vr, sham_r, 0.4);
-    f64 l2_h = compute_L2(sham_hpart, h, sham_r, 0.4);
-    f64 l2_u = compute_L2(sham_uint, u, sham_r, 0.4);
+    f64 l2_h  = compute_L2(sham_hpart, h, sham_r, 0.4);
+    f64 l2_u  = compute_L2(sham_uint, u, sham_r, 0.4);
 
     logger::raw_ln("normalized L2 distance r : ", l2_r);
     logger::raw_ln("normalized L2 distance h : ", l2_h);
     logger::raw_ln("normalized L2 distance vr : ", l2_vr);
     logger::raw_ln("normalized L2 distance u : ", l2_u);
 
-    TEX_REPORT(R"==(\begin{itemize})==" "\n")
-    TEX_REPORT("\\item t = $" + std::to_string(time) +"$\n")
-    TEX_REPORT("\\item normalized L2 distance r : $" + std::to_string (l2_r)+"$\n");
-    TEX_REPORT("\\item normalized L2 distance h : $" + std::to_string (l2_h)+"$\n");
-    TEX_REPORT("\\item normalized L2 distance vr : $" + std::to_string (l2_vr)+"$\n");
-    TEX_REPORT("\\item normalized L2 distance u : $" + std::to_string (l2_u)+"$\n");
-    TEX_REPORT(R"==(\end{itemize})==" "\n")
+    TEX_REPORT(R"==(\begin{itemize})=="
+               "\n")
+    TEX_REPORT("\\item t = $" + std::to_string(time) + "$\n")
+    TEX_REPORT("\\item normalized L2 distance r : $" + std::to_string(l2_r) + "$\n");
+    TEX_REPORT("\\item normalized L2 distance h : $" + std::to_string(l2_h) + "$\n");
+    TEX_REPORT("\\item normalized L2 distance vr : $" + std::to_string(l2_vr) + "$\n");
+    TEX_REPORT("\\item normalized L2 distance u : $" + std::to_string(l2_u) + "$\n");
+    TEX_REPORT(R"==(\end{itemize})=="
+               "\n")
 
-    _Assert(l2_r < 1e-9)
-    _Assert(l2_vr < 28e-06 )
-    _Assert(l2_h < 4e-08 )
-    _Assert(l2_u < 2e-07 )
-
+    _Assert(l2_r < 1e-9) _Assert(l2_vr < 28e-06) _Assert(l2_h < 4e-08) _Assert(l2_u < 2e-07)
 }
 
 void do_test(bool long_version) {
@@ -347,76 +347,74 @@ void do_test(bool long_version) {
     f64 t = start_t;
     u32 i = 0;
     model.evolve_once_time_expl(t, 0);
-    for (; i< 1; i++) {
+    for (; i < 1; i++) {
         model.evolve_once_time_expl(t, dt);
         t = i * dt;
     }
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
-            ctx.allgather_data();
+        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+            = ctx.allgather_data();
         shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_1step.pdf",
             pdat_end,
             dump_0001,
-            model.solver.solver_config.gpart_mass,t);
+            model.solver.solver_config.gpart_mass,
+            t);
     }
 
-    for (; i< 10; i++) {
+    for (; i < 10; i++) {
         model.evolve_once_time_expl(t, dt);
         t = i * dt;
     }
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
-            ctx.allgather_data();
+        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+            = ctx.allgather_data();
         shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_10step.pdf",
             pdat_end,
             dump_0010,
-            model.solver.solver_config.gpart_mass,t);
+            model.solver.solver_config.gpart_mass,
+            t);
     }
 
     if (!long_version) {
         return;
     }
 
-    for (; i< 100; i++) {
+    for (; i < 100; i++) {
         model.evolve_once_time_expl(t, dt);
         t = i * dt;
     }
 
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
-            ctx.allgather_data();
+        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+            = ctx.allgather_data();
         shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_100step.pdf",
             pdat_end,
             dump_0100,
-            model.solver.solver_config.gpart_mass,t);
+            model.solver.solver_config.gpart_mass,
+            t);
     }
 
-    
-
-    
-
-    for (; i< 1000; i++) {
+    for (; i < 1000; i++) {
         model.evolve_once_time_expl(t, dt);
-        t = (i+1) * dt;
+        t = (i + 1) * dt;
     }
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result =
-            ctx.allgather_data();
+        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+            = ctx.allgather_data();
         shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_1000step.pdf",
             pdat_end,
             dump_1000,
-            model.solver.solver_config.gpart_mass,t);
+            model.solver.solver_config.gpart_mass,
+            t);
     }
-
-
 }
 
 // 16 cores phantom (i7-10700) = 5min 27sec (1000 iter)

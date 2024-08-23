@@ -11,15 +11,14 @@
 /**
  * @file ResizableUSMBuffer.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shamalgs/container/BufferEventHandler.hpp"
+
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamalgs/container/BufferEventHandler.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include <cstddef>
 #include <random>
@@ -49,8 +48,6 @@ namespace shamalgs {
 
     enum BufferType { Host, Device, Shared };
 
-    
-
     template<class T>
     class ResizableUSMBuffer {
 
@@ -74,7 +71,7 @@ namespace shamalgs {
 
         T *usm_ptr = nullptr;
 
-        BufferEventHandler  events_hndl;
+        BufferEventHandler events_hndl;
 
         u32 capacity  = 0;
         u32 val_count = 0;
@@ -85,7 +82,7 @@ namespace shamalgs {
         BufferType type = Host;
 
         public:
-        inline ResizableUSMBuffer(sycl::queue &q, BufferType type) : q(q), type(type){};
+        inline ResizableUSMBuffer(sycl::queue &q, BufferType type) : q(q), type(type) {};
 
         ResizableUSMBuffer(ResizableUSMBuffer &other)
             : val_count(other.val_count), capacity(other.capacity), q(other.q) {
@@ -118,7 +115,7 @@ namespace shamalgs {
 
         void free();
 
-        ~ResizableUSMBuffer(){
+        ~ResizableUSMBuffer() {
             StackEntry stack_loc{};
             if (usm_ptr != nullptr) {
                 free();
@@ -148,9 +145,9 @@ namespace shamalgs {
 
         [[nodiscard]] bool check_buf_match(ResizableUSMBuffer<T> &f2);
 
-        void synchronize_events() { 
+        void synchronize_events() {
             StackEntry stack_loc{};
-            events_hndl.synchronize(); 
+            events_hndl.synchronize();
         }
 
         inline T const *get_usm_ptr_read_only(std::vector<sycl::event> &depends_list) {

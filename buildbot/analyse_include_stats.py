@@ -56,7 +56,7 @@ def analyse_file(f):
     print(fname_relat,": src : {} -E {}".format(line_src, line_src_preproc))
 
     return [fname_relat, line_src, line_src_preproc]
-    
+
 
 with open(args.filename) as cmd_comp :
     database = (json.load(cmd_comp))
@@ -83,5 +83,3 @@ for [name,src,preproc] in print_db:
 print("----------------------------------------------------------------------    ---------   ---------")
 tmp = "{:70s} {:10} {:10}".format("SUM", sum_l, sum_E)
 print(tmp)
-
-

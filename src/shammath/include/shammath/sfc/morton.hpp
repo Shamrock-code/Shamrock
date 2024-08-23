@@ -16,11 +16,11 @@
  */
 
 #include "bmi.hpp"
-#include "shammath/CoordRangeTransform.hpp"
 #include "shambackends/math.hpp"
-#include "shambackends/vec.hpp"
-#include <type_traits>
 #include "shambackends/sycl.hpp"
+#include "shambackends/vec.hpp"
+#include "shammath/CoordRangeTransform.hpp"
+#include <type_traits>
 
 namespace shamrock::sfc {
 
@@ -30,26 +30,26 @@ namespace shamrock::sfc {
     template<>
     class MortonCodes<u32, 3> {
         public:
-        using int_vec_repr_base                      = u16;
-        using int_vec_repr                           = u16_3;
-        static constexpr int_vec_repr_base dimension = 3;
-        static constexpr int_vec_repr_base max_val   = 1024 - 1;
-        static constexpr int_vec_repr_base val_count = 1024;
+        using int_vec_repr_base                                     = u16;
+        using int_vec_repr                                          = u16_3;
+        static constexpr int_vec_repr_base dimension                = 3;
+        static constexpr int_vec_repr_base max_val                  = 1024 - 1;
+        static constexpr int_vec_repr_base val_count                = 1024;
         static constexpr int_vec_repr_base significant_bits_p_coord = 10;
-        static constexpr int_vec_repr_base significant_bits = dimension*significant_bits_p_coord;
-        
+        static constexpr int_vec_repr_base significant_bits = dimension * significant_bits_p_coord;
+
         static constexpr u32 err_code = 4294967295U;
 
         inline static u32 icoord_to_morton(u32 x, u32 y, u32 z) {
-            u32 xx = bmi::expand_bits<u32, 2>((u32)x);
-            u32 yy = bmi::expand_bits<u32, 2>((u32)y);
-            u32 zz = bmi::expand_bits<u32, 2>((u32)z);
+            u32 xx = bmi::expand_bits<u32, 2>((u32) x);
+            u32 yy = bmi::expand_bits<u32, 2>((u32) y);
+            u32 zz = bmi::expand_bits<u32, 2>((u32) z);
             return xx * 4 + yy * 2 + zz;
         }
 
         inline static bool is_morton_bounding_box(int_vec_repr min, int_vec_repr max) noexcept {
-            return min.x() == 0 && min.y() == 0 && min.z() == 0 && max.x() == max_val &&
-                   max.y() == max_val && max.z() == max_val;
+            return min.x() == 0 && min.y() == 0 && min.z() == 0 && max.x() == max_val
+                   && max.y() == max_val && max.z() == max_val;
         }
 
         template<class flt>
@@ -79,9 +79,9 @@ namespace shamrock::sfc {
         inline static u16_3 morton_to_icoord(u32 morton) {
 
             u16_3 pos;
-            pos.s0() = (u16)bmi::contract_bits<u32, 2>((morton & 0x24924924U) >> 2U);
-            pos.s1() = (u16)bmi::contract_bits<u32, 2>((morton & 0x12492492U) >> 1U);
-            pos.s2() = (u16)bmi::contract_bits<u32, 2>((morton & 0x09249249U) >> 0U);
+            pos.s0() = (u16) bmi::contract_bits<u32, 2>((morton & 0x24924924U) >> 2U);
+            pos.s1() = (u16) bmi::contract_bits<u32, 2>((morton & 0x12492492U) >> 1U);
+            pos.s2() = (u16) bmi::contract_bits<u32, 2>((morton & 0x09249249U) >> 0U);
 
             return pos;
         }
@@ -98,27 +98,26 @@ namespace shamrock::sfc {
     template<>
     class MortonCodes<u64, 3> {
         public:
-        using int_vec_repr_base                      = u32;
-        using int_vec_repr                           = u32_3;
-        static constexpr int_vec_repr_base dimension = 3;
-        static constexpr int_vec_repr_base max_val   = 2097152 - 1;
-        static constexpr int_vec_repr_base val_count = 2097152;
+        using int_vec_repr_base                                     = u32;
+        using int_vec_repr                                          = u32_3;
+        static constexpr int_vec_repr_base dimension                = 3;
+        static constexpr int_vec_repr_base max_val                  = 2097152 - 1;
+        static constexpr int_vec_repr_base val_count                = 2097152;
         static constexpr int_vec_repr_base significant_bits_p_coord = 21;
-        static constexpr int_vec_repr_base significant_bits = dimension*significant_bits_p_coord;
-        
+        static constexpr int_vec_repr_base significant_bits = dimension * significant_bits_p_coord;
 
         static constexpr u64 err_code = 18446744073709551615UL;
 
         inline static u64 icoord_to_morton(u64 x, u64 y, u64 z) {
-            u64 xx = bmi::expand_bits<u64, 2>((u64)x);
-            u64 yy = bmi::expand_bits<u64, 2>((u64)y);
-            u64 zz = bmi::expand_bits<u64, 2>((u64)z);
+            u64 xx = bmi::expand_bits<u64, 2>((u64) x);
+            u64 yy = bmi::expand_bits<u64, 2>((u64) y);
+            u64 zz = bmi::expand_bits<u64, 2>((u64) z);
             return xx * 4 + yy * 2 + zz;
         }
 
         inline static bool is_morton_bounding_box(int_vec_repr min, int_vec_repr max) noexcept {
-            return min.x() == 0 && min.y() == 0 && min.z() == 0 && max.x() == max_val &&
-                   max.y() == max_val && max.z() == max_val;
+            return min.x() == 0 && min.y() == 0 && min.z() == 0 && max.x() == max_val
+                   && max.y() == max_val && max.z() == max_val;
         }
 
         template<class flt>
@@ -178,11 +177,12 @@ namespace shamrock::sfc {
         using CoordTransform = shammath::CoordRangeTransform<ipos_t, pos_t>;
 
         private:
-        static constexpr bool implemented_int =
-            std::is_same<pos_t, u32_3>::value || std::is_same<pos_t, u64_3>::value || std::is_same<pos_t, i64_3>::value;
+        static constexpr bool implemented_int = std::is_same<pos_t, u32_3>::value
+                                                || std::is_same<pos_t, u64_3>::value
+                                                || std::is_same<pos_t, i64_3>::value;
 
-        static constexpr bool implemented_float =
-            std::is_same<pos_t, f32_3>::value || std::is_same<pos_t, f64_3>::value;
+        static constexpr bool implemented_float
+            = std::is_same<pos_t, f32_3>::value || std::is_same<pos_t, f64_3>::value;
 
         static_assert(implemented_int || implemented_float, "not implemented");
 
@@ -191,8 +191,7 @@ namespace shamrock::sfc {
             return CoordTransform(
                 shammath::CoordRange<ipos_t>{
                     {0, 0, 0}, {Morton::val_count, Morton::val_count, Morton::val_count}},
-                shammath::CoordRange<pos_t>{bounding_box_min, bounding_box_max}
-            );
+                shammath::CoordRange<pos_t>{bounding_box_min, bounding_box_max});
         }
 
         inline static ipos_t to_morton_grid(pos_t pos, CoordTransform transform) {
@@ -266,9 +265,9 @@ namespace morton_3d {
         y = sycl::fmin(sycl::fmax(y * 2097152., 0.), 2097152. - 1.);
         z = sycl::fmin(sycl::fmax(z * 2097152., 0.), 2097152. - 1.);
 
-        u64 xx = shamrock::sfc::bmi::expand_bits<u64, 2>((u64)x);
-        u64 yy = shamrock::sfc::bmi::expand_bits<u64, 2>((u64)y);
-        u64 zz = shamrock::sfc::bmi::expand_bits<u64, 2>((u64)z);
+        u64 xx = shamrock::sfc::bmi::expand_bits<u64, 2>((u64) x);
+        u64 yy = shamrock::sfc::bmi::expand_bits<u64, 2>((u64) y);
+        u64 zz = shamrock::sfc::bmi::expand_bits<u64, 2>((u64) z);
         return xx * 4 + yy * 2 + zz;
     }
 
@@ -278,9 +277,9 @@ namespace morton_3d {
         y = sycl::fmin(sycl::fmax(y * 2097152.F, 0.F), 2097152.F - 1.F);
         z = sycl::fmin(sycl::fmax(z * 2097152.F, 0.F), 2097152.F - 1.F);
 
-        u64 xx = shamrock::sfc::bmi::expand_bits<u64, 2>((u64)x);
-        u64 yy = shamrock::sfc::bmi::expand_bits<u64, 2>((u64)y);
-        u64 zz = shamrock::sfc::bmi::expand_bits<u64, 2>((u64)z);
+        u64 xx = shamrock::sfc::bmi::expand_bits<u64, 2>((u64) x);
+        u64 yy = shamrock::sfc::bmi::expand_bits<u64, 2>((u64) y);
+        u64 zz = shamrock::sfc::bmi::expand_bits<u64, 2>((u64) z);
         return xx * 4 + yy * 2 + zz;
     }
 
@@ -290,9 +289,9 @@ namespace morton_3d {
         y = sycl::fmin(sycl::fmax(y * 1024., 0.), 1024. - 1.);
         z = sycl::fmin(sycl::fmax(z * 1024., 0.), 1024. - 1.);
 
-        u32 xx = shamrock::sfc::bmi::expand_bits<u32, 2>((u32)x);
-        u32 yy = shamrock::sfc::bmi::expand_bits<u32, 2>((u32)y);
-        u32 zz = shamrock::sfc::bmi::expand_bits<u32, 2>((u32)z);
+        u32 xx = shamrock::sfc::bmi::expand_bits<u32, 2>((u32) x);
+        u32 yy = shamrock::sfc::bmi::expand_bits<u32, 2>((u32) y);
+        u32 zz = shamrock::sfc::bmi::expand_bits<u32, 2>((u32) z);
         return xx * 4 + yy * 2 + zz;
     }
 
@@ -302,9 +301,9 @@ namespace morton_3d {
         y = sycl::fmin(sycl::fmax(y * 1024.F, 0.F), 1024.F - 1.F);
         z = sycl::fmin(sycl::fmax(z * 1024.F, 0.F), 1024.F - 1.F);
 
-        u32 xx = shamrock::sfc::bmi::expand_bits<u32, 2>((u32)x);
-        u32 yy = shamrock::sfc::bmi::expand_bits<u32, 2>((u32)y);
-        u32 zz = shamrock::sfc::bmi::expand_bits<u32, 2>((u32)z);
+        u32 xx = shamrock::sfc::bmi::expand_bits<u32, 2>((u32) x);
+        u32 yy = shamrock::sfc::bmi::expand_bits<u32, 2>((u32) y);
+        u32 zz = shamrock::sfc::bmi::expand_bits<u32, 2>((u32) z);
         return xx * 4 + yy * 2 + zz;
     }
 
@@ -323,9 +322,9 @@ namespace morton_3d {
     inline u16_3 morton_to_ipos<u32>(u32 morton) {
 
         u16_3 pos;
-        pos.s0() = (u16)shamrock::sfc::bmi::contract_bits<u32, 2>((morton & 0x24924924U) >> 2U);
-        pos.s1() = (u16)shamrock::sfc::bmi::contract_bits<u32, 2>((morton & 0x12492492U) >> 1U);
-        pos.s2() = (u16)shamrock::sfc::bmi::contract_bits<u32, 2>((morton & 0x09249249U) >> 0U);
+        pos.s0() = (u16) shamrock::sfc::bmi::contract_bits<u32, 2>((morton & 0x24924924U) >> 2U);
+        pos.s1() = (u16) shamrock::sfc::bmi::contract_bits<u32, 2>((morton & 0x12492492U) >> 1U);
+        pos.s2() = (u16) shamrock::sfc::bmi::contract_bits<u32, 2>((morton & 0x09249249U) >> 0U);
 
         return pos;
     }

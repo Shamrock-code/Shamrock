@@ -1,4 +1,4 @@
-from lib.buildbot import * 
+from lib.buildbot import *
 import glob
 import sys
 import subprocess
@@ -47,7 +47,7 @@ def autocorect(source, filename, path):
     if l_end == 0:
         l_end = l_start
 
-    new_splt = splt[:l_start] 
+    new_splt = splt[:l_start]
     new_splt.append(get_doxstring(path, filename))
     new_splt += splt[l_end+1:]
 
@@ -90,7 +90,7 @@ def run_autocorect():
 
         change, source = autocorect(source,os.path.basename(fname),fname)
 
-        if change: 
+        if change:
             print("autocorect : ",fname.split(abs_proj_dir)[-1])
             f = open(fname,'w')
             f.write(source)

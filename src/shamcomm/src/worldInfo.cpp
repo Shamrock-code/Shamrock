@@ -9,12 +9,12 @@
 /**
  * @file worldInfo.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "shamcomm/worldInfo.hpp"
-#include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/mpi.hpp"
+#include "shamcomm/mpiErrorCheck.hpp"
 
 namespace shamcomm {
 
@@ -22,19 +22,14 @@ namespace shamcomm {
 
     i32 _world_size;
 
-    const i32 world_size(){
-        return _world_size;
-    }
+    const i32 world_size() { return _world_size; }
 
-    const i32 world_rank(){
-        return _world_rank;
-    }
+    const i32 world_rank() { return _world_rank; }
 
-    void fetch_world_info(){
+    void fetch_world_info() {
 
         MPICHECK(MPI_Comm_size(MPI_COMM_WORLD, &_world_size));
         MPICHECK(MPI_Comm_rank(MPI_COMM_WORLD, &_world_rank));
-
     }
 
 } // namespace shamcomm

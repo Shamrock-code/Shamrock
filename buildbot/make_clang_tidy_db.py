@@ -1,4 +1,4 @@
-import os 
+import os
 
 comp_db = open("build/compile_commands.json", "r")
 db = comp_db.read()
@@ -9,7 +9,7 @@ db = db.replace("--acpp-targets='omp'","")
 
 def remove_external_files():
     global db
-    
+
     import json
     dic = json.loads(db)
 

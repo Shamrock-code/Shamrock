@@ -9,13 +9,12 @@
 /**
  * @file bitonicSort_updated_xor_swap.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shamalgs/details/algorithm/bitonicSort.hpp"
 
 #include "shambase/integer.hpp"
+#include "shamalgs/details/algorithm/bitonicSort.hpp"
 
 // modified from http://www.bealto.com/gpu-sorting.html
 
@@ -24,12 +23,14 @@ namespace shamalgs::algorithm::details {
     template<class Tkey, class Tval>
     struct OrderingPrimitiveXorSwap {
 
-        using AccKey = sycl::accessor<Tkey, 1, sycl::access::mode::read_write, sycl::target::device>;
-        using AccVal = sycl::accessor<Tval, 1, sycl::access::mode::read_write, sycl::target::device>;
+        using AccKey
+            = sycl::accessor<Tkey, 1, sycl::access::mode::read_write, sycl::target::device>;
+        using AccVal
+            = sycl::accessor<Tval, 1, sycl::access::mode::read_write, sycl::target::device>;
 
         inline static void _order(Tkey &a, Tkey &b, Tval &va, Tval &vb, bool reverse) {
-            bool swap   = reverse ^ (a < b);
-            if(swap){
+            bool swap = reverse ^ (a < b);
+            if (swap) {
                 a ^= b;
                 b ^= a;
                 a ^= b;
@@ -40,9 +41,9 @@ namespace shamalgs::algorithm::details {
         }
 
         inline static void _orderV(Tkey *x, Tval *vx, u32 a, u32 b, bool reverse) {
-            bool swap   = reverse ^ (x[a] < x[b]);
+            bool swap = reverse ^ (x[a] < x[b]);
 
-            if(swap){
+            if (swap) {
                 x[a] ^= x[b];
                 x[b] ^= x[a];
                 x[a] ^= x[b];
@@ -258,13 +259,11 @@ namespace shamalgs::algorithm::details {
 
     template<class Tkey, class Tval, u32 MaxStencilSize>
     void sort_by_key_bitonic_updated_xor_swap(
-        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len
-    ) {
+        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
 
         if (!shambase::is_pow_of_two(len)) {
             throw std::invalid_argument(
-                "this algorithm can only be used with length that are powers of two"
-            );
+                "this algorithm can only be used with length that are powers of two");
         }
 
         using B = OrderingPrimitiveXorSwap<Tkey, Tval>;
@@ -290,9 +289,7 @@ namespace shamalgs::algorithm::details {
                             cgh.parallel_for(range, [=](sycl::item<1> item) {
                                 //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                                B::template order_kernel<32>(
-                                    m, id, inc, length, item.get_id(0)
-                                );
+                                B::template order_kernel<32>(m, id, inc, length, item.get_id(0));
                             });
                         };
                         q.submit(ker_sort_morton_b32);
@@ -312,9 +309,7 @@ namespace shamalgs::algorithm::details {
                             cgh.parallel_for(range, [=](sycl::item<1> item) {
                                 //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                                B::template order_kernel<16>(
-                                    m, id, inc, length, item.get_id(0)
-                                );
+                                B::template order_kernel<16>(m, id, inc, length, item.get_id(0));
                             });
                         };
                         q.submit(ker_sort_morton_b16);
@@ -338,9 +333,7 @@ namespace shamalgs::algorithm::details {
                             cgh.parallel_for(range, [=](sycl::item<1> item) {
                                 //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                                B::template order_kernel<8>(
-                                    m, id, inc, length, item.get_id(0)
-                                );
+                                B::template order_kernel<8>(m, id, inc, length, item.get_id(0));
                             });
                         };
                         q.submit(ker_sort_morton_b8);
@@ -362,9 +355,7 @@ namespace shamalgs::algorithm::details {
                             sycl::accessor m{buf_key, cgh, sycl::read_write};
                             sycl::accessor id{buf_values, cgh, sycl::read_write};
                             cgh.parallel_for(range, [=](sycl::item<1> item) {
-                                B::template order_kernel<4>(
-                                    m, id, inc, length, item.get_id(0)
-                                );
+                                B::template order_kernel<4>(m, id, inc, length, item.get_id(0));
                             });
                         };
                         q.submit(ker_sort_morton_b4);
@@ -385,9 +376,7 @@ namespace shamalgs::algorithm::details {
                         cgh.parallel_for(range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                            B::template order_kernel<2>(
-                                m, id, inc, length, item.get_id(0)
-                            );
+                            B::template order_kernel<2>(m, id, inc, length, item.get_id(0));
                         });
                     };
                     q.submit(ker_sort_morton_b2);
@@ -399,27 +388,21 @@ namespace shamalgs::algorithm::details {
     }
 
     template void sort_by_key_bitonic_updated_xor_swap<u32, u32, 16>(
-        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated_xor_swap<u64, u32, 16>(
-        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated_xor_swap<u32, u32, 8>(
-        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated_xor_swap<u64, u32, 8>(
-        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated_xor_swap<u32, u32, 32>(
-        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     template void sort_by_key_bitonic_updated_xor_swap<u64, u32, 32>(
-        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
 } // namespace shamalgs::algorithm::details

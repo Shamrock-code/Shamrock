@@ -17,13 +17,11 @@
  * Essentially it handle the MPI process and corresponding accelerators
  */
 
-
-
 #include "shambase/aliases_int.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shamcomm/worldInfo.hpp"
-#include <vector>
 #include <sycl/sycl.hpp>
+#include <vector>
 
 namespace shamsys::instance {
 
@@ -31,7 +29,7 @@ namespace shamsys::instance {
      * @brief Exception type for the NodeInstance
      */
     class ShamsysInstanceException : public std::exception {
-      public:
+        public:
         explicit ShamsysInstanceException(const char *message) : msg_(message) {}
 
         explicit ShamsysInstanceException(const std::string &message) : msg_(message) {}
@@ -40,13 +38,13 @@ namespace shamsys::instance {
 
         [[nodiscard]] const char *what() const noexcept override { return msg_.c_str(); }
 
-      protected:
+        protected:
         std::string msg_;
     };
 
     /**
      * @brief Struct containing Sycl Init informations
-     * Usage 
+     * Usage
      * ```
      * SyclInitInfo{alt_id, compute_id}
      * ```
@@ -58,7 +56,7 @@ namespace shamsys::instance {
 
     /**
      * @brief Struct containing MPI Init informations
-     * Usage 
+     * Usage
      * ```
      * MPIInitInfo{argc, argv}
      * ```
@@ -91,9 +89,9 @@ namespace shamsys::instance {
 
     /**
      * @brief select & start the sycl queues
-     * 
-     * @param alt_id 
-     * @param compute_id 
+     *
+     * @param alt_id
+     * @param compute_id
      */
     void start_sycl(u32 alt_id, u32 compute_id);
 
@@ -126,30 +124,28 @@ namespace shamsys::instance {
     ////////////////////////////
 
     /**
-     * @brief 
-     * 
+     * @brief
      *
-     * 
-     * @param id 
+     *
+     *
+     * @param id
      * @return sycl::queue& reference to the corresponding queue
      */
     sycl::queue &get_compute_queue(u32 id = 0);
     u32 get_compute_queue_eu_count(u32 id = 0);
 
-    inline sycl::device get_compute_device(){
-        return get_compute_queue().get_device();
-    }
+    inline sycl::device get_compute_device() { return get_compute_queue().get_device(); }
 
     /**
      * @brief Get the alternative queue
-     * 
-     * @param id 
+     *
+     * @param id
      * @return sycl::queue& reference to the corresponding queue
      */
     sycl::queue &get_alt_queue(u32 id = 0);
 
-    sham::DeviceScheduler & get_compute_scheduler();
-    sham::DeviceScheduler & get_alt_scheduler();
+    sham::DeviceScheduler &get_compute_scheduler();
+    sham::DeviceScheduler &get_alt_scheduler();
 
     std::shared_ptr<sham::DeviceScheduler> get_compute_scheduler_ptr();
     std::shared_ptr<sham::DeviceScheduler> get_alt_scheduler_ptr();
@@ -159,7 +155,6 @@ namespace shamsys::instance {
     ////////////////////////////
 
     // idea to handle multiple GPU with MPI : i32 get_mpi_tag(u32 tag);
-
 
     void print_mpi_capabilities();
 

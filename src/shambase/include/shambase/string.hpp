@@ -210,9 +210,9 @@ namespace shambase {
      * @return std::string The truncated string.
      * @throws std::invalid_argument If the maximum length is less than 5.
      *
-     * This function truncates a string to a specified length by adding an ellipsis at the start of the string,
-     * and taking the last `max_len - 4` characters if the original string is longer than `max_len`. If
-     * `max_len` is less than 5, an `std::invalid_argument` exception is thrown.
+     * This function truncates a string to a specified length by adding an ellipsis at the start of
+     * the string, and taking the last `max_len - 4` characters if the original string is longer
+     * than `max_len`. If `max_len` is less than 5, an `std::invalid_argument` exception is thrown.
      */
     inline std::string trunc_str_start(std::string s, u32 max_len) {
         if (max_len < 5)

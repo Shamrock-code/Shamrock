@@ -343,7 +343,9 @@ R"==(
         .def("change_htolerance",&T::change_htolerance)
         .def("make_analysis_sodtube",[](T & self, shamphys::SodTube sod, Tvec direction, Tscal time_val,Tscal x_ref,Tscal x_min,Tscal x_max){
             return std::make_unique<TAnalysisSodTube>(self.ctx, self.solver.solver_config, self.solver.storage,sod, direction,time_val, x_ref, x_min, x_max);
-        });
+        })
+        .def("load_from_dump",&T::load_from_dump)
+        .def("dump",&T::dump);
     ;
 }
 

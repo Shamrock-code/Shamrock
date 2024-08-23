@@ -19,7 +19,6 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shamcomm/logs.hpp"
-
 #include <functional>
 #include <map>
 #include <utility>
@@ -192,7 +191,7 @@ namespace shambase {
 
             return ret;
         }
-        
+
         /**
          * @brief Reset the collection to its initial state
          *

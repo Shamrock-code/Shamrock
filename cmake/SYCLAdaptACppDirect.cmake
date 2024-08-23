@@ -14,7 +14,7 @@ check_cxx_source_compiles("
     #else
     #error
     #endif
-    "    
+    "
     SYCL_COMPILER_IS_ACPP)
 
 if(NOT SYCL_COMPILER_IS_ACPP)
@@ -45,7 +45,7 @@ check_cxx_source_compiles(
     int main(void){
       bool a = sycl::isinf(0.f / 1.f);
     }
-    "    
+    "
     SYCL2020_FEATURE_ISINF)
 
 
@@ -55,7 +55,7 @@ check_cxx_source_compiles(
       int main(void){
         auto a = sycl::clz(std::uint64_t(10));
       }
-      "    
+      "
       SYCL2020_FEATURE_CLZ)
 
 if(NOT DEFINED SYCL_feature_reduc2020)
@@ -83,25 +83,25 @@ if(DEFINED ACPP_PATH)
   "
   #include <${ACPP_PATH}/include/AdaptiveCpp/sycl/sycl.hpp>
   int main(void){}
-  "    
+  "
   HAS_ACPP_HEADER_FOLDER)
-  
-  
+
+
   check_cxx_source_compiles(
   "
   #include <${ACPP_PATH}/include/OpenSYCL/sycl/sycl.hpp>
   int main(void){}
-  "    
+  "
   HAS_OpenSYCL_HEADER_FOLDER)
-  
-  
+
+
   check_cxx_source_compiles(
   "
   #include <${ACPP_PATH}/include/hipSYCL/sycl/sycl.hpp>
   int main(void){}
-  "    
+  "
   HAS_hipSYCL_HEADER_FOLDER)
-  
+
 
 
 
@@ -143,4 +143,3 @@ message("  HAS_OpenSYCL_HEADER_FOLDER : ${HAS_OpenSYCL_HEADER_FOLDER}")
 message("  HAS_hipSYCL_HEADER_FOLDER : ${HAS_hipSYCL_HEADER_FOLDER}")
 message("  ACPP_FAST_MATH : ${ACPP_FAST_MATH}")
 message(" ------------------------------------- ")
-

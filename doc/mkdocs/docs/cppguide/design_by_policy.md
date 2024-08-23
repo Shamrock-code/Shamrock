@@ -2,7 +2,7 @@
 
 The idea is to replace a specific usage patern of preprocessors.
 
-Imagine you have a black box function `do_smth` , this function may have multiple implementation `do_smth_int1`, `do_smth_int2` where one or the other are more suitable to specific architectures. Usually in `c` it would be implemented like this. 
+Imagine you have a black box function `do_smth` , this function may have multiple implementation `do_smth_int1`, `do_smth_int2` where one or the other are more suitable to specific architectures. Usually in `c` it would be implemented like this.
 
 ```c++
 void do_smth( args ...){
@@ -47,14 +47,14 @@ void do_stuff_arch3();
 void do_stuff_arch4();
 ```
 
-you want to have function like this : 
+you want to have function like this :
 
 ```c++
 template<u32 arch_code>
 void do_stuff();
 ```
 
-then the original exemple may be rewritten as such : 
+then the original exemple may be rewritten as such :
 
 ```c++
 enum ArchCodes{
@@ -76,7 +76,7 @@ void do_smth( args ...){
 
 Imagine you are coding a GPU kernel but some parameters may have to be tweaked to squeeze the best performance out of the card. The policy design might be very revelant.
 
-The global definition is : 
+The global definition is :
 ```c++
 enum ArchCodes{
     ARCHI_1, ARCHI_UNKNOWN
@@ -100,7 +100,7 @@ struct SMTHPolicy{
 }
 ```
 
-or equivalently : 
+or equivalently :
 
 ```c++
 struct SMTHPolicy{
@@ -109,7 +109,7 @@ struct SMTHPolicy{
 }
 ```
 
-and then : 
+and then :
 
 ```c++
 void do_smth( args ...){

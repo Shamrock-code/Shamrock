@@ -2,21 +2,21 @@
    <source media="(prefers-color-scheme: dark)" srcset="doc/shamrock-doc/src/images/no_background_nocolor.png"  width="600">
    <img alt="text" src="doc/logosham_white.png" width="600">
  </picture>
- 
+
 ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/on_push_main.yml/badge.svg?branch=main) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 # The Shamrock code
 
-Shamrock is a general purpose HPC hydrodynamics simulation code focused on astrophysical contexts.  
-The whole code is **C++17** by default, and all accelerated parts are done using **SYCL**, 
+Shamrock is a general purpose HPC hydrodynamics simulation code focused on astrophysical contexts.
+The whole code is **C++17** by default, and all accelerated parts are done using **SYCL**,
 which can be directly compiled directly to native **CUDA**, **ROCM**, **OpenMP** and much more.
-Shamrock also supports multiple GPUs and Heterogeneous clusters using **MPI**.  
-This code aims to be: 
+Shamrock also supports multiple GPUs and Heterogeneous clusters using **MPI**.
+This code aims to be:
 - Modern
-- Modular  
-- Fast 
+- Modular
+- Fast
 - Portable
-  
+
 ## Getting in touch
 
 Join us on [Discord](https://discord.gg/Q69s5buyr5)! Alternatively, open a discussion or issue in this repository.
@@ -36,14 +36,14 @@ The day MNRAS will accept the paper 😅
 
 ## Compiler support
 
-Compiler config | Support 
+Compiler config | Support
 ---|---
-DPC++ CUDA | ![badge2](https://badgen.net/static/DPC++%2FCUDA/yes/green)  
-DPC++ ROCM | ![badge2](https://badgen.net/static/DPC++%2FHIP:ROCM/yes/green)  
-AdaptiveCPP OpenMP | ![badge2](https://badgen.net/static/ACPP%2FOpenMP/yes/green)  
-AdaptiveCPP ROCM | ![badge2](https://badgen.net/static/ACPP%2FROCM/yes/green)  
-AdaptiveCPP CUDA | ![badge2](https://badgen.net/static/ACPP%2FCUDA/yes/green)  
-AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)  
+DPC++ CUDA | ![badge2](https://badgen.net/static/DPC++%2FCUDA/yes/green)
+DPC++ ROCM | ![badge2](https://badgen.net/static/DPC++%2FHIP:ROCM/yes/green)
+AdaptiveCPP OpenMP | ![badge2](https://badgen.net/static/ACPP%2FOpenMP/yes/green)
+AdaptiveCPP ROCM | ![badge2](https://badgen.net/static/ACPP%2FROCM/yes/green)
+AdaptiveCPP CUDA | ![badge2](https://badgen.net/static/ACPP%2FCUDA/yes/green)
+AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)
 
 
 # Documentation
@@ -54,7 +54,7 @@ We provide both a book like documentation and the more classic doxygen style for
 
 # Getting started
 
-The whole getting started guide can be found here: [Getting started](https://tdavidcl.github.io/Shamrock/mdbook/usermanual/quickstart.html)
+The whole getting started guide can be found here: [Getting started](https://tdavidcl.github.io/Shamrock/mkdocs/usermanual/quickstart/)
 
 Note that a convenient way to pull the Shamrock repo is the following command to also pull the submodules:
 ```bash

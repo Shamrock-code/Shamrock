@@ -9,19 +9,19 @@
 /**
  * @file SPHSolverImpl.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "SPHSolverImpl.hpp"
 
-shamrock::tree::ObjectCache
-shammodels::SPHSolverImpl::build_neigh_cache(u32 start_offset,
-                                             u32 obj_cnt,
-                                             sycl::buffer<vec> &buf_xyz,
-                                             sycl::buffer<flt> &buf_hpart,
-                                             RadixTree<u_morton, vec> &tree,
-                                             sycl::buffer<flt> &tree_field_hmax) {
+shamrock::tree::ObjectCache shammodels::SPHSolverImpl::build_neigh_cache(
+    u32 start_offset,
+    u32 obj_cnt,
+    sycl::buffer<vec> &buf_xyz,
+    sycl::buffer<flt> &buf_hpart,
+    RadixTree<u_morton, vec> &tree,
+    sycl::buffer<flt> &tree_field_hmax) {
 
     StackEntry stack_loc{};
 
@@ -46,7 +46,7 @@ shammodels::SPHSolverImpl::build_neigh_cache(u32 start_offset,
         constexpr flt Rker2 = Kernel::Rkern * Kernel::Rkern;
 
         cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-            u32 id_a = start_offset + (u32)item.get_id(0);
+            u32 id_a = start_offset + (u32) item.get_id(0);
 
             flt h_a = hpart[id_a];
 
@@ -104,7 +104,7 @@ shammodels::SPHSolverImpl::build_neigh_cache(u32 start_offset,
         constexpr flt Rker2 = Kernel::Rkern * Kernel::Rkern;
 
         cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-            u32 id_a = start_offset + (u32)item.get_id(0);
+            u32 id_a = start_offset + (u32) item.get_id(0);
 
             flt h_a = hpart[id_a];
 
@@ -143,13 +143,13 @@ shammodels::SPHSolverImpl::build_neigh_cache(u32 start_offset,
     return pcache;
 }
 
-shamrock::tree::ObjectCache
-shammodels::SPHSolverImpl::build_hiter_neigh_cache(u32 start_offset,
-                                                   u32 obj_cnt,
-                                                   sycl::buffer<vec> &buf_xyz,
-                                                   sycl::buffer<flt> &buf_hpart,
-                                                   RadixTree<u_morton, vec> &tree,
-                                                   flt h_tolerance) {
+shamrock::tree::ObjectCache shammodels::SPHSolverImpl::build_hiter_neigh_cache(
+    u32 start_offset,
+    u32 obj_cnt,
+    sycl::buffer<vec> &buf_xyz,
+    sycl::buffer<flt> &buf_hpart,
+    RadixTree<u_morton, vec> &tree,
+    flt h_tolerance) {
 
     StackEntry stack_loc{};
 
@@ -171,7 +171,7 @@ shammodels::SPHSolverImpl::build_hiter_neigh_cache(u32 start_offset,
             constexpr flt Rker2 = Kernel::Rkern * Kernel::Rkern;
 
             cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-                u32 id_a = start_offset + (u32)item.get_id(0);
+                u32 id_a = start_offset + (u32) item.get_id(0);
                 // increase smoothing length to include possible future neigh in the cache
                 flt h_a  = hpart[id_a] * h_tolerance;
                 flt dint = h_a * h_a * Rker2;
@@ -220,7 +220,7 @@ shammodels::SPHSolverImpl::build_hiter_neigh_cache(u32 start_offset,
             constexpr flt Rker2 = Kernel::Rkern * Kernel::Rkern;
 
             cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-                u32 id_a = start_offset + (u32)item.get_id(0);
+                u32 id_a = start_offset + (u32) item.get_id(0);
 
                 // increase smoothing length to include possible future neigh in the cache
                 flt h_a  = hpart[id_a] * h_tolerance;

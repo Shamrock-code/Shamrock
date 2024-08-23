@@ -11,7 +11,7 @@
 /**
  * @file CommProtocolException.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include <exception>
@@ -23,7 +23,7 @@ namespace shamsys::comm {
      * @brief Exception type for the NodeInstance
      */
     class CommProtocolException : public std::exception {
-      public:
+        public:
         explicit CommProtocolException(const char *message) : msg_(message) {}
 
         explicit CommProtocolException(const std::string &message) : msg_(message) {}
@@ -32,8 +32,8 @@ namespace shamsys::comm {
 
         [[nodiscard]] const char *what() const noexcept override { return msg_.c_str(); }
 
-      protected:
+        protected:
         std::string msg_;
     };
 
-}
+} // namespace shamsys::comm

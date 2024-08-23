@@ -4,9 +4,10 @@ Patch.cpp
 PatchData.cpp
 PatchDataLayout.cpp
 PatchDataField.cpp
+SimBox.cpp
 )
 set(SourcesTest
-    
+
 )
 set(Headers
     Patch.hpp

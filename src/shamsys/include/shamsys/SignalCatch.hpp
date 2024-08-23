@@ -11,7 +11,7 @@
 /**
  * @file SignalCatch.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 namespace shamsys {
@@ -19,4 +19,4 @@ namespace shamsys {
         void signal_callback_handler(int signum);
     }
     void register_signals();
-}
+} // namespace shamsys

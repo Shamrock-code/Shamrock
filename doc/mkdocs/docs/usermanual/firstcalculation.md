@@ -27,7 +27,7 @@ SHAMROCK provides an array of pre-cooked scripts you can run as is. When running
 For the sake of clarity, let's take the example of the spherical_wave.py script. To run it, type this in your terminal:
 
 ```bash
-./shamrock --sycl-cfg 0:0 --sycl-ls-map --loglevel 10 --rscript ../exemples/spherical_wave.py 
+./shamrock --sycl-cfg 0:0 --sycl-ls-map --loglevel 10 --rscript ../exemples/spherical_wave.py
 ```
 the --loglevel argument specifies the degree of verbosity of SHAMROCK.
 - 0 silent
@@ -64,12 +64,3 @@ model.init_from_phantom_dump(dump)
 ## Analysing dumps via the phantomanalysis tool
 
 After running your simulation in Shamrock and outputing it in fortran format, you can use the Phantom utility phantomanalysis. For it to work, you NEED to copy in the directory where your shamrock dumps are the .in file and the .params file. Careful with underscores.
-
-
-
-
-
-
-
-
-

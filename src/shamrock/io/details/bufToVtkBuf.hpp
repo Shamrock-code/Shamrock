@@ -11,36 +11,35 @@
 /**
  * @file bufToVtkBuf.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "shambase/endian.hpp"
-#include "shambackends/vec.hpp"
-#include "shambackends/typeAliasVec.hpp"
 #include "shambackends/sycl.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/vec.hpp"
 
 namespace shamrock::details {
 
-
-    template<class RT, class T> RT to_vtk_type(T a){
+    template<class RT, class T>
+    RT to_vtk_type(T a) {
         return shambase::get_endian_swap<RT>(a);
-    } 
+    }
 
     template<class RT, class T>
-    inline sycl::buffer<RT> to_vtk_buf_type(sycl::queue &q, sycl::buffer<T> &buf_in, u64 len){
+    inline sycl::buffer<RT> to_vtk_buf_type(sycl::queue &q, sycl::buffer<T> &buf_in, u64 len) {
         sycl::buffer<RT> ret(len);
 
         q.submit([=, &buf_in, &ret](sycl::handler &cgh) {
             sycl::accessor acc_in{buf_in, cgh, sycl::read_only};
             sycl::accessor acc_out{ret, cgh, sycl::write_only, sycl::no_init};
-            cgh.parallel_for(sycl::range<1>{len},
-                             [=](sycl::item<1> id) { 
-                                acc_out[id] = to_vtk_type<RT>(acc_in[id]) ; });
+            cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                acc_out[id] = to_vtk_type<RT>(acc_in[id]);
+            });
         });
 
         return ret;
-    
     }
 
     template<class RT, class T, int n>
@@ -49,7 +48,6 @@ namespace shamrock::details {
         sycl::buffer<RT> ret(len * n);
 
         q.submit([=, &buf_in, &ret](sycl::handler &cgh) {
-            
             sycl::accessor acc_in{buf_in, cgh, sycl::read_only};
             sycl::accessor acc_out{ret, cgh, sycl::write_only, sycl::no_init};
 
@@ -109,4 +107,4 @@ namespace shamrock::details {
         return ret;
     }
 
-}
+} // namespace shamrock::details

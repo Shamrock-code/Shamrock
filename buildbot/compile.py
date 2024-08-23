@@ -1,4 +1,4 @@
-from lib.buildbot import * 
+from lib.buildbot import *
 
 print_buildbot_info("compile tool")
 

@@ -78,7 +78,7 @@ def plot_vertical_profile(r, rrange, label = ""):
     ysel = np.array(ysel)
 
     rhobar = np.mean(rhosel)
-    
+
     plt.scatter(ysel, rhosel/rhobar, s=1, label = label)
 
 
@@ -112,4 +112,3 @@ while next_dt_target <= t_target:
 model.do_vtk_dump("end.vtk", True)
 dump = model.make_phantom_dump()
 dump.save_dump("end.phdump")
-

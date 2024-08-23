@@ -27,7 +27,6 @@ namespace sham {
      */
     class DeviceQueue {
         public:
-
         /**
          * @brief The device context of this queue
          */
@@ -73,7 +72,6 @@ namespace sham {
          * property.
          */
         DeviceQueue(std::string queue_name, std::shared_ptr<DeviceContext> ctx, bool in_order);
-
     };
 
 } // namespace sham

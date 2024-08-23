@@ -1,5 +1,5 @@
 import json
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import numpy as np
 import random
 
@@ -7,7 +7,7 @@ import random
 files = ["sedov_scale_test_2_0", "sedov_scale_test_2_1","sedov_scale_test_init_2_0","sedov_scale_test_init_2_1"]
 
 def load_dic(fname):
-    fl = open(fname,'r') 
+    fl = open(fname,'r')
     str_f = fl.read()
     fl.close()
 
@@ -48,7 +48,7 @@ colors = ["tab:blue" ,
     "tab:orange" ,
     "tab:green",
     "tab:red",
-    "tab:purple", 
+    "tab:purple",
     "tab:brown" ,
     "tab:pink" ,
     "tab:gray" ,

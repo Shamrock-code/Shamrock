@@ -11,10 +11,10 @@
 /**
  * @file integrator.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include <functional>
 
 namespace shammath {

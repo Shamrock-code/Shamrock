@@ -19,9 +19,9 @@
 
 namespace shambindings {
 
-    #if defined(DOXYGEN) || defined(SHAMROCK_EXECUTABLE_BUILD)
+#if defined(DOXYGEN) || defined(SHAMROCK_EXECUTABLE_BUILD)
     /**
-     * @brief Start shamrock embded ipython interpreter 
+     * @brief Start shamrock embded ipython interpreter
      *
      * This function is available only if the flag SHAMROCK_EXECUTABLE_BUILD is set
      *
@@ -39,6 +39,6 @@ namespace shambindings {
      * @param file_path path to the runscript
      */
     void run_py_file(std::string file_path, bool do_print);
-    #endif
+#endif
 
 } // namespace shambindings

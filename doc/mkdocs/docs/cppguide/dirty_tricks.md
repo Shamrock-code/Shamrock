@@ -3,9 +3,9 @@
 
 ## Fixing constructor issues (The dirty way)
 
-if you have a class `MyClass` having some custom constructors or deleted constructors. A way to avoid dealing with constructors issues is to wrap the class in a `std::unique_ptr`. 
+if you have a class `MyClass` having some custom constructors or deleted constructors. A way to avoid dealing with constructors issues is to wrap the class in a `std::unique_ptr`.
 
-Exemple : 
+Exemple :
 
 ```cpp
 struct MyClass{
@@ -18,13 +18,13 @@ struct MyClass{
     ~MyClass(){
         delete ptr;
     }
-    
+
 }
 ```
 
 Such class is ill formed in a non trivial way because it doesn't follow the rule of Three/Five/whatever c++ weird mechanics.
 
-But if you wrap this type in a `std::unique_ptr` then it will behave correctly. 
+But if you wrap this type in a `std::unique_ptr` then it will behave correctly.
 
 ## Container template
 
@@ -35,7 +35,7 @@ class VariantContainer {
 }
 ```
 
-Such Variant container can be used as such 
+Such Variant container can be used as such
 
 ```cpp
 template<class T>
@@ -46,7 +46,7 @@ struct Field{
 using VariantField = VariantContainer<Field>;
 ```
 
-here VariantField is equivalent to a type like this : 
+here VariantField is equivalent to a type like this :
 
 ```cpp
 class VariantField {
@@ -73,12 +73,12 @@ struct StaticInitClass{
 
 ```
 
-If in the code you write the following code block : 
+If in the code you write the following code block :
 
 ```cpp
 void fct_to_register(){...}
 
-void (*fct_ptr)() =fct_to_register; 
+void (*fct_ptr)() =fct_to_register;
 
 StaticInitClass static_init_instance (fct_ptr);
 ```

@@ -12,34 +12,202 @@
  * @brief
  */
 
+#include "shambase/SourceLocation.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
-#include "shamsys/NodeInstance.hpp"
-
+#include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/math.hpp"
-#include "shambackends/typeAliasVec.hpp"
-#include "shambase/SourceLocation.hpp"
-#include "shambase/exception.hpp"
-#include "shambase/stacktrace.hpp"
-#include "shambase/string.hpp"
 #include "shambackends/sycl_utils.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shamcmdopt/cmdopt.hpp"
+#include "shamcmdopt/tty.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiInfo.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/EnvVariables.hpp"
+#include "shamsys/MpiDataTypeHandler.hpp"
 #include "shamsys/MpiWrapper.hpp"
-#include "shamcmdopt/cmdopt.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-
-#include "shamsys/MpiDataTypeHandler.hpp"
 #include <memory>
 #include <optional>
 #include <stdexcept>
 #include <string>
+
+/**
+ * @brief Namespace for log formatters
+ */
+namespace logformatter {
+
+    /**
+     * @brief Log formatter for style 0, full details
+     *
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+
+    std::string style0_formatter_full(const logger::ReformatArgs &args) {
+        return "[" + (args.color) + args.module_name + shambase::term_colors::reset() + "] "
+               + (args.color) + (args.level_name) + shambase::term_colors::reset() + ": "
+               + args.content;
+    }
+
+    /**
+     * @brief Log formatter for style 0, simple details
+     *
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+    std::string style0_formatter_simple(const logger::ReformatArgs &args) {
+        return "[" + (args.color) + args.module_name + shambase::term_colors::reset() + "] "
+               + (args.color) + (args.level_name) + shambase::term_colors::reset() + ": "
+               + args.content;
+    }
+
+    /**
+     * @brief Log formatter for style 1, full details
+     *
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+    std::string style1_formatter_full(const logger::ReformatArgs &args) {
+        return shambase::format(
+            "{5:}rank={6:<4}{2:} {5:}({3:^20}){2:} {0:}{1:}{2:}: {4:}",
+            args.color,
+            args.level_name,
+            shambase::term_colors::reset(),
+            args.module_name,
+            args.content,
+            shambase::term_colors::faint(),
+            shamcomm::world_rank());
+    }
+
+    /**
+     * @brief Log formatter for style 1, simple details
+     *
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+    std::string style1_formatter_simple(const logger::ReformatArgs &args) {
+        return shambase::format(
+            "{5:}({3:}){2:} : {4:}",
+            args.color,
+            args.level_name,
+            shambase::term_colors::reset(),
+            args.module_name,
+            args.content,
+            shambase::term_colors::faint());
+    }
+    /**
+     * @brief Log formatter for style 2, full details
+     *
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+
+    std::string style2_formatter_full(const logger::ReformatArgs &args) {
+
+        return shambase::format(
+            "{0:}{1:}{2:}: {4:}{5:} | ({3:}) rank={6:<4}{2:}",
+            args.color,
+            args.level_name,
+            shambase::term_colors::reset(),
+            args.module_name,
+            args.content,
+            shambase::term_colors::faint(),
+            shamcomm::world_rank());
+    }
+
+    /**
+     * @brief Log formatter for style 2, simple details
+     *
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+    std::string style2_formatter_simple(const logger::ReformatArgs &args) {
+        return shambase::format(
+            "{5:}({3:}){2:} : {4:}",
+            args.color,
+            args.level_name,
+            shambase::term_colors::reset(),
+            args.module_name,
+            args.content,
+            shambase::term_colors::faint());
+    }
+
+    /**
+     * @brief Log formatter for style 3, full details
+     *
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+    std::string style3_formatter_full(const logger::ReformatArgs &args) {
+
+        u32 tty_width = shamcmdopt::get_tty_columns();
+
+        std::string ansi_reset = shambase::term_colors::reset();
+        std::string ansi_faint = shambase::term_colors::faint();
+
+        std::string lineend = shambase::format(
+            "{5:} [{3:}][rank={6:}]{2:}",
+            args.color,
+            args.level_name,
+            ansi_reset,
+            args.module_name,
+            args.content,
+            ansi_faint,
+            shamcomm::world_rank());
+
+        std::string log = shambase::format(
+            "{0:}{1:}{2:}: {4:}",
+            args.color,
+            args.level_name,
+            ansi_reset,
+            args.module_name,
+            args.content,
+            ansi_faint,
+            shamcomm::world_rank());
+
+        std::string log_line1, log_line2;
+        size_t first_nl = log.find_first_of('\n');
+        if (first_nl != std::string::npos) {
+            log_line1 = log.substr(0, first_nl);
+            log_line2 = log.substr(first_nl);
+        } else {
+            log_line1 = log;
+            log_line2 = "";
+        }
+
+        u32 ansi_count = ansi_reset.size() * 2 + ansi_faint.size() + args.color.size();
+
+        return shambase::format("{:<{}}", log_line1, tty_width - lineend.size() + ansi_count - 1)
+               + lineend + log_line2;
+    }
+
+    /**
+     * @brief Log formatter for style 3, simple details
+     *
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+    std::string style3_formatter_simple(const logger::ReformatArgs &args) {
+        return shambase::format(
+            "{5:}({3:}){2:} : {4:}",
+            args.color,
+            args.level_name,
+            shambase::term_colors::reset(),
+            args.module_name,
+            args.content,
+            shambase::term_colors::faint());
+    }
+} // namespace logformatter
 
 namespace shamsys::instance::details {
 
@@ -83,8 +251,8 @@ namespace shamsys::instance::details {
                              key_global,
                              devname,
                              platname,
-                             devtype) +
-                         "\n";
+                             devtype)
+                         + "\n";
         });
 
         std::string recv;
@@ -114,28 +282,27 @@ namespace syclinit {
     std::shared_ptr<sham::Device> device_compute;
     std::shared_ptr<sham::Device> device_alt;
 
-
     std::shared_ptr<sham::DeviceContext> ctx_compute;
     std::shared_ptr<sham::DeviceContext> ctx_alt;
 
     std::shared_ptr<sham::DeviceScheduler> sched_compute;
     std::shared_ptr<sham::DeviceScheduler> sched_alt;
 
-    void init_device_scheduling(){
+    void init_device_scheduling() {
         StackEntry stack_loc{false};
         ctx_compute = std::make_shared<sham::DeviceContext>(device_compute);
-        ctx_alt = std::make_shared<sham::DeviceContext>(device_alt);
+        ctx_alt     = std::make_shared<sham::DeviceContext>(device_alt);
 
         sched_compute = std::make_shared<sham::DeviceScheduler>(ctx_compute);
-        sched_alt = std::make_shared<sham::DeviceScheduler>(ctx_alt);
+        sched_alt     = std::make_shared<sham::DeviceScheduler>(ctx_alt);
 
         sched_compute->test();
         sched_alt->test();
 
-        //logger::raw_ln("--- Compute ---");
-        //sched_compute->print_info();
-        //logger::raw_ln("--- Alternative ---");
-        //sched_alt->print_info();
+        // logger::raw_ln("--- Compute ---");
+        // sched_compute->print_info();
+        // logger::raw_ln("--- Alternative ---");
+        // sched_alt->print_info();
     }
 
     void init_queues_auto(std::string search_key) {
@@ -183,7 +350,8 @@ namespace syclinit {
                                 shambase::getDevice_type(dev),
                                 "|");
 
-                            device_alt = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
+                            device_alt = std::make_shared<sham::Device>(
+                                sham::sycl_dev_to_sham_dev(key_global, dev));
 
                             logger::debug_sycl_ln(
                                 "NodeInstance",
@@ -195,8 +363,8 @@ namespace syclinit {
                                 "|",
                                 shambase::getDevice_type(dev),
                                 "|");
-                            device_compute = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
-
+                            device_compute = std::make_shared<sham::Device>(
+                                sham::sycl_dev_to_sham_dev(key_global, dev));
                         }
 
                         valid_dev_id++;
@@ -229,47 +397,48 @@ namespace syclinit {
                 "the compute queue id is larger than the number of queue");
         }
 
-        shamsys::instance::details::for_each_device(
-            [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
-                auto PlatformName = plat.get_info<sycl::info::platform::name>();
-                auto DeviceName   = dev.get_info<sycl::info::device::name>();
+        shamsys::instance::details::for_each_device([&](u32 key_global,
+                                                        const sycl::platform &plat,
+                                                        const sycl::device &dev) {
+            auto PlatformName = plat.get_info<sycl::info::platform::name>();
+            auto DeviceName   = dev.get_info<sycl::info::device::name>();
 
-                if (key_global == alt_id) {
-                    logger::debug_sycl_ln(
-                        "NodeInstance",
-                        "init alt queue  : ",
-                        "|",
-                        DeviceName,
-                        "|",
-                        PlatformName,
-                        "|",
-                        shambase::getDevice_type(dev),
-                        "|");
-                        device_alt = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
+            if (key_global == alt_id) {
+                logger::debug_sycl_ln(
+                    "NodeInstance",
+                    "init alt queue  : ",
+                    "|",
+                    DeviceName,
+                    "|",
+                    PlatformName,
+                    "|",
+                    shambase::getDevice_type(dev),
+                    "|");
+                device_alt
+                    = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
+            }
 
-                }
-
-                if (key_global == compute_id) {
-                    logger::debug_sycl_ln(
-                        "NodeInstance",
-                        "init comp queue : ",
-                        "|",
-                        DeviceName,
-                        "|",
-                        PlatformName,
-                        "|",
-                        shambase::getDevice_type(dev),
-                        "|");
-                        device_compute = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
-
-                }
-            });
+            if (key_global == compute_id) {
+                logger::debug_sycl_ln(
+                    "NodeInstance",
+                    "init comp queue : ",
+                    "|",
+                    DeviceName,
+                    "|",
+                    PlatformName,
+                    "|",
+                    shambase::getDevice_type(dev),
+                    "|");
+                device_compute
+                    = std::make_shared<sham::Device>(sham::sycl_dev_to_sham_dev(key_global, dev));
+            }
+        });
 
         init_device_scheduling();
         initialized = true;
     }
 
-    void finalize(){
+    void finalize() {
         initialized = false;
 
         device_compute.reset();
@@ -279,9 +448,9 @@ namespace syclinit {
         ctx_alt.reset();
 
         sched_compute.reset();
-        sched_alt.reset();   
+        sched_alt.reset();
     }
-};
+}; // namespace syclinit
 
 namespace shamsys::instance {
 
@@ -331,43 +500,33 @@ namespace shamsys::instance {
         }
     }
 
-
-    namespace tmp{
-
-
+    namespace tmp {
 
         void print_device_list_debug() {
             u32 rank = 0;
 
             std::string print_buf = "device avail : ";
 
-            details::for_each_device([&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
-                auto PlatformName = plat.get_info<sycl::info::platform::name>();
-                auto DeviceName   = dev.get_info<sycl::info::device::name>();
+            details::for_each_device(
+                [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
+                    auto PlatformName = plat.get_info<sycl::info::platform::name>();
+                    auto DeviceName   = dev.get_info<sycl::info::device::name>();
 
-                std::string devname  = DeviceName;
-                std::string platname = PlatformName;
-                std::string devtype  = "truc";
+                    std::string devname  = DeviceName;
+                    std::string platname = PlatformName;
+                    std::string devtype  = "truc";
 
-                print_buf += 
-                                std::to_string(key_global) + " " +
-                                devname+
-                                platname +
-                            "\n";
-            });
+                    print_buf += std::to_string(key_global) + " " + devname + platname + "\n";
+                });
 
-        
             logger::debug_sycl_ln("InitSYCL", print_buf);
         }
 
-
-    }
+    } // namespace tmp
 
     void init(int argc, char *argv[]) {
 
         tmp::print_device_list_debug();
-
-
 
         if (opts::has_option("--sycl-cfg")) {
 
@@ -380,7 +539,7 @@ namespace shamsys::instance {
             if (shambase::contain_substr(sycl_cfg, "auto:")) {
 
                 std::string search = sycl_cfg.substr(5);
-                init_auto(search, MPIInitInfo{argc, argv,force_aware});
+                init_auto(search, MPIInitInfo{argc, argv, force_aware});
 
             } else {
 
@@ -443,6 +602,33 @@ namespace shamsys::instance {
         mpi::init(&mpi_info.argc, &mpi_info.argv);
 
         shamcomm::fetch_world_info();
+
+        // now that MPI is started we can use the formatter with rank info
+
+        logger::debug_ln("Sys", "changing formatter to MPI form");
+
+        auto env_formatter = shamcmdopt::getenv_str("SHAMLOGFORMATTER");
+        if (env_formatter) {
+            if (*env_formatter == "0") {
+                logger::change_formaters(
+                    logformatter::style0_formatter_full, logformatter::style0_formatter_simple);
+            } else if (*env_formatter == "1") {
+                logger::change_formaters(
+                    logformatter::style1_formatter_full, logformatter::style1_formatter_simple);
+            } else if (*env_formatter == "2") {
+                logger::change_formaters(
+                    logformatter::style2_formatter_full, logformatter::style2_formatter_simple);
+            } else if (*env_formatter == "3") {
+                logger::change_formaters(
+                    logformatter::style3_formatter_full, logformatter::style3_formatter_simple);
+            } else {
+                logger::err_ln("Log", "Unknown formatter");
+                throw ShamsysInstanceException("Unknown formatter");
+            }
+        } else {
+            logger::change_formaters(
+                logformatter::style3_formatter_full, logformatter::style3_formatter_simple);
+        }
 
 #ifdef MPI_LOGGER_ENABLED
         std::cout << "%MPI_VALUE:world_size=" << world_size << "\n";
@@ -522,28 +708,19 @@ namespace shamsys::instance {
     // sycl related routines
     ////////////////////////////
 
-    sycl::queue &get_compute_queue(u32 /*id*/) { 
-        return syclinit::sched_compute->get_queue().q; 
-        }
+    sycl::queue &get_compute_queue(u32 /*id*/) { return syclinit::sched_compute->get_queue().q; }
 
-    sycl::queue &get_alt_queue(u32 /*id*/) { 
-        return syclinit::sched_alt->get_queue().q; }
+    sycl::queue &get_alt_queue(u32 /*id*/) { return syclinit::sched_alt->get_queue().q; }
 
-    sham::DeviceScheduler & get_compute_scheduler(){
-        return *syclinit::sched_compute;
-    }    
-    
-    sham::DeviceScheduler & get_alt_scheduler(){
-        return *syclinit::sched_alt;
-    }
+    sham::DeviceScheduler &get_compute_scheduler() { return *syclinit::sched_compute; }
 
-    std::shared_ptr<sham::DeviceScheduler> get_compute_scheduler_ptr(){
+    sham::DeviceScheduler &get_alt_scheduler() { return *syclinit::sched_alt; }
+
+    std::shared_ptr<sham::DeviceScheduler> get_compute_scheduler_ptr() {
         return syclinit::sched_compute;
-    }    
-    
-    std::shared_ptr<sham::DeviceScheduler> get_alt_scheduler_ptr(){
-        return syclinit::sched_alt;
     }
+
+    std::shared_ptr<sham::DeviceScheduler> get_alt_scheduler_ptr() { return syclinit::sched_alt; }
 
     void print_device_info(const sycl::device &Device) {
         std::cout << "   - " << Device.get_info<sycl::info::device::name>() << " "
@@ -553,7 +730,6 @@ namespace shamsys::instance {
     }
 
     void print_device_list() { details::print_device_list(); }
-
 
     void start_sycl(u32 alt_id, u32 compute_id) {
         // start sycl

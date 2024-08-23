@@ -90,4 +90,3 @@ set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_LOOP_GSIZE=${SHAMROCK
 message( " -------------------------------------- ")
 
 message(STATUS "Shamrock configure SYCL backend - done")
-

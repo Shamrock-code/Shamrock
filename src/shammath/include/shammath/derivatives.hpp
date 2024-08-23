@@ -11,17 +11,17 @@
 /**
  * @file derivatives.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include <functional>
 
 namespace shammath {
 
     template<class T>
     inline T derivative_upwind(T x, T dx, std::function<T(T)> &&fct) {
-        return (fct(x +dx)-fct(x))/dx ;
+        return (fct(x + dx) - fct(x)) / dx;
     }
 
 } // namespace shammath

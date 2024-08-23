@@ -9,13 +9,13 @@
 /**
  * @file exclusiveScanGPUGems39.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shamalgs/details/numeric/exclusiveScanGPUGems39.hpp"
-#include "shamalgs/memory.hpp"
 #include "shambase/integer.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambackends/math.hpp"
 
 /*
@@ -56,67 +56,54 @@ namespace shamalgs::numeric::details {
         sycl::buffer<T> out1(len);
         sycl::buffer<T> out2(len);
 
-        auto get_in_buf_ref = [&](u32 step) -> sycl::buffer<T>& {
-            if(step%2 == 0){
+        auto get_in_buf_ref = [&](u32 step) -> sycl::buffer<T> & {
+            if (step % 2 == 0) {
                 return out1;
-            }else{
+            } else {
                 return out2;
             }
         };
 
-        auto get_out_buf_ref = [&](u32 step) -> sycl::buffer<T>& {
-            if(step%2 == 1){
+        auto get_out_buf_ref = [&](u32 step) -> sycl::buffer<T> & {
+            if (step % 2 == 1) {
                 return out1;
-            }else{
+            } else {
                 return out2;
             }
         };
 
         u32 step = 0;
 
-
         q.submit([&](sycl::handler &cgh) {
-            sycl::accessor acc_in {buf1, cgh, sycl::read_only};
-            sycl::accessor acc_out {get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor acc_in{buf1, cgh, sycl::read_only};
+            sycl::accessor acc_out{get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
 
-            cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id){
-                u32 thid = id.get_linear_id();
+            cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                u32 thid    = id.get_linear_id();
                 acc_out[id] = (thid > 0) ? acc_in[thid - 1] : 0;
             });
         });
-        
+
         for (int offset = 1; offset < len; offset *= 2) {
 
+            q.submit([&, offset](sycl::handler &cgh) {
+                sycl::accessor acc_in{get_in_buf_ref(step), cgh, sycl::read_only};
+                sycl::accessor acc_out{get_out_buf_ref(step), cgh, sycl::write_only};
 
-            q.submit([&,offset](sycl::handler &cgh) {
-                sycl::accessor acc_in {get_in_buf_ref(step), cgh, sycl::read_only};
-                sycl::accessor acc_out {get_out_buf_ref(step), cgh, sycl::write_only};
-
-                cgh.parallel_for<KernelExclsum_1<T>>(sycl::range<1>{len}, [=](sycl::item<1> id){
+                cgh.parallel_for<KernelExclsum_1<T>>(sycl::range<1>{len}, [=](sycl::item<1> id) {
                     u32 thid = id.get_linear_id();
 
                     const auto in_val = acc_in[thid];
-                    
+
                     acc_out[thid] = (thid >= offset) ? in_val + acc_in[thid - offset] : in_val;
-
-
                 });
             });
 
-            
-
             step++;
-            
         }
-
 
         return std::move(get_in_buf_ref(step));
     }
-
-
-
-
-
 
     template<class T>
     class KernelExclsum_2;
@@ -129,67 +116,56 @@ namespace shamalgs::numeric::details {
         sycl::buffer<T> out1(rounded_len);
         sycl::buffer<T> out2(rounded_len);
 
-        auto get_in_buf_ref = [&](u32 step) -> sycl::buffer<T>& {
-            if(step%2 == 0){
+        auto get_in_buf_ref = [&](u32 step) -> sycl::buffer<T> & {
+            if (step % 2 == 0) {
                 return out1;
-            }else{
+            } else {
                 return out2;
             }
         };
 
-        auto get_out_buf_ref = [&](u32 step) -> sycl::buffer<T>& {
-            if(step%2 == 1){
+        auto get_out_buf_ref = [&](u32 step) -> sycl::buffer<T> & {
+            if (step % 2 == 1) {
                 return out1;
-            }else{
+            } else {
                 return out2;
             }
         };
 
         u32 step = 0;
 
-
         q.submit([&](sycl::handler &cgh) {
             u32 corect_len = len;
-            sycl::accessor acc_in {buf1, cgh, sycl::read_only};
-            sycl::accessor acc_out {get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor acc_in{buf1, cgh, sycl::read_only};
+            sycl::accessor acc_out{get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
 
-            cgh.parallel_for(sycl::range<1>{rounded_len}, [=](sycl::item<1> id){
-                u32 thid = id.get_linear_id();
+            cgh.parallel_for(sycl::range<1>{rounded_len}, [=](sycl::item<1> id) {
+                u32 thid    = id.get_linear_id();
                 acc_out[id] = (thid > 0 && thid < corect_len) ? acc_in[thid - 1] : 0;
             });
         });
-        
+
         for (int offset = 1; offset < rounded_len; offset *= 2) {
 
+            q.submit([&, offset](sycl::handler &cgh) {
+                sycl::accessor acc_in{get_in_buf_ref(step), cgh, sycl::read_only};
+                sycl::accessor acc_out{get_out_buf_ref(step), cgh, sycl::write_only};
 
-            q.submit([&,offset](sycl::handler &cgh) {
-                sycl::accessor acc_in {get_in_buf_ref(step), cgh, sycl::read_only};
-                sycl::accessor acc_out {get_out_buf_ref(step), cgh, sycl::write_only};
+                cgh.parallel_for<KernelExclsum_2<T>>(
+                    sycl::range<1>{rounded_len}, [=](sycl::item<1> id) {
+                        u32 thid = id.get_linear_id();
 
-                cgh.parallel_for<KernelExclsum_2<T>>(sycl::range<1>{rounded_len}, [=](sycl::item<1> id){
-                    u32 thid = id.get_linear_id();
+                        const auto in_val = acc_in[thid];
 
-                    const auto in_val = acc_in[thid];
-                    
-                    acc_out[thid] = (thid >= offset) ? in_val + acc_in[thid - offset] : in_val;
-
-
-                });
+                        acc_out[thid] = (thid >= offset) ? in_val + acc_in[thid - offset] : in_val;
+                    });
             });
 
-            
-
             step++;
-            
         }
-
 
         return std::move(get_in_buf_ref(step));
     }
-
-
-
-
 
     template<class T>
     class KernelExclsum_3;
@@ -202,71 +178,59 @@ namespace shamalgs::numeric::details {
         sycl::buffer<T> out1(rounded_len);
         sycl::buffer<T> out2(rounded_len);
 
-        auto get_in_buf_ref = [&](u32 step) -> sycl::buffer<T>& {
-            if(step%2 == 0){
+        auto get_in_buf_ref = [&](u32 step) -> sycl::buffer<T> & {
+            if (step % 2 == 0) {
                 return out1;
-            }else{
+            } else {
                 return out2;
             }
         };
 
-        auto get_out_buf_ref = [&](u32 step) -> sycl::buffer<T>& {
-            if(step%2 == 1){
+        auto get_out_buf_ref = [&](u32 step) -> sycl::buffer<T> & {
+            if (step % 2 == 1) {
                 return out1;
-            }else{
+            } else {
                 return out2;
             }
         };
 
         u32 step = 0;
 
-
         q.submit([&](sycl::handler &cgh) {
             u32 corect_len = len;
-            sycl::accessor acc_in {buf1, cgh, sycl::read_only};
-            sycl::accessor acc_out {get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor acc_in{buf1, cgh, sycl::read_only};
+            sycl::accessor acc_out{get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
 
-            cgh.parallel_for(sycl::range<1>{rounded_len}, [=](sycl::item<1> id){
-                u32 thid = id.get_linear_id();
+            cgh.parallel_for(sycl::range<1>{rounded_len}, [=](sycl::item<1> id) {
+                u32 thid    = id.get_linear_id();
                 acc_out[id] = (thid > 0 && thid < corect_len) ? acc_in[thid - 1] : 0;
             });
         });
-        
+
         for (int offset = 1; offset < rounded_len; offset *= 2) {
 
+            q.submit([&, offset](sycl::handler &cgh) {
+                sycl::accessor acc_in{get_in_buf_ref(step), cgh, sycl::read_only};
+                sycl::accessor acc_out{get_out_buf_ref(step), cgh, sycl::write_only};
 
-            q.submit([&,offset](sycl::handler &cgh) {
-                sycl::accessor acc_in {get_in_buf_ref(step), cgh, sycl::read_only};
-                sycl::accessor acc_out {get_out_buf_ref(step), cgh, sycl::write_only};
+                cgh.parallel_for<KernelExclsum_3<T>>(
+                    sycl::range<1>{rounded_len}, [=](sycl::item<1> id) {
+                        u32 thid = id.get_linear_id();
 
-                cgh.parallel_for<KernelExclsum_3<T>>(sycl::range<1>{rounded_len}, [=](sycl::item<1> id){
-                    u32 thid = id.get_linear_id();
+                        const auto in_val = acc_in[thid];
 
-                    const auto in_val = acc_in[thid];
-                    
-                    acc_out[thid] = (thid >= offset) ? in_val + acc_in[thid - offset] : in_val;
-
-
-                });
+                        acc_out[thid] = (thid >= offset) ? in_val + acc_in[thid - offset] : in_val;
+                    });
             });
 
-            
-
             step++;
-            
         }
-
 
         return std::move(get_in_buf_ref(step));
     }
 
-
-
-
-
     template sycl::buffer<u32>
     exclusive_sum_gpugems39_1(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
-
 
     template sycl::buffer<u32>
     exclusive_sum_gpugems39_2(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);

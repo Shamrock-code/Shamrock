@@ -3,7 +3,7 @@ import numpy as np
 def write_array(fname, xa):
   fp = open(fname,"w")
   for x in xa:
-    s = '%lf\n' % x 
+    s = '%lf\n' % x
     fp.write(s)
   fp.close()
 
@@ -259,7 +259,7 @@ def write_ten_arrays(fname, a, b, c, d, f, g, h, k, l, m):
   fp.close()
 
 
-  
+
 def read_eight_arrays(fname):
   fp = open(fname,"r")
   fl = fp.readlines()

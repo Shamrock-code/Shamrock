@@ -17,11 +17,9 @@
  * From original version by Thomas Guillet (T.A.Guillet@exeter.ac.uk)
  */
 
-#include "shambackends/vec.hpp"
-
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
-
+#include "shambackends/vec.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -36,9 +34,9 @@ namespace shammath {
         Tscal rho{}, rhoe{};
         Tvec rhovel{};
 
-        const ConsState& operator+=(const ConsState&);
-        const ConsState& operator-=(const ConsState&);
-        const ConsState& operator*=(const Tscal);
+        const ConsState &operator+=(const ConsState &);
+        const ConsState &operator-=(const ConsState &);
+        const ConsState &operator*=(const Tscal);
     };
 
     template<class Tvec_>
@@ -51,56 +49,51 @@ namespace shammath {
     };
 
     template<class Tvec>
-    const ConsState<Tvec>& ConsState<Tvec>::operator+=(const ConsState<Tvec>& cst)
-    {
-        rho     += cst.rho;
-        rhoe    += cst.rhoe;
-        rhovel  += cst.rhovel;
+    const ConsState<Tvec> &ConsState<Tvec>::operator+=(const ConsState<Tvec> &cst) {
+        rho += cst.rho;
+        rhoe += cst.rhoe;
+        rhovel += cst.rhovel;
         return *this;
     }
 
     template<class Tvec>
-    const ConsState<Tvec> operator+(const ConsState<Tvec>& lhs, const ConsState<Tvec>& rhs)
-    {
-        return ConsState<Tvec>(lhs)+=rhs;
+    const ConsState<Tvec> operator+(const ConsState<Tvec> &lhs, const ConsState<Tvec> &rhs) {
+        return ConsState<Tvec>(lhs) += rhs;
     }
 
     template<class Tvec>
-    const ConsState<Tvec>& ConsState<Tvec>::operator-=(const ConsState<Tvec>& cst)
-    {
-        rho     -= cst.rho;
-        rhoe    -= cst.rhoe;
-        rhovel  -= cst.rhovel;
+    const ConsState<Tvec> &ConsState<Tvec>::operator-=(const ConsState<Tvec> &cst) {
+        rho -= cst.rho;
+        rhoe -= cst.rhoe;
+        rhovel -= cst.rhovel;
         return *this;
     }
 
     template<class Tvec>
-    const ConsState<Tvec> operator-(const ConsState<Tvec>& lhs, const ConsState<Tvec>& rhs)
-    {
-        return ConsState<Tvec>(lhs)-= rhs;
+    const ConsState<Tvec> operator-(const ConsState<Tvec> &lhs, const ConsState<Tvec> &rhs) {
+        return ConsState<Tvec>(lhs) -= rhs;
     }
 
     template<class Tvec>
-    const ConsState<Tvec>& ConsState<Tvec>::operator*=(const typename ConsState<Tvec>::Tscal factor)
-    {
-        rho    *= factor;
-        rhoe   *= factor;
+    const ConsState<Tvec> &
+    ConsState<Tvec>::operator*=(const typename ConsState<Tvec>::Tscal factor) {
+        rho *= factor;
+        rhoe *= factor;
         rhovel *= factor;
         return *this;
     }
 
     template<class Tvec>
-    const ConsState<Tvec> operator*(const typename ConsState<Tvec>::Tscal factor, const ConsState<Tvec>& rhs)
-    {
+    const ConsState<Tvec>
+    operator*(const typename ConsState<Tvec>::Tscal factor, const ConsState<Tvec> &rhs) {
         return ConsState<Tvec>(rhs) *= factor;
     }
 
     template<class Tvec>
-    const ConsState<Tvec> operator*(const ConsState<Tvec>& lhs, const typename ConsState<Tvec>::Tscal factor)
-    {
+    const ConsState<Tvec>
+    operator*(const ConsState<Tvec> &lhs, const typename ConsState<Tvec>::Tscal factor) {
         return ConsState<Tvec>(lhs) *= factor;
     }
-
 
     template<class Tvec_>
     struct Fluxes {
@@ -196,7 +189,6 @@ namespace shammath {
     //     return (fL + fR) * 0.5 - (cR - cL) * S;
     // }
 
-  
     template<class Tcons>
     inline constexpr Tcons rusanov_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
         Tcons flux;
@@ -208,12 +200,12 @@ namespace shammath {
         const auto csR = sound_speed(primR, gamma);
 
         // Equation (10.56) from Toro 3rd Edition , Springer 2009
-        const auto S = sham::max( (sham::abs(primL.vel[0]) + csL), (sham::abs(primR.vel[0]) + csR) );
+        const auto S = sham::max((sham::abs(primL.vel[0]) + csL), (sham::abs(primR.vel[0]) + csR));
 
         const auto fL = hydro_flux_x(cL, gamma);
         const auto fR = hydro_flux_x(cR, gamma);
-        
-        // Equation (10.55) from Toro 3rd Edition , Springer 2009 
+
+        // Equation (10.55) from Toro 3rd Edition , Springer 2009
         return 0.5 * ((fL + fR) - (cR - cL) * S);
     }
 
@@ -261,8 +253,8 @@ namespace shammath {
         return cprime;
     }
 
-    template<class Tcons> 
-    inline constexpr Tcons invert_axis(const Tcons c){
+    template<class Tcons>
+    inline constexpr Tcons invert_axis(const Tcons c) {
         Tcons cprime;
         cprime.rho       = c.rho;
         cprime.rhoe      = c.rhoe;
@@ -284,19 +276,18 @@ namespace shammath {
 
     template<class Tcons>
     inline constexpr Tcons rusanov_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(rusanov_flux_x(invert_axis(cL),invert_axis(cR), gamma));
+        return invert_axis(rusanov_flux_x(invert_axis(cL), invert_axis(cR), gamma));
     }
 
     template<class Tcons>
     inline constexpr Tcons rusanov_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(rusanov_flux_y(invert_axis(cL),invert_axis(cR), gamma));
+        return invert_axis(rusanov_flux_y(invert_axis(cL), invert_axis(cR), gamma));
     }
 
     template<class Tcons>
     inline constexpr Tcons rusanov_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(rusanov_flux_z(invert_axis(cL),invert_axis(cR), gamma));
+        return invert_axis(rusanov_flux_z(invert_axis(cL), invert_axis(cR), gamma));
     }
-
 
     template<class Tcons>
     inline constexpr auto
@@ -308,8 +299,8 @@ namespace shammath {
         const auto csR = sound_speed(primR, gamma);
 
         // Teyssier form
-        //const auto S_L = sham::min(primL.vel[0], primR.vel[0]) - sham::max(csL, csR);
-        //const auto S_R = sham::max(primL.vel[0], primR.vel[0]) + sham::max(csL, csR);
+        // const auto S_L = sham::min(primL.vel[0], primR.vel[0]) - sham::max(csL, csR);
+        // const auto S_R = sham::max(primL.vel[0], primR.vel[0]) + sham::max(csL, csR);
 
         // Toro form Equation (10.48)
         const auto S_L = sham::min(primL.vel[0] - csL, primR.vel[0] - csR);
@@ -327,20 +318,18 @@ namespace shammath {
             //         + (consR - consL) * S_R_upwind * S_L_upwind)
             //        * S_norm;
 
-            if( S_L >= 0)
+            if (S_L >= 0)
                 return fluxL;
-            else if( S_R <= 0)
+            else if (S_R <= 0)
                 return fluxR;
             else {
-                const auto S_norm = 1.0 /(S_R - S_L);
-                return (fluxL * S_R - fluxR * S_L 
-                    + (consR - consL) * S_R * S_L) * S_norm;
+                const auto S_norm = 1.0 / (S_R - S_L);
+                return (fluxL * S_R - fluxR * S_L + (consR - consL) * S_R * S_L) * S_norm;
             }
         };
 
         return hll_flux();
     }
-
 
     template<class Tcons>
     inline constexpr Tcons hll_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
@@ -354,16 +343,16 @@ namespace shammath {
 
     template<class Tcons>
     inline constexpr Tcons hll_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hll_flux_x(invert_axis(cL),invert_axis(cR), gamma));
+        return invert_axis(hll_flux_x(invert_axis(cL), invert_axis(cR), gamma));
     }
 
     template<class Tcons>
     inline constexpr Tcons hll_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hll_flux_y(invert_axis(cL),invert_axis(cR), gamma));
+        return invert_axis(hll_flux_y(invert_axis(cL), invert_axis(cR), gamma));
     }
 
     template<class Tcons>
     inline constexpr Tcons hll_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hll_flux_z(invert_axis(cL),invert_axis(cR), gamma));
+        return invert_axis(hll_flux_z(invert_axis(cL), invert_axis(cR), gamma));
     }
 } // namespace shammath

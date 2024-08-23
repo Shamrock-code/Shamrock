@@ -30,7 +30,7 @@ def plot_fcc_new(nx,ny,nz):
         for j in range(ny):
             for k in range(nz):
 
-                
+
 
                 x = 2*i + (j%2)
                 y = (3**0.5)*j

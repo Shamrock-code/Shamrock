@@ -3,18 +3,18 @@
 ## The tree
 
 
-The radix tree in shamrock can be imported by 
+The radix tree in shamrock can be imported by
 ```c++
 #include "shamrock/tree/RadixTree.hpp"
 ```
 
-This define the class `RadixTree<...>`. This templated `RadixTree` can be instanciated like this : 
+This define the class `RadixTree<...>`. This templated `RadixTree` can be instanciated like this :
 
 ```c++
 RadixTree<
         u32,   // The precision of the morton codes
         f32_3, // The type of the position data
-        3      // The dimension 
+        3      // The dimension
     >
 ```
 
@@ -38,10 +38,10 @@ rtree.convert_bounding_box(q); //convert the cell sizes to the original space of
 ```
 
 
-## Tree traversal 
+## Tree traversal
 
 
-### Interaction Criterion 
+### Interaction Criterion
  Here is an exemple of the definition of an interaction criterion
 
 ```c++
@@ -68,7 +68,7 @@ class SPHTestInteractionCrit {
         flt Rpart_pow2;
 
         Access(SPHTestInteractionCrit crit, sycl::handler &cgh)
-              : part_pos{crit.positions, cgh, sycl::read_only}, 
+              : part_pos{crit.positions, cgh, sycl::read_only},
                 Rpart(crit.Rpart),Rpart_pow2(crit.Rpart*crit.Rpart),
                 tree_cell_coordrange_min{*crit.tree.buf_pos_min_cell_flt, cgh, sycl::read_only},
                 tree_cell_coordrange_max{*crit.tree.buf_pos_max_cell_flt, cgh, sycl::read_only} {}
@@ -91,24 +91,24 @@ class SPHTestInteractionCrit {
 
         vec box_int_sz = {acc.Rpart,acc.Rpart,acc.Rpart};
 
-        return 
+        return
             BBAA::cella_neigh_b(
-                current_values.xyz_a - box_int_sz, current_values.xyz_a + box_int_sz, 
+                current_values.xyz_a - box_int_sz, current_values.xyz_a + box_int_sz,
                 cur_pos_min_cell_b, cur_pos_max_cell_b) ||
             BBAA::cella_neigh_b(
-                current_values.xyz_a, current_values.xyz_a,                   
+                current_values.xyz_a, current_values.xyz_a,
                 cur_pos_min_cell_b - box_int_sz, cur_pos_min_cell_b + box_int_sz);
     };
 };
 ```
 
-### Traversal 
+### Traversal
 
 
 ```c++
 using Criterion = SPHTestInteractionCrit<morton_mode,flt>;
 using CriterionAcc = typename Criterion::Access;
-using CriterionVal = typename CriterionAcc::ObjectValues; 
+using CriterionVal = typename CriterionAcc::ObjectValues;
 
 using namespace shamrock::tree;
 TreeStructureWalker walk = generate_walk<Recompute>(
@@ -121,7 +121,7 @@ q.submit([&](sycl::handler &cgh) {
     auto leaf_iterator = rtree.get_leaf_access(cgh);
 
     sycl::accessor neigh_count {neighbours,cgh,sycl::write_only, sycl::no_init};
-    
+
 
     cgh.parallel_for(walker.get_sycl_range(), [=](sycl::item<1> item) {
         u32 sum = 0;
@@ -132,14 +132,14 @@ q.submit([&](sycl::handler &cgh) {
             item,int_values,
             [&](u32 /*node_id*/, u32 leaf_iterator_id) {
                 leaf_iterator.iter_object_in_leaf(
-                    leaf_iterator_id, [&](u32 obj_id) { 
+                    leaf_iterator_id, [&](u32 obj_id) {
 
                         vec xyz_b = walker.criterion().part_pos[obj_id];
                         vec dxyz = xyz_b - int_values.xyz_a;
                         flt dot_ = sycl::dot(dxyz,dxyz);
 
                         if(dot_ < walker.criterion().Rpart_pow2){
-                            sum += 1; 
+                            sum += 1;
                         }
                     }
                 );
@@ -149,6 +149,6 @@ q.submit([&](sycl::handler &cgh) {
 
         neigh_count[item] = sum;
     });
-    
+
 });
 ```

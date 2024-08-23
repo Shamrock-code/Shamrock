@@ -104,7 +104,7 @@ int func_do_while(int i){
 }
 ```
 
-Note that the 3 function showed previously exibit exactly the same assembly code but the last one with a lambda exibit a slightly different assembly 
+Note that the 3 function showed previously exibit exactly the same assembly code but the last one with a lambda exibit a slightly different assembly
 
 
 ```cpp
@@ -244,7 +244,7 @@ unsigned int shiftmystuff (unsigned int a, unsigned int v)
   unsigned int halfshift = v>>1;
   unsigned int otherhalf = (v+1)>>1;
 
-  return (a >> halfshift) >> otherhalf; 
+  return (a >> halfshift) >> otherhalf;
 }
 ```
 Performing the task the way shown above is a good deal faster than using a branch like this:
@@ -275,7 +275,7 @@ XMACRO
 #undef X
 ```
 
-this code is equivalent to 
+this code is equivalent to
 
 ```cpp
 int varfloat;
@@ -511,7 +511,7 @@ int func(int i, int j){
 }
 ```
 
-This may be slow looking at the assembly (O3) : 
+This may be slow looking at the assembly (O3) :
 
 ```x86asm
 func(int, int):                              # @func(int, int)

@@ -4,8 +4,8 @@
 #hack to rerun the version generator if ninja/make all
 #cf https://stackoverflow.com/questions/13920072/how-to-always-run-command-when-building-regardless-of-any-dependency
 add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp 
-           ${CMAKE_CURRENT_SOURCE_DIR}/version__.cpp 
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
+           ${CMAKE_CURRENT_SOURCE_DIR}/version__.cpp
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp "${CMAKE_CXX_FLAGS}"
   )
 
@@ -13,15 +13,15 @@ add_custom_command(
 
 
 
-set(as_subproject 
-  shamunits 
-  shambase 
-  shamcomm 
-  shambackends 
-  shammath 
-  shamalgs 
-  shamsys 
-  shamphys 
+set(as_subproject
+  shamunits
+  shambase
+  shamcomm
+  shambackends
+  shammath
+  shamalgs
+  shamsys
+  shamphys
   shamcmdopt
   shambindings)
 
@@ -123,7 +123,7 @@ if("${BUILD_TEST}")
 
     target_link_libraries(shamrock_test PUBLIC ${as_subproject})
 
-    
+
     target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/src")
     #target_include_directories(shamrock_test PUBLIC "${CMAKE_SOURCE_DIR}/external")
 

@@ -14,7 +14,6 @@
  */
 
 #include "shambase/SourceLocation.hpp"
-
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/printf.h>
@@ -22,7 +21,7 @@
 
 std::string SourceLocation::format_multiline() {
     return fmt::format(
-R"=(
+        R"=(
 ---- Source Location ----
 {}:{}:{}
 call = {}
@@ -36,11 +35,11 @@ call = {}
 
 std::string SourceLocation::format_multiline(std::string stacktrace) {
     return fmt::format(
-R"=(
+        R"=(
 ---- Source Location ----
 {}:{}:{}
 call = {}
-stacktrace : 
+stacktrace :
 {}
 -------------------------
 )=",

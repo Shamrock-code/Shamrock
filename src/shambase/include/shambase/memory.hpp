@@ -18,7 +18,6 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
-
 #include <memory>
 #include <optional>
 #include <utility>
@@ -39,11 +38,11 @@ namespace shambase {
      */
     template<class T, class AccU8>
     inline void store_u8(AccU8 &acc, u64 idx_write, T a) {
-        constexpr u64 szT = sizeof(T); 
-        u8 *bytes         = (u8 *) &a;  
-        #pragma unroll
-        for (u64 i = 0; i < szT; i++) { 
-            acc[idx_write + i] = bytes[i]; 
+        constexpr u64 szT = sizeof(T);
+        u8 *bytes         = (u8 *) &a;
+#pragma unroll
+        for (u64 i = 0; i < szT; i++) {
+            acc[idx_write + i] = bytes[i];
         }
     }
 

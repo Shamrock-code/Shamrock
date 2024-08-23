@@ -33,5 +33,4 @@ void sycl_compute_cell_ranges(
     std::unique_ptr<sycl::buffer<typename shamrock::sfc::MortonCodes<u_morton, 3>::int_vec_repr>>
         &buf_pos_min_cell,
     std::unique_ptr<sycl::buffer<typename shamrock::sfc::MortonCodes<u_morton, 3>::int_vec_repr>>
-        &buf_pos_max_cell
-);
+        &buf_pos_max_cell);

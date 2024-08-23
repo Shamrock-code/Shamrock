@@ -18,13 +18,13 @@ exemples of vectors : `f64_3`, `u64_16`, ...
 
 ### Classes, structs, enums
 
-Classes, structs and enums in shamrock follows the PascalCase naming scheme, each word is starts with a captial letter, 
+Classes, structs and enums in shamrock follows the PascalCase naming scheme, each word is starts with a captial letter,
 
 for exemple : `IMeanIKindaLikeThisCaseTheOthersAreLessReadableToMe`
 
 ### functions
 
-Functions in shamrock tend to be called using snake_case to distinguish them from classes. 
+Functions in shamrock tend to be called using snake_case to distinguish them from classes.
 
 for exemple : `is_this_informatics_or_physics(....)`
 

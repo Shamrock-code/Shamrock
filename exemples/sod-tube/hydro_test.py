@@ -64,6 +64,8 @@ print("Current part mass :", pmass)
 model.set_cfl_cour(0.1)
 model.set_cfl_force(0.1)
 
+model.dump("outfile")
+
 t_target = 0.245
 
 model.evolve_until(t_target)

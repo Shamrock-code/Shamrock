@@ -6,174 +6,181 @@
 //
 // -------------------------------------------------------//
 
-
-#include "shamalgs/details/random/random.hpp"
 #include "shambase/constants.hpp"
-#include "shambackends/sycl_utils.hpp"
 #include "shambase/time.hpp"
+#include "shamalgs/details/random/random.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shammath/derivatives.hpp"
 #include "shammath/integrator.hpp"
+#include "shammath/sphkernels.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
-
-#include "shammath/sphkernels.hpp"
 #include <vector>
 
-
-
 template<class Ker>
-inline void validate_kernel_3d(typename Ker::Tscal tol,typename Ker::Tscal dx,typename Ker::Tscal dx_int){
+inline void
+validate_kernel_3d(typename Ker::Tscal tol, typename Ker::Tscal dx, typename Ker::Tscal dx_int) {
 
     using namespace shambase::constants;
 
     using Tscal = typename Ker::Tscal;
 
     // test finite support
-    _AssertEqual(Ker::f(Ker::Rkern) , 0);
-    _AssertEqual(Ker::W_3d(Ker::Rkern,1) , 0);
+    _AssertEqual(Ker::f(Ker::Rkern), 0);
+    _AssertEqual(Ker::W_3d(Ker::Rkern, 1), 0);
 
     Tscal gen_norm3d = Ker::Generator::norm_3d;
 
     // test f <-> W scale relations
-    _AssertEqual(gen_norm3d*Ker::f(Ker::Rkern) , Ker::W_3d(Ker::Rkern,1));
-    _AssertEqual(gen_norm3d*Ker::f(Ker::Rkern/2) , Ker::W_3d(Ker::Rkern/2,1));
-    _AssertEqual(gen_norm3d*Ker::f(Ker::Rkern/3) , Ker::W_3d(Ker::Rkern/3,1));
-    _AssertEqual(gen_norm3d*Ker::f(Ker::Rkern/4) , Ker::W_3d(Ker::Rkern/4,1));
+    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern), Ker::W_3d(Ker::Rkern, 1));
+    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 2), Ker::W_3d(Ker::Rkern / 2, 1));
+    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 3), Ker::W_3d(Ker::Rkern / 3, 1));
+    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 4), Ker::W_3d(Ker::Rkern / 4, 1));
 
-    _AssertEqual(gen_norm3d*Ker::f(Ker::Rkern)/8 , Ker::W_3d(2*Ker::Rkern,2));
-    _AssertEqual(gen_norm3d*Ker::f(Ker::Rkern/2)/8 , Ker::W_3d(2*Ker::Rkern/2,2));
-    _AssertEqual(gen_norm3d*Ker::f(Ker::Rkern/3)/8 , Ker::W_3d(2*Ker::Rkern/3,2));
-    _AssertEqual(gen_norm3d*Ker::f(Ker::Rkern/4)/8 , Ker::W_3d(2*Ker::Rkern/4,2));
+    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern) / 8, Ker::W_3d(2 * Ker::Rkern, 2));
+    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 2) / 8, Ker::W_3d(2 * Ker::Rkern / 2, 2));
+    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 3) / 8, Ker::W_3d(2 * Ker::Rkern / 3, 2));
+    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 4) / 8, Ker::W_3d(2 * Ker::Rkern / 4, 2));
 
     // test df <-> dW scale relations
-    _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern) , Ker::dW_3d(Ker::Rkern,1));
-    _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern/2) , Ker::dW_3d(Ker::Rkern/2,1));
-    _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern/3) , Ker::dW_3d(Ker::Rkern/3,1));
-    _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern/4) , Ker::dW_3d(Ker::Rkern/4,1));
+    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern), Ker::dW_3d(Ker::Rkern, 1));
+    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 2), Ker::dW_3d(Ker::Rkern / 2, 1));
+    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 3), Ker::dW_3d(Ker::Rkern / 3, 1));
+    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 4), Ker::dW_3d(Ker::Rkern / 4, 1));
 
-    _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern)/16 , Ker::dW_3d(2*Ker::Rkern,2));
-    _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern/2)/16 , Ker::dW_3d(2*Ker::Rkern/2,2));
-    _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern/3)/16 , Ker::dW_3d(2*Ker::Rkern/3,2));
-    _AssertEqual(gen_norm3d*Ker::df(Ker::Rkern/4)/16 , Ker::dW_3d(2*Ker::Rkern/4,2));
+    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern) / 16, Ker::dW_3d(2 * Ker::Rkern, 2));
+    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 2) / 16, Ker::dW_3d(2 * Ker::Rkern / 2, 2));
+    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 3) / 16, Ker::dW_3d(2 * Ker::Rkern / 3, 2));
+    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 4) / 16, Ker::dW_3d(2 * Ker::Rkern / 4, 2));
 
     // is integral of W == 1 (1d)
-    _AssertFloatEqual(1, 
-        shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, dx_int, [](Tscal x) {
-            return 2*Ker::W_1d(x,1);
-        }
-    ),tol)
+    _AssertFloatEqual(
+        1,
+        shammath::integ_riemann_sum<Tscal>(
+            0,
+            Ker::Rkern,
+            dx_int,
+            [](Tscal x) {
+                return 2 * Ker::W_1d(x, 1);
+            }),
+        tol)
 
-    // is integral of W == 1 (2d)
-    _AssertFloatEqual(1, 
-        shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, dx_int, [](Tscal x) {
-            return 2*pi<Tscal>*x* Ker::W_2d(x,1);
-        }
-    ),tol)
+        // is integral of W == 1 (2d)
+        _AssertFloatEqual(
+            1,
+            shammath::integ_riemann_sum<Tscal>(
+                0,
+                Ker::Rkern,
+                dx_int,
+                [](Tscal x) {
+                    return 2 * pi<Tscal> * x * Ker::W_2d(x, 1);
+                }),
+            tol)
 
-    // is integral of W == 1 (3d)
-    _AssertFloatEqual(1, 
-        shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, dx_int, [](Tscal x) {
-            return 4*pi<Tscal>*x*x* Ker::W_3d(x,1);
-        }
-    ),tol)
+        // is integral of W == 1 (3d)
+        _AssertFloatEqual(
+            1,
+            shammath::integ_riemann_sum<Tscal>(
+                0,
+                Ker::Rkern,
+                dx_int,
+                [](Tscal x) {
+                    return 4 * pi<Tscal> * x * x * Ker::W_3d(x, 1);
+                }),
+            tol)
 
-    // is df = f' ?
-    Tscal L2_sum = 0;
+        // is df = f' ?
+        Tscal L2_sum
+        = 0;
     Tscal step = 0.01;
     for (Tscal x = 0; x < Ker::Rkern; x += step) {
-        Tscal diff = Ker::df(x) - 
-            shammath::derivative_upwind<Tscal>(x, dx, [](Tscal x) {
-                return Ker::f(x);
-            });
+        Tscal diff = Ker::df(x) - shammath::derivative_upwind<Tscal>(x, dx, [](Tscal x) {
+                         return Ker::f(x);
+                     });
         diff *= gen_norm3d;
-        L2_sum += diff*diff*step;
+        L2_sum += diff * diff * step;
     }
     _AssertFloatEqual(L2_sum, 0, tol)
-
 }
 
-TestStart(Unittest, "shammath/sphkernels/M4", validateM4kernel, 1){
-    validate_kernel_3d<shammath::M4<f32>>(1e-3,1e-4,1e-3);
-    validate_kernel_3d<shammath::M4<f64>>(1e-5,1e-5,1e-5);
+TestStart(Unittest, "shammath/sphkernels/M4", validateM4kernel, 1) {
+    validate_kernel_3d<shammath::M4<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M4<f64>>(1e-5, 1e-5, 1e-5);
 }
 
-TestStart(Unittest, "shammath/sphkernels/M5", validateM5kernel, 1){
-    validate_kernel_3d<shammath::M5<f32>>(1e-3,1e-4,1e-3);
-    validate_kernel_3d<shammath::M5<f64>>(1e-5,1e-5,1e-5);
+TestStart(Unittest, "shammath/sphkernels/M5", validateM5kernel, 1) {
+    validate_kernel_3d<shammath::M5<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M5<f64>>(1e-5, 1e-5, 1e-5);
 }
 
-TestStart(Unittest, "shammath/sphkernels/M6", validateM6kernel, 1){
-    validate_kernel_3d<shammath::M6<f32>>(1e-3,1e-3,1e-3);
-    validate_kernel_3d<shammath::M6<f64>>(1e-5,1e-5,1e-5);
+TestStart(Unittest, "shammath/sphkernels/M6", validateM6kernel, 1) {
+    validate_kernel_3d<shammath::M6<f32>>(1e-3, 1e-3, 1e-3);
+    validate_kernel_3d<shammath::M6<f64>>(1e-5, 1e-5, 1e-5);
 }
 
-TestStart(Unittest, "shammath/sphkernels/M7", validateM7kernel, 1){
-    validate_kernel_3d<shammath::M7<f32>>(1e-3,1e-3,1e-3);
-    validate_kernel_3d<shammath::M7<f64>>(1e-5,1e-5,1e-5);
+TestStart(Unittest, "shammath/sphkernels/M7", validateM7kernel, 1) {
+    validate_kernel_3d<shammath::M7<f32>>(1e-3, 1e-3, 1e-3);
+    validate_kernel_3d<shammath::M7<f64>>(1e-5, 1e-5, 1e-5);
 }
 
-TestStart(Unittest, "shammath/sphkernels/M8", validateM8kernel, 1){
-    validate_kernel_3d<shammath::M8<f32>>(1e-3,1e-3,1e-3);
-    //TODO check why do we need to reduce tol for 2D integ, value from T. Tricco 2019
-    validate_kernel_3d<shammath::M8<f64>>(1e-3,1e-5,1e-6);
+TestStart(Unittest, "shammath/sphkernels/M8", validateM8kernel, 1) {
+    validate_kernel_3d<shammath::M8<f32>>(1e-3, 1e-3, 1e-3);
+    // TODO check why do we need to reduce tol for 2D integ, value from T. Tricco 2019
+    validate_kernel_3d<shammath::M8<f64>>(1e-3, 1e-5, 1e-6);
 }
 
-TestStart(Unittest, "shammath/sphkernels/M9", validateM9kernel, 1){
-    validate_kernel_3d<shammath::M9<f32>>(1e-3,1e-3,1e-3);
-    validate_kernel_3d<shammath::M9<f64>>(1e-5,1e-5,1e-5); 
+TestStart(Unittest, "shammath/sphkernels/M9", validateM9kernel, 1) {
+    validate_kernel_3d<shammath::M9<f32>>(1e-3, 1e-3, 1e-3);
+    validate_kernel_3d<shammath::M9<f64>>(1e-5, 1e-5, 1e-5);
 }
 
-TestStart(Unittest, "shammath/sphkernels/M10", validateM10kernel, 1){
-    validate_kernel_3d<shammath::M10<f32>>(1e-3,1e-3,1e-3);
-    validate_kernel_3d<shammath::M10<f64>>(1e-5,1e-5,1e-5);
+TestStart(Unittest, "shammath/sphkernels/M10", validateM10kernel, 1) {
+    validate_kernel_3d<shammath::M10<f32>>(1e-3, 1e-3, 1e-3);
+    validate_kernel_3d<shammath::M10<f64>>(1e-5, 1e-5, 1e-5);
 }
 
-TestStart(Unittest, "shammath/sphkernels/C2", validateC2kernel, 1){
-    validate_kernel_3d<shammath::C2<f32>>(1e-3,1e-4,1e-3);
-    validate_kernel_3d<shammath::C2<f64>>(1e-5,1e-5,1e-5);
+TestStart(Unittest, "shammath/sphkernels/C2", validateC2kernel, 1) {
+    validate_kernel_3d<shammath::C2<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::C2<f64>>(1e-5, 1e-5, 1e-5);
 }
 
-TestStart(Unittest, "shammath/sphkernels/C4", validateC4kernel, 1){
-    validate_kernel_3d<shammath::C4<f32>>(1e-3,1e-4,1e-3);
-    validate_kernel_3d<shammath::C4<f64>>(1e-5,1e-5,1e-5);
+TestStart(Unittest, "shammath/sphkernels/C4", validateC4kernel, 1) {
+    validate_kernel_3d<shammath::C4<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::C4<f64>>(1e-5, 1e-5, 1e-5);
 }
 
-TestStart(Unittest, "shammath/sphkernels/C6", validateC6kernel, 1){
-    validate_kernel_3d<shammath::C6<f32>>(1e-3,1e-3,1e-3);
-    validate_kernel_3d<shammath::C6<f64>>(1e-5,1e-5,1e-5);
+TestStart(Unittest, "shammath/sphkernels/C6", validateC6kernel, 1) {
+    validate_kernel_3d<shammath::C6<f32>>(1e-3, 1e-3, 1e-3);
+    validate_kernel_3d<shammath::C6<f64>>(1e-5, 1e-5, 1e-5);
 }
 
-
-
-struct Outplot{
+struct Outplot {
     std::vector<f64> val_W1;
     std::vector<f64> val_dW1;
     std::vector<f64> val_dW1_num;
 };
 
 template<class Ker>
-Outplot gen_plot(std::vector<f64> & xin){
+Outplot gen_plot(std::vector<f64> &xin) {
     Outplot out;
 
     using Tscal = typename Ker::Tscal;
 
     for (f64 x : xin) {
-        out.val_W1.push_back(Ker::W_3d(x,1));
-        out.val_dW1.push_back(Ker::dW_3d(x,1));
-        out.val_dW1_num.push_back(
-            shammath::derivative_upwind<Tscal>(x, 0.0001, [](Tscal x) {
-                return Ker::W_3d(x,1);
-            })
-        );
+        out.val_W1.push_back(Ker::W_3d(x, 1));
+        out.val_dW1.push_back(Ker::dW_3d(x, 1));
+        out.val_dW1_num.push_back(shammath::derivative_upwind<Tscal>(x, 0.0001, [](Tscal x) {
+            return Ker::W_3d(x, 1);
+        }));
     }
 
     return out;
 }
 
-TestStart(ValidationTest, "shammath/sphkernels_plotall", plotkernels, 1){
+TestStart(ValidationTest, "shammath/sphkernels_plotall", plotkernels, 1) {
 
     std::vector<f64> X;
 
@@ -194,30 +201,29 @@ TestStart(ValidationTest, "shammath/sphkernels_plotall", plotkernels, 1){
 
     hdnl.data()["X"] = X;
 
-    hdnl.data()["m4"] = m4.val_W1;
-    hdnl.data()["m4_d"] = m4.val_dW1;
+    hdnl.data()["m4"]      = m4.val_W1;
+    hdnl.data()["m4_d"]    = m4.val_dW1;
     hdnl.data()["m4_dnum"] = m4.val_dW1_num;
 
-    hdnl.data()["m5"] = m5.val_W1;
-    hdnl.data()["m5_d"] = m5.val_dW1;
+    hdnl.data()["m5"]      = m5.val_W1;
+    hdnl.data()["m5_d"]    = m5.val_dW1;
     hdnl.data()["m5_dnum"] = m5.val_dW1_num;
 
-    hdnl.data()["m6"] = m6.val_W1;
-    hdnl.data()["m6_d"] = m6.val_dW1;
+    hdnl.data()["m6"]      = m6.val_W1;
+    hdnl.data()["m6_d"]    = m6.val_dW1;
     hdnl.data()["m6_dnum"] = m6.val_dW1_num;
 
-    hdnl.data()["c2"] = c2.val_W1;
-    hdnl.data()["c2_d"] = c2.val_dW1;
+    hdnl.data()["c2"]      = c2.val_W1;
+    hdnl.data()["c2_d"]    = c2.val_dW1;
     hdnl.data()["c2_dnum"] = c2.val_dW1_num;
 
-    hdnl.data()["c4"] = c4.val_W1;
-    hdnl.data()["c4_d"] = c4.val_dW1;
+    hdnl.data()["c4"]      = c4.val_W1;
+    hdnl.data()["c4_d"]    = c4.val_dW1;
     hdnl.data()["c4_dnum"] = c4.val_dW1_num;
 
-    hdnl.data()["c6"] = c6.val_W1;
-    hdnl.data()["c6_d"] = c6.val_dW1;
+    hdnl.data()["c6"]      = c6.val_W1;
+    hdnl.data()["c6_d"]    = c6.val_dW1;
     hdnl.data()["c6_dnum"] = c6.val_dW1_num;
-
 
     hdnl.exec(R"(
         import numpy as np
@@ -277,41 +283,35 @@ TestStart(ValidationTest, "shammath/sphkernels_plotall", plotkernels, 1){
         \end{figure}
 
     )==")
-    
 }
 
-
-
-
-
 template<class Ker>
-f64 benchmark_sph_kernel(u32 N){
+f64 benchmark_sph_kernel(u32 N) {
 
     using Tscal = typename Ker::Tscal;
 
-    sycl::buffer<Tscal> dist = shamalgs::random::mock_buffer<Tscal>(0x111,N,0,Ker::Rkern);
-    sycl::buffer<Tscal> result (N);
+    sycl::buffer<Tscal> dist = shamalgs::random::mock_buffer<Tscal>(0x111, N, 0, Ker::Rkern);
+    sycl::buffer<Tscal> result(N);
 
     shamsys::instance::get_compute_queue().wait_and_throw();
 
-    return shambase::timeit([&](){
+    return shambase::timeit(
+        [&]() {
+            shamsys::instance::get_compute_queue()
+                .submit([&](sycl::handler &cgh) {
+                    sycl::accessor x{dist, cgh, sycl::read_only};
+                    sycl::accessor f{result, cgh, sycl::write_only, sycl::no_init};
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-
-            sycl::accessor x {dist, cgh, sycl::read_only};
-            sycl::accessor f {result, cgh, sycl::write_only, sycl::no_init};
-
-            shambase::parralel_for(cgh, N, "test sph kernel", [=](u32 i){
-                f[i] = Ker::W_3d(x[i],1);
-            });
-
-        }).wait();
-
-    }, 4);
-
+                    shambase::parralel_for(cgh, N, "test sph kernel", [=](u32 i) {
+                        f[i] = Ker::W_3d(x[i], 1);
+                    });
+                })
+                .wait();
+        },
+        4);
 }
 
-TestStart(Benchmark, "shammath/sphkernels_performance", kernelperf, 1){
+TestStart(Benchmark, "shammath/sphkernels_performance", kernelperf, 1) {
     f64 m6_f32 = benchmark_sph_kernel<shammath::M6<f32>>(10000000);
     f64 m6_f64 = benchmark_sph_kernel<shammath::M6<f64>>(10000000);
 
@@ -330,27 +330,25 @@ TestStart(Benchmark, "shammath/sphkernels_performance", kernelperf, 1){
     f64 c6_f32 = benchmark_sph_kernel<shammath::C6<f32>>(10000000);
     f64 c6_f64 = benchmark_sph_kernel<shammath::C6<f64>>(10000000);
 
-    
     PyScriptHandle hdnl{};
 
-    hdnl.data()["m6_f32"]   = m6_f32 ;
-    hdnl.data()["m6_f64"]   = m6_f64 ;
+    hdnl.data()["m6_f32"] = m6_f32;
+    hdnl.data()["m6_f64"] = m6_f64;
 
-    hdnl.data()["m5_f32"]   = m5_f32 ;
-    hdnl.data()["m5_f64"]   = m5_f64 ;
-    
-    hdnl.data()["m4_f32"]   = m4_f32 ;
-    hdnl.data()["m4_f64"]   = m4_f64 ;
+    hdnl.data()["m5_f32"] = m5_f32;
+    hdnl.data()["m5_f64"] = m5_f64;
 
-    hdnl.data()["c2_f32"]   = c2_f32 ;
-    hdnl.data()["c2_f64"]   = c2_f64 ;
+    hdnl.data()["m4_f32"] = m4_f32;
+    hdnl.data()["m4_f64"] = m4_f64;
 
-    hdnl.data()["c4_f32"]   = c4_f32 ;
-    hdnl.data()["c4_f64"]   = c4_f64 ;
-    
-    hdnl.data()["c6_f32"]   = c6_f32 ;
-    hdnl.data()["c6_f64"]   = c6_f64 ;
+    hdnl.data()["c2_f32"] = c2_f32;
+    hdnl.data()["c2_f64"] = c2_f64;
 
+    hdnl.data()["c4_f32"] = c4_f32;
+    hdnl.data()["c4_f64"] = c4_f64;
+
+    hdnl.data()["c6_f32"] = c6_f32;
+    hdnl.data()["c6_f64"] = c6_f64;
 
     hdnl.exec(R"(
         import numpy as np

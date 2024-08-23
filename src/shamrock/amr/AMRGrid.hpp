@@ -11,15 +11,15 @@
 /**
  * @file AMRGrid.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
+#include "shambase/DistributedData.hpp"
 #include "AMRCell.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
-#include "shambase/DistributedData.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
@@ -59,11 +59,12 @@ namespace shamrock::amr {
             correct_names &= sched.pdl.get_field<Tcoord>(1).name == "cell_max";
 
             if (!correct_type || !correct_names) {
-                throw std::runtime_error("the amr module require a layout in the form :\n"
-                                         "    0 : cell_min : nvar=1 type : (Coordinate type)\n"
-                                         "    1 : cell_max : nvar=1 type : (Coordinate type)\n\n"
-                                         "the current layout is : \n" +
-                                         sched.pdl.get_description_str());
+                throw std::runtime_error(
+                    "the amr module require a layout in the form :\n"
+                    "    0 : cell_min : nvar=1 type : (Coordinate type)\n"
+                    "    1 : cell_max : nvar=1 type : (Coordinate type)\n\n"
+                    "the current layout is : \n"
+                    + sched.pdl.get_description_str());
             }
         }
 
@@ -288,11 +289,11 @@ namespace shamrock::amr {
                                 u32 idx_to_refine = index_to_ref[gid];
 
                                 // gen splits coordinates
-                                CellCoord cur_cell{cell_bound_low[idx_to_refine],
-                                                   cell_bound_high[idx_to_refine]};
+                                CellCoord cur_cell{
+                                    cell_bound_low[idx_to_refine], cell_bound_high[idx_to_refine]};
 
-                                std::array<CellCoord, split_count> cell_coords =
-                                    CellCoord::get_split(cur_cell.bmin, cur_cell.bmax);
+                                std::array<CellCoord, split_count> cell_coords
+                                    = CellCoord::get_split(cur_cell.bmin, cur_cell.bmax);
 
                                 // generate index for the refined cells
                                 std::array<u32, split_count> cells_ids;
@@ -338,10 +339,10 @@ namespace shamrock::amr {
                 if (derefine_flags.count > 0) {
 
                     // init flag table
-                    sycl::buffer<u32> keep_cell_flag =
-                        shamalgs::algorithm::gen_buffer_device(q, old_obj_cnt, [](u32 i) -> u32 {
-                            return 1;
-                        });
+                    sycl::buffer<u32> keep_cell_flag
+                        = shamalgs::algorithm::gen_buffer_device(q, old_obj_cnt, [](u32 i) -> u32 {
+                              return 1;
+                          });
 
                     // edit cell content + make flag of cells to keep
                     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -373,8 +374,9 @@ namespace shamrock::amr {
                                 std::array<CellCoord, split_count> cell_coords;
 #pragma unroll
                                 for (u32 pid = 0; pid < split_count; pid++) {
-                                    cell_coords[pid] = CellCoord{cell_bound_low[old_indexes[pid]],
-                                                                 cell_bound_high[old_indexes[pid]]};
+                                    cell_coords[pid] = CellCoord{
+                                        cell_bound_low[old_indexes[pid]],
+                                        cell_bound_high[old_indexes[pid]]};
                                 }
 
                                 // make new cell coord
@@ -391,11 +393,12 @@ namespace shamrock::amr {
                                 }
 
                                 // user lambda to fill the fields
-                                lambd(old_indexes,
-                                      cell_coords,
-                                      idx_to_derefine,
-                                      merged_cell_coord,
-                                      uacc);
+                                lambd(
+                                    old_indexes,
+                                    cell_coords,
+                                    idx_to_derefine,
+                                    merged_cell_coord,
+                                    uacc);
                             });
                     });
 
@@ -403,13 +406,14 @@ namespace shamrock::amr {
                     auto [opt_buf, len] = shamalgs::numeric::stream_compact(
                         shamsys::instance::get_compute_queue(), keep_cell_flag, old_obj_cnt);
 
-                    logger::debug_ln("AMR Grid",
-                                     "patch",
-                                     id_patch,
-                                     "derefine cell count ",
-                                     old_obj_cnt,
-                                     "->",
-                                     len);
+                    logger::debug_ln(
+                        "AMR Grid",
+                        "patch",
+                        id_patch,
+                        "derefine cell count ",
+                        old_obj_cnt,
+                        "->",
+                        len);
 
                     if (!opt_buf) {
                         throw std::runtime_error("opt buf must contain something at this point");
@@ -423,9 +427,10 @@ namespace shamrock::amr {
 
         inline void make_base_grid(Tcoord bmin, Tcoord cell_size, std::array<u32, dim> cell_count) {
 
-            Tcoord bmax{bmin.x() + cell_size.x() * (cell_count[0]),
-                        bmin.y() + cell_size.y() * (cell_count[1]),
-                        bmin.z() + cell_size.z() * (cell_count[2])};
+            Tcoord bmax{
+                bmin.x() + cell_size.x() * (cell_count[0]),
+                bmin.y() + cell_size.y() * (cell_count[1]),
+                bmin.z() + cell_size.z() * (cell_count[2])};
 
             sched.set_coord_domain_bound(bmin, bmax);
 
@@ -445,15 +450,17 @@ namespace shamrock::amr {
                 gcd_cell_count = std::gcd(gcd_cell_count, gcd_pow2);
             }
 
-            logger::debug_ln("AMRGrid",
-                             "patch grid :",
-                             cell_count[0] / gcd_cell_count,
-                             cell_count[1] / gcd_cell_count,
-                             cell_count[2] / gcd_cell_count);
+            logger::debug_ln(
+                "AMRGrid",
+                "patch grid :",
+                cell_count[0] / gcd_cell_count,
+                cell_count[1] / gcd_cell_count,
+                cell_count[2] / gcd_cell_count);
 
-            sched.make_patch_base_grid<3>({{cell_count[0] / gcd_cell_count,
-                                            cell_count[1] / gcd_cell_count,
-                                            cell_count[2] / gcd_cell_count}});
+            sched.make_patch_base_grid<3>(
+                {{cell_count[0] / gcd_cell_count,
+                  cell_count[1] / gcd_cell_count,
+                  cell_count[2] / gcd_cell_count}});
 
             sched.for_each_patch([](u64 id_patch, patch::Patch p) {
                 // TODO implement check to verify that patch a cubes of size 2^n

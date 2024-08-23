@@ -7,122 +7,130 @@
 // -------------------------------------------------------//
 
 #include "shambase/integer.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
+#include "shambackends/sycl.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shambackends/sycl.hpp"
-#include "shambackends/sycl_utils.hpp"
-#include "shambase/stacktrace.hpp"
 #include <vector>
 
-namespace shambase {
+namespace shambase {}
 
-    
+TestStart(Benchmark, "sycl/loop_perfs", syclloopperfs, 1) {
 
-}
+    std::vector<f64> speed_parfor;
 
-TestStart(Benchmark, "sycl/loop_perfs", syclloopperfs, 1){
-
-    std::vector<f64> speed_parfor ;
-
-    auto fill_buf = [](u32 sz, sycl::buffer<f32> & buf){
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-
-            sycl::accessor acc {buf, cgh, sycl::write_only, sycl::no_init};
-            cgh.parallel_for(sycl::range<1>{sz}, [=](sycl::item<1> id){
-                acc[id] = id.get_linear_id();
-            });
-
-        }).wait();
+    auto fill_buf = [](u32 sz, sycl::buffer<f32> &buf) {
+        shamsys::instance::get_compute_queue()
+            .submit([&](sycl::handler &cgh) {
+                sycl::accessor acc{buf, cgh, sycl::write_only, sycl::no_init};
+                cgh.parallel_for(sycl::range<1>{sz}, [=](sycl::item<1> id) {
+                    acc[id] = id.get_linear_id();
+                });
+            })
+            .wait();
     };
 
     f64 exp_test = 1.2;
 
-    shambase::BenchmarkResult res_parfor = shambase::benchmark_pow_len([&](u32 sz){
-        sycl::buffer<f32> buf{sz};
+    shambase::BenchmarkResult res_parfor = shambase::benchmark_pow_len(
+        [&](u32 sz) {
+            sycl::buffer<f32> buf{sz};
 
-        fill_buf(sz, buf);
+            fill_buf(sz, buf);
 
-        return shambase::timeit([&](){
+            return shambase::timeit(
+                [&]() {
+                    shamsys::instance::get_compute_queue()
+                        .submit([&](sycl::handler &cgh) {
+                            sycl::accessor acc{buf, cgh, sycl::read_write};
+                            cgh.parallel_for(sycl::range<1>{sz}, [=](sycl::item<1> id) {
+                                auto tmp = acc[id];
+                                acc[id]  = tmp * tmp;
+                            });
+                        })
+                        .wait();
+                },
+                5);
+        },
+        10,
+        1e9,
+        exp_test);
 
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+    shambase::BenchmarkResult res_ndrange = shambase::benchmark_pow_len(
+        [&](u32 sz) {
+            sycl::buffer<f32> buf{sz};
 
-            sycl::accessor acc {buf, cgh, sycl::read_write};
-            cgh.parallel_for(sycl::range<1>{sz}, [=](sycl::item<1> id){
-                auto tmp = acc[id];
-                acc[id] = tmp*tmp;
-            });
+            fill_buf(sz, buf);
 
-        }).wait();
+            constexpr u32 gsize = 8;
+            u32 group_cnt       = shambase::group_count(sz, gsize);
 
-        },5);
-    }, 10, 1e9, exp_test);
+            u32 len = group_cnt * gsize;
 
+            return shambase::timeit(
+                [&]() {
+                    shamsys::instance::get_compute_queue()
+                        .submit([&](sycl::handler &cgh) {
+                            sycl::accessor acc{buf, cgh, sycl::read_write};
+                            cgh.parallel_for(
+                                sycl::nd_range<1>{len, gsize}, [=](sycl::nd_item<1> id) {
+                                    u32 gid = id.get_global_linear_id();
 
-    shambase::BenchmarkResult res_ndrange = shambase::benchmark_pow_len([&](u32 sz){
-        sycl::buffer<f32> buf{sz};
+                                    if (gid >= sz)
+                                        return;
 
-        fill_buf(sz, buf);
+                                    auto tmp = acc[gid];
+                                    acc[gid] = tmp * tmp;
+                                });
+                        })
+                        .wait();
+                },
+                5);
+        },
+        10,
+        1e9,
+        exp_test);
 
-        constexpr u32 gsize = 8;
-        u32 group_cnt = shambase::group_count(sz, gsize);
+    shambase::BenchmarkResult res_shampar = shambase::benchmark_pow_len(
+        [&](u32 sz) {
+            sycl::buffer<f32> buf{sz};
 
-        u32 len =group_cnt*gsize;
+            fill_buf(sz, buf);
 
-        return shambase::timeit([&](){
+            constexpr u32 gsize = 8;
+            u32 group_cnt       = shambase::group_count(sz, gsize);
 
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
+            u32 len = group_cnt * gsize;
 
-            sycl::accessor acc {buf, cgh, sycl::read_write};
-            cgh.parallel_for(sycl::nd_range<1>{len, gsize}, [=](sycl::nd_item<1> id){
+            return shambase::timeit(
+                [&]() {
+                    shamsys::instance::get_compute_queue()
+                        .submit([&](sycl::handler &cgh) {
+                            sycl::accessor acc{buf, cgh, sycl::read_write};
 
-                u32 gid = id.get_global_linear_id();
-
-                if(gid >= sz) return;
-
-                auto tmp = acc[gid];
-                acc[gid] = tmp*tmp;
-            });
-
-        }).wait();
-
-        },5);
-    }, 10, 1e9, exp_test);
-
-    shambase::BenchmarkResult res_shampar = shambase::benchmark_pow_len([&](u32 sz){
-        sycl::buffer<f32> buf{sz};
-
-        fill_buf(sz, buf);
-
-        constexpr u32 gsize = 8;
-        u32 group_cnt = shambase::group_count(sz, gsize);
-
-        u32 len =group_cnt*gsize;
-
-        return shambase::timeit([&](){
-
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-
-                sycl::accessor acc {buf, cgh, sycl::read_write};
-
-                shambase::parralel_for(cgh, sz,"test_kernel", [=](u64 gid){
-                    auto tmp = acc[gid];
-                    acc[gid] = tmp*tmp;
-                });
-
-            }).wait();
-
-        },5);
-    }, 10, 1e9, exp_test);
+                            shambase::parralel_for(cgh, sz, "test_kernel", [=](u64 gid) {
+                                auto tmp = acc[gid];
+                                acc[gid] = tmp * tmp;
+                            });
+                        })
+                        .wait();
+                },
+                5);
+        },
+        10,
+        1e9,
+        exp_test);
 
     PyScriptHandle hdnl{};
 
-    hdnl.data()["x"] = res_parfor.counts;
-    hdnl.data()["yparforbuf"] = res_parfor.times;
+    hdnl.data()["x"]              = res_parfor.counts;
+    hdnl.data()["yparforbuf"]     = res_parfor.times;
     hdnl.data()["yndrangeforbuf"] = res_ndrange.times;
-    hdnl.data()["yshamrockpar"] = res_shampar.times;
+    hdnl.data()["yshamrockpar"]   = res_shampar.times;
 
     hdnl.exec(R"(
         import matplotlib.pyplot as plt
@@ -149,5 +157,4 @@ TestStart(Benchmark, "sycl/loop_perfs", syclloopperfs, 1){
 
         plt.savefig("tests/figures/perfparfor.pdf")
     )");
-
 }

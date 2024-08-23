@@ -14,4 +14,3 @@ model.set_solver_config(cfg)
 model.init_scheduler(int(1e5),1)
 
 model.init_from_phantom_dump(dump)
-

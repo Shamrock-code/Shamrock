@@ -11,10 +11,10 @@
 /**
  * @file NeighFaceList.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shamrock/tree/TreeTraversal.hpp"

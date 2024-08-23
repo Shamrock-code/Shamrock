@@ -18,8 +18,8 @@
 #include "shambase/memory.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/math/integrators.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shamrock {
@@ -30,7 +30,8 @@ namespace shamrock {
         public:
         shambase::DistributedData<PatchDataField<T>> field_data;
 
-        inline void generate(PatchScheduler &sched, std::string name, u32 nvar = 1) {StackEntry stack_loc{};
+        inline void generate(PatchScheduler &sched, std::string name, u32 nvar = 1) {
+            StackEntry stack_loc{};
 
             using namespace shamrock::patch;
 
@@ -46,14 +47,15 @@ namespace shamrock {
 
         inline PatchDataField<T> &get_field(u64 id_patch) { return field_data.get(id_patch); }
 
-        inline sycl::buffer<T> & get_buf_check(u64 id){
+        inline sycl::buffer<T> &get_buf_check(u64 id) {
             return shambase::get_check_ref(get_buf(id));
         }
 
-        inline T compute_rank_max(){StackEntry stack_loc{};
+        inline T compute_rank_max() {
+            StackEntry stack_loc{};
             T ret = shambase::VectorProperties<T>::get_min();
-            field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
-                if(!cfield.is_empty()){
+            field_data.for_each([&](u64 id, PatchDataField<T> &cfield) {
+                if (!cfield.is_empty()) {
                     ret = sham::max(ret, cfield.compute_max());
                 }
             });
@@ -61,10 +63,11 @@ namespace shamrock {
             return ret;
         }
 
-        inline T compute_rank_min(){StackEntry stack_loc{};
+        inline T compute_rank_min() {
+            StackEntry stack_loc{};
             T ret = shambase::VectorProperties<T>::get_max();
-            field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
-                if(!cfield.is_empty()){
+            field_data.for_each([&](u64 id, PatchDataField<T> &cfield) {
+                if (!cfield.is_empty()) {
                     ret = sham::min(ret, cfield.compute_min());
                 }
             });
@@ -72,11 +75,12 @@ namespace shamrock {
             return ret;
         }
 
-        inline T compute_rank_sum(){StackEntry stack_loc{};
+        inline T compute_rank_sum() {
+            StackEntry stack_loc{};
             T ret = shambase::VectorProperties<T>::get_zero();
-            field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
-                if(!cfield.is_empty()){
-                    ret +=  cfield.compute_sum();
+            field_data.for_each([&](u64 id, PatchDataField<T> &cfield) {
+                if (!cfield.is_empty()) {
+                    ret += cfield.compute_sum();
                 }
             });
 
@@ -87,39 +91,36 @@ namespace shamrock {
 
             std::optional<u32> nvar = std::nullopt;
 
-            field_data.for_each([&](u64 id, PatchDataField<T> & cfield){
-
+            field_data.for_each([&](u64 id, PatchDataField<T> &cfield) {
                 u32 loc_nvar = cfield.get_nvar();
-                if(!bool(nvar)){
+                if (!bool(nvar)) {
                     nvar = loc_nvar;
                 }
 
-                if(nvar != loc_nvar){
+                if (nvar != loc_nvar) {
                     shambase::throw_with_loc<std::runtime_error>(
-                        shambase::format("mismatch in nvar excepted={} found={}",*nvar,loc_nvar)
-                        );
+                        shambase::format("mismatch in nvar excepted={} found={}", *nvar, loc_nvar));
                 }
             });
 
-            if(!bool(nvar)){
+            if (!bool(nvar)) {
                 shambase::throw_with_loc<std::runtime_error>(
-                        "you cannot querry this function when you have no fields"
-                        );
+                    "you cannot querry this function when you have no fields");
             }
 
             return *nvar;
         }
 
-        inline std::unique_ptr<sycl::buffer<T>> rankgather_computefield(PatchScheduler &sched){
+        inline std::unique_ptr<sycl::buffer<T>> rankgather_computefield(PatchScheduler &sched) {
             StackEntry stack_loc{};
-            
+
             std::unique_ptr<sycl::buffer<T>> ret;
 
             u64 num_obj = sched.get_rank_count();
-            u64 nvar = get_nvar();
+            u64 nvar    = get_nvar();
 
-            if(num_obj > 0){
-                ret = std::make_unique<sycl::buffer<T>>(num_obj*nvar);
+            if (num_obj > 0) {
+                ret = std::make_unique<sycl::buffer<T>>(num_obj * nvar);
 
                 using namespace shamrock::patch;
 
@@ -127,16 +128,16 @@ namespace shamrock {
                 sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
                     using namespace shamalgs::memory;
                     using namespace shambase;
-                    
-                    if(pdat.get_obj_cnt() > 0){
+
+                    if (pdat.get_obj_cnt() > 0) {
                         write_with_offset_into(
                             shamsys::instance::get_compute_queue(),
-                            get_check_ref(ret), 
-                            get_check_ref(get_buf(id_patch)), 
-                            ptr, 
-                            pdat.get_obj_cnt()*nvar);
+                            get_check_ref(ret),
+                            get_check_ref(get_buf(id_patch)),
+                            ptr,
+                            pdat.get_obj_cnt() * nvar);
 
-                        ptr += pdat.get_obj_cnt()*nvar;
+                        ptr += pdat.get_obj_cnt() * nvar;
                     }
                 });
             }
@@ -144,8 +145,6 @@ namespace shamrock {
             return ret;
         }
 
-        inline void reset(){
-            field_data.reset();
-        }
+        inline void reset() { field_data.reset(); }
     };
-}
+} // namespace shamrock

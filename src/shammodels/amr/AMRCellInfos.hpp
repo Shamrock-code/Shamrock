@@ -19,21 +19,20 @@
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
-    struct CellInfos{
+    struct CellInfos {
 
-        using Tscal                      = shambase::VecComponent<Tvec>;
-        using Tgridscal                  = shambase::VecComponent<TgridVec>;
+        using Tscal     = shambase::VecComponent<Tvec>;
+        using Tgridscal = shambase::VecComponent<TgridVec>;
 
-        //size of a cell of a block = block_cell_sizes[block]
+        // size of a cell of a block = block_cell_sizes[block]
         shamrock::ComputeField<Tscal> block_cell_sizes;
 
         // the center of the first cell in the block
-        // cell0block_aabb[block] + lcoord[loc_id]*block_cell_sizes[block] = cell0 aabb [global cell id]
+        // cell0block_aabb[block] + lcoord[loc_id]*block_cell_sizes[block] = cell0 aabb [global cell
+        // id]
         shamrock::ComputeField<Tvec> cell0block_aabb_lower;
 
-        //upper is not needed since it is cell0block_aabb_lower + block_cell_sizes
-
+        // upper is not needed since it is cell0block_aabb_lower + block_cell_sizes
     };
 
-
-}
+} // namespace shammodels::basegodunov::modules

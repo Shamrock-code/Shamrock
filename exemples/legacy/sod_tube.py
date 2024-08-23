@@ -1,6 +1,6 @@
 import shamrock
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import os
 
 
@@ -31,7 +31,7 @@ def write_dic_to_vtk(dic,filename):
     for k in dic.keys():
 
         if not (k == "xyz"):
-            
+
             if type(dic[k][0]) == list:
 
                 vect = vtk.vtkDoubleArray()
@@ -67,7 +67,7 @@ def write_dic_to_vtk(dic,filename):
 
 
 ###
-#export DPCPP_HOME=$(pwd)/sycl_cpl/dpcpp 
+#export DPCPP_HOME=$(pwd)/sycl_cpl/dpcpp
 #export LD_LIBRARY_PATH=$DPCPP_HOME/../../sycl_cpl_src/dpcpp/llvm/build/lib:$LD_LIBRARY_PATH
 #export PATH=$DPCPP_HOME/llvm/build/bin:$PATH
 ###
@@ -124,7 +124,7 @@ def sim_setup(ctx : shamrock.Context):
 
     #todo set box size to otherwise split patchdata won't work in the setup
 
-    dr = 1/xs 
+    dr = 1/xs
 
     (xs,ys,zs) = setup.get_box_dim_icnt(dr,bdim)
 
@@ -165,7 +165,7 @@ def print_dist(ctx : shamrock.Context, cname : str,fname : str):
 
     write_dic_to_vtk(dic, fname)
 
- 
+
 
 
 

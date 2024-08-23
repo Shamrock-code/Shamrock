@@ -6,22 +6,16 @@
 //
 // -------------------------------------------------------//
 
-
+#include "numericTests.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/numeric.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
-
-
-#include "shamalgs/numeric.hpp"
 #include <numeric>
 
-#include "numericTests.hpp"
+TestStart(Unittest, "shamalgs/numeric/stream_compact", streamcompactalg, 1) {
 
-
-TestStart(Unittest, "shamalgs/numeric/stream_compact", streamcompactalg, 1){
-    
-    TestStreamCompact test ((TestStreamCompact::vFunctionCall)shamalgs::numeric::stream_compact);
+    TestStreamCompact test((TestStreamCompact::vFunctionCall) shamalgs::numeric::stream_compact);
     test.check();
-
 }

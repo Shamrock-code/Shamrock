@@ -16,10 +16,9 @@
  */
 
 #include "shambackends/vec.hpp"
-
+#include "shammodels/amr/NeighGraph.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
-#include "shammodels/amr/NeighGraph.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 
 namespace shammodels::basegodunov::modules {
@@ -35,7 +34,7 @@ namespace shammodels::basegodunov::modules {
 
         using Config           = SolverConfig<Tvec, TgridVec>;
         using Storage          = SolverStorage<Tvec, TgridVec, u64>;
-        using u_morton = u64;
+        using u_morton         = u64;
         using AMRBlock         = typename Config::AMRBlock;
         using OrientedAMRGraph = OrientedAMRGraph<Tvec, TgridVec>;
 
@@ -47,10 +46,20 @@ namespace shammodels::basegodunov::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void compute_flux();
+        void compute_flux_dust();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+    };
 
+    // We move Direction here because it'll be use in more than one file
+    enum Direction {
+        xp = 0,
+        xm = 1,
+        yp = 2,
+        ym = 3,
+        zp = 4,
+        zm = 5,
     };
 
 } // namespace shammodels::basegodunov::modules

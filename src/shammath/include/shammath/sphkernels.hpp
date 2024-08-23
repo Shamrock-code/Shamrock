@@ -17,6 +17,7 @@
 //%Impl status : Good
 
 #include "shambase/constants.hpp"
+#include "shambase/type_name_info.hpp"
 #include "shambackends/math.hpp"
 
 namespace shammath::details {
@@ -810,3 +811,49 @@ namespace shammath {
     using C6 = SPHKernelGen<flt_type, details::KernelDefC6<flt_type>>;
 
 } // namespace shammath
+
+namespace shambase {
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M4<flt_type>> {
+        inline static const std::string name = "M4<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M5<flt_type>> {
+        inline static const std::string name = "M5<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M6<flt_type>> {
+        inline static const std::string name = "M6<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M7<flt_type>> {
+        inline static const std::string name = "M7<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M8<flt_type>> {
+        inline static const std::string name = "M8<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M9<flt_type>> {
+        inline static const std::string name = "M9<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M10<flt_type>> {
+        inline static const std::string name = "M10<" + get_type_name<flt_type>() + ">";
+    };
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::C2<flt_type>> {
+        inline static const std::string name = "C2<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::C4<flt_type>> {
+        inline static const std::string name = "C4<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::C6<flt_type>> {
+        inline static const std::string name = "C6<" + get_type_name<flt_type>() + ">";
+    };
+
+} // namespace shambase

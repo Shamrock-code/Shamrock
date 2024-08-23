@@ -8,7 +8,6 @@ target_sources(shamrock_lib
         pySPHModel.cpp
         pySfc.cpp
         pyShamrockCtx.cpp
-        pyShamsys.cpp 
+        pyShamsys.cpp
     PUBLIC
     )
-    

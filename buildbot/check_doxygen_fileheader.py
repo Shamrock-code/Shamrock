@@ -1,4 +1,4 @@
-from lib.buildbot import * 
+from lib.buildbot import *
 import glob
 import sys
 
@@ -37,7 +37,7 @@ for fname in file_list:
     res = has_header(f.read(), os.path.basename(fname))
     f.close()
 
-    if not res : 
+    if not res :
         missing_doxygenfilehead.append(fname)
 
 
@@ -70,7 +70,7 @@ def run_autocorect():
         if "godbolt.cpp" in fname:
             continue
 
-        
+
 
         f = open(fname,'r')
         source = f.read()
@@ -79,10 +79,10 @@ def run_autocorect():
 
         res = has_header(source, os.path.basename(fname))
 
-        if not res : 
+        if not res :
             change, source = autocorect(source,os.path.basename(fname))
 
-            if change: 
+            if change:
                 print("autocorect : ",fname.split(abs_proj_dir)[-1])
                 f = open(fname,'w')
                 f.write(source)
@@ -108,7 +108,7 @@ A properly formed doxygen header should be like and placed just below `#pragma o
  * @file <filename>
  * @author <Author name> (<email>)
  * @brief <Description of the file content>
- * 
+ *
  */
 ```
 
@@ -118,7 +118,7 @@ At some point we will refer to a guide in the doc about this
 \n"""
 
     rep += "List of files with errors :\n\n"
-    
+
     for i in missing_doxygenfilehead:
         rep += (" - `"+i.split(abs_proj_dir)[-1]+"`\n")
 
@@ -133,20 +133,20 @@ if len(missing_doxygenfilehead) > 0:
         print(" -",i.split(abs_proj_dir)[-1])
 
     print(r"""
-    
-    Please add a doxygen header in the file above, similar to this : 
+
+    Please add a doxygen header in the file above, similar to this :
 
     /**
      * @file {filename}
      * @author {name} (mail@mail.com)
      * @brief ...
      */
-    
+
     """)
 
     run_autocorect()
     make_check_pr_report()
 
     sys.exit("Missing doxygen header for some source files")
-else : 
+else :
     print(" => \033[1;34mLicense status \033[0;0m: OK !")

@@ -14,7 +14,6 @@
  * @brief utility to manipulate AMR blocks
  */
 
-
 #include "shambase/aliases_int.hpp"
 #include "shambase/type_traits.hpp"
 #include "shammodels/amr/AMRBlock.hpp"
@@ -22,40 +21,38 @@
 #include <variant>
 namespace shammodels::amr::cell {
 
-
-    struct SameLevel{
+    struct SameLevel {
         u64 cell_idx;
     };
 
-    struct Levelp1{
+    struct Levelp1 {
         u64 cell_child_idxs_base;
 
         template<class AMRBlock, class Fct>
-        void for_all_indexes(Fct && f){
+        void for_all_indexes(Fct &&f) {
 
-            f(cell_child_idxs_base + AMRBlock::get_index({0,0,0}));
-            f(cell_child_idxs_base + AMRBlock::get_index({0,0,1}));
-            f(cell_child_idxs_base + AMRBlock::get_index({0,1,0}));
-            f(cell_child_idxs_base + AMRBlock::get_index({0,1,1}));
-            f(cell_child_idxs_base + AMRBlock::get_index({1,0,0}));
-            f(cell_child_idxs_base + AMRBlock::get_index({1,0,1}));
-            f(cell_child_idxs_base + AMRBlock::get_index({1,1,0}));
-            f(cell_child_idxs_base + AMRBlock::get_index({1,1,1}));
+            f(cell_child_idxs_base + AMRBlock::get_index({0, 0, 0}));
+            f(cell_child_idxs_base + AMRBlock::get_index({0, 0, 1}));
+            f(cell_child_idxs_base + AMRBlock::get_index({0, 1, 0}));
+            f(cell_child_idxs_base + AMRBlock::get_index({0, 1, 1}));
+            f(cell_child_idxs_base + AMRBlock::get_index({1, 0, 0}));
+            f(cell_child_idxs_base + AMRBlock::get_index({1, 0, 1}));
+            f(cell_child_idxs_base + AMRBlock::get_index({1, 1, 0}));
+            f(cell_child_idxs_base + AMRBlock::get_index({1, 1, 1}));
         }
     };
 
-    struct Levelm1{
+    struct Levelm1 {
         u64 cell_idx;
     };
 
-
-        struct None{};
+    struct None {};
 
     /**
-    * @brief Stencil element, describe the state of a cell relative to another
-    * 
-    */
-    struct alignas(8) StencilElement{
+     * @brief Stencil element, describe the state of a cell relative to another
+     *
+     */
+    struct alignas(8) StencilElement {
 
         enum { SAME, LEVELP1, LEVELM1, NONE } tag = NONE;
 
@@ -100,6 +97,6 @@ namespace shammodels::amr::cell {
             case NONE: f4(none); break;
             }
         }
-    };  
+    };
 
-}
+} // namespace shammodels::amr::cell

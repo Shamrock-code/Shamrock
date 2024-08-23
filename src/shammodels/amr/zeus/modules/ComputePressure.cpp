@@ -9,12 +9,12 @@
 /**
  * @file ComputePressure.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shammodels/amr/zeus/modules/ComputePressure.hpp"
+
 #include "shambase/stacktrace.hpp"
+#include "shammodels/amr/zeus/modules/ComputePressure.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
@@ -64,7 +64,6 @@ void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
                     p[id_a] = (gamma - 1) /** rho[id_a]*/ * eint[id_a];
                 });
         });
-
     });
 }
 

@@ -43,7 +43,7 @@ namespace shammodels::sph::modules {
         Tvec direction;
         Tscal time_val;
         Tscal x_ref;        // shock centered on x_ref
-        Tscal x_min,x_max; // check only between [x_min, x_max ]
+        Tscal x_min, x_max; // check only between [x_min, x_max ]
 
         AnalysisSodTube(
             ShamrockCtx &context,
@@ -52,9 +52,11 @@ namespace shammodels::sph::modules {
             shamphys::SodTube &solution,
             Tvec direction,
             Tscal time_val,
-            Tscal x_ref,Tscal x_min,Tscal x_max)
+            Tscal x_ref,
+            Tscal x_min,
+            Tscal x_max)
             : context(context), solver_config(solver_config), storage(storage), solution(solution),
-              direction(direction), time_val(time_val), x_ref(x_ref), x_min(x_min),x_max(x_max) {}
+              direction(direction), time_val(time_val), x_ref(x_ref), x_min(x_min), x_max(x_max) {}
 
         struct field_val {
             Tscal rho;

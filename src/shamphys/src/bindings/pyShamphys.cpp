@@ -14,13 +14,13 @@
 
 #include "shambase/aliases_float.hpp"
 #include "shambindings/pybind11_stl.hpp"
-#include "shamcomm/logs.hpp"
-#include "shamphys/SodTube.hpp"
-#include <pybind11/complex.h>
 #include "shambindings/pybindaliases.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamphys/BlackHoles.hpp"
 #include "shamphys/HydroSoundwave.hpp"
 #include "shamphys/Planets.hpp"
+#include "shamphys/SodTube.hpp"
+#include <pybind11/complex.h>
 #include <complex>
 #include <utility>
 
@@ -88,7 +88,7 @@ Register_pymod(shamphyslibinit) {
         py::arg("G"),
         py::arg("c"),
         R"pbdoc(
-        Compute the schwarzschild radius 
+        Compute the schwarzschild radius
         M : Black hole mass
         G : Gravitational constant
         c : Speed of light
@@ -108,38 +108,39 @@ Register_pymod(shamphyslibinit) {
         units : unit system
     )pbdoc");
 
-    shamcomm::logs::debug_ln("[Py]","registering shamrock.phys.HydroSoundwave");
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.HydroSoundwave");
     py::class_<shamphys::HydroSoundwave>(shamphys_module, "HydroSoundwave")
-        .def(py::init([](f64 cs, f64 k, std::complex<f64> rho_tilde, std::complex<f64> v_tilde) {
-            return std::make_unique<shamphys::HydroSoundwave>(
-                shamphys::HydroSoundwave{cs, k, rho_tilde, v_tilde});
-        }),
-        py::kw_only(),
-        py::arg("cs"),
-        py::arg("k"),
-        py::arg("rho_tilde"),
-        py::arg("v_tilde"))
-        .def("get_omega",&shamphys::HydroSoundwave::get_omega)
-        .def("get_value",[](shamphys::HydroSoundwave& self,f64 t, f64 x){
+        .def(
+            py::init([](f64 cs, f64 k, std::complex<f64> rho_tilde, std::complex<f64> v_tilde) {
+                return std::make_unique<shamphys::HydroSoundwave>(
+                    shamphys::HydroSoundwave{cs, k, rho_tilde, v_tilde});
+            }),
+            py::kw_only(),
+            py::arg("cs"),
+            py::arg("k"),
+            py::arg("rho_tilde"),
+            py::arg("v_tilde"))
+        .def("get_omega", &shamphys::HydroSoundwave::get_omega)
+        .def("get_value", [](shamphys::HydroSoundwave &self, f64 t, f64 x) {
             auto ret = self.get_value(t, x);
-            return std::pair<f64,f64>{ret.rho, ret.v};
+            return std::pair<f64, f64>{ret.rho, ret.v};
         });
 
-    shamcomm::logs::debug_ln("[Py]","registering shamrock.phys.SodTube");
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.SodTube");
     py::class_<shamphys::SodTube>(shamphys_module, "SodTube")
-        .def(py::init([](f64 gamma, f64 rho_1, f64 P_1, f64 rho_5, f64 P_5) {
-            return std::make_unique<shamphys::SodTube>(
-                shamphys::SodTube{gamma, rho_1, P_1, rho_5, P_5});
-        }),
-        py::kw_only(),
-        py::arg("gamma"),
-        py::arg("rho_1"),
-        py::arg("P_1"),
-        py::arg("rho_5"),
-        py::arg("P_5")
-        )
-        .def("get_value",[](shamphys::SodTube& self,f64 t, f64 x){
+        .def(
+            py::init([](f64 gamma, f64 rho_1, f64 P_1, f64 rho_5, f64 P_5) {
+                return std::make_unique<shamphys::SodTube>(
+                    shamphys::SodTube{gamma, rho_1, P_1, rho_5, P_5});
+            }),
+            py::kw_only(),
+            py::arg("gamma"),
+            py::arg("rho_1"),
+            py::arg("P_1"),
+            py::arg("rho_5"),
+            py::arg("P_5"))
+        .def("get_value", [](shamphys::SodTube &self, f64 t, f64 x) {
             auto ret = self.get_value(t, x);
-            return std::tuple<f64,f64,f64>{ret.rho, ret.vx, ret.P};
+            return std::tuple<f64, f64, f64>{ret.rho, ret.vx, ret.P};
         });
 }

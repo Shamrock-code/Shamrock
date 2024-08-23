@@ -15,9 +15,7 @@
 
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shambase/exception.hpp"
-
 #include "shambackends/USMBufferInterop.hpp"
-
 #include <cstring>
 #include <stdexcept>
 

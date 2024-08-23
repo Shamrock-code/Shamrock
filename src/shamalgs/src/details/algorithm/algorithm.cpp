@@ -9,10 +9,10 @@
 /**
  * @file algorithm.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shamalgs/details/algorithm/algorithm.hpp"
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
 
@@ -20,15 +20,13 @@ namespace shamalgs::algorithm {
 
     template<class Tkey, class Tval>
     void sort_by_key(
-        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len
-    ) {
+        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
 
-        if(len < 5e3){
+        if (len < 5e3) {
             details::sort_by_key_bitonic_fallback(q, buf_key, buf_values, len);
-        }else{
+        } else {
             details::sort_by_key_bitonic_updated<Tkey, Tval, 16>(q, buf_key, buf_values, len);
         }
-
     }
 
     template void
@@ -38,19 +36,14 @@ namespace shamalgs::algorithm {
     sort_by_key(sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
     sycl::buffer<u32> gen_buffer_index(sycl::queue &q, u32 len) {
-        return gen_buffer_device(q, len, [](u32 i) -> u32 { return i; });
+        return gen_buffer_device(q, len, [](u32 i) -> u32 {
+            return i;
+        });
     }
 
-
-
-
-
-
-
-
     template<class T>
-    sycl::buffer<T> index_remap(
-        sycl::queue &q, sycl::buffer<T> &buf, sycl::buffer<u32> &index_map, u32 len) {
+    sycl::buffer<T>
+    index_remap(sycl::queue &q, sycl::buffer<T> &buf, sycl::buffer<u32> &index_map, u32 len) {
 
         sycl::buffer<T> ret(len);
 
@@ -71,7 +64,7 @@ namespace shamalgs::algorithm {
     sycl::buffer<T> index_remap_nvar(
         sycl::queue &q, sycl::buffer<T> &buf, sycl::buffer<u32> &index_map, u32 len, u32 nvar) {
 
-        sycl::buffer<T> ret(len*nvar);
+        sycl::buffer<T> ret(len * nvar);
 
         q.submit([&](sycl::handler &cgh) {
             sycl::accessor in{buf, cgh, sycl::read_only};
@@ -93,11 +86,6 @@ namespace shamalgs::algorithm {
         return std::move(ret);
     }
 
-
-
-
-
-
 #define XMAC_TYPES                                                                                 \
     X(f32)                                                                                         \
     X(f32_2)                                                                                       \
@@ -118,14 +106,18 @@ namespace shamalgs::algorithm {
     X(i64_3)
 
 #define X(_arg_)                                                                                   \
-    template sycl::buffer<_arg_> index_remap(\
-        sycl::queue &q, sycl::buffer<_arg_> &buf, sycl::buffer<u32> &index_map, u32 len);                                                                                             \
+    template sycl::buffer<_arg_> index_remap(                                                      \
+        sycl::queue &q, sycl::buffer<_arg_> &buf, sycl::buffer<u32> &index_map, u32 len);          \
                                                                                                    \
-    template sycl::buffer<_arg_> index_remap_nvar(\
-        sycl::queue &q, sycl::buffer<_arg_> &buf, sycl::buffer<u32> &index_map, u32 len, u32 nvar);
+    template sycl::buffer<_arg_> index_remap_nvar(                                                 \
+        sycl::queue &q,                                                                            \
+        sycl::buffer<_arg_> &buf,                                                                  \
+        sycl::buffer<u32> &index_map,                                                              \
+        u32 len,                                                                                   \
+        u32 nvar);
 
     XMAC_TYPES
 
-    #undef X
+#undef X
 
 } // namespace shamalgs::algorithm

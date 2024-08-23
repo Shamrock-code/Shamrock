@@ -15,24 +15,23 @@
 #include <random>
 
 template<class T>
-inline void test(){
-    u32 wsize = shamcomm::world_size();
-    u32 wrank = shamcomm::world_rank();
-    std::vector<T> vectest = shamalgs::random::mock_vector<T>(0x1111,wsize);
+inline void test() {
+    u32 wsize              = shamcomm::world_size();
+    u32 wrank              = shamcomm::world_rank();
+    std::vector<T> vectest = shamalgs::random::mock_vector<T>(0x1111, wsize);
 
     T sum = shamalgs::collective::allreduce_sum(vectest[wrank]);
 
     T ref_sum{};
 
-    for(T tmp : vectest){
+    for (T tmp : vectest) {
         ref_sum += tmp;
     }
 
-    shamtest::asserts().assert_bool("same value", sham::equals(sum,ref_sum));
+    shamtest::asserts().assert_bool("same value", sham::equals(sum, ref_sum));
 }
 
-
-TestStart(Unittest, "shamalgs/collective/reduction/allreduce_sum", testsallreducesum, -1){
+TestStart(Unittest, "shamalgs/collective/reduction/allreduce_sum", testsallreducesum, -1) {
     test<f32>();
     test<u32>();
     test<f64_2>();

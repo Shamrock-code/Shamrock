@@ -17,7 +17,6 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/vec.hpp"
-
 #include "shamrock/scheduler/loadbalance/LoadBalanceStrategy.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -81,9 +80,8 @@ namespace shamrock::scheduler {
 
             patch_dt[i]
                 = {SFC::icoord_to_hilbert(p.coord_min[0], p.coord_min[1], p.coord_min[2]),
-                    p.load_value};
+                   p.load_value};
         }
-        
 
         std::vector<i32> new_owner_table = load_balance(std::move(patch_dt));
 

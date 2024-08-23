@@ -2,7 +2,7 @@
 
 every module must have bindings and be tested using `shamtest` (tests are in file located in `*module*/test` )
 
-structure of a module must be : 
+structure of a module must be :
 
 ```markdown
 *module*
@@ -69,7 +69,7 @@ src
 CMakeLists.txt
 ```
 
-`src` is added to the include path to be able to do 
+`src` is added to the include path to be able to do
 ```cpp
 #include "shamrock/legacy/scheduler/scheduler.hpp"
 ```
@@ -97,12 +97,12 @@ Should be implemented in the proper place but each line of codes of an experimen
 #endif
 ```
 in general the namespace should be `*component*/*module*/experimental/...`
-the file must be located in the wanted folder / experimental 
+the file must be located in the wanted folder / experimental
 
 # Legacy features
 
 in general the namespace should be `*component*/*module*/legacy/...`
-the file must be located in the wanted folder / experimental 
+the file must be located in the wanted folder / experimental
 
 # Core module interactions
 
@@ -113,10 +113,10 @@ subgraph shamrock
     system; shamtest; patch; scheduler; comm; io; algs; sfc;
     subgraph trees
         radix_tree;
-    end 
-    
+    end
+
     subgraph models
-        amr; sph; nbody; phys; 
+        amr; sph; nbody; phys;
     end
 end
 
@@ -135,7 +135,7 @@ scheduler --> algs & sfc & patch & io & system & comm;
 amr & sph & nbody --> phys;
 
 
-models --> radix_tree & scheduler & phys; 
+models --> radix_tree & scheduler & phys;
 
 
 ```
@@ -176,7 +176,7 @@ endif()
 
 ```
 
-# Module description 
+# Module description
 
 ## System
 

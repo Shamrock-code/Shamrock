@@ -6,7 +6,7 @@
 //
 // -------------------------------------------------------//
 
-#pragma once 
+#pragma once
 
 /**
  * @file key_morton_sort.hpp
@@ -14,16 +14,13 @@
  * @brief
  */
 
-#include <memory>
 #include "shambackends/sycl.hpp"
+#include <memory>
 
-
-enum SortImplType{
-    MultiKernel
-};
+enum SortImplType { MultiKernel };
 
 /**
- * @brief sort morton code and generate remap table 
+ * @brief sort morton code and generate remap table
  *
  * @tparam u_morton morton precision
  * @param queue sycl queue
@@ -33,8 +30,7 @@ enum SortImplType{
  */
 template<class u_morton, SortImplType impl = MultiKernel>
 void sycl_sort_morton_key_pair(
-    sycl::queue & queue,
+    sycl::queue &queue,
     u32 morton_count_rounded_pow,
-    std::unique_ptr<sycl::buffer<u32>>      & buf_index,
-    std::unique_ptr<sycl::buffer<u_morton>> & buf_morton
-    );
+    std::unique_ptr<sycl::buffer<u32>> &buf_index,
+    std::unique_ptr<sycl::buffer<u_morton>> &buf_morton);

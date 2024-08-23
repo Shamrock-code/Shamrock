@@ -9,109 +9,92 @@
 /**
  * @file benchmark_selfgrav.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
 
 #include "shambase/time.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
-
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammodels/nbody/setup/nbody_setup.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtest/shamtest.hpp"
 
-
-
-
-
-
-
-template<class flt> 
-std::tuple<f64,f64> benchmark_selfgrav(f32 dr, u32 npatch){
+template<class flt>
+std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
 
     using namespace shamrock::patch;
 
-    using vec = sycl::vec<flt,3>;
+    using vec = sycl::vec<flt, 3>;
 
-    u64 Nesti = (2.F/dr)*(2.F/dr)*(2.F/dr);
+    u64 Nesti = (2.F / dr) * (2.F / dr) * (2.F / dr);
 
     shamrock::patch::PatchDataLayout pdl;
 
     pdl.add_field<f32_3>("xyz", 1);
     pdl.add_field<f32>("hpart", 1);
-    pdl.add_field<f32_3>("vxyz",1);
-    pdl.add_field<f32_3>("axyz",1);
-    pdl.add_field<f32_3>("axyz_old",1);
+    pdl.add_field<f32_3>("vxyz", 1);
+    pdl.add_field<f32_3>("axyz", 1);
+    pdl.add_field<f32_3>("axyz_old", 1);
 
     auto id_v = pdl.get_field_idx<f32_3>("vxyz");
     auto id_a = pdl.get_field_idx<f32_3>("axyz");
 
-    PatchScheduler sched = PatchScheduler(pdl,Nesti/npatch, 1);
+    PatchScheduler sched = PatchScheduler(pdl, Nesti / npatch, 1);
     sched.init_mpi_required_types();
 
-    auto setup = [&]() -> std::tuple<flt,f64>{
+    auto setup = [&]() -> std::tuple<flt, f64> {
         using Setup = models::nbody::NBodySetup<f32>;
 
         Setup setup;
         setup.init(sched);
 
-        auto box = setup.get_ideal_box(dr, {vec{-1,-1,-1},vec{1,1,1}});
+        auto box = setup.get_ideal_box(dr, {vec{-1, -1, -1}, vec{1, 1, 1}});
 
-        //auto ebox = box;
-        //std::get<0>(ebox).x() -= 1e-5;
-        //std::get<0>(ebox).y() -= 1e-5;
-        //std::get<0>(ebox).z() -= 1e-5;
-        //std::get<1>(ebox).x() += 1e-5;
-        //std::get<1>(ebox).y() += 1e-5;
-        //std::get<1>(ebox).z() += 1e-5;
+        // auto ebox = box;
+        // std::get<0>(ebox).x() -= 1e-5;
+        // std::get<0>(ebox).y() -= 1e-5;
+        // std::get<0>(ebox).z() -= 1e-5;
+        // std::get<1>(ebox).x() += 1e-5;
+        // std::get<1>(ebox).y() += 1e-5;
+        // std::get<1>(ebox).z() += 1e-5;
         sched.set_coord_domain_bound<f32_3>(box);
-
 
         setup.set_boundaries(true);
         setup.add_particules_fcc(sched, dr, box);
         setup.set_total_mass(8.);
-        
+
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            pdat.get_field<f32_3>(id_v).override(f32_3{0,0,0});
-            pdat.get_field<f32_3>(id_a).override(f32_3{0,0,0});
+            pdat.get_field<f32_3>(id_v).override(f32_3{0, 0, 0});
+            pdat.get_field<f32_3>(id_a).override(f32_3{0, 0, 0});
         });
 
-
-
         sched.scheduler_step(true, true);
 
         sched.scheduler_step(true, true);
 
         sched.scheduler_step(true, true);
-
-
 
         auto pmass = setup.get_part_mass();
 
-        auto Npart = 8./pmass;
+        auto Npart = 8. / pmass;
 
-        //setup.pertub_eigenmode_wave(sched, {0,0}, {0,0,1}, 0);
+        // setup.pertub_eigenmode_wave(sched, {0,0}, {0,0,1}, 0);
 
-        return {pmass,Npart};
+        return {pmass, Npart};
     };
 
-    auto [pmass,Npart] = setup();
+    auto [pmass, Npart] = setup();
 
-
-    
-
-
-    if(sched.patch_list.global.size() != npatch){
-        throw ShamrockSyclException("Wrong patch count" + shambase::format_printf("%d, wanted %d",sched.patch_list.global.size(),npatch));
+    if (sched.patch_list.global.size() != npatch) {
+        throw ShamrockSyclException(
+            "Wrong patch count"
+            + shambase::format_printf("%d, wanted %d", sched.patch_list.global.size(), npatch));
     }
-
-    
 
     using Model = models::nbody::Nbody_SelfGrav<f32>;
 
-    Model model ;
+    Model model;
 
     const f32 htol_up_tol  = 1.4;
     const f32 htol_up_iter = 1.2;
@@ -126,7 +109,7 @@ std::tuple<f64,f64> benchmark_selfgrav(f32 dr, u32 npatch){
 
     shambase::Timer t;
     t.start();
-    
+
     model.evolve(sched, 0, 1e-3);
     shamsys::instance::get_compute_queue().wait();
 
@@ -134,73 +117,68 @@ std::tuple<f64,f64> benchmark_selfgrav(f32 dr, u32 npatch){
 
     model.close();
 
-    return {Npart,t.nanosec/1e9};
-
+    return {Npart, t.nanosec / 1e9};
 }
 
 template<class flt>
-void benchmark_selfgrav_main(u32 npatch, std::string name){
-
+void benchmark_selfgrav_main(u32 npatch, std::string name) {
 
     std::vector<f64> npart;
     std::vector<f64> times;
 
     {
 
-        
         f64 part_per_g = 2500000;
 
+        f64 gsz = shamsys::instance::get_compute_queue()
+                      .get_device()
+                      .get_info<sycl::info::device::global_mem_size>();
+        gsz = 1024 * 1024 * 1024 * 1;
 
-        f64 gsz = shamsys::instance::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();gsz = 1024*1024*1024*1;
-
-        logger::raw_ln("limit = ", part_per_g*(gsz/1.3)/(1024.*1024.*1024.));
+        logger::raw_ln("limit = ", part_per_g * (gsz / 1.3) / (1024. * 1024. * 1024.));
     }
 
-    auto should_stop = [&](f64 dr){
-
+    auto should_stop = [&](f64 dr) {
         f64 part_per_g = 2500000;
 
-        f64 Nesti = (1.F/dr)*(1.F/dr)*(1.F/dr);
+        f64 Nesti = (1.F / dr) * (1.F / dr) * (1.F / dr);
 
         f64 multiplier = shamcomm::world_size();
 
-        if(npatch < multiplier){
+        if (npatch < multiplier) {
             multiplier = 1;
         }
 
-        f64 gsz = shamsys::instance::get_compute_queue().get_device().get_info<sycl::info::device::global_mem_size>();gsz = 1024*1024*1024*1;
+        f64 gsz = shamsys::instance::get_compute_queue()
+                      .get_device()
+                      .get_info<sycl::info::device::global_mem_size>();
+        gsz = 1024 * 1024 * 1024 * 1;
 
-        f64 a = (Nesti/part_per_g)*1024.*1024.*1024.;
-        f64 b = multiplier*gsz/1.3;
+        f64 a = (Nesti / part_per_g) * 1024. * 1024. * 1024.;
+        f64 b = multiplier * gsz / 1.3;
 
-
-        logger::raw_ln(Nesti,a,b);
+        logger::raw_ln(Nesti, a, b);
 
         return a < b;
-
     };
 
-
-
     f32 dr = 0.05;
-    for(; should_stop(dr); dr /= 1.1){
-        auto [N,t] = benchmark_selfgrav<flt>(dr, npatch);
+    for (; should_stop(dr); dr /= 1.1) {
+        auto [N, t] = benchmark_selfgrav<flt>(dr, npatch);
         npart.push_back(N);
         times.push_back(t);
     }
 
-    if(shamcomm::world_rank() == 0){
-        auto & dset = shamtest::test_data().new_dataset(name);
+    if (shamcomm::world_rank() == 0) {
+        auto &dset = shamtest::test_data().new_dataset(name);
         dset.add_data("Npart", npart);
         dset.add_data("times", times);
     }
-
 }
 
-TestStart(Benchmark, "benchmark selfgrav nbody", bench_selfgrav_nbody, -1){
+TestStart(Benchmark, "benchmark selfgrav nbody", bench_selfgrav_nbody, -1) {
 
-    benchmark_selfgrav_main<f32>(1,"patch_1");
-    //benchmark_selfgrav_main<f32>(8,"patch_8");
-    //benchmark_selfgrav_main<f32>(64,"patch_64");
-
+    benchmark_selfgrav_main<f32>(1, "patch_1");
+    // benchmark_selfgrav_main<f32>(8,"patch_8");
+    // benchmark_selfgrav_main<f32>(64,"patch_64");
 }

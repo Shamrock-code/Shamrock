@@ -26,9 +26,9 @@
 #include "shambase/exception.hpp"
 #include "shambackends/DeviceContext.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 
 namespace shamcomm {
 
@@ -39,8 +39,9 @@ namespace shamcomm {
     class CommunicationBuffer {
 
         private:
-        using int_var_t = std::variant<std::unique_ptr<details::CommunicationBuffer<CopyToHost>>,
-                                       std::unique_ptr<details::CommunicationBuffer<DirectGPU>>>;
+        using int_var_t = std::variant<
+            std::unique_ptr<details::CommunicationBuffer<CopyToHost>>,
+            std::unique_ptr<details::CommunicationBuffer<DirectGPU>>>;
 
         int_var_t _int_type;
 
@@ -51,31 +52,37 @@ namespace shamcomm {
 
         public:
         inline CommunicationBuffer(u64 bytelen, sham::DeviceScheduler &queue_details) {
-            sham::Device & dev = *queue_details.ctx->device;
+            sham::Device &dev  = *queue_details.ctx->device;
             Protocol comm_mode = get_protocol(dev);
             if (comm_mode == CopyToHost) {
-                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(bytelen, queue_details.get_queue().q);
+                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(
+                    bytelen, queue_details.get_queue().q);
             } else if (comm_mode == DirectGPU) {
-                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(bytelen, queue_details.get_queue().q);
+                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(
+                    bytelen, queue_details.get_queue().q);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
-        inline CommunicationBuffer(sycl::buffer<u8> &bytebuf, sham::DeviceScheduler &queue_details) {
-            sham::Device & dev = *queue_details.ctx->device;
+        inline CommunicationBuffer(
+            sycl::buffer<u8> &bytebuf, sham::DeviceScheduler &queue_details) {
+            sham::Device &dev  = *queue_details.ctx->device;
             Protocol comm_mode = get_protocol(dev);
             if (comm_mode == CopyToHost) {
-                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(bytebuf, queue_details.get_queue().q);
+                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(
+                    bytebuf, queue_details.get_queue().q);
             } else if (comm_mode == DirectGPU) {
-                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(bytebuf, queue_details.get_queue().q);
+                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(
+                    bytebuf, queue_details.get_queue().q);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }
         }
 
-        inline CommunicationBuffer(sycl::buffer<u8> &&bytebuf, sham::DeviceScheduler &queue_details) {
-            sham::Device & dev = *queue_details.ctx->device;
+        inline CommunicationBuffer(
+            sycl::buffer<u8> &&bytebuf, sham::DeviceScheduler &queue_details) {
+            sham::Device &dev  = *queue_details.ctx->device;
             Protocol comm_mode = get_protocol(dev);
             if (comm_mode == CopyToHost) {
                 _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(
@@ -94,15 +101,27 @@ namespace shamcomm {
          * @return T
          */
         inline sycl::buffer<u8> copy_back() {
-            return std::visit([=](auto &&arg) { return arg->copy_back(); }, _int_type);
+            return std::visit(
+                [=](auto &&arg) {
+                    return arg->copy_back();
+                },
+                _int_type);
         }
 
         inline u64 get_bytesize() {
-            return std::visit([=](auto &&arg) { return arg->get_bytesize(); }, _int_type);
+            return std::visit(
+                [=](auto &&arg) {
+                    return arg->get_bytesize();
+                },
+                _int_type);
         }
 
         inline u8 *get_ptr() {
-            return std::visit([=](auto &&arg) { return arg->get_ptr(); }, _int_type);
+            return std::visit(
+                [=](auto &&arg) {
+                    return arg->get_ptr();
+                },
+                _int_type);
         }
 
         /**
@@ -113,7 +132,10 @@ namespace shamcomm {
         inline CommunicationBuffer duplicate() {
 
             int_var_t tmp = std::visit(
-                [=](auto &&arg) { return int_var_t(arg->duplicate_to_ptr()); }, _int_type);
+                [=](auto &&arg) {
+                    return int_var_t(arg->duplicate_to_ptr());
+                },
+                _int_type);
 
             return CommunicationBuffer(std::move(tmp));
         }
@@ -142,6 +164,6 @@ namespace shamcomm {
         }
     };
 
-    void validate_comm(sham::DeviceScheduler & sched);
+    void validate_comm(sham::DeviceScheduler &sched);
 
 } // namespace shamcomm

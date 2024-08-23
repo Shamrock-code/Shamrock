@@ -11,17 +11,17 @@
 /**
  * @file MicroBenchmark.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 namespace shamsys {
 
     /**
-    * @brief Run latency & bandwidth benchmark
-    * those benchmark where adapted from osu_microbenchmark
-    * -     osu-micro-benchmarks/mpi/pt2pt/osu_bw.c
-    * -     osu-micro-benchmarks/mpi/pt2pt/osu_latency.c
-    */
+     * @brief Run latency & bandwidth benchmark
+     * those benchmark where adapted from osu_microbenchmark
+     * -     osu-micro-benchmarks/mpi/pt2pt/osu_bw.c
+     * -     osu-micro-benchmarks/mpi/pt2pt/osu_latency.c
+     */
     void run_micro_benchmark();
 
 } // namespace shamsys

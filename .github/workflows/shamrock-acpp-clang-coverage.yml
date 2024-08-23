@@ -13,10 +13,10 @@ jobs:
 
     container:
       image: ${{ matrix.container }}
-      
+
     strategy:
       matrix:
-        include: 
+        include:
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
@@ -25,6 +25,10 @@ jobs:
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
       - uses: actions/checkout@v4
         if: github.event_name == 'pull_request_target'
         with:
@@ -40,12 +44,12 @@ jobs:
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
       - name: ls local
         run : ls -la
-      
+
       - name: install LLVM
         run: |
           wget https://apt.llvm.org/llvm.sh
@@ -56,7 +60,7 @@ jobs:
             sudo rm -r /usr/lib/clang/16*
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
-          
+
 
       - name: configure Shamrock
         run: |
@@ -87,14 +91,14 @@ jobs:
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd acpp_omp_debug
-          mpirun \
+          mpirun --allow-run-as-root \
             -n 1 -x LLVM_PROFILE_FILE=utests_2_0.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_2_1.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
-      
+
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd acpp_omp_debug
-          mpirun --oversubscribe \
+          mpirun --allow-run-as-root --oversubscribe \
             -n 1 -x LLVM_PROFILE_FILE=utests_3_0.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_3_1.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_3_2.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
@@ -102,7 +106,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd acpp_omp_debug
-          mpirun --oversubscribe \
+          mpirun --allow-run-as-root --oversubscribe \
             -n 1 -x LLVM_PROFILE_FILE=utests_4_0.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_4_1.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_4_2.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
@@ -123,7 +127,7 @@ jobs:
           llvm-cov-15 show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov\
               -Xdemangler c++filt -Xdemangler -n \
               -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp"
-      
+
       - name: print coverage
         run: |
           cd acpp_omp_debug

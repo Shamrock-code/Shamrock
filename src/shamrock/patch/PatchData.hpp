@@ -14,13 +14,12 @@
  * @brief
  */
 
-#include "PatchDataField.hpp"
-#include "PatchDataLayout.hpp"
-
-#include "Patch.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "Patch.hpp"
+#include "PatchDataField.hpp"
+#include "PatchDataLayout.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shammath/intervals.hpp"
 #include <variant>
@@ -47,7 +46,7 @@ namespace shamrock::patch {
 
         inline PatchData(const PatchData &other) : pdl(other.pdl) {
 
-            NamedStackEntry stack_loc{"PatchData::copy_constructor",true};
+            NamedStackEntry stack_loc{"PatchData::copy_constructor", true};
 
             for (auto &field_var : other.fields) {
 
@@ -61,40 +60,36 @@ namespace shamrock::patch {
 
         /**
          * @brief PatchData move constructor
-         * 
-         * @param other 
+         *
+         * @param other
          */
         inline PatchData(PatchData &&other) noexcept
-            : fields(std::move(other.fields)), pdl(other.pdl) {
-        }
+            : fields(std::move(other.fields)), pdl(other.pdl) {}
 
         /**
          * @brief PatchData move assignment
-         * 
-         * @param other 
+         *
+         * @param other
          */
         inline PatchData &operator=(PatchData &&other) noexcept {
-            fields        = std::move(other.fields);
-            pdl = std::move(other.pdl);
+            fields = std::move(other.fields);
+            pdl    = std::move(other.pdl);
 
             return *this;
         }
 
         PatchData &operator=(const PatchData &other) = delete;
 
-
-        
-
         static PatchData mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl);
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
             for (auto &f : fields) {
-                f.visit([&](auto &arg) { func(arg); });
+                f.visit([&](auto &arg) {
+                    func(arg);
+                });
             }
         }
-
-        
 
         template<class Func>
         inline PatchData(PatchDataLayout &pdl, Func &&fct_init) : pdl(pdl) {
@@ -113,8 +108,6 @@ namespace shamrock::patch {
             const PatchData &current = *this;
             return std::make_unique<PatchData>(current);
         }
-
-        
 
         /**
          * @brief extract particle at index pidx and insert it in the provided vectors
@@ -174,9 +167,10 @@ namespace shamrock::patch {
         //     bmax_p6,Tvecbox bmax_p7);
 
         template<class Tvecbox>
-        void split_patchdata(std::array<std::reference_wrapper<PatchData>, 8> pdats,
-                             std::array<Tvecbox, 8> min_box,
-                             std::array<Tvecbox, 8> max_box);
+        void split_patchdata(
+            std::array<std::reference_wrapper<PatchData>, 8> pdats,
+            std::array<Tvecbox, 8> min_box,
+            std::array<Tvecbox, 8> max_box);
 
         void append_subset_to(std::vector<u32> &idxs, PatchData &pdat);
         void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat);
@@ -186,7 +180,9 @@ namespace shamrock::patch {
             bool is_empty = fields.empty();
 
             if (!is_empty) {
-                return fields[0].visit_return([](auto &field) { return field.get_obj_cnt(); });
+                return fields[0].visit_return([](auto &field) {
+                    return field.get_obj_cnt();
+                });
             }
 
             throw shambase::make_except_with_loc<std::runtime_error>(
@@ -198,7 +194,9 @@ namespace shamrock::patch {
 
             for (auto &field_var : fields) {
 
-                field_var.visit([&](auto &field) { sum += field.memsize(); });
+                field_var.visit([&](auto &field) {
+                    sum += field.memsize();
+                });
             }
 
             return sum;
@@ -234,11 +232,11 @@ namespace shamrock::patch {
 
             throw shambase::make_except_with_loc<std::runtime_error>(
                 "the request id is not of correct type\n"
-                "   current map is : \n" +
-                pdl.get_description_str() +
-                "\n"
-                "    arg : idx = " +
-                std::to_string(idx));
+                "   current map is : \n"
+                + pdl.get_description_str()
+                + "\n"
+                  "    arg : idx = "
+                + std::to_string(idx));
         }
 
         template<class T>
@@ -254,11 +252,11 @@ namespace shamrock::patch {
 
             throw shambase::make_except_with_loc<std::runtime_error>(
                 "the request id is not of correct type\n"
-                "   current map is : \n" +
-                pdl.get_description_str() +
-                "\n"
-                "    arg : idx = " +
-                std::to_string(idx));
+                "   current map is : \n"
+                + pdl.get_description_str()
+                + "\n"
+                  "    arg : idx = "
+                + std::to_string(idx));
         }
 
         /**
@@ -270,7 +268,8 @@ namespace shamrock::patch {
             for (auto &field_var : fields) {
                 field_var.visit([&](auto &field) {
                     if (field.get_obj_cnt() != cnt) {
-                        throw shambase::make_except_with_loc<std::runtime_error>("mismatch in obj cnt");
+                        throw shambase::make_except_with_loc<std::runtime_error>(
+                            "mismatch in obj cnt");
                     }
                 });
             }
@@ -374,20 +373,17 @@ namespace shamrock::patch {
             return ret;
         }
 
-
-
-
         /**
-         * @brief 
+         * @brief
          * \todo should add a check in patch data to check that
          * size in ovveride match with the one in the input vec
-         * @tparam T 
-         * @param field_name 
-         * @param vec 
+         * @tparam T
+         * @param field_name
+         * @param vec
          */
         template<class T>
-        void override_patch_field(std::string field_name, std::vector<T> & vec){
-            u32 len                 = vec.size();
+        void override_patch_field(std::string field_name, std::vector<T> &vec) {
+            u32 len              = vec.size();
             PatchDataField<T> &f = get_field<T>(pdl.get_field_idx<T>(field_name));
             sycl::buffer<T> buf(vec.data(), len);
             f.override(buf, len);
@@ -395,41 +391,37 @@ namespace shamrock::patch {
 
         /**
          * @brief Fetch data of a patchdata field into a std::vector
-         * @tparam T 
-         * @param key 
-         * @param pdat 
-         * @return std::vector<T> 
+         * @tparam T
+         * @param key
+         * @param pdat
+         * @return std::vector<T>
          */
         template<class T>
-        inline std::vector<T> fetch_data(std::string key){
+        inline std::vector<T> fetch_data(std::string key) {
 
             std::vector<T> vec;
 
-            auto appender = [&](auto & field){
-
+            auto appender = [&](auto &field) {
                 if (field.get_name() == key) {
 
-                    logger::debug_ln("PyShamrockCTX","appending field",key);
-                    
-                    if(!field.is_empty()){
-                        sycl::host_accessor acc {shambase::get_check_ref(field.get_buf())};
+                    logger::debug_ln("PyShamrockCTX", "appending field", key);
+
+                    if (!field.is_empty()) {
+                        sycl::host_accessor acc{shambase::get_check_ref(field.get_buf())};
                         u32 len = field.size();
 
-                        for (u32 i = 0 ; i < len; i++) {
+                        for (u32 i = 0; i < len; i++) {
                             vec.push_back(acc[i]);
                         }
                     }
-
                 }
-
             };
 
-            for_each_field<T>([&](auto & field){
+            for_each_field<T>([&](auto &field) {
                 appender(field);
             });
 
             return vec;
-
         }
     };
 

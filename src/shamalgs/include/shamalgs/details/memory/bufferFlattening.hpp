@@ -11,10 +11,10 @@
 /**
  * @file bufferFlattening.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
 
@@ -27,8 +27,9 @@ namespace shamalgs::memory {
         q.submit([=, &buf_in](sycl::handler &cgh) {
             sycl::accessor acc_in{buf_in, cgh, sycl::read_only};
             sycl::accessor acc_out{ret, cgh, sycl::write_only, sycl::no_init};
-            cgh.parallel_for(sycl::range<1>{len},
-                             [=](sycl::item<1> id) { acc_out[id] = acc_in[id]; });
+            cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                acc_out[id] = acc_in[id];
+            });
         });
     }
 
@@ -38,7 +39,6 @@ namespace shamalgs::memory {
         sycl::buffer<T> ret(len * n);
 
         q.submit([=, &buf_in, &ret](sycl::handler &cgh) {
-            
             sycl::accessor acc_in{buf_in, cgh, sycl::read_only};
             sycl::accessor acc_out{ret, cgh, sycl::write_only, sycl::no_init};
 
@@ -97,6 +97,5 @@ namespace shamalgs::memory {
 
         return ret;
     }
-
 
 } // namespace shamalgs::memory

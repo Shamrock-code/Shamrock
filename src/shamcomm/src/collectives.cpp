@@ -30,7 +30,8 @@ void shamcomm::gather_str(const std::string &send_vec, std::string &recv_vec) {
 
     int *table_data_count = new int[shamcomm::world_size()];
 
-    MPICHECK(MPI_Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, MPI_COMM_WORLD));
+    MPICHECK(
+        MPI_Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, MPI_COMM_WORLD));
 
     // printf("table_data_count =
     // [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
@@ -40,8 +41,8 @@ void shamcomm::gather_str(const std::string &send_vec, std::string &recv_vec) {
     node_displacments_data_table[0] = 0;
 
     for (u32 i = 1; i < shamcomm::world_size(); i++) {
-        node_displacments_data_table[i] =
-            node_displacments_data_table[i - 1] + table_data_count[i - 1];
+        node_displacments_data_table[i]
+            = node_displacments_data_table[i - 1] + table_data_count[i - 1];
     }
 
     // printf("node_displacments_data_table =

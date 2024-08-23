@@ -1,4 +1,4 @@
-from lib.buildbot import * 
+from lib.buildbot import *
 import glob
 import sys
 
@@ -30,7 +30,7 @@ for fname in file_list:
     res = f.read().startswith(licence)
     f.close()
 
-    if not res : 
+    if not res :
         missing_licence.append(fname)
 
 
@@ -46,7 +46,7 @@ def make_check_pr_report():
     rep += ("""
 
 The pre-commit checks have found some missing or ill formed license header.
-All C++ files (headers or sources) should start with : 
+All C++ files (headers or sources) should start with :
 ```
 // -------------------------------------------------------//
 //
@@ -74,5 +74,5 @@ if len(missing_licence) > 0:
         print(" -",i.split(abs_proj_dir)[-1])
 
     sys.exit("Missing liscence for some source files")
-else : 
+else :
     print(" => \033[1;34mLicense status \033[0;0m: OK !")

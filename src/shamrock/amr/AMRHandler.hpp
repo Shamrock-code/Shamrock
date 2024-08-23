@@ -11,47 +11,37 @@
 /**
  * @file AMRHandler.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #include "AMRCell.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/patch/PatchData.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 
 namespace shamrock::amr {
 
     template<class Tcoord, u32 dim, class AMRModel>
     class AMRHandler {
 
-        PatchScheduler & sched;
+        PatchScheduler &sched;
 
         public:
-        using CellCoord = AMRCellCoord<Tcoord, dim>;
+        using CellCoord                  = AMRCellCoord<Tcoord, dim>;
         static constexpr u32 split_count = CellCoord::splts_count;
 
-        void update_grid(){
+        void update_grid() {
 
             using namespace patch;
 
-            //split
+            // split
 
-            sched.for_each_patch_data(
-                [&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                    
-                    sycl::buffer<u32> split_list = AMRModel::get_split_table(pdat, cur_p);
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                sycl::buffer<u32> split_list = AMRModel::get_split_table(pdat, cur_p);
+            });
 
-                    
-
-                }
-            );
-
-
-            //merge
-
+            // merge
         }
-
-        
     };
 
 } // namespace shamrock::amr

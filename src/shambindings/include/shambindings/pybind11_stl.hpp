@@ -6,26 +6,25 @@
 //
 // -------------------------------------------------------//
 
-
 #pragma once
 
 /**
  * @file pybind11_stl.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
 #ifdef SHAMROCK_VALARRAY_FIX
-#include <utility>
-#include <type_traits>
-#include <algorithm>
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wkeyword-macro"
-#define noexcept
-#include <valarray>
-#undef noexcept
-#pragma GCC diagnostic pop
+    #include <type_traits>
+    #include <algorithm>
+    #include <utility>
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wkeyword-macro"
+    #define noexcept
+    #include <valarray>
+    #undef noexcept
+    #pragma GCC diagnostic pop
 #endif
 
 #include <pybind11/stl.h>

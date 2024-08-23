@@ -34,11 +34,11 @@ class ShamEnvBuild(build_ext):
         subprocess.run(
             ["bash", "-c", "source ./activate && shamconfigure && shammake shamrock"], check=True
         )
-        
+
         subprocess.run(
             ["bash", "-c", f"mkdir -p {extdir}"], check=True
         )
-        
+
         subprocess.run(
             ["bash", "-c", f"cp -v *.so {extdir}"], check=True
         )

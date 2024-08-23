@@ -1,7 +1,7 @@
 import os
 import argparse
 
-from lib.buildbot import * 
+from lib.buildbot import *
 
 parser = argparse.ArgumentParser(description='Configure utility for Shamrock')
 
@@ -85,7 +85,7 @@ if args.interactive:
 
 comp_path = ""
 
-if args.cxxbin : 
+if args.cxxbin :
     comp_path = args.cxxbin
 
 ### chose the compiler id
@@ -114,7 +114,7 @@ else:
 
 
 
-######### 
+#########
 # defines all the build profiles
 #########
 intel_llvm_cmake_flag = "-DINTEL_LLVM_PATH="+abs_compiler_root_dir
@@ -205,9 +205,9 @@ if args.interactive:
 
 
 ### processing results
-if args.builddir == None : 
+if args.builddir == None :
     raise "no output directory specified, please add --builddir flag pointing to the build folder"
-    
+
 #print(args)
 
 

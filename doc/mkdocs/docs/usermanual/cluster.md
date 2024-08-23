@@ -33,7 +33,7 @@ make -j all libsycldevice install
 
 ### Compiling OpenSYCL
 
-Seem's to be broken due to gcc headers  
+Seem's to be broken due to gcc headers
 ```bash
 module purge
 module load llvm-amdgpu/5.2.0_gcc-10.4.0 rocm-cmake/5.2.0_gcc-10.4.0 rocm-opencl/5.2.0_gcc-10.4.0 rocm-openmp-extras/5.2.0_gcc-10.4.0 rocm-smi-lib/5.2.3_gcc-10.4.0 rocminfo/5.2.0_gcc-10.4.0 llvm
@@ -72,7 +72,7 @@ export DPCPP_HOME=$(pwd)/dpcpp_compiler
 export PATH=$DPCPP_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
 
-tar -xvf Shamrock.tar.gz 
+tar -xvf Shamrock.tar.gz
 cd Shamrock
 python3 buildbot/configure.py --gen make --tests --build release --builddir dpcpp_rocm --cxxpath ../llvm/build --compiler intel_llvm --profile hip-gfx906 --cxxflags="--rocm-path=/opt/rocm"
 cd dpcpp_rocm

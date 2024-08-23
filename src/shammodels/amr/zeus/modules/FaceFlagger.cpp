@@ -9,13 +9,13 @@
 /**
  * @file FaceFlagger.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
+
 #include "shambase/DistributedData.hpp"
 #include "shambase/SourceLocation.hpp"
+#include "shammodels/amr/zeus/modules/FaceFlagger.hpp"
 #include "shammodels/amr/zeus/NeighFaceList.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -65,19 +65,18 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
 
                     // what a readable piece of code
                     // there can be only ONE that is the true answers
-                    const u8 lookup = ((cell2_d.x() == -max_compo) ? 0 : 0) +
-                                      ((cell2_d.x() == max_compo) ? 1 : 0) +
-                                      ((cell2_d.y() == -max_compo) ? 2 : 0) +
-                                      ((cell2_d.y() == max_compo) ? 3 : 0) +
-                                      ((cell2_d.z() == -max_compo) ? 4 : 0) +
-                                      ((cell2_d.z() == max_compo) ? 5 : 0);
+                    const u8 lookup = ((cell2_d.x() == -max_compo) ? 0 : 0)
+                                      + ((cell2_d.x() == max_compo) ? 1 : 0)
+                                      + ((cell2_d.y() == -max_compo) ? 2 : 0)
+                                      + ((cell2_d.y() == max_compo) ? 3 : 0)
+                                      + ((cell2_d.z() == -max_compo) ? 4 : 0)
+                                      + ((cell2_d.z() == max_compo) ? 5 : 0);
 
-                    //if(cell_min[id_a].x() < 0 && cell_min[id_a].y() == 10){
-                    //    sycl::ext::oneapi::experimental::printf("%d (%ld %ld %ld) : %d\n", id_a,
-                    //    cell_min[id_a].x(),cell_min[id_a].y(),cell_min[id_a].z()
-                    //    ,u32(lookup));
-                    //}
-
+                    // if(cell_min[id_a].x() < 0 && cell_min[id_a].y() == 10){
+                    //     sycl::ext::oneapi::experimental::printf("%d (%ld %ld %ld) : %d\n", id_a,
+                    //     cell_min[id_a].x(),cell_min[id_a].y(),cell_min[id_a].z()
+                    //     ,u32(lookup));
+                    // }
 
                     // F this bit bit of code
                     // i'm so done with this crap
@@ -137,10 +136,7 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::split_face_list() {
         sycl::buffer<u8> &face_normals_lookup = storage.face_normals_lookup.get().get(p.id_patch);
 
         auto build_flist = [&](u8 lookup) -> OrientedNeighFaceList<Tvec> {
-            return{
-                isolate_lookups(cache, face_normals_lookup, lookup),
-                lookup_to_normal(lookup)
-            };
+            return {isolate_lookups(cache, face_normals_lookup, lookup), lookup_to_normal(lookup)};
         };
 
         auto build_neigh_list = [&]() -> NeighFaceList<Tvec> {
@@ -150,8 +146,7 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::split_face_list() {
                 build_flist(2),
                 build_flist(3),
                 build_flist(4),
-                build_flist(5)
-            };
+                build_flist(5)};
         };
 
         neigh_lst.add_obj(p.id_patch, build_neigh_list());
@@ -161,26 +156,22 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::split_face_list() {
     storage.face_normals_lookup.reset();
 
     storage.face_lists.set(std::move(neigh_lst));
-
 }
 
-
-
 struct AMRNeighIds {
-    // since it's AMR with only delta = 1 in level 
+    // since it's AMR with only delta = 1 in level
     // only cases are :
     //  - same level : block_id <-> block_id map
     //  - increase level :  block_id <-> block_id map
     //  - decrease level : block_id <-> block_id + divcoord map
-    //          divcoord are to see in which suboct of 
-    //          the block the neigh is in. 
+    //          divcoord are to see in which suboct of
+    //          the block the neigh is in.
 
     u64 id_patch;
 
     struct {
 
         sycl::buffer<u32> block_ids;
-
 
     } level_p1;
 
@@ -199,10 +190,10 @@ struct AMRNeighIds {
 
     struct {
 
-        //ids of the blocks having
+        // ids of the blocks having
         sycl::buffer<u32> block_ids;
 
-        // neigh[block_id*block_size + cell_id] 
+        // neigh[block_id*block_size + cell_id]
         //     -> neighbourgh cell (block_id*block_size + cell_id)
         sycl::buffer<u32> cell_xm;
         sycl::buffer<u32> cell_xp;
@@ -212,92 +203,84 @@ struct AMRNeighIds {
         sycl::buffer<u32> cell_zp;
 
     } level_same;
-
 };
 
-
+template<class Tvec, class TgridVec>
+void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::compute_neigh_ids() {}
 
 template<class Tvec, class TgridVec>
-void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::compute_neigh_ids(){
-
-
-
-}
-
-
-
-
-
-template<class Tvec, class TgridVec>
-shamrock::tree::ObjectCache
-shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::isolate_lookups(shamrock::tree::ObjectCache &cache,
-                                        sycl::buffer<u8> &face_normals_lookup,
-                                        u8 lookup_value) {
+shamrock::tree::ObjectCache shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::isolate_lookups(
+    shamrock::tree::ObjectCache &cache, sycl::buffer<u8> &face_normals_lookup, u8 lookup_value) {
 
     u32 obj_cnt = cache.cnt_neigh.size();
 
     sycl::buffer<u32> face_count(obj_cnt);
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        shamrock::tree::ObjectCacheIterator cell_looper(cache, cgh);
+    shamsys::instance::get_compute_queue()
+        .submit([&](sycl::handler &cgh) {
+            shamrock::tree::ObjectCacheIterator cell_looper(cache, cgh);
 
-        sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
+            sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
 
-        sycl::accessor face_cnts{face_count, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor face_cnts{face_count, cgh, sycl::write_only, sycl::no_init};
 
-        u8 wanted_lookup = lookup_value;
+            u8 wanted_lookup = lookup_value;
 
-        shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
-            u32 id_a = (u32)gid;
+            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+                u32 id_a = (u32) gid;
 
-            u32 cnt = 0;
-            cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u32 id_list) {
-                cnt += (normals_lookup[id_list] == wanted_lookup) ? 1 : 0;
+                u32 cnt = 0;
+                cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u32 id_list) {
+                    cnt += (normals_lookup[id_list] == wanted_lookup) ? 1 : 0;
+                });
+
+                face_cnts[id_a] = cnt;
             });
+        })
+        .wait();
 
-            face_cnts[id_a] = cnt;
-        });
-    }).wait();
+    shamrock::tree::ObjectCache pcache
+        = shamrock::tree::prepare_object_cache(std::move(face_count), obj_cnt);
 
-
-    shamrock::tree::ObjectCache pcache =
-        shamrock::tree::prepare_object_cache(std::move(face_count), obj_cnt);
-
-        shamsys::instance::get_compute_queue().wait();
+    shamsys::instance::get_compute_queue().wait();
 
     NamedStackEntry stack_loc2{"fill cache"};
 
-    //logger::raw_ln(obj_cnt, pcache.cnt_neigh.size(),pcache.scanned_cnt.size(), pcache.index_neigh_map.size());
+    // logger::raw_ln(obj_cnt, pcache.cnt_neigh.size(),pcache.scanned_cnt.size(),
+    // pcache.index_neigh_map.size());
 
+    shamsys::instance::get_compute_queue()
+        .submit([&](sycl::handler &cgh) {
+            shamrock::tree::ObjectCacheIterator cell_looper(cache, cgh);
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        shamrock::tree::ObjectCacheIterator cell_looper(cache, cgh);
-        
-        sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
+            sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
 
-        sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
-        sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
+            sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
 
-        u8 wanted_lookup = lookup_value;
+            u8 wanted_lookup = lookup_value;
 
-        shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
-            u32 id_a = (u32)gid;
-            u32 cnt  = scanned_neigh_cnt[id_a];
+            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
+                u32 id_a = (u32) gid;
+                u32 cnt  = scanned_neigh_cnt[id_a];
 
-            //sycl::ext::oneapi::experimental::printf("%d %d\n", id_a,cnt);
+                // sycl::ext::oneapi::experimental::printf("%d %d\n", id_a,cnt);
 
-            cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u32 id_list) {
-                bool lookup_match = normals_lookup[id_list] == wanted_lookup;
-                if (lookup_match) {
-                    //sycl::ext::oneapi::experimental::printf("%d %d %d %d\n", id_a,cnt,id_b,id_list);
-                    neigh[cnt] = id_b;
-                    cnt ++;
-                }
+                cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u32 id_list) {
+                    bool lookup_match = normals_lookup[id_list] == wanted_lookup;
+                    if (lookup_match) {
+                        // sycl::ext::oneapi::experimental::printf("%d %d %d %d\n",
+                        // id_a,cnt,id_b,id_list);
+                        neigh[cnt] = id_b;
+                        cnt++;
+                    }
+                });
             });
-        });
-    }).wait();
+        })
+        .wait();
 
-    logger::debug_sycl_ln("AMR::FaceFlagger", "lookup :",lookup_value, "found N =",pcache.sum_neigh_cnt);
+    logger::debug_sycl_ln(
+        "AMR::FaceFlagger", "lookup :", lookup_value, "found N =", pcache.sum_neigh_cnt);
 
     return pcache;
 }

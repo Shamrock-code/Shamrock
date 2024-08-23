@@ -69,18 +69,18 @@ namespace sham::details {
         usm_ptr_hold.free_ptr();
     }
 
-    template USMPtrHolder<device> create_usm_ptr<device>(u32 size, std::shared_ptr<DeviceScheduler> dev_sched);
-    template USMPtrHolder<shared> create_usm_ptr<shared>(u32 size, std::shared_ptr<DeviceScheduler> dev_sched);
-    template USMPtrHolder<host> create_usm_ptr<host>(u32 size, std::shared_ptr<DeviceScheduler> dev_sched);
+    template USMPtrHolder<device>
+    create_usm_ptr<device>(u32 size, std::shared_ptr<DeviceScheduler> dev_sched);
+    template USMPtrHolder<shared>
+    create_usm_ptr<shared>(u32 size, std::shared_ptr<DeviceScheduler> dev_sched);
+    template USMPtrHolder<host>
+    create_usm_ptr<host>(u32 size, std::shared_ptr<DeviceScheduler> dev_sched);
 
-    template 
-    void
-    release_usm_ptr<device>(USMPtrHolder<device> &&usm_ptr_hold, details::BufferEventHandler &&events);
-    template 
-    void
-    release_usm_ptr<shared>(USMPtrHolder<shared> &&usm_ptr_hold, details::BufferEventHandler &&events);
-    template 
-    void
+    template void release_usm_ptr<device>(
+        USMPtrHolder<device> &&usm_ptr_hold, details::BufferEventHandler &&events);
+    template void release_usm_ptr<shared>(
+        USMPtrHolder<shared> &&usm_ptr_hold, details::BufferEventHandler &&events);
+    template void
     release_usm_ptr<host>(USMPtrHolder<host> &&usm_ptr_hold, details::BufferEventHandler &&events);
 
 } // namespace sham::details

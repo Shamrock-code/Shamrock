@@ -11,10 +11,10 @@
 /**
  * @file algorithm.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include <shamalgs/details/algorithm/algorithm.hpp>
 
 namespace shamalgs {

@@ -13,10 +13,10 @@
  */
 
 #include "shambase/string.hpp"
-#include "texTestReport.hpp"
 #include "shambackends/sycl.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
+#include "texTestReport.hpp"
 #include "version.hpp"
 #include <algorithm>
 #include <sstream>

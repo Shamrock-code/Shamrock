@@ -14,12 +14,12 @@
  * @brief
  */
 
+#include "shambackends/vec.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammath/CoordRangeTransform.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoord.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shambackends/vec.hpp"
 
 namespace shamrock::patch {
 
@@ -32,8 +32,7 @@ namespace shamrock::patch {
 
         public:
         inline PatchCoordTransform(
-            shammath::CoordRange<u64_3> patch_range, shammath::CoordRange<Tcoord> obj_range
-        )
+            shammath::CoordRange<u64_3> patch_range, shammath::CoordRange<Tcoord> obj_range)
             : transform(patch_range, obj_range) {}
 
         inline shammath::CoordRange<Tcoord> to_obj_coord(shammath::CoordRange<u64_3> p) const {

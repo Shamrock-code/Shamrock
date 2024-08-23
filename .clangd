@@ -1,9 +1,9 @@
 CompileFlags:
-  Remove: [ 
-      -fsycl, 
-      -fsycl-targets=*, 
-      --hipsycl-targets=*, 
-      --hipsycl-platform=*, 
+  Remove: [
+      -fsycl,
+      -fsycl-targets=*,
+      --hipsycl-targets=*,
+      --hipsycl-platform=*,
       --hipsycl-config-file=*,
       --hipsycl-cpu-cxx=*,
       --acpp-targets=*

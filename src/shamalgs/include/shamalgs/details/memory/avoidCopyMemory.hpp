@@ -11,23 +11,18 @@
 /**
  * @file avoidCopyMemory.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/sycl.hpp"
 
 namespace shamalgs::memory::details {
 
     template<class T>
-    struct AvoidCopy{
+    struct AvoidCopy {
 
         static T extract_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx);
-
     };
-    
 
-    
-
-
-}
+} // namespace shamalgs::memory::details

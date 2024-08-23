@@ -6,12 +6,11 @@
 //
 // -------------------------------------------------------//
 
+#include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 #include <memory>
 #include <vector>
-
-#include "shamtest/PyScriptHandle.hpp"
 
 TestStart(Unittest, "shamtest/PyScriptHandle(plot)", shamtestpyscriptplot, 1) {
 
@@ -34,34 +33,26 @@ TestStart(Unittest, "shamtest/PyScriptHandle(run)", shamtestpyscriptrun, 1) {
 
     PyScriptHandle hdnl{};
 
-    shamtest::asserts().assert_bool("succesfull", 
-        hdnl.exec(R"(
+    shamtest::asserts().assert_bool("succesfull", hdnl.exec(R"(
             a=0
-        )")
-    );
-
+        )"));
 }
 
 TestStart(Unittest, "shamtest/PyScriptHandle(run)", shamtestpyscriptrunfail, 1) {
 
     PyScriptHandle hdnl{};
 
-    
-    shamtest::asserts().assert_bool("fail", 
-        !hdnl.exec(R"(
+    shamtest::asserts().assert_bool("fail", !hdnl.exec(R"(
             a=b
-        )")
-    );
+        )"));
 }
 
 TestStart(Unittest, "shamtest/PyScriptHandle(shamrock)", shamtestpyscriptrunshamrockmodule, 1) {
 
     PyScriptHandle hdnl{};
 
-    shamtest::asserts().assert_bool("success", 
-        hdnl.exec(R"(
+    shamtest::asserts().assert_bool("success", hdnl.exec(R"(
             import shamrock
-            
-        )")
-    );
+
+        )"));
 }

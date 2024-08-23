@@ -96,7 +96,7 @@ i_dump = 0
 while t_sum < t_target:
 
     print("step : t=",t_sum)
-    
+
     next_dt = model.evolve(current_dt, True, "dump_"+str(i_dump)+".vtk", True)
 
     if i % 1 == 0:

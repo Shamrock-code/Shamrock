@@ -1,6 +1,6 @@
 import shamrock
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import os
 
 
@@ -31,7 +31,7 @@ def write_dic_to_vtk(dic,filename):
     for k in dic.keys():
 
         if not (k == "xyz"):
-            
+
             if type(dic[k][0]) == list:
 
                 vect = vtk.vtkDoubleArray()
@@ -147,7 +147,7 @@ def print_dist(dic, cname : str,fname : str,tval):
     plt.legend()
     plt.savefig(fname)
 
-    
+
 
 
 

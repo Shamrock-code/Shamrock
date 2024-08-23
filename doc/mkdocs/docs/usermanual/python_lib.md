@@ -6,7 +6,7 @@ This can be done in 3 steps:
 
 - Activate a python virtual environment
 - Create a Shamrock environment with the flag `--pylib`
-- In the environment build directory run `` 
+- In the environment build directory run ``
 
 For exemple the following should work:
 ```bash

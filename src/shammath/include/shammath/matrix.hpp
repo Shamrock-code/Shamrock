@@ -11,10 +11,10 @@
 /**
  * @file matrix.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/sycl.hpp"
 #include <array>
 
@@ -38,12 +38,14 @@ namespace shammath {
         T a12 = mat[1].z();
         T a22 = mat[2].z();
 
-        T det = (-a02 * a11 * a20 + a01 * a12 * a20 + a02 * a10 * a21 - a00 * a12 * a21 -
-                 a01 * a10 * a22 + a00 * a11 * a22);
+        T det
+            = (-a02 * a11 * a20 + a01 * a12 * a20 + a02 * a10 * a21 - a00 * a12 * a21
+               - a01 * a10 * a22 + a00 * a11 * a22);
 
-        return {(vec{-a12 * a21 + a11 * a22, a02 * a21 - a01 * a22, -a02 * a11 + a01 * a12} / det),
-                (vec{a12 * a20 - a10 * a22, -a02 * a20 + a00 * a22, a02 * a10 - a00 * a12} / det),
-                (vec{-a11 * a20 + a10 * a21, a01 * a20 - a00 * a21, -a01 * a10 + a00 * a11} / det)};
+        return {
+            (vec{-a12 * a21 + a11 * a22, a02 * a21 - a01 * a22, -a02 * a11 + a01 * a12} / det),
+            (vec{a12 * a20 - a10 * a22, -a02 * a20 + a00 * a22, a02 * a10 - a00 * a12} / det),
+            (vec{-a11 * a20 + a10 * a21, a01 * a20 - a00 * a21, -a01 * a10 + a00 * a11} / det)};
     }
 
     template<class T>
@@ -77,15 +79,16 @@ namespace shammath {
         T b12 = mat_b[1].z();
         T b22 = mat_b[2].z();
 
-        return {vec{a00 * b00 + a01 * b10 + a02 * b20,
-                 a00 * b01 + a01 * b11 + a02 * b21,
-                 a00 * b02 + a01 * b12 + a02 * b22},
-                vec{a10 * b00 + a11 * b10 + a12 * b20,
-                 a10 * b01 + a11 * b11 + a12 * b21,
-                 a10 * b02 + a11 * b12 + a12 * b22},
-                vec{a20 * b00 + a21 * b10 + a22 * b20,
-                 a20 * b01 + a21 * b11 + a22 * b21,
-                 a20 * b02 + a21 * b12 + a22 * b22}};
+        return {
+            vec{a00 * b00 + a01 * b10 + a02 * b20,
+                a00 * b01 + a01 * b11 + a02 * b21,
+                a00 * b02 + a01 * b12 + a02 * b22},
+            vec{a10 * b00 + a11 * b10 + a12 * b20,
+                a10 * b01 + a11 * b11 + a12 * b21,
+                a10 * b02 + a11 * b12 + a12 * b22},
+            vec{a20 * b00 + a21 * b10 + a22 * b20,
+                a20 * b01 + a21 * b11 + a22 * b21,
+                a20 * b02 + a21 * b12 + a22 * b22}};
     }
 
 } // namespace shammath

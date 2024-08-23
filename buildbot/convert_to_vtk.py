@@ -21,8 +21,8 @@ def read_header_field(header_f,dic_res):
         obj_cntb = tmp_in[68:72]
 
         name = str(nb.decode('utf-8')).rstrip("\x00")
-        nvar = int.from_bytes(nvarb, "little") 
-        obj_cnt = int.from_bytes(obj_cntb, "little") 
+        nvar = int.from_bytes(nvarb, "little")
+        obj_cnt = int.from_bytes(obj_cntb, "little")
 
         dic_res.append({"name":name, "nvar":nvar, "obj_cnt":obj_cnt})
 
@@ -59,7 +59,7 @@ def get_plot_patchdata(filename):
     dic_fields = {
         "f32"    : [],
         "f32_2"  : [],
-        "f32_3"  : [],    
+        "f32_3"  : [],
         "f32_4"  : [],
         "f32_8"  : [],
         "f32_16" : [],
@@ -303,7 +303,7 @@ for idx in range(170,1000):
     tval, = struct.unpack("d",f.read(8))
     f.close()
 
-    
+
     dic = {}
 
     for fname in file_list:
@@ -322,7 +322,7 @@ for idx in range(170,1000):
 
     #lst.append({"timestep" : tval, "file" : "step"+str(idx)+'.vtu'})
 exit()
-    
+
 import glob
 for idx in range(1,1000):
 
@@ -337,7 +337,7 @@ for idx in range(1,1000):
     tval, = struct.unpack("d",f.read(8))
     f.close()
 
-    
+
     dic = {}
 
     for fname in file_list:
@@ -371,7 +371,7 @@ for idx in range(1,1000):
     tval, = struct.unpack("d",f.read(8))
     f.close()
 
-    
+
     dic = {}
 
     for fname in file_list:
@@ -402,7 +402,7 @@ for idx in range(1,1000):
     tval, = struct.unpack("d",f.read(8))
     f.close()
 
-    
+
     dic = {}
 
     for fname in file_list:

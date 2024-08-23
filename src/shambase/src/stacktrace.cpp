@@ -39,13 +39,13 @@ namespace shambase::details {
         if (is_start) {
             return shambase::format_printf(
                 R"({
-                "cat": "%s",  
-                "pid": %d,  
-                "tid": %d, 
-                "ts": %zu, 
-                "ph": "B", 
-                "name": "%s", 
-                "args": { 
+                "cat": "%s",
+                "pid": %d,
+                "tid": %d,
+                "ts": %zu,
+                "ph": "B",
+                "name": "%s",
+                "args": {
                 }
             })",
                 name.c_str(),
@@ -57,13 +57,13 @@ namespace shambase::details {
         } else {
             return shambase::format_printf(
                 R"({
-                "cat": "%s",  
-                "pid": %d,  
-                "tid": %d, 
-                "ts": %zu, 
-                "ph": "E", 
-                "name": "%s", 
-                "args": { 
+                "cat": "%s",
+                "pid": %d,
+                "tid": %d,
+                "ts": %zu,
+                "ph": "E",
+                "name": "%s",
+                "args": {
                 }
             })",
                 name.c_str(),

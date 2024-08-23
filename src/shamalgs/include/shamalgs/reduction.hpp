@@ -11,10 +11,10 @@
 /**
  * @file reduction.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include <shamalgs/details/reduction/reduction.hpp>
 
 namespace shamalgs {

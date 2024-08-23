@@ -6,17 +6,15 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/memory.hpp"
 #include "shambase/time.hpp"
-#include "shamrock/legacy/patch/base/patchdata.hpp"
-
-#include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamtest/shamtest.hpp"
-
-#include "shamalgs/random.hpp"
-#include "shamrock/tree/RadixTree.hpp"
-#include <vector>
 #include "TreeTests.hpp"
+#include "shamalgs/memory.hpp"
+#include "shamalgs/random.hpp"
+#include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/tree/RadixTree.hpp"
+#include "shamtest/shamtest.hpp"
+#include <vector>
 
 #if false
 
@@ -42,7 +40,7 @@ Test_start("radix_tree",test_new_pfield_compute,1){
     PatchData pdat(pdl);
     pdat.resize(npart);
 
-    
+
 
     {
         auto & pos_part = pdat.get_field<vec>(id_xyz).get_buf();
@@ -57,13 +55,13 @@ Test_start("radix_tree",test_new_pfield_compute,1){
         }
     }
 
-    
+
     constexpr u32 reduc_level = 5;
 
     auto rtree = Radix_Tree<morton_mode, vec>(
-            shamsys::instance::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(),
             {vec{-1,-1,-1},vec{1,1,1}},
-            pdat.get_field<vec>(id_xyz).get_buf(), 
+            pdat.get_field<vec>(id_xyz).get_buf(),
             npart , reduc_level
         );
 
@@ -73,7 +71,7 @@ Test_start("radix_tree",test_new_pfield_compute,1){
     flt h_tol = 1.2;
 
     auto h_max = rtree.compute_field<flt>(
-        shamsys::instance::get_compute_queue(), 
+        shamsys::instance::get_compute_queue(),
         1,
         [&](sycl::handler &cgh,auto && node_looper){
 
@@ -103,7 +101,7 @@ Test_start("radix_tree",test_new_pfield_compute,1){
     );
 
 
-    
+
 
 
     auto compute_old = [&]() -> auto {
@@ -208,7 +206,7 @@ constexpr auto list_npart_test = {1.14975700e+02,
        2.36448941e+06, 2.78255940e+06, 3.27454916e+06, 3.85352859e+06,
        4.53487851e+06, 5.33669923e+06, 6.28029144e+06, 7.39072203e+06,
        8.69749003e+06, 1.02353102e+07};
-       
+
        //, 1.20450354e+07, 1.41747416e+07,
        //1.66810054e+07, 1.96304065e+07, 2.31012970e+07, 2.71858824e+07,
        //3.19926714e+07, 3.76493581e+07, 4.43062146e+07, 5.21400829e+07,
@@ -238,7 +236,7 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
         PatchData pdat(pdl);
         pdat.resize(npart);
 
-        
+
 
         {
             auto & pos_part = pdat.get_field<vec>(id_xyz).get_buf();
@@ -253,12 +251,12 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
             }
         }
 
-        
+
 
         auto rtree = Radix_Tree<morton_mode, vec>(
-                shamsys::instance::get_compute_queue(), 
+                shamsys::instance::get_compute_queue(),
                 {vec{-1,-1,-1},vec{1,1,1}},
-                pdat.get_field<vec>(id_xyz).get_buf(), 
+                pdat.get_field<vec>(id_xyz).get_buf(),
                 npart , reduc_level
             );
 
@@ -272,7 +270,7 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
         Timer timer; timer.start();
 
         auto h_max = rtree.compute_field<flt>(
-            shamsys::instance::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(),
             1,
             [&](sycl::handler &cgh,auto && node_looper){
 
@@ -319,7 +317,7 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
         }
 
     }
-    
+
 
 }
 
@@ -363,13 +361,13 @@ void test_tree_comm(TestResults &__test_result_ref){
         }
     }
 
-    
+
     constexpr u32 reduc_level = 5;
 
     auto rtree = Radix_Tree<morton_mode, vec>(
-            shamsys::instance::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(),
             {vec{-1,-1,-1},vec{1,1,1}},
-            pdat.get_field<vec>(id_xyz).get_buf(), 
+            pdat.get_field<vec>(id_xyz).get_buf(),
             npart , reduc_level
         );
 
@@ -425,7 +423,7 @@ void test_tree_comm(TestResults &__test_result_ref){
 
 Test_start("radix_tree", tree_comm, 2){
 
-    test_tree_comm<f32,u32>(__test_result_ref); 
+    test_tree_comm<f32,u32>(__test_result_ref);
 
 }
 
@@ -457,7 +455,7 @@ Test_start("radix_tree", tree_cut, 1){
     PatchData pdat(pdl);
     pdat.resize(npart);
 
-    
+
 
     {
         auto & pos_part = pdat.get_field<vec>(id_xyz).get_buf();
@@ -472,9 +470,9 @@ Test_start("radix_tree", tree_cut, 1){
     constexpr u32 reduc_level = 5;
 
     auto rtree = Radix_Tree<morton_mode, vec>(
-            shamsys::instance::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(),
             {vec{-1,-1,-1},vec{1,1,1}},
-            pdat.get_field<vec>(id_xyz).get_buf(), 
+            pdat.get_field<vec>(id_xyz).get_buf(),
             npart ,reduc_level
         );
 
@@ -515,7 +513,7 @@ Test_start("radix_tree", tree_cut, 1){
     logger::debug_sycl_ln("Radixtree", "computing valid node buf");
 
     auto init_valid_buf = [&]() -> sycl::buffer<u8> {
-        
+
         sycl::buffer<u8> valid_node = sycl::buffer<u8>(total_count);
 
         sycl::range<1> range_tree{total_count};
@@ -538,7 +536,7 @@ Test_start("radix_tree", tree_cut, 1){
     };
 
 
-    
+
     std::unique_ptr<sycl::buffer<u8>> valid_buf = std::make_unique<sycl::buffer<u8>>(init_valid_buf());
 
     auto cut = rtree.cut_tree(shamsys::instance::get_compute_queue(), *valid_buf);
@@ -571,9 +569,9 @@ Test_start("radix_tree", treeleveljump_cell_range_test, 1){
 
 
     auto rtree = Radix_Tree<morton_mode, vec>(
-            shamsys::instance::get_compute_queue(), 
+            shamsys::instance::get_compute_queue(),
             {vec{0,0,0},vec{1,1,1}},
-            xyz, 
+            xyz,
             4 ,0
         );
 
@@ -593,23 +591,21 @@ Test_start("radix_tree", treeleveljump_cell_range_test, 1){
 
 #endif
 
-
 template<class u_morton, class flt>
 void test_inclusion(u32 Npart, u32 reduc_level) {
     using vec = sycl::vec<flt, 3>;
 
     auto coord_range = get_test_coord_ranges<vec>();
 
-    auto pos =
-        shamalgs::random::mock_buffer_ptr<vec>(0x111, Npart, coord_range.lower, coord_range.upper);
+    auto pos = shamalgs::random::mock_buffer_ptr<vec>(
+        0x111, Npart, coord_range.lower, coord_range.upper);
 
     RadixTree<u_morton, vec> rtree = RadixTree<u_morton, vec>(
         shamsys::instance::get_compute_queue(),
         {coord_range.lower, coord_range.upper},
         pos,
         Npart,
-        reduc_level
-    );
+        reduc_level);
 
     rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
 
@@ -618,8 +614,10 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
     std::string comment;
 
     {
-        sycl::host_accessor tree_acc_pos_min_cell{*rtree.tree_cell_ranges.buf_pos_min_cell, sycl::read_only};
-        sycl::host_accessor tree_acc_pos_max_cell{*rtree.tree_cell_ranges.buf_pos_max_cell, sycl::read_only};
+        sycl::host_accessor tree_acc_pos_min_cell{
+            *rtree.tree_cell_ranges.buf_pos_min_cell, sycl::read_only};
+        sycl::host_accessor tree_acc_pos_max_cell{
+            *rtree.tree_cell_ranges.buf_pos_max_cell, sycl::read_only};
         u32 tree_leaf_offset = rtree.tree_struct.internal_cell_count;
         sycl::host_accessor tree_lchild_id{*rtree.tree_struct.buf_lchild_id, sycl::read_only};
         sycl::host_accessor tree_rchild_id{*rtree.tree_struct.buf_rchild_id, sycl::read_only};
@@ -631,21 +629,21 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
             auto cur_pos_max_cell_a = tree_acc_pos_max_cell[i];
 
             auto inclusion_crit = [&](auto other_min, auto other_max) -> bool {
-                return (cur_pos_min_cell_a.x() <= other_min.x()) &&
-                       (cur_pos_min_cell_a.y() <= other_min.y()) &&
-                       (cur_pos_min_cell_a.z() <= other_min.z()) &&
-                       (cur_pos_max_cell_a.x() >= other_max.x()) &&
-                       (cur_pos_max_cell_a.y() >= other_max.y()) &&
-                       (cur_pos_max_cell_a.z() >= other_max.z());
+                return (cur_pos_min_cell_a.x() <= other_min.x())
+                       && (cur_pos_min_cell_a.y() <= other_min.y())
+                       && (cur_pos_min_cell_a.z() <= other_min.z())
+                       && (cur_pos_max_cell_a.x() >= other_max.x())
+                       && (cur_pos_max_cell_a.y() >= other_max.y())
+                       && (cur_pos_max_cell_a.z() >= other_max.z());
             };
 
             u32 lid = tree_lchild_id[i] + tree_leaf_offset * tree_lchild_flag[i];
             u32 rid = tree_rchild_id[i] + tree_leaf_offset * tree_rchild_flag[i];
 
-            //because the rid is volontarly modified in one cell mode
-            //if(rtree.tree_struct.one_cell_mode){
-            //    rid = 2;
-            //}
+            // because the rid is volontarly modified in one cell mode
+            // if(rtree.tree_struct.one_cell_mode){
+            //     rid = 2;
+            // }
 
             auto cur_pos_min_cell_bl = tree_acc_pos_min_cell[lid];
             auto cur_pos_max_cell_bl = tree_acc_pos_max_cell[lid];
@@ -665,8 +663,9 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
                     cur_pos_min_cell_bl,
                     cur_pos_max_cell_bl,
                     cur_pos_min_cell_br,
-                    cur_pos_max_cell_br,lid,rid
-                );
+                    cur_pos_max_cell_br,
+                    lid,
+                    rid);
             }
         }
     }
@@ -677,18 +676,16 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
         shamtest::asserts().assert_add_comment(
             "inclusion ok",
             false,
-            comment + shambase::format(
-                          "\n leaf count : {}, internal count : {}",
-                          rtree.tree_reduced_morton_codes.tree_leaf_count,
-                          rtree.tree_struct.internal_cell_count
-                      )
-        );
+            comment
+                + shambase::format(
+                    "\n leaf count : {}, internal count : {}",
+                    rtree.tree_reduced_morton_codes.tree_leaf_count,
+                    rtree.tree_struct.internal_cell_count));
     }
 }
 
 TestStart(
-    Unittest, "shamrock/tree/RadixTree:bounding_volume_inclusion", bounding_volume_inclusion, 1
-) {
+    Unittest, "shamrock/tree/RadixTree:bounding_volume_inclusion", bounding_volume_inclusion, 1) {
     test_inclusion<u32, f32>(1000, 0);
     test_inclusion<u64, f32>(1000, 0);
     test_inclusion<u32, f64>(1000, 0);
@@ -708,8 +705,6 @@ TestStart(
     // test_inclusion<u64, u32>(10,10);
 }
 
-
-
 template<class morton_mode, class flt, u32 reduc_lev>
 inline void test_tree(std::string dset_name) {
 
@@ -721,13 +716,10 @@ inline void test_tree(std::string dset_name) {
 
     auto coord_range = get_test_coord_ranges<vec>();
 
-    auto pos =
-        shamalgs::random::mock_buffer_ptr<vec>(0x111, Nmax, coord_range.lower, coord_range.upper);
+    auto pos
+        = shamalgs::random::mock_buffer_ptr<vec>(0x111, Nmax, coord_range.lower, coord_range.upper);
 
-
-    shamalgs::memory::move_buffer_on_queue(
-        shamsys::instance::get_compute_queue(), 
-        *pos);
+    shamalgs::memory::move_buffer_on_queue(shamsys::instance::get_compute_queue(), *pos);
 
     std::vector<f64> times;
     std::vector<f64> Npart;
@@ -743,8 +735,7 @@ inline void test_tree(std::string dset_name) {
             {coord_range.lower, coord_range.upper},
             pos,
             cnt,
-            reduc_lev
-        );
+            reduc_lev);
 
         rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
         rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
@@ -777,9 +768,11 @@ TestStart(Benchmark, "shamrock/tree/RadixTree:build:benchmark", morton_tree_buil
     test_tree<u64, f64, 2>("u64, f64, 2");
 }
 
-
-
-TestStart(Benchmark, "article_shamrock1:shamrock/tree/RadixTree:build:benchmark", morton_tree_build_article1, 1) {
+TestStart(
+    Benchmark,
+    "article_shamrock1:shamrock/tree/RadixTree:build:benchmark",
+    morton_tree_build_article1,
+    1) {
     test_tree<u32, f32, 0>("morton = u32, field type = f32");
     test_tree<u64, f32, 0>("morton = u64, field type = f32");
     test_tree<u32, f64, 0>("morton = u32, field type = f64");

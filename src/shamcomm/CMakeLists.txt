@@ -28,4 +28,3 @@ target_link_libraries(shamcomm PUBLIC MPI::MPI_C)
 target_include_directories(shamcomm PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
-

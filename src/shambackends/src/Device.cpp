@@ -15,7 +15,6 @@
 
 #include "shambackends/Device.hpp"
 #include "shambase/string.hpp"
-
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiInfo.hpp"
 
@@ -95,15 +94,15 @@ namespace sham {
         FETCH_PROP(max_mem_alloc_size, uint64_t)
 
         // Image a really second class objects in SYCL right now ...
-        //FETCH_PROP(max_read_image_args, uint32_t)
-        //FETCH_PROP(max_write_image_args, uint32_t)
-        //FETCH_PROP(image2d_max_width, size_t)
-        //FETCH_PROP(image2d_max_height, size_t)
-        //FETCH_PROP(image3d_max_width, size_t)
-        //FETCH_PROP(image3d_max_height, size_t)
-        //FETCH_PROP(image3d_max_depth, size_t)
-        //FETCH_PROP(image_max_buffer_size, size_t)
-        //FETCH_PROP(max_samplers, uint32_t)
+        // FETCH_PROP(max_read_image_args, uint32_t)
+        // FETCH_PROP(max_write_image_args, uint32_t)
+        // FETCH_PROP(image2d_max_width, size_t)
+        // FETCH_PROP(image2d_max_height, size_t)
+        // FETCH_PROP(image3d_max_width, size_t)
+        // FETCH_PROP(image3d_max_height, size_t)
+        // FETCH_PROP(image3d_max_depth, size_t)
+        // FETCH_PROP(image_max_buffer_size, size_t)
+        // FETCH_PROP(max_samplers, uint32_t)
 
         FETCH_PROP(max_parameter_size, size_t)
         FETCH_PROP(mem_base_addr_align, uint32_t)
@@ -126,9 +125,9 @@ namespace sham {
         FETCH_PROP(profiling_timer_resolution, size_t)
         FETCH_PROP(is_available, bool)
         FETCH_PROP(execution_capabilities, std::vector<sycl::info::execution_capability>)
-        //FETCH_PROP(built_in_kernel_ids,std::vector<sycl::kernel_id>)
-        //FETCH_PROP(built_in_kernels, std::vector<std::string>)
-        //FETCH_PROP(platform, sycl::platform)
+        // FETCH_PROP(built_in_kernel_ids,std::vector<sycl::kernel_id>)
+        // FETCH_PROP(built_in_kernels, std::vector<std::string>)
+        // FETCH_PROP(platform, sycl::platform)
         FETCH_PROP(name, std::string)
         FETCH_PROP(vendor, std::string)
 
@@ -137,10 +136,10 @@ namespace sham {
 #ifdef SYCL_COMP_INTEL_LLVM
         FETCH_PROP(backend_version, std::string)
 #endif
-        //FETCH_PROP(aspects, std::vector<sycl::aspect>)
-        //FETCH_PROP(printf_buffer_size, size_t)
+        // FETCH_PROP(aspects, std::vector<sycl::aspect>)
+        // FETCH_PROP(printf_buffer_size, size_t)
 #ifdef SYCL_COMP_INTEL_LLVM
-        //FETCH_PROP(parent_device, device)
+        // FETCH_PROP(parent_device, device)
 #endif
         FETCH_PROP(partition_max_sub_devices, uint32_t)
         FETCH_PROP(partition_properties, std::vector<sycl::info::partition_property>)
@@ -272,7 +271,7 @@ namespace sham {
         logger::raw_ln(
             "   - Cache size      :", shambase::readable_sizeof(prop.global_mem_cache_size));
         logger::raw_ln("   - Local mem size  :", shambase::readable_sizeof(prop.local_mem_size));
-        logger::raw_ln("   - Direct MPI capable :",mpi_prop.is_mpi_direct_capable);
+        logger::raw_ln("   - Direct MPI capable :", mpi_prop.is_mpi_direct_capable);
     }
 
 } // namespace sham

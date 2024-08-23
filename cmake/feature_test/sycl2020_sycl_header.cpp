@@ -1,2 +1,2 @@
 #include <sycl/sycl.hpp>
-int main(void){}
+int main(void) {}

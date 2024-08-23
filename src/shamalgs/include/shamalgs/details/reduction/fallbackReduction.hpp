@@ -11,37 +11,36 @@
 /**
  * @file fallbackReduction.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 
 namespace shamalgs::reduction::details {
 
     template<class T>
-    struct FallbackReduction{
+    struct FallbackReduction {
 
         static T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
         static T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
         static T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
-
     };
 
     template<class T>
-    inline T _int_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T _int_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
         T accum;
 
         {
-            sycl::host_accessor acc {buf1, sycl::read_only};
+            sycl::host_accessor acc{buf1, sycl::read_only};
 
-            for(u32 idx = start_id; idx < end_id; idx ++){
-                if(idx == start_id){
+            for (u32 idx = start_id; idx < end_id; idx++) {
+                if (idx == start_id) {
                     accum = acc[idx];
-                }else{
+                } else {
                     accum += acc[idx];
                 }
             }
@@ -51,16 +50,16 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T>
-    inline T _int_min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T _int_min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
         T accum;
 
         {
-            sycl::host_accessor acc {buf1, sycl::read_only};
+            sycl::host_accessor acc{buf1, sycl::read_only};
 
-            for(u32 idx = start_id; idx < end_id; idx ++){
-                if(idx == start_id){
+            for (u32 idx = start_id; idx < end_id; idx++) {
+                if (idx == start_id) {
                     accum = acc[idx];
-                }else{
+                } else {
                     accum = sham::min(acc[idx], accum);
                 }
             }
@@ -70,16 +69,16 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T>
-    inline T _int_max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
+    inline T _int_max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
         T accum;
 
         {
-            sycl::host_accessor acc {buf1, sycl::read_only};
+            sycl::host_accessor acc{buf1, sycl::read_only};
 
-            for(u32 idx = start_id; idx < end_id; idx ++){
-                if(idx == start_id){
+            for (u32 idx = start_id; idx < end_id; idx++) {
+                if (idx == start_id) {
                     accum = acc[idx];
-                }else{
+                } else {
                     accum = sham::max(acc[idx], accum);
                 }
             }
@@ -88,30 +87,25 @@ namespace shamalgs::reduction::details {
         return accum;
     }
 
-
-
-
-
-    
     template<class T>
-    inline T FallbackReduction<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        
+    inline T
+    FallbackReduction<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+
         return _int_sum(q, buf1, start_id, end_id);
-        
     }
 
     template<class T>
-    inline T FallbackReduction<T>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        
+    inline T
+    FallbackReduction<T>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+
         return _int_min(q, buf1, start_id, end_id);
-        
     }
 
     template<class T>
-    inline T FallbackReduction<T>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        
+    inline T
+    FallbackReduction<T>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+
         return _int_max(q, buf1, start_id, end_id);
-        
     }
 
 } // namespace shamalgs::reduction::details

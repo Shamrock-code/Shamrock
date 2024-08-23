@@ -13,9 +13,8 @@
  *
  */
 
-#include "shamalgs/details/algorithm/bitonicSort.hpp"
-
 #include "shambase/integer.hpp"
+#include "shamalgs/details/algorithm/bitonicSort.hpp"
 #include "shambackends/sycl_utils.hpp"
 
 // modified from http://www.bealto.com/gpu-sorting.html
@@ -62,7 +61,7 @@ namespace shamalgs::algorithm::details {
         template<>
         inline void
         order_stencil<4>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
-            #pragma unroll
+#pragma unroll
             for (int i4 = 0; i4 < 2; i4++) {
                 _orderV(x, vx, a + i4, a + i4 + 2, reverse);
             }
@@ -73,7 +72,7 @@ namespace shamalgs::algorithm::details {
         template<>
         inline void
         order_stencil<8>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
-            #pragma unroll
+#pragma unroll
             for (int i8 = 0; i8 < 4; i8++) {
                 _orderV(x, vx, a + i8, a + i8 + 4, reverse);
             }
@@ -84,7 +83,7 @@ namespace shamalgs::algorithm::details {
         template<>
         inline void
         order_stencil<16>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
-            #pragma unroll
+#pragma unroll
             for (int i16 = 0; i16 < 8; i16++) {
                 _orderV(x, vx, a + i16, a + i16 + 8, reverse);
             }
@@ -95,7 +94,7 @@ namespace shamalgs::algorithm::details {
         template<>
         inline void
         order_stencil<32>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
-            #pragma unroll
+#pragma unroll
             for (int i32 = 0; i32 < 16; i32++) {
                 _orderV(x, vx, a + i32, a + i32 + 16, reverse);
             }
@@ -120,23 +119,23 @@ namespace shamalgs::algorithm::details {
 
             // Load
             Tkey x[32];
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k < 32; k++)
                 x[k] = m[k * _inc + i];
 
             uint idx[32];
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k < 32; k++)
                 idx[k] = id[k * _inc + i];
 
             // Sort
             order_stencil<32>(x, idx, 0, reverse);
 
-            // Store
-            #pragma unroll
+// Store
+#pragma unroll
             for (int k = 0; k < 32; k++)
                 m[k * _inc + i] = x[k];
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k < 32; k++)
                 id[k * _inc + i] = idx[k];
         }
@@ -155,23 +154,23 @@ namespace shamalgs::algorithm::details {
 
             // Load
             Tkey x[16];
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k < 16; k++)
                 x[k] = m[k * _inc + i];
 
             Tval idx[16];
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k < 16; k++)
                 idx[k] = id[k * _inc + i];
 
             // Sort
             order_stencil<16>(x, idx, 0, reverse);
 
-            // Store
-            #pragma unroll
+// Store
+#pragma unroll
             for (int k = 0; k < 16; k++)
                 m[k * _inc + i] = x[k];
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k < 16; k++)
                 id[k * _inc + i] = idx[k];
         }
@@ -189,23 +188,23 @@ namespace shamalgs::algorithm::details {
 
             // Load
             Tkey x[8];
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k < 8; k++)
                 x[k] = m[k * _inc + i];
 
             Tval idx[8];
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k < 8; k++)
                 idx[k] = id[k * _inc + i];
 
             // Sort
             order_stencil<8>(x, idx, 0, reverse);
 
-            // Store
-            #pragma unroll
+// Store
+#pragma unroll
             for (int k = 0; k < 8; k++)
                 m[k * _inc + i] = x[k];
-            #pragma unroll
+#pragma unroll
             for (int k = 0; k < 8; k++)
                 id[k * _inc + i] = idx[k];
         }

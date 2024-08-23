@@ -11,5 +11,3 @@ set(coverage_flags "-fprofile-instr-generate -fcoverage-mapping")
 
 set(CMAKE_C_FLAGS_COVERAGE "${coverage_flags}")
 set(CMAKE_CXX_FLAGS_COVERAGE "${coverage_flags}")
-
-

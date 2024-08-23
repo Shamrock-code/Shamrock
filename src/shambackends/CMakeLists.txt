@@ -31,4 +31,3 @@ target_link_libraries(shambackends PUBLIC shamcomm)
 target_include_directories(shambackends PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
-

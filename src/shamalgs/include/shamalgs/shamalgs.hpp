@@ -6,7 +6,6 @@
 //
 // -------------------------------------------------------//
 
-
 #pragma once
 
 /**
@@ -16,13 +15,13 @@
  * \todo remove and use a dox file instead
  */
 
-#include "numeric.hpp"
 #include "algorithm.hpp"
 #include "memory.hpp"
+#include "numeric.hpp"
 #include "random.hpp"
 
 /**
  * @brief namespace to contain everything implemented by shamalgs
- * 
+ *
  */
 namespace shamalgs {}

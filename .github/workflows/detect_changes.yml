@@ -25,14 +25,13 @@ jobs:
         id: changes
         with:
           filters: |
-            ci: 
+            ci:
               - '.github/workflows/**'
             doc:
               - 'doc/**'
-            src: 
+            src:
               - 'src/**'
               - 'env/**'
               - 'external/**'
 
       - run: echo '${{ steps.changes.outputs.changes }}'
-     

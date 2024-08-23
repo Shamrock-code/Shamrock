@@ -112,7 +112,7 @@ namespace shamunits {
         explicit Constants(const UnitSystem<T> units) : units(units) {}
 
         // clang-format off
-        
+
         addconstant(delta_nu_cs) { return Cget(Si::delta_nu_cs,1) * Uget(Hertz, 1); }
         addconstant(c)           { return Cget(Si::c,1)   * Uget(m, 1)* Uget(s, -1); }
         addconstant(h)           { return Cget(Si::h,1)   * Uget(Joule, 1) * Uget(s, -1); }
@@ -121,7 +121,7 @@ namespace shamunits {
         addconstant(Na)          { return Cget(Si::Na,1)  * Uget(mole, -1); }
         addconstant(Kcd)         { return Cget(Si::Kcd,1) * Uget(lm, 1)    * Uget(Watt, -1); }
 
-        
+
         addconstant(year)         { return Cget(Si::year,1) * Uget(s,1) ; }
 
         addconstant(au)         { return Cget(Si::astronomical_unit,1) * Uget(s,1) ; }

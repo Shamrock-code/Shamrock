@@ -14,13 +14,12 @@
  * @brief
  */
 
-
+#include "shambase/exception.hpp"
 #include "kernels/karras_alg.hpp"
 #include "shamalgs/memory.hpp"
-#include "shamalgs/serialize.hpp"
 #include "shamalgs/reduction.hpp"
+#include "shamalgs/serialize.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shambase/exception.hpp"
 
 namespace shamrock::tree {
 
@@ -38,8 +37,8 @@ namespace shamrock::tree {
         std::unique_ptr<sycl::buffer<u32>> buf_endrange;   // size = internal
 
         bool is_built() {
-            return bool(buf_lchild_id) && bool(buf_rchild_id) && bool(buf_lchild_flag) &&
-                   bool(buf_rchild_flag) && bool(buf_endrange);
+            return bool(buf_lchild_id) && bool(buf_rchild_id) && bool(buf_lchild_flag)
+                   && bool(buf_rchild_flag) && bool(buf_endrange);
         }
 
         inline void
@@ -58,14 +57,15 @@ namespace shamrock::tree {
             buf_rchild_flag = std::make_unique<sycl::buffer<u8>>(internal_cell_count);
             buf_endrange    = std::make_unique<sycl::buffer<u32>>(internal_cell_count);
 
-            sycl_karras_alg(queue,
-                            internal_cell_count,
-                            morton_buf,
-                            *buf_lchild_id,
-                            *buf_rchild_id,
-                            *buf_lchild_flag,
-                            *buf_rchild_flag,
-                            *buf_endrange);
+            sycl_karras_alg(
+                queue,
+                internal_cell_count,
+                morton_buf,
+                *buf_lchild_id,
+                *buf_rchild_id,
+                *buf_lchild_flag,
+                *buf_rchild_flag,
+                *buf_endrange);
 
             one_cell_mode = false;
         }
@@ -106,11 +106,11 @@ namespace shamrock::tree {
                 }
             };
 
-            add_ptr(buf_lchild_id  );
-            add_ptr(buf_rchild_id  );
+            add_ptr(buf_lchild_id);
+            add_ptr(buf_rchild_id);
             add_ptr(buf_lchild_flag);
             add_ptr(buf_rchild_flag);
-            add_ptr(buf_endrange   );
+            add_ptr(buf_endrange);
 
             return sum;
         }
@@ -120,16 +120,36 @@ namespace shamrock::tree {
 
             cmp = cmp && (t1.internal_cell_count == t2.internal_cell_count);
 
-            cmp = cmp && shamalgs::reduction::equals(shamsys::instance::get_compute_queue(),
-                             *t1.buf_lchild_id, *t2.buf_lchild_id, t1.internal_cell_count);
-            cmp = cmp && shamalgs::reduction::equals(shamsys::instance::get_compute_queue(),
-                             *t1.buf_rchild_id, *t2.buf_rchild_id, t1.internal_cell_count);
-            cmp = cmp && shamalgs::reduction::equals(shamsys::instance::get_compute_queue(),
-                             *t1.buf_lchild_flag, *t2.buf_lchild_flag, t1.internal_cell_count);
-            cmp = cmp && shamalgs::reduction::equals(shamsys::instance::get_compute_queue(),
-                             *t1.buf_rchild_flag, *t2.buf_rchild_flag, t1.internal_cell_count);
-            cmp = cmp && shamalgs::reduction::equals(shamsys::instance::get_compute_queue(),
-                             *t1.buf_endrange, *t2.buf_endrange, t1.internal_cell_count);
+            cmp = cmp
+                  && shamalgs::reduction::equals(
+                      shamsys::instance::get_compute_queue(),
+                      *t1.buf_lchild_id,
+                      *t2.buf_lchild_id,
+                      t1.internal_cell_count);
+            cmp = cmp
+                  && shamalgs::reduction::equals(
+                      shamsys::instance::get_compute_queue(),
+                      *t1.buf_rchild_id,
+                      *t2.buf_rchild_id,
+                      t1.internal_cell_count);
+            cmp = cmp
+                  && shamalgs::reduction::equals(
+                      shamsys::instance::get_compute_queue(),
+                      *t1.buf_lchild_flag,
+                      *t2.buf_lchild_flag,
+                      t1.internal_cell_count);
+            cmp = cmp
+                  && shamalgs::reduction::equals(
+                      shamsys::instance::get_compute_queue(),
+                      *t1.buf_rchild_flag,
+                      *t2.buf_rchild_flag,
+                      t1.internal_cell_count);
+            cmp = cmp
+                  && shamalgs::reduction::equals(
+                      shamsys::instance::get_compute_queue(),
+                      *t1.buf_endrange,
+                      *t2.buf_endrange,
+                      t1.internal_cell_count);
             cmp = cmp && (t1.one_cell_mode == t2.one_cell_mode);
 
             return cmp;
@@ -139,34 +159,40 @@ namespace shamrock::tree {
 
         inline TreeStructure(const TreeStructure &other)
             : internal_cell_count(other.internal_cell_count), one_cell_mode(other.one_cell_mode),
-              buf_lchild_id(shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_lchild_id)), // size = internal
-              buf_rchild_id(shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_rchild_id)), // size = internal
-              buf_lchild_flag(
-                  shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_lchild_flag)), // size = internal
-              buf_rchild_flag(
-                  shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_rchild_flag)),      // size = internal
-              buf_endrange(shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_endrange)) // size = internal
+              buf_lchild_id(shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(), other.buf_lchild_id)), // size = internal
+              buf_rchild_id(shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(), other.buf_rchild_id)), // size = internal
+              buf_lchild_flag(shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_lchild_flag)), // size = internal
+              buf_rchild_flag(shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_rchild_flag)), // size = internal
+              buf_endrange(shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(), other.buf_endrange)) // size = internal
         {}
 
         inline TreeStructure &operator=(TreeStructure &&other) noexcept {
-            internal_cell_count     = std::move(other.internal_cell_count    );
-            one_cell_mode     = std::move(other.one_cell_mode    );
-            buf_lchild_id   = std::move(other.buf_lchild_id  );
-            buf_rchild_id   = std::move(other.buf_rchild_id  );
-            buf_lchild_flag = std::move(other.buf_lchild_flag);
-            buf_rchild_flag = std::move(other.buf_rchild_flag);
-            buf_endrange    = std::move(other.buf_endrange   );
+            internal_cell_count = std::move(other.internal_cell_count);
+            one_cell_mode       = std::move(other.one_cell_mode);
+            buf_lchild_id       = std::move(other.buf_lchild_id);
+            buf_rchild_id       = std::move(other.buf_rchild_id);
+            buf_lchild_flag     = std::move(other.buf_lchild_flag);
+            buf_rchild_flag     = std::move(other.buf_rchild_flag);
+            buf_endrange        = std::move(other.buf_endrange);
 
             return *this;
         } // move assignment
 
-        inline TreeStructure(u32 internal_cell_count,
-                             bool one_cell_mode,
-                             std::unique_ptr<sycl::buffer<u32>> &&buf_lchild_id,
-                             std::unique_ptr<sycl::buffer<u32>> &&buf_rchild_id,
-                             std::unique_ptr<sycl::buffer<u8>> &&buf_lchild_flag,
-                             std::unique_ptr<sycl::buffer<u8>> &&buf_rchild_flag,
-                             std::unique_ptr<sycl::buffer<u32>> &&buf_endrange)
+        inline TreeStructure(
+            u32 internal_cell_count,
+            bool one_cell_mode,
+            std::unique_ptr<sycl::buffer<u32>> &&buf_lchild_id,
+            std::unique_ptr<sycl::buffer<u32>> &&buf_rchild_id,
+            std::unique_ptr<sycl::buffer<u8>> &&buf_lchild_flag,
+            std::unique_ptr<sycl::buffer<u8>> &&buf_rchild_flag,
+            std::unique_ptr<sycl::buffer<u32>> &&buf_endrange)
             : internal_cell_count(internal_cell_count), one_cell_mode(one_cell_mode),
               buf_lchild_id(std::move(buf_lchild_id)), buf_rchild_id(std::move(buf_rchild_id)),
               buf_lchild_flag(std::move(buf_lchild_flag)),
@@ -187,12 +213,12 @@ namespace shamrock::tree {
 
             using H = shamalgs::SerializeHelper;
 
-            return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>() +
-                   H::serialize_byte_size<u32>(internal_cell_count) +
-                   H::serialize_byte_size<u32>(internal_cell_count) +
-                   H::serialize_byte_size<u8>(internal_cell_count) +
-                   H::serialize_byte_size<u8>(internal_cell_count) +
-                   H::serialize_byte_size<u32>(internal_cell_count);
+            return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>()
+                   + H::serialize_byte_size<u32>(internal_cell_count)
+                   + H::serialize_byte_size<u32>(internal_cell_count)
+                   + H::serialize_byte_size<u8>(internal_cell_count)
+                   + H::serialize_byte_size<u8>(internal_cell_count)
+                   + H::serialize_byte_size<u32>(internal_cell_count);
         }
 
         inline static TreeStructure deserialize(shamalgs::SerializeHelper &serializer) {

@@ -15,5 +15,5 @@
  *
  */
 
-#include "shambase/aliases_int.hpp"
 #include "shambase/aliases_float.hpp"
+#include "shambase/aliases_int.hpp"

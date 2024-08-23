@@ -13,9 +13,9 @@
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief This file contains the declaration of the memory handling and its methods.
  *
- * The memoryHandle class is used to allocate SYCL memory. It provides a way to safely allocate, use,
- * and deallocate memory in SYCL. This file should always be used to allocate SYCL memory, as it ensures
- * correct memory management (including memory pooling).
+ * The memoryHandle class is used to allocate SYCL memory. It provides a way to safely allocate,
+ * use, and deallocate memory in SYCL. This file should always be used to allocate SYCL memory, as
+ * it ensures correct memory management (including memory pooling).
  *
  * @section Usage
  *
@@ -35,11 +35,11 @@
  *
  * @section Implementation details
  *
- * The memoryHandle class uses the USMPtrHolder class to manage the memory. The USMPtrHolder class is a smart pointer that
- * manages the memory allocated using SYCL unified shared memory (USM). It provides a way to safely allocate, use,
- * and deallocate memory in USM.
+ * The memoryHandle class uses the USMPtrHolder class to manage the memory. The USMPtrHolder class
+ * is a smart pointer that manages the memory allocated using SYCL unified shared memory (USM). It
+ * provides a way to safely allocate, use, and deallocate memory in USM.
  */
- 
+
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
 

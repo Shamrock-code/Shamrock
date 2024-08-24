@@ -471,10 +471,22 @@ shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_compute_field(
     return out;
 }
 
-template class shammodels::zeus::modules::GhostZones<f64_3, i64_3>;
-template shamrock::ComputeField<f64_8>
-shammodels::zeus::modules::GhostZones<f64_3, i64_3>::exchange_compute_field<f64_8>(
-    shamrock::ComputeField<f64_8> &in);
-template shambase::DistributedDataShared<PatchDataField<f64_8>>
-shammodels::zeus::modules::GhostZones<f64_3, i64_3>::communicate_pdat_field<f64_8>(
-    shambase::DistributedDataShared<PatchDataField<f64_8>> &&interf);
+// doxygen does not have a clue of what is happenning here
+// like ... come on ...
+#ifndef DOXYGEN
+namespace shammodels::zeus::modules {
+
+    /// Explicit instanciation of the GhostZones class to exchange
+    /// compute fields of f64_8
+    template class GhostZones<f64_3, i64_3>;
+    template shamrock::ComputeField<f64_8>
+    GhostZones<f64_3, i64_3>::exchange_compute_field<f64_8>(shamrock::ComputeField<f64_8> &in);
+
+    /// Explicit instanciation of the GhostZones class to communicate
+    /// compute fields of f64_8
+    template shambase::DistributedDataShared<PatchDataField<f64_8>>
+    GhostZones<f64_3, i64_3>::communicate_pdat_field<f64_8>(
+        shambase::DistributedDataShared<PatchDataField<f64_8>> &&interf);
+
+} // namespace shammodels::zeus::modules
+#endif

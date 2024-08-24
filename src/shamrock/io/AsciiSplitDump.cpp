@@ -58,29 +58,33 @@ void AsciiSplitDump::PatchDump::write_table(sycl::buffer<T> buf, u32 len) {
     }
 }
 
-#define XMAC_TYPES                                                                                 \
-    X(f32)                                                                                         \
-    X(f32_2)                                                                                       \
-    X(f32_3)                                                                                       \
-    X(f32_4)                                                                                       \
-    X(f32_8)                                                                                       \
-    X(f32_16)                                                                                      \
-    X(f64)                                                                                         \
-    X(f64_2)                                                                                       \
-    X(f64_3)                                                                                       \
-    X(f64_4)                                                                                       \
-    X(f64_8)                                                                                       \
-    X(f64_16)                                                                                      \
-    X(u32)                                                                                         \
-    X(u64)                                                                                         \
-    X(u32_3)                                                                                       \
-    X(u64_3)                                                                                       \
-    X(i64_3)
+#ifndef DOXYGEN
+    #define XMAC_TYPES                                                                             \
+        X(f32)                                                                                     \
+        X(f32_2)                                                                                   \
+        X(f32_3)                                                                                   \
+        X(f32_4)                                                                                   \
+        X(f32_8)                                                                                   \
+        X(f32_16)                                                                                  \
+        X(f64)                                                                                     \
+        X(f64_2)                                                                                   \
+        X(f64_3)                                                                                   \
+        X(f64_4)                                                                                   \
+        X(f64_8)                                                                                   \
+        X(f64_16)                                                                                  \
+        X(u32)                                                                                     \
+        X(u64)                                                                                     \
+        X(u32_3)                                                                                   \
+        X(u64_3)                                                                                   \
+        X(i64_3)
 
-#define X(_arg_)                                                                                   \
-    template void AsciiSplitDump::PatchDump::write_val<_arg_>(_arg_ val);                          \
-    template void AsciiSplitDump::PatchDump::write_table<_arg_>(std::vector<_arg_> buf, u32 len);  \
-    template void AsciiSplitDump::PatchDump::write_table<_arg_>(sycl::buffer<_arg_> buf, u32 len);
+    #define X(_arg_)                                                                               \
+        template void AsciiSplitDump::PatchDump::write_val<_arg_>(_arg_ val);                      \
+        template void AsciiSplitDump::PatchDump::write_table<_arg_>(                               \
+            std::vector<_arg_> buf, u32 len);                                                      \
+        template void AsciiSplitDump::PatchDump::write_table<_arg_>(                               \
+            sycl::buffer<_arg_> buf, u32 len);
 
 XMAC_TYPES
-#undef X
+    #undef X
+#endif

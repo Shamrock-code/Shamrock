@@ -23,20 +23,39 @@
 
 namespace shammodels::sph {
 
+    /**
+     * @brief Configuration for the Artificial Viscosity (AV)
+     *
+     * This struct contains the information needed to configure the Artificial Viscosity
+     * in the SPH algorithm. It is a variant of two possible types of artificial viscosity:
+     * - None: no AV
+     * - Constant: AV with a constant value
+     * - VaryingMM97: AV with a varying value, using the Monaghan & Gingold 1997 prescription
+     * - VaryingCD10: AV with a varying value, using the Cullen & Dehnen 2010 prescription
+     * - ConstantDisc: AV with a constant value, but only in the disc plane
+     *
+     * @tparam Tvec type of the vector of coordinates
+     */
     template<class Tvec>
     struct AVConfig;
-}
+} // namespace shammodels::sph
 
 template<class Tvec>
 struct shammodels::sph::AVConfig {
 
-    using Tscal              = shambase::VecComponent<Tvec>;
+    /// Type of the components of the vector of coordinates
+    using Tscal = shambase::VecComponent<Tvec>;
+    /// Number of dimensions of the problem
     static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+
     /**
-     * @brief cf Price 2018 , q^a_ab = 0
+     * @brief No artificial viscosity: \f$ q^a_ab = 0\f$
      */
     struct None {};
 
+    /**
+     * @brief Constant artificial viscosity: \f$ \alpha = cte\f$
+     */
     struct Constant {
         Tscal alpha_u  = 1.0;
         Tscal alpha_AV = 1.0;
@@ -67,43 +86,87 @@ struct shammodels::sph::AVConfig {
         Tscal beta_AV     = 2.0;
     };
 
+    /**
+     * @brief Constant artificial viscosity for alpha disc viscosity
+     */
     struct ConstantDisc {
         Tscal alpha_AV = 1.0;
         Tscal alpha_u  = 1.0;
         Tscal beta_AV  = 2.0;
     };
 
+    /// Variant of all types of artificial viscosity possible
     using Variant = std::variant<None, Constant, VaryingMM97, VaryingCD10, ConstantDisc>;
 
+    /// The actual configuration (default to constant viscosity)
     Variant config = Constant{};
 
+    /// Set the configuration
     void set(Variant v) { config = v; }
 
+    /**
+     * @brief Sets the configuration to use a varying Cullen & Dehnen 2010 artificial viscosity.
+     *
+     * @param alpha_min the minimum value of alpha
+     * @param alpha_max the maximum value of alpha
+     * @param sigma_decay the decay rate of sigma
+     * @param alpha_u the value of alpha_u
+     * @param beta_AV the value of beta_AV
+     */
     void set_varying_cd10(
         Tscal alpha_min, Tscal alpha_max, Tscal sigma_decay, Tscal alpha_u, Tscal beta_AV) {
         set(VaryingCD10{alpha_min, alpha_max, sigma_decay, alpha_u, beta_AV});
     }
 
+    /**
+     * @brief Checks if the current configuration has an alpha artificial viscosity field.
+     *
+     * @return true if the configuration has an alpha artificial viscosity field, false otherwise
+     */
     inline bool has_alphaAV_field() {
         bool is_varying_alpha
             = bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
         return is_varying_alpha;
     }
 
+    /**
+     * @brief Checks if the current configuration need the divergence of the velocity field.
+     *
+     * @return true if the current configuration need the divergence of the velocity field, false
+     * otherwise
+     */
     inline bool has_divv_field() {
         bool is_varying_alpha
             = bool(std::get_if<VaryingMM97>(&config)) || bool(std::get_if<VaryingCD10>(&config));
         return is_varying_alpha;
     }
+
+    /**
+     * @brief Checks if the current configuration need the curl of the velocity field.
+     *
+     * @return true if the current configuration need the curl of the velocity field, false
+     * otherwise
+     */
     inline bool has_curlv_field() {
         bool is_varying_alpha = bool(std::get_if<VaryingCD10>(&config));
         return is_varying_alpha;
     }
+
+    /**
+     * @brief Checks if the current configuration has a dtdivv field.
+     *
+     * @return true if the configuration has a dtdivv field, false otherwise
+     */
     inline bool has_dtdivv_field() {
         bool is_varying_alpha = bool(std::get_if<VaryingCD10>(&config));
         return is_varying_alpha;
     }
 
+    /**
+     * @brief Checks if the current configuration requires the soundspeed field.
+     *
+     * @return true if the configuration requires the soundspeed field, false otherwise.
+     */
     inline bool has_field_soundspeed() {
 
         // this should not be needed idealy, but we need the pressure on the ghosts and
@@ -117,6 +180,9 @@ struct shammodels::sph::AVConfig {
         return is_varying_alpha;
     }
 
+    /**
+     * @brief Prints the status of the artificial viscosity configuration.
+     */
     inline void print_status() {
         logger::raw_ln("--- artificial viscosity config");
 
@@ -157,6 +223,13 @@ struct shammodels::sph::AVConfig {
 };
 
 namespace shammodels::sph {
+
+    /**
+     * @brief Convert an AVConfig to a json object.
+     *
+     * @param j the json object to be filled
+     * @param p the AVConfig object
+     */
     template<class Tvec>
     inline void to_json(nlohmann::json &j, const AVConfig<Tvec> &p) {
         using T = AVConfig<Tvec>;
@@ -208,6 +281,12 @@ namespace shammodels::sph {
         }
     }
 
+    /**
+     * @brief Convert a json object to an AVConfig.
+     *
+     * @param j the json object to be used
+     * @param p the AVConfig object to be filled
+     */
     template<class Tvec>
     inline void from_json(const nlohmann::json &j, AVConfig<Tvec> &p) {
         using T = AVConfig<Tvec>;
@@ -257,4 +336,5 @@ namespace shammodels::sph {
             shambase::throw_unimplemented("wtf !");
         }
     }
+
 } // namespace shammodels::sph

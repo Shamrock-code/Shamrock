@@ -11,7 +11,7 @@
 /**
  * @file fmt_defs.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief
+ * @brief Define the fmt formatters for sycl::vec
  *
  */
 
@@ -21,6 +21,7 @@
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 
+#ifndef DOXYGEN
 template<class T>
 struct fmt::formatter<sycl::vec<T, 2>> {
 
@@ -118,3 +119,5 @@ struct fmt::formatter<sycl::vec<T, 16>> {
             c.sF());
     }
 };
+
+#endif

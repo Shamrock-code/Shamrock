@@ -327,6 +327,7 @@ namespace shamrock::patch {
         append_subset_to(idx_p7, pdats[7].get());
     }
 
+#ifndef DOXYGEN
     template void PatchData::split_patchdata(
         std::array<std::reference_wrapper<PatchData>, 8> pdats,
         std::array<f32_3, 8> min_box,
@@ -347,5 +348,6 @@ namespace shamrock::patch {
         std::array<std::reference_wrapper<PatchData>, 8> pdats,
         std::array<i64_3, 8> min_box,
         std::array<i64_3, 8> max_box);
+#endif
 
 } // namespace shamrock::patch

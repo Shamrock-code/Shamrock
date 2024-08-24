@@ -25,11 +25,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM4 {
         public:
-        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.2;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 2. / 3.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 10. / (7. * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 1 / shambase::constants::pi<Tscal>;
 
         inline static Tscal f(Tscal q) {
@@ -69,11 +73,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM5 {
         public:
-        inline static constexpr Tscal Rkern  = 5. / 2.;
+        inline static constexpr Tscal Rkern = 5. / 2.; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.2;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 24.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 96. / (1199 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 1 / (20 * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -144,11 +152,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM6 {
         public:
-        inline static constexpr Tscal Rkern  = 3;
+        inline static constexpr Tscal Rkern = 3; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 120.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 7. / (478 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 1 / (120 * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -211,11 +223,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM7 {
         public:
-        inline static constexpr Tscal Rkern  = 3.5;
+        inline static constexpr Tscal Rkern = 3.5; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 720;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 256. / (113149 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 6. / (5040. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -292,11 +308,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM8 {
         public:
-        inline static constexpr Tscal Rkern  = 4.0;
+        inline static constexpr Tscal Rkern = 4.0; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 5040;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 9. / (29749. * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 6. / (40320. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -361,11 +381,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM9 {
         public:
-        inline static constexpr Tscal Rkern  = 4.5;
+        inline static constexpr Tscal Rkern = 4.5; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 40320;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 512. / (14345663 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 6. / (362880. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -452,11 +476,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM10 {
         public:
-        inline static constexpr Tscal Rkern  = 5;
+        inline static constexpr Tscal Rkern = 5; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 362880;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 11. / (2922230 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 6. / (3628800. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -531,11 +559,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefC2 {
         public:
-        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 3. / 4.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 7. / (4 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 21 / (16 * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -575,11 +607,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefC4 {
         public:
-        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 27. / 32.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 9. / (4 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 495. / (256. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -619,11 +655,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefC6 {
         public:
-        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 15. / 16.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 39. / (14. * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 1365. / (512. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {

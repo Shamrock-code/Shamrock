@@ -448,6 +448,11 @@ void shammodels::sph::Solver<Tvec, Kern>::gen_serial_patch_tree() {
     storage.serial_patch_tree.set(std::move(_sptree));
 }
 
+/**
+ * @brief Applies position boundary conditions to the particles.
+ *
+ * @param time_val the current time value
+ */
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_val) {
 

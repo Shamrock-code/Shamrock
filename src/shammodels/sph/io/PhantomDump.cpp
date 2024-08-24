@@ -407,7 +407,7 @@ namespace shammodels::sph {
     template<class Tvec>
     EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump &phdump, bool bypass_error) {
 
-        shammodels::EOSConfig<Tvec> cfg{};
+        EOSConfig<Tvec> cfg{};
 
         i64 ieos = phdump.read_header_int<i64>("ieos");
 
@@ -429,10 +429,10 @@ namespace shammodels::sph {
         return cfg;
     }
 
-    template shammodels::EOSConfig<f32_3>
-    get_shamrock_eosconfig<f32_3>(PhantomDump &phdump, bool bypass_error);
-    template shammodels::EOSConfig<f64_3>
-    get_shamrock_eosconfig<f64_3>(PhantomDump &phdump, bool bypass_error);
+    /// explicit instanciation for f32_3
+    template EOSConfig<f32_3> get_shamrock_eosconfig<f32_3>(PhantomDump &phdump, bool bypass_error);
+    /// explicit instanciation for f64_3
+    template EOSConfig<f64_3> get_shamrock_eosconfig<f64_3>(PhantomDump &phdump, bool bypass_error);
 
 } // namespace shammodels::sph
 
@@ -446,26 +446,30 @@ namespace shammodels::sph {
         return cfg;
     }
 
+    /// explicit instanciation for f32_3
     template AVConfig<f32_3> get_shamrock_avconfig<f32_3>(PhantomDump &phdump);
+    /// explicit instanciation for f64_3
     template AVConfig<f64_3> get_shamrock_avconfig<f64_3>(PhantomDump &phdump);
+
+    template<class Tscal>
+    shamunits::UnitSystem<Tscal> get_shamrock_units(PhantomDump &phdump) {
+
+        f64 udist  = phdump.read_header_float<f64>("udist");
+        f64 umass  = phdump.read_header_float<f64>("umass");
+        f64 utime  = phdump.read_header_float<f64>("utime");
+        f64 umagfd = phdump.read_header_float<f64>("umagfd");
+
+        return shamunits::UnitSystem<Tscal>(
+            utime, udist, umass
+            // unit_current = 1 ,
+            // unit_temperature = 1 ,
+            // unit_qte = 1 ,
+            // unit_lumint = 1
+        );
+    }
+
+    /// explicit instanciation for f32_3
+    template shamunits::UnitSystem<f32> get_shamrock_units<f32>(PhantomDump &phdump);
+    /// explicit instanciation for f64_3
+    template shamunits::UnitSystem<f64> get_shamrock_units<f64>(PhantomDump &phdump);
 } // namespace shammodels::sph
-
-template<class Tscal>
-shamunits::UnitSystem<Tscal> shammodels::sph::get_shamrock_units(PhantomDump &phdump) {
-
-    f64 udist  = phdump.read_header_float<f64>("udist");
-    f64 umass  = phdump.read_header_float<f64>("umass");
-    f64 utime  = phdump.read_header_float<f64>("utime");
-    f64 umagfd = phdump.read_header_float<f64>("umagfd");
-
-    return shamunits::UnitSystem<Tscal>(
-        utime, udist, umass
-        // unit_current = 1 ,
-        // unit_temperature = 1 ,
-        // unit_qte = 1 ,
-        // unit_lumint = 1
-    );
-}
-
-template shamunits::UnitSystem<f32> shammodels::sph::get_shamrock_units<f32>(PhantomDump &phdump);
-template shamunits::UnitSystem<f64> shammodels::sph::get_shamrock_units<f64>(PhantomDump &phdump);

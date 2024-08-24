@@ -177,37 +177,132 @@ namespace shammodels::sph {
         void print_state();
     };
 
+    /**
+     * @brief A class to represent a single block of data in a Phantom dump.
+     *
+     * @tparam T The type of the values in the block.
+     */
     struct PhantomDumpBlock {
+        /// The total number of values in the block.
         i64 tot_count;
 
+        /// The type for Phantom's real type.
         using fort_real = f64;
-        using fort_int  = int;
+        /// The type for Phantom's integer type.
+        using fort_int = int;
 
+        /// The blocks of values of type `fort_int`.
         std::vector<PhantomDumpBlockArray<fort_int>> blocks_fort_int;
+        /// The blocks of values of type `i8`.
         std::vector<PhantomDumpBlockArray<i8>> blocks_i8;
+        /// The blocks of values of type `i16`.
         std::vector<PhantomDumpBlockArray<i16>> blocks_i16;
+        /// The blocks of values of type `i32`.
         std::vector<PhantomDumpBlockArray<i32>> blocks_i32;
+        /// The blocks of values of type `i64`.
         std::vector<PhantomDumpBlockArray<i64>> blocks_i64;
+        /// The blocks of values of type `fort_real`.
         std::vector<PhantomDumpBlockArray<fort_real>> blocks_fort_real;
+        /// The blocks of values of type `f32`.
         std::vector<PhantomDumpBlockArray<f32>> blocks_f32;
+        /// The blocks of values of type `f64`.
         std::vector<PhantomDumpBlockArray<f64>> blocks_f64;
 
+        /**
+         * @brief Gets the index of a block of type `fort_int` with the given name.
+         *
+         * @param s The name of the block to search for.
+         * @return The index of the block in the vector, or `0` if no such block exists.
+         */
         u64 get_ref_fort_int(std::string s);
+
+        /**
+         * @brief Gets the index of a block of type `i8` with the given name.
+         *
+         * @param s The name of the block to search for.
+         * @return The index of the block in the vector, or `0` if no such block exists.
+         */
         u64 get_ref_i8(std::string s);
+
+        /**
+         * @brief Gets the index of a block of type `i16` with the given name.
+         *
+         * @param s The name of the block to search for.
+         * @return The index of the block in the vector, or `0` if no such block exists.
+         */
         u64 get_ref_i16(std::string s);
+
+        /**
+         * @brief Gets the index of a block of type `i32` with the given name.
+         *
+         * @param s The name of the block to search for.
+         * @return The index of the block in the vector, or `0` if no such block exists.
+         */
         u64 get_ref_i32(std::string s);
+
+        /**
+         * @brief Gets the index of a block of type `i64` with the given name.
+         *
+         * @param s The name of the block to search for.
+         * @return The index of the block in the vector, or `0` if no such block exists.
+         */
         u64 get_ref_i64(std::string s);
+
+        /**
+         * @brief Gets the index of a block of type `fort_real` with the given name.
+         *
+         * @param s The name of the block to search for.
+         * @return The index of the block in the vector, or `0` if no such block exists.
+         */
         u64 get_ref_fort_real(std::string s);
+
+        /**
+         * @brief Gets the index of a block of type `f32` with the given name.
+         *
+         * @param s The name of the block to search for.
+         * @return The index of the block in the vector, or `0` if no such block exists.
+         */
         u64 get_ref_f32(std::string s);
+
+        /**
+         * @brief Gets the index of a block of type `f64` with the given name.
+         *
+         * @param s The name of the block to search for.
+         * @return The index of the block in the vector, or `0` if no such block exists.
+         */
         u64 get_ref_f64(std::string s);
 
+        /**
+         * @brief Prints the state of the block.
+         */
         void print_state();
 
+        /**
+         * @brief Reads a block from a file
+         *
+         * @param phfile the file to read from
+         * @param tot_count the total number of values to read
+         * @param numarray the number of values of each type
+         * @return the block that was read
+         */
         static PhantomDumpBlock
         from_file(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
 
+        /**
+         * @brief Writes a block to a file
+         *
+         * @param phfile the file to write to
+         * @param tot_count the total number of values to write
+         * @param numarray the number of values of each type
+         */
         void write(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
 
+        /**
+         * @brief Fills a vector with the values of a given field name
+         *
+         * @param field_name the name of the field to look for
+         * @param vec the vector to fill
+         */
         template<class T>
         void fill_vec(std::string field_name, std::vector<T> &vec) {
 
@@ -240,6 +335,15 @@ namespace shammodels::sph {
         }
     };
 
+    /**
+     * @brief  Class representing a Phantom dump file.
+     *
+     * The class provides methods to read and write Phantom dump files, as well as to
+     * retrieve data from the file.
+     *
+     * @todo add exemple of usage
+     *
+     */
     struct PhantomDump {
 
         /// Floating-point type used in the phantom dump format.
@@ -269,7 +373,7 @@ namespace shammodels::sph {
         }
 
         /**
-         * Checks if the magic numbers in the PhantomDump struct match the expected values.
+         * @brief Checks if the magic numbers in the PhantomDump struct match the expected values.
          *
          * @throws std::runtime_error if any of the magic numbers do not match the expected values
          */
@@ -288,21 +392,47 @@ namespace shammodels::sph {
             }
         }
 
+        /// Table header for integer data.
         PhantomDumpTableHeader<fort_int> table_header_fort_int;
+        /// Table header for signed 8-bit integer data.
         PhantomDumpTableHeader<i8> table_header_i8;
+        /// Table header for signed 16-bit integer data.
         PhantomDumpTableHeader<i16> table_header_i16;
+        /// Table header for signed 32-bit integer data.
         PhantomDumpTableHeader<i32> table_header_i32;
+        /// Table header for signed 64-bit integer data.
         PhantomDumpTableHeader<i64> table_header_i64;
+        /// Table header for floating-point data.
         PhantomDumpTableHeader<fort_real> table_header_fort_real;
+        /// Table header for 32-bit floating-point data.
         PhantomDumpTableHeader<f32> table_header_f32;
+        /// Table header for 64-bit floating-point data.
         PhantomDumpTableHeader<f64> table_header_f64;
-
+        /// List of blocks in the Phantom dump file.
         std::vector<PhantomDumpBlock> blocks;
 
+        /**
+         * @brief Generates a Phantom dump file from the current state of the object.
+         *
+         * @return a Phantom dump file
+         */
         shambase::FortranIOFile gen_file();
 
+        /**
+         * @brief Reads a Phantom dump file and returns a PhantomDump object.
+         *
+         * @param phfile Phantom dump file to read
+         * @return a PhantomDump object containing the data from the file
+         */
         static PhantomDump from_file(shambase::FortranIOFile &phfile);
 
+        /**
+         * @brief Checks if a given string is present in any of the table headers.
+         *
+         * @param s the string to be searched in the table headers
+         *
+         * @return true if the string is found in any of the table headers, false otherwise
+         */
         inline bool has_header_entry(std::string s) {
 
             s = shambase::format("{:16s}", s);
@@ -335,6 +465,15 @@ namespace shammodels::sph {
             return false;
         }
 
+        /**
+         * @brief Retrieves a floating-point value from the table headers.
+         *
+         * @param s the string to be searched in the table headers
+         *
+         * @return the floating-point value associated with the given string
+         *
+         * @throws std::runtime_error if the entry cannot be found in the table headers
+         */
         template<class T>
         inline T read_header_float(std::string s) {
 
@@ -356,6 +495,13 @@ namespace shammodels::sph {
             return {};
         }
 
+        /**
+         * @brief Reads multiple float values from the table headers based on the given string.
+         *
+         * @param s the string to be searched in the table headers
+         *
+         * @return a vector of float values found in the table headers
+         */
         template<class T>
         inline std::vector<T> read_header_floats(std::string s) {
             std::vector<T> vec{};
@@ -369,6 +515,15 @@ namespace shammodels::sph {
             return vec;
         }
 
+        /**
+         * @brief Retrieves an integer value from the table headers.
+         *
+         * @param s the string to be searched in the table headers
+         *
+         * @return the integer value associated with the given string
+         *
+         * @throws std::runtime_error if the entry cannot be found in the table headers
+         */
         template<class T>
         inline T read_header_int(std::string s) {
 
@@ -395,6 +550,14 @@ namespace shammodels::sph {
             return {};
         }
 
+        /**
+         * @brief Retrieves multiple integer values from the table headers based on the given
+         * string.
+         *
+         * @param s the string to be searched in the table headers
+         *
+         * @return a vector of integer values found in the table headers
+         */
         template<class T>
         inline std::vector<T> read_header_ints(std::string s) {
             std::vector<T> vec{};
@@ -410,11 +573,12 @@ namespace shammodels::sph {
             return vec;
         }
 
+        /// Print current state of the data stored in the class
         void print_state();
     };
 
     /**
-     * Generate a Shamrock EOS configuration from a PhantomDump object.
+     * @brief Generate a Shamrock EOS configuration from a PhantomDump object.
      *
      * @param phdump Reference to the PhantomDump object.
      * @param bypass_error Flag to bypass error handling.
@@ -427,7 +591,7 @@ namespace shammodels::sph {
     EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump &phdump, bool bypass_error);
 
     /**
-     * Generate an Shamrock artificial viscosity configuration from a PhantomDump object.
+     * @brief Generate an Shamrock artificial viscosity configuration from a PhantomDump object.
      *
      * @param phdump Reference to the PhantomDump object.
      *

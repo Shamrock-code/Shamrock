@@ -37,19 +37,53 @@
 
 namespace shammodels::sph {
 
+    /**
+     * @brief Phantom dump table header for a specific type
+     *
+     * This class is used to store the header of a Phantom dump file for one type.
+     *
+     * @tparam T type of the data
+     */
     template<class T>
     struct PhantomDumpTableHeader {
+        /**
+         * @brief A vector of pairs containing the name and the value of each entry in
+         * the table.
+         */
         std::vector<std::pair<std::string, T>> entries;
 
+        /**
+         * @brief Reads the header from a Phantom dump file.
+         *
+         * @param phfile the file to read from
+         * @return the header
+         */
         static PhantomDumpTableHeader<T> from_file(shambase::FortranIOFile &phfile);
 
+        /**
+         * @brief Adds an entry to the header.
+         *
+         * @param s the name of the entry
+         * @param val the value of the entry
+         */
         void add(std::string s, T val) {
             s = shambase::format("{:16s}", s);
             entries.push_back({s, val});
         }
 
+        /**
+         * @brief Writes the header to a Phantom dump file.
+         *
+         * @param phfile the file to write to
+         */
         void write(shambase::FortranIOFile &phfile);
 
+        /**
+         * @brief Fetches the value of a given entry from the header.
+         *
+         * @param s the name of the entry
+         * @return the value of the entry
+         */
         inline std::optional<T> fetch(std::string s) {
             std::optional<T> ret = {};
 
@@ -62,6 +96,13 @@ namespace shammodels::sph {
             return ret;
         }
 
+        /**
+         * @brief Fetches the values of all entries with a given name from the header into the
+         * supplied vector.
+         *
+         * @param vec the vector to store the values in
+         * @param s the name of the entries
+         */
         template<class Tb>
         inline void fetch_multiple(std::vector<Tb> &vec, std::string s) {
             for (auto [key, val] : entries) {
@@ -71,19 +112,56 @@ namespace shammodels::sph {
             }
         }
 
+        /**
+         * @brief Prints the state of the header.
+         */
         void print_state();
     };
 
+    /**
+     * @brief A helper class to represent a single block of data in a Phantom dump.
+     *
+     * A single block of data in a Phantom dump consists of a 16-character tag, followed by a
+     * variable number of values of a given type. This class represents such a block.
+     *
+     * @tparam T The type of the values in the block.
+     */
     template<class T>
     struct PhantomDumpBlockArray {
 
+        /**
+         * @brief The tag of the block.
+         */
         std::string tag;
+
+        /**
+         * @brief The values of the block.
+         */
         std::vector<T> vals;
 
+        /**
+         * @brief Reads a block from a file
+         *
+         * @param phfile the file to read from
+         * @param tot_count the total number of values to read
+         * @return the block that was read
+         */
         static PhantomDumpBlockArray from_file(shambase::FortranIOFile &phfile, i64 tot_count);
 
+        /**
+         * @brief Writes a block to a file
+         *
+         * @param phfile the file to write to
+         * @param tot_count the total number of values to write
+         */
         void write(shambase::FortranIOFile &phfile, i64 tot_count);
 
+        /**
+         * @brief Fills a vector with the values of a given field name
+         *
+         * @param field_name the name of the field to look for
+         * @param vec the vector to fill
+         */
         template<class Tb>
         void fill_vec(std::string field_name, std::vector<Tb> &vec) {
             if (tag == field_name) {
@@ -93,6 +171,9 @@ namespace shammodels::sph {
             }
         }
 
+        /**
+         * @brief Prints the state of the block
+         */
         void print_state();
     };
 
@@ -161,13 +242,25 @@ namespace shammodels::sph {
 
     struct PhantomDump {
 
+        /// Floating-point type used in the phantom dump format.
         using fort_real = f64;
-        using fort_int  = int;
+        /// Integer type used in the phantom dump format.
+        using fort_int = int;
 
-        fort_int i1, i2, iversion, i3;
+        /// Magic number used in the phantom dump format.
+        fort_int i1;
+        /// Magic number used in the phantom dump format.
+        fort_int i2;
+        /// Magic number used in the phantom dump format.
+        fort_int iversion;
+        /// Magic number used in the phantom dump format.
+        fort_int i3;
+        /// Magic number used in the phantom dump format.
         fort_real r1;
+        /// Magic number used in the phantom dump format.
         std::string fileid;
 
+        /// Overrides the magic numbers used in the PhantomDump struct.
         void override_magic_number() {
             i1 = 60769;
             i2 = 60878;
@@ -175,6 +268,11 @@ namespace shammodels::sph {
             r1 = i2;
         }
 
+        /**
+         * Checks if the magic numbers in the PhantomDump struct match the expected values.
+         *
+         * @throws std::runtime_error if any of the magic numbers do not match the expected values
+         */
         void check_magic_numbers() {
             if (i1 != 60769) {
                 shambase::throw_with_loc<std::runtime_error>("");
@@ -315,9 +413,26 @@ namespace shammodels::sph {
         void print_state();
     };
 
+    /**
+     * Generate a Shamrock EOS configuration from a PhantomDump object.
+     *
+     * @param phdump Reference to the PhantomDump object.
+     * @param bypass_error Flag to bypass error handling.
+     *
+     * @return The EOS configuration corresponding to the given PhantomDump object.
+     *
+     * @throws std::runtime_error If an error occurs during configuration retrieval.
+     */
     template<class Tvec>
     EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump &phdump, bool bypass_error);
 
+    /**
+     * Generate an Shamrock artificial viscosity configuration from a PhantomDump object.
+     *
+     * @param phdump Reference to the PhantomDump object.
+     *
+     * @return The artificial viscosity configuration corresponding to the given PhantomDump object.
+     */
     template<class Tvec>
     AVConfig<Tvec> get_shamrock_avconfig(PhantomDump &phdump);
 

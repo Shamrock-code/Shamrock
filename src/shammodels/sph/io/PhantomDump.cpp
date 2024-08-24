@@ -379,75 +379,76 @@ void shammodels::sph::PhantomDump::print_state() {
     logger::raw_ln("------------------");
 }
 
-/* cf pahntom
-! This module contains stuff to do with the equation of state
-!  Current options:
-!     1 = isothermal eos
-!     2 = adiabatic/polytropic eos
-!     3 = eos for a locally isothermal disc as in Lodato & Pringle (2007)
-!     4 = GR isothermal
-!     6 = eos for a locally isothermal disc as in Lodato & Pringle (2007),
-!         centered on a sink particle
-!     7 = z-dependent locally isothermal eos
-!     8 = Barotropic eos
-!     9 = Piecewise polytrope
-!    10 = MESA EoS
-!    11 = isothermal eos with zero pressure
-!    12 = ideal gas with radiation pressure
-!    13 = locally isothermal prescription from Farris et al. (2014) generalised for generic
-hierarchical systems
-!    14 = locally isothermal prescription from Farris et al. (2014) for binary
-system
-!    15 = Helmholtz free energy eos
-!    16 = Shen eos
-!    20 = Ideal gas + radiation +
-various forms of recombination energy from HORMONE (Hirai et al., 2020)
-*/
+// cf phantom
+// This module contains stuff to do with the equation of state
+//  Current options:
+//     1 = isothermal eos
+//     2 = adiabatic/polytropic eos
+//     3 = eos for a locally isothermal disc as in Lodato & Pringle (2007)
+//     4 = GR isothermal
+//     6 = eos for a locally isothermal disc as in Lodato & Pringle (2007),
+//         centered on a sink particle
+//     7 = z-dependent locally isothermal eos
+//     8 = Barotropic eos
+//     9 = Piecewise polytrope
+//    10 = MESA EoS
+//    11 = isothermal eos with zero pressure
+//    12 = ideal gas with radiation pressure
+//    13 = locally isothermal prescription from Farris et al. (2014) generalised for generic
+//         hierarchical systems
+//    14 = locally isothermal prescription from Farris et al. (2014) for
+//         binarysystem
+//    15 = Helmholtz free energy eos 16 = Shen eos 20 = Ideal gas + radiation + various
+//         forms of recombination energy from HORMONE (Hirai et al., 2020)
+//
 
-template<class Tvec>
-shammodels::EOSConfig<Tvec>
-shammodels::sph::get_shamrock_eosconfig(PhantomDump &phdump, bool bypass_error) {
+namespace shammodels::sph {
 
-    shammodels::EOSConfig<Tvec> cfg{};
+    template<class Tvec>
+    EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump &phdump, bool bypass_error) {
 
-    i64 ieos = phdump.read_header_int<i64>("ieos");
+        shammodels::EOSConfig<Tvec> cfg{};
 
-    logger::debug_ln("PhantomDump", "read ieos :", ieos);
+        i64 ieos = phdump.read_header_int<i64>("ieos");
 
-    if (ieos == 2) {
-        f64 gamma = phdump.read_header_float<f64>("gamma");
-        cfg.set_adiabatic(gamma);
-    } else {
-        const std::string msg
-            = "phantom ieos=" + std::to_string(ieos) + " is not implemented in shamrock";
-        if (bypass_error) {
-            logger::warn_ln("SPH", msg);
+        logger::debug_ln("PhantomDump", "read ieos :", ieos);
+
+        if (ieos == 2) {
+            f64 gamma = phdump.read_header_float<f64>("gamma");
+            cfg.set_adiabatic(gamma);
         } else {
-            shambase::throw_unimplemented(msg);
+            const std::string msg
+                = "phantom ieos=" + std::to_string(ieos) + " is not implemented in shamrock";
+            if (bypass_error) {
+                logger::warn_ln("SPH", msg);
+            } else {
+                shambase::throw_unimplemented(msg);
+            }
         }
+
+        return cfg;
     }
 
-    return cfg;
-}
+    template shammodels::EOSConfig<f32_3>
+    get_shamrock_eosconfig<f32_3>(PhantomDump &phdump, bool bypass_error);
+    template shammodels::EOSConfig<f64_3>
+    get_shamrock_eosconfig<f64_3>(PhantomDump &phdump, bool bypass_error);
 
-template shammodels::EOSConfig<f32_3>
-shammodels::sph::get_shamrock_eosconfig<f32_3>(PhantomDump &phdump, bool bypass_error);
-template shammodels::EOSConfig<f64_3>
-shammodels::sph::get_shamrock_eosconfig<f64_3>(PhantomDump &phdump, bool bypass_error);
+} // namespace shammodels::sph
 
-template<class Tvec>
-shammodels::sph::AVConfig<Tvec> shammodels::sph::get_shamrock_avconfig(PhantomDump &phdump) {
-    shammodels::sph::AVConfig<Tvec> cfg{};
+namespace shammodels::sph {
+    template<class Tvec>
+    AVConfig<Tvec> get_shamrock_avconfig(PhantomDump &phdump) {
+        AVConfig<Tvec> cfg{};
 
-    cfg.set_varying_cd10(0, 1, 0.1, phdump.read_header_float<f64>("alphau"), 2);
+        cfg.set_varying_cd10(0, 1, 0.1, phdump.read_header_float<f64>("alphau"), 2);
 
-    return cfg;
-}
+        return cfg;
+    }
 
-template shammodels::sph::AVConfig<f32_3>
-shammodels::sph::get_shamrock_avconfig<f32_3>(PhantomDump &phdump);
-template shammodels::sph::AVConfig<f64_3>
-shammodels::sph::get_shamrock_avconfig<f64_3>(PhantomDump &phdump);
+    template AVConfig<f32_3> get_shamrock_avconfig<f32_3>(PhantomDump &phdump);
+    template AVConfig<f64_3> get_shamrock_avconfig<f64_3>(PhantomDump &phdump);
+} // namespace shammodels::sph
 
 template<class Tscal>
 shamunits::UnitSystem<Tscal> shammodels::sph::get_shamrock_units(PhantomDump &phdump) {

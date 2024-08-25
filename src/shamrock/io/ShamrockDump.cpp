@@ -72,6 +72,14 @@ namespace shamrock {
         shambase::Timer timer;
         timer.start();
 
+        // do some perf investigation before enabling preallocation
+        bool preallocate = false;
+        if (preallocate) {
+            MPI_Offset tot_byte = all_offsets.back() + all_bytecounts.back() + metadata_user.size()
+                                  + metadata_patch.size() + sout.size() + sizeof(std::size_t) * 3;
+            MPICHECK(MPI_File_preallocate(mfile, tot_byte));
+        }
+
         shamalgs::collective::write_header(mfile, metadata_user, head_ptr);
         shamalgs::collective::write_header(mfile, metadata_patch, head_ptr);
         shamalgs::collective::write_header(mfile, sout, head_ptr);

@@ -144,7 +144,7 @@ int main(int argc, char *argv[]) {
 
     cfg.print_test_list_exit = false;
 
-    cfg.full_output = false;
+    cfg.full_output = opts::has_option("--full-output");
 
     cfg.output_tex = true;
     if (opts::has_option("-o")) {

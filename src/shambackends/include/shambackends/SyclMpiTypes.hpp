@@ -121,24 +121,24 @@ inline MPI_Datatype &get_mpi_type<u32>() {
 }
 
 #ifdef __MACH__ // On normal Linux size_t is u64
-template<>
-inline MPI_Datatype &get_mpi_type<size_t>() {
-
     // https://stackoverflow.com/questions/40807833/sending-size-t-type-data-with-mpi
-
     #if SIZE_MAX == UCHAR_MAX
-    return MPI_UNSIGNED_CHAR
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED_CHAR;
     #elif SIZE_MAX == USHRT_MAX
-    return MPI_UNSIGNED_SHORT
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED_SHORT;
     #elif SIZE_MAX == UINT_MAX
-    return MPI_UNSIGNED
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED;
     #elif SIZE_MAX == ULONG_MAX
-    return MPI_UNSIGNED_LONG
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED_LONG;
     #elif SIZE_MAX == ULLONG_MAX
-    return MPI_UNSIGNED_LONG_LONG
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED_LONG_LONG;
     #else
         #error "what is happening here?"
     #endif
+inline MPI_Datatype mpi_type_size_t = _MPI_TYPE_SIZE_T;
+template<>
+inline MPI_Datatype &get_mpi_type<size_t>() {
+    return mpi_type_size_t;
 }
 #endif
 

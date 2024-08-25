@@ -38,8 +38,7 @@ xm,ym,zm = bmin
 xM,yM,zM = bmax
 
 model.resize_simulation_box(bmin,bmax)
-model.add_cube_hcp_3d(dr, bmin,bmax)
-
+model.add_cube_hcp_3d_v2(dr, bmin,bmax)
 
 xc,yc,zc = model.get_closest_part_to((0,0,0))
 print("closest part to (0,0,0) is in :",xc,yc,zc)

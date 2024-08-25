@@ -25,6 +25,7 @@
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shamrock/patch/PatchData.hpp"
+#include "shamrock/scheduler/DataInserterUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -479,6 +480,110 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
     if (true) {
         modules::ParticleReordering<Tvec, u32, SPHKernel>(ctx, solver.solver_config, solver.storage)
             .reorder_particles();
+    }
+
+    time_setup.end();
+    if (shamcomm::world_rank() == 0) {
+        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elasped_sec(), "s");
+    }
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
+    Tscal dr, std::pair<Tvec, Tvec> _box) {
+    shambase::Timer time_setup;
+    time_setup.start();
+    StackEntry stack_loc{};
+
+    shammath::CoordRange<Tvec> box = _box;
+    using namespace shamrock::patch;
+
+    PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+    using Lattice     = shammath::LatticeHCP<Tvec>;
+    using LatticeIter = typename shammath::LatticeHCP<Tvec>::IteratorDiscontinuous;
+
+    auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
+
+    u32 idx_gen     = 0;
+    LatticeIter gen = LatticeIter(dr, idxs_min, idxs_max);
+
+    shamrock::DataInserterUtility inserter(sched);
+
+    auto push_current_data = [&](std::vector<Tvec> pos_data) {
+        PatchData tmp(sched.pdl);
+        tmp.resize(pos_data.size());
+        tmp.fields_raz();
+
+        {
+            u32 len                 = pos_data.size();
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+            // sycl::buffer<Tvec> buf(pos_data.data(), len);
+            f.override(pos_data, len);
+        }
+
+        {
+            PatchDataField<Tscal> &f
+                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+            f.override(dr);
+        }
+
+        inserter.push_patch_data<Tvec>(tmp, "xyz", sched.crit_patch_split * 8, [&]() {
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(
+                ctx, solver.solver_config, solver.storage)
+                .update_load_balancing();
+        });
+        pos_data.clear();
+    };
+
+    u32 insert_step = sched.crit_patch_split * 8;
+
+    u32 wrank = shamcomm::world_rank();
+    u32 wsize = shamcomm::world_size();
+
+    auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<Tvec>();
+
+    auto has_pdat = [&]() {
+        bool ret = false;
+        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+            ret = true;
+        });
+        return ret;
+    };
+
+    // Every MPI rank should be synchroneous on gen state
+    while (!gen.is_done()) {
+
+        u64 loc_gen_count = (has_pdat()) ? insert_step : 0;
+
+        auto gen_info = shamalgs::collective::fetch_view(loc_gen_count);
+
+        u64 skip_start = gen_info.head_offset;
+        u64 gen_cnt    = loc_gen_count;
+        u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
+
+        logger::debug_ln(
+            "Gen",
+            "generate : ",
+            skip_start,
+            gen_cnt,
+            skip_end,
+            "total",
+            skip_start + gen_cnt + skip_end);
+        gen.skip(skip_start);
+        auto tmp = gen.next_n(gen_cnt);
+        gen.skip(skip_end);
+
+        std::vector<Tvec> pos_data;
+        for (Tvec r : tmp) {
+            if (Patch::is_in_patch_converted(r, bmin, bmax)) {
+                pos_data.push_back(r);
+            }
+        }
+
+        push_current_data(pos_data);
+
+        logger::debug_ln("Gen", "gen.is_done()", gen.is_done());
     }
 
     time_setup.end();

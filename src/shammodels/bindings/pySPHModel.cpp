@@ -197,6 +197,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.add_cube_hcp_3d(dr, {box_min, box_max});
             })
         .def(
+            "add_cube_hcp_3d_v2",
+            [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
+                return self.add_cube_hcp_3d_v2(dr, {box_min, box_max});
+            })
+        .def(
             "add_disc_3d_keplerian",
             [](T &self,
                Tvec center,

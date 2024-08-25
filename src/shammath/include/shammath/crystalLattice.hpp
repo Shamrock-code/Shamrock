@@ -206,6 +206,7 @@ namespace shammath {
             std::array<i32, dim> current;
 
             bool done = false;
+            u32 idx   = 0;
 
             public:
             Iterator(Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
@@ -221,19 +222,23 @@ namespace shammath {
             inline Tvec next() {
                 Tvec ret = generator(dr, current);
 
-                current[0]++;
-                if (current[0] >= coord_max[0]) {
-                    current[0] = coord_min[0];
+                if (!done) {
+                    current[0]++;
+                    if (current[0] >= coord_max[0]) {
+                        current[0] = coord_min[0];
 
-                    current[1]++;
-                    if (current[1] >= coord_max[1]) {
-                        current[1] = coord_min[1];
+                        current[1]++;
+                        if (current[1] >= coord_max[1]) {
+                            current[1] = coord_min[1];
 
-                        current[2]++;
-                        if (current[2] >= coord_max[2]) {
-                            done = true;
+                            current[2]++;
+                            if (current[2] >= coord_max[2]) {
+                                done = true;
+                            }
                         }
                     }
+
+                    idx++;
                 }
 
                 return ret;
@@ -248,7 +253,18 @@ namespace shammath {
 
                     ret.push_back(next());
                 }
+                logger::debug_ln("Discontinuous iterator", "next_n final idx", idx);
                 return ret;
+            }
+
+            inline void skip(u32 n) {
+                for (u32 i = 0; i < n; i++) {
+                    if (done) {
+                        break;
+                    }
+                    next();
+                }
+                logger::debug_ln("Discontinuous iterator", "skip final idx", idx);
             }
         };
 
@@ -265,6 +281,7 @@ namespace shammath {
             std::array<DiscontinuousIterator<i32>, dim> it;
 
             bool done = false;
+            u32 idx   = 0;
 
             void update_next() {
                 if (!done) {
@@ -283,6 +300,7 @@ namespace shammath {
                             }
                         }
                     }
+                    idx++;
                 }
             }
 
@@ -323,7 +341,18 @@ namespace shammath {
 
                     ret.push_back(next());
                 }
+                logger::debug_ln("Discontinuous iterator", "next_n final idx", idx);
                 return ret;
+            }
+
+            inline void skip(u32 n) {
+                for (u32 i = 0; i < n; i++) {
+                    if (done) {
+                        break;
+                    }
+                    next();
+                }
+                logger::debug_ln("Discontinuous iterator", "skip final idx", idx);
             }
         };
     };

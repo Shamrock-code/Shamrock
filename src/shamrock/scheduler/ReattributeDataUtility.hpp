@@ -167,6 +167,11 @@ namespace shamrock {
             DistributedData<sycl::buffer<u64>> new_pid = compute_new_pid(sptree, ipos);
 
             DistributedDataShared<patch::PatchData> part_exchange = extract_elements(new_pid);
+
+            part_exchange.for_each([](u64 sender, u64 receiver, PatchData &pdat) {
+                logger::debug_ln("ReattributeDataUtility", sender, receiver, pdat.get_obj_cnt());
+            });
+
             DistributedDataShared<patch::PatchData> recv_dat;
 
             shamalgs::collective::serialize_sparse_comm<PatchData>(

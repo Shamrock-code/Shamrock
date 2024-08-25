@@ -43,15 +43,27 @@ namespace shamrock {
         void push_patch_data(
             shamrock::patch::PatchData &pdat_ins,
             std::string main_field_name,
-            u32 split_threshold) {
+            u32 split_threshold,
+            std::function<void(void)> load_balance_update) {
             using namespace shamrock::patch;
 
             u32 pdat_ob_cnt = pdat_ins.get_obj_cnt();
 
+            {
+                u32 sum_push = shamalgs::collective::allreduce_sum(pdat_ob_cnt);
+                if (shamcomm::world_rank() == 0) {
+                    logger::info_ln(
+                        "DataInserterUtility", "pushing data in scheduler, N =", sum_push);
+                }
+            }
+
             if (pdat_ob_cnt < split_threshold) {
+                bool should_insert = true;
                 sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
-                    pdat.insert_elements(pdat_ins);
-                    return; // We insert only in first patch (no duplicates)
+                    if (should_insert) {
+                        pdat.insert_elements(pdat_ins);
+                        should_insert = false; // We insert only in first patch (no duplicates)
+                    }
                 });
             } else {
                 shambase::throw_unimplemented("Not implemented yet please keep the obj count to be "
@@ -59,11 +71,16 @@ namespace shamrock {
             }
 
             // move data into the corect patches
-            SerialPatchTree<Tvec> sptree(sched.patch_tree);
+            SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
             ReattributeDataUtility reatrib(sched);
             sptree.attach_buf();
             reatrib.reatribute_patch_objects(sptree, main_field_name);
             sched.check_patchdata_locality_corectness();
+
+            load_balance_update();
+
+            sched.scheduler_step(false, false);
+            sched.scheduler_step(true, true);
         }
     };
 

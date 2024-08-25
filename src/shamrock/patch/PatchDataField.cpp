@@ -223,24 +223,31 @@ class PdatField_insert;
 template<class T>
 void PatchDataField<T>::insert(PatchDataField<T> &f2) {
 
-    logger::debug_sycl_ln("PatchDataField", "expand field buf");
-    const u32 old_val_cnt = size(); // field_data.size();
-    expand(f2.obj_cnt);
+    u32 f2_len = f2.get_obj_cnt();
 
-    logger::debug_sycl_ln("PatchDataField", "write values");
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        const u32 idx_st = old_val_cnt;
+    if (f2_len > 0) {
+        logger::debug_sycl_ln("PatchDataField", "expand field buf by N =", f2_len);
 
-        // This is triggering a warning in OpenSycl when the buffer was just allocated
-        //  TODO fix the warning
-        sycl::accessor acc{shambase::get_check_ref(get_buf()), cgh, sycl::write_only};
+        const u32 old_val_cnt = size(); // field_data.size();
+        expand(f2.obj_cnt);
 
-        sycl::accessor acc_f2{shambase::get_check_ref(f2.get_buf()), cgh, sycl::read_only};
+        logger::debug_sycl_ln("PatchDataField", "write values");
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            const u32 idx_st = old_val_cnt;
 
-        cgh.parallel_for<PdatField_insert<T>>(sycl::range<1>{f2.size()}, [=](sycl::id<1> idx) {
-            acc[idx_st + idx] = acc_f2[idx];
+            // This is triggering a warning in OpenSycl when the buffer was just allocated
+            //  TODO fix the warning
+            sycl::accessor acc{shambase::get_check_ref(get_buf()), cgh, sycl::write_only};
+
+            sycl::accessor acc_f2{shambase::get_check_ref(f2.get_buf()), cgh, sycl::read_only};
+
+            cgh.parallel_for<PdatField_insert<T>>(sycl::range<1>{f2.size()}, [=](sycl::id<1> idx) {
+                acc[idx_st + idx] = acc_f2[idx];
+            });
         });
-    });
+    } else {
+        logger::debug_sycl_ln("PatchDataField", "expand field buf (skip f2 is empty)");
+    }
 }
 
 template<class T>

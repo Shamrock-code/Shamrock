@@ -116,6 +116,7 @@ namespace shammodels::sph {
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
         void add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
+        void add_cube_hcp_3d_v2(Tscal dr, std::pair<Tvec, Tvec> _box);
 
         //        std::function<Tscal(Tscal)> sigma_profile = [=](Tscal r, Tscal r_in, Tscal p){
         //            // we setup with an adimensional mass since it is monte carlo
@@ -732,7 +733,9 @@ namespace shammodels::sph {
          * @param fname The name of the dump file.
          */
         inline void dump(std::string fname) {
-            logger::info_ln("SPH", "Dumping state to", fname);
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("SPH", "Dumping state to", fname);
+            }
 
             // Dump the state of the SPH model to a file
             /// TODO: replace supplied metadata by solver config json

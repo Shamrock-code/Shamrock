@@ -17,17 +17,34 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcomm/mpi.hpp"
 
-inline MPI_Datatype mpi_type_i64 = MPI_INT64_T;
-inline MPI_Datatype mpi_type_i32 = MPI_INT32_T;
-inline MPI_Datatype mpi_type_i16 = MPI_INT16_T;
-inline MPI_Datatype mpi_type_i8  = MPI_INT8_T;
-inline MPI_Datatype mpi_type_u64 = MPI_UINT64_T;
-inline MPI_Datatype mpi_type_u32 = MPI_UINT32_T;
-inline MPI_Datatype mpi_type_u16 = MPI_UINT16_T;
-inline MPI_Datatype mpi_type_u8  = MPI_UINT8_T;
-inline MPI_Datatype mpi_type_f16 = MPI_SHORT; // no f16 in mpi std
-inline MPI_Datatype mpi_type_f32 = MPI_FLOAT;
-inline MPI_Datatype mpi_type_f64 = MPI_DOUBLE;
+// https://stackoverflow.com/questions/40807833/sending-size-t-type-data-with-mpi
+
+#if SIZE_MAX == UCHAR_MAX
+    #define _MPI_SIZE_T MPI_UNSIGNED_CHAR
+#elif SIZE_MAX == USHRT_MAX
+    #define _MPI_SIZE_T MPI_UNSIGNED_SHORT
+#elif SIZE_MAX == UINT_MAX
+    #define _MPI_SIZE_T MPI_UNSIGNED
+#elif SIZE_MAX == ULONG_MAX
+    #define _MPI_SIZE_T MPI_UNSIGNED_LONG
+#elif SIZE_MAX == ULLONG_MAX
+    #define _MPI_SIZE_T MPI_UNSIGNED_LONG_LONG
+#else
+    #error "what is happening here?"
+#endif
+
+inline MPI_Datatype mpi_type_i64    = MPI_INT64_T;
+inline MPI_Datatype mpi_type_i32    = MPI_INT32_T;
+inline MPI_Datatype mpi_type_i16    = MPI_INT16_T;
+inline MPI_Datatype mpi_type_i8     = MPI_INT8_T;
+inline MPI_Datatype mpi_type_u64    = MPI_UINT64_T;
+inline MPI_Datatype mpi_type_u32    = MPI_UINT32_T;
+inline MPI_Datatype mpi_type_u16    = MPI_UINT16_T;
+inline MPI_Datatype mpi_type_u8     = MPI_UINT8_T;
+inline MPI_Datatype mpi_type_f16    = MPI_SHORT; // no f16 in mpi std
+inline MPI_Datatype mpi_type_f32    = MPI_FLOAT;
+inline MPI_Datatype mpi_type_f64    = MPI_DOUBLE;
+inline MPI_Datatype mpi_type_size_t = _MPI_SIZE_T;
 
 inline MPI_Datatype mpi_type_i64_2;
 inline MPI_Datatype mpi_type_i32_2;
@@ -117,6 +134,10 @@ inline MPI_Datatype &get_mpi_type<u64>() {
 template<>
 inline MPI_Datatype &get_mpi_type<u32>() {
     return mpi_type_u32;
+}
+template<>
+inline MPI_Datatype &get_mpi_type<size_t>() {
+    return mpi_type_size_t;
 }
 template<>
 inline MPI_Datatype &get_mpi_type<u16>() {

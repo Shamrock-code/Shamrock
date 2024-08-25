@@ -23,7 +23,7 @@ namespace shamrock {
         using namespace shamrock::patch;
 
         std::vector<u64> pids;
-        std::vector<size_t> bytecounts;
+        std::vector<u64> bytecounts;
         std::vector<std::unique_ptr<sycl::buffer<u8>>> datas;
 
         // serialize patchdatas and push them into dat
@@ -64,7 +64,7 @@ namespace shamrock {
 
         // Write to the file
 
-        size_t head_ptr = 0;
+        u64 head_ptr = 0;
         MPI_File mfile{};
 
         shamcomm::open_reset_file(mfile, fname);
@@ -124,7 +124,7 @@ namespace shamrock {
 
     void load_shamrock_dump(std::string fname, std::string &metadata_user, ShamrockCtx &ctx) {
 
-        size_t head_ptr = 0;
+        u64 head_ptr = 0;
         MPI_File mfile{};
 
         shamcomm::open_read_only_file(mfile, fname);

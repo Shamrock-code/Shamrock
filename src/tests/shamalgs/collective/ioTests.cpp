@@ -17,7 +17,7 @@
 TestStart(Unittest, "shamalgs/collective/io/header_val", test_collective_io_header_val, -1) {
 
     { // Write
-        size_t head_ptr = 0;
+        u64 head_ptr = 0;
 
         MPI_File mfile{};
 
@@ -29,7 +29,7 @@ TestStart(Unittest, "shamalgs/collective/io/header_val", test_collective_io_head
     }
 
     { // Read
-        size_t head_ptr = 0;
+        u64 head_ptr = 0;
 
         MPI_File mfile{};
 
@@ -47,7 +47,7 @@ TestStart(Unittest, "shamalgs/collective/io/header_read_write", test_collective_
     static std::string ref_str = "dazjndazndzad azd azdijnazidiaz";
 
     { // Write
-        size_t head_ptr = 0;
+        u64 head_ptr = 0;
 
         MPI_File mfile{};
 
@@ -58,7 +58,7 @@ TestStart(Unittest, "shamalgs/collective/io/header_read_write", test_collective_
     }
 
     { // Read
-        size_t head_ptr = 0;
+        u64 head_ptr = 0;
 
         MPI_File mfile{};
 

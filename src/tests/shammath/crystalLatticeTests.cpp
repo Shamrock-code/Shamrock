@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Copyright(C) 2021-2David--Cléris <timothee.david--cleris@ens-lyon.fr>
 // Licensed under CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
@@ -17,6 +17,7 @@
 #include "shamtest/shamtest.hpp"
 #include <random>
 #include <vector>
+#include <hipSYCL/sycl.hpp>
 
 f64 compute_sum(shammath::CoordRange<f64_3> box, u32 id, std::vector<f64_3> &parts) {
 
@@ -136,6 +137,9 @@ TestStart(
     lattice_nearest_periodic_box_indices_test,
     1) {
     std::mt19937 eng(0x1111);
+
+
+
 
     for (u32 i = 0; i < 100; i++) {
         i32 xmin = shamalgs::random::mock_value(eng, -7, 0);

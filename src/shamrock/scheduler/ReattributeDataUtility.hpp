@@ -25,12 +25,37 @@
 #include <vector>
 
 namespace shamrock {
+
+    /**
+     * @brief Utility class used to move the objects between patches.
+     *
+     * The class is used to recompute the ownership of the objects in the patches
+     * based on their position in space.
+     *
+     */
     class ReattributeDataUtility {
-        PatchScheduler &sched;
+        PatchScheduler &sched; ///< Scheduler to bind onto
 
         public:
+        /**
+         * @brief Constructor
+         *
+         * @param sched The PatchScheduler to work on.
+         */
         ReattributeDataUtility(PatchScheduler &sched) : sched(sched) {}
 
+        /**
+         * @brief Computes the new patch owner IDs for the objects in the patches based on their
+         * position in space.
+         *
+         * @param sptree The SerialPatchTree used to compute the patch owners.
+         * @param ipos The index of the position field in the PatchData.
+         *
+         * @return A DistributedData containing the new patch IDs for each patch.
+         *
+         * @throws std::runtime_error If a new ID could not be computed for an object (out of
+         * bound).
+         */
         template<class T>
         shambase::DistributedData<sycl::buffer<u64>>
         compute_new_pid(SerialPatchTree<T> &sptree, u32 ipos) {
@@ -70,6 +95,18 @@ namespace shamrock {
             return newid_buf_map;
         }
 
+        /**
+         * @brief Extracts elements that do not belong to a patch from the patch data based on the
+         * new patch IDs.
+         *
+         * This function iterates over the patch data and extracts elements that need to be moved to
+         * a different patch. It uses the new patch IDs to determine which elements to extract and
+         * where to move them.
+         *
+         * @param new_pid A distributed data object containing the new patch IDs.
+         *
+         * @return A shared distributed data object containing the extracted patch data.
+         */
         inline shambase::DistributedDataShared<shamrock::patch::PatchData>
         extract_elements(shambase::DistributedData<sycl::buffer<u64>> new_pid) {
             shambase::DistributedDataShared<patch::PatchData> part_exchange;
@@ -154,6 +191,16 @@ namespace shamrock {
             return part_exchange;
         }
 
+        /**
+         * @brief Reattribute objects based on a given position field.
+         *
+         * This function computes new patch IDs for each object in the PatchData,
+         * extracts elements to be exchanged between patches, and then updates the patch data
+         * with the received elements.
+         *
+         * @param sptree the SerialPatchTree
+         * @param position_field the name of the main field used to determine the new patch IDs
+         */
         template<class T>
         inline void
         reatribute_patch_objects(SerialPatchTree<T> &sptree, std::string position_field) {
@@ -201,4 +248,5 @@ namespace shamrock {
             });
         }
     };
+
 } // namespace shamrock

@@ -437,6 +437,7 @@ XMAC_LIST_ENABLED_FIELD
 
 const u32 obj_mock_cnt = 6000;
 
+#ifndef DOXYGEN
 template<>
 void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
@@ -741,3 +742,4 @@ void PatchDataField<i64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
         }
     }
 }
+#endif

@@ -21,10 +21,25 @@
 
 namespace shamrock {
 
+    /**
+     * @brief Class to insert data in the PatchScheduler
+     *
+     * This class is used to insert data in the PatchScheduler.
+     * It provides a way to push data into the scheduler and
+     * handle the insertion of the data into the correct patches.
+     *
+     * @warning
+     * This class must be used by all MPI ranks.
+     */
     class DataInserterUtility {
-        PatchScheduler &sched;
+        PatchScheduler &sched; ///< Scheduler to bind onto
 
         public:
+        /**
+         * @brief Constructor
+         *
+         * @param sched The PatchScheduler to work on.
+         */
         DataInserterUtility(PatchScheduler &sched) : sched(sched) {}
 
         /**
@@ -32,9 +47,11 @@ namespace shamrock {
          *
          * @warning This function must be called by all MPI ranks
          *
-         * @param pdat The PatchData object containing the data to be inserted.
+         * @param pdat_ins The PatchData object containing the data to be inserted.
          * @param main_field_name The name of the main field.
          * @param split_threshold The threshold at which the data will be split.
+         * @param load_balance_update A function to call after the insertion of the data.
+         *                             This function should call the load balance algorithm.
          *
          * @todo use directly main field at id=0 and deduce type
          * @todo implement case we more object than the threshold are present

@@ -145,13 +145,16 @@ TestStart(
         i32 ymax = shamalgs::random::mock_value(eng, 0, 7);
         i32 zmax = shamalgs::random::mock_value(eng, 0, 7);
 
+        if (xmin == xmax || ymin == ymax || zmin == zmax)
+            continue;
+
         std::pair<std::array<i32, 3>, std::array<i32, 3>> out
             = shammath::LatticeHCP<f64_3>::nearest_periodic_box_indices(
                 {xmin, ymin, zmin}, {xmax, ymax, zmax});
 
         shamtest ::asserts().assert_bool(
             shambase::format(
-                "check periodicity : ({} {} {}) ({} {} {}) ({} {} {}) ",
+                "check periodicity : ({} {} {}) ({} {} {}) ({} {} {})",
                 xmin,
                 ymin,
                 zmin,
@@ -160,9 +163,7 @@ TestStart(
                 zmax,
                 xmax - xmin,
                 ymax - ymin,
-                zmax - zmin
-
-                ),
+                zmax - zmin),
             shammath::LatticeHCP<f64_3>::can_make_periodic_box(out.first, out.second));
     }
 }

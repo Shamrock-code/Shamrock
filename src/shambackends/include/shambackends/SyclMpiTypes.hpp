@@ -16,6 +16,7 @@
 
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcomm/mpi.hpp"
+#include <climits>
 
 inline MPI_Datatype mpi_type_i64 = MPI_INT64_T;
 inline MPI_Datatype mpi_type_i32 = MPI_INT32_T;
@@ -118,6 +119,29 @@ template<>
 inline MPI_Datatype &get_mpi_type<u32>() {
     return mpi_type_u32;
 }
+
+#ifdef __MACH__ // On normal Linux size_t is u64
+    // https://stackoverflow.com/questions/40807833/sending-size-t-type-data-with-mpi
+    #if SIZE_MAX == UCHAR_MAX
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED_CHAR;
+    #elif SIZE_MAX == USHRT_MAX
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED_SHORT;
+    #elif SIZE_MAX == UINT_MAX
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED;
+    #elif SIZE_MAX == ULONG_MAX
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED_LONG;
+    #elif SIZE_MAX == ULLONG_MAX
+        #define _MPI_TYPE_SIZE_T MPI_UNSIGNED_LONG_LONG;
+    #else
+        #error "what is happening here?"
+    #endif
+inline MPI_Datatype mpi_type_size_t = _MPI_TYPE_SIZE_T;
+template<>
+inline MPI_Datatype &get_mpi_type<size_t>() {
+    return mpi_type_size_t;
+}
+#endif
+
 template<>
 inline MPI_Datatype &get_mpi_type<u16>() {
     return mpi_type_u16;

@@ -26,6 +26,9 @@ namespace shamrock {
     /**
      * @brief Write a Shamrock dump file containing the current state of the patches and user
      * supplied metadata
+     *
+     * @todo Do some perf investigation before enabling preallocation
+     *
      * @param fname The file name to write to
      * @param metadata_user The user-provided metadata to add to the dump
      * @param sched The patch scheduler to dump

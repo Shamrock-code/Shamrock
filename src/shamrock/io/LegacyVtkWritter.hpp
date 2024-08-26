@@ -29,6 +29,8 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <string>
+#include <fstream>
+#include <sstream>
 
 namespace shamrock {
     namespace details {

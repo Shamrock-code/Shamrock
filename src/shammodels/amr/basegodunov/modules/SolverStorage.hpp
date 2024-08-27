@@ -286,8 +286,9 @@ namespace shammodels::basegodunov {
         /**
          * @brief dust density flux at cells interfaces in +y direction
          */
-        shambase::DistributedData < shammodels::basegodunov::modules::NeighGraphLinkField < Tscal
-            >>> flux_rho_dust_face_yp;
+        Component<
+            shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
+            flux_rho_dust_face_yp;
         /**
          * @brief dust density flux at cells interfaces in -y direction
          */

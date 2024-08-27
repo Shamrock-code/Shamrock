@@ -1,5 +1,5 @@
 import glob
-from lib.buildbot import * 
+from lib.buildbot import *
 
 print_buildbot_info("make status file table")
 
@@ -37,13 +37,13 @@ def get_new_state(state1 : str, state2 : str):
 
     elif -1 in st:
         return dic_inv[0]
-    
+
     else:
 
 
         return dic_inv[min(st[0],st[1])]
 
-    
+
 
 
 

@@ -396,7 +396,6 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
             return storage.merged_patchdata_ghost.get().get(id).total_elements;
         });
 
-
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
 

@@ -7,12 +7,10 @@
 // -------------------------------------------------------//
 
 #include "shambase/StlContainerConversion.hpp"
-
 #include "shamalgs/serialize.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
-
 #include <set>
 
 TestStart(
@@ -31,7 +29,8 @@ TestStart(
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(),std::move(recov));
+        shamalgs::SerializeHelper ser2(
+            shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
         PatchDataField<u32_3> buf2 = PatchDataField<u32_3>::deserialize_buf(ser2, name, nvar);
 
@@ -55,7 +54,8 @@ TestStart(
     auto recov = ser.finalize();
 
     {
-        shamalgs::SerializeHelper ser2(shamsys::instance::get_compute_scheduler_ptr(),std::move(recov));
+        shamalgs::SerializeHelper ser2(
+            shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
         PatchDataField<u32_3> buf2 = PatchDataField<u32_3>::deserialize_full(ser2);
 

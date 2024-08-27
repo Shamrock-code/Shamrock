@@ -17,7 +17,7 @@ LLVM_PROFILE_FILE="utests.profraw" ./shamrock_test --sycl-cfg 0:0 --loglevel 0 -
 llvm-profdata merge -sparse utests.profraw -o utests.profdata
 ```
 
-to print a report to the terminal: 
+to print a report to the terminal:
 ```sh
 llvm-cov report shamrock_test -instr-profile=utests.profdata
 ```

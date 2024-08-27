@@ -23,5 +23,4 @@ void shamcomm::check_mpi_return(int ret, const char *log) {
         fprintf(stderr, "error in MPI call : %s\n", log);
         MPI_Abort(MPI_COMM_WORLD, 10);
     }
-    
 }

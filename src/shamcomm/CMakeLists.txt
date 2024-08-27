@@ -8,6 +8,7 @@ set(Sources
     src/mpiInfo.cpp
     src/collectives.cpp
     src/io.cpp
+    src/logs.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
@@ -27,4 +28,3 @@ target_link_libraries(shamcomm PUBLIC MPI::MPI_C)
 target_include_directories(shamcomm PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
-

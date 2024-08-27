@@ -14,7 +14,7 @@ sycl::queue q {..., sycl::property::queue::in_order}
 
 ```cpp
 shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-                
+
     sycl::accessor ...
 
     passing variables
@@ -36,7 +36,7 @@ struct CustomAcc{
 
 //withing a function templated on the accessor and the functor
 shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
-                
+
     CustomAcc local = acc_arg;
 
     cgh.parallel_for([](sycl::range) ...,[=](sycl::item ... gid){
@@ -53,9 +53,9 @@ double v0, v1, v2, v3;
 for (i=threadIdx.x, ctr=0; i<imax; i+= BLOCKDIMX, ctr++) {
   ctr_mod = ctr%4;
   if (ctr_mod==0) { // only fill the buffer each 4th iteration
-    v0=arr[i+0* BLOCKDIMX]; 
-    v1=arr[i+1* BLOCKDIMX]; 
-    v2=arr[i+2* BLOCKDIMX]; 
+    v0=arr[i+0* BLOCKDIMX];
+    v1=arr[i+1* BLOCKDIMX];
+    v2=arr[i+2* BLOCKDIMX];
     v3=arr[i+3* BLOCKDIMX];
   }
   switch (ctr_mod) { // pull one value out of the prefetched batch

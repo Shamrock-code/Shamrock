@@ -1,6 +1,6 @@
 import shamrock
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import os
 
 
@@ -8,7 +8,7 @@ ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
 model = shamrock.get_AMRGodunov(
-    context = ctx, 
+    context = ctx,
     vector_type = "f64_3",
     grid_repr = "i64_3")
 
@@ -19,7 +19,7 @@ multy = 1
 multz = 1
 
 sz = 1 << 1
-base = 32 
+base = 32
 model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 cfg = model.gen_default_config()
@@ -30,7 +30,7 @@ cfg.set_eos_gamma(5./3.)
 model.set_config(cfg)
 
 
-gamma = 5./3. 
+gamma = 5./3.
 
 u_cs1 = 1/( gamma*(gamma-1))
 
@@ -74,7 +74,7 @@ freq = 16
 
 
 for i in range(1000):
-    
+
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 

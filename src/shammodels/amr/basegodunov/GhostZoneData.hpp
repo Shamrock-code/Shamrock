@@ -11,10 +11,10 @@
 /**
  * @file GhostZoneData.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambase/DistributedData.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammath/AABB.hpp"
@@ -23,9 +23,9 @@ namespace shammodels::basegodunov {
 
     /**
      * @brief Class to hold information related to ghost zones
-     * 
-     * @tparam Tvec 
-     * @tparam TgridVec 
+     *
+     * @tparam Tvec
+     * @tparam TgridVec
      */
     template<class Tvec, class TgridVec>
     class GhostZonesData {
@@ -53,8 +53,7 @@ namespace shammodels::basegodunov {
 
         template<class T>
         shambase::DistributedDataShared<T> build_interface_native(
-            std::function<T(u64,u64,InterfaceBuildInfos,sycl::buffer<u32>&,u32)> fct
-            ){
+            std::function<T(u64, u64, InterfaceBuildInfos, sycl::buffer<u32> &, u32)> fct) {
             StackEntry stack_loc{};
 
             // clang-format off
@@ -66,11 +65,11 @@ namespace shammodels::basegodunov {
 
                 return fct(
                     sender,
-                    receiver, 
-                    build_table.build_infos, 
-                    *build_table.ids_interf, 
+                    receiver,
+                    build_table.build_infos,
+                    *build_table.ids_interf,
                     build_table.ids_interf->size());
-                    
+
             });
             // clang-format on
         }

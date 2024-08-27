@@ -11,13 +11,12 @@
 /**
  * @file sycl2020reduction.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shamalgs/memory.hpp"
 #include "shambackends/sycl.hpp"
-
 
 namespace shamalgs::reduction::details {
 
@@ -25,9 +24,9 @@ namespace shamalgs::reduction::details {
     struct SYCL2020 {
         static T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
-        //static T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+        // static T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
-        //static T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
+        // static T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
     };
 
     template<class T, class Op>
@@ -66,14 +65,14 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T>
-    inline T SYCL2020<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id){
-        #ifdef SYCL_COMP_INTEL_LLVM
+    inline T SYCL2020<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+#ifdef SYCL_COMP_INTEL_LLVM
         return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<>{});
-        #endif
+#endif
 
-        #ifdef SYCL_COMP_ACPP
+#ifdef SYCL_COMP_ACPP
         return reduce_sycl_2020(q, buf1, start_id, end_id, sycl::plus<T>{});
-        #endif
+#endif
     }
 
 } // namespace shamalgs::reduction::details

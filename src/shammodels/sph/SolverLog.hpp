@@ -28,9 +28,9 @@ namespace shammodels::sph {
  * @brief Class holding the logs of the solver
  * /todo add a variable to keep only a definite number of steps in the step_logs
  */
-struct shammodels::sph::SolverLog{
+struct shammodels::sph::SolverLog {
 
-    struct StepInfo{
+    struct StepInfo {
         f64 solver_t;
         f64 solver_dt;
         i32 world_rank;
@@ -42,15 +42,10 @@ struct shammodels::sph::SolverLog{
 
     std::vector<StepInfo> step_logs;
 
-    inline void register_log(StepInfo info){
-        step_logs.push_back(info);
-    }
+    inline void register_log(StepInfo info) { step_logs.push_back(info); }
 
     f64 get_last_rate();
     u64 get_last_obj_count();
 
-    u64 get_iteration_count(){
-        return step_logs.size();
-    }
-
+    u64 get_iteration_count() { return step_logs.size(); }
 };

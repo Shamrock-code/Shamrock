@@ -19,17 +19,16 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
-
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/generic/setup/generators.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shamrock/patch/PatchData.hpp"
+#include "shamrock/scheduler/DataInserterUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-
 #include <functional>
 #include <random>
 #include <utility>
@@ -50,7 +49,6 @@ void shammodels::sph::Model<Tvec, SPHKernel>::timestep() {
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
     solver.init_required_fields();
-    solver.init_ghost_layout();
     ctx.init_sched(crit_split, crit_merge);
 
     using namespace shamrock::patch;
@@ -65,6 +63,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32
     sched.update_local_load_value([&](shamrock::patch::Patch p) {
         return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
     });
+    solver.init_ghost_layout();
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -156,7 +155,6 @@ void shammodels::sph::Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec
         }
     });
 
-
     modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
         .update_load_balancing();
     sched.scheduler_step(false, false);
@@ -230,31 +228,32 @@ inline void post_insert_data(PatchScheduler &sched) {
     using namespace shamrock::patch;
 
     u32 smallest_count = u32_max;
-    u32 largest_count = 0;
+    u32 largest_count  = 0;
 
     sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
-        u32 tmp = pdat.get_obj_cnt();
+        u32 tmp        = pdat.get_obj_cnt();
         smallest_count = sham::min(tmp, smallest_count);
-        largest_count = sham::max(tmp, largest_count);
+        largest_count  = sham::max(tmp, largest_count);
     });
 
     smallest_count = shamalgs::collective::allreduce_min(smallest_count);
-    largest_count = shamalgs::collective::allreduce_max(largest_count);
+    largest_count  = shamalgs::collective::allreduce_max(largest_count);
 
-    if (shamcomm::world_rank() == 0){
-        logger::info_ln("Model", "current particle counts : min = ", smallest_count, "max = ",largest_count);
+    if (shamcomm::world_rank() == 0) {
+        logger::info_ln(
+            "Model", "current particle counts : min = ", smallest_count, "max = ", largest_count);
     }
 
-    //sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
-    //    log += shambase::format(
-    //        "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
-    //});
+    // sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+    //     log += shambase::format(
+    //         "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
+    // });
     //
-    //std::string log_gathered = "";
-    //shamcomm::gather_str(log, log_gathered);
+    // std::string log_gathered = "";
+    // shamcomm::gather_str(log, log_gathered);
     //
-    //if (shamcomm::world_rank() == 0)
-    //    logger::info_ln("Model", "current particle counts : ", log_gathered);
+    // if (shamcomm::world_rank() == 0)
+    //     logger::info_ln("Model", "current particle counts : ", log_gathered);
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -346,8 +345,8 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> _box)
-    -> std::pair<Tvec, Tvec> {
+auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(
+    Tscal dr, std::pair<Tvec, Tvec> _box) -> std::pair<Tvec, Tvec> {
     StackEntry stack_loc{};
 
     using Lattice     = shammath::LatticeHCP<Tvec>;
@@ -364,8 +363,10 @@ auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::p
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
-    shambase::Timer time_setup;time_setup.start();
+void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
+    Tscal dr, std::pair<Tvec, Tvec> _box) {
+    shambase::Timer time_setup;
+    time_setup.start();
 
     StackEntry stack_loc{};
 
@@ -382,7 +383,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pai
 
     LatticeIter gen = LatticeIter(dr, idxs_min, idxs_max);
 
-    u64 acc_count =0;
+    u64 acc_count = 0;
 
     std::string log = "";
     while (!gen.is_done()) {
@@ -393,9 +394,8 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pai
         u64 max_loc_sum_ins_cnt = 0;
 
         do {
-            std::vector<Tvec> to_ins = gen.next_n(sched.crit_patch_split*2);
+            std::vector<Tvec> to_ins = gen.next_n(sched.crit_patch_split * 2);
             acc_count += to_ins.size();
-
 
             sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
@@ -423,7 +423,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pai
                     vec_acc.size(),
                     patch_coord.lower,
                     patch_coord.upper);
-                
+
                 // reserve space to avoid allocating during copy
                 pdat.reserve(vec_acc.size());
 
@@ -432,9 +432,10 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pai
                 tmp.fields_raz();
 
                 {
-                    u32 len                 = vec_acc.size();
-                    PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
-                    //sycl::buffer<Tvec> buf(vec_acc.data(), len);
+                    u32 len = vec_acc.size();
+                    PatchDataField<Tvec> &f
+                        = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+                    // sycl::buffer<Tvec> buf(vec_acc.data(), len);
                     f.override(vec_acc, len);
                 }
 
@@ -445,265 +446,364 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pai
                 }
 
                 pdat.insert_elements(tmp);
-
             });
 
             max_loc_sum_ins_cnt = shamalgs::collective::allreduce_max(loc_sum_ins_cnt);
 
-            if(shamcomm::world_rank() == 0){
-                logger::info_ln("Model", "--> insertion loop : max loc insert count = ",max_loc_sum_ins_cnt, "sum =",acc_count);
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "Model",
+                    "--> insertion loop : max loc insert count = ",
+                    max_loc_sum_ins_cnt,
+                    "sum =",
+                    acc_count);
             }
-        }while(!gen.is_done() && max_loc_sum_ins_cnt < sched.crit_patch_split*8);
-        
+        } while (!gen.is_done() && max_loc_sum_ins_cnt < sched.crit_patch_split * 8);
 
         sched.check_patchdata_locality_corectness();
 
-        //if(logger::details::loglevel >= shamcomm::logs::log_info){
-        //    std::string log_gathered = "";
-        //    shamcomm::gather_str(log, log_gathered);
+        // if(logger::details::loglevel >= shamcomm::logs::log_info){
+        //     std::string log_gathered = "";
+        //     shamcomm::gather_str(log, log_gathered);
         //
-        //    if (shamcomm::world_rank() == 0) {
-        //        logger::debug_ln("Model", "Push particles : ", log_gathered);
-        //    }
-        //}
+        //     if (shamcomm::world_rank() == 0) {
+        //         logger::debug_ln("Model", "Push particles : ", log_gathered);
+        //     }
+        // }
         log = "";
 
         modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
             .update_load_balancing();
         post_insert_data<Tvec>(sched);
-        
     }
 
-    if(true){
-        modules::ParticleReordering<Tvec,u32, SPHKernel>(ctx, solver.solver_config, solver.storage).reorder_particles();
+    if (true) {
+        modules::ParticleReordering<Tvec, u32, SPHKernel>(ctx, solver.solver_config, solver.storage)
+            .reorder_particles();
     }
 
     time_setup.end();
-    if(shamcomm::world_rank() == 0){
-        logger::info_ln("Model", "add_cube_hcp took :",time_setup.elasped_sec(),"s");
+    if (shamcomm::world_rank() == 0) {
+        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elasped_sec(), "s");
+    }
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
+    Tscal dr, std::pair<Tvec, Tvec> _box) {
+    shambase::Timer time_setup;
+    time_setup.start();
+    StackEntry stack_loc{};
+
+    shammath::CoordRange<Tvec> box = _box;
+    using namespace shamrock::patch;
+
+    PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+    using Lattice     = shammath::LatticeHCP<Tvec>;
+    using LatticeIter = typename shammath::LatticeHCP<Tvec>::IteratorDiscontinuous;
+
+    auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
+
+    u32 idx_gen     = 0;
+    LatticeIter gen = LatticeIter(dr, idxs_min, idxs_max);
+
+    shamrock::DataInserterUtility inserter(sched);
+
+    auto push_current_data = [&](std::vector<Tvec> pos_data) {
+        PatchData tmp(sched.pdl);
+        tmp.resize(pos_data.size());
+        tmp.fields_raz();
+
+        {
+            u32 len                 = pos_data.size();
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+            // sycl::buffer<Tvec> buf(pos_data.data(), len);
+            f.override(pos_data, len);
+        }
+
+        {
+            PatchDataField<Tscal> &f
+                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+            f.override(dr);
+        }
+
+        inserter.push_patch_data<Tvec>(tmp, "xyz", sched.crit_patch_split * 8, [&]() {
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(
+                ctx, solver.solver_config, solver.storage)
+                .update_load_balancing();
+        });
+        pos_data.clear();
+    };
+
+    u32 insert_step = sched.crit_patch_split * 8;
+
+    u32 wrank = shamcomm::world_rank();
+    u32 wsize = shamcomm::world_size();
+
+    auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<Tvec>();
+
+    auto has_pdat = [&]() {
+        bool ret = false;
+        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+            ret = true;
+        });
+        return ret;
+    };
+
+    // Every MPI rank should be synchroneous on gen state
+    while (!gen.is_done()) {
+
+        u64 loc_gen_count = (has_pdat()) ? insert_step : 0;
+
+        auto gen_info = shamalgs::collective::fetch_view(loc_gen_count);
+
+        u64 skip_start = gen_info.head_offset;
+        u64 gen_cnt    = loc_gen_count;
+        u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
+
+        logger::debug_ln(
+            "Gen",
+            "generate : ",
+            skip_start,
+            gen_cnt,
+            skip_end,
+            "total",
+            skip_start + gen_cnt + skip_end);
+        gen.skip(skip_start);
+        auto tmp = gen.next_n(gen_cnt);
+        gen.skip(skip_end);
+
+        std::vector<Tvec> pos_data;
+        for (Tvec r : tmp) {
+            if (Patch::is_in_patch_converted(r, bmin, bmax)) {
+                pos_data.push_back(r);
+            }
+        }
+
+        push_current_data(pos_data);
+
+        logger::debug_ln("Gen", "gen.is_done()", gen.is_done());
+    }
+
+    time_setup.end();
+    if (shamcomm::world_rank() == 0) {
+        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elasped_sec(), "s");
     }
 }
 
 template<class Tvec>
 class BigDiscUtils {
-public:
-using Tscal = shambase::VecComponent<Tvec>;
-using Out = generic::setup::generators::DiscOutput<Tscal>; 
-
-class DiscIterator {       
-    bool done = false;
-    Tvec center;
-    Tscal central_mass;
-    u64 Npart;
-    Tscal r_in;
-    Tscal r_out;
-    Tscal disc_mass;
-    Tscal p;
-    Tscal H_r_in;
-    Tscal q;
-    Tscal G;
-
-    u64 current_index;
-    
-    std::mt19937 eng;
-
-    std::function<Tscal(Tscal)> sigma_profile;
-    std::function<Tscal(Tscal)> cs_profile;
-    std::function<Tscal(Tscal)> rot_profile;
-    std::function<Tscal(Tscal)> vel_full_corr;
-
     public:
-    DiscIterator(
-        Tvec center, 
-        Tscal central_mass,
-        u64 Npart,
-        Tscal r_in,
-        Tscal r_out,
-        Tscal disc_mass,
-        Tscal p,
-        Tscal H_r_in,
-        Tscal q,
-        Tscal G,
-        std::mt19937 eng,
-        std::function<Tscal(Tscal)> sigma_profile,
-        std::function<Tscal(Tscal)> cs_profile,
-        std::function<Tscal(Tscal)> rot_profile
-    ) : current_index(0), Npart(Npart),
-    center(center), central_mass(central_mass), r_in(r_in), r_out(r_out), disc_mass(disc_mass),
-    p(p), H_r_in(H_r_in), q(q), G(G),
-    eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile),
-    rot_profile(rot_profile)
-    {
+    using Tscal = shambase::VecComponent<Tvec>;
+    using Out   = generic::setup::generators::DiscOutput<Tscal>;
 
-        if (Npart == 0) {
-            done = true;
+    class DiscIterator {
+        bool done = false;
+        Tvec center;
+        Tscal central_mass;
+        u64 Npart;
+        Tscal r_in;
+        Tscal r_out;
+        Tscal disc_mass;
+        Tscal p;
+        Tscal H_r_in;
+        Tscal q;
+        Tscal G;
+
+        u64 current_index;
+
+        std::mt19937 eng;
+
+        std::function<Tscal(Tscal)> sigma_profile;
+        std::function<Tscal(Tscal)> cs_profile;
+        std::function<Tscal(Tscal)> rot_profile;
+        std::function<Tscal(Tscal)> vel_full_corr;
+
+        public:
+        DiscIterator(
+            Tvec center,
+            Tscal central_mass,
+            u64 Npart,
+            Tscal r_in,
+            Tscal r_out,
+            Tscal disc_mass,
+            Tscal p,
+            Tscal H_r_in,
+            Tscal q,
+            Tscal G,
+            std::mt19937 eng,
+            std::function<Tscal(Tscal)> sigma_profile,
+            std::function<Tscal(Tscal)> cs_profile,
+            std::function<Tscal(Tscal)> rot_profile)
+            : current_index(0), Npart(Npart), center(center), central_mass(central_mass),
+              r_in(r_in), r_out(r_out), disc_mass(disc_mass), p(p), H_r_in(H_r_in), q(q), G(G),
+              eng(eng), sigma_profile(sigma_profile), cs_profile(cs_profile),
+              rot_profile(rot_profile) {
+
+            if (Npart == 0) {
+                done = true;
+            }
         }
-    }
 
-    inline bool is_done() { return done; } // just to make sure the result is not tempered with
+        inline bool is_done() { return done; } // just to make sure the result is not tempered with
 
+        inline generic::setup::generators::DiscOutput<Tscal> next() {
 
-    inline generic::setup::generators::DiscOutput<Tscal> next() {
+            constexpr Tscal _2pi = 2 * shambase::constants::pi<Tscal>;
 
-        constexpr Tscal _2pi = 2*shambase::constants::pi<Tscal>;
+            auto f_func = [&](Tscal r) {
+                return r * sigma_profile(r);
+            };
 
-        auto f_func = [&](Tscal r){
-            return r*sigma_profile(r);
-        };
+            Tscal fmax = f_func(r_out);
 
-        Tscal fmax = f_func(r_out);
-
-        auto find_r = [&](){
-            while(true){
-                Tscal u2 = shamalgs::random::mock_value<Tscal>(eng,0, fmax);
-                Tscal r = shamalgs::random::mock_value<Tscal>(eng,r_in, r_out);
-                if (u2 < f_func(r)){
-                    return r;
+            auto find_r = [&]() {
+                while (true) {
+                    Tscal u2 = shamalgs::random::mock_value<Tscal>(eng, 0, fmax);
+                    Tscal r  = shamalgs::random::mock_value<Tscal>(eng, r_in, r_out);
+                    if (u2 < f_func(r)) {
+                        return r;
+                    }
                 }
-            }
-        };
-            
-        auto theta = shamalgs::random::mock_value<Tscal>(eng, 0, _2pi);
-        auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng);
-        Tscal aspin = 2.;
+            };
 
-        Tscal r = find_r();
+            auto theta  = shamalgs::random::mock_value<Tscal>(eng, 0, _2pi);
+            auto Gauss  = shamalgs::random::mock_gaussian<Tscal>(eng);
+            Tscal aspin = 2.;
 
-        Tscal vk = rot_profile(r);
-        Tscal cs = cs_profile(r);
-        Tscal sigma = sigma_profile(r);
+            Tscal r = find_r();
 
-        Tscal Omega_Kep = sycl::sqrt(G * central_mass/ (r * r * r));
-        
-        //Tscal H_r = cs/vk;
-        //Tscal H =  H_r * r;
-        Tscal H = sycl::sqrt(2.) * 3. * cs / Omega_Kep; //factor taken from phantom, to fasten thermalizing
-                
-        Tscal z = H * Gauss;
+            Tscal vk    = rot_profile(r);
+            Tscal cs    = cs_profile(r);
+            Tscal sigma = sigma_profile(r);
 
-        auto pos = sycl::vec<Tscal, 3>{r*sycl::cos(theta),z,r*sycl::sin(theta)}; 
+            Tscal Omega_Kep = sycl::sqrt(G * central_mass / (r * r * r));
 
-        auto etheta = sycl::vec<Tscal, 3>{-pos.z(),0, pos.x()};
-        etheta /= sycl::length(etheta);
+            // Tscal H_r = cs/vk;
+            // Tscal H =  H_r * r;
+            Tscal H = sycl::sqrt(2.) * 3. * cs
+                      / Omega_Kep; // factor taken from phantom, to fasten thermalizing
 
-        auto vel = vk*etheta;
+            Tscal z = H * Gauss;
 
-        //Tscal rho = (sigma / (H * shambase::constants::pi2_sqrt<Tscal>))*
-        //    sycl::exp(- z*z / (2*H*H));
+            auto pos = sycl::vec<Tscal, 3>{r * sycl::cos(theta), z, r * sycl::sin(theta)};
 
-        Tscal fs = 1. - sycl::sqrt(r_in / r);
-        Tscal rho = (sigma * fs) * sycl::exp(- z*z / (2*H*H));
+            auto etheta = sycl::vec<Tscal, 3>{-pos.z(), 0, pos.x()};
+            etheta /= sycl::length(etheta);
 
-        Out out {
-            pos, vel, cs, rho
-        };
+            auto vel = vk * etheta;
 
-        // increase counter + check if finished
-        current_index++;
-        if(current_index == Npart){
-            done = true;
-        }
+            // Tscal rho = (sigma / (H * shambase::constants::pi2_sqrt<Tscal>))*
+            //     sycl::exp(- z*z / (2*H*H));
 
-        return out;
-    }
+            Tscal fs  = 1. - sycl::sqrt(r_in / r);
+            Tscal rho = (sigma * fs) * sycl::exp(-z * z / (2 * H * H));
 
-    inline std::vector<Out> next_n(u32 nmax) {
-        std::vector<Out> ret{};
-        for (u32 i = 0; i < nmax; i++) {
-            if (done) {
-                break;
+            Out out{pos, vel, cs, rho};
+
+            // increase counter + check if finished
+            current_index++;
+            if (current_index == Npart) {
+                done = true;
             }
 
-            ret.push_back(next());
+            return out;
         }
-        return ret;
-    }
+
+        inline std::vector<Out> next_n(u32 nmax) {
+            std::vector<Out> ret{};
+            for (u32 i = 0; i < nmax; i++) {
+                if (done) {
+                    break;
+                }
+
+                ret.push_back(next());
+            }
+            return ret;
+        }
+    };
 };
 
-};
-
-            
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
-                Tvec center, 
-                Tscal central_mass,
-                u32 Npart,
-                Tscal r_in,
-                Tscal r_out,
-                Tscal disc_mass,
-                Tscal p,
-                Tscal H_r_in,
-                Tscal q,
-                std::mt19937 eng
-) {
+    Tvec center,
+    Tscal central_mass,
+    u32 Npart,
+    Tscal r_in,
+    Tscal r_out,
+    Tscal disc_mass,
+    Tscal p,
+    Tscal H_r_in,
+    Tscal q,
+    std::mt19937 eng) {
 
     Tscal eos_gamma;
-    using Config = SolverConfig;
+    using Config              = SolverConfig;
     using SolverConfigEOS     = typename Config::EOSConfig;
     using SolverEOS_Adiabatic = typename SolverConfigEOS::Adiabatic;
-    if (SolverEOS_Adiabatic *eos_config =
-        std::get_if<SolverEOS_Adiabatic>(&solver.solver_config.eos_config.config)) {
+    if (SolverEOS_Adiabatic *eos_config
+        = std::get_if<SolverEOS_Adiabatic>(&solver.solver_config.eos_config.config)) {
 
         eos_gamma = eos_config->gamma;
 
     } else {
-        //dirty hack for disc setup in locally isothermal
+        // dirty hack for disc setup in locally isothermal
         eos_gamma = 2;
-        //shambase::throw_unimplemented();
+        // shambase::throw_unimplemented();
     }
 
-    auto sigma_profile = [=](Tscal r){
+    auto sigma_profile = [=](Tscal r) {
         // we setup with an adimensional mass since it is monte carlo
         constexpr Tscal sigma_0 = 1;
-        return sigma_0*sycl::pow(r/r_in, -p);
+        return sigma_0 * sycl::pow(r / r_in, -p);
     };
 
-    auto cs_law = [=](Tscal r){
-        return sycl::pow(r/r_in, -q);
+    auto cs_law = [=](Tscal r) {
+        return sycl::pow(r / r_in, -q);
     };
 
-    auto kep_profile = [&](Tscal r){
+    auto kep_profile = [&](Tscal r) {
         Tscal G = solver.solver_config.get_constant_G();
-        return sycl::sqrt(G * central_mass/r);
+        return sycl::sqrt(G * central_mass / r);
     };
 
-    auto rot_profile = [&] (Tscal r) -> Tscal{
-        //carefull: needs r in cylindrical
-        Tscal G = solver.solver_config.get_constant_G();
-        Tscal c = solver.solver_config.get_constant_c();
-        Tscal aspin = 2.;
-        Tscal term = G * central_mass / r;
+    auto rot_profile = [&](Tscal r) -> Tscal {
+        // carefull: needs r in cylindrical
+        Tscal G       = solver.solver_config.get_constant_G();
+        Tscal c       = solver.solver_config.get_constant_c();
+        Tscal aspin   = 2.;
+        Tscal term    = G * central_mass / r;
         Tscal term_fs = 1. - sycl::sqrt(r_in / r);
-        Tscal term_pr = - sycl::pown(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
+        Tscal term_pr
+            = -sycl::pown(cs_law(r), 2) * (1.5 + p + q); // NO CORRECTION from fs term, bad response
         Tscal term_bh = 0.; //- (2. * aspin / sycl::pow(c, 3)) * sycl::pow(G * central_mass / r, 2);
-        Tscal det = sycl::pown(term_bh, 2) + 4.*(term + term_pr);
-        Tscal Rg   = G * central_mass / sycl::pown(c, 2);
-        Tscal vkep = sqrt(G * central_mass / r);
+        Tscal det     = sycl::pown(term_bh, 2) + 4. * (term + term_pr);
+        Tscal Rg      = G * central_mass / sycl::pown(c, 2);
+        Tscal vkep    = sqrt(G * central_mass / r);
 
-        Tscal vphi = 0.5*(term_bh + sycl::sqrt(det));
+        Tscal vphi = 0.5 * (term_bh + sycl::sqrt(det));
 
         return vphi;
-
     };
 
-    auto cs_profile = [&](Tscal r){
-        Tscal cs_in = (H_r_in * r_in / r )*kep_profile(r_in);//H_r_in*rot_profile(r_in);
-        return cs_law(r)*cs_in; 
+    auto cs_profile = [&](Tscal r) {
+        Tscal cs_in = (H_r_in * r_in / r) * kep_profile(r_in); // H_r_in*rot_profile(r_in);
+        return cs_law(r) * cs_in;
     };
 
     auto get_hfact = []() -> Tscal {
         return Kernel::hfactd;
     };
-        
-    auto int_rho_h = [&] (Tscal h) -> Tscal{
+
+    auto int_rho_h = [&](Tscal h) -> Tscal {
         return shamrock::sph::rho_h(solver.solver_config.gpart_mass, h, Kernel::hfactd);
     };
 
+    Tscal part_mass = disc_mass / Npart;
 
-
-    Tscal part_mass = disc_mass/Npart;
-
-    shambase::Timer time_setup;time_setup.start();
+    shambase::Timer time_setup;
+    time_setup.start();
 
     StackEntry stack_loc{};
 
@@ -711,13 +811,12 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
 
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
-    using Out = generic::setup::generators::DiscOutput<Tscal>; 
+    using Out   = generic::setup::generators::DiscOutput<Tscal>;
     using DIter = typename BigDiscUtils<Tvec>::DiscIterator;
 
-
-    Tscal G = solver.solver_config.get_constant_G();
+    Tscal G   = solver.solver_config.get_constant_G();
     DIter gen = DIter(
-        center, 
+        center,
         central_mass,
         Npart,
         r_in,
@@ -732,7 +831,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
         cs_profile,
         rot_profile);
 
-    u64 acc_count =0;
+    u64 acc_count = 0;
 
     std::string log = "";
     while (!gen.is_done()) {
@@ -743,9 +842,8 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
         u64 max_loc_sum_ins_cnt = 0;
 
         do {
-            std::vector<Out> to_ins = gen.next_n(sched.crit_patch_split*2);
+            std::vector<Out> to_ins = gen.next_n(sched.crit_patch_split * 2);
             acc_count += to_ins.size();
-
 
             sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
@@ -754,11 +852,10 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
 
                 std::vector<Out> part_list;
                 for (Out r : to_ins) {
-                    if (patch_coord.contain_pos(r.pos )) {
-                    // add all part to insert in a vector
-                    part_list.push_back(r);
+                    if (patch_coord.contain_pos(r.pos)) {
+                        // add all part to insert in a vector
+                        part_list.push_back(r);
                     }
-                
                 }
 
                 // update max insert_count
@@ -775,18 +872,18 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
                     part_list.size(),
                     patch_coord.lower,
                     patch_coord.upper);
-                
-                //extract the pos from part_list
+
+                // extract the pos from part_list
                 std::vector<Tvec> vec_pos;
                 std::vector<Tvec> vec_vel;
                 std::vector<Tscal> vec_u;
                 std::vector<Tscal> vec_h;
                 std::vector<Tscal> vec_cs;
 
-                for(Out o : part_list){
+                for (Out o : part_list) {
                     vec_pos.push_back(o.pos);
                     vec_vel.push_back(o.velocity);
-                    vec_u.push_back(o.cs*o.cs/(/*solver.eos_gamma * */ (eos_gamma - 1)));
+                    vec_u.push_back(o.cs * o.cs / (/*solver.eos_gamma * */ (eos_gamma - 1)));
                     vec_h.push_back(shamrock::sph::h_rho(part_mass, o.rho * 0.1, Kernel::hfactd));
                     vec_cs.push_back(o.cs);
                 }
@@ -799,86 +896,91 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
                 tmp.fields_raz();
 
                 {
-                    u32 len                 = vec_pos.size();
-                    PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+                    u32 len = vec_pos.size();
+                    PatchDataField<Tvec> &f
+                        = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
                     sycl::buffer<Tvec> buf(vec_pos.data(), len);
                     f.override(buf, len);
                 }
 
                 {
                     u32 len = vec_pos.size();
-                    PatchDataField<Tscal> &f =
-                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                    PatchDataField<Tscal> &f
+                        = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
                     sycl::buffer<Tscal> buf(vec_h.data(), len);
                     f.override(buf, len);
                 }
 
                 {
                     u32 len = vec_pos.size();
-                    PatchDataField<Tscal> &f =
-                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
+                    PatchDataField<Tscal> &f
+                        = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("uint"));
                     sycl::buffer<Tscal> buf(vec_u.data(), len);
                     f.override(buf, len);
                 }
 
-                if(solver.solver_config.is_eos_locally_isothermal()){
+                if (solver.solver_config.is_eos_locally_isothermal()) {
                     u32 len = vec_pos.size();
-                    PatchDataField<Tscal> &f =
-                        tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("soundspeed"));
+                    PatchDataField<Tscal> &f
+                        = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("soundspeed"));
                     sycl::buffer<Tscal> buf(vec_cs.data(), len);
                     f.override(buf, len);
                 }
 
                 {
                     u32 len = vec_pos.size();
-                    PatchDataField<Tvec> &f =
-                        tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
+                    PatchDataField<Tvec> &f
+                        = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
                     sycl::buffer<Tvec> buf(vec_vel.data(), len);
                     f.override(buf, len);
                 }
 
                 pdat.insert_elements(tmp);
-
             });
 
             max_loc_sum_ins_cnt = shamalgs::collective::allreduce_max(loc_sum_ins_cnt);
 
-            if(shamcomm::world_rank() == 0){
-                logger::info_ln("Model", "--> insertion loop : max loc insert count = ",max_loc_sum_ins_cnt, "sum =",acc_count);
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "Model",
+                    "--> insertion loop : max loc insert count = ",
+                    max_loc_sum_ins_cnt,
+                    "sum =",
+                    acc_count);
             }
-        }while(!gen.is_done() && max_loc_sum_ins_cnt < sched.crit_patch_split*8);
-        
+        } while (!gen.is_done() && max_loc_sum_ins_cnt < sched.crit_patch_split * 8);
 
         sched.check_patchdata_locality_corectness();
 
-        //if(logger::details::loglevel >= shamcomm::logs::log_info){
-        //    std::string log_gathered = "";
-        //    shamcomm::gather_str(log, log_gathered);
+        // if(logger::details::loglevel >= shamcomm::logs::log_info){
+        //     std::string log_gathered = "";
+        //     shamcomm::gather_str(log, log_gathered);
         //
-        //    if (shamcomm::world_rank() == 0) {
-        //        logger::debug_ln("Model", "Push particles : ", log_gathered);
-        //    }
-        //}
+        //     if (shamcomm::world_rank() == 0) {
+        //         logger::debug_ln("Model", "Push particles : ", log_gathered);
+        //     }
+        // }
         log = "";
 
         modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
             .update_load_balancing();
         post_insert_data<Tvec>(sched);
-        
     }
 
-    if(true){
-        modules::ParticleReordering<Tvec,u32, SPHKernel>(ctx, solver.solver_config, solver.storage).reorder_particles();
+    if (true) {
+        modules::ParticleReordering<Tvec, u32, SPHKernel>(ctx, solver.solver_config, solver.storage)
+            .reorder_particles();
     }
 
     time_setup.end();
-    if(shamcomm::world_rank() == 0){
-        logger::info_ln("Model", "add_big_disc took :",time_setup.elasped_sec(),"s");
+    if (shamcomm::world_rank() == 0) {
+        logger::info_ln("Model", "add_big_disc took :", time_setup.elasped_sec(), "s");
     }
 }
-        
+
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
+    Tscal dr, std::pair<Tvec, Tvec> _box) {
     StackEntry stack_loc{};
 
     shammath::CoordRange<Tvec> box = _box;
@@ -986,16 +1088,16 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pai
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(PhantomDump &phdump, bool bypass_error)
-    -> SolverConfig {
+auto shammodels::sph::Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(
+    PhantomDump &phdump, bool bypass_error) -> SolverConfig {
     StackEntry stack_loc{};
     SolverConfig conf{};
 
     auto massoftype = phdump.read_header_floats<Tscal>("massoftype");
 
-    conf.gpart_mass = massoftype[0];
-    conf.cfl_cour   = phdump.read_header_float<Tscal>("C_force");
-    conf.cfl_force  = phdump.read_header_float<Tscal>("C_cour");
+    conf.gpart_mass           = massoftype[0];
+    conf.cfl_config.cfl_cour  = phdump.read_header_float<Tscal>("C_force");
+    conf.cfl_config.cfl_force = phdump.read_header_float<Tscal>("C_cour");
 
     conf.eos_config      = get_shamrock_eosconfig<Tvec>(phdump, bypass_error);
     conf.artif_viscosity = get_shamrock_avconfig<Tvec>(phdump);
@@ -1331,8 +1433,8 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
     dump.table_header_fort_real.add("rhozero", 0);
     dump.table_header_fort_real.add("hfact", Kernel::hfactd);
     dump.table_header_fort_real.add("tolh", 0.0001);
-    dump.table_header_fort_real.add("C_cour", solver.solver_config.cfl_cour);
-    dump.table_header_fort_real.add("C_force", solver.solver_config.cfl_force);
+    dump.table_header_fort_real.add("C_cour", solver.solver_config.cfl_config.cfl_cour);
+    dump.table_header_fort_real.add("C_force", solver.solver_config.cfl_config.cfl_force);
     dump.table_header_fort_real.add("alpha", 0);
     dump.table_header_fort_real.add("alphau", 1);
     dump.table_header_fort_real.add("alphaB", 1);

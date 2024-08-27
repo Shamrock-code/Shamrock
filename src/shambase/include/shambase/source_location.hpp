@@ -11,12 +11,12 @@
 /**
  * @file source_location.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
+ * @brief
  */
 
 #include "cxxbackports/source_location.hpp"
 
-namespace shambase::cxxstd{
+namespace shambase::cxxstd {
 
     using source_location = std::source_location;
 

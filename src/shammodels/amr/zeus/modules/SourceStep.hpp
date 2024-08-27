@@ -11,10 +11,10 @@
 /**
  * @file SourceStep.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/vec.hpp"
 #include "shammodels/amr/zeus/Solver.hpp"
 #include "shammodels/amr/zeus/modules/SolverStorage.hpp"
@@ -28,7 +28,7 @@ namespace shammodels::zeus::modules {
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using Config  = SolverConfig<Tvec,TgridVec>;
+        using Config  = SolverConfig<Tvec, TgridVec>;
         using Storage = SolverStorage<Tvec, TgridVec, u64>;
 
         ShamrockCtx &context;
@@ -39,32 +39,30 @@ namespace shammodels::zeus::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         /**
-         * @brief compute general forces (pressure + external and store them into `SolverStorage::forces`)
-         * \f[
-         *   \frac{u_i^{n+1} - u_i^{n}}{\Delta t} = \underbrace{-\frac{\partial_i p^n}{\rho^n} 
+         * @brief compute general forces (pressure + external and store them into
+         * `SolverStorage::forces`) \f[ \frac{u_i^{n+1} - u_i^{n}}{\Delta t} =
+         * \underbrace{-\frac{\partial_i p^n}{\rho^n}
          *     + f_{\text{ext},i}}_{ f_{\rm gen} }
          * \f]
          */
         void compute_forces();
 
-        
-
         /**
          * @brief apply the generalized forces
          * \f[
-         *   \frac{u_i^{n+1} - u_i^{n}}{\Delta t} = \underbrace{-\frac{\partial_i p^n}{\rho^n} 
+         *   \frac{u_i^{n+1} - u_i^{n}}{\Delta t} = \underbrace{-\frac{\partial_i p^n}{\rho^n}
          *     + f_{\text{ext},i}}_{ f_{\rm gen} }
          * \f]
          */
         void apply_force(Tscal dt);
-        
+
         /**
          * @brief Compute the values of the artificial viscosity terms
          * (\cite Zeus2d_main equations 33,34)
-         * 
+         *
          * \f{eqnarray*}{
-         *     q^x_{i,j,k} &=& C^{\rm AV} \rho_{i,j} (v^x_{i+1,j,k} - v^x_{i,j,k}) \\ 
-         *     q^y_{i,j,k} &=& C^{\rm AV} \rho_{i,j} (v^y_{i,j+1,k} - v^y_{i,j,k}) \\ 
+         *     q^x_{i,j,k} &=& C^{\rm AV} \rho_{i,j} (v^x_{i+1,j,k} - v^x_{i,j,k}) \\
+         *     q^y_{i,j,k} &=& C^{\rm AV} \rho_{i,j} (v^y_{i,j+1,k} - v^y_{i,j,k}) \\
          *     q^z_{i,j,k} &=& C^{\rm AV} \rho_{i,j} (v^z_{i,j,k+1} - v^z_{i,j,k})
          * \f}
          */
@@ -75,8 +73,8 @@ namespace shammodels::zeus::modules {
         void compute_div_v();
 
         void update_eint_eos(Tscal dt);
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
-
     };
 } // namespace shammodels::zeus::modules

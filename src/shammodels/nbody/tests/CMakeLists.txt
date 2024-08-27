@@ -5,7 +5,7 @@ if("${BUILD_TEST}")
     PRIVATE
     benchmark_selfgrav.cpp
     PUBLIC
-         
+
     )
 
 

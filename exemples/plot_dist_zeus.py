@@ -1,6 +1,6 @@
 import shamrock
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import os
 
 
@@ -8,7 +8,7 @@ ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
 model = shamrock.get_AMRZeus(
-    context = ctx, 
+    context = ctx,
     vector_type = "f64_3",
     grid_repr = "i64_3")
 
@@ -19,7 +19,7 @@ multy = 1
 multz = 1
 
 sz = 1 << 1
-base = 64 
+base = 64
 #model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 cfg = model.gen_default_config()
@@ -205,7 +205,7 @@ for line in lines:
             z = float(splt[2])
             cell_vel_end_transp.append((x,y,z))
 
-        
+
         elif active_field == "divv_source":
             val = float(line[:-1])
             cell_divv_source.append(val)
@@ -401,12 +401,12 @@ select_cell_Flux_z = [[],[],[],[],[],[],[],[]]
 for i in range(len(cell_rho)):
     rho,eint,vel,cmin,cmax = cell_rho [i],cell_eint[i],cell_vel[i],cell_min[i],cell_max[i]
 
-    eint_src, vel_src = cell_eint_post_source[i], cell_vel_post_source[i], 
-    eint_trsp, vel_trsp = cell_eint_start_transp[i], cell_vel_start_transp[i], 
+    eint_src, vel_src = cell_eint_post_source[i], cell_vel_post_source[i],
+    eint_trsp, vel_trsp = cell_eint_start_transp[i], cell_vel_start_transp[i],
     rho_etrsp, eint_etrsp, vel_etrsp = cell_rho_end_transp[i], cell_eint_end_transp[i], cell_vel_end_transp[i]
 
     x,y,z = cmin
-    
+
 
     if y == 10 and z == 10:
         select_cell_rho .append(rho )

@@ -1,6 +1,6 @@
 import shamrock
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import os
 
 
@@ -8,7 +8,7 @@ ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
 model = shamrock.get_AMRZeus(
-    context = ctx, 
+    context = ctx,
     vector_type = "f64_3",
     grid_repr = "i64_3")
 
@@ -19,7 +19,7 @@ multy = 1
 multz = 1
 
 sz = 1 << 1
-base = 64 
+base = 64
 model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 

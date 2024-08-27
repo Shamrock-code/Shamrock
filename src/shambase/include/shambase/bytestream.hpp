@@ -11,10 +11,10 @@
 /**
  * @file bytestream.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambase/aliases_int.hpp"
 #include <sstream>
 #include <string>
@@ -47,8 +47,8 @@ namespace shambase {
 
     namespace details {
         template<typename T>
-        using serialize_t =
-            decltype(std::declval<T>().serialize(std::declval<std::basic_stringstream<byte> &>()));
+        using serialize_t = decltype(std::declval<T>().serialize(
+            std::declval<std::basic_stringstream<byte> &>()));
 
         template<typename Container, typename = std::void_t<>>
         struct has_serialize : std::false_type {};
@@ -60,8 +60,8 @@ namespace shambase {
         inline constexpr bool has_serialize_v = has_serialize<Container>::value;
 
         template<typename T>
-        using deserialize_t =
-            decltype(T::deserialize(std::declval<std::basic_stringstream<byte> &>()));
+        using deserialize_t
+            = decltype(T::deserialize(std::declval<std::basic_stringstream<byte> &>()));
 
         template<typename Container, typename = std::void_t<>>
         struct has_deserialize : std::false_type {};
@@ -94,10 +94,10 @@ namespace shambase {
 
     /**
      * @brief write the vector into the bytestream
-     * 
-     * @tparam T 
-     * @param stream 
-     * @param vec 
+     *
+     * @tparam T
+     * @param stream
+     * @param vec
      */
     template<class T>
     inline void stream_write_vector(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
@@ -118,10 +118,10 @@ namespace shambase {
     /**
      * @brief read a vector from the bytestream
      * Note : this appends read objects to the vector without resetting it
-     * 
-     * @tparam T 
-     * @param stream 
-     * @param vec 
+     *
+     * @tparam T
+     * @param stream
+     * @param vec
      */
     template<class T>
     inline void stream_read_vector(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
@@ -141,29 +141,30 @@ namespace shambase {
         }
     }
 
-
     template<class T>
-    inline void stream_write_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
+    inline void
+    stream_write_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
 
         u32 flag = details::VALIDATION_FLAGS::VECTOR;
         stream_write(stream, flag);
 
         u64 len = vec.size();
         stream_write(stream, len);
-        
+
         stream.write(reinterpret_cast<byte const *>(vec.data()), len * sizeof(T));
     }
 
     /**
      * @brief read a vector from the bytestream
      * Note : this appends read objects to the vector without resetting it
-     * 
-     * @tparam T 
-     * @param stream 
-     * @param vec 
+     *
+     * @tparam T
+     * @param stream
+     * @param vec
      */
     template<class T>
-    inline void stream_read_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
+    inline void
+    stream_read_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
 
         u32 flag;
         stream_read(stream, flag);
@@ -174,8 +175,8 @@ namespace shambase {
         u64 len;
         stream_read(stream, len);
         vec.resize(len);
-        
-        stream.read(reinterpret_cast<byte *>(vec.data()),  len * sizeof(T));
+
+        stream.read(reinterpret_cast<byte *>(vec.data()), len * sizeof(T));
     }
 
 } // namespace shambase

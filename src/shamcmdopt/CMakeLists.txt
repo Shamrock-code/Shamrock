@@ -7,6 +7,7 @@ set(Sources
         src/cmdopt.cpp
         src/env.cpp
         src/term_colors.cpp
+        src/tty.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)
@@ -22,4 +23,3 @@ target_link_libraries(shamcmdopt PUBLIC shambase)
 target_include_directories(shamcmdopt PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
-

@@ -9,15 +9,15 @@
 /**
  * @file DiffOperator.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
-#include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/modules/DiffOperator.hpp"
+#include "shamrock/scheduler/InterfacesUtility.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
@@ -26,7 +26,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
     logger::debug_ln("SPH", "Updating divv");
 
     Tscal gpart_mass = solver_config.gpart_mass;
-    
+
     using namespace shamrock;
     using namespace shamrock::patch;
 
@@ -47,8 +47,8 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
 
-        sycl::buffer<Tvec> &buf_xyz =
-            shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+        sycl::buffer<Tvec> &buf_xyz
+            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
         sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
         sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sycl::buffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
@@ -76,8 +76,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute divv", [=](i32 id_a){
-
+                shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute divv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
                     Tvec sum_axyz  = {0, 0, 0};
@@ -154,8 +153,8 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
 
-        sycl::buffer<Tvec> &buf_xyz =
-            shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+        sycl::buffer<Tvec> &buf_xyz
+            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
         sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
         sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sycl::buffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
@@ -183,8 +182,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, pdat.get_obj_cnt(),"compute curlv", [=](i32 id_a){
-
+                shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute curlv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
                     Tvec sum_axyz  = {0, 0, 0};

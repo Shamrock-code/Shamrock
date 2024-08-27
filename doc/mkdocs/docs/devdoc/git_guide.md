@@ -29,9 +29,9 @@
 **TODO**
 
 
-## Usage of git in shamrock 
+## Usage of git in shamrock
 
-Resemble to gitflow: 
+Resemble to gitflow:
 
 ```mermaid
 gitGraph LR:
@@ -64,13 +64,13 @@ git clone --recurse-submodules git@github.com:tdavidcl/Shamrock.git
 
 ## Git configuration
 
-Username and mail : 
+Username and mail :
 ```bash
 git config --global user.name "<github username>"
 git config --global user.email "<github email>"
 ```
 
-Default editor : 
+Default editor :
 
 === "Nano users"
 
@@ -84,7 +84,7 @@ Default editor :
     git config --global core.editor vim
     ```
 
-## Making a commit 
+## Making a commit
 First go on the branch your are working on :
 ```bash
 git fetch --all
@@ -99,5 +99,5 @@ git commit -m "my commit message"
 git push
 ```
 
-For the commit message please name them accordingly : 
+For the commit message please name them accordingly :
 `[<Modified component>] <the commit message>`, for exemple `[SPH] fix ....`

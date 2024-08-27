@@ -16,15 +16,15 @@
  * Exemple :
  * \code{.cpp}
  * TestStart(Unittest, "shamtest/PyScriptHandle(plot)", shamtestpyscriptplot, 1) {
- * 
+ *
  *     std::vector<f64> x = {0, 1, 2, 4, 5};
  *     std::vector<f64> y = {1, 2, 4, 6, 1};
- * 
+ *
  *     PyScriptHandle hdnl{};
- * 
+ *
  *     hdnl.data()["x"] = x;
  *     hdnl.data()["y"] = y;
- * 
+ *
  *     hdnl.exec(R"(
  *         import matplotlib.pyplot as plt
  *         plt.plot(x,y)

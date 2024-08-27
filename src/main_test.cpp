@@ -9,15 +9,15 @@
 /**
  * @file main_test.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamcmdopt/cmdopt.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 #include "version.hpp"
@@ -39,11 +39,12 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--validation", {}, "run only validation tests");
     opts::register_opt("--unittest", {}, "run only unittest");
     opts::register_opt("--long-test", {}, "run also long tests");
-    opts::register_opt("--force-dgpu",{}, "for direct mpi comm on");
+    opts::register_opt("--force-dgpu", {}, "for direct mpi comm on");
 
     opts::register_opt("-o", {"(filepath)"}, "output test report in that file");
 
     opts::register_env_var_doc("REF_FILES_PATH", "reference test files path");
+    shamcmdopt::register_env_var_doc("SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
     opts::init(argc, argv);
     if (opts::is_help_mode()) {
@@ -77,8 +78,8 @@ int main(int argc, char *argv[]) {
         logger::print_faint_row();
 
         std::cout << "\n"
-                  << shambase::term_colors::col8b_cyan() + "Git infos " +
-                        shambase::term_colors::reset() + ":\n";
+                  << shambase::term_colors::col8b_cyan() + "Git infos "
+                         + shambase::term_colors::reset() + ":\n";
         std::cout << git_info_str << std::endl;
 
         logger::print_faint_row();
@@ -134,8 +135,8 @@ int main(int argc, char *argv[]) {
             " - Code init",
             shambase::term_colors::col8b_green() + "DONE" + shambase::term_colors::reset(),
             "now it's time to",
-            shambase::term_colors::col8b_cyan() + shambase::term_colors::blink() + "ROCK" +
-                shambase::term_colors::reset());
+            shambase::term_colors::col8b_cyan() + shambase::term_colors::blink() + "ROCK"
+                + shambase::term_colors::reset());
         logger::print_faint_row();
     }
 
@@ -143,7 +144,7 @@ int main(int argc, char *argv[]) {
 
     cfg.print_test_list_exit = false;
 
-    cfg.full_output = false;
+    cfg.full_output = opts::has_option("--full-output");
 
     cfg.output_tex = true;
     if (opts::has_option("-o")) {

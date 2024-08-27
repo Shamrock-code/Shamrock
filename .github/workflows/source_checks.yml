@@ -7,7 +7,7 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-    
+
 jobs:
 
   pre-commit:
@@ -17,6 +17,11 @@ jobs:
 
     #### Checkout part ####
     # Checkout merge commit if PR otherwise default
+    - name : Reconfigure git
+      run:  |
+        git config --global --add safe.directory '*'
+        git config --global --list
+
     - uses: actions/checkout@v4
       if: github.event_name == 'pull_request_target'
       with:
@@ -30,7 +35,7 @@ jobs:
 
     - name: Show diff against main
       if: github.event_name == 'pull_request_target'
-      run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+      run: git diff ${{ github.event.pull_request.base.sha }} HEAD
     #### End Checkout part ####
 
     - uses: actions/setup-python@v5
@@ -47,11 +52,11 @@ jobs:
     - name: make file comment
       if: success() && github.event_name == 'pull_request_target'
       run: |
-        echo "Pre-commit check: ✅ 
+        echo "Pre-commit check: ✅
         \`\`\`
         $(pre-commit run --all-files)
         \`\`\`
-        
+
         Test pipeline can run.
         " > message.md
 
@@ -90,7 +95,7 @@ jobs:
     - name: rm tmpfiles
       if: failure() && github.event_name == 'pull_request_target'
       run: rm diff-pre-commit log_precommit_*
-    
+
     - name: Show diff
       if: failure() && github.event_name == 'pull_request_target'
       run: git diff

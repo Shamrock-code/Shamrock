@@ -6,20 +6,19 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/DistributedData.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
-#include "shambase/DistributedData.hpp"
-#include "shamsys/NodeInstance.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 #include <map>
 #include <memory>
 
-
-void distribdata_sparse_comm_test(std::string prefix){
+void distribdata_sparse_comm_test(std::string prefix) {
 
     using namespace shamalgs::collective;
     using namespace shamsys::instance;
@@ -50,10 +49,11 @@ void distribdata_sparse_comm_test(std::string prefix){
         u64 rnd      = eng();
 
         if (!dat_ref.has_key(sender, receiver)) {
-            dat_ref.add_obj(sender,
-                            receiver,
-                            std::make_unique<sycl::buffer<u8>>(shamalgs::random::mock_buffer<u8>(
-                                rnd, shamalgs::random::mock_value<i32>(eng, 1, length))));
+            dat_ref.add_obj(
+                sender,
+                receiver,
+                std::make_unique<sycl::buffer<u8>>(shamalgs::random::mock_buffer<u8>(
+                    rnd, shamalgs::random::mock_value<i32>(eng, 1, length))));
         }
     }
 
@@ -61,24 +61,28 @@ void distribdata_sparse_comm_test(std::string prefix){
 
     dat_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
         if (rank_owner[sender] == wrank) {
-            send_data.add_obj(sender, receiver, shamalgs::memory::duplicate(get_compute_queue(), buf));
+            send_data.add_obj(
+                sender, receiver, shamalgs::memory::duplicate(get_compute_queue(), buf));
         }
     });
 
     shamalgs::collective::SerializedDDataComm recv_data;
-    distributed_data_sparse_comm(get_compute_scheduler_ptr(),
-        send_data, recv_data, [&](u64 id) { return rank_owner[id]; });
+    distributed_data_sparse_comm(get_compute_scheduler_ptr(), send_data, recv_data, [&](u64 id) {
+        return rank_owner[id];
+    });
 
     shamalgs::collective::SerializedDDataComm recv_data_ref;
     dat_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
         if (rank_owner[receiver] == wrank) {
-            recv_data_ref.add_obj(sender, receiver, shamalgs::memory::duplicate(get_compute_queue(),buf));
+            recv_data_ref.add_obj(
+                sender, receiver, shamalgs::memory::duplicate(get_compute_queue(), buf));
         }
     });
 
-    shamtest::asserts().assert_equal("expected number of recv",
-                                     recv_data.get_element_count(),
-                                     recv_data_ref.get_element_count());
+    shamtest::asserts().assert_equal(
+        "expected number of recv",
+        recv_data.get_element_count(),
+        recv_data_ref.get_element_count());
 
     recv_data_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
         shamtest::asserts().assert_bool("has expected key", recv_data.has_key(sender, receiver));
@@ -94,5 +98,4 @@ void distribdata_sparse_comm_test(std::string prefix){
 TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributeddatacomm, -1) {
 
     distribdata_sparse_comm_test("");
-    
 }

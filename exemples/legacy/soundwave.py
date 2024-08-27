@@ -1,6 +1,6 @@
 import shamrock
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import os
 
 
@@ -88,7 +88,7 @@ setup.clear()
 
 def print_dist(dic, cname : str,fname : str,tval):
 
-   
+
 
     #import os
     #if not os.path.exists(report_dir):
@@ -110,7 +110,7 @@ def print_dist(dic, cname : str,fname : str,tval):
     plt.legend()
     plt.savefig(fname)
 
-    
+
 
 
 

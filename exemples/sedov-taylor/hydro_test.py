@@ -38,8 +38,7 @@ xm,ym,zm = bmin
 xM,yM,zM = bmax
 
 model.resize_simulation_box(bmin,bmax)
-model.add_cube_hcp_3d(dr, bmin,bmax)
-
+model.add_cube_hcp_3d_v2(dr, bmin,bmax)
 
 xc,yc,zc = model.get_closest_part_to((0,0,0))
 print("closest part to (0,0,0) is in :",xc,yc,zc)
@@ -83,6 +82,7 @@ model.set_cfl_force(0.1)
 
 model.timestep()
 model.do_vtk_dump("init.vtk", True)
+model.dump("outfile")
 
 t_target = 0.1
 model.evolve_until(t_target)
@@ -96,7 +96,7 @@ dic = ctx.collect_data()
 
 
 if(shamrock.sys.world_rank() == 0):
-    
+
 
     r = np.sqrt(dic['xyz'][:,0]**2 + dic['xyz'][:,1]**2 +dic['xyz'][:,2]**2)
     vr = np.sqrt(dic['vxyz'][:,0]**2 + dic['vxyz'][:,1]**2 +dic['vxyz'][:,2]**2)
@@ -121,7 +121,7 @@ if(shamrock.sys.world_rank() == 0):
 
     plt.style.use('custom_style.mplstyle')
     if False:
-        
+
         fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
 
         axs[0,0].scatter(r, vr,c = 'black',s=1,label = "v", rasterized=True)

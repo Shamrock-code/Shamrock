@@ -1,0 +1,9 @@
+/**
+\namespace shammodels::zeus
+\brief namespace for the zeus model
+*/
+
+/**
+\namespace shammodels::zeus::modules
+\brief namespace for the zeus model modules
+*/

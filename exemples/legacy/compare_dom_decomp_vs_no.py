@@ -1,6 +1,6 @@
 import shamrock
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import os
 
 import vtk
@@ -29,7 +29,7 @@ def write_dic_to_vtk(dic,filename):
     for k in dic.keys():
 
         if not (k == "xyz"):
-            
+
             if type(dic[k][0]) == list:
 
                 vect = vtk.vtkDoubleArray()
@@ -130,7 +130,7 @@ def get_result(cnt: int):
 
 
 
-    
+
     model = shamrock.NBody_selfgrav_f32()
     model.init()
     model.set_cfl_force(0.3)

@@ -1,5 +1,5 @@
 import pyvista as pv
-import numpy as np 
+import numpy as np
 
 import glob
 
@@ -23,7 +23,7 @@ def get_plot_patchdata(filename):
     header_unpacked = list(struct.unpack("IIIIII", header))
 
     dic = {}
-    
+
     desc_nam = ["x","y","z"]
     desc_len = [ 4 , 4 , 4 ]
     tot_len = sum(desc_len)
@@ -115,7 +115,7 @@ def loading_frames():
 
     idx = 0
 
-    while True : 
+    while True :
         file_list = glob.glob("./step"+str(idx)+"/patchdata*")
         print(file_list)
 
@@ -159,7 +159,7 @@ def make_gif_with_load():
 
     idx = 0
 
-    while True : 
+    while True :
         file_list = glob.glob("./step"+str(idx)+"/patchdata*")
         print(file_list)
 
@@ -192,7 +192,7 @@ def make_movie_with_load():
 
     idx = 0
 
-    while True : 
+    while True :
         file_list = glob.glob("./step"+str(idx)+"/patchdata*")
         print(file_list)
 
@@ -244,4 +244,3 @@ make_gif_with_load()
 #mayavi.mlab.show()
 #print("saving ...")
 #mayavi.mlab.savefig(sys.argv[1])
-

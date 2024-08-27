@@ -9,37 +9,33 @@
 /**
  * @file shamtest.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
+ * @brief
  */
 
-#include "shamtest.hpp"
-#include <cmath>
-#include <cstdlib>
-#include <filesystem>
-#include "shamcmdopt/env.hpp"
-#include <pybind11/embed.h>
-#include <sstream>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 #include "shambase/bytestream.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include "shambase/time.hpp"
-#include "shamsys/legacy/log.hpp"
-
+#include "shambindings/pybindaliases.hpp"
+#include "shamcmdopt/env.hpp"
+#include "shamcmdopt/term_colors.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-
-#include "shambase/exception.hpp"
-
-#include "shambindings/pybindaliases.hpp"
+#include "shamtest.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/details/reporters/texTestReport.hpp"
 #include "version.hpp"
+#include <pybind11/embed.h>
+#include <unordered_map>
+#include <cmath>
+#include <cstdlib>
+#include <filesystem>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace shamtest {
 
@@ -110,8 +106,8 @@ namespace shamtest {
             std::cout << "   -> Result : \033[1;31m Fail \033[0m";
         }
 
-        std::string s_assert =
-            shambase::format(" [{}/{}] ", succes_cnt, res.asserts.asserts.size());
+        std::string s_assert
+            = shambase::format(" [{}/{}] ", succes_cnt, res.asserts.asserts.size());
         printf("%-15s", s_assert.c_str());
         std::cout << " (" << timer.get_time_str() << ")" << std::endl;
 
@@ -138,17 +134,17 @@ namespace shamtest {
 
     /**
      * @brief Generate a failure log at the end of the tests
-     * 
-     * @param res 
-     * @return std::string 
+     *
+     * @param res
+     * @return std::string
      */
     std::string gen_fail_log(details::TestResult &res) {
         std::string out = "";
 
         std::string sep = "\n-------------------------------------\n";
 
-        out += " - Test : \033[;34m" + res.name +
-               "\033[0m world_rank = " + std::to_string(res.world_rank);
+        out += " - Test : \033[;34m" + res.name
+               + "\033[0m world_rank = " + std::to_string(res.world_rank);
         out += "\n    Assertion list :\n";
 
         for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
@@ -174,8 +170,8 @@ namespace shamtest {
 
     /**
      * @brief Print summary of the test run
-     * 
-     * @param results 
+     *
+     * @param results
      */
     void _print_summary(std::vector<details::TestResult> &results) {
         if (shamcomm::world_rank() > 0) {
@@ -185,7 +181,8 @@ namespace shamtest {
         logger::print_faint_row();
         logger::print_faint_row();
         logger::print_faint_row();
-        logger::raw_ln(shambase::term_colors::bold() + "Test Report :" + shambase::term_colors::reset());
+        logger::raw_ln(
+            shambase::term_colors::bold() + "Test Report :" + shambase::term_colors::reset());
         logger::raw_ln();
 
         u32 test_count  = results.size();
@@ -228,7 +225,7 @@ namespace shamtest {
             std::basic_string<byte> loc_string = in;
 
             int *counts   = new int[shamcomm::world_size()];
-            int nelements = (int)loc_string.size();
+            int nelements = (int) loc_string.size();
             // Each process tells the root how many elements it holds
             mpi::gather(&nelements, 1, MPI_INT, counts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -243,8 +240,8 @@ namespace shamtest {
             byte *gather_data = NULL;
             if (shamcomm::world_rank() == 0)
                 // disps[size-1]+counts[size-1] == total number of elements
-                gather_data =
-                    new byte[disps[shamcomm::world_size() - 1] + counts[shamcomm::world_size() - 1]];
+                gather_data = new byte
+                    [disps[shamcomm::world_size() - 1] + counts[shamcomm::world_size() - 1]];
 
             // Collect everything into the root
             mpi::gatherv(
@@ -372,8 +369,7 @@ namespace shamtest {
         s_out = "{\n";
 
         s_out += R"(    "commit_hash" : ")" + git_commit_hash + "\",\n";
-        s_out +=
-            R"(    "world_size" : ")" + std::to_string(shamcomm::world_size()) + "\",\n";
+        s_out += R"(    "world_size" : ")" + std::to_string(shamcomm::world_size()) + "\",\n";
 
 #if defined(SYCL_COMP_INTEL_LLVM)
         s_out += R"(    "compiler" : "DPCPP",)"
@@ -430,12 +426,11 @@ namespace shamtest {
 
         is_full_output_mode = cfg.full_output;
 
-        bool run_unit_test = cfg.run_unittest;
-        bool run_validation_test = cfg.run_validation;
+        bool run_unit_test           = cfg.run_unittest;
+        bool run_validation_test     = cfg.run_validation;
         bool run_longvalidation_test = cfg.run_validation && cfg.run_long_tests;
-        bool run_benchmark_test = cfg.run_benchmark;
-        bool run_longbenchmark_test = cfg.run_benchmark && cfg.run_long_tests;
-
+        bool run_benchmark_test      = cfg.run_benchmark;
+        bool run_longbenchmark_test  = cfg.run_benchmark && cfg.run_long_tests;
 
         using namespace shamsys;
 
@@ -454,9 +449,11 @@ namespace shamtest {
             auto test_type = t.type;
             can_run_type   = can_run_type || (run_unit_test && (Unittest == test_type));
             can_run_type   = can_run_type || (run_validation_test && (ValidationTest == test_type));
-            can_run_type   = can_run_type || (run_longvalidation_test && (LongValidationTest == test_type));
-            can_run_type   = can_run_type || (run_benchmark_test && (Benchmark == test_type));
-            can_run_type   = can_run_type || (run_longvalidation_test && (LongBenchmark == test_type));
+            can_run_type
+                = can_run_type || (run_longvalidation_test && (LongValidationTest == test_type));
+            can_run_type = can_run_type || (run_benchmark_test && (Benchmark == test_type));
+            can_run_type
+                = can_run_type || (run_longvalidation_test && (LongBenchmark == test_type));
 
             return can_run_type && (any_node_cnt || world_size_ok);
         };
@@ -608,12 +605,12 @@ namespace shamtest {
         return errcode;
     }
 
-    void gen_test_list(std::string_view outfile){
-        //logger::raw_ln("Test list ...", outfile);
+    void gen_test_list(std::string_view outfile) {
+        // logger::raw_ln("Test list ...", outfile);
 
         using namespace details;
 
-        std::array rank_list {1,2,3,4};
+        std::array rank_list{1, 2, 3, 4};
 
         auto get_pref_type = [](TestType t) -> std::string {
             switch (t) {
@@ -621,7 +618,7 @@ namespace shamtest {
             case LongBenchmark: return "LongBenchmark";
             case ValidationTest: return "ValidationTest";
             case LongValidationTest: return "LongValidationTest";
-            case Unittest:  return "Unittest";
+            case Unittest: return "Unittest";
             }
         };
 
@@ -631,36 +628,36 @@ namespace shamtest {
             case LongBenchmark: return "--long-test --benchmark";
             case ValidationTest: return "--validation";
             case LongValidationTest: return "--long-test --validation";
-            case Unittest:  return "--unittest";
+            case Unittest: return "--unittest";
             }
         };
 
-        auto get_test_name= [&](Test t, int ranks) -> std::string {
-            std::string name = get_pref_type(t.type) + "/" + t.name + shambase::format(
-                "(ranks={})"
-                //"{}"
-                , ranks);
-            //shambase::replace_all(name, "/", "");
+        auto get_test_name = [&](Test t, int ranks) -> std::string {
+            std::string name = get_pref_type(t.type) + "/" + t.name
+                               + shambase::format(
+                                   "(ranks={})"
+                                   //"{}"
+                                   ,
+                                   ranks);
+            // shambase::replace_all(name, "/", "");
             return name;
         };
 
-
         std::ofstream filestream;
-        filestream.open (std::string(outfile));
+        filestream.open(std::string(outfile));
 
         std::vector<std::string> cmake_test_list;
 
         auto add_test = [&](Test t, int ranks) {
-
             std::string tname = get_test_name(t, ranks);
             cmake_test_list.push_back(tname);
 
             std::string ret = "add_test(\"";
             ret += tname;
             ret += "\"";
-            if(ranks > 1){
-                ret += " mpirun -n "+ std::to_string(ranks) + " ../shamrock_test --sycl-cfg 0:0";
-            }else{
+            if (ranks > 1) {
+                ret += " mpirun -n " + std::to_string(ranks) + " ../shamrock_test --sycl-cfg 0:0";
+            } else {
                 ret += " ../shamrock_test --sycl-cfg 0:0";
             }
             ret += " --run-only \"" + std::string(t.name) + "\"";
@@ -669,13 +666,14 @@ namespace shamtest {
             filestream << ret;
         };
 
-        for (const Test & t : static_init_vec_tests) {
-            if(t.type == Benchmark || t.type == LongBenchmark) continue;
-            if(t.node_count == -1){
-                for(int ncount : rank_list){
+        for (const Test &t : static_init_vec_tests) {
+            if (t.type == Benchmark || t.type == LongBenchmark)
+                continue;
+            if (t.node_count == -1) {
+                for (int ncount : rank_list) {
                     add_test(t, ncount);
                 }
-            }else{
+            } else {
                 add_test(t, t.node_count);
             }
         }
@@ -690,13 +688,11 @@ namespace shamtest {
                 filestream << "    \"" << tname << "\"\n";
             }
             filestream << "  PROPERTIES\n";
-            filestream << "    ENVIRONMENT \"REF_FILES_PATH="+*REF_FILES_PATH << "\"\n";
+            filestream << "    ENVIRONMENT \"REF_FILES_PATH=" + *REF_FILES_PATH << "\"\n";
             filestream << ")\n";
         }
 
-
         filestream.close();
-
     }
 
 } // namespace shamtest

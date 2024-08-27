@@ -9,30 +9,33 @@
 /**
  * @file ResizableUSMBuffer.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shamalgs/container/ResizableUSMBuffer.hpp"
 #include "shamalgs/details/reduction/reduction.hpp"
 #include "shamcomm/logs.hpp"
 
-
 template<class T>
 void shamalgs::ResizableUSMBuffer<T>::alloc() {
     if (usm_ptr != nullptr) {
-        throw shambase::make_except_with_loc<std::runtime_error>("the usm pointer is already allocated");
+        throw shambase::make_except_with_loc<std::runtime_error>(
+            "the usm pointer is already allocated");
     }
 
     if (type == Host) {
         usm_ptr = sycl::malloc_host<T>(capacity, q);
-        logger::debug_alloc_ln("ResizableBufferUSM",events_hndl.get_hash_log(), "alloc HOST N =",capacity);
+        logger::debug_alloc_ln(
+            "ResizableBufferUSM", events_hndl.get_hash_log(), "alloc HOST N =", capacity);
     } else if (type == Device) {
         usm_ptr = sycl::malloc_device<T>(capacity, q);
-        logger::debug_alloc_ln("ResizableBufferUSM",events_hndl.get_hash_log(), "alloc DEVICE N =",capacity);
+        logger::debug_alloc_ln(
+            "ResizableBufferUSM", events_hndl.get_hash_log(), "alloc DEVICE N =", capacity);
     } else if (type == Shared) {
         usm_ptr = sycl::malloc_shared<T>(capacity, q);
-        logger::debug_alloc_ln("ResizableBufferUSM",events_hndl.get_hash_log(), "alloc SHARED N =",capacity);
+        logger::debug_alloc_ln(
+            "ResizableBufferUSM", events_hndl.get_hash_log(), "alloc SHARED N =", capacity);
     }
 }
 
@@ -41,7 +44,7 @@ void shamalgs::ResizableUSMBuffer<T>::free() {
     StackEntry stack_loc{};
     events_hndl.synchronize();
 
-    logger::debug_alloc_ln("ResizableBufferUSM",events_hndl.get_hash_log(), "free");
+    logger::debug_alloc_ln("ResizableBufferUSM", events_hndl.get_hash_log(), "free");
     sycl::free(usm_ptr, q);
     usm_ptr = nullptr;
 }
@@ -50,7 +53,13 @@ template<class T>
 void shamalgs::ResizableUSMBuffer<T>::change_capacity(u32 new_capa) {
     StackEntry stack_loc{false};
 
-    logger::debug_alloc_ln("ResizableBufferUSM",events_hndl.get_hash_log(),"change capacity from : ", capacity, "to :", new_capa);
+    logger::debug_alloc_ln(
+        "ResizableBufferUSM",
+        events_hndl.get_hash_log(),
+        "change capacity from : ",
+        capacity,
+        "to :",
+        new_capa);
 
     if (capacity == 0) {
 
@@ -74,7 +83,8 @@ void shamalgs::ResizableUSMBuffer<T>::change_capacity(u32 new_capa) {
                     q.memcpy(usm_ptr, old_usm, sizeof(T) * val_count).wait();
                 }
 
-                logger::debug_alloc_ln("ResizableBufferUSM",events_hndl.get_hash_log(), "delete old buf");
+                logger::debug_alloc_ln(
+                    "ResizableBufferUSM", events_hndl.get_hash_log(), "delete old buf");
                 sycl::free(old_usm, q);
             }
 
@@ -100,7 +110,13 @@ template<class T>
 void shamalgs::ResizableUSMBuffer<T>::resize(u32 new_size) {
     StackEntry stack_loc{false};
 
-    logger::debug_alloc_ln("ResizableBufferUSM",events_hndl.get_hash_log(), "resize from : ", val_count, "to :", new_size);
+    logger::debug_alloc_ln(
+        "ResizableBufferUSM",
+        events_hndl.get_hash_log(),
+        "resize from : ",
+        val_count,
+        "to :",
+        new_size);
 
     if (new_size > capacity) {
         change_capacity(new_size * safe_fact);
@@ -122,17 +138,12 @@ void shamalgs::ResizableUSMBuffer<T>::change_buf_type(BufferType new_type) {
         q.memcpy(usm_ptr, old_usm, sizeof(T) * val_count).wait();
     }
 
-    logger::debug_alloc_ln("ResizableBufferUSM",events_hndl.get_hash_log(), "delete old buf");
+    logger::debug_alloc_ln("ResizableBufferUSM", events_hndl.get_hash_log(), "delete old buf");
     sycl::free(old_usm, q);
 }
 
-
-
-
-
-
 template<class T>
-bool shamalgs::ResizableUSMBuffer<T>::check_buf_match(ResizableUSMBuffer<T> &f2){
+bool shamalgs::ResizableUSMBuffer<T>::check_buf_match(ResizableUSMBuffer<T> &f2) {
 
     bool match = true;
 
@@ -146,7 +157,7 @@ bool shamalgs::ResizableUSMBuffer<T>::check_buf_match(ResizableUSMBuffer<T> &f2)
 
         sycl::buffer<u8> res_buf(val_count);
 
-        sycl::event e = q.submit([&,acc1,acc2](sycl::handler &cgh) {
+        sycl::event e = q.submit([&, acc1, acc2](sycl::handler &cgh) {
             cgh.depends_on(wait_list);
 
             sycl::accessor acc_res{res_buf, cgh, sycl::write_only, sycl::no_init};
@@ -163,10 +174,7 @@ bool shamalgs::ResizableUSMBuffer<T>::check_buf_match(ResizableUSMBuffer<T> &f2)
     }
 
     return match;
-
 }
-
-
 
 #define X(a) template class shamalgs::ResizableUSMBuffer<a>;
 XMAC_LIST_ENABLED_ResizableUSMBuffer

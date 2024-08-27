@@ -14,27 +14,31 @@
  * @brief
  */
 
-#include <memory>
 #include "shambackends/sycl.hpp"
+#include <memory>
 
 /**
  * @brief Karras 2012 algorithm with addition endrange buffer
- * 
- * @param internal_cell_count internal cell count
- * @param in_morton input morton set
- * @param buf_lchild_id output
- * @param buf_rchild_id output
- * @param buf_lchild_flag output
- * @param buf_rchild_flag output
- * @param buf_endrange output
+ *
+ * Given a list of morton codes, compute the left and right child id, left and right
+ * child flag, and the endrange for each cell using the Karras 2012 algorithm.
+ *
+ * @param[in] queue sycl queue
+ * @param[in] internal_cell_count number of internal cells
+ * @param[in] in_morton input morton codes
+ * @param[out] out_buf_lchild_id left child id
+ * @param[out] out_buf_rchild_id right child id
+ * @param[out] out_buf_lchild_flag left child flag
+ * @param[out] out_buf_rchild_flag right child flag
+ * @param[out] out_buf_endrange endrange
  */
 template<class u_morton>
 void sycl_karras_alg(
-    sycl::queue & queue,
+    sycl::queue &queue,
     u32 internal_cell_count,
-    sycl::buffer<u_morton> & in_morton,
-    sycl::buffer<u32> & out_buf_lchild_id   ,
-    sycl::buffer<u32> & out_buf_rchild_id   ,
-    sycl::buffer<u8 > & out_buf_lchild_flag ,
-    sycl::buffer<u8 > & out_buf_rchild_flag,
-    sycl::buffer<u32> & out_buf_endrange    );
+    sycl::buffer<u_morton> &in_morton,
+    sycl::buffer<u32> &out_buf_lchild_id,
+    sycl::buffer<u32> &out_buf_rchild_id,
+    sycl::buffer<u8> &out_buf_lchild_flag,
+    sycl::buffer<u8> &out_buf_rchild_flag,
+    sycl::buffer<u32> &out_buf_endrange);

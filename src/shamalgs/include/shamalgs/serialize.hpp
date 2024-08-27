@@ -11,90 +11,87 @@
 /**
  * @file serialize.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "details/SerializeHelperMember.hpp"
+
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "details/SerializeHelperMember.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
+#include <type_traits>
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <utility>
 
 namespace shamalgs {
 
-    struct SerializeSize{
-        u64 head_size = 0;
+    struct SerializeSize {
+        u64 head_size    = 0;
         u64 content_size = 0;
 
-        SerializeSize& operator+=(const SerializeSize& rhs) // compound assignment (does not need to be a member,
-        {                           // but often is, to modify the private members)
+        SerializeSize &
+        operator+=(const SerializeSize &rhs) // compound assignment (does not need to be a member,
+        {                                    // but often is, to modify the private members)
             /* addition of rhs to *this takes place here */
             head_size += rhs.head_size;
             content_size += rhs.content_size;
             return *this; // return the result by reference
         }
-    
+
         // friends defined inside class body are inline and are hidden from non-ADL lookup
-        friend SerializeSize operator+(SerializeSize lhs,        // passing lhs by value helps optimize chained a+b+c
-                        const SerializeSize& rhs) // otherwise, both parameters may be const references
+        friend SerializeSize operator+(
+            SerializeSize lhs,        // passing lhs by value helps optimize chained a+b+c
+            const SerializeSize &rhs) // otherwise, both parameters may be const references
         {
             lhs += rhs; // reuse compound assignment
             return lhs; // return the result by value (uses move constructor)
         }
-        SerializeSize& operator*=(const SerializeSize& rhs) // compound assignment (does not need to be a member,
-        {                           // but often is, to modify the private members)
+        SerializeSize &
+        operator*=(const SerializeSize &rhs) // compound assignment (does not need to be a member,
+        {                                    // but often is, to modify the private members)
             /* addition of rhs to *this takes place here */
             head_size *= rhs.head_size;
             content_size *= rhs.content_size;
             return *this; // return the result by reference
         }
-    
+
         // friends defined inside class body are inline and are hidden from non-ADL lookup
-        friend SerializeSize operator*(SerializeSize lhs,        // passing lhs by value helps optimize chained a*b*c
-                        const SerializeSize& rhs) // otherwise, both parameters may be const references
+        friend SerializeSize operator*(
+            SerializeSize lhs,        // passing lhs by value helps optimize chained a*b*c
+            const SerializeSize &rhs) // otherwise, both parameters may be const references
         {
             lhs *= rhs; // reuse compound assignment
             return lhs; // return the result by value (uses move constructor)
         }
 
-
-        SerializeSize& operator*=(const int& rhs) // compound assignment (does not need to be a member,
-        {                           // but often is, to modify the private members)
+        SerializeSize &
+        operator*=(const int &rhs) // compound assignment (does not need to be a member,
+        {                          // but often is, to modify the private members)
             /* addition of rhs to *this takes place here */
             head_size *= rhs;
             content_size *= rhs;
             return *this; // return the result by reference
         }
-    
+
         // friends defined inside class body are inline and are hidden from non-ADL lookup
-        friend SerializeSize operator*(SerializeSize lhs,        // passing lhs by value helps optimize chained a*b*c
-                        const int& rhs) // otherwise, both parameters may be const references
+        friend SerializeSize operator*(
+            SerializeSize lhs, // passing lhs by value helps optimize chained a*b*c
+            const int &rhs)    // otherwise, both parameters may be const references
         {
             lhs *= rhs; // reuse compound assignment
             return lhs; // return the result by value (uses move constructor)
         }
 
-        static SerializeSize Header(u64 sz){
-            return {sz,0};
-        }
-        static SerializeSize Content(u64 sz){
-            return {0,sz};
-        }
+        static SerializeSize Header(u64 sz) { return {sz, 0}; }
+        static SerializeSize Content(u64 sz) { return {0, sz}; }
 
-        inline u64 get_total_size(){
-            return head_size + content_size;
-        }
-
+        inline u64 get_total_size() { return head_size + content_size; }
     };
-
 
     namespace details {
         template<u64 alignment>
@@ -120,22 +117,20 @@ namespace shamalgs {
 
         template<u64 alignment>
         inline SerializeSize serialize_byte_size(std::string s) {
-            return serialize_byte_size<alignment, u32>() +
-                   serialize_byte_size<alignment, u32>(s.size());
+            return serialize_byte_size<alignment, u32>()
+                   + serialize_byte_size<alignment, u32>(s.size());
         }
 
     } // namespace details
-
-
 
     class SerializeHelper {
 
         u64 header_size = 0;
 
-        std::unique_ptr<sycl::buffer<u8>> storage = {};
+        std::unique_ptr<sycl::buffer<u8>> storage       = {};
         std::unique_ptr<std::vector<u8>> storage_header = {};
-        u64 head_device      = 0;
-        u64 head_host      = 0;
+        u64 head_device                                 = 0;
+        u64 head_host                                   = 0;
 
         static constexpr u64 alignment = 8;
 
@@ -145,11 +140,11 @@ namespace shamalgs {
                     ("the buffer is not allocated, the head cannot be moved"));
             }
             if (head_device + off > storage->size()) {
-                throw shambase::make_except_with_loc<std::runtime_error>(
-                    shambase::format("the buffer is not allocated, the head_device cannot be moved\n "
-                                     "storage size : {}, requested head_device : {}",
-                                     storage->size(),
-                                     head_device + off));
+                throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                    "the buffer is not allocated, the head_device cannot be moved\n "
+                    "storage size : {}, requested head_device : {}",
+                    storage->size(),
+                    head_device + off));
             }
         }
         inline void check_head_move_host(u64 off) {
@@ -158,11 +153,11 @@ namespace shamalgs {
                     ("the buffer is not allocated, the head cannot be moved"));
             }
             if (head_host + off > storage_header->size()) {
-                throw shambase::make_except_with_loc<std::runtime_error>(
-                    shambase::format("the buffer is not allocated, the head_host cannot be moved\n "
-                                     "storage_header size : {}, requested head_host : {}",
-                                     storage_header->size(),
-                                     head_host + off));
+                throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                    "the buffer is not allocated, the head_host cannot be moved\n "
+                    "storage_header size : {}, requested head_host : {}",
+                    storage_header->size(),
+                    head_host + off));
             }
         }
 
@@ -173,14 +168,13 @@ namespace shamalgs {
         std::shared_ptr<sham::DeviceScheduler> dev_sched;
 
         public:
-
-        std::shared_ptr<sham::DeviceScheduler> & get_device_scheduler(){
-            return dev_sched;
-        }
+        std::shared_ptr<sham::DeviceScheduler> &get_device_scheduler() { return dev_sched; }
 
         SerializeHelper(std::shared_ptr<sham::DeviceScheduler> dev_sched);
 
-        SerializeHelper(std::shared_ptr<sham::DeviceScheduler> dev_sched, std::unique_ptr<sycl::buffer<u8>> &&storage);
+        SerializeHelper(
+            std::shared_ptr<sham::DeviceScheduler> dev_sched,
+            std::unique_ptr<sycl::buffer<u8>> &&storage);
 
         void allocate(SerializeSize szinfo);
 
@@ -226,14 +220,14 @@ namespace shamalgs {
             u64 offset       = align_repr(Helper::szrepr);
             check_head_move_host(offset);
 
-            {//using host_acc rather than anything else since other options causes addition latency
-                
+            { // using host_acc rather than anything else since other options causes addition
+              // latency
+
                 val = Helper::load(&(*storage_header)[current_head]);
             }
 
             head_host += offset;
         }
-
 
         inline void write(std::string s) {
             StackEntry stack_loc{false};
@@ -265,10 +259,6 @@ namespace shamalgs {
             }
         }
 
-
-
-
-
         template<class T>
         inline void write_buf(sycl::buffer<T> &buf, u64 len) {
             StackEntry stack_loc{false};
@@ -279,17 +269,15 @@ namespace shamalgs {
             u64 offset = align_repr(len * Helper::szrepr);
             check_head_move_device(offset);
 
-            dev_sched->get_queue().q.submit(
-                [&, current_head](sycl::handler &cgh) {
-                    sycl::accessor accbufbyte{*storage, cgh, sycl::write_only};
-                    sycl::accessor accbuf{buf, cgh, sycl::read_only};
+            dev_sched->get_queue().q.submit([&, current_head](sycl::handler &cgh) {
+                sycl::accessor accbufbyte{*storage, cgh, sycl::write_only};
+                sycl::accessor accbuf{buf, cgh, sycl::read_only};
 
-                    cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
-                        u64 head = current_head + id.get_linear_id() * Helper::szrepr;
-                        Helper::store(&accbufbyte[head], accbuf[id]);
-                    });
+                cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                    u64 head = current_head + id.get_linear_id() * Helper::szrepr;
+                    Helper::store(&accbufbyte[head], accbuf[id]);
                 });
-            
+            });
 
             head_device += offset;
         }
@@ -316,7 +304,6 @@ namespace shamalgs {
 
             head_device += offset;
         }
-
     };
 
 } // namespace shamalgs

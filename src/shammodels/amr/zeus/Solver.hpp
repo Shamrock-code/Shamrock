@@ -11,31 +11,29 @@
 /**
  * @file Solver.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/vec.hpp"
 #include "shammodels/amr/AMRBlock.hpp"
+#include "shammodels/amr/zeus/SolverConfig.hpp"
 #include "shammodels/amr/zeus/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shammodels/amr/zeus/SolverConfig.hpp"
 
 namespace shammodels::zeus {
 
-
     template<class Tvec, class TgridVec>
-    class Solver {public:
-
+    class Solver {
+        public:
         using Tscal              = shambase::VecComponent<Tvec>;
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-
         using u_morton = u64;
 
-        using Config = SolverConfig<Tvec,TgridVec>;
+        using Config = SolverConfig<Tvec, TgridVec>;
 
         using AMRBlock = typename Config::AMRBlock;
 
@@ -44,7 +42,7 @@ namespace shammodels::zeus {
 
         Config solver_config;
 
-        SolverStorage<Tvec,TgridVec, u_morton> storage {};
+        SolverStorage<Tvec, TgridVec, u_morton> storage{};
 
         inline void init_required_fields() {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);
@@ -56,7 +54,7 @@ namespace shammodels::zeus {
 
         Solver(ShamrockCtx &context) : context(context) {}
 
-        Tscal evolve_once(Tscal t_current,Tscal dt_input);
+        Tscal evolve_once(Tscal t_current, Tscal dt_input);
     };
 
 } // namespace shammodels::zeus

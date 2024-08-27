@@ -16,6 +16,7 @@
 
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/scheduler/PatchTreeNode.hpp"
+#include <nlohmann/json.hpp>
 #include <unordered_set>
 
 namespace shamrock::scheduler {
@@ -81,8 +82,7 @@ namespace shamrock::scheduler {
          * @param id_patch_to_global_idx
          */
         void update_values_node(
-            std::vector<Patch> &plist, const std::unordered_map<u64, u64> & id_patch_to_global_idx
-        );
+            std::vector<Patch> &plist, const std::unordered_map<u64, u64> &id_patch_to_global_idx);
 
         /**
          * @brief update values in leafs and parent_of_only_leaf_key only
@@ -91,8 +91,7 @@ namespace shamrock::scheduler {
          * @param id_patch_to_global_idx
          */
         void partial_values_reduction(
-            std::vector<Patch> &plist, const std::unordered_map<u64, u64> & id_patch_to_global_idx
-        );
+            std::vector<Patch> &plist, const std::unordered_map<u64, u64> &id_patch_to_global_idx);
 
         /**
          * @brief Get list of nodes id to split
@@ -110,7 +109,11 @@ namespace shamrock::scheduler {
          */
         std::unordered_set<u64> get_merge_request(u64 crit_load_merge);
 
-        void insert_root_node(u32 patch_id,patch::PatchCoord<3> coords);
+        void insert_root_node(u32 patch_id, patch::PatchCoord<3> coords);
+
+        nlohmann::json serialize_patch_metadata() const;
+
+        void load_json(const nlohmann::json &j);
 
         private:
         u64 next_id = 0;
@@ -119,8 +122,13 @@ namespace shamrock::scheduler {
         void remove_node(u64 id);
 
         void update_ptnode(
-            Node &n, std::vector<Patch> &plist, const std::unordered_map<u64, u64>& id_patch_to_global_idx
-        );
+            Node &n,
+            std::vector<Patch> &plist,
+            const std::unordered_map<u64, u64> &id_patch_to_global_idx);
     };
+
+    void to_json(nlohmann::json &j, const PatchTree &p);
+
+    void from_json(const nlohmann::json &j, PatchTree &p);
 
 } // namespace shamrock::scheduler

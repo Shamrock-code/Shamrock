@@ -11,9 +11,9 @@ for path in Path('.').rglob('*.o'):
     os.system('../../../sycl_compilers/dpcpp/bin/clang-offload-bundler --input ' + str(path.absolute())+' --type ll --output '+str(path.absolute())+'.llvm.off'+' --targets "host-x86_64-unknown-linux-gnu" --unbundle')
     os.system('../../../sycl_compilers/dpcpp/bin/clang-offload-bundler --input ' + str(path.absolute())+' --type ll --output '+str(path.absolute())+'.llvm.offspr'+' --targets "sycl-spir64-unknown-unknown" --unbundle')
 
-    os.system('../../../sycl_compilers/dpcpp/bin/opt -p dot-callgraph -o ' 
+    os.system('../../../sycl_compilers/dpcpp/bin/opt -p dot-callgraph -o '
         +str(path.absolute())+".tmp " + str(path.absolute())+'.llvm.off')
-    os.system('../../../sycl_compilers/dpcpp/bin/opt -p dot-callgraph -o ' 
+    os.system('../../../sycl_compilers/dpcpp/bin/opt -p dot-callgraph -o '
         +str(path.absolute())+".tmp " + str(path.absolute())+'.llvm.offspr')
 
 for path in Path('.').rglob('*.callgraph.dot'):
@@ -75,7 +75,7 @@ for path in Path('.').rglob('*.filt'):
 
             print(gfile[i])
 
-    
+
     _gbody += gfile
 
 with open("_body_tmp", 'w') as fout:
@@ -259,7 +259,7 @@ for key in replace_dic.keys():
     print(new_nd, old_nd)
 
     for i in range(len(_gbody)):
-        
+
 
         _gbody[i] = _gbody[i].replace(old_nd, new_nd)
 
@@ -315,7 +315,7 @@ def add_childs(Node_id,depth = 0):
     if depth > 10 : return
 
     if depth < 3: print(Nodes[Node_id])
-    
+
     used_Nodes[Node_id] = True
 
     if Node_id in links.keys():
@@ -370,7 +370,7 @@ list_std = [
 def is_std_group(Node_label):
     if Node_label in list_std:
         return True
-    
+
     if Node_label.startswith("std::"):
         return True
 

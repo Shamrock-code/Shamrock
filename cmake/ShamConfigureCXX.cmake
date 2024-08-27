@@ -10,20 +10,20 @@ check_cxx_compiler_flag("-fcolor-diagnostics" COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
 
 check_cxx_compiler_flag("-Werror=return-type" COMPILER_SUPPORT_ERROR_RETURN_TYPE)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 
 if(COMPILER_SUPPORT_PEDANTIC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors") 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors")
 endif()
 
 if(COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics") 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fcolor-diagnostics")
 endif()
 
 if(COMPILER_SUPPORT_ERROR_RETURN_TYPE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type") 
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror=return-type")
 endif()
 
 if(COMPILER_SUPPORT_MARCHNATIVE)
@@ -37,8 +37,8 @@ endif()
 check_cxx_source_compiles("
     #include <valarray>
     int main(){}
-    "    
-    CXX_VALARRAY_COMPILE)  
+    "
+    CXX_VALARRAY_COMPILE)
 
 # this is a check used on systems with GCC 10.2.1-6 20210110
 # because of a mismatch between valarray declaration and header
@@ -57,13 +57,13 @@ if(NOT CXX_VALARRAY_COMPILE)
         #undef noexcept
         #pragma GCC diagnostic pop
         int main(){}
-        "    
-        CXX_VALARRAY_COMPILE_NOEXCEPT)  
+        "
+        CXX_VALARRAY_COMPILE_NOEXCEPT)
 
-    
+
     if(CXX_VALARRAY_COMPILE_NOEXCEPT)
         message(STATUS "Enable noexcept fix for valarray (#define SHAMROCK_VALARRAY_FIX)")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_VALARRAY_FIX") 
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_VALARRAY_FIX")
     endif()
 
 endif()

@@ -3,7 +3,7 @@ name: Acpp/clang
 
 on:
   workflow_call:
-  
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -11,7 +11,7 @@ jobs:
 
 
   shamrock_acpp:
-    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} 
+    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}}
     runs-on: [self-hosted,  docker-runner]
 
     container:
@@ -19,7 +19,7 @@ jobs:
 
     strategy:
       matrix:
-        include: 
+        include:
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
@@ -53,11 +53,15 @@ jobs:
             backend: hip
             arch: gfx906
             container: ghcr.io/shamrock-code/ci-ubuntu20rocm543:main
-  
+
     timeout-minutes: 60
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
       - uses: actions/checkout@v4
         if: github.event_name == 'pull_request_target'
         with:
@@ -73,9 +77,9 @@ jobs:
 
       - name: Show diff against main
         if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD 
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
-  
+
       - name: install LLVM
         run: |
           wget https://apt.llvm.org/llvm.sh
@@ -92,7 +96,7 @@ jobs:
 
       - name: Setup env
         run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
-  
+
       - name: Configure
         shell: bash # In docker container github action default to sh
         run: |
@@ -109,7 +113,7 @@ jobs:
         run: |
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
-      
+
       - name: run Shamrock help
         if: matrix.runtest
         run: |
@@ -129,21 +133,21 @@ jobs:
         run: |
           cd build
           ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-  
+
       - name: run Shamrock Unittests world_size = 2
         if: matrix.runtest
         run: |
           cd build
-          mpirun -n 2 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-      
+          mpirun --allow-run-as-root -n 2 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
       - name: run Shamrock Unittests world_size = 3
         if: matrix.runtest
         run: |
           cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-  
+          mpirun --allow-run-as-root --oversubscribe -n 3 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
       - name: run Shamrock Unittests world_size = 4
         if: matrix.runtest
         run: |
           cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi

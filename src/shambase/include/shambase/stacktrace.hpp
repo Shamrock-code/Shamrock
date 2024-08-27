@@ -14,10 +14,10 @@
  * @brief This file contains the definition for the stacktrace related functionality.
  */
 
+#include "shambase/SourceLocation.hpp"
 #include "shambase/aliases_float.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shambase/string.hpp"
-#include "shambase/SourceLocation.hpp"
 #include <stack>
 
 #ifdef SHAMROCK_USE_NVTX

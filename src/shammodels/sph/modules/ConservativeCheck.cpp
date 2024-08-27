@@ -9,12 +9,11 @@
 /**
  * @file ConservativeCheck.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "ConservativeCheck.hpp"
 
+#include "ConservativeCheck.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
 

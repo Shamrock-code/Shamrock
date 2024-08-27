@@ -13,16 +13,13 @@
  *
  */
 
-#include "shamcomm/io.hpp"
 #include "shambase/exception.hpp"
+#include "shamcomm/io.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
 
 namespace shamcomm {
-    /**
-     * @brief open a mpi file and remove its content
-     *
-     */
+
     void open_reset_file(MPI_File &fh, std::string fname) {
 
         int rc = MPI_File_open(
@@ -50,4 +47,14 @@ namespace shamcomm {
             }
         }
     }
+
+    void open_read_only_file(MPI_File &fh, std::string fname) {
+        MPICHECK(MPI_File_open(
+            MPI_COMM_WORLD,
+            fname.c_str(),
+            MPI_MODE_RDONLY | MPI_MODE_UNIQUE_OPEN,
+            MPI_INFO_NULL,
+            &fh));
+    }
+
 } // namespace shamcomm

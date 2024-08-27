@@ -14,11 +14,11 @@
  * @brief
  */
 
-#include "shamalgs/memory.hpp"
-#include "shamalgs/serialize.hpp"
-#include "shamalgs/reduction.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamalgs/memory.hpp"
+#include "shamalgs/reduction.hpp"
+#include "shamalgs/serialize.hpp"
 #include "shambackends/vec.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamrock/tree/RadixTreeMortonBuilder.hpp"
@@ -36,10 +36,11 @@ namespace shamrock::tree {
         std::unique_ptr<sycl::buffer<u32>> buf_particle_index_map;
 
         template<class T>
-        inline void build(sycl::queue &queue,
-                          shammath::CoordRange<T> coord_range,
-                          u32 obj_cnt,
-                          sycl::buffer<T> &pos_buf) {
+        inline void build(
+            sycl::queue &queue,
+            shammath::CoordRange<T> coord_range,
+            u32 obj_cnt,
+            sycl::buffer<T> &pos_buf) {
             StackEntry stack_loc{};
 
             this->obj_cnt = obj_cnt;
@@ -56,11 +57,11 @@ namespace shamrock::tree {
         }
 
         template<class T>
-        inline static std::unique_ptr<sycl::buffer<u_morton>>
-        build_raw(sycl::queue &queue,
-                  shammath::CoordRange<T> coord_range,
-                  u32 obj_cnt,
-                  sycl::buffer<T> &pos_buf) {
+        inline static std::unique_ptr<sycl::buffer<u_morton>> build_raw(
+            sycl::queue &queue,
+            shammath::CoordRange<T> coord_range,
+            u32 obj_cnt,
+            sycl::buffer<T> &pos_buf) {
 
             std::unique_ptr<sycl::buffer<u_morton>> buf_morton;
 
@@ -94,8 +95,11 @@ namespace shamrock::tree {
         inline TreeMortonCodes() = default;
 
         inline TreeMortonCodes(const TreeMortonCodes &other)
-            : obj_cnt(other.obj_cnt), buf_morton(shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(), other.buf_morton)),
-              buf_particle_index_map(shamalgs::memory::duplicate(shamsys::instance::get_compute_queue(),other.buf_particle_index_map)) {}
+            : obj_cnt(other.obj_cnt),
+              buf_morton(shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(), other.buf_morton)),
+              buf_particle_index_map(shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(), other.buf_particle_index_map)) {}
 
         inline TreeMortonCodes &operator=(TreeMortonCodes &&other) noexcept {
             obj_cnt                = std::move(other.obj_cnt);
@@ -112,8 +116,18 @@ namespace shamrock::tree {
 
             using namespace shamalgs::reduction;
 
-            cmp = cmp && equals(shamsys::instance::get_compute_queue(),*t1.buf_morton, *t2.buf_morton, t1.obj_cnt);
-            cmp = cmp && equals(shamsys::instance::get_compute_queue(),*t1.buf_particle_index_map, *t2.buf_particle_index_map, t1.obj_cnt);
+            cmp = cmp
+                  && equals(
+                      shamsys::instance::get_compute_queue(),
+                      *t1.buf_morton,
+                      *t2.buf_morton,
+                      t1.obj_cnt);
+            cmp = cmp
+                  && equals(
+                      shamsys::instance::get_compute_queue(),
+                      *t1.buf_particle_index_map,
+                      *t2.buf_particle_index_map,
+                      t1.obj_cnt);
 
             return cmp;
         }
@@ -171,8 +185,8 @@ namespace shamrock::tree {
          */
         inline shamalgs::SerializeSize serialize_byte_size() {
             using H = shamalgs::SerializeHelper;
-            return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>(obj_cnt) +
-                   H::serialize_byte_size<u_morton>(obj_cnt);
+            return H::serialize_byte_size<u32>() + H::serialize_byte_size<u32>(obj_cnt)
+                   + H::serialize_byte_size<u_morton>(obj_cnt);
         }
     };
 

@@ -19,8 +19,8 @@
  */
 
 #include "shambase/aliases_float.hpp"
+#include "shambase/type_name_info.hpp"
 #include "shambase/type_traits.hpp"
-
 #include "shambackends/typeAliasFp16.hpp"
 
 namespace sham {
@@ -56,3 +56,13 @@ namespace sham {
           || std::is_same_v<T, f32> || std::is_same_v<T, f64>;
 
 } // namespace sham
+
+namespace shambase {
+
+    template<class T, int n>
+    struct TypeNameInfo<sycl::vec<T, n>> {
+        inline static const std::string name
+            = "sycl::vec<" + get_type_name<T>() + "," + std::to_string(n) + ">";
+    };
+
+} // namespace shambase

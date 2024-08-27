@@ -17,6 +17,7 @@
 //%Impl status : Good
 
 #include "shambase/constants.hpp"
+#include "shambase/type_name_info.hpp"
 #include "shambackends/math.hpp"
 
 namespace shammath::details {
@@ -24,11 +25,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM4 {
         public:
-        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.2;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 2. / 3.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 10. / (7. * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 1 / shambase::constants::pi<Tscal>;
 
         inline static Tscal f(Tscal q) {
@@ -68,11 +73,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM5 {
         public:
-        inline static constexpr Tscal Rkern  = 5. / 2.;
+        inline static constexpr Tscal Rkern = 5. / 2.; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.2;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 24.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 96. / (1199 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 1 / (20 * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -143,11 +152,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM6 {
         public:
-        inline static constexpr Tscal Rkern  = 3;
+        inline static constexpr Tscal Rkern = 3; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 120.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 7. / (478 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 1 / (120 * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -207,16 +220,18 @@ namespace shammath::details {
         }
     };
 
-
-
     template<class Tscal>
     class KernelDefM7 {
         public:
-        inline static constexpr Tscal Rkern  = 3.5;
+        inline static constexpr Tscal Rkern = 3.5; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 720;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 256. / (113149 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 6. / (5040. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -252,7 +267,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -273,10 +287,10 @@ namespace shammath::details {
             t3 = sham::pow_constexpr<5>(t3);
             t4 = sham::pow_constexpr<5>(t4);
 
-            t1 *= (-6.)*(1.);
-            t2 *= (-6.)*(-7.);
-            t3 *= (-6.)*(21.);
-            t4 *= (-6.)*(-35.);
+            t1 *= (-6.) * (1.);
+            t2 *= (-6.) * (-7.);
+            t3 *= (-6.) * (21.);
+            t4 *= (-6.) * (-35.);
 
             if (q < div1_2) {
                 return t1 + t2 + t3 + t4;
@@ -294,11 +308,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefM8 {
         public:
-        inline static constexpr Tscal Rkern  = 4.0;
+        inline static constexpr Tscal Rkern = 4.0; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 5040;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 9. / (29749. * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 6. / (40320. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -328,7 +346,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -343,10 +360,10 @@ namespace shammath::details {
             t3 = sham::pow_constexpr<6>(t3);
             t4 = sham::pow_constexpr<6>(t4);
 
-            t1 *= (-7.)*(1.);
-            t2 *= (-7.)*(-8.);
-            t3 *= (-7.)*(28.);
-            t4 *= (-7.)*(-56.);
+            t1 *= (-7.) * (1.);
+            t2 *= (-7.) * (-8.);
+            t3 *= (-7.) * (28.);
+            t4 *= (-7.) * (-56.);
 
             if (q < 1) {
                 return t1 + t2 + t3 + t4;
@@ -361,18 +378,18 @@ namespace shammath::details {
         }
     };
 
-
-
-
-
     template<class Tscal>
     class KernelDefM9 {
         public:
-        inline static constexpr Tscal Rkern  = 4.5;
+        inline static constexpr Tscal Rkern = 4.5; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 40320;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 512. / (14345663 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 6. / (362880. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -413,7 +430,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -436,11 +452,11 @@ namespace shammath::details {
             t4 = sham::pow_constexpr<7>(t4);
             t5 = sham::pow_constexpr<7>(t5);
 
-            t1 *= (-8.)*(1.);
-            t2 *= (-8.)*(-9.);
-            t3 *= (-8.)*(36.);
-            t4 *= (-8.)*(-84.);
-            t5 *= (-8.)*(126.);
+            t1 *= (-8.) * (1.);
+            t2 *= (-8.) * (-9.);
+            t3 *= (-8.) * (36.);
+            t4 *= (-8.) * (-84.);
+            t5 *= (-8.) * (126.);
 
             if (q < div1_2) {
                 return t1 + t2 + t3 + t4 + t5;
@@ -457,15 +473,18 @@ namespace shammath::details {
         }
     };
 
-
     template<class Tscal>
     class KernelDefM10 {
         public:
-        inline static constexpr Tscal Rkern  = 5;
+        inline static constexpr Tscal Rkern = 5; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 1. / 362880;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 11. / (2922230 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 6. / (3628800. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -500,7 +519,6 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
-
         }
 
         inline static Tscal df(Tscal q) {
@@ -517,11 +535,11 @@ namespace shammath::details {
             t4 = sham::pow_constexpr<8>(t4);
             t5 = sham::pow_constexpr<8>(t5);
 
-            t1 *= (-9.)*(1.);
-            t2 *= (-9.)*(-10.);
-            t3 *= (-9.)*(45.);
-            t4 *= (-9.)*(-120.);
-            t5 *= (-9.)*(210.);
+            t1 *= (-9.) * (1.);
+            t2 *= (-9.) * (-10.);
+            t3 *= (-9.) * (45.);
+            t4 *= (-9.) * (-120.);
+            t5 *= (-9.) * (210.);
 
             if (q < 1) {
                 return t1 + t2 + t3 + t4 + t5;
@@ -541,11 +559,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefC2 {
         public:
-        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 3. / 4.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 7. / (4 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 21 / (16 * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -585,11 +607,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefC4 {
         public:
-        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 27. / 32.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 9. / (4 * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 495. / (256. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -629,11 +655,15 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefC6 {
         public:
-        inline static constexpr Tscal Rkern  = 2;
+        inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
+        /// default hfact to be used for this kernel
         inline static constexpr Tscal hfactd = 1.0;
 
+        /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 15. / 16.;
+        /// 2D norm of the kernel
         inline static constexpr Tscal norm_2d = 39. / (14. * shambase::constants::pi<Tscal>);
+        /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 1365. / (512. * shambase::constants::pi<Tscal>);
 
         inline static Tscal f(Tscal q) {
@@ -681,8 +711,8 @@ namespace shammath {
         using Generator                     = BaseKernel;
         using Tscal                         = Tscal_;
         inline static constexpr Tscal Rkern = BaseKernel::Rkern; /*!< Radius of the support */
-        inline static constexpr Tscal hfactd =
-            BaseKernel::hfactd; /*!< default $h_{\rm fact}$ for this kernel*/
+        inline static constexpr Tscal hfactd
+            = BaseKernel::hfactd; /*!< default $h_{\rm fact}$ for this kernel*/
 
         /**
          * @brief the base function for this SPH kernel
@@ -821,3 +851,49 @@ namespace shammath {
     using C6 = SPHKernelGen<flt_type, details::KernelDefC6<flt_type>>;
 
 } // namespace shammath
+
+namespace shambase {
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M4<flt_type>> {
+        inline static const std::string name = "M4<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M5<flt_type>> {
+        inline static const std::string name = "M5<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M6<flt_type>> {
+        inline static const std::string name = "M6<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M7<flt_type>> {
+        inline static const std::string name = "M7<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M8<flt_type>> {
+        inline static const std::string name = "M8<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M9<flt_type>> {
+        inline static const std::string name = "M9<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::M10<flt_type>> {
+        inline static const std::string name = "M10<" + get_type_name<flt_type>() + ">";
+    };
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::C2<flt_type>> {
+        inline static const std::string name = "C2<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::C4<flt_type>> {
+        inline static const std::string name = "C4<" + get_type_name<flt_type>() + ">";
+    };
+    template<class flt_type>
+    struct TypeNameInfo<shammath::C6<flt_type>> {
+        inline static const std::string name = "C6<" + get_type_name<flt_type>() + ">";
+    };
+
+} // namespace shambase

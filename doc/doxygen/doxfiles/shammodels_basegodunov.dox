@@ -1,0 +1,9 @@
+/**
+\namespace shammodels::basegodunov
+\brief namespace for the basegodunov model
+*/
+
+/**
+\namespace shammodels::basegodunov::modules
+\brief namespace for the basegodunov model modules
+*/

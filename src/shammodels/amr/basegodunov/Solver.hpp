@@ -11,10 +11,10 @@
 /**
  * @file Solver.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/amr/AMRBlock.hpp"
@@ -23,34 +23,32 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::basegodunov {
 
-    enum RiemmanSolverMode {
-        Rusanov = 0,
-        HLL = 1
-    };
+    enum RiemmanSolverMode { Rusanov = 0, HLL = 1 };
 
-    enum SlopeMode{
-        None = 0,
-        VanLeer_f = 1,
+    enum SlopeMode {
+        None        = 0,
+        VanLeer_f   = 1,
         VanLeer_std = 2,
         VanLeer_sym = 3,
-        Minmod = 4,
-    };   
-    
-    enum DustRiemannSolverMode{
-        NoDust = 0,
-        DHLL = 1, // Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
-        HB   = 2   // Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
+        Minmod      = 4,
     };
 
-    struct DustConfig{
-        DustRiemannSolverMode dust_riemann_config=NoDust;
-        u32 ndust = 0;
+    enum DustRiemannSolverMode {
+        NoDust = 0,
+        DHLL   = 1, // Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
+        HB     = 2 // Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
+    };
 
-        inline bool is_dust_on(){
+    struct DustConfig {
+        DustRiemannSolverMode dust_riemann_config = NoDust;
+        u32 ndust                                 = 0;
+
+        inline bool is_dust_on() {
             if (dust_riemann_config != NoDust) {
 
-                if(ndust == 0){
-                    throw shambase::make_except_with_loc<std::runtime_error>("Dust is on with ndust == 0");
+                if (ndust == 0) {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "Dust is on with ndust == 0");
                 }
                 return true;
             }
@@ -59,42 +57,38 @@ namespace shammodels::basegodunov {
         }
     };
 
-    template<class Tvec,class TgridVec>
+    template<class Tvec, class TgridVec>
     struct SolverConfig {
 
-        using Tscal              = shambase::VecComponent<Tvec>;
+        using Tscal = shambase::VecComponent<Tvec>;
 
-        Tscal eos_gamma = 5./3.;
+        Tscal eos_gamma = 5. / 3.;
 
         Tscal grid_coord_to_pos_fact = 1;
 
         static constexpr u32 NsideBlockPow = 1;
-        using AMRBlock = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>;
+        using AMRBlock                     = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>;
 
-        inline void set_eos_gamma(Tscal gamma){
-            eos_gamma = gamma;
-        }
+        inline void set_eos_gamma(Tscal gamma) { eos_gamma = gamma; }
 
         RiemmanSolverMode riemman_config = HLL;
-        SlopeMode slope_config = VanLeer_sym;
-        DustConfig dust_config {};
+        SlopeMode slope_config           = VanLeer_sym;
+        DustConfig dust_config{};
 
-        inline bool is_dust_on(){
-            return dust_config.is_dust_on();
-        }
+        inline bool is_dust_on() { return dust_config.is_dust_on(); }
 
         Tscal Csafe = 0.9;
     };
 
     template<class Tvec, class TgridVec>
-    class Solver {public:
-
+    class Solver {
+        public:
         using Tscal              = shambase::VecComponent<Tvec>;
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         using u_morton = u64;
-        using Config = SolverConfig<Tvec,TgridVec>;
+        using Config   = SolverConfig<Tvec, TgridVec>;
 
         using AMRBlock = typename Config::AMRBlock;
 
@@ -103,7 +97,7 @@ namespace shammodels::basegodunov {
 
         Config solver_config;
 
-        SolverStorage<Tvec,TgridVec, u_morton> storage {};
+        SolverStorage<Tvec, TgridVec, u_morton> storage{};
 
         inline void init_required_fields() {
             context.pdata_layout_add_field<TgridVec>("cell_min", 1);
@@ -115,16 +109,14 @@ namespace shammodels::basegodunov {
             if (solver_config.is_dust_on()) {
                 u32 ndust = solver_config.dust_config.ndust;
 
-                context.pdata_layout_add_field<Tscal>("rho_dust", (ndust * AMRBlock::block_size));  
-                context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust* AMRBlock::block_size));
-
+                context.pdata_layout_add_field<Tscal>("rho_dust", (ndust * AMRBlock::block_size));
+                context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust * AMRBlock::block_size));
             }
-
         }
 
         Solver(ShamrockCtx &context) : context(context) {}
 
-        Tscal evolve_once(Tscal t_current,Tscal dt_input);
+        Tscal evolve_once(Tscal t_current, Tscal dt_input);
 
         void do_debug_vtk_dump(std::string filename);
     };

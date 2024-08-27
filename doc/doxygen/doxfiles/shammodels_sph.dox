@@ -1,0 +1,9 @@
+/**
+\namespace shammodels::sph
+\brief namespace for the sph model
+*/
+
+/**
+\namespace shammodels::sph::modules
+\brief namespace for the sph model modules
+*/

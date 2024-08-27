@@ -18,7 +18,6 @@
  * information.
  */
 
- 
 #include "shambase/SourceLocation.hpp"
 #include <stdexcept>
 
@@ -37,7 +36,6 @@ namespace shambase {
      */
     std::string exception_format(SourceLocation loc);
 
-
     /**
      * @brief Create an exception with a message and a location
      *
@@ -51,7 +49,8 @@ namespace shambase {
      * the source location.
      */
     template<class ExcptTypes>
-    inline ExcptTypes make_except_with_loc(std::string message, SourceLocation loc = SourceLocation{}) {
+    inline ExcptTypes
+    make_except_with_loc(std::string message, SourceLocation loc = SourceLocation{}) {
         return ExcptTypes(message + exception_format(loc));
     }
 
@@ -62,11 +61,11 @@ namespace shambase {
      * that is richer, as it also contains the source location
      * where the exception was thrown.
      *
-     * Usage : 
+     * Usage :
      * ~~~~~{.cpp}
      * shambase::throw_with_loc<MyException>("message");
      * ~~~~~
-     * 
+     *
      * @tparam ExcptTypes The type of the exception to throw
      * @param message The message of the exception
      * @param loc The location from where the exception was thrown
@@ -86,18 +85,18 @@ namespace shambase {
      * std::runtime_error saying that the function is unimplemented.
      * It also includes the source location where the exception was thrown.
      *
-     * Usage : 
+     * Usage :
      * ~~~~~{.cpp}
      * shambase::throw_unimplemented();
      * ~~~~~
-     * 
+     *
      * @param loc The location from where the exception was thrown
      *
      * @throw std::runtime_error The exception with a message saying that the
      * function is unimplemented, and the source location.
      */
     inline void throw_unimplemented(SourceLocation loc = SourceLocation{}) {
-        throw_with_loc<std::runtime_error>("unimplemented",loc);
+        throw_with_loc<std::runtime_error>("unimplemented", loc);
     }
 
     /**
@@ -107,7 +106,7 @@ namespace shambase {
      * saying that the function is unimplemented. It also includes the
      * source location where the exception was thrown.
      *
-     * Usage : 
+     * Usage :
      * ~~~~~{.cpp}
      * shambase::throw_unimplemented("my function");
      * ~~~~~
@@ -118,8 +117,8 @@ namespace shambase {
      * @throw std::runtime_error The exception with a message saying that the
      * function is unimplemented, the given message, and the source location.
      */
-    inline void throw_unimplemented(std::string message,SourceLocation loc = SourceLocation{}) {
-        throw_with_loc<std::runtime_error>(message + "\nunimplemented",loc);
+    inline void throw_unimplemented(std::string message, SourceLocation loc = SourceLocation{}) {
+        throw_with_loc<std::runtime_error>(message + "\nunimplemented", loc);
     }
 
 } // namespace shambase

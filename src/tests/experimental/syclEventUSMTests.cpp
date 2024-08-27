@@ -10,109 +10,83 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 
-
-
-struct DeviceQueue{
+struct DeviceQueue {
 
     sycl::queue q;
 
-    void wait(){
-        q.wait();
-    }
+    void wait() { q.wait(); }
 
-    void wait_and_throw(){
-        q.wait();
-    }
+    void wait_and_throw() { q.wait(); }
 
-    DeviceQueue& operator=(const DeviceQueue&) = delete;
-    DeviceQueue(const DeviceQueue&)            = delete;
-    DeviceQueue& operator=(DeviceQueue&&) = delete;
-    DeviceQueue(DeviceQueue&&)            = delete;
+    DeviceQueue &operator=(const DeviceQueue &) = delete;
+    DeviceQueue(const DeviceQueue &)            = delete;
+    DeviceQueue &operator=(DeviceQueue &&)      = delete;
+    DeviceQueue(DeviceQueue &&)                 = delete;
 
-
-    operator const sycl::queue & () const { return q; }
+    operator const sycl::queue &() const { return q; }
 };
 
-
-struct QueueEvent{
+struct QueueEvent {
 
     sycl::event e;
 
-    QueueEvent() : e{ } {}
-    QueueEvent( sycl::event&& event) : e{ std::forward<sycl::event>(event) } {}
+    QueueEvent() : e{} {}
+    QueueEvent(sycl::event &&event) : e{std::forward<sycl::event>(event)} {}
 
     ~QueueEvent() = default;
 
-    void wait(){
-        e.wait();
-    }
+    void wait() { e.wait(); }
 
-    operator sycl::event () const { return e; }
-
+    operator sycl::event() const { return e; }
 };
 
-
-
-enum BufferType{
-    HOST, Device, Shared
-};
-
+enum BufferType { HOST, Device, Shared };
 
 template<class T>
 class ResizableUSMBuffer {
-    T* usm_ptr = nullptr;
+    T *usm_ptr = nullptr;
 
     u32 buf_size;
     u32 val_count;
 
     BufferType type;
 
-    inline void alloc(DeviceQueue & q){
-        if(usm_ptr != nullptr){
+    inline void alloc(DeviceQueue &q) {
+        if (usm_ptr != nullptr) {
             throw;
         }
 
-        if(type == HOST){
-            usm_ptr = sycl::malloc_host<T>( buf_size, q );
-        }else if(type == Device){
-            usm_ptr = sycl::malloc_device<T>( buf_size, q );
-        }else if(type == Shared){
-            usm_ptr = sycl::malloc_shared<T>( buf_size, q );
+        if (type == HOST) {
+            usm_ptr = sycl::malloc_host<T>(buf_size, q);
+        } else if (type == Device) {
+            usm_ptr = sycl::malloc_device<T>(buf_size, q);
+        } else if (type == Shared) {
+            usm_ptr = sycl::malloc_shared<T>(buf_size, q);
         }
     }
 
-    inline void free(DeviceQueue & q){
+    inline void free(DeviceQueue &q) {
         sycl::free(usm_ptr, q);
         usm_ptr = nullptr;
     }
-
 };
 
-
-
-
 template class ResizableUSMBuffer<u32>;
-
-
-
-
-
-
 
 class ker1test;
 class ker2test;
 
-QueueEvent sub_func(QueueEvent & e, u32* ptr){
+QueueEvent sub_func(QueueEvent &e, u32 *ptr) {
 
-    sycl::queue & q = shamsys::instance::get_compute_queue();
+    sycl::queue &q = shamsys::instance::get_compute_queue();
 
-    QueueEvent e1 = q.submit([&](sycl::handler & cgh){
+    QueueEvent e1 = q.submit([&](sycl::handler &cgh) {
         cgh.depends_on(e);
 
         cgh.memset(ptr, 0, 100);
     });
 
-    QueueEvent e2 = q.submit([&,ptr](sycl::handler & cgh){
+    QueueEvent e2 = q.submit([&, ptr](sycl::handler &cgh) {
         cgh.depends_on(e1);
 
         cgh.parallel_for<ker1test>(sycl::range<1>{100}, [=](sycl::id<1> idx) {
@@ -126,49 +100,40 @@ QueueEvent sub_func(QueueEvent & e, u32* ptr){
     return e2;
 }
 
-TestStart(ValidationTest, "test-usm-event-arch", usm_event_test, 1){
+TestStart(ValidationTest, "test-usm-event-arch", usm_event_test, 1) {
 
-    sycl::queue & q = shamsys::instance::get_compute_queue();
-
+    sycl::queue &q = shamsys::instance::get_compute_queue();
 
     logger::debug_ln("TEST", "alloc 1");
-    u32* ptr1 = sycl::malloc_device<u32>( 100,q);
+    u32 *ptr1 = sycl::malloc_device<u32>(100, q);
 
     logger::debug_ln("TEST", "alloc 2");
-    u32* ptr2 = sycl::malloc_device<u32>( 100,q);
+    u32 *ptr2 = sycl::malloc_device<u32>(100, q);
 
-    QueueEvent e1,e2;
-
+    QueueEvent e1, e2;
 
     logger::debug_ln("TEST", "sub_func 1");
-    QueueEvent e3 = sub_func(e1,ptr1);
+    QueueEvent e3 = sub_func(e1, ptr1);
     logger::debug_ln("TEST", "sub_func 2");
-    QueueEvent e4 = sub_func(e2,ptr2);
-
+    QueueEvent e4 = sub_func(e2, ptr2);
 
     logger::debug_ln("TEST", "alloc 3");
-    u32* ptr3 = sycl::malloc_device<u32>( 100,q);
-    
+    u32 *ptr3 = sycl::malloc_device<u32>(100, q);
 
     logger::debug_ln("TEST", "ker2");
-    QueueEvent e5 = q.submit([&,ptr1,ptr2,ptr3](sycl::handler & cgh){
-        cgh.depends_on({e3,e4});
+    QueueEvent e5 = q.submit([&, ptr1, ptr2, ptr3](sycl::handler &cgh) {
+        cgh.depends_on({e3, e4});
 
         cgh.parallel_for<ker2test>(sycl::range<1>{100}, [=](sycl::id<1> idx) {
-            
             ptr3[idx] = ptr1[idx] + ptr2[idx];
-
-        }); 
+        });
     });
 
-
     logger::debug_ln("TEST", "recover");
-    std::array<u32,100> recov;
-    q.submit([&,ptr3](sycl::handler & cgh){
-        cgh.depends_on(e5);
+    std::array<u32, 100> recov;
+    q.submit([&, ptr3](sycl::handler &cgh) {
+         cgh.depends_on(e5);
 
-        cgh.memcpy(recov.data(), ptr3,sizeof(u32)*100);
-    }).wait();
-
-
+         cgh.memcpy(recov.data(), ptr3, sizeof(u32) * 100);
+     }).wait();
 }

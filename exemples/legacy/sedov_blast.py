@@ -86,7 +86,7 @@ rinj = 0.01
 
 u_inj = 1000
 while 1:
-    
+
     model.set_value_in_sphere("uint","f64", u_inj,(0,0,0),rinj)
 
     tot_u = pmass*model.get_sum("uint","f64")
@@ -134,7 +134,7 @@ i_dump = 0
 while t_sum < t_target:
 
     print("step : t=",t_sum)
-    
+
     next_dt = model.evolve(current_dt, True, "dump_"+str(i_dump)+".vtk", True)
 
     if i % 1 == 0:

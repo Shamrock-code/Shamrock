@@ -16,25 +16,22 @@
 #include "SchedulerPatchData.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
-
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamsys/legacy/log.hpp"
-
 #include <stdexcept>
 #include <vector>
 
 #define NEW_LB_APPLY_IMPL
 
 #ifndef NEW_LB_APPLY_IMPL
-#include "shamrock/legacy/patch/base/patchdata.hpp"
+    #include "shamrock/legacy/patch/base/patchdata.hpp"
 #endif
 
 namespace shamrock::scheduler {
-
 
 #ifdef NEW_LB_APPLY_IMPL
     struct Message {
@@ -50,11 +47,12 @@ namespace shamrock::scheduler {
             auto &rq     = rqs[rq_index];
 
             u64 bsize = msg.buf->get_bytesize();
-            if(bsize % 8 != 0){
-                shambase::throw_with_loc<std::runtime_error>("the following mpi comm assume that we can send longs to pack 8byte");
+            if (bsize % 8 != 0) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "the following mpi comm assume that we can send longs to pack 8byte");
             }
-            u64 lcount = bsize/8;
-            if(lcount > i32_max){
+            u64 lcount = bsize / 8;
+            if (lcount > i32_max) {
                 shambase::throw_with_loc<std::runtime_error>("The message is too large for MPI");
             }
 
@@ -81,9 +79,17 @@ namespace shamrock::scheduler {
             mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
             mpi::get_count(&st, get_mpi_type<u64>(), &cnt);
 
-            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(cnt*8, shamsys::instance::get_compute_scheduler());
+            msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(
+                cnt * 8, shamsys::instance::get_compute_scheduler());
 
-            mpi::irecv(msg.buf->get_ptr(), cnt, get_mpi_type<u64>(), msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
+            mpi::irecv(
+                msg.buf->get_ptr(),
+                cnt,
+                get_mpi_type<u64>(),
+                msg.rank,
+                msg.tag,
+                MPI_COMM_WORLD,
+                &rq);
         }
     }
 
@@ -104,7 +110,9 @@ namespace shamrock::scheduler {
 
         auto deserializer = [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
-            shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr(),std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            shamalgs::SerializeHelper ser(
+                shamsys::instance::get_compute_scheduler_ptr(),
+                std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         };
 
@@ -117,7 +125,8 @@ namespace shamrock::scheduler {
                 std::unique_ptr<sycl::buffer<u8>> tmp = serializer(patchdata);
 
                 send_payloads.push_back(Message{
-                    std::make_unique<shamcomm::CommunicationBuffer>(shambase::get_check_ref(tmp), shamsys::instance::get_compute_scheduler()),
+                    std::make_unique<shamcomm::CommunicationBuffer>(
+                        shambase::get_check_ref(tmp), shamsys::instance::get_compute_scheduler()),
                     op.rank_owner_new,
                     op.tag_comm});
             }
@@ -177,54 +186,58 @@ namespace shamrock::scheduler {
             }
         }
     }
-    #else
+#else
 
-void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalancingChangeList & change_list,SchedulerPatchList& patch_list){
+    void SchedulerPatchData::apply_change_list(
+        const shamrock::scheduler::LoadBalancingChangeList &change_list,
+        SchedulerPatchList &patch_list) {
 
-    StackEntry stack_loc{};
+        StackEntry stack_loc{};
 
-    std::vector<PatchDataMpiRequest> rq_lst;
+        std::vector<PatchDataMpiRequest> rq_lst;
 
-    using ChangeOp = shamrock::scheduler::LoadBalancingChangeList::ChangeOp;
+        using ChangeOp = shamrock::scheduler::LoadBalancingChangeList::ChangeOp;
 
-    //send
-    for(const ChangeOp op : change_list.change_ops){ // switch to range based
-         //if i'm sender
-        if(op.rank_owner_old == shamcomm::world_rank()){
-            auto & patchdata = owned_data.get(op.patch_id);
-            patchdata_isend(patchdata, rq_lst, op.rank_owner_new, op.tag_comm, MPI_COMM_WORLD);
-        }
-    }
-
-    //receive
-    for(const ChangeOp op : change_list.change_ops){
-        auto & id_patch = op.patch_id;
-        
-        //if i'm receiver
-        if(op.rank_owner_new == shamcomm::world_rank()){
-            owned_data.add_obj(id_patch,pdl);
-            patchdata_irecv_probe(owned_data.get(id_patch), rq_lst, op.rank_owner_old , op.tag_comm, MPI_COMM_WORLD);
-        }
-    }
-
-    waitall_pdat_mpi_rq(rq_lst);
-
-    //erase old patchdata
-    for(const ChangeOp op : change_list.change_ops){
-        auto & id_patch = op.patch_id;
-        
-        patch_list.global[op.patch_idx].node_owner_id = op.rank_owner_new;
-
-        //if i'm sender delete old data
-        if(op.rank_owner_old == shamcomm::world_rank()){
-            owned_data.erase(id_patch);
+        // send
+        for (const ChangeOp op : change_list.change_ops) { // switch to range based
+                                                           // if i'm sender
+            if (op.rank_owner_old == shamcomm::world_rank()) {
+                auto &patchdata = owned_data.get(op.patch_id);
+                patchdata_isend(patchdata, rq_lst, op.rank_owner_new, op.tag_comm, MPI_COMM_WORLD);
+            }
         }
 
+        // receive
+        for (const ChangeOp op : change_list.change_ops) {
+            auto &id_patch = op.patch_id;
+
+            // if i'm receiver
+            if (op.rank_owner_new == shamcomm::world_rank()) {
+                owned_data.add_obj(id_patch, pdl);
+                patchdata_irecv_probe(
+                    owned_data.get(id_patch),
+                    rq_lst,
+                    op.rank_owner_old,
+                    op.tag_comm,
+                    MPI_COMM_WORLD);
+            }
+        }
+
+        waitall_pdat_mpi_rq(rq_lst);
+
+        // erase old patchdata
+        for (const ChangeOp op : change_list.change_ops) {
+            auto &id_patch = op.patch_id;
+
+            patch_list.global[op.patch_idx].node_owner_id = op.rank_owner_new;
+
+            // if i'm sender delete old data
+            if (op.rank_owner_old == shamcomm::world_rank()) {
+                owned_data.erase(id_patch);
+            }
+        }
     }
-
-
-}
-    #endif
+#endif
 
     template<class Vectype>
     void split_patchdata(
@@ -314,7 +327,7 @@ void SchedulerPatchData::apply_change_list(const shamrock::scheduler::LoadBalanc
 
                 shamrock::scheduler::split_patchdata<u64_3>(
                     original_pd, sim_box, patches, {pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7});
-            }  else if (pdl.check_main_field_type<i64_3>()) {
+            } else if (pdl.check_main_field_type<i64_3>()) {
 
                 shamrock::scheduler::split_patchdata<i64_3>(
                     original_pd, sim_box, patches, {pd0, pd1, pd2, pd3, pd4, pd5, pd6, pd7});

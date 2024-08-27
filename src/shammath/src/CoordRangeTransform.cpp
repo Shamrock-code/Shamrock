@@ -9,23 +9,18 @@
 /**
  * @file CoordRangeTransform.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
-#include "shammath/CoordRangeTransform.hpp"
-
-#include "shamcomm/logs.hpp"
-#include "shambackends/fmt_bindings/fmt_defs.hpp"
 
 #include "shambase/exception.hpp"
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
+#include "shamcomm/logs.hpp"
+#include "shammath/CoordRangeTransform.hpp"
 #include <stdexcept>
 
 namespace shammath {
 
-    
-
-    
     void check_divisor_throw(u64_3 val, u64_3 divisor) {
         bool cmp_x = val.x() % divisor.x() == 0;
         bool cmp_y = val.y() % divisor.y() == 0;
@@ -34,54 +29,44 @@ namespace shammath {
         if (!cmp_x) {
             throw shambase::make_except_with_loc<std::invalid_argument>(
                 "the divisor does not divide the value on component x\n"
-                "  val     = (" +
-                    std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
-                    std::to_string(val.z()) + ")\n" + "  divisor = (" +
-                    std::to_string(divisor.x()) + ", " + std::to_string(divisor.y()) + ", " +
-                    std::to_string(divisor.z()) + ")\n"
-            );
+                "  val     = ("
+                + std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", "
+                + std::to_string(val.z()) + ")\n" + "  divisor = (" + std::to_string(divisor.x())
+                + ", " + std::to_string(divisor.y()) + ", " + std::to_string(divisor.z()) + ")\n");
         }
 
         if (!cmp_y) {
             throw shambase::make_except_with_loc<std::invalid_argument>(
                 "the divisor does not divide the value on component y\n"
-                "  val     = (" +
-                    std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
-                    std::to_string(val.z()) + ")\n" + "  divisor = (" +
-                    std::to_string(divisor.x()) + ", " + std::to_string(divisor.y()) + ", " +
-                    std::to_string(divisor.z()) + ")\n"
-            );
+                "  val     = ("
+                + std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", "
+                + std::to_string(val.z()) + ")\n" + "  divisor = (" + std::to_string(divisor.x())
+                + ", " + std::to_string(divisor.y()) + ", " + std::to_string(divisor.z()) + ")\n");
         }
 
         if (!cmp_z) {
             throw shambase::make_except_with_loc<std::invalid_argument>(
                 "the divisor does not divide the value on component z\n"
-                "  val     = (" +
-                    std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", " +
-                    std::to_string(val.z()) + ")\n" + "  divisor = (" +
-                    std::to_string(divisor.x()) + ", " + std::to_string(divisor.y()) + ", " +
-                    std::to_string(divisor.z()) + ")\n"
-            );
+                "  val     = ("
+                + std::to_string(val.x()) + ", " + std::to_string(val.y()) + ", "
+                + std::to_string(val.z()) + ")\n" + "  divisor = (" + std::to_string(divisor.x())
+                + ", " + std::to_string(divisor.y()) + ", " + std::to_string(divisor.z()) + ")\n");
         }
     }
-    
-template<class Ta, class Tb>
-    void check_divisor_throw(Ta val, Tb divisor){
-        check_divisor_throw(
-            val.template convert<u64>(),divisor.template convert<u64>()
-            );
+
+    template<class Ta, class Tb>
+    void check_divisor_throw(Ta val, Tb divisor) {
+        check_divisor_throw(val.template convert<u64>(), divisor.template convert<u64>());
     }
 
     template<class Tsource, class Tdest>
-    void CoordRangeTransform<Tsource, Tdest>::print_transform()  const{
+    void CoordRangeTransform<Tsource, Tdest>::print_transform() const {
         if (mode == multiply) {
             logger::debug_ln(
-                "CoordRangeTransform", "multiply:", fact, source_coord_min, dest_coord_min
-            );
+                "CoordRangeTransform", "multiply:", fact, source_coord_min, dest_coord_min);
         } else {
             logger::debug_ln(
-                "CoordRangeTransform", "divide  :", fact, source_coord_min, dest_coord_min
-            );
+                "CoordRangeTransform", "divide  :", fact, source_coord_min, dest_coord_min);
         }
     }
 
@@ -91,8 +76,7 @@ template<class Ta, class Tb>
 
     template<>
     CoordRangeTransform<u64_3, f32_3>::CoordRangeTransform(
-        CoordRange<u64_3> source_range, CoordRange<f32_3> dest_range
-    )
+        CoordRange<u64_3> source_range, CoordRange<f32_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -110,8 +94,7 @@ template<class Ta, class Tb>
 
     template<>
     CoordRangeTransform<u64_3, f64_3>::CoordRangeTransform(
-        CoordRange<u64_3> source_range, CoordRange<f64_3> dest_range
-    )
+        CoordRange<u64_3> source_range, CoordRange<f64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -129,8 +112,7 @@ template<class Ta, class Tb>
 
     template<>
     CoordRangeTransform<u32_3, f32_3>::CoordRangeTransform(
-        CoordRange<u32_3> source_range, CoordRange<f32_3> dest_range
-    )
+        CoordRange<u32_3> source_range, CoordRange<f32_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -148,8 +130,7 @@ template<class Ta, class Tb>
 
     template<>
     CoordRangeTransform<u32_3, f64_3>::CoordRangeTransform(
-        CoordRange<u32_3> source_range, CoordRange<f64_3> dest_range
-    )
+        CoordRange<u32_3> source_range, CoordRange<f64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -167,8 +148,7 @@ template<class Ta, class Tb>
 
     template<>
     CoordRangeTransform<u16_3, f32_3>::CoordRangeTransform(
-        CoordRange<u16_3> source_range, CoordRange<f32_3> dest_range
-    )
+        CoordRange<u16_3> source_range, CoordRange<f32_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -186,8 +166,7 @@ template<class Ta, class Tb>
 
     template<>
     CoordRangeTransform<u16_3, f64_3>::CoordRangeTransform(
-        CoordRange<u16_3> source_range, CoordRange<f64_3> dest_range
-    )
+        CoordRange<u16_3> source_range, CoordRange<f64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -205,8 +184,7 @@ template<class Ta, class Tb>
 
     template<>
     CoordRangeTransform<u64_3, u64_3>::CoordRangeTransform(
-        CoordRange<u64_3> source_range, CoordRange<u64_3> dest_range
-    )
+        CoordRange<u64_3> source_range, CoordRange<u64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -234,16 +212,14 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
-
-
     template<>
     CoordRangeTransform<i64_3, u64_3>::CoordRangeTransform(
-        CoordRange<i64_3> source_range, CoordRange<u64_3> dest_range
-    )
+        CoordRange<i64_3> source_range, CoordRange<u64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -271,16 +247,14 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
-
-
     template<>
     CoordRangeTransform<u64_3, i64_3>::CoordRangeTransform(
-        CoordRange<u64_3> source_range, CoordRange<i64_3> dest_range
-    )
+        CoordRange<u64_3> source_range, CoordRange<i64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -308,14 +282,14 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
     template<>
     CoordRangeTransform<u64_3, u32_3>::CoordRangeTransform(
-        CoordRange<u64_3> source_range, CoordRange<u32_3> dest_range
-    )
+        CoordRange<u64_3> source_range, CoordRange<u32_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -343,14 +317,14 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
     template<>
     CoordRangeTransform<u64_3, i32_3>::CoordRangeTransform(
-        CoordRange<u64_3> source_range, CoordRange<i32_3> dest_range
-    )
+        CoordRange<u64_3> source_range, CoordRange<i32_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -378,14 +352,14 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
     template<>
     CoordRangeTransform<u32_3, u16_3>::CoordRangeTransform(
-        CoordRange<u32_3> source_range, CoordRange<u16_3> dest_range
-    )
+        CoordRange<u32_3> source_range, CoordRange<u16_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -413,14 +387,14 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
     template<>
     CoordRangeTransform<u32_3, u64_3>::CoordRangeTransform(
-        CoordRange<u32_3> source_range, CoordRange<u64_3> dest_range
-    )
+        CoordRange<u32_3> source_range, CoordRange<u64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -440,7 +414,7 @@ template<class Ta, class Tb>
             if (obj_greater_than_patch) {
                 check_divisor_throw(dest_delt, source_delt);
                 mode = multiply;
-                fact = (dest_delt/ source_delt.convert<u64>());
+                fact = (dest_delt / source_delt.convert<u64>());
             } else {
                 check_divisor_throw(source_delt, dest_delt);
                 mode = divide;
@@ -448,14 +422,14 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
     template<>
     CoordRangeTransform<u32_3, i64_3>::CoordRangeTransform(
-        CoordRange<u32_3> source_range, CoordRange<i64_3> dest_range
-    )
+        CoordRange<u32_3> source_range, CoordRange<i64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -475,7 +449,7 @@ template<class Ta, class Tb>
             if (obj_greater_than_patch) {
                 check_divisor_throw(dest_delt, source_delt);
                 mode = multiply;
-                fact = (dest_delt/ source_delt.convert<i64>());
+                fact = (dest_delt / source_delt.convert<i64>());
             } else {
                 check_divisor_throw(source_delt, dest_delt);
                 mode = divide;
@@ -483,14 +457,14 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
     template<>
     CoordRangeTransform<u32_3, i32_3>::CoordRangeTransform(
-        CoordRange<u32_3> source_range, CoordRange<i32_3> dest_range
-    )
+        CoordRange<u32_3> source_range, CoordRange<i32_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -510,7 +484,7 @@ template<class Ta, class Tb>
             if (obj_greater_than_patch) {
                 check_divisor_throw(dest_delt, source_delt);
                 mode = multiply;
-                fact = (dest_delt/ source_delt.convert<i32>());
+                fact = (dest_delt / source_delt.convert<i32>());
             } else {
                 check_divisor_throw(source_delt, dest_delt);
                 mode = divide;
@@ -518,15 +492,14 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
-    
 
     template<>
     CoordRangeTransform<u16_3, u64_3>::CoordRangeTransform(
-        CoordRange<u16_3> source_range, CoordRange<u64_3> dest_range
-    )
+        CoordRange<u16_3> source_range, CoordRange<u64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
         source_range.check_throw_ranges();
@@ -546,7 +519,7 @@ template<class Ta, class Tb>
             if (obj_greater_than_patch) {
                 check_divisor_throw(dest_delt, source_delt);
                 mode = multiply;
-                fact = (dest_delt/ source_delt.convert<u64>());
+                fact = (dest_delt / source_delt.convert<u64>());
             } else {
                 check_divisor_throw(source_delt, dest_delt);
                 mode = divide;
@@ -554,16 +527,16 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
     template<>
     CoordRangeTransform<u16_3, u32_3>::CoordRangeTransform(
-        CoordRange<u16_3> source_range, CoordRange<u32_3> dest_range
-    )
+        CoordRange<u16_3> source_range, CoordRange<u32_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
-            
+
         source_range.check_throw_ranges();
         dest_range.check_throw_ranges();
 
@@ -581,7 +554,7 @@ template<class Ta, class Tb>
             if (obj_greater_than_patch) {
                 check_divisor_throw(dest_delt, source_delt);
                 mode = multiply;
-                fact = (dest_delt/ source_delt.convert<u32>());
+                fact = (dest_delt / source_delt.convert<u32>());
             } else {
                 check_divisor_throw(source_delt, dest_delt);
                 mode = divide;
@@ -589,16 +562,16 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
     template<>
     CoordRangeTransform<u16_3, i32_3>::CoordRangeTransform(
-        CoordRange<u16_3> source_range, CoordRange<i32_3> dest_range
-    )
+        CoordRange<u16_3> source_range, CoordRange<i32_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
-            
+
         source_range.check_throw_ranges();
         dest_range.check_throw_ranges();
 
@@ -616,7 +589,7 @@ template<class Ta, class Tb>
             if (obj_greater_than_patch) {
                 check_divisor_throw(dest_delt, source_delt);
                 mode = multiply;
-                fact = (dest_delt/ source_delt.convert<i32>());
+                fact = (dest_delt / source_delt.convert<i32>());
             } else {
                 check_divisor_throw(source_delt, dest_delt);
                 mode = divide;
@@ -624,16 +597,16 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
     template<>
     CoordRangeTransform<u16_3, i64_3>::CoordRangeTransform(
-        CoordRange<u16_3> source_range, CoordRange<i64_3> dest_range
-    )
+        CoordRange<u16_3> source_range, CoordRange<i64_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
-            
+
         source_range.check_throw_ranges();
         dest_range.check_throw_ranges();
 
@@ -651,7 +624,7 @@ template<class Ta, class Tb>
             if (obj_greater_than_patch) {
                 check_divisor_throw(dest_delt, source_delt);
                 mode = multiply;
-                fact = (dest_delt/ source_delt.convert<i64>());
+                fact = (dest_delt / source_delt.convert<i64>());
             } else {
                 check_divisor_throw(source_delt, dest_delt);
                 mode = divide;
@@ -659,32 +632,28 @@ template<class Ta, class Tb>
             }
 
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>( "the range comparaison are not the same");
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "the range comparaison are not the same");
         }
     }
 
-    
-
     template<>
     CoordRangeTransform<u64_3, u16_3>::CoordRangeTransform(
-        CoordRange<u64_3> source_range, CoordRange<u16_3> dest_range
-    )
+        CoordRange<u64_3> source_range, CoordRange<u16_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
-        throw shambase::make_except_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
-        );
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "this coordinate conversion mode is not implemented");
     }
 
     template<>
     CoordRangeTransform<u32_3, u32_3>::CoordRangeTransform(
-        CoordRange<u32_3> source_range, CoordRange<u32_3> dest_range
-    )
+        CoordRange<u32_3> source_range, CoordRange<u32_3> dest_range)
         : source_coord_min(source_range.lower), dest_coord_min(dest_range.lower) {
 
-        throw shambase::make_except_with_loc<std::invalid_argument>( "this coordinate conversion mode is not implemented"
-        );
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "this coordinate conversion mode is not implemented");
     }
-
 
     template class CoordRangeTransform<u64_3, f32_3>;
     template class CoordRangeTransform<u64_3, f64_3>;

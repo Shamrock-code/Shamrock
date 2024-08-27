@@ -6,13 +6,10 @@
 //
 // -------------------------------------------------------//
 
-#include "shamtest/shamtest.hpp"
-
 #include "shammath/sfc/morton.hpp"
+#include "shamtest/shamtest.hpp"
 #include <memory>
 #include <vector>
-
-
 
 #if false
 
@@ -30,7 +27,7 @@ Test_start("tree::kernels::",morton_kernels,1){
 
     }
 
-    Test_assert("min morton 32 == b0x0", morton_32[0] == 0x0);    
+    Test_assert("min morton 32 == b0x0", morton_32[0] == 0x0);
     Test_assert("max morton 32 == b30x1", morton_32[1] == 0x3fffffff);
 
 
@@ -46,9 +43,9 @@ Test_start("tree::kernels::",morton_kernels,1){
 
     }
 
-    Test_assert("min morton 64 == b0", morton_64[0] == 0x0);    
+    Test_assert("min morton 64 == b0", morton_64[0] == 0x0);
     Test_assert("max morton 64 == b63x1", morton_64[1] == 0x7fffffffffffffff);
-    
+
 
 }
 

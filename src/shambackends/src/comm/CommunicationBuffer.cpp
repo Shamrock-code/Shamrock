@@ -14,7 +14,6 @@
  */
 
 #include "shambackends/comm/CommunicationBuffer.hpp"
-
 #include "shambackends/math.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"

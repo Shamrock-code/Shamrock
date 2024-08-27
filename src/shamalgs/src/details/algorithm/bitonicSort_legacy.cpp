@@ -9,13 +9,13 @@
 /**
  * @file bitonicSort_legacy.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
+#include "shambase/integer.hpp"
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
 #include "shamcomm/logs.hpp"
-#include "shambase/integer.hpp"
 
 // modified from http://www.bealto.com/gpu-sorting.html
 
@@ -34,7 +34,6 @@
         idb         = (swap) ? auxida : auxidb;                                                    \
     }
 
-
 #define ORDERV(x, idx, a, b)                                                                       \
     {                                                                                              \
         bool swap   = reverse ^ (x[a] < x[b]);                                                     \
@@ -48,9 +47,8 @@
         idx[b]      = (swap) ? auxida : auxidb;                                                    \
     }
 
-#define B2V(x, idx, a)                                                                             \
-    { ORDERV(x, idx, a, a + 1) }
-    
+#define B2V(x, idx, a) {ORDERV(x, idx, a, a + 1)}
+
 #define B4V(x, idx, a)                                                                             \
     {                                                                                              \
         for (int i4 = 0; i4 < 2; i4++) {                                                           \
@@ -99,19 +97,15 @@ namespace shamalgs::algorithm::details {
 
     template<class Tkey, class Tval>
     void sort_by_key_bitonic_legacy(
-        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len
-    ) {
+        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
 
-
-        if(!shambase::is_pow_of_two(len)){
-            throw std::invalid_argument("this algorithm can only be used with length that are powers of two");
+        if (!shambase::is_pow_of_two(len)) {
+            throw std::invalid_argument(
+                "this algorithm can only be used with length that are powers of two");
         }
 
-
-
         shamcomm::logs::debug_sycl_ln(
-            "BitonicSorter", "submit : sycl_sort_morton_key_pair<u32, MultiKernel>"
-        );
+            "BitonicSorter", "submit : sycl_sort_morton_key_pair<u32, MultiKernel>");
 
         for (u32 length = 1; length < len; length <<= 1) {
             u32 inc = length;
@@ -128,8 +122,8 @@ namespace shamalgs::algorithm::details {
                     sycl::range<1> range{nThreads};
 
                     auto ker_sort_morton_b32 = [&](sycl::handler &cgh) {
-                        sycl::accessor m { buf_key,cgh,sycl::read_write};
-                        sycl::accessor id { buf_values,cgh,sycl::read_write};
+                        sycl::accessor m{buf_key, cgh, sycl::read_write};
+                        sycl::accessor id{buf_values, cgh, sycl::read_write};
 
                         cgh.parallel_for(range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
@@ -173,8 +167,8 @@ namespace shamalgs::algorithm::details {
                     sycl::range<1> range{nThreads};
 
                     auto ker_sort_morton_b16 = [&](sycl::handler &cgh) {
-                        sycl::accessor m { buf_key,cgh,sycl::read_write};
-                        sycl::accessor id { buf_values,cgh,sycl::read_write};
+                        sycl::accessor m{buf_key, cgh, sycl::read_write};
+                        sycl::accessor id{buf_values, cgh, sycl::read_write};
 
                         cgh.parallel_for(range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
@@ -222,8 +216,8 @@ namespace shamalgs::algorithm::details {
                     sycl::range<1> range{nThreads};
 
                     auto ker_sort_morton_b8 = [&](sycl::handler &cgh) {
-                        sycl::accessor m { buf_key,cgh,sycl::read_write};
-                        sycl::accessor id { buf_values,cgh,sycl::read_write};
+                        sycl::accessor m{buf_key, cgh, sycl::read_write};
+                        sycl::accessor id{buf_values, cgh, sycl::read_write};
 
                         cgh.parallel_for(range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
@@ -272,8 +266,8 @@ namespace shamalgs::algorithm::details {
                     // sort_kernel_B4(arg_eq,* buf_key->buf,*
                     // particles::buf_ids->buf,inc,length<<1);
                     auto ker_sort_morton_b4 = [&](sycl::handler &cgh) {
-                        sycl::accessor m { buf_key,cgh,sycl::read_write};
-                        sycl::accessor id { buf_values,cgh,sycl::read_write};
+                        sycl::accessor m{buf_key, cgh, sycl::read_write};
+                        sycl::accessor id{buf_values, cgh, sycl::read_write};
                         cgh.parallel_for(range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
@@ -327,8 +321,8 @@ namespace shamalgs::algorithm::details {
                     // sort_kernel_B2(arg_eq,* buf_key->buf,*
                     // particles::buf_ids->buf,inc,length<<1);
                     auto ker_sort_morton_b2 = [&](sycl::handler &cgh) {
-                        sycl::accessor m { buf_key,cgh,sycl::read_write};
-                        sycl::accessor id { buf_values,cgh,sycl::read_write};
+                        sycl::accessor m{buf_key, cgh, sycl::read_write};
+                        sycl::accessor id{buf_values, cgh, sycl::read_write};
 
                         cgh.parallel_for(range, [=](sycl::item<1> item) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
@@ -342,10 +336,10 @@ namespace shamalgs::algorithm::details {
                             bool reverse = ((_dir & i) == 0); // asc/desc order
 
                             // Load
-                            Tkey x0 = m[0 + i];
-                            Tkey x1 = m[_inc + i];
-                            Tval idx0   = id[0 + i];
-                            Tval idx1   = id[_inc + i];
+                            Tkey x0   = m[0 + i];
+                            Tkey x1   = m[_inc + i];
+                            Tval idx0 = id[0 + i];
+                            Tval idx1 = id[_inc + i];
 
                             // Sort
                             ORDER(x0, x1, idx0, idx1)
@@ -365,15 +359,10 @@ namespace shamalgs::algorithm::details {
         }
     }
 
+    template void sort_by_key_bitonic_legacy(
+        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
-    template
-    void sort_by_key_bitonic_legacy(
-        sycl::queue &q, sycl::buffer<u32> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
-
-    template
-    void sort_by_key_bitonic_legacy(
-        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len
-    );
+    template void sort_by_key_bitonic_legacy(
+        sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
 } // namespace shamalgs::algorithm::details

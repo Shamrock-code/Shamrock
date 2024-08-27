@@ -15,39 +15,28 @@
  *
  */
 
-
-#include "shambackends/sycl.hpp"
-#include "shambackends/vec.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/type_traits.hpp"
-
+#include "shambackends/sycl.hpp"
+#include "shambackends/vec.hpp"
 
 namespace sham::syclbackport {
 
-
-
 #ifndef SYCL2020_FEATURE_ISINF
-#ifdef SYCL_COMP_ACPP
-template<class T> 
-HIPSYCL_UNIVERSAL_TARGET bool fallback_is_inf(T value){
+    #ifdef SYCL_COMP_ACPP
+    template<class T>
+    HIPSYCL_UNIVERSAL_TARGET bool fallback_is_inf(T value) {
 
-    __hipsycl_if_target_host(
-        return std::isinf(value);
-        )
+        __hipsycl_if_target_host(return std::isinf(value);)
 
-    __hipsycl_if_target_hiplike(
-        return isinf(value);
-        ) 
+            __hipsycl_if_target_hiplike(return isinf(value);)
 
-    __hipsycl_if_target_spirv(
-        static_assert(false, "this case is not implemented");
-        )
-
-}
-#endif
+                __hipsycl_if_target_spirv(static_assert(false, "this case is not implemented");)
+    }
+    #endif
 #endif
 
-}
+} // namespace sham::syclbackport
 
 namespace sham {
 
@@ -82,8 +71,8 @@ namespace sham {
 
     template<class T, int n, std::enable_if_t<n == 16, int> = 0>
     inline constexpr T product_accumulate(sycl::vec<T, n> v) noexcept {
-        return v.s0() * v.s1() * v.s2() * v.s3() * v.s4() * v.s5() * v.s6() * v.s7() * v.s8() *
-               v.s9() * v.sA() * v.sB() * v.sC() * v.sD() * v.sE() * v.sF();
+        return v.s0() * v.s1() * v.s2() * v.s3() * v.s4() * v.s5() * v.s6() * v.s7() * v.s8()
+               * v.s9() * v.sA() * v.sB() * v.sC() * v.sD() * v.sE() * v.sF();
     }
 
     template<class T>
@@ -113,8 +102,8 @@ namespace sham {
 
     template<class T, int n, std::enable_if_t<n == 16, int> = 0>
     inline constexpr T sum_accumulate(sycl::vec<T, n> v) noexcept {
-        return v.s0() + v.s1() + v.s2() + v.s3() + v.s4() + v.s5() + v.s6() + v.s7() + v.s8() +
-               v.s9() + v.sA() + v.sB() + v.sC() + v.sD() + v.sE() + v.sF();
+        return v.s0() + v.s1() + v.s2() + v.s3() + v.s4() + v.s5() + v.s6() + v.s7() + v.s8()
+               + v.s9() + v.sA() + v.sB() + v.sC() + v.sD() + v.sE() + v.sF();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,18 +132,17 @@ namespace sham {
 
     template<class T, int n, std::enable_if_t<n == 8 && std::is_signed<T>::value, int> = 0>
     inline constexpr T all_component_are_negative(sycl::vec<T, n> v) noexcept {
-        return (v.s0() < 0) && (v.s1() < 0) && (v.s2() < 0) && (v.s3() < 0) && (v.s4() < 0) &&
-               (v.s5() < 0) && (v.s6() < 0) && (v.s7() < 0);
+        return (v.s0() < 0) && (v.s1() < 0) && (v.s2() < 0) && (v.s3() < 0) && (v.s4() < 0)
+               && (v.s5() < 0) && (v.s6() < 0) && (v.s7() < 0);
     }
 
     template<class T, int n, std::enable_if_t<n == 16 && std::is_signed<T>::value, int> = 0>
     inline constexpr T all_component_are_negative(sycl::vec<T, n> v) noexcept {
-        return (v.s0() < 0) && (v.s1() < 0) && (v.s2() < 0) && (v.s3() < 0) && (v.s4() < 0) &&
-               (v.s5() < 0) && (v.s6() < 0) && (v.s7() < 0) && (v.s8() < 0) && (v.s9() < 0) &&
-               (v.sA() < 0) && (v.sB() < 0) && (v.sC() < 0) && (v.sD() < 0) && (v.sE() < 0) &&
-               (v.sF() < 0);
+        return (v.s0() < 0) && (v.s1() < 0) && (v.s2() < 0) && (v.s3() < 0) && (v.s4() < 0)
+               && (v.s5() < 0) && (v.s6() < 0) && (v.s7() < 0) && (v.s8() < 0) && (v.s9() < 0)
+               && (v.sA() < 0) && (v.sB() < 0) && (v.sC() < 0) && (v.sD() < 0) && (v.sE() < 0)
+               && (v.sF() < 0);
     }
-
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // vec_compare_geq
@@ -182,16 +170,18 @@ namespace sham {
 
     template<class T, int n, std::enable_if_t<n == 8, int> = 0>
     inline constexpr T vec_compare_geq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
-        return (v.s0() >= w.s0()) && (v.s1() >= w.s1()) && (v.s2() >= w.s2()) && (v.s3() >= w.s3()) && (v.s4() >= w.s4()) &&
-               (v.s5() >= w.s5()) && (v.s6() >= w.s6()) && (v.s7() >= w.s7());
+        return (v.s0() >= w.s0()) && (v.s1() >= w.s1()) && (v.s2() >= w.s2()) && (v.s3() >= w.s3())
+               && (v.s4() >= w.s4()) && (v.s5() >= w.s5()) && (v.s6() >= w.s6())
+               && (v.s7() >= w.s7());
     }
 
     template<class T, int n, std::enable_if_t<n == 16, int> = 0>
     inline constexpr T vec_compare_geq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
-        return (v.s0() >= w.s0()) && (v.s1() >= w.s1()) && (v.s2() >= w.s2()) && (v.s3() >= w.s3()) && (v.s4() >= w.s4()) &&
-               (v.s5() >= w.s5()) && (v.s6() >= w.s6()) && (v.s7() >= w.s7()) && (v.s8() >= w.s8()) && (v.s9() >= w.s9()) &&
-               (v.sA() >= w.sA()) && (v.sB() >= w.sB()) && (v.sC() >= w.sC()) && (v.sD() >= w.sD()) && (v.sE() >= w.sE()) &&
-               (v.sF() >= w.sF());
+        return (v.s0() >= w.s0()) && (v.s1() >= w.s1()) && (v.s2() >= w.s2()) && (v.s3() >= w.s3())
+               && (v.s4() >= w.s4()) && (v.s5() >= w.s5()) && (v.s6() >= w.s6())
+               && (v.s7() >= w.s7()) && (v.s8() >= w.s8()) && (v.s9() >= w.s9())
+               && (v.sA() >= w.sA()) && (v.sB() >= w.sB()) && (v.sC() >= w.sC())
+               && (v.sD() >= w.sD()) && (v.sE() >= w.sE()) && (v.sF() >= w.sF());
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -220,16 +210,16 @@ namespace sham {
 
     template<class T, int n, std::enable_if_t<n == 8, int> = 0>
     inline constexpr T vec_compare_g(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
-        return (v.s0() > w.s0()) && (v.s1() > w.s1()) && (v.s2() > w.s2()) && (v.s3() > w.s3()) && (v.s4() > w.s4()) &&
-               (v.s5() > w.s5()) && (v.s6() > w.s6()) && (v.s7() > w.s7());
+        return (v.s0() > w.s0()) && (v.s1() > w.s1()) && (v.s2() > w.s2()) && (v.s3() > w.s3())
+               && (v.s4() > w.s4()) && (v.s5() > w.s5()) && (v.s6() > w.s6()) && (v.s7() > w.s7());
     }
 
     template<class T, int n, std::enable_if_t<n == 16, int> = 0>
     inline constexpr T vec_compare_g(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
-        return (v.s0() > w.s0()) && (v.s1() > w.s1()) && (v.s2() > w.s2()) && (v.s3() > w.s3()) && (v.s4() > w.s4()) &&
-               (v.s5() > w.s5()) && (v.s6() > w.s6()) && (v.s7() > w.s7()) && (v.s8() > w.s8()) && (v.s9() > w.s9()) &&
-               (v.sA() > w.sA()) && (v.sB() > w.sB()) && (v.sC() > w.sC()) && (v.sD() > w.sD()) && (v.sE() > w.sE()) &&
-               (v.sF() > w.sF());
+        return (v.s0() > w.s0()) && (v.s1() > w.s1()) && (v.s2() > w.s2()) && (v.s3() > w.s3())
+               && (v.s4() > w.s4()) && (v.s5() > w.s5()) && (v.s6() > w.s6()) && (v.s7() > w.s7())
+               && (v.s8() > w.s8()) && (v.s9() > w.s9()) && (v.sA() > w.sA()) && (v.sB() > w.sB())
+               && (v.sC() > w.sC()) && (v.sD() > w.sD()) && (v.sE() > w.sE()) && (v.sF() > w.sF());
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -258,16 +248,16 @@ namespace sham {
 
     template<class T, int n, std::enable_if_t<n == 8, int> = 0>
     inline constexpr T component_have_a_zero(sycl::vec<T, n> v) noexcept {
-        return (v.s0() == 0) || (v.s1() == 0) || (v.s2() == 0) || (v.s3() == 0) || (v.s4() == 0) ||
-               (v.s5() == 0) || (v.s6() == 0) || (v.s7() == 0);
+        return (v.s0() == 0) || (v.s1() == 0) || (v.s2() == 0) || (v.s3() == 0) || (v.s4() == 0)
+               || (v.s5() == 0) || (v.s6() == 0) || (v.s7() == 0);
     }
 
     template<class T, int n, std::enable_if_t<n == 16, int> = 0>
     inline constexpr T component_have_a_zero(sycl::vec<T, n> v) noexcept {
-        return (v.s0() == 0) || (v.s1() == 0) || (v.s2() == 0) || (v.s3() == 0) || (v.s4() == 0) ||
-               (v.s5() == 0) || (v.s6() == 0) || (v.s7() == 0) || (v.s8() == 0) || (v.s9() == 0) ||
-               (v.sA() == 0) || (v.sB() == 0) || (v.sC() == 0) || (v.sD() == 0) || (v.sE() == 0) ||
-               (v.sF() == 0);
+        return (v.s0() == 0) || (v.s1() == 0) || (v.s2() == 0) || (v.s3() == 0) || (v.s4() == 0)
+               || (v.s5() == 0) || (v.s6() == 0) || (v.s7() == 0) || (v.s8() == 0) || (v.s9() == 0)
+               || (v.sA() == 0) || (v.sB() == 0) || (v.sC() == 0) || (v.sD() == 0) || (v.sE() == 0)
+               || (v.sF() == 0);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -296,21 +286,21 @@ namespace sham {
 
     template<class T, int n, std::enable_if_t<n == 8, int> = 0>
     inline constexpr T component_have_only_one_zero(sycl::vec<T, n> v) noexcept {
-        return 1 == int{(v.s0() == 0)} + int{(v.s1() == 0)} + int{(v.s2() == 0)} +
-                        int{(v.s3() == 0)} + int{(v.s4() == 0)} + int{(v.s5() == 0)} +
-                        int{(v.s6() == 0)} + int{(v.s7() == 0)};
+        return 1
+               == int{(v.s0() == 0)} + int{(v.s1() == 0)} + int{(v.s2() == 0)} + int{(v.s3() == 0)}
+                      + int{(v.s4() == 0)} + int{(v.s5() == 0)} + int{(v.s6() == 0)}
+                      + int{(v.s7() == 0)};
     }
 
     template<class T, int n, std::enable_if_t<n == 16, int> = 0>
     inline constexpr T component_have_only_one_zero(sycl::vec<T, n> v) noexcept {
-        return 1 == int{(v.s0() == 0)} + int{(v.s1() == 0)} + int{(v.s2() == 0)} +
-                        int{(v.s3() == 0)} + int{(v.s4() == 0)} + int{(v.s5() == 0)} +
-                        int{(v.s6() == 0)} + int{(v.s7() == 0)} + int{(v.s8() == 0)} +
-                        int{(v.s9() == 0)} + int{(v.sA() == 0)} + int{(v.sB() == 0)} +
-                        int{(v.sC() == 0)} + int{(v.sD() == 0)} + int{(v.sE() == 0)} +
-                        int{(v.sF() == 0)};
+        return 1
+               == int{(v.s0() == 0)} + int{(v.s1() == 0)} + int{(v.s2() == 0)} + int{(v.s3() == 0)}
+                      + int{(v.s4() == 0)} + int{(v.s5() == 0)} + int{(v.s6() == 0)}
+                      + int{(v.s7() == 0)} + int{(v.s8() == 0)} + int{(v.s9() == 0)}
+                      + int{(v.sA() == 0)} + int{(v.sB() == 0)} + int{(v.sC() == 0)}
+                      + int{(v.sD() == 0)} + int{(v.sE() == 0)} + int{(v.sF() == 0)};
     }
-
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // component_have_at_most_one_zero
@@ -338,22 +328,21 @@ namespace sham {
 
     template<class T, int n, std::enable_if_t<n == 8, int> = 0>
     inline constexpr T component_have_at_most_one_zero(sycl::vec<T, n> v) noexcept {
-        return 2 > int{(v.s0() == 0)} + int{(v.s1() == 0)} + int{(v.s2() == 0)} +
-                        int{(v.s3() == 0)} + int{(v.s4() == 0)} + int{(v.s5() == 0)} +
-                        int{(v.s6() == 0)} + int{(v.s7() == 0)};
+        return 2 > int{(v.s0() == 0)} + int{(v.s1() == 0)} + int{(v.s2() == 0)} + int{(v.s3() == 0)}
+                       + int{(v.s4() == 0)} + int{(v.s5() == 0)} + int{(v.s6() == 0)}
+                       + int{(v.s7() == 0)};
     }
 
     template<class T, int n, std::enable_if_t<n == 16, int> = 0>
     inline constexpr T component_have_at_most_one_zero(sycl::vec<T, n> v) noexcept {
-        return 2 > int{(v.s0() == 0)} + int{(v.s1() == 0)} + int{(v.s2() == 0)} +
-                        int{(v.s3() == 0)} + int{(v.s4() == 0)} + int{(v.s5() == 0)} +
-                        int{(v.s6() == 0)} + int{(v.s7() == 0)} + int{(v.s8() == 0)} +
-                        int{(v.s9() == 0)} + int{(v.sA() == 0)} + int{(v.sB() == 0)} +
-                        int{(v.sC() == 0)} + int{(v.sD() == 0)} + int{(v.sE() == 0)} +
-                        int{(v.sF() == 0)};
+        return 2 > int{(v.s0() == 0)} + int{(v.s1() == 0)} + int{(v.s2() == 0)} + int{(v.s3() == 0)}
+                       + int{(v.s4() == 0)} + int{(v.s5() == 0)} + int{(v.s6() == 0)}
+                       + int{(v.s7() == 0)} + int{(v.s8() == 0)} + int{(v.s9() == 0)}
+                       + int{(v.sA() == 0)} + int{(v.sB() == 0)} + int{(v.sC() == 0)}
+                       + int{(v.sD() == 0)} + int{(v.sE() == 0)} + int{(v.sF() == 0)};
     }
 
-}
+} // namespace sham
 
 namespace sham::details {
     template<class T>
@@ -396,7 +385,6 @@ namespace sham::details {
         } else if constexpr (shambase::VectorProperties<T>::is_uint_based) {
             return sycl::abs(a);
         }
-
     }
 
     template<class T>
@@ -404,7 +392,9 @@ namespace sham::details {
 
         static_assert(shambase::VectorProperties<T>::has_info, "no info about this type");
 
-        if constexpr (shambase::VectorProperties<T>::is_float_based && shambase::VectorProperties<T>::dimension <=4) {
+        if constexpr (
+            shambase::VectorProperties<T>::is_float_based
+            && shambase::VectorProperties<T>::dimension <= 4) {
 
             return sycl::dot(a, b);
 
@@ -413,7 +403,6 @@ namespace sham::details {
             return sum_accumulate(a * b);
         }
     }
-
 
     template<class T>
     inline constexpr bool vec_equals(sycl::vec<T, 2> a, sycl::vec<T, 2> b) noexcept {
@@ -472,8 +461,8 @@ namespace sham::details {
         bool eqsE = a.sE() == b.sE();
         bool eqsF = a.sF() == b.sF();
 
-        return eqs0 && eqs1 && eqs2 && eqs3 && eqs4 && eqs5 && eqs6 && eqs7 && eqs8 && eqs9 &&
-               eqsA && eqsB && eqsC && eqsD && eqsE && eqsF;
+        return eqs0 && eqs1 && eqs2 && eqs3 && eqs4 && eqs5 && eqs6 && eqs7 && eqs8 && eqs9 && eqsA
+               && eqsB && eqsC && eqsD && eqsE && eqsF;
     }
 
     template<class T>
@@ -481,9 +470,7 @@ namespace sham::details {
         bool eqx = a == b;
         return eqx;
     }
-}
-
-
+} // namespace sham::details
 
 namespace sham {
 
@@ -498,27 +485,18 @@ namespace sham {
     }
 
     template<class T>
-    inline shambase::VecComponent<T> dot(T a, T b){
+    inline shambase::VecComponent<T> dot(T a, T b) {
         return sham::details::g_sycl_dot(a, b);
     }
 
     template<class T>
-    inline T max_8points(T v0,T v1,T v2,T v3,T v4,T v5,T v6,T v7){
-        return max(
-                max( max(v0, v1), max(v2, v3))
-            , 
-                max( max(v4, v5), max(v6, v7))
-            );
+    inline T max_8points(T v0, T v1, T v2, T v3, T v4, T v5, T v6, T v7) {
+        return max(max(max(v0, v1), max(v2, v3)), max(max(v4, v5), max(v6, v7)));
     }
 
-
     template<class T>
-    inline T min_8points(T v0,T v1,T v2,T v3,T v4,T v5,T v6,T v7){
-        return min(
-                min( min(v0, v1), min(v2, v3))
-            , 
-                min( min(v4, v5), min(v6, v7))
-            );
+    inline T min_8points(T v0, T v1, T v2, T v3, T v4, T v5, T v6, T v7) {
+        return min(min(min(v0, v1), min(v2, v3)), min(min(v4, v5), min(v6, v7)));
     }
 
     template<class T>
@@ -527,73 +505,66 @@ namespace sham {
     }
 
     template<class T>
-    inline T positive_part(T a){
-        return (sham::abs(a) + a)/2;
+    inline T positive_part(T a) {
+        return (sham::abs(a) + a) / 2;
     }
 
     template<class T>
-    inline T negative_part(T a){
-        return (sham::abs(a) - a)/2;
+    inline T negative_part(T a) {
+        return (sham::abs(a) - a) / 2;
     }
 
     template<class T>
-    inline bool equals(T a, T b){
-        return details::vec_equals(a,b);
+    inline bool equals(T a, T b) {
+        return details::vec_equals(a, b);
     }
 
+    inline auto pack32(u32 a, u32 b) -> u64 { return (u64(a) << 32U) + b; };
 
-    inline auto pack32(u32 a, u32 b) -> u64 {
-        return (u64(a) << 32U) + b;
-    };
+    inline auto unpack32(u64 v) -> sycl::vec<u32, 2> { return {u32(v >> 32U), u32(v)}; };
 
-    inline auto unpack32 (u64 v) -> sycl::vec<u32, 2> {
-        return {u32(v >> 32U), u32(v)};
-    };
-
-
-    
     template<class T>
-    inline bool has_nan(T v){
-        auto tmp = ! sycl::isnan(v);
+    inline bool has_nan(T v) {
+        auto tmp = !sycl::isnan(v);
         return !(tmp);
     }
 
     template<class T>
-    inline bool has_inf(T v){
-        #ifdef SYCL2020_FEATURE_ISINF
-            auto tmp = ! sycl::isinf(v);
-            return !(tmp);
-        #else
-            auto tmp = ! syclbackport::fallback_is_inf(v);
-            return !(tmp);
-        #endif
+    inline bool has_inf(T v) {
+#ifdef SYCL2020_FEATURE_ISINF
+        auto tmp = !sycl::isinf(v);
+        return !(tmp);
+#else
+        auto tmp = !syclbackport::fallback_is_inf(v);
+        return !(tmp);
+#endif
     }
 
     template<class T>
-    inline bool has_nan_or_inf(T v){
-        #ifdef SYCL2020_FEATURE_ISINF
-            auto tmp = ! (sycl::isnan(v) || sycl::isinf(v));
-            return !(tmp);
-        #else
-            auto tmp = ! (sycl::isnan(v) || syclbackport::fallback_is_inf(v));
-            return !(tmp);
-        #endif
+    inline bool has_nan_or_inf(T v) {
+#ifdef SYCL2020_FEATURE_ISINF
+        auto tmp = !(sycl::isnan(v) || sycl::isinf(v));
+        return !(tmp);
+#else
+        auto tmp = !(sycl::isnan(v) || syclbackport::fallback_is_inf(v));
+        return !(tmp);
+#endif
     }
 
     /**
      * @brief return true if vector has a nan
-     * 
-     * @tparam T 
-     * @tparam n 
-     * @param v 
-     * @return true 
-     * @return false 
+     *
+     * @tparam T
+     * @tparam n
+     * @param v
+     * @return true
+     * @return false
      */
     template<class T, int n>
-    inline bool has_nan(sycl::vec<T,n> v){
+    inline bool has_nan(sycl::vec<T, n> v) {
         bool has = false;
-        #pragma unroll 
-        for(i32 i = 0 ; i < n; i ++){
+#pragma unroll
+        for (i32 i = 0; i < n; i++) {
             has = has || (sycl::isnan(v[i]));
         }
         return has;
@@ -601,59 +572,59 @@ namespace sham {
 
     /**
      * @brief return true if vector has a inf
-     * 
-     * @tparam T 
-     * @tparam n 
-     * @param v 
-     * @return true 
-     * @return false 
+     *
+     * @tparam T
+     * @tparam n
+     * @param v
+     * @return true
+     * @return false
      */
     template<class T, int n>
-    inline bool has_inf(sycl::vec<T,n> v){
+    inline bool has_inf(sycl::vec<T, n> v) {
         bool has = false;
-        #pragma unroll 
-        for(i32 i = 0 ; i < n; i ++){
-            #ifdef SYCL2020_FEATURE_ISINF
-                has = has || (sycl::isinf(v[i]));
-            #else
-                has = has || (syclbackport::fallback_is_inf(v[i]));
-            #endif
+#pragma unroll
+        for (i32 i = 0; i < n; i++) {
+#ifdef SYCL2020_FEATURE_ISINF
+            has = has || (sycl::isinf(v[i]));
+#else
+            has = has || (syclbackport::fallback_is_inf(v[i]));
+#endif
         }
         return has;
     }
 
     /**
      * @brief return true if vector has a nan or a inf
-     * 
-     * @tparam T 
-     * @tparam n 
-     * @param v 
-     * @return true 
-     * @return false 
+     *
+     * @tparam T
+     * @tparam n
+     * @param v
+     * @return true
+     * @return false
      */
     template<class T, int n>
-    inline bool has_nan_or_inf(sycl::vec<T,n> v){
+    inline bool has_nan_or_inf(sycl::vec<T, n> v) {
         bool has = false;
-        #pragma unroll 
-        for(i32 i = 0 ; i < n; i ++){
-            #ifdef SYCL2020_FEATURE_ISINF
-                has = has || (sycl::isnan(v[i]) || sycl::isinf(v[i]));
-            #else
-                has = has || (sycl::isnan(v[i]) || syclbackport::fallback_is_inf(v[i]));
-            #endif
+#pragma unroll
+        for (i32 i = 0; i < n; i++) {
+#ifdef SYCL2020_FEATURE_ISINF
+            has = has || (sycl::isnan(v[i]) || sycl::isinf(v[i]));
+#else
+            has = has || (sycl::isnan(v[i]) || syclbackport::fallback_is_inf(v[i]));
+#endif
         }
         return has;
     }
 
     /**
      * @brief generalized pow constexpr
-     * 
-     * @tparam power 
-     * @tparam T 
-     * @param a 
-     * @return constexpr T 
+     *
+     * @tparam power
+     * @tparam T
+     * @param a
+     * @return constexpr T
      */
-    template<i32 power,class T>
+    template<i32 power, class T>
     inline constexpr T pow_constexpr(T a) noexcept {
 
         if constexpr (power < 0) {
@@ -669,61 +640,40 @@ namespace sham {
             T tmp = pow_constexpr<(power - 1) / 2>(a);
             return tmp * tmp * a;
         }
-
     }
-
-
 
     template<class T>
-    inline constexpr T clz(T a) noexcept{
-        #ifdef SYCL2020_FEATURE_CLZ
-            return sycl::clz(a);
-        #else
-            #ifdef SYCL_COMP_ACPP
+    inline constexpr T clz(T a) noexcept {
+#ifdef SYCL2020_FEATURE_CLZ
+        return sycl::clz(a);
+#else
+    #ifdef SYCL_COMP_ACPP
 
-                if constexpr (std::is_same_v<T,u32>){
-                    
-                    __hipsycl_if_target_host(
-                        return __builtin_clz(a);
-                    )
+        if constexpr (std::is_same_v<T, u32>) {
 
-                    __hipsycl_if_target_hiplike(
-                        return __clz(a);
-                    )
+            __hipsycl_if_target_host(return __builtin_clz(a);)
 
-                    __hipsycl_if_target_spirv(
-                        return __spirv_ocl_clz(a);
-                    )
+                __hipsycl_if_target_hiplike(return __clz(a);)
 
-                    __hipsycl_if_target_sscp(
-                        return sycl::clz(a);
-                    )
-                }
+                    __hipsycl_if_target_spirv(return __spirv_ocl_clz(a);)
 
-                if constexpr (std::is_same_v<T,u64>){
-                    
-                    __hipsycl_if_target_host(
-                        return __builtin_clzll(a);
-                    )
+                        __hipsycl_if_target_sscp(return sycl::clz(a);)
+        }
 
-                    __hipsycl_if_target_hiplike(
-                        return __clzll(a);
-                    )
+        if constexpr (std::is_same_v<T, u64>) {
 
-                    __hipsycl_if_target_spirv(
-                        return __spirv_ocl_clz(a);
-                    )
+            __hipsycl_if_target_host(return __builtin_clzll(a);)
 
-                    __hipsycl_if_target_sscp(
-                        return sycl::clz(a);
-                    )
-                }
+                __hipsycl_if_target_hiplike(return __clzll(a);)
 
-            #endif
-        #endif
+                    __hipsycl_if_target_spirv(return __spirv_ocl_clz(a);)
+
+                        __hipsycl_if_target_sscp(return sycl::clz(a);)
+        }
+
+    #endif
+#endif
     }
-
-    
 
     /**
      * @brief give the length of the common prefix
@@ -734,48 +684,43 @@ namespace sham {
      * @return false
      */
     template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
-    inline constexpr T clz_xor(T a, T b) noexcept{
-        return sham::clz(a^b);
+    inline constexpr T clz_xor(T a, T b) noexcept {
+        return sham::clz(a ^ b);
     }
 
     /**
      * @brief round up to the next power of two
      *  0 is rounded up to 1 as it is not a pow of 2
      *  every input above the maximum power of 2 returns 0
-     * 
-     * @tparam T 
-     * @param v 
-     * @return constexpr T 
+     *
+     * @tparam T
+     * @param v
+     * @return constexpr T
      */
     template<class T, std::enable_if_t<std::is_integral_v<T> || (!std::is_signed_v<T>), int> = 0>
-    inline constexpr T roundup_pow2_clz (T v) noexcept {
+    inline constexpr T roundup_pow2_clz(T v) noexcept {
 
-        constexpr T max_signed_p1 = (shambase::get_max<T>()>>1) +1;
+        constexpr T max_signed_p1 = (shambase::get_max<T>() >> 1) + 1;
 
-        bool is_pow2 = shambase::is_pow_of_two(v);
+        bool is_pow2      = shambase::is_pow_of_two(v);
         bool is_above_max = v > max_signed_p1;
 
-        return (is_above_max) ? 
-            0 : 
-            ((is_pow2) ? 
-                v : 
-                1U << (shambase::bitsizeof<T>-sham::clz(v)));
-
+        return (is_above_max) ? 0 : ((is_pow2) ? v : 1U << (shambase::bitsizeof<T> - sham::clz(v)));
     };
 
     /**
      * @brief delta operator defined in Karras 2012
-     * 
-     * @tparam Acc 
-     * @param x 
-     * @param y 
-     * @param morton_length 
-     * @param m 
-     * @return i32 
+     *
+     * @tparam Acc
+     * @param x
+     * @param y
+     * @param morton_length
+     * @param m
+     * @return i32
      */
     template<class Acc>
     inline i32 karras_delta(i32 x, i32 y, u32 morton_length, Acc m) noexcept {
-        return ((y > morton_length - 1 || y < 0) ? -1 : int(clz_xor(m[x] , m[y])));
+        return ((y > morton_length - 1 || y < 0) ? -1 : int(clz_xor(m[x], m[y])));
     }
 
 } // namespace sham

@@ -7,7 +7,7 @@ In Shamrock to ease configuration we provide environment script, the goal is for
 
 Functions registered by the env :
 - shammake that call ninja or make automatically
-- shamconfigure that call cmake and forward argument to the cmake call 
+- shamconfigure that call cmake and forward argument to the cmake call
 
 Typicall workflow would be :
 ```

@@ -14,379 +14,11 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambackends/sycl.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeFlux.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeFluxUtilities.hpp"
-#include "shambackends/sycl.hpp"
 #include <array>
-
-
-// #include "shammath/riemann.hpp"
-
-// enum Direction{
-//     xp = 0,
-//     xm = 1,
-//     yp = 2,
-//     ym = 3,
-//     zp = 4,
-//     zm = 5,
-// };
-
-/*
-using RiemmanSolverMode = shammodels::basegodunov::RiemmanSolverMode;
-
-template<class Tvec, RiemmanSolverMode mode, Direction dir>
-class FluxCompute{
-    public: 
-
-    using Tcons = shammath::ConsState<Tvec>;
-    using Tprim = shammath::PrimState<Tvec>;
-    using Tscal =  typename Tcons::Tscal;
-
-    inline static Tcons flux(Tcons cL, Tcons cR, typename Tcons::Tscal gamma){
-        if constexpr (mode == RiemmanSolverMode::Rusanov){
-            if constexpr (dir == xp){
-                return shammath::rusanov_flux_x(cL, cR, gamma);
-            }
-            if constexpr (dir == yp){
-                return shammath::rusanov_flux_y(cL, cR, gamma);
-            }
-            if constexpr (dir == zp){
-                return shammath::rusanov_flux_z(cL, cR, gamma);
-            }
-            if constexpr (dir == xm){
-                return shammath::rusanov_flux_mx(cL, cR, gamma);
-            }
-            if constexpr (dir == ym){
-                return shammath::rusanov_flux_my(cL, cR, gamma);
-            }
-            if constexpr (dir == zm){
-                return shammath::rusanov_flux_mz(cL, cR, gamma);
-            }
-        }
-        if constexpr (mode == RiemmanSolverMode::HLL){
-            if constexpr (dir == xp){
-                return shammath::hll_flux_x(cL, cR, gamma);
-            }
-            if constexpr (dir == yp){
-                return shammath::hll_flux_y(cL, cR, gamma);
-            }
-            if constexpr (dir == zp){
-                return shammath::hll_flux_z(cL, cR, gamma);
-            }
-            if constexpr (dir == xm){
-                return shammath::hll_flux_mx(cL, cR, gamma);
-            }
-            if constexpr (dir == ym){
-                return shammath::hll_flux_my(cL, cR, gamma);
-            }
-            if constexpr (dir == zm){
-                return shammath::hll_flux_mz(cL, cR, gamma);
-            }
-        }
-    }
-
-    inline static Tcons flux(Tprim pL, Tprim pR, typename Tcons::Tscal gamma){
-
-        Tcons cL = shammath::prim_to_cons(pL, gamma);
-        Tcons cR = shammath::prim_to_cons(pR, gamma);
-
-        if constexpr (mode == RiemmanSolverMode::Rusanov){
-            if constexpr (dir == xp){
-                return shammath::rusanov_flux_x(cL, cR, gamma);
-            }
-            if constexpr (dir == yp){
-                return shammath::rusanov_flux_y(cL, cR, gamma);
-            }
-            if constexpr (dir == zp){
-                return shammath::rusanov_flux_z(cL, cR, gamma);
-            }
-            if constexpr (dir == xm){
-                return shammath::rusanov_flux_mx(cL, cR, gamma);
-            }
-            if constexpr (dir == ym){
-                return shammath::rusanov_flux_my(cL, cR, gamma);
-            }
-            if constexpr (dir == zm){
-                return shammath::rusanov_flux_mz(cL, cR, gamma);
-            }
-        }
-        if constexpr (mode == RiemmanSolverMode::HLL){
-            if constexpr (dir == xp){
-                return shammath::hll_flux_x(cL, cR, gamma);
-            }
-            if constexpr (dir == yp){
-                return shammath::hll_flux_y(cL, cR, gamma);
-            }
-            if constexpr (dir == zp){
-                return shammath::hll_flux_z(cL, cR, gamma);
-            }
-            if constexpr (dir == xm){
-                return shammath::hll_flux_mx(cL, cR, gamma);
-            }
-            if constexpr (dir == ym){
-                return shammath::hll_flux_my(cL, cR, gamma);
-            }
-            if constexpr (dir == zm){
-                return shammath::hll_flux_mz(cL, cR, gamma);
-            }
-        }
-    }
-};
-
-template<RiemmanSolverMode mode, class Tvec, class Tscal>
-void compute_fluxes_xp(
-    sycl::queue &q,
-    u32 link_count,
-    sycl::buffer<std::array<Tscal, 2>> &rho_face_xp,
-    sycl::buffer<std::array<Tvec, 2>> &vel_face_xp,
-    sycl::buffer<std::array<Tscal, 2>> &press_face_xp,
-    sycl::buffer<Tscal> &flux_rho_face_xp,
-    sycl::buffer<Tvec> &flux_vel_face_xp,
-    sycl::buffer<Tscal> &flux_press_face_xp,
-    Tscal gamma) {
-
-    using Flux = FluxCompute<Tvec, mode, xp>;
-
-    q.submit([&, gamma](sycl::handler &cgh) {
-        sycl::accessor rho{rho_face_xp, cgh, sycl::read_only};
-        sycl::accessor vel{vel_face_xp, cgh, sycl::read_only};
-        sycl::accessor press{press_face_xp, cgh, sycl::read_only};
-
-        sycl::accessor flux_rho{flux_rho_face_xp, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhov{flux_vel_face_xp, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhoe{flux_press_face_xp, cgh, sycl::write_only, sycl::no_init};
-
-        shambase::parralel_for(cgh, link_count, "compute rusanov flux xp", [=](u32 id_a) {
-            auto rho_ij  = rho[id_a];
-            auto vel_ij = vel[id_a];
-            auto P_ij = press[id_a];
-
-            using Tprim = shammath::PrimState<Tvec>;
-
-            auto flux_x = Flux::flux(
-                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
-                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
-                gamma);
-
-            flux_rho[id_a]  = flux_x.rho;
-            flux_rhov[id_a] = flux_x.rhovel;
-            flux_rhoe[id_a] = flux_x.rhoe;
-        });
-    });
-}
-
-template<RiemmanSolverMode mode, class Tvec, class Tscal>
-void compute_fluxes_yp(
-    sycl::queue &q,
-    u32 link_count,
-    sycl::buffer<std::array<Tscal, 2>> &rho_face_yp,
-    sycl::buffer<std::array<Tvec, 2>> &vel_face_yp,
-    sycl::buffer<std::array<Tscal, 2>> &press_face_yp,
-    sycl::buffer<Tscal> &flux_rho_face_yp,
-    sycl::buffer<Tvec> &flux_vel_face_yp,
-    sycl::buffer<Tscal> &flux_press_face_yp,
-    Tscal gamma) {
-
-    using Flux = FluxCompute<Tvec, mode, yp>;
-
-    q.submit([&, gamma](sycl::handler &cgh) {
-        sycl::accessor rho{rho_face_yp, cgh, sycl::read_only};
-        sycl::accessor vel{vel_face_yp, cgh, sycl::read_only};
-        sycl::accessor press{press_face_yp, cgh, sycl::read_only};
-
-        sycl::accessor flux_rho{flux_rho_face_yp, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhov{flux_vel_face_yp, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhoe{flux_press_face_yp, cgh, sycl::write_only, sycl::no_init};
-
-        shambase::parralel_for(cgh, link_count, "compute rusanov flux yp", [=](u32 id_a) {
-            auto rho_ij  = rho[id_a];
-            auto vel_ij = vel[id_a];
-            auto P_ij = press[id_a];
-
-            using Tprim = shammath::PrimState<Tvec>;
-
-            auto flux_y = Flux::flux(
-                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
-                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
-                gamma);
-
-            flux_rho[id_a]  = flux_y.rho;
-            flux_rhov[id_a] = flux_y.rhovel;
-            flux_rhoe[id_a] = flux_y.rhoe;
-        });
-    });
-}
-
-template<RiemmanSolverMode mode, class Tvec, class Tscal>
-void compute_fluxes_zp(
-    sycl::queue &q,
-    u32 link_count,
-    sycl::buffer<std::array<Tscal, 2>> &rho_face_zp,
-    sycl::buffer<std::array<Tvec, 2>> &vel_face_zp,
-    sycl::buffer<std::array<Tscal, 2>> &press_face_zp,
-    sycl::buffer<Tscal> &flux_rho_face_zp,
-    sycl::buffer<Tvec> &flux_vel_face_zp,
-    sycl::buffer<Tscal> &flux_press_face_zp,
-    Tscal gamma) {
-
-    using Flux = FluxCompute<Tvec, mode, zp>;
-
-    q.submit([&, gamma](sycl::handler &cgh) {
-        sycl::accessor rho{rho_face_zp, cgh, sycl::read_only};
-        sycl::accessor vel{vel_face_zp, cgh, sycl::read_only};
-        sycl::accessor press{press_face_zp, cgh, sycl::read_only};
-
-        sycl::accessor flux_rho{flux_rho_face_zp, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhov{flux_vel_face_zp, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhoe{flux_press_face_zp, cgh, sycl::write_only, sycl::no_init};
-
-        shambase::parralel_for(cgh, link_count, "compute rusanov flux zp", [=](u32 id_a) {
-            auto rho_ij  = rho[id_a];
-            auto vel_ij = vel[id_a];
-            auto P_ij = press[id_a];
-
-            using Tprim = shammath::PrimState<Tvec>;
-
-            auto flux_z = Flux::flux(
-                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
-                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
-                gamma);
-
-            flux_rho[id_a]  = flux_z.rho;
-            flux_rhov[id_a] = flux_z.rhovel;
-            flux_rhoe[id_a] = flux_z.rhoe;
-        });
-    });
-}
-
-template<RiemmanSolverMode mode, class Tvec, class Tscal>
-void compute_fluxes_xm(
-    sycl::queue &q,
-    u32 link_count,
-    sycl::buffer<std::array<Tscal, 2>> &rho_face_xm,
-    sycl::buffer<std::array<Tvec, 2>> &vel_face_xm,
-    sycl::buffer<std::array<Tscal, 2>> &press_face_xm,
-    sycl::buffer<Tscal> &flux_rho_face_xm,
-    sycl::buffer<Tvec> &flux_vel_face_xm,
-    sycl::buffer<Tscal> &flux_press_face_xm,
-    Tscal gamma) {
-
-    using Flux = FluxCompute<Tvec, mode, xm>;
-
-    q.submit([&, gamma](sycl::handler &cgh) {
-        sycl::accessor rho{rho_face_xm, cgh, sycl::read_only};
-        sycl::accessor vel{vel_face_xm, cgh, sycl::read_only};
-        sycl::accessor press{press_face_xm, cgh, sycl::read_only};
-
-        sycl::accessor flux_rho{flux_rho_face_xm, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhov{flux_vel_face_xm, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhoe{flux_press_face_xm, cgh, sycl::write_only, sycl::no_init};
-
-        shambase::parralel_for(cgh, link_count, "compute rusanov flux xm", [=](u32 id_a) {
-            auto rho_ij  = rho[id_a];
-            auto vel_ij = vel[id_a];
-            auto P_ij = press[id_a];
-
-            using Tprim = shammath::PrimState<Tvec>;
-
-            auto flux_x = Flux::flux(
-                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
-                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
-                gamma);
-
-            flux_rho[id_a]  = flux_x.rho;
-            flux_rhov[id_a] = flux_x.rhovel;
-            flux_rhoe[id_a] = flux_x.rhoe;
-        });
-    });
-}
-
-template<RiemmanSolverMode mode, class Tvec, class Tscal>
-void compute_fluxes_ym(
-    sycl::queue &q,
-    u32 link_count,
-    sycl::buffer<std::array<Tscal, 2>> &rho_face_ym,
-    sycl::buffer<std::array<Tvec, 2>> &vel_face_ym,
-    sycl::buffer<std::array<Tscal, 2>> &press_face_ym,
-    sycl::buffer<Tscal> &flux_rho_face_ym,
-    sycl::buffer<Tvec> &flux_vel_face_ym,
-    sycl::buffer<Tscal> &flux_press_face_ym,
-    Tscal gamma) {
-
-    using Flux = FluxCompute<Tvec, mode, ym>;
-
-    q.submit([&, gamma](sycl::handler &cgh) {
-        sycl::accessor rho{rho_face_ym, cgh, sycl::read_only};
-        sycl::accessor vel{vel_face_ym, cgh, sycl::read_only};
-        sycl::accessor press{press_face_ym, cgh, sycl::read_only};
-
-        sycl::accessor flux_rho{flux_rho_face_ym, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhov{flux_vel_face_ym, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhoe{flux_press_face_ym, cgh, sycl::write_only, sycl::no_init};
-
-        shambase::parralel_for(cgh, link_count, "compute rusanov flux ym", [=](u32 id_a) {
-            auto rho_ij  = rho[id_a];
-            auto vel_ij = vel[id_a];
-            auto P_ij = press[id_a];
-
-            using Tprim = shammath::PrimState<Tvec>;
-
-            auto flux_y = Flux::flux(
-                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
-                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
-                gamma);
-
-            flux_rho[id_a]  = flux_y.rho;
-            flux_rhov[id_a] = flux_y.rhovel;
-            flux_rhoe[id_a] = flux_y.rhoe;
-        });
-    });
-}
-
-template<RiemmanSolverMode mode, class Tvec, class Tscal>
-void compute_fluxes_zm(
-    sycl::queue &q,
-    u32 link_count,
-    sycl::buffer<std::array<Tscal, 2>> &rho_face_zm,
-    sycl::buffer<std::array<Tvec, 2>> &vel_face_zm,
-    sycl::buffer<std::array<Tscal, 2>> &press_face_zm,
-    sycl::buffer<Tscal> &flux_rho_face_zm,
-    sycl::buffer<Tvec> &flux_vel_face_zm,
-    sycl::buffer<Tscal> &flux_press_face_zm,
-    Tscal gamma) {
-
-    using Flux = FluxCompute<Tvec, mode, zm>;
-
-    q.submit([&, gamma](sycl::handler &cgh) {
-        sycl::accessor rho{rho_face_zm, cgh, sycl::read_only};
-        sycl::accessor vel{vel_face_zm, cgh, sycl::read_only};
-        sycl::accessor press{press_face_zm, cgh, sycl::read_only};
-
-        sycl::accessor flux_rho{flux_rho_face_zm, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhov{flux_vel_face_zm, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor flux_rhoe{flux_press_face_zm, cgh, sycl::write_only, sycl::no_init};
-
-        shambase::parralel_for(cgh, link_count, "compute rusanov flux zm", [=](u32 id_a) {
-            auto rho_ij  = rho[id_a];
-            auto vel_ij = vel[id_a];
-            auto P_ij = press[id_a];
-
-            using Tprim = shammath::PrimState<Tvec>;
-
-            auto flux_z = Flux::flux(
-                Tprim{rho_ij[0], P_ij[0], vel_ij[0]},
-                Tprim{rho_ij[1], P_ij[1], vel_ij[1]},
-                gamma);
-
-            flux_rho[id_a]  = flux_z.rho;
-            flux_rhov[id_a] = flux_z.rhovel;
-            flux_rhoe[id_a] = flux_z.rhoe;
-        });
-    });
-}
-
-*/
 
 
 template<class T>
@@ -472,11 +104,10 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         NGLink<Tscal> buf_flux_rhoe_face_zp{*oriented_cell_graph.graph_links[izp]};
         NGLink<Tscal> buf_flux_rhoe_face_zm{*oriented_cell_graph.graph_links[izm]};
 
-
-        if(solver_config.riemman_config == Rusanov){
+        if (solver_config.riemman_config == Rusanov) {
             constexpr RiemmanSolverMode mode = Rusanov;
             logger::debug_ln("[AMR Flux]", "compute rusanov xp patch", id);
-            compute_fluxes_dir<mode,Tvec,Tscal,Direction::xp>(
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
                 q,
                 rho_face_xp.link_count,
                 rho_face_xp.link_graph_field,
@@ -487,7 +118,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_xp.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute rusanov yp patch", id);
-            compute_fluxes_dir<mode,Tvec, Tscal, Direction::yp>(
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
                 q,
                 rho_face_yp.link_count,
                 rho_face_yp.link_graph_field,
@@ -520,7 +151,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_xm.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute rusanov ym patch", id);
-            compute_fluxes_dir<mode,Tvec, Tscal, Direction::ym>(
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
                 q,
                 rho_face_ym.link_count,
                 rho_face_ym.link_graph_field,
@@ -541,10 +172,10 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhov_face_zm.link_graph_field,
                 buf_flux_rhoe_face_zm.link_graph_field,
                 gamma);
-        }else if(solver_config.riemman_config == HLL){
+        } else if (solver_config.riemman_config == HLL) {
             constexpr RiemmanSolverMode mode = HLL;
             logger::debug_ln("[AMR Flux]", "compute HLL xp patch", id);
-            compute_fluxes_dir<mode,Tvec,Tscal,Direction::xp>(
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
                 q,
                 rho_face_xp.link_count,
                 rho_face_xp.link_graph_field,
@@ -555,7 +186,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_xp.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL yp patch", id);
-            compute_fluxes_dir<mode,Tvec,Tscal,Direction::yp>(
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
                 q,
                 rho_face_yp.link_count,
                 rho_face_yp.link_graph_field,
@@ -566,7 +197,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_yp.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL zp patch", id);
-            compute_fluxes_dir<mode,Tvec,Tscal,Direction::zp>(
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
                 q,
                 rho_face_zp.link_count,
                 rho_face_zp.link_graph_field,
@@ -577,7 +208,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_zp.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL xm patch", id);
-            compute_fluxes_dir<mode,Tvec,Tscal,Direction::xm>(
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
                 q,
                 rho_face_xm.link_count,
                 rho_face_xm.link_graph_field,
@@ -588,7 +219,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_xm.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL ym patch", id);
-            compute_fluxes_dir<mode,Tvec,Tscal,Direction::ym>(
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
                 q,
                 rho_face_ym.link_count,
                 rho_face_ym.link_graph_field,
@@ -599,7 +230,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhoe_face_ym.link_graph_field,
                 gamma);
             logger::debug_ln("[AMR Flux]", "compute HLL zm patch", id);
-            compute_fluxes_dir<mode,Tvec,Tscal,Direction::zm>(
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
                 q,
                 rho_face_zm.link_count,
                 rho_face_zm.link_graph_field,
@@ -655,9 +286,9 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux_dust() {
-    
+
     StackEntry stack_loc{};
-    
+
     shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_xp;
     shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_xm;
     shambase::DistributedData<NGLink<Tscal>> flux_rho_dust_face_yp;
@@ -696,14 +327,12 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         const u32 izp = oriented_cell_graph.zp;
         const u32 izm = oriented_cell_graph.zm;
 
-
         NGLink<Tscal> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
         NGLink<Tscal> buf_flux_rho_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
         NGLink<Tscal> buf_flux_rho_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
         NGLink<Tscal> buf_flux_rho_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
         NGLink<Tscal> buf_flux_rho_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
         NGLink<Tscal> buf_flux_rho_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
-
 
         NGLink<Tvec> buf_flux_rhov_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
         NGLink<Tvec> buf_flux_rhov_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
@@ -712,21 +341,20 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         NGLink<Tvec> buf_flux_rhov_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
         NGLink<Tvec> buf_flux_rhov_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
 
-        if(solver_config.is_dust_on())
-        {
-            u32 _ndust = solver_config.dust_config.ndust;   
-            if(solver_config.dust_config.dust_riemann_config == DHLL)
-            {
+        if (solver_config.is_dust_on()) {
+            u32 _ndust = solver_config.dust_config.ndust;
+            if (solver_config.dust_config.dust_riemann_config == DHLL) {
                 constexpr DustRiemannSolverMode mode = DHLL;
                 logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll xp patch", id);
-                dust_compute_fluxes_dir<mode,Tvec, Tscal, Direction::xp>(
+                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
                     q,
                     rho_dust_face_xp.link_count,
                     rho_dust_face_xp.link_graph_field,
                     vel_dust_face_xp.link_graph_field,
                     buf_flux_rho_dust_face_xp.link_graph_field,
-                    buf_flux_rhov_dust_face_xp.link_graph_field,_ndust);
-                
+                    buf_flux_rhov_dust_face_xp.link_graph_field,
+                    _ndust);
+
                 logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll yp patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
                     q,
@@ -734,7 +362,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_yp.link_graph_field,
                     vel_dust_face_yp.link_graph_field,
                     buf_flux_rho_dust_face_yp.link_graph_field,
-                    buf_flux_rhov_dust_face_yp.link_graph_field,_ndust);
+                    buf_flux_rhov_dust_face_yp.link_graph_field,
+                    _ndust);
 
                 logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll zp patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
@@ -743,7 +372,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_zp.link_graph_field,
                     vel_dust_face_zp.link_graph_field,
                     buf_flux_rho_dust_face_zp.link_graph_field,
-                    buf_flux_rhov_dust_face_zp.link_graph_field,_ndust);
+                    buf_flux_rhov_dust_face_zp.link_graph_field,
+                    _ndust);
 
                 logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll xm patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
@@ -752,8 +382,9 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_xm.link_graph_field,
                     vel_dust_face_xm.link_graph_field,
                     buf_flux_rho_dust_face_xm.link_graph_field,
-                    buf_flux_rhov_dust_face_xm.link_graph_field,_ndust);
-                
+                    buf_flux_rhov_dust_face_xm.link_graph_field,
+                    _ndust);
+
                 logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll ym patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
                     q,
@@ -761,8 +392,9 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_ym.link_graph_field,
                     vel_dust_face_ym.link_graph_field,
                     buf_flux_rho_dust_face_ym.link_graph_field,
-                    buf_flux_rhov_dust_face_ym.link_graph_field,_ndust);
-                
+                    buf_flux_rhov_dust_face_ym.link_graph_field,
+                    _ndust);
+
                 logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll zm patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
                     q,
@@ -770,21 +402,21 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_zm.link_graph_field,
                     vel_dust_face_zm.link_graph_field,
                     buf_flux_rho_dust_face_zm.link_graph_field,
-                    buf_flux_rhov_dust_face_zm.link_graph_field,_ndust);
-            }
-            else if(solver_config.dust_config.dust_riemann_config == HB)
-            {
+                    buf_flux_rhov_dust_face_zm.link_graph_field,
+                    _ndust);
+            } else if (solver_config.dust_config.dust_riemann_config == HB) {
 
                 constexpr DustRiemannSolverMode mode = HB;
                 logger::debug_ln("[AMR Flux]", "compute dust huang-bai xp patch", id);
-                dust_compute_fluxes_dir<mode,Tvec, Tscal, Direction::xp>(
+                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
                     q,
                     rho_dust_face_xp.link_count,
                     rho_dust_face_xp.link_graph_field,
                     vel_dust_face_xp.link_graph_field,
                     buf_flux_rho_dust_face_xp.link_graph_field,
-                    buf_flux_rhov_dust_face_xp.link_graph_field,_ndust);
-                
+                    buf_flux_rhov_dust_face_xp.link_graph_field,
+                    _ndust);
+
                 logger::debug_ln("[AMR Flux]", "compute dust huang-bai yp patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
                     q,
@@ -792,7 +424,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_yp.link_graph_field,
                     vel_dust_face_yp.link_graph_field,
                     buf_flux_rho_dust_face_yp.link_graph_field,
-                    buf_flux_rhov_dust_face_yp.link_graph_field,_ndust);
+                    buf_flux_rhov_dust_face_yp.link_graph_field,
+                    _ndust);
 
                 logger::debug_ln("[AMR Flux]", "compute dust huang-bai zp patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
@@ -801,7 +434,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_zp.link_graph_field,
                     vel_dust_face_zp.link_graph_field,
                     buf_flux_rho_dust_face_zp.link_graph_field,
-                    buf_flux_rhov_dust_face_zp.link_graph_field,_ndust);
+                    buf_flux_rhov_dust_face_zp.link_graph_field,
+                    _ndust);
 
                 logger::debug_ln("[AMR Flux]", "compute dust huang-bai xm patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
@@ -810,8 +444,9 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_xm.link_graph_field,
                     vel_dust_face_xm.link_graph_field,
                     buf_flux_rho_dust_face_xm.link_graph_field,
-                    buf_flux_rhov_dust_face_xm.link_graph_field,_ndust);
-                
+                    buf_flux_rhov_dust_face_xm.link_graph_field,
+                    _ndust);
+
                 logger::debug_ln("[AMR Flux]", "compute dust huang-bai ym patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
                     q,
@@ -819,8 +454,9 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_ym.link_graph_field,
                     vel_dust_face_ym.link_graph_field,
                     buf_flux_rho_dust_face_ym.link_graph_field,
-                    buf_flux_rhov_dust_face_ym.link_graph_field,_ndust);
-                
+                    buf_flux_rhov_dust_face_ym.link_graph_field,
+                    _ndust);
+
                 logger::debug_ln("[AMR Flux]", "compute dust huang-bai zm patch", id);
                 dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
                     q,
@@ -828,7 +464,8 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                     rho_dust_face_zm.link_graph_field,
                     vel_dust_face_zm.link_graph_field,
                     buf_flux_rho_dust_face_zm.link_graph_field,
-                    buf_flux_rhov_dust_face_zm.link_graph_field,_ndust);
+                    buf_flux_rhov_dust_face_zm.link_graph_field,
+                    _ndust);
             }
         }
 
@@ -845,7 +482,6 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         flux_rhov_dust_face_ym.add_obj(id, std::move(buf_flux_rhov_dust_face_ym));
         flux_rhov_dust_face_zp.add_obj(id, std::move(buf_flux_rhov_dust_face_zp));
         flux_rhov_dust_face_zm.add_obj(id, std::move(buf_flux_rhov_dust_face_zm));
-
     });
 
     storage.flux_rho_dust_face_xp.set(std::move(flux_rho_dust_face_xp));

@@ -6,11 +6,10 @@
 //
 // -------------------------------------------------------//
 
-#include "shamtest/shamtest.hpp"
-
-#include "shamrock/scheduler/scheduler_patch_list.hpp"
-#include "test_patch_utils.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
+#include "shamrock/scheduler/scheduler_patch_list.hpp"
+#include "shamtest/shamtest.hpp"
+#include "test_patch_utils.hpp"
 
 #if false
 
@@ -46,7 +45,7 @@ Test_start("SchedulerPatchList::fake_patch_list_gen()::",no_patch_intersection,-
         for(Patch & p2 : test_vec){
 
             if(p1 == p2) continue;
-            
+
             no_p_intersect = no_p_intersect && ( !BBAA::intersect_not_null_cella_b<u32_3>(
                 {p1.x_min,p1.y_min,p1.z_min},{p1.x_max,p1.y_max,p1.z_max},
                 {p2.x_min,p2.y_min,p2.z_min},{p2.x_max,p2.y_max,p2.z_max}

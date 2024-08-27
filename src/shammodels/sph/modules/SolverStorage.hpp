@@ -11,10 +11,11 @@
 /**
  * @file SolverStorage.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
 
+#include "shambase/StorageComponent.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
@@ -24,7 +25,6 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamrock/tree/TreeTraversalCache.hpp"
-#include "shambase/StorageComponent.hpp"
 #include "shamsys/legacy/log.hpp"
 
 namespace shammodels::sph {
@@ -78,12 +78,10 @@ namespace shammodels::sph {
         struct Timings {
             f64 interface = 0;
             f64 neighbors = 0;
-            f64 io = 0;
+            f64 io        = 0;
 
             /// Reset the timings logged in the storage
-            void reset(){
-                *this = {};
-            }
+            void reset() { *this = {}; }
         } timings_details;
     };
 

@@ -1,4 +1,4 @@
-from lib.buildbot import * 
+from lib.buildbot import *
 import json
 import sys
 
@@ -15,7 +15,7 @@ for f in flist:
     print(f)
     str_f = ""
 
-    fl = open(f,'r') 
+    fl = open(f,'r')
     str_f = fl.read()
     fl.close()
 
@@ -34,5 +34,5 @@ sumator = []
 for st in str_lst:
     sumator += json.loads(st)
 
-with open(outfile,'w') as outf : 
+with open(outfile,'w') as outf :
     json.dump(sumator, outf)

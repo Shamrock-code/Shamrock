@@ -11,41 +11,36 @@
 /**
  * @file sycl_builtins.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief 
- * 
+ * @brief
+ *
  */
- 
+
+#include "shambase/integer.hpp"
+#include "shambase/vectors.hpp"
+#include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
-#include "shambackends/math.hpp"
-#include "shambase/vectors.hpp"
-#include "shambase/integer.hpp"
 
 namespace shambase {
 
     /**
      * @brief Fallback function for sycl::any
-     * SYCL std : Returns 1 if the most significant bit in any component of x is set; otherwise returns 0.
-     * if it is something else than the most significant bit it is UB
+     * SYCL std : Returns 1 if the most significant bit in any component of x is set; otherwise
+     * returns 0. if it is something else than the most significant bit it is UB
      *
      * @tparam T
      * @tparam n
      * @param v
      * @return i32
      */
-    template<
-        class T,
-        int n,
-        std::enable_if_t<std::is_integral_v<T>,
-                         int> = 0>
+    template<class T, int n, std::enable_if_t<std::is_integral_v<T>, int> = 0>
     i32 any(sycl::vec<T, n> v) {
-        #ifdef SYCL_COMP_INTEL_LLVM
-            return sycl::any(v);
-        #else
-            return sham::sum_accumulate(
-                (v & sycl::vec<T, n>{most_sig_bit_mask<T>()}) >> sycl::vec<T, n>{4}
-            );
-        #endif
+#ifdef SYCL_COMP_INTEL_LLVM
+        return sycl::any(v);
+#else
+        return sham::sum_accumulate(
+            (v & sycl::vec<T, n>{most_sig_bit_mask<T>()}) >> sycl::vec<T, n>{4});
+#endif
     }
 
 } // namespace shambase

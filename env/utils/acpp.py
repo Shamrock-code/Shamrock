@@ -1,13 +1,14 @@
 import os
 import utils.cuda_arch
 import utils.amd_arch
+from utils.oscmd import *
 
 def clone_acpp(folder):
     if os.path.isdir(folder):
         print("-- skipping git clone folder does already exist")
     else:
         print("-- clonning https://github.com/AdaptiveCpp/AdaptiveCpp.git")
-        os.system("git clone https://github.com/AdaptiveCpp/AdaptiveCpp.git "+folder)
+        run_cmd("git clone https://github.com/AdaptiveCpp/AdaptiveCpp.git "+folder)
 
 def get_acpp_target_env(args, version = "git"):
 

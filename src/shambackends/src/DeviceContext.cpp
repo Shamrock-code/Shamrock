@@ -45,7 +45,9 @@ namespace sham {
 
         shamcomm::logs::raw_ln("  Context info");
 
-        logger::raw_ln("   - is_host() :", ctx.is_host());
+        // deprecated in DPCPP and does not really make sense in acpp either
+        // logger::raw_ln("   - is_host() :", ctx.is_host());
+
         // #ifdef SYCL_COMP_ACPP
         //         logger::raw_ln("   - hipSYCL_hash_code() :", ctx.hipSYCL_hash_code());
         // #endif

@@ -6,6 +6,7 @@ import utils.envscript
 import utils.cuda_arch
 import utils.amd_arch
 from utils.setuparg import *
+from utils.oscmd import *
 
 NAME = "Debian generic Intel LLVM"
 PATH = "machine/debian-generic/intel-llvm"
@@ -72,7 +73,7 @@ def setup(arg : SetupArg):
     cmake_extra_args = ""
     if pylib:
         cmake_extra_args += " -DBUILD_PYLIB=True"
-        os.system("cp "+os.path.abspath(os.path.join(cur_file, "../"+"_pysetup.py")) +" "+ builddir+"/setup.py")
+        run_cmd("cp "+os.path.abspath(os.path.join(cur_file, "../"+"_pysetup.py")) +" "+ builddir+"/setup.py")
 
     if lib_mode == "shared":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=On"
@@ -96,4 +97,4 @@ def setup(arg : SetupArg):
         print("-- intel llvm already installed => skipping")
     else:
         print("-- running compiler setup")
-        os.system("bash -c 'cd "+builddir+" && source ./activate &&  updatecompiler'")
+        run_cmd("cd "+builddir+" && source ./activate &&  updatecompiler")

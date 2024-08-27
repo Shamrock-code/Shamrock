@@ -1,16 +1,17 @@
 import os
 import utils.cuda_arch
 import utils.amd_arch
+from utils.oscmd import *
 
 def clone_intel_llvm(folder):
     if os.path.isdir(folder):
         print("-- skipping git clone folder does already exist")
     else:
         print("-- clonning https://github.com/intel/llvm.git")
-        os.system("git clone https://github.com/intel/llvm.git "+folder)
+        run_cmd("git clone https://github.com/intel/llvm.git "+folder)
 
 def change_branch(folder, branch_name):
-    os.system("cd "+folder + " && git checkout " + branch_name)
+    run_cmd("cd "+folder + " && git checkout " + branch_name)
 
 def get_llvm_configure_arg(args):
 

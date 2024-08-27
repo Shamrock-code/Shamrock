@@ -28,9 +28,9 @@
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <string>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 namespace shamrock {
     namespace details {

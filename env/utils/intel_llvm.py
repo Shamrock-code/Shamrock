@@ -9,6 +9,8 @@ def clone_intel_llvm(folder):
         print("-- clonning https://github.com/intel/llvm.git")
         os.system("git clone https://github.com/intel/llvm.git "+folder)
 
+def change_branch(folder, branch_name):
+    os.system("cd "+folder + " && git checkout " + branch_name)
 
 def get_llvm_configure_arg(args):
 

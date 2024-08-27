@@ -20,7 +20,6 @@
 #include "shammodels/amr/basegodunov/modules/ComputeFluxUtilities.hpp"
 #include <array>
 
-
 template<class T>
 using NGLink = shammodels::basegodunov::modules::NeighGraphLinkField<T>;
 

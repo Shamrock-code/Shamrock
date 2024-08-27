@@ -200,7 +200,6 @@ namespace shammath {
         const auto fL = d_hydro_flux_x(cL);
         const auto fR = d_hydro_flux_x(cR);
 
-
         if (d_primL.vel[0] > 0 && d_primR.vel[0] > 0)
             d_flux = fL;
         else if (d_primL.vel[0] < 0 && d_primR.vel[0] < 0)
@@ -209,7 +208,6 @@ namespace shammath {
             d_flux *= 0;
         else if (d_primL.vel[0] > 0 && d_primR.vel[0] < 0)
             d_flux = (fL + fR);
-
 
         return d_flux;
     }

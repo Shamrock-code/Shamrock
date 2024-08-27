@@ -183,88 +183,114 @@ namespace shammodels::basegodunov {
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
             flux_rhoe_face_zm;
-        Component<shamrock::ComputeField<Tvec>> vel_dust;
-        Component<shamrock::ComputeField<Tvec>> grad_rho_dust;
-        Component<shamrock::ComputeField<Tvec>> dx_v_dust;
-        Component<shamrock::ComputeField<Tvec>> dy_v_dust;
-        Component<shamrock::ComputeField<Tvec>> dz_v_dust;
 
         Component<shamrock::ComputeField<Tscal>> dtrho;
         Component<shamrock::ComputeField<Tvec>> dtrhov;
         Component<shamrock::ComputeField<Tscal>> dtrhoe;
 
+        // Dust velocity : primitives variables get from conservative rhovel_dust variable
+        Component<shamrock::ComputeField<Tvec>> vel_dust;
+        /*
+            dust fields gradients
+        */
+        Component<shamrock::ComputeField<Tvec>> grad_rho_dust;
+        Component<shamrock::ComputeField<Tvec>> dx_v_dust;
+        Component<shamrock::ComputeField<Tvec>> dy_v_dust;
+        Component<shamrock::ComputeField<Tvec>> dz_v_dust;
+
+        // dust densities in +x direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_xp;
+        // dust densities in -x direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_xm;
+        // dust densities in +y direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_yp;
+        // dust densities in -y direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_ym;
+        // dust densities in +z direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_zp;
+        // dust densities in -z direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_zm;
-
+        // dust velocities in +x direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
             vel_dust_face_xp;
+        // dust velocities in -x direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
             vel_dust_face_xm;
+        // dust velocities in +y direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
             vel_dust_face_yp;
+        // dust velocities in -y direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
             vel_dust_face_ym;
+        // dust velocities in +z direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
             vel_dust_face_zp;
+        // dust velocities in -z direction stored at the cells faces
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
             vel_dust_face_zm;
-
+        // dust density flux at cells interfaces in +x direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
             flux_rho_dust_face_xp;
+        // dust density flux at cells interfaces in -x direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
             flux_rho_dust_face_xm;
+        // dust density flux at cells interfaces in +y direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
             flux_rho_dust_face_yp;
+        // dust density flux at cells interfaces in -y direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
             flux_rho_dust_face_ym;
+        // dust density flux at cells interfaces in +z direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
             flux_rho_dust_face_zp;
+        // dust density flux at cells interfaces in -z direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
             flux_rho_dust_face_zm;
-
+        // dust momentum flux at cells interfaces in +x direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>>
             flux_rhov_dust_face_xp;
+        // dust momentum flux at cells interfaces in -x direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>>
             flux_rhov_dust_face_xm;
+        // dust momentum flux at cells interfaces in +y direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>>
             flux_rhov_dust_face_yp;
+        // dust momentum flux at cells interfaces in -y direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>>
             flux_rhov_dust_face_ym;
+        // dust momentum flux at cells interfaces in +z direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>>
             flux_rhov_dust_face_zp;
+        // dust momentum flux at cells interfaces in -z direction
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>>
             flux_rhov_dust_face_zm;

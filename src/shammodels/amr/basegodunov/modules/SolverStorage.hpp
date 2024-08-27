@@ -183,6 +183,11 @@ namespace shammodels::basegodunov {
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
             flux_rhoe_face_zm;
+        Component<shamrock::ComputeField<Tvec>> vel_dust;
+        Component<shamrock::ComputeField<Tvec>> grad_rho_dust;
+        Component<shamrock::ComputeField<Tvec>> dx_v_dust;
+        Component<shamrock::ComputeField<Tvec>> dy_v_dust;
+        Component<shamrock::ComputeField<Tvec>> dz_v_dust;
 
         Component<shamrock::ComputeField<Tscal>> dtrho;
         Component<shamrock::ComputeField<Tvec>> dtrhov;

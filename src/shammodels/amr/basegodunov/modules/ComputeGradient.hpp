@@ -58,6 +58,10 @@ namespace shammodels::basegodunov::modules {
         void _compute_grad_v_van_leer();
         template<SlopeMode mode>
         void _compute_grad_P_van_leer();
+        template<SlopeMode mode>
+        void _compute_grad_rho_dust_van_leer();
+        template<SlopeMode mode>
+        void _compute_grad_v_dust_van_leer();
 
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

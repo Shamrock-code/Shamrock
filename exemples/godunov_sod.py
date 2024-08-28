@@ -85,7 +85,7 @@ for i in range(701):
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 
-    next_dt = model.evolve_once(t,dt)
+    next_dt = model.evolve_once_override_time(t,dt)
 
     t += dt
     dt = next_dt

@@ -1,68 +1,78 @@
 import shamrock
+import numpy as np
 import matplotlib.pyplot as plt
+import os
 
-gamma = 1.4
-
-rho_g = 1
-rho_d = 0.125
-
-fact = (rho_g/rho_d)**(1./3.)
-
-P_g = 1
-P_d = 0.1
-
-u_g = P_g/((gamma - 1)*rho_g)
-u_d = P_d/((gamma - 1)*rho_d)
-
-resol = 128
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_AMRGodunov(
+    context = ctx,
+    vector_type = "f64_3",
+    grid_repr = "i64_3")
+
+model.init_scheduler(int(1e7),1)
+
+multx = 4
+multy = 1
+multz = 1
+
+sz = 1 << 1
+base = 32
+model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 cfg = model.gen_default_config()
-#cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
-#cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_boundary_periodic()
-cfg.set_eos_adiabatic(gamma)
-cfg.print_status()
-model.set_solver_config(cfg)
+scale_fact = 2/(sz*base*multx)
+cfg.set_scale_factor(scale_fact)
 
-model.init_scheduler(int(1e8),1)
+gamma = 1.4
+cfg.set_eos_gamma(gamma)
+#cfg.set_riemann_solver_rusanov()
+cfg.set_riemann_solver_hll()
 
-
-(xs,ys,zs) = model.get_box_dim_fcc_3d(1,resol,24,24)
-dr = 1/xs
-(xs,ys,zs) = model.get_box_dim_fcc_3d(dr,resol,24,24)
-
-model.resize_simulation_box((-xs,-ys/2,-zs/2),(xs,ys/2,zs/2))
+#cfg.set_slope_lim_none()
+#cfg.set_slope_lim_vanleer_f()
+#cfg.set_slope_lim_vanleer_std()
+#cfg.set_slope_lim_vanleer_sym()
+cfg.set_slope_lim_minmod()
+model.set_config(cfg)
 
 
-model.add_cube_fcc_3d(dr, (-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
-model.add_cube_fcc_3d(dr*fact, (0,-ys/2,-zs/2),(xs,ys/2,zs/2))
+kx,ky,kz = 2*np.pi,0,0
+delta_rho = 1e-2
 
-model.set_value_in_a_box("uint", "f64", u_g ,(-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
-model.set_value_in_a_box("uint", "f64", u_d ,(0,-ys/2,-zs/2),(xs,ys/2,zs/2))
+def rho_map(rmin,rmax):
 
-
-
-vol_b = xs*ys*zs
-
-totmass = (rho_d*vol_b) + (rho_g*vol_b)
-
-print("Total mass :", totmass)
+    x,y,z = rmin
+    if x < 1:
+        return 1
+    else:
+        return 0.125
 
 
-pmass = model.total_mass_to_part_mass(totmass)
-model.set_particle_mass(pmass)
-print("Current part mass :", pmass)
+etot_L = 1./(gamma-1)
+etot_R = 0.1/(gamma-1)
+
+def rhoetot_map(rmin,rmax):
+
+    rho = rho_map(rmin,rmax)
+
+    x,y,z = rmin
+    if x < 1:
+        return etot_L
+    else:
+        return etot_R
+
+def rhovel_map(rmin,rmax):
+    rho = rho_map(rmin,rmax)
+
+    return (0,0,0)
 
 
-
-model.set_cfl_cour(0.1)
-model.set_cfl_force(0.1)
+model.set_field_value_lambda_f64("rho", rho_map)
+model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
+model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 t_target = 0.245
 

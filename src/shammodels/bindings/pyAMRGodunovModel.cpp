@@ -103,7 +103,17 @@ namespace shammodels::basegodunov {
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
+            .def("evolve_once_override_time", &T::evolve_once_time_expl)
             .def("evolve_once", &T::evolve_once)
+            .def(
+                "evolve_until",
+                [](T &self, f64 target_time, i32 niter_max) {
+                    return self.evolve_until(target_time, niter_max);
+                },
+                py::arg("target_time"),
+                py::kw_only(),
+                py::arg("niter_max") = -1)
+            .def("timestep", &T::timestep)
             .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
             .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
             .def(

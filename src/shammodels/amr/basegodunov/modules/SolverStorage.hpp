@@ -192,12 +192,13 @@ namespace shammodels::basegodunov {
          * @brief Dust velocity : primitives variables get from conservative rhovel_dust variable
          */
         Component<shamrock::ComputeField<Tvec>> vel_dust;
-        /**
-         * @brief dust fields gradients
-         */
+        /// dust fields gradients (grad rho_dust)
         Component<shamrock::ComputeField<Tvec>> grad_rho_dust;
+        /// dust fields gradients (d vdust / d x)
         Component<shamrock::ComputeField<Tvec>> dx_v_dust;
+        /// dust fields gradients (d vdust / d y)
         Component<shamrock::ComputeField<Tvec>> dy_v_dust;
+        /// dust fields gradients (d vdust / d z)
         Component<shamrock::ComputeField<Tvec>> dz_v_dust;
         /**
          * @brief dust densities in +x direction stored at the cells faces

@@ -218,7 +218,6 @@ namespace shammath {
     }
 
     template<class Tcons>
-
     inline constexpr Tcons d_hll_flux_z(Tcons cL, Tcons cR) {
         return d_x_to_z(d_hll_flux_x(d_z_to_x(cL), d_z_to_x(cR)));
     }

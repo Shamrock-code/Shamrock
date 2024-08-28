@@ -17,6 +17,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/amr/basegodunov/Model.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
+#include "shammodels/amr/basegodunov/modules/AnalysisSodTube.hpp"
 #include <pybind11/functional.h>
 #include <memory>
 
@@ -27,8 +28,9 @@ namespace shammodels::basegodunov {
         using Tscal     = shambase::VecComponent<Tvec>;
         using Tgridscal = shambase::VecComponent<TgridVec>;
 
-        using T       = Model<Tvec, TgridVec>;
-        using TConfig = typename T::Solver::Config;
+        using T                = Model<Tvec, TgridVec>;
+        using TConfig          = typename T::Solver::Config;
+        using TAnalysisSodTube = shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>;
 
         logger::debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
         logger::debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
@@ -99,11 +101,28 @@ namespace shammodels::basegodunov {
                 self.dust_config = {NoDust, 0};
             });
 
+        std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
+        py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())
+            .def("compute_L2_dist", [](TAnalysisSodTube &self) -> std::tuple<Tscal, Tvec, Tscal> {
+                auto ret = self.compute_L2_dist();
+                return {ret.rho, ret.v, ret.P};
+            });
+
         py::class_<T>(m, name_model.c_str())
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
+            .def("evolve_once_override_time", &T::evolve_once_time_expl)
             .def("evolve_once", &T::evolve_once)
+            .def(
+                "evolve_until",
+                [](T &self, f64 target_time, i32 niter_max) {
+                    return self.evolve_until(target_time, niter_max);
+                },
+                py::arg("target_time"),
+                py::kw_only(),
+                py::arg("niter_max") = -1)
+            .def("timestep", &T::timestep)
             .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
             .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
             .def(
@@ -120,6 +139,26 @@ namespace shammodels::basegodunov {
                 "get_cell_coords",
                 [](T &self, std::pair<TgridVec, TgridVec> block_coord, u32 cell_local_id) {
                     return self.get_cell_coords(block_coord, cell_local_id);
+                })
+            .def(
+                "make_analysis_sodtube",
+                [](T &self,
+                   shamphys::SodTube sod,
+                   Tvec direction,
+                   Tscal time_val,
+                   Tscal x_ref,
+                   Tscal x_min,
+                   Tscal x_max) {
+                    return std::make_unique<TAnalysisSodTube>(
+                        self.ctx,
+                        self.solver.solver_config,
+                        self.solver.storage,
+                        sod,
+                        direction,
+                        time_val,
+                        x_ref,
+                        x_min,
+                        x_max);
                 });
     }
 } // namespace shammodels::basegodunov

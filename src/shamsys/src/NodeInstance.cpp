@@ -199,13 +199,13 @@ namespace logformatter {
      */
     std::string style3_formatter_simple(const logger::ReformatArgs &args) {
         return shambase::format(
-            "{5:}({3:}){2:} : {4:}",
+            "{5:}{3:}{2:}: {4:}",
             args.color,
             args.level_name,
             shambase::term_colors::reset(),
             args.module_name,
             args.content,
-            shambase::term_colors::faint());
+            shambase::term_colors::bold());
     }
 } // namespace logformatter
 

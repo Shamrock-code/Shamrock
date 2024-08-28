@@ -69,7 +69,7 @@ def run_sim(vanleer = True, label = "none"):
         if i % freq == 0:
             model.dump_vtk("test"+str(i//freq)+".vtk")
 
-        model.evolve_once(dt*float(i),dt)
+        model.evolve_once_override_time(dt*float(i),dt)
         t = dt*i
 
         if t >= tmax:
@@ -120,7 +120,7 @@ def run_sim(vanleer = True, label = "none"):
 
     dic = convert_to_cell_coords(ctx.collect_data())
 
-
+    print(dic)
 
     X = []
     rho = []

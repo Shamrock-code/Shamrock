@@ -18,8 +18,21 @@ def get_avail_mem():
         free_mem = (psutil.virtual_memory().available)/1e6
     else:
         try:
-            tot_m, used_m, free_m = map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
-            free_mem = free_m
+
+            free_res = os.popen('free -m -t').readlines()[1:]
+
+            out = 0
+            for l in free_res:
+                l = l.split()[1:]
+                if len(l) < 6:
+                    tot_m, used_m, free_m = map(int, l)
+                    out = max(out, free_m)
+                else:
+                    tot_m, used_m, free_m,sharedmem,bufcache,avail = map(int, l)
+                    out = max(out, free_m)
+                    out = max(out, avail)
+
+            free_mem = out
         except:
             print("Available memory can not be detected -> assuming 16Go")
             free_mem = 1e9*16

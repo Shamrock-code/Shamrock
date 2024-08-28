@@ -78,7 +78,7 @@ for i in range(1000):
     if i % freq == 0:
         model.dump_vtk("test"+str(i//freq)+".vtk")
 
-    model.evolve_once(t,dt)
+    model.evolve_once_override_time(t,dt)
     t += dt
 
     if t >= tmax:

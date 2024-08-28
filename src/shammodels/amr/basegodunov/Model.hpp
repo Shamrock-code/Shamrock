@@ -47,8 +47,6 @@ namespace shammodels::basegodunov {
 
         void dump_vtk(std::string filename);
 
-        Tscal evolve_once(Tscal t_current, Tscal dt_input);
-
         template<class T>
         inline void set_field_value_lambda(
             std::string field_name, const std::function<T(Tvec, Tvec)> pos_to_val) {
@@ -95,6 +93,21 @@ namespace shammodels::basegodunov {
             tmp.first *= solver.solver_config.grid_coord_to_pos_fact;
             tmp.second *= solver.solver_config.grid_coord_to_pos_fact;
             return tmp;
+        }
+
+        inline f64 evolve_once_time_expl(f64 t_curr, f64 dt_input) {
+            return solver.evolve_once_time_expl(t_curr, dt_input);
+        }
+
+        inline void timestep() { solver.evolve_once(); }
+
+        inline void evolve_once() {
+            solver.evolve_once();
+            solver.print_timestep_logs();
+        }
+
+        inline bool evolve_until(Tscal target_time, i32 niter_max) {
+            return solver.evolve_until(target_time, niter_max);
         }
     };
 

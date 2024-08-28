@@ -30,8 +30,9 @@
 #include "shamrock/io/LegacyVtkWritter.hpp"
 
 template<class Tvec, class TgridVec>
-auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tscal dt_input)
-    -> Tscal {
+void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
+    Tscal t_current = solver_config.get_time();
+    Tscal dt_input  = solver_config.get_dt();
 
     StackEntry stack_loc{};
 
@@ -118,6 +119,9 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
 
     modules::ComputeCFL cfl_compute(context, solver_config, storage);
     f64 new_dt = cfl_compute.compute_cfl();
+
+    solver_config.set_next_dt(new_dt);
+    solver_config.set_time(t_current + dt_input);
 
     storage.dtrho.reset();
     storage.dtrhov.reset();
@@ -217,8 +221,6 @@ auto shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once(Tscal t_curren
     }
 
     storage.timings_details.reset();
-
-    return new_dt;
 }
 
 template<class Tvec, class TgridVec>

@@ -1,5 +1,6 @@
 import argparse
 import os
+from utils.oscmd import *
 import utils.acpp
 import utils.sysinfo
 import utils.envscript
@@ -70,7 +71,7 @@ def setup(arg : SetupArg):
     cmake_extra_args = ""
     if pylib:
         cmake_extra_args += " -DBUILD_PYLIB=True"
-        os.system("cp "+os.path.abspath(os.path.join(cur_file, "../"+"_pysetup.py")) +" "+ builddir+"/setup.py")
+        run_cmd("cp "+os.path.abspath(os.path.join(cur_file, "../"+"_pysetup.py")) +" "+ builddir+"/setup.py")
 
     if lib_mode == "shared":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=On"
@@ -96,4 +97,4 @@ def setup(arg : SetupArg):
         print("-- acpp already installed => skipping")
     else:
         print("-- running compiler setup")
-        os.system("bash -c 'cd "+builddir+" && . ./activate &&  updatecompiler'")
+        run_cmd("cd "+builddir+" && . ./activate &&  updatecompiler")

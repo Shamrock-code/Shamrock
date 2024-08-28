@@ -57,6 +57,16 @@ namespace shammodels::basegodunov {
         }
     };
 
+    template<class Tvec>
+    struct SolverStatusVar {
+
+        /// The type of the scalar used to represent the quantities
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        Tscal time = 0; ///< Current time
+        Tscal dt   = 0; ///< Current time step
+    };
+
     template<class Tvec, class TgridVec>
     struct SolverConfig {
 
@@ -78,6 +88,19 @@ namespace shammodels::basegodunov {
         inline bool is_dust_on() { return dust_config.is_dust_on(); }
 
         Tscal Csafe = 0.9;
+
+        /// Alias to SolverStatusVar type
+        using SolverStatusVar = SolverStatusVar<Tvec>;
+        /// The time sate of the simulation
+        SolverStatusVar time_state;
+        /// Set the current time
+        inline void set_time(Tscal t) { time_state.time = t; }
+        /// Set the time step for the next iteration
+        inline void set_next_dt(Tscal dt) { time_state.dt = dt; }
+        /// Get the current time
+        inline Tscal get_time() { return time_state.time; }
+        /// Get the time step for the next iteration
+        inline Tscal get_dt() { return time_state.dt; }
     };
 
     template<class Tvec, class TgridVec>
@@ -116,9 +139,58 @@ namespace shammodels::basegodunov {
 
         Solver(ShamrockCtx &context) : context(context) {}
 
-        Tscal evolve_once(Tscal t_current, Tscal dt_input);
-
         void do_debug_vtk_dump(std::string filename);
+
+        inline void print_timestep_logs() {
+            if (shamcomm::world_rank() == 0) {
+                // logger::info_ln("Godunov", "iteration since start :",
+                // solve_logs.get_iteration_count());
+                logger::info_ln(
+                    "Godunov", "time since start :", shambase::details::get_wtime(), "(s)");
+            }
+        }
+
+        void evolve_once();
+
+        inline Tscal evolve_once_time_expl(Tscal t_current, Tscal dt_input) {
+            solver_config.set_time(t_current);
+            solver_config.set_next_dt(dt_input);
+            evolve_once();
+            return solver_config.get_dt();
+        }
+
+        inline bool evolve_until(Tscal target_time, i32 niter_max) {
+            auto step = [&]() {
+                Tscal dt = solver_config.get_dt();
+                Tscal t  = solver_config.get_time();
+
+                if (t > target_time) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "the target time is higher than the current time");
+                }
+
+                if (t + dt > target_time) {
+                    solver_config.set_next_dt(target_time - t);
+                }
+                evolve_once();
+            };
+
+            i32 iter_count = 0;
+
+            while (solver_config.get_time() < target_time) {
+                step();
+                iter_count++;
+
+                if ((iter_count >= niter_max) && (niter_max != -1)) {
+                    logger::info_ln("SPH", "stopping evolve until because of niter =", iter_count);
+                    return false;
+                }
+            }
+
+            print_timestep_logs();
+
+            return true;
+        }
     };
 
 } // namespace shammodels::basegodunov

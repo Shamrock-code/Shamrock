@@ -22,7 +22,15 @@ jobs:
             backend: omp
             arch: none
             runtest: yes
-            testfile: sod_tube.py
+            testfile: sod_tube_sph.py
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: omp
+            arch: none
+            runtest: yes
+            testfile: sod_tube_godunov.py
             container: ghcr.io/shamrock-code/ci-ubuntu20:main
 
 

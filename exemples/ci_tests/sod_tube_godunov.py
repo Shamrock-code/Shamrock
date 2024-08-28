@@ -79,27 +79,135 @@ t_target = 0.245
 model.evolve_until(t_target)
 
 #model.evolve_once()
-
+xref = 1.0
+xrange = 0.5
 sod = shamrock.phys.SodTube(gamma = gamma, rho_1 = 1,P_1 = 1,rho_5 = 0.125,P_5 = 0.1)
-sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, 0.0, -0.5,0.5)
+sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, xref, -xrange,xrange)
+
+
+
+
+#################
+### Plot
+#################
+# do plot or not
+if False:
+
+    def convert_to_cell_coords(dic):
+
+        cmin = dic['cell_min']
+        cmax = dic['cell_max']
+
+        xmin = []
+        ymin = []
+        zmin = []
+        xmax = []
+        ymax = []
+        zmax = []
+
+        for i in range(len(cmin)):
+
+            m,M = cmin[i],cmax[i]
+
+            mx,my,mz = m
+            Mx,My,Mz = M
+
+            for j in range(8):
+                a,b = model.get_cell_coords(((mx,my,mz), (Mx,My,Mz)),j)
+
+                x,y,z = a
+                xmin.append(x)
+                ymin.append(y)
+                zmin.append(z)
+
+                x,y,z = b
+                xmax.append(x)
+                ymax.append(y)
+                zmax.append(z)
+
+        dic["xmin"] = np.array(xmin)
+        dic["ymin"] = np.array(ymin)
+        dic["zmin"] = np.array(zmin)
+        dic["xmax"] = np.array(xmax)
+        dic["ymax"] = np.array(ymax)
+        dic["zmax"] = np.array(zmax)
+
+        return dic
+
+
+    dic = convert_to_cell_coords(ctx.collect_data())
+
+
+
+    X = []
+    rho = []
+    rhovelx = []
+    rhoetot = []
+
+    for i in range(len(dic["xmin"])):
+
+        X.append(dic["xmin"][i])
+        rho.append(dic["rho"][i])
+        rhovelx.append(dic["rhovel"][i][0])
+        rhoetot.append(dic["rhoetot"][i])
+
+    X = np.array(X)
+    rho = np.array(rho)
+    rhovelx = np.array(rhovelx)
+    rhoetot = np.array(rhoetot)
+
+    vx = rhovelx / rho
+
+    plt.plot(X,rho,'.',label="rho")
+    plt.plot(X,vx,'.',label="v")
+    plt.plot(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1),'.',label="P")
+    #plt.plot(X,rhoetot,'.',label="rhoetot")
+    plt.legend()
+    plt.grid()
+
+
+    #### add analytical soluce
+    arr_x = np.linspace(xref-xrange,xref+xrange,1000)
+
+    arr_rho = []
+    arr_P = []
+    arr_vx = []
+
+    for i in range(len(arr_x)):
+        x_ = arr_x[i] - xref
+
+        _rho,_vx,_P = sod.get_value(t_target, x_)
+        arr_rho.append(_rho)
+        arr_vx.append(_vx)
+        arr_P.append(_P)
+
+    plt.plot(arr_x,arr_rho,color = "black",label="analytic")
+    plt.plot(arr_x,arr_vx,color = "black")
+    plt.plot(arr_x,arr_P,color = "black")
+    #######
+    plt.show()
+
+
+
 
 #################
 ### Test CD
 #################
 rho, v, P = sodanalysis.compute_L2_dist()
+print(rho,v,P)
 vx,vy,vz = v
 
 # normally :
-# rho 0.0001615491818848632
-# v (0.0011627047434807855, 2.9881306160215856e-05, 1.7413547093275864e-07)
-# P0.0001248364612976704
+# rho 0.07979993131348424
+# v (0.17970690984930585, 0.0, 0.0)
+# P 0.12628776652228088
 
 test_pass = True
-pass_rho = 0.0001615491818848697
-pass_vx = 0.0011627047434809158
-pass_vy = 2.9881306160215856e-05
-pass_vz = 1.7413547093275864e-07
-pass_P = 0.0001248364612976704
+pass_rho = 0.07979993131348424 + 1e-7
+pass_vx = 0.17970690984930585 + 1e-7
+pass_vy = 1e-09
+pass_vz = 1e-09
+pass_P = 0.12628776652228088 + 1e-7
 
 err_log = ""
 

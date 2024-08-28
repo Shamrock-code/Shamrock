@@ -12,6 +12,7 @@ set(Sources
     TimeIntegrator.cpp
     ConsToPrim.cpp
     ComputeCFL.cpp
+    AnalysisSodTube.cpp
 )
 set(Headers
 )

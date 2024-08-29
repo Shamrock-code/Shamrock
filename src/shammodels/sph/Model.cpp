@@ -505,7 +505,6 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
 
     auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
 
-    u32 idx_gen     = 0;
     LatticeIter gen = LatticeIter(dr, idxs_min, idxs_max);
 
     shamrock::DataInserterUtility inserter(sched);
@@ -537,9 +536,6 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
     };
 
     u32 insert_step = sched.crit_patch_split * 8;
-
-    u32 wrank = shamcomm::world_rank();
-    u32 wsize = shamcomm::world_size();
 
     auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<Tvec>();
 

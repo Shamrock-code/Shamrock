@@ -38,11 +38,15 @@ xm,ym,zm = bmin
 xM,yM,zM = bmax
 
 model.resize_simulation_box(bmin,bmax)
-model.add_cube_hcp_3d_v2(dr, bmin,bmax)
+
+#model.add_cube_hcp_3d_v2(dr, bmin,bmax)
+
+setup = model.get_setup()
+gen = setup.make_generator_lattice_hcp(dr, bmin,bmax)
+setup.apply_setup(gen)
 
 xc,yc,zc = model.get_closest_part_to((0,0,0))
 print("closest part to (0,0,0) is in :",xc,yc,zc)
-
 
 vol_b = (xM - xm)*(yM - ym)*(zM - zm)
 

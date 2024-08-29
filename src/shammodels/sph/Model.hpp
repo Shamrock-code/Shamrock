@@ -27,6 +27,7 @@
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
+#include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
 #include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/patch/PatchData.hpp"
@@ -117,6 +118,11 @@ namespace shammodels::sph {
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
         void add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
         void add_cube_hcp_3d_v2(Tscal dr, std::pair<Tvec, Tvec> _box);
+
+        inline std::unique_ptr<modules::SPHSetup<Tvec, SPHKernel>> get_setup() {
+            return std::make_unique<modules::SPHSetup<Tvec, SPHKernel>>(
+                ctx, solver.solver_config, solver.storage);
+        }
 
         //        std::function<Tscal(Tscal)> sigma_profile = [=](Tscal r, Tscal r_in, Tscal p){
         //            // we setup with an adimensional mass since it is monte carlo

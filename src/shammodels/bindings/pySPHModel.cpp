@@ -148,6 +148,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
         .def(
+            "make_combiner_add",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent1,
+               shammodels::sph::modules::SetupNodePtr parent2) {
+                return self.make_combiner_add(parent1, parent2);
+            })
+        .def(
             "apply_setup",
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr setup,

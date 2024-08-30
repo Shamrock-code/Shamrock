@@ -40,8 +40,16 @@ dr = 1/xs
 model.resize_simulation_box((-xs,-ys/2,-zs/2),(xs,ys/2,zs/2))
 
 
-model.add_cube_fcc_3d(dr, (-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
-model.add_cube_fcc_3d(dr*fact, (0,-ys/2,-zs/2),(xs,ys/2,zs/2))
+
+setup = model.get_setup()
+gen1 = setup.make_generator_lattice_hcp(dr, (-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
+gen2 = setup.make_generator_lattice_hcp(dr*fact, (0,-ys/2,-zs/2),(xs,ys/2,zs/2))
+comb = setup.make_combiner_add(gen1,gen2)
+#print(comb.get_dot())
+setup.apply_setup(comb)
+
+#model.add_cube_fcc_3d(dr, (-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
+#model.add_cube_fcc_3d(dr*fact, (0,-ys/2,-zs/2),(xs,ys/2,zs/2))
 
 model.set_value_in_a_box("uint", "f64", u_g ,(-xs,-ys/2,-zs/2),(0,ys/2,zs/2))
 model.set_value_in_a_box("uint", "f64", u_d ,(0,-ys/2,-zs/2),(xs,ys/2,zs/2))

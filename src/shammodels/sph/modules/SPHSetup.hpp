@@ -19,6 +19,7 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
+#include "shammodels/sph/modules/setup/CombinerAdd.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -47,6 +48,10 @@ namespace shammodels::sph::modules {
         inline std::shared_ptr<ISPHSetupNode>
         make_generator_lattice_hcp(Tscal dr, std::pair<Tvec, Tvec> box) {
             return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP<Tvec>(context, dr, box));
+        }
+        inline std::shared_ptr<ISPHSetupNode>
+        make_combiner_add(SetupNodePtr parent1, SetupNodePtr parent2) {
+            return std::shared_ptr<ISPHSetupNode>(new CombinerAdd<Tvec>(context, parent1, parent2));
         }
 
         private:

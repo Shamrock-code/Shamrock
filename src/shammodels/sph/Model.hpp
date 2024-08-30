@@ -720,7 +720,13 @@ namespace shammodels::sph {
             /// TODO: load solver config from metadata
             nlohmann::json j = nlohmann::json::parse(metadata_user);
             // std::cout << j << std::endl;
-            j.get_to(solver.solver_config);
+            j.at("solver_config").get_to(solver.solver_config);
+
+            if (!j.at("sinks").is_null()) {
+                std::vector<SinkParticle<Tvec>> out;
+                j.at("sinks").get_to(out);
+                solver.storage.sinks.set(std::move(out));
+            }
 
             solver.init_ghost_layout();
 
@@ -743,12 +749,19 @@ namespace shammodels::sph {
                 logger::info_ln("SPH", "Dumping state to", fname);
             }
 
+            nlohmann::json metadata;
+            metadata["solver_config"] = solver.solver_config;
+
+            if (solver.storage.sinks.is_empty()) {
+                metadata["sinks"] = nlohmann::json{};
+            } else {
+                metadata["sinks"] = solver.storage.sinks.get();
+            }
+
             // Dump the state of the SPH model to a file
             /// TODO: replace supplied metadata by solver config json
             shamrock::write_shamrock_dump(
-                fname,
-                nlohmann::json(solver.solver_config).dump(4),
-                shambase::get_check_ref(ctx.sched));
+                fname, metadata.dump(4), shambase::get_check_ref(ctx.sched));
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////

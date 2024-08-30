@@ -5,7 +5,7 @@ import numpy as np
 ####################################################
 # Setup parameters
 ####################################################
-Npart = 10000000
+Npart = 1000000
 disc_mass = 0.01 #sol mass
 center_mass = 1
 center_racc = 0.1
@@ -27,6 +27,8 @@ C_force = 0.25
 H_r_in = 0.05
 
 do_plots = False
+
+dump_prefix = "disc_"
 
 ####################################################
 ####################################################
@@ -68,7 +70,10 @@ def rot_profile(r):
     return kep_profile(r)
 
 def H_profile(r):
-    return (cs_profile(r) / omega_k(r))
+    H = (cs_profile(r) / omega_k(r))
+    #fact = (2.**0.5) * 3.
+    fact = 1
+    return fact * H # factor taken from phantom, to fasten thermalizing
 
 def plot_curve_in():
     x = np.linspace(rin,rout)
@@ -104,68 +109,103 @@ if do_plots:
 
 
 
+####################################################
+# Dump handling
+####################################################
+def get_dump_name(idump):
+    return dump_prefix + f"{idump:04}" + ".sham"
+
+def get_vtk_dump_name(idump):
+    return dump_prefix + f"{idump:04}" + ".vtk"
+
+def get_last_dump():
+    import glob
+
+    res = glob.glob(dump_prefix + "*.sham")
+
+    f_max = ""
+    num_max = -1
+
+    for f in res:
+        try:
+            dump_num = int(f[len(dump_prefix):-5])
+            if dump_num > num_max:
+                f_max = f
+                num_max = dump_num
+        except:
+            pass
+
+    if num_max == -1:
+        return None
+    else:
+        return num_max
+
+idump_last_dump = get_last_dump()
+
+####################################################
+####################################################
+####################################################
+
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 
-cfg = model.gen_default_config()
-#cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_ConstantDisc(alpha_u = alpha_u, alpha_AV = alpha_AV, beta_AV = beta_AV)
-cfg.set_eos_locally_isothermalLP07(cs0 = cs0, q = q, r0 = r0)
-cfg.print_status()
-cfg.set_units(codeu)
-model.set_solver_config(cfg)
+if idump_last_dump is not None:
+    model.load_from_dump(get_dump_name(idump_last_dump))
+else:
+    cfg = model.gen_default_config()
+    #cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+    cfg.set_artif_viscosity_ConstantDisc(alpha_u = alpha_u, alpha_AV = alpha_AV, beta_AV = beta_AV)
+    cfg.set_eos_locally_isothermalLP07(cs0 = cs0, q = q, r0 = r0)
+    cfg.print_status()
+    cfg.set_units(codeu)
+    model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e8),1)
+    model.init_scheduler(int(1e8),1)
 
-model.resize_simulation_box(bmin,bmax)
+    model.resize_simulation_box(bmin,bmax)
 
-
-
-
-
-setup = model.get_setup()
-gen_disc = setup.make_generator_disc_mc(
-        part_mass = pmass,
-        disc_mass = disc_mass,
-        r_in = rin,
-        r_out = rout,
-        sigma_profile = sigma_profile,
-        H_profile = H_profile,
-        rot_profile = rot_profile,
-        cs_profile = cs_profile,
-        random_seed = 666
-    )
-#print(comb.get_dot())
-setup.apply_setup(gen_disc)
-
+    setup = model.get_setup()
+    gen_disc = setup.make_generator_disc_mc(
+            part_mass = pmass,
+            disc_mass = disc_mass,
+            r_in = rin,
+            r_out = rout,
+            sigma_profile = sigma_profile,
+            H_profile = H_profile,
+            rot_profile = rot_profile,
+            cs_profile = cs_profile,
+            random_seed = 666
+        )
+    #print(comb.get_dot())
+    setup.apply_setup(gen_disc)
 
 
-model.set_particle_mass(pmass)
-model.add_sink(center_mass,(0,0,0),(0,0,0),center_racc)
-model.set_cfl_cour(C_cour)
-model.set_cfl_force(C_force)
 
+    model.set_particle_mass(pmass)
+    model.add_sink(center_mass,(0,0,0),(0,0,0),center_racc)
+    model.set_cfl_cour(C_cour)
+    model.set_cfl_force(C_force)
 
-model.do_vtk_dump("init_disc.vtk", True)
-model.dump("init_disc")
+    model.do_vtk_dump("init_disc.vtk", True)
+    model.dump("init_disc")
 
+    model.change_htolerance(1.3)
+    model.timestep()
+    model.change_htolerance(1.1)
 
-model.change_htolerance(1.3)
-model.timestep()
-model.change_htolerance(1.1)
+t_start = model.get_time()
 
-
-t_target = 1
-ndump = 100
-t_dumps = [i*t_target/ndump for i in range(ndump+1)]
+dt_dump = 1e-1
+ndump = 1000
+t_dumps = [i*dt_dump for i in range(ndump+1)]
 
 idump = 0
 for ttarg in t_dumps:
-    model.evolve_until(ttarg)
+    if ttarg >= t_start:
+        model.evolve_until(ttarg)
 
-    dump_name = f"disc_{idump:04}"
-    model.do_vtk_dump(dump_name+".vtk", True)
-    model.dump(dump_name+".sham")
+        model.do_vtk_dump(get_vtk_dump_name(idump), True)
+        model.dump(get_dump_name(idump))
     idump += 1

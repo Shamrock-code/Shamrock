@@ -19,8 +19,6 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
-#include "shammodels/sph/modules/setup/CombinerAdd.hpp"
-#include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
@@ -45,14 +43,22 @@ namespace shammodels::sph::modules {
 
         void apply_setup(SetupNodePtr setup, bool part_reordering);
 
-        inline std::shared_ptr<ISPHSetupNode>
-        make_generator_lattice_hcp(Tscal dr, std::pair<Tvec, Tvec> box) {
-            return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP<Tvec>(context, dr, box));
-        }
-        inline std::shared_ptr<ISPHSetupNode>
-        make_combiner_add(SetupNodePtr parent1, SetupNodePtr parent2) {
-            return std::shared_ptr<ISPHSetupNode>(new CombinerAdd<Tvec>(context, parent1, parent2));
-        }
+        std::shared_ptr<ISPHSetupNode>
+        make_generator_lattice_hcp(Tscal dr, std::pair<Tvec, Tvec> box);
+
+        std::shared_ptr<ISPHSetupNode> make_generator_disc_mc(
+            Tscal part_mass,
+            Tscal disc_mass,
+            Tscal r_in,
+            Tscal r_out,
+            std::function<Tscal(Tscal)> sigma_profile,
+            std::function<Tscal(Tscal)> H_profile,
+            std::function<Tscal(Tscal)> rot_profile,
+            std::function<Tscal(Tscal)> cs_profile,
+            std::mt19937 eng);
+
+        std::shared_ptr<ISPHSetupNode>
+        make_combiner_add(SetupNodePtr parent1, SetupNodePtr parent2);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

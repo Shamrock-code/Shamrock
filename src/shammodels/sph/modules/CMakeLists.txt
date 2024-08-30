@@ -14,5 +14,6 @@ target_sources(shamrock_lib
         ParticleReordering.cpp
         AnalysisSodTube.cpp
         SPHSetup.cpp
+        setup/GeneratorMCDisc.cpp
     PUBLIC
     )

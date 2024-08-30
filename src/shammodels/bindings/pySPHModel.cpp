@@ -46,7 +46,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_max_neigh_cache_size", &TConfig::set_max_neigh_cache_size)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
-        .def("set_eos_locally_isothermalLP07", &TConfig::set_eos_locally_isothermalLP07)
+        .def(
+            "set_eos_locally_isothermalLP07",
+            [](TConfig &self, Tscal cs0, Tscal q, Tscal r0) {
+                self.set_eos_locally_isothermalLP07(cs0, q, r0);
+            },
+            py::kw_only(),
+            py::arg("cs0"),
+            py::arg("q"),
+            py::arg("r0"))
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "to_json",
@@ -147,6 +155,40 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
+        .def(
+            "make_generator_disc_mc",
+            [](TSPHSetup &self,
+               Tscal part_mass,
+               Tscal disc_mass,
+               Tscal r_in,
+               Tscal r_out,
+               std::function<Tscal(Tscal)> sigma_profile,
+               std::function<Tscal(Tscal)> H_profile,
+               std::function<Tscal(Tscal)> rot_profile,
+               std::function<Tscal(Tscal)> cs_profile,
+               u64 random_seed) {
+                return self.make_generator_disc_mc(
+                    part_mass,
+                    disc_mass,
+                    r_in,
+                    r_out,
+                    sigma_profile,
+                    H_profile,
+                    rot_profile,
+                    cs_profile,
+                    std::mt19937(random_seed));
+            },
+            py::kw_only(),
+            py::arg("part_mass"),
+            py::arg("disc_mass"),
+            py::arg("r_in"),
+            py::arg("r_out"),
+            py::arg("sigma_profile"),
+            py::arg("H_profile"),
+            py::arg("rot_profile"),
+            py::arg("cs_profile"),
+            py::arg("random_seed")
+            )
         .def(
             "make_combiner_add",
             [](TSPHSetup &self,

@@ -17,6 +17,49 @@
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
+#include "shammodels/sph/modules/setup/CombinerAdd.hpp"
+#include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
+#include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
+shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp(
+    Tscal dr, std::pair<Tvec, Tvec> box) {
+    return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP<Tvec>(context, dr, box));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
+shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_generator_disc_mc(
+    Tscal part_mass,
+    Tscal disc_mass,
+    Tscal r_in,
+    Tscal r_out,
+    std::function<Tscal(Tscal)> sigma_profile,
+    std::function<Tscal(Tscal)> H_profile,
+    std::function<Tscal(Tscal)> rot_profile,
+    std::function<Tscal(Tscal)> cs_profile,
+    std::mt19937 eng) {
+    return std::shared_ptr<ISPHSetupNode>(new GeneratorMCDisc<Tvec, SPHKernel>(
+        context,
+        solver_config,
+        part_mass,
+        disc_mass,
+        r_in,
+        r_out,
+        sigma_profile,
+        H_profile,
+        rot_profile,
+        cs_profile,
+        eng));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
+shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_combiner_add(
+    SetupNodePtr parent1, SetupNodePtr parent2) {
+    return std::shared_ptr<ISPHSetupNode>(new CombinerAdd<Tvec>(context, parent1, parent2));
+}
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(

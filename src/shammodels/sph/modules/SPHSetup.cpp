@@ -15,10 +15,12 @@
 
 #include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
+#include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(SetupNodePtr setup) {
+void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
+    SetupNodePtr setup, bool part_reordering) {
 
     if (!bool(setup)) {
         shambase::throw_with_loc<std::invalid_argument>("The setup shared pointer is empty");
@@ -42,6 +44,12 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(SetupNodeP
                 .update_load_balancing();
         });
     }
+
+    if (part_reordering) {
+        modules::ParticleReordering<Tvec, u32, SPHKernel>(context, solver_config, storage)
+            .reorder_particles();
+    }
+
     time_setup.end();
     if (shamcomm::world_rank() == 0) {
         logger::info_ln("SPH setup", "the setup took :", time_setup.elasped_sec(), "s");

@@ -147,7 +147,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
-        .def("apply_setup", &TSPHSetup::apply_setup);
+        .def(
+            "apply_setup",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr setup,
+               bool part_reordering) {
+                return self.apply_setup(setup, part_reordering);
+            },
+            py::arg("setup"),
+            py::kw_only(),
+            py::arg("part_reordering") = true);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {

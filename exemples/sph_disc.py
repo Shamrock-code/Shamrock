@@ -69,6 +69,9 @@ cs0 = cs_profile(rin)
 def rot_profile(r):
     return kep_profile(r)
 
+    # subkeplerian correction
+    # return ((kep_profile(r)**2) - (2*p+q)*cs_profile(r)**2)**0.5
+
 def H_profile(r):
     H = (cs_profile(r) / omega_k(r))
     #fact = (2.**0.5) * 3.

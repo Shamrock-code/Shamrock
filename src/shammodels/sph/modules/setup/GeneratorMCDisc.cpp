@@ -122,20 +122,15 @@ shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
     std::vector<Tscal> vec_h;
     std::vector<Tscal> vec_cs;
 
-    Tscal min_h = 100000, max_h = 0;
     for (DiscOutput o : pos_data) {
         vec_pos.push_back(o.pos);
         vec_vel.push_back(o.velocity);
         // vec_u.push_back(o.cs * o.cs / (/*solver.eos_gamma * */ (eos_gamma - 1)));
         Tscal h = shamrock::sph::h_rho(pmass, o.rho * 0.1, Kernel::hfactd);
-        min_h   = sham::min(h, min_h);
-        max_h   = sham::max(h, max_h);
         vec_h.push_back(h);
         vec_cs.push_back(o.cs);
     }
-    logger::raw_ln(min_h, max_h);
 
-    logger::raw_ln(vec_pos[12227], vec_vel[12227], vec_h[12227], vec_cs[12227]);
     // Make a patchdata from pos_data
     PatchData tmp(sched.pdl);
     if (!pos_data.empty()) {

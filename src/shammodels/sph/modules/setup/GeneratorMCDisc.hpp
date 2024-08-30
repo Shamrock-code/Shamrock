@@ -28,7 +28,7 @@ namespace shammodels::sph::modules {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Config  = SolverConfig<Tvec, SPHKernel>;
+        using Config = SolverConfig<Tvec, SPHKernel>;
 
         ShamrockCtx &context;
         Config &solver_config;
@@ -81,15 +81,16 @@ namespace shammodels::sph::modules {
             std::function<Tscal(Tscal)> cs_profile,
             std::mt19937 eng)
             : context(context), solver_config(solver_config), generator(make_generator(
-                                    part_mass,
-                                    disc_mass,
-                                    r_in,
-                                    r_out,
-                                    sigma_profile,
-                                    H_profile,
-                                    rot_profile,
-                                    cs_profile,
-                                    eng)), pmass(part_mass) {}
+                                                                  part_mass,
+                                                                  disc_mass,
+                                                                  r_in,
+                                                                  r_out,
+                                                                  sigma_profile,
+                                                                  H_profile,
+                                                                  rot_profile,
+                                                                  cs_profile,
+                                                                  eng)),
+              pmass(part_mass) {}
 
         bool is_done();
 
@@ -139,13 +140,18 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
           r_out(r_out), sigma_profile(sigma_profile), H_profile(H_profile),
           rot_profile(rot_profile), cs_profile(cs_profile), eng(eng), current_index(0) {
 
-            logger::debug_ln("GeneratorMCDisc", 
-            "part_mass",part_mass,
-            "disc_mass",disc_mass,
-            "r_in",r_in,
-            "r_out",r_out,
-            "Npart",Npart
-            );
+        logger::debug_ln(
+            "GeneratorMCDisc",
+            "part_mass",
+            part_mass,
+            "disc_mass",
+            disc_mass,
+            "r_in",
+            r_in,
+            "r_out",
+            r_out,
+            "Npart",
+            Npart);
 
         if (Npart == 0) {
             done = true;

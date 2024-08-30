@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file GeneratorMCDisc.hpp
+ * @file GeneratorMCDisc.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -54,8 +54,8 @@ auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::n
 
     auto vel = rot_speed * etheta;
 
-    //Tscal fs  = 1. - sycl::sqrt(r_in / r);
-    Tscal fs = 1;
+    // Tscal fs  = 1. - sycl::sqrt(r_in / r);
+    Tscal fs  = 1;
     Tscal rho = (sigma * fs) * sycl::exp(-z * z / (2 * H * H));
 
     DiscOutput out{pos, vel, cs, rho};
@@ -122,20 +122,20 @@ shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
     std::vector<Tscal> vec_h;
     std::vector<Tscal> vec_cs;
 
-    Tscal min_h=100000,max_h=0;
+    Tscal min_h = 100000, max_h = 0;
     for (DiscOutput o : pos_data) {
         vec_pos.push_back(o.pos);
         vec_vel.push_back(o.velocity);
         // vec_u.push_back(o.cs * o.cs / (/*solver.eos_gamma * */ (eos_gamma - 1)));
         Tscal h = shamrock::sph::h_rho(pmass, o.rho * 0.1, Kernel::hfactd);
-        min_h = sham::min(h,min_h);
-        max_h = sham::max(h,max_h);
+        min_h   = sham::min(h, min_h);
+        max_h   = sham::max(h, max_h);
         vec_h.push_back(h);
         vec_cs.push_back(o.cs);
     }
-    logger::raw_ln(min_h,max_h);
+    logger::raw_ln(min_h, max_h);
 
-    logger::raw_ln(vec_pos[12227],vec_vel[12227],vec_h[12227],vec_cs[12227]);
+    logger::raw_ln(vec_pos[12227], vec_vel[12227], vec_h[12227], vec_cs[12227]);
     // Make a patchdata from pos_data
     PatchData tmp(sched.pdl);
     if (!pos_data.empty()) {

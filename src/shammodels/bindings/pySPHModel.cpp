@@ -187,8 +187,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("H_profile"),
             py::arg("rot_profile"),
             py::arg("cs_profile"),
-            py::arg("random_seed")
-            )
+            py::arg("random_seed"))
         .def(
             "make_combiner_add",
             [](TSPHSetup &self,

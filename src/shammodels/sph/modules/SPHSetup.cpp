@@ -16,10 +16,10 @@
 #include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
-#include "shamrock/scheduler/DataInserterUtility.hpp"
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
+#include "shamrock/scheduler/DataInserterUtility.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>

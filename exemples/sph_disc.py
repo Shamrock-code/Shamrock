@@ -33,10 +33,10 @@ dump_prefix = "disc_"
 
 R_planet_base = 2
 planet_list = [
-    #{"R": R_planet_base*1, "mass": 1e-3, "racc": 0.01},
+    #{"R": R_planet_base*1, "mass": 1e-3, "racc": 0.05},
 
     # reso 3:2
-    #{"R": R_planet_base*(3/2)**(2/3), "mass": 1e-3, "racc": 0.01},
+    #{"R": R_planet_base*(3/2)**(2/3), "mass": 1e-3, "racc": 0.05},
 ]
 
 ####################################################
@@ -178,6 +178,52 @@ else:
 
     model.resize_simulation_box(bmin,bmax)
 
+    sink_list = [
+        {"mass": center_mass, "racc": center_racc, "pos" : (0,0,0), "vel" : (0,0,0)},
+    ]
+    for _p in planet_list:
+        mass = _p["mass"]
+        R = _p["R"]
+        racc = _p["racc"]
+
+        vphi = kep_profile(R)
+        pos = (R,0,0)
+        vel = (0,vphi,0)
+
+        sink_list.append({"mass": mass, "racc": racc, "pos" : pos, "vel" : vel})
+
+    sum_mass = sum(s["mass"] for s in sink_list)
+    vel_bary = (
+        sum(s["mass"]*s["vel"][0] for s in sink_list) / sum_mass,
+        sum(s["mass"]*s["vel"][1] for s in sink_list) / sum_mass,
+        sum(s["mass"]*s["vel"][2] for s in sink_list) / sum_mass
+    )
+    pos_bary = (
+        sum(s["mass"]*s["pos"][0] for s in sink_list) / sum_mass,
+        sum(s["mass"]*s["pos"][1] for s in sink_list) / sum_mass,
+        sum(s["mass"]*s["pos"][2] for s in sink_list) / sum_mass
+    )
+
+    print("sinks baryenceter : velocity {} position {}".format(vel_bary,pos_bary))
+
+    model.set_particle_mass(pmass)
+    for s in sink_list:
+        mass = s["mass"]
+        x,y,z = s["pos"]
+        vx,vy,vz = s["vel"]
+        racc = s["racc"]
+
+        x -= pos_bary[0]
+        y -= pos_bary[1]
+        z -= pos_bary[2]
+
+        vx -= vel_bary[0]
+        vy -= vel_bary[1]
+        vz -= vel_bary[2]
+
+        print("add sink : mass {} pos {} vel {} racc {}".format(mass,(x,y,z),(vx,vy,vz),racc))
+        model.add_sink(mass,(x,y,z),(vx,vy,vz),racc)
+
     setup = model.get_setup()
     gen_disc = setup.make_generator_disc_mc(
             part_mass = pmass,
@@ -192,21 +238,6 @@ else:
         )
     #print(comb.get_dot())
     setup.apply_setup(gen_disc)
-
-
-
-    model.set_particle_mass(pmass)
-    model.add_sink(center_mass,(0,0,0),(0,0,0),center_racc)
-    for p in planet_list:
-        mass = p["mass"]
-        R = p["R"]
-        racc = p["racc"]
-
-        vphi = kep_profile(R)
-        pos = (R,0,0)
-        vel = (0,vphi,0)
-
-        model.add_sink(mass,pos,vel,racc)
 
     model.set_cfl_cour(C_cour)
     model.set_cfl_force(C_force)

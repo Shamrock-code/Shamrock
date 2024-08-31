@@ -199,12 +199,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "apply_setup",
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr setup,
-               bool part_reordering) {
-                return self.apply_setup(setup, part_reordering);
+               bool part_reordering,
+               std::optional<u32> insert_step) {
+                return self.apply_setup(setup, part_reordering, insert_step);
             },
             py::arg("setup"),
             py::kw_only(),
-            py::arg("part_reordering") = true);
+            py::arg("part_reordering") = true,
+            py::arg("insert_step")     = std::nullopt);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {

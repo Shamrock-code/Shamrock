@@ -63,7 +63,7 @@ shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_combiner_add(
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
-    SetupNodePtr setup, bool part_reordering) {
+    SetupNodePtr setup, bool part_reordering, std::optional<u32> insert_step) {
 
     if (!bool(setup)) {
         shambase::throw_with_loc<std::invalid_argument>("The setup shared pointer is empty");
@@ -76,11 +76,14 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
 
     shamrock::DataInserterUtility inserter(sched);
-    u32 insert_step = sched.crit_patch_split * 8;
+    u32 _insert_step = sched.crit_patch_split * 8;
+    if (bool(insert_step)) {
+        _insert_step = insert_step.value();
+    }
 
     while (!setup->is_done()) {
 
-        shamrock::patch::PatchData pdat = setup->next_n(insert_step);
+        shamrock::patch::PatchData pdat = setup->next_n(_insert_step);
 
         inserter.push_patch_data<Tvec>(pdat, "xyz", sched.crit_patch_split * 8, [&]() {
             modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(context, solver_config, storage)

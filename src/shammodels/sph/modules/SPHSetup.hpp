@@ -41,7 +41,10 @@ namespace shammodels::sph::modules {
         SPHSetup(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void apply_setup(SetupNodePtr setup, bool part_reordering);
+        void apply_setup(
+            SetupNodePtr setup,
+            bool part_reordering,
+            std::optional<u32> insert_step = std::nullopt);
 
         std::shared_ptr<ISPHSetupNode>
         make_generator_lattice_hcp(Tscal dr, std::pair<Tvec, Tvec> box);

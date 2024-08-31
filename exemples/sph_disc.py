@@ -31,6 +31,14 @@ do_plots = False
 
 dump_prefix = "disc_"
 
+R_planet_base = 2
+planet_list = [
+    #{"R": R_planet_base*1, "mass": 1e-3, "racc": 0.01},
+
+    # reso 3:2
+    #{"R": R_planet_base*(3/2)**(2/3), "mass": 1e-3, "racc": 0.01},
+]
+
 ####################################################
 ####################################################
 ####################################################
@@ -189,6 +197,17 @@ else:
 
     model.set_particle_mass(pmass)
     model.add_sink(center_mass,(0,0,0),(0,0,0),center_racc)
+    for p in planet_list:
+        mass = p["mass"]
+        R = p["R"]
+        racc = p["racc"]
+
+        vphi = kep_profile(R)
+        pos = (R,0,0)
+        vel = (0,vphi,0)
+
+        model.add_sink(mass,pos,vel,racc)
+
     model.set_cfl_cour(C_cour)
     model.set_cfl_force(C_force)
 

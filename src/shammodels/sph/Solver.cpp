@@ -151,9 +151,13 @@ void vtk_dump_add_compute_field(
     using namespace shamrock::patch;
     u64 num_obj = sched.get_rank_count();
 
-    std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
+    if (num_obj > 0) {
+        std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
 
-    writter.write_field(field_dump_name, field_vals, num_obj);
+        writter.write_field(field_dump_name, field_vals, num_obj);
+    } else {
+        writter.write_field_no_buf<T>(field_dump_name);
+    }
 }
 
 template<class T>
@@ -167,9 +171,13 @@ void vtk_dump_add_field(
     using namespace shamrock::patch;
     u64 num_obj = sched.get_rank_count();
 
-    std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
+    if (num_obj > 0) {
+        std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
 
-    writter.write_field(field_dump_name, field_vals, num_obj);
+        writter.write_field(field_dump_name, field_vals, num_obj);
+    } else {
+        writter.write_field_no_buf<T>(field_dump_name);
+    }
 }
 
 template<class Tvec, template<class> class Kern>

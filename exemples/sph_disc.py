@@ -13,12 +13,13 @@ center_racc = 0.1
 rout = 10
 rin = 1
 
+# alpha_ss ~ alpha_AV * 0.08
+alpha_AV = 1e-3 / 0.08
 alpha_u = 1
-alpha_AV = 1
 beta_AV = 2
 
 q = 0.5
-p = 0.5
+p = 3./2.
 r0 = 1
 
 C_cour = 0.3
@@ -67,10 +68,10 @@ def cs_profile(r):
 cs0 = cs_profile(rin)
 
 def rot_profile(r):
-    return kep_profile(r)
+    # return kep_profile(r)
 
-    # subkeplerian correction
-    # return ((kep_profile(r)**2) - (2*p+q)*cs_profile(r)**2)**0.5
+    # subkeplerian correction
+    return ((kep_profile(r)**2) - (2*p+q)*cs_profile(r)**2)**0.5
 
 def H_profile(r):
     H = (cs_profile(r) / omega_k(r))

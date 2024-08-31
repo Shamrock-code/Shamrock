@@ -1770,6 +1770,8 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
         print += ("--------------------------------------------------------------------------------"
                   "-");
         logger::info_ln("sph::Model", print);
+        logger::info_ln(
+            "sph::Model", "estimated rate :", dt * (3600 / tstep.elasped_sec()), "(tsim/hr)");
     }
 
     storage.timings_details.reset();

@@ -154,15 +154,16 @@ shamalgs::SerializeHelper::SerializeHelper(
       storage(std::forward<std::unique_ptr<sycl::buffer<u8>>>(input)) {
 
     header_size = extract_preahead(storage);
-    // std::cout << "prehead read :" << header_size << std::endl;
-    storage_header
-        = extract_header(dev_sched->get_queue().q, storage, header_size, pre_head_lenght());
 
     logger::debug_sycl_ln(
         "SerializeHelper",
-        "SerializeHelper(std::unique_ptr<sycl::buffer<u8>> &&)",
-        storage->size(),
-        header_size);
+        shambase::format(
+            "Init SerializeHelper from buffer\n    storage size : {},\n    header_size : {}",
+            storage->size(),
+            header_size));
+
+    storage_header
+        = extract_header(dev_sched->get_queue().q, storage, header_size, pre_head_lenght());
 
     head_device = pre_head_lenght() + header_size;
 }

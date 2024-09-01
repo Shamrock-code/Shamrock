@@ -183,6 +183,9 @@ void vtk_dump_add_field(
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
     std::string filename, bool add_patch_world_id) {
+
+    StackEntry stack_loc{};
+
     using namespace shamrock;
     using namespace shamrock::patch;
     shamrock::SchedulerUtility utility(scheduler());
@@ -196,6 +199,7 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
     ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+        logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             sycl::accessor acc_h{
                 shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),

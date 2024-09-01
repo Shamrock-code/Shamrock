@@ -269,7 +269,7 @@ class PatchScheduler {
     for_each_local_patch_nonempty(std::function<void(const shamrock::patch::Patch &)> fct) {
         patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
             shamrock::patch::Patch &cur_p
-                = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
+                = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
 
             if ((!cur_p.is_err_mode()) && (!pdat.is_empty())) {
                 fct(cur_p);
@@ -279,7 +279,7 @@ class PatchScheduler {
 
     inline u32 get_patch_rank_owner(u64 patch_id) {
         shamrock::patch::Patch &cur_p
-            = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
+            = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
         return cur_p.node_owner_id;
     }
 
@@ -287,7 +287,7 @@ class PatchScheduler {
         std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchData &)> fct) {
         patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
             shamrock::patch::Patch &cur_p
-                = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
+                = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
 
             if ((!cur_p.is_err_mode()) && (!pdat.is_empty())) {
                 fct(cur_p, pdat);

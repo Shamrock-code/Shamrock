@@ -99,9 +99,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     // flux
     modules::ComputeFlux flux_compute(context, solver_config, storage);
     flux_compute.compute_flux();
-    if (solver_config.is_dust_on())
+    if (solver_config.is_dust_on()) {
         flux_compute.compute_flux_dust();
-
+    }
     // compute dt fields
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
     dt_compute.compute_dt_fields();

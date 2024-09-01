@@ -344,7 +344,6 @@ namespace shammodels::basegodunov {
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tvec>>>
             flux_rhov_dust_face_zm;
-        
         // time derivative dust density
         Component<shamrock::ComputeField<Tscal>> dtrho_dust;
         // time derivative dust momemtum

@@ -81,8 +81,9 @@ namespace shammodels::basegodunov {
 
         inline void set_eos_gamma(Tscal gamma) { eos_gamma = gamma; }
 
-        RiemmanSolverMode riemman_config = HLL;
-        SlopeMode slope_config           = VanLeer_sym;
+        RiemmanSolverMode riemman_config  = HLL;
+        SlopeMode slope_config            = VanLeer_sym;
+        bool face_half_time_interpolation = true;
         DustConfig dust_config{};
 
         inline bool is_dust_on() { return dust_config.is_dust_on(); }

@@ -15,6 +15,7 @@
  *
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/memory.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"

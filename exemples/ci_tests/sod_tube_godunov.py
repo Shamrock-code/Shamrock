@@ -36,7 +36,16 @@ cfg.set_riemann_solver_hll()
 #cfg.set_slope_lim_vanleer_std()
 #cfg.set_slope_lim_vanleer_sym()
 cfg.set_slope_lim_minmod()
+cfg.set_face_time_interpolation(False)
 model.set_config(cfg)
+
+
+# without face time interpolation
+# 0.07979993131348424 (0.17970690984930585, 0.0, 0.0) 0.12628776652228088
+
+# with face time interpolation
+# 0.08011697770557873 (0.18007740444376066, 0.0, 0.0) 0.12610383365359476
+
 
 
 kx,ky,kz = 2*np.pi,0,0
@@ -158,10 +167,13 @@ if False:
 
     vx = rhovelx / rho
 
-    plt.plot(X,rho,'.',label="rho")
-    plt.plot(X,vx,'.',label="v")
-    plt.plot(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1),'.',label="P")
-    #plt.plot(X,rhoetot,'.',label="rhoetot")
+
+    fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(9,6),dpi=125)
+
+    plt.scatter(X,rho, rasterized=True,label="rho")
+    plt.scatter(X,vx, rasterized=True,label="v")
+    plt.scatter(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1), rasterized=True,label="P")
+    #plt.scatter(X,rhoetot, rasterized=True,label="rhoetot")
     plt.legend()
     plt.grid()
 
@@ -184,11 +196,10 @@ if False:
     plt.plot(arr_x,arr_rho,color = "black",label="analytic")
     plt.plot(arr_x,arr_vx,color = "black")
     plt.plot(arr_x,arr_P,color = "black")
+    plt.ylim(-0.1,1.1)
+    plt.xlim(0.5,1.5)
     #######
     plt.show()
-
-
-
 
 #################
 ### Test CD

@@ -45,11 +45,12 @@ namespace shammodels::basegodunov::modules {
         FaceInterpolate(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void interpolate_rho_to_face();
-        void interpolate_v_to_face();
-        void interpolate_P_to_face();
-        void interpolate_rho_dust_to_face();
-        void interpolate_v_dust_to_face();
+        void interpolate_rho_to_face(Tscal dt_interp);
+        void interpolate_v_to_face(Tscal dt_interp);
+        void interpolate_P_to_face(Tscal dt_interp);
+
+        void interpolate_rho_dust_to_face(Tscal dt_interp);
+        void interpolate_v_dust_to_face(Tscal dt_interp);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

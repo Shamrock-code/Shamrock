@@ -94,9 +94,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     // shift values
     modules::FaceInterpolate face_interpolator(context, solver_config, storage);
-    face_interpolator.interpolate_rho_to_face();
-    face_interpolator.interpolate_v_to_face();
-    face_interpolator.interpolate_P_to_face();
+    Tscal dt_face_interp = 0;
+    if (solver_config.face_half_time_interpolation) {
+        dt_face_interp = dt_input / 2.0;
+    }
+    face_interpolator.interpolate_rho_to_face(dt_face_interp);
+    face_interpolator.interpolate_v_to_face(dt_face_interp);
+    face_interpolator.interpolate_P_to_face(dt_face_interp);
 
     // flux
     modules::ComputeFlux flux_compute(context, solver_config, storage);

@@ -22,11 +22,28 @@
 
 namespace shammodels::sph::modules {
 
+    /**
+     * @brief This struct is used to generate a dot graph of the setup tree
+     *
+     * It is composed of a name, a type and a vector of inputs.
+     */
     struct ISPHSetupNode_Dot {
         std::string name;
         u32 type;
         std::vector<ISPHSetupNode_Dot> inputs;
 
+        /**
+         * @brief This function generate a dot graph for the setup tree
+         *
+         * This function is used to generate a dot graph that describes the
+         * setup tree. It takes a counter and a string as input, and update
+         * the counter and the string to generate the dot graph.
+         *
+         * @param counter a counter that is used to generate the node id in
+         * the dot graph
+         * @param out the string that will be updated to contain the dot graph
+         * @return the new value of the counter
+         */
         u32 add_node(u32 &counter, std::string &out) {
 
             std::vector<u32> inputs_id{};
@@ -48,8 +65,18 @@ namespace shammodels::sph::modules {
         }
     };
 
+    /**
+     * @class ISPHSetupNode
+     * @brief This class is an interface that all SPH setup nodes must implement.
+     * It describe an operation associated to a node in the setup tree.
+     */
     class ISPHSetupNode {
         public:
+        /**
+         * @brief This function return true if the setup is done
+         *
+         * @return true if done, false otherwise
+         */
         virtual bool is_done() = 0;
 
         /**
@@ -61,12 +88,36 @@ namespace shammodels::sph::modules {
          */
         virtual shamrock::patch::PatchData next_n(u32 nmax) = 0;
 
+        /**
+         * @brief Get the name of the node
+         * @return The name of the node
+         */
         virtual std::string get_name() = 0;
 
+        /**
+         * @brief Get a dot subgraph describing the node and its childrens (recursively)
+         *
+         * This function should return a ISPHSetupNode_Dot object which contains
+         * all the information needed to generate a dot graph for the node and
+         * its children.
+         *
+         * @return A ISPHSetupNode_Dot object
+         */
         virtual ISPHSetupNode_Dot get_dot_subgraph() = 0;
 
+        /**
+         * @brief Virtual destructor for the ISPHSetupNode class
+         */
         virtual ~ISPHSetupNode() = default;
 
+        /**
+         * @brief Generate a dot graph for the setup tree
+         *
+         * This function returns a string containing a dot graph that describes the
+         * setup tree.
+         *
+         * @return A string containing a dot graph
+         */
         std::string get_dot() {
             std::string out;
 
@@ -85,6 +136,7 @@ namespace shammodels::sph::modules {
         }
     };
 
+    /// Alias for a shared pointer to an ISPHSetupNode
     using SetupNodePtr = std::shared_ptr<ISPHSetupNode>;
 
 } // namespace shammodels::sph::modules

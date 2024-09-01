@@ -33,14 +33,23 @@ dump_prefix = "disc_"
 
 R_planet_base = 2
 planet_list = [
-    #{"R": R_planet_base*1, "mass": 1e-3, "racc": 0.05},
+    #{"R": R_planet_base*1, "mass": 1e-3},
 
     # reso 3:2
-    #{"R": R_planet_base*(3/2)**(2/3), "mass": 1e-3, "racc": 0.05},
+    #{"R": R_planet_base*(3/2)**(2/3), "mass": 1e-3},
 
     # reso 2:1
-    #{"R": R_planet_base*(2/1)**(2/3), "mass": 1e-3, "racc": 0.05},
+    #{"R": R_planet_base*(2/1)**(2/3), "mass": 1e-3},
 ]
+
+racc_overhill = 0.1
+for i in range(len(planet_list)):
+    planet_list[i]["racc"] = racc_overhill*shamrock.phys.hill_radius(
+        R= planet_list[i]["R"],
+        m= planet_list[i]["mass"],
+        M= center_mass
+        )
+
 
 ####################################################
 ####################################################

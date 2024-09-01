@@ -581,6 +581,11 @@ std::string PatchScheduler::dump_status() {
            << " [" << p.coord_min[2] << "," << p.coord_max[2] << "] )\n";
     }
 
+    ss << shambase::format(
+        "patch_list.id_patch_to_global_idx :\n{}\n", patch_list.id_patch_to_global_idx);
+    ss << shambase::format(
+        "patch_list.id_patch_to_local_idx :\n{}\n", patch_list.id_patch_to_local_idx);
+
     ss << " -> SchedulerPatchData\n";
     ss << "    owned data : \n";
 

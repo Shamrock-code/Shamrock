@@ -711,7 +711,9 @@ namespace shammodels::sph {
          * @param fname The name of the dump file.
          */
         inline void load_from_dump(std::string fname) {
-            logger::info_ln("SPH", "Loading state from dump", fname);
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("SPH", "Loading state from dump", fname);
+            }
 
             // Load the context state and recover user metadata
             std::string metadata_user{};
@@ -734,6 +736,7 @@ namespace shammodels::sph {
             logger::debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();
+            sched.patch_list.build_global_idx_map();
             sched.update_local_load_value([&](shamrock::patch::Patch p) {
                 return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
             });

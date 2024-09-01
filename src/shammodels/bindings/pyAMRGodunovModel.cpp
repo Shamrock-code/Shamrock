@@ -86,6 +86,11 @@ namespace shammodels::basegodunov {
                 [](TConfig &self) {
                     self.slope_config = Minmod;
                 })
+            .def(
+                "set_face_time_interpolation",
+                [](TConfig &self, bool face_time_interpolate) {
+                    self.face_half_time_interpolation = face_time_interpolate;
+                })
 
             .def(
                 "set_dust_mode_dhll",

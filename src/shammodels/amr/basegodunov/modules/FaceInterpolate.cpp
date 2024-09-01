@@ -114,7 +114,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
               acc_dz_v_cell{dz_v_cell, cgh, sycl::read_only} {}
 
         Tscal get_dt_rho(Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
-            return -sham::dot(v, grad_rho) + rho * (dx_v[0] + dy_v[1] + dz_v[2]);
+            return -(sham::dot(v, grad_rho) + rho * (dx_v[0] + dy_v[1] + dz_v[2]));
         }
 
         std::array<Tscal, 2> get_link_field_val(u32 id_a, u32 id_b) const {
@@ -315,7 +315,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
               acc_grad_P_cell{grad_P_cell, cgh, sycl::read_only} {}
 
         Tvec get_dt_v(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho, Tvec grad_P) const {
-            return v[0] * dx_v + v[1] * dy_v + v[2] * dz_v + grad_P / rho;
+            return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v + grad_P / rho);
         }
 
         std::array<Tvec, 2> get_link_field_val(u32 id_a, u32 id_b) const {

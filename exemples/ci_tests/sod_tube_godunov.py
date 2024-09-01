@@ -36,7 +36,7 @@ cfg.set_riemann_solver_hll()
 #cfg.set_slope_lim_vanleer_std()
 #cfg.set_slope_lim_vanleer_sym()
 cfg.set_slope_lim_minmod()
-cfg.set_face_time_interpolation(False)
+cfg.set_face_time_interpolation(True)
 model.set_config(cfg)
 
 
@@ -44,7 +44,7 @@ model.set_config(cfg)
 # 0.07979993131348424 (0.17970690984930585, 0.0, 0.0) 0.12628776652228088
 
 # with face time interpolation
-# 0.08011697770557873 (0.18007740444376066, 0.0, 0.0) 0.12610383365359476
+# 0.07894793711859852 (0.17754462339166546, 0.0, 0.0) 0.12498304725061045
 
 
 

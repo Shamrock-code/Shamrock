@@ -86,10 +86,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     grad_compute.compute_grad_v_van_leer();
     grad_compute.compute_grad_P_van_leer();
     if (solver_config.is_dust_on()) {
-        // TODO : Implement grad for dust
-
-        // grad_compute.compute_grad_rho_dust_van_leer();
-        // grad_compute.compute_grad_v_dust_van_leer();
+        grad_compute.compute_grad_rho_dust_van_leer();
+        grad_compute.compute_grad_v_dust_van_leer();
     }
 
     // shift values

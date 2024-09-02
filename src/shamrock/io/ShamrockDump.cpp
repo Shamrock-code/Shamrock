@@ -51,7 +51,7 @@ namespace shamrock {
 
         std::vector<u64> all_offsets = all_bytecounts;
 
-        std::exclusive_scan(all_offsets.begin(), all_offsets.end(), all_offsets.begin(), 0);
+        std::exclusive_scan(all_offsets.begin(), all_offsets.end(), all_offsets.begin(), u64{0});
 
         using namespace nlohmann;
 

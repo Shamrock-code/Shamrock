@@ -103,7 +103,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
                 Tvec acc_pxyz = shamalgs::reduction::sum(q, pxyz_acc, 0, Naccrete);
 
                 s_acc_mass += acc_mass;
-                s_acc_pxyz += acc_pxyz / s.mass;
+                s_acc_pxyz += acc_pxyz;
 
                 pdat.keep_ids(*std::get<0>(id_list_keep), std::get<1>(id_list_keep));
             }

@@ -276,7 +276,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
     shamrock::ComputeField<Tscal> cfield_dtrho_dust
         = utility.make_compute_field<Tscal>("dt rho dust", ndust * AMRBlock::block_size);
     shamrock::ComputeField<Tvec> cfield_dtrhov_dust
-        = utility.make_compute_field<Tvec>("dt rhovel dust", nduts * AMRBlock::block_size);
+        = utility.make_compute_field<Tvec>("dt rhovel dust", ndust * AMRBlock::block_size);
 
     shambase::DistributedData<NGLink<Tscal>> &flux_rho_dust_face_xp
         = storage.flux_rho_dust_face_xp.get();
@@ -311,12 +311,12 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         u32 id                                = p.id_patch;
         OrientedAMRGraph &oriented_cell_graph = storage.cell_link_graph.get().get(id);
 
-        NGLink<Tscal> &patch_flux_rho_dust_face_xp = flux_rho_face_xp.get(id);
-        NGLink<Tscal> &patch_flux_rho_dust_face_xm = flux_rho_face_xm.get(id);
-        NGLink<Tscal> &patch_flux_rho_dust_face_yp = flux_rho_face_yp.get(id);
-        NGLink<Tscal> &patch_flux_rho_dust_face_ym = flux_rho_face_ym.get(id);
-        NGLink<Tscal> &patch_flux_rho_dust_face_zp = flux_rho_face_zp.get(id);
-        NGLink<Tscal> &patch_flux_rho_dust_face_zm = flux_rho_face_zm.get(id);
+        NGLink<Tscal> &patch_flux_rho_dust_face_xp = flux_rho_dust_face_xp.get(id);
+        NGLink<Tscal> &patch_flux_rho_dust_face_xm = flux_rho_dust_face_xm.get(id);
+        NGLink<Tscal> &patch_flux_rho_dust_face_yp = flux_rho_dust_face_yp.get(id);
+        NGLink<Tscal> &patch_flux_rho_dust_face_ym = flux_rho_dust_face_ym.get(id);
+        NGLink<Tscal> &patch_flux_rho_dust_face_zp = flux_rho_dust_face_zp.get(id);
+        NGLink<Tscal> &patch_flux_rho_dust_face_zm = flux_rho_dust_face_zm.get(id);
 
         NGLink<Tvec> &patch_flux_rhov_dust_face_xp = flux_rhov_dust_face_xp.get(id);
         NGLink<Tvec> &patch_flux_rhov_dust_face_xm = flux_rhov_dust_face_xm.get(id);
@@ -457,38 +457,62 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
 
                 graph_iter_xp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(id_a, id_b);
-                    dtrho_dust -= flux_rho_dust_face_xp[link_id] * S_ij;
-                    dtrhov_dust -= flux_rhov_dust_face_xp[link_id] * S_ij;
+                    dtrho_dust -= flux_rho_dust_face_xp
+                                      [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                  * S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_xp
+                                       [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                   * S_ij;
                 });
 
                 graph_iter_yp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(id_a, id_b);
-                    dtrho_dust -= flux_rho_dust_face_yp[link_id] * S_ij;
-                    dtrhov_dust -= flux_rhov_dust_face_yp[link_id] * S_ij;
+                    dtrho_dust -= flux_rho_dust_face_yp
+                                      [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                  * S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_yp
+                                       [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                   * S_ij;
                 });
 
                 graph_iter_zp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(id_a, id_b);
-                    dtrho_dust -= flux_rho_dust_face_zp[link_id] * S_ij;
-                    dtrhov_dust -= flux_rhov_dust_face_zp[link_id] * S_ij;
+                    dtrho_dust -= flux_rho_dust_face_zp
+                                      [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                  * S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_zp
+                                       [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                   * S_ij;
                 });
 
                 graph_iter_xm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(id_a, id_b);
-                    dtrho_dust -= flux_rho_dust_face_xm[link_id] * S_ij;
-                    dtrhov_dust -= flux_rhov_dust_face_xm[link_id] * S_ij;
+                    dtrho_dust -= flux_rho_dust_face_xm
+                                      [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                  * S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_xm
+                                       [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                   * S_ij;
                 });
 
                 graph_iter_ym.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(id_a, id_b);
-                    dtrho_dust -= flux_rho_dust_face_ym[link_id] * S_ij;
-                    dtrhov_dust -= flux_rhov_dust_face_ym[link_id] * S_ij;
+                    dtrho_dust -= flux_rho_dust_face_ym
+                                      [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                  * S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_ym
+                                       [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                   * S_ij;
                 });
 
                 graph_iter_zm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(id_a, id_b);
-                    dtrho_dust -= flux_rho_dust_face_zm[link_id] * S_ij;
-                    dtrhov_dust -= flux_rhov_dust_face_zm[link_id] * S_ij;
+                    dtrho_dust -= flux_rho_dust_face_zm
+                                      [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                  * S_ij;
+                    dtrhov_dust -= flux_rhov_dust_face_zm
+                                       [link_id + block_id * (AMRBlock::block_size * ndust)]
+                                   * S_ij;
                 });
 
                 dtrho_dust /= V_i;

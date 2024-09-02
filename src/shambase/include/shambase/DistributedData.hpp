@@ -108,7 +108,21 @@ namespace shambase {
          *
          * @throw If the object is not found.
          */
-        inline T &get(u64 id) { return data.at(id); }
+        inline T &get(u64 id) {
+            try {
+                return data.at(id);
+            } catch (std::out_of_range &) {
+
+                std::vector<u64> id_list;
+
+                for_each([&](u64 id, T &) {
+                    id_list.push_back(id);
+                });
+
+                throw make_except_with_loc<std::runtime_error>(format(
+                    "The querried id {} does not exist, current id list is {}", id, id_list));
+            }
+        }
 
         /**
          * @brief Checks if an object exists in the collection.

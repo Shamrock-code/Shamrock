@@ -40,7 +40,13 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
+    u32 sink_id        = 0;
+    bool had_accretion = false;
+    std::string log    = "sink accretion :";
     for (Sink &s : sink_parts) {
+
+        Tscal s_acc_mass = 0;
+        Tvec s_acc_pxyz  = {0, 0, 0};
 
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
             u32 Nobj = pdat.get_obj_cnt();
@@ -96,14 +102,28 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
 
                 Tvec acc_pxyz = shamalgs::reduction::sum(q, pxyz_acc, 0, Naccrete);
 
-                s.mass += acc_mass;
-                s.velocity += acc_pxyz / s.mass;
-
-                logger::raw_ln("accretion : += ", acc_mass, acc_pxyz / s.mass);
+                s_acc_mass += acc_mass;
+                s_acc_pxyz += acc_pxyz / s.mass;
 
                 pdat.keep_ids(*std::get<0>(id_list_keep), std::get<1>(id_list_keep));
             }
         });
+
+        Tscal sum_acc_mass = shamalgs::collective::allreduce_sum(s_acc_mass);
+        Tvec sum_acc_pxyz  = shamalgs::collective::allreduce_sum(s_acc_pxyz);
+
+        s.mass += sum_acc_mass;
+        s.velocity += sum_acc_pxyz / s.mass;
+        if (sum_acc_mass > 0) {
+            had_accretion = true;
+            log += shambase::format(
+                "\n    id {} mass {} vel {}", sink_id, sum_acc_mass, sum_acc_pxyz / s.mass);
+        }
+
+        sink_id++;
+    }
+    if (shamcomm::world_rank() == 0 && had_accretion) {
+        logger::info_ln("sph::Sink", log);
     }
 }
 

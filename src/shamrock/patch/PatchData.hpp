@@ -208,7 +208,7 @@ namespace shamrock::patch {
 
         template<class T>
         bool check_field_type(u32 idx) {
-            var_t &tmp = fields[idx];
+            var_t &tmp = fields.at(idx);
 
             PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 
@@ -222,7 +222,7 @@ namespace shamrock::patch {
         template<class T>
         PatchDataField<T> &get_field(u32 idx) {
 
-            var_t &tmp = fields[idx];
+            var_t &tmp = fields.at(idx);
 
             PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 
@@ -242,7 +242,7 @@ namespace shamrock::patch {
         template<class T>
         sycl::buffer<T> &get_field_buf_ref(u32 idx) {
 
-            var_t &tmp = fields[idx];
+            var_t &tmp = fields.at(idx);
 
             PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 

@@ -84,6 +84,32 @@ namespace shamrock {
         shamalgs::collective::write_header(mfile, metadata_patch, head_ptr);
         shamalgs::collective::write_header(mfile, sout, head_ptr);
 
+        logger::debug_ln(
+            "ShamrockDump",
+            shambase::format(
+                "table sizes {} {} {}", metadata_patch.size(), metadata_user.size(), sout.size()));
+
+        if (/*do check*/ true) {
+            auto check_same_mpi = [](std::string s) {
+                u64 out = shamalgs::collective::allreduce_sum(s.size());
+                if (out != s.size() * shamcomm::world_size()) {
+                    logger::err_ln(
+                        "ShamrockDump",
+                        shambase::format(
+                            "string size mismatch between all processes,\n    size : {}\nthe "
+                            "string : {}\n",
+                            s.size(),
+                            s));
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "size mismatch in shamrock dump header");
+                }
+            };
+
+            check_same_mpi(metadata_user);
+            check_same_mpi(metadata_patch);
+            check_same_mpi(sout);
+        }
+
         // map of patch id -> all_pids idx
         std::unordered_map<u64, size_t> map{};
         for (u32 i = 0; i < all_pids.size(); i++) {

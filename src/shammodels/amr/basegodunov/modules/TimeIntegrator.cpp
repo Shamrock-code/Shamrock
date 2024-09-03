@@ -71,6 +71,49 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
                 });
             });
         });
+
+    if (solver_config.is_dust_on()) {
+
+        shamrock::ComputeField<Tscal> &cfield_dtrho_dust = storage.dtrho_dust.get();
+        shamrock::ComputeField<Tvec> &cfield_dtrhov_dust = storage.dtrhov_dust.get();
+
+        const u32 irho_dust    = pdl.get_field_idx<Tscal>("rho_dust");
+        const u32 irhovel_dust = pdl.get_field_idx<Tvec>("rhovel_dust");
+
+        scheduler().for_each_patchdata_nonempty(
+            [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+                logger::debug_ln(
+                    "[AMR Flux]", "forward euler integration patch for dust fields", p.id_patch);
+
+                sycl::queue &q = shamsys::instance::get_compute_queue();
+                u32 id         = p.id_patch;
+
+                sycl::buffer<Tscal> &dt_rho_dust_patch = cfield_dtrho_dust.get_buf_check(id);
+                sycl::buffer<Tvec> &dt_rhov_dust_patch = cfield_dtrhov_dust.get_buf_check(id);
+
+                u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+                u32 ndust      = solver_config.dust_config.ndust;
+
+                sycl::buffer<Tscal> &buf_rho_dust = pdat.get_field_buf_ref<Tscal>(irho_dust);
+                sycl::buffer<Tvec> &buf_rhov_dust = pdat.get_field_buf_ref<Tvec>(irhovel_dust);
+
+                q.submit([&, dt, ndust](sycl::handler &cgh) {
+                    sycl::accessor acc_dt_rho_dust_patch{dt_rho_dust_patch, cgh, sycl::read_only};
+                    sycl::accessor acc_dt_rhov_dust_patch{dt_rhov_dust_patch, cgh, sycl::read_only};
+
+                    sycl::accessor rho_dust{buf_rho_dust, cgh, sycl::read_write};
+                    sycl::accessor rhov_dust{buf_rhov_dust, cgh, sycl::read_write};
+
+                    shambase::parralel_for(
+                        cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
+                            const u32 cell_global_id = (u32) id_a;
+
+                            rho_dust[id_a] += dt * acc_dt_rho_dust_patch[id_a];
+                            rhov_dust[id_a] += dt * acc_dt_rhov_dust_patch[id_a];
+                        });
+                });
+            });
+    }
 }
 
 template class shammodels::basegodunov::modules::TimeIntegrator<f64_3, i64_3>;

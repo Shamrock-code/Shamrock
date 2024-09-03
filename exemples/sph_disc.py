@@ -31,7 +31,7 @@ do_plots = False
 
 dump_prefix = "disc_"
 
-R_planet_base = 2
+R_planet_base = 2 # multiplier for the planet orbit radius
 planet_list = [
     #{"R": R_planet_base*1, "mass": 1e-3},
 
@@ -50,6 +50,11 @@ for i in range(len(planet_list)):
         M= center_mass
         )
 
+center_object_is_binary = False
+m1_over_centermass = 0.8
+m2_over_centermass = 0.2
+binary_a = 0.5
+binary_e = 0.8
 
 ####################################################
 ####################################################
@@ -132,6 +137,43 @@ if do_plots:
     plt.show()
 
 
+####################################################
+# Binary coordinate mapping
+####################################################
+def kepler_to_cartesian_no_rotation(m1, m2, a, e):
+    nu=np.radians(90)
+    # Total mass and reduced mass
+    M = m1 + m2
+    mu = m1 * m2 / M
+
+    # Distance between the two stars
+    r = a * (1 - e**2) / (1 + e * np.cos(nu))
+
+    # Orbital positions in the orbital plane
+    x_orb = r * np.cos(nu)
+    y_orb = r * np.sin(nu)
+
+    # Orbital velocities in the orbital plane
+    h = np.sqrt(G * M * a * (1 - e**2))
+    vx_orb = -G * M / h * np.sin(nu)
+    vy_orb = G * M / h * (e + np.cos(nu))
+
+    # Position in 2D orbital plane
+    r_orb = np.array([x_orb, y_orb])
+
+    # Velocity in 2D orbital plane
+    v_orb = np.array([vx_orb, vy_orb])
+
+    # Center of mass positions
+    r1 = -m2 / M * r_orb
+    r2 = m1 / M * r_orb
+
+    # Center of mass velocities
+    v1 = -m2 / M * v_orb
+    v2 = m1 / M * v_orb
+
+    return r1, r2, v1, v2
+
 
 ####################################################
 # Dump handling
@@ -190,9 +232,28 @@ else:
 
     model.resize_simulation_box(bmin,bmax)
 
-    sink_list = [
-        {"mass": center_mass, "racc": center_racc, "pos" : (0,0,0), "vel" : (0,0,0)},
-    ]
+    sink_list = []
+
+    if center_object_is_binary:
+        m1 = m1_over_centermass * center_mass
+        m2 = m2_over_centermass * center_mass
+
+        r1, r2, v1, v2 = kepler_to_cartesian_no_rotation(m1, m2, binary_a, binary_e)
+
+        p1 = (r1[0],r1[1],0)
+        v1 = (v1[0],v1[1],0)
+
+        p2 = (r2[0],r2[1],0)
+        v2 = (v2[0],v2[1],0)
+        sink_list = [
+            {"mass": m1, "racc": center_racc, "pos" : p1, "vel" : v1},
+            {"mass": m2, "racc": center_racc, "pos" : p2, "vel" : v2},
+        ]
+    else:
+        sink_list = [
+            {"mass": center_mass, "racc": center_racc, "pos" : (0,0,0), "vel" : (0,0,0)},
+        ]
+
     for _p in planet_list:
         mass = _p["mass"]
         R = _p["R"]
@@ -261,10 +322,14 @@ else:
     model.timestep()
     model.change_htolerance(1.1)
 
+sink_history = []
+
+sink_history.append(model.get_sinks())
+
 t_start = model.get_time()
 
-dt_dump = 1e-1
-ndump = 1000
+dt_dump = 1e-2
+ndump = 100
 t_dumps = [i*dt_dump for i in range(ndump+1)]
 
 idump = 0
@@ -274,4 +339,24 @@ for ttarg in t_dumps:
 
         model.do_vtk_dump(get_vtk_dump_name(idump), True)
         model.dump(get_dump_name(idump))
+        sink_history.append(model.get_sinks())
     idump += 1
+
+sink_pos_X = [[] for i in range(len(sink_history[0]))]
+sink_pos_Y = [[] for i in range(len(sink_history[0]))]
+sink_pos_Z = [[] for i in range(len(sink_history[0]))]
+
+for h in sink_history:
+    for i in range(len(h)):
+        x,y,z = h[i]["pos"]
+        print(x,y,z)
+
+        sink_pos_X[i].append(x)
+        sink_pos_Y[i].append(y)
+        sink_pos_Z[i].append(z)
+
+for i in range(len(sink_history[0])):
+    plt.plot(sink_pos_X[i],sink_pos_Y[i])
+
+plt.axis('equal')
+plt.show()

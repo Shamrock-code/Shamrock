@@ -46,6 +46,7 @@ namespace shammodels::basegodunov::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         Tscal compute_cfl();
+        Tscal compute_dust_cfl();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

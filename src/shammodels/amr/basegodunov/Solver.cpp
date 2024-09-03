@@ -124,6 +124,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     modules::ComputeCFL cfl_compute(context, solver_config, storage);
     f64 new_dt = cfl_compute.compute_cfl();
 
+    // if new physics like dust is added then use the smallest dt
+    if (solver_config.is_dust_on())
+        new_dt = std::min(new_dt, cfl_compute.compute_dust_cfl());
+
     solver_config.set_next_dt(new_dt);
     solver_config.set_time(t_current + dt_input);
 

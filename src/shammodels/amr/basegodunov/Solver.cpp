@@ -102,6 +102,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     face_interpolator.interpolate_v_to_face(dt_face_interp);
     face_interpolator.interpolate_P_to_face(dt_face_interp);
 
+    if (solver_config.is_dust_on()) {
+        face_interpolator.interpolate_rho_dust_to_face(dt_face_interp);
+        face_interpolator.interpolate_v_dust_to_face(dt_face_interp);
+    }
+
     // flux
     modules::ComputeFlux flux_compute(context, solver_config, storage);
     flux_compute.compute_flux();

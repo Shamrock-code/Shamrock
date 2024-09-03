@@ -695,6 +695,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
     class RhoDustInterpolate {
         public:
         GetShift<Tvec, TgridVec, AMRBlock> shift_get;
+        u32 nvar;
 
         sycl::accessor<Tscal, 1, sycl::access::mode::read, sycl::target::device> acc_rho_dust_cell;
         sycl::accessor<Tvec, 1, sycl::access::mode::read, sycl::target::device>
@@ -710,6 +711,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
 
         RhoDustInterpolate(
             sycl::handler &cgh,
+            u32 nvar,
             sycl::buffer<Tvec> &aabb_block_lower,
             sycl::buffer<Tscal> &aabb_cell_size,
             sycl::buffer<Tscal> &rho_dust_cell,
@@ -720,7 +722,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             sycl::buffer<Tvec> &dx_v_dust_cell,
             sycl::buffer<Tvec> &dy_v_dust_cell,
             sycl::buffer<Tvec> &dz_v_dust_cell)
-            : shift_get(cgh, aabb_block_lower, aabb_cell_size),
+            : shift_get(cgh, aabb_block_lower, aabb_cell_size), nvar(nvar),
               acc_rho_dust_cell{rho_dust_cell, cgh, sycl::read_only},
               acc_grad_rho_dust_cell{grad_rho_dust_cell, cgh, sycl::read_only},
               dt_interp(dt_interp), acc_vel_dust_cell{vel_dust_cell, cgh, sycl::read_only},
@@ -740,7 +742,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 + rho_dust * (dx_v_dust[0] + dy_v_dust[1] + dz_v_dust[2]));
         }
 
-        u32 nvar;
         std::array<Tscal, 2> get_link_field_val(u32 id_a, u32 id_b) const {
             const u32 icell_a = id_a / nvar;
             const u32 icell_b = id_b / nvar;
@@ -944,6 +945,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
         VelDustInterpolate(
             sycl::handler &cgh,
+            u32 nvar,
             sycl::buffer<Tvec> &aabb_block_lower,
             sycl::buffer<Tscal> &aabb_cell_size,
             sycl::buffer<Tvec> &vel_dust_cell,
@@ -953,7 +955,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             // For time interpolation
             Tscal dt_interp,
             sycl::buffer<Tscal> &rho_dust_cell)
-            : shift_get(cgh, aabb_block_lower, aabb_cell_size),
+            : shift_get(cgh, aabb_block_lower, aabb_cell_size), nvar(nvar),
               acc_vel_dust_cell{vel_dust_cell, cgh, sycl::read_only},
               acc_dx_v_dust_cell{dx_v_dust_cell, cgh, sycl::read_only},
               acc_dy_v_dust_cell{dy_v_dust_cell, cgh, sycl::read_only},

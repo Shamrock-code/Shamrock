@@ -17,7 +17,6 @@
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
-#include <utility>
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim() {

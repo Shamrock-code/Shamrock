@@ -502,8 +502,8 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
                 dtrho_dust /= V_i;
                 dtrhov_dust /= V_i;
 
-                acc_dt_rho_dust_patch[icell_a]  = dtrho_dust;
-                acc_dt_rhov_dust_patch[icell_a] = dtrhov_dust;
+                acc_dt_rho_dust_patch[icell_a * ndust + ndust_off_loc]  = dtrho_dust;
+                acc_dt_rhov_dust_patch[icell_a * ndust + ndust_off_loc] = dtrhov_dust;
             });
         });
     });

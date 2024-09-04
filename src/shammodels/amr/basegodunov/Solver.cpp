@@ -109,9 +109,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     // compute dt fields
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
     dt_compute.compute_dt_fields();
-    if (solver_config.is_dust_on())
+    if (solver_config.is_dust_on()) {
         dt_compute.compute_dt_dust_fields();
-
+    }
 
     // RK2 + flux lim
 

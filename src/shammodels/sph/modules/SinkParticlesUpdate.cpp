@@ -103,7 +103,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
                 Tvec acc_pxyz = shamalgs::reduction::sum(q, pxyz_acc, 0, Naccrete);
 
                 s_acc_mass += acc_mass;
-                s_acc_pxyz += acc_pxyz / s.mass;
+                s_acc_pxyz += acc_pxyz;
 
                 pdat.keep_ids(*std::get<0>(id_list_keep), std::get<1>(id_list_keep));
             }
@@ -210,9 +210,10 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
             sycl::buffer<Tvec> buf_sync_axyz(pdat.get_obj_cnt());
 
             Tscal sink_mass = s.mass;
+            Tscal sink_racc = s.accretion_radius;
             Tvec sink_pos   = s.pos;
 
-            q.submit([&, G, epsilon_grav, sink_mass, sink_pos](sycl::handler &cgh) {
+            q.submit([&, G, epsilon_grav, sink_mass, sink_pos, sink_racc](sycl::handler &cgh) {
                 sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
                 sycl::accessor axyz_ext{buf_axyz_ext, cgh, sycl::read_write};
                 sycl::accessor axyz_sync{buf_sync_axyz, cgh, sycl::write_only, sycl::no_init};
@@ -223,7 +224,14 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
                     Tvec delta = r_a - sink_pos;
                     Tscal d    = sycl::length(delta);
 
-                    Tvec force      = G * delta / (d * d * d);
+                    Tvec force = G * delta / (d * d * d);
+
+                    // This is a hack to avoid the sink kaboom effect
+                    // when the particle is being advected close to the sink before being accreted
+                    if (d < sink_racc) {
+                        force = {0, 0, 0};
+                    }
+
                     axyz_sync[id_a] = force * gpart_mass;
                     axyz_ext[id_a] += -force * sink_mass;
                 });

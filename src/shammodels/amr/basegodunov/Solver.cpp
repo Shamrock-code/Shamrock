@@ -86,10 +86,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     grad_compute.compute_grad_v_van_leer();
     grad_compute.compute_grad_P_van_leer();
     if (solver_config.is_dust_on()) {
-        // TODO : Implement grad for dust
-
-        // grad_compute.compute_grad_rho_dust_van_leer();
-        // grad_compute.compute_grad_v_dust_van_leer();
+        grad_compute.compute_grad_rho_dust_van_leer();
+        grad_compute.compute_grad_v_dust_van_leer();
     }
 
     // shift values
@@ -110,10 +108,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     // flux
     modules::ComputeFlux flux_compute(context, solver_config, storage);
     flux_compute.compute_flux();
-
+    if (solver_config.is_dust_on()) {
+        flux_compute.compute_flux_dust();
+    }
     // compute dt fields
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
     dt_compute.compute_dt_fields();
+    // TODO call compute_dt_dust when dust_config is on
 
     // RK2 + flux lim
 

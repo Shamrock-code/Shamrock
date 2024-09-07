@@ -63,7 +63,7 @@ namespace shamphys {
      * @tparam Tscal Scalar type
      *
      * The equation of state is given by:
-     * \f$ p = c_{s,0}^2 (r / r_0)^{-q} \rho \f$
+     * \f$ p = (c_{s,0} (r / r_0)^{-q})^2 \rho \f$
      */
     template<class Tscal>
     struct EOS_Config_LocallyIsothermal_LP07 {
@@ -94,6 +94,38 @@ namespace shamphys {
         const EOS_Config_LocallyIsothermal_LP07<Tscal> &lhs,
         const EOS_Config_LocallyIsothermal_LP07<Tscal> &rhs) {
         return (lhs.cs0 == rhs.cs0) && (lhs.q == rhs.q) && (lhs.r0 == rhs.r0);
+    }
+
+    /**
+     * @brief Configuration struct for the locally isothermal equation of state from Farris 2014
+     *
+     * @tparam Tscal Scalar type
+     *
+     * The equation of state is given by:
+     * \f$ c_s = (H/r) \sqrt(- \phi_{\rm grav}) \f$
+     */
+    template<class Tscal>
+    struct EOS_Config_LocallyIsothermalDisc_Farris2014 {
+        Tscal h_over_r = 0.05;
+    };
+
+    /**
+     * @brief Equal operator for the EOS_Config_LocallyIsothermalDisc_Farris2014 struct
+     *
+     * @tparam Tscal Scalar type
+     * @param lhs First EOS_Config_LocallyIsothermalDisc_Farris2014 struct to compare
+     * @param rhs Second EOS_Config_LocallyIsothermalDisc_Farris2014 struct to compare
+     *
+     * This function checks if two EOS_Config_LocallyIsothermalDisc_Farris2014 structs are equal by
+     * comparing their cs0, q, and r0 values.
+     *
+     * @return true if the two structs have the same cs0, q, and r0 values, false otherwise
+     */
+    template<class Tscal>
+    inline bool operator==(
+        const EOS_Config_LocallyIsothermalDisc_Farris2014<Tscal> &lhs,
+        const EOS_Config_LocallyIsothermalDisc_Farris2014<Tscal> &rhs) {
+        return (lhs.h_over_r == rhs.h_over_r);
     }
 
 } // namespace shamphys

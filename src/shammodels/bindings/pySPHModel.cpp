@@ -55,6 +55,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("cs0"),
             py::arg("q"),
             py::arg("r0"))
+        .def(
+            "set_eos_locally_isothermalFA2014",
+            [](TConfig &self, Tscal h_over_r) {
+                self.set_eos_locally_isothermalFA2014(h_over_r);
+            },
+            py::kw_only(),
+            py::arg("h_over_r"))
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "to_json",

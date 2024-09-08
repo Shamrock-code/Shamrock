@@ -31,9 +31,8 @@ function setupcompiler {
     source /opt/cray/pe/cpe/23.12/restore_lmod_system_defaults.sh
     module list
 
-
+    # See : https://dci.dci-gitlab.cines.fr/webextranet/software_stack/libraries/index.html#compiling-intel-llvm
     echo " -- clone inte/llvm"
-    # Cloning the code on a login node.
     git clone --branch="sycl" https://github.com/intel/llvm ${INTELLLVM_GIT_DIR} || true
     cd ${INTELLLVM_GIT_DIR}
 

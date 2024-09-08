@@ -87,12 +87,28 @@ namespace shamrock {
                                               "inserted below the split_threshold, sorrrrrry ...");
             }
 
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("DataInserterUtility", "reattributing data ...");
+            }
+
+            shambase::Timer treatrib;
+            treatrib.start();
             // move data into the corect patches
             SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
             ReattributeDataUtility reatrib(sched);
             sptree.attach_buf();
             reatrib.reatribute_patch_objects(sptree, main_field_name);
             sched.check_patchdata_locality_corectness();
+
+            treatrib.end();
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "DataInserterUtility", "reattributing data done in ", treatrib.get_time_str());
+            }
+
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("DataInserterUtility", "run scheduler step ...");
+            }
 
             load_balance_update();
 

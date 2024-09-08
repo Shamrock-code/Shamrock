@@ -22,28 +22,43 @@ export LD_LIBRARY_PATH=$INTELLLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 export MPICH_GPU_SUPPORT_ENABLED=1
 
 function setupcompiler {
+    echo " ---- Running compiler setup ----"
 
+    echo " -- Restoring env default"
+    source /opt/cray/pe/cpe/23.12/restore_lmod_system_defaults.sh
+    echo " -- module purge"
     module purge
     source /opt/cray/pe/cpe/23.12/restore_lmod_system_defaults.sh
+    module list
+
+
+    echo " -- clone inte/llvm"
+    # Cloning the code on a login node.
+    git clone --branch="sycl" https://github.com/intel/llvm ${INTELLLVM_GIT_DIR} || true
+    cd ${INTELLLVM_GIT_DIR}
+
     module purge
 
-    # to get cmake and ninja
-    pip3 install -U cmake ninja
-
-    module load PrgEnv-amd
+    module load cpe/23.12
     module load cray-python
-    module load CCE-GPU-2.1.0
-    module load rocm/5.7.1 # 5.5.1 -> 5.7.1
+    module load rocm/5.7.1
 
+    module list
 
-    python3 ${INTELLLVM_GIT_DIR}/buildbot/configure.py \
+    pip3 install -U ninja cmake
+
+    python3 buildbot/configure.py \
         --hip \
-        --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=$ROCM_PATH" \
-        --cmake-gen "Ninja" \
-        --cmake-opt="-DCMAKE_INSTALL_PREFIX=${INTELLLVM_INSTALL_DIR}"
+        --cmake-opt="-DCMAKE_C_COMPILER=amdclang" \
+        --cmake-opt="-DCMAKE_CXX_COMPILER=amdclang++" \
+        --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=${ROCM_PATH}" \
+        --cmake-opt="-DCMAKE_INSTALL_PREFIX=${INTELLLVM_INSTALL_DIR}" \
+        --cmake-gen="Ninja"
 
-    (cd ${INTELLLVM_GIT_DIR}/build && $MAKE_EXEC "${MAKE_OPT[@]}" all libsycldevice)
-    (cd ${INTELLLVM_GIT_DIR}/build && $MAKE_EXEC install)
+    cd build
+
+    time ninja -k0 all lib/all tools/libdevice/libsycldevice
+    time ninja -k0 install
 
     module purge
     loadmodules
@@ -64,7 +79,8 @@ function shamconfigure {
         -DINTEL_LLVM_PATH="${INTELLLVM_INSTALL_DIR}" \
         -DCMAKE_CXX_COMPILER="${INTELLLVM_INSTALL_DIR}/bin/clang++" \
         -DCMAKE_C_COMPILER="${INTELLLVM_INSTALL_DIR}/bin/clang" \
-        -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=${ROCM_PATH} -isystem ${CRAY_MPICH_PREFIX}/include -L${CRAY_MPICH_PREFIX}/lib -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
+        -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=${ROCM_PATH} -isystem ${CRAY_MPICH_PREFIX}/include" \
+        -DCMAKE_EXE_LINKER_FLAGS="-L"${CRAY_MPICH_PREFIX}/lib" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \

@@ -5,6 +5,7 @@ import utils.sysinfo
 import utils.envscript
 import utils.amd_arch
 from utils.setuparg import *
+from utils.oscmd import *
 
 NAME = "Adastra mi250x Intel LLVM ROCM"
 PATH = "machine/debian-generic/intel-llvm"
@@ -38,7 +39,7 @@ def setup(arg : SetupArg):
     INTELLLVM_GIT_DIR = builddir+"/.env/intel-llvm-git"
     INTELLLVM_INSTALL_DIR = builddir + "/.env/intel-llvm-installdir"
 
-    utils.intel_llvm.clone_intel_llvm(INTELLLVM_GIT_DIR)
+    #utils.intel_llvm.clone_intel_llvm(INTELLLVM_GIT_DIR)
 
     ENV_SCRIPT_PATH = builddir+"/activate"
 
@@ -62,6 +63,7 @@ def setup(arg : SetupArg):
     source_file = "env_built_intel-llvm.sh"
     source_path = os.path.abspath(os.path.join(cur_file, "../"+source_file))
 
+    run_cmd("mkdir -p "+builddir)
     utils.envscript.write_env_file(
         source_path = source_path,
         header = ENV_SCRIPT_HEADER,

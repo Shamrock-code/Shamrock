@@ -55,6 +55,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("cs0"),
             py::arg("q"),
             py::arg("r0"))
+        .def(
+            "set_eos_locally_isothermalFA2014",
+            [](TConfig &self, Tscal h_over_r) {
+                self.set_eos_locally_isothermalFA2014(h_over_r);
+            },
+            py::kw_only(),
+            py::arg("h_over_r"))
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "to_json",
@@ -422,6 +429,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def("set_solver_config", &T::set_solver_config)
         .def("add_sink", &T::add_sink)
+        .def(
+            "get_sinks",
+            [](T &self) {
+                py::list list_out;
+
+                if (!self.solver.storage.sinks.is_empty()) {
+                    for (auto &sink : self.solver.storage.sinks.get()) {
+                        py::dict sink_dic;
+                        sink_dic["pos"]              = sink.pos;
+                        sink_dic["velocity"]         = sink.velocity;
+                        sink_dic["sph_acceleration"] = sink.sph_acceleration;
+                        sink_dic["ext_acceleration"] = sink.ext_acceleration;
+                        sink_dic["mass"]             = sink.mass;
+                        sink_dic["angular_momentum"] = sink.angular_momentum;
+                        sink_dic["accretion_radius"] = sink.accretion_radius;
+                        list_out.append(sink_dic);
+                    }
+                }
+
+                return list_out;
+            })
         .def(
             "gen_config_from_phantom_dump",
             [](T &self, PhantomDump &dump, bool bypass_error) {

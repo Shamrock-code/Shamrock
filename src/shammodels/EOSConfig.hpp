@@ -55,8 +55,13 @@ namespace shammodels {
         /// Locally isothermal equation of state configuration from Lodato Price 2007
         using LocallyIsothermalLP07 = shamphys::EOS_Config_LocallyIsothermal_LP07<Tscal>;
 
+        /// Locally isothermal equation of state configuration from Lodato Price 2007
+        using LocallyIsothermalFA2014
+            = shamphys::EOS_Config_LocallyIsothermalDisc_Farris2014<Tscal>;
+
         /// Variant type to store the EOS configuration
-        using Variant = std::variant<Adiabatic, LocallyIsothermal, LocallyIsothermalLP07>;
+        using Variant = std::
+            variant<Adiabatic, LocallyIsothermal, LocallyIsothermalLP07, LocallyIsothermalFA2014>;
 
         /// Current EOS configuration
         Variant config = Adiabatic{};
@@ -88,6 +93,10 @@ namespace shammodels {
             config = LocallyIsothermalLP07{cs0, q, r0};
         }
 
+        inline void set_locally_isothermalFA2014(Tscal h_over_r) {
+            config = LocallyIsothermalFA2014{h_over_r};
+        }
+
         /**
          * @brief Print current status of the EOSConfig
          */
@@ -116,6 +125,9 @@ void shammodels::EOSConfig<Tvec>::print_status() {
         logger::raw_ln("locally isothermal : ");
     } else if (LocallyIsothermalLP07 *eos_config = std::get_if<LocallyIsothermalLP07>(&config)) {
         logger::raw_ln("locally isothermal (Lodato Price 2007) : ");
+    } else if (
+        LocallyIsothermalFA2014 *eos_config = std::get_if<LocallyIsothermalFA2014>(&config)) {
+        logger::raw_ln("locally isothermal (Farris 2014) : ");
     } else {
         shambase::throw_unimplemented();
     }
@@ -157,9 +169,10 @@ namespace shammodels {
             static_assert(shambase::always_false_v<Tvec>, "This Tvec type is not handled");
         }
 
-        using Adiabatic   = typename EOSConfig<Tvec>::Adiabatic;
-        using LocIsoT     = typename EOSConfig<Tvec>::LocallyIsothermal;
-        using LocIsoTLP07 = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
+        using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
+        using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
+        using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
+        using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
 
         if (const Adiabatic *eos_config = std::get_if<Adiabatic>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "adiabatic"}, {"gamma", eos_config->gamma}};
@@ -172,6 +185,11 @@ namespace shammodels {
                 {"cs0", eos_config->cs0},
                 {"q", eos_config->q},
                 {"r0", eos_config->r0}};
+        } else if (const LocIsoTFA2014 *eos_config = std::get_if<LocIsoTFA2014>(&p.config)) {
+            j = json{
+                {"Tvec", type_id},
+                {"eos_type", "locally_isothermal_fa2014"},
+                {"h_over_r", eos_config->h_over_r}};
         } else {
             shambase::throw_unimplemented(); // should never be reached
         }
@@ -218,9 +236,10 @@ namespace shammodels {
         std::string eos_type;
         j.at("eos_type").get_to(eos_type);
 
-        using Adiabatic   = typename EOSConfig<Tvec>::Adiabatic;
-        using LocIsoT     = typename EOSConfig<Tvec>::LocallyIsothermal;
-        using LocIsoTLP07 = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
+        using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
+        using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
+        using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
+        using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
 
         if (eos_type == "adiabatic") {
             p.config = Adiabatic{j.at("gamma").get<Tscal>()};
@@ -229,6 +248,8 @@ namespace shammodels {
         } else if (eos_type == "locally_isothermal_lp07") {
             p.config = LocIsoTLP07{
                 j.at("cs0").get<Tscal>(), j.at("q").get<Tscal>(), j.at("r0").get<Tscal>()};
+        } else if (eos_type == "locally_isothermal_fa2014") {
+            p.config = LocIsoTFA2014{j.at("h_over_r").get<Tscal>()};
         } else {
             shambase::throw_unimplemented("wtf !");
         }

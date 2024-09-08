@@ -45,10 +45,11 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         return storage.merged_patchdata_ghost.get().get(id).total_elements;
     }));
 
-    using SolverConfigEOS                 = typename Config::EOSConfig;
-    using SolverEOS_Adiabatic             = typename SolverConfigEOS::Adiabatic;
-    using SolverEOS_LocallyIsothermal     = typename SolverConfigEOS::LocallyIsothermal;
-    using SolverEOS_LocallyIsothermalLP07 = typename SolverConfigEOS::LocallyIsothermalLP07;
+    using SolverConfigEOS                   = typename Config::EOSConfig;
+    using SolverEOS_Adiabatic               = typename SolverConfigEOS::Adiabatic;
+    using SolverEOS_LocallyIsothermal       = typename SolverConfigEOS::LocallyIsothermal;
+    using SolverEOS_LocallyIsothermalLP07   = typename SolverConfigEOS::LocallyIsothermalLP07;
+    using SolverEOS_LocallyIsothermalFA2014 = typename SolverConfigEOS::LocallyIsothermalFA2014;
 
     if (SolverEOS_Adiabatic *eos_config
         = std::get_if<SolverEOS_Adiabatic>(&solver_config.eos_config.config)) {
@@ -165,6 +166,76 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                     Tscal rho_a  = rho_h(pmass, h[item], Kernel::hfactd);
 
                     Tscal P_a = EOS::pressure_from_cs(cs_out * cs_out, rho_a);
+
+                    P[item]  = P_a;
+                    cs[item] = cs_out;
+                });
+            });
+        });
+
+    } else if (
+        SolverEOS_LocallyIsothermalFA2014 *eos_config
+        = std::get_if<SolverEOS_LocallyIsothermalFA2014>(&solver_config.eos_config.config)) {
+
+        Tscal _G = solver_config.get_constant_G();
+
+        using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
+
+        auto &sink_parts = storage.sinks.get();
+        std::vector<Tvec> sink_pos;
+        std::vector<Tscal> sink_mass;
+        u32 sink_cnt = 0;
+
+        for (auto &s : sink_parts) {
+            sink_pos.push_back(s.pos);
+            sink_mass.push_back(s.mass);
+            sink_cnt++;
+        }
+
+        sycl::buffer<Tvec> sink_pos_buf{sink_pos};
+        sycl::buffer<Tscal> sink_mass_buf{sink_mass};
+
+        storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
+            auto &mfield                = storage.merged_xyzh.get().get(id);
+            sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(mfield.field_pos.get_buf());
+            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
+                sycl::accessor P{
+                    storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor cs{
+                    storage.soundspeed.get().get_buf_check(id),
+                    cgh,
+                    sycl::write_only,
+                    sycl::no_init};
+                sycl::accessor h{
+                    mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
+
+                sycl::accessor spos{sink_pos_buf, cgh, sycl::read_only};
+                sycl::accessor smass{sink_mass_buf, cgh, sycl::read_only};
+                u32 scount = sink_cnt;
+
+                Tscal pmass    = gpart_mass;
+                Tscal h_over_r = eos_config->h_over_r;
+                Tscal G        = _G;
+
+                cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
+                    using namespace shamrock::sph;
+
+                    Tvec R    = xyz[item];
+                    Tscal h_a = h[item];
+
+                    Tscal mpotential = 0;
+                    for (u32 i = 0; i < scount; i++) {
+                        Tvec s_r      = spos[i] - R;
+                        Tscal s_m     = smass[i];
+                        Tscal s_r_abs = sycl::length(s_r);
+                        mpotential += G * s_m / s_r_abs;
+                    }
+
+                    Tscal rho_a = rho_h(pmass, h_a, Kernel::hfactd);
+
+                    Tscal cs_out = h_over_r * sycl::sqrt(mpotential);
+                    Tscal P_a    = EOS::pressure_from_cs(cs_out * cs_out, rho_a);
 
                     P[item]  = P_a;
                     cs[item] = cs_out;

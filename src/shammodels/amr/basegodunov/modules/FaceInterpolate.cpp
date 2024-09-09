@@ -30,7 +30,6 @@ namespace {
         sycl::accessor<Tvec, 1, sycl::access::mode::read, sycl::target::device>
             acc_aabb_block_lower;
         sycl::accessor<Tscal, 1, sycl::access::mode::read, sycl::target::device> acc_aabb_cell_size;
-        u32 nvar;
 
         GetShift(
             sycl::handler &cgh,

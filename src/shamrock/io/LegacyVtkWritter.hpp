@@ -51,8 +51,9 @@ namespace shamrock {
             u64 &file_head_ptr) {
             StackEntry stack_loc{};
 
-            if(len == 0){
-                shambase::throw_with_loc<std::invalid_argument>("Cannot call this function with null buffer length");
+            if (len == 0) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "Cannot call this function with null buffer length");
             }
 
             const u32 new_cnt     = len * repr_count<T>;

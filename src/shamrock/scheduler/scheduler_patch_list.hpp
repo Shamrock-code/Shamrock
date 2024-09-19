@@ -31,6 +31,38 @@
  *
  */
 class SchedulerPatchList {
+
+    /**
+     * @brief id_patch_to_global_idx[patch_id] = index in global patch list
+     */
+    std::unordered_map<u64, u64> id_patch_to_global_idx;
+
+    /**
+     * @brief id_patch_to_local_idx[patch_id] = index in local patch list
+     */
+    std::unordered_map<u64, u64> id_patch_to_local_idx;
+
+    /**
+     * @brief recompute id_patch_to_global_idx
+     *
+     */
+    void build_global_idx_map();
+
+    /**
+     * @brief recompute id_patch_to_local_idx
+     */
+    void build_local_idx_map();
+
+    /**
+     * @brief contain the list of all patches in the simulation
+     */
+    std::vector<shamrock::patch::Patch> global;
+
+    /**
+     * @brief contain the list of patch owned by the current node
+     */
+    std::vector<shamrock::patch::Patch> local;
+
     public:
     /**
      * @brief The next available patch id
@@ -42,15 +74,31 @@ class SchedulerPatchList {
      */
     u64 _next_patch_id = 0;
 
-    /**
-     * @brief contain the list of all patches in the simulation
-     */
-    std::vector<shamrock::patch::Patch> global;
+    std::vector<shamrock::patch::Patch> &get_global_editable() {
+        id_patch_to_global_idx.clear();
+        return global;
+    }
+    std::vector<shamrock::patch::Patch> &get_local_editable() {
+        id_patch_to_local_idx.clear();
+        return local;
+    }
 
-    /**
-     * @brief contain the list of patch owned by the current node
-     */
-    std::vector<shamrock::patch::Patch> local;
+    const std::vector<shamrock::patch::Patch> &get_global() const { return global; }
+    const std::vector<shamrock::patch::Patch> &get_local() const { return local; }
+
+    const std::unordered_map<u64, u64> &get_id_patch_to_global_idx() {
+        if (id_patch_to_global_idx.empty()) {
+            build_global_idx_map();
+        }
+        return get_id_patch_to_global_idx();
+    }
+
+    const std::unordered_map<u64, u64> &get_id_patch_to_local_idx() {
+        if (id_patch_to_local_idx.empty()) {
+            build_local_idx_map();
+        }
+        return get_id_patch_to_local_idx();
+    }
 
     bool is_load_values_up_to_date = false; ///< Are patch load values up to date
 
@@ -107,27 +155,6 @@ class SchedulerPatchList {
         std::unordered_set<u64> &patch_id_lst,
         std::vector<u64> &to_send_idx,
         std::vector<u64> &to_recv_idx);
-
-    /**
-     * @brief id_patch_to_global_idx[patch_id] = index in global patch list
-     */
-    std::unordered_map<u64, u64> id_patch_to_global_idx;
-
-    /**
-     * @brief id_patch_to_local_idx[patch_id] = index in local patch list
-     */
-    std::unordered_map<u64, u64> id_patch_to_local_idx;
-
-    /**
-     * @brief recompute id_patch_to_global_idx
-     *
-     */
-    void build_global_idx_map();
-
-    /**
-     * @brief recompute id_patch_to_local_idx
-     */
-    void build_local_idx_map();
 
     /**
      * @brief reset Patch's pack index value

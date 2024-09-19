@@ -93,6 +93,7 @@ class PatchScheduler {
     std::string dump_status();
 
     inline void update_local_load_value(std::function<u64(shamrock::patch::Patch)> load_function) {
+        // TODO move to patch list
         for (u64 id : owned_patch_id) {
             shamrock::patch::Patch &p = patch_list.local[patch_list.id_patch_to_local_idx[id]];
             p.load_value              = load_function(p);
@@ -216,9 +217,11 @@ class PatchScheduler {
     template<class Function>
     inline void for_each_patch_data(Function &&fct) {
 
+        auto &_global_patch    = patch_list.get_global();
+        auto &global_patch_map = patch_list.get_id_patch_to_global_idx();
+
         patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
-            shamrock::patch::Patch &cur_p
-                = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
+            const shamrock::patch::Patch &cur_p = _global_patch[global_patch_map.at(patch_id)];
 
             if (!cur_p.is_err_mode()) {
                 fct(patch_id, cur_p, pdat);
@@ -229,9 +232,11 @@ class PatchScheduler {
     template<class Function>
     inline void for_each_patch(Function &&fct) {
 
+        auto &_global_patch    = patch_list.get_global();
+        auto &global_patch_map = patch_list.get_id_patch_to_global_idx();
+
         patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
-            shamrock::patch::Patch &cur_p
-                = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
+            const shamrock::patch::Patch &cur_p = _global_patch[global_patch_map.at(patch_id)];
 
             // TODO should feed the sycl queue to the lambda
             if (!cur_p.is_err_mode()) {
@@ -241,7 +246,8 @@ class PatchScheduler {
     }
 
     inline void for_each_global_patch(std::function<void(const shamrock::patch::Patch)> fct) {
-        for (shamrock::patch::Patch p : patch_list.global) {
+        auto &_global_patch = patch_list.get_global();
+        for (shamrock::patch::Patch p : _global_patch) {
             if (!p.is_err_mode()) {
                 fct(p);
             }
@@ -249,7 +255,8 @@ class PatchScheduler {
     }
 
     inline void for_each_local_patch(std::function<void(const shamrock::patch::Patch)> fct) {
-        for (shamrock::patch::Patch p : patch_list.local) {
+        auto &_local_patch = patch_list.get_local();
+        for (shamrock::patch::Patch p : _local_patch) {
             if (!p.is_err_mode()) {
                 fct(p);
             }
@@ -258,7 +265,8 @@ class PatchScheduler {
 
     inline void for_each_local_patchdata(
         std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchData &)> fct) {
-        for (shamrock::patch::Patch p : patch_list.local) {
+        auto &_local_patch = patch_list.get_local();
+        for (shamrock::patch::Patch p : _local_patch) {
             if (!p.is_err_mode()) {
                 fct(p, patch_data.get_pdat(p.id_patch));
             }
@@ -267,9 +275,11 @@ class PatchScheduler {
 
     inline void
     for_each_local_patch_nonempty(std::function<void(const shamrock::patch::Patch &)> fct) {
+        auto &_global_patch    = patch_list.get_global();
+        auto &global_patch_map = patch_list.get_id_patch_to_global_idx();
+
         patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
-            shamrock::patch::Patch &cur_p
-                = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
+            const shamrock::patch::Patch &cur_p = _global_patch[global_patch_map.at(patch_id)];
 
             if ((!cur_p.is_err_mode()) && (!pdat.is_empty())) {
                 fct(cur_p);
@@ -278,16 +288,19 @@ class PatchScheduler {
     }
 
     inline u32 get_patch_rank_owner(u64 patch_id) {
-        shamrock::patch::Patch &cur_p
-            = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
+        auto &_global_patch                 = patch_list.get_global();
+        auto &global_patch_map              = patch_list.get_id_patch_to_global_idx();
+        const shamrock::patch::Patch &cur_p = _global_patch[global_patch_map.at(patch_id)];
         return cur_p.node_owner_id;
     }
 
     inline void for_each_patchdata_nonempty(
         std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchData &)> fct) {
+        auto &_global_patch    = patch_list.get_global();
+        auto &global_patch_map = patch_list.get_id_patch_to_global_idx();
+
         patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
-            shamrock::patch::Patch &cur_p
-                = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
+            const shamrock::patch::Patch &cur_p = _global_patch[global_patch_map.at(patch_id)];
 
             if ((!cur_p.is_err_mode()) && (!pdat.is_empty())) {
                 fct(cur_p, pdat);
@@ -316,7 +329,7 @@ class PatchScheduler {
         // TODO : after a split the scheduler patch list state does not match global =
         // allgather(local) but here it is implicitely assumed, that's ... bad
         return shamalgs::collective::fetch_all_simple<T, Patch>(
-            src, patch_list.local, patch_list.global, [](Patch p) {
+            src, patch_list.get_local(), patch_list.get_global(), [](Patch p) {
                 return p.id_patch;
             });
     }
@@ -327,7 +340,7 @@ class PatchScheduler {
         using namespace shamrock::patch;
 
         return shamalgs::collective::fetch_all_storeload<T, Patch>(
-            src, patch_list.local, patch_list.global, [](Patch p) {
+            src, patch_list.get_local(), patch_list.get_global(), [](Patch p) {
                 return p.id_patch;
             });
     }

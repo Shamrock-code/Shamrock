@@ -231,7 +231,7 @@ namespace shamrock::patch {
 void to_json(nlohmann::json &j, const SchedulerPatchList &p) {
     j = nlohmann::json{
         {"_next_patch_id", p._next_patch_id},
-        {"global", p.global},
+        {"global", p.get_global()},
         //{"local", p.local}, // must be disabled to avoid differences between ranks
         {"is_load_values_up_to_date", p.is_load_values_up_to_date},
     };
@@ -239,7 +239,7 @@ void to_json(nlohmann::json &j, const SchedulerPatchList &p) {
 
 void from_json(const nlohmann::json &j, SchedulerPatchList &p) {
     j.at("_next_patch_id").get_to(p._next_patch_id);
-    j.at("global").get_to(p.global);
+    j.at("global").get_to(p.get_global_editable());
     // j.at("local").get_to(p.local); // must be disabled to avoid differences between ranks
     j.at("is_load_values_up_to_date").get_to(p.is_load_values_up_to_date);
 }

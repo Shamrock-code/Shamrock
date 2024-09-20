@@ -73,6 +73,9 @@ namespace shammodels::sph {
         Component<shamrock::ComputeField<Tvec>> old_axyz;
         Component<shamrock::ComputeField<Tscal>> old_duint;
 
+        Component<shamrock::ComputeField<Tvec>> old_dB_on_rho;
+        Component<shamrock::ComputeField<Tscal>> old_dpsi_on_ch;
+
         Component<std::vector<SinkParticle<Tvec>>> sinks;
 
         struct Timings {

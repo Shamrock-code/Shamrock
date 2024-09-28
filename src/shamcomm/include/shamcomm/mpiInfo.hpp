@@ -17,6 +17,7 @@
  * current process.
  */
 
+#include <optional>
 #include <string>
 namespace shamcomm {
 
@@ -35,27 +36,23 @@ namespace shamcomm {
         /**
          * @brief The MPI implementation does not support the feature
          */
-        No
+        No,
+        ForcedYes,
+        ForcedNo
     };
 
-    /**
-     * @brief State of the CUDA MPI awareness
-     */
-    extern StateMPI_Aware mpi_cuda_aware;
+    StateMPI_Aware get_mpi_cuda_aware_status();
 
-    /**
-     * @brief State of the ROCm MPI awareness
-     */
-    extern StateMPI_Aware mpi_rocm_aware;
+    StateMPI_Aware get_mpi_rocm_aware_status();
 
     /**
      * @brief Fetch the MPI capabilities
      *
      * This function fetches the MPI capabilities of the current process.
      *
-     * @param force_aware Force the MPI CUDA & ROCM aware capability to be reported as @c Yes
+     * @param forced_state Force the MPI CUDA & ROCM aware capability to be reported as @c ForcedOn
      */
-    void fetch_mpi_capabilities(bool force_aware);
+    void fetch_mpi_capabilities(std::optional<StateMPI_Aware> forced_state);
 
     /**
      * @brief Print the MPI capabilities

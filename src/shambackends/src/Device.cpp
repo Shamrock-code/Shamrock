@@ -170,12 +170,16 @@ namespace sham {
 
         // If CUDA-aware MPI is enabled, and the device is a CUDA device,
         // then we can use it
-        if ((shamcomm::mpi_cuda_aware == shamcomm::Yes) && (prop.backend == Backend::CUDA)) {
+        if ((shamcomm::get_mpi_cuda_aware_status() == shamcomm::Yes
+             || shamcomm::get_mpi_cuda_aware_status() == shamcomm::ForcedYes)
+            && (prop.backend == Backend::CUDA)) {
             dgpu_capable = true;
         }
 
         // Same for ROCm-aware MPI and ROCm devices
-        if ((shamcomm::mpi_rocm_aware == shamcomm::Yes) && (prop.backend == Backend::ROCM)) {
+        if ((shamcomm::get_mpi_rocm_aware_status() == shamcomm::Yes
+             || shamcomm::get_mpi_rocm_aware_status() == shamcomm::ForcedYes)
+            && (prop.backend == Backend::ROCM)) {
             dgpu_capable = true;
         }
 
@@ -218,7 +222,7 @@ namespace sham {
      */
     Device sycl_dev_to_sham_dev(usize i, const sycl::device &dev) {
         DeviceProperties prop       = fetch_properties(dev); // Get the properties of the device
-        DeviceMPIProperties propmpi = fetch_mpi_properties(dev, prop); // Get the MPI properties
+        DeviceMPIProperties propmpi = {false};               // Get the MPI properties
         return Device{
             i,      // The index of the device
             dev,    // The SYCL device

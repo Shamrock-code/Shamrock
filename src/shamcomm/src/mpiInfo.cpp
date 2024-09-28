@@ -23,10 +23,25 @@ namespace shamcomm {
 
     StateMPI_Aware mpi_cuda_aware;
     StateMPI_Aware mpi_rocm_aware;
+    bool fetched = false;
 
-    bool forced_on;
+    StateMPI_Aware get_mpi_cuda_aware_status() {
+        if (!fetched) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "MPI capabilities have not been fetched yet");
+        }
+        return mpi_cuda_aware;
+    }
 
-    void fetch_mpi_capabilities(bool force_aware) {
+    StateMPI_Aware get_mpi_rocm_aware_status() {
+        if (!fetched) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "MPI capabilities have not been fetched yet");
+        }
+        return mpi_rocm_aware;
+    }
+
+    void fetch_mpi_capabilities(std::optional<StateMPI_Aware> forced_state) {
         logs::debug_ln("Comm", "fetching mpi capabilities...");
 #ifdef FOUND_MPI_EXT
         logs::debug_mpi_ln("Comm", "FOUND_MPI_EXT is defined");
@@ -58,34 +73,43 @@ namespace shamcomm {
         mpi_rocm_aware = Unknown;
 #endif
 
-        if (force_aware) {
-            forced_on      = true;
-            mpi_cuda_aware = Yes;
-            mpi_rocm_aware = Yes;
+        if (forced_state) {
+            mpi_cuda_aware = *forced_state;
+            mpi_rocm_aware = *forced_state;
         }
+
+        fetched = true;
     }
 
     void print_mpi_capabilities() {
         using namespace shambase::term_colors;
-        if (!forced_on) {
-            if (mpi_cuda_aware == Yes) {
-                logs::print_ln(" - MPI CUDA-AWARE :", col8b_green() + "Yes" + reset());
-            } else if (mpi_cuda_aware == No) {
-                logs::print_ln(" - MPI CUDA-AWARE :", col8b_red() + "No" + reset());
-            } else if (mpi_cuda_aware == Unknown) {
-                logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Unknown" + reset());
-            }
 
-            if (mpi_rocm_aware == Yes) {
-                logs::print_ln(" - MPI ROCM-AWARE :", col8b_green() + "Yes" + reset());
-            } else if (mpi_rocm_aware == No) {
-                logs::print_ln(" - MPI ROCM-AWARE :", col8b_red() + "No" + reset());
-            } else if (mpi_rocm_aware == Unknown) {
-                logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Unknown" + reset());
-            }
-        } else {
+        switch (mpi_cuda_aware) {
+        case Yes: logs::print_ln(" - MPI CUDA-AWARE :", col8b_green() + "Yes" + reset()); break;
+        case No: logs::print_ln(" - MPI CUDA-AWARE :", col8b_red() + "No" + reset()); break;
+        case Unknown:
+            logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Unknown" + reset());
+            break;
+        case ForcedYes:
             logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Forced Yes" + reset());
+            break;
+        case ForcedNo:
+            logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Forced No" + reset());
+            break;
+        }
+
+        switch (mpi_rocm_aware) {
+        case Yes: logs::print_ln(" - MPI ROCM-AWARE :", col8b_green() + "Yes" + reset()); break;
+        case No: logs::print_ln(" - MPI ROCM-AWARE :", col8b_red() + "No" + reset()); break;
+        case Unknown:
+            logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Unknown" + reset());
+            break;
+        case ForcedYes:
             logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Forced Yes" + reset());
+            break;
+        case ForcedNo:
+            logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Forced No" + reset());
+            break;
         }
     }
 

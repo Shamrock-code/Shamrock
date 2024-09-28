@@ -51,6 +51,11 @@ namespace shamrock {
             u64 &file_head_ptr) {
             StackEntry stack_loc{};
 
+            if (len == 0) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "Cannot call this function with null buffer length");
+            }
+
             const u32 new_cnt     = len * repr_count<T>;
             const u32 new_cnt_sum = sum_len * repr_count<T>;
 
@@ -104,12 +109,8 @@ namespace shamrock {
 
             sycl::queue &q = shamsys::instance::get_compute_queue();
 
-            RT *usm_buf = nullptr;
-
-            shamalgs::collective::viewed_write_all_fetch_known_total_size(
-                fh, usm_buf, 0, new_cnt_sum, file_head_ptr);
-
-            sycl::free(usm_buf, q);
+            shamalgs::collective::viewed_write_all_fetch_known_total_size<RT>(
+                fh, nullptr, 0, new_cnt_sum, file_head_ptr);
         }
     } // namespace details
 

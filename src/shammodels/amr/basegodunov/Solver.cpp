@@ -100,6 +100,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     face_interpolator.interpolate_v_to_face(dt_face_interp);
     face_interpolator.interpolate_P_to_face(dt_face_interp);
 
+    if (solver_config.is_dust_on()) {
+        face_interpolator.interpolate_rho_dust_to_face(dt_face_interp);
+        face_interpolator.interpolate_v_dust_to_face(dt_face_interp);
+    }
+
     // flux
     modules::ComputeFlux flux_compute(context, solver_config, storage);
     flux_compute.compute_flux();
@@ -126,6 +131,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     modules::ComputeCFL cfl_compute(context, solver_config, storage);
     f64 new_dt = cfl_compute.compute_cfl();
+
+    // if new physics like dust is added then use the smallest dt
+    if (solver_config.is_dust_on())
+        new_dt = std::min(new_dt, cfl_compute.compute_dust_cfl());
 
     solver_config.set_next_dt(new_dt);
     solver_config.set_time(t_current + dt_input);

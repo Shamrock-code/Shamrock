@@ -63,7 +63,7 @@ namespace shammodels::basegodunov::modules {
 
         q.submit([&](sycl::handler &cgh) {
             NeighGraphLinkiterator link_iter{graph, cgh};
-            LinkFieldCompute compute(cgh, std::forward<Args>(args)...);
+            LinkFieldCompute compute(cgh, nvar, std::forward<Args>(args)...);
 
             sycl::accessor acc_link_field{
                 result.link_graph_field, cgh, sycl::write_only, sycl::no_init};

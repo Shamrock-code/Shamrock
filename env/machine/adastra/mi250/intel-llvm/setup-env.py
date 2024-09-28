@@ -39,7 +39,7 @@ def setup(arg : SetupArg):
     INTELLLVM_GIT_DIR = builddir+"/.env/intel-llvm-git"
     INTELLLVM_INSTALL_DIR = builddir + "/.env/intel-llvm-installdir"
 
-    #utils.intel_llvm.clone_intel_llvm(INTELLLVM_GIT_DIR)
+    utils.intel_llvm.clone_intel_llvm(INTELLLVM_GIT_DIR)
 
     ENV_SCRIPT_PATH = builddir+"/activate"
 

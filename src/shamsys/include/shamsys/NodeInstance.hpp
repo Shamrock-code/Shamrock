@@ -19,6 +19,7 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shamcomm/mpiInfo.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include <sycl/sycl.hpp>
 #include <vector>
@@ -64,6 +65,7 @@ namespace shamsys::instance {
     struct MPIInitInfo {
         int argc;
         char **argv;
+        std::optional<shamcomm::StateMPI_Aware> forced_state;
     };
 
     /**

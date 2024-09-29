@@ -528,6 +528,16 @@ namespace shamsys::instance {
 
         tmp::print_device_list_debug();
 
+        std::optional<shamcomm::StateMPI_Aware> forced_state = std::nullopt;
+
+        if (shamcmdopt::has_option("--force-dgpu-on")) {
+            forced_state = shamcomm::StateMPI_Aware::ForcedYes;
+        }
+
+        if (shamcmdopt::has_option("--force-dgpu-off")) {
+            forced_state = shamcomm::StateMPI_Aware::ForcedNo;
+        }
+
         if (opts::has_option("--sycl-cfg")) {
 
             std::string sycl_cfg = std::string(opts::get_option("--sycl-cfg"));
@@ -537,7 +547,7 @@ namespace shamsys::instance {
             if (shambase::contain_substr(sycl_cfg, "auto:")) {
 
                 std::string search = sycl_cfg.substr(5);
-                init_auto(search, MPIInitInfo{argc, argv});
+                init_auto(search, MPIInitInfo{argc, argv, forced_state});
 
             } else {
 
@@ -577,7 +587,7 @@ namespace shamsys::instance {
                     throw ShamsysInstanceException("compute config is to big for an integer");
                 }
 
-                init(SyclInitInfo{ialt, icomp}, MPIInitInfo{argc, argv});
+                init(SyclInitInfo{ialt, icomp}, MPIInitInfo{argc, argv, forced_state});
             }
 
         } else {
@@ -595,17 +605,7 @@ namespace shamsys::instance {
         std::cout << "%MPI_DEFINE:MPI_COMM_WORLD=" << MPI_COMM_WORLD << "\n";
 #endif
 
-        std::optional<shamcomm::StateMPI_Aware> forced_state = std::nullopt;
-
-        if (shamcmdopt::has_option("--force-dgpu-on")) {
-            forced_state = shamcomm::StateMPI_Aware::ForcedYes;
-        }
-
-        if (shamcmdopt::has_option("--force-dgpu-off")) {
-            forced_state = shamcomm::StateMPI_Aware::ForcedNo;
-        }
-
-        shamcomm::fetch_mpi_capabilities(forced_state);
+        shamcomm::fetch_mpi_capabilities(mpi_info.forced_state);
 
         mpi::init(&mpi_info.argc, &mpi_info.argv);
 

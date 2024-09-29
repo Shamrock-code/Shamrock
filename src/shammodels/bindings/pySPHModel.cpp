@@ -19,8 +19,10 @@
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
+#include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
 #include <pybind11/cast.h>
+#include <pybind11/numpy.h>
 #include <memory>
 #include <random>
 
@@ -450,6 +452,45 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
                 return list_out;
             })
+        .def(
+            "render_cartesian_slice",
+            [](T &self,
+               std::string name,
+               std::string field_type,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny) -> std::variant<py::array_t<Tscal>> {
+                if (field_type == "f64") {
+                    py::array_t<Tscal> ret({nx, ny});
+
+                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+
+                    std::vector<f64> slice
+                        = render.compute_slice(name, center, delta_x, delta_y, nx, ny)
+                              .copyback_data();
+
+                    for (u32 iy = 0; iy < ny; iy++) {
+                        for (u32 ix = 0; ix < ny; ix++) {
+                            ret.mutable_at(iy, ix) = slice[ix + nx * iy];
+                        }
+                    }
+
+                    return ret;
+                }
+
+                shambase::throw_with_loc<std::runtime_error>("unknown slice type");
+                return py::array_t<Tscal>({nx, ny});
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"))
         .def(
             "gen_config_from_phantom_dump",
             [](T &self, PhantomDump &dump, bool bypass_error) {

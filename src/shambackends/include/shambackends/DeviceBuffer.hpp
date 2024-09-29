@@ -57,6 +57,29 @@ namespace sham {
         DeviceBuffer &operator=(const DeviceBuffer &other) = delete;
 
         /**
+         * @brief Move constructor for DeviceBuffer
+         *
+         * This move constructor moves the USM pointer and the event handler
+         * from the other object to this object.
+         */
+        DeviceBuffer(DeviceBuffer &&other) noexcept
+            : hold(std::move(other.hold)), size(other.size),
+              events_hndl(std::move(other.events_hndl)) {}
+
+        /**
+         * @brief Move assignment operator for DeviceBuffer
+         *
+         * This move assignment operator moves the USM pointer and the event handler
+         * from the other object to this object.
+         */
+        DeviceBuffer &operator=(DeviceBuffer &&other) noexcept {
+            hold        = std::move(other.hold);
+            size        = other.size;
+            events_hndl = std::move(other.events_hndl);
+            return *this;
+        }
+
+        /**
          * @brief Destructor for DeviceBuffer
          *
          * This destructor releases the USM pointer and event handler
@@ -130,6 +153,22 @@ namespace sham {
          * @return The size of the buffer in bytes
          */
         [[nodiscard]] inline size_t get_bytesize() const { return hold.get_bytesize(); }
+
+        [[nodiscard]] inline std::vector<T> copyback_data() {
+            std::vector<T> ret(size);
+
+            std::vector<sycl::event> depends_list;
+            const T *ptr = get_read_access(depends_list);
+
+            sycl::event e = hold.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
+                cgh.depends_on(depends_list);
+                cgh.copy(ptr, ret.data(), size);
+            });
+
+            complete_event_state(e);
+
+            return ret;
+        }
 
         private:
         /**

@@ -21,8 +21,30 @@
 
 namespace shamcomm {
 
-    StateMPI_Aware mpi_cuda_aware;
-    StateMPI_Aware mpi_rocm_aware;
+    /**
+     * @brief MPI CUDA aware capability
+     *
+     * This variable contains the MPI CUDA aware capability of the current
+     * process. It is set to `Unknown` at the beginning and is updated by the
+     * `fetch_mpi_capabilities` function.
+     */
+    StateMPI_Aware mpi_cuda_aware = StateMPI_Aware::Unknown;
+
+    /**
+     * @brief MPI ROCm aware capability
+     *
+     * This variable contains the MPI ROCm aware capability of the current
+     * process. It is set to `Unknown` at the beginning and is updated by the
+     * `fetch_mpi_capabilities` function.
+     */
+    StateMPI_Aware mpi_rocm_aware = StateMPI_Aware::Unknown;
+
+    /**
+     * @brief Has the MPI capabilities been fetched?
+     *
+     * This variable is set to `true` once the `fetch_mpi_capabilities` function
+     * has been called.
+     */
     bool fetched = false;
 
     StateMPI_Aware get_mpi_cuda_aware_status() {

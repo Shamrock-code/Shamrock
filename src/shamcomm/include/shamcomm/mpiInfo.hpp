@@ -37,12 +37,36 @@ namespace shamcomm {
          * @brief The MPI implementation does not support the feature
          */
         No,
+        /**
+         * @brief Feature forced on by the user
+         */
         ForcedYes,
+        /**
+         * @brief Feature forced off by the user
+         */
         ForcedNo
     };
 
+    /**
+     * @brief Get the MPI CUDA aware capability
+     *
+     * This function returns the MPI CUDA aware capability of the current
+     * process. If the capability has not been fetched yet, it raises a
+     * std::runtime_error
+     *
+     * @return The MPI CUDA aware capability
+     */
     StateMPI_Aware get_mpi_cuda_aware_status();
 
+    /**
+     * @brief Get the MPI ROCM aware capability
+     *
+     * This function returns the MPI ROCM aware capability of the current
+     * process. If the capability has not been fetched yet, it raises a
+     * std::runtime_error
+     *
+     * @return The MPI ROCM aware capability
+     */
     StateMPI_Aware get_mpi_rocm_aware_status();
 
     /**

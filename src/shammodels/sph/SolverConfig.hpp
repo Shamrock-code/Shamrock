@@ -211,9 +211,7 @@ struct shammodels::sph::SolverConfig {
         mhd_type.set(v);
     }
 
-    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) {
-        mhd_type.set(v);
-    }
+    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_type.set(v); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // MHD Config (END)

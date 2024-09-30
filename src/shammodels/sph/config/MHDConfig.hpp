@@ -32,20 +32,19 @@ struct shammodels::sph::MHDConfig {
 
     struct None {};
 
-    struct IdealMHD_constrained_hyper_para{
+    struct IdealMHD_constrained_hyper_para {
         Tscal sigma_mhd = 0.1;
-        Tscal alpha_u = 1.;
+        Tscal alpha_u   = 1.;
     };
 
-    struct NonIdealMHD{
+    struct NonIdealMHD {
         Tscal sigma_mhd = 0.1;
-        Tscal alpha_u = 1.;
+        Tscal alpha_u   = 1.;
     };
-
 
     // how to set a new state of a variant as a dummy:
-    //a) do everything right
-    //b) forget to add the state to the variant
+    // a) do everything right
+    // b) forget to add the state to the variant
     //-> question your life choices
     using Variant = std::variant<None, IdealMHD_constrained_hyper_para, NonIdealMHD>;
 
@@ -54,15 +53,15 @@ struct shammodels::sph::MHDConfig {
     void set(Variant v) { config = v; }
 
     inline bool has_B_field() {
-    bool is_B =
-        bool(std::get_if<IdealMHD_constrained_hyper_para>(&config)) || bool(std::get_if<NonIdealMHD>(&config));
-    return is_B;
+        bool is_B = bool(std::get_if<IdealMHD_constrained_hyper_para>(&config))
+                    || bool(std::get_if<NonIdealMHD>(&config));
+        return is_B;
     }
 
     inline bool has_psi_field() {
-    bool is_psi =
-        bool(std::get_if<IdealMHD_constrained_hyper_para>(&config)) || bool(std::get_if<NonIdealMHD>(&config));
-    return is_psi;
+        bool is_psi = bool(std::get_if<IdealMHD_constrained_hyper_para>(&config))
+                      || bool(std::get_if<NonIdealMHD>(&config));
+        return is_psi;
     }
 
     inline bool has_curlB_field() {
@@ -70,13 +69,14 @@ struct shammodels::sph::MHDConfig {
         return is_curlB;
     }
 
-
     inline void print_status() {
         logger::raw_ln("--- MHD config");
 
         if (None *v = std::get_if<None>(&config)) {
             logger::raw_ln("  Config MHD Type : None (No MHD)");
-        } else if (IdealMHD_constrained_hyper_para *v = std::get_if<IdealMHD_constrained_hyper_para>(&config)) {
+        } else if (
+            IdealMHD_constrained_hyper_para *v
+            = std::get_if<IdealMHD_constrained_hyper_para>(&config)) {
             logger::raw_ln("  Config MHD  : Ideal MHD, constrained hyperbolic/parabolic treatment");
             logger::raw_ln("  sigma_mhd  =", v->sigma_mhd);
         } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&config)) {

@@ -41,6 +41,17 @@ namespace shammodels::sph::modules {
         CartesianRender(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        using field_getter_t = const std::unique_ptr<sycl::buffer<Tfield>> &(
+            const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat);
+
+        sham::DeviceBuffer<Tfield> compute_slice(
+            std::function<field_getter_t> field_getter,
+            Tvec center,
+            Tvec delta_x,
+            Tvec delta_y,
+            u32 nx,
+            u32 ny);
+
         sham::DeviceBuffer<Tfield> compute_slice(
             std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny);
 

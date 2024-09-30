@@ -15,6 +15,7 @@
 
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shamrock/scheduler/SchedulerUtility.hpp"
 
 namespace shammodels::sph::modules {
 
@@ -22,6 +23,65 @@ namespace shammodels::sph::modules {
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
         std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny)
         -> sham::DeviceBuffer<Tfield> {
+
+        if (field_name == "rho" && std::is_same_v<Tscal, Tfield>) {
+            using namespace shamrock;
+            using namespace shamrock::patch;
+            shamrock::SchedulerUtility utility(scheduler());
+            shamrock::ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
+
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
+                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    sycl::accessor acc_h{
+                        shambase::get_check_ref(
+                            pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart"))
+                                .get_buf()),
+                        cgh,
+                        sycl::read_only};
+
+                    sycl::accessor acc_rho{
+                        shambase::get_check_ref(density.get_buf(p.id_patch)),
+                        cgh,
+                        sycl::write_only,
+                        sycl::no_init};
+                    const Tscal part_mass = solver_config.gpart_mass;
+
+                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                        u32 gid = (u32) item.get_id();
+                        using namespace shamrock::sph;
+                        Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
+                        acc_rho[gid] = rho_ha;
+                    });
+                });
+            });
+
+            auto field_source_getter
+                = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat)
+                -> const std::unique_ptr<sycl::buffer<Tfield>> & {
+                return density.get_buf(cur_p.id_patch);
+            };
+
+            return compute_slice(field_source_getter, center, delta_x, delta_y, nx, ny);
+        }
+
+        auto field_source_getter =
+            [&](const shamrock::patch::Patch cur_p,
+                shamrock::patch::PatchData &pdat) -> const std::unique_ptr<sycl::buffer<Tfield>> & {
+            return pdat.get_field<Tfield>(pdat.pdl.get_field_idx<Tfield>(field_name)).get_buf();
+        };
+
+        return compute_slice(field_source_getter, center, delta_x, delta_y, nx, ny);
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
+        std::function<field_getter_t> field_getter,
+        Tvec center,
+        Tvec delta_x,
+        Tvec delta_y,
+        u32 nx,
+        u32 ny) -> sham::DeviceBuffer<Tfield> {
 
         sham::DeviceBuffer<Tfield> ret{nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
 
@@ -41,8 +101,7 @@ namespace shammodels::sph::modules {
             auto &buf_hpart
                 = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf();
 
-            auto &buf_field_to_render
-                = pdat.get_field<Tfield>(pdat.pdl.get_field_idx<Tfield>(field_name)).get_buf();
+            auto &buf_field_to_render = field_getter(cur_p, pdat);
 
             u32 obj_cnt = main_field.get_obj_cnt();
 
@@ -96,11 +155,6 @@ namespace shammodels::sph::modules {
                     f64 fy          = ((f64(iy) + 0.5) / ny) - 0.5;
                     Tvec pos_render = center + delta_x * fx + delta_y * fy;
 
-                    bool crit = ix == 0 && iy == 0;
-                    if (crit) {
-                        fmt::println("{} ({},{}) {}", gid, ix, iy, pos_render);
-                    }
-
                     Tfield ret = 0;
 
                     particle_looper.rtree_for(
@@ -110,29 +164,12 @@ namespace shammodels::sph::modules {
                             auto interbox
                                 = shammath::CoordRange<Tvec>{bmin, bmax}.expand_all(rint_cell);
 
-                            if (crit && false) {
-                                fmt::println(
-                                    "test ->\n    {}>{}\n    rint={}\n    res={}",
-                                    interbox.lower,
-                                    interbox.upper,
-                                    rint_cell,
-                                    interbox.contain_pos(pos_render));
-                            }
-
                             return interbox.contain_pos(pos_render);
                         },
                         [&](u32 id_b) {
                             Tvec dr    = pos_render - xyz[id_b];
                             Tscal rab2 = sycl::dot(dr, dr);
                             Tscal h_b  = hpart[id_b];
-
-                            if (crit && false) {
-                                fmt::println(
-                                    "test part ->\n    dr={}\n    rab2={}\n    h_b^2 R={}",
-                                    dr,
-                                    rab2,
-                                    h_b * h_b * Rker2);
-                            }
 
                             if (rab2 > h_b * h_b * Rker2) {
                                 return;
@@ -141,15 +178,6 @@ namespace shammodels::sph::modules {
                             Tscal rab = sycl::sqrt(rab2);
 
                             Tfield val = torender[id_b];
-
-                            if (crit) {
-                                fmt::println(
-                                    "add val ->\n    rab={}\n    val={}\n    h_b={}\n    +={}",
-                                    rab,
-                                    val,
-                                    h_b,
-                                    val * Kernel::W_3d(rab, h_b));
-                            }
 
                             Tscal rho_b = shamrock::sph::rho_h(partmass, h_b, Kernel::hfactd);
 

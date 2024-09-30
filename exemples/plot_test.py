@@ -132,7 +132,7 @@ def plot_curve_in():
     plt.plot(x,H, label = "H")
     plt.plot(x,H_r, label = "H_r")
 
-if do_plots:
+if do_plots and False:
     plot_curve_in()
     plt.legend()
     plt.yscale("log")
@@ -403,9 +403,10 @@ else:
 
 
 
-if do_plots:
+def plot_state(iplot):
     import matplotlib
-    plt.figure(dpi=200)
+    # Reset the figure using the same memory as the last one
+    plt.figure(num=1, clear=True,dpi=200)
     import copy
     my_cmap = copy.copy(matplotlib.colormaps.get_cmap('gist_heat')) # copy the default cmap
     my_cmap.set_bad(color="black")
@@ -416,18 +417,18 @@ if do_plots:
     print(sinks)
 
     ext = 5
-    arr = model.render_cartesian_slice("hpart","f64",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
-    #res = plt.imshow(arr, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext], norm="log", vmin=1e-2, vmax=1e3)
-    res = plt.imshow(arr, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext])
-    plt.scatter(sinks[:,0],sinks[:,2])
+    arr = model.render_cartesian_slice("rho","f64",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
+    res = plt.imshow(arr, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext], norm="log", vmin=1e-8, vmax=2e-4)
+    #res = plt.imshow(arr, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext])
+    plt.scatter(sinks[:,0],sinks[:,1])
     plt.xlabel("x")
     plt.ylabel("y")
-    plt.title("t = {:0.3f} [time code unit]".format(model.get_time()))
+    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2*np.pi)))
 
     cbar = plt.colorbar(res, extend='both')
-    cbar.set_label(r"$h_{part}$")
-    plt.show()
-    #plt.savefig("plots/plot_{:04}.png".format(i_dump))
+    cbar.set_label(r"$\rho$ [code unit]")
+    #plt.show()
+    plt.savefig("plot_{:04}.png".format(iplot))
 
 
 
@@ -438,18 +439,31 @@ sink_history = []
 
 t_start = model.get_time()
 
-dt_dump = 1e-2 * 2*np.pi
+freq_stop = 1000
 norbit = 5
-ndump = norbit*100
-t_dumps = [i*dt_dump for i in range(ndump+1)]
+dump_freq_stop = 10
+
+dt_stop = (1./freq_stop) * 2*np.pi
+nstop = norbit*freq_stop
+
+t_stop = [i*dt_stop for i in range(nstop+1)]
 
 idump = 0
-for ttarg in t_dumps:
-    if ttarg >= t_start:
-        ttargets = np.linspace(model.get_time(),ttarg,11)[1:]
-        for t_next in ttargets:
-            model.evolve_until(t_next)
+iplot = 0
+istop = 0
+for ttarg in t_stop:
 
-        model.do_vtk_dump(get_vtk_dump_name(idump), True)
-        model.dump(get_dump_name(idump))
-    idump += 1
+    if ttarg >= t_start:
+        model.evolve_until(ttarg)
+
+        if istop % 10 == 0:
+            #model.do_vtk_dump(get_vtk_dump_name(idump), True)
+            model.dump(get_dump_name(idump))
+
+        plot_state(iplot)
+
+    if istop % 10 == 0:
+        idump += 1
+
+    iplot += 1
+    istop += 1

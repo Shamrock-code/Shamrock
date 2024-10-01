@@ -202,15 +202,18 @@ struct shammodels::sph::SolverConfig {
     using MHDConfig = MHDConfig<Tvec>;
     MHDConfig mhd_type;
 
+    /// disable MHD in the SPH solver
     inline void set_noMHD() {
         using Tmp = typename MHDConfig::None;
         mhd_type.set(Tmp{});
     }
 
+    /// Enable the ideal MHD hydro solver
     inline void set_IdealMHD(typename MHDConfig::IdealMHD_constrained_hyper_para v) {
         mhd_type.set(v);
     }
 
+    /// Enable the non-ideal MHD hydro solver
     inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_type.set(v); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

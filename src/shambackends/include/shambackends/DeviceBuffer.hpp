@@ -19,6 +19,7 @@
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
 #include "shambackends/details/memoryHandle.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include <memory>
 
 namespace sham {
@@ -208,6 +209,20 @@ namespace sham {
 
             complete_event_state(e);
             other.complete_event_state(e);
+        }
+
+        inline void fill(T value) {
+            std::vector<sycl::event> depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e1 = hold.get_dev_scheduler().get_queue().q.submit(
+                [&, ptr, value](sycl::handler &cgh) {
+                    cgh.depends_on(depends_list);
+                    shambase::parralel_for(cgh, size, "fill field", [=](u32 gid) {
+                        ptr[gid] = value;
+                    });
+                });
+            complete_event_state(e1);
         }
 
         private:

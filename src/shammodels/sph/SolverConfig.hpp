@@ -213,7 +213,6 @@ struct shammodels::sph::SolverConfig {
         mhd_config.set(v);
     }
 
-    /// Enable the non-ideal MHD hydro solver
     inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_config.set(v); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

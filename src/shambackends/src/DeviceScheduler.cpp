@@ -44,4 +44,6 @@ namespace sham {
         }
     }
 
+    bool DeviceScheduler::use_direct_comm() { return ctx->use_direct_comm(); }
+
 } // namespace sham

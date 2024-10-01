@@ -191,6 +191,8 @@ namespace shammodels::sph::modules {
             ret.complete_event_state(e2);
         });
 
+        shamalgs::collective::reduce_buffer_in_place_sum(ret, MPI_COMM_WORLD);
+
         return ret;
     }
 

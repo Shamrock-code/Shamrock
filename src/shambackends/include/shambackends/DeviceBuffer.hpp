@@ -170,6 +170,46 @@ namespace sham {
             return ret;
         }
 
+        template<USMKindTarget new_target>
+        [[nodiscard]] inline DeviceBuffer<T, new_target> copy_to() {
+            DeviceBuffer<T, new_target> ret(size, hold.get_dev_scheduler_ptr());
+
+            std::vector<sycl::event> depends_list;
+            const T *ptr_src = get_read_access(depends_list);
+            T *ptr_dest      = ret.get_write_access(depends_list);
+
+            sycl::event e = hold.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
+                cgh.depends_on(depends_list);
+                cgh.copy(ptr_src, ptr_dest, size);
+            });
+
+            complete_event_state(e);
+            ret.complete_event_state(e);
+
+            return ret;
+        }
+
+        template<USMKindTarget new_target>
+        [[nodiscard]] inline void copy_from(DeviceBuffer<T, new_target> &other) {
+
+            if (other.get_size() != get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "The two fields must have the same size");
+            }
+
+            std::vector<sycl::event> depends_list;
+            T *ptr_src        = get_write_access(depends_list);
+            const T *ptr_dest = other.get_read_access(depends_list);
+
+            sycl::event e = hold.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
+                cgh.depends_on(depends_list);
+                cgh.copy(ptr_dest, ptr_src, size);
+            });
+
+            complete_event_state(e);
+            other.complete_event_state(e);
+        }
+
         private:
         /**
          * @brief The USM pointer holder

@@ -74,8 +74,13 @@ namespace shamalgs::collective {
     inline void
     reduce_buffer_in_place_sum(sham::DeviceBuffer<T, sham::host> &field, MPI_Comm comm) {
 
+        if (field.get_size() > size_t(i32_max)) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "MPI message are limited to i32_max in size");
+        }
+
         std::vector<sycl::event> depends_list;
-        T *ptr = field.get_read_access(depends_list);
+        T *ptr = field.get_write_access(depends_list);
 
         for (auto &e : depends_list) {
             e.wait_and_throw();
@@ -83,18 +88,22 @@ namespace shamalgs::collective {
 
         MPICHECK(
             MPI_Allreduce(MPI_IN_PLACE, ptr, field.get_size(), get_mpi_type<T>(), MPI_SUM, comm));
+
+        field.complete_event_state({});
     }
 
     template<class T>
     inline void
     reduce_buffer_in_place_sum(sham::DeviceBuffer<T, sham::device> &field, MPI_Comm comm) {
+
         if (field.get_size() > size_t(i32_max)) {
             shambase::throw_with_loc<std::invalid_argument>(
                 "MPI message are limited to i32_max in size");
         }
+
         if (field.get_dev_scheduler().use_direct_comm()) {
             std::vector<sycl::event> depends_list;
-            T *ptr = field.get_read_access(depends_list);
+            T *ptr = field.get_write_access(depends_list);
 
             for (auto &e : depends_list) {
                 e.wait_and_throw();
@@ -103,6 +112,7 @@ namespace shamalgs::collective {
             MPICHECK(MPI_Allreduce(
                 MPI_IN_PLACE, ptr, field.get_size(), get_mpi_type<T>(), MPI_SUM, comm));
 
+            field.complete_event_state({});
         } else {
             sham::DeviceBuffer<T, sham::host> field_host = field.template copy_to<sham::host>();
             reduce_buffer_in_place_sum(field_host, comm);

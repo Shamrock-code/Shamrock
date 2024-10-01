@@ -190,7 +190,7 @@ namespace sham {
         }
 
         template<USMKindTarget new_target>
-        [[nodiscard]] inline void copy_from(DeviceBuffer<T, new_target> &other) {
+        inline void copy_from(DeviceBuffer<T, new_target> &other) {
 
             if (other.get_size() != get_size()) {
                 shambase::throw_with_loc<std::invalid_argument>(

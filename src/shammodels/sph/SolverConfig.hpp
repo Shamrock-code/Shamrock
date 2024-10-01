@@ -199,19 +199,19 @@ struct shammodels::sph::SolverConfig {
     // MHD Config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    using MHDConfig = MHDConfig<Tvec>;
-    MHDConfig mhd_type;
+    using MHDConfig      = MHDConfig<Tvec>;
+    MHDConfig mhd_config = {};
 
     inline void set_noMHD() {
         using Tmp = typename MHDConfig::None;
-        mhd_type.set(Tmp{});
+        mhd_config.set(Tmp{});
     }
 
     inline void set_IdealMHD(typename MHDConfig::IdealMHD_constrained_hyper_para v) {
-        mhd_type.set(v);
+        mhd_config.set(v);
     }
 
-    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_type.set(v); }
+    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_config.set(v); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // MHD Config (END)
@@ -544,13 +544,13 @@ struct shammodels::sph::SolverConfig {
     }
 
     /// @brief Whether the solver has a field for B_on_rho
-    inline bool has_field_B_on_rho() { return mhd_type.has_B_field() && (dim == 3); }
+    inline bool has_field_B_on_rho() { return mhd_config.has_B_field() && (dim == 3); }
 
     /// @brief Whether the solver has a field for psi_on_ch
-    inline bool has_field_psi_on_ch() { return mhd_type.has_psi_field(); }
+    inline bool has_field_psi_on_ch() { return mhd_config.has_psi_field(); }
 
     /// @brief Whether the solver has a field for curlB
-    inline bool has_field_curlB() { return mhd_type.has_curlB_field() && (dim == 3); }
+    inline bool has_field_curlB() { return mhd_config.has_curlB_field() && (dim == 3); }
 
     /// Print the current status of the solver config
     inline void print_status() {
@@ -742,6 +742,8 @@ namespace shammodels::sph {
             {"cfl_config", p.cfl_config},
             {"unit_sys", junit},
             {"time_state", p.time_state},
+            // mhd config
+            {"mhd_config", p.mhd_config},
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
@@ -800,6 +802,9 @@ namespace shammodels::sph {
         from_json_optional(j.at("unit_sys"), p.unit_sys);
 
         j.at("time_state").get_to(p.time_state);
+
+        // mhd config
+        j.at("mhd_config").get_to(p.mhd_config);
 
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);

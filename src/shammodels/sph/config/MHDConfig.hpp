@@ -17,6 +17,7 @@
 
 #include "shambackends/vec.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <nlohmann/json.hpp>
 
 namespace shammodels::sph {
 
@@ -48,7 +49,7 @@ struct shammodels::sph::MHDConfig {
     //-> question your life choices
     using Variant = std::variant<None, IdealMHD_constrained_hyper_para, NonIdealMHD>;
 
-    Variant config = IdealMHD_constrained_hyper_para{};
+    Variant config = None{};
 
     void set(Variant v) { config = v; }
 
@@ -91,3 +92,87 @@ struct shammodels::sph::MHDConfig {
         logger::raw_ln("-------------");
     }
 };
+
+namespace shammodels::sph {
+
+    /**
+     * @brief Serialize a MHDConfig to a JSON object
+     *
+     * @param[out] j  The JSON object to write to
+     * @param[in] p  The MHDConfig to serialize
+     */
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const MHDConfig<Tvec> &p) {
+        using T = MHDConfig<Tvec>;
+
+        using None        = typename T::None;
+        using IMHD        = typename T::IdealMHD_constrained_hyper_para;
+        using NonIdealMHD = typename T::NonIdealMHD;
+
+        // Write the config type into the JSON object
+        if (const None *v = std::get_if<None>(&p.config)) {
+            j = {
+                {"mhd_type", "none"},
+            };
+        } else if (const IMHD *v = std::get_if<IMHD>(&p.config)) {
+            j = {
+                {"mhd_type", "ideal_mhd_constrained_hyper_para"},
+                {"sigma_mhd", v->sigma_mhd},
+                {"alpha_u", v->alpha_u},
+            };
+        } else if (const NonIdealMHD *v = std::get_if<NonIdealMHD>(&p.config)) {
+            // Write the shear base, direction, and speed into the JSON object
+            j = {
+                {"mhd_type", "non_ideal_mhd"},
+                {"sigma_mhd", v->sigma_mhd},
+                {"alpha_u", v->alpha_u},
+            };
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    /**
+     * @brief Deserialize a JSON object into a MHDConfig
+     *
+     * @param[in] j  The JSON object to read from
+     * @param[out] p The MHDConfig to deserialize
+     */
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, MHDConfig<Tvec> &p) {
+        using T = MHDConfig<Tvec>;
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        // Check if the JSON object contains the "mhd_type" field
+        if (!j.contains("mhd_type")) {
+            shambase::throw_with_loc<std::runtime_error>("no field mhd_type is found in this json");
+        }
+
+        // Read the config type from the JSON object
+        std::string mhd_type;
+        j.at("mhd_type").get_to(mhd_type);
+
+        using None        = typename T::None;
+        using IMHD        = typename T::IdealMHD_constrained_hyper_para;
+        using NonIdealMHD = typename T::NonIdealMHD;
+
+        // Set the BCConfig based on the config type
+        if (mhd_type == "none") {
+            p.set(None{});
+        } else if (mhd_type == "ideal_mhd_constrained_hyper_para") {
+            p.set(IMHD{
+                j.at("sigma_mhd").get<Tscal>(),
+                j.at("alpha_u").get<Tscal>(),
+            });
+        } else if (mhd_type == "non_ideal_mhd") {
+            p.set(NonIdealMHD{
+                j.at("sigma_mhd").get<Tscal>(),
+                j.at("alpha_u").get<Tscal>(),
+            });
+        } else {
+            shambase::throw_unimplemented("wtf !");
+        }
+    }
+
+} // namespace shammodels::sph

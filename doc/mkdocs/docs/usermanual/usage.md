@@ -9,16 +9,33 @@ If you run `./shamrock --help`, you will see the following :
 executable : ./shamrock
 
 Usage :
---sycl-ls                        : list available devices
---sycl-ls-map                    : list available devices & list of queue bindings
---benchmark-mpi                  : micro benchmark for MPI
---sycl-cfg      (idcomp:idalt)   : specify the compute & alt queue index
---loglevel      (logvalue)       : specify a log level
---nocolor                        : disable colored ouput
---rscript       (filepath)       : run shamrock with python runscirpt
---ipython                        : run shamrock in Ipython mode
---force-dgpu                     : for direct mpi comm on
---help                           : show this message
+--benchmark-mpi                 : micro benchmark for MPI
+--color                         : force colored ouput
+--force-dgpu-off                 : for direct mpi comm off
+--force-dgpu-on                 : for direct mpi comm on
+--help                          : show this message
+--ipython                       : run shamrock in Ipython mode
+--loglevel      (logvalue)      : specify a log level
+--nocolor                       : disable colored ouput
+--rscript       (filepath)      : run shamrock with python runscirpt
+--sycl-cfg      (idcomp:idalt)  : specify the compute & alt queue index
+--sycl-ls                       : list available devices
+--sycl-ls-map                   : list available devices & list of queue bindings
+
+Env variables :
+  SHAMLOGFORMATTER              : Change the log formatter (values :0-3)
+  NO_COLOR                      : Disable colors (if no color cli args are passed)
+  CLICOLOR_FORCE                : Enable colors (if no color cli args are passed)
+  TERM                          : Terminal emulator identifier
+    = xterm-kitty
+  COLORTERM                     : Terminal color support identifier
+    = truecolor
+  SHAMTTYCOL                    : Set tty assumed column count
+
+Env deduced vars :
+  isatty = Yes
+  color = enabled
+  tty size = 45x133
 ```
 
 Most of those options are just changing the configuration of the code at runtime and will be explained later.

@@ -39,7 +39,8 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--validation", {}, "run only validation tests");
     opts::register_opt("--unittest", {}, "run only unittest");
     opts::register_opt("--long-test", {}, "run also long tests");
-    opts::register_opt("--force-dgpu", {}, "for direct mpi comm on");
+    opts::register_opt("--force-dgpu-on", {}, "for direct mpi comm on");
+    opts::register_opt("--force-dgpu-off", {}, "for direct mpi comm off");
 
     opts::register_opt("-o", {"(filepath)"}, "output test report in that file");
 

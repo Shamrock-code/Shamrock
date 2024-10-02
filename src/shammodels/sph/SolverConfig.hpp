@@ -806,7 +806,13 @@ namespace shammodels::sph {
         j.at("time_state").get_to(p.time_state);
 
         // mhd config
-        j.at("mhd_config").get_to(p.mhd_config);
+        try {
+            j.at("mhd_config").get_to(p.mhd_config);
+        } catch (const nlohmann::json::out_of_range &e) {
+            logger::warn_ln(
+                "SPHConfig", "mhd_config not found when deserializing, defaulting to None");
+            p.mhd_config.set(typename T::MHDConfig::None{});
+        }
 
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);

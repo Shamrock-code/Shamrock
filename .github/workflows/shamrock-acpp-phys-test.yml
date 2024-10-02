@@ -32,6 +32,14 @@ jobs:
             runtest: yes
             testfile: sod_tube_godunov.py
             container: ghcr.io/shamrock-code/ci-ubuntu20:main
+          - clang: 15
+            cuda: 11.0.2
+            rocm: 5.4.3
+            backend: omp
+            arch: none
+            runtest: yes
+            testfile: reload_old_dump.py
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
 
 
     timeout-minutes: 60

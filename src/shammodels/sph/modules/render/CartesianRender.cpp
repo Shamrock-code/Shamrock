@@ -84,6 +84,7 @@ namespace shammodels::sph::modules {
         u32 ny) -> sham::DeviceBuffer<Tfield> {
 
         sham::DeviceBuffer<Tfield> ret{nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
+        ret.fill({});
 
         using u_morton = u32;
         using RTree    = RadixTree<u_morton, Tvec>;
@@ -123,17 +124,9 @@ namespace shammodels::sph::modules {
             std::vector<sycl::event> depends_list;
             Tfield *render_field = ret.get_write_access(depends_list);
 
-            sycl::event e1 = shamsys::instance::get_compute_queue().submit(
-                [&, render_field](sycl::handler &cgh) {
-                    cgh.depends_on(depends_list);
-                    shambase::parralel_for(cgh, nx * ny, "reset render field", [=](u32 gid) {
-                        render_field[gid] = {};
-                    });
-                });
-
             sycl::event e2 = shamsys::instance::get_compute_queue().submit([&, render_field](
                                                                                sycl::handler &cgh) {
-                cgh.depends_on(e1);
+                cgh.depends_on(depends_list);
 
                 shamrock::tree::ObjectIterator particle_looper(tree, cgh);
                 sycl::accessor xyz{shambase::get_check_ref(buf_xyz), cgh, sycl::read_only};

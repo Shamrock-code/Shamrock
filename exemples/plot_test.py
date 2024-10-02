@@ -400,10 +400,8 @@ else:
 
 
 
+def plot_rho(ext,sinks,arr_rho, iplot):
 
-
-
-def plot_state(iplot):
     import matplotlib
     # Reset the figure using the same memory as the last one
     plt.figure(num=1, clear=True,dpi=200)
@@ -411,38 +409,71 @@ def plot_state(iplot):
     my_cmap = copy.copy(matplotlib.colormaps.get_cmap('gist_heat')) # copy the default cmap
     my_cmap.set_bad(color="black")
 
+    res = plt.imshow(arr_rho, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext], norm="log", vmin=1e-8, vmax=2e-4)
+    #res = plt.imshow(arr[:,:,0], cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
+    #plt.scatter(sinks[:,0],sinks[:,1], s=1)
+
+    ax = plt.gca()
+
+    output_list = []
+    for s in sinks:
+        print(s)
+        x,y,z = s["pos"]
+        output_list.append(
+            plt.Circle((x, y), s["accretion_radius"], color="blue", fill=False))
+    for circle in output_list:
+        ax.add_artist(circle)
+
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2*np.pi)))
+
+    cbar = plt.colorbar(res, extend='both')
+    cbar.set_label(r"$\rho$ [code unit]")
+    
+    plt.savefig("plot_rho_{:04}.png".format(iplot))
+
+def plot_vx(ext,sinks,arr_vx, iplot):
+
+    import matplotlib
+    # Reset the figure using the same memory as the last one
+    plt.figure(num=1, clear=True,dpi=200)
+
+    res = plt.imshow(arr_vx, cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
+    #res = plt.imshow(arr[:,:,0], cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
+    #plt.scatter(sinks[:,0],sinks[:,1], s=1)
+
+    ax = plt.gca()
+
+    output_list = []
+    for s in sinks:
+        print(s)
+        x,y,z = s["pos"]
+        output_list.append(
+            plt.Circle((x, y), s["accretion_radius"], color="blue", fill=False))
+    for circle in output_list:
+        ax.add_artist(circle)
+
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2*np.pi)))
+
+    cbar = plt.colorbar(res, extend='both')
+    cbar.set_label(r"$v_x$ [code unit]")
+    
+    plt.savefig("plot_vx_{:04}.png".format(iplot))
+
+
+def plot_state(iplot):
     sinks = model.get_sinks()
 
-    print(sinks)
-
     ext = 5
-    arr = model.render_cartesian_slice("rho","f64",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
-    #arr = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
 
-    if shamrock.sys.world_rank() == 0:
-        res = plt.imshow(arr, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext], norm="log", vmin=1e-8, vmax=2e-4)
-        #res = plt.imshow(arr[:,:,0], cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
-        #plt.scatter(sinks[:,0],sinks[:,1], s=1)
+    arr_rho = model.render_cartesian_slice("rho","f64",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
+    arr_v = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
 
-        ax = plt.gca()
-
-        output_list = []
-        for s in sinks:
-            print(s)
-            x,y,z = s["pos"]
-            output_list.append(
-                plt.Circle((x, y), s["accretion_radius"], color="blue", fill=False))
-        for circle in output_list:
-            ax.add_artist(circle)
-
-        plt.xlabel("x")
-        plt.ylabel("y")
-        plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2*np.pi)))
-
-        cbar = plt.colorbar(res, extend='both')
-        cbar.set_label(r"$\rho$ [code unit]")
-        plt.show()
-        plt.savefig("plot_{:04}.png".format(iplot))
+    plot_rho(ext,sinks,arr_rho, iplot)
+    plot_vx(ext,sinks,arr_v[:,:,0], iplot)
 
 
 

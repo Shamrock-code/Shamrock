@@ -142,6 +142,15 @@ namespace sham {
         }
 
         /**
+         * @brief Gets the Device scheduler pointer corresponding to the held allocation
+         *
+         * @return The Device scheduler
+         */
+        [[nodiscard]] inline std::shared_ptr<DeviceScheduler> &get_dev_scheduler_ptr()  {
+            return hold.get_dev_scheduler_ptr();
+        }
+
+        /**
          * @brief Gets the number of elements in the buffer
          *
          * @return The number of elements in the buffer
@@ -155,7 +164,15 @@ namespace sham {
          */
         [[nodiscard]] inline size_t get_bytesize() const { return hold.get_bytesize(); }
 
-        [[nodiscard]] inline std::vector<T> copyback_data() {
+        /**
+         * @brief Copy the content of the buffer to a std::vector
+         *
+         * This function creates a new std::vector with the same size and content than the current one
+         * and returns it.
+         *
+         * @return The new std::vector
+         */
+        [[nodiscard]] inline std::vector<T> copy_to_stdvec() {
             std::vector<T> ret(size);
 
             std::vector<sycl::event> depends_list;
@@ -171,6 +188,14 @@ namespace sham {
             return ret;
         }
 
+        /**
+         * @brief Copy the content of the buffer to a new buffer with a different USM target
+         *
+         * This function creates a new buffer with the same size and content than the current one
+         * but with a different USM target. The new buffer is returned.
+         *
+         * @return The new buffer
+         */
         template<USMKindTarget new_target>
         [[nodiscard]] inline DeviceBuffer<T, new_target> copy_to() {
             DeviceBuffer<T, new_target> ret(size, hold.get_dev_scheduler_ptr());
@@ -190,6 +215,14 @@ namespace sham {
             return ret;
         }
 
+        /**
+         * @brief Copies the data from another buffer to this one
+         *
+         * This function copies the data from another buffer to this one. The
+         * two buffers must have the same size.
+         *
+         * @param other The buffer from which to copy the data
+         */
         template<USMKindTarget new_target>
         inline void copy_from(DeviceBuffer<T, new_target> &other) {
 
@@ -211,6 +244,15 @@ namespace sham {
             other.complete_event_state(e);
         }
 
+        /**
+         * @brief Fill the buffer with a given value.
+         *
+         * This function fills the buffer with the given value. The function
+         * returns immediately, and the filling operation is executed
+         * asynchronously.
+         *
+         * @param value The value to fill the buffer with.
+         */
         inline void fill(T value) {
             std::vector<sycl::event> depends_list;
             T *ptr = get_write_access(depends_list);
@@ -223,6 +265,18 @@ namespace sham {
                     });
                 });
             complete_event_state(e1);
+        }
+
+        /**
+         * @brief Copy the current buffer
+         *
+         * This function creates a new buffer of the same type and size as the current one,
+         * and copies the content of the current buffer to the new one.
+         *
+         * @return The new buffer.
+         */
+        inline DeviceBuffer<T, target> copy(){
+            return copy_to<target>();
         }
 
         private:

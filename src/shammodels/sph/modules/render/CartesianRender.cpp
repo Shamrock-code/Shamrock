@@ -24,45 +24,48 @@ namespace shammodels::sph::modules {
         std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny)
         -> sham::DeviceBuffer<Tfield> {
 
-        if (field_name == "rho" && std::is_same_v<Tscal, Tfield>) {
-            using namespace shamrock;
-            using namespace shamrock::patch;
-            shamrock::SchedulerUtility utility(scheduler());
-            shamrock::ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
+        if constexpr (std::is_same_v<Tfield, f64>) {
+            if (field_name == "rho" && std::is_same_v<Tscal, Tfield>) {
+                using namespace shamrock;
+                using namespace shamrock::patch;
+                shamrock::SchedulerUtility utility(scheduler());
+                shamrock::ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
-            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-                logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor acc_h{
-                        shambase::get_check_ref(
-                            pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart"))
-                                .get_buf()),
-                        cgh,
-                        sycl::read_only};
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                    logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
+                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                        sycl::accessor acc_h{
+                            shambase::get_check_ref(
+                                pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart"))
+                                    .get_buf()),
+                            cgh,
+                            sycl::read_only};
 
-                    sycl::accessor acc_rho{
-                        shambase::get_check_ref(density.get_buf(p.id_patch)),
-                        cgh,
-                        sycl::write_only,
-                        sycl::no_init};
-                    const Tscal part_mass = solver_config.gpart_mass;
+                        sycl::accessor acc_rho{
+                            shambase::get_check_ref(density.get_buf(p.id_patch)),
+                            cgh,
+                            sycl::write_only,
+                            sycl::no_init};
+                        const Tscal part_mass = solver_config.gpart_mass;
 
-                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                        u32 gid = (u32) item.get_id();
-                        using namespace shamrock::sph;
-                        Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
-                        acc_rho[gid] = rho_ha;
+                        cgh.parallel_for(
+                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                                u32 gid = (u32) item.get_id();
+                                using namespace shamrock::sph;
+                                Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
+                                acc_rho[gid] = rho_ha;
+                            });
                     });
                 });
-            });
 
-            auto field_source_getter
-                = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat)
-                -> const std::unique_ptr<sycl::buffer<Tfield>> & {
-                return density.get_buf(cur_p.id_patch);
-            };
+                auto field_source_getter
+                    = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat)
+                    -> const std::unique_ptr<sycl::buffer<Tfield>> & {
+                    return density.get_buf(cur_p.id_patch);
+                };
 
-            return compute_slice(field_source_getter, center, delta_x, delta_y, nx, ny);
+                return compute_slice(field_source_getter, center, delta_x, delta_y, nx, ny);
+            }
         }
 
         auto field_source_getter =
@@ -84,7 +87,7 @@ namespace shammodels::sph::modules {
         u32 ny) -> sham::DeviceBuffer<Tfield> {
 
         sham::DeviceBuffer<Tfield> ret{nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
-        ret.fill({});
+        ret.fill(sham::VectorProperties<Tfield>::get_zero());
 
         using u_morton = u32;
         using RTree    = RadixTree<u_morton, Tvec>;
@@ -148,7 +151,7 @@ namespace shammodels::sph::modules {
                     f64 fy          = ((f64(iy) + 0.5) / ny) - 0.5;
                     Tvec pos_render = center + delta_x * fx + delta_y * fy;
 
-                    Tfield ret = 0;
+                    Tfield ret = sham::VectorProperties<Tfield>::get_zero();
 
                     particle_looper.rtree_for(
                         [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
@@ -195,3 +198,7 @@ using namespace shammath;
 template class shammodels::sph::modules::CartesianRender<f64_3, f64, M4>;
 template class shammodels::sph::modules::CartesianRender<f64_3, f64, M6>;
 template class shammodels::sph::modules::CartesianRender<f64_3, f64, M8>;
+
+template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, M4>;
+template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, M6>;
+template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, M8>;

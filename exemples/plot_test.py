@@ -417,10 +417,11 @@ def plot_state(iplot):
 
     ext = 5
     arr = model.render_cartesian_slice("rho","f64",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
+    #arr = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
 
     if shamrock.sys.world_rank() == 0:
         res = plt.imshow(arr, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext], norm="log", vmin=1e-8, vmax=2e-4)
-        #res = plt.imshow(arr, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext])
+        #res = plt.imshow(arr[:,:,0], cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
         #plt.scatter(sinks[:,0],sinks[:,1], s=1)
 
         ax = plt.gca()

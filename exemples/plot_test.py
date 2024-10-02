@@ -430,7 +430,7 @@ def plot_rho(ext,sinks,arr_rho, iplot):
 
     cbar = plt.colorbar(res, extend='both')
     cbar.set_label(r"$\rho$ [code unit]")
-    
+
     plt.savefig("plot_rho_{:04}.png".format(iplot))
 
 def plot_vx(ext,sinks,arr_vx, iplot):
@@ -460,7 +460,7 @@ def plot_vx(ext,sinks,arr_vx, iplot):
 
     cbar = plt.colorbar(res, extend='both')
     cbar.set_label(r"$v_x$ [code unit]")
-    
+
     plt.savefig("plot_vx_{:04}.png".format(iplot))
 
 

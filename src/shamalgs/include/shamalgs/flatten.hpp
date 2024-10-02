@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file reduction.hpp
+ * @file flatten.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -39,7 +39,7 @@ namespace shamalgs {
     flatten_buffer(sham::DeviceBuffer<Tvec, target> &buffer) {
 
         using Tscal = typename shambase::VectorProperties<Tvec>::component_type;
-        auto & sched = buffer.get_dev_scheduler_ptr();
+        auto &sched = buffer.get_dev_scheduler_ptr();
 
         if constexpr (target == sham::USMKindTarget::device) {
 
@@ -47,8 +47,7 @@ namespace shamalgs {
                 return buffer.copy();
             } else if constexpr (std::is_same_v<Tvec, sycl::vec<Tscal, 2>>) {
 
-                sham::DeviceBuffer<Tscal, target> ret(
-                    buffer.get_size() * 2, sched);
+                sham::DeviceBuffer<Tscal, target> ret(buffer.get_size() * 2, sched);
 
                 std::vector<sycl::event> depends_list;
                 const Tvec *ptr_src = buffer.get_read_access(depends_list);
@@ -72,8 +71,7 @@ namespace shamalgs {
 
             } else if constexpr (std::is_same_v<Tvec, sycl::vec<Tscal, 3>>) {
 
-                sham::DeviceBuffer<Tscal, target> ret(
-                    buffer.get_size() * 3, sched);
+                sham::DeviceBuffer<Tscal, target> ret(buffer.get_size() * 3, sched);
 
                 std::vector<sycl::event> depends_list;
                 const Tvec *ptr_src = buffer.get_read_access(depends_list);
@@ -123,7 +121,7 @@ namespace shamalgs {
             &buffer) {
 
         using Tscal = typename shambase::VectorProperties<Tvec>::component_type;
-        auto & sched = buffer.get_dev_scheduler_ptr();
+        auto &sched = buffer.get_dev_scheduler_ptr();
 
         if constexpr (target == sham::USMKindTarget::device) {
 
@@ -136,8 +134,7 @@ namespace shamalgs {
                         "The buffer must have an even number of elements");
                 }
 
-                sham::DeviceBuffer<Tvec, target> ret(
-                    buffer.get_size() / 2, sched);
+                sham::DeviceBuffer<Tvec, target> ret(buffer.get_size() / 2, sched);
 
                 std::vector<sycl::event> depends_list;
                 const Tscal *ptr_src = buffer.get_read_access(depends_list);
@@ -164,8 +161,7 @@ namespace shamalgs {
                         "The buffer must have a multiple of 3 elements");
                 }
 
-                sham::DeviceBuffer<Tvec, target> ret(
-                    buffer.get_size() / 3, sched);
+                sham::DeviceBuffer<Tvec, target> ret(buffer.get_size() / 3, sched);
 
                 std::vector<sycl::event> depends_list;
                 const Tscal *ptr_src = buffer.get_read_access(depends_list);

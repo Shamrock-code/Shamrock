@@ -31,6 +31,6 @@ fi
         mkdocs-git-revision-date-plugin mkdocs-git-revision-date-localized-plugin \
 )
 
-( 
+(
     source $VENV_DIR/bin/activate && mkdocs serve
 )

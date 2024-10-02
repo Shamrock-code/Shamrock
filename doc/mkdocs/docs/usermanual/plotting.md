@@ -34,7 +34,7 @@ cbar.set_label(r"$\rho$ [code unit]")
 plt.show()
 ```
 
-In this sample the core function to be used is `model.render_cartesian_slice` which will 
+In this sample the core function to be used is `model.render_cartesian_slice` which will
 render the slice using the GPU trees. It will return a numpy array with the slice.
 
 

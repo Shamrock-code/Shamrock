@@ -462,7 +462,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tvec delta_y,
                u32 nx,
                u32 ny) -> std::variant<py::array_t<Tscal>> {
-                
                 if (field_type == "f64") {
                     py::array_t<Tscal> ret({nx, ny});
 
@@ -483,7 +482,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 }
 
                 if (field_type == "f64_3") {
-                    py::array_t<Tscal> ret({nx, ny,3_u32});
+                    py::array_t<Tscal> ret({nx, ny, 3_u32});
 
                     modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
                         self.ctx, self.solver.solver_config, self.solver.storage);
@@ -494,9 +493,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
                     for (u32 iy = 0; iy < ny; iy++) {
                         for (u32 ix = 0; ix < ny; ix++) {
-                            ret.mutable_at(iy, ix,0) = slice[ix + nx * iy][0];
-                            ret.mutable_at(iy, ix,1) = slice[ix + nx * iy][1];
-                            ret.mutable_at(iy, ix,2) = slice[ix + nx * iy][2];
+                            ret.mutable_at(iy, ix, 0) = slice[ix + nx * iy][0];
+                            ret.mutable_at(iy, ix, 1) = slice[ix + nx * iy][1];
+                            ret.mutable_at(iy, ix, 2) = slice[ix + nx * iy][2];
                         }
                     }
 

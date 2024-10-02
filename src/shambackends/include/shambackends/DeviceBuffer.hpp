@@ -146,7 +146,7 @@ namespace sham {
          *
          * @return The Device scheduler
          */
-        [[nodiscard]] inline std::shared_ptr<DeviceScheduler> &get_dev_scheduler_ptr()  {
+        [[nodiscard]] inline std::shared_ptr<DeviceScheduler> &get_dev_scheduler_ptr() {
             return hold.get_dev_scheduler_ptr();
         }
 
@@ -167,8 +167,8 @@ namespace sham {
         /**
          * @brief Copy the content of the buffer to a std::vector
          *
-         * This function creates a new std::vector with the same size and content than the current one
-         * and returns it.
+         * This function creates a new std::vector with the same size and content than the current
+         * one and returns it.
          *
          * @return The new std::vector
          */
@@ -275,9 +275,7 @@ namespace sham {
          *
          * @return The new buffer.
          */
-        inline DeviceBuffer<T, target> copy(){
-            return copy_to<target>();
-        }
+        inline DeviceBuffer<T, target> copy() { return copy_to<target>(); }
 
         private:
         /**

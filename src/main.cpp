@@ -64,7 +64,8 @@ int main(int argc, char *argv[]) {
 
         opts::register_opt("--rscript", "(filepath)", "run shamrock with python runscirpt");
         opts::register_opt("--ipython", {}, "run shamrock in Ipython mode");
-        opts::register_opt("--force-dgpu", {}, "for direct mpi comm on");
+        opts::register_opt("--force-dgpu-on", {}, "for direct mpi comm on");
+        opts::register_opt("--force-dgpu-off", {}, "for direct mpi comm off");
 
         shamcmdopt::register_env_var_doc(
             "SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");

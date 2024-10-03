@@ -20,7 +20,7 @@
 namespace shammath {
 
     template<class T>
-    inline T integ_riemann_sum(T start, T end, T step, std::function<T(T)> &&fct) {
+    inline constexpr T integ_riemann_sum(T start, T end, T step, std::function<T(T)> &&fct) {
         T acc = {};
 
         for (T x = start; x < end; x += step) {

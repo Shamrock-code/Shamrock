@@ -19,6 +19,7 @@
 #include "shambase/constants.hpp"
 #include "shambase/type_name_info.hpp"
 #include "shambackends/math.hpp"
+#include "shammath/integrator.hpp"
 
 namespace shammath::details {
 
@@ -757,6 +758,12 @@ namespace shammath {
 
         inline static Tscal dhW_3d(Tscal r, Tscal h) {
             return -(BaseKernel::norm_3d) * (3 * f(r / h) + (r / h) * df(r / h)) / (h * h * h * h);
+        }
+
+        inline static Tscal f3d_integ_z(Tscal x, int np = 32) {
+            return integ_riemann_sum(-Rkern, Rkern, Rkern / np, [&](Tscal z) {
+                return f(sqrt(x * x + z * z));
+            });
         }
     };
 

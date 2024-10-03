@@ -52,6 +52,14 @@ namespace shammodels::sph::modules {
             u32 nx,
             u32 ny);
 
+        sham::DeviceBuffer<Tfield> compute_column_integ(
+            std::function<field_getter_t> field_getter,
+            Tvec center,
+            Tvec delta_x,
+            Tvec delta_y,
+            u32 nx,
+            u32 ny);
+
         sham::DeviceBuffer<Tfield> compute_slice(
             std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny);
 

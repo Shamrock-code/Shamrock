@@ -15,6 +15,7 @@
 
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 namespace shammodels::sph::modules {
@@ -24,57 +25,37 @@ namespace shammodels::sph::modules {
         std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny)
         -> sham::DeviceBuffer<Tfield> {
 
-        if constexpr (std::is_same_v<Tfield, f64>) {
-            if (field_name == "rho" && std::is_same_v<Tscal, Tfield>) {
-                using namespace shamrock;
-                using namespace shamrock::patch;
-                shamrock::SchedulerUtility utility(scheduler());
-                shamrock::ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
-
-                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-                    logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        sycl::accessor acc_h{
-                            shambase::get_check_ref(
-                                pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart"))
-                                    .get_buf()),
-                            cgh,
-                            sycl::read_only};
-
-                        sycl::accessor acc_rho{
-                            shambase::get_check_ref(density.get_buf(p.id_patch)),
-                            cgh,
-                            sycl::write_only,
-                            sycl::no_init};
-                        const Tscal part_mass = solver_config.gpart_mass;
-
-                        cgh.parallel_for(
-                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                                u32 gid = (u32) item.get_id();
-                                using namespace shamrock::sph;
-                                Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
-                                acc_rho[gid] = rho_ha;
-                            });
-                    });
-                });
-
-                auto field_source_getter
-                    = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat)
-                    -> const std::unique_ptr<sycl::buffer<Tfield>> & {
-                    return density.get_buf(cur_p.id_patch);
-                };
-
-                return compute_slice(field_source_getter, center, delta_x, delta_y, nx, ny);
-            }
+        if (shamcomm::world_rank() == 0) {
+            logger::info_ln(
+                "sph::CartesianRender",
+                shambase::format(
+                    "compute_slice field_name: {}, center: {}, delta_x: {}, delta_y: {}, nx: {}, "
+                    "ny: {}",
+                    field_name,
+                    center,
+                    delta_x,
+                    delta_y,
+                    nx,
+                    ny));
         }
 
-        auto field_source_getter =
-            [&](const shamrock::patch::Patch cur_p,
-                shamrock::patch::PatchData &pdat) -> const std::unique_ptr<sycl::buffer<Tfield>> & {
-            return pdat.get_field<Tfield>(pdat.pdl.get_field_idx<Tfield>(field_name)).get_buf();
-        };
+        shambase::Timer t;
+        t.start();
 
-        return compute_slice(field_source_getter, center, delta_x, delta_y, nx, ny);
+        auto ret = RenderFieldGetter<Tvec, Tfield, SPHKernel>(context, solver_config, storage)
+                       .runner_function(
+                           field_name, [&](auto field_getter) -> sham::DeviceBuffer<Tfield> {
+                               return compute_slice(field_getter, center, delta_x, delta_y, nx, ny);
+                           });
+
+        t.end();
+        if (shamcomm::world_rank() == 0) {
+            logger::info_ln(
+                "sph::CartesianRender",
+                shambase::format("compute_slice took {}", t.get_time_str()));
+        }
+
+        return ret;
     }
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>

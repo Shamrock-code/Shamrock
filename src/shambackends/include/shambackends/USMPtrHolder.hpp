@@ -18,6 +18,7 @@
  * and deallocate memory in USM.
  */
 
+#include "shambase/ptr.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include <memory>
 #include <utility>
@@ -134,6 +135,10 @@ namespace sham {
          */
         template<class T>
         inline T *ptr_cast() const {
+            if (!shambase::is_aligned<T>(usm_ptr)) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "The USM pointer is not aligned with the given type");
+            }
             return reinterpret_cast<T *>(usm_ptr);
         }
 

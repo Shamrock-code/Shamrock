@@ -101,6 +101,12 @@ jobs:
           cd build
           source activate && shammake
 
+      - name: Pull refs
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source activate && pull_reffiles
+
       - name: run test
         run: |
           cd build

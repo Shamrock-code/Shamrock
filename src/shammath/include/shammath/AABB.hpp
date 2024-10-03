@@ -75,6 +75,10 @@ namespace shammath {
 
         inline T sum_bounds() const noexcept { return lower + upper; }
 
+        inline AABB expand_all(typename T_prop::component_type value) {
+            return AABB{lower - value, upper + value};
+        }
+
         template<class Tb>
         inline AABB<Tb> convert() {
             using Tb_prop = shambase::VectorProperties<Tb>;

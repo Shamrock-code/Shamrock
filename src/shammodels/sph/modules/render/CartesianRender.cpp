@@ -14,6 +14,7 @@
  */
 
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
+#include "shammath/AABB.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -291,16 +292,15 @@ namespace shammodels::sph::modules {
 
                     Tfield ret = sham::VectorProperties<Tfield>::get_zero();
 
+                    shammath::Ray<Tvec> ray(pos_render, e_z);
+
                     particle_looper.rtree_for(
                         [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
                             Tscal rint_cell = hmax[node_id] * Kernel::Rkern;
 
-                            auto interbox
-                                = shammath::CoordRange<Tvec>{bmin, bmax}.expand_all(rint_cell);
+                            auto interbox = shammath::AABB<Tvec>{bmin, bmax}.expand_all(rint_cell);
 
-                            return interbox.contain_pos(pos_render);
-
-                            // change this also to AABB ray intersect instead
+                            return interbox.intersect_ray(ray);
                         },
                         [&](u32 id_b) {
                             Tvec dr = pos_render - xyz[id_b];

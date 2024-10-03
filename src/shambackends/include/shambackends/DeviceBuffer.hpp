@@ -45,7 +45,8 @@ namespace sham {
          * size in the respective member variables.
          */
         DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
-            : hold(details::create_usm_ptr<target>(sz * sizeof(T), dev_sched)), size(sz) {}
+            : hold(details::create_usm_ptr<target>(sz * sizeof(T), dev_sched, alignof(T))),
+              size(sz) {}
 
         /**
          * @brief Deleted copy constructor

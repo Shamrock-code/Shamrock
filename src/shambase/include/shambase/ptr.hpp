@@ -14,14 +14,26 @@
  * @brief
  *
  */
+#include <cstddef>
 #include <cstdint>
+
 namespace shambase {
+
+    /// @brief Check if a pointer is aligned with the given alignment.
+    ///
+    /// @param[in] ptr the pointer to check
+    /// @param[in] alignment the alignment to check for
+    ///
+    /// @return `true` if the pointer is aligned, `false` otherwise
+    inline bool is_aligned(const void *ptr, size_t alignment) noexcept {
+        auto iptr = reinterpret_cast<std::uintptr_t>(ptr);
+        return !(iptr % alignment);
+    }
 
     /// @brief Check if a pointer is aligned with the given type.
     template<class T>
-    bool is_aligned(const void *ptr) noexcept {
-        auto iptr = reinterpret_cast<std::uintptr_t>(ptr);
-        return !(iptr % alignof(T));
+    inline bool is_aligned(const void *ptr) noexcept {
+        return is_aligned(ptr, alignof(T));
     }
 
 } // namespace shambase

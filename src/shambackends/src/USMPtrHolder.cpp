@@ -19,20 +19,36 @@
 namespace sham {
 
     template<USMKindTarget target>
-    USMPtrHolder<target>
-    USMPtrHolder<target>::create(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched) {
+    USMPtrHolder<target> USMPtrHolder<target>::create(
+        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment) {
 
         sycl::context &sycl_ctx = dev_sched->ctx->ctx;
         sycl::device &dev       = dev_sched->ctx->device->dev;
         void *usm_ptr;
-        if constexpr (target == device) {
-            usm_ptr = sycl::malloc_device(sz, dev, sycl_ctx);
-        } else if constexpr (target == shared) {
-            usm_ptr = sycl::malloc_shared(sz, dev, sycl_ctx);
-        } else if constexpr (target == host) {
-            usm_ptr = sycl::malloc_host(sz, sycl_ctx);
+
+        if (alignment) {
+
+            // TODO upgrade alignment to 256-bit for CUDA ?
+
+            if constexpr (target == device) {
+                usm_ptr = sycl::aligned_alloc_device(*alignment, sz, dev, sycl_ctx);
+            } else if constexpr (target == shared) {
+                usm_ptr = sycl::aligned_alloc_shared(*alignment, sz, dev, sycl_ctx);
+            } else if constexpr (target == host) {
+                usm_ptr = sycl::aligned_alloc_host(*alignment, sz, sycl_ctx);
+            } else {
+                shambase::throw_unimplemented();
+            }
         } else {
-            shambase::throw_unimplemented();
+            if constexpr (target == device) {
+                usm_ptr = sycl::malloc_device(sz, dev, sycl_ctx);
+            } else if constexpr (target == shared) {
+                usm_ptr = sycl::malloc_shared(sz, dev, sycl_ctx);
+            } else if constexpr (target == host) {
+                usm_ptr = sycl::malloc_host(sz, sycl_ctx);
+            } else {
+                shambase::throw_unimplemented();
+            }
         }
 
         return USMPtrHolder<target>(usm_ptr, sz, dev_sched);

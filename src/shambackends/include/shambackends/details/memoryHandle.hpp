@@ -55,7 +55,10 @@ namespace sham::details {
      * @return USMPtrHolder<target> The newly created USM pointer.
      */
     template<USMKindTarget target>
-    USMPtrHolder<target> create_usm_ptr(u32 size, std::shared_ptr<DeviceScheduler> dev_sched);
+    USMPtrHolder<target> create_usm_ptr(
+        u32 size,
+        std::shared_ptr<DeviceScheduler> dev_sched,
+        std::optional<size_t> alignment = std::nullopt);
 
     /**
      * @brief Release a USM pointer.

@@ -3,6 +3,7 @@ repos:
   rev: v4.4.0
   hooks:
   - id: trailing-whitespace
+    exclude: ^\svg
     log_file: log_precommit_trailing-whitespace
   - id: end-of-file-fixer  # add EOF "\n" if missing
     log_file: log_precommit_end-of-file-fixer

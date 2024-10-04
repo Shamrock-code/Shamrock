@@ -320,7 +320,7 @@ namespace shammodels::sph::modules {
 
                             Tscal rho_b = shamrock::sph::rho_h(partmass, h_b, Kernel::hfactd);
 
-                            ret += partmass * val * Kernel::W_3d(rab, h_b) / rho_b;
+                            ret += partmass * val * Kernel::Y_3d(rab, h_b, 4) / rho_b;
                         });
 
                     render_field[gid] += ret;

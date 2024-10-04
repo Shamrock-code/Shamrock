@@ -45,3 +45,42 @@ The arguments to be passed to the function are :
 - `center`: the center of the slice
 - `delta_x` and `delta_y`: the size of the slice
 - `nx` and `ny`: the number of pixels in the slice
+
+
+## Column density algorithm
+
+The standard SPH kernel is defined as being
+
+\[
+    W(\mathbf{r},h) = \frac{C_{norm}}{h^3} f\left(q = \vert \frac{\mathbf{r}}{h}\vert \right)
+\]
+
+If we integrate along the z axis we can define a new kernel
+
+\[
+    Y(x,y,h) = \frac{C_{norm}}{h^3} \int \mathrm{d}z \, f\left(q = \vert \frac{\mathbf{r}}{h}\vert \right)
+\]
+
+Which can can transform as follows
+
+\[
+    Y(x,y,h) = \frac{C_{norm}}{h^2} \int \mathrm{d}q_z \, f\left(\sqrt{q_x^2 + q_y^2 + q_z^2}\right) = \frac{C_{norm}}{h^2}  g\left(\sqrt{q_x^2 + q_y^2 }\right)
+\]
+
+where
+
+\[
+    g(q_x) = \int \mathrm{d}q_z \, f\left(\sqrt{q_x^2  + q_z^2}\right)
+\]
+
+We can use a Riemann sum to integrate this function, this gives the following plot
+
+![plot_error](../assets/figures/integ_kernel.svg)
+
+We can see here that already with only 4 points in the riemann sum we approximate the kernel $g$ fairly well.
+We can compare the error with a large number of points (1024 here)
+
+![plot_error](../assets/figures/estim_integ_kernel.svg)
+
+indeed only 4 points yield a sufficient precision for the integrated kernel, which make it
+sufficiently cheap to be usable as is.

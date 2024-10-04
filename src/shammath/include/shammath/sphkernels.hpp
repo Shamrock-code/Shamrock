@@ -765,6 +765,10 @@ namespace shammath {
                 return f(sqrt(x * x + z * z));
             });
         }
+
+        inline static Tscal Y_3d(Tscal r, Tscal h, int np = 32) {
+            return BaseKernel::norm_3d * f3d_integ_z(r / h, np) / (h * h);
+        }
     };
 
     /**

@@ -1,39 +1,108 @@
 # Plotting results
 
-In SPH we have access to slice rendering, it can be used in runscripts as follows :
+## Rendering 
+In SPH we have access to rendering, it can be used in runscripts as follows :
+
+First define the parameters of the plot
 ```py
-import matplotlib
-# Reset the figure using the same memory as the last one
-plt.figure(num=1, clear=True,dpi=200)
-import copy
+pixel_x = 1920
+pixel_y = 1080
+radius = 5
+center = (0.,0.,0.)
+
+aspect = pixel_x/pixel_y
+pic_range = [-radius*aspect, radius*aspect, -radius, radius]
+delta_x = (radius*2*aspect,0.,0.)
+delta_y = (0.,radius*2,0.)
+```
+
+You can do a column integrated plot :
+```py
+arr_rho = model.render_cartesian_column_integ(
+    "rho",
+    "f64",
+    center = (0.,0.,0.),
+    delta_x = delta_x,
+    delta_y = delta_y, 
+    nx = pixel_x, 
+    ny = pixel_y)
+```
+
+Or a slice :
+```py
+arr_rho = model.render_cartesian_slice(
+    "rho",
+    "f64",
+    center = (0.,0.,0.),
+    delta_x = delta_x,
+    delta_y = delta_y, 
+    nx = pixel_x, 
+    ny = pixel_y)
+```
+Note here that you can save the obtained numpy array using `np.save` and recover it using `np.load`
+
+## Matplotlib 
+You can then either do a standard plot like so :
+```py
+import copy, matplotlib
 my_cmap = copy.copy(matplotlib.colormaps.get_cmap('gist_heat')) # copy the default cmap
 my_cmap.set_bad(color="black")
 
-sinks = model.get_sinks()
-
-ext = 5
-arr = model.render_cartesian_slice("rho","f64",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
-res = plt.imshow(arr, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext], norm="log", vmin=1e-8, vmax=2e-4)
-
-ax = plt.gca()
-
-output_list = []
-for s in sinks:
-    x,y,z = s["pos"]
-    output_list.append(
-        plt.Circle((x, y), s["accretion_radius"], color="blue", fill=False))
-for circle in output_list:
-    ax.add_artist(circle)
-
-plt.xlabel("x")
-plt.ylabel("y")
-plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2*np.pi)))
+plt.figure(figsize=(16/2,9/2))
+res = plt.imshow(arr_rho, cmap=my_cmap,origin='lower', extent=pic_range, norm="log",vmin=1e-9)
 
 cbar = plt.colorbar(res, extend='both')
-cbar.set_label(r"$\rho$ [code unit]")
-plt.show()
+cbar.set_label(r"$\int \rho \, \mathrm{d} z$ [code unit]")
+# or r"$\rho$ [code unit]" for slices
+
+plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
+plt.xlabel("x")
+plt.ylabel("z")
 ```
 
+This should result in something like this :
+![plot](../assets/figures/std_plot.svg)
+
+Or you do the same plot using the splash cinematic way like so :
+```py
+import copy, matplotlib
+my_cmap = copy.copy(matplotlib.colormaps.get_cmap('gist_heat')) # copy the default cmap
+my_cmap.set_bad(color="black")
+
+dpi=200
+plt.figure(dpi=dpi)
+plt.gca().set_position((0, 0, 1, 1))
+plt.gcf().set_size_inches(pixel_x / dpi, pixel_y / dpi)
+plt.axis('off') 
+
+res = plt.imshow(arr_rho, cmap=my_cmap,origin='lower', extent=pic_range, norm="log",vmin=1e-9)
+
+axins = plt.gca().inset_axes([0.73, 0.1, 0.25, 0.025])
+cbar = plt.colorbar(res,cax=axins,orientation="horizontal", extend='both')
+cbar.set_label(r"$\int \rho \, \mathrm{d} z$ [code unit]")
+
+from matplotlib.offsetbox import AnchoredText
+anchored_text = AnchoredText("t = {:0.3f} [code unit]".format(model.get_time()), loc=2)
+plt.gca().add_artist(anchored_text)
+```
+![plot](../assets/figures/cinematic_plot.svg)
+
+
+## Adding sink particles
+
+You can also add sink particles to the plot like so
+```py
+output_list = []
+for s in model.get_sinks():
+    x,y,z = s["pos"]
+    output_list.append(
+        plt.Circle((x, z), s["accretion_radius"], color="chartreuse", fill=False))
+for circle in output_list:
+    plt.gca().add_artist(circle)
+```
+![plot](../assets/figures/cinematic_plot_sink.svg)
+
+## Details of the rendering function
 In this sample the core function to be used is `model.render_cartesian_slice` which will
 render the slice using the GPU trees. It will return a numpy array with the slice.
 

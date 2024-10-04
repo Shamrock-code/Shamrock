@@ -5,7 +5,7 @@ import numpy as np
 ####################################################
 # Setup parameters
 ####################################################
-Npart = 1000000
+Npart = 100000
 disc_mass = 0.01 #sol mass
 center_mass = 1
 center_racc = 0.05
@@ -433,13 +433,58 @@ def plot_rho(ext,sinks,arr_rho, iplot):
 
     plt.savefig("plot_rho_{:04}.png".format(iplot))
 
+
+def rot_plot_rho(ext,sinks,arr_rho, iplot,e_r,e_theta):
+
+    import matplotlib
+    # Reset the figure using the same memory as the last one
+    plt.figure(num=1, clear=True,dpi=200)
+    import copy
+    my_cmap = copy.copy(matplotlib.colormaps.get_cmap('gist_heat')) # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    res = plt.imshow(arr_rho, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext], norm="log", vmin=1e-8, vmax=2e-4)
+    #res = plt.imshow(arr[:,:,0], cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
+    #plt.scatter(sinks[:,0],sinks[:,1], s=1)
+
+    ax = plt.gca()
+
+    output_list = []
+    for s in sinks:
+        print(s)
+        x,y,z = s["pos"]
+        e_rx, e_ry, e_rz = e_r
+        e_thx, e_thy, e_thz = e_theta
+
+        p_x = x * e_rx + y * e_ry
+        p_y = x * e_thx + y * e_thy
+
+
+
+        output_list.append(
+            plt.Circle((p_x/(2*ext), p_y/(2*ext)), s["accretion_radius"], color="blue", fill=False))
+    for circle in output_list:
+        ax.add_artist(circle)
+
+    plt.xlabel(r"$x_{binary}$")
+    plt.ylabel(r"$y_{binary}$")
+    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2*np.pi)))
+
+    cbar = plt.colorbar(res, extend='both')
+    cbar.set_label(r"$\rho$ [code unit]")
+
+    plt.savefig("plot_rho_rot_{:04}.png".format(iplot))
+
 def plot_vx(ext,sinks,arr_vx, iplot):
+
 
     import matplotlib
     # Reset the figure using the same memory as the last one
     plt.figure(num=1, clear=True,dpi=200)
 
-    res = plt.imshow(arr_vx, cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
+    v_ext = np.max(arr_vx)
+    v_ext = max(v_ext,np.abs(np.min(arr_vx)))
+    res = plt.imshow(arr_vx, cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext], vmin=-v_ext, vmax=v_ext)
     #res = plt.imshow(arr[:,:,0], cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
     #plt.scatter(sinks[:,0],sinks[:,1], s=1)
 
@@ -464,16 +509,115 @@ def plot_vx(ext,sinks,arr_vx, iplot):
     plt.savefig("plot_vx_{:04}.png".format(iplot))
 
 
+def plot_vz_z(ext,sinks,arr_vz, iplot):
+
+    import matplotlib
+    # Reset the figure using the same memory as the last one
+    plt.figure(num=1, clear=True,dpi=200)
+
+    v_ext = np.max(arr_vz)
+    v_ext = max(v_ext,np.abs(np.min(arr_vz)))
+    res = plt.imshow(arr_vz, cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext], vmin=-v_ext, vmax=v_ext)
+    #res = plt.imshow(arr[:,:,0], cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
+    #plt.scatter(sinks[:,0],sinks[:,1], s=1)
+
+    ax = plt.gca()
+
+    output_list = []
+    for s in sinks:
+        print(s)
+        x,y,z = s["pos"]
+        output_list.append(
+            plt.Circle((x, z), s["accretion_radius"], color="blue", fill=False))
+    for circle in output_list:
+        ax.add_artist(circle)
+
+    plt.xlabel("x")
+    plt.ylabel("z")
+    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2*np.pi)))
+
+    cbar = plt.colorbar(res, extend='both')
+    cbar.set_label(r"$v_z$ [code unit]")
+
+    plt.savefig("plot_vz_z_{:04}.png".format(iplot))
+
+
+def rot_plot_vz_z(ext,sinks,arr_vz, iplot,e_r,e_z):
+
+    import matplotlib
+    # Reset the figure using the same memory as the last one
+    plt.figure(num=1, clear=True,dpi=200)
+
+    v_ext = np.max(arr_vz)
+    v_ext = max(v_ext,np.abs(np.min(arr_vz)))
+    res = plt.imshow(arr_vz, cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext], vmin=-v_ext, vmax=v_ext)
+    #res = plt.imshow(arr[:,:,0], cmap="seismic",origin='lower', extent=[-ext, ext, -ext, ext])
+    #plt.scatter(sinks[:,0],sinks[:,1], s=1)
+
+    ax = plt.gca()
+
+    output_list = []
+    for s in sinks:
+        print(s)
+        x,y,z = s["pos"]
+        e_rx, e_ry, e_rz = e_r
+        e_zx, e_zy, e_zz = e_z
+
+        p_x = x * e_rx + y * e_ry
+        p_z = z
+
+        output_list.append(
+            plt.Circle((p_x/(2*ext), p_z), s["accretion_radius"], color="blue", fill=False))
+    for circle in output_list:
+        ax.add_artist(circle)
+
+    plt.xlabel(r"$x_{binary}$")
+    plt.ylabel(r"$z_{binary}$")
+    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2*np.pi)))
+
+    cbar = plt.colorbar(res, extend='both')
+    cbar.set_label(r"$\rho$ [code unit]")
+
+    plt.savefig("plot_vz_z_rot_{:04}.png".format(iplot))
+
+
 def plot_state(iplot):
     sinks = model.get_sinks()
 
+
+    x1,y1,z1 = sinks[0]["pos"]
+    x2,y2,z2 = sinks[1]["pos"]
+
     ext = 5
+
+    d_x = x2-x1
+    d_y = y2-y1
+    d_z = z2-z1
+    d = np.sqrt(d_x**2 + d_y**2 + d_z**2)
+    d_x = d_x/d
+    d_y = d_y/d
+    d_z = d_z/d
+
+    f = 2*ext
+    e_r = (f*d_x,f*d_y,0)
+    e_theta = (-f*d_y,f*d_x,0)
+    e_z = (0,0,f*1)
+
+
+
 
     arr_rho = model.render_cartesian_slice("rho","f64",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
     arr_v = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
+    arr_v_vslice = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,0.,ext*2), nx = 1000, ny = 1000)
+    rot_arr_rho = model.render_cartesian_slice("rho","f64",center = (0.,0.,0.),delta_x = e_r,delta_y = e_theta, nx = 1000, ny = 1000)
+    #rot_arr_v = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = e_r,delta_y = e_theta, nx = 1000, ny = 1000)
+    rot_arr_v_vslice = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = e_r,delta_y = e_z, nx = 1000, ny = 1000)
 
     plot_rho(ext,sinks,arr_rho, iplot)
+    rot_plot_rho(ext,sinks,rot_arr_rho, iplot,e_r,e_theta)
     plot_vx(ext,sinks,arr_v[:,:,0], iplot)
+    plot_vz_z(ext,sinks,arr_v_vslice[:,:,2], iplot)
+    rot_plot_vz_z(ext,sinks,rot_arr_v_vslice[:,:,2], iplot,e_r,e_z)
 
 
 

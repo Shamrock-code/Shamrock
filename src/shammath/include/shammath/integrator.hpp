@@ -19,8 +19,8 @@
 
 namespace shammath {
 
-    template<class T>
-    inline constexpr T integ_riemann_sum(T start, T end, T step, std::function<T(T)> &&fct) {
+    template<class T, class Lambda>
+    inline constexpr T integ_riemann_sum(T start, T end, T step, Lambda &&fct) {
         T acc = {};
 
         for (T x = start; x < end; x += step) {

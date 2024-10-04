@@ -433,6 +433,47 @@ def plot_rho(ext,sinks,arr_rho, iplot):
 
     plt.savefig("plot_rho_{:04}.png".format(iplot))
 
+def plot_rho_integ(ext,sinks,arr_rho, iplot):
+
+    dpi = 200
+    import matplotlib
+    # Reset the figure using the same memory as the last one
+    plt.figure(num=1, clear=True,dpi=dpi)
+    import copy
+    my_cmap = copy.copy(matplotlib.colormaps.get_cmap('gist_heat')) # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    res = plt.imshow(arr_rho, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext], norm="log", vmin=1e-8, vmax=1e-4)
+    #res = plt.imshow(arr_rho, cmap=my_cmap,origin='lower', extent=[-ext, ext, -ext, ext])
+    #plt.scatter(sinks[:,0],sinks[:,1], s=1)
+
+    ax = plt.gca()
+
+    output_list = []
+    for s in sinks:
+        print(s)
+        x,y,z = s["pos"]
+        output_list.append(
+            plt.Circle((x, y), s["accretion_radius"], color="blue", fill=False))
+    for circle in output_list:
+        ax.add_artist(circle)
+
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("t = {:0.3f} [Binary orbit]".format(model.get_time() / (2*np.pi)))
+
+    center_cmap_x = ext * 0.75
+    center_cmap_y = 0
+    cmap_width = ext * 0.125/2
+    cmap_height = ext * 1.8
+
+
+    cbar = plt.colorbar(res, extend='both')
+    cbar.set_label(r"$\int \rho \, \mathrm{d}z$ [code unit]")
+
+    plt.savefig("plot_rho_integ_{:04}.png".format(iplot))
+    exit()
+
 
 def rot_plot_rho(ext,sinks,arr_rho, iplot,e_r,e_theta):
 
@@ -607,6 +648,7 @@ def plot_state(iplot):
 
 
     arr_rho = model.render_cartesian_slice("rho","f64",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
+    arr_rho2 = model.render_cartesian_column_integ("rho","f64",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
     arr_v = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,ext*2,0.), nx = 1000, ny = 1000)
     arr_v_vslice = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = (ext*2,0,0.),delta_y = (0.,0.,ext*2), nx = 1000, ny = 1000)
     rot_arr_rho = model.render_cartesian_slice("rho","f64",center = (0.,0.,0.),delta_x = e_r,delta_y = e_theta, nx = 1000, ny = 1000)
@@ -614,6 +656,7 @@ def plot_state(iplot):
     rot_arr_v_vslice = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = e_r,delta_y = e_z, nx = 1000, ny = 1000)
 
     plot_rho(ext,sinks,arr_rho, iplot)
+    plot_rho_integ(ext,sinks,arr_rho2, iplot)
     rot_plot_rho(ext,sinks,rot_arr_rho, iplot,e_r,e_theta)
     plot_vx(ext,sinks,arr_v[:,:,0], iplot)
     plot_vz_z(ext,sinks,arr_v_vslice[:,:,2], iplot)

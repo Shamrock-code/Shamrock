@@ -1,6 +1,6 @@
 # Plotting results
 
-## Rendering 
+## Rendering
 In SPH we have access to rendering, it can be used in runscripts as follows :
 
 First define the parameters of the plot
@@ -23,8 +23,8 @@ arr_rho = model.render_cartesian_column_integ(
     "f64",
     center = (0.,0.,0.),
     delta_x = delta_x,
-    delta_y = delta_y, 
-    nx = pixel_x, 
+    delta_y = delta_y,
+    nx = pixel_x,
     ny = pixel_y)
 ```
 
@@ -35,13 +35,13 @@ arr_rho = model.render_cartesian_slice(
     "f64",
     center = (0.,0.,0.),
     delta_x = delta_x,
-    delta_y = delta_y, 
-    nx = pixel_x, 
+    delta_y = delta_y,
+    nx = pixel_x,
     ny = pixel_y)
 ```
 Note here that you can save the obtained numpy array using `np.save` and recover it using `np.load`
 
-## Matplotlib 
+## Matplotlib
 You can then either do a standard plot like so :
 ```py
 import copy, matplotlib
@@ -73,7 +73,7 @@ dpi=200
 plt.figure(dpi=dpi)
 plt.gca().set_position((0, 0, 1, 1))
 plt.gcf().set_size_inches(pixel_x / dpi, pixel_y / dpi)
-plt.axis('off') 
+plt.axis('off')
 
 res = plt.imshow(arr_rho, cmap=my_cmap,origin='lower', extent=pic_range, norm="log",vmin=1e-9)
 

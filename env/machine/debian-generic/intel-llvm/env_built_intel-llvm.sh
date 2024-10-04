@@ -44,5 +44,5 @@ function shammake {
 export REF_FILES_PATH=$BUILD_DIR/reference-files
 
 function pull_reffiles {
-    git clone git@github.com:Shamrock-code/reference-files.git $REF_FILES_PATH
+    git clone https://github.com/Shamrock-code/reference-files.git $REF_FILES_PATH
 }

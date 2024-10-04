@@ -761,7 +761,7 @@ namespace shammath {
         }
 
         inline static Tscal f3d_integ_z(Tscal x, int np = 32) {
-            return integ_riemann_sum(-Rkern, Rkern, Rkern / np, [&](Tscal z) {
+            return integ_riemann_sum<Tscal>(-Rkern, Rkern, Rkern / np, [&](Tscal z) {
                 return f(sqrt(x * x + z * z));
             });
         }

@@ -10,5 +10,6 @@ target_sources(shamrock_lib
         pyShamrockCtx.cpp
         pyShamsys.cpp
         pyAABB.cpp
+        pySPHKernels.cpp
     PUBLIC
     )

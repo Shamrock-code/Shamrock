@@ -93,13 +93,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (shamcomm::world_rank() == 0) {
-            std::cout << shamrock_title_bar_big << std::endl;
-            logger::print_faint_row();
-
-            std::cout << "\n"
-                      << shambase::term_colors::col8b_cyan() + "Git infos "
-                             + shambase::term_colors::reset() + ":\n";
-            std::cout << git_info_str << std::endl;
+            print_title_bar();
 
             logger::print_faint_row();
 

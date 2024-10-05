@@ -18,11 +18,14 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include "shamcmdopt/term_colors.hpp"
+#include "shamcomm/logs.hpp"
 #include <string>
 
 extern const std::string git_info_str;
 extern const std::string git_commit_hash;
 extern const std::string compile_arg;
+extern const std::string version_string;
 
 const u32 term_width = 64;
 
@@ -38,8 +41,13 @@ inline std::string shamrock_title_bar_big = "\n\
 ";
 
 inline void print_title_bar() {
-    printf("%s\n", shamrock_title_bar_big.c_str());
-    printf("---------------------------------------------------------------------------------");
-    printf("%s\n", git_info_str.c_str());
-    printf("---------------------------------------------------------------------------------\n");
+    logger::raw_ln(shamrock_title_bar_big);
+    logger::print_faint_row();
+
+    logger::raw_ln(
+        "\n" + shambase::term_colors::col8b_cyan() + "Shamrock version "
+        + shambase::term_colors::reset() + ": " + version_string);
+    logger::raw_ln(
+        "\n" + shambase::term_colors::col8b_cyan() + "Git infos " + shambase::term_colors::reset()
+        + ":\n" + shambase::trunc_str(git_info_str, 512));
 }

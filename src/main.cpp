@@ -64,7 +64,8 @@ int main(int argc, char *argv[]) {
 
         opts::register_opt("--rscript", "(filepath)", "run shamrock with python runscirpt");
         opts::register_opt("--ipython", {}, "run shamrock in Ipython mode");
-        opts::register_opt("--force-dgpu", {}, "for direct mpi comm on");
+        opts::register_opt("--force-dgpu-on", {}, "for direct mpi comm on");
+        opts::register_opt("--force-dgpu-off", {}, "for direct mpi comm off");
 
         shamcmdopt::register_env_var_doc(
             "SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
@@ -92,13 +93,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (shamcomm::world_rank() == 0) {
-            std::cout << shamrock_title_bar_big << std::endl;
-            logger::print_faint_row();
-
-            std::cout << "\n"
-                      << shambase::term_colors::col8b_cyan() + "Git infos "
-                             + shambase::term_colors::reset() + ":\n";
-            std::cout << git_info_str << std::endl;
+            print_title_bar();
 
             logger::print_faint_row();
 

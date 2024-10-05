@@ -61,6 +61,17 @@ namespace sham {
          * @brief Function to test that all the queues are working properly
          */
         void test();
+
+        /**
+         * @brief Check if the context corresponding to the device scheduler should use direct
+         * communication
+         *
+         * This method returns true if the context should use direct
+         * communication, false otherwise.
+         *
+         * @return true if direct communication should be used
+         */
+        bool use_direct_comm();
     };
 
 } // namespace sham

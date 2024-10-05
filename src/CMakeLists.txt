@@ -6,7 +6,7 @@
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
            ${CMAKE_CURRENT_SOURCE_DIR}/version__.cpp
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp "${CMAKE_CXX_FLAGS}"
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp "${CMAKE_CXX_FLAGS}" "${SHAMROCK_VERSION_STRING}"
   )
 
 

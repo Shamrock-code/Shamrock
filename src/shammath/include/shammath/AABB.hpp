@@ -22,6 +22,23 @@
 
 namespace shammath {
 
+    template<class T>
+    struct Ray {
+        using T_prop = shambase::VectorProperties<T>;
+        using Tscal  = typename T_prop::component_type;
+
+        T origin;
+        T direction;
+        T inv_direction;
+
+        inline Ray(T origin, T direction)
+            : origin(origin), direction(direction), inv_direction(1 / direction) {
+            Tscal f = sycl::length(direction);
+            this->direction /= f;
+            this->inv_direction *= f;
+        }
+    };
+
     /**
      * @brief Axis-Aligned bounding box
      *
@@ -36,6 +53,7 @@ namespace shammath {
     struct AABB {
 
         using T_prop = shambase::VectorProperties<T>;
+        using Tscal  = typename T_prop::component_type;
 
         T lower; ///< Lower bound of the AABB
         T upper; ///< Upper bound of the AABB
@@ -51,13 +69,15 @@ namespace shammath {
 
         inline T delt() const { return upper - lower; }
 
-        inline typename T_prop::component_type get_volume() {
-            return sham::product_accumulate(upper - lower);
-        }
+        inline Tscal get_volume() { return sham::product_accumulate(upper - lower); }
 
         inline T get_center() const noexcept { return (lower + upper) / 2; }
 
         inline T sum_bounds() const noexcept { return lower + upper; }
+
+        inline AABB expand_all(typename T_prop::component_type value) {
+            return AABB{lower - value, upper + value};
+        }
 
         template<class Tb>
         inline AABB<Tb> convert() {
@@ -88,6 +108,30 @@ namespace shammath {
 
         [[nodiscard]] inline bool is_surface_or_volume() const noexcept {
             return sham::component_have_at_most_one_zero(delt()) && (is_not_empty());
+        }
+
+        [[nodiscard]] inline bool intersect_ray(Ray<T> ray) const noexcept {
+            Tscal tmin = -shambase::get_infty<Tscal>(), tmax = shambase::get_infty<Tscal>();
+
+            Tscal tx1 = (lower.x() - ray.origin.x()) * ray.inv_direction.x();
+            Tscal tx2 = (upper.x() - ray.origin.x()) * ray.inv_direction.x();
+
+            tmin = sycl::max(tmin, sycl::min(tx1, tx2));
+            tmax = sycl::min(tmax, sycl::max(tx1, tx2));
+
+            Tscal ty1 = (lower.y() - ray.origin.y()) * ray.inv_direction.y();
+            Tscal ty2 = (upper.y() - ray.origin.y()) * ray.inv_direction.y();
+
+            tmin = sycl::max(tmin, sycl::min(ty1, ty2));
+            tmax = sycl::min(tmax, sycl::max(ty1, ty2));
+
+            Tscal tz1 = (lower.z() - ray.origin.z()) * ray.inv_direction.z();
+            Tscal tz2 = (upper.z() - ray.origin.z()) * ray.inv_direction.z();
+
+            tmin = sycl::max(tmin, sycl::min(tz1, tz2));
+            tmax = sycl::min(tmax, sycl::max(tz1, tz2));
+
+            return tmax >= tmin;
         }
     };
 

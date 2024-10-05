@@ -23,6 +23,8 @@ nav:
       - 'PSMN' : 'usermanual/clusters/psmn.md'
       - 'Adastra' : 'usermanual/clusters/adastra.md'
     - 'CUDA aware openMPI' : 'usermanual/openmpi_setup.md'
+    - 'Plotting' : 'usermanual/plotting.md'
+
 
   - 'Physical models' :
     - 'SPH' :

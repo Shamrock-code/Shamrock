@@ -81,7 +81,7 @@ namespace shamunits {
             // other constants in si units
             static constexpr T G         = 6.6743015e-11;               // (N.m2.kg-2)
             static constexpr T hbar      = 1.054571817e-34;             // (J.s-1)
-            static constexpr T mu_0      = 1.2566370621219e-6;          //
+            static constexpr T mu_0      = 1.2566370621219e-6;          // (N.A-2)
             static constexpr T Z_0       = mu_0 * c;                    //
             static constexpr T epsilon_0 = 1 / (Z_0 * c);               //
             static constexpr T ke        = 1 / (4 * pi<T> * epsilon_0); //
@@ -126,7 +126,12 @@ namespace shamunits {
 
         addconstant(au)         { return Cget(Si::astronomical_unit,1) * Uget(s,1) ; }
 
+        addconstant(N)         { return Cget(Si::N,1); }
+        addconstant(A)         { return Cget(Si::A,1); }
+
         addconstant(G)         { return Cget(Si::G,1) * Uget(N,1) * Uget(m,2) * Uget(kg,-2)  ; }
+
+        addconstant(mu_0)         { return Cget(Si::mu_0,1) * Uget(N,1) * Uget(A,-2)  ; }
 
         addconstant(earth_mass)         { return Cget(Si::earth_mass,1) * Uget(kg,1) ; }
         addconstant(jupiter_mass)         { return Cget(Si::jupiter_mass,1) * Uget(kg,1) ; }

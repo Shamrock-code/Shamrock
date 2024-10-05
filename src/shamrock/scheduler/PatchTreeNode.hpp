@@ -79,7 +79,7 @@ namespace shamrock::scheduler {
         // patch fields
         u64 load_value = u64_max;
 
-        std::array<PatchTreeNode, split_count> get_split_nodes();
+        std::array<PatchTreeNode, split_count> get_split_nodes(u32 cur_id);
 
         bool is_leaf() { return tree_node.is_leaf; }
 
@@ -120,7 +120,8 @@ namespace shamrock::scheduler {
                && (lhs.linked_patchid == rhs.linked_patchid) && (lhs.load_value == rhs.load_value);
     }
 
-    inline auto PatchTreeNode::get_split_nodes() -> std::array<PatchTreeNode, split_count> {
+    inline auto
+    PatchTreeNode::get_split_nodes(u32 cur_id) -> std::array<PatchTreeNode, split_count> {
         std::array<PatchCoord, split_count> splt_coord = patch_coord.split();
 
         std::array<PatchTreeNode, split_count> ret;
@@ -129,7 +130,7 @@ namespace shamrock::scheduler {
         for (u32 i = 0; i < split_count; i++) {
             ret[i].patch_coord          = splt_coord[i];
             ret[i].tree_node.level      = tree_node.level + 1;
-            ret[i].tree_node.parent_nid = tree_node.parent_nid;
+            ret[i].tree_node.parent_nid = cur_id;
         }
 
         return ret;

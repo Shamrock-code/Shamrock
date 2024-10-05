@@ -47,7 +47,7 @@ namespace shamrock::scheduler {
         tree_node.is_leaf             = false;
         tree_node.child_are_all_leafs = true;
 
-        std::array<Node, Node::split_count> splitted_node = curr.get_split_nodes();
+        std::array<Node, Node::split_count> splitted_node = curr.get_split_nodes(id);
 
 #pragma unroll
         for (u32 i = 0; i < Node::split_count; i++) {

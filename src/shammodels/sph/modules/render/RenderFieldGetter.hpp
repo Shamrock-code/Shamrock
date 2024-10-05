@@ -1,0 +1,56 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
+// Licensed under CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file RenderFieldGetter.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ *
+ */
+
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/typeAliasVec.hpp"
+#include "shambackends/vec.hpp"
+#include "shammodels/sph/SolverConfig.hpp"
+#include "shammodels/sph/modules/SolverStorage.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
+
+namespace shammodels::sph::modules {
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
+    class RenderFieldGetter {
+        public:
+        using Tscal              = shambase::VecComponent<Tvec>;
+        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+        using Kernel             = SPHKernel<Tscal>;
+
+        using Config  = SolverConfig<Tvec, SPHKernel>;
+        using Storage = SolverStorage<Tvec, u32>;
+
+        ShamrockCtx &context;
+        Config &solver_config;
+        Storage &storage;
+
+        RenderFieldGetter(ShamrockCtx &context, Config &solver_config, Storage &storage)
+            : context(context), solver_config(solver_config), storage(storage) {}
+
+        using field_getter_t = const std::unique_ptr<sycl::buffer<Tfield>> &(
+            const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat);
+
+        using lamda_runner
+            = std::function<sham::DeviceBuffer<Tfield>(std::function<field_getter_t>)>;
+
+        sham::DeviceBuffer<Tfield> runner_function(std::string field_name, lamda_runner lambda);
+
+        private:
+        inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+    };
+
+} // namespace shammodels::sph::modules

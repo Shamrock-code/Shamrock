@@ -26,6 +26,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/EOSConfig.hpp"
 #include "shammodels/ExtForceConfig.hpp"
+#include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <shamunits/Constants.hpp>
@@ -139,6 +140,17 @@ struct shammodels::sph::SolverConfig {
         }
     }
 
+    /// Retrieves the value of the constant mu_0 based on the unit system.
+    inline Tscal get_constant_mu_0() {
+        if (!unit_sys) {
+            logger::warn_ln("sph::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.mu_0();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.mu_0();
+        }
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,6 +193,30 @@ struct shammodels::sph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // MHD Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using MHDConfig      = MHDConfig<Tvec>;
+    MHDConfig mhd_config = {};
+
+    /// disable MHD in the SPH solver
+    inline void set_noMHD() {
+        using Tmp = typename MHDConfig::None;
+        mhd_config.set(Tmp{});
+    }
+
+    /// Enable the ideal MHD hydro solver
+    inline void set_IdealMHD(typename MHDConfig::IdealMHD_constrained_hyper_para v) {
+        mhd_config.set(v);
+    }
+
+    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_config.set(v); }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // MHD Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -509,6 +545,15 @@ struct shammodels::sph::SolverConfig {
         return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
     }
 
+    /// @brief Whether the solver has a field for B_on_rho
+    inline bool has_field_B_on_rho() { return mhd_config.has_B_field() && (dim == 3); }
+
+    /// @brief Whether the solver has a field for psi_on_ch
+    inline bool has_field_psi_on_ch() { return mhd_config.has_psi_field(); }
+
+    /// @brief Whether the solver has a field for curlB
+    inline bool has_field_curlB() { return mhd_config.has_curlB_field() && (dim == 3); }
+
     /// Print the current status of the solver config
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {
@@ -699,6 +744,8 @@ namespace shammodels::sph {
             {"cfl_config", p.cfl_config},
             {"unit_sys", junit},
             {"time_state", p.time_state},
+            // mhd config
+            {"mhd_config", p.mhd_config},
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
@@ -757,6 +804,15 @@ namespace shammodels::sph {
         from_json_optional(j.at("unit_sys"), p.unit_sys);
 
         j.at("time_state").get_to(p.time_state);
+
+        // mhd config
+        try {
+            j.at("mhd_config").get_to(p.mhd_config);
+        } catch (const nlohmann::json::out_of_range &e) {
+            logger::warn_ln(
+                "SPHConfig", "mhd_config not found when deserializing, defaulting to None");
+            p.mhd_config.set(typename T::MHDConfig::None{});
+        }
 
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);

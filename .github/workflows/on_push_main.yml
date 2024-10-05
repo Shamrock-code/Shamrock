@@ -154,6 +154,7 @@ jobs:
 
   publish_release:
 
+
     runs-on: [self-hosted,  docker-runner]
 
     container:
@@ -162,7 +163,8 @@ jobs:
 
     needs: [shamrock_linux_acpp_cov, make_documentation]
 
-    if: github.ref == 'refs/heads/main'
+    if: false
+    #if: github.ref == 'refs/heads/main'
 
     steps:
 

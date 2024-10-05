@@ -53,4 +53,18 @@ namespace sham {
         // #endif
     }
 
+    bool DeviceContext::use_direct_comm() {
+
+        if (!bool(device)) {
+            shambase::throw_with_loc<std::runtime_error>("Why is device not allocated");
+        }
+
+        auto &dev = *device;
+        if (dev.mpi_prop.is_mpi_direct_capable) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 } // namespace sham

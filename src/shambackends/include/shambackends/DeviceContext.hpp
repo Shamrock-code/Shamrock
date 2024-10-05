@@ -47,6 +47,16 @@ namespace sham {
          * @param device The device(s) to use for this context
          */
         explicit DeviceContext(std::shared_ptr<Device> device);
+
+        /**
+         * @brief Check if the context should use direct communication
+         *
+         * This method returns true if the context should use direct
+         * communication, false otherwise.
+         *
+         * @return true if direct communication should be used
+         */
+        bool use_direct_comm();
     };
 
 } // namespace sham

@@ -15,5 +15,7 @@ target_sources(shamrock_lib
         AnalysisSodTube.cpp
         SPHSetup.cpp
         setup/GeneratorMCDisc.cpp
+        render/CartesianRender.cpp
+        render/RenderFieldGetter.cpp
     PUBLIC
     )

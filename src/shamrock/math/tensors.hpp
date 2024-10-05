@@ -14,5 +14,5 @@
  * @brief
  */
 
-#include "tensors/collections.hpp"
-#include "tensors/symtensors.hpp"
+#include "shammath/symtensor_collections.hpp"
+#include "shammath/symtensors.hpp"

@@ -14,11 +14,11 @@
  */
 
 #include "nbody_selfgrav.hpp"
+#include "shammath/symtensor_collections.hpp"
 #include "shammodels/generic/algs/integrators_utils.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/utility/full_tree_field.hpp"
-#include "shamrock/math/tensors/collections.hpp"
 #include "shamrock/physics/fmm.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -177,6 +177,9 @@ class FMMInteract_cd {
 template<class Tree, class vec, class flt>
 void compute_multipoles(
     Tree &rtree, sycl::buffer<vec> &pos_part, sycl::buffer<flt> &grav_multipoles, flt gpart_mass) {
+
+    using namespace shammath;
+
     logger::debug_sycl_ln(
         "RTreeFMM",
         "computing leaf moments (",
@@ -320,6 +323,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
+    using namespace shammath;
 
     check_valid();
 

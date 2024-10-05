@@ -15,7 +15,7 @@
 
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
-#include "shamrock/math/tensors/collections.hpp"
+#include "shammath/symtensor_collections.hpp"
 #include "shamrock/physics/fmm.hpp"
 #include "shamrock/tree/RadixTree.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -34,6 +34,9 @@ class FMM_prec_eval {
     public:
     static T eval_prec_fmm_pot(
         sycl::vec<T, 3> xi, sycl::vec<T, 3> xj, sycl::vec<T, 3> sa, sycl::vec<T, 3> sb) {
+
+        using namespace shammath;
+
         f64 m_j = 1;
 
         std::vector<f64_3> pos_table = {xj};
@@ -110,6 +113,8 @@ class FMM_prec_eval {
     }
     static T eval_prec_fmm_force(
         sycl::vec<T, 3> xi, sycl::vec<T, 3> xj, sycl::vec<T, 3> sa, sycl::vec<T, 3> sb) {
+
+        using namespace shammath;
         f64 m_j = 1;
 
         std::vector<f64_3> pos_table = {xj};
@@ -375,7 +380,7 @@ TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
 }
 
 TestStart(Unittest, "models/generic/fmm/multipole_moment_offset", multipole_moment_offset, 1) {
-
+    using namespace shammath;
     std::mt19937 eng(0x1111);
     std::uniform_real_distribution<f64> distf64(-1, 1);
 
@@ -514,7 +519,7 @@ struct Result_nompi_fmm_testing {
 template<class flt, class morton_mode, u32 fmm_order>
 Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
     std::unique_ptr<sycl::buffer<sycl::vec<flt, 3>>> &pos_part, u32 reduc_level, flt open_crit) {
-
+    using namespace shammath;
     using vec = sycl::vec<flt, 3>;
 
     u32 npart = pos_part->size();

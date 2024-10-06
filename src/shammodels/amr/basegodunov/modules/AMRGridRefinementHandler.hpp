@@ -60,11 +60,11 @@ namespace shammodels::basegodunov::modules {
         private:
         template<class UserAcc, class Fct>
         void internal_refine_grid(
-            shambase::DistributedData<OptIndexList> refine_list, Fct &&refine_functor);
+            shambase::DistributedData<OptIndexList> &&refine_list, Fct &&refine_functor);
 
         template<class UserAcc, class Fct>
         void internal_derefine_grid(
-            shambase::DistributedData<OptIndexList> derefine_list, Fct &&derefine_functor);
+            shambase::DistributedData<OptIndexList> &&derefine_list, Fct &&derefine_functor);
 
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

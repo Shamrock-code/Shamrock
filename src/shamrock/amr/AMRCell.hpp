@@ -21,7 +21,7 @@
 namespace shamrock::amr {
 
     template<class Tcoord, u32 dim>
-    class AMRCellCoord {
+    class AMRBlockCoord {
 
         public:
         static constexpr u32 splts_count = 1U << dim;
@@ -32,9 +32,9 @@ namespace shamrock::amr {
         }
 
         inline static auto
-        get_split(Tcoord bmin, Tcoord bmax) -> std::array<AMRCellCoord, splts_count> {
+        get_split(Tcoord bmin, Tcoord bmax) -> std::array<AMRBlockCoord, splts_count> {
 
-            AMRCellCoord p0, p1, p2, p3, p4, p5, p6, p7;
+            AMRBlockCoord p0, p1, p2, p3, p4, p5, p6, p7;
 
             Tcoord splts = get_split_coord(bmin, bmax);
 
@@ -97,27 +97,27 @@ namespace shamrock::amr {
             return {p0, p1, p2, p3, p4, p5, p6, p7};
         }
 
-        inline auto split() { return AMRCellCoord::get_split(bmin, bmax); }
+        inline auto split() { return AMRBlockCoord::get_split(bmin, bmax); }
 
-        inline static AMRCellCoord get_merge(AMRCellCoord c1, AMRCellCoord c2) {
-            return AMRCellCoord{sycl::min(c1.bmin, c2.bmin), sycl::max(c1.bmax, c2.bmax)};
+        inline static AMRBlockCoord get_merge(AMRBlockCoord c1, AMRBlockCoord c2) {
+            return AMRBlockCoord{sycl::min(c1.bmin, c2.bmin), sycl::max(c1.bmax, c2.bmax)};
         }
 
-        inline static AMRCellCoord get_merge(std::array<AMRCellCoord, splts_count> others) {
-            return AMRCellCoord::get_merge(
-                AMRCellCoord::get_merge(
-                    AMRCellCoord::get_merge(others[0], others[1]),
-                    AMRCellCoord::get_merge(others[2], others[3])),
-                AMRCellCoord::get_merge(
-                    AMRCellCoord::get_merge(others[4], others[5]),
-                    AMRCellCoord::get_merge(others[6], others[7])));
+        inline static AMRBlockCoord get_merge(std::array<AMRBlockCoord, splts_count> others) {
+            return AMRBlockCoord::get_merge(
+                AMRBlockCoord::get_merge(
+                    AMRBlockCoord::get_merge(others[0], others[1]),
+                    AMRBlockCoord::get_merge(others[2], others[3])),
+                AMRBlockCoord::get_merge(
+                    AMRBlockCoord::get_merge(others[4], others[5]),
+                    AMRBlockCoord::get_merge(others[6], others[7])));
         }
 
-        inline static bool are_mergeable(std::array<AMRCellCoord, splts_count> others) {
+        inline static bool are_mergeable(std::array<AMRBlockCoord, splts_count> others) {
 
-            AMRCellCoord merged = AMRCellCoord::get_merge(others);
+            AMRBlockCoord merged = AMRBlockCoord::get_merge(others);
 
-            std::array<AMRCellCoord, splts_count> splitted = merged.split();
+            std::array<AMRBlockCoord, splts_count> splitted = merged.split();
 
             bool are_same = true;
 

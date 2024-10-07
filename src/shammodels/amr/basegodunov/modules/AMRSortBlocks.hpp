@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file AMRGridRefinementHandler.hpp
+ * @file AMRSortBlocks.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -23,16 +23,8 @@
 
 namespace shammodels::basegodunov::modules {
 
-    struct OptIndexList {
-        std::optional<sycl::buffer<u32>> idx;
-        u32 count;
-    };
-
     template<class Tvec, class TgridVec>
-    class AMRGridRefinementHandler {
-
-        class AMRBlockFinder;
-        class AMRLowering;
+    class AMRSortBlocks {
 
         public:
         using Tscal                      = shambase::VecComponent<Tvec>;
@@ -51,32 +43,12 @@ namespace shammodels::basegodunov::modules {
         Config &solver_config;
         Storage &storage;
 
-        AMRGridRefinementHandler(ShamrockCtx &context, Config &solver_config, Storage &storage)
+        AMRSortBlocks(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void refine_grid(shambase::DistributedData<OptIndexList> refine_list);
-        void derefine_grid(shambase::DistributedData<OptIndexList> derefine_list);
+        void reorder_amr_blocks();
 
         private:
-        template<class UserAcc, class Fct, class... T>
-        void gen_refine_block_changes(
-            shambase::DistributedData<OptIndexList> &refine_list,
-            shambase::DistributedData<OptIndexList> &derefine_list,
-            Fct &&flag_refine_derefine_functor,
-            T &&...args);
-
-        struct CellToUpdate {};
-
-        CellToUpdate update_refinement();
-
-        template<class UserAcc, class Fct>
-        void internal_refine_grid(
-            shambase::DistributedData<OptIndexList> &&refine_list, Fct &&refine_functor);
-
-        template<class UserAcc, class Fct>
-        void internal_derefine_grid(
-            shambase::DistributedData<OptIndexList> &&derefine_list, Fct &&derefine_functor);
-
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };
 

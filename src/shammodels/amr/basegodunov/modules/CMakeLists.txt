@@ -14,6 +14,7 @@ set(Sources
     ComputeCFL.cpp
     AnalysisSodTube.cpp
     AMRGridRefinementHandler.cpp
+    AMRSortBlocks.cpp
 )
 set(Headers
 )

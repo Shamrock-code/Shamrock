@@ -14,6 +14,163 @@
  */
 
 #include "shammodels/amr/basegodunov/modules/AMRGridRefinementHandler.hpp"
+#include "shammodels/amr/basegodunov/modules/AMRSortBlocks.hpp"
+
+template<class Tvec, class TgridVec>
+template<class UserAcc, class Fct, class... T>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    gen_refine_block_changes(
+        shambase::DistributedData<OptIndexList> &refine_list,
+        shambase::DistributedData<OptIndexList> &derefine_list,
+        Fct &&flag_refine_derefine_functor,
+        T &&...args) {
+
+    using namespace shamrock::patch;
+
+    u64 tot_refine   = 0;
+    u64 tot_derefine = 0;
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        sycl::queue &q = shamsys::instance::get_compute_queue();
+
+        u64 id_patch = cur_p.id_patch;
+
+        // create the refine and derefine flags buffers
+        u32 obj_cnt = pdat.get_obj_cnt();
+
+        sycl::buffer<u32> refine_flags(obj_cnt);
+        sycl::buffer<u32> derefine_flags(obj_cnt);
+
+        // fill in the flags
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sycl::accessor refine_acc{refine_flags, cgh, sycl::write_only, sycl::no_init};
+            sycl::accessor derefine_acc{derefine_flags, cgh, sycl::write_only, sycl::no_init};
+
+            UserAcc uacc(cgh, id_patch, cur_p, pdat, args...);
+
+            cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
+                bool flag_refine   = false;
+                bool flag_derefine = false;
+                flag_refine_derefine_functor(gid.get_linear_id(), uacc, flag_refine, flag_derefine);
+
+                // This is just a safe guard to avoid this nonsensicall case
+                if (flag_refine && flag_derefine) {
+                    flag_derefine = false;
+                }
+
+                refine_acc[gid]   = (flag_refine) ? 1 : 0;
+                derefine_acc[gid] = (flag_derefine) ? 1 : 0;
+            });
+        });
+
+        // keep only derefine flags on only if the eight cells want to merge and if they can
+        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sycl::accessor acc_min{*pdat.get_field<TgridVec>(0).get_buf(), cgh, sycl::read_only};
+            sycl::accessor acc_max{*pdat.get_field<TgridVec>(1).get_buf(), cgh, sycl::read_only};
+
+            sycl::accessor acc_merge_flag{derefine_flags, cgh, sycl::read_write};
+
+            cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
+                u32 id = gid.get_linear_id();
+
+                std::array<BlockCoord, split_count> blocks;
+
+                bool all_want_to_merge = true;
+                for (u32 lid = 0; lid < split_count; lid++) {
+                    blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
+                    all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
+                }
+
+                acc_merge_flag[gid] = all_want_to_merge && BlockCoord::are_mergeable(blocks);
+            });
+        });
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // refinement
+        ////////////////////////////////////////////////////////////////////////////////
+
+        // perform stream compactions on the refinement flags
+        auto [buf_refine, len_refine] = shamalgs::numeric::stream_compact(q, refine_flags, obj_cnt);
+
+        logger::debug_ln("AMRGrid", "patch ", id_patch, "refine block count = ", len_refine);
+
+        tot_refine += len_refine;
+
+        // add the results to the map
+        refine_list.add_obj(id_patch, OptIndexList{std::move(buf_refine), len_refine});
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // derefinement
+        ////////////////////////////////////////////////////////////////////////////////
+
+        // perform stream compactions on the derefinement flags
+        auto [buf_derefine, len_derefine]
+            = shamalgs::numeric::stream_compact(q, derefine_flags, obj_cnt);
+
+        logger::debug_ln("AMRGrid", "patch ", id_patch, "merge block count = ", len_derefine);
+
+        tot_derefine += len_derefine;
+
+        // add the results to the map
+        derefine_list.add_obj(id_patch, OptIndexList{std::move(buf_derefine), len_derefine});
+    });
+
+    logger::info_ln("AMRGrid", "on this process", tot_refine, "blocks were refined");
+    logger::info_ln(
+        "AMRGrid", "on this process", tot_derefine * split_count, "blocks were derefined");
+}
+
+template<class Tvec, class TgridVec>
+auto shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::update_refinement()
+    -> CellToUpdate {
+
+    // Ensure that the blocks are sorted before refinement
+    AMRSortBlocks block_sorter(context, solver_config, storage);
+    block_sorter.reorder_amr_blocks();
+
+    class RefineCritBlockAccessor {
+        public:
+        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> block_low_bound;
+        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> block_high_bound;
+
+        RefineCritBlockAccessor(
+            sycl::handler &cgh,
+            u64 id_patch,
+            shamrock::patch::Patch p,
+            shamrock::patch::PatchData &pdat)
+            : block_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
+              block_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
+    };
+
+    // get refine and derefine list
+    shambase::DistributedData<OptIndexList> refine_list;
+    shambase::DistributedData<OptIndexList> derefine_list;
+
+    gen_refine_block_changes<RefineCritBlockAccessor>(
+        refine_list,
+        derefine_list,
+        [](u32 block_id, RefineCritBlockAccessor acc, bool &should_refine, bool &should_derefine) {
+            u64_3 low_bound  = acc.block_low_bound[block_id];
+            u64_3 high_bound = acc.block_high_bound[block_id];
+
+            u64_3 block_size = high_bound - low_bound;
+            u64 block_sz     = block_size.x();
+
+            // refine based on x position
+            u64 wanted_sz = block_sz;
+            if (low_bound[0] < 4)
+                wanted_sz = 4;
+            if (low_bound[0] < 8)
+                wanted_sz = 8;
+            if (low_bound[0] < 16)
+                wanted_sz = 16;
+
+            should_refine   = (block_sz > 1) && (block_sz > wanted_sz);
+            should_derefine = (block_sz < wanted_sz);
+        });
+
+    return {};
+}
 
 template<class Tvec, class TgridVec>
 template<class UserAcc, class Fct>

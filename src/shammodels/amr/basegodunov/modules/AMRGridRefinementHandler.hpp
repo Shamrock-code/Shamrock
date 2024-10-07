@@ -58,6 +58,20 @@ namespace shammodels::basegodunov::modules {
         void derefine_grid(shambase::DistributedData<OptIndexList> derefine_list);
 
         private:
+        /**
+         * @brief Generate the list of blocks that need to be refined or derefined.
+         *
+         * We then need to apply the refinement, apply the changes to the indexes in the derefine
+         * list, then apply the derefinement.
+         *
+         * @tparam UserAcc
+         * @tparam Fct
+         * @tparam T
+         * @param refine_list
+         * @param derefine_list
+         * @param flag_refine_derefine_functor
+         * @param args
+         */
         template<class UserAcc, class Fct, class... T>
         void gen_refine_block_changes(
             shambase::DistributedData<OptIndexList> &refine_list,

@@ -84,7 +84,7 @@ def run_sim(vanleer = True, label = "none"):
 
         x,y,z = rmin
         rho = rho_d_map_1(rmin,rmax)
-        return (1 *rho,0 *rho,0 *rho)
+        return (1.25 *rho,0 *rho,0 *rho)
 
 
     model.set_field_value_lambda_f64("rho", rho_map)
@@ -102,7 +102,7 @@ def run_sim(vanleer = True, label = "none"):
     t = 0
     tend = 0.245
 
-    for i in range(15):
+    for i in range(55):
 
         # if i % freq == 0:
         model.dump_vtk("test"+str(i)+".vtk")

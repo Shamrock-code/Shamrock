@@ -17,12 +17,11 @@
 #include "shammodels/amr/basegodunov/modules/AMRSortBlocks.hpp"
 
 template<class Tvec, class TgridVec>
-template<class UserAcc, class Fct, class... T>
+template<class UserAcc, class... T>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     gen_refine_block_changes(
         shambase::DistributedData<OptIndexList> &refine_list,
         shambase::DistributedData<OptIndexList> &derefine_list,
-        Fct &&flag_refine_derefine_functor,
         T &&...args) {
 
     using namespace shamrock::patch;
@@ -51,7 +50,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
                 bool flag_refine   = false;
                 bool flag_derefine = false;
-                flag_refine_derefine_functor(gid.get_linear_id(), uacc, flag_refine, flag_derefine);
+                UserAcc::refine_criterion(gid.get_linear_id(), uacc, flag_refine, flag_derefine);
 
                 // This is just a safe guard to avoid this nonsensicall case
                 if (flag_refine && flag_derefine) {
@@ -119,110 +118,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     logger::info_ln(
         "AMRGrid", "on this process", tot_derefine * split_count, "blocks were derefined");
 }
-
 template<class Tvec, class TgridVec>
-auto shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::update_refinement()
-    -> CellToUpdate {
-
-    // Ensure that the blocks are sorted before refinement
-    AMRSortBlocks block_sorter(context, solver_config, storage);
-    block_sorter.reorder_amr_blocks();
-
-    class RefineCritBlockAccessor {
-        public:
-        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> block_low_bound;
-        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> block_high_bound;
-
-        RefineCritBlockAccessor(
-            sycl::handler &cgh,
-            u64 id_patch,
-            shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat)
-            : block_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
-              block_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
-    };
-
-    // get refine and derefine list
-    shambase::DistributedData<OptIndexList> refine_list;
-    shambase::DistributedData<OptIndexList> derefine_list;
-
-    gen_refine_block_changes<RefineCritBlockAccessor>(
-        refine_list,
-        derefine_list,
-        [](u32 block_id, RefineCritBlockAccessor acc, bool &should_refine, bool &should_derefine) {
-            u64_3 low_bound  = acc.block_low_bound[block_id];
-            u64_3 high_bound = acc.block_high_bound[block_id];
-
-            u64_3 block_size = high_bound - low_bound;
-            u64 block_sz     = block_size.x();
-
-            // refine based on x position
-            u64 wanted_sz = block_sz;
-            if (low_bound[0] < 4)
-                wanted_sz = 4;
-            if (low_bound[0] < 8)
-                wanted_sz = 8;
-            if (low_bound[0] < 16)
-                wanted_sz = 16;
-
-            should_refine   = (block_sz > 1) && (block_sz > wanted_sz);
-            should_derefine = (block_sz < wanted_sz);
-        });
-
-    class RefineCellAccessor {
-        public:
-        sycl::accessor<u32, 1, sycl::access::mode::read_write, sycl::target::device> field;
-
-        RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
-            : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} {}
-    };
-
-    internal_refine_grid<RefineCellAccessor>(
-        std::move(refine_list),
-
-        [](u32 cur_idx,
-           BlockCoord cur_coords,
-           std::array<u32, 8> new_cells,
-           std::array<BlockCoord, 8> new_cells_coords,
-           RefineCellAccessor acc) {
-            u32 val = acc.field[cur_idx];
-
-#pragma unroll
-            for (u32 pid = 0; pid < 8; pid++) {
-                acc.field[new_cells[pid]] = val;
-            }
-        }
-
-    );
-
-    internal_derefine_grid<RefineCellAccessor>(
-        std::move(derefine_list),
-
-        [](std::array<u32, 8> old_cells,
-           std::array<BlockCoord, 8> old_coords,
-           u32 new_cell,
-           BlockCoord new_coord,
-
-           RefineCellAccessor acc) {
-            u32 accum = 0;
-
-#pragma unroll
-            for (u32 pid = 0; pid < 8; pid++) {
-                accum += acc.field[old_cells[pid]];
-            }
-
-            acc.field[new_cell] = accum / 8;
-        }
-
-    );
-
-    return {};
-}
-
-template<class Tvec, class TgridVec>
-template<class UserAcc, class Fct>
+template<class UserAcc>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list, Fct &&lambd) {
+    internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list) {
 
     using namespace shamrock::patch;
 
@@ -285,7 +184,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     }
 
                     // user lambda to fill the fields
-                    lambd(idx_to_refine, cur_block, blocks_ids, block_coords, uacc);
+                    UserAcc::apply_refine(idx_to_refine, cur_block, blocks_ids, block_coords, uacc);
                 });
             });
         }
@@ -297,9 +196,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 }
 
 template<class Tvec, class TgridVec>
-template<class UserAcc, class Fct>
+template<class UserAcc>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_derefine_grid(shambase::DistributedData<OptIndexList> &&derefine_list, Fct &&lambd) {
+    internal_derefine_grid(shambase::DistributedData<OptIndexList> &&derefine_list) {
 
     using namespace shamrock::patch;
 
@@ -365,7 +264,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     }
 
                     // user lambda to fill the fields
-                    lambd(old_indexes, block_coords, idx_to_derefine, merged_block_coord, uacc);
+                    UserAcc::apply_derefine(
+                        old_indexes, block_coords, idx_to_derefine, merged_block_coord, uacc);
                 });
             });
 
@@ -384,6 +284,111 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             pdat.index_remap_resize(*opt_buf, len);
         }
     });
+}
+
+template<class Tvec, class TgridVec>
+template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    internal_update_refinement() {
+
+    // Ensure that the blocks are sorted before refinement
+    AMRSortBlocks block_sorter(context, solver_config, storage);
+    block_sorter.reorder_amr_blocks();
+
+    // get refine and derefine list
+    shambase::DistributedData<OptIndexList> refine_list;
+    shambase::DistributedData<OptIndexList> derefine_list;
+
+    gen_refine_block_changes<UserAccCrit>(refine_list, derefine_list);
+
+    internal_refine_grid<UserAccSplit>(std::move(refine_list)
+
+    );
+
+    internal_derefine_grid<UserAccMerge>(std::move(derefine_list)
+
+    );
+}
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    update_refinement() {
+
+    class RefineCritBlock {
+        public:
+        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> block_low_bound;
+        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> block_high_bound;
+
+        RefineCritBlock(
+            sycl::handler &cgh,
+            u64 id_patch,
+            shamrock::patch::Patch p,
+            shamrock::patch::PatchData &pdat)
+            : block_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
+              block_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
+
+        static void refine_criterion(
+            u32 block_id, RefineCritBlock acc, bool &should_refine, bool &should_derefine) {
+            u64_3 low_bound  = acc.block_low_bound[block_id];
+            u64_3 high_bound = acc.block_high_bound[block_id];
+
+            u64_3 block_size = high_bound - low_bound;
+            u64 block_sz     = block_size.x();
+
+            // refine based on x position
+            u64 wanted_sz = block_sz;
+            if (low_bound[0] < 4)
+                wanted_sz = 4;
+            if (low_bound[0] < 8)
+                wanted_sz = 8;
+            if (low_bound[0] < 16)
+                wanted_sz = 16;
+
+            should_refine   = (block_sz > 1) && (block_sz > wanted_sz);
+            should_derefine = (block_sz < wanted_sz);
+        }
+    };
+
+    class RefineCellAccessor {
+        public:
+        sycl::accessor<u32, 1, sycl::access::mode::read_write, sycl::target::device> field;
+
+        RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
+            : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} {}
+
+        static void apply_refine(
+            u32 cur_idx,
+            BlockCoord cur_coords,
+            std::array<u32, 8> new_cells,
+            std::array<BlockCoord, 8> new_cells_coords,
+            RefineCellAccessor acc) {
+            u32 val = acc.field[cur_idx];
+
+#pragma unroll
+            for (u32 pid = 0; pid < 8; pid++) {
+                acc.field[new_cells[pid]] = val;
+            }
+        }
+
+        static void apply_derefine(
+            std::array<u32, 8> old_cells,
+            std::array<BlockCoord, 8> old_coords,
+            u32 new_cell,
+            BlockCoord new_coord,
+
+            RefineCellAccessor acc) {
+            u32 accum = 0;
+
+#pragma unroll
+            for (u32 pid = 0; pid < 8; pid++) {
+                accum += acc.field[old_cells[pid]];
+            }
+
+            acc.field[new_cell] = accum / 8;
+        }
+    };
+
+    internal_update_refinement<RefineCritBlock, RefineCellAccessor, RefineCellAccessor>();
 }
 
 template class shammodels::basegodunov::modules::AMRGridRefinementHandler<f64_3, i64_3>;

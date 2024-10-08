@@ -169,13 +169,60 @@ auto shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             should_derefine = (block_sz < wanted_sz);
         });
 
+    class RefineCellAccessor {
+        public:
+        sycl::accessor<u32, 1, sycl::access::mode::read_write, sycl::target::device> field;
+
+        RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
+            : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} {}
+    };
+
+    internal_refine_grid<RefineCellAccessor>(
+        std::move(refine_list),
+
+        [](u32 cur_idx,
+           BlockCoord cur_coords,
+           std::array<u32, 8> new_cells,
+           std::array<BlockCoord, 8> new_cells_coords,
+           RefineCellAccessor acc) {
+            u32 val = acc.field[cur_idx];
+
+#pragma unroll
+            for (u32 pid = 0; pid < 8; pid++) {
+                acc.field[new_cells[pid]] = val;
+            }
+        }
+
+    );
+
+    internal_derefine_grid<RefineCellAccessor>(
+        std::move(derefine_list),
+
+        [](std::array<u32, 8> old_cells,
+           std::array<BlockCoord, 8> old_coords,
+           u32 new_cell,
+           BlockCoord new_coord,
+
+           RefineCellAccessor acc) {
+            u32 accum = 0;
+
+#pragma unroll
+            for (u32 pid = 0; pid < 8; pid++) {
+                accum += acc.field[old_cells[pid]];
+            }
+
+            acc.field[new_cell] = accum / 8;
+        }
+
+    );
+
     return {};
 }
 
 template<class Tvec, class TgridVec>
 template<class UserAcc, class Fct>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list, Fct &&f) {
+    internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list, Fct &&lambd) {
 
     using namespace shamrock::patch;
 
@@ -252,8 +299,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 template<class UserAcc, class Fct>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_derefine_grid(
-        shambase::DistributedData<OptIndexList> &&derefine_list, Fct &&derefine_functor) {
+    internal_derefine_grid(shambase::DistributedData<OptIndexList> &&derefine_list, Fct &&lambd) {
 
     using namespace shamrock::patch;
 
@@ -339,9 +385,5 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
     });
 }
-
-template<class Tvec, class TgridVec>
-void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::refine_grid(
-    shambase::DistributedData<OptIndexList> refine_list) {}
 
 template class shammodels::basegodunov::modules::AMRGridRefinementHandler<f64_3, i64_3>;

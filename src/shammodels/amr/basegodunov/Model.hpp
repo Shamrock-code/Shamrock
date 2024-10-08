@@ -63,6 +63,9 @@ namespace shammodels::basegodunov {
 
                 PatchDataField<T> &f
                     = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
+                
+                auto f_nvar =  f.get_nvar() / Block::block_size;
+                std::cout << " f_nvar = " << f_nvar << "\n\n";
 
                 {
                     auto &buf = shambase::get_check_ref(f.get_buf());
@@ -79,7 +82,7 @@ namespace shammodels::basegodunov {
 
                         Block::for_each_cell_in_block(delta_cell, [&](u32 lid, Tvec delta) {
                             Tvec bmin                        = block_min + delta;
-                            acc[i * Block::block_size + lid] = pos_to_val(bmin, bmin + delta_cell);
+                            acc[(i * Block::block_size + lid) * f_nvar ] = pos_to_val(bmin, bmin + delta_cell);
                         });
                     }
                 }

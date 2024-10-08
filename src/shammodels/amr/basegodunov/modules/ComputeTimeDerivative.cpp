@@ -409,7 +409,8 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
                 // block id : this is the block id of the current cell
                 const u32 block_id = cell_global_id / AMRBlock::block_size;
                 // id of the current cell with respect to it's block
-                const u32 cell_loc_id = block_id % AMRBlock::block_size;
+                // const u32 cell_loc_id = block_id % AMRBlock::block_size;
+                const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
                 // fetch current block info
                 const Tvec cblock_min  = acc_aabb_block_lower[block_id];

@@ -542,7 +542,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
         });
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_dust_ghost = ghost_layout.get_field_idx<Tscal>("rho_dust", ndust);
+    u32 irho_dust_ghost = ghost_layout.get_field_idx<Tscal>("rho_dust");
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);

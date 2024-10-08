@@ -325,20 +325,21 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         const u32 iym = oriented_cell_graph.ym;
         const u32 izp = oriented_cell_graph.zp;
         const u32 izm = oriented_cell_graph.zm;
+        auto ndust = solver_config.dust_config.ndust;
 
-        NGLink<Tscal> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
-        NGLink<Tscal> buf_flux_rho_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
-        NGLink<Tscal> buf_flux_rho_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
-        NGLink<Tscal> buf_flux_rho_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
-        NGLink<Tscal> buf_flux_rho_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
-        NGLink<Tscal> buf_flux_rho_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
+        NGLink<Tscal> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixp], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_xm{*oriented_cell_graph.graph_links[ixm], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_yp{*oriented_cell_graph.graph_links[iyp], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_ym{*oriented_cell_graph.graph_links[iym], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_zp{*oriented_cell_graph.graph_links[izp], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_zm{*oriented_cell_graph.graph_links[izm], ndust};
 
-        NGLink<Tvec> buf_flux_rhov_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
+        NGLink<Tvec> buf_flux_rhov_dust_face_xp{*oriented_cell_graph.graph_links[ixp], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_xm{*oriented_cell_graph.graph_links[ixm], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_yp{*oriented_cell_graph.graph_links[iyp], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_ym{*oriented_cell_graph.graph_links[iym], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_zp{*oriented_cell_graph.graph_links[izp], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_zm{*oriented_cell_graph.graph_links[izm], ndust};
 
         if (solver_config.is_dust_on()) {
             u32 _ndust = solver_config.dust_config.ndust;

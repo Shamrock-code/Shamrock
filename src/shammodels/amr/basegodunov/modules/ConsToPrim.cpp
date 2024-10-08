@@ -83,6 +83,7 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
 
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
+        shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
 
         shamrock::ComputeField<Tvec> v_dust_ghost = utility.make_compute_field<Tvec>(
             "vel_dust", ndust * AMRBlock::block_size, [&](u64 id) {

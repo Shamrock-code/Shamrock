@@ -14,7 +14,7 @@ def run_sim(vanleer = True, label = "none"):
         grid_repr = "i64_3")
 
 
-    model.init_scheduler(int(1e7),1)
+    # model.init_scheduler(int(1e7),1)
 
     multx = 1
     multy = 1
@@ -22,16 +22,18 @@ def run_sim(vanleer = True, label = "none"):
 
     sz = 1 << 1
     base = 32
-    model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
+    # model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
     cfg = model.gen_default_config()
     scale_fact = 1/(sz*base*multx)
     cfg.set_scale_factor(scale_fact)
     cfg.set_eos_gamma(1.66667)
     # cfg.set_slope_lim_none()
-    cfg.set_dust_mode_dhll(1)
-
+    cfg.set_dust_mode_dhll(2)
+    
     model.set_config(cfg)
+    model.init_scheduler(int(1e7),1)
+    model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 
     def rho_map(rmin,rmax):
@@ -69,12 +71,30 @@ def run_sim(vanleer = True, label = "none"):
         rho = rho_d_map(rmin,rmax)
         return (1 *rho,0 *rho,0 *rho)
 
+    def rho_d_map_1(rmin,rmax):
+
+        x,y,z = rmin
+
+        if x > 0.25 and x < 0.75:
+            return 2
+
+        return 1.
+
+    def rhovel_d_map_1(rmin,rmax):
+
+        x,y,z = rmin
+        rho = rho_d_map_1(rmin,rmax)
+        return (1 *rho,0 *rho,0 *rho)
+
 
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
-    model.set_field_value_lambda_f64("rho_dust", rho_d_map)
-    model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map)
+    model.set_field_value_lambda_f64("rho_dust", rho_d_map,0)
+    model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map,0)
+
+    model.set_field_value_lambda_f64("rho_dust", rho_d_map_1,1)
+    model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map_1,1)
 
     
     freq = 50
@@ -156,11 +176,11 @@ def run_sim(vanleer = True, label = "none"):
         X.append(dic["xmin"][i])
         rho.append(dic["rho"][i])
         velx.append(dic["rhovel"][i][0])
-        rho_d.append(dic["rho_dust"][i])
-        velx_d.append(dic["rhovel_dust"][i][0])
+        # rho_d.append(dic["rho_dust"][i])
+        # velx_d.append(dic["rhovel_dust"][i][0])
 
     plt.plot(X,rho,'.',label='rho')
-    plt.plot(X,rho_d,'.',label='rho_d')
+    # plt.plot(X,rho_d,'.',label='rho_d')
 
 
 run_sim(vanleer = True, label = "van leer")

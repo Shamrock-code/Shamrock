@@ -49,7 +49,7 @@ namespace shammodels::basegodunov {
 
         template<class T>
         inline void set_field_value_lambda(
-            std::string field_name, const std::function<T(Tvec, Tvec)> pos_to_val) {
+            std::string field_name, const std::function<T(Tvec, Tvec)> pos_to_val, const i32 offset) {
 
             StackEntry stack_loc{};
 
@@ -82,7 +82,7 @@ namespace shammodels::basegodunov {
 
                         Block::for_each_cell_in_block(delta_cell, [&](u32 lid, Tvec delta) {
                             Tvec bmin                        = block_min + delta;
-                            acc[(i * Block::block_size + lid) * f_nvar ] = pos_to_val(bmin, bmin + delta_cell);
+                            acc[(i * Block::block_size + lid) * f_nvar + offset] = pos_to_val(bmin, bmin + delta_cell);
                         });
                     }
                 }

@@ -41,7 +41,7 @@ namespace shammodels::basegodunov {
 
     struct DustConfig {
         DustRiemannSolverMode dust_riemann_config = DHLL;
-        u32 ndust                                 = 1;
+        u32 ndust                                 = 2;
 
         inline bool is_dust_on() {
             if (dust_riemann_config != NoDust) {

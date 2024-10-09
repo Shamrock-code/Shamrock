@@ -50,7 +50,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
                 bool flag_refine   = false;
                 bool flag_derefine = false;
-                UserAcc::refine_criterion(gid.get_linear_id(), uacc, flag_refine, flag_derefine);
+                uacc.refine_criterion(gid.get_linear_id(), uacc, flag_refine, flag_derefine);
 
                 // This is just a safe guard to avoid this nonsensicall case
                 if (flag_refine && flag_derefine) {
@@ -184,7 +184,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     }
 
                     // user lambda to fill the fields
-                    UserAcc::apply_refine(idx_to_refine, cur_block, blocks_ids, block_coords, uacc);
+                    uacc.apply_refine(idx_to_refine, cur_block, blocks_ids, block_coords, uacc);
                 });
             });
         }
@@ -264,7 +264,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     }
 
                     // user lambda to fill the fields
-                    UserAcc::apply_derefine(
+                    uacc.apply_derefine(
                         old_indexes, block_coords, idx_to_derefine, merged_block_coord, uacc);
                 });
             });
@@ -301,13 +301,16 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
     gen_refine_block_changes<UserAccCrit>(refine_list, derefine_list);
 
-    internal_refine_grid<UserAccSplit>(std::move(refine_list)
+    //////// apply refine ////////
+    // Note that this only add new blocks at the end of the patchdata
+    internal_refine_grid<UserAccSplit>(std::move(refine_list));
 
-    );
-
-    internal_derefine_grid<UserAccMerge>(std::move(derefine_list)
-
-    );
+    //////// apply derefine ////////
+    // Note that this will perform the merge then remove the old blocks
+    // This is ok to call straight after the refine without edditing the index list in derefine_list
+    // since no permutations were applied in internal_refine_grid and no cells can be both refined
+    // and derefined in the same pass
+    internal_derefine_grid<UserAccMerge>(std::move(derefine_list));
 }
 
 template<class Tvec, class TgridVec>
@@ -316,79 +319,173 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
     class RefineCritBlock {
         public:
-        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> block_low_bound;
-        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> block_high_bound;
+        sycl::accessor<TgridVec, 1, sycl::access::mode::read, sycl::target::device> block_low_bound;
+        sycl::accessor<TgridVec, 1, sycl::access::mode::read, sycl::target::device>
+            block_high_bound;
+        sycl::accessor<Tscal, 1, sycl::access::mode::read, sycl::target::device>
+            block_density_field;
+
+        Tscal one_over_Nside = 1. / AMRBlock::Nside;
+
+        Tscal dxfact;
+        Tscal wanted_mass;
 
         RefineCritBlock(
             sycl::handler &cgh,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat)
-            : block_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
-              block_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
+            shamrock::patch::PatchData &pdat,
+            Tscal dxfact,
+            Tscal wanted_mass)
+            : block_low_bound{*pdat.get_field<TgridVec>(0).get_buf(), cgh, sycl::read_only},
+              block_high_bound{*pdat.get_field<TgridVec>(1).get_buf(), cgh, sycl::read_only},
+              block_density_field{
+                  *pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("rho")).get_buf(),
+                  cgh,
+                  sycl::read_only},
+              dxfact(dxfact), wanted_mass(wanted_mass) {}
 
-        static void refine_criterion(
-            u32 block_id, RefineCritBlock acc, bool &should_refine, bool &should_derefine) {
-            u64_3 low_bound  = acc.block_low_bound[block_id];
-            u64_3 high_bound = acc.block_high_bound[block_id];
+        void refine_criterion(
+            u32 block_id, RefineCritBlock acc, bool &should_refine, bool &should_derefine) const {
 
-            u64_3 block_size = high_bound - low_bound;
-            u64 block_sz     = block_size.x();
+            TgridVec low_bound  = acc.block_low_bound[block_id];
+            TgridVec high_bound = acc.block_high_bound[block_id];
 
-            // refine based on x position
-            u64 wanted_sz = block_sz;
-            if (low_bound[0] < 4)
-                wanted_sz = 4;
-            if (low_bound[0] < 8)
-                wanted_sz = 8;
-            if (low_bound[0] < 16)
-                wanted_sz = 16;
+            Tvec lower_flt = low_bound.template convert<Tscal>() * dxfact;
+            Tvec upper_flt = high_bound.template convert<Tscal>() * dxfact;
 
-            should_refine   = (block_sz > 1) && (block_sz > wanted_sz);
-            should_derefine = (block_sz < wanted_sz);
+            Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
+
+            Tscal sum_mass = 0;
+            for (u32 i = 0; i < AMRBlock::block_size; i++) {
+                sum_mass += acc.block_density_field[i + block_id * AMRBlock::block_size];
+            }
+            sum_mass *= block_cell_size.x() * block_cell_size.y() * block_cell_size.z();
+
+            if (sum_mass > wanted_mass * 8) {
+                should_refine   = true;
+                should_derefine = false;
+            } else if (sum_mass < wanted_mass) {
+                should_refine   = false;
+                should_derefine = true;
+            } else {
+                should_refine   = false;
+                should_derefine = false;
+            }
+
+            should_refine = should_refine && (high_bound.x() - low_bound.x() > 1);
+            should_refine = should_refine && (high_bound.y() - low_bound.y() > 1);
+            should_refine = should_refine && (high_bound.z() - low_bound.z() > 1);
         }
     };
 
     class RefineCellAccessor {
         public:
-        sycl::accessor<u32, 1, sycl::access::mode::read_write, sycl::target::device> field;
+        sycl::accessor<f64, 1, sycl::access::mode::read_write, sycl::target::device> rho;
+        sycl::accessor<f64_3, 1, sycl::access::mode::read_write, sycl::target::device> rho_vel;
+        sycl::accessor<f64, 1, sycl::access::mode::read_write, sycl::target::device> rhoE;
 
         RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
-            : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} {}
+            : rho{*pdat.get_field<f64>(2).get_buf(), cgh, sycl::read_write},
+              rho_vel{*pdat.get_field<f64_3>(3).get_buf(), cgh, sycl::read_write},
+              rhoE{*pdat.get_field<f64>(4).get_buf(), cgh, sycl::read_write} {}
 
-        static void apply_refine(
+        void apply_refine(
             u32 cur_idx,
             BlockCoord cur_coords,
-            std::array<u32, 8> new_cells,
-            std::array<BlockCoord, 8> new_cells_coords,
-            RefineCellAccessor acc) {
-            u32 val = acc.field[cur_idx];
+            std::array<u32, 8> new_blocks,
+            std::array<BlockCoord, 8> new_block_coords,
+            RefineCellAccessor acc) const {
 
-#pragma unroll
+            std::array<f64, AMRBlock::block_size> rho_block;
+            std::array<f64_3, AMRBlock::block_size> rho_vel_block;
+            std::array<f64, AMRBlock::block_size> rhoE_block;
+
+            for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
+                u32 cell_idx           = cur_idx * AMRBlock::block_size + cell_id;
+                rho_block[cell_id]     = acc.rho[cell_idx];
+                rho_vel_block[cell_id] = acc.rho_vel[cell_idx];
+                rhoE_block[cell_id]    = acc.rhoE[cell_idx];
+            }
+
             for (u32 pid = 0; pid < 8; pid++) {
-                acc.field[new_cells[pid]] = val;
+                u32 new_block = new_blocks[pid];
+                for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
+                    u32 new_cell_idx          = new_block * AMRBlock::block_size + cell_id;
+                    acc.rho[new_cell_idx]     = rho_block[cell_id];
+                    acc.rho_vel[new_cell_idx] = rho_vel_block[cell_id];
+                    acc.rhoE[new_cell_idx]    = rhoE_block[cell_id];
+                }
             }
         }
 
-        static void apply_derefine(
-            std::array<u32, 8> old_cells,
+        void apply_derefine(
+            std::array<u32, 8> old_blocks,
             std::array<BlockCoord, 8> old_coords,
             u32 new_cell,
             BlockCoord new_coord,
 
-            RefineCellAccessor acc) {
-            u32 accum = 0;
+            RefineCellAccessor acc) const {
 
-#pragma unroll
-            for (u32 pid = 0; pid < 8; pid++) {
-                accum += acc.field[old_cells[pid]];
+            std::array<f64, AMRBlock::block_size> rho_block;
+            std::array<f64_3, AMRBlock::block_size> rho_vel_block;
+            std::array<f64, AMRBlock::block_size> rhoE_block;
+
+            for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
+                rho_block[cell_id]     = {};
+                rho_vel_block[cell_id] = {};
+                rhoE_block[cell_id]    = {};
             }
 
-            acc.field[new_cell] = accum / 8;
+            for (u32 pid = 0; pid < 8; pid++) {
+                for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
+                    rho_block[cell_id] += acc.rho[old_blocks[pid] * AMRBlock::block_size + cell_id];
+                    rho_vel_block[cell_id]
+                        += acc.rho_vel[old_blocks[pid] * AMRBlock::block_size + cell_id];
+                    rhoE_block[cell_id]
+                        += acc.rhoE[old_blocks[pid] * AMRBlock::block_size + cell_id];
+                }
+            }
+
+            for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
+                rho_block[cell_id]     /= 8;
+                rho_vel_block[cell_id] /= 8;
+                rhoE_block[cell_id]    /= 8;
+            }
+
+            for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
+                u32 newcell_idx           = new_cell * AMRBlock::block_size + cell_id;
+                acc.rho[newcell_idx]     = rho_block[cell_id]    ;
+                acc.rho_vel[newcell_idx] = rho_vel_block[cell_id];
+                acc.rhoE[newcell_idx]    = rhoE_block[cell_id]    ;
+            }
+
         }
     };
 
-    internal_update_refinement<RefineCritBlock, RefineCellAccessor, RefineCellAccessor>();
+    Tscal dxfact(solver_config.grid_coord_to_pos_fact);
+    Tscal wanted_mass = 0.0000001;
+
+    // Ensure that the blocks are sorted before refinement
+    AMRSortBlocks block_sorter(context, solver_config, storage);
+    block_sorter.reorder_amr_blocks();
+
+    // get refine and derefine list
+    shambase::DistributedData<OptIndexList> refine_list;
+    shambase::DistributedData<OptIndexList> derefine_list;
+
+    gen_refine_block_changes<RefineCritBlock>(refine_list, derefine_list, dxfact, wanted_mass);
+
+    //////// apply refine ////////
+    // Note that this only add new blocks at the end of the patchdata
+    internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
+
+    //////// apply derefine ////////
+    // Note that this will perform the merge then remove the old blocks
+    // This is ok to call straight after the refine without edditing the index list in derefine_list
+    // since no permutations were applied in internal_refine_grid and no cells can be both refined
+    // and derefined in the same pass
+    internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
 }
 
 template class shammodels::basegodunov::modules::AMRGridRefinementHandler<f64_3, i64_3>;

@@ -448,18 +448,17 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             }
 
             for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
-                rho_block[cell_id]     /= 8;
+                rho_block[cell_id] /= 8;
                 rho_vel_block[cell_id] /= 8;
-                rhoE_block[cell_id]    /= 8;
+                rhoE_block[cell_id] /= 8;
             }
 
             for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
-                u32 newcell_idx           = new_cell * AMRBlock::block_size + cell_id;
-                acc.rho[newcell_idx]     = rho_block[cell_id]    ;
+                u32 newcell_idx          = new_cell * AMRBlock::block_size + cell_id;
+                acc.rho[newcell_idx]     = rho_block[cell_id];
                 acc.rho_vel[newcell_idx] = rho_vel_block[cell_id];
-                acc.rhoE[newcell_idx]    = rhoE_block[cell_id]    ;
+                acc.rhoE[newcell_idx]    = rhoE_block[cell_id];
             }
-
         }
     };
 

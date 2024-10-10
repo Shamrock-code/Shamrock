@@ -57,8 +57,7 @@ def run_sim(vanleer = True, label = "none"):
         return 1.*rho
 
     def rhovel_map(rmin,rmax):
-
-        x,y,z = rmin
+        
         rho = rho_map(rmin,rmax)
         return (1 *rho,0 *rho,0 *rho)
     

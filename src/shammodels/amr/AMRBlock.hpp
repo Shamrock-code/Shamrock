@@ -30,14 +30,15 @@ namespace shammodels::amr {
      * @tparam Tvec
      * @tparam NsideBlockPow
      */
-    template<class Tvec, class TgridVec, u32 NsideBlockPow>
+    template<class Tvec, class TgridVec, u32 _NsideBlockPow>
     struct AMRBlock {
         using Tscal = shambase::VecComponent<Tvec>;
 
         static constexpr u32 dim = shambase::VectorProperties<TgridVec>::dimension;
 
-        static constexpr u32 Nside     = 1U << NsideBlockPow;
-        static constexpr u32 side_size = Nside;
+        static constexpr u32 NsideBlockPow = _NsideBlockPow;
+        static constexpr u32 Nside         = 1U << NsideBlockPow;
+        static constexpr u32 side_size     = Nside;
 
         static constexpr u32 block_size = shambase::pow_constexpr<dim>(Nside);
 

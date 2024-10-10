@@ -397,24 +397,84 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             std::array<BlockCoord, 8> new_block_coords,
             RefineCellAccessor acc) const {
 
-            std::array<f64, AMRBlock::block_size> rho_block;
-            std::array<f64_3, AMRBlock::block_size> rho_vel_block;
-            std::array<f64, AMRBlock::block_size> rhoE_block;
+            auto get_coord_ref = [](u32 i) -> std::array<u32, dim> {
+                constexpr u32 NsideBlockPow = 1;
+                constexpr u32 Nside         = 1U << NsideBlockPow;
 
-            for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
-                u32 cell_idx           = cur_idx * AMRBlock::block_size + cell_id;
-                rho_block[cell_id]     = acc.rho[cell_idx];
-                rho_vel_block[cell_id] = acc.rho_vel[cell_idx];
-                rhoE_block[cell_id]    = acc.rhoE[cell_idx];
+                if constexpr (dim == 3) {
+                    const u32 tmp = i >> NsideBlockPow;
+                    return {i % Nside, (tmp) % Nside, (tmp) >> NsideBlockPow};
+                }
+            };
+
+            auto get_index_block = [](std::array<u32, dim> coord) -> u32 {
+                constexpr u32 NsideBlockPow = 1;
+                constexpr u32 Nside         = 1U << NsideBlockPow;
+
+                if constexpr (dim == 3) {
+                    return coord[0] + Nside * coord[1] + Nside * Nside * coord[2];
+                }
+            };
+
+            auto get_gid_write = [&](std::array<u32, dim> &glid) -> u32 {
+                std::array<u32, dim> bid
+                    = {glid[0] >> AMRBlock::NsideBlockPow,
+                       glid[1] >> AMRBlock::NsideBlockPow,
+                       glid[2] >> AMRBlock::NsideBlockPow};
+
+                // logger::raw_ln(glid,bid);
+                return new_blocks[get_index_block(bid)] * AMRBlock::block_size
+                       + AMRBlock::get_index(
+                           {glid[0] % AMRBlock::Nside,
+                            glid[1] % AMRBlock::Nside,
+                            glid[2] % AMRBlock::Nside});
+            };
+
+            std::array<f64, AMRBlock::block_size> old_rho_block;
+            std::array<f64_3, AMRBlock::block_size> old_rho_vel_block;
+            std::array<f64, AMRBlock::block_size> old_rhoE_block;
+
+            // save old block
+            for (u32 loc_id = 0; loc_id < AMRBlock::block_size; loc_id++) {
+
+                auto [lx, ly, lz]         = get_coord_ref(loc_id);
+                u32 old_cell_idx          = cur_idx * AMRBlock::block_size + loc_id;
+                old_rho_block[loc_id]     = acc.rho[old_cell_idx];
+                old_rho_vel_block[loc_id] = acc.rho_vel[old_cell_idx];
+                old_rhoE_block[loc_id]    = acc.rhoE[old_cell_idx];
             }
 
-            for (u32 pid = 0; pid < 8; pid++) {
-                u32 new_block = new_blocks[pid];
-                for (u32 cell_id = 0; cell_id < AMRBlock::block_size; cell_id++) {
-                    u32 new_cell_idx          = new_block * AMRBlock::block_size + cell_id;
-                    acc.rho[new_cell_idx]     = rho_block[cell_id];
-                    acc.rho_vel[new_cell_idx] = rho_vel_block[cell_id];
-                    acc.rhoE[new_cell_idx]    = rhoE_block[cell_id];
+            for (u32 loc_id = 0; loc_id < AMRBlock::block_size; loc_id++) {
+
+                auto [lx, ly, lz] = get_coord_ref(loc_id);
+                u32 old_cell_idx  = cur_idx * AMRBlock::block_size + loc_id;
+
+                Tscal rho_block    = old_rho_block[loc_id];
+                Tvec rho_vel_block = old_rho_vel_block[loc_id];
+                Tscal rhoE_block   = old_rhoE_block[loc_id];
+                for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {
+
+                    auto [sx, sy, sz] = get_coord_ref(subdiv_lid);
+
+                    std::array<u32, 3> glid = {lx * 2 + sx, ly * 2 + sy, lz * 2 + sz};
+
+                    u32 new_cell_idx = get_gid_write(glid);
+
+                    if (1627 == cur_idx) {
+                        logger::raw_ln(
+                            cur_idx,
+                            "set cell ",
+                            new_cell_idx,
+                            " from cell",
+                            old_cell_idx,
+                            "old",
+                            rho_block,
+                            rho_vel_block,
+                            rhoE_block);
+                    }
+                    acc.rho[new_cell_idx]     = rho_block;
+                    acc.rho_vel[new_cell_idx] = rho_vel_block;
+                    acc.rhoE[new_cell_idx]    = rhoE_block;
                 }
             }
         }

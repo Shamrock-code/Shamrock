@@ -6,7 +6,6 @@
 //
 // -------------------------------------------------------//
 
-#pragma once
 
 /**
  * @file DragIntegrator.cpp
@@ -139,20 +138,19 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
             u32 id                  = p.id_patch;
             u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
           
-            sycl::buffer<Tscal>rho_new_patch     = cfield_rho_new.get_buf_chek(id);
+            sycl::buffer<Tscal>rho_new_patch     = cfield_rho_new.get_buf_check(id);
             sycl::buffer<Tvec>rhov_new_patch     = cfield_rhov_new.get_buf_check(id);
-            sycl::buffer<Tscal>rhoe_new_patch    = cfield_rhoe_new.get_buf_chek(id);
-            sycl::buffer<Tscal>rho_d_new_patch   = cfield_rho_d_new.get_buf_chek(id);
-            sycl::buffer<Tvec>rhov_d_new_patch   = cfield_rhov_d_new.get_buf_chek(id);
+            sycl::buffer<Tscal>rhoe_new_patch    = cfield_rhoe_new.get_buf_check(id);
+            sycl::buffer<Tscal>rho_d_new_patch   = cfield_rho_d_new.get_buf_check(id);
+            sycl::buffer<Tvec>rhov_d_new_patch   = cfield_rhov_d_new.get_buf_check(id);
 
             sycl::buffer<Tscal>rho_old          = pdat.get_field_buf_ref<Tscal>(irho);
             sycl::buffer<Tvec>rhov_old          = pdat.get_field_buf_ref<Tvec>(irhovel);
             sycl::buffer<Tscal>rhoe_old         = pdat.get_field_buf_ref<Tscal>(irhoetot);
             sycl::buffer<Tscal>rho_d_old        = pdat.get_field_buf_ref<Tscal>(irho_d);
-            sycl::buffer<Tvec>rhov_d_old        = pdat.get_field_buf_ref<Tscal>(irhovel_d);
+            sycl::buffer<Tvec>rhov_d_old        = pdat.get_field_buf_ref<Tvec>(irhovel_d);
 
             sycl::buffer<f32> alphas_buf {alphas_vector};
-            // sycl::buffer<f32> inv_dt_alphas_buf{inv_dt_alphas};
 
             q.submit([&,dt,ndust, friction_control](sycl::handler &cgh) {
                 sycl::accessor acc_rho_new_patch{rho_new_patch, cgh, sycl::read_only};
@@ -227,3 +225,5 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
         });
 
 }
+
+template class shammodels::basegodunov::modules::DragIntegrator<f64_3, i64_3>;

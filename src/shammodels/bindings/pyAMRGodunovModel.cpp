@@ -109,7 +109,7 @@ namespace shammodels::basegodunov {
                 [](TConfig &self, f32 alpha_values) {
                     return self.set_alphas_static(alpha_values);
                 })
-            .def("set_drag_mode_NoDrag", [](TConfig &self) {
+            .def("set_drag_mode_no_drag", [](TConfig &self) {
                 self.drag_config.drag_solver_config = NoDrag;
                 self.drag_config.enable_frictional_heating = false;
             })

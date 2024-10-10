@@ -30,11 +30,11 @@ def run_sim(vanleer = True, label = "none"):
     cfg.set_eos_gamma(1.66667)
     # cfg.set_slope_lim_none()
     cfg.set_dust_mode_dhll(2)
-    cfg.set_drag_mode_expo(False)
-    cfg.set_alpha_values(0.2)
-    cfg.set_alpha_values(0.5)
-    cfg.set_alpha_values(0.4)
-    cfg.set_alpha_values(0.3)
+    cfg.set_drag_mode_no_drag()
+    # cfg.set_alpha_values(0.2)
+    # cfg.set_alpha_values(0.5)
+    # cfg.set_alpha_values(0.4)
+    # cfg.set_alpha_values(0.3)
     
     
     model.set_config(cfg)

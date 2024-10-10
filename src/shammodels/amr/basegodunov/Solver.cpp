@@ -27,6 +27,7 @@
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
 #include "shammodels/amr/basegodunov/modules/TimeIntegrator.hpp"
+#include "shammodels/amr/basegodunov/modules/DragIntegrator.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 
 template<class Tvec, class TgridVec>
@@ -119,9 +120,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     }
 
     // RK2 + flux lim
-
-    modules::TimeIntegrator dt_integ(context, solver_config, storage);
-    dt_integ.forward_euler(dt_input);
+    if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag)
+    {
+        modules::TimeIntegrator dt_integ(context, solver_config, storage);
+        dt_integ.forward_euler(dt_input);
+    }
+    else if(solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1)
+    {
+        modules::DragIntegrator drag_integ(context, solver_config, storage);
+        drag_integ.involve_with_no_src(dt_input);
+        drag_integ.enable_irk1_drag_integrator(dt_input);
+    }
 
     if (false) {
         static u32 cnt_debug = 0;
@@ -192,6 +201,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.vel.reset();
     storage.press.reset();
 
+
     if (solver_config.is_dust_on())
     {
         storage.dtrho_dust.reset();
@@ -231,6 +241,15 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         storage.vel_dust.reset();
 
+    }
+
+    if(solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag)
+    {
+        storage.rho_next_no_drag.reset();
+        storage.rhov_next_no_drag.reset();
+        storage.rhoe_next_no_drag.reset();
+        storage.rho_d_next_no_drag.reset();
+        storage.rhov_d_next_no_drag.reset();
     }
 
     storage.cell_infos.reset();

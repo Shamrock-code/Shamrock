@@ -65,7 +65,6 @@ namespace shammodels::basegodunov {
                 }
                 return true;
             }
-
             return false;
         }
     };
@@ -156,6 +155,12 @@ namespace shammodels::basegodunov {
 
                 context.pdata_layout_add_field<Tscal>("rho_dust", (ndust * AMRBlock::block_size));
                 context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust * AMRBlock::block_size));
+                std::cout << " friction_flags  :  " << solver_config.drag_config.enable_frictional_heating << "\n\n";
+                std::cout << " drag_solver_config  :  " << solver_config.drag_config.drag_solver_config << "\n\n";
+                std::cout << " alphas_vector::size  :  " << solver_config.drag_config.alphas.size() << "\n\n";
+                for(auto &x :solver_config.drag_config.alphas)
+                    std::cout << " alphas_vector_values  :  " << x << " ;" ;
+                std::cout << "\n\n";                
             }
         }
 

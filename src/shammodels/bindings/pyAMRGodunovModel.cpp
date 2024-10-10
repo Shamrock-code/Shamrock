@@ -104,7 +104,28 @@ namespace shammodels::basegodunov {
                 })
             .def("set_dust_mode_none", [](TConfig &self) {
                 self.dust_config = {NoDust, 0};
-            });
+            })
+            .def("set_alpha_values",
+                [](TConfig &self, f32 alpha_values) {
+                    return self.set_alphas_static(alpha_values);
+                })
+            .def("set_drag_mode_NoDrag", [](TConfig &self) {
+                self.drag_config.drag_solver_config = NoDrag;
+                self.drag_config.enable_frictional_heating = false;
+            })
+            .def("set_drag_mode_irk1", [](TConfig &self, bool frictional_status) {
+                self.drag_config.drag_solver_config = IRK1;
+                self.drag_config.enable_frictional_heating = frictional_status;
+            })
+            .def("set_drag_mode_irk2", [](TConfig &self, bool frictional_status) {
+                self.drag_config.drag_solver_config = IRK2;
+                self.drag_config.enable_frictional_heating = frictional_status;
+            })
+            .def("set_drag_mode_expo", [](TConfig &self, bool frictional_status) {
+                self.drag_config.drag_solver_config = EXPO;
+                self.drag_config.enable_frictional_heating = frictional_status;
+            })
+            ;
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
         py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())
@@ -144,26 +165,7 @@ namespace shammodels::basegodunov {
                 py::arg("field_name"),
                 py::arg("pos_to_val"),
                 py::arg("offset") = 0)
-            .def("set_alpha_values",
-                [](TConfig &self, f32 alpha_values) {
-                    return self.set_alphas_static(alpha_values);
-                })
-            .def("set_drag_mode_NoDrag", [](TConfig &self) {
-                self.drag_config.drag_solver_config = NoDrag;
-                self.drag_config.enable_frictional_heating = false;
-            });
-            .def("set_drag_mode_irk1", [](TConfig &self, bool frictional_status) {
-                self.drag_config.drag_solver_config = IRK1;
-                self.drag_config.enable_frictional_heating = frictional_status;
-            });
-            .def("set_drag_mode_irk2", [](TConfig &self, bool frictional_status) {
-                self.drag_config.drag_solver_config = IRK2;
-                self.drag_config.enable_frictional_heating = frictional_status;
-            });
-            .def("set_drag_mode_expo", [](TConfig &self, bool frictional_status) {
-                self.drag_config.drag_solver_config = EXPO;
-                self.drag_config.enable_frictional_heating = frictional_status;
-            });
+
             .def(
                 "gen_default_config",
                 [](T &self) -> TConfig {

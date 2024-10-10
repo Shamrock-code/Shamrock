@@ -15,6 +15,7 @@
  *
  */
 #include "shammodels/amr/basegodunov/modules/DragIntegrator.hpp"
+#include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_with_no_src(Tscal dt){
@@ -27,10 +28,10 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
 
    const u32 ndust  = solver_config.dust_config.ndust;
 
-   shamrock::SchedulerUtility utility(scheduler);
+   SchedulerUtility utility(scheduler());
    shamrock::ComputeField<Tscal> cfield_rho_next_bf_drag   = utility.make_compute_field<Tscal>("rho_next_bf_drag", AMRBlock::block_size);
    shamrock::ComputeField<Tvec>  cfield_rhov_next_bf_drag  = utility.make_compute_field<Tvec>("rhov_next_bf_drag", AMRBlock::block_size);
-   shamrock::ComputeField<Tscal> cfield_rhoe_next_bf_drag  = utility.make_compute_field<Tscal>("rhoe_next_bf_drag" AMRBlock::block_size);
+   shamrock::ComputeField<Tscal> cfield_rhoe_next_bf_drag  = utility.make_compute_field<Tscal>("rhoe_next_bf_drag" , AMRBlock::block_size);
    shamrock::ComputeField<Tscal> cfield_rho_d_next_bf_drag   = utility.make_compute_field<Tscal>("rho_d_next_bf_drag", ndust * AMRBlock::block_size);
    shamrock::ComputeField<Tvec>  cfield_rhov_d_next_bf_drag  = utility.make_compute_field<Tvec>("rhov_d_next_bf_drag", ndust * AMRBlock::block_size);
 
@@ -50,8 +51,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
         sycl::buffer<Tscal> &dt_rho_patch    = cfield_dtrho.get_buf_check(id);
         sycl::buffer<Tvec>  &dt_rhov_patch   = cfield_dtrhov.get_buf_check(id);
         sycl::buffer<Tscal> &dt_rhoe_patch   = cfield_dtrhoe.get_buf_check(id);
-        sycl::buffer<Tscal> &dt_rho_d_patch  = cfield_dtrho_d_.get_buf_check(id);
-        sycl::buffer<Tvec>  &dt_rhov_d_patch = cfield_dtrhov_d_.get_buf_check(id);
+        sycl::buffer<Tscal> &dt_rho_d_patch  = cfield_dtrho_d.get_buf_check(id);
+        sycl::buffer<Tvec>  &dt_rhov_d_patch = cfield_dtrhov_d.get_buf_check(id);
 
         sycl::buffer<Tscal> &rho_patch    = cfield_rho_next_bf_drag.get_buf_check(id);
         sycl::buffer<Tvec>  &rhov_patch   = cfield_rhov_next_bf_drag.get_buf_check(id);
@@ -125,7 +126,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
     const u32 irhovel_d         = pdl.get_field_idx<Tvec>("rhovel_dust");
 
     const u32 ndust = solver_config.dust_config.ndust;
-    auto aplhas_vector = solver_config.drag_config.alphas;
+    auto alphas_vector = solver_config.drag_config.alphas;
     std::vector<f32> inv_dt_alphas(ndust);
     bool   enable_frictional_heating  = solver_config.drag_config.enable_frictional_heating;
     u32 friction_control = (enable_frictional_heating == false) ? 1 : 0;
@@ -174,8 +175,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 
                         for(u32 i = 0; i < ndust; i++)
                         {
-                            const f32 inv_dt_alphas = 1.0 / (1.0 + alphas(i) * dt);
-                            const f32 dt_alphas     = dt * alphas(i);
+                            const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
+                            const f32 dt_alphas     = dt * acc_alphas[i];
 
                             tmp_mom_1 = tmp_mom_1 + dt_alphas * inv_dt_alphas * acc_rhov_d_new_patch[id_a * ndust + i];
                             tmp_rho   = tmp_rho   + dt_alphas * inv_dt_alphas * acc_rho_d_new_patch[id_a * ndust + i]; 
@@ -197,11 +198,11 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                         f64 dissipation = 0.0;
                         for(u32 i = 0; i < ndust; i++)
                         {
-                            const f32 inv_dt_alphas = 1.0 / (1.0 + alphas(i) * dt);
-                            const f32 dt_alphas     = dt * alphas(i);
+                            const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
+                            const f32 dt_alphas     = dt * acc_alphas[i];
                             f64 inv_rho_d           = 1.0 / acc_rho_d_new_patch[id_a];
                             f64_3 vd_bf             = inv_rho_d * acc_rhov_new_patch[id_a * ndust + i] ;  
-                            f64_3 vd_af             = inv_rhov_d * inv_dt_alphas* (acc_rhov_d_new_patch[id_a * ndust + i] + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
+                            f64_3 vd_af             = inv_rho_d * inv_dt_alphas* (acc_rhov_d_new_patch[id_a * ndust + i] + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
 
                             dissipation += 0.5 * dt_alphas * inv_dt_alphas * ( (acc_rho_d_old[id_a * ndust + i] * tmp_vel[0] - acc_rhov_d_new_patch[id_a * ndust + i][0]) * (vd_af[0] + vd_bf[0]) +
                                                     (acc_rho_d_old[id_a * ndust + i] * tmp_vel[1] - acc_rhov_d_new_patch[id_a * ndust + i][1]) * (vd_af[1] + vd_bf[1]) +
@@ -216,8 +217,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 
                         for(u32 i=0; i < ndust; i++)
                         {
-                            const f32 inv_dt_alphas = 1.0 / (1.0 + alphas(i) * dt);
-                            const f32 dt_alphas     = dt * alphas(i);
+                            const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
+                            const f32 dt_alphas     = dt * acc_alphas[i];
                             acc_rhov_d_old[id_a * ndust + i] = inv_dt_alphas * (acc_rhov_d_new_patch[id_a * ndust + i] + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel );
                             acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];
                         }

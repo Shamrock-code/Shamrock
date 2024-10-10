@@ -39,9 +39,22 @@ namespace shammodels::basegodunov {
         HB     = 2 // Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
     };
 
+    enum DragSolverMode {
+        NoDrag = 0,
+        IRK1   = 1, // Implicit RK1
+        IRK2   = 2, // Implicit RK2
+        EXPO   = 3  // Matrix exponential
+    };
+
+    struct DragConfig {
+        DragSolverMode drag_solver_config      = NoDrag;
+        std::vector<f32> alphas ;       
+        bool enable_frictional_heating = false;   // 0 to turn off and 1 when all dissipation is deposited to the gas
+    };
+
     struct DustConfig {
-        DustRiemannSolverMode dust_riemann_config = DHLL;
-        u32 ndust                                 = 2;
+        DustRiemannSolverMode dust_riemann_config = NoDust;
+        u32 ndust                                 = 0;
 
         inline bool is_dust_on() {
             if (dust_riemann_config != NoDust) {
@@ -85,8 +98,16 @@ namespace shammodels::basegodunov {
         SlopeMode slope_config            = VanLeer_sym;
         bool face_half_time_interpolation = true;
         DustConfig dust_config{};
+        DragConfig drag_config{};
 
         inline bool is_dust_on() { return dust_config.is_dust_on(); }
+        // get alpha values from user
+        inline void set_alphas_static(f32 alpha_values)
+        {
+            StackEntry stack_lock{};
+            drag_config.alphas.push_back(alpha_values);
+        }  
+        
 
         Tscal Csafe = 0.9;
 

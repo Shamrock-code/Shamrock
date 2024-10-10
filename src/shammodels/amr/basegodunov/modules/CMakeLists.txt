@@ -13,6 +13,7 @@ set(Sources
     ConsToPrim.cpp
     ComputeCFL.cpp
     AnalysisSodTube.cpp
+    DragIntegrator.cpp
 )
 set(Headers
 )

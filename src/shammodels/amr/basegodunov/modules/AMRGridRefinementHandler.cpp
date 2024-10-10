@@ -373,9 +373,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 should_derefine = false;
             }
 
-            should_refine = should_refine && (high_bound.x() - low_bound.x() > 1);
-            should_refine = should_refine && (high_bound.y() - low_bound.y() > 1);
-            should_refine = should_refine && (high_bound.z() - low_bound.z() > 1);
+            should_refine = should_refine && (high_bound.x() - low_bound.x() > AMRBlock::Nside);
+            should_refine = should_refine && (high_bound.y() - low_bound.y() > AMRBlock::Nside);
+            should_refine = should_refine && (high_bound.z() - low_bound.z() > AMRBlock::Nside);
         }
     };
 
@@ -463,7 +463,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     };
 
     Tscal dxfact(solver_config.grid_coord_to_pos_fact);
-    Tscal wanted_mass = 0.0000001;
+    Tscal wanted_mass = 0.000001;
 
     // Ensure that the blocks are sorted before refinement
     AMRSortBlocks block_sorter(context, solver_config, storage);

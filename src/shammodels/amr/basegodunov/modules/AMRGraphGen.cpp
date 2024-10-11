@@ -415,6 +415,10 @@ class shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::AMRLowering
 
     template<class IndexFunctor>
     void for_each_other_index(u32 id_a, IndexFunctor &&fct) const {
+        // Possible performance regression here, ideally i should fix the full mode for AMR as i
+        // expect it to outperform the safe one
+
+        // for_each_other_index_full(id_a, fct);
         for_each_other_index_safe(id_a, fct);
     }
 };

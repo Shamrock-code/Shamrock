@@ -170,6 +170,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     std::array<u32, split_count> blocks_ids;
                     blocks_ids[0] = idx_to_refine;
 
+                    // generate index for the new blocks (the current index is reused for the first
+                    // new block, the others are pushed at the end of the patchdata)
 #pragma unroll
                     for (u32 pid = 0; pid < new_splits; pid++) {
                         blocks_ids[pid + 1] = start_index_push + tid * new_splits + pid;
@@ -523,6 +525,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
     };
 
+    // Ensure that the blocks are sorted before refinement
+    AMRSortBlocks block_sorter(context, solver_config, storage);
+    block_sorter.reorder_amr_blocks();
+
     using AMRmode_None         = typename AMRMode<Tvec, TgridVec>::None;
     using AMRmode_DensityBased = typename AMRMode<Tvec, TgridVec>::DensityBased;
 
@@ -532,10 +538,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         AMRmode_DensityBased *cfg
         = std::get_if<AMRmode_DensityBased>(&solver_config.amr_mode.config)) {
         Tscal dxfact(solver_config.grid_coord_to_pos_fact);
-
-        // Ensure that the blocks are sorted before refinement
-        AMRSortBlocks block_sorter(context, solver_config, storage);
-        block_sorter.reorder_amr_blocks();
 
         // get refine and derefine list
         shambase::DistributedData<OptIndexList> refine_list;

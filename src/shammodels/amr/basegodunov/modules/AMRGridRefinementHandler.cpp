@@ -459,19 +459,20 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     std::array<u32, 3> glid = {lx * 2 + sx, ly * 2 + sy, lz * 2 + sz};
 
                     u32 new_cell_idx = get_gid_write(glid);
-
-                    if (1627 == cur_idx) {
-                        logger::raw_ln(
-                            cur_idx,
-                            "set cell ",
-                            new_cell_idx,
-                            " from cell",
-                            old_cell_idx,
-                            "old",
-                            rho_block,
-                            rho_vel_block,
-                            rhoE_block);
-                    }
+                    /*
+                                        if (1627 == cur_idx) {
+                                            logger::raw_ln(
+                                                cur_idx,
+                                                "set cell ",
+                                                new_cell_idx,
+                                                " from cell",
+                                                old_cell_idx,
+                                                "old",
+                                                rho_block,
+                                                rho_vel_block,
+                                                rhoE_block);
+                                        }
+                                        */
                     acc.rho[new_cell_idx]     = rho_block;
                     acc.rho_vel[new_cell_idx] = rho_vel_block;
                     acc.rhoE[new_cell_idx]    = rhoE_block;
@@ -522,29 +523,38 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
     };
 
-    Tscal dxfact(solver_config.grid_coord_to_pos_fact);
-    Tscal wanted_mass = 0.000001;
+    using AMRmode_None         = typename AMRMode<Tvec, TgridVec>::None;
+    using AMRmode_DensityBased = typename AMRMode<Tvec, TgridVec>::DensityBased;
 
-    // Ensure that the blocks are sorted before refinement
-    AMRSortBlocks block_sorter(context, solver_config, storage);
-    block_sorter.reorder_amr_blocks();
+    if (AMRmode_None *cfg = std::get_if<AMRmode_None>(&solver_config.amr_mode.config)) {
 
-    // get refine and derefine list
-    shambase::DistributedData<OptIndexList> refine_list;
-    shambase::DistributedData<OptIndexList> derefine_list;
+    } else if (
+        AMRmode_DensityBased *cfg
+        = std::get_if<AMRmode_DensityBased>(&solver_config.amr_mode.config)) {
+        Tscal dxfact(solver_config.grid_coord_to_pos_fact);
 
-    gen_refine_block_changes<RefineCritBlock>(refine_list, derefine_list, dxfact, wanted_mass);
+        // Ensure that the blocks are sorted before refinement
+        AMRSortBlocks block_sorter(context, solver_config, storage);
+        block_sorter.reorder_amr_blocks();
 
-    //////// apply refine ////////
-    // Note that this only add new blocks at the end of the patchdata
-    internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
+        // get refine and derefine list
+        shambase::DistributedData<OptIndexList> refine_list;
+        shambase::DistributedData<OptIndexList> derefine_list;
 
-    //////// apply derefine ////////
-    // Note that this will perform the merge then remove the old blocks
-    // This is ok to call straight after the refine without edditing the index list in derefine_list
-    // since no permutations were applied in internal_refine_grid and no cells can be both refined
-    // and derefined in the same pass
-    internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
+        gen_refine_block_changes<RefineCritBlock>(
+            refine_list, derefine_list, dxfact, cfg->crit_mass);
+
+        //////// apply refine ////////
+        // Note that this only add new blocks at the end of the patchdata
+        internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
+
+        //////// apply derefine ////////
+        // Note that this will perform the merge then remove the old blocks
+        // This is ok to call straight after the refine without edditing the index list in
+        // derefine_list since no permutations were applied in internal_refine_grid and no cells can
+        // be both refined and derefined in the same pass
+        internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
+    }
 }
 
 template class shammodels::basegodunov::modules::AMRGridRefinementHandler<f64_3, i64_3>;

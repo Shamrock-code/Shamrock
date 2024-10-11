@@ -37,6 +37,8 @@ cfg.set_riemann_solver_hll()
 #cfg.set_slope_lim_vanleer_sym()
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
+mass_crit = 0.0000001*5*2*2
+cfg.set_amr_mode_density_based(crit_mass=mass_crit)
 model.set_config(cfg)
 
 
@@ -85,9 +87,9 @@ model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 t_target = 0.245
 
-for i in range(1000):
-    model.dump_vtk(f"test{i:04d}.vtk")
-    model.timestep()
+#for i in range(1000):
+#    model.dump_vtk(f"test{i:04d}.vtk")
+#    model.timestep()
 
 model.evolve_until(t_target)
 
@@ -104,7 +106,7 @@ sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, xref, -xrange,
 ### Plot
 #################
 # do plot or not
-if False:
+if True:
 
     def convert_to_cell_coords(dic):
 
@@ -153,6 +155,7 @@ if False:
 
 
     X = []
+    dX = []
     rho = []
     rhovelx = []
     rhoetot = []
@@ -160,11 +163,13 @@ if False:
     for i in range(len(dic["xmin"])):
 
         X.append(dic["xmin"][i])
+        dX.append(dic["xmax"][i] - dic["xmin"][i])
         rho.append(dic["rho"][i])
         rhovelx.append(dic["rhovel"][i][0])
         rhoetot.append(dic["rhoetot"][i])
 
     X = np.array(X)
+    dX = np.array(dX)
     rho = np.array(rho)
     rhovelx = np.array(rhovelx)
     rhoetot = np.array(rhoetot)
@@ -174,12 +179,20 @@ if False:
 
     fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(9,6),dpi=125)
 
-    plt.scatter(X,rho, rasterized=True,label="rho")
-    plt.scatter(X,vx, rasterized=True,label="v")
-    plt.scatter(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1), rasterized=True,label="P")
+
+    ax1 = plt.gca()
+    ax2 = ax1.twinx()
+
+    l = -np.log2(dX / np.max(dX)) +1
+
+    ax1.scatter(X,rho, rasterized=True,label="rho")
+    ax1.scatter(X,vx, rasterized=True,label="v")
+    ax1.scatter(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1), rasterized=True,label="P")
+    ax2.scatter(X,l , rasterized=True,color="purple", label = "AMR level")
     #plt.scatter(X,rhoetot, rasterized=True,label="rhoetot")
-    plt.legend()
-    plt.grid()
+    ax1.legend(loc=0)
+    ax2.legend(loc=0)
+    ax1.grid()
 
 
     #### add analytical soluce
@@ -197,11 +210,16 @@ if False:
         arr_vx.append(_vx)
         arr_P.append(_P)
 
-    plt.plot(arr_x,arr_rho,color = "black",label="analytic")
-    plt.plot(arr_x,arr_vx,color = "black")
-    plt.plot(arr_x,arr_P,color = "black")
-    plt.ylim(-0.1,1.1)
-    plt.xlim(0.5,1.5)
+    ax1.plot(arr_x,arr_rho,color = "black",label="analytic")
+    ax1.plot(arr_x,arr_vx,color = "black")
+    ax1.plot(arr_x,arr_P,color = "black")
+
+    ax1.set_ylim(-0.1,1.1)
+    ax1.set_xlim(0.5,1.5)
+    ax2.set_ylabel("AMR level")
+    plt.title(r"$m_{crit}="+str(mass_crit)+"$")
+    plt.savefig("sod_tube.pdf")
+    plt.savefig("sod_tube.png")
     #######
     plt.show()
 

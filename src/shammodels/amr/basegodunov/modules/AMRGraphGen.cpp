@@ -291,27 +291,7 @@ class shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::AMRLowering
                                            .is_volume_not_null()
                                        && id_a != idx;
 
-                        // logger::raw_ln("lx", lx, "ly", ly, "lz", lz, "overlap", overlap,
-                        // "found_cell", found_cell.lower, found_cell.upper, "criterion_aabb",
-                        // criterion_aabb.lower, criterion_aabb.upper,"shift1", shift1.lower,
-                        // shift1.upper, "shift2", shift2.lower, shift2.upper, "current_cell_aabb",
-                        // current_cell_aabb.lower, current_cell_aabb.upper);
-
                         if (overlap) {
-
-                            if (id_a == 6534) {
-                                logger::raw_ln(
-                                    idx,
-                                    dir_offset,
-                                    "overlap",
-                                    overlap,
-                                    "found_cell",
-                                    found_cell.lower,
-                                    found_cell.upper,
-                                    "current_cell_aabb",
-                                    current_cell_aabb.lower,
-                                    current_cell_aabb.upper);
-                            }
                             fct(idx);
                         }
                     }
@@ -425,9 +405,7 @@ class shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::AMRLowering
                     if (overlap) {
                         u32 idx
                             = wanted_block * AMRBlock::block_size + AMRBlock::get_index({x, y, z});
-                        if (id_a == 6534) {
-                            logger::raw_ln(idx, dir_offset);
-                        }
+
                         fct(idx);
                     }
                 }

@@ -64,10 +64,12 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
 
                 shambase::parralel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
                     const u32 cell_global_id = (u32) id_a;
-
+                    std::cout << "rho bf  " << rho[id_a] << "\n\n";
+                    std::cout << "dt rho bf  " << acc_dt_rho_patch[id_a] << "\n\n";
                     rho[id_a] += dt * acc_dt_rho_patch[id_a];
                     rhov[id_a] += dt * acc_dt_rhov_patch[id_a];
                     rhoe[id_a] += dt * acc_dt_rhoe_patch[id_a];
+                    std::cout << "rho af " << rho[id_a] << "\n\n";
                 });
             });
         });
@@ -94,6 +96,8 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
                 u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
                 u32 ndust      = solver_config.dust_config.ndust;
 
+                std::cout << "cell_count Time_integrator " <<  cell_count << "\n\n";
+
                 sycl::buffer<Tscal> &buf_rho_dust = pdat.get_field_buf_ref<Tscal>(irho_dust);
                 sycl::buffer<Tvec> &buf_rhov_dust = pdat.get_field_buf_ref<Tvec>(irhovel_dust);
 
@@ -106,8 +110,11 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
 
                     shambase::parralel_for(
                         cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
+                            std::cout << "rho_d bf  " << rho_dust[id_a] << "\n\n";
+                            std::cout << "dt rho_d bf  " << acc_dt_rho_dust_patch[id_a] << "\n\n";
                             rho_dust[id_a] += dt * acc_dt_rho_dust_patch[id_a];
                             rhov_dust[id_a] += dt * acc_dt_rhov_dust_patch[id_a];
+                            std::cout << "rho_d af  " << rho_dust[id_a] << "\n\n";
                         });
                 });
             });

@@ -67,6 +67,8 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
+            std::cout << "cell_count cTp " << cell_count << "\n\n";
+
             shambase::parralel_for(cgh, cell_count, "cons_to_prim", [=](u64 gid) {
                 auto conststate = shammath::ConsState<Tvec>{rho[gid], rhoe[gid], rhovel[gid]};
 

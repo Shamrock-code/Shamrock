@@ -21,7 +21,8 @@ def run_sim(vanleer = True, label = "none"):
     multz = 1
 
     sz = 1 << 1
-    base = 32
+    # base = 32
+    base = 2
     # model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
     cfg = model.gen_default_config()
@@ -29,6 +30,7 @@ def run_sim(vanleer = True, label = "none"):
     cfg.set_scale_factor(scale_fact)
     cfg.set_eos_gamma(1.66667)
     # cfg.set_slope_lim_none()
+    cfg.set_face_time_interpolation(True)
     cfg.set_dust_mode_dhll(2)
     cfg.set_drag_mode_no_drag()
     # cfg.set_alpha_values(0.2)
@@ -57,7 +59,7 @@ def run_sim(vanleer = True, label = "none"):
         return 1.*rho
 
     def rhovel_map(rmin,rmax):
-        
+
         rho = rho_map(rmin,rmax)
         return (1 *rho,0 *rho,0 *rho)
     
@@ -107,7 +109,7 @@ def run_sim(vanleer = True, label = "none"):
     t = 0
     tend = 0.245
 
-    for i in range(55):
+    for i in range(2):
 
         # if i % freq == 0:
         model.dump_vtk("test"+str(i)+".vtk")
@@ -181,19 +183,26 @@ def run_sim(vanleer = True, label = "none"):
         X.append(dic["xmin"][i])
         rho.append(dic["rho"][i])
         velx.append(dic["rhovel"][i][0])
+        print(f"rho shape = {dic["rho"].shape}")
+        print(f"rho_vel shape = {dic["rhovel"].shape}")
+        print(f"rho_d shape = {dic["rho_dust"].shape}")
         # rho_d.append(dic["rho_dust"][i])
         # velx_d.append(dic["rhovel_dust"][i][0])
 
-    plt.plot(X,rho,'.',label='rho')
+    # plt.plot(X,rho,'.',label='rho')
     # plt.plot(X,rho_d,'.',label='rho_d')
 
 
 run_sim(vanleer = True, label = "van leer")
 
 
-plt.legend()
-plt.grid()
+# plt.legend()
+# plt.grid()
+
+
 #plt.ylim(0.9,2.5)
 #plt.xlim(0,1)
-plt.title("t="+str(tmax))
-plt.show()
+
+
+# plt.title("t="+str(tmax))
+# plt.show()

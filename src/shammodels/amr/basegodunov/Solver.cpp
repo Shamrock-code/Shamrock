@@ -123,7 +123,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag)
     {
         modules::TimeIntegrator dt_integ(context, solver_config, storage);
+        // modules::DragIntegrator drag_integ(context, solver_config, storage);
         dt_integ.forward_euler(dt_input);
+        // drag_integ.involve_with_no_src(dt_input);
     }
     else if(solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1)
     {

@@ -151,6 +151,7 @@ PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coo
         //);
     }
 
+    patch_list.build_local();
     patch_list.reset_local_pack_index();
     patch_list.build_local_idx_map();
     patch_list.build_global_idx_map();
@@ -675,6 +676,8 @@ void PatchScheduler::check_patchdata_locality_corectness() {
         check_locality_t<u32_3>(*this);
     } else if (pdl.check_main_field_type<u64_3>()) {
         check_locality_t<u64_3>(*this);
+    } else if (pdl.check_main_field_type<i64_3>()) {
+        check_locality_t<i64_3>(*this);
     } else {
         throw shambase::make_except_with_loc<std::runtime_error>(
             "the main field does not match any");

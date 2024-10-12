@@ -332,25 +332,40 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
 
     using namespace shamrock::patch;
 
+    sycl::buffer<u64> roots = shamalgs::vec_to_buf(roots_ids);
+
     queue.submit([&](sycl::handler &cgh) {
         sycl::accessor pos{position_buffer, cgh, sycl::read_only};
         sycl::accessor tnode{shambase::get_check_ref(serial_tree_buf), cgh, sycl::read_only};
         sycl::accessor linked_node_id{
             shambase::get_check_ref(linked_patch_ids_buf), cgh, sycl::read_only};
+        sycl::accessor roots_id{roots, cgh, sycl::read_only};
         sycl::accessor new_id{new_owned_id, cgh, sycl::write_only, sycl::no_init};
 
+        u32 root_cnt = roots_id.size();
         auto max_lev = get_level_count();
+
+        using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
 
         cgh.parallel_for(sycl::range(len), [=](sycl::item<1> item) {
             u32 i = (u32) item.get_id(0);
 
-            // TODO implement the version with multiple roots
-            u64 current_node = 0;
-            u64 result_node  = u64_max;
-
             auto xyz = pos[i];
 
-            using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
+            u64 current_node = 0;
+
+            // find the correct root to start the search
+            for (u32 iroot = 0; iroot < root_cnt; iroot++) {
+                u32 root_id      = roots_id[iroot];
+                PtNode root_node = tnode[root_id];
+
+                if (Patch::is_in_patch_converted(xyz, root_node.box_min, root_node.box_max)) {
+                    current_node = root_id;
+                    break;
+                }
+            }
+
+            u64 result_node = u64_max;
 
             for (u32 step = 0; step < max_lev + 1; step++) {
                 PtNode cur_node = tnode[current_node];
@@ -408,14 +423,14 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
 
             if constexpr (false) {
                 PtNode cur_node = tnode[current_node];
-                if (xyz.z() == 0) {
+                if (xyz[0] == 0 && xyz[1] == 0 && xyz[2] == 0) {
                     logger::raw(shambase::format(
                         "{:5} ({}) -> {} [{} {}]\n",
                         i,
                         Patch::is_in_patch_converted(xyz, cur_node.box_min, cur_node.box_max),
-                        xyz.z(),
-                        cur_node.box_min.z(),
-                        cur_node.box_max.z()));
+                        xyz,
+                        cur_node.box_min,
+                        cur_node.box_max));
                 }
             }
 

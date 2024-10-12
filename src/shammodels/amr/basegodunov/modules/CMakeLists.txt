@@ -15,6 +15,7 @@ set(Sources
     AnalysisSodTube.cpp
     AMRGridRefinementHandler.cpp
     AMRSortBlocks.cpp
+    AMRSetup.cpp
 )
 set(Headers
 )

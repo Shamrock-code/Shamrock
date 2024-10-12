@@ -184,7 +184,6 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
             tmp.fields_raz();
 
             tmp.get_field<TgridVec>(0).override(bmin, tmp_out.size());
-
             tmp.get_field<TgridVec>(1).override(bmax, tmp_out.size());
         }
         return tmp;
@@ -197,7 +196,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
 
         shamrock::patch::PatchData pdat = next_n_patch();
 
-        inserter.push_patch_data<Tvec>(pdat, "xyz", sched.crit_patch_split * 8, [&]() {
+        inserter.push_patch_data<TgridVec>(pdat, "cell_min", sched.crit_patch_split * 8, [&]() {
             scheduler().update_local_load_value([&](shamrock::patch::Patch p) {
                 return scheduler().patch_data.owned_data.get(p.id_patch).get_obj_cnt();
             });

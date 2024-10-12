@@ -533,7 +533,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     using AMRmode_DensityBased = typename AMRMode<Tvec, TgridVec>::DensityBased;
 
     if (AMRmode_None *cfg = std::get_if<AMRmode_None>(&solver_config.amr_mode.config)) {
-
+        // no refinment here turn around there is nothing to see
     } else if (
         AMRmode_DensityBased *cfg
         = std::get_if<AMRmode_DensityBased>(&solver_config.amr_mode.config)) {

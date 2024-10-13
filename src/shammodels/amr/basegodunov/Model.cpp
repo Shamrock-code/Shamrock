@@ -70,6 +70,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::make_base_grid(
     setup.make_base_grid(bmin, cell_size, {cell_count[0], cell_count[1], cell_count[2]});
     return;
 
+    /* Old cell injection
     shamrock::amr::AMRGrid<TgridVec, 3> grid(shambase::get_check_ref(ctx.sched));
     grid.make_base_grid(bmin, cell_size, {cell_count.x(), cell_count.y(), cell_count.z()});
 
@@ -81,6 +82,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::make_base_grid(
         return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
     });
     sched.scheduler_step(true, true);
+    */
 }
 
 template<class Tvec, class TgridVec>

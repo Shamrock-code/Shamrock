@@ -5,7 +5,7 @@ import numpy as np
 ####################################################
 # Setup parameters
 ####################################################
-Npart = 100000
+Npart = 1000000
 disc_mass = 0.01 #sol mass
 center_mass = 1
 center_racc = 0.05
@@ -472,7 +472,6 @@ def plot_rho_integ(ext,sinks,arr_rho, iplot):
     cbar.set_label(r"$\int \rho \, \mathrm{d}z$ [code unit]")
 
     plt.savefig("plot_rho_integ_{:04}.png".format(iplot))
-    exit()
 
 
 def rot_plot_rho(ext,sinks,arr_rho, iplot,e_r,e_theta):
@@ -655,12 +654,14 @@ def plot_state(iplot):
     #rot_arr_v = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = e_r,delta_y = e_theta, nx = 1000, ny = 1000)
     rot_arr_v_vslice = model.render_cartesian_slice("vxyz","f64_3",center = (0.,0.,0.),delta_x = e_r,delta_y = e_z, nx = 1000, ny = 1000)
 
-    plot_rho(ext,sinks,arr_rho, iplot)
-    plot_rho_integ(ext,sinks,arr_rho2, iplot)
-    rot_plot_rho(ext,sinks,rot_arr_rho, iplot,e_r,e_theta)
-    plot_vx(ext,sinks,arr_v[:,:,0], iplot)
-    plot_vz_z(ext,sinks,arr_v_vslice[:,:,2], iplot)
-    rot_plot_vz_z(ext,sinks,rot_arr_v_vslice[:,:,2], iplot,e_r,e_z)
+    if shamrock.sys.world_rank() == 0:
+
+        plot_rho(ext,sinks,arr_rho, iplot)
+        plot_rho_integ(ext,sinks,arr_rho2, iplot)
+        rot_plot_rho(ext,sinks,rot_arr_rho, iplot,e_r,e_theta)
+        plot_vx(ext,sinks,arr_v[:,:,0], iplot)
+        plot_vz_z(ext,sinks,arr_v_vslice[:,:,2], iplot)
+        rot_plot_vz_z(ext,sinks,rot_arr_v_vslice[:,:,2], iplot,e_r,e_z)
 
 
 

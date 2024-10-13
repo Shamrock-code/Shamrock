@@ -210,9 +210,9 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 
                 sycl::accessor acc_alphas {alphas_buf, cgh, sycl::read_only};
 
-                std::cout << " rho_g_buf_size " << acc_rho_old.size() << "\n\n";
-                std::cout << " rho_d_buf_size " << acc_rho_d_old.size() << "\n\n";
-                std::cout << " cell_count "   << cell_count  << "\n\n";
+                // std::cout << " rho_g_buf_size " << acc_rho_old.size() << "\n\n";
+                // std::cout << " rho_d_buf_size " << acc_rho_d_old.size() << "\n\n";
+                // std::cout << " cell_count "   << cell_count  << "\n\n";
 
                 shambase::parralel_for(cgh, cell_count, "add_drag [irk1]", [=](u32 id_a){
                         f64_3 tmp_mom_1 = acc_rhov_new_patch[id_a];
@@ -230,8 +230,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                         f64    tmp_inv_rho  = 1.0 / tmp_rho;
                         f64_3  tmp_vel      =  tmp_inv_rho * tmp_mom_1;
 
-                        std::cout << tmp_inv_rho << "\n\n";
-                        std::cout << "tmp_vel [0] " <<   tmp_vel [0] << " tmp_vel [1] "<<tmp_vel [1] << " tmp_vel [2] "<< tmp_vel [2]<< "\n\n";
+                        // std::cout << tmp_inv_rho << "\n\n";
+                        // std::cout << "tmp_vel [0] " <<   tmp_vel [0] << " tmp_vel [1] "<<tmp_vel [1] << " tmp_vel [2] "<< tmp_vel [2]<< "\n\n";
 
 
 
@@ -241,14 +241,14 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 
                         f64 inv_rho_g      = 1.0 / acc_rho_new_patch[id_a];
                         f64_3 vg_bf        = inv_rho_g * acc_rhov_new_patch[id_a];
-                        std::cout << "vg_bf [0] " <<   vg_bf [0] << " vg_bf [1] "<<vg_bf [1] << " vg_bf [2] "<< vg_bf [2]<< "\n\n";
+                        // std::cout << "vg_bf [0] " <<   vg_bf [0] << " vg_bf [1] "<<vg_bf [1] << " vg_bf [2] "<< vg_bf [2]<< "\n\n";
                         f64_3 vg_af        = inv_rho_g * acc_rho_old[id_a] * tmp_vel;
-                        std::cout << "vg_af [0] " <<   vg_af [0] << " vg_af [1] "<<vg_af [1] << " vg_af [2] "<< vg_af [2]<< "\n\n";
+                        // std::cout << "vg_af [0] " <<   vg_af [0] << " vg_af [1] "<<vg_af [1] << " vg_af [2] "<< vg_af [2]<< "\n\n";
                         f64   work_drag    = 0.5 * ( (acc_rho_old[id_a] * tmp_vel[0] - acc_rhov_new_patch[id_a][0]) * (vg_bf[0] + vg_af[0]) + 
                                                      (acc_rho_old[id_a] * tmp_vel[1] - acc_rhov_new_patch[id_a][1]) * (vg_bf[1] + vg_af[1]) +
                                                      (acc_rho_old[id_a] * tmp_vel[2] - acc_rhov_new_patch[id_a][2]) * (vg_bf[2] + vg_af[2])
                                                 ) ;
-                        std::cout << "work " << work_drag << "\n\n";
+                        // std::cout << "work " << work_drag << "\n\n";
                         
                         f64 dissipation = 0.0;
                         for(u32 i = 0; i < ndust; i++)
@@ -257,33 +257,34 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                             const f32 dt_alphas     = dt * acc_alphas[i];
                             f64 inv_rho_d           = 1.0 / acc_rho_d_new_patch[id_a * ndust + i];
                             f64_3 vd_bf             = inv_rho_d * acc_rhov_d_new_patch[id_a * ndust + i] ;  
-                                std::cout << "vd_bf [0] " <<   vd_bf [0] << " vd_bf [1] "<<vd_bf [1] << " vd_bf [2] "<< vd_bf [2]<< "\n\n";
+                                // std::cout << "vd_bf [0] " <<   vd_bf [0] << " vd_bf [1] "<<vd_bf [1] << " vd_bf [2] "<< vd_bf [2]<< "\n\n";
                             f64_3 vd_af             = inv_rho_d * inv_dt_alphas * (acc_rhov_d_new_patch[id_a * ndust + i] + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
-                        std::cout << "vd_af [0] " <<   vd_af [0] << " vd_af [1] "<<vd_af [1] << " vd_af [2] "<< vd_af [2]<< "\n\n";
+                        // std::cout << "vd_af [0] " <<   vd_af [0] << " vd_af [1] "<<vd_af [1] << " vd_af [2] "<< vd_af [2]<< "\n\n";
                             dissipation += 0.5 * dt_alphas * inv_dt_alphas * ( (acc_rho_d_old[id_a * ndust + i] * tmp_vel[0] - acc_rhov_d_new_patch[id_a * ndust + i][0]) * (vd_af[0] + vd_bf[0]) +
                                                     (acc_rho_d_old[id_a * ndust + i] * tmp_vel[1] - acc_rhov_d_new_patch[id_a * ndust + i][1]) * (vd_af[1] + vd_bf[1]) +
                                                     (acc_rho_d_old[id_a * ndust + i] * tmp_vel[2] - acc_rhov_d_new_patch[id_a * ndust + i][2]) * (vd_af[2] + vd_bf[2]))  ;
                         }
 
-                        std::cout << "diss " << dissipation << "\n\n";
+                        // std::cout << "diss " << dissipation << "\n\n";
 
                         Eg += acc_rhoe_new_patch[id_a] + (1 - friction_control) * work_drag - friction_control * dissipation;
-                        std::cout << "Eg " << Eg << "\n\n";
+                        // std::cout << "Eg " << Eg << "\n\n";
                         
 
                         acc_rhov_old[id_a]    = tmp_vel * acc_rho_old[id_a];
                         // std::cout << "vg_af [0] + " <<   acc_rhov_old[id_a] [0] << " vg_af [1] + "<<acc_rhov_old[id_a] [1] << " vg_af [2] + "<< acc_rhov_old[id_a][2]<< "\n\n";
                         acc_rhoe_old[id_a]    = Eg;
-                        std::cout << "Eg wr " << acc_rhoe_old[id_a] << "\n\n";
+                        acc_rho_old[id_a]     = acc_rho_new_patch[id_a];
+                        // std::cout << "Eg wr " << acc_rhoe_old[id_a] << "\n\n";
 
                         for(u32 i=0; i < ndust; i++)
                         {
                             const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
                             const f32 dt_alphas     = dt * acc_alphas[i];
                             acc_rhov_d_old[id_a * ndust + i] = inv_dt_alphas * (acc_rhov_d_new_patch[id_a * ndust + i] + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel );
-                            std::cout << "vd_af [0] + " <<   acc_rhov_d_old[id_a * ndust + i] [0] << " vd_af [1] + "<<acc_rhov_d_old[id_a * ndust + i] [1] << " vd_af [2] + "<< acc_rhov_d_old[id_a * ndust + i][2]<< "\n\n";
-                            std::cout << "acc_rhov_d_old  " << acc_rhov_d_old[id_a * ndust + i][0] << "\n\n";
-                            // acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];
+                            // std::cout << "vd_af [0] + " <<   acc_rhov_d_old[id_a * ndust + i] [0] << " vd_af [1] + "<<acc_rhov_d_old[id_a * ndust + i] [1] << " vd_af [2] + "<< acc_rhov_d_old[id_a * ndust + i][2]<< "\n\n";
+                            // std::cout << "acc_rhov_d_old  " << acc_rhov_d_old[id_a * ndust + i][0] << "\n\n";
+                            acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];
                         }
                         // if (id_a * ndust + 1 > acc_rho_d_old.size()){
                         // std::cout << " id_a " <<  id_a << "\n\n";

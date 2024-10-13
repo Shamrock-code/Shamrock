@@ -57,11 +57,9 @@ TestStart(
     sham::DeviceBuffer<T, sham::host> source(size, shamsys::instance::get_alt_scheduler_ptr());
 
     {
-        std::vector<sycl::event> depends_list;
+        sham::EventList depends_list;
         T *ptr = source.get_write_access(depends_list);
-        for (auto &e : depends_list) {
-            e.wait_and_throw();
-        }
+        depends_list.wait_and_throw();
 
         for (u32 i = 0; i < size; i++) {
             ptr[i] = source_func(i);
@@ -77,11 +75,9 @@ TestStart(
     source.copy_from(buf);
 
     {
-        std::vector<sycl::event> depends_list;
+        sham::EventList depends_list;
         const T *ptr = source.get_read_access(depends_list);
-        for (auto &e : depends_list) {
-            e.wait_and_throw();
-        }
+        depends_list.wait_and_throw();
 
         for (u32 i = 0; i < size; i++) {
             _AssertEqual(ptr[i], check_func(i));

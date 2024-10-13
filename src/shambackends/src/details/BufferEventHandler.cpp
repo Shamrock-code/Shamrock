@@ -14,13 +14,13 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambackends/EventList.hpp"
 #include <shambackends/details/BufferEventHandler.hpp>
 #include <stdexcept>
 
 namespace sham::details {
 
-    void BufferEventHandler::read_access(
-        std::vector<sycl::event> &depends_list, SourceLocation src_loc) {
+    void BufferEventHandler::read_access(sham::EventList &depends_list, SourceLocation src_loc) {
 
         if (!up_to_date_events) {
             shambase::throw_with_loc<std::runtime_error>(
@@ -33,12 +33,11 @@ namespace sham::details {
         last_access       = READ;
 
         for (sycl::event e : write_events) {
-            depends_list.push_back(e);
+            depends_list.add_event(e);
         }
     }
 
-    void BufferEventHandler::write_access(
-        std::vector<sycl::event> &depends_list, SourceLocation src_loc) {
+    void BufferEventHandler::write_access(sham::EventList &depends_list, SourceLocation src_loc) {
 
         if (!up_to_date_events) {
             shambase::throw_with_loc<std::runtime_error>(
@@ -51,10 +50,10 @@ namespace sham::details {
         last_access       = WRITE;
 
         for (sycl::event e : write_events) {
-            depends_list.push_back(e);
+            depends_list.add_event(e);
         }
         for (sycl::event e : read_events) {
-            depends_list.push_back(e);
+            depends_list.add_event(e);
         }
     }
 

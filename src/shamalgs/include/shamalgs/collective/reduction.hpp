@@ -88,12 +88,10 @@ namespace shamalgs::collective {
             if constexpr (target == sham::device) {
 
                 if (field.get_dev_scheduler().use_direct_comm()) {
-                    std::vector<sycl::event> depends_list;
+                    sham::EventList depends_list;
                     T *ptr = field.get_write_access(depends_list);
 
-                    for (auto &e : depends_list) {
-                        e.wait_and_throw();
-                    }
+                    depends_list.wait_and_throw();
 
                     MPICHECK(MPI_Allreduce(
                         MPI_IN_PLACE, ptr, field.get_size(), get_mpi_type<T>(), MPI_SUM, comm));
@@ -108,12 +106,10 @@ namespace shamalgs::collective {
 
             } else if (target == sham::host) {
 
-                std::vector<sycl::event> depends_list;
+                sham::EventList depends_list;
                 T *ptr = field.get_write_access(depends_list);
 
-                for (auto &e : depends_list) {
-                    e.wait_and_throw();
-                }
+                depends_list.wait_and_throw();
 
                 MPICHECK(MPI_Allreduce(
                     MPI_IN_PLACE, ptr, field.get_size(), get_mpi_type<T>(), MPI_SUM, comm));

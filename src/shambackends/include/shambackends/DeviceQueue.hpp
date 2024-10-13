@@ -15,6 +15,7 @@
  */
 
 #include "shambackends/DeviceContext.hpp"
+#include "shambackends/EventList.hpp"
 
 namespace sham {
 
@@ -72,6 +73,15 @@ namespace sham {
          * property.
          */
         DeviceQueue(std::string queue_name, std::shared_ptr<DeviceContext> ctx, bool in_order);
+
+        template<class Fct>
+        sycl::event submit(EventList &elist, Fct &&fct) {
+            elist.consumed = true;
+            return q.submit([&](sycl::handler &h) {
+                elist.apply_dependancy(h);
+                fct(h);
+            });
+        }
     };
 
 } // namespace sham

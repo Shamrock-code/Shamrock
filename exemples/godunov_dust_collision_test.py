@@ -1,7 +1,6 @@
 import shamrock
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 from math import *
 import matplotlib as mpl
 
@@ -10,23 +9,23 @@ import matplotlib as mpl
 
 lw,ms = 3,8 #linewidth #markersize
 
-elw,cs = 0.75,0.75 #elinewidth and capthick #capsize for errorbar specifically
+elw,cs = 0.75,0.75 # linewidth and capthick #capsize for errorbar specifically
 
-fontsize = 20 
+fontsize = 20
 
-tickwidth,ticksize = 1.5,7 
+tickwidth,ticksize = 1.5,7
 
 mpl.rcParams['axes.titlesize'] = fontsize
 
 mpl.rcParams['axes.labelsize'] = fontsize
 
-mpl.rcParams['xtick.major.size'] = ticksize 
+mpl.rcParams['xtick.major.size'] = ticksize
 
-mpl.rcParams['ytick.major.size'] = ticksize 
+mpl.rcParams['ytick.major.size'] = ticksize
 
 mpl.rcParams['xtick.major.width'] = tickwidth
 
-mpl.rcParams['ytick.major.width'] = tickwidth 
+mpl.rcParams['ytick.major.width'] = tickwidth
 
 mpl.rcParams['xtick.minor.size'] = ticksize
 
@@ -34,7 +33,7 @@ mpl.rcParams['ytick.minor.size'] = ticksize
 
 mpl.rcParams['xtick.minor.width'] = tickwidth
 
-mpl.rcParams['ytick.minor.width'] = tickwidth 
+mpl.rcParams['ytick.minor.width'] = tickwidth
 
 mpl.rcParams['lines.linewidth'] = lw
 
@@ -83,7 +82,7 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     cfg.set_scale_factor(scale_fact)
     cfg.set_Csafe(0.44)                  #  TODO : remember to add possibility of different CFL for fluids(e.g Csafe_gas and Csafe_dust ...)
     cfg.set_eos_gamma(1.4)              # set adiabatic index gamma , here adiabatic EOS
-    cfg.set_dust_mode_dhll(2)           # enable dust config 
+    cfg.set_dust_mode_dhll(2)           # enable dust config
     cfg.set_drag_mode_irk1(True)        # enable drag config
     cfg.set_face_time_interpolation(False)
 
@@ -91,10 +90,8 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     #======= set drag coefficients for test B ========
     cfg.set_alpha_values(100)          # ts := 0.01
     cfg.set_alpha_values(500)          # ts := 0.002
-    
+
     """
-
-
     #======= set drag coefficients for test C ========
     cfg.set_alpha_values(0.5)          # ts  := 2
     cfg.set_alpha_values(1)            # ts  := 1
@@ -107,10 +104,10 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
 
     def rho_map(rmin,rmax):
         return 1  # 1 is the initial density
-    
+
     def rhovel_map(rmin,rmax):
         return (1, 0, 0)  # vg_x:=1, vg_y:=0, vg_z:=0
-    
+
     def rhoe_map(rmin,rmax):
         cs_0 = 1.4
         gamma = 1.4
@@ -123,31 +120,31 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     #=========== Fields maps for dust in test B ============
     def b_rho_d_1_map(rmin, rmax):
         return 1     # rho_d_1 := 1
-    
+
     def b_rho_d_2_map(rmin, rmax):
         return 1   # rho_d_2 := 1
-    
+
     def b_rhovel_d_1_map(rmin,rmax):
         return (2,0,0)  # vd_1_x:=2, vd_1_y:=0, vd_1_z:=0
-    
+
     def b_rhovel_d_2_map(rmin,rmax):
         return (0.5,0,0)  # vd_2_x:=0.5, vd_2_y:=0, vd_2_z:=0
-    
+
 
 
     #=========== Fields maps for dust in test C ============
     def c_rho_d_1_map(rmin, rmax):
         return 10     # rho_d_1 := 10
-    
+
     def c_rho_d_2_map(rmin, rmax):
         return 100   # rho_d_2 := 100
-    
+
     def c_rhovel_d_1_map(rmin,rmax):
         return (20,0,0)  # vd_1_x:=2, vd_1_y:=0, vd_1_z:=0
-    
+
     def c_rhovel_d_2_map(rmin,rmax):
         return (50,0,0)  # vd_2_x:=0.5, vd_2_y:=0, vd_2_z:=0
-    
+
 
 
     #============ set init fields values for gas =============
@@ -156,20 +153,20 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
-    """ 
+    """
     #============ set init fields values for dusts in test B ==========
     model.set_field_value_lambda_f64("rho_dust", b_rho_d_1_map,0)
     model.set_field_value_lambda_f64_3("rhovel_dust", b_rhovel_d_1_map,0)
     model.set_field_value_lambda_f64("rho_dust", b_rho_d_2_map,1)
     model.set_field_value_lambda_f64_3("rhovel_dust", b_rhovel_d_2_map,1)
-    
+
     """
     #============ set init fields values for dusts in test C ==========
     model.set_field_value_lambda_f64("rho_dust", c_rho_d_1_map,0)
     model.set_field_value_lambda_f64_3("rhovel_dust", c_rhovel_d_1_map,0)
     model.set_field_value_lambda_f64("rho_dust", c_rho_d_2_map,1)
     model.set_field_value_lambda_f64_3("rhovel_dust", c_rhovel_d_2_map,1)
-    
+
 
     def convert_to_cell_coords(dic):
 
@@ -235,12 +232,12 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
 
 # ============== post treatment ===================
 
-## ========= analytical function for velocity =====        
+## ========= analytical function for velocity =====
 def analytical_velocity(t, Vcom, c1, c2, lambda1, lambda2):
     return Vcom + c1 * exp(lambda1 * t) + c2 * exp(lambda2 * t)
 
 
-## =========Test A setup========= 
+## =========Test A setup=========
 Vcom_A     =  1.16666666666666
 lambda1_A  = -0.63397459621556
 lambda2_A  = -2.36602540378444
@@ -251,7 +248,7 @@ cd12_A     = -0.01634603522555
 cd21_A     = -0.62200846792815
 cd22_A     = -0.04465819873852
 
-## =========Test B setup========= 
+## =========Test B setup=========
 Vcom_B     =  1.166666666666667
 lambda1_B  = -141.742430504416
 lambda2_B  = -1058.25756949558
@@ -329,16 +326,3 @@ axs[2].set_title("$V_{d,2}$", fontsize=15, fontweight='bold')
 plt.legend(prop={'weight' : 'bold'})
 # plt.savefig("dusty_collision_test_B.png")
 plt.savefig("dusty_collision_test_C.png")
-
-# plt.show()
-
-
-
-
-
-
-
-
-
-
-

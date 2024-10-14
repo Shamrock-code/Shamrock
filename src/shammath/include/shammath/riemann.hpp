@@ -141,7 +141,6 @@ namespace shammath {
 
         const auto rhoeint = cons.rhoe - rhoekin(prim.rho, prim.vel);
         prim.press         = (gamma - 1.0) * rhoeint;
-        // prim.press = cons.rho;   // for isothermal 
 
         return prim;
     }
@@ -199,9 +198,6 @@ namespace shammath {
 
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
-
-        // const auto csL = 1;
-        // const auto csR = 1;
 
         // Equation (10.56) from Toro 3rd Edition , Springer 2009
         const auto S = sham::max((sham::abs(primL.vel[0]) + csL), (sham::abs(primR.vel[0]) + csR));

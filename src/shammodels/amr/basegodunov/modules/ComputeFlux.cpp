@@ -325,7 +325,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         const u32 iym = oriented_cell_graph.ym;
         const u32 izp = oriented_cell_graph.zp;
         const u32 izm = oriented_cell_graph.zm;
-        auto ndust = solver_config.dust_config.ndust;
+        auto ndust    = solver_config.dust_config.ndust;
 
         NGLink<Tscal> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixp], ndust};
         NGLink<Tscal> buf_flux_rho_dust_face_xm{*oriented_cell_graph.graph_links[ixm], ndust};

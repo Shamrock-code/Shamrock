@@ -67,8 +67,6 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
-            std::cout << "cell_count cTp " << cell_count << "\n\n";
-
             shambase::parralel_for(cgh, cell_count, "cons_to_prim", [=](u64 gid) {
                 auto conststate = shammath::ConsState<Tvec>{rho[gid], rhoe[gid], rhovel[gid]};
 
@@ -84,7 +82,7 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
     storage.press.set(std::move(P_ghost));
 
     if (solver_config.is_dust_on()) {
-        u32 ndust = solver_config.dust_config.ndust;
+        u32 ndust                                      = solver_config.dust_config.ndust;
         shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
 
         shamrock::ComputeField<Tvec> v_dust_ghost = utility.make_compute_field<Tvec>(

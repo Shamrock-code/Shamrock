@@ -101,8 +101,7 @@ namespace shammath {
     template<class Tvec>
     inline constexpr DustConsState<Tvec> d_prim_to_cons(const DustPrimState<Tvec> d_prim) {
         DustConsState<Tvec> d_cons;
-        d_cons.rho    = d_prim.rho;
-        // d_cons.rhovel = (d_prim.vel * d_prim.rho);
+        d_cons.rho       = d_prim.rho;
         d_cons.rhovel[0] = (d_prim.vel[0] * d_prim.rho);
         d_cons.rhovel[1] = (d_prim.vel[1] * d_prim.rho);
         d_cons.rhovel[2] = (d_prim.vel[2] * d_prim.rho);
@@ -112,8 +111,7 @@ namespace shammath {
     template<class Tvec>
     inline constexpr DustPrimState<Tvec> d_cons_to_prim(const DustConsState<Tvec> d_cons) {
         DustPrimState<Tvec> d_prim;
-        d_prim.rho = d_cons.rho;
-        // d_prim.vel = (d_cons.rhovel * (1 / d_cons.rho));
+        d_prim.rho    = d_cons.rho;
         d_prim.vel[0] = (d_cons.rhovel[0] * (1 / d_cons.rho));
         d_prim.vel[1] = (d_cons.rhovel[1] * (1 / d_cons.rho));
         d_prim.vel[2] = (d_cons.rhovel[2] * (1 / d_cons.rho));
@@ -125,8 +123,7 @@ namespace shammath {
         DustConsState<Tvec> d_flux;
         const DustPrimState<Tvec> d_prim = d_cons_to_prim<Tvec>(d_cons);
         const typename DustConsState<Tvec>::Tscal x_vel{d_prim.vel[0]};
-        d_flux.rho    = d_cons.rhovel[0];
-        // d_flux.rhovel = d_prim.vel * (d_cons.rho * x_vel);
+        d_flux.rho       = d_cons.rhovel[0];
         d_flux.rhovel[0] = d_prim.vel[0] * (d_cons.rho * x_vel);
         d_flux.rhovel[1] = d_prim.vel[1] * (d_cons.rho * x_vel);
         d_flux.rhovel[2] = d_prim.vel[2] * (d_cons.rho * x_vel);
@@ -170,7 +167,6 @@ namespace shammath {
         d_cst.rho       = c.rho;
         d_cst.rhovel[0] = c.rhovel[2];
         d_cst.rhovel[1] = c.rhovel[1];
-        // d_cst.rhovel[2] = c.rhovel[0];
         d_cst.rhovel[2] = -c.rhovel[0];
         return d_cst;
     }
@@ -178,8 +174,7 @@ namespace shammath {
     template<class Tcons>
     inline constexpr Tcons d_invert_axis(const Tcons c) {
         Tcons d_cst;
-        d_cst.rho    = c.rho;
-        // d_cst.rhovel = -(c.rhovel);
+        d_cst.rho       = c.rho;
         d_cst.rhovel[0] = -c.rhovel[0];
         d_cst.rhovel[1] = -c.rhovel[1];
         d_cst.rhovel[2] = -c.rhovel[2];
@@ -194,17 +189,11 @@ namespace shammath {
         const auto d_primL = d_cons_to_prim(cL);
         const auto d_primR = d_cons_to_prim(cR);
 
-        const auto S = sham::max(sham::abs(d_primL.vel[0]), sham::abs(d_primR.vel[0]));
-        const auto SL = - S;
+        const auto S  = sham::max(sham::abs(d_primL.vel[0]), sham::abs(d_primR.vel[0]));
         const auto fL = d_hydro_flux_x(cL);
         const auto fR = d_hydro_flux_x(cR);
 
-        if (SL >= 0)
-            return fL;
-        else if (S <= 0)
-            return fR;
-        else
-            return 0.5 * ((fL + fR) - S * (cR - cL));
+        return 0.5 * ((fL + fR) - S * (cR - cL));
     }
 
     // Huang & Bai, 2022 ,A Multiﬂuid Dust Module in Athena++: Algorithms and Numerical Tests

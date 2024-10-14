@@ -9,23 +9,23 @@ from math import *
 
 lw,ms = 3,8 #linewidth #markersize
 
-elw,cs = 0.75,0.75 #elinewidth and capthick #capsize for errorbar specifically
+elw,cs = 0.75,0.75 # linewidth and capthick #capsize for errorbar specifically
 
-fontsize = 20 
+fontsize = 20
 
-tickwidth,ticksize = 1.5,7 
+tickwidth,ticksize = 1.5,7
 
 mpl.rcParams['axes.titlesize'] = fontsize
 
 mpl.rcParams['axes.labelsize'] = fontsize
 
-mpl.rcParams['xtick.major.size'] = ticksize 
+mpl.rcParams['xtick.major.size'] = ticksize
 
-mpl.rcParams['ytick.major.size'] = ticksize 
+mpl.rcParams['ytick.major.size'] = ticksize
 
 mpl.rcParams['xtick.major.width'] = tickwidth
 
-mpl.rcParams['ytick.major.width'] = tickwidth 
+mpl.rcParams['ytick.major.width'] = tickwidth
 
 mpl.rcParams['xtick.minor.size'] = ticksize
 
@@ -33,7 +33,7 @@ mpl.rcParams['ytick.minor.size'] = ticksize
 
 mpl.rcParams['xtick.minor.width'] = tickwidth
 
-mpl.rcParams['ytick.minor.width'] = tickwidth 
+mpl.rcParams['ytick.minor.width'] = tickwidth
 
 mpl.rcParams['lines.linewidth'] = lw
 
@@ -87,20 +87,16 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     cfg.set_drag_mode_irk1(True)
     cfg.set_face_time_interpolation(False)
 
-    """ 
+    """
     #=================== set drag coefficients for 2 fluids dust =========
     cfg.set_alpha_values(2.5)          # ts = 0.4
     """
 
-    
     #=================== set drag coefficients for 5 fluids dust =========
     cfg.set_alpha_values(float(1.0/0.1))               # ts = 0.1
     cfg.set_alpha_values(float(1.0/0.215443))          # ts = 0.215443
     cfg.set_alpha_values(float(1.0/0.464159))          # ts = 0.464159
     cfg.set_alpha_values(1.0)                          # ts = 1.0
-
-    
-
 
     model.set_config(cfg)
     model.init_scheduler(int(1e7),1)
@@ -110,9 +106,8 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
 
     def pertubation(x,A, Re, Im,L) ->float:
         return (A * ( Re * cos(2*x*pi/L) -  Im * sin (2*x*pi/L) ))
-    
-    """
 
+    """
     ##  2 fluids test setup
     rhog_0    = 1.00000
     rhod_0    = 2.240000
@@ -131,17 +126,17 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     gamma     = 1.0000001
 
     ### Gas maps
-    
+
     def rho_map(rmin,rmax)->float:
         x,y,z = rmin
         return rhog_0 + pertubation(x,A_rho,Re_rho,Im_rho,L)
-    
+
     def rhovel_map(rmin, rmax)->tuple[float,float,float]:
         x,y,z = rmin
         rho = rhog_0 + pertubation(x,A_rho,Re_rho,Im_rho,L)
         vx  = pertubation(x,A_vel,Re_vel,Im_vel,L)
         return (rho*vx, 0, 0)
-    
+
     def rhoe_map (rmin, rmax)->float:
         x,y,z   = rmin
         rho     = rhog_0 + pertubation(x,A_rho,Re_rho,Im_rho,L)
@@ -150,20 +145,18 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
         rhoeint = press / (gamma - 1.0)
         rhoekin = 0.5 * rho * (vx *vx + 0.0)
         return (rhoeint + rhoekin)
-    
+
     ### Dust maps
     def rho_d_map(rmin,rmax)->float:
         x,y,z = rmin
         return rhod_0 + pertubation(x,A_rho,Re_rd,Im_rd,L)
-    
+
     def rhovel_d_map(rmin, rmax)->tuple[float,float,float]:
         x,y,z = rmin
         rho = rhod_0 + pertubation(x,A_rho,Re_rd,Im_rd,L)
         vx  = pertubation(x,A_vel,Re_vd,Im_vd,L)
         return (rho*vx, 0, 0)
     """
-    
-    
     ##  5 fluids test setup
     L          = 1
     A_rho      = 1e-4
@@ -202,17 +195,17 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     cs        = 1.0
     gamma     = 1.0000001
 
-    ### Gas maps 
+    ### Gas maps
     def rho_map(rmin,rmax)->float:
         x,y,z = rmin
         return rhog_0 + pertubation(x,A_rho,Re_rho,Im_rho,L)
-    
+
     def rhovel_map(rmin, rmax)->tuple[float,float,float]:
         x,y,z = rmin
         rho = rhog_0 + pertubation(x,A_rho,Re_rho,Im_rho,L)
         vx  = pertubation(x,A_vel,Re_vel,Im_vel,L)
         return (rho*vx, 0, 0)
-    
+
     def rhoe_map (rmin, rmax)->float:
         x,y,z   = rmin
         rho     = rhog_0 + pertubation(x,A_rho,Re_rho,Im_rho,L)
@@ -221,13 +214,13 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
         rhoeint = press / (gamma - 1.0)
         rhoekin = 0.5 * rho * (vx *vx + 0.0)
         return (rhoeint + rhoekin)
-    
+
     ### Dusts maps
 
     def rho_d_1_map(rmin,rmax)->float:
         x,y,z = rmin
         return rhod_1 + pertubation(x,A_rho,Re_rd_1,Im_rd_1,L)
-    
+
     def rhovel_d_1_map(rmin, rmax)->tuple[float,float,float]:
         x,y,z = rmin
         rho = rhod_1 + pertubation(x,A_rho,Re_rd_1,Im_rd_1,L)
@@ -237,51 +230,46 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     def rho_d_2_map(rmin,rmax)->float:
         x,y,z = rmin
         return rhod_2 + pertubation(x,A_rho,Re_rd_2,Im_rd_2,L)
-    
+
     def rhovel_d_2_map(rmin, rmax)->tuple[float,float,float]:
         x,y,z = rmin
         rho = rhod_2 + pertubation(x,A_rho,Re_rd_2,Im_rd_2,L)
         vx  = pertubation(x,A_vel,Re_vd_2,Im_vd_2,L)
         return (rho*vx, 0, 0)
-    
+
     def rho_d_3_map(rmin,rmax)->float:
         x,y,z = rmin
         return rhod_3 + pertubation(x,A_rho,Re_rd_3,Im_rd_3,L)
-    
+
     def rhovel_d_3_map(rmin, rmax)->tuple[float,float,float]:
         x,y,z = rmin
         rho = rhod_3 + pertubation(x,A_rho,Re_rd_3,Im_rd_3,L)
         vx  = pertubation(x,A_vel,Re_vd_3,Im_vd_3,L)
         return (rho*vx, 0, 0)
-    
+
     def rho_d_4_map(rmin,rmax)->float:
         x,y,z = rmin
         return rhod_4 + pertubation(x,A_rho,Re_rd_4,Im_rd_4,L)
-    
+
     def rhovel_d_4_map(rmin, rmax)->tuple[float,float,float]:
         x,y,z = rmin
         rho = rhod_4 + pertubation(x,A_rho,Re_rd_4,Im_rd_4,L)
         vx  = pertubation(x,A_vel,Re_vd_4,Im_vd_4,L)
         return (rho*vx, 0, 0)
-        
-    
-
 
     #============ set init fields values for gas =============
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
-
     """
     #============ set init fields values for dusts [2 fluid case] =============
 
     model.set_field_value_lambda_f64("rho_dust", rho_d_map)
     model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map)
-    
+
     """
 
-    
     #============ set init fields values for dusts [5 fluid case] =============
     model.set_field_value_lambda_f64("rho_dust", rho_d_1_map,0)
     model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_1_map,0)
@@ -291,8 +279,6 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_3_map,2)
     model.set_field_value_lambda_f64("rho_dust", rho_d_4_map,3)
     model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_4_map,3)
-    
-    
 
     def convert_to_cell_coords(dic):
 
@@ -334,7 +320,7 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
         dic["zmax"] = np.array(zmax)
 
         return dic
-    
+
     freq = 15
     dt     = 0.000
     t      = 0
@@ -345,7 +331,7 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
             model.dump_vtk("test"+str(i//freq)+".vtk")
 
             dic_i   = convert_to_cell_coords(ctx.collect_data())
-            """   
+            """
             vg_i    =  dic_i["rhovel"][0][0]/dic_i["rho"][0]
             rg_i    =  dic_i["rho"][0]
             rd_i   =  dic_i["rho_dust"][0]
@@ -386,20 +372,18 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
             normalized_vd_num[3].append(vd_4_i/A_vel)
 
         next_dt = model.evolve_once_override_time(t,dt)
- 
+
         t += dt
 
         if i % freq == 0:
             times.append(t)
         dt = next_dt
-    
 
         if tend < t + next_dt:
             dt = tend - t
         if t == tend:
-
             break
-    
+
 # ================ post treatment =========
 
 ## ===== get numerical results ========
@@ -413,7 +397,6 @@ normalized_vd_num    = [[],[],[],[]]
 x0        = 0
 # rhod_0    = 2.240000
 
-
 rhod_1     = 0.100000
 rhod_2     = 0.233333
 rhod_3     = 0.366667
@@ -423,7 +406,6 @@ run_sim(times,x0,normalized_rd_num,normalized_rg_num, normalized_vd_num,normaliz
 
 ## ========= get analytical values ========
 
-import math
 from cmath import *
 
 ## analytical function =============
@@ -431,7 +413,6 @@ def analytical_values(t, w, x, delta) :
     res = 0.0 + 0.0j
     res = delta * exp(-t*w)*exp(pi * x * (2j))
     return res.real, res.imag
-
 
 """
 ## 2 fluid gas and dust analytical solutions
@@ -500,11 +481,11 @@ plt.savefig("dusty_wave_test_2fluids.png")
 ## 5 fluids
 fig, axs = plt.subplots(1,2,figsize=(25,10))
 plt.subplots_adjust(wspace=0.25)
-axs[0].plot(times, normalized_rd_num[0],  lw = 3, label="Dust1-num")
-axs[0].plot(times, normalized_rd_num[1],  lw = 3, label="Dust2-num")
-axs[0].plot(times, normalized_rd_num[2],  lw = 3, label="Dust3-num")
-axs[0].plot(times, normalized_rd_num[3],  lw = 3, label="Dust4-num")
-axs[0].plot(times, normalized_rg_num,  lw = 3, label="Gas-num")
+axs[0].plot(times, normalized_rd_num[0], 'bo', lw = 3, label="Dust1-num")
+axs[0].plot(times, normalized_rd_num[1], 'ro', lw = 3, label="Dust2-num")
+axs[0].plot(times, normalized_rd_num[2], 'go',  lw = 3, label="Dust3-num")
+axs[0].plot(times, normalized_rd_num[3], 'co', lw = 3, label="Dust4-num")
+axs[0].plot(times, normalized_rg_num,    'm*', lw = 3, label="Gas-num")
 axs[0].plot(times, norm_rd_1_re, 'k', lw = 1, label="Dust1-ana" )
 axs[0].plot(times, norm_rd_2_re, 'k', lw = 1, label="Dust2-ana" )
 axs[0].plot(times, norm_rd_3_re, 'k', lw = 1, label="Dust3-ana" )
@@ -513,11 +494,11 @@ axs[0].plot(times, norm_rg_re, 'k', lw = 1, label="Gas-ana")
 axs[0].set_xlabel('Time', fontsize=15,fontweight='bold')
 axs[0].set_ylabel('Normalized Density', fontsize=15, fontweight='bold')
 
-axs[1].plot(times, normalized_vd_num[0], lw = 3, label="Dust1-num")
-axs[1].plot(times, normalized_vd_num[1], lw = 3, label="Dust2-num")
-axs[1].plot(times, normalized_vd_num[2], lw = 3, label="Dust3-num")
-axs[1].plot(times, normalized_vd_num[3], lw = 3, label="Dust4-num")
-axs[1].plot(times, normalized_vg_num, lw = 3, label="Gas-num")
+axs[1].plot(times, normalized_vd_num[0],'bo', lw = 3, label="Dust1-num")
+axs[1].plot(times, normalized_vd_num[1],'ro', lw = 3, label="Dust2-num")
+axs[1].plot(times, normalized_vd_num[2],'go', lw = 3, label="Dust3-num")
+axs[1].plot(times, normalized_vd_num[3],'co', lw = 3, label="Dust4-num")
+axs[1].plot(times, normalized_vg_num,'m*', lw = 3, label="Gas-num")
 axs[1].plot(times, norm_vd_1_re, 'k', lw = 1, label="Dust1-ana" )
 axs[1].plot(times, norm_vd_2_re, 'k', lw = 1, label="Dust2-ana" )
 axs[1].plot(times, norm_vd_3_re, 'k', lw = 1, label="Dust3-ana" )

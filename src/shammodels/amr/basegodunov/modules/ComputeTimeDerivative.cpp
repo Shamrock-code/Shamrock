@@ -409,9 +409,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
                 // block id : this is the block id of the current cell
                 const u32 block_id = cell_global_id / AMRBlock::block_size;
                 // id of the current cell with respect to it's block
-                // const u32 cell_loc_id = block_id % AMRBlock::block_size;
                 const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
-
                 // fetch current block info
                 const Tvec cblock_min  = acc_aabb_block_lower[block_id];
                 const Tscal delta_cell = acc_aabb_cell_size[block_id];
@@ -446,7 +444,6 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
                 const u32 icell_a = ivar_a / ndust;
                 // variable id in the cell of icell_a id
                 const u32 ndust_off_loc = ivar_a % ndust;
-
                 // block id of the ivar_a
                 const u32 block_id = icell_a / AMRBlock::block_size;
                 // cell id in the block of id block_id
@@ -464,35 +461,30 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
                     dtrho_dust -= flux_rho_dust_face_xp[link_id * ndust + ndust_off_loc] * S_ij;
                     dtrhov_dust -= flux_rhov_dust_face_xp[link_id * ndust + ndust_off_loc] * S_ij;
                 });
-
                 // iterate trough neighborh table is yp direction
                 graph_iter_yp.for_each_object_link_id(icell_a, [&](u32 icell_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(icell_a, icell_b);
                     dtrho_dust -= flux_rho_dust_face_yp[link_id * ndust + ndust_off_loc] * S_ij;
                     dtrhov_dust -= flux_rhov_dust_face_yp[link_id * ndust + ndust_off_loc] * S_ij;
                 });
-
                 // iterate trough neighborh table is zp direction
                 graph_iter_zp.for_each_object_link_id(icell_a, [&](u32 icell_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(icell_a, icell_b);
                     dtrho_dust -= flux_rho_dust_face_zp[link_id * ndust + ndust_off_loc] * S_ij;
                     dtrhov_dust -= flux_rhov_dust_face_zp[link_id * ndust + ndust_off_loc] * S_ij;
                 });
-
                 // iterate trough neighborh table is xm direction
                 graph_iter_xm.for_each_object_link_id(icell_a, [&](u32 icell_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(icell_a, icell_b);
                     dtrho_dust -= flux_rho_dust_face_xm[link_id * ndust + ndust_off_loc] * S_ij;
                     dtrhov_dust -= flux_rhov_dust_face_xm[link_id * ndust + ndust_off_loc] * S_ij;
                 });
-
                 // iterate trough neighborh table is ym direction
                 graph_iter_ym.for_each_object_link_id(icell_a, [&](u32 icell_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(icell_a, icell_b);
                     dtrho_dust -= flux_rho_dust_face_ym[link_id * ndust + ndust_off_loc] * S_ij;
                     dtrhov_dust -= flux_rhov_dust_face_ym[link_id * ndust + ndust_off_loc] * S_ij;
                 });
-
                 // iterate trough neighborh table is zm direction
                 graph_iter_zm.for_each_object_link_id(icell_a, [&](u32 icell_b, u32 link_id) {
                     Tscal S_ij = get_face_surface(icell_a, icell_b);

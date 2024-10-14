@@ -102,30 +102,38 @@ namespace shammodels::basegodunov {
                 [](TConfig &self, u32 ndust) {
                     self.dust_config = {HB, ndust};
                 })
-            .def("set_dust_mode_none", [](TConfig &self) {
-                self.dust_config = {NoDust, 0};
-            })
-            .def("set_alpha_values",
+            .def(
+                "set_dust_mode_none",
+                [](TConfig &self) {
+                    self.dust_config = {NoDust, 0};
+                })
+            .def(
+                "set_alpha_values",
                 [](TConfig &self, f32 alpha_values) {
                     return self.set_alphas_static(alpha_values);
                 })
-            .def("set_drag_mode_no_drag", [](TConfig &self) {
-                self.drag_config.drag_solver_config = NoDrag;
-                self.drag_config.enable_frictional_heating = false;
-            })
-            .def("set_drag_mode_irk1", [](TConfig &self, bool frictional_status) {
-                self.drag_config.drag_solver_config = IRK1;
-                self.drag_config.enable_frictional_heating = frictional_status;
-            })
-            .def("set_drag_mode_irk2", [](TConfig &self, bool frictional_status) {
-                self.drag_config.drag_solver_config = IRK2;
-                self.drag_config.enable_frictional_heating = frictional_status;
-            })
+            .def(
+                "set_drag_mode_no_drag",
+                [](TConfig &self) {
+                    self.drag_config.drag_solver_config        = NoDrag;
+                    self.drag_config.enable_frictional_heating = false;
+                })
+            .def(
+                "set_drag_mode_irk1",
+                [](TConfig &self, bool frictional_status) {
+                    self.drag_config.drag_solver_config        = IRK1;
+                    self.drag_config.enable_frictional_heating = frictional_status;
+                })
+            .def(
+                "set_drag_mode_irk2",
+                [](TConfig &self, bool frictional_status) {
+                    self.drag_config.drag_solver_config        = IRK2;
+                    self.drag_config.enable_frictional_heating = frictional_status;
+                })
             .def("set_drag_mode_expo", [](TConfig &self, bool frictional_status) {
-                self.drag_config.drag_solver_config = EXPO;
+                self.drag_config.drag_solver_config        = EXPO;
                 self.drag_config.enable_frictional_heating = frictional_status;
-            })
-            ;
+            });
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
         py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())
@@ -149,23 +157,30 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("niter_max") = -1)
             .def("timestep", &T::timestep)
-            // .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
-            // .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
-            .def("set_field_value_lambda_f64", [](T& self, std::string field_name, const std::function<f64(Tvec, Tvec)> pos_to_val, const i32 offset)
-                {
-                    return self.template set_field_value_lambda<f64>(field_name, pos_to_val, offset);
+            .def(
+                "set_field_value_lambda_f64",
+                [](T &self,
+                   std::string field_name,
+                   const std::function<f64(Tvec, Tvec)> pos_to_val,
+                   const i32 offset) {
+                    return self.template set_field_value_lambda<f64>(
+                        field_name, pos_to_val, offset);
                 },
                 py::arg("field_name"),
                 py::arg("pos_to_val"),
                 py::arg("offset") = 0)
-            .def("set_field_value_lambda_f64_3", [](T& self, std::string field_name, const std::function<f64_3(Tvec, Tvec)> pos_to_val, const i32 offset)
-                {
-                    return self.template set_field_value_lambda<f64_3>(field_name, pos_to_val, offset);
+            .def(
+                "set_field_value_lambda_f64_3",
+                [](T &self,
+                   std::string field_name,
+                   const std::function<f64_3(Tvec, Tvec)> pos_to_val,
+                   const i32 offset) {
+                    return self.template set_field_value_lambda<f64_3>(
+                        field_name, pos_to_val, offset);
                 },
                 py::arg("field_name"),
                 py::arg("pos_to_val"),
                 py::arg("offset") = 0)
-
             .def(
                 "gen_default_config",
                 [](T &self) -> TConfig {

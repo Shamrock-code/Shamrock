@@ -160,7 +160,6 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
 
             std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust
                 = sched.rankgather_field<Tscal>(irho_dust);
-            // writer.write_field("rho_dust", fields_rho_dust, ndust*num_obj*block_size);
 
             if (fields_rho_dust) {
                 u32 nobj   = fields_rho_dust->size();

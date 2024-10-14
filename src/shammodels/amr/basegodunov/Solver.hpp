@@ -47,9 +47,10 @@ namespace shammodels::basegodunov {
     };
 
     struct DragConfig {
-        DragSolverMode drag_solver_config      = NoDrag;
-        std::vector<f32> alphas ;       
-        bool enable_frictional_heating = false;   // 0 to turn off and 1 when all dissipation is deposited to the gas
+        DragSolverMode drag_solver_config = NoDrag;
+        std::vector<f32> alphas;
+        bool enable_frictional_heating
+            = false; // 0 to turn off and 1 when all dissipation is deposited to the gas
     };
 
     struct DustConfig {
@@ -101,12 +102,10 @@ namespace shammodels::basegodunov {
 
         inline bool is_dust_on() { return dust_config.is_dust_on(); }
         // get alpha values from user
-        inline void set_alphas_static(f32 alpha_values)
-        {
+        inline void set_alphas_static(f32 alpha_values) {
             StackEntry stack_lock{};
             drag_config.alphas.push_back(alpha_values);
-        }  
-        
+        }
 
         Tscal Csafe = 0.9;
 
@@ -155,12 +154,6 @@ namespace shammodels::basegodunov {
 
                 context.pdata_layout_add_field<Tscal>("rho_dust", (ndust * AMRBlock::block_size));
                 context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust * AMRBlock::block_size));
-                std::cout << " friction_flags  :  " << solver_config.drag_config.enable_frictional_heating << "\n\n";
-                std::cout << " drag_solver_config  :  " << solver_config.drag_config.drag_solver_config << "\n\n";
-                std::cout << " alphas_vector::size  :  " << solver_config.drag_config.alphas.size() << "\n\n";
-                for(auto &x :solver_config.drag_config.alphas)
-                    std::cout << " alphas_vector_values  :  " << x << " ;" ;
-                std::cout << "\n\n";                
             }
         }
 

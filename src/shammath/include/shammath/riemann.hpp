@@ -210,6 +210,87 @@ namespace shammath {
     }
 
     template<class Tcons>
+    inline constexpr Tcons hllc_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        Tcons flux;
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        // const to prim
+        const auto primL = const_to_prim(cL, gamma);
+        const auto primR = const_to_prim(cR, gamma);
+
+        // sound speeds
+        const auto csL = sound_speed(primL, gamma);
+        const auto csR = sound_speed(primR, gamma);
+
+        // Left and right state fluxes
+        const auto FL = hydro_flux_x(cL, gamma);
+        const auto FR = hydro_flux_x(cR, gamma);
+
+        // Left variables
+        const auto rhoL   = primL.rho;
+        const auto pressL = primL.press;
+        const auto velxL  = primL.vel[0];
+        const auto velyL  = primL.vel[1];
+        const auto velzL  = primL.vel[2];
+        const auto ekinL  = 0.5 * rhoL * (velxL * velxL + velyL * velyL + velzL * velzL);
+        const auto etotL  = pressL / (gamma - 1.0) + ekinL;
+
+        // Right variables
+        const auto rhoR   = primR.rho;
+        const auto pressR = primR.press;
+        const auto velxR  = primR.vel[0];
+        const auto velyR  = primR.vel[1];
+        const auto velzR  = primR.vel[2];
+        const auto ekinR  = 0.5 * rhoR * (velxR * velxR + velyR * velyR + velzR * velzR);
+        const auto etotR  = pressR / (gamma - 1.0) + ekinR;
+
+        // signal speed
+        const Tscal SL = 1;
+        const Tscal SR = 1;
+
+        //
+        // const Tscal var_L    = rhoL * (SL - velxL);
+        // const Tscal var_R    = rhoR * (SR - velxR);
+        const Tscal var_L = rhoL * (SL - primL.vel[0]);
+        const Tscal var_R = rhoR * (SR - primR.vel[0]);
+
+        // S* speed estimate
+        // const Tscal S_star = (pressR - pressL + velxL * var_L - velxR * var_R)/(var_L - var_R);
+        const Tscal S_star
+            = (primR.press - primL.press + primL.vel[0] * var_L - primR.vel[0] * var_R)
+              / (var_L - var_R);
+        // P* pression estimate
+        // const Tscal press_star = (pressR * var_L - pressL * var_R + (velxL - velxR) * var_L *
+        // var_R) / (var_L - var_R);
+        const Tscal press_star = (primR.press * var_L - primL.press * var_R
+                                  + (primL.vel[0] - primR.vel[0]) * var_L * var_R)
+                                 / (var_L - var_R);
+        // Left intermediate conservative state in the star region
+        //  const Tscal rhoL_star   = var_L / (SL - S_star);
+        //  const Tscal velxL_star  = (SL * cL.rhovel[0] - FL.rhovel[0] + press_star) / (SL -
+        //  S_star); const Tscal velyL_star  = (SL * cL.rhovel[1] - FL.rhovel[1] ) / (SL - S_star);
+        //  const Tscal velzL_star  = (SL * cL.rhovel[2] - FL.rhovel[2] ) / (SL - S_star);
+        //  const Tscal etotL_star = (etotL*(SL - velxL) - velxL * pressL + press_star * S_star)/(SL
+        //  - S_star);
+
+        Tcons cL_star
+            = (SL * cL - FL + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SL - S_star);
+        // Right intermediate conservative state in the star region
+        //  const Tscal rhoR_star  = var_R / (SR - S_star);
+        //  const Tscal etotR_star = (etotR*(SR - velxR) - velxR * pressR + press_star * S_star)/(SR
+        //  - S_star); const Tscal velxR_star  = (SR * cR.rhovel[0] - FR.rhovel[0] + press_star) /
+        //  (SR - S_star); const Tscal velyR_star  = (SR * cR.rhovel[1] - FR.rhovel[1] ) / (SR -
+        //  S_star); const Tscal velzR_star  = (SR * cR.rhovel[2] - FR.rhovel[2] ) / (SR - S_star);
+
+        Tcons cR_star
+            = (SR * cR - FR + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SR - S_star);
+
+        // intemediate Flux in the star region
+        Tcons FL_star = FL + SL * (cL_star - cL);
+        Tcons FR_star = FR + SR * (cR_star - cR);
+    }
+
+    template<class Tcons>
     inline constexpr Tcons y_to_x(const Tcons c) {
         Tcons cprime;
         cprime.rho       = c.rho;

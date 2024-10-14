@@ -34,8 +34,19 @@ namespace sham {
     class DeviceBuffer {
 
         public:
+        /**
+         * @brief Get the memory alignment of the type T in bytes
+         *
+         * @return The memory alignment of the type T in bytes
+         */
         static std::optional<size_t> get_alignment() { return alignof(T); }
 
+        /**
+         * @brief Convert a size in number of elements to a size in bytes
+         *
+         * @param sz The size in number of elements
+         * @return The size in bytes
+         */
         static size_t to_bytesize(size_t sz) { return sz * sizeof(T); }
 
         /**
@@ -51,6 +62,21 @@ namespace sham {
         DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
             : hold(details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())),
               size(sz) {}
+
+        /**
+         * @brief Construct a new Device Buffer object with a given USM pointer
+         *
+         * @param sz The size of the buffer in number of elements
+         * @param _hold A USMPtrHolder holding the USM pointer
+         *
+         * This constructor is used to create a Device Buffer object with a
+         * pre-allocated USM pointer. The size of the buffer is given by the
+         * `sz` parameter, and the USM pointer is given by the `_hold` parameter.
+         * The constructor forwards the `_hold` parameter to the USMPtrHolder
+         * constructor.
+         */
+        DeviceBuffer(size_t sz, USMPtrHolder<target> &&_hold)
+            : hold(std::forward<USMPtrHolder<target>>(_hold)), size(sz) {}
 
         /**
          * @brief Deleted copy constructor
@@ -213,6 +239,12 @@ namespace sham {
         // Size getters (END)
         ///////////////////////////////////////////////////////////////////////
 
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+        // Copy fcts
+        ///////////////////////////////////////////////////////////////////////
+
         /**
          * @brief Copy the content of the buffer to a std::vector
          *
@@ -263,6 +295,40 @@ namespace sham {
         }
 
         /**
+         * @brief Copies the content of another buffer to this one
+         *
+         * This function copies the content of another buffer to this one. The two buffers must have
+         * the same size, and the size of the copy must be smaller than the size of the buffer
+         * involved.
+         *
+         * @param other The buffer from which to copy the data
+         * @param copy_size The size of the copy
+         */
+        template<USMKindTarget new_target>
+        inline void copy_from(DeviceBuffer<T, new_target> &other, size_t copy_size) {
+
+            if (!(copy_size <= get_size() && copy_size <= other.get_size())) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "The size of the copy must be smaller than the size of the buffer involved\n  "
+                    "copy_size: {}\n  get_size(): {}\n  other.get_size(): {}",
+                    copy_size,
+                    get_size(),
+                    other.get_size()));
+            }
+
+            sham::EventList depends_list;
+            T *ptr_dest      = get_write_access(depends_list);
+            const T *ptr_src = other.get_read_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr_src, ptr_dest, copy_size);
+            });
+
+            complete_event_state(e);
+            other.complete_event_state(e);
+        }
+
+        /**
          * @brief Copies the data from another buffer to this one
          *
          * This function copies the data from another buffer to this one. The
@@ -273,42 +339,15 @@ namespace sham {
         template<USMKindTarget new_target>
         inline void copy_from(DeviceBuffer<T, new_target> &other) {
 
-            if (get_size() >= other.get_size()) {
-                shambase::throw_with_loc<std::invalid_argument>(
-                    "The other field must be smaller than the current one, or equal in size");
+            if (get_size() != other.get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "The other field must be of the same size\n  get_size = {},\n  other.get_size "
+                    "= {}",
+                    get_size(),
+                    other.get_size()));
             }
 
-            sham::EventList depends_list;
-            T *ptr_dest      = get_write_access(depends_list);
-            const T *ptr_src = other.get_read_access(depends_list);
-
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                cgh.copy(ptr_src, ptr_dest, size);
-            });
-
-            complete_event_state(e);
-            other.complete_event_state(e);
-        }
-
-        /**
-         * @brief Fill the buffer with a given value.
-         *
-         * This function fills the buffer with the given value. The function
-         * returns immediately, and the filling operation is executed
-         * asynchronously.
-         *
-         * @param value The value to fill the buffer with.
-         */
-        inline void fill(T value) {
-            sham::EventList depends_list;
-            T *ptr = get_write_access(depends_list);
-
-            sycl::event e1 = get_queue().submit(depends_list, [&, ptr, value](sycl::handler &cgh) {
-                shambase::parralel_for(cgh, size, "fill field", [=](u32 gid) {
-                    ptr[gid] = value;
-                });
-            });
-            complete_event_state(e1);
+            copy_from(other, get_size());
         }
 
         /**
@@ -320,6 +359,149 @@ namespace sham {
          * @return The new buffer.
          */
         inline DeviceBuffer<T, target> copy() { return copy_to<target>(); }
+
+        ///////////////////////////////////////////////////////////////////////
+        // Copy fcts (END)
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+        // Filler fcts
+        ///////////////////////////////////////////////////////////////////////
+
+        /**
+         * @brief Fill the current buffer with a value
+         *
+         * This function fill the current buffer with a value. The filling is done
+         * in parallel.
+         *
+         * @param value The value with which to fill the buffer
+         * @param idx_count The number of elements to fill
+         * @param start_index The index at which to start filling the buffer
+         *
+         * @throws std::invalid_argument if start_index + idx_count > get_size()
+         */
+        inline void fill(T value, size_t start_index, size_t idx_count) {
+
+            if (!(start_index + idx_count <= get_size())) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "!(start_index + idx_count <= get_size())\n  start_index = {},\n  idx_count = "
+                    "{},\n  get_size() = {}",
+                    start_index,
+                    idx_count,
+                    get_size()));
+            }
+
+            sham::EventList depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e1 = get_queue().submit(
+                depends_list, [&, ptr, value, start_index, idx_count](sycl::handler &cgh) {
+                    shambase::parralel_for(cgh, idx_count, "fill field", [=](u32 gid) {
+                        ptr[start_index + gid] = value;
+                    });
+                });
+
+            complete_event_state(e1);
+        }
+
+        /**
+         * @brief Fill the first `idx_count` elements of the buffer with a value
+         *
+         * This function is a convenience function that calls fill(value, 0, idx_count)
+         *
+         * @param value The value with which to fill the buffer
+         * @param idx_count The number of elements to fill
+         */
+        inline void fill(T value, size_t idx_count) { fill(value, 0, get_size()); }
+
+        /**
+         * @brief Fill the buffer with a given value.
+         *
+         * This function fills the buffer with the given value. The function
+         * returns immediately, and the filling operation is executed
+         * asynchronously.
+         *
+         * @param value The value to fill the buffer with.
+         */
+        inline void fill(T value) { fill(value, get_size()); }
+
+        ///////////////////////////////////////////////////////////////////////
+        // Filler fcts (END)
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+        // Size manipulation
+        ///////////////////////////////////////////////////////////////////////
+
+        /**
+         * @brief Resizes the buffer to a given size.
+         *
+         * @param new_size The new size of the buffer.
+         */
+        inline void resize(u32 new_size) {
+            if (to_bytesize(new_size) > hold.get_bytesize()) {
+                // expand storage
+
+                size_t new_storage_size = to_bytesize(new_size) * 1.5;
+
+                DeviceBuffer new_buf(
+                    new_size,
+                    details::create_usm_ptr<target>(
+                        new_storage_size, get_dev_scheduler_ptr(), get_alignment()));
+
+                // copy data
+                new_buf.copy_from(*this, get_size());
+
+                // override old buffer
+                *this = std::move(new_buf);
+
+            } else if (to_bytesize(new_size) < hold.get_bytesize() * 0.5) {
+                // shrink storage
+
+                size_t new_storage_size = to_bytesize(new_size);
+
+                DeviceBuffer new_buf(
+                    new_size,
+                    details::create_usm_ptr<target>(
+                        new_storage_size, get_dev_scheduler_ptr(), get_alignment()));
+
+                // copy data
+                new_buf.copy_from(*this, new_size);
+
+                // override old buffer
+                *this = std::move(new_buf);
+            } else {
+                size = new_size;
+                // no need to resize
+            }
+        }
+
+        ///////////////////////////////////////////////////////////////////////
+        // Size manipulation (END)
+        ///////////////////////////////////////////////////////////////////////
+
+#if false
+        // I'm not sure if enabling this one is a good idea
+        /**
+         * @brief Reserves space in the buffer for `add_sz` elements, but doesn't change the
+         * buffer's size.
+         *
+         * This function is useful when you know you'll need to add `add_sz` elements to the buffer,
+         * but you don't want to resize the buffer just yet. After calling this function, you can
+         * add `add_sz` elements to the buffer without triggering a resize.
+         *
+         * @param add_sz The number of elements to reserve space for.
+         */
+        inline void reserve(size_t add_sz) {
+            size_t old_sz = get_size();
+            resize(old_sz + add_sz);
+            size = old_sz;
+        }
+#endif
 
         private:
         /**

@@ -46,7 +46,9 @@
 namespace sham::details {
 
     /**
-     * @brief Create a USM pointer with the given size in bytes.
+     * @brief Create a USM pointer with at least the given size in bytes.
+     *
+     * @note The USM pointer may have a larger allocation than the required size.
      *
      * @tparam target The target of the USM pointer.
      * @param size The size of the pointer in bytes.

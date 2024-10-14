@@ -210,80 +210,6 @@ namespace shammath {
     }
 
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        Tcons flux;
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        // const to prim
-        const auto primL = const_to_prim(cL, gamma);
-        const auto primR = const_to_prim(cR, gamma);
-
-        // sound speeds
-        const auto csL = sound_speed(primL, gamma);
-        const auto csR = sound_speed(primR, gamma);
-
-        // Left and right state fluxes
-        const auto FL = hydro_flux_x(cL, gamma);
-        const auto FR = hydro_flux_x(cR, gamma);
-
-        // Left variables
-        const auto rhoL   = primL.rho;
-        const auto pressL = primL.press;
-        const auto velxL  = primL.vel[0];
-        const auto velyL  = primL.vel[1];
-        const auto velzL  = primL.vel[2];
-        const auto ekinL  = 0.5 * rhoL * (velxL * velxL + velyL * velyL + velzL * velzL);
-        const auto etotL  = pressL / (gamma - 1.0) + ekinL;
-
-        // Right variables
-        const auto rhoR   = primR.rho;
-        const auto pressR = primR.press;
-        const auto velxR  = primR.vel[0];
-        const auto velyR  = primR.vel[1];
-        const auto velzR  = primR.vel[2];
-        const auto ekinR  = 0.5 * rhoR * (velxR * velxR + velyR * velyR + velzR * velzR);
-        const auto etotR  = pressR / (gamma - 1.0) + ekinR;
-
-        // signal speed
-        const Tscal SL = 1;
-        const Tscal SR = 1;
-
-        //
-        const Tscal var_L = rhoL * (SL - primL.vel[0]);
-        const Tscal var_R = rhoR * (SR - primR.vel[0]);
-
-        // S* speed estimate
-        const Tscal S_star
-            = (primR.press - primL.press + primL.vel[0] * var_L - primR.vel[0] * var_R)
-              / (var_L - var_R);
-        // P* pression estimate
-        const Tscal press_star = (primR.press * var_L - primL.press * var_R
-                                  + (primL.vel[0] - primR.vel[0]) * var_L * var_R)
-                                 / (var_L - var_R);
-
-        // Left intermediate conservative state in the star region
-        Tcons cL_star
-            = (SL * cL - FL + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SL - S_star);
-
-        // Right intermediate conservative state in the star region
-        Tcons cR_star
-            = (SR * cR - FR + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SR - S_star);
-
-        // intemediate Flux in the star region
-        Tcons FL_star = FL + SL * (cL_star - cL);
-        Tcons FR_star = FR + SR * (cR_star - cR);
-
-        if (SL >= 0) {
-            return FL;
-        } else if (S_star >= 0) {
-            return FL_star;
-        } else if (S_R >= 0) {
-            return FR_star;
-        } else
-            return FR;
-    }
-
-    template<class Tcons>
     inline constexpr Tcons y_to_x(const Tcons c) {
         Tcons cprime;
         cprime.rho       = c.rho;
@@ -429,4 +355,145 @@ namespace shammath {
     inline constexpr Tcons hll_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
         return invert_axis(hll_flux_z(invert_axis(cL), invert_axis(cR), gamma));
     }
+
+    /**
+     * @brief HLLC solver based on section 10.4 from Toro 3rd Edition , Springer 2009.
+     *         The wave speeds estimates are based on Bernd Einfeldt (SIAM, 1988), On Godunov-Type
+     *          Methods for Gas Dynamics
+     * @tparam Tcons
+     * @param cL left  conservative state
+     * @param cR right conservative state
+     * @param gamma adiabatic index
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        Tcons flux;
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        // const to prim
+        const auto primL = const_to_prim(cL, gamma);
+        const auto primR = const_to_prim(cR, gamma);
+
+        // sound speeds
+        const auto csL = sound_speed(primL, gamma);
+        const auto csR = sound_speed(primR, gamma);
+
+        // Left and right state fluxes
+        const auto FL = hydro_flux_x(cL, gamma);
+        const auto FR = hydro_flux_x(cR, gamma);
+
+        // Left variables
+        const auto rhoL   = primL.rho;
+        const auto pressL = primL.press;
+        const auto velxL  = primL.vel[0];
+        const auto velyL  = primL.vel[1];
+        const auto velzL  = primL.vel[2];
+        const auto ekinL  = 0.5 * rhoL * (velxL * velxL + velyL * velyL + velzL * velzL);
+        const auto etotL  = pressL / (gamma - 1.0) + ekinL;
+
+        // Right variables
+        const auto rhoR   = primR.rho;
+        const auto pressR = primR.press;
+        const auto velxR  = primR.vel[0];
+        const auto velyR  = primR.vel[1];
+        const auto velzR  = primR.vel[2];
+        const auto ekinR  = 0.5 * rhoR * (velxR * velxR + velyR * velyR + velzR * velzR);
+        const auto etotR  = pressR / (gamma - 1.0) + ekinR;
+
+        /**
+         * wave speed estimates based on the Roe average eigenvalues
+         **/
+
+        const Tscal HL = (etotL + pressL) / sqrt(rhoL); // left enthalpy  times left state density
+        const Tscal HR = (etotR + pressR) / sqrt(rhoR); // right enthalpy times right state density
+        const Tscal H_tot   = (HL + HR) / (sqrt(rhoL) + sqrt(rhoR)); // average total enthalpy
+        const Tscal vel_roe = (sqrt(rhoL) * velxL + sqrt(rhoR) * velxR)
+                              / (sqrt(rhoL) + sqrt(rhoR)); // Roe-average velocity
+        // ============= [Einfeldt's HLLR solver]
+        const Tscal cs_roe
+            = sqrt((gamma - 1.0) * (H_tot - 0.5 * vel_roe * vel_roe)); // Roe-average sound speed
+        const Tscal SL = vel_roe - cs_roe;
+        const Tscal SR = vel_roe + cs_roe;
+
+        // ============= [Einfeldt's HLLE solver]
+        // const Tscal etha2 =  0.5 * sqrt(rhoL * rhoR) / (rhoL + rhoR + 2 * sqrt(rhoL * rhoR) );
+        // const Tscal d     = sqrt((velxR - velxL)*(velxR - velxL)*etha2 + (sqrt(rhoL)*csL*csL +
+        // sqrt(rhoR)*csR*csR) / (sqrt(rhoL) + sqrt(rhoR)) ); const Tscal SL    = vel_roe - d; const
+        // Tscal SR    = vel_roe + d;
+
+        //
+        const Tscal var_L = rhoL * (SL - primL.vel[0]);
+        const Tscal var_R = rhoR * (SR - primR.vel[0]);
+
+        // S* speed estimate
+        const Tscal S_star
+            = (primR.press - primL.press + primL.vel[0] * var_L - primR.vel[0] * var_R)
+              / (var_L - var_R);
+        // P* pression estimate
+        const Tscal press_star = (primR.press * var_L - primL.press * var_R
+                                  + (primL.vel[0] - primR.vel[0]) * var_L * var_R)
+                                 / (var_L - var_R);
+
+        // Left intermediate conservative state in the star region
+        Tcons cL_star
+            = (SL * cL - FL + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SL - S_star);
+
+        // Right intermediate conservative state in the star region
+        Tcons cR_star
+            = (SR * cR - FR + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SR - S_star);
+
+        // intemediate Flux in the star region
+        Tcons FL_star = FL + SL * (cL_star - cL);
+        Tcons FR_star = FR + SR * (cR_star - cR);
+
+        if (SL >= 0) {
+            return FL;
+        } else if (S_star >= 0) {
+            return FL_star;
+        } else if (S_R >= 0) {
+            return FR_star;
+        } else
+            return FR;
+    }
+
+    /**
+     * @brief HLLC flux in the +y direction
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_y(hllc_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    }
+
+    /**
+     * @brief HLLC flux in the +z direction
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_z(hllc_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    }
+
+    /**
+     * @brief HLLC flux in the -x direction
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hllc_flux_x(invert_axis(cL), invert_axis(cR), gamma));
+    }
+
+    /**
+     * @brief HLLC flux in the -y direction
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hllc_flux_y(invert_axis(cL), invert_axis(cR), gamma));
+    }
+
+    /**
+     * @brief HLLC flux in the -z direction
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hllc_flux_z(invert_axis(cL), invert_axis(cR), gamma));
+    }
+
 } // namespace shammath

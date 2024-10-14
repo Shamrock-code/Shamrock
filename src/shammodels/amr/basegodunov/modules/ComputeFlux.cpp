@@ -239,6 +239,74 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
                 buf_flux_rhov_face_zm.link_graph_field,
                 buf_flux_rhoe_face_zm.link_graph_field,
                 gamma);
+        } else if (solver_config.riemman_config == HLLC) {
+            constexpr RiemmanSolverMode mode = HLLC;
+            logger::debug_ln("[AMR Flux]", "compute HLLC xp patch", id);
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
+                q,
+                rho_face_xp.link_count,
+                rho_face_xp.link_graph_field,
+                vel_face_xp.link_graph_field,
+                press_face_xp.link_graph_field,
+                buf_flux_rho_face_xp.link_graph_field,
+                buf_flux_rhov_face_xp.link_graph_field,
+                buf_flux_rhoe_face_xp.link_graph_field,
+                gamma);
+            logger::debug_ln("[AMR Flux]", "compute HLLC yp patch", id);
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
+                q,
+                rho_face_yp.link_count,
+                rho_face_yp.link_graph_field,
+                vel_face_yp.link_graph_field,
+                press_face_yp.link_graph_field,
+                buf_flux_rho_face_yp.link_graph_field,
+                buf_flux_rhov_face_yp.link_graph_field,
+                buf_flux_rhoe_face_yp.link_graph_field,
+                gamma);
+            logger::debug_ln("[AMR Flux]", "compute HLLC zp patch", id);
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
+                q,
+                rho_face_zp.link_count,
+                rho_face_zp.link_graph_field,
+                vel_face_zp.link_graph_field,
+                press_face_zp.link_graph_field,
+                buf_flux_rho_face_zp.link_graph_field,
+                buf_flux_rhov_face_zp.link_graph_field,
+                buf_flux_rhoe_face_zp.link_graph_field,
+                gamma);
+            logger::debug_ln("[AMR Flux]", "compute HLLC xm patch", id);
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
+                q,
+                rho_face_xm.link_count,
+                rho_face_xm.link_graph_field,
+                vel_face_xm.link_graph_field,
+                press_face_xm.link_graph_field,
+                buf_flux_rho_face_xm.link_graph_field,
+                buf_flux_rhov_face_xm.link_graph_field,
+                buf_flux_rhoe_face_xm.link_graph_field,
+                gamma);
+            logger::debug_ln("[AMR Flux]", "compute HLLC ym patch", id);
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
+                q,
+                rho_face_ym.link_count,
+                rho_face_ym.link_graph_field,
+                vel_face_ym.link_graph_field,
+                press_face_ym.link_graph_field,
+                buf_flux_rho_face_ym.link_graph_field,
+                buf_flux_rhov_face_ym.link_graph_field,
+                buf_flux_rhoe_face_ym.link_graph_field,
+                gamma);
+            logger::debug_ln("[AMR Flux]", "compute HLLC zm patch", id);
+            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
+                q,
+                rho_face_zm.link_count,
+                rho_face_zm.link_graph_field,
+                vel_face_zm.link_graph_field,
+                press_face_zm.link_graph_field,
+                buf_flux_rho_face_zm.link_graph_field,
+                buf_flux_rhov_face_zm.link_graph_field,
+                buf_flux_rhoe_face_zm.link_graph_field,
+                gamma);
         }
 
         flux_rho_face_xp.add_obj(id, std::move(buf_flux_rho_face_xp));

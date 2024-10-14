@@ -153,8 +153,14 @@ namespace shammodels::basegodunov::modules {
         Tscal gamma) {
 
         using Flux            = FluxCompute<Tvec, mode, dir>;
-        std::string flux_name = (mode == RiemannSolverMode::HLL) ? "hll flux " : "rusanov flux ";
-        auto get_dir_name     = [&]() {
+        std::string flux_name = " ";
+        if (mode == RiemannSolverMode::HLL)
+            flux_name = "hll flux";
+        else if (mode == RiemannSolverMode::HLLC)
+            flux_name = "hllc flux ";
+        else if (mode == RiemannSolverMode::Rusanov)
+            flux_name = "rusanov flux ";
+        auto get_dir_name = [&]() {
             if constexpr (dir == Direction::xp) {
                 return "xp";
             } else if constexpr (dir == Direction::xm) {

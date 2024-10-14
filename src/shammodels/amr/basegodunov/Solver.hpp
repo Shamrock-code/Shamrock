@@ -23,7 +23,7 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::basegodunov {
 
-    enum RiemmanSolverMode { Rusanov = 0, HLL = 1 };
+    enum RiemmanSolverMode { Rusanov = 0, HLL = 1, HLLC = 2 };
 
     enum SlopeMode {
         None        = 0,

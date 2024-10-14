@@ -57,6 +57,11 @@ namespace shammodels::basegodunov {
                     self.riemman_config = HLL;
                 })
             .def(
+                "set_riemann_solver_hllc",
+                [](TConfig &self) {
+                    self.riemman_config = HLLC;
+                })
+            .def(
                 "set_riemann_solver_rusanov",
                 [](TConfig &self) {
                     self.riemman_config = Rusanov;

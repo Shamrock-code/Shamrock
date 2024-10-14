@@ -34,6 +34,10 @@ namespace sham {
     class DeviceBuffer {
 
         public:
+        static std::optional<size_t> get_alignment() { return alignof(T); }
+
+        static size_t to_bytesize(size_t sz) { return sz * sizeof(T); }
+
         /**
          * @brief Construct a new Device Buffer object
          *
@@ -45,7 +49,7 @@ namespace sham {
          * size in the respective member variables.
          */
         DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
-            : hold(details::create_usm_ptr<target>(sz * sizeof(T), dev_sched, alignof(T))),
+            : hold(details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())),
               size(sz) {}
 
         /**
@@ -92,6 +96,10 @@ namespace sham {
             details::release_usm_ptr(std::move(hold), std::move(events_hndl));
         }
 
+        ///////////////////////////////////////////////////////////////////////
+        // Event handling
+        ///////////////////////////////////////////////////////////////////////
+
         /**
          * @brief Get a read-only pointer to the buffer's data.
          *
@@ -133,6 +141,16 @@ namespace sham {
          */
         void complete_event_state(sycl::event e) { events_hndl.complete_state(e); }
 
+        ///////////////////////////////////////////////////////////////////////
+        // Event handling (End)
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+        // Queue / Scheduler getters
+        ///////////////////////////////////////////////////////////////////////
+
         /**
          * @brief Gets the Device scheduler corresponding to the held allocation
          *
@@ -152,6 +170,25 @@ namespace sham {
         }
 
         /**
+         * @brief Gets the DeviceQueue associated with the held allocation
+         *
+         * @return The DeviceQueue associated with the held allocation
+         */
+        [[nodiscard]] inline DeviceQueue &get_queue() {
+            return hold.get_dev_scheduler().get_queue();
+        }
+
+        ///////////////////////////////////////////////////////////////////////
+        // Queue / Scheduler getters (END)
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+        // Size getters
+        ///////////////////////////////////////////////////////////////////////
+
+        /**
          * @brief Gets the number of elements in the buffer
          *
          * @return The number of elements in the buffer
@@ -163,7 +200,18 @@ namespace sham {
          *
          * @return The size of the buffer in bytes
          */
-        [[nodiscard]] inline size_t get_bytesize() const { return hold.get_bytesize(); }
+        [[nodiscard]] inline size_t get_bytesize() const { return to_bytesize(get_size()); }
+
+        /**
+         * @brief Gets the amount of memory used by the buffer
+         *
+         * @return The amount of memory used by the buffer
+         */
+        [[nodiscard]] inline size_t get_mem_usage() const { return hold.get_bytesize(); }
+
+        ///////////////////////////////////////////////////////////////////////
+        // Size getters (END)
+        ///////////////////////////////////////////////////////////////////////
 
         /**
          * @brief Copy the content of the buffer to a std::vector
@@ -179,10 +227,9 @@ namespace sham {
             sham::EventList depends_list;
             const T *ptr = get_read_access(depends_list);
 
-            sycl::event e = hold.get_dev_scheduler().get_queue().submit(
-                depends_list, [&](sycl::handler &cgh) {
-                    cgh.copy(ptr, ret.data(), size);
-                });
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr, ret.data(), size);
+            });
 
             complete_event_state(e);
 
@@ -199,16 +246,15 @@ namespace sham {
          */
         template<USMKindTarget new_target>
         [[nodiscard]] inline DeviceBuffer<T, new_target> copy_to() {
-            DeviceBuffer<T, new_target> ret(size, hold.get_dev_scheduler_ptr());
+            DeviceBuffer<T, new_target> ret(size, get_dev_scheduler_ptr());
 
             sham::EventList depends_list;
             const T *ptr_src = get_read_access(depends_list);
             T *ptr_dest      = ret.get_write_access(depends_list);
 
-            sycl::event e = hold.get_dev_scheduler().get_queue().submit(
-                depends_list, [&](sycl::handler &cgh) {
-                    cgh.copy(ptr_src, ptr_dest, size);
-                });
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr_src, ptr_dest, size);
+            });
 
             complete_event_state(e);
             ret.complete_event_state(e);
@@ -227,19 +273,18 @@ namespace sham {
         template<USMKindTarget new_target>
         inline void copy_from(DeviceBuffer<T, new_target> &other) {
 
-            if (other.get_size() != get_size()) {
+            if (get_size() >= other.get_size()) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    "The two fields must have the same size");
+                    "The other field must be smaller than the current one, or equal in size");
             }
 
             sham::EventList depends_list;
-            T *ptr_src        = get_write_access(depends_list);
-            const T *ptr_dest = other.get_read_access(depends_list);
+            T *ptr_dest      = get_write_access(depends_list);
+            const T *ptr_src = other.get_read_access(depends_list);
 
-            sycl::event e = hold.get_dev_scheduler().get_queue().submit(
-                depends_list, [&](sycl::handler &cgh) {
-                    cgh.copy(ptr_dest, ptr_src, size);
-                });
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr_src, ptr_dest, size);
+            });
 
             complete_event_state(e);
             other.complete_event_state(e);
@@ -258,12 +303,11 @@ namespace sham {
             sham::EventList depends_list;
             T *ptr = get_write_access(depends_list);
 
-            sycl::event e1 = hold.get_dev_scheduler().get_queue().submit(
-                depends_list, [&, ptr, value](sycl::handler &cgh) {
-                    shambase::parralel_for(cgh, size, "fill field", [=](u32 gid) {
-                        ptr[gid] = value;
-                    });
+            sycl::event e1 = get_queue().submit(depends_list, [&, ptr, value](sycl::handler &cgh) {
+                shambase::parralel_for(cgh, size, "fill field", [=](u32 gid) {
+                    ptr[gid] = value;
                 });
+            });
             complete_event_state(e1);
         }
 

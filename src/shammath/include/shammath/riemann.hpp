@@ -249,45 +249,38 @@ namespace shammath {
         const Tscal SR = 1;
 
         //
-        // const Tscal var_L    = rhoL * (SL - velxL);
-        // const Tscal var_R    = rhoR * (SR - velxR);
         const Tscal var_L = rhoL * (SL - primL.vel[0]);
         const Tscal var_R = rhoR * (SR - primR.vel[0]);
 
         // S* speed estimate
-        // const Tscal S_star = (pressR - pressL + velxL * var_L - velxR * var_R)/(var_L - var_R);
         const Tscal S_star
             = (primR.press - primL.press + primL.vel[0] * var_L - primR.vel[0] * var_R)
               / (var_L - var_R);
         // P* pression estimate
-        // const Tscal press_star = (pressR * var_L - pressL * var_R + (velxL - velxR) * var_L *
-        // var_R) / (var_L - var_R);
         const Tscal press_star = (primR.press * var_L - primL.press * var_R
                                   + (primL.vel[0] - primR.vel[0]) * var_L * var_R)
                                  / (var_L - var_R);
-        // Left intermediate conservative state in the star region
-        //  const Tscal rhoL_star   = var_L / (SL - S_star);
-        //  const Tscal velxL_star  = (SL * cL.rhovel[0] - FL.rhovel[0] + press_star) / (SL -
-        //  S_star); const Tscal velyL_star  = (SL * cL.rhovel[1] - FL.rhovel[1] ) / (SL - S_star);
-        //  const Tscal velzL_star  = (SL * cL.rhovel[2] - FL.rhovel[2] ) / (SL - S_star);
-        //  const Tscal etotL_star = (etotL*(SL - velxL) - velxL * pressL + press_star * S_star)/(SL
-        //  - S_star);
 
+        // Left intermediate conservative state in the star region
         Tcons cL_star
             = (SL * cL - FL + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SL - S_star);
-        // Right intermediate conservative state in the star region
-        //  const Tscal rhoR_star  = var_R / (SR - S_star);
-        //  const Tscal etotR_star = (etotR*(SR - velxR) - velxR * pressR + press_star * S_star)/(SR
-        //  - S_star); const Tscal velxR_star  = (SR * cR.rhovel[0] - FR.rhovel[0] + press_star) /
-        //  (SR - S_star); const Tscal velyR_star  = (SR * cR.rhovel[1] - FR.rhovel[1] ) / (SR -
-        //  S_star); const Tscal velzR_star  = (SR * cR.rhovel[2] - FR.rhovel[2] ) / (SR - S_star);
 
+        // Right intermediate conservative state in the star region
         Tcons cR_star
             = (SR * cR - FR + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SR - S_star);
 
         // intemediate Flux in the star region
         Tcons FL_star = FL + SL * (cL_star - cL);
         Tcons FR_star = FR + SR * (cR_star - cR);
+
+        if (SL >= 0) {
+            return FL;
+        } else if (S_star >= 0) {
+            return FL_star;
+        } else if (S_R >= 0) {
+            return FR_star;
+        } else
+            return FR;
     }
 
     template<class Tcons>

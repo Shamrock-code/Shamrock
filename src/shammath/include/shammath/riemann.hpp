@@ -368,11 +368,12 @@ namespace shammath {
     template<class Tcons>
     inline constexpr Tcons hllc_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
         Tcons flux;
-        using Tscal = shambase::VecComponent<Tvec>;
+        using Tscal = typename Tcons::Tscal;
+        using Tvec  = typename Tcons::Tvec;
 
         // const to prim
-        const auto primL = const_to_prim(cL, gamma);
-        const auto primR = const_to_prim(cR, gamma);
+        const auto primL = cons_to_prim(cL, gamma);
+        const auto primR = cons_to_prim(cR, gamma);
 
         // sound speeds
         const auto csL = sound_speed(primL, gamma);
@@ -433,14 +434,13 @@ namespace shammath {
         const Tscal press_star = (primR.press * var_L - primL.press * var_R
                                   + (primL.vel[0] - primR.vel[0]) * var_L * var_R)
                                  / (var_L - var_R);
-
+        Tvec D{1, 0, 0};
+        Tcons D_star{0, S_star, D};
         // Left intermediate conservative state in the star region
-        Tcons cL_star
-            = (SL * cL - FL + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SL - S_star);
+        Tcons cL_star = (SL * cL - FL + press_star * D_star) * (1.0 / (SL - S_star));
 
         // Right intermediate conservative state in the star region
-        Tcons cR_star
-            = (SR * cR - FR + press_star * ((Tcons){0, {1, 0, 0}, S_star})) / (SR - S_star);
+        Tcons cR_star = (SR * cR - FR + press_star * D_star) * (1.0 / (SR - S_star));
 
         // intemediate Flux in the star region
         Tcons FL_star = FL + SL * (cL_star - cL);
@@ -450,7 +450,7 @@ namespace shammath {
             return FL;
         } else if (S_star >= 0) {
             return FL_star;
-        } else if (S_R >= 0) {
+        } else if (SR >= 0) {
             return FR_star;
         } else
             return FR;

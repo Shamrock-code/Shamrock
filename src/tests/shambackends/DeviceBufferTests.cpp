@@ -79,11 +79,11 @@ TestStart(Unittest, "shambackends/DeviceBuffer:fill", DeviceBuffer_fill1, 1) {
 
     {
         std::vector<int> b = buffer.copy_to_stdvec();
-        REQUIRE(b.size() == 10);
+        _AssertEqual(b.size(), 10);
 
         // Check that the buffer is filled with the correct value
         for (int i = 0; i < 10; i++) {
-            REQUIRE(b[i] == 5);
+            _AssertEqual(b[i], 5);
         }
     }
 }

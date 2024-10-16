@@ -263,7 +263,8 @@ namespace sham {
                 cgh.copy(ptr, ret.data(), size);
             });
 
-            complete_event_state(e);
+            e.wait_and_throw();
+            complete_event_state({});
 
             return ret;
         }
@@ -465,7 +466,7 @@ namespace sham {
                 new_buf.copy_from(*this, get_size());
 
                 // override old buffer
-                *this = std::move(new_buf);
+                std::swap(new_buf, *this);
 
             } else if (to_bytesize(new_size) < hold.get_bytesize() * 0.5) {
                 // shrink storage
@@ -481,7 +482,7 @@ namespace sham {
                 new_buf.copy_from(*this, new_size);
 
                 // override old buffer
-                *this = std::move(new_buf);
+                std::swap(new_buf, *this);
             } else {
                 size = new_size;
                 // no need to resize

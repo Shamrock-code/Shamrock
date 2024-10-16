@@ -77,6 +77,10 @@ namespace sham::details {
     void
     release_usm_ptr(USMPtrHolder<target> &&usm_ptr_hold, details::BufferEventHandler &&events) {
 
+        if (usm_ptr_hold.get_raw_ptr() == nullptr && events.is_empty()) {
+            return;
+        }
+
         shamcomm::logs::debug_alloc_ln(
             "memoryHandle",
             "release usm pointer size :",

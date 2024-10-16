@@ -29,239 +29,225 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
     StackEntry stack_loc{};
 
     shambase::DistributedData<NGLink<Tscal>> flux_rho_face_xp;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_xm;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_yp;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_ym;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_zp;
-    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_zm;
-
     shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_xp;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_xm;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_yp;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_ym;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_zp;
-    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_zm;
-
     shambase::DistributedData<NGLink<Tscal>> flux_rhoe_face_xp;
+
+    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_xm;
+    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_xm;
     shambase::DistributedData<NGLink<Tscal>> flux_rhoe_face_xm;
+
+    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_yp;
+    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_yp;
     shambase::DistributedData<NGLink<Tscal>> flux_rhoe_face_yp;
+
+    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_ym;
+    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_ym;
     shambase::DistributedData<NGLink<Tscal>> flux_rhoe_face_ym;
+
+    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_zp;
+    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_zp;
     shambase::DistributedData<NGLink<Tscal>> flux_rhoe_face_zp;
+
+    shambase::DistributedData<NGLink<Tscal>> flux_rho_face_zm;
+    shambase::DistributedData<NGLink<Tvec>> flux_rhov_face_zm;
     shambase::DistributedData<NGLink<Tscal>> flux_rhoe_face_zm;
 
     Tscal gamma = solver_config.eos_gamma;
 
+    RiemmanSolverMode mode = Rusanov;
+    if (solver_config.riemman_config == Rusanov) {
+        mode = Rusanov;
+    } else if (solver_config.riemman_config == HLL) {
+        mode = HLL;
+    }
+
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         sycl::queue &q = shamsys::instance::get_compute_queue();
 
-        NGLink<std::array<Tscal, 2>> &rho_face_xp = storage.rho_face_xp.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_face_xm = storage.rho_face_xm.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_face_yp = storage.rho_face_yp.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_face_ym = storage.rho_face_ym.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_face_zp = storage.rho_face_zp.get().get(id);
-        NGLink<std::array<Tscal, 2>> &rho_face_zm = storage.rho_face_zm.get().get(id);
-
-        NGLink<std::array<Tvec, 2>> &vel_face_xp = storage.vel_face_xp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_face_xm = storage.vel_face_xm.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_face_yp = storage.vel_face_yp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_face_ym = storage.vel_face_ym.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_face_zp = storage.vel_face_zp.get().get(id);
-        NGLink<std::array<Tvec, 2>> &vel_face_zm = storage.vel_face_zm.get().get(id);
-
+        NGLink<std::array<Tscal, 2>> &rho_face_xp   = storage.rho_face_xp.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_xp    = storage.vel_face_xp.get().get(id);
         NGLink<std::array<Tscal, 2>> &press_face_xp = storage.press_face_xp.get().get(id);
+        const u32 ixp                               = oriented_cell_graph.xp;
+        NGLink<Tscal> buf_flux_rho_face_xp{*oriented_cell_graph.graph_links[ixp]};
+        NGLink<Tvec> buf_flux_rhov_face_xp{*oriented_cell_graph.graph_links[ixp]};
+        NGLink<Tscal> buf_flux_rhoe_face_xp{*oriented_cell_graph.graph_links[ixp]};
+
+        logger::debug_ln("[AMR Flux]", "compute flux xp patch", id);
+        compute_fluxes_dir_riemanmode<Tvec, Tscal, Direction::xp>(
+            q,
+            rho_face_xp.link_count,
+            rho_face_xp.link_graph_field,
+            vel_face_xp.link_graph_field,
+            press_face_xp.link_graph_field,
+            buf_flux_rho_face_xp.link_graph_field,
+            buf_flux_rhov_face_xp.link_graph_field,
+            buf_flux_rhoe_face_xp.link_graph_field,
+            gamma,
+            mode);
+        flux_rho_face_xp.add_obj(id, std::move(buf_flux_rho_face_xp));
+        flux_rhov_face_xp.add_obj(id, std::move(buf_flux_rhov_face_xp));
+        flux_rhoe_face_xp.add_obj(id, std::move(buf_flux_rhoe_face_xp));
+    });
+
+    storage.rho_face_xp.reset();
+    storage.vel_face_xp.reset();
+    storage.press_face_xp.reset();
+
+    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+        sycl::queue &q = shamsys::instance::get_compute_queue();
+
+        NGLink<std::array<Tscal, 2>> &rho_face_xm   = storage.rho_face_xm.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_xm    = storage.vel_face_xm.get().get(id);
         NGLink<std::array<Tscal, 2>> &press_face_xm = storage.press_face_xm.get().get(id);
+        const u32 ixm                               = oriented_cell_graph.xm;
+        NGLink<Tscal> buf_flux_rho_face_xm{*oriented_cell_graph.graph_links[ixm]};
+        NGLink<Tvec> buf_flux_rhov_face_xm{*oriented_cell_graph.graph_links[ixm]};
+        NGLink<Tscal> buf_flux_rhoe_face_xm{*oriented_cell_graph.graph_links[ixm]};
+        logger::debug_ln("[AMR Flux]", "compute flux xm patch", id);
+        compute_fluxes_dir_riemanmode<Tvec, Tscal, Direction::xm>(
+            q,
+            rho_face_xm.link_count,
+            rho_face_xm.link_graph_field,
+            vel_face_xm.link_graph_field,
+            press_face_xm.link_graph_field,
+            buf_flux_rho_face_xm.link_graph_field,
+            buf_flux_rhov_face_xm.link_graph_field,
+            buf_flux_rhoe_face_xm.link_graph_field,
+            gamma,
+            mode);
+        flux_rho_face_xm.add_obj(id, std::move(buf_flux_rho_face_xm));
+        flux_rhov_face_xm.add_obj(id, std::move(buf_flux_rhov_face_xm));
+        flux_rhoe_face_xm.add_obj(id, std::move(buf_flux_rhoe_face_xm));
+    });
+
+    storage.rho_face_xm.reset();
+    storage.vel_face_xm.reset();
+    storage.press_face_xm.reset();
+
+    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+        sycl::queue &q = shamsys::instance::get_compute_queue();
+
+        NGLink<std::array<Tscal, 2>> &rho_face_yp   = storage.rho_face_yp.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_yp    = storage.vel_face_yp.get().get(id);
         NGLink<std::array<Tscal, 2>> &press_face_yp = storage.press_face_yp.get().get(id);
+        const u32 iyp                               = oriented_cell_graph.yp;
+        NGLink<Tscal> buf_flux_rho_face_yp{*oriented_cell_graph.graph_links[iyp]};
+        NGLink<Tvec> buf_flux_rhov_face_yp{*oriented_cell_graph.graph_links[iyp]};
+        NGLink<Tscal> buf_flux_rhoe_face_yp{*oriented_cell_graph.graph_links[iyp]};
+        logger::debug_ln("[AMR Flux]", "compute flux yp patch", id);
+        compute_fluxes_dir_riemanmode<Tvec, Tscal, Direction::yp>(
+            q,
+            rho_face_yp.link_count,
+            rho_face_yp.link_graph_field,
+            vel_face_yp.link_graph_field,
+            press_face_yp.link_graph_field,
+            buf_flux_rho_face_yp.link_graph_field,
+            buf_flux_rhov_face_yp.link_graph_field,
+            buf_flux_rhoe_face_yp.link_graph_field,
+            gamma,
+            mode);
+        flux_rho_face_yp.add_obj(id, std::move(buf_flux_rho_face_yp));
+        flux_rhov_face_yp.add_obj(id, std::move(buf_flux_rhov_face_yp));
+        flux_rhoe_face_yp.add_obj(id, std::move(buf_flux_rhoe_face_yp));
+    });
+
+    storage.rho_face_yp.reset();
+    storage.vel_face_yp.reset();
+    storage.press_face_yp.reset();
+
+    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+        sycl::queue &q = shamsys::instance::get_compute_queue();
+
+        NGLink<std::array<Tscal, 2>> &rho_face_ym   = storage.rho_face_ym.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_ym    = storage.vel_face_ym.get().get(id);
         NGLink<std::array<Tscal, 2>> &press_face_ym = storage.press_face_ym.get().get(id);
+        const u32 iym                               = oriented_cell_graph.ym;
+        NGLink<Tscal> buf_flux_rho_face_ym{*oriented_cell_graph.graph_links[iym]};
+        NGLink<Tvec> buf_flux_rhov_face_ym{*oriented_cell_graph.graph_links[iym]};
+        NGLink<Tscal> buf_flux_rhoe_face_ym{*oriented_cell_graph.graph_links[iym]};
+        logger::debug_ln("[AMR Flux]", "compute flux ym patch", id);
+        compute_fluxes_dir_riemanmode<Tvec, Tscal, Direction::ym>(
+            q,
+            rho_face_ym.link_count,
+            rho_face_ym.link_graph_field,
+            vel_face_ym.link_graph_field,
+            press_face_ym.link_graph_field,
+            buf_flux_rho_face_ym.link_graph_field,
+            buf_flux_rhov_face_ym.link_graph_field,
+            buf_flux_rhoe_face_ym.link_graph_field,
+            gamma,
+            mode);
+        flux_rho_face_ym.add_obj(id, std::move(buf_flux_rho_face_ym));
+        flux_rhov_face_ym.add_obj(id, std::move(buf_flux_rhov_face_ym));
+        flux_rhoe_face_ym.add_obj(id, std::move(buf_flux_rhoe_face_ym));
+    });
+    storage.rho_face_ym.reset();
+    storage.vel_face_ym.reset();
+    storage.press_face_ym.reset();
+
+    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+        sycl::queue &q = shamsys::instance::get_compute_queue();
+
+        NGLink<std::array<Tscal, 2>> &rho_face_zp   = storage.rho_face_zp.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_zp    = storage.vel_face_zp.get().get(id);
         NGLink<std::array<Tscal, 2>> &press_face_zp = storage.press_face_zp.get().get(id);
+        const u32 izp                               = oriented_cell_graph.zp;
+        NGLink<Tscal> buf_flux_rho_face_zp{*oriented_cell_graph.graph_links[izp]};
+        NGLink<Tvec> buf_flux_rhov_face_zp{*oriented_cell_graph.graph_links[izp]};
+        NGLink<Tscal> buf_flux_rhoe_face_zp{*oriented_cell_graph.graph_links[izp]};
+        logger::debug_ln("[AMR Flux]", "compute flux zp patch", id);
+        compute_fluxes_dir_riemanmode<Tvec, Tscal, Direction::zp>(
+            q,
+            rho_face_zp.link_count,
+            rho_face_zp.link_graph_field,
+            vel_face_zp.link_graph_field,
+            press_face_zp.link_graph_field,
+            buf_flux_rho_face_zp.link_graph_field,
+            buf_flux_rhov_face_zp.link_graph_field,
+            buf_flux_rhoe_face_zp.link_graph_field,
+            gamma,
+            mode);
+        flux_rho_face_zp.add_obj(id, std::move(buf_flux_rho_face_zp));
+        flux_rhov_face_zp.add_obj(id, std::move(buf_flux_rhov_face_zp));
+        flux_rhoe_face_zp.add_obj(id, std::move(buf_flux_rhoe_face_zp));
+    });
+    storage.rho_face_zp.reset();
+    storage.vel_face_zp.reset();
+    storage.press_face_zp.reset();
+
+    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+        sycl::queue &q = shamsys::instance::get_compute_queue();
+
+        NGLink<std::array<Tscal, 2>> &rho_face_zm   = storage.rho_face_zm.get().get(id);
+        NGLink<std::array<Tvec, 2>> &vel_face_zm    = storage.vel_face_zm.get().get(id);
         NGLink<std::array<Tscal, 2>> &press_face_zm = storage.press_face_zm.get().get(id);
 
-        const u32 ixp = oriented_cell_graph.xp;
-        const u32 ixm = oriented_cell_graph.xm;
-        const u32 iyp = oriented_cell_graph.yp;
-        const u32 iym = oriented_cell_graph.ym;
-        const u32 izp = oriented_cell_graph.zp;
         const u32 izm = oriented_cell_graph.zm;
 
-        NGLink<Tscal> buf_flux_rho_face_xp{*oriented_cell_graph.graph_links[ixp]};
-        NGLink<Tscal> buf_flux_rho_face_xm{*oriented_cell_graph.graph_links[ixm]};
-        NGLink<Tscal> buf_flux_rho_face_yp{*oriented_cell_graph.graph_links[iyp]};
-        NGLink<Tscal> buf_flux_rho_face_ym{*oriented_cell_graph.graph_links[iym]};
-        NGLink<Tscal> buf_flux_rho_face_zp{*oriented_cell_graph.graph_links[izp]};
         NGLink<Tscal> buf_flux_rho_face_zm{*oriented_cell_graph.graph_links[izm]};
-
-        NGLink<Tvec> buf_flux_rhov_face_xp{*oriented_cell_graph.graph_links[ixp]};
-        NGLink<Tvec> buf_flux_rhov_face_xm{*oriented_cell_graph.graph_links[ixm]};
-        NGLink<Tvec> buf_flux_rhov_face_yp{*oriented_cell_graph.graph_links[iyp]};
-        NGLink<Tvec> buf_flux_rhov_face_ym{*oriented_cell_graph.graph_links[iym]};
-        NGLink<Tvec> buf_flux_rhov_face_zp{*oriented_cell_graph.graph_links[izp]};
         NGLink<Tvec> buf_flux_rhov_face_zm{*oriented_cell_graph.graph_links[izm]};
-
-        NGLink<Tscal> buf_flux_rhoe_face_xp{*oriented_cell_graph.graph_links[ixp]};
-        NGLink<Tscal> buf_flux_rhoe_face_xm{*oriented_cell_graph.graph_links[ixm]};
-        NGLink<Tscal> buf_flux_rhoe_face_yp{*oriented_cell_graph.graph_links[iyp]};
-        NGLink<Tscal> buf_flux_rhoe_face_ym{*oriented_cell_graph.graph_links[iym]};
-        NGLink<Tscal> buf_flux_rhoe_face_zp{*oriented_cell_graph.graph_links[izp]};
         NGLink<Tscal> buf_flux_rhoe_face_zm{*oriented_cell_graph.graph_links[izm]};
 
-        if (solver_config.riemman_config == Rusanov) {
-            constexpr RiemmanSolverMode mode = Rusanov;
-            logger::debug_ln("[AMR Flux]", "compute rusanov xp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
-                q,
-                rho_face_xp.link_count,
-                rho_face_xp.link_graph_field,
-                vel_face_xp.link_graph_field,
-                press_face_xp.link_graph_field,
-                buf_flux_rho_face_xp.link_graph_field,
-                buf_flux_rhov_face_xp.link_graph_field,
-                buf_flux_rhoe_face_xp.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute rusanov yp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
-                q,
-                rho_face_yp.link_count,
-                rho_face_yp.link_graph_field,
-                vel_face_yp.link_graph_field,
-                press_face_yp.link_graph_field,
-                buf_flux_rho_face_yp.link_graph_field,
-                buf_flux_rhov_face_yp.link_graph_field,
-                buf_flux_rhoe_face_yp.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute rusanov zp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
-                q,
-                rho_face_zp.link_count,
-                rho_face_zp.link_graph_field,
-                vel_face_zp.link_graph_field,
-                press_face_zp.link_graph_field,
-                buf_flux_rho_face_zp.link_graph_field,
-                buf_flux_rhov_face_zp.link_graph_field,
-                buf_flux_rhoe_face_zp.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute rusanov xm patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
-                q,
-                rho_face_xm.link_count,
-                rho_face_xm.link_graph_field,
-                vel_face_xm.link_graph_field,
-                press_face_xm.link_graph_field,
-                buf_flux_rho_face_xm.link_graph_field,
-                buf_flux_rhov_face_xm.link_graph_field,
-                buf_flux_rhoe_face_xm.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute rusanov ym patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
-                q,
-                rho_face_ym.link_count,
-                rho_face_ym.link_graph_field,
-                vel_face_ym.link_graph_field,
-                press_face_ym.link_graph_field,
-                buf_flux_rho_face_ym.link_graph_field,
-                buf_flux_rhov_face_ym.link_graph_field,
-                buf_flux_rhoe_face_ym.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute rusanov zm patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
-                q,
-                rho_face_zm.link_count,
-                rho_face_zm.link_graph_field,
-                vel_face_zm.link_graph_field,
-                press_face_zm.link_graph_field,
-                buf_flux_rho_face_zm.link_graph_field,
-                buf_flux_rhov_face_zm.link_graph_field,
-                buf_flux_rhoe_face_zm.link_graph_field,
-                gamma);
-        } else if (solver_config.riemman_config == HLL) {
-            constexpr RiemmanSolverMode mode = HLL;
-            logger::debug_ln("[AMR Flux]", "compute HLL xp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
-                q,
-                rho_face_xp.link_count,
-                rho_face_xp.link_graph_field,
-                vel_face_xp.link_graph_field,
-                press_face_xp.link_graph_field,
-                buf_flux_rho_face_xp.link_graph_field,
-                buf_flux_rhov_face_xp.link_graph_field,
-                buf_flux_rhoe_face_xp.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute HLL yp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
-                q,
-                rho_face_yp.link_count,
-                rho_face_yp.link_graph_field,
-                vel_face_yp.link_graph_field,
-                press_face_yp.link_graph_field,
-                buf_flux_rho_face_yp.link_graph_field,
-                buf_flux_rhov_face_yp.link_graph_field,
-                buf_flux_rhoe_face_yp.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute HLL zp patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
-                q,
-                rho_face_zp.link_count,
-                rho_face_zp.link_graph_field,
-                vel_face_zp.link_graph_field,
-                press_face_zp.link_graph_field,
-                buf_flux_rho_face_zp.link_graph_field,
-                buf_flux_rhov_face_zp.link_graph_field,
-                buf_flux_rhoe_face_zp.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute HLL xm patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
-                q,
-                rho_face_xm.link_count,
-                rho_face_xm.link_graph_field,
-                vel_face_xm.link_graph_field,
-                press_face_xm.link_graph_field,
-                buf_flux_rho_face_xm.link_graph_field,
-                buf_flux_rhov_face_xm.link_graph_field,
-                buf_flux_rhoe_face_xm.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute HLL ym patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
-                q,
-                rho_face_ym.link_count,
-                rho_face_ym.link_graph_field,
-                vel_face_ym.link_graph_field,
-                press_face_ym.link_graph_field,
-                buf_flux_rho_face_ym.link_graph_field,
-                buf_flux_rhov_face_ym.link_graph_field,
-                buf_flux_rhoe_face_ym.link_graph_field,
-                gamma);
-            logger::debug_ln("[AMR Flux]", "compute HLL zm patch", id);
-            compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
-                q,
-                rho_face_zm.link_count,
-                rho_face_zm.link_graph_field,
-                vel_face_zm.link_graph_field,
-                press_face_zm.link_graph_field,
-                buf_flux_rho_face_zm.link_graph_field,
-                buf_flux_rhov_face_zm.link_graph_field,
-                buf_flux_rhoe_face_zm.link_graph_field,
-                gamma);
-        }
+        logger::debug_ln("[AMR Flux]", "compute flux zm patch", id);
+        compute_fluxes_dir_riemanmode<Tvec, Tscal, Direction::zm>(
+            q,
+            rho_face_zm.link_count,
+            rho_face_zm.link_graph_field,
+            vel_face_zm.link_graph_field,
+            press_face_zm.link_graph_field,
+            buf_flux_rho_face_zm.link_graph_field,
+            buf_flux_rhov_face_zm.link_graph_field,
+            buf_flux_rhoe_face_zm.link_graph_field,
+            gamma,
+            mode);
 
-        flux_rho_face_xp.add_obj(id, std::move(buf_flux_rho_face_xp));
-        flux_rho_face_xm.add_obj(id, std::move(buf_flux_rho_face_xm));
-        flux_rho_face_yp.add_obj(id, std::move(buf_flux_rho_face_yp));
-        flux_rho_face_ym.add_obj(id, std::move(buf_flux_rho_face_ym));
-        flux_rho_face_zp.add_obj(id, std::move(buf_flux_rho_face_zp));
         flux_rho_face_zm.add_obj(id, std::move(buf_flux_rho_face_zm));
-
-        flux_rhov_face_xp.add_obj(id, std::move(buf_flux_rhov_face_xp));
-        flux_rhov_face_xm.add_obj(id, std::move(buf_flux_rhov_face_xm));
-        flux_rhov_face_yp.add_obj(id, std::move(buf_flux_rhov_face_yp));
-        flux_rhov_face_ym.add_obj(id, std::move(buf_flux_rhov_face_ym));
-        flux_rhov_face_zp.add_obj(id, std::move(buf_flux_rhov_face_zp));
         flux_rhov_face_zm.add_obj(id, std::move(buf_flux_rhov_face_zm));
-
-        flux_rhoe_face_xp.add_obj(id, std::move(buf_flux_rhoe_face_xp));
-        flux_rhoe_face_xm.add_obj(id, std::move(buf_flux_rhoe_face_xm));
-        flux_rhoe_face_yp.add_obj(id, std::move(buf_flux_rhoe_face_yp));
-        flux_rhoe_face_ym.add_obj(id, std::move(buf_flux_rhoe_face_ym));
-        flux_rhoe_face_zp.add_obj(id, std::move(buf_flux_rhoe_face_zp));
         flux_rhoe_face_zm.add_obj(id, std::move(buf_flux_rhoe_face_zm));
     });
+    storage.rho_face_zm.reset();
+    storage.vel_face_zm.reset();
+    storage.press_face_zm.reset();
 
     storage.flux_rho_face_xp.set(std::move(flux_rho_face_xp));
     storage.flux_rho_face_xm.set(std::move(flux_rho_face_xm));

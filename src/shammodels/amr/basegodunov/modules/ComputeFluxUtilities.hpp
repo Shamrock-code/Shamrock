@@ -203,6 +203,46 @@ namespace shammodels::basegodunov::modules {
         });
     }
 
+    template<class Tvec, class Tscal, Direction dir>
+    void compute_fluxes_dir_riemanmode(
+        sycl::queue &q,
+        u32 link_count,
+        sycl::buffer<std::array<Tscal, 2>> &rho_face_dir,
+        sycl::buffer<std::array<Tvec, 2>> &vel_face_dir,
+        sycl::buffer<std::array<Tscal, 2>> &press_face_dir,
+        sycl::buffer<Tscal> &flux_rho_face_dir,
+        sycl::buffer<Tvec> &flux_rhov_face_dir,
+        sycl::buffer<Tscal> &flux_rhoe_face_dir,
+        Tscal gamma,
+        RiemannSolverMode mode) {
+
+        if (mode == RiemannSolverMode::HLL) {
+            compute_fluxes_dir<RiemannSolverMode::HLL, Tvec, Tscal, dir>(
+                q,
+                link_count,
+                rho_face_dir,
+                vel_face_dir,
+                press_face_dir,
+                flux_rho_face_dir,
+                flux_rhov_face_dir,
+                flux_rhoe_face_dir,
+                gamma);
+        } else if (mode == RiemannSolverMode::Rusanov) {
+            compute_fluxes_dir<RiemannSolverMode::Rusanov, Tvec, Tscal, dir>(
+                q,
+                link_count,
+                rho_face_dir,
+                vel_face_dir,
+                press_face_dir,
+                flux_rho_face_dir,
+                flux_rhov_face_dir,
+                flux_rhoe_face_dir,
+                gamma);
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
     template<DustRiemannSolverMode mode, class Tvec, class Tscal, Direction dir>
     void dust_compute_fluxes_dir(
         sycl::queue &q,

@@ -166,27 +166,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.flux_rhoe_face_zp.reset();
     storage.flux_rhoe_face_zm.reset();
 
-    storage.rho_face_xp.reset();
-    storage.rho_face_xm.reset();
-    storage.rho_face_yp.reset();
-    storage.rho_face_ym.reset();
-    storage.rho_face_zp.reset();
-    storage.rho_face_zm.reset();
-
-    storage.vel_face_xp.reset();
-    storage.vel_face_xm.reset();
-    storage.vel_face_yp.reset();
-    storage.vel_face_ym.reset();
-    storage.vel_face_zp.reset();
-    storage.vel_face_zm.reset();
-
-    storage.press_face_xp.reset();
-    storage.press_face_xm.reset();
-    storage.press_face_yp.reset();
-    storage.press_face_ym.reset();
-    storage.press_face_zp.reset();
-    storage.press_face_zm.reset();
-
     storage.grad_rho.reset();
     storage.dx_v.reset();
     storage.dy_v.reset();

@@ -486,8 +486,8 @@ namespace sham {
                 new_buf.copy_from(*this, new_size);
 
                 // override old buffer
-                // std::swap(new_buf, *this);
-                *this = std::move(new_buf);
+                std::swap(new_buf, *this);
+                // *this = std::move(new_buf);
             } else {
                 size = new_size;
                 // no need to resize

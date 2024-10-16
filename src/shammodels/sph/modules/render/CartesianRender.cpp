@@ -146,13 +146,12 @@ namespace shammodels::sph::modules {
                 pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf(),
                 1);
 
-            std::vector<sycl::event> depends_list;
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            sham::EventList depends_list;
             Tfield *render_field = ret.get_write_access(depends_list);
 
-            sycl::event e2 = shamsys::instance::get_compute_queue().submit([&, render_field](
-                                                                               sycl::handler &cgh) {
-                cgh.depends_on(depends_list);
-
+            sycl::event e2 = q.submit(depends_list, [&, render_field](sycl::handler &cgh) {
                 shamrock::tree::ObjectIterator particle_looper(tree, cgh);
                 sycl::accessor xyz{shambase::get_check_ref(buf_xyz), cgh, sycl::read_only};
                 sycl::accessor hpart{shambase::get_check_ref(buf_hpart), cgh, sycl::read_only};
@@ -260,13 +259,12 @@ namespace shammodels::sph::modules {
                 pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf(),
                 1);
 
-            std::vector<sycl::event> depends_list;
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            sham::EventList depends_list;
             Tfield *render_field = ret.get_write_access(depends_list);
 
-            sycl::event e2 = shamsys::instance::get_compute_queue().submit([&, render_field](
-                                                                               sycl::handler &cgh) {
-                cgh.depends_on(depends_list);
-
+            sycl::event e2 = q.submit(depends_list, [&, render_field](sycl::handler &cgh) {
                 shamrock::tree::ObjectIterator particle_looper(tree, cgh);
                 sycl::accessor xyz{shambase::get_check_ref(buf_xyz), cgh, sycl::read_only};
                 sycl::accessor hpart{shambase::get_check_ref(buf_hpart), cgh, sycl::read_only};

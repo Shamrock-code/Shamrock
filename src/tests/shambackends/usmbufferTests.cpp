@@ -23,7 +23,7 @@ TestStart(Unittest, "shambackends/DeviceBuffer", DeviceBuffer_consttructor, 1) {
     std::shared_ptr<DeviceScheduler> sched = shamsys::instance::get_compute_scheduler_ptr();
     sham::DeviceBuffer<T, target> buf{sz, sched};
 
-    std::vector<sycl::event> e;
+    sham::EventList e;
 
     REQUIRE(buf.get_read_access(e) != nullptr);
     buf.complete_event_state(sycl::event{});
@@ -31,6 +31,8 @@ TestStart(Unittest, "shambackends/DeviceBuffer", DeviceBuffer_consttructor, 1) {
     buf.complete_event_state(sycl::event{});
     REQUIRE(buf.get_size() == sz);
     REQUIRE(buf.get_bytesize() == sz * sizeof(T));
+
+    e.wait_and_throw();
 
     // REQUIRE(buf.get_sched() == sched);
 }

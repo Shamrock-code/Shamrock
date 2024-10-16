@@ -68,6 +68,24 @@ namespace shammodels::basegodunov {
     };
 
     template<class Tvec, class TgridVec>
+    struct AMRMode {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        struct None {};
+        struct DensityBased {
+            Tscal crit_mass;
+        };
+
+        using mode = std::variant<None, DensityBased>;
+
+        mode config = None{};
+
+        void set_refine_none() { config = None{}; }
+        void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+    };
+
+    template<class Tvec, class TgridVec>
     struct SolverConfig {
 
         using Tscal = shambase::VecComponent<Tvec>;
@@ -89,6 +107,9 @@ namespace shammodels::basegodunov {
         inline bool is_dust_on() { return dust_config.is_dust_on(); }
 
         Tscal Csafe = 0.9;
+
+        /// AMR refinement mode
+        AMRMode<Tvec, TgridVec> amr_mode = {};
 
         /// Alias to SolverStatusVar type
         using SolverStatusVar = SolverStatusVar<Tvec>;

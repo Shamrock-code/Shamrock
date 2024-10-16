@@ -235,7 +235,73 @@ class shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::AMRLowering
           acc_block_max{buf_block_max, cgh, sycl::read_only}, dir_offset(std::move(dir_offset)) {}
 
     template<class IndexFunctor>
-    void for_each_other_index(u32 id_a, IndexFunctor &&fct) const {
+    void for_each_other_index_safe(u32 id_a, IndexFunctor &&fct) const {
+
+        const u32 cell_global_id = (u32) id_a;
+
+        const u32 block_id    = cell_global_id / AMRBlock::block_size;
+        const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+
+        // fetch current block info
+        const TgridVec cblock_min = acc_block_min[block_id];
+        const TgridVec cblock_max = acc_block_max[block_id];
+        const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
+
+        // Compute wanted neighbourg cell bounds
+        auto get_cell_local_coord = [&]() -> TgridVec {
+            std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
+            return {lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]};
+        };
+
+        TgridVec lcoord = get_cell_local_coord();
+
+        shammath::AABB<TgridVec> current_cell_aabb
+            = {cblock_min + lcoord * delta_cell,
+               cblock_min + (lcoord + TgridVec{1, 1, 1}) * delta_cell};
+
+        const shammath::AABB<TgridVec> current_cell_aabb_shifted
+            = {current_cell_aabb.lower + dir_offset, current_cell_aabb.upper + dir_offset};
+
+        auto for_each_possible_blocks = [&](auto &&functor) {
+            functor(block_id);
+            graph_iter.for_each_object_link(block_id, [&](u32 block_b) {
+                functor(block_b);
+            });
+        };
+
+        for_each_possible_blocks([&](u32 block_b) {
+            TgridVec block_b_min = acc_block_min[block_b];
+            TgridVec block_b_max = acc_block_max[block_b];
+
+            const TgridVec delta_cell_b = (block_b_max - block_b_min) / AMRBlock::Nside;
+
+            for (u32 lx = 0; lx < AMRBlock::Nside; lx++) {
+                for (u32 ly = 0; ly < AMRBlock::Nside; ly++) {
+                    for (u32 lz = 0; lz < AMRBlock::Nside; lz++) {
+
+                        shammath::AABB<TgridVec> found_cell
+                            = {TgridVec{block_b_min + TgridVec{lx, ly, lz} * delta_cell_b},
+                               TgridVec{
+                                   block_b_min + TgridVec{lx + 1, ly + 1, lz + 1} * delta_cell_b}};
+
+                        u32 idx
+                            = block_b * AMRBlock::block_size + AMRBlock::get_index({lx, ly, lz});
+
+                        bool overlap = found_cell.get_intersect(current_cell_aabb_shifted)
+                                           .is_volume_not_null()
+                                       && id_a != idx;
+
+                        if (overlap) {
+                            fct(idx);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    template<class IndexFunctor>
+    void for_each_other_index_full(u32 id_a, IndexFunctor &&fct) const {
 
         const u32 cell_global_id = (u32) id_a;
 
@@ -337,11 +403,23 @@ class shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::AMRLowering
                         = found_cell.get_intersect(current_cell_aabb_shifted).is_volume_not_null();
 
                     if (overlap) {
-                        fct(wanted_block * AMRBlock::block_size + AMRBlock::get_index({x, y, z}));
+                        u32 idx
+                            = wanted_block * AMRBlock::block_size + AMRBlock::get_index({x, y, z});
+
+                        fct(idx);
                     }
                 }
             }
         }
+    }
+
+    template<class IndexFunctor>
+    void for_each_other_index(u32 id_a, IndexFunctor &&fct) const {
+        // Possible performance regression here, ideally i should fix the full mode for AMR as i
+        // expect it to outperform the safe one
+
+        // for_each_other_index_full(id_a, fct);
+        for_each_other_index_safe(id_a, fct);
     }
 };
 

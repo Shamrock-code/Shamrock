@@ -44,7 +44,7 @@ namespace shamrock::amr {
         public:
         PatchScheduler &sched;
 
-        using CellCoord                  = AMRCellCoord<Tcoord, dim>;
+        using CellCoord                  = AMRBlockCoord<Tcoord, dim>;
         static constexpr u32 dimension   = dim;
         static constexpr u32 split_count = CellCoord::splts_count;
 

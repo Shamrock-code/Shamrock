@@ -107,9 +107,23 @@ namespace shammodels::basegodunov {
                 [](TConfig &self, u32 ndust) {
                     self.dust_config = {HB, ndust};
                 })
-            .def("set_dust_mode_none", [](TConfig &self) {
-                self.dust_config = {NoDust, 0};
-            });
+            .def(
+                "set_dust_mode_none",
+                [](TConfig &self) {
+                    self.dust_config = {NoDust, 0};
+                })
+            .def(
+                "set_amr_mode_none",
+                [](TConfig &self) {
+                    self.amr_mode.set_refine_none();
+                })
+            .def(
+                "set_amr_mode_density_based",
+                [](TConfig &self, Tscal crit_mass) {
+                    self.amr_mode.set_refine_density_based(crit_mass);
+                },
+                py::kw_only(),
+                py::arg("crit_mass"));
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
         py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())

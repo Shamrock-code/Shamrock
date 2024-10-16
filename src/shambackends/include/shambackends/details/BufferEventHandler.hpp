@@ -15,7 +15,9 @@
  */
 
 #include "shambase/SourceLocation.hpp"
+#include "shambackends/EventList.hpp"
 #include "shambackends/sycl.hpp"
+#include <shambackends/details/BufferEventHandler.hpp>
 
 namespace sham::details {
 
@@ -111,8 +113,7 @@ namespace sham::details {
          *         This exception is thrown when the function is called on a buffer event
          *         handler that is in an incomplete state (i.e., `up_to_date_events` is `false`).
          */
-        void read_access(
-            std::vector<sycl::event> &depends_list, SourceLocation src_loc = SourceLocation{});
+        void read_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{});
 
         /**
          * @brief Adds events conditioning the validity of a buffer for write access to the
@@ -132,8 +133,7 @@ namespace sham::details {
          *         This exception is thrown when the function is called on a buffer event
          *         handler that is in an incomplete state (i.e., `up_to_date_events` is `false`).
          */
-        void write_access(
-            std::vector<sycl::event> &depends_list, SourceLocation src_loc = SourceLocation{});
+        void write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{});
 
         /**
          * @brief Completes the state of the buffer event handler with the event for which the

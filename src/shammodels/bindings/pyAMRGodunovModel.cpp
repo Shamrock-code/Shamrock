@@ -131,15 +131,17 @@ namespace shammodels::basegodunov {
                     self.drag_config.drag_solver_config        = IRK2;
                     self.drag_config.enable_frictional_heating = frictional_status;
                 })
-            .def("set_drag_mode_expo", [](TConfig &self, bool frictional_status) {
-                self.drag_config.drag_solver_config        = EXPO;
-                self.drag_config.enable_frictional_heating = frictional_status;
-            });
-        .def(
-            "set_amr_mode_none",
-            [](TConfig &self) {
-                self.amr_mode.set_refine_none();
-            })
+            .def(
+                "set_drag_mode_expo",
+                [](TConfig &self, bool frictional_status) {
+                    self.drag_config.drag_solver_config        = EXPO;
+                    self.drag_config.enable_frictional_heating = frictional_status;
+                })
+            .def(
+                "set_amr_mode_none",
+                [](TConfig &self) {
+                    self.amr_mode.set_refine_none();
+                })
             .def(
                 "set_amr_mode_density_based",
                 [](TConfig &self, Tscal crit_mass) {

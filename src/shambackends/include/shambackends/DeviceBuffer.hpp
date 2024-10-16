@@ -118,6 +118,10 @@ namespace sham {
          * by transfering them back to the memory handler
          */
         ~DeviceBuffer() {
+            // This object is empty, it was probably moved
+            if (hold.get_raw_ptr() == nullptr && events_hndl.is_empty()) {
+                return;
+            }
             // give the ptr holder and event handler to the memory handler
             details::release_usm_ptr(std::move(hold), std::move(events_hndl));
         }

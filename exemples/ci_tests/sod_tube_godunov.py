@@ -19,7 +19,7 @@ multy = 1
 multz = 1
 
 sz = 1 << 1
-base = 32
+base = 16
 model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
 
 cfg = model.gen_default_config()
@@ -31,12 +31,12 @@ cfg.set_eos_gamma(gamma)
 #cfg.set_riemann_solver_rusanov()
 cfg.set_riemann_solver_hll()
 
-#cfg.set_slope_lim_none()
+cfg.set_slope_lim_none()
 #cfg.set_slope_lim_vanleer_f()
 #cfg.set_slope_lim_vanleer_std()
 #cfg.set_slope_lim_vanleer_sym()
-cfg.set_slope_lim_minmod()
-cfg.set_face_time_interpolation(True)
+# cfg.set_slope_lim_minmod()
+cfg.set_face_time_interpolation(False)
 model.set_config(cfg)
 
 
@@ -54,14 +54,20 @@ delta_rho = 1e-2
 def rho_map(rmin,rmax):
 
     x,y,z = rmin
+    # if x < 1:
+    #     return 1
+    # else:
+    #     return 0.125
     if x < 1:
-        return 1
+        return 1.4
     else:
-        return 0.125
+        return 1
 
 
-etot_L = 1./(gamma-1)
-etot_R = 0.1/(gamma-1)
+# etot_L = 1./(gamma-1)
+# etot_R = 0.1/(gamma-1)
+etot_L = 1/(gamma-1)
+etot_R = 1/(gamma-1)
 
 def rhoetot_map(rmin,rmax):
 
@@ -84,13 +90,17 @@ model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
 model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 t_target = 0.245
+# t_target = 1
 
 model.evolve_until(t_target)
 
 #model.evolve_once()
 xref = 1.0
-xrange = 0.5
-sod = shamrock.phys.SodTube(gamma = gamma, rho_1 = 1,P_1 = 1,rho_5 = 0.125,P_5 = 0.1)
+# xrange = 0.5
+xrange = 1
+# sod = shamrock.phys.SodTube(gamma = gamma, rho_1 = 1,P_1 = 1,rho_5 = 0.125,P_5 = 0.1)
+# sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, xref, -xrange,xrange)
+sod = shamrock.phys.SodTube(gamma = gamma, rho_1 = 1.4,P_1 = 1,rho_5 = 1,P_5 = 1)
 sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, xref, -xrange,xrange)
 
 
@@ -171,8 +181,8 @@ if True:
     fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(9,6),dpi=125)
 
     plt.scatter(X,rho, rasterized=True,label="rho")
-    plt.scatter(X,vx, rasterized=True,label="v")
-    plt.scatter(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1), rasterized=True,label="P")
+    # plt.scatter(X,vx, rasterized=True,label="v")
+    # plt.scatter(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1), rasterized=True,label="P")
     #plt.scatter(X,rhoetot, rasterized=True,label="rhoetot")
     plt.legend()
     plt.grid()
@@ -194,10 +204,10 @@ if True:
         arr_P.append(_P)
 
     plt.plot(arr_x,arr_rho,color = "black",label="analytic")
-    plt.plot(arr_x,arr_vx,color = "black")
-    plt.plot(arr_x,arr_P,color = "black")
-    plt.ylim(-0.1,1.1)
-    plt.xlim(0.5,1.5)
+    # plt.plot(arr_x,arr_vx,color = "black")
+    # plt.plot(arr_x,arr_P,color = "black")
+    # plt.ylim(-0.1,1.1)
+    # plt.xlim(0.5,1.5)
     #######
     plt.show()
 

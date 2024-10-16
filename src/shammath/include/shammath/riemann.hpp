@@ -416,11 +416,13 @@ namespace shammath {
         const Tscal SL = vel_roe - cs_roe;
         const Tscal SR = vel_roe + cs_roe;
 
-        // ============= [Einfeldt's HLLE solver]
-        // const Tscal etha2 =  0.5 * sqrt(rhoL * rhoR) / (rhoL + rhoR + 2 * sqrt(rhoL * rhoR) );
-        // const Tscal d     = sqrt((velxR - velxL)*(velxR - velxL)*etha2 + (sqrt(rhoL)*csL*csL +
-        // sqrt(rhoR)*csR*csR) / (sqrt(rhoL) + sqrt(rhoR)) ); const Tscal SL    = vel_roe - d; const
-        // Tscal SR    = vel_roe + d;
+        // // ============= [Einfeldt's HLLE solver]
+        // const Tscal etha2 = 0.5 * sqrt(rhoL * rhoR) / (rhoL + rhoR + 2 * sqrt(rhoL * rhoR));
+        // const Tscal d     = sqrt(
+        //     (velxR - velxL) * (velxR - velxL) * etha2
+        //     + (sqrt(rhoL) * csL * csL + sqrt(rhoR) * csR * csR) / (sqrt(rhoL) + sqrt(rhoR)));
+        // const Tscal SL = vel_roe - d;
+        // const Tscal SR = vel_roe + d;
 
         //
         const Tscal var_L = rhoL * (SL - primL.vel[0]);

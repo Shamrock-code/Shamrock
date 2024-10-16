@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <vector>
 
-void sparse_comm_test(std::string prefix, sham::DeviceScheduler &qdet) {
+void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler> qdet) {
 
     using namespace shamalgs::collective;
     using namespace shamsys::instance;
@@ -142,5 +142,5 @@ void sparse_comm_test(std::string prefix, sham::DeviceScheduler &qdet) {
 
 TestStart(Unittest, "shamalgs/collective/sparseXchg", testsparsexchg, -1) {
 
-    sparse_comm_test("", shamsys::instance::get_compute_scheduler());
+    sparse_comm_test("", shamsys::instance::get_compute_scheduler_ptr());
 }

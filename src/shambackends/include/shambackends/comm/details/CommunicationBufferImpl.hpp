@@ -16,6 +16,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambackends/Device.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include <stdexcept>
 #include <variant>
 
@@ -50,7 +51,7 @@ namespace shamcomm {
         template<>
         class CommunicationBuffer<CopyToHost> {
 
-            sycl::queue &bind_queue;
+            std::shared_ptr<sham::DeviceScheduler> dev_sched;
 
             u8 *usm_ptr;
             u64 bytelen;
@@ -62,7 +63,9 @@ namespace shamcomm {
             void copy_usm(u64 len, u8 *new_usm);
 
             public:
-            inline CommunicationBuffer(u64 bytelen, sycl::queue &queue) : bind_queue(queue) {
+            inline CommunicationBuffer(
+                u64 bytelen, std::shared_ptr<sham::DeviceScheduler> dev_sched)
+                : dev_sched(dev_sched) {
                 if (bytelen == 0) {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
                         "can not create a buffer of size = 0");
@@ -71,37 +74,39 @@ namespace shamcomm {
                 alloc_usm(bytelen);
             }
 
-            inline CommunicationBuffer(sycl::buffer<u8> &obj_ref, sycl::queue &queue)
-                : bind_queue(queue) {
+            inline CommunicationBuffer(
+                sycl::buffer<u8> &obj_ref, std::shared_ptr<sham::DeviceScheduler> dev_sched)
+                : dev_sched(dev_sched) {
                 bytelen = obj_ref.size();
                 alloc_usm(bytelen);
                 copy_to_usm(obj_ref, bytelen);
             }
 
-            inline CommunicationBuffer(sycl::buffer<u8> &&moved_obj, sycl::queue &queue)
-                : bind_queue(queue) {
+            inline CommunicationBuffer(
+                sycl::buffer<u8> &&moved_obj, std::shared_ptr<sham::DeviceScheduler> dev_sched)
+                : dev_sched(dev_sched) {
                 bytelen = moved_obj.size();
                 alloc_usm(bytelen);
                 copy_to_usm(moved_obj, bytelen);
             }
 
-            inline ~CommunicationBuffer() { sycl::free(usm_ptr, bind_queue); }
+            inline ~CommunicationBuffer() { sycl::free(usm_ptr, dev_sched->get_queue().q); }
 
             inline CommunicationBuffer(CommunicationBuffer &&other) noexcept
                 : usm_ptr(std::exchange(other.usm_ptr, nullptr)), bytelen(other.bytelen),
-                  bind_queue(other.bind_queue) {} // move constructor
+                  dev_sched(other.dev_sched) {} // move constructor
 
             inline CommunicationBuffer &operator=(CommunicationBuffer &&other) noexcept {
                 std::swap(usm_ptr, other.usm_ptr);
-                bytelen    = (other.bytelen);
-                bind_queue = other.bind_queue;
+                bytelen   = (other.bytelen);
+                dev_sched = other.dev_sched;
 
                 return *this;
             } // move assignment
 
             inline std::unique_ptr<CommunicationBuffer> duplicate_to_ptr() {
                 std::unique_ptr<CommunicationBuffer> ret
-                    = std::make_unique<CommunicationBuffer>(bytelen, bind_queue);
+                    = std::make_unique<CommunicationBuffer>(bytelen, dev_sched);
                 copy_usm(bytelen, ret->usm_ptr);
                 return ret;
             }
@@ -122,7 +127,7 @@ namespace shamcomm {
         template<>
         class CommunicationBuffer<DirectGPU> {
 
-            sycl::queue &bind_queue;
+            std::shared_ptr<sham::DeviceScheduler> dev_sched;
 
             u8 *usm_ptr;
             u64 bytelen;
@@ -134,7 +139,9 @@ namespace shamcomm {
             void copy_usm(u64 len, u8 *new_usm);
 
             public:
-            inline CommunicationBuffer(u64 bytelen, sycl::queue &queue) : bind_queue(queue) {
+            inline CommunicationBuffer(
+                u64 bytelen, std::shared_ptr<sham::DeviceScheduler> dev_sched)
+                : dev_sched(dev_sched) {
                 if (bytelen == 0) {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
                         "can not create a buffer of size = 0");
@@ -143,37 +150,39 @@ namespace shamcomm {
                 alloc_usm(bytelen);
             }
 
-            inline CommunicationBuffer(sycl::buffer<u8> &obj_ref, sycl::queue &queue)
-                : bind_queue(queue) {
+            inline CommunicationBuffer(
+                sycl::buffer<u8> &obj_ref, std::shared_ptr<sham::DeviceScheduler> dev_sched)
+                : dev_sched(dev_sched) {
                 bytelen = obj_ref.size();
                 alloc_usm(bytelen);
                 copy_to_usm(obj_ref, bytelen);
             }
 
-            inline CommunicationBuffer(sycl::buffer<u8> &&moved_obj, sycl::queue &queue)
-                : bind_queue(queue) {
+            inline CommunicationBuffer(
+                sycl::buffer<u8> &&moved_obj, std::shared_ptr<sham::DeviceScheduler> dev_sched)
+                : dev_sched(dev_sched) {
                 bytelen = moved_obj.size();
                 alloc_usm(bytelen);
                 copy_to_usm(moved_obj, bytelen);
             }
 
-            inline ~CommunicationBuffer() { sycl::free(usm_ptr, bind_queue); }
+            inline ~CommunicationBuffer() { sycl::free(usm_ptr, dev_sched->get_queue().q); }
 
             inline CommunicationBuffer(CommunicationBuffer &&other) noexcept
                 : usm_ptr(std::exchange(other.usm_ptr, nullptr)), bytelen(other.bytelen),
-                  bind_queue(other.bind_queue) {} // move constructor
+                  dev_sched(other.dev_sched) {} // move constructor
 
             inline CommunicationBuffer &operator=(CommunicationBuffer &&other) noexcept {
                 std::swap(usm_ptr, other.usm_ptr);
-                bytelen    = (other.bytelen);
-                bind_queue = other.bind_queue;
+                bytelen   = (other.bytelen);
+                dev_sched = other.dev_sched;
 
                 return *this;
             } // move assignment
 
             inline std::unique_ptr<CommunicationBuffer> duplicate_to_ptr() {
                 std::unique_ptr<CommunicationBuffer> ret
-                    = std::make_unique<CommunicationBuffer>(bytelen, bind_queue);
+                    = std::make_unique<CommunicationBuffer>(bytelen, dev_sched);
                 copy_usm(bytelen, ret->usm_ptr);
                 return ret;
             }

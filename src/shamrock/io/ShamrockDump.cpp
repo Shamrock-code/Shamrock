@@ -125,7 +125,7 @@ namespace shamrock {
             auto &data = datas[i];
 
             shamcomm::CommunicationBuffer buf(
-                shambase::get_check_ref(data), shamsys::instance::get_compute_scheduler());
+                shambase::get_check_ref(data), shamsys::instance::get_compute_scheduler_ptr());
 
             shamalgs::collective::write_at<u8>(mfile, buf.get_ptr(), bytecount, head_ptr + off);
         }
@@ -219,7 +219,7 @@ namespace shamrock {
             auto loc_file_info = off_table[pid];
 
             shamcomm::CommunicationBuffer buf(
-                loc_file_info.bytecount, shamsys::instance::get_compute_scheduler());
+                loc_file_info.bytecount, shamsys::instance::get_compute_scheduler_ptr());
 
             shamalgs::collective::read_at<u8>(
                 mfile, buf.get_ptr(), loc_file_info.bytecount, head_ptr + loc_file_info.offset);

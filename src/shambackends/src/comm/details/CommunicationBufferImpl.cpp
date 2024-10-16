@@ -22,13 +22,13 @@
 namespace shamcomm::details {
 
     void CommunicationBuffer<CopyToHost>::alloc_usm(u64 len) {
-        usm_ptr = sycl::malloc_host<u8>(len, bind_queue);
+        usm_ptr = sycl::malloc_host<u8>(len, dev_sched->get_queue().q);
     }
 
     void CommunicationBuffer<CopyToHost>::copy_to_usm(sycl::buffer<u8> &obj_ref, u64 len) {
         sycl::host_accessor acc{obj_ref, sycl::read_only};
         const u8 *tmp = acc.get_pointer();
-        bind_queue.memcpy(usm_ptr, tmp, len).wait();
+        dev_sched->get_queue().q.memcpy(usm_ptr, tmp, len).wait();
     }
 
     sycl::buffer<u8> CommunicationBuffer<CopyToHost>::build_from_usm(u64 len) {
@@ -36,24 +36,25 @@ namespace shamcomm::details {
         {
             sycl::host_accessor acc{buf_ret, sycl::write_only, sycl::no_init};
             u8 *tmp = acc.get_pointer();
-            bind_queue.memcpy(tmp, usm_ptr, len).wait();
+            dev_sched->get_queue().q.memcpy(tmp, usm_ptr, len).wait();
         }
         return buf_ret;
     }
 
     void CommunicationBuffer<CopyToHost>::copy_usm(u64 len, u8 *new_usm) {
-        bind_queue.memcpy(new_usm, usm_ptr, len).wait();
+        dev_sched->get_queue().q.memcpy(new_usm, usm_ptr, len).wait();
     }
 
     ///////
 
     void CommunicationBuffer<DirectGPU>::alloc_usm(u64 len) {
-        usm_ptr = sycl::malloc_device<u8>(len, bind_queue);
+        usm_ptr = sycl::malloc_device<u8>(len, dev_sched->get_queue().q);
     }
 
     void CommunicationBuffer<DirectGPU>::copy_to_usm(sycl::buffer<u8> &obj_ref, u64 len) {
 
-        std::vector<sycl::event> evs = sham::usmbuffer_memcpy(bind_queue, obj_ref, usm_ptr, len);
+        std::vector<sycl::event> evs
+            = sham::usmbuffer_memcpy(dev_sched->get_queue().q, obj_ref, usm_ptr, len);
 
         for (sycl::event &ev : evs) {
             ev.wait();
@@ -64,7 +65,7 @@ namespace shamcomm::details {
         sycl::buffer<u8> buf_ret(len);
 
         std::vector<sycl::event> evs
-            = sham::usmbuffer_memcpy_discard(bind_queue, usm_ptr, buf_ret, len);
+            = sham::usmbuffer_memcpy_discard(dev_sched->get_queue().q, usm_ptr, buf_ret, len);
 
         for (sycl::event &ev : evs) {
             ev.wait();
@@ -74,6 +75,6 @@ namespace shamcomm::details {
     }
 
     void CommunicationBuffer<DirectGPU>::copy_usm(u64 len, u8 *new_usm) {
-        bind_queue.memcpy(new_usm, usm_ptr, len).wait();
+        dev_sched->get_queue().q.memcpy(new_usm, usm_ptr, len).wait();
     }
 } // namespace shamcomm::details

@@ -21,7 +21,7 @@
 
 namespace shamcomm {
 
-    bool validate_comm_internal(sham::DeviceScheduler &device_sched) {
+    bool validate_comm_internal(std::shared_ptr<sham::DeviceScheduler> &device_sched) {
 
         u32 nbytes = 1e5;
         sycl::buffer<u8> buf_comp(nbytes);
@@ -84,13 +84,13 @@ namespace shamcomm {
         return valid;
     }
 
-    void validate_comm(sham::DeviceScheduler &sched) {
+    void validate_comm(std::shared_ptr<sham::DeviceScheduler> &sched) {
         u32 nbytes = 1e5;
         sycl::buffer<u8> buf_comp(nbytes);
 
         bool call_abort = false;
 
-        bool dgpu_mode = sched.ctx->device->mpi_prop.is_mpi_direct_capable;
+        bool dgpu_mode = sched->ctx->device->mpi_prop.is_mpi_direct_capable;
 
         using namespace shambase::term_colors;
         if (dgpu_mode) {

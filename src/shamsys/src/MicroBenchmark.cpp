@@ -51,8 +51,8 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv) {
     u32 wr = shamcomm::world_rank();
 
     u64 length = 1024UL * 1014UL * 8UL; // 8MB messages
-    shamcomm::CommunicationBuffer buf_recv{length, instance::get_compute_scheduler()};
-    shamcomm::CommunicationBuffer buf_send{length, instance::get_compute_scheduler()};
+    shamcomm::CommunicationBuffer buf_recv{length, instance::get_compute_scheduler_ptr()};
+    shamcomm::CommunicationBuffer buf_send{length, instance::get_compute_scheduler_ptr()};
 
     std::vector<MPI_Request> rqs;
 
@@ -112,8 +112,8 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
     u32 wr = shamcomm::world_rank();
 
     u64 length = 8ULL; // 8B messages
-    shamcomm::CommunicationBuffer buf_recv{length, instance::get_compute_scheduler()};
-    shamcomm::CommunicationBuffer buf_send{length, instance::get_compute_scheduler()};
+    shamcomm::CommunicationBuffer buf_recv{length, instance::get_compute_scheduler_ptr()};
+    shamcomm::CommunicationBuffer buf_send{length, instance::get_compute_scheduler_ptr()};
 
     f64 t        = 0;
     u64 loops    = 0;

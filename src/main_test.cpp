@@ -90,7 +90,8 @@ int main(int argc, char *argv[]) {
         shamsys::instance::check_dgpu_available();
     }
 
-    shamcomm::validate_comm(shamsys::instance::get_compute_scheduler());
+    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+    shamcomm::validate_comm(sptr);
 
     if (opts::has_option("--benchmark-mpi")) {
         shamsys::run_micro_benchmark();

@@ -16,6 +16,7 @@
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRGraphGen.hpp"
+#include "shammodels/amr/basegodunov/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRTree.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeCFL.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeCellInfos.hpp"
@@ -134,6 +135,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         do_debug_vtk_dump(shambase::format("debug_dump_{:04}.vtk", cnt_debug));
         cnt_debug++;
     }
+
+    modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
+    refinement.update_refinement();
 
     modules::ComputeCFL cfl_compute(context, solver_config, storage);
     f64 new_dt = cfl_compute.compute_cfl();

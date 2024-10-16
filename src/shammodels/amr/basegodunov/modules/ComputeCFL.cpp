@@ -45,6 +45,9 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
         u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
+        sycl::buffer<TgridVec> &buf_block_min = pdat.get_field_buf_ref<TgridVec>(0);
+        sycl::buffer<TgridVec> &buf_block_max = pdat.get_field_buf_ref<TgridVec>(1);
+
         sycl::buffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
         sycl::buffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
         sycl::buffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
@@ -57,23 +60,32 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
         shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
             sycl::accessor cfl_dt{cfl_dt_buf, cgh, sycl::write_only, sycl::no_init};
 
+            sycl::accessor acc_block_min{buf_block_min, cgh, sycl::read_only};
+            sycl::accessor acc_block_max{buf_block_max, cgh, sycl::read_only};
             sycl::accessor rho{buf_rho, cgh, sycl::read_only};
             sycl::accessor rhov{buf_rhov, cgh, sycl::read_only};
             sycl::accessor rhoe{buf_rhoe, cgh, sycl::read_only};
 
-            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
-
             Tscal C_safe = solver_config.Csafe;
             Tscal gamma  = solver_config.eos_gamma;
 
+            Tscal one_over_Nside = 1. / AMRBlock::Nside;
+
+            Tscal dxfact = solver_config.grid_coord_to_pos_fact;
             shambase::parralel_for(cgh, cell_count, "compute_cfl", [=](u64 gid) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
                 const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
+                TgridVec lower       = acc_block_min[block_id];
+                TgridVec upper       = acc_block_max[block_id];
+                Tvec lower_flt       = lower.template convert<Tscal>() * dxfact;
+                Tvec upper_flt       = upper.template convert<Tscal>() * dxfact;
+                Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
+                Tscal dx             = block_cell_size.x();
+
                 auto conststate = shammath::ConsState<Tvec>{rho[gid], rhoe[gid], rhov[gid]};
-                Tscal dx        = acc_aabb_cell_size[block_id];
 
                 auto prim_state = shammath::cons_to_prim(conststate, gamma);
 

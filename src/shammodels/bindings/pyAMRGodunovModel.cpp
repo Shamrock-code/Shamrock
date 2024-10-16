@@ -108,6 +108,7 @@ namespace shammodels::basegodunov {
                     self.dust_config = {NoDust, 0};
                 })
             .def(
+
                 "set_alpha_values",
                 [](TConfig &self, f32 alpha_values) {
                     return self.set_alphas_static(alpha_values);
@@ -134,6 +135,18 @@ namespace shammodels::basegodunov {
                 self.drag_config.drag_solver_config        = EXPO;
                 self.drag_config.enable_frictional_heating = frictional_status;
             });
+        .def(
+            "set_amr_mode_none",
+            [](TConfig &self) {
+                self.amr_mode.set_refine_none();
+            })
+            .def(
+                "set_amr_mode_density_based",
+                [](TConfig &self, Tscal crit_mass) {
+                    self.amr_mode.set_refine_density_based(crit_mass);
+                },
+                py::kw_only(),
+                py::arg("crit_mass"));
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
         py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())

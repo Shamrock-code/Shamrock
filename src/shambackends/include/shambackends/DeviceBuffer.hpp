@@ -103,7 +103,7 @@ namespace sham {
          *        accessing the buffer.
          * @return A const pointer to the buffer's data.
          */
-        [[nodiscard]] inline const T *get_read_access(std::vector<sycl::event> &depends_list) {
+        [[nodiscard]] inline const T *get_read_access(sham::EventList &depends_list) {
             events_hndl.read_access(depends_list);
             return hold.template ptr_cast<T>();
         }
@@ -118,7 +118,7 @@ namespace sham {
          *        accessing the buffer.
          * @return A pointer to the buffer's data.
          */
-        [[nodiscard]] inline T *get_write_access(std::vector<sycl::event> &depends_list) {
+        [[nodiscard]] inline T *get_write_access(sham::EventList &depends_list) {
             events_hndl.write_access(depends_list);
             return hold.template ptr_cast<T>();
         }
@@ -176,13 +176,13 @@ namespace sham {
         [[nodiscard]] inline std::vector<T> copy_to_stdvec() {
             std::vector<T> ret(size);
 
-            std::vector<sycl::event> depends_list;
+            sham::EventList depends_list;
             const T *ptr = get_read_access(depends_list);
 
-            sycl::event e = hold.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
-                cgh.depends_on(depends_list);
-                cgh.copy(ptr, ret.data(), size);
-            });
+            sycl::event e = hold.get_dev_scheduler().get_queue().submit(
+                depends_list, [&](sycl::handler &cgh) {
+                    cgh.copy(ptr, ret.data(), size);
+                });
 
             complete_event_state(e);
 
@@ -201,14 +201,14 @@ namespace sham {
         [[nodiscard]] inline DeviceBuffer<T, new_target> copy_to() {
             DeviceBuffer<T, new_target> ret(size, hold.get_dev_scheduler_ptr());
 
-            std::vector<sycl::event> depends_list;
+            sham::EventList depends_list;
             const T *ptr_src = get_read_access(depends_list);
             T *ptr_dest      = ret.get_write_access(depends_list);
 
-            sycl::event e = hold.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
-                cgh.depends_on(depends_list);
-                cgh.copy(ptr_src, ptr_dest, size);
-            });
+            sycl::event e = hold.get_dev_scheduler().get_queue().submit(
+                depends_list, [&](sycl::handler &cgh) {
+                    cgh.copy(ptr_src, ptr_dest, size);
+                });
 
             complete_event_state(e);
             ret.complete_event_state(e);
@@ -232,14 +232,14 @@ namespace sham {
                     "The two fields must have the same size");
             }
 
-            std::vector<sycl::event> depends_list;
+            sham::EventList depends_list;
             T *ptr_src        = get_write_access(depends_list);
             const T *ptr_dest = other.get_read_access(depends_list);
 
-            sycl::event e = hold.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
-                cgh.depends_on(depends_list);
-                cgh.copy(ptr_dest, ptr_src, size);
-            });
+            sycl::event e = hold.get_dev_scheduler().get_queue().submit(
+                depends_list, [&](sycl::handler &cgh) {
+                    cgh.copy(ptr_dest, ptr_src, size);
+                });
 
             complete_event_state(e);
             other.complete_event_state(e);
@@ -255,12 +255,11 @@ namespace sham {
          * @param value The value to fill the buffer with.
          */
         inline void fill(T value) {
-            std::vector<sycl::event> depends_list;
+            sham::EventList depends_list;
             T *ptr = get_write_access(depends_list);
 
-            sycl::event e1 = hold.get_dev_scheduler().get_queue().q.submit(
-                [&, ptr, value](sycl::handler &cgh) {
-                    cgh.depends_on(depends_list);
+            sycl::event e1 = hold.get_dev_scheduler().get_queue().submit(
+                depends_list, [&, ptr, value](sycl::handler &cgh) {
                     shambase::parralel_for(cgh, size, "fill field", [=](u32 gid) {
                         ptr[gid] = value;
                     });

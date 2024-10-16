@@ -49,20 +49,18 @@ namespace shamalgs {
 
                 sham::DeviceBuffer<Tscal, target> ret(buffer.get_size() * 2, sched);
 
-                std::vector<sycl::event> depends_list;
+                sham::EventList depends_list;
                 const Tvec *ptr_src = buffer.get_read_access(depends_list);
                 Tscal *ptr_dest     = ret.get_write_access(depends_list);
 
-                sycl::event e
-                    = buffer.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
-                          cgh.depends_on(depends_list);
-
-                          cgh.parallel_for(buffer.get_size(), [=](sycl::id<1> gid) {
-                              Tvec tmp              = ptr_src[gid];
-                              ptr_dest[gid * 2 + 0] = tmp[0];
-                              ptr_dest[gid * 2 + 1] = tmp[1];
-                          });
-                      });
+                sycl::event e = buffer.get_dev_scheduler().get_queue().submit(
+                    depends_list, [&](sycl::handler &cgh) {
+                        cgh.parallel_for(buffer.get_size(), [=](sycl::id<1> gid) {
+                            Tvec tmp              = ptr_src[gid];
+                            ptr_dest[gid * 2 + 0] = tmp[0];
+                            ptr_dest[gid * 2 + 1] = tmp[1];
+                        });
+                    });
 
                 ret.complete_event_state(e);
                 buffer.complete_event_state(e);
@@ -73,21 +71,19 @@ namespace shamalgs {
 
                 sham::DeviceBuffer<Tscal, target> ret(buffer.get_size() * 3, sched);
 
-                std::vector<sycl::event> depends_list;
+                sham::EventList depends_list;
                 const Tvec *ptr_src = buffer.get_read_access(depends_list);
                 Tscal *ptr_dest     = ret.get_write_access(depends_list);
 
-                sycl::event e
-                    = buffer.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
-                          cgh.depends_on(depends_list);
-
-                          cgh.parallel_for(buffer.get_size(), [=](sycl::id<1> gid) {
-                              Tvec tmp              = ptr_src[gid];
-                              ptr_dest[gid * 3 + 0] = tmp[0];
-                              ptr_dest[gid * 3 + 1] = tmp[1];
-                              ptr_dest[gid * 3 + 2] = tmp[2];
-                          });
-                      });
+                sycl::event e = buffer.get_dev_scheduler().get_queue().submit(
+                    depends_list, [&](sycl::handler &cgh) {
+                        cgh.parallel_for(buffer.get_size(), [=](sycl::id<1> gid) {
+                            Tvec tmp              = ptr_src[gid];
+                            ptr_dest[gid * 3 + 0] = tmp[0];
+                            ptr_dest[gid * 3 + 1] = tmp[1];
+                            ptr_dest[gid * 3 + 2] = tmp[2];
+                        });
+                    });
 
                 ret.complete_event_state(e);
                 buffer.complete_event_state(e);
@@ -136,18 +132,16 @@ namespace shamalgs {
 
                 sham::DeviceBuffer<Tvec, target> ret(buffer.get_size() / 2, sched);
 
-                std::vector<sycl::event> depends_list;
+                sham::EventList depends_list;
                 const Tscal *ptr_src = buffer.get_read_access(depends_list);
                 Tvec *ptr_dest       = ret.get_write_access(depends_list);
 
-                sycl::event e
-                    = buffer.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
-                          cgh.depends_on(depends_list);
-
-                          cgh.parallel_for(buffer.get_size() / 2, [=](sycl::id<1> gid) {
-                              ptr_dest[gid] = Tvec{ptr_src[gid * 2 + 0], ptr_src[gid * 2 + 1]};
-                          });
-                      });
+                sycl::event e = buffer.get_dev_scheduler().get_queue().submit(
+                    depends_list, [&](sycl::handler &cgh) {
+                        cgh.parallel_for(buffer.get_size() / 2, [=](sycl::id<1> gid) {
+                            ptr_dest[gid] = Tvec{ptr_src[gid * 2 + 0], ptr_src[gid * 2 + 1]};
+                        });
+                    });
 
                 ret.complete_event_state(e);
                 buffer.complete_event_state(e);
@@ -163,19 +157,17 @@ namespace shamalgs {
 
                 sham::DeviceBuffer<Tvec, target> ret(buffer.get_size() / 3, sched);
 
-                std::vector<sycl::event> depends_list;
+                sham::EventList depends_list;
                 const Tscal *ptr_src = buffer.get_read_access(depends_list);
                 Tvec *ptr_dest       = ret.get_write_access(depends_list);
 
-                sycl::event e
-                    = buffer.get_dev_scheduler().get_queue().q.submit([&](sycl::handler &cgh) {
-                          cgh.depends_on(depends_list);
-
-                          cgh.parallel_for(buffer.get_size() / 3, [=](sycl::id<1> gid) {
-                              ptr_dest[gid] = Tvec{
-                                  ptr_src[gid * 3 + 0], ptr_src[gid * 3 + 1], ptr_src[gid * 3 + 2]};
-                          });
-                      });
+                sycl::event e = buffer.get_dev_scheduler().get_queue().submit(
+                    depends_list, [&](sycl::handler &cgh) {
+                        cgh.parallel_for(buffer.get_size() / 3, [=](sycl::id<1> gid) {
+                            ptr_dest[gid] = Tvec{
+                                ptr_src[gid * 3 + 0], ptr_src[gid * 3 + 1], ptr_src[gid * 3 + 2]};
+                        });
+                    });
 
                 ret.complete_event_state(e);
                 buffer.complete_event_state(e);

@@ -371,18 +371,24 @@ namespace sham {
         ///////////////////////////////////////////////////////////////////////
 
         /**
-         * @brief Fill the current buffer with a value
+         * @brief Fill a subpart of the buffer with a given value
          *
-         * This function fill the current buffer with a value. The filling is done
-         * in parallel.
+         * This function fills a subpart of the buffer with a given value. The subpart is
+         * defined by a range of indices, given as a pair `[start_index,idx_count]`. The
+         * start index is the first index of the range, and the count is the number of
+         * elements to fill.
          *
-         * @param value The value with which to fill the buffer
-         * @param idx_count The number of elements to fill
-         * @param start_index The index at which to start filling the buffer
+         * The function checks that the range of indices is valid, i.e. that
+         * `start_index + idx_count <= get_size()`.
          *
-         * @throws std::invalid_argument if start_index + idx_count > get_size()
+         * @param value The value to fill the buffer with
+         * @param idx_range The range of indices to fill, given as a pair
+         * `[start_index,idx_count]`.
          */
-        inline void fill(T value, size_t start_index, size_t idx_count) {
+        inline void fill(T value, std::array<size_t, 2> idx_range) {
+
+            size_t start_index = idx_range[0];
+            size_t idx_count   = idx_range[1] - start_index;
 
             if (!(start_index + idx_count <= get_size())) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
@@ -407,14 +413,16 @@ namespace sham {
         }
 
         /**
-         * @brief Fill the first `idx_count` elements of the buffer with a value
+         * @brief Fill the first `idx_count` elements of the buffer with a given value
          *
-         * This function is a convenience function that calls fill(value, 0, idx_count)
+         * This function fills the first `idx_count` elements of the buffer with the given
+         * value. The function returns immediately, and the filling operation is executed
+         * asynchronously.
          *
-         * @param value The value with which to fill the buffer
+         * @param value The value to fill the buffer with
          * @param idx_count The number of elements to fill
          */
-        inline void fill(T value, size_t idx_count) { fill(value, 0, get_size()); }
+        inline void fill(T value, size_t idx_count) { fill(value, {0, idx_count}); }
 
         /**
          * @brief Fill the buffer with a given value.

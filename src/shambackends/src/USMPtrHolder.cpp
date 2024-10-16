@@ -14,6 +14,7 @@
  */
 
 #include "shambackends/USMPtrHolder.hpp"
+#include "shambase/string.hpp"
 #include <memory>
 
 namespace sham {
@@ -49,6 +50,21 @@ namespace sham {
             } else {
                 shambase::throw_unimplemented();
             }
+        }
+
+        if (usm_ptr == nullptr) {
+            std::string err_msg = "";
+            if (alignment) {
+                err_msg = shambase::format(
+                    "USM allocation failed, details : sz={}, target={}, alignment={}",
+                    sz,
+                    target,
+                    *alignment);
+            } else {
+                err_msg = shambase::format(
+                    "USM allocation failed, details : sz={}, target={}", sz, target);
+            }
+            shambase::throw_with_loc<std::runtime_error>(err_msg);
         }
 
         return USMPtrHolder<target>(usm_ptr, sz, dev_sched);

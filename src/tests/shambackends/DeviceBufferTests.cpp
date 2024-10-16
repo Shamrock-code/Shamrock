@@ -67,29 +67,6 @@ TestStart(Unittest, "shambackends/DeviceBuffer:smalltaskgraph", DeviceBuffer_sma
     add(q, a, b, c);
 }
 
-TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) {
-
-    std::shared_ptr<sham::DeviceScheduler> dev_sched
-        = shamsys::instance::get_compute_scheduler_ptr();
-
-    sham::DeviceBuffer<int> a{1000, dev_sched};
-    a.fill(77);
-
-    a.resize(2000);
-
-    REQUIRE(a.get_size() == 2000);
-    REQUIRE(a.get_mem_usage() >= a.to_bytesize(2000));
-
-    {
-        std::vector<int> b = a.copy_to_stdvec();
-        REQUIRE(b.size() == 2000);
-
-        for (int i = 0; i < 1000; i++) {
-            REQUIRE(b[i] == 77);
-        }
-    }
-}
-
 TestStart(Unittest, "shambackends/DeviceBuffer:fill", DeviceBuffer_fill1, 1) {
     std::shared_ptr<sham::DeviceScheduler> dev_sched
         = shamsys::instance::get_compute_scheduler_ptr();
@@ -122,7 +99,7 @@ TestStart(Unittest, "shambackends/DeviceBuffer:fill(with count)", DeviceBuffer_f
     buffer.fill(0);
 
     // Fill the buffer with value 5, starting from index 2, with count 5
-    buffer.fill(5, 2, 5);
+    buffer.fill(5, {2, 7});
 
     {
         std::vector<int> b = buffer.copy_to_stdvec();
@@ -147,5 +124,28 @@ TestStart(Unittest, "shambackends/DeviceBuffer:fill(exception)", DeviceBuffer_fi
     sham::DeviceBuffer<int> buffer(10, dev_sched);
 
     // Try to fill the buffer with value 5, starting from index 15, with count 5
-    _Assert_throw(buffer.fill(5, 15, 5), std::invalid_argument);
+    _Assert_throw(buffer.fill(5, {15, 20}), std::invalid_argument);
+}
+
+TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) {
+
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceBuffer<int> a{1000, dev_sched};
+    a.fill(77);
+
+    a.resize(2000);
+
+    REQUIRE(a.get_size() == 2000);
+    REQUIRE(a.get_mem_usage() >= a.to_bytesize(2000));
+
+    {
+        std::vector<int> b = a.copy_to_stdvec();
+        REQUIRE(b.size() == 2000);
+
+        for (int i = 0; i < 1000; i++) {
+            REQUIRE(b[i] == 77);
+        }
+    }
 }

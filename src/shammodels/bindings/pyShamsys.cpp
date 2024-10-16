@@ -86,7 +86,9 @@ Register_pymod(pysyslibinit) {
     m.def(
         "dump_profiling",
         [](std::string prefix) {
+#ifdef SHAMROCK_USE_PROFILING
             shambase::details::dump_profilings(prefix, shamcomm::world_rank());
+#endif
         },
         R"pbdoc(
         dump profiling data
@@ -95,7 +97,9 @@ Register_pymod(pysyslibinit) {
     m.def(
         "dump_profiling_chrome",
         [](std::string prefix) {
+#ifdef SHAMROCK_USE_PROFILING
             shambase::details::dump_profilings_chrome(prefix, shamcomm::world_rank());
+#endif
         },
         R"pbdoc(
         dump profiling data
@@ -104,7 +108,9 @@ Register_pymod(pysyslibinit) {
     m.def(
         "clear_profiling_data",
         []() {
+#ifdef SHAMROCK_USE_PROFILING
             shambase::details::clear_profiling_data();
+#endif
         },
         R"pbdoc(
         dump profiling data

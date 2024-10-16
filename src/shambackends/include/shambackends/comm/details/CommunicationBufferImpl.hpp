@@ -16,6 +16,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambackends/Device.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include <stdexcept>
 #include <variant>
@@ -53,75 +54,46 @@ namespace shamcomm {
 
             std::shared_ptr<sham::DeviceScheduler> dev_sched;
 
-            u8 *usm_ptr;
-            u64 bytelen;
-
-            void alloc_usm(u64 len);
-            void copy_to_usm(sycl::buffer<u8> &obj_ref, u64 len);
-            sycl::buffer<u8> build_from_usm(u64 len);
-
-            void copy_usm(u64 len, u8 *new_usm);
+            sham::DeviceBuffer<u8, sham::host> usm_buf;
 
             public:
             inline CommunicationBuffer(
                 u64 bytelen, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched) {
-                if (bytelen == 0) {
-                    throw shambase::make_except_with_loc<std::invalid_argument>(
-                        "can not create a buffer of size = 0");
-                }
-                this->bytelen = bytelen;
-                alloc_usm(bytelen);
-            }
+                : dev_sched(dev_sched), usm_buf(bytelen, dev_sched) {}
 
             inline CommunicationBuffer(
                 sycl::buffer<u8> &obj_ref, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched) {
-                bytelen = obj_ref.size();
-                alloc_usm(bytelen);
-                copy_to_usm(obj_ref, bytelen);
-            }
+                : dev_sched(dev_sched), usm_buf(obj_ref, dev_sched) {}
 
             inline CommunicationBuffer(
                 sycl::buffer<u8> &&moved_obj, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched) {
-                bytelen = moved_obj.size();
-                alloc_usm(bytelen);
-                copy_to_usm(moved_obj, bytelen);
-            }
+                : dev_sched(dev_sched), usm_buf(moved_obj, dev_sched) {}
 
-            inline ~CommunicationBuffer() { sycl::free(usm_ptr, dev_sched->get_queue().q); }
-
-            inline CommunicationBuffer(CommunicationBuffer &&other) noexcept
-                : usm_ptr(std::exchange(other.usm_ptr, nullptr)), bytelen(other.bytelen),
-                  dev_sched(other.dev_sched) {} // move constructor
-
-            inline CommunicationBuffer &operator=(CommunicationBuffer &&other) noexcept {
-                std::swap(usm_ptr, other.usm_ptr);
-                bytelen   = (other.bytelen);
-                dev_sched = other.dev_sched;
-
-                return *this;
-            } // move assignment
+            inline CommunicationBuffer(
+                sham::DeviceBuffer<u8, sham::host> &&moved_obj,
+                std::shared_ptr<sham::DeviceScheduler> dev_sched)
+                : dev_sched(dev_sched),
+                  usm_buf(std::forward<sham::DeviceBuffer<u8, sham::host>>(moved_obj)) {}
 
             inline std::unique_ptr<CommunicationBuffer> duplicate_to_ptr() {
                 std::unique_ptr<CommunicationBuffer> ret
-                    = std::make_unique<CommunicationBuffer>(bytelen, dev_sched);
-                copy_usm(bytelen, ret->usm_ptr);
+                    = std::make_unique<CommunicationBuffer>(usm_buf.copy(), dev_sched);
                 return ret;
             }
 
-            inline sycl::buffer<u8> copy_back() {
-                u64 len = bytelen;
+            inline sycl::buffer<u8> copy_back() { return usm_buf.copy_to_sycl_buffer(); }
 
-                return build_from_usm(len);
-            }
-
-            inline u64 get_bytesize() { return bytelen; }
+            inline u64 get_bytesize() { return usm_buf.get_bytesize(); }
 
             static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
 
-            u8 *get_ptr() { return usm_ptr; }
+            u8 *get_ptr() {
+                sham::EventList depends_list;
+                u8 *ptr = usm_buf.get_write_access(depends_list);
+                usm_buf.complete_event_state({});
+
+                return ptr;
+            }
         };
 
         template<>
@@ -129,75 +101,46 @@ namespace shamcomm {
 
             std::shared_ptr<sham::DeviceScheduler> dev_sched;
 
-            u8 *usm_ptr;
-            u64 bytelen;
-
-            void alloc_usm(u64 len);
-            void copy_to_usm(sycl::buffer<u8> &obj_ref, u64 len);
-            sycl::buffer<u8> build_from_usm(u64 len);
-
-            void copy_usm(u64 len, u8 *new_usm);
+            sham::DeviceBuffer<u8, sham::device> usm_buf;
 
             public:
             inline CommunicationBuffer(
                 u64 bytelen, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched) {
-                if (bytelen == 0) {
-                    throw shambase::make_except_with_loc<std::invalid_argument>(
-                        "can not create a buffer of size = 0");
-                }
-                this->bytelen = bytelen;
-                alloc_usm(bytelen);
-            }
+                : dev_sched(dev_sched), usm_buf(bytelen, dev_sched) {}
 
             inline CommunicationBuffer(
                 sycl::buffer<u8> &obj_ref, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched) {
-                bytelen = obj_ref.size();
-                alloc_usm(bytelen);
-                copy_to_usm(obj_ref, bytelen);
-            }
+                : dev_sched(dev_sched), usm_buf(obj_ref, dev_sched) {}
 
             inline CommunicationBuffer(
                 sycl::buffer<u8> &&moved_obj, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched) {
-                bytelen = moved_obj.size();
-                alloc_usm(bytelen);
-                copy_to_usm(moved_obj, bytelen);
-            }
+                : dev_sched(dev_sched), usm_buf(moved_obj, dev_sched) {}
 
-            inline ~CommunicationBuffer() { sycl::free(usm_ptr, dev_sched->get_queue().q); }
-
-            inline CommunicationBuffer(CommunicationBuffer &&other) noexcept
-                : usm_ptr(std::exchange(other.usm_ptr, nullptr)), bytelen(other.bytelen),
-                  dev_sched(other.dev_sched) {} // move constructor
-
-            inline CommunicationBuffer &operator=(CommunicationBuffer &&other) noexcept {
-                std::swap(usm_ptr, other.usm_ptr);
-                bytelen   = (other.bytelen);
-                dev_sched = other.dev_sched;
-
-                return *this;
-            } // move assignment
+            inline CommunicationBuffer(
+                sham::DeviceBuffer<u8, sham::device> &&moved_obj,
+                std::shared_ptr<sham::DeviceScheduler> dev_sched)
+                : dev_sched(dev_sched),
+                  usm_buf(std::forward<sham::DeviceBuffer<u8, sham::device>>(moved_obj)) {}
 
             inline std::unique_ptr<CommunicationBuffer> duplicate_to_ptr() {
                 std::unique_ptr<CommunicationBuffer> ret
-                    = std::make_unique<CommunicationBuffer>(bytelen, dev_sched);
-                copy_usm(bytelen, ret->usm_ptr);
+                    = std::make_unique<CommunicationBuffer>(usm_buf.copy(), dev_sched);
                 return ret;
             }
 
-            inline sycl::buffer<u8> copy_back() {
-                u64 len = bytelen;
+            inline sycl::buffer<u8> copy_back() { return usm_buf.copy_to_sycl_buffer(); }
 
-                return build_from_usm(len);
-            }
-
-            inline u64 get_bytesize() { return bytelen; }
+            inline u64 get_bytesize() { return usm_buf.get_bytesize(); }
 
             static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
 
-            u8 *get_ptr() { return usm_ptr; }
+            u8 *get_ptr() {
+                sham::EventList depends_list;
+                u8 *ptr = usm_buf.get_write_access(depends_list);
+                usm_buf.complete_event_state({});
+
+                return ptr;
+            }
         };
     } // namespace details
 

@@ -63,6 +63,23 @@ namespace sham {
             : hold(details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())),
               size(sz) {}
 
+        DeviceBuffer(sycl::buffer<T> &syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
+            : DeviceBuffer(syclbuf.size(), dev_sched) {
+            sham::EventList depends_list;
+            T *ptr_dest = get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                sycl::accessor acc{syclbuf, cgh, sycl::read_only};
+
+                cgh.copy(acc, ptr_dest);
+            });
+
+            complete_event_state(e);
+        }
+
+        DeviceBuffer(sycl::buffer<T> &&syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
+            : DeviceBuffer(syclbuf, dev_sched) {}
+
         /**
          * @brief Construct a new Device Buffer object with a given USM pointer
          *
@@ -269,6 +286,30 @@ namespace sham {
 
             e.wait_and_throw();
             complete_event_state({});
+
+            return ret;
+        }
+
+        /**
+         * @brief Copy the content of the buffer to a new SYCL buffer
+         *
+         * This function creates a new SYCL buffer with the same size and content than the current
+         * one and returns it.
+         *
+         * @return The new SYCL buffer
+         */
+        [[nodiscard]] inline sycl::buffer<T> copy_to_sycl_buffer() {
+            sycl::buffer<T> ret(size);
+
+            sham::EventList depends_list;
+            const T *ptr = get_read_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                sycl::accessor acc(ret, cgh, sycl::write_only, sycl::no_init);
+                cgh.copy(ptr, acc);
+            });
+
+            complete_event_state(e);
 
             return ret;
         }

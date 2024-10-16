@@ -105,9 +105,9 @@ namespace sham {
          * from the other object to this object.
          */
         DeviceBuffer &operator=(DeviceBuffer &&other) noexcept {
-            hold        = std::move(other.hold);
-            size        = other.size;
-            events_hndl = std::move(other.events_hndl);
+            std::swap(hold, other.hold);
+            std::swap(events_hndl, other.events_hndl);
+            size = other.size;
             return *this;
         }
 
@@ -486,7 +486,8 @@ namespace sham {
                 new_buf.copy_from(*this, new_size);
 
                 // override old buffer
-                std::swap(new_buf, *this);
+                // std::swap(new_buf, *this);
+                *this = std::move(new_buf);
             } else {
                 size = new_size;
                 // no need to resize

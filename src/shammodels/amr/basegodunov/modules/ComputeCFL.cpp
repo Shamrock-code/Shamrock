@@ -91,8 +91,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
                 constexpr Tscal div = 1. / 3.;
 
-                Tscal cs = sound_speed(prim_state, gamma);
-                // Tscal cs    = 1;
+                Tscal cs    = sound_speed(prim_state, gamma);
                 Tscal vnorm = sycl::length(prim_state.vel);
                 Tscal dt    = C_safe * dx * div / (cs + vnorm);
 

@@ -75,8 +75,7 @@ namespace shammodels::basegodunov::modules {
 
                     link_iter.for_each_object_link_id(id_cell_a, [&](u32 id_cell_b, u32 link_id) {
                         acc_link_field[link_id * nvar + nvar_loc] = compute.get_link_field_val(
-                            id_cell_a * nvar + nvar_loc,
-                            id_cell_b * nvar + nvar_loc); // id_cell_a ==> link_id
+                            id_cell_a * nvar + nvar_loc, id_cell_b * nvar + nvar_loc);
                     });
                 });
         });

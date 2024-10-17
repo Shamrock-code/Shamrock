@@ -101,20 +101,16 @@ namespace shammath {
     template<class Tvec>
     inline constexpr DustConsState<Tvec> d_prim_to_cons(const DustPrimState<Tvec> d_prim) {
         DustConsState<Tvec> d_cons;
-        d_cons.rho       = d_prim.rho;
-        d_cons.rhovel[0] = (d_prim.vel[0] * d_prim.rho);
-        d_cons.rhovel[1] = (d_prim.vel[1] * d_prim.rho);
-        d_cons.rhovel[2] = (d_prim.vel[2] * d_prim.rho);
+        d_cons.rho    = d_prim.rho;
+        d_cons.rhovel = d_prim.vel * d_prim.rho;
         return d_cons;
     }
 
     template<class Tvec>
     inline constexpr DustPrimState<Tvec> d_cons_to_prim(const DustConsState<Tvec> d_cons) {
         DustPrimState<Tvec> d_prim;
-        d_prim.rho    = d_cons.rho;
-        d_prim.vel[0] = (d_cons.rhovel[0] * (1 / d_cons.rho));
-        d_prim.vel[1] = (d_cons.rhovel[1] * (1 / d_cons.rho));
-        d_prim.vel[2] = (d_cons.rhovel[2] * (1 / d_cons.rho));
+        d_prim.rho = d_cons.rho;
+        d_prim.vel = d_cons.rhovel * (1 / d_cons.rho);
         return d_prim;
     }
 
@@ -123,11 +119,8 @@ namespace shammath {
         DustConsState<Tvec> d_flux;
         const DustPrimState<Tvec> d_prim = d_cons_to_prim<Tvec>(d_cons);
         const typename DustConsState<Tvec>::Tscal x_vel{d_prim.vel[0]};
-        d_flux.rho       = d_cons.rhovel[0];
-        d_flux.rhovel[0] = d_prim.vel[0] * (d_cons.rho * x_vel);
-        d_flux.rhovel[1] = d_prim.vel[1] * (d_cons.rho * x_vel);
-        d_flux.rhovel[2] = d_prim.vel[2] * (d_cons.rho * x_vel);
-        return d_flux;
+        d_flux.rho    = d_cons.rhovel[0];
+        d_flux.rhovel = d_prim.vel * (d_cons.rho * x_vel) return d_flux;
     }
 
     template<class Tcons>
@@ -174,10 +167,8 @@ namespace shammath {
     template<class Tcons>
     inline constexpr Tcons d_invert_axis(const Tcons c) {
         Tcons d_cst;
-        d_cst.rho       = c.rho;
-        d_cst.rhovel[0] = -c.rhovel[0];
-        d_cst.rhovel[1] = -c.rhovel[1];
-        d_cst.rhovel[2] = -c.rhovel[2];
+        d_cst.rho    = c.rho;
+        d_cst.rhovel = -(c.rhovel);
         return d_cst;
     }
 

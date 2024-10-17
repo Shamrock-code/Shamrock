@@ -120,7 +120,8 @@ namespace shammath {
         const DustPrimState<Tvec> d_prim = d_cons_to_prim<Tvec>(d_cons);
         const typename DustConsState<Tvec>::Tscal x_vel{d_prim.vel[0]};
         d_flux.rho    = d_cons.rhovel[0];
-        d_flux.rhovel = d_prim.vel * (d_cons.rho * x_vel) return d_flux;
+        d_flux.rhovel = d_prim.vel * (d_cons.rho * x_vel);
+        return d_flux;
     }
 
     template<class Tcons>

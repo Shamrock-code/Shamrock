@@ -13,8 +13,8 @@
  *
  */
 
-#include "shambase/string.hpp"
 #include "shambase/profiling/chrome.hpp"
+#include "shambase/string.hpp"
 #include <fstream>
 
 namespace {

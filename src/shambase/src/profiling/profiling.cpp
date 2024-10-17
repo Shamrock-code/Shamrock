@@ -7,7 +7,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file chrome.cpp
+ * @file profiling.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *

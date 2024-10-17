@@ -9,7 +9,7 @@
 #pragma once
 
 /**
- * @file chrome.hpp
+ * @file profiling.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -23,14 +23,17 @@
 
 namespace shambase::profiling {
 
-
-
     void stack_entry_start(
-        const std::source_location &fileloc, f64 t_start, std::optional<std::string> name = std::nullopt, std::optional<std::string> category_name = std::nullopt);
+        const std::source_location &fileloc,
+        f64 t_start,
+        std::optional<std::string> name          = std::nullopt,
+        std::optional<std::string> category_name = std::nullopt);
 
     void stack_entry_end(
         const std::source_location &fileloc,
         f64 t_start,
-        f64 tend, std::optional<std::string> name = std::nullopt, std::optional<std::string> category_name = std::nullopt);
+        f64 tend,
+        std::optional<std::string> name          = std::nullopt,
+        std::optional<std::string> category_name = std::nullopt);
 
 } // namespace shambase::profiling

@@ -13,8 +13,8 @@
  *
  */
 
-#include "shambase/stacktrace.hpp"
 #include "shambase/profiling/chrome.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"

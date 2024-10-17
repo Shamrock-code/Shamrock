@@ -13,9 +13,9 @@
  *
  */
 
+#include "shambase/profiling/chrome.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
-#include "shambase/profiling/chrome.hpp"
 #include <sstream>
 #include <string>
 #include <vector>
@@ -189,7 +189,8 @@ namespace shambase::details {
     void register_profile_entry_start(std::source_location loc, f64 start_time) {
         add_entry_chrome(loc, start_time, true);
 
-        profiling::register_event_start(src_loc_to_name(loc), loc.function_name(), start_time, 0, 0);
+        profiling::register_event_start(
+            src_loc_to_name(loc), loc.function_name(), start_time, 0, 0);
     };
 
     void register_profile_entry(std::source_location loc, f64 start_time, f64 end_time) {

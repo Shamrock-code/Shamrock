@@ -19,7 +19,7 @@
 #include "shambase/aliases_int.hpp"
 #include <string>
 
-namespace shambase::profiling {
+namespace shambase::profiling::chrome {
 
     void register_event_start(
         const std::string &name, const std::string &category_name, f64 t_start, u64 pid, u64 tid);
@@ -39,4 +39,4 @@ namespace shambase::profiling {
 
     void register_counter_val(u64 pid, f64 t, const std::string &name, f64 val);
 
-} // namespace shambase::profiling
+} // namespace shambase::profiling::chrome

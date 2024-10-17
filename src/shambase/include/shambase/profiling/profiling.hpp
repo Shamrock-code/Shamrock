@@ -46,4 +46,6 @@ namespace shambase::profiling {
         std::optional<std::string> name          = std::nullopt,
         std::optional<std::string> category_name = std::nullopt);
 
+    void register_counter_val(const std::string &name, f64 time, f64 val);
+
 } // namespace shambase::profiling

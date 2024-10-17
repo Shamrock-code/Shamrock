@@ -32,6 +32,8 @@ std::string src_loc_to_name(const SourceLocation &loc) {
         loc.loc.column());
 }
 
+bool enable_nvtx        = false;
+bool enable_profiling   = false;
 bool use_complete_event = false;
 f64 threshold           = 1e-5;
 
@@ -41,10 +43,13 @@ void shambase::profiling::stack_entry_start(
     std::optional<std::string> name,
     std::optional<std::string> category_name) {
 
-    if (!use_complete_event) {
-        register_event_start(src_loc_to_name(fileloc), fileloc.loc.function_name(), t_start, 0, 0);
-    }
+    if (enable_profiling) {
 
+        if (!use_complete_event) {
+            chrome::register_event_start(
+                src_loc_to_name(fileloc), fileloc.loc.function_name(), t_start, 0, 0);
+        }
+    }
     stack_entry_start_no_time(fileloc, name, category_name);
 }
 
@@ -55,15 +60,17 @@ void shambase::profiling::stack_entry_end(
     std::optional<std::string> name,
     std::optional<std::string> category_name) {
 
-    if (use_complete_event) {
-        if (tend - t_start > threshold) {
-            register_event_complete(
-                src_loc_to_name(fileloc), fileloc.loc.function_name(), t_start, tend, 0, 0);
+    if (enable_profiling) {
+        if (use_complete_event) {
+            if (tend - t_start > threshold) {
+                chrome::register_event_complete(
+                    src_loc_to_name(fileloc), fileloc.loc.function_name(), t_start, tend, 0, 0);
+            }
+        } else {
+            chrome::register_event_end(
+                src_loc_to_name(fileloc), fileloc.loc.function_name(), tend, 0, 0);
         }
-    } else {
-        register_event_end(src_loc_to_name(fileloc), fileloc.loc.function_name(), tend, 0, 0);
     }
-
     stack_entry_end_no_time(fileloc, name, category_name);
 }
 
@@ -72,10 +79,12 @@ void shambase::profiling::stack_entry_start_no_time(
     std::optional<std::string> name,
     std::optional<std::string> category_name) {
 
+    if (enable_profiling && enable_nvtx) {
 #ifdef SHAMROCK_USE_NVTX
-    // Push a NVTX range
-    nvtxRangePush(fileloc.loc.function_name());
+        // Push a NVTX range
+        nvtxRangePush(fileloc.loc.function_name());
 #endif
+    }
 }
 
 void shambase::profiling::stack_entry_end_no_time(
@@ -83,8 +92,17 @@ void shambase::profiling::stack_entry_end_no_time(
     std::optional<std::string> name,
     std::optional<std::string> category_name) {
 
+    if (enable_profiling && enable_nvtx) {
 #ifdef SHAMROCK_USE_NVTX
-    // Pop the NVTX range
-    nvtxRangePop();
+        // Pop the NVTX range
+        nvtxRangePop();
 #endif
+    }
+}
+
+void shambase::profiling::register_counter_val(const std::string &name, f64 time, f64 val) {
+
+    if (enable_profiling) {
+        chrome::register_counter_val(0, time, name, val);
+    }
 }

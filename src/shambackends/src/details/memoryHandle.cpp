@@ -28,55 +28,41 @@ namespace {
     void register_alloc_device(size_t size) {
         allocated_byte_device += size;
         shambase::profiling::register_counter_val(
-            shamcomm::world_rank(),
-            shambase::details::get_wtime(),
-            "Device Memory",
-            allocated_byte_device);
+            "Device Memory", shambase::details::get_wtime(), allocated_byte_device);
     }
 
     void register_alloc_shared(size_t size) {
         allocated_byte_shared += size;
         shambase::profiling::register_counter_val(
-            shamcomm::world_rank(),
-            shambase::details::get_wtime(),
-            "Shared Memory",
-            allocated_byte_shared);
+
+            "Shared Memory", shambase::details::get_wtime(), allocated_byte_shared);
     }
 
     void register_alloc_host(size_t size) {
         allocated_byte_host += size;
         shambase::profiling::register_counter_val(
-            shamcomm::world_rank(),
-            shambase::details::get_wtime(),
-            "Host Memory",
-            allocated_byte_host);
+            "Host Memory", shambase::details::get_wtime(), allocated_byte_host);
     }
 
     void register_free_device(size_t size) {
         allocated_byte_device -= size;
         shambase::profiling::register_counter_val(
-            shamcomm::world_rank(),
-            shambase::details::get_wtime(),
-            "Device Memory",
-            allocated_byte_device);
+
+            "Device Memory", shambase::details::get_wtime(), allocated_byte_device);
     }
 
     void register_free_shared(size_t size) {
         allocated_byte_shared -= size;
         shambase::profiling::register_counter_val(
-            shamcomm::world_rank(),
-            shambase::details::get_wtime(),
-            "Shared Memory",
-            allocated_byte_shared);
+
+            "Shared Memory", shambase::details::get_wtime(), allocated_byte_shared);
     }
 
     void register_free_host(size_t size) {
         allocated_byte_host -= size;
         shambase::profiling::register_counter_val(
-            shamcomm::world_rank(),
-            shambase::details::get_wtime(),
-            "Host Memory",
-            allocated_byte_host);
+
+            "Host Memory", shambase::details::get_wtime(), allocated_byte_host);
     }
 
 } // namespace

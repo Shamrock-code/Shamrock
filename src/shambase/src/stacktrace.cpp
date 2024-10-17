@@ -15,6 +15,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
+#include "shambase/tracing/chrome.hpp"
 #include <sstream>
 #include <string>
 #include <vector>
@@ -180,8 +181,15 @@ namespace shambase::details {
         return global_timer.elasped_sec();
     }
 
+    std::string src_loc_to_name(std::source_location loc) {
+        return fmt::format(
+            "{} ({}:{}:{})", loc.function_name(), loc.file_name(), loc.line(), loc.column());
+    }
+
     void register_profile_entry_start(std::source_location loc, f64 start_time) {
         add_entry_chrome(loc, start_time, true);
+
+        tracing::register_event_start(src_loc_to_name(loc), loc.function_name(), start_time, 0, 0);
     };
 
     void register_profile_entry(std::source_location loc, f64 start_time, f64 end_time) {
@@ -189,6 +197,7 @@ namespace shambase::details {
         profile_data.push_back({start_time, end_time, loc.function_name()});
         // Add a Chrome tracing entry to the storage
         add_entry_chrome(loc, end_time, false);
+        tracing::register_event_end(src_loc_to_name(loc), loc.function_name(), end_time, 0, 0);
     };
 
     void clear_profiling_data() {

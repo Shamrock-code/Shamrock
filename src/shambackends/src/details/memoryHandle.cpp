@@ -13,9 +13,73 @@
  *
  */
 
+#include "shambase/stacktrace.hpp"
+#include "shambase/tracing/chrome.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include <shambackends/details/memoryHandle.hpp>
+
+namespace {
+    size_t allocated_byte_device = 0;
+    size_t allocated_byte_shared = 0;
+    size_t allocated_byte_host   = 0;
+
+    void register_alloc_device(size_t size) {
+        allocated_byte_device += size;
+        shambase::tracing::register_counter_val(
+            shamcomm::world_rank(),
+            shambase::details::get_wtime(),
+            "Device Memory",
+            allocated_byte_device);
+    }
+
+    void register_alloc_shared(size_t size) {
+        allocated_byte_shared += size;
+        shambase::tracing::register_counter_val(
+            shamcomm::world_rank(),
+            shambase::details::get_wtime(),
+            "Shared Memory",
+            allocated_byte_shared);
+    }
+
+    void register_alloc_host(size_t size) {
+        allocated_byte_host += size;
+        shambase::tracing::register_counter_val(
+            shamcomm::world_rank(),
+            shambase::details::get_wtime(),
+            "Host Memory",
+            allocated_byte_host);
+    }
+
+    void register_free_device(size_t size) {
+        allocated_byte_device -= size;
+        shambase::tracing::register_counter_val(
+            shamcomm::world_rank(),
+            shambase::details::get_wtime(),
+            "Device Memory",
+            allocated_byte_device);
+    }
+
+    void register_free_shared(size_t size) {
+        allocated_byte_shared -= size;
+        shambase::tracing::register_counter_val(
+            shamcomm::world_rank(),
+            shambase::details::get_wtime(),
+            "Shared Memory",
+            allocated_byte_shared);
+    }
+
+    void register_free_host(size_t size) {
+        allocated_byte_host -= size;
+        shambase::tracing::register_counter_val(
+            shamcomm::world_rank(),
+            shambase::details::get_wtime(),
+            "Host Memory",
+            allocated_byte_host);
+    }
+
+} // namespace
 
 namespace sham::details {
 
@@ -41,6 +105,8 @@ namespace sham::details {
     USMPtrHolder<target> create_usm_ptr(
         u32 size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment) {
 
+        StackEntry __st{};
+
         shamcomm::logs::debug_alloc_ln(
             "memoryHandle",
             "create usm pointer size :",
@@ -49,6 +115,14 @@ namespace sham::details {
             get_mode_name<target>());
 
         auto ret = USMPtrHolder<target>::create(size, dev_sched, alignment);
+
+        if constexpr (target == device) {
+            register_alloc_device(size);
+        } else if constexpr (target == shared) {
+            register_alloc_shared(size);
+        } else if constexpr (target == host) {
+            register_alloc_host(size);
+        }
 
         if (alignment) {
 
@@ -77,6 +151,8 @@ namespace sham::details {
     void
     release_usm_ptr(USMPtrHolder<target> &&usm_ptr_hold, details::BufferEventHandler &&events) {
 
+        StackEntry __st{};
+
         shamcomm::logs::debug_alloc_ln(
             "memoryHandle",
             "release usm pointer size :",
@@ -89,6 +165,14 @@ namespace sham::details {
         events.wait_all();
         shamcomm::logs::debug_alloc_ln("memoryHandle", "done, freeing memory");
         usm_ptr_hold.free_ptr();
+
+        if constexpr (target == device) {
+            register_free_device(usm_ptr_hold.get_bytesize());
+        } else if constexpr (target == shared) {
+            register_free_shared(usm_ptr_hold.get_bytesize());
+        } else if constexpr (target == host) {
+            register_free_host(usm_ptr_hold.get_bytesize());
+        }
     }
 
     template USMPtrHolder<device> create_usm_ptr<device>(

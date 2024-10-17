@@ -14,6 +14,7 @@
  * @brief
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shambackends/DeviceContext.hpp"
 
 namespace sham {
@@ -23,6 +24,7 @@ namespace sham {
         void apply_dependancy(sycl::handler &h) { h.depends_on(events); }
 
         void wait() {
+            StackEntry __s{};
             for (auto &e : events) {
                 e.wait();
             }
@@ -30,6 +32,7 @@ namespace sham {
         }
 
         void wait_and_throw() {
+            StackEntry __s{};
             for (auto &e : events) {
                 e.wait_and_throw();
             }

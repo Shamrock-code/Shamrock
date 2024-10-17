@@ -14,7 +14,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
-#include "shambase/tracing/chrome.hpp"
+#include "shambase/profiling/chrome.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -27,7 +27,7 @@ namespace {
 
     void register_alloc_device(size_t size) {
         allocated_byte_device += size;
-        shambase::tracing::register_counter_val(
+        shambase::profiling::register_counter_val(
             shamcomm::world_rank(),
             shambase::details::get_wtime(),
             "Device Memory",
@@ -36,7 +36,7 @@ namespace {
 
     void register_alloc_shared(size_t size) {
         allocated_byte_shared += size;
-        shambase::tracing::register_counter_val(
+        shambase::profiling::register_counter_val(
             shamcomm::world_rank(),
             shambase::details::get_wtime(),
             "Shared Memory",
@@ -45,7 +45,7 @@ namespace {
 
     void register_alloc_host(size_t size) {
         allocated_byte_host += size;
-        shambase::tracing::register_counter_val(
+        shambase::profiling::register_counter_val(
             shamcomm::world_rank(),
             shambase::details::get_wtime(),
             "Host Memory",
@@ -54,7 +54,7 @@ namespace {
 
     void register_free_device(size_t size) {
         allocated_byte_device -= size;
-        shambase::tracing::register_counter_val(
+        shambase::profiling::register_counter_val(
             shamcomm::world_rank(),
             shambase::details::get_wtime(),
             "Device Memory",
@@ -63,7 +63,7 @@ namespace {
 
     void register_free_shared(size_t size) {
         allocated_byte_shared -= size;
-        shambase::tracing::register_counter_val(
+        shambase::profiling::register_counter_val(
             shamcomm::world_rank(),
             shambase::details::get_wtime(),
             "Shared Memory",
@@ -72,7 +72,7 @@ namespace {
 
     void register_free_host(size_t size) {
         allocated_byte_host -= size;
-        shambase::tracing::register_counter_val(
+        shambase::profiling::register_counter_val(
             shamcomm::world_rank(),
             shambase::details::get_wtime(),
             "Host Memory",

@@ -14,7 +14,7 @@
  */
 
 #include "shambase/string.hpp"
-#include "shambase/tracing/chrome.hpp"
+#include "shambase/profiling/chrome.hpp"
 #include <fstream>
 
 namespace {
@@ -58,7 +58,7 @@ namespace {
 
 } // namespace
 
-void shambase::tracing::register_event_start(
+void shambase::profiling::register_event_start(
     const std::string &name, const std::string &display_name, f64 t_start, u64 pid, u64 tid) {
     register_event(shambase::format(
         "{{\"name\": \"{}\", \"cat\": \"{}\", \"ph\": \"B\", \"ts\": {}, \"pid\": {}, \"tid\": "
@@ -70,7 +70,7 @@ void shambase::tracing::register_event_start(
         tid));
 }
 
-void shambase::tracing::register_event_end(
+void shambase::profiling::register_event_end(
     const std::string &name, const std::string &display_name, f64 tend, u64 pid, u64 tid) {
     register_event(shambase::format(
         "{{\"name\": \"{}\", \"cat\": \"{}\", \"ph\": \"E\", \"ts\": {}, \"pid\": {}, \"tid\": "
@@ -82,11 +82,11 @@ void shambase::tracing::register_event_end(
         tid));
 }
 
-void shambase::tracing::register_metadata_thread_name(u64 pid, u64 tid, const std::string &name) {
+void shambase::profiling::register_metadata_thread_name(u64 pid, u64 tid, const std::string &name) {
     register_event("");
 }
 
-void shambase::tracing::register_counter_val(u64 pid, f64 t, const std::string &name, f64 val) {
+void shambase::profiling::register_counter_val(u64 pid, f64 t, const std::string &name, f64 val) {
     // { "pid": 0, "ph": "C", "ts":  0, "args": {"GPU mem usage":  0}},
     register_event(shambase::format(
         "{{ \"pid\": {}, \"ph\": \"C\", \"ts\":  {}, \"args\": {{\"{}\": {} }} }},",

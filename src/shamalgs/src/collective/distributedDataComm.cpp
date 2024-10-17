@@ -113,7 +113,7 @@ namespace shamalgs::collective {
                 send_payoad.push_back(
                     {key.second,
                      std::make_unique<shamcomm::CommunicationBuffer>(
-                         get_check_ref(buf), *dev_sched)});
+                         get_check_ref(buf), dev_sched)});
             }
         }
 

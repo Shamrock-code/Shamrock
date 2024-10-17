@@ -6,6 +6,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamalgs/details/reduction/reduction.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -65,6 +66,56 @@ TestStart(Unittest, "shambackends/DeviceBuffer:smalltaskgraph", DeviceBuffer_sma
     fill(q, b, 33);
 
     add(q, a, b, c);
+}
+
+TestStart(Unittest, "shambackends/DeviceBuffer:copy_to_stdvec", devbuf_testcopy_to_stdvec, 1) {
+    using T = int;
+
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    // mock a vector
+    std::vector<T> v1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    sham::DeviceBuffer<T> b(v1.size(), dev_sched);
+    b.copy_from_stdvec(v1);
+
+    std::vector<T> v2 = b.copy_to_stdvec();
+
+    _AssertEqual(b.get_size(), v1.size());
+    _AssertEqual(v2.size(), v1.size());
+    for (size_t i = 0; i < b.get_size(); ++i) {
+        _AssertEqual(v2[i], v1[i]);
+    }
+}
+
+TestStart(
+    Unittest, "shambackends/DeviceBuffer:copy_to_sycl_buffer", devbuf_testcopy_to_sycl_buffer, 1) {
+    using T = int;
+
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    sycl::queue &q = dev_sched->get_queue().q;
+
+    // mock a sycl buffer
+    sycl::buffer<T> b1(10);
+    {
+        sycl::host_accessor acc(b1, sycl::write_only, sycl::no_init);
+        for (size_t i = 0; i < 10; ++i) {
+            acc[i] = i;
+        }
+    }
+
+    sham::DeviceBuffer<T> b(10, dev_sched);
+    b.copy_from_sycl_buffer(b1);
+
+    sycl::buffer<T> b2 = b.copy_to_sycl_buffer();
+
+    _AssertEqual(b1.get_count(), b2.get_count());
+    _AssertEqual(b.get_size(), b1.get_count());
+
+    shamalgs::reduction::equals(q, b1, b2);
 }
 
 TestStart(Unittest, "shambackends/DeviceBuffer:fill", DeviceBuffer_fill1, 1) {

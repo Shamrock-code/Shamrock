@@ -48,13 +48,15 @@ TestStart(
     sycl::buffer<u8> buf_comp = shamalgs::random::mock_buffer<u8>(0x111, nbytes);
 
     {
-        shamcomm::CommunicationBuffer cbuf{buf_comp, shamsys::instance::get_compute_scheduler()};
+        shamcomm::CommunicationBuffer cbuf{
+            buf_comp, shamsys::instance::get_compute_scheduler_ptr()};
         sycl::buffer<u8> ret = cbuf.copy_back();
         check_buf("copy to host mode", buf_comp, ret);
     }
 
     {
-        shamcomm::CommunicationBuffer cbuf{buf_comp, shamsys::instance::get_compute_scheduler()};
+        shamcomm::CommunicationBuffer cbuf{
+            buf_comp, shamsys::instance::get_compute_scheduler_ptr()};
         sycl::buffer<u8> ret = cbuf.copy_back();
         check_buf("copy to host mode", buf_comp, ret);
     }
@@ -67,12 +69,13 @@ TestStart(
     sycl::buffer<u8> buf_comp = shamalgs::random::mock_buffer<u8>(0x111, nbytes);
 
     if (shamcomm::world_rank() == 0) {
-        shamcomm::CommunicationBuffer cbuf{buf_comp, shamsys::instance::get_compute_scheduler()};
+        shamcomm::CommunicationBuffer cbuf{
+            buf_comp, shamsys::instance::get_compute_scheduler_ptr()};
         MPI_Send(cbuf.get_ptr(), nbytes, MPI_BYTE, 1, 0, MPI_COMM_WORLD);
     }
 
     if (shamcomm::world_rank() == 1) {
-        shamcomm::CommunicationBuffer cbuf{nbytes, shamsys::instance::get_compute_scheduler()};
+        shamcomm::CommunicationBuffer cbuf{nbytes, shamsys::instance::get_compute_scheduler_ptr()};
         MPI_Recv(cbuf.get_ptr(), nbytes, MPI_BYTE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         sycl::buffer<u8> ret = cbuf.copy_back();

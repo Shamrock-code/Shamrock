@@ -90,6 +90,7 @@ namespace shamcomm {
             u8 *get_ptr() {
                 sham::EventList depends_list;
                 u8 *ptr = usm_buf.get_write_access(depends_list);
+                depends_list.wait_and_throw();
                 usm_buf.complete_event_state({});
 
                 return ptr;
@@ -137,6 +138,7 @@ namespace shamcomm {
             u8 *get_ptr() {
                 sham::EventList depends_list;
                 u8 *ptr = usm_buf.get_write_access(depends_list);
+                depends_list.wait_and_throw();
                 usm_buf.complete_event_state({});
 
                 return ptr;

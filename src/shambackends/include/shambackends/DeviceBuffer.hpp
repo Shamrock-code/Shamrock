@@ -65,16 +65,7 @@ namespace sham {
 
         DeviceBuffer(sycl::buffer<T> &syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
             : DeviceBuffer(syclbuf.size(), dev_sched) {
-            sham::EventList depends_list;
-            T *ptr_dest = get_write_access(depends_list);
-
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                sycl::accessor acc{syclbuf, cgh, sycl::read_only};
-
-                cgh.copy(acc, ptr_dest);
-            });
-
-            complete_event_state(e);
+            copy_from_sycl_buffer(syclbuf);
         }
 
         DeviceBuffer(sycl::buffer<T> &&syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
@@ -291,6 +282,34 @@ namespace sham {
         }
 
         /**
+         * @brief Copy the content of a std::vector into the buffer
+         *
+         * This function copies the content of a given std::vector into the buffer.
+         * The size of the vector must be equal to the size of the buffer.
+         *
+         * @param vec The std::vector to copy from
+         */
+        inline void copy_from_stdvec(const std::vector<T> &vec) {
+
+            if (size != vec.size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_from_stdvec: size mismatch\n  size = {},\n  vec.size() = {}",
+                    size,
+                    vec.size()));
+            }
+
+            sham::EventList depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(vec.data(), ptr, size);
+            });
+
+            e.wait_and_throw();
+            complete_event_state({});
+        }
+
+        /**
          * @brief Copy the content of the buffer to a new SYCL buffer
          *
          * This function creates a new SYCL buffer with the same size and content than the current
@@ -312,6 +331,34 @@ namespace sham {
             complete_event_state(e);
 
             return ret;
+        }
+
+        /**
+         * @brief Copy the content of a SYCL buffer into the buffer
+         *
+         * This function copies the content of a given SYCL buffer into the buffer.
+         * The size of the SYCL buffer must be equal to the size of the buffer.
+         *
+         * @param buf The SYCL buffer to copy from
+         */
+        [[nodiscard]] inline void copy_from_sycl_buffer(sycl::buffer<T> &buf) {
+
+            if (size != buf.get_count()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_from_sycl_buffer: size mismatch\n  size = {},\n  buf.get_count() = {}",
+                    size,
+                    buf.get_count()));
+            }
+
+            sham::EventList depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                sycl::accessor acc(buf, cgh, sycl::read_only);
+                cgh.copy(acc, ptr);
+            });
+
+            complete_event_state(e);
         }
 
         /**

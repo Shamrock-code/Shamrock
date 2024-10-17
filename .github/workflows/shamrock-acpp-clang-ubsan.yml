@@ -17,12 +17,10 @@ jobs:
     container:
       image: ${{ matrix.container }}
 
-    if: false
-
     strategy:
       matrix:
         include:
-          - clang: 15
+          - clang: 17
             cuda: 11.0.2
             rocm: 5.4.3
             container: ghcr.io/shamrock-code/ci-ubuntu20:main

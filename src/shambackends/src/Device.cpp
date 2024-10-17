@@ -43,6 +43,9 @@ namespace sham {
         if (shambase::contain_substr(pname, "AMD")) {
             return Backend::ROCM;
         }
+        if (shambase::contain_substr(pname, "HIP")) {
+            return Backend::ROCM; // AMD ROCm
+        }
         if (shambase::contain_substr(pname, "OpenMP")) {
             return Backend::OPENMP; // OpenMP
         }

@@ -22,10 +22,18 @@
 namespace shambase::profiling {
 
     void register_event_start(
-        const std::string &name, const std::string &display_name, f64 t_start, u64 pid, u64 tid);
+        const std::string &name, const std::string &category_name, f64 t_start, u64 pid, u64 tid);
 
     void register_event_end(
-        const std::string &name, const std::string &display_name, f64 tend, u64 pid, u64 tid);
+        const std::string &name, const std::string &category_name, f64 tend, u64 pid, u64 tid);
+
+    void register_event_complete(
+        const std::string &name,
+        const std::string &category_name,
+        f64 t_start,
+        f64 tend,
+        u64 pid,
+        u64 tid);
 
     void register_metadata_thread_name(u64 pid, u64 tid, const std::string &name);
 

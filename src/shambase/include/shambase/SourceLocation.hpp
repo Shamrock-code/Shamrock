@@ -39,7 +39,7 @@ struct SourceLocation {
      *
      * @return std::string the formated location
      */
-    std::string format_multiline();
+    std::string format_multiline() const;
 
     /**
      * @brief format the location in multiple lines with a given stacktrace
@@ -47,19 +47,19 @@ struct SourceLocation {
      * @param stacktrace the stacktrace to add to the location
      * @return std::string the formated location
      */
-    std::string format_multiline(std::string stacktrace);
+    std::string format_multiline(std::string stacktrace) const;
 
     /**
      * @brief format the location in a one liner
      *
      * @return std::string the formated location
      */
-    std::string format_one_line();
+    std::string format_one_line() const;
 
     /**
      * @brief format the location in a one liner with the function name displayed
      *
      * @return std::string the formated location
      */
-    std::string format_one_line_func();
+    std::string format_one_line_func() const;
 };

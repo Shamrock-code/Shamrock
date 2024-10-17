@@ -23,6 +23,10 @@
 #include "shamcomm/logs.hpp"
 #include <stdexcept>
 
+#ifdef SHAMROCK_USE_NVTX
+    #include <nvtx3/nvtx3.hpp>
+#endif
+
 namespace shambase {
 
     /**

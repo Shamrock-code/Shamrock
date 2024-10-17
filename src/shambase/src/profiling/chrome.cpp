@@ -59,25 +59,47 @@ namespace {
 } // namespace
 
 void shambase::profiling::register_event_start(
-    const std::string &name, const std::string &display_name, f64 t_start, u64 pid, u64 tid) {
+    const std::string &name, const std::string &category_name, f64 t_start, u64 pid, u64 tid) {
+
     register_event(shambase::format(
         "{{\"name\": \"{}\", \"cat\": \"{}\", \"ph\": \"B\", \"ts\": {}, \"pid\": {}, \"tid\": "
         "{}}},\n",
         name,
-        display_name,
+        category_name,
         to_prof_time(t_start),
         pid,
         tid));
 }
 
 void shambase::profiling::register_event_end(
-    const std::string &name, const std::string &display_name, f64 tend, u64 pid, u64 tid) {
+    const std::string &name, const std::string &category_name, f64 tend, u64 pid, u64 tid) {
+
     register_event(shambase::format(
         "{{\"name\": \"{}\", \"cat\": \"{}\", \"ph\": \"E\", \"ts\": {}, \"pid\": {}, \"tid\": "
         "{}}},\n",
         name,
-        display_name,
+        category_name,
         to_prof_time(tend),
+        pid,
+        tid));
+}
+
+void shambase::profiling::register_event_complete(
+    const std::string &name,
+    const std::string &category_name,
+    f64 t_start,
+    f64 tend,
+    u64 pid,
+    u64 tid) {
+
+    register_event(shambase::format(
+        "{{\"name\": \"{}\", \"cat\": \"{}\", \"ph\": \"X\", \"ts\": {}, \"dur\": {}, \"pid\": {}, "
+        "\"tid\": "
+        "{}}},\n",
+        name,
+        category_name,
+        to_prof_time(t_start),
+        to_prof_time(tend - t_start),
         pid,
         tid));
 }

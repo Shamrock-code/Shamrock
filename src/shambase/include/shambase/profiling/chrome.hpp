@@ -22,6 +22,7 @@
 namespace shambase::profiling::chrome {
 
     void set_chrome_pid(u32 pid);
+    void set_time_offset(f64 offset);
 
     void register_event_start(
         const std::string &name, const std::string &category_name, f64 t_start, u64 pid, u64 tid);

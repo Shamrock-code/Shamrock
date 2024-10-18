@@ -22,11 +22,16 @@
 
 u32 chrome_pid = u32_max;
 
+f64 time_offset = 0.0;
+
+void shambase::profiling::chrome::set_time_offset(f64 offset) { time_offset = offset; }
+
 void shambase::profiling::chrome::set_chrome_pid(u32 pid) { chrome_pid = pid; }
 
 namespace {
 
-    f64 to_prof_time(f64 in) { return in * 1e6; };
+    f64 to_prof_time(f64 in) { return (in - time_offset) * 1e6; };
+    f64 to_prof_delta(f64 in) { return (in) * 1e6; };
 
     struct ChromeEvent {
 
@@ -87,7 +92,7 @@ namespace {
                     name,
                     category_name,
                     to_prof_time(t_start),
-                    to_prof_time(tend - t_start),
+                    to_prof_delta(tend - t_start),
                     pid,
                     tid);
             }

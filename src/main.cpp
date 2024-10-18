@@ -70,6 +70,7 @@ int main(int argc, char *argv[]) {
         shamcmdopt::register_env_var_doc(
             "SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
+        shamcmdopt::register_env_var_doc("SHAM_PROF_PREFIX", "Prefix of shamrock profile outputs");
         shamcmdopt::register_env_var_doc("SHAM_PROF_USE_NVTX", "Enable NVTX profiling");
         shamcmdopt::register_env_var_doc("SHAM_PROFILING", "Enable Shamrock profiling");
         shamcmdopt::register_env_var_doc(

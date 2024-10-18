@@ -12,9 +12,10 @@
  * @brief
  */
 
-#include "shamcomm/worldInfo.hpp"
+#include "shambase/profiling/chrome.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
+#include "shamcomm/worldInfo.hpp"
 
 namespace shamcomm {
 
@@ -30,6 +31,8 @@ namespace shamcomm {
 
         MPICHECK(MPI_Comm_size(MPI_COMM_WORLD, &_world_size));
         MPICHECK(MPI_Comm_rank(MPI_COMM_WORLD, &_world_rank));
+
+        shambase::profiling::chrome::set_chrome_pid(world_rank());
     }
 
 } // namespace shamcomm

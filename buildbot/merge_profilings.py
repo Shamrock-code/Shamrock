@@ -5,34 +5,20 @@ import sys
 print_buildbot_info("mrege profiling files")
 
 
-outfile = sys.argv[-1]
-flist = sys.argv[1:-1]
-
-str_lst = []
-
-for f in flist:
-
-    print(f)
-    str_f = ""
-
-    fl = open(f,'r')
-    str_f = fl.read()
-    fl.close()
-
-    if(str_f.endswith(",")):
-        str_f = str_f[:-1] + "]"
-
-    if(str_f.endswith("}")):
-        str_f = str_f + "]"
-
-    str_lst.append(str_f)
+flist = sys.argv[1:]
 
 
+with open("merged_profile.json",'w') as outf :
+    outf.write("[\n")
+    for f in flist:
 
-sumator = []
+        print(f)
+        str_f = "[\n"
 
-for st in str_lst:
-    sumator += json.loads(st)
+        fl = open(f,'r')
+        str_f = fl.read()
+        fl.close()
 
-with open(outfile,'w') as outf :
-    json.dump(sumator, outf)
+        outf.write(str_f)
+
+    outf.write("]\n")

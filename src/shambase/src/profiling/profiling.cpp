@@ -32,10 +32,54 @@ std::string src_loc_to_name(const SourceLocation &loc) {
         loc.loc.column());
 }
 
-bool enable_nvtx        = false;
-bool enable_profiling   = false;
-bool use_complete_event = false;
-f64 threshold           = 1e-5;
+auto get_nvtx = []() {
+    const char *val = std::getenv("SHAM_PROF_USE_NVTX");
+    if (val != nullptr) {
+        if (std::string(val) == "1") {
+            return true;
+        } else if (std::string(val) == "0") {
+            return false;
+        }
+    }
+    return false;
+};
+
+auto get_profiling = []() {
+    const char *val = std::getenv("SHAM_PROFILING");
+    if (val != nullptr) {
+        if (std::string(val) == "1") {
+            return true;
+        } else if (std::string(val) == "0") {
+            return false;
+        }
+    }
+    return false;
+};
+
+auto get_complete_event = []() {
+    const char *val = std::getenv("SHAM_PROF_USE_COMPLETE_EVENT");
+    if (val != nullptr) {
+        if (std::string(val) == "1") {
+            return true;
+        } else if (std::string(val) == "0") {
+            return false;
+        }
+    }
+    return true;
+};
+
+auto get_threshold = []() {
+    const char *val = std::getenv("SHAM_PROF_EVENT_RECORD_THRES");
+    if (val != nullptr) {
+        return std::stod(val);
+    }
+    return 1e-5;
+};
+
+bool enable_nvtx        = get_nvtx();
+bool enable_profiling   = get_profiling();
+bool use_complete_event = get_complete_event();
+f64 threshold           = get_threshold();
 
 void shambase::profiling::set_enable_nvtx(bool enable) { enable_nvtx = enable; }
 void shambase::profiling::set_enable_profiling(bool enable) { enable_profiling = enable; }

@@ -47,6 +47,16 @@ int main(int argc, char *argv[]) {
     opts::register_env_var_doc("REF_FILES_PATH", "reference test files path");
     shamcmdopt::register_env_var_doc("SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
+    shamcmdopt::register_env_var_doc("SHAM_PROF_USE_NVTX", "Enable NVTX profiling");
+    shamcmdopt::register_env_var_doc("SHAM_PROFILING", "Enable Shamrock profiling");
+    shamcmdopt::register_env_var_doc(
+        "SHAM_PROF_USE_COMPLETE_EVENT",
+        "Use complete event instead of begin end for chrome tracing");
+    shamcmdopt::register_env_var_doc(
+        "SHAM_PROF_EVENT_RECORD_THRES", "Change the event recording threshold");
+    shamcmdopt::register_env_var_doc(
+        "SHAM_CHROME_TRACE_PREFIX", "Change the event recording threshold");
+
     opts::init(argc, argv);
     if (opts::is_help_mode()) {
         return 0;

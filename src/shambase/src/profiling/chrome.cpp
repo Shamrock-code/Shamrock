@@ -20,6 +20,8 @@
 
 namespace {
 
+    std::string prof_prefix = "shamrock_profile";
+
     f64 to_prof_time(f64 in) { return in * 1e6; };
 
     void write(std::string event) {

@@ -14,6 +14,7 @@
  */
 
 #include "shambase/profiling/chrome.hpp"
+#include "shambase/profiling/profiling.hpp"
 #include "shambase/string.hpp"
 #include <fstream>
 
@@ -39,6 +40,10 @@ namespace {
 
         write(event);
         return;
+
+        if (shambase::profiling::get_profile_pid() == u32_max) {
+            // do buffering since pid is not set yet
+        }
 
         // should write everyting on destructor call
         // like using a unique ptr to hold the buffer

@@ -180,11 +180,6 @@ namespace shambase::details {
         return global_timer.elasped_sec();
     }
 
-    std::string src_loc_to_name(std::source_location loc) {
-        return fmt::format(
-            "{} ({}:{}:{})", loc.function_name(), loc.file_name(), loc.line(), loc.column());
-    }
-
     void register_profile_entry_start(std::source_location loc, f64 start_time) {
         add_entry_chrome(loc, start_time, true);
     };

@@ -23,6 +23,14 @@
 
 namespace shambase::profiling {
 
+    void set_pid(u32 pid);
+    u32 get_profile_pid();
+
+    void set_enable_nvtx(bool enable_nvtx);
+    void set_enable_profiling(bool enable_profiling);
+    void set_use_complete_event(bool use_complete_event);
+    void set_event_record_threshold(f64 threshold);
+
     void stack_entry_start(
         const SourceLocation &fileloc,
         f64 t_start,

@@ -112,8 +112,8 @@ TestStart(
 
     sycl::buffer<T> b2 = b.copy_to_sycl_buffer();
 
-    _AssertEqual(b1.get_count(), b2.get_count());
-    _AssertEqual(b.get_size(), b1.get_count());
+    _AssertEqual(b1.size(), b2.size());
+    _AssertEqual(b.get_size(), b1.size());
 
     shamalgs::reduction::equals(q, b1, b2);
 }

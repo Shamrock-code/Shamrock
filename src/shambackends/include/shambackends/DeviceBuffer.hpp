@@ -341,13 +341,13 @@ namespace sham {
          *
          * @param buf The SYCL buffer to copy from
          */
-        [[nodiscard]] inline void copy_from_sycl_buffer(sycl::buffer<T> &buf) {
+        inline void copy_from_sycl_buffer(sycl::buffer<T> &buf) {
 
-            if (size != buf.get_count()) {
+            if (size != buf.size()) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "copy_from_sycl_buffer: size mismatch\n  size = {},\n  buf.get_count() = {}",
+                    "copy_from_sycl_buffer: size mismatch\n  size = {},\n  buf.size() = {}",
                     size,
-                    buf.get_count()));
+                    buf.size()));
             }
 
             sham::EventList depends_list;

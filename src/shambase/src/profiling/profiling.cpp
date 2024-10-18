@@ -32,14 +32,11 @@ std::string src_loc_to_name(const SourceLocation &loc) {
         loc.loc.column());
 }
 
-// will not dump until changed
-u32 pid                 = u32_max;
 bool enable_nvtx        = false;
 bool enable_profiling   = false;
 bool use_complete_event = false;
 f64 threshold           = 1e-5;
 
-void shambase::profiling::set_pid(u32 pid_) { pid = pid_; }
 void shambase::profiling::set_enable_nvtx(bool enable) { enable_nvtx = enable; }
 void shambase::profiling::set_enable_profiling(bool enable) { enable_profiling = enable; }
 void shambase::profiling::set_use_complete_event(bool enable) { use_complete_event = enable; }

@@ -2,7 +2,42 @@
 
 ## Shamrock custom profiling
 
-turned on by cmake : `SHAMROCK_USE_PROFILING=On`
+### Basics
+
+In Shamrock multiple tools are available to profile the code.
+In particular most of the tools are enabled by setting the cmake option `SHAMROCK_USE_PROFILING=On` (which is on by default).
+
+This enables the use of the following environment variables  :
+
+- `SHAM_PROFILING` : Enable Shamrock profiling
+- `SHAM_PROF_PREFIX` : Prefix of shamrock profile outputs
+- `SHAM_PROF_USE_NVTX` : Enable NVTX profiling
+- `SHAM_PROF_USE_COMPLETE_EVENT` :Use complete event instead of begin end for chrome tracing
+- `SHAM_PROF_EVENT_RECORD_THRES` : Change the event recording threshold
+
+For Shamrock compiled with profiling enabled you have many options availables.
+First of by default nothing appends and the profiling overhead should be low enough to be ignored. If you want Shamrock to generate profiling flag you should set the env variable `SHAM_PROFILING=1`. This enables the profiling dump to a file set by the env variable `SHAM_PROF_PREFIX`, which will be named as `${SHAM_PROF_PREFIX}.${MPI_WORLD_RANK}.json`.
+
+After Shamrock has finished its job you can use the script `merge_profilings.py` to merge all the traces into a single one by doing
+```bash
+python buildbot/merge_profilings.py ${SHAM_PROF_PREFIX}.*
+```
+This will create a file `merged_profile.json` that can be viewed using either `chrome://tracing/` or [Perfetto UI](https://ui.perfetto.dev/).
+
+### Options
+
+The behavior of the profiling can be controlled using a few options. First `SHAM_PROF_EVENT_RECORD_THRES` env variable can be used to set the threshold time for event to be registered ($10 \mu s$ by default), any event shorter than this threshold won't be recorded.
+Additionally setting it to `0` will record any event regardless of their duration.
+
+The option `SHAM_PROF_USE_COMPLETE_EVENT` controls wether completed event or `begin` `end` events will be used in the chrome tracing dump.
+
+Lastly the option `SHAM_PROF_USE_NVTX` will enable NVTX profiling in shamrock.
+
+!!! warning "NVTX profiling"
+
+    Be aware that both `SHAM_PROFILING` and `SHAM_PROF_USE_NVTX` must be set to `1` and that Shamrock must be compiled with the cmake option `SHAMROCK_USE_NVTX=On` for NVTX to work.
+
+### Adding profiling entries in the code
 
 In the code many function starts with
 
@@ -15,20 +50,6 @@ StackEntry stack_loc{false};
 ```
 
 This is used initially to trace the location in the code, allowing more precise error message, but also profiling !
-
-when the code is ran some files name `timings_*` will be created, they hold the flame graph tracing of the code.
-
-```bash
-python buildbot/merge_profilings.py timings_* merge_prof
-```
-
-This will merged the output of each files.
-
-Go on `https://ui.perfetto.dev/` and upload the `merge_prof` file you will see the actual trace of the code execution.
-
-## NVTX profiling
-
-Shamrock can also use NVTX based tooling, enabled by `SHAMROCK_USE_NVTX=On` in Cmake
 
 ## Nvidia profiling
 

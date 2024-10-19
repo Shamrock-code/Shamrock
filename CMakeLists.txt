@@ -174,7 +174,30 @@ if(SHAMROCK_WITH_MPI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
 endif()
 
+if(NOT DEFINED Python_EXECUTABLE)
+  if(DEFINED ENV{VIRTUAL_ENV})
+    find_program(
+      Python_EXECUTABLE python
+      PATHS "$ENV{VIRTUAL_ENV}" "$ENV{VIRTUAL_ENV}/bin"
+      NO_DEFAULT_PATH)
+  elseif(DEFINED ENV{CONDA_PREFIX})
+    find_program(
+      Python_EXECUTABLE python
+      PATHS "$ENV{CONDA_PREFIX}" "$ENV{CONDA_PREFIX}/bin"
+      NO_DEFAULT_PATH)
+  elseif(DEFINED ENV{pythonLocation})
+    find_program(
+      Python_EXECUTABLE python
+      PATHS "$ENV{pythonLocation}" "$ENV{pythonLocation}/bin"
+      NO_DEFAULT_PATH)
+  endif()
+  if(NOT Python_EXECUTABLE)
+    unset(Python_EXECUTABLE)
+  endif()
+endif()
+
 find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
+
 add_subdirectory(external)
 
 if("${BUILD_PYLIB}")

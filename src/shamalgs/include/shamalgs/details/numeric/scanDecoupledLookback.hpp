@@ -382,13 +382,12 @@ namespace shamalgs::numeric::details {
         return ret_buf;
     }
 
-
     template<class T, u32 group_size>
     class KernelExclusiveSumAtomicSyncDecoupled_v5_USM;
 
     template<class T, u32 group_size>
-    sham::DeviceBuffer<T>
-    exclusive_sum_atomic_decoupled_v5_usm(sham::DeviceScheduler_ptr dev_sched, sham::DeviceBuffer<T, sham::device> &buf1, u32 len) {
+    sham::DeviceBuffer<T> exclusive_sum_atomic_decoupled_v5_usm(
+        sham::DeviceScheduler_ptr dev_sched, sham::DeviceBuffer<T, sham::device> &buf1, u32 len) {
 
         u32 group_cnt = shambase::group_count(len, group_size);
 
@@ -396,7 +395,7 @@ namespace shamalgs::numeric::details {
         u32 corrected_len = group_cnt * group_size;
 
         // prepare the return buffer by shifting values for the exclusive sum
-        sham::DeviceBuffer<T> ret_buf(corrected_len,dev_sched);
+        sham::DeviceBuffer<T> ret_buf(corrected_len, dev_sched);
 
         // group aggregates
         sycl::buffer<typename ScanTile<T>::PackStorage> tile_state(group_cnt);
@@ -405,100 +404,103 @@ namespace shamalgs::numeric::details {
         constexpr T STATE_A = 1;
         constexpr T STATE_P = 2;
 
-        shamalgs::memory::buf_fill_discard(dev_sched->get_queue().q, tile_state, sham::pack32(STATE_X, T(0)));
+        shamalgs::memory::buf_fill_discard(
+            dev_sched->get_queue().q, tile_state, sham::pack32(STATE_X, T(0)));
 
         atomic::DynamicIdGenerator<i32, group_size> id_gen(dev_sched->get_queue().q);
 
         sham::EventList depends_list;
-        const T* in_ptr = buf1.get_read_access(depends_list);
-         T*out_ptr = ret_buf.get_write_access(depends_list);
+        const T *in_ptr = buf1.get_read_access(depends_list);
+        T *out_ptr      = ret_buf.get_write_access(depends_list);
 
-        sycl::event e = dev_sched->get_queue().submit(depends_list, [&, group_cnt, len, in_ptr,out_ptr](sycl::handler &cgh) {
-            auto dyn_id = id_gen.get_access(cgh);
+        sycl::event e = dev_sched->get_queue().submit(
+            depends_list, [&, group_cnt, len, in_ptr, out_ptr](sycl::handler &cgh) {
+                auto dyn_id = id_gen.get_access(cgh);
 
-            sycl::accessor acc_tile_state{tile_state, cgh, sycl::read_write};
+                sycl::accessor acc_tile_state{tile_state, cgh, sycl::read_write};
 
-            sycl::local_accessor<T, 1> local_scan_buf{1, cgh};
-            sycl::local_accessor<T, 1> local_sum{1, cgh};
+                sycl::local_accessor<T, 1> local_scan_buf{1, cgh};
+                sycl::local_accessor<T, 1> local_sum{1, cgh};
 
-            using atomic_ref_T = sycl::atomic_ref<
-                u64,
-                sycl::memory_order_relaxed,
-                sycl::memory_scope_device,
-                sycl::access::address_space::global_space>;
+                using atomic_ref_T = sycl::atomic_ref<
+                    u64,
+                    sycl::memory_order_relaxed,
+                    sycl::memory_scope_device,
+                    sycl::access::address_space::global_space>;
 
-            cgh.parallel_for<KernelExclusiveSumAtomicSyncDecoupled_v5_USM<T, group_size>>(
-                sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
-                    u32 local_id = id.get_local_id(0);
+                cgh.parallel_for<KernelExclusiveSumAtomicSyncDecoupled_v5_USM<T, group_size>>(
+                    sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
+                        u32 local_id = id.get_local_id(0);
 
-                    atomic::DynamicId<i32> group_id = dyn_id.compute_id(id);
+                        atomic::DynamicId<i32> group_id = dyn_id.compute_id(id);
 
-                    u32 group_tile_id = group_id.dyn_group_id;
-                    u32 global_id     = group_id.dyn_global_id;
-                    // u32 group_tile_id = id.get_group_linear_id();
-                    // u32 global_id = group_tile_id * group_size + local_id;
+                        u32 group_tile_id = group_id.dyn_group_id;
+                        u32 global_id     = group_id.dyn_global_id;
+                        // u32 group_tile_id = id.get_group_linear_id();
+                        // u32 global_id = group_tile_id * group_size + local_id;
 
-                    // load from global buffer
-                    T local_val = (global_id > 0 && global_id < len) ? in_ptr[global_id - 1] : 0;
+                        // load from global buffer
+                        T local_val
+                            = (global_id > 0 && global_id < len) ? in_ptr[global_id - 1] : 0;
 
-                    // local scan in the group
-                    // the local sum will be in local id `group_size - 1`
-                    T local_scan = sycl::inclusive_scan_over_group(
-                        id.get_group(), local_val, sycl::plus<T>{});
+                        // local scan in the group
+                        // the local sum will be in local id `group_size - 1`
+                        T local_scan = sycl::inclusive_scan_over_group(
+                            id.get_group(), local_val, sycl::plus<T>{});
 
-                    // can be removed if i change the index in the look back ?
-                    if (local_id == group_size - 1) {
-                        local_scan_buf[0] = local_scan;
-                    }
-
-                    // sync group
-                    id.barrier(sycl::access::fence_space::local_space);
-
-                    // DATA PARALLEL C++: MASTERING DPC++ ... device wide synchro
-                    if (local_id == 0) {
-
-                        atomic_ref_T tile_atomic(acc_tile_state[group_tile_id]);
-
-                        // load group sum
-                        T local_group_sum          = local_scan_buf[0];
-                        T accum                    = 0;
-                        u32 tile_ptr               = group_tile_id - 1;
-                        sycl::vec<T, 2> tile_state = {STATE_X, 0};
-
-                        // global scan using atomic counter
-
-                        if (group_tile_id != 0) {
-
-                            tile_atomic.store(sham::pack32(STATE_A, local_group_sum));
-
-                            while (tile_state.x() != STATE_P) {
-
-                                atomic_ref_T atomic_state(acc_tile_state[tile_ptr]);
-
-                                do {
-                                    tile_state = sham::unpack32(atomic_state.load());
-                                } while (tile_state.x() == STATE_X);
-
-                                accum += tile_state.y();
-
-                                tile_ptr--;
-                            }
+                        // can be removed if i change the index in the look back ?
+                        if (local_id == group_size - 1) {
+                            local_scan_buf[0] = local_scan;
                         }
 
-                        tile_atomic.store(sham::pack32(STATE_P, accum + local_group_sum));
+                        // sync group
+                        id.barrier(sycl::access::fence_space::local_space);
 
-                        local_sum[0] = accum;
-                    }
+                        // DATA PARALLEL C++: MASTERING DPC++ ... device wide synchro
+                        if (local_id == 0) {
 
-                    // sync
-                    id.barrier(sycl::access::fence_space::local_space);
+                            atomic_ref_T tile_atomic(acc_tile_state[group_tile_id]);
 
-                    // store final result
-                    if (global_id < len) {
-                        out_ptr[global_id] = local_scan + local_sum[0];
-                    }
-                });
-        });
+                            // load group sum
+                            T local_group_sum          = local_scan_buf[0];
+                            T accum                    = 0;
+                            u32 tile_ptr               = group_tile_id - 1;
+                            sycl::vec<T, 2> tile_state = {STATE_X, 0};
+
+                            // global scan using atomic counter
+
+                            if (group_tile_id != 0) {
+
+                                tile_atomic.store(sham::pack32(STATE_A, local_group_sum));
+
+                                while (tile_state.x() != STATE_P) {
+
+                                    atomic_ref_T atomic_state(acc_tile_state[tile_ptr]);
+
+                                    do {
+                                        tile_state = sham::unpack32(atomic_state.load());
+                                    } while (tile_state.x() == STATE_X);
+
+                                    accum += tile_state.y();
+
+                                    tile_ptr--;
+                                }
+                            }
+
+                            tile_atomic.store(sham::pack32(STATE_P, accum + local_group_sum));
+
+                            local_sum[0] = accum;
+                        }
+
+                        // sync
+                        id.barrier(sycl::access::fence_space::local_space);
+
+                        // store final result
+                        if (global_id < len) {
+                            out_ptr[global_id] = local_scan + local_sum[0];
+                        }
+                    });
+            });
         buf1.complete_event_state(e);
         ret_buf.complete_event_state(e);
 

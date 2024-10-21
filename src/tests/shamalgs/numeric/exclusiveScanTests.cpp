@@ -24,7 +24,7 @@ struct TestExclScan {
 
     vFunctionCall fct;
 
-    explicit TestExclScan(vFunctionCall arg) : fct(arg){};
+    explicit TestExclScan(vFunctionCall arg) : fct(arg) {};
 
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
@@ -135,7 +135,7 @@ struct TestExclScanUSM {
 
     vFunctionCall fct;
 
-    explicit TestExclScanUSM(vFunctionCall arg) : fct(arg){};
+    explicit TestExclScanUSM(vFunctionCall arg) : fct(arg) {};
 
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
@@ -260,7 +260,7 @@ struct TestExclScanInplace {
 
     vFunctionCall fct;
 
-    explicit TestExclScanInplace(vFunctionCall arg) : fct(arg){};
+    explicit TestExclScanInplace(vFunctionCall arg) : fct(arg) {};
 
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
@@ -738,11 +738,9 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         results["D. Merrill parr. u32 gsize = 256/256"] = test.benchmark();
     }
 
-
     PyScriptHandle hdnl{};
 
     hdnl.data()["results"] = results;
-
 
     hdnl.exec(R"(
         import numpy as np

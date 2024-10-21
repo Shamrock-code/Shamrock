@@ -14,6 +14,8 @@
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
+#include "shambindings/pybindaliases.hpp"
+#include "shamtest/PyScriptHandle.hpp"
 
 template<class T>
 struct TestExclScan {
@@ -22,7 +24,7 @@ struct TestExclScan {
 
     vFunctionCall fct;
 
-    explicit TestExclScan(vFunctionCall arg) : fct(arg) {};
+    explicit TestExclScan(vFunctionCall arg) : fct(arg){};
 
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
@@ -101,24 +103,151 @@ struct TestExclScan {
         return sum / cnt;
     }
 
-    struct BenchRes {
-        std::vector<f64> sizes;
-        std::vector<f64> times;
-    };
+    py::dict benchmark(u32 lim_bench = 1e8) {
 
-    BenchRes benchmark(u32 lim_bench = 1e8) {
-        BenchRes ret;
+        std::vector<u32> sizes;
+        std::vector<f64> times;
 
         logger::info_ln("TestExclScan", "testing :", __PRETTY_FUNCTION__);
 
         for (f64 i = 1e3; i < lim_bench; i *= 1.1) {
-            ret.sizes.push_back(i);
+            sizes.push_back(u32(i));
         }
 
-        for (const f64 &sz : ret.sizes) {
+        for (const u32 &sz : sizes) {
             logger::debug_ln("ShamrockTest", "N=", sz);
-            ret.times.push_back(bench_one_avg(sz));
+            times.push_back(bench_one_avg(sz));
         }
+
+        py::dict ret;
+        ret["sizes"] = sizes;
+        ret["times"] = times;
+
+        return ret;
+    }
+};
+
+template<class T>
+struct TestExclScanUSM {
+
+    using vFunctionCall
+        = sham::DeviceBuffer<T> (*)(sham::DeviceScheduler_ptr, sham::DeviceBuffer<T> &, u32);
+
+    vFunctionCall fct;
+
+    explicit TestExclScanUSM(vFunctionCall arg) : fct(arg){};
+
+    void check() {
+        if constexpr (std::is_same<u32, T>::value) {
+
+            u32 len_test = 1e5;
+
+            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, len_test, 0, 10);
+
+            std::vector<u32> data_buf(data);
+
+            std::exclusive_scan(data.begin(), data.end(), data.begin(), 0);
+
+            sham::DeviceBuffer<u32> buf{
+                data_buf.size(), shamsys::instance::get_compute_scheduler_ptr()};
+            buf.copy_from_stdvec(data_buf);
+            // shamalgs::memory::print_buf(buf, 4096, 16, "{:4} ");
+
+            sham::DeviceBuffer<u32> res
+                = fct(shamsys::instance::get_compute_scheduler_ptr(), buf, data_buf.size());
+
+            // shamalgs::memory::print_buf(res, len_test, 16, "{:4} ");
+
+            {
+                std::vector<u32> result = res.copy_to_stdvec();
+
+                // for (u32 i = 0; i < data_buf.size(); i++) {
+                //     //shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
+                //     eq = eq && (acc[i] == data[i]);
+                // }
+
+                shamtest::asserts().assert_equal_array(
+                    "exclusive scan match", result, data, data_buf.size());
+            }
+
+            // sycl::buffer<u32> tmp (data.data(), data.size());
+            // shamalgs::memory::print_buf(tmp, len_test, 16, "{:4} ");
+        }
+    }
+
+    f64 benchmark_one(u32 len) {
+
+        std::vector<u32> data_buf = shamalgs::random::mock_vector<u32>(0x111, len, 0, 50);
+
+        auto dev_ptr = shamsys::instance::get_compute_scheduler_ptr();
+
+        sham::DeviceBuffer<u32> buf{data_buf.size(), dev_ptr};
+        buf.copy_from_stdvec(data_buf);
+
+        sycl::queue &q = shamsys::instance::get_compute_queue();
+
+        {
+            sham::EventList depends_list;
+            u32 *res_ptr = buf.get_write_access(depends_list);
+            depends_list.wait_and_throw();
+            buf.complete_event_state({});
+        }
+        q.wait();
+
+        shambase::Timer t;
+        t.start();
+        sham::DeviceBuffer<u32> res = fct(dev_ptr, buf, len);
+
+        {
+            sham::EventList depends_list;
+            u32 *res_ptr = res.get_write_access(depends_list);
+            depends_list.wait_and_throw();
+            res.complete_event_state({});
+        }
+        t.end();
+
+        return (t.nanosec * 1e-9);
+    }
+
+    f64 bench_one_avg(u32 len) {
+        f64 sum = 0;
+
+        f64 cnt = 4;
+
+        if (len < 2e6) {
+            cnt = 10;
+        } else if (len < 1e5) {
+            cnt = 100;
+        } else if (len < 1e4) {
+            cnt = 1000;
+        }
+
+        for (u32 i = 0; i < cnt; i++) {
+            sum += benchmark_one(len);
+        }
+
+        return sum / cnt;
+    }
+
+    py::dict benchmark(u32 lim_bench = 1e8) {
+
+        std::vector<u32> sizes;
+        std::vector<f64> times;
+
+        logger::info_ln("TestExclScan", "testing :", __PRETTY_FUNCTION__);
+
+        for (f64 i = 1e3; i < lim_bench; i *= 1.1) {
+            sizes.push_back(u32(i));
+        }
+
+        for (const u32 &sz : sizes) {
+            logger::debug_ln("ShamrockTest", "N=", sz);
+            times.push_back(bench_one_avg(sz));
+        }
+
+        py::dict ret;
+        ret["sizes"] = sizes;
+        ret["times"] = times;
 
         return ret;
     }
@@ -131,7 +260,7 @@ struct TestExclScanInplace {
 
     vFunctionCall fct;
 
-    explicit TestExclScanInplace(vFunctionCall arg) : fct(arg) {};
+    explicit TestExclScanInplace(vFunctionCall arg) : fct(arg){};
 
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
@@ -333,6 +462,20 @@ TestStart(
 }
 #endif
 
+#ifndef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
+TestStart(
+    Unittest,
+    "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5_usm",
+    test_exclusive_sum_atomic_decoupled_v5_usm,
+    1) {
+
+    TestExclScanUSM<u32> test(
+        (TestExclScanUSM<u32>::vFunctionCall)
+            shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v5_usm<u32, 512>);
+    test.check();
+}
+#endif
+
 // TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v6",
 // test_exclusive_sum_atomic_decoupled_v6, 1){
 //
@@ -356,6 +499,7 @@ TestStart(
 #endif
 
 TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_exclusive_sum, 1) {
+    py::dict results;
     /*
         {
             TestExclScan<u32> test
@@ -382,23 +526,13 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
     {
         TestExclScan<u32> test((TestExclScan<u32>::vFunctionCall)
                                    shamalgs::numeric::details::exclusive_sum_gpugems39_2);
-        auto result = test.benchmark();
-
-        auto &res = shamtest::test_data().new_dataset("gpugems39 opt. u32");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
+        results["exclusive_sum_gpugems39_2"] = test.benchmark();
     }
 
     {
         TestExclScan<u32> test(
             (TestExclScan<u32>::vFunctionCall) shamalgs::numeric::details::exclusive_sum_fallback);
-        auto result = test.benchmark();
-
-        auto &res = shamtest::test_data().new_dataset("fallback u32");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
+        results["exclusive_sum_fallback"] = test.benchmark();
     }
 
     /*
@@ -539,24 +673,20 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         TestExclScan<u32> test(
             (TestExclScan<u32>::vFunctionCall)
                 shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v5<u32, 512>);
-        auto result = test.benchmark();
-
-        auto &res = shamtest::test_data().new_dataset("D. Merrill u32 gsize = 512");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
+        results["D. Merrill u32 gsize = 512"] = test.benchmark();
+    }
+    {
+        TestExclScanUSM<u32> test(
+            (TestExclScanUSM<u32>::vFunctionCall)
+                shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v5_usm<u32, 512>);
+        results["D. Merrill u32 gsize = 512 (USM)"] = test.benchmark();
     }
 
     {
         TestExclScan<u32> test(
             (TestExclScan<u32>::vFunctionCall)
                 shamalgs::numeric::details::exclusive_sum_sycl_jointalg<u32, 512>);
-        auto result = test.benchmark(4e6);
-
-        auto &res = shamtest::test_data().new_dataset("sycl joint excl sum u32 gsize = 512");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
+        results["sycl joint excl sum u32 gsize = 512"] = test.benchmark(4e6);
     }
 
     /*
@@ -586,45 +716,54 @@ TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_e
         TestExclScan<u32> test(
             (TestExclScan<u32>::vFunctionCall)
                 shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32, 512, 256>);
-        auto result = test.benchmark();
-
-        auto &res = shamtest::test_data().new_dataset("D. Merrill parr. u32 gsize = 512/256");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
+        results["D. Merrill parr. u32 gsize = 512/256"] = test.benchmark();
     }
     {
         TestExclScan<u32> test(
             (TestExclScan<u32>::vFunctionCall)
                 shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32, 512, 512>);
-        auto result = test.benchmark();
-
-        auto &res = shamtest::test_data().new_dataset("D. Merrill parr. u32 gsize = 512/512");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
+        results["D. Merrill parr. u32 gsize = 512/512"] = test.benchmark();
     }
 
     {
         TestExclScan<u32> test(
             (TestExclScan<u32>::vFunctionCall)
                 shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32, 256, 128>);
-        auto result = test.benchmark();
-
-        auto &res = shamtest::test_data().new_dataset("D. Merrill parr. u32 gsize = 256/128");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
+        results["D. Merrill parr. u32 gsize = 256/128"] = test.benchmark();
     }
     {
         TestExclScan<u32> test(
             (TestExclScan<u32>::vFunctionCall)
                 shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32, 256, 256>);
-        auto result = test.benchmark();
-
-        auto &res = shamtest::test_data().new_dataset("D. Merrill parr. u32 gsize = 256/256");
-
-        res.add_data("Nobj", result.sizes);
-        res.add_data("t_sort", result.times);
+        results["D. Merrill parr. u32 gsize = 256/256"] = test.benchmark();
     }
+
+
+    PyScriptHandle hdnl{};
+
+    hdnl.data()["results"] = results;
+
+
+    hdnl.exec(R"(
+        import numpy as np
+        import matplotlib.pyplot as plt
+
+        plt.style.use('custom_style.mplstyle')
+
+
+        for name, result in results.items():
+            plt.plot(result["sizes"], np.array(result["times"])/np.array(result["sizes"]), label=name)
+
+        plt.xscale('log')
+        plt.yscale('log')
+
+        plt.xlabel(r"$N$")
+        plt.ylabel(r"$t_{\text{scan}}/N$")
+        plt.legend()
+
+        plt.tight_layout()
+
+        plt.savefig("tests/figures/excl_scan_perf.pdf", dpi = 300)
+
+    )");
 }

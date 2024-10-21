@@ -74,4 +74,6 @@ namespace sham {
         bool use_direct_comm();
     };
 
+    using DeviceScheduler_ptr = std::shared_ptr<DeviceScheduler>;
+
 } // namespace sham

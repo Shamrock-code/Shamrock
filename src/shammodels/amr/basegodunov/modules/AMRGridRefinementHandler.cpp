@@ -73,14 +73,23 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 u32 id = gid.get_linear_id();
 
                 std::array<BlockCoord, split_count> blocks;
+                bool do_merge = true;
 
-                bool all_want_to_merge = true;
-                for (u32 lid = 0; lid < split_count; lid++) {
-                    blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
-                    all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
+                if (id + split_count <= obj_cnt) {
+                    bool all_want_to_merge = true;
+
+                    for (u32 lid = 0; lid < split_count; lid++) {
+                        blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
+                        all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
+                    }
+                    
+                    do_merge = all_want_to_merge && BlockCoord::are_mergeable(blocks);
+
+                } else {
+                    do_merge = false;
                 }
 
-                acc_merge_flag[gid] = all_want_to_merge && BlockCoord::are_mergeable(blocks);
+                acc_merge_flag[gid] = do_merge;
             });
         });
 

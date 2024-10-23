@@ -75,6 +75,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 std::array<BlockCoord, split_count> blocks;
                 bool do_merge = true;
 
+                // This avoid the case where we are in the last block of the buffer to avoid the
+                // out-of-bound read
                 if (id + split_count <= obj_cnt) {
                     bool all_want_to_merge = true;
 

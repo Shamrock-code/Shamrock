@@ -82,7 +82,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                         blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
                         all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
                     }
-                    
+
                     do_merge = all_want_to_merge && BlockCoord::are_mergeable(blocks);
 
                 } else {

@@ -100,7 +100,7 @@ sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, xref, -xrange,
 ### Plot
 #################
 # do plot or not
-if True:
+if False:
 
     def convert_to_cell_coords(dic):
 

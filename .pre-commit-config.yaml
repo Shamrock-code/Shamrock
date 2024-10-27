@@ -3,12 +3,11 @@ repos:
   rev: v4.4.0
   hooks:
   - id: trailing-whitespace
-    exclude: \.svg$
-    exclude: LICENSE
+    exclude: \.svg$|LICENSE
     log_file: log_precommit_trailing-whitespace
   - id: end-of-file-fixer  # add EOF "\n" if missing
     log_file: log_precommit_end-of-file-fixer
-    exclude: LICENSE
+    exclude: \.svg$|LICENSE
   - id: check-merge-conflict
     log_file: log_precommit_check-merge-conflict
 

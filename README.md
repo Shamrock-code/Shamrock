@@ -3,6 +3,10 @@
    <img alt="text" src="doc/logosham_white.png" width="600">
  </picture>
 
+Copyright 2020-2024 Timothée David--Cléris
+
+SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+
 ![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/on_push_main.yml/badge.svg?branch=main) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 # The Shamrock code

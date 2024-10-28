@@ -59,6 +59,7 @@ def setup(arg : SetupArg):
     ENV_SCRIPT_HEADER += "export INTELLLVM_GIT_DIR="+INTELLLVM_GIT_DIR+"\n"
     ENV_SCRIPT_HEADER += "export INTELLLVM_INSTALL_DIR="+INTELLLVM_INSTALL_DIR+"\n"
     ENV_SCRIPT_HEADER += "export INTELLLVM_CONFIGURE_ARGS=("+configure_args+")\n"
+    ENV_SCRIPT_HEADER += "export INTEL_LLVM_VERSION=\"nightly-2024-10-27\"\n"
 
     run_cmd("mkdir -p "+builddir+"/.env")
 

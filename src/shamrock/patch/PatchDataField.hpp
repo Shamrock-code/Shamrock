@@ -20,6 +20,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shamalgs/serialize.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -77,7 +78,7 @@ class PatchDataField {
     // member fields
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    shamalgs::ResizableBuffer<T> buf;
+    sham::DeviceBuffer<T> buf;
 
     std::string field_name;
 
@@ -345,7 +346,7 @@ class PatchDataField {
      * @param index_map
      * @param len the length of the map (must match with the current count)
      */
-    void index_remap(sycl::buffer<u32> &index_map, u32 len);
+    void index_remap(sham::DeviceBuffer<u32> &index_map, u32 len);
 
     /**
      * @brief this function remaps the patchdatafield like so
@@ -358,7 +359,7 @@ class PatchDataField {
      * @param index_map
      * @param len the length of the map
      */
-    void index_remap_resize(sycl::buffer<u32> &index_map, u32 len);
+    void index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len);
 
     /**
      * @brief minimal serialization

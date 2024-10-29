@@ -247,6 +247,13 @@ namespace sham {
          */
         [[nodiscard]] inline size_t get_mem_usage() const { return hold.get_bytesize(); }
 
+        /**
+         * @brief Check if the buffer is empty
+         *
+         * @return `true` if the buffer is empty, `false` otherwise
+         */
+        [[nodiscard]] inline bool is_empty() const { return size == 0; }
+
         ///////////////////////////////////////////////////////////////////////
         // Size getters (END)
         ///////////////////////////////////////////////////////////////////////
@@ -580,6 +587,34 @@ namespace sham {
                 size = new_size;
                 // no need to resize
             }
+        }
+
+        /**
+         * @brief Expand the buffer by `add_sz` elements.
+         *
+         * This functions reserves space in the buffer for `add_sz` elements, but doesn't change the
+         * buffer's size.
+         *
+         * @param add_sz The number of elements to add to the buffer.
+         */
+        inline void expand(u32 add_sz) { resize(get_size() + add_sz); }
+
+        /**
+         * @brief Shrink the buffer by `sub_sz` elements.
+         *
+         * If `sub_sz` is greater than the current size of the buffer, this function will throw an
+         * std::invalid_argument.
+         *
+         * @param sub_sz The number of elements to remove from the buffer.
+         */
+        inline void shrink(u32 sub_sz) {
+            if (sub_sz > get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "shrink called with sub_sz > get_size()\n  sub_sz: {}\n  get_size(): {}",
+                    sub_sz,
+                    get_size()));
+            }
+            resize(get_size() - sub_sz);
         }
 
         ///////////////////////////////////////////////////////////////////////

@@ -15,6 +15,8 @@
  *
  */
 
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceQueue.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 
@@ -104,6 +106,48 @@ namespace shamalgs::algorithm {
         sycl::buffer<u32> &index_map,
         u32 len,
         u32 nvar);
+
+    template<class T>
+    void index_remap(
+        sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> &source,
+        sham::DeviceBuffer<T> &dest,
+        sham::DeviceBuffer<u32> &index_map,
+        u32 len);
+
+    template<class T>
+    void index_remap_nvar(
+        sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> &source,
+        sham::DeviceBuffer<T> &dest,
+        sham::DeviceBuffer<u32> &index_map,
+        u32 len,
+        u32 nvar);
+
+    template<class T>
+    sham::DeviceBuffer<T> index_remap(
+        sham::DeviceScheduler_ptr &sched_ptr,
+        sham::DeviceBuffer<T> &source,
+        sham::DeviceBuffer<u32> &index_map,
+        u32 len) {
+
+        sham::DeviceBuffer<T> dest(len, sched_ptr);
+        index_remap<T>(sched_ptr, source, dest, index_map, len);
+        return dest;
+    }
+
+    template<class T>
+    sham::DeviceBuffer<T> index_remap_nvar(
+        sham::DeviceScheduler_ptr &sched_ptr,
+        sham::DeviceBuffer<T> &source,
+        sham::DeviceBuffer<u32> &index_map,
+        u32 len,
+        u32 nvar) {
+
+        sham::DeviceBuffer<T> dest(len * nvar, sched_ptr);
+        index_remap_nvar<T>(sched_ptr, source, dest, index_map, len, nvar);
+        return dest;
+    }
 
     /**
      * @brief generate a buffer such that for i in [0,len[, buf[i] = i

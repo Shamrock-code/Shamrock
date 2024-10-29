@@ -251,14 +251,28 @@ void PatchDataField<T>::insert(PatchDataField<T> &f2) {
 }
 
 template<class T>
-void PatchDataField<T>::index_remap_resize(sycl::buffer<u32> &index_map, u32 len) {
+void PatchDataField<T>::index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len) {
 
-    buf.index_remap_resize(index_map, len, nvar);
+    if (!buf.is_empty()) {
+
+        auto sched_ptr = shamsys::instance::get_compute_scheduler_ptr();
+
+        auto get_new_buf = [&]() {
+            if (nvar == 1) {
+                return shamalgs::algorithm::index_remap(sched_ptr, buf, index_map, len);
+            } else {
+                return shamalgs::algorithm::index_remap_nvar(sched_ptr, buf, index_map, len, nvar);
+            }
+        };
+
+        buf = get_new_buf();
+    }
+
     obj_cnt = len;
 }
 
 template<class T>
-void PatchDataField<T>::index_remap(sycl::buffer<u32> &index_map, u32 len) {
+void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len) {
 
     if (len != get_obj_cnt()) {
         throw shambase::make_except_with_loc<std::invalid_argument>(

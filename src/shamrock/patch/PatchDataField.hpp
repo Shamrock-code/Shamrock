@@ -69,13 +69,6 @@ class PatchDataField {
     using EnableIfVec = enable_if_t<is_in_type_list && (!isprimitive)>;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // constexpr parameters
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    constexpr static u32 min_capa  = 100;
-    constexpr static f32 safe_fact = 1.25;
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
     // member fields
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -110,25 +103,26 @@ class PatchDataField {
 
     inline PatchDataField(std::string name, u32 nvar)
         : field_name(std::move(name)), nvar(nvar), obj_cnt(0),
-          buf(shamsys::instance::get_compute_scheduler_ptr(), 0) {};
+          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {};
 
     inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
         : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt),
-          buf(shamsys::instance::get_compute_scheduler_ptr(), obj_cnt * nvar) {};
+          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {};
 
-    inline PatchDataField(const PatchDataField &other)
-        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {}
+    inline PatchDataField(PatchDataField &other)
+        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt),
+          buf(other.buf.copy()) {}
 
     inline PatchDataField(
-        shamalgs::ResizableBuffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
+        sham::DeviceBuffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
         : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(std::forward<shamalgs::ResizableBuffer<T>>(moved_buf)) {}
+          buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {}
 
     inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
         : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(shamsys::instance::get_compute_scheduler_ptr(),
-              std::forward<sycl::buffer<T>>(moved_buf),
-              obj_cnt * nvar) {}
+          buf(std::forward<sycl::buffer<T>>(moved_buf),
+              obj_cnt * nvar,
+              shamsys::instance::get_compute_scheduler_ptr()) {}
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
@@ -136,30 +130,30 @@ class PatchDataField {
     // member functions
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    inline PatchDataField duplicate() const {
-        const PatchDataField &current = *this;
+    inline PatchDataField duplicate() {
+        PatchDataField &current = *this;
         return PatchDataField(current);
     }
 
-    inline PatchDataField duplicate(std::string new_name) const {
-        const PatchDataField &current = *this;
-        PatchDataField ret            = PatchDataField(current);
-        ret.field_name                = new_name;
+    inline PatchDataField duplicate(std::string new_name) {
+        PatchDataField &current = *this;
+        PatchDataField ret      = PatchDataField(current);
+        ret.field_name          = new_name;
         return ret;
     }
 
-    inline std::unique_ptr<PatchDataField> duplicate_to_ptr() const {
-        const PatchDataField &current = *this;
+    inline std::unique_ptr<PatchDataField> duplicate_to_ptr() {
+        PatchDataField &current = *this;
         return std::make_unique<PatchDataField>(current);
     }
 
-    inline std::unique_ptr<sycl::buffer<T>> &get_buf() { return buf.get_buf_priviledge(); }
+    inline sham::DeviceBuffer<T> &get_buf() { return buf; }
 
-    [[nodiscard]] inline const u32 &size() const { return buf.size(); }
+    [[nodiscard]] inline u32 size() const { return buf.get_size(); }
 
     [[nodiscard]] inline bool is_empty() const { return size() == 0; }
 
-    [[nodiscard]] inline u64 memsize() const { return buf.memsize(); }
+    [[nodiscard]] inline u64 memsize() const { return buf.get_mem_usage(); }
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 

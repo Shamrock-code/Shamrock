@@ -55,10 +55,13 @@ void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
                   auto &buf_to   = to.get_buf();
                   auto &buf_from = from.get_buf();
 
-                  shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                      sycl::accessor acc_to{*buf_to, cgh, sycl::write_only};
-                      sycl::accessor acc_from{*buf_from, cgh, sycl::read_write};
+                  sham::EventList depends_list;
+                  T *acc_to   = buf_to.get_write_access(depends_list);
+                  T *acc_from = buf_from.get_write_access(depends_list);
 
+                  sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+                  auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                       const u32 nvar_loc = nvar;
 
                       cgh.single_task<Kernel_Extract_element<T>>([=]() {
@@ -68,6 +71,9 @@ void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
                           }
                       });
                   });
+
+                  buf_to.complete_event_state(e);
+                  buf_from.complete_event_state(e);
               }
 
               from.shrink(1);

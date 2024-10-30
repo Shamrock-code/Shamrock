@@ -69,8 +69,18 @@ namespace sham {
             copy_from_sycl_buffer(syclbuf);
         }
 
+        DeviceBuffer(
+            sycl::buffer<T> &syclbuf, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
+            : DeviceBuffer(sz, dev_sched) {
+            copy_from_sycl_buffer(syclbuf, sz);
+        }
+
         DeviceBuffer(sycl::buffer<T> &&syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
             : DeviceBuffer(syclbuf, dev_sched) {}
+
+        DeviceBuffer(
+            sycl::buffer<T> &&syclbuf, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
+            : DeviceBuffer(syclbuf, sz, dev_sched) {}
 
         /**
          * @brief Construct a new Device Buffer object with a given USM pointer
@@ -370,6 +380,44 @@ namespace sham {
         }
 
         /**
+         * @brief Copy the content of a SYCL buffer into the buffer
+         *
+         * This function copies the content of a given SYCL buffer into the buffer.
+         * The size of the SYCL buffer must be equal to the size of the buffer.
+         *
+         * @param buf The SYCL buffer to copy from
+         */
+        inline void copy_from_sycl_buffer(sycl::buffer<T> &buf, size_t sz) {
+
+            if (sz > buf.size() || sz > size) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_from_sycl_buffer: size mismatch (sz > buf.size() || sz > size)\n  size = "
+                    "{},\n  buf.size() = {},\n  sz = {}",
+                    size,
+                    buf.size(),
+                    sz));
+            }
+
+            if (sz > u32_max) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_from_sycl_buffer: size mismatch (sz > u32_max)\n  sz = {}", sz));
+            }
+
+            sham::EventList depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                sycl::accessor acc(buf, cgh, sycl::read_only);
+
+                shambase::parralel_for(cgh, sz, "copy field", [=](u32 gid) {
+                    ptr[gid] = acc[gid];
+                });
+            });
+
+            complete_event_state(e);
+        }
+
+        /**
          * @brief Copy the content of the buffer to a new buffer with a different USM target
          *
          * This function creates a new buffer with the same size and content than the current one
@@ -622,7 +670,6 @@ namespace sham {
         // Size manipulation (END)
         ///////////////////////////////////////////////////////////////////////
 
-#if false
         // I'm not sure if enabling this one is a good idea
         /**
          * @brief Reserves space in the buffer for `add_sz` elements, but doesn't change the
@@ -635,11 +682,12 @@ namespace sham {
          * @param add_sz The number of elements to reserve space for.
          */
         inline void reserve(size_t add_sz) {
+#if false
             size_t old_sz = get_size();
             resize(old_sz + add_sz);
             size = old_sz;
-        }
 #endif
+        }
 
         private:
         /**

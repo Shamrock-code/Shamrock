@@ -1,8 +1,9 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-// Licensed under CeCILL 2.1 License, see LICENSE for more information
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
@@ -10,7 +11,7 @@
 
 /**
  * @file version.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief typedefs and macros
  * @date 2021-09-17
  * @copyright Copyright Timothée David--Cléris (c) 2021
@@ -42,6 +43,13 @@ inline std::string shamrock_title_bar_big = "\n\
 
 inline void print_title_bar() {
     logger::raw_ln(shamrock_title_bar_big);
+    logger::raw_ln(
+        shambase::term_colors::col8b_cyan()
+        + "Copyright (c) 2021-2024 Timothée David--Cléris (tim.shamrock@proton.me)"
+        + shambase::term_colors::reset());
+    logger::raw_ln(
+        shambase::term_colors::col8b_cyan() + "SPDX-License-Identifier"
+        + shambase::term_colors::reset() + " : CeCILL Free Software License Agreement v2.1");
     logger::print_faint_row();
 
     logger::raw_ln(

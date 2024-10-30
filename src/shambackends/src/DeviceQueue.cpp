@@ -1,8 +1,9 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-// Licensed under CeCILL 2.1 License, see LICENSE for more information
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
@@ -13,6 +14,8 @@
  */
 
 #include "shambackends/DeviceQueue.hpp"
+#include "shamcmdopt/env.hpp"
+#include "shamcomm/logs.hpp"
 #include <utility>
 
 namespace sham {
@@ -25,16 +28,40 @@ namespace sham {
         }
     };
 
+    auto parse_wait_after_submit = []() -> bool {
+        shamcmdopt::register_env_var_doc(
+            "SHAMROCK_WAIT_AFTER_SUBMIT", "Make queues wait after submit");
+
+        std::optional<std::string> SHAMROCK_WAIT_AFTER_SUBMIT
+            = shamcmdopt::getenv_str("SHAMROCK_WAIT_AFTER_SUBMIT");
+
+        bool ret;
+        if (SHAMROCK_WAIT_AFTER_SUBMIT.has_value()) {
+            ret = *SHAMROCK_WAIT_AFTER_SUBMIT == "1";
+        } else {
+            ret = false;
+        }
+
+        if (ret) {
+            shamcomm::logs::warn_ln("Backends", "DeviceQueue :", "wait_after_submit is on !");
+        }
+
+        return ret;
+    };
+
+    bool env_var_wait_after_submit_set = parse_wait_after_submit();
+
     DeviceQueue::DeviceQueue(
         std::string queue_name, std::shared_ptr<DeviceContext> _ctx, bool in_order)
         : queue_name(std::move(queue_name)), ctx(std::move(_ctx)), in_order(in_order),
-          q(build_queue(ctx->ctx, ctx->device->dev, in_order)) {}
+          q(build_queue(ctx->ctx, ctx->device->dev, in_order)),
+          wait_after_submit(env_var_wait_after_submit_set) {}
 
     void DeviceQueue::test() {
-        auto test_kernel = [](sycl::queue &q) {
+        auto test_kernel = [&](sycl::queue &q) {
             sycl::buffer<u32> b(10);
 
-            q.submit([&](sycl::handler &cgh) {
+            submit([&b](sycl::handler &cgh) {
                 sycl::accessor acc{b, cgh, sycl::write_only, sycl::no_init};
 
                 cgh.parallel_for(sycl::range<1>{10}, [=](sycl::item<1> i) {

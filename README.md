@@ -57,3 +57,11 @@ Note that a convenient way to pull the Shamrock repo is the following command to
 ```bash
 git clone --recurse-submodules git@github.com:tdavidcl/Shamrock.git
 ```
+
+# Licensing
+
+Shamrock is licensed under the `CeCILL Free Software License Agreement v2.1`. See [License (french version)](./LICENSE) or [License (english version)](./LICENSE.en) for more details.
+
+Copyright 2021-2024 Timothée David--Cléris
+
+SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1

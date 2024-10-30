@@ -1,8 +1,9 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-// Licensed under CeCILL 2.1 License, see LICENSE for more information
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
@@ -29,9 +30,15 @@ using f16 = sycl::detail::hp_float; // issue with hipsycl not supporting half
 #endif
 
 #ifdef SYCL_COMP_INTEL_LLVM
-    #include <detail/generic_type_lists.hpp>
-    #include <sycl/types.hpp>
-    #include <cstdint>
+
+    #if __has_include(<detail/generic_type_lists.hpp>)
+        #include <detail/generic_type_lists.hpp>
+        #include <sycl/types.hpp>
+        #include <cstdint>
+    #else
+        #include <sycl/sycl.hpp>
+    #endif
+
 using f16 = sycl::half;
 
 #endif

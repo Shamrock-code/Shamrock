@@ -29,9 +29,15 @@ using f16 = sycl::detail::hp_float; // issue with hipsycl not supporting half
 #endif
 
 #ifdef SYCL_COMP_INTEL_LLVM
-    #include <detail/generic_type_lists.hpp>
-    #include <sycl/types.hpp>
-    #include <cstdint>
+
+    #if __has_include(<detail/generic_type_lists.hpp>)
+        #include <detail/generic_type_lists.hpp>
+        #include <sycl/types.hpp>
+        #include <cstdint>
+    #else
+        #include <sycl/sycl.hpp>
+    #endif
+
 using f16 = sycl::half;
 
 #endif

@@ -6,12 +6,11 @@ if [ ! -f "$INTELLLVM_GIT_DIR/README.md" ]; then
 
     if [ -z ${INTEL_LLVM_VERSION+x} ]
     then
-        echo "-> git clone -b sycl https://github.com/intel/llvm.git $INTELLLVM_GIT_DIR"
-        git clone -b sycl https://github.com/intel/llvm.git $INTELLLVM_GIT_DIR
-        (cd $INTELLLVM_GIT_DIR && git checkout $INTEL_LLVM_VERSION)
-    else
         echo "-> git clone --depth 1 -b sycl https://github.com/intel/llvm.git $INTELLLVM_GIT_DIR"
         git clone --depth 1 -b sycl https://github.com/intel/llvm.git $INTELLLVM_GIT_DIR
+    else
+        echo "-> git clone --depth 1 -b $INTEL_LLVM_VERSION https://github.com/intel/llvm.git $INTELLLVM_GIT_DIR"
+        git clone --depth 1 -b $INTEL_LLVM_VERSION https://github.com/intel/llvm.git $INTELLLVM_GIT_DIR
     fi
     echo " ------  LLVM Cloned  ------ "
 

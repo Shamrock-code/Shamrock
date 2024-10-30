@@ -23,6 +23,12 @@ function updatecompiler {
     setupcompiler
 }
 
+if [ ! -f "${INTELLLVM_INSTALL_DIR}/bin/clang++" ]; then
+    echo " ----- intel llvm is not configured, compiling it ... -----"
+    setupcompiler
+    echo " ----- intel llvm configured ! -----"
+fi
+
 function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \

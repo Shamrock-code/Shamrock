@@ -24,7 +24,6 @@
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamsys/NodeInstance.hpp"
 #include <type_traits>
 #include <memory>
 #include <stdexcept>
@@ -318,9 +317,6 @@ namespace shamalgs {
             u64 offset = align_repr(len * Helper::szrepr);
             check_head_move_device(offset);
 
-            auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-            auto &q   = sptr->get_queue();
-
             sham::EventList depends_list;
             const T *accbuf = buf.get_read_access(depends_list);
 
@@ -357,9 +353,6 @@ namespace shamalgs {
                     len));
             }
 
-            auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-            auto &q   = sptr->get_queue();
-
             sham::EventList depends_list;
             T *accbuf = buf.get_write_access(depends_list);
 
@@ -373,6 +366,7 @@ namespace shamalgs {
                         accbuf[id] = Helper::load(&accbufbyte[head]);
                     });
                 });
+
             buf.complete_event_state(e);
 
             head_device += offset;

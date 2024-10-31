@@ -516,7 +516,7 @@ PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) {
     */
 
     {
-        sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
+        auto acc = buf.copy_to_stdvec();
 
         for (u32 i = 0; i < size(); i++) {
             if (cd_true(acc[i], vmin, vmax)) {
@@ -566,7 +566,7 @@ PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::stri
 
     bool error = false;
     {
-        sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
+        auto acc    = buf.copy_to_stdvec();
         u32 err_cnt = 0;
 
         for (u32 i = 0; i < size(); i++) {

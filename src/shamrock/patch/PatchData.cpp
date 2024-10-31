@@ -145,18 +145,23 @@ namespace shamrock::patch {
 
     void PatchData::index_remap(sycl::buffer<u32> &index_map, u32 len) {
 
+        sham::DeviceBuffer<u32> dev_index_map(
+            index_map, len, shamsys::instance::get_compute_scheduler_ptr());
+
         for (auto &field_var : fields) {
             field_var.visit([&](auto &field) {
-                field.index_remap(index_map, len);
+                field.index_remap(dev_index_map, len);
             });
         }
     }
 
     void PatchData::index_remap_resize(sycl::buffer<u32> &index_map, u32 len) {
+        sham::DeviceBuffer<u32> dev_index_map(
+            index_map, len, shamsys::instance::get_compute_scheduler_ptr());
 
         for (auto &field_var : fields) {
             field_var.visit([&](auto &field) {
-                field.index_remap_resize(index_map, len);
+                field.index_remap_resize(dev_index_map, len);
             });
         }
     }

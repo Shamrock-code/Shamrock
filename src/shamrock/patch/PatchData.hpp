@@ -45,7 +45,7 @@ namespace shamrock::patch {
 
         inline PatchData(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
 
-        inline PatchData(const PatchData &other) : pdl(other.pdl) {
+        inline PatchData(PatchData &other) : pdl(other.pdl) {
 
             NamedStackEntry stack_loc{"PatchData::copy_constructor", true};
 
@@ -101,12 +101,12 @@ namespace shamrock::patch {
         }
 
         inline PatchData duplicate() {
-            const PatchData &current = *this;
+            PatchData &current = *this;
             return PatchData(current);
         }
 
         inline std::unique_ptr<PatchData> duplicate_to_ptr() {
-            const PatchData &current = *this;
+            PatchData &current = *this;
             return std::make_unique<PatchData>(current);
         }
 

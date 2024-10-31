@@ -113,9 +113,7 @@ void PatchDataField<T>::append_subset_to(
 
     pfield.expand(sz);
 
-    using buf_t = std::unique_ptr<sycl::buffer<T>>;
-
-    const buf_t &buf_other = pfield.get_buf();
+    auto &buf_other = pfield.get_buf();
 
 #ifdef false
     {
@@ -147,10 +145,15 @@ void PatchDataField<T>::append_subset_to(
     }
 #endif
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor acc_curr{shambase::get_check_ref(get_buf()), cgh, sycl::read_only};
-        sycl::accessor acc_other{
-            shambase::get_check_ref(buf_other), cgh, sycl::write_only, sycl::no_init};
+    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q   = sptr->get_queue();
+
+    sham::EventList depends_list;
+
+    const T *acc_curr = buf.get_read_access(depends_list);
+    T *acc_other      = buf_other.get_write_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         sycl::accessor acc_idxs{idxs_buf, cgh, sycl::read_only};
 
         const u32 nvar_loc        = nvar;
@@ -167,6 +170,9 @@ void PatchDataField<T>::append_subset_to(
             }
         });
     });
+
+    buf.complete_event_state(e);
+    buf_other.complete_event_state(e);
 }
 
 template<class T>

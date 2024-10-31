@@ -89,7 +89,9 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     match = match && (field_name == f2.field_name);
     match = match && (nvar == f2.nvar);
     match = match && (obj_cnt == f2.obj_cnt);
-    match = match && buf.check_buf_match(f2.buf);
+
+    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+    match     = match && shamalgs::equals(sptr, buf, f2.buf, obj_cnt * nvar);
 
     return match;
 }

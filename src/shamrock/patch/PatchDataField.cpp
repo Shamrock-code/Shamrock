@@ -398,11 +398,10 @@ T PatchDataField<T>::compute_max() {
     if (is_empty()) {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
-    return shamalgs::reduction::max(
-        shamsys::instance::get_compute_queue(),
-        shambase::get_check_ref(buf.get_buf()),
-        0,
-        obj_cnt * nvar);
+
+    auto tmp = buf.copy_to_sycl_buffer();
+
+    return shamalgs::reduction::max(shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
 }
 
 template<class T>
@@ -411,11 +410,10 @@ T PatchDataField<T>::compute_min() {
     if (is_empty()) {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
-    return shamalgs::reduction::min(
-        shamsys::instance::get_compute_queue(),
-        shambase::get_check_ref(buf.get_buf()),
-        0,
-        obj_cnt * nvar);
+
+    auto tmp = buf.copy_to_sycl_buffer();
+
+    return shamalgs::reduction::min(shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
 }
 
 template<class T>
@@ -424,11 +422,10 @@ T PatchDataField<T>::compute_sum() {
     if (is_empty()) {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
-    return shamalgs::reduction::sum(
-        shamsys::instance::get_compute_queue(),
-        shambase::get_check_ref(buf.get_buf()),
-        0,
-        obj_cnt * nvar);
+
+    auto tmp = buf.copy_to_sycl_buffer();
+
+    return shamalgs::reduction::sum(shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
 }
 
 template<class T>
@@ -437,33 +434,36 @@ shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum() {
     if (is_empty()) {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
+
+    auto tmp = buf.copy_to_sycl_buffer();
+
     return shamalgs::reduction::dot_sum(
-        shamsys::instance::get_compute_queue(),
-        shambase::get_check_ref(buf.get_buf()),
-        0,
-        obj_cnt * nvar);
+        shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
 }
 
 template<class T>
 bool PatchDataField<T>::has_nan() {
     StackEntry stack_loc{};
 
-    return shamalgs::reduction::has_nan(
-        shamsys::instance::get_compute_queue(), shambase::get_check_ref(get_buf()), size());
+    auto tmp = buf.copy_to_sycl_buffer();
+
+    return shamalgs::reduction::has_nan(shamsys::instance::get_compute_queue(), tmp, size());
 }
 template<class T>
 bool PatchDataField<T>::has_inf() {
     StackEntry stack_loc{};
 
-    return shamalgs::reduction::has_inf(
-        shamsys::instance::get_compute_queue(), shambase::get_check_ref(get_buf()), size());
+    auto tmp = buf.copy_to_sycl_buffer();
+
+    return shamalgs::reduction::has_inf(shamsys::instance::get_compute_queue(), tmp, size());
 }
 template<class T>
 bool PatchDataField<T>::has_nan_or_inf() {
     StackEntry stack_loc{};
 
-    return shamalgs::reduction::has_nan_or_inf(
-        shamsys::instance::get_compute_queue(), shambase::get_check_ref(get_buf()), size());
+    auto tmp = buf.copy_to_sycl_buffer();
+
+    return shamalgs::reduction::has_nan_or_inf(shamsys::instance::get_compute_queue(), tmp, size());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -488,20 +488,15 @@ const u32 obj_mock_cnt = 6000;
 template<>
 void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
+
+    std::vector<f32> out(obj_cnt * nvar);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
-
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f32(distf64(eng));
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f32(distf64(eng));
     }
 
-    // for (auto & a : field_data) {
-    //     a = f32(distf64(eng));
-    // }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -509,14 +504,12 @@ void PatchDataField<f32_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f32_2> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f32_2{distf64(eng), distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f32_2{distf64(eng), distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -524,14 +517,12 @@ void PatchDataField<f32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f32_3> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f32_3{distf64(eng), distf64(eng), distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f32_3{distf64(eng), distf64(eng), distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -539,14 +530,12 @@ void PatchDataField<f32_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f32_4> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f32_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f32_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -554,22 +543,20 @@ void PatchDataField<f32_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f32_8> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f32_8{
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f32_8{
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -577,30 +564,28 @@ void PatchDataField<f32_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f32_16> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f32_16{
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f32_16{
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -608,14 +593,12 @@ void PatchDataField<f64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f64> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f64(distf64(eng));
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f64(distf64(eng));
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -623,14 +606,12 @@ void PatchDataField<f64_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f64_2> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f64_2{distf64(eng), distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f64_2{distf64(eng), distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -638,14 +619,12 @@ void PatchDataField<f64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f64_3> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f64_3{distf64(eng), distf64(eng), distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f64_3{distf64(eng), distf64(eng), distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -653,14 +632,12 @@ void PatchDataField<f64_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f64_4> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f64_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f64_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -668,22 +645,20 @@ void PatchDataField<f64_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f64_8> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f64_8{
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f64_8{
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -691,30 +666,28 @@ void PatchDataField<f64_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<f64_16> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = f64_16{
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng),
-                distf64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = f64_16{
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng),
+            distf64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -722,28 +695,24 @@ void PatchDataField<u32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_int_distribution<u32> distu32(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<u32> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = distu32(eng);
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = distu32(eng);
     }
+    buf.copy_from_stdvec(out);
 }
 template<>
 void PatchDataField<u64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_int_distribution<u64> distu64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<u64> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = distu64(eng);
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = distu64(eng);
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -751,28 +720,24 @@ void PatchDataField<u32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_int_distribution<u32> distu32(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<u32_3> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = u32_3{distu32(eng), distu32(eng), distu32(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = u32_3{distu32(eng), distu32(eng), distu32(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 template<>
 void PatchDataField<u64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_int_distribution<u64> distu64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<u64_3> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = u64_3{distu64(eng), distu64(eng), distu64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = u64_3{distu64(eng), distu64(eng), distu64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 
 template<>
@@ -780,13 +745,11 @@ void PatchDataField<i64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
     std::uniform_int_distribution<i64> distu64(1, obj_mock_cnt);
 
-    {
-        auto &buf = get_buf();
-        sycl::host_accessor acc{*buf, sycl::write_only, sycl::no_init};
+    std::vector<i64_3> out(obj_cnt * nvar);
 
-        for (u32 i = 0; i < size(); i++) {
-            acc[i] = i64_3{distu64(eng), distu64(eng), distu64(eng)};
-        }
+    for (u32 i = 0; i < size(); i++) {
+        out[i] = i64_3{distu64(eng), distu64(eng), distu64(eng)};
     }
+    buf.copy_from_stdvec(out);
 }
 #endif

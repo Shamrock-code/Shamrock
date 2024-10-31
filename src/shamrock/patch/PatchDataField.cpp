@@ -318,12 +318,11 @@ PatchDataField<T>
 PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax) {
     using Prop = shambase::VectorProperties<T>;
 
-    return PatchDataField<T>(
-        shamalgs::ResizableBuffer<T>::mock_buffer(
-            shamsys::instance::get_compute_scheduler_ptr(), seed, obj_cnt * nvar, vmin, vmax),
-        obj_cnt,
-        name,
-        nvar);
+    sycl::buffer<T> buf = shamalgs::random::mock_buffer<T>(seed, obj_cnt * nvar, vmin, vmax);
+
+    sham::DeviceBuffer<T> buf_dev{buf, shamsys::instance::get_compute_scheduler_ptr()};
+
+    return PatchDataField<T>(std::move(buf_dev), obj_cnt, name, nvar);
 }
 
 template<class T>

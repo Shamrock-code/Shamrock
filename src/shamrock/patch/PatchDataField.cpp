@@ -183,9 +183,6 @@ void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchData
             "field must be similar for extraction");
     }
 
-    using buf_t            = std::unique_ptr<sycl::buffer<T>>;
-    const buf_t &buf_other = pfield.get_buf();
-
     u32 sz = idxs.size();
 
     if (sz > 0) {
@@ -202,15 +199,22 @@ void PatchDataField<T>::insert_element(T v) {
     u32 ins_pos = size();
     expand(1);
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q   = sptr->get_queue();
+
+    sham::EventList depends_list;
+    T *acc = get_buf().get_write_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         auto id_ins = ins_pos;
         auto val    = v;
-        sycl::accessor acc{shambase::get_check_ref(get_buf()), cgh, sycl::write_only};
 
         cgh.single_task<PdatField_insert_element<T>>([=]() {
             acc[id_ins] = val;
         });
     });
+
+    get_buf().complete_event_state(e);
 }
 
 template<class T>
@@ -220,15 +224,22 @@ template<class T>
 void PatchDataField<T>::apply_offset(T off) {
 
     if (get_obj_cnt() > 0) {
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+        auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+        auto &q   = sptr->get_queue();
+
+        sham::EventList depends_list;
+        T *acc = get_buf().get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             auto val = off;
-            sycl::accessor acc{shambase::get_check_ref(get_buf()), cgh, sycl::read_write};
 
             cgh.parallel_for<PdatField_apply_offset<T>>(
                 sycl::range<1>{size()}, [=](sycl::id<1> idx) {
                     acc[idx] += val;
                 });
         });
+        get_buf().complete_event_state(e);
     }
 }
 

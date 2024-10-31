@@ -328,6 +328,37 @@ namespace sham {
         }
 
         /**
+         * @brief Copy the content of a std::vector into the buffer
+         *
+         * This function copies the content of a given std::vector into the buffer.
+         * The size of the vector must be equal to the size of the buffer.
+         *
+         * @param vec The std::vector to copy from
+         * @param sz The number of elements to copy
+         */
+        inline void copy_from_stdvec(const std::vector<T> &vec, size_t sz) {
+
+            if (sz > vec.size() || sz > size) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_from_stdvec: size mismatch (sz > vec.size() || sz > size)\n  size = "
+                    "{},\n  vec.size() = {},\n  sz = {}",
+                    size,
+                    vec.size(),
+                    sz));
+            }
+
+            sham::EventList depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(vec.data(), ptr, sz);
+            });
+
+            e.wait_and_throw();
+            complete_event_state({});
+        }
+
+        /**
          * @brief Copy the content of the buffer to a new SYCL buffer
          *
          * This function creates a new SYCL buffer with the same size and content than the current

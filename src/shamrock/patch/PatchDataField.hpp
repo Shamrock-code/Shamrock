@@ -468,13 +468,13 @@ inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
 template<class T>
 inline void PatchDataField<T>::override(sycl::buffer<T> &data, u32 cnt) {
     StackEntry stack_loc{};
-    buf.override(data, cnt);
+    buf.copy_from_sycl_buffer(data, cnt);
 }
 
 template<class T>
 inline void PatchDataField<T>::override(std::vector<T> &data, u32 cnt) {
     StackEntry stack_loc{};
-    buf.override(data, cnt);
+    buf.copy_from_stdvec(data, cnt);
 }
 
 template<class T>

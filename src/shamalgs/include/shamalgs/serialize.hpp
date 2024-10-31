@@ -359,7 +359,6 @@ namespace shamalgs {
             auto e = dev_sched->get_queue().submit(
                 depends_list, [&, current_head](sycl::handler &cgh) {
                     sycl::accessor accbufbyte{*storage, cgh, sycl::read_only};
-                    sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
 
                     cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
                         u64 head   = current_head + id.get_linear_id() * Helper::szrepr;

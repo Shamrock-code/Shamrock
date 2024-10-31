@@ -74,11 +74,11 @@ namespace shamalgs::reduction {
         sham::DeviceBuffer<T> &buf2,
         u32 cnt) {
 
-        if (buf1.size() < cnt) {
+        if (buf1.get_size() < cnt) {
             throw shambase::make_except_with_loc<std::invalid_argument>("buf 1 is larger than cnt");
         }
 
-        if (buf2.size() < cnt) {
+        if (buf2.get_size() < cnt) {
             throw shambase::make_except_with_loc<std::invalid_argument>("buf 2 is larger than cnt");
         }
 

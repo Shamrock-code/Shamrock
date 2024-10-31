@@ -461,22 +461,26 @@ inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
 template<class T>
 inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
-    buf.overwrite(f2.buf, obj_cnt * f2.nvar);
+    StackEntry stack_loc{};
+    buf.copy_from(f2.buf, obj_cnt * f2.nvar);
 }
 
 template<class T>
 inline void PatchDataField<T>::override(sycl::buffer<T> &data, u32 cnt) {
+    StackEntry stack_loc{};
     buf.override(data, cnt);
 }
 
 template<class T>
 inline void PatchDataField<T>::override(std::vector<T> &data, u32 cnt) {
+    StackEntry stack_loc{};
     buf.override(data, cnt);
 }
 
 template<class T>
 inline void PatchDataField<T>::override(const T val) {
-    buf.override(val);
+    StackEntry stack_loc{};
+    buf.fill(val);
 }
 
 template<class T>

@@ -90,9 +90,7 @@ auto shammodels::sph::Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> T
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
     sched.for_each_patchdata_nonempty([&](const Patch, PatchData &pdat) {
-        sycl::buffer<Tvec> &xyz = shambase::get_check_ref(pdat.get_field<Tvec>(0).get_buf());
-
-        sycl::host_accessor acc{xyz, sycl::read_only};
+        auto acc = pdat.get_field<Tvec>(0).get_buf().copy_to_stdvec();
 
         u32 cnt = pdat.get_obj_cnt();
 
@@ -145,15 +143,16 @@ void shammodels::sph::Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec
 
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
     sched.for_each_patchdata_nonempty([&](const Patch, PatchData &pdat) {
-        sycl::buffer<Tvec> &xyz = shambase::get_check_ref(pdat.get_field<Tvec>(0).get_buf());
-
-        sycl::host_accessor acc{xyz, sycl::read_write};
+        auto &xyz = pdat.get_field<Tvec>(0).get_buf();
+        auto acc  = xyz.copy_to_stdvec();
 
         u32 cnt = pdat.get_obj_cnt();
 
         for (u32 i = 0; i < cnt; i++) {
             acc[i] = map(acc[i]);
         }
+
+        xyz.copy_from_stdvec(acc);
     });
 
     modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)

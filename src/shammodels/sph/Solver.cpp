@@ -201,12 +201,16 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
         logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor acc_h{
-                shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),
-                cgh,
-                sycl::read_only};
 
+        auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
+
+        auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+        auto &q   = sptr->get_queue();
+
+        sham::EventList depends_list;
+        const Tscal *acc_h = buf_hpart.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             sycl::accessor acc_rho{
                 shambase::get_check_ref(density.get_buf(p.id_patch)),
                 cgh,
@@ -221,6 +225,8 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
                 acc_rho[gid] = rho_ha;
             });
         });
+
+        buf_hpart.complete_event_state(e);
     });
 
     shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);

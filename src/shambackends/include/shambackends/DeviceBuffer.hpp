@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/memory.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
@@ -137,12 +138,20 @@ namespace sham {
          * by transfering them back to the memory handler
          */
         ~DeviceBuffer() {
+            if (!bool(events_hndl)) {
+                // If this is not allocated it must be a moved object
+                if (hold.get_raw_ptr() != nullptr) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "you have an event handler but not pointer, like how ???");
+                }
+                return;
+            }
             // This object is empty, it was probably moved
-            if (hold.get_raw_ptr() == nullptr && events_hndl.is_empty()) {
+            if (hold.get_raw_ptr() == nullptr && events_hndl->is_empty()) {
                 return;
             }
             // give the ptr holder and event handler to the memory handler
-            details::release_usm_ptr(std::move(hold), std::move(events_hndl));
+            details::release_usm_ptr(std::move(hold), shambase::extract_pointer(events_hndl));
         }
 
         ///////////////////////////////////////////////////////////////////////
@@ -161,7 +170,7 @@ namespace sham {
          * @return A const pointer to the buffer's data.
          */
         [[nodiscard]] inline const T *get_read_access(sham::EventList &depends_list) {
-            events_hndl.read_access(depends_list);
+            shambase::get_check_ref(events_hndl).read_access(depends_list);
             return hold.template ptr_cast<T>();
         }
 
@@ -176,7 +185,7 @@ namespace sham {
          * @return A pointer to the buffer's data.
          */
         [[nodiscard]] inline T *get_write_access(sham::EventList &depends_list) {
-            events_hndl.write_access(depends_list);
+            shambase::get_check_ref(events_hndl).write_access(depends_list);
             return hold.template ptr_cast<T>();
         }
 
@@ -188,7 +197,9 @@ namespace sham {
          *
          * @param e The SYCL event resulting of the queried access.
          */
-        void complete_event_state(sycl::event e) { events_hndl.complete_state(e); }
+        void complete_event_state(sycl::event e) {
+            shambase::get_check_ref(events_hndl).complete_state(e);
+        }
 
         ///////////////////////////////////////////////////////////////////////
         // Event handling (End)
@@ -283,7 +294,7 @@ namespace sham {
          *
          * @return The new std::vector
          */
-        [[nodiscard]] inline std::vector<T> copy_to_stdvec() {
+        [[nodiscard]] inline std::vector<T> copy_to_stdvec() const {
             std::vector<T> ret(size);
 
             sham::EventList depends_list;
@@ -737,8 +748,11 @@ namespace sham {
          * This event handler keeps track of the events associated with read and write
          * accesses to the buffer. It is used to ensure that the buffer is not accessed
          * before the data is in a complete state.
+         *
+         * This is wrapped in a unique_ptr to allow DeviceBuffer to be const while registering
+         * events
          */
-        details::BufferEventHandler events_hndl;
+        std::unique_ptr<details::BufferEventHandler> events_hndl;
     };
 
 } // namespace sham

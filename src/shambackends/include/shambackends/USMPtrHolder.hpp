@@ -179,6 +179,15 @@ namespace sham {
         [[nodiscard]] inline std::shared_ptr<DeviceScheduler> &get_dev_scheduler_ptr() {
             return dev_sched;
         }
+
+        /**
+         * @brief Get the SYCL context used for allocation/freeing the USM buffer
+         *
+         * @return The SYCL context used for allocation/freeing the USM buffer
+         */
+        [[nodiscard]] inline const std::shared_ptr<DeviceScheduler> &get_dev_scheduler_ptr() const {
+            return dev_sched;
+        }
     };
 
 } // namespace sham

@@ -23,6 +23,13 @@
 namespace shamphys {
 
     template<class T>
+    struct EOS_Isothermal {
+
+        static constexpr T pressure(T cs, T rho) { return cs * cs * rho; }
+        
+    };
+
+    template<class T>
     struct EOS_Adiabatic {
 
         static constexpr T pressure(T gamma, T rho, T u) { return (gamma - 1) * rho * u; }

@@ -26,7 +26,6 @@ namespace shamphys {
     struct EOS_Isothermal {
 
         static constexpr T pressure(T cs, T rho) { return cs * cs * rho; }
-        
     };
 
     template<class T>

@@ -47,7 +47,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
     }));
 
     using SolverConfigEOS                   = typename Config::EOSConfig;
-    using SolverEOS_Isothermal               = typename SolverConfigEOS::Isothermal;
+    using SolverEOS_Isothermal              = typename SolverConfigEOS::Isothermal;
     using SolverEOS_Adiabatic               = typename SolverConfigEOS::Adiabatic;
     using SolverEOS_LocallyIsothermal       = typename SolverConfigEOS::LocallyIsothermal;
     using SolverEOS_LocallyIsothermalLP07   = typename SolverConfigEOS::LocallyIsothermalLP07;
@@ -66,7 +66,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                     mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
 
                 Tscal pmass = gpart_mass;
-                Tscal cs = eos_config->cs;
+                Tscal cs    = eos_config->cs;
 
                 cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
                     using namespace shamrock::sph;
@@ -77,7 +77,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                 });
             });
         });
-    }else if (SolverEOS_Adiabatic *eos_config
+    } else if (
+        SolverEOS_Adiabatic *eos_config
         = std::get_if<SolverEOS_Adiabatic>(&solver_config.eos_config.config)) {
 
         using EOS = shamphys::EOS_Adiabatic<Tscal>;

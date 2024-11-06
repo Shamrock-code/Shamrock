@@ -64,8 +64,12 @@ namespace shammodels {
             = shamphys::EOS_Config_LocallyIsothermalDisc_Farris2014<Tscal>;
 
         /// Variant type to store the EOS configuration
-        using Variant = std::
-            variant<Isothermal, Adiabatic, LocallyIsothermal, LocallyIsothermalLP07, LocallyIsothermalFA2014>;
+        using Variant = std::variant<
+            Isothermal,
+            Adiabatic,
+            LocallyIsothermal,
+            LocallyIsothermalLP07,
+            LocallyIsothermalFA2014>;
 
         /// Current EOS configuration
         Variant config = Adiabatic{};
@@ -183,7 +187,7 @@ namespace shammodels {
             static_assert(shambase::always_false_v<Tvec>, "This Tvec type is not handled");
         }
 
-        using Isothermal     = typename EOSConfig<Tvec>::Isothermal;
+        using Isothermal    = typename EOSConfig<Tvec>::Isothermal;
         using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
         using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
         using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
@@ -191,7 +195,7 @@ namespace shammodels {
 
         if (const Isothermal *eos_config = std::get_if<Isothermal>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "isothermal"}, {"cs", eos_config->cs}};
-        }else if (const Adiabatic *eos_config = std::get_if<Adiabatic>(&p.config)) {
+        } else if (const Adiabatic *eos_config = std::get_if<Adiabatic>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "adiabatic"}, {"gamma", eos_config->gamma}};
         } else if (const LocIsoT *eos_config = std::get_if<LocIsoT>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "locally_isothermal"}};
@@ -253,7 +257,7 @@ namespace shammodels {
         std::string eos_type;
         j.at("eos_type").get_to(eos_type);
 
-        using Isothermal     = typename EOSConfig<Tvec>::Isothermal;
+        using Isothermal    = typename EOSConfig<Tvec>::Isothermal;
         using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
         using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
         using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
@@ -261,7 +265,8 @@ namespace shammodels {
 
         if (eos_type == "isothermal") {
             p.config = Isothermal{j.at("cs").get<Tscal>()};
-        }if (eos_type == "adiabatic") {
+        }
+        if (eos_type == "adiabatic") {
             p.config = Adiabatic{j.at("gamma").get<Tscal>()};
         } else if (eos_type == "locally_isothermal") {
             p.config = LocIsoT{};

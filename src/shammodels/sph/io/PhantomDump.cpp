@@ -417,7 +417,7 @@ namespace shammodels::sph {
         if (ieos == 1) {
             f64 cs = phdump.read_header_float<f64>("cs");
             cfg.set_isothermal(cs);
-        }else if (ieos == 2) {
+        } else if (ieos == 2) {
             f64 gamma = phdump.read_header_float<f64>("gamma");
             cfg.set_adiabatic(gamma);
         } else {

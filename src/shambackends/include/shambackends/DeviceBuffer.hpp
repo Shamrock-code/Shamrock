@@ -52,6 +52,22 @@ namespace sham {
         static size_t to_bytesize(size_t sz) { return sz * sizeof(T); }
 
         /**
+         * @brief Construct a new Device Buffer object with a given USM pointer
+         *
+         * @param sz The size of the buffer in number of elements
+         * @param _hold A USMPtrHolder holding the USM pointer
+         *
+         * This constructor is used to create a Device Buffer object with a
+         * pre-allocated USM pointer. The size of the buffer is given by the
+         * `sz` parameter, and the USM pointer is given by the `_hold` parameter.
+         * The constructor forwards the `_hold` parameter to the USMPtrHolder
+         * constructor.
+         */
+        DeviceBuffer(size_t sz, USMPtrHolder<target> &&_hold)
+            : hold(std::forward<USMPtrHolder<target>>(_hold)), size(sz),
+              events_hndl(std::make_unique<details::BufferEventHandler>()) {}
+
+        /**
          * @brief Construct a new Device Buffer object
          *
          * @param sz The size of the buffer in number of elements
@@ -62,8 +78,9 @@ namespace sham {
          * size in the respective member variables.
          */
         DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
-            : hold(details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())),
-              size(sz) {}
+            : DeviceBuffer(
+                  sz,
+                  details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())) {}
 
         DeviceBuffer(sycl::buffer<T> &syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
             : DeviceBuffer(syclbuf.size(), dev_sched) {
@@ -82,21 +99,6 @@ namespace sham {
         DeviceBuffer(
             sycl::buffer<T> &&syclbuf, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
             : DeviceBuffer(syclbuf, sz, dev_sched) {}
-
-        /**
-         * @brief Construct a new Device Buffer object with a given USM pointer
-         *
-         * @param sz The size of the buffer in number of elements
-         * @param _hold A USMPtrHolder holding the USM pointer
-         *
-         * This constructor is used to create a Device Buffer object with a
-         * pre-allocated USM pointer. The size of the buffer is given by the
-         * `sz` parameter, and the USM pointer is given by the `_hold` parameter.
-         * The constructor forwards the `_hold` parameter to the USMPtrHolder
-         * constructor.
-         */
-        DeviceBuffer(size_t sz, USMPtrHolder<target> &&_hold)
-            : hold(std::forward<USMPtrHolder<target>>(_hold)), size(sz) {}
 
         /**
          * @brief Deleted copy constructor

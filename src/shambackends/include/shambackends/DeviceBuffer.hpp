@@ -489,6 +489,7 @@ namespace sham {
          * The size of the SYCL buffer must be equal to the size of the buffer.
          *
          * @param buf The SYCL buffer to copy from
+         * @param sz The number of elements to copy
          */
         inline void copy_from_sycl_buffer(sycl::buffer<T> &buf, size_t sz) {
 

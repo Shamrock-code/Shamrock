@@ -75,27 +75,75 @@ namespace sham {
          *
          * This constructor creates a new Device Buffer object with the given size.
          * It allocates the buffer as USM memory and stores the USM pointer and the
-         * size in the respective member variables.
+         * size in the respective member variables. The constructor also creates a
+         * BufferEventHandler object and stores it in the `events_hndl` member
+         * variable.
          */
         DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
             : DeviceBuffer(
                   sz,
                   details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())) {}
 
+        /**
+         * @brief Construct a new Device Buffer object from a SYCL buffer
+         *
+         * @param syclbuf The SYCL buffer to copy from
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor creates a new Device Buffer object with the same size
+         * as the given SYCL buffer. It allocates the buffer as USM memory and stores
+         * the USM pointer and the size in the respective member variables. The
+         * constructor also copies the content of the SYCL buffer into the newly
+         * allocated USM buffer.
+         */
         DeviceBuffer(sycl::buffer<T> &syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
             : DeviceBuffer(syclbuf.size(), dev_sched) {
             copy_from_sycl_buffer(syclbuf);
         }
 
+        /**
+         * @brief Construct a new Device Buffer object from a SYCL buffer with a given size
+         *
+         * @param syclbuf The SYCL buffer to copy from
+         * @param sz The size of the buffer in number of elements
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor creates a new Device Buffer object with the given size.
+         * It allocates the buffer as USM memory and stores the USM pointer and the
+         * size in the respective member variables. The constructor also copies the
+         * first `sz` elements of the SYCL buffer into the newly allocated USM
+         * buffer.
+         */
         DeviceBuffer(
             sycl::buffer<T> &syclbuf, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
             : DeviceBuffer(sz, dev_sched) {
             copy_from_sycl_buffer(syclbuf, sz);
         }
 
+        /**
+         * @brief Construct a new Device Buffer object by moving from a SYCL buffer
+         *
+         * @param syclbuf The SYCL buffer to move from
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor moves a SYCL buffer into a new Device Buffer object.
+         * It forwards the SYCL buffer and the device scheduler to another constructor.
+         */
         DeviceBuffer(sycl::buffer<T> &&syclbuf, std::shared_ptr<DeviceScheduler> dev_sched)
             : DeviceBuffer(syclbuf, dev_sched) {}
 
+        /**
+         * @brief Construct a new Device Buffer object by moving from a SYCL buffer
+         * with a given size
+         *
+         * @param syclbuf The SYCL buffer to move from
+         * @param sz The size of the buffer in number of elements
+         * @param dev_sched A shared pointer to the Device Scheduler
+         *
+         * This constructor moves a SYCL buffer into a new Device Buffer object.
+         * It forwards the SYCL buffer and the device scheduler to another
+         * constructor. The size of the buffer is also given as a parameter.
+         */
         DeviceBuffer(
             sycl::buffer<T> &&syclbuf, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
             : DeviceBuffer(syclbuf, sz, dev_sched) {}

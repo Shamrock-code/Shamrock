@@ -149,7 +149,7 @@ class PatchDataField {
 
     inline sham::DeviceBuffer<T> &get_buf() { return buf; }
 
-    [[nodiscard]] inline const u32 &size() const { return buf.get_size(); }
+    [[nodiscard]] inline u32 size() const { return buf.get_size(); }
 
     [[nodiscard]] inline bool is_empty() const { return size() == 0; }
 

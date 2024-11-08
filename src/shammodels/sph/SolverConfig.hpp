@@ -279,6 +279,19 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    /// Check if the EOS is an isothermal equation of state
+    inline bool is_eos_isothermal() {
+        using T = typename EOSConfig::Isothermal;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
+    /**
+     * @brief Set the EOS configuration to an isothermal equation of state
+     *
+     * @param cs The isothermal index
+     */
+    inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }
+
     /**
      * @brief Set the EOS configuration to an adiabatic equation of state
      *

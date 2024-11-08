@@ -22,6 +22,23 @@
 namespace shamphys {
 
     /**
+     * @brief Configuration struct for isothermal equation of state
+     *
+     * @tparam Tscal Scalar type
+     *
+     * This struct holds the configuration for the isothermal equation of state.
+     * It contains the soundspeed cs = sqrt(RT).
+     *
+     * The equation of state is given by:
+     * \f$ p = c_s^2 \rho \f$
+     */
+    template<class Tscal>
+    struct EOS_Config_Isothermal {
+        /// Soundspeed
+        Tscal cs;
+    };
+
+    /**
      * @brief Configuration struct for adiabatic equation of state
      *
      * @tparam Tscal Scalar type

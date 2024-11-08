@@ -18,13 +18,14 @@
 
 sham::EventList::~EventList() {
     if (!consumed) {
-        shamcomm::logs::warn_ln(
-            "Backends",
-            shambase::format(
-                "EventList destroyed without being consumed :\n    -> creation : {}",
-                loc_build.format_one_line()));
+        std::string log_str = shambase::format(
+            "EventList destroyed without being consumed :\n    -> creation : {}",
+            loc_build.format_one_line());
+
+        shamcomm::logs::err_ln("Backends", log_str);
         for (auto &e : events) {
             e.wait();
         }
+        shambase::throw_with_loc<std::runtime_error>(log_str);
     }
 }

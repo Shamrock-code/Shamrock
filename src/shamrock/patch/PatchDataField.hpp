@@ -109,7 +109,7 @@ class PatchDataField {
         : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt),
           buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {};
 
-    inline PatchDataField(PatchDataField &other)
+    inline PatchDataField(const PatchDataField &other)
         : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt),
           buf(other.buf.copy()) {}
 
@@ -130,26 +130,26 @@ class PatchDataField {
     // member functions
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    inline PatchDataField duplicate() {
-        PatchDataField &current = *this;
+    inline PatchDataField duplicate() const {
+        const PatchDataField &current = *this;
         return PatchDataField(current);
     }
 
-    inline PatchDataField duplicate(std::string new_name) {
-        PatchDataField &current = *this;
-        PatchDataField ret      = PatchDataField(current);
-        ret.field_name          = new_name;
+    inline PatchDataField duplicate(std::string new_name) const {
+        const PatchDataField &current = *this;
+        PatchDataField ret            = PatchDataField(current);
+        ret.field_name                = new_name;
         return ret;
     }
 
-    inline std::unique_ptr<PatchDataField> duplicate_to_ptr() {
-        PatchDataField &current = *this;
+    inline std::unique_ptr<PatchDataField> duplicate_to_ptr() const {
+        const PatchDataField &current = *this;
         return std::make_unique<PatchDataField>(current);
     }
 
     inline sham::DeviceBuffer<T> &get_buf() { return buf; }
 
-    [[nodiscard]] inline u32 size() const { return buf.get_size(); }
+    [[nodiscard]] inline const u32 &size() const { return buf.get_size(); }
 
     [[nodiscard]] inline bool is_empty() const { return size() == 0; }
 

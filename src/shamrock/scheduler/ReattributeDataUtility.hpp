@@ -74,7 +74,7 @@ namespace shamrock {
                         id,
                         sptree.compute_patch_owner(
                             shamsys::instance::get_compute_queue(),
-                            shambase::get_check_ref(pos_field.get_buf()),
+                            pos_field.get_buf(),
                             pos_field.size()));
 
                     bool err_id_in_newid = false;

@@ -133,6 +133,13 @@ class RadixTree {
         u32 cnt_obj,
         u32 reduc_level);
 
+    RadixTree(
+        sham::DeviceScheduler_ptr dev_sched,
+        std::tuple<Tvec, Tvec> treebox,
+        sham::DeviceBuffer<Tvec> &pos_buf,
+        u32 cnt_obj,
+        u32 reduc_level);
+
     inline RadixTree(const RadixTree &other)
         : bounding_box(other.bounding_box), tree_morton_codes{other.tree_morton_codes},
           tree_reduced_morton_codes(other.tree_reduced_morton_codes), // size = leaf cnt

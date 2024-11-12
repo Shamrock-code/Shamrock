@@ -65,6 +65,42 @@ RadixTree<u_morton, vec3>::RadixTree(
     u32 reduc_level)
     : RadixTree(queue, treebox, shambase::get_check_ref(pos_buf), cnt_obj, reduc_level) {}
 
+template<class u_morton, class Tvec>
+RadixTree<u_morton, Tvec>::RadixTree(
+    sham::DeviceScheduler_ptr dev_sched,
+    std::tuple<Tvec, Tvec> treebox,
+    sham::DeviceBuffer<Tvec> &pos_buf,
+    u32 cnt_obj,
+    u32 reduc_level) {
+
+    sycl::queue &queue = dev_sched->get_queue().q;
+
+    if (cnt_obj > i32_max - 1) {
+        throw shambase::make_except_with_loc<std::runtime_error>(
+            "number of element in patch above i32_max-1");
+    }
+
+    logger::debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
+
+    bounding_box = treebox;
+
+    tree_morton_codes.build(dev_sched, shammath::CoordRange<Tvec>{treebox}, cnt_obj, pos_buf);
+
+    bool one_cell_mode;
+
+    tree_reduced_morton_codes.build(
+        queue, tree_morton_codes.obj_cnt, reduc_level, tree_morton_codes, one_cell_mode);
+
+    if (!one_cell_mode) {
+        tree_struct.build(
+            queue,
+            tree_reduced_morton_codes.tree_leaf_count - 1,
+            *tree_reduced_morton_codes.buf_tree_morton);
+    } else {
+        tree_struct.build_one_cell_mode();
+    }
+}
+
 template<class u_morton, class vec3>
 void RadixTree<u_morton, vec3>::serialize(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{};

@@ -56,6 +56,26 @@ namespace shamrock::tree {
                 buf_morton,
                 buf_particle_index_map);
         }
+        template<class T>
+        inline void build(
+            sham::DeviceScheduler_ptr dev_sched,
+            shammath::CoordRange<T> coord_range,
+            u32 obj_cnt,
+            sham::DeviceBuffer<T> &pos_buf) {
+            StackEntry stack_loc{};
+
+            this->obj_cnt = obj_cnt;
+
+            using TProp = shambase::VectorProperties<T>;
+
+            RadixTreeMortonBuilder<u_morton, T, TProp::dimension>::build(
+                dev_sched,
+                {coord_range.lower, coord_range.upper},
+                pos_buf,
+                obj_cnt,
+                buf_morton,
+                buf_particle_index_map);
+        }
 
         template<class T>
         inline static std::unique_ptr<sycl::buffer<u_morton>> build_raw(

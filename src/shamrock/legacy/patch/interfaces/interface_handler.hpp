@@ -169,8 +169,7 @@ class LegacyInterfacehandler {
                 u32 nobj = pdat.get_obj_cnt();
 
                 auto &buf = pdat.get_field<vectype>(ixyz).get_buf();
-                auto t    = syclalg::get_min_max<vectype>(
-                    shamsys::instance::get_compute_queue(), buf, nobj);
+                auto t    = syclalg::get_min_max<vectype>(buf, nobj);
 
                 fct(patch_id, int_pid, pdat, t);
             }

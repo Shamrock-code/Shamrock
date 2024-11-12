@@ -42,11 +42,11 @@ namespace patchdata {
             if constexpr (std::is_same<htype, f32>::value) {
 
                 u32 ihpart = pdl.get_field_idx<f32>("hpart");
-                tmp = syclalg::get_max<f32>(queue, pdat.get_field<f32>(ihpart).get_buf(), nobj);
+                tmp        = syclalg::get_max<f32>(pdat.get_field<f32>(ihpart).get_buf(), nobj);
 
             } else if constexpr (std::is_same<htype, f64>::value) {
                 u32 ihpart = pdl.get_field_idx<f64>("hpart");
-                tmp = syclalg::get_max<f64>(queue, pdat.get_field<f64>(ihpart).get_buf(), nobj);
+                tmp        = syclalg::get_max<f64>(pdat.get_field<f64>(ihpart).get_buf(), nobj);
 
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>(

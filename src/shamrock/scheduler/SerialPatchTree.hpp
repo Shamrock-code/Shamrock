@@ -322,21 +322,27 @@ class SerialPatchTree {
         }
     }
 
-    sycl::buffer<u64>
-    compute_patch_owner(sycl::queue &queue, sycl::buffer<fp_prec_vec> &position_buffer, u32 len);
+    sycl::buffer<u64> compute_patch_owner(
+        sham::DeviceScheduler_ptr dev_sched,
+        sham::DeviceBuffer<fp_prec_vec> &position_buffer,
+        u32 len);
 };
 
 template<class vec>
 sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
-    sycl::queue &queue, sycl::buffer<vec> &position_buffer, u32 len) {
+    sham::DeviceScheduler_ptr dev_sched, sham::DeviceBuffer<vec> &position_buffer, u32 len) {
     sycl::buffer<u64> new_owned_id(len);
 
     using namespace shamrock::patch;
 
     sycl::buffer<u64> roots = shamalgs::vec_to_buf(roots_ids);
 
-    queue.submit([&](sycl::handler &cgh) {
-        sycl::accessor pos{position_buffer, cgh, sycl::read_only};
+    auto &q = dev_sched->get_queue();
+
+    sham::EventList depends_list;
+    auto pos = position_buffer.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         sycl::accessor tnode{shambase::get_check_ref(serial_tree_buf), cgh, sycl::read_only};
         sycl::accessor linked_node_id{
             shambase::get_check_ref(linked_patch_ids_buf), cgh, sycl::read_only};
@@ -438,6 +444,8 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
             new_id[i] = result_node;
         });
     });
+
+    position_buffer.complete_event_state(e);
 
     return new_owned_id;
 }

@@ -73,7 +73,7 @@ namespace shamrock {
                     newid_buf_map.add_obj(
                         id,
                         sptree.compute_patch_owner(
-                            shamsys::instance::get_compute_queue(),
+                            shamsys::instance::get_compute_scheduler_ptr(),
                             pos_field.get_buf(),
                             pos_field.size()));
 

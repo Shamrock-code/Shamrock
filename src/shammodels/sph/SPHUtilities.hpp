@@ -105,10 +105,10 @@ namespace shammodels::sph {
 
         static void iterate_smoothing_length_cache(
 
-            sycl::buffer<vec> &merged_r,
-            sycl::buffer<flt> &hnew,
-            sycl::buffer<flt> &hold,
-            sycl::buffer<flt> &eps_h,
+            sham::DeviceBuffer<vec> &merged_r,
+            sham::DeviceBuffer<flt> &hnew,
+            sham::DeviceBuffer<flt> &hold,
+            sham::DeviceBuffer<flt> &eps_h,
             sycl::range<1> update_range,
             shamrock::tree::ObjectCache &neigh_cache,
 
@@ -146,9 +146,9 @@ namespace shammodels::sph {
         }
 
         static void compute_omega(
-            sycl::buffer<vec> &merged_r,
-            sycl::buffer<flt> &h_part,
-            sycl::buffer<flt> &omega_h,
+            sham::DeviceBuffer<vec> &merged_r,
+            sham::DeviceBuffer<flt> &h_part,
+            sham::DeviceBuffer<flt> &omega_h,
             sycl::range<1> part_range,
             shamrock::tree::ObjectCache &neigh_cache,
             flt gpart_mass);

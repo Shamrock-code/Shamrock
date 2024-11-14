@@ -72,11 +72,11 @@ namespace shamrock {
             using namespace shamrock::patch;
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 integrators::leapfrog_corrector(
-                    shamsys::instance::get_compute_queue(),
-                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
-                    shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
-                    shambase::get_check_ref(derfield_old.get_field(cur_p.id_patch).get_buf()),
-                    shambase::get_check_ref(field_epsilon.get_field(cur_p.id_patch).get_buf()),
+                    shamsys::instance::get_compute_scheduler().get_queue(),
+                    pdat.get_field<T>(field_idx).get_buf(),
+                    pdat.get_field<T>(derfield_idx).get_buf(),
+                    derfield_old.get_field(cur_p.id_patch).get_buf(),
+                    field_epsilon.get_field(cur_p.id_patch).get_buf(),
                     pdat.get_obj_cnt(),
                     hdt);
             });

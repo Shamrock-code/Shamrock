@@ -168,12 +168,16 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
 
     auto &buf_cell_int_rad_buf = buf_cell_interact_rad.radix_tree_field_buf;
 
-    queue.submit([&](sycl::handler &cgh) {
+    sham::DeviceQueue q = shamsys::instance::get_compute_scheduler().get_queue();
+    sham::EventList depends_list;
+
+    auto h = int_rad_buf.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         u32 offset_leaf = tree_struct.internal_cell_count;
 
         auto h_max_cell
             = buf_cell_int_rad_buf->template get_access<sycl::access::mode::discard_write>(cgh);
-        auto h = int_rad_buf->template get_access<sycl::access::mode::read>(cgh);
 
         auto cell_particle_ids = tree_reduced_morton_codes.buf_reduc_index_map
                                      ->template get_access<sycl::access::mode::read>(cgh);
@@ -198,6 +202,8 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
             h_max_cell[offset_leaf + gid] = h_tmp;
         });
     });
+
+    int_rad_buf.complete_event_state(e);
 
 #if false
     // debug code to track the DPCPP + prime number worker issue

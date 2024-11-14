@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
@@ -25,19 +26,19 @@ namespace shamrock {
 
         template<class flt, class T>
         void forward_euler(
-            sycl::queue &queue,
-            sycl::buffer<T> &buf_val,
-            sycl::buffer<T> &buf_der,
+            sham::DeviceQueue &queue,
+            sham::DeviceBuffer<T> &buf_val,
+            sham::DeviceBuffer<T> &buf_der,
             sycl::range<1> elem_range,
             flt dt);
 
         template<class flt, class T>
         void leapfrog_corrector(
-            sycl::queue &queue,
-            sycl::buffer<T> &buf_val,
-            sycl::buffer<T> &buf_der,
-            sycl::buffer<T> &buf_der_old,
-            sycl::buffer<flt> &buf_eps_sq,
+            sham::DeviceQueue &queue,
+            sham::DeviceBuffer<T> &buf_val,
+            sham::DeviceBuffer<T> &buf_der,
+            sham::DeviceBuffer<T> &buf_der_old,
+            sham::DeviceBuffer<flt> &buf_eps_sq,
             sycl::range<1> elem_range,
             flt hdt);
     } // namespace integrators

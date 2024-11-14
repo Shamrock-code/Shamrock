@@ -28,49 +28,54 @@ namespace util  = shamrock::utilities;
 
 template<class flt, class T>
 void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<T> &buf_val,
-    sycl::buffer<T> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<T> &buf_val,
+    sham::DeviceBuffer<T> &buf_der,
     sycl::range<1> elem_range,
     flt dt) {
 
-    queue.submit([&](sycl::handler &cgh) {
-        sycl::accessor acc_u{buf_val, cgh, sycl::read_write};
-        sycl::accessor acc_du{buf_der, cgh, sycl::read_only};
+    sham::EventList depends_list;
 
+    auto acc_u  = buf_val.get_write_access(depends_list);
+    auto acc_du = buf_der.get_read_access(depends_list);
+
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
         cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
             u32 gid     = (u32) item.get_id();
             acc_u[item] = acc_u[item] + (dt) *acc_du[item];
         });
     });
+
+    buf_val.complete_event_state(e);
+    buf_der.complete_event_state(e);
 }
 
 #ifndef DOXYGEN
 template void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<f32_3> &buf_val,
-    sycl::buffer<f32_3> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32_3> &buf_val,
+    sham::DeviceBuffer<f32_3> &buf_der,
     sycl::range<1> elem_range,
     f32 dt);
 
 template void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<f32> &buf_val,
-    sycl::buffer<f32> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32> &buf_val,
+    sham::DeviceBuffer<f32> &buf_der,
     sycl::range<1> elem_range,
     f32 dt);
 
 template void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<f64_3> &buf_val,
-    sycl::buffer<f64_3> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64_3> &buf_val,
+    sham::DeviceBuffer<f64_3> &buf_der,
     sycl::range<1> elem_range,
     f64 dt);
 
 template void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<f64> &buf_val,
-    sycl::buffer<f64> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64> &buf_val,
+    sham::DeviceBuffer<f64> &buf_der,
     sycl::range<1> elem_range,
     f64 dt);
 #endif
@@ -80,25 +85,22 @@ template void integ::forward_euler(
 
 template<class flt, class T>
 void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<T> &buf_val,
-    sycl::buffer<T> &buf_der,
-    sycl::buffer<T> &buf_der_old,
-    sycl::buffer<flt> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<T> &buf_val,
+    sham::DeviceBuffer<T> &buf_der,
+    sham::DeviceBuffer<T> &buf_der_old,
+    sham::DeviceBuffer<flt> &buf_eps_sq,
     sycl::range<1> elem_range,
     flt hdt) {
 
-    shambase::check_buffer_size(buf_val, elem_range.size());
-    shambase::check_buffer_size(buf_der, elem_range.size());
-    shambase::check_buffer_size(buf_der_old, elem_range.size());
-    shambase::check_buffer_size(buf_eps_sq, elem_range.size());
+    sham::EventList depends_list;
 
-    queue.submit([&](sycl::handler &cgh) {
-        sycl::accessor acc_u{buf_val, cgh, sycl::read_write};
-        sycl::accessor acc_du{buf_der, cgh, sycl::read_only};
-        sycl::accessor acc_du_old{buf_der_old, cgh, sycl::read_only};
-        sycl::accessor acc_epsilon_sq{buf_eps_sq, cgh, sycl::write_only, sycl::no_init};
+    auto acc_u          = buf_val.get_write_access(depends_list);
+    auto acc_du         = buf_der.get_read_access(depends_list);
+    auto acc_du_old     = buf_der_old.get_read_access(depends_list);
+    auto acc_epsilon_sq = buf_eps_sq.get_write_access(depends_list);
 
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
         cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
             u32 gid = (u32) item.get_id();
 
@@ -108,42 +110,47 @@ void integ::leapfrog_corrector(
             acc_epsilon_sq[item] = sycl::dot(incr, incr);
         });
     });
+
+    buf_val.complete_event_state(e);
+    buf_der.complete_event_state(e);
+    buf_der_old.complete_event_state(e);
+    buf_eps_sq.complete_event_state(e);
 }
 
 #ifndef DOXYGEN
 template void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<f32_3> &buf_val,
-    sycl::buffer<f32_3> &buf_der,
-    sycl::buffer<f32_3> &buf_der_old,
-    sycl::buffer<f32> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32_3> &buf_val,
+    sham::DeviceBuffer<f32_3> &buf_der,
+    sham::DeviceBuffer<f32_3> &buf_der_old,
+    sham::DeviceBuffer<f32> &buf_eps_sq,
     sycl::range<1> elem_range,
     f32 hdt);
 
 template void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<f32> &buf_val,
-    sycl::buffer<f32> &buf_der,
-    sycl::buffer<f32> &buf_der_old,
-    sycl::buffer<f32> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32> &buf_val,
+    sham::DeviceBuffer<f32> &buf_der,
+    sham::DeviceBuffer<f32> &buf_der_old,
+    sham::DeviceBuffer<f32> &buf_eps_sq,
     sycl::range<1> elem_range,
     f32 hdt);
 
 template void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<f64_3> &buf_val,
-    sycl::buffer<f64_3> &buf_der,
-    sycl::buffer<f64_3> &buf_der_old,
-    sycl::buffer<f64> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64_3> &buf_val,
+    sham::DeviceBuffer<f64_3> &buf_der,
+    sham::DeviceBuffer<f64_3> &buf_der_old,
+    sham::DeviceBuffer<f64> &buf_eps_sq,
     sycl::range<1> elem_range,
     f64 hdt);
 
 template void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<f64> &buf_val,
-    sycl::buffer<f64> &buf_der,
-    sycl::buffer<f64> &buf_der_old,
-    sycl::buffer<f64> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64> &buf_val,
+    sham::DeviceBuffer<f64> &buf_der,
+    sham::DeviceBuffer<f64> &buf_der_old,
+    sham::DeviceBuffer<f64> &buf_eps_sq,
     sycl::range<1> elem_range,
     f64 hdt);
 #endif

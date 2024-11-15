@@ -25,6 +25,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 
     StackEntry stack_loc{};
 
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
     Tscal gpart_mass = solver_config.gpart_mass;
 
     using namespace shamrock;
@@ -49,13 +51,14 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             Tscal G     = solver_config.get_constant_G();
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                sycl::buffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
-                sycl::buffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
+                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
+                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                    sycl::accessor axyz_ext{buf_axyz_ext, cgh, sycl::read_write};
+                sham::EventList depends_list;
+                auto xyz      = buf_xyz.get_read_access(depends_list);
+                auto axyz_ext = buf_axyz_ext.get_write_access(depends_list);
 
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     Tscal mGM = -cmass * G;
 
                     shambase::parralel_for(
@@ -66,6 +69,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                             axyz_ext[gid] += mGM * r_a / abs_ra_3;
                         });
                 });
+
+                buf_xyz.complete_event_state(e);
+                buf_axyz_ext.complete_event_state(e);
             });
 
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
@@ -74,13 +80,14 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             Tscal G     = solver_config.get_constant_G();
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                sycl::buffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
-                sycl::buffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
+                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
+                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                    sycl::accessor axyz_ext{buf_axyz_ext, cgh, sycl::read_write};
+                sham::EventList depends_list;
+                auto xyz      = buf_xyz.get_read_access(depends_list);
+                auto axyz_ext = buf_axyz_ext.get_write_access(depends_list);
 
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     Tscal mGM = -cmass * G;
 
                     shambase::parralel_for(
@@ -96,13 +103,14 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                sycl::buffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
-                sycl::buffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
+                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
+                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                    sycl::accessor axyz_ext{buf_axyz_ext, cgh, sycl::read_write};
+                sham::EventList depends_list;
+                auto xyz      = buf_xyz.get_read_access(depends_list);
+                auto axyz_ext = buf_axyz_ext.get_write_access(depends_list);
 
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     Tscal two_eta = 2 * ext_force->eta;
 
                     shambase::parralel_for(
@@ -124,6 +132,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
     StackEntry stack_loc{};
 
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
     Tscal gpart_mass = solver_config.gpart_mass;
 
     using namespace shamrock;
@@ -136,13 +146,14 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
     const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        sycl::buffer<Tvec> &buf_axyz     = pdat.get_field_buf_ref<Tvec>(iaxyz);
-        sycl::buffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
+        sham::DeviceBuffer<Tvec> &buf_axyz     = pdat.get_field_buf_ref<Tvec>(iaxyz);
+        sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor axyz{buf_axyz, cgh, sycl::read_write};
-            sycl::accessor axyz_ext{buf_axyz_ext, cgh, sycl::read_only};
+        sham::EventList depends_list;
+        auto axyz     = buf_axyz.get_write_access(depends_list);
+        auto axyz_ext = buf_axyz_ext.get_read_access(depends_list);
 
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(
                 cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
                     axyz[gid] += axyz_ext[gid];
@@ -167,15 +178,17 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
             logger::raw_ln("S", ext_force->a_spin * GM * GM * ext_force->dir_spin / (c * c * c));
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                sycl::buffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(0);
-                sycl::buffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
-                sycl::buffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
+                sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(0);
+                sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
+                sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                    sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
-                    sycl::accessor axyz{buf_axyz, cgh, sycl::read_write};
+                sham::EventList depends_list;
 
+                auto xyz  = buf_xyz.get_read_access(depends_list);
+                auto vxyz = buf_vxyz.get_read_access(depends_list);
+                auto axyz = buf_axyz.get_write_access(depends_list);
+
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     Tvec S = ext_force->a_spin * GM * GM * ext_force->dir_spin / (c * c * c);
 
                     shambase::parralel_for(
@@ -193,6 +206,10 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                             axyz[gid] += acc_lt;
                         });
                 });
+
+                buf_xyz.complete_event_state(e);
+                buf_vxyz.complete_event_state(e);
+                buf_axyz.complete_event_state(e);
             });
         } else if (
             EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
@@ -204,15 +221,17 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                               + bsize.z() * ext_force->shear_base.z();
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                sycl::buffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(0);
-                sycl::buffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
-                sycl::buffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
+                sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(0);
+                sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
+                sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                    sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
-                    sycl::accessor axyz{buf_axyz, cgh, sycl::read_write};
+                sham::EventList depends_list;
 
+                auto xyz  = buf_xyz.get_read_access(depends_list);
+                auto vxyz = buf_vxyz.get_read_access(depends_list);
+                auto axyz = buf_axyz.get_write_access(depends_list);
+
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     Tscal Omega_0    = ext_force->Omega_0;
                     Tscal Omega_0_sq = Omega_0 * Omega_0;
                     Tscal q          = ext_force->q;
@@ -255,7 +274,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
     const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
 
-    sycl::queue &q = shamsys::instance::get_compute_queue();
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
 
@@ -275,14 +294,16 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
             u32 Nobj = pdat.get_obj_cnt();
 
-            sycl::buffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
-            sycl::buffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
+            sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
+            sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
 
             sycl::buffer<u32> not_accreted(Nobj);
             sycl::buffer<u32> accreted(Nobj);
 
-            q.submit([&](sycl::handler &cgh) {
-                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
+            sham::EventList depends_list;
+            auto xyz = buf_xyz.get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 sycl::accessor not_acc{not_accreted, cgh, sycl::write_only, sycl::no_init};
                 sycl::accessor acc{accreted, cgh, sycl::write_only, sycl::no_init};
 
@@ -297,11 +318,13 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
                 });
             });
 
+            buf_xyz.complete_event_state(e);
+
             std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_keep
-                = shamalgs::numeric::stream_compact(q, not_accreted, Nobj);
+                = shamalgs::numeric::stream_compact(q.q, not_accreted, Nobj);
 
             std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_accrete
-                = shamalgs::numeric::stream_compact(q, accreted, Nobj);
+                = shamalgs::numeric::stream_compact(q.q, accreted, Nobj);
 
             // sum accreted values onto sink
 
@@ -312,9 +335,13 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
                 Tscal acc_mass = gpart_mass * Naccrete;
 
                 sycl::buffer<Tvec> pxyz_acc(Naccrete);
-                q.submit([&, gpart_mass](sycl::handler &cgh) {
+
+                sham::EventList depends_list;
+
+                auto vxyz = buf_vxyz.get_read_access(depends_list);
+
+                auto e = q.submit(depends_list, [&, gpart_mass](sycl::handler &cgh) {
                     sycl::accessor id_acc{*std::get<0>(id_list_accrete), cgh, sycl::read_only};
-                    sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
 
                     sycl::accessor accretion_p{pxyz_acc, cgh, sycl::write_only};
 
@@ -324,7 +351,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
                         });
                 });
 
-                Tvec acc_pxyz = shamalgs::reduction::sum(q, pxyz_acc, 0, Naccrete);
+                buf_vxyz.complete_event_state(e);
+
+                Tvec acc_pxyz = shamalgs::reduction::sum(q.q, pxyz_acc, 0, Naccrete);
 
                 logger::raw_ln("central potential accretion : += ", acc_mass);
 

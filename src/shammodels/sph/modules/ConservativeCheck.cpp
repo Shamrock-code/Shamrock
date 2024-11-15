@@ -23,6 +23,8 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     StackEntry stack_loc{};
 
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
     Tscal gpart_mass = solver_config.gpart_mass;
 
     using namespace shamrock;
@@ -106,17 +108,24 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
         sycl::buffer<Tscal> temp_de(pdat.get_obj_cnt());
 
-        shamsys::instance::get_compute_queue().submit([&, pmass](sycl::handler &cgh) {
-            sycl::accessor u{*field_u.get_buf(), cgh, sycl::read_only};
-            sycl::accessor du{*field_du.get_buf(), cgh, sycl::read_only};
-            sycl::accessor v{*field_v.get_buf(), cgh, sycl::read_only};
-            sycl::accessor a{*field_a.get_buf(), cgh, sycl::read_only};
+        sham::EventList depends_list;
+        auto u  = field_u.get_buf().get_read_access(depends_list);
+        auto du = field_du.get_buf().get_read_access(depends_list);
+        auto v  = field_v.get_buf().get_read_access(depends_list);
+        auto a  = field_a.get_buf().get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
             sycl::accessor de{temp_de, cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                 de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item]);
             });
         });
+
+        field_u.get_buf().complete_event_state(e);
+        field_du.get_buf().complete_event_state(e);
+        field_v.get_buf().complete_event_state(e);
+        field_a.get_buf().complete_event_state(e);
 
         Tscal de_p = shamalgs::reduction::sum(
             shamsys::instance::get_compute_queue(), temp_de, 0, pdat.get_obj_cnt());

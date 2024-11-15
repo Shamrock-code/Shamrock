@@ -61,24 +61,27 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        sycl::buffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
-        sycl::buffer<Tscal> &buf_cs       = pdat.get_field_buf_ref<Tscal>(isoundspeed);
-        sycl::buffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
-        sycl::buffer<Tscal> &buf_alpha_AV = pdat.get_field_buf_ref<Tscal>(ialpha_AV);
+        sham::DeviceBuffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
+        sham::DeviceBuffer<Tscal> &buf_cs       = pdat.get_field_buf_ref<Tscal>(isoundspeed);
+        sham::DeviceBuffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
+        sham::DeviceBuffer<Tscal> &buf_alpha_AV = pdat.get_field_buf_ref<Tscal>(ialpha_AV);
 
-        sycl::buffer<Tscal> &buf_alpha_AV_updated
+        sham::DeviceBuffer<Tscal> &buf_alpha_AV_updated
             = storage.alpha_av_updated.get().get_buf_check(cur_p.id_patch);
 
         u32 obj_cnt = pdat.get_obj_cnt();
 
-        shamsys::instance::get_compute_queue().submit([&, dt](sycl::handler &cgh) {
-            sycl::accessor divv{buf_divv, cgh, sycl::read_only};
-            sycl::accessor cs{buf_cs, cgh, sycl::read_only};
-            sycl::accessor h{buf_h, cgh, sycl::read_only};
-            sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_only};
-            sycl::accessor alpha_AV_updated{
-                buf_alpha_AV_updated, cgh, sycl::write_only, sycl::no_init};
+        sham::DeviceQueue &queue = shamsys::instance::get_compute_scheduler().get_queue();
 
+        sham::EventList depends_list;
+
+        auto divv             = buf_divv.get_read_access(depends_list);
+        auto cs               = buf_cs.get_read_access(depends_list);
+        auto h                = buf_h.get_read_access(depends_list);
+        auto alpha_AV         = buf_alpha_AV.get_read_access(depends_list);
+        auto alpha_AV_updated = buf_alpha_AV_updated.get_write_access(depends_list);
+
+        auto e = queue.submit(depends_list, [&, dt](sycl::handler &cgh) {
             Tscal sigma_decay = cfg.sigma_decay;
             Tscal alpha_min   = cfg.alpha_min;
             Tscal alpha_max   = cfg.alpha_max;
@@ -101,6 +104,12 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
                 alpha_AV_updated[item] = sham::min(alpha_max, new_alpha);
             });
         });
+
+        buf_divv.complete_event_state(e);
+        buf_cs.complete_event_state(e);
+        buf_h.complete_event_state(e);
+        buf_alpha_AV.complete_event_state(e);
+        buf_alpha_AV_updated.complete_event_state(e);
     });
 }
 
@@ -121,27 +130,30 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        sycl::buffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
-        sycl::buffer<Tscal> &buf_dtdivv   = pdat.get_field_buf_ref<Tscal>(idtdivv);
-        sycl::buffer<Tvec> &buf_curlv     = pdat.get_field_buf_ref<Tvec>(icurlv);
-        sycl::buffer<Tscal> &buf_cs       = pdat.get_field_buf_ref<Tscal>(isoundspeed);
-        sycl::buffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
-        sycl::buffer<Tscal> &buf_alpha_AV = pdat.get_field_buf_ref<Tscal>(ialpha_AV);
-        sycl::buffer<Tscal> &buf_alpha_AV_updated
+        sham::DeviceBuffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
+        sham::DeviceBuffer<Tscal> &buf_dtdivv   = pdat.get_field_buf_ref<Tscal>(idtdivv);
+        sham::DeviceBuffer<Tvec> &buf_curlv     = pdat.get_field_buf_ref<Tvec>(icurlv);
+        sham::DeviceBuffer<Tscal> &buf_cs       = pdat.get_field_buf_ref<Tscal>(isoundspeed);
+        sham::DeviceBuffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
+        sham::DeviceBuffer<Tscal> &buf_alpha_AV = pdat.get_field_buf_ref<Tscal>(ialpha_AV);
+        sham::DeviceBuffer<Tscal> &buf_alpha_AV_updated
             = storage.alpha_av_updated.get().get_buf_check(cur_p.id_patch);
 
         u32 obj_cnt = pdat.get_obj_cnt();
 
-        shamsys::instance::get_compute_queue().submit([&, dt](sycl::handler &cgh) {
-            sycl::accessor divv{buf_divv, cgh, sycl::read_only};
-            sycl::accessor curlv{buf_curlv, cgh, sycl::read_only};
-            sycl::accessor dtdivv{buf_dtdivv, cgh, sycl::read_only};
-            sycl::accessor cs{buf_cs, cgh, sycl::read_only};
-            sycl::accessor h{buf_h, cgh, sycl::read_only};
-            sycl::accessor alpha_AV{buf_alpha_AV, cgh, sycl::read_only};
-            sycl::accessor alpha_AV_updated{
-                buf_alpha_AV_updated, cgh, sycl::write_only, sycl::no_init};
+        sham::DeviceQueue &queue = shamsys::instance::get_compute_scheduler().get_queue();
 
+        sham::EventList depends_list;
+
+        auto divv             = buf_divv.get_read_access(depends_list);
+        auto curlv            = buf_curlv.get_read_access(depends_list);
+        auto dtdivv           = buf_dtdivv.get_read_access(depends_list);
+        auto cs               = buf_cs.get_read_access(depends_list);
+        auto h                = buf_h.get_read_access(depends_list);
+        auto alpha_AV         = buf_alpha_AV.get_read_access(depends_list);
+        auto alpha_AV_updated = buf_alpha_AV_updated.get_write_access(depends_list);
+
+        auto e = queue.submit(depends_list, [&, dt](sycl::handler &cgh) {
             Tscal sigma_decay = cfg.sigma_decay;
             Tscal alpha_min   = cfg.alpha_min;
             Tscal alpha_max   = cfg.alpha_max;
@@ -196,6 +208,14 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
                 alpha_AV_updated[item] = new_alpha;
             });
         });
+
+        buf_divv.complete_event_state(e);
+        buf_curlv.complete_event_state(e);
+        buf_dtdivv.complete_event_state(e);
+        buf_cs.complete_event_state(e);
+        buf_h.complete_event_state(e);
+        buf_alpha_AV.complete_event_state(e);
+        buf_alpha_AV_updated.complete_event_state(e);
     });
 }
 

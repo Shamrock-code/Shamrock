@@ -37,9 +37,9 @@ namespace shamrock {
             using namespace shamrock::patch;
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 integrators::forward_euler(
-                    shamsys::instance::get_compute_queue(),
-                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
-                    shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
+                    shamsys::instance::get_compute_scheduler().get_queue(),
+                    pdat.get_field<T>(field_idx).get_buf(),
+                    pdat.get_field<T>(derfield_idx).get_buf(),
                     pdat.get_obj_cnt(),
                     dt);
             });
@@ -52,10 +52,10 @@ namespace shamrock {
             using namespace shamrock::patch;
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 integrators::leapfrog_corrector(
-                    shamsys::instance::get_compute_queue(),
-                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
-                    shambase::get_check_ref(pdat.get_field<T>(derfield_idx).get_buf()),
-                    shambase::get_check_ref(pdat.get_field<T>(derfield_old_idx).get_buf()),
+                    shamsys::instance::get_compute_scheduler().get_queue(),
+                    pdat.get_field<T>(field_idx).get_buf(),
+                    pdat.get_field<T>(derfield_idx).get_buf(),
+                    pdat.get_field<T>(derfield_old_idx).get_buf(),
                     pdat.get_obj_cnt(),
                     hdt);
             });
@@ -88,8 +88,8 @@ namespace shamrock {
             using namespace shamrock::patch;
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 utilities::sycl_position_modulo(
-                    shamsys::instance::get_compute_queue(),
-                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
+                    shamsys::instance::get_compute_scheduler().get_queue(),
+                    pdat.get_field<T>(field_idx).get_buf(),
                     pdat.get_obj_cnt(),
                     box);
             });
@@ -109,9 +109,9 @@ namespace shamrock {
             using namespace shamrock::patch;
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 utilities::sycl_position_sheared_modulo(
-                    shamsys::instance::get_compute_queue(),
-                    shambase::get_check_ref(pdat.get_field<T>(field_idx).get_buf()),
-                    shambase::get_check_ref(pdat.get_field<T>(field_velocity).get_buf()),
+                    shamsys::instance::get_compute_scheduler().get_queue(),
+                    pdat.get_field<T>(field_idx).get_buf(),
+                    pdat.get_field<T>(field_velocity).get_buf(),
                     pdat.get_obj_cnt(),
                     box,
                     shear_base,
@@ -127,9 +127,9 @@ namespace shamrock {
             using namespace shamrock::patch;
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 utilities::swap_fields(
-                    shamsys::instance::get_compute_queue(),
-                    shambase::get_check_ref(pdat.get_field<T>(field_idx1).get_buf()),
-                    shambase::get_check_ref(pdat.get_field<T>(field_idx2).get_buf()),
+                    shamsys::instance::get_compute_scheduler().get_queue(),
+                    pdat.get_field<T>(field_idx1).get_buf(),
+                    pdat.get_field<T>(field_idx2).get_buf(),
                     pdat.get_obj_cnt());
             });
         }

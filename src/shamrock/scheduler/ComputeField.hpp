@@ -130,9 +130,9 @@ namespace shamrock {
 
                     if (pdat.get_obj_cnt() > 0) {
                         write_with_offset_into(
-                            shamsys::instance::get_compute_queue(),
+                            shamsys::instance::get_compute_scheduler().get_queue(),
                             get_check_ref(ret),
-                            get_check_ref(get_buf(id_patch)),
+                            get_buf(id_patch),
                             ptr,
                             pdat.get_obj_cnt() * nvar);
 

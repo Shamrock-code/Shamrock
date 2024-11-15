@@ -241,8 +241,6 @@ namespace shamalgs::memory {
         auto dest   = buf_ctn.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            sycl::accessor source{buf_in, cgh, sycl::read_only};
-            sycl::accessor dest{buf_ctn, cgh, sycl::write_only, sycl::no_init};
             u32 off = offset;
             cgh.parallel_for(sycl::range{element_count}, [=](sycl::item<1> item) {
                 dest[item.get_id(0) + off] = source[item];
@@ -251,6 +249,28 @@ namespace shamalgs::memory {
 
         buf_in.complete_event_state(e);
         buf_ctn.complete_event_state(e);
+    }
+
+    template<class T>
+    void write_with_offset_into(
+        sham::DeviceQueue &q,
+        sycl::buffer<T> &buf_ctn,
+        sham::DeviceBuffer<T> &buf_in,
+        u32 offset,
+        u32 element_count) {
+
+        sham::EventList depends_list;
+        auto source = buf_in.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            sycl::accessor dest{buf_ctn, cgh, sycl::write_only, sycl::no_init};
+            u32 off = offset;
+            cgh.parallel_for(sycl::range{element_count}, [=](sycl::item<1> item) {
+                dest[item.get_id(0) + off] = source[item];
+            });
+        });
+
+        buf_in.complete_event_state(e);
     }
 
     template<class T>

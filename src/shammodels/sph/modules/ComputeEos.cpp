@@ -53,29 +53,41 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
     using SolverEOS_LocallyIsothermalLP07   = typename SolverConfigEOS::LocallyIsothermalLP07;
     using SolverEOS_LocallyIsothermalFA2014 = typename SolverConfigEOS::LocallyIsothermalFA2014;
 
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
     if (SolverEOS_Isothermal *eos_config
         = std::get_if<SolverEOS_Isothermal>(&solver_config.eos_config.config)) {
 
         using EOS = shamphys::EOS_Isothermal<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor P{
-                    storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
-                sycl::accessor h{
-                    mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
+            sham::DeviceBuffer<Tscal> &buf_P  = storage.pressure.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_h  = mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf);
 
-                Tscal pmass = gpart_mass;
-                Tscal cs    = eos_config->cs;
+            sham::EventList depends_list;
+
+            auto P  = buf_P.get_write_access(depends_list);
+            auto cs = buf_cs.get_write_access(depends_list);
+            auto h  = buf_h.get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal pmass  = gpart_mass;
+                Tscal cs_cfg = eos_config->cs;
 
                 cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
                     using namespace shamrock::sph;
 
                     Tscal rho_a = rho_h(pmass, h[item], Kernel::hfactd);
-                    Tscal P_a   = EOS::pressure(cs, rho_a);
+                    Tscal P_a   = EOS::pressure(cs_cfg, rho_a);
                     P[item]     = P_a;
+                    cs[item]    = cs_cfg;
                 });
             });
+
+            buf_P.complete_event_state(e);
+            buf_h.complete_event_state(e);
+            buf_cs.complete_event_state(e);
         });
     } else if (
         SolverEOS_Adiabatic *eos_config
@@ -84,19 +96,19 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         using EOS = shamphys::EOS_Adiabatic<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor P{
-                    storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
-                sycl::accessor cs{
-                    storage.soundspeed.get().get_buf_check(id),
-                    cgh,
-                    sycl::write_only,
-                    sycl::no_init};
-                sycl::accessor U{
-                    mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf), cgh, sycl::read_only};
-                sycl::accessor h{
-                    mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
+            sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_uint = mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf);
+            sham::DeviceBuffer<Tscal> &buf_h = mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf);
 
+            sham::EventList depends_list;
+
+            auto P  = buf_P.get_write_access(depends_list);
+            auto cs = buf_cs.get_write_access(depends_list);
+            auto h  = buf_h.get_read_access(depends_list);
+            auto U  = buf_uint.get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 Tscal pmass = gpart_mass;
                 Tscal gamma = eos_config->gamma;
 
@@ -110,6 +122,11 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                     cs[item]    = cs_a;
                 });
             });
+
+            buf_P.complete_event_state(e);
+            buf_cs.complete_event_state(e);
+            buf_h.complete_event_state(e);
+            buf_uint.complete_event_state(e);
         });
 
     } else if (
@@ -121,21 +138,22 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         u32 isoundspeed_interf = ghost_layout.get_field_idx<Tscal>("soundspeed");
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor P{
-                    storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
-                sycl::accessor cs{
-                    storage.soundspeed.get().get_buf_check(id),
-                    cgh,
-                    sycl::write_only,
-                    sycl::no_init};
-                sycl::accessor U{
-                    mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf), cgh, sycl::read_only};
-                sycl::accessor h{
-                    mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
-                sycl::accessor cs0{
-                    mpdat.pdat.get_field_buf_ref<Tscal>(isoundspeed_interf), cgh, sycl::read_only};
+            sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_uint = mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf);
+            sham::DeviceBuffer<Tscal> &buf_h = mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf);
+            sham::DeviceBuffer<Tscal> &buf_cs0
+                = mpdat.pdat.get_field_buf_ref<Tscal>(isoundspeed_interf);
 
+            sham::EventList depends_list;
+
+            auto P   = buf_P.get_write_access(depends_list);
+            auto cs  = buf_cs.get_write_access(depends_list);
+            auto h   = buf_h.get_read_access(depends_list);
+            auto U   = buf_uint.get_read_access(depends_list);
+            auto cs0 = buf_cs0.get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 Tscal pmass = gpart_mass;
 
                 cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
@@ -150,6 +168,12 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                     cs[item] = cs_out;
                 });
             });
+
+            buf_P.complete_event_state(e);
+            buf_cs.complete_event_state(e);
+            buf_h.complete_event_state(e);
+            buf_uint.complete_event_state(e);
+            buf_cs0.complete_event_state(e);
         });
 
     } else if (
@@ -161,22 +185,22 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
             auto &mfield = storage.merged_xyzh.get().get(id);
 
-            sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(mfield.field_pos.get_buf());
+            sham::DeviceBuffer<Tvec> &buf_xyz = mfield.field_pos.get_buf();
 
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                sycl::accessor P{
-                    storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
-                sycl::accessor cs{
-                    storage.soundspeed.get().get_buf_check(id),
-                    cgh,
-                    sycl::write_only,
-                    sycl::no_init};
-                sycl::accessor U{
-                    mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf), cgh, sycl::read_only};
-                sycl::accessor h{
-                    mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
+            sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_uint = mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf);
+            sham::DeviceBuffer<Tscal> &buf_h = mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf);
 
+            sham::EventList depends_list;
+
+            auto P   = buf_P.get_write_access(depends_list);
+            auto cs  = buf_cs.get_write_access(depends_list);
+            auto h   = buf_h.get_read_access(depends_list);
+            auto U   = buf_uint.get_read_access(depends_list);
+            auto xyz = buf_xyz.get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 Tscal cs0   = eos_config->cs0;
                 Tscal mq    = -eos_config->q;
                 Tscal r0sq  = eos_config->r0 * eos_config->r0;
@@ -198,6 +222,12 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                     cs[item] = cs_out;
                 });
             });
+
+            buf_P.complete_event_state(e);
+            buf_cs.complete_event_state(e);
+            buf_h.complete_event_state(e);
+            buf_uint.complete_event_state(e);
+            buf_xyz.complete_event_state(e);
         });
 
     } else if (
@@ -223,20 +253,24 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         sycl::buffer<Tscal> sink_mass_buf{sink_mass};
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
-            auto &mfield                = storage.merged_xyzh.get().get(id);
-            sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(mfield.field_pos.get_buf());
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                sycl::accessor P{
-                    storage.pressure.get().get_buf_check(id), cgh, sycl::write_only, sycl::no_init};
-                sycl::accessor cs{
-                    storage.soundspeed.get().get_buf_check(id),
-                    cgh,
-                    sycl::write_only,
-                    sycl::no_init};
-                sycl::accessor h{
-                    mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf), cgh, sycl::read_only};
+            auto &mfield = storage.merged_xyzh.get().get(id);
 
+            sham::DeviceBuffer<Tvec> &buf_xyz = mfield.field_pos.get_buf();
+
+            sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_uint = mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf);
+            sham::DeviceBuffer<Tscal> &buf_h = mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf);
+
+            sham::EventList depends_list;
+
+            auto P   = buf_P.get_write_access(depends_list);
+            auto cs  = buf_cs.get_write_access(depends_list);
+            auto h   = buf_h.get_read_access(depends_list);
+            auto U   = buf_uint.get_read_access(depends_list);
+            auto xyz = buf_xyz.get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 sycl::accessor spos{sink_pos_buf, cgh, sycl::read_only};
                 sycl::accessor smass{sink_mass_buf, cgh, sycl::read_only};
                 u32 scount = sink_cnt;
@@ -268,6 +302,12 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                     cs[item] = cs_out;
                 });
             });
+
+            buf_P.complete_event_state(e);
+            buf_cs.complete_event_state(e);
+            buf_h.complete_event_state(e);
+            buf_uint.complete_event_state(e);
+            buf_xyz.complete_event_state(e);
         });
 
     } else {

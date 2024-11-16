@@ -49,7 +49,7 @@ get_new_id_map<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptree) {
             newid_buf_map.insert(
                 {id,
                  sptree.compute_patch_owner(
-                     shamsys::instance::get_compute_queue(), *pos, xyz_field.size())});
+                     shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
         }
     });
 
@@ -74,7 +74,7 @@ get_new_id_map<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptree) {
             newid_buf_map.insert(
                 {id,
                  sptree.compute_patch_owner(
-                     shamsys::instance::get_compute_queue(), *pos, xyz_field.size())});
+                     shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
         }
     });
 
@@ -106,7 +106,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
             newid_buf_map.insert(
                 {id,
                  sptree.compute_patch_owner(
-                     shamsys::instance::get_compute_queue(), *pos, xyz_field.size())});
+                     shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
 
             {
                 // auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
@@ -158,8 +158,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
             {
 
                 auto &pos = xyz_field.get_buf();
-
-                sycl::host_accessor acc{*pos, sycl::read_only};
+                auto acc  = pos.copy_to_stdvec();
 
                 for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
 
@@ -193,7 +192,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
                 newid_buf_map.insert(
                     {id,
                      sptree.compute_patch_owner(
-                         shamsys::instance::get_compute_queue(), *pos, xyz_field.size())});
+                         shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
             }
         });
     }
@@ -333,7 +332,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
             newid_buf_map.insert(
                 {id,
                  sptree.compute_patch_owner(
-                     shamsys::instance::get_compute_queue(), *pos, xyz_field.size())});
+                     shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
 
             {
                 // auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
@@ -386,7 +385,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
 
                 auto &pos = xyz_field.get_buf();
 
-                sycl::host_accessor acc{*pos, sycl::read_only};
+                auto acc = pos.copy_to_stdvec();
 
                 for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
 
@@ -420,7 +419,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
                 newid_buf_map.insert(
                     {id,
                      sptree.compute_patch_owner(
-                         shamsys::instance::get_compute_queue(), *pos, xyz_field.size())});
+                         shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
             }
         });
     }

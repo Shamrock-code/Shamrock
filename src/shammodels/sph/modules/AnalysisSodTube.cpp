@@ -66,10 +66,10 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
             u32 len = pdat.get_obj_cnt();
 
             {
-                sycl::host_accessor acc_xyz{xyz_buf};
-                sycl::host_accessor acc_hpart{hpart_buf};
-                sycl::host_accessor acc_vxyz{vxyz_buf};
-                sycl::host_accessor acc_uint{uint_buf};
+                auto acc_xyz   = xyz_buf.copy_to_stdvec();
+                auto acc_hpart = hpart_buf.copy_to_stdvec();
+                auto acc_vxyz  = vxyz_buf.copy_to_stdvec();
+                auto acc_uint  = uint_buf.copy_to_stdvec();
 
                 for (u32 i = 0; i < len; i++) {
 

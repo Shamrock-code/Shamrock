@@ -42,7 +42,7 @@ namespace shammodels::sph::modules {
         RenderFieldGetter(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        using field_getter_t = const std::unique_ptr<sycl::buffer<Tfield>> &(
+        using field_getter_t = const sham::DeviceBuffer<Tfield> &(
             const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat);
 
         using lamda_runner

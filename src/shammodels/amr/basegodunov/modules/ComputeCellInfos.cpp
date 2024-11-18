@@ -39,26 +39,19 @@ void shammodels::basegodunov::modules::ComputeCellInfos<Tvec, TgridVec>::compute
           });
 
     storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPDat &mpdat) {
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::buffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        q.submit([&](sycl::handler &cgh) {
-            sycl::accessor acc_block_min{buf_block_min, cgh, sycl::read_only};
-            sycl::accessor acc_block_max{buf_block_max, cgh, sycl::read_only};
+        sham::EventList depends_list;
 
-            sycl::accessor bsize{
-                shambase::get_check_ref(block_cell_sizes.get_buf(id)),
-                cgh,
-                sycl::write_only,
-                sycl::no_init};
-            sycl::accessor aabb_lower{
-                shambase::get_check_ref(cell0block_aabb_lower.get_buf(id)),
-                cgh,
-                sycl::write_only,
-                sycl::no_init};
+        auto acc_block_min = buf_block_min.get_read_access(depends_list);
+        auto acc_block_max = buf_block_max.get_read_access(depends_list);
+        auto bsize         = block_cell_sizes.get_buf(id).get_write_access(depends_list);
+        auto aabb_lower    = cell0block_aabb_lower.get_buf(id).get_write_access(depends_list);
 
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal one_over_Nside = 1. / AMRBlock::Nside;
 
             Tscal dxfact = solver_config.grid_coord_to_pos_fact;
@@ -78,6 +71,11 @@ void shammodels::basegodunov::modules::ComputeCellInfos<Tvec, TgridVec>::compute
                 aabb_lower[gid] = lower_flt;
             });
         });
+
+        buf_block_min.complete_event_state(e);
+        buf_block_max.complete_event_state(e);
+        block_cell_sizes.get_buf(id).complete_event_state(e);
+        cell0block_aabb_lower.get_buf(id).complete_event_state(e);
     });
 
     storage.cell_infos.set(

@@ -60,7 +60,7 @@ void shammodels::basegodunov::modules::AMRTree<Tvec, TgridVec>::build_trees() {
               auto &field_pos = merged.pdat.get_field<TgridVec>(0);
 
               RTree tree(
-                  shamsys::instance::get_compute_queue(),
+                  shamsys::instance::get_compute_scheduler_ptr(),
                   {bmin, bmax},
                   field_pos.get_buf(),
                   field_pos.get_obj_cnt(),
@@ -93,17 +93,20 @@ void shammodels::basegodunov::modules::AMRTree<Tvec, TgridVec>::correct_bounding
         sycl::buffer<TgridVec> tmp_min_cell(tot_count);
         sycl::buffer<TgridVec> tmp_max_cell(tot_count);
 
-        MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(id);
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        MergedPDat &mpdat                          = storage.merged_patchdata_ghost.get().get(id);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::EventList depends_list;
+        auto acc_bmin = buf_cell_min.get_read_access(depends_list);
+        auto acc_bmax = buf_cell_max.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shamrock::tree::ObjectIterator cell_looper(tree, cgh);
 
             u32 leaf_offset = tree.tree_struct.internal_cell_count;
-
-            sycl::accessor acc_bmin{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor acc_bmax{buf_cell_max, cgh, sycl::read_only};
 
             sycl::accessor comp_min{tmp_min_cell, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor comp_max{tmp_max_cell, cgh, sycl::write_only, sycl::no_init};
@@ -127,6 +130,9 @@ void shammodels::basegodunov::modules::AMRTree<Tvec, TgridVec>::correct_bounding
                 comp_max[leaf_offset + leaf_id] = max;
             });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
 
         auto ker_reduc_hmax = [&](sycl::handler &cgh) {
             u32 offset_leaf = internal_cell_count;

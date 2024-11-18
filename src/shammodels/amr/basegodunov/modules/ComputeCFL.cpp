@@ -42,31 +42,31 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
     const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
-        sycl::buffer<TgridVec> &buf_block_min = pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_block_max = pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_block_min = pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
-        sycl::buffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
-        sycl::buffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
+        sham::DeviceBuffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
+        sham::DeviceBuffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
+        sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
 
-        sycl::buffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
 
-        sycl::buffer<Tscal> &block_cell_sizes
+        sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(cur_p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cfl_dt{cfl_dt_buf, cgh, sycl::write_only, sycl::no_init};
+        sham::EventList depends_list;
+        auto cfl_dt        = cfl_dt_buf.get_write_access(depends_list);
+        auto acc_block_min = buf_block_min.get_read_access(depends_list);
+        auto acc_block_max = buf_block_max.get_read_access(depends_list);
+        auto rho           = buf_rho.get_read_access(depends_list);
+        auto rhov          = buf_rhov.get_read_access(depends_list);
+        auto rhoe          = buf_rhoe.get_read_access(depends_list);
 
-            sycl::accessor acc_block_min{buf_block_min, cgh, sycl::read_only};
-            sycl::accessor acc_block_max{buf_block_max, cgh, sycl::read_only};
-            sycl::accessor rho{buf_rho, cgh, sycl::read_only};
-            sycl::accessor rhov{buf_rhov, cgh, sycl::read_only};
-            sycl::accessor rhoe{buf_rhoe, cgh, sycl::read_only};
-
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal C_safe = solver_config.Csafe;
             Tscal gamma  = solver_config.eos_gamma;
 
@@ -99,6 +99,13 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
                 cfl_dt[gid] = dt;
             });
         });
+
+        cfl_dt_buf.complete_event_state(e);
+        buf_block_min.complete_event_state(e);
+        buf_block_max.complete_event_state(e);
+        buf_rho.complete_event_state(e);
+        buf_rhov.complete_event_state(e);
+        buf_rhoe.complete_event_state(e);
     });
 
     Tscal rank_dt = cfl_dt.compute_rank_min();
@@ -137,26 +144,25 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
     const u32 irhovel_dust = pdl.get_field_idx<Tvec>("rhovel_dust");
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
-        sycl::buffer<Tscal> &buf_rho_dust = pdat.get_field_buf_ref<Tscal>(irho_dust);
-        sycl::buffer<Tvec> &buf_rhov_dust = pdat.get_field_buf_ref<Tvec>(irhovel_dust);
+        sham::DeviceBuffer<Tscal> &buf_rho_dust = pdat.get_field_buf_ref<Tscal>(irho_dust);
+        sham::DeviceBuffer<Tvec> &buf_rhov_dust = pdat.get_field_buf_ref<Tvec>(irhovel_dust);
 
-        sycl::buffer<Tscal> &dust_cfl_dt_buf = dust_cfl_dt.get_buf_check(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &dust_cfl_dt_buf = dust_cfl_dt.get_buf_check(cur_p.id_patch);
 
-        sycl::buffer<Tscal> &block_cell_sizes
+        sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(cur_p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor dust_cfl_dt{dust_cfl_dt_buf, cgh, sycl::write_only, sycl::no_init};
+        sham::EventList depends_list;
+        auto dust_cfl_dt        = dust_cfl_dt_buf.get_write_access(depends_list);
+        auto rho_dust           = buf_rho_dust.get_read_access(depends_list);
+        auto rhov_dust          = buf_rhov_dust.get_read_access(depends_list);
+        auto acc_aabb_cell_size = block_cell_sizes.get_read_access(depends_list);
 
-            sycl::accessor rho_dust{buf_rho_dust, cgh, sycl::read_only};
-            sycl::accessor rhov_dust{buf_rhov_dust, cgh, sycl::read_only};
-
-            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
-
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal C_safe = solver_config.Csafe;
 
             shambase::parralel_for(cgh, ndust * cell_count, "compute_dust_cfl", [=](u64 gid) {
@@ -182,6 +188,11 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
                 dust_cfl_dt[ndust * cell_global_id + ndust_off_loc] = dt;
             });
         });
+
+        dust_cfl_dt_buf.complete_event_state(e);
+        buf_rho_dust.complete_event_state(e);
+        buf_rhov_dust.complete_event_state(e);
+        block_cell_sizes.complete_event_state(e);
     });
 
     Tscal rank_dust_dt = dust_cfl_dt.compute_rank_min();

@@ -97,7 +97,7 @@ namespace shamalgs::collective {
                     MPICHECK(MPI_Allreduce(
                         MPI_IN_PLACE, ptr, field.get_size(), get_mpi_type<T>(), MPI_SUM, comm));
 
-                    field.complete_event_state({});
+                    field.complete_event_state(sycl::event{});
                 } else {
                     sham::DeviceBuffer<T, sham::host> field_host
                         = field.template copy_to<sham::host>();
@@ -115,7 +115,7 @@ namespace shamalgs::collective {
                 MPICHECK(MPI_Allreduce(
                     MPI_IN_PLACE, ptr, field.get_size(), get_mpi_type<T>(), MPI_SUM, comm));
 
-                field.complete_event_state({});
+                field.complete_event_state(sycl::event{});
             } else {
                 shambase::throw_unimplemented();
             }

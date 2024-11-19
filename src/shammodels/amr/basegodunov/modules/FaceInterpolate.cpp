@@ -282,6 +282,15 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
                 ptr_buf_dz_vel));
+
+        block_cell_sizes.complete_event_state(resulting_event_list);
+        cell0block_aabb_lower.complete_event_state(resulting_event_list);
+        buf_rho.complete_event_state(resulting_event_list);
+        buf_grad_rho.complete_event_state(resulting_event_list);
+        buf_vel.complete_event_state(resulting_event_list);
+        buf_dx_vel.complete_event_state(resulting_event_list);
+        buf_dy_vel.complete_event_state(resulting_event_list);
+        buf_dz_vel.complete_event_state(resulting_event_list);
     });
 
     storage.rho_face_xp.set(std::move(rho_face_xp));

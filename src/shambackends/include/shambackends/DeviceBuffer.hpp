@@ -265,6 +265,18 @@ namespace sham {
             shambase::get_check_ref(events_hndl).complete_state(e);
         }
 
+        /**
+         * @brief Complete the event state of the buffer.
+         *
+         * This function complete the event state of the buffer by registering the
+         * event resulting of the last queried access
+         *
+         * @param e The SYCL event resulting of the queried access.
+         */
+        void complete_event_state(sham::EventList &e) const {
+            shambase::get_check_ref(events_hndl).complete_state(e);
+        }
+
         ///////////////////////////////////////////////////////////////////////
         // Event handling (End)
         ///////////////////////////////////////////////////////////////////////
@@ -378,7 +390,7 @@ namespace sham {
             });
 
             e.wait_and_throw();
-            complete_event_state({});
+            complete_event_state(sycl::event{});
 
             return ret;
         }
@@ -408,7 +420,7 @@ namespace sham {
             });
 
             e.wait_and_throw();
-            complete_event_state({});
+            complete_event_state(sycl::event{});
         }
 
         /**
@@ -439,7 +451,7 @@ namespace sham {
             });
 
             e.wait_and_throw();
-            complete_event_state({});
+            complete_event_state(sycl::event{});
         }
 
         /**

@@ -171,9 +171,9 @@ namespace shamrock::amr {
                 std::unique_ptr<sycl::buffer<u32>> out_buf_particle_index_map;
 
                 MortonBuilder::build(
-                    shamsys::instance::get_compute_queue(),
+                    shamsys::instance::get_compute_scheduler_ptr(),
                     sched.get_sim_box().template patch_coord_to_domain<Tcoord>(cur_p),
-                    *pdat.get_field<Tcoord>(0).get_buf(),
+                    pdat.get_field<Tcoord>(0).get_buf(),
                     pdat.get_obj_cnt(),
                     out_buf_morton,
                     out_buf_particle_index_map);
@@ -190,12 +190,13 @@ namespace shamrock::amr {
 
                 sycl::buffer<u32> mergeable_indexes(obj_to_check);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor acc_min{
-                        *pdat.get_field<Tcoord>(0).get_buf(), cgh, sycl::read_only};
-                    sycl::accessor acc_max{
-                        *pdat.get_field<Tcoord>(1).get_buf(), cgh, sycl::read_only};
+                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+                sham::EventList depends_list;
+                auto acc_min = pdat.get_field<Tcoord>(0).get_buf().get_write_access(depends_list);
+                auto acc_max = pdat.get_field<Tcoord>(1).get_buf().get_write_access(depends_list);
+
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     sycl::accessor acc_mergeable{
                         mergeable_indexes, cgh, sycl::write_only, sycl::no_init};
 
@@ -213,6 +214,9 @@ namespace shamrock::amr {
                         acc_mergeable[gid] = CellCoord::are_mergeable(cells);
                     });
                 });
+
+                pdat.get_field<Tcoord>(0).get_buf().complete_event_state(e);
+                pdat.get_field<Tcoord>(1).get_buf().complete_event_state(e);
 
                 shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
                     sycl::accessor acc_mergeable{mergeable_indexes, cgh, sycl::read_write};
@@ -269,13 +273,17 @@ namespace shamrock::amr {
 
                     pdat.expand(refine_flags.count * (split_count - 1));
 
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        sycl::accessor index_to_ref{*refine_flags.idx, cgh, sycl::read_only};
+                    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-                        sycl::accessor cell_bound_low{
-                            *pdat.get_field<Tcoord>(0).get_buf(), cgh, sycl::read_write};
-                        sycl::accessor cell_bound_high{
-                            *pdat.get_field<Tcoord>(1).get_buf(), cgh, sycl::read_write};
+                    sham::EventList depends_list;
+
+                    auto cell_bound_low
+                        = pdat.get_field<Tcoord>(0).get_buf().get_write_access(depends_list);
+                    auto cell_bound_high
+                        = pdat.get_field<Tcoord>(1).get_buf().get_write_access(depends_list);
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        sycl::accessor index_to_ref{*refine_flags.idx, cgh, sycl::read_only};
 
                         u32 start_index_push = old_obj_cnt;
 
@@ -317,6 +325,9 @@ namespace shamrock::amr {
                                 lambd(idx_to_refine, cur_cell, cells_ids, cell_coords, uacc);
                             });
                     });
+
+                    pdat.get_field<Tcoord>(0).get_buf().complete_event_state(e);
+                    pdat.get_field<Tcoord>(1).get_buf().complete_event_state(e);
                 }
 
                 sum_cell_count += pdat.get_obj_cnt();
@@ -347,18 +358,13 @@ namespace shamrock::amr {
 
                     sham::EventList depends_list;
                     auto cell_bound_low
-                        = pdat.get_field<Tcoord>(0).get_buf().get_write_acess(depends_list);
+                        = pdat.get_field<Tcoord>(0).get_buf().get_write_access(depends_list);
                     auto cell_bound_high
-                        = pdat.get_field<Tcoord>(1).get_buf().get_write_acess(depends_list);
+                        = pdat.get_field<Tcoord>(1).get_buf().get_write_access(depends_list);
 
                     // edit cell content + make flag of cells to keep
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         sycl::accessor index_to_deref{*derefine_flags.idx, cgh, sycl::read_only};
-
-                        sycl::accessor cell_bound_low{
-                            *pdat.get_field<Tcoord>(0).get_buf(), cgh, sycl::read_write};
-                        sycl::accessor cell_bound_high{
-                            *pdat.get_field<Tcoord>(1).get_buf(), cgh, sycl::read_write};
 
                         sycl::accessor flag_keep{keep_cell_flag, cgh, sycl::read_write};
 

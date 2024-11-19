@@ -59,6 +59,11 @@ namespace sham::details {
     }
 
     void BufferEventHandler::complete_state(sycl::event e, SourceLocation src_loc) {
+        complete_state(std::vector<sycl::event>{e}, src_loc);
+    }
+
+    void BufferEventHandler::complete_state(
+        const std::vector<sycl::event> &events, SourceLocation src_loc) {
         if (up_to_date_events) {
             shambase::throw_with_loc<std::runtime_error>(
                 "the event state of that buffer is already complete"
@@ -68,7 +73,10 @@ namespace sham::details {
 
         if (last_access == READ) {
 
-            read_events.push_back(e);
+            for (auto e : events) {
+                read_events.push_back(e);
+            }
+
             up_to_date_events = true;
 
         } else if (last_access == WRITE) {
@@ -77,7 +85,10 @@ namespace sham::details {
             write_events.clear();
             read_events.clear();
 
-            write_events.push_back(e);
+            for (auto e : events) {
+                write_events.push_back(e);
+            }
+
             up_to_date_events = true;
         }
     }

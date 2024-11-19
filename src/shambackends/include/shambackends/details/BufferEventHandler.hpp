@@ -152,6 +152,23 @@ namespace sham::details {
          * that is already up to date (i.e., `up_to_date_events` is `true`).
          */
         void complete_state(sycl::event e, SourceLocation src_loc = SourceLocation{});
+
+        /**
+         * @brief Completes the state of the buffer event handler with the specified events.
+         *
+         * This function is used to complete the state of the buffer event handler with the given
+         * list of events. Once the state is completed, the buffer event handler is marked as up to
+         * date.
+         *
+         * @param events A vector of events for which the state is completed.
+         * @param src_loc The source location of the call to this function.
+         *
+         * @throws std::runtime_error if the buffer event handler is already up to date.
+         *         This exception is thrown when the function is called on a buffer event handler
+         * that is already up to date (i.e., `up_to_date_events` is `true`).
+         */
+        void complete_state(
+            const std::vector<sycl::event> &events, SourceLocation src_loc = SourceLocation{});
     };
 
 } // namespace sham::details

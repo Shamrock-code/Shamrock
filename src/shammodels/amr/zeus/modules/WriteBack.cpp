@@ -35,24 +35,27 @@ void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_dat
         using MergedPDat  = shamrock::MergedPatchData;
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<Tscal> &rho_merged  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-        sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
-        sycl::buffer<Tvec> &vel_merged   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+        sham::DeviceBuffer<Tscal> &rho_merged  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sham::DeviceBuffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sham::DeviceBuffer<Tvec> &vel_merged   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
-        PatchData &patch_dest          = scheduler().patch_data.get_pdat(p.id_patch);
-        sycl::buffer<Tscal> &rho_dest  = patch_dest.get_field_buf_ref<Tscal>(irho_interf);
-        sycl::buffer<Tscal> &eint_dest = patch_dest.get_field_buf_ref<Tscal>(ieint_interf);
-        sycl::buffer<Tvec> &vel_dest   = patch_dest.get_field_buf_ref<Tvec>(ivel_interf);
+        PatchData &patch_dest                = scheduler().patch_data.get_pdat(p.id_patch);
+        sham::DeviceBuffer<Tscal> &rho_dest  = patch_dest.get_field_buf_ref<Tscal>(irho_interf);
+        sham::DeviceBuffer<Tscal> &eint_dest = patch_dest.get_field_buf_ref<Tscal>(ieint_interf);
+        sham::DeviceBuffer<Tvec> &vel_dest   = patch_dest.get_field_buf_ref<Tvec>(ivel_interf);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor acc_rho_src{rho_merged, cgh, sycl::read_only};
-            sycl::accessor acc_eint_src{eint_merged, cgh, sycl::read_only};
-            sycl::accessor acc_vel_src{vel_merged, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor acc_rho_dest{rho_dest, cgh, sycl::write_only};
-            sycl::accessor acc_eint_dest{eint_dest, cgh, sycl::write_only};
-            sycl::accessor acc_vel_dest{vel_dest, cgh, sycl::write_only};
+        sham::EventList depends_list;
+        auto acc_rho_src  = rho_merged.get_read_access(depends_list);
+        auto acc_eint_src = eint_merged.get_read_access(depends_list);
+        auto acc_vel_src  = vel_merged.get_read_access(depends_list);
 
+        auto acc_rho_dest  = rho_dest.get_write_access(depends_list);
+        auto acc_eint_dest = eint_dest.get_write_access(depends_list);
+        auto acc_vel_dest  = vel_dest.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(
                 cgh, mpdat.original_elements * Block::block_size, "copy_back", [=](u32 id) {
                     acc_rho_dest[id]  = acc_rho_src[id];
@@ -60,6 +63,14 @@ void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_dat
                     acc_vel_dest[id]  = acc_vel_src[id];
                 });
         });
+
+        rho_merged.complete_event_state(e);
+        eint_merged.complete_event_state(e);
+        vel_merged.complete_event_state(e);
+
+        rho_dest.complete_event_state(e);
+        eint_dest.complete_event_state(e);
+        vel_dest.complete_event_state(e);
 
         if (mpdat.pdat.has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in write back");

@@ -41,8 +41,8 @@ void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
         shammodels::zeus::NeighFaceList<Tvec> &face_lists
             = storage.face_lists.get().get(p.id_patch);
@@ -53,17 +53,21 @@ void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact;
 
-        sycl::buffer<Tvec> &buf_vel    = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
-        sycl::buffer<Tvec> &buf_grad_u = storage.gradu.get().get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel    = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+        sham::DeviceBuffer<Tvec> &buf_grad_u = storage.gradu.get().get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::EventList depends_list;
+
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
+
+        auto vel    = buf_vel.get_read_access(depends_list);
+        auto grad_u = buf_grad_u.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             tree::ObjectCacheIterator faces_xm(face_xm.neigh_info, cgh);
-
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
-
-            sycl::accessor grad_u{buf_grad_u, cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
 
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "subsetp1", [=](u64 id_a) {
                 Tvec cell2_a = (cell_min[id_a] + cell_max[id_a]).template convert<Tscal>()
@@ -88,6 +92,11 @@ void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
                 // grad_p[id_a] = -buf_grad_u;
             });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        buf_vel.complete_event_state(e);
+        buf_grad_u.complete_event_state(e);
     });
 }
 

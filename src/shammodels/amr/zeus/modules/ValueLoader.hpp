@@ -73,8 +73,8 @@ namespace shammodels::zeus::modules {
             std::array<Tgridscal, dim> offset,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
 
         /**
          * @brief load value of neighbour blocks having same level
@@ -90,13 +90,13 @@ namespace shammodels::zeus::modules {
          */
         void load_patch_neigh_same_level(
             std::array<Tgridscal, dim> offset,
-            sycl::buffer<TgridVec> &buf_cell_min,
-            sycl::buffer<TgridVec> &buf_cell_max,
+            sham::DeviceBuffer<TgridVec> &buf_cell_min,
+            sham::DeviceBuffer<TgridVec> &buf_cell_max,
             shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
 
         /**
          * @brief load value of neighbour block with level = +1
@@ -112,13 +112,13 @@ namespace shammodels::zeus::modules {
          */
         void load_patch_neigh_level_up(
             std::array<Tgridscal, dim> offset,
-            sycl::buffer<TgridVec> &buf_cell_min,
-            sycl::buffer<TgridVec> &buf_cell_max,
+            sham::DeviceBuffer<TgridVec> &buf_cell_min,
+            sham::DeviceBuffer<TgridVec> &buf_cell_max,
             shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
 
         /**
          * @brief load value of neighbour block with level = -1
@@ -134,91 +134,91 @@ namespace shammodels::zeus::modules {
          */
         void load_patch_neigh_level_down(
             std::array<Tgridscal, dim> offset,
-            sycl::buffer<TgridVec> &buf_cell_min,
-            sycl::buffer<TgridVec> &buf_cell_max,
+            sham::DeviceBuffer<TgridVec> &buf_cell_min,
+            sham::DeviceBuffer<TgridVec> &buf_cell_max,
             shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
 
         void load_patch_internal_block_xm(
-            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+            u32 nobj, u32 nvar, sham::DeviceBuffer<T> &src, sham::DeviceBuffer<T> &dest);
 
         void load_patch_internal_block_ym(
-            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+            u32 nobj, u32 nvar, sham::DeviceBuffer<T> &src, sham::DeviceBuffer<T> &dest);
 
         void load_patch_internal_block_zm(
-            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+            u32 nobj, u32 nvar, sham::DeviceBuffer<T> &src, sham::DeviceBuffer<T> &dest);
 
         void load_patch_internal_block_xp(
-            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+            u32 nobj, u32 nvar, sham::DeviceBuffer<T> &src, sham::DeviceBuffer<T> &dest);
 
         void load_patch_internal_block_yp(
-            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+            u32 nobj, u32 nvar, sham::DeviceBuffer<T> &src, sham::DeviceBuffer<T> &dest);
 
         void load_patch_internal_block_zp(
-            u32 nobj, u32 nvar, sycl::buffer<T> &src, sycl::buffer<T> &dest);
+            u32 nobj, u32 nvar, sham::DeviceBuffer<T> &src, sham::DeviceBuffer<T> &dest);
 
         void load_patch_neigh_same_level_xm(
             std::array<Tgridscal, dim> offset,
-            sycl::buffer<TgridVec> &buf_cell_min,
-            sycl::buffer<TgridVec> &buf_cell_max,
+            sham::DeviceBuffer<TgridVec> &buf_cell_min,
+            sham::DeviceBuffer<TgridVec> &buf_cell_max,
             shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
 
         void load_patch_neigh_same_level_ym(
             std::array<Tgridscal, dim> offset,
-            sycl::buffer<TgridVec> &buf_cell_min,
-            sycl::buffer<TgridVec> &buf_cell_max,
+            sham::DeviceBuffer<TgridVec> &buf_cell_min,
+            sham::DeviceBuffer<TgridVec> &buf_cell_max,
             shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
 
         void load_patch_neigh_same_level_zm(
             std::array<Tgridscal, dim> offset,
-            sycl::buffer<TgridVec> &buf_cell_min,
-            sycl::buffer<TgridVec> &buf_cell_max,
+            sham::DeviceBuffer<TgridVec> &buf_cell_min,
+            sham::DeviceBuffer<TgridVec> &buf_cell_max,
             shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
 
         void load_patch_neigh_same_level_xp(
             std::array<Tgridscal, dim> offset,
-            sycl::buffer<TgridVec> &buf_cell_min,
-            sycl::buffer<TgridVec> &buf_cell_max,
+            sham::DeviceBuffer<TgridVec> &buf_cell_min,
+            sham::DeviceBuffer<TgridVec> &buf_cell_max,
             shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
 
         void load_patch_neigh_same_level_yp(
             std::array<Tgridscal, dim> offset,
-            sycl::buffer<TgridVec> &buf_cell_min,
-            sycl::buffer<TgridVec> &buf_cell_max,
+            sham::DeviceBuffer<TgridVec> &buf_cell_min,
+            sham::DeviceBuffer<TgridVec> &buf_cell_max,
             shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
 
         void load_patch_neigh_same_level_zp(
             std::array<Tgridscal, dim> offset,
-            sycl::buffer<TgridVec> &buf_cell_min,
-            sycl::buffer<TgridVec> &buf_cell_max,
+            sham::DeviceBuffer<TgridVec> &buf_cell_min,
+            sham::DeviceBuffer<TgridVec> &buf_cell_max,
             shammodels::zeus::NeighFaceList<Tvec> &face_lists,
             u32 nobj,
             u32 nvar,
-            sycl::buffer<T> &src,
-            sycl::buffer<T> &dest);
+            sham::DeviceBuffer<T> &src,
+            sham::DeviceBuffer<T> &dest);
     };
 
 } // namespace shammodels::zeus::modules

@@ -172,16 +172,14 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
 
         // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
-        auto ptr_buf_rho               = buf_rho.get_read_access(depends_list);
-        auto ptr_buf_grad_rho          = buf_grad_rho.get_read_access(depends_list);
-        auto ptr_buf_vel               = buf_vel.get_read_access(depends_list);
-        auto ptr_buf_dx_vel            = buf_dx_vel.get_read_access(depends_list);
-        auto ptr_buf_dy_vel            = buf_dy_vel.get_read_access(depends_list);
-        auto ptr_buf_dz_vel            = buf_dz_vel.get_read_access(depends_list);
-        depends_list.wait_and_throw();
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
+        auto ptr_buf_rho               = buf_rho.get_read_access_sync();
+        auto ptr_buf_grad_rho          = buf_grad_rho.get_read_access_sync();
+        auto ptr_buf_vel               = buf_vel.get_read_access_sync();
+        auto ptr_buf_dx_vel            = buf_dx_vel.get_read_access_sync();
+        auto ptr_buf_dy_vel            = buf_dy_vel.get_read_access_sync();
+        auto ptr_buf_dz_vel            = buf_dz_vel.get_read_access_sync();
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho");
 
@@ -385,19 +383,16 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::DeviceBuffer<Tvec> &buf_grad_P = storage.grad_P.get().get_buf(id);
 
         // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
 
-        auto ptr_vel    = buf_vel.get_read_access(depends_list);
-        auto ptr_dx_vel = buf_dx_vel.get_read_access(depends_list);
-        auto ptr_dy_vel = buf_dy_vel.get_read_access(depends_list);
-        auto ptr_dz_vel = buf_dz_vel.get_read_access(depends_list);
+        auto ptr_vel    = buf_vel.get_read_access_sync();
+        auto ptr_dx_vel = buf_dx_vel.get_read_access_sync();
+        auto ptr_dy_vel = buf_dy_vel.get_read_access_sync();
+        auto ptr_dz_vel = buf_dz_vel.get_read_access_sync();
 
-        auto ptr_rho    = buf_rho.get_read_access(depends_list);
-        auto ptr_grad_P = buf_grad_P.get_read_access(depends_list);
-
-        depends_list.wait_and_throw();
+        auto ptr_rho    = buf_rho.get_read_access_sync();
+        auto ptr_grad_P = buf_grad_P.get_read_access_sync();
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
 
@@ -597,19 +592,16 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
 
         // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
 
-        auto ptr_buf_press  = buf_press.get_read_access(depends_list);
-        auto ptr_buf_grad_P = buf_grad_P.get_read_access(depends_list);
+        auto ptr_buf_press  = buf_press.get_read_access_sync();
+        auto ptr_buf_grad_P = buf_grad_P.get_read_access_sync();
 
-        auto ptr_buf_vel    = buf_vel.get_read_access(depends_list);
-        auto ptr_buf_dx_vel = buf_dx_vel.get_read_access(depends_list);
-        auto ptr_buf_dy_vel = buf_dy_vel.get_read_access(depends_list);
-        auto ptr_buf_dz_vel = buf_dz_vel.get_read_access(depends_list);
-
-        depends_list.wait_and_throw();
+        auto ptr_buf_vel    = buf_vel.get_read_access_sync();
+        auto ptr_buf_dx_vel = buf_dx_vel.get_read_access_sync();
+        auto ptr_buf_dy_vel = buf_dy_vel.get_read_access_sync();
+        auto ptr_buf_dz_vel = buf_dz_vel.get_read_access_sync();
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate press");
 
@@ -841,19 +833,16 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
         sham::DeviceBuffer<Tvec> &buf_dz_vel_dust = storage.dz_v_dust.get().get_buf(id);
 
         // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
 
-        auto ptr_rho_dust      = buf_rho_dust.get_read_access(depends_list);
-        auto ptr_grad_rho_dust = buf_grad_rho_dust.get_read_access(depends_list);
+        auto ptr_rho_dust      = buf_rho_dust.get_read_access_sync();
+        auto ptr_grad_rho_dust = buf_grad_rho_dust.get_read_access_sync();
 
-        auto ptr_vel_dust    = buf_vel_dust.get_read_access(depends_list);
-        auto ptr_dx_vel_dust = buf_dx_vel_dust.get_read_access(depends_list);
-        auto ptr_dy_vel_dust = buf_dy_vel_dust.get_read_access(depends_list);
-        auto ptr_dz_vel_dust = buf_dz_vel_dust.get_read_access(depends_list);
-
-        depends_list.wait_and_throw();
+        auto ptr_vel_dust    = buf_vel_dust.get_read_access_sync();
+        auto ptr_dx_vel_dust = buf_dx_vel_dust.get_read_access_sync();
+        auto ptr_dy_vel_dust = buf_dy_vel_dust.get_read_access_sync();
+        auto ptr_dz_vel_dust = buf_dz_vel_dust.get_read_access_sync();
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho dust");
 
@@ -1065,16 +1054,13 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
 
         // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
-        auto ptr_buf_vel_dust          = buf_vel_dust.get_read_access(depends_list);
-        auto ptr_buf_dx_vel_dust       = buf_dx_vel_dust.get_read_access(depends_list);
-        auto ptr_buf_dy_vel_dust       = buf_dy_vel_dust.get_read_access(depends_list);
-        auto ptr_buf_dz_vel_dust       = buf_dz_vel_dust.get_read_access(depends_list);
-        auto ptr_buf_rho_dust          = buf_rho_dust.get_read_access(depends_list);
-
-        depends_list.wait_and_throw();
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
+        auto ptr_buf_vel_dust          = buf_vel_dust.get_read_access_sync();
+        auto ptr_buf_dx_vel_dust       = buf_dx_vel_dust.get_read_access_sync();
+        auto ptr_buf_dy_vel_dust       = buf_dy_vel_dust.get_read_access_sync();
+        auto ptr_buf_dz_vel_dust       = buf_dz_vel_dust.get_read_access_sync();
+        auto ptr_buf_rho_dust          = buf_rho_dust.get_read_access_sync();
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
 

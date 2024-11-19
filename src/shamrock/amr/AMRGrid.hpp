@@ -331,7 +331,7 @@ namespace shamrock::amr {
             using namespace patch;
 
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                sycl::queue &q = shamsys::instance::get_compute_queue();
+                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
                 u32 old_obj_cnt = pdat.get_obj_cnt();
 
@@ -340,13 +340,19 @@ namespace shamrock::amr {
                 if (derefine_flags.count > 0) {
 
                     // init flag table
-                    sycl::buffer<u32> keep_cell_flag
-                        = shamalgs::algorithm::gen_buffer_device(q, old_obj_cnt, [](u32 i) -> u32 {
-                              return 1;
-                          });
+                    sycl::buffer<u32> keep_cell_flag = shamalgs::algorithm::gen_buffer_device(
+                        q.q, old_obj_cnt, [](u32 i) -> u32 {
+                            return 1;
+                        });
+
+                    sham::EventList depends_list;
+                    auto cell_bound_low
+                        = pdat.get_field<Tcoord>(0).get_buf().get_write_acess(depends_list);
+                    auto cell_bound_high
+                        = pdat.get_field<Tcoord>(1).get_buf().get_write_acess(depends_list);
 
                     // edit cell content + make flag of cells to keep
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         sycl::accessor index_to_deref{*derefine_flags.idx, cgh, sycl::read_only};
 
                         sycl::accessor cell_bound_low{
@@ -403,9 +409,12 @@ namespace shamrock::amr {
                             });
                     });
 
+                    pdat.get_field<Tcoord>(0).get_buf().complete_event_state(e);
+                    pdat.get_field<Tcoord>(1).get_buf().complete_event_state(e);
+
                     // stream compact the flags
-                    auto [opt_buf, len] = shamalgs::numeric::stream_compact(
-                        shamsys::instance::get_compute_queue(), keep_cell_flag, old_obj_cnt);
+                    auto [opt_buf, len]
+                        = shamalgs::numeric::stream_compact(q.q, keep_cell_flag, old_obj_cnt);
 
                     logger::debug_ln(
                         "AMR Grid",

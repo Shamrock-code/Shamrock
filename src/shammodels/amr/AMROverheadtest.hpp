@@ -37,16 +37,16 @@ class AMRTestModel {
 
     class RefineCritCellAccessor {
         public:
-        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> cell_low_bound;
-        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> cell_high_bound;
+        const u64_3 *cell_low_bound;
+        const u64_3 *cell_high_bound;
 
         RefineCritCellAccessor(
             sycl::handler &cgh,
             u64 id_patch,
             shamrock::patch::Patch p,
             shamrock::patch::PatchData &pdat)
-            : cell_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
-              cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only} {}
+            : cell_low_bound{pdat.get_field<u64_3>(0).get_buf().get_read_access_sync()},
+              cell_high_bound{pdat.get_field<u64_3>(1).get_buf().get_read_access_sync()} {}
     };
 
     template<class T>
@@ -57,10 +57,10 @@ class AMRTestModel {
 
     class RefineCellAccessor {
         public:
-        buf_access_read_write<u32> field;
+        u32 *field;
 
         RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
-            : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} {}
+            : field{pdat.get_field<u32>(2).get_buf().get_write_access_sync()} {}
     };
 
     inline void dump_patch(u64 id) {
@@ -70,10 +70,8 @@ class AMRTestModel {
 
         PatchData &pdat = grid.sched.patch_data.get_pdat(id);
 
-        std::vector<u64_3> mins
-            = buf_to_vec(*pdat.get_field<u64_3>(0).get_buf(), pdat.get_obj_cnt());
-        std::vector<u64_3> maxs
-            = buf_to_vec(*pdat.get_field<u64_3>(1).get_buf(), pdat.get_obj_cnt());
+        std::vector<u64_3> mins = pdat.get_field<u64_3>(0).get_buf().copy_to_stdvec();
+        std::vector<u64_3> maxs = pdat.get_field<u64_3>(1).get_buf().copy_to_stdvec();
 
         logger::raw_ln("----- dump");
         for (u32 i = 0; i < mins.size(); i++) {
@@ -185,7 +183,7 @@ class AMRTestModel {
 
         grid.sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
             RadixTree<u64, u64_3> tree(
-                q,
+                shamsys::instance::get_compute_scheduler_ptr(),
                 grid.sched.get_sim_box().patch_coord_to_domain<u64_3>(cur_p),
                 pdat.get_field<u64_3>(0).get_buf(),
                 pdat.get_obj_cnt(),
@@ -197,16 +195,17 @@ class AMRTestModel {
 
             class WalkAccessors {
                 public:
-                sycl::accessor<u32, 1, sycl::access::mode::read_write, sycl::target::device> field;
+                u32 *field;
 
                 WalkAccessors(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
-                    : field{*pdat.get_field<u32>(2).get_buf(), cgh, sycl::read_write} {}
+                    : field{pdat.get_field<u32>(2).get_buf().get_write_access_sync()} {}
             };
 
             q.wait();
 
             shambase::Timer t;
             t.start();
+
             q.submit([&](sycl::handler &cgh) {
                 using Rta = walker::Radix_tree_accessor<u64, u64_3>;
                 Rta tree_acc(tree, cgh);
@@ -215,10 +214,8 @@ class AMRTestModel {
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
-                sycl::accessor cell_low_bound{
-                    *pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only};
-                sycl::accessor cell_high_bound{
-                    *pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only};
+                auto cell_low_bound  = pdat.get_field<u64_3>(0).get_buf().get_read_access_sync();
+                auto cell_high_bound = pdat.get_field<u64_3>(1).get_buf().get_read_access_sync();
 
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                     u64_3 low_bound_a  = cell_low_bound[item];
@@ -259,16 +256,18 @@ class AMRTestModel {
 
                 class Access {
                     public:
-                    sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_low_bound;
-                    sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_high_bound;
+                    const u64_3 *cell_low_bound;
+                    const u64_3 *cell_high_bound;
 
                     sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_min;
                     sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_max;
 
                     Access(InteractionCrit crit, sycl::handler &cgh)
-                        : cell_low_bound{*crit.pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
+                        : cell_low_bound{crit.pdat.get_field<u64_3>(0)
+                                             .get_buf()
+                                             .get_read_access_sync()},
                           cell_high_bound{
-                              *crit.pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only},
+                              crit.pdat.get_field<u64_3>(1).get_buf().get_read_access_sync()},
                           tree_cell_coordrange_min{
                               *crit.tree.tree_cell_ranges.buf_pos_min_cell_flt,
                               cgh,

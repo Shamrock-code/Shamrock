@@ -37,20 +37,24 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
         tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(p.id_patch);
 
         sycl::buffer<u8> face_normals_lookup(pcache.sum_neigh_cnt);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::EventList depends_list;
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             tree::ObjectCacheIterator cell_looper(pcache, cgh);
 
             sycl::accessor normals_lookup{
                 face_normals_lookup, cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
 
             shambase::parralel_for(cgh, mpdat.total_elements, "flag_neigh", [=](u64 id_a) {
                 TgridVec cell2_a = (cell_min[id_a] + cell_max[id_a]);
@@ -113,6 +117,9 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
                 // But all I find is chaos, as you laugh at me.
             });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
 
         // store the buffer in distrib data
         face_normals_dat_lookup.add_obj(p.id_patch, std::move(face_normals_lookup));

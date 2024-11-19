@@ -164,8 +164,6 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
         auto cell_max = src.get_field_buf_ref<TgridVec>(1).get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            sycl::accessor cell_min{src.get_field_buf_ref<TgridVec>(0), cgh, sycl::read_only};
-            sycl::accessor cell_max{src.get_field_buf_ref<TgridVec>(1), cgh, sycl::read_only};
             sycl::accessor flag{is_in_interf, cgh, sycl::write_only, sycl::no_init};
 
             shammath::AABB<TgridVec> check_volume = build.volume_target;
@@ -177,7 +175,10 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
             });
         });
 
-        auto resut = shamalgs::numeric::stream_compact(q, is_in_interf, src.get_obj_cnt());
+        src.get_field_buf_ref<TgridVec>(0).complete_event_state(e);
+        src.get_field_buf_ref<TgridVec>(1).complete_event_state(e);
+
+        auto resut = shamalgs::numeric::stream_compact(q.q, is_in_interf, src.get_obj_cnt());
         f64 ratio  = f64(std::get<1>(resut)) / f64(src.get_obj_cnt());
 
         std::string s = shambase::format(

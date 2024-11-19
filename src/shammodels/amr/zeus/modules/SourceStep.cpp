@@ -54,38 +54,42 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-        sycl::buffer<Tscal> &buf_p   = pressure_field.get_buf_check(p.id_patch);
-        sycl::buffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sham::DeviceBuffer<Tscal> &buf_p   = pressure_field.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
 
-        sycl::buffer<Tscal> &buf_rho_xm = rho_xm.get_buf_check(p.id_patch);
-        sycl::buffer<Tscal> &buf_rho_ym = rho_ym.get_buf_check(p.id_patch);
-        sycl::buffer<Tscal> &buf_rho_zm = rho_zm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho_xm = rho_xm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho_ym = rho_ym.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho_zm = rho_zm.get_buf_check(p.id_patch);
 
-        sycl::buffer<Tscal> &buf_p_xm = p_xm.get_buf_check(p.id_patch);
-        sycl::buffer<Tscal> &buf_p_ym = p_ym.get_buf_check(p.id_patch);
-        sycl::buffer<Tscal> &buf_p_zm = p_zm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_p_xm = p_xm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_p_ym = p_ym.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_p_zm = p_zm.get_buf_check(p.id_patch);
 
-        sycl::buffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor grad_p{forces_buf, cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor rho{buf_rho, cgh, sycl::read_only};
-            sycl::accessor rho_xm{buf_rho_xm, cgh, sycl::read_only};
-            sycl::accessor rho_ym{buf_rho_ym, cgh, sycl::read_only};
-            sycl::accessor rho_zm{buf_rho_zm, cgh, sycl::read_only};
-            sycl::accessor p{buf_p, cgh, sycl::read_only};
-            sycl::accessor p_xm{buf_p_xm, cgh, sycl::read_only};
-            sycl::accessor p_ym{buf_p_ym, cgh, sycl::read_only};
-            sycl::accessor p_zm{buf_p_zm, cgh, sycl::read_only};
+        sham::EventList depends_list;
 
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
+        auto rho      = buf_rho.get_read_access(depends_list);
+        auto rho_xm   = buf_rho_xm.get_read_access(depends_list);
+        auto rho_ym   = buf_rho_ym.get_read_access(depends_list);
+        auto rho_zm   = buf_rho_zm.get_read_access(depends_list);
+        auto press    = buf_p.get_read_access(depends_list);
+        auto p_xm     = buf_p_xm.get_read_access(depends_list);
+        auto p_ym     = buf_p_ym.get_read_access(depends_list);
+        auto p_zm     = buf_p_zm.get_read_access(depends_list);
+
+        auto grad_p = forces_buf.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute grad p", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
@@ -99,7 +103,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
                     Tscal rho_i_jm1_k = rho_ym[id_a];
                     Tscal rho_i_j_km1 = rho_zm[id_a];
 
-                    Tscal p_i_j_k   = p[id_a];
+                    Tscal p_i_j_k   = press[id_a];
                     Tscal p_im1_j_k = p_xm[id_a];
                     Tscal p_i_jm1_k = p_ym[id_a];
                     Tscal p_i_j_km1 = p_zm[id_a];
@@ -110,14 +114,12 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
                         p_i_j_k - p_i_j_km1
                     };
 
-
                     Tvec avg_rho =
                         Tvec{
                             rho_i_j_k + rho_im1_j_k,
                             rho_i_j_k + rho_i_jm1_k,
                             rho_i_j_k + rho_i_j_km1
                             } * Tscal{0.5};
-
 
                     Tvec grad_p_source_term = dp / (avg_rho * d_cell);
 
@@ -131,27 +133,42 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
                     // clang-format on
                 });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        buf_rho.complete_event_state(e);
+        buf_rho_xm.complete_event_state(e);
+        buf_rho_ym.complete_event_state(e);
+        buf_rho_zm.complete_event_state(e);
+        buf_p.complete_event_state(e);
+        buf_p_xm.complete_event_state(e);
+        buf_p_ym.complete_event_state(e);
+        buf_p_zm.complete_event_state(e);
+
+        forces_buf.complete_event_state(e);
     });
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
 
-        sycl::buffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact;
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor forces{forces_buf, cgh, sycl::read_write};
-            sycl::accessor rho{buf_rho, cgh, sycl::read_only};
+        sham::EventList depends_list;
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
+        auto forces   = forces_buf.get_write_access(depends_list);
+        auto rho      = buf_rho.get_read_access(depends_list);
 
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "add ext force", [=](u64 id_a) {
                 Tvec block_min    = cell_min[id_a].template convert<Tscal>();
                 Tvec block_max    = cell_max[id_a].template convert<Tscal>();
@@ -169,6 +186,12 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
                 });
             });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        forces_buf.complete_event_state(e);
+        buf_rho.complete_event_state(e);
+
         if (storage.forces.get().get_field(p.id_patch).has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in forces");
             throw shambase::make_except_with_loc<std::runtime_error>("detected nan");
@@ -194,19 +217,27 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_force(Tscal dt
     u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
-        MergedPDat &mpdat              = storage.merged_patchdata_ghost.get().get(p.id_patch);
-        sycl::buffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &vel_buf    = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor forces{forces_buf, cgh, sycl::read_only};
-            sycl::accessor vel{vel_buf, cgh, sycl::read_write};
+        sham::DeviceBuffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &vel_buf    = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::EventList depends_list;
+
+        auto forces = forces_buf.get_read_access(depends_list);
+        auto vel    = vel_buf.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(
                 cgh, mpdat.total_elements * Block::block_size, "add ext force", [=](u64 id_a) {
                     vel[id_a] += dt * forces[id_a];
                 });
         });
+
+        forces_buf.complete_event_state(e);
+        vel_buf.complete_event_state(e);
 
         // logger::raw_ln(storage.forces.get().get_field(p.id_patch).compute_max());
     });
@@ -242,32 +273,34 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_AV() {
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-        sycl::buffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
 
-        sycl::buffer<Tvec> &buf_vel    = vel_n.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel    = vel_n.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
 
-        sycl::buffer<Tvec> &q_AV_buf = storage.q_AV.get().get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &q_AV_buf = storage.q_AV.get().get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor rho{buf_rho, cgh, sycl::read_only};
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
-            sycl::accessor vel_xp{buf_vel_xp, cgh, sycl::read_only};
-            sycl::accessor vel_yp{buf_vel_yp, cgh, sycl::read_only};
-            sycl::accessor vel_zp{buf_vel_zp, cgh, sycl::read_only};
+        sham::EventList depends_list;
 
-            sycl::accessor q_AV{q_AV_buf, cgh, sycl::write_only, sycl::no_init};
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
+        auto rho      = buf_rho.get_read_access(depends_list);
+        auto vel      = buf_vel.get_read_access(depends_list);
+        auto vel_xp   = buf_vel_xp.get_read_access(depends_list);
+        auto vel_yp   = buf_vel_yp.get_read_access(depends_list);
+        auto vel_zp   = buf_vel_zp.get_read_access(depends_list);
+        auto q_AV     = q_AV_buf.get_write_access(depends_list);
 
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
@@ -297,6 +330,15 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_AV() {
                     // clang-format on
                 });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        buf_rho.complete_event_state(e);
+        buf_vel.complete_event_state(e);
+        buf_vel_xp.complete_event_state(e);
+        buf_vel_yp.complete_event_state(e);
+        buf_vel_zp.complete_event_state(e);
+        q_AV_buf.complete_event_state(e);
     });
 }
 
@@ -333,44 +375,44 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-        sycl::buffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-        sycl::buffer<Tvec> &buf_vel  = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+        sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sham::DeviceBuffer<Tvec> &buf_vel  = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
-        sycl::buffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
 
-        sycl::buffer<Tscal> &buf_rho_xm = rho_xm.get_buf_check(p.id_patch);
-        sycl::buffer<Tscal> &buf_rho_ym = rho_ym.get_buf_check(p.id_patch);
-        sycl::buffer<Tscal> &buf_rho_zm = rho_zm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho_xm = rho_xm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho_ym = rho_ym.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho_zm = rho_zm.get_buf_check(p.id_patch);
 
-        sycl::buffer<Tvec> &q_AV_buf      = storage.q_AV.get().get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_q_AV_n_xm = q_AV_n_xm.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_q_AV_n_ym = q_AV_n_ym.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_q_AV_n_zm = q_AV_n_zm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &q_AV_buf      = storage.q_AV.get().get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_q_AV_n_xm = q_AV_n_xm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_q_AV_n_ym = q_AV_n_ym.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_q_AV_n_zm = q_AV_n_zm.get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor rho{buf_rho, cgh, sycl::read_only};
+        sham::EventList depends_list;
 
-            sycl::accessor rho_xm{buf_rho_xm, cgh, sycl::read_only};
-            sycl::accessor rho_ym{buf_rho_ym, cgh, sycl::read_only};
-            sycl::accessor rho_zm{buf_rho_zm, cgh, sycl::read_only};
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
+        auto rho      = buf_rho.get_read_access(depends_list);
+        auto rho_xm   = buf_rho_xm.get_read_access(depends_list);
+        auto rho_ym   = buf_rho_ym.get_read_access(depends_list);
+        auto rho_zm   = buf_rho_zm.get_read_access(depends_list);
+        auto q_AV     = q_AV_buf.get_read_access(depends_list);
+        auto q_AV_xm  = buf_q_AV_n_xm.get_read_access(depends_list);
+        auto q_AV_ym  = buf_q_AV_n_ym.get_read_access(depends_list);
+        auto q_AV_zm  = buf_q_AV_n_zm.get_read_access(depends_list);
+        auto vel      = buf_vel.get_write_access(depends_list);
 
-            sycl::accessor q_AV{q_AV_buf, cgh, sycl::read_only};
-            sycl::accessor q_AV_xm{buf_q_AV_n_xm, cgh, sycl::read_only};
-            sycl::accessor q_AV_ym{buf_q_AV_n_ym, cgh, sycl::read_only};
-            sycl::accessor q_AV_zm{buf_q_AV_n_zm, cgh, sycl::read_only};
-
-            sycl::accessor vel{buf_vel, cgh, sycl::read_write};
-
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(
                 cgh, mpdat.total_elements * Block::block_size, "add vel AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
@@ -406,44 +448,56 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
                     // clang-format on
                 });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        buf_rho.complete_event_state(e);
+        buf_rho_xm.complete_event_state(e);
+        buf_rho_ym.complete_event_state(e);
+        buf_rho_zm.complete_event_state(e);
+        q_AV_buf.complete_event_state(e);
+        buf_q_AV_n_xm.complete_event_state(e);
+        buf_q_AV_n_ym.complete_event_state(e);
+        buf_q_AV_n_zm.complete_event_state(e);
+        buf_vel.complete_event_state(e);
     });
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-        sycl::buffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sham::DeviceBuffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
 
-        sycl::buffer<Tvec> &buf_vel    = vel_n.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel    = vel_n.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
 
-        sycl::buffer<Tvec> &q_AV_buf      = storage.q_AV.get().get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_q_AV_n_xm = q_AV_n_xm.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_q_AV_n_ym = q_AV_n_ym.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_q_AV_n_zm = q_AV_n_zm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &q_AV_buf      = storage.q_AV.get().get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_q_AV_n_xm = q_AV_n_xm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_q_AV_n_ym = q_AV_n_ym.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_q_AV_n_zm = q_AV_n_zm.get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
-            sycl::accessor vel_xp{buf_vel_xp, cgh, sycl::read_only};
-            sycl::accessor vel_yp{buf_vel_yp, cgh, sycl::read_only};
-            sycl::accessor vel_zp{buf_vel_zp, cgh, sycl::read_only};
+        sham::EventList depends_list;
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
+        auto vel      = buf_vel.get_read_access(depends_list);
+        auto vel_xp   = buf_vel_xp.get_read_access(depends_list);
+        auto vel_yp   = buf_vel_yp.get_read_access(depends_list);
+        auto vel_zp   = buf_vel_zp.get_read_access(depends_list);
+        auto q_AV     = q_AV_buf.get_read_access(depends_list);
+        auto q_AV_xm  = buf_q_AV_n_xm.get_read_access(depends_list);
+        auto q_AV_ym  = buf_q_AV_n_ym.get_read_access(depends_list);
+        auto q_AV_zm  = buf_q_AV_n_zm.get_read_access(depends_list);
+        auto eint     = buf_eint.get_write_access(depends_list);
 
-            sycl::accessor q_AV{q_AV_buf, cgh, sycl::read_only};
-            sycl::accessor q_AV_xm{buf_q_AV_n_xm, cgh, sycl::read_only};
-            sycl::accessor q_AV_ym{buf_q_AV_n_ym, cgh, sycl::read_only};
-            sycl::accessor q_AV_zm{buf_q_AV_n_zm, cgh, sycl::read_only};
-
-            sycl::accessor eint{buf_eint, cgh, sycl::read_write};
-
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(
                 cgh, pdat.get_obj_cnt() * Block::block_size, "add eint AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
@@ -469,6 +523,18 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
                     // clang-format on
                 });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        buf_vel.complete_event_state(e);
+        buf_vel_xp.complete_event_state(e);
+        buf_vel_yp.complete_event_state(e);
+        buf_vel_zp.complete_event_state(e);
+        q_AV_buf.complete_event_state(e);
+        buf_q_AV_n_xm.complete_event_state(e);
+        buf_q_AV_n_ym.complete_event_state(e);
+        buf_q_AV_n_zm.complete_event_state(e);
+        buf_eint.complete_event_state(e);
     });
 }
 
@@ -500,29 +566,32 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_div_v() {
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-        sycl::buffer<Tvec> &buf_vel    = vel_n.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel    = vel_n.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
 
-        sycl::buffer<Tscal> &buf_div_v = div_v.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_div_v = div_v.get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
-            sycl::accessor vel_xp{buf_vel_xp, cgh, sycl::read_only};
-            sycl::accessor vel_yp{buf_vel_yp, cgh, sycl::read_only};
-            sycl::accessor vel_zp{buf_vel_zp, cgh, sycl::read_only};
+        sham::EventList depends_list;
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor divv{buf_div_v, cgh, sycl::write_only, sycl::no_init};
+        auto vel    = buf_vel.get_read_access(depends_list);
+        auto vel_xp = buf_vel_xp.get_read_access(depends_list);
+        auto vel_yp = buf_vel_yp.get_read_access(depends_list);
+        auto vel_zp = buf_vel_zp.get_read_access(depends_list);
 
+        auto divv = buf_div_v.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(
                 cgh, pdat.get_obj_cnt() * Block::block_size, "compute divv", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
@@ -546,6 +615,14 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_div_v() {
                     // clang-format on
                 });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        buf_vel.complete_event_state(e);
+        buf_vel_xp.complete_event_state(e);
+        buf_vel_yp.complete_event_state(e);
+        buf_vel_zp.complete_event_state(e);
+        buf_div_v.complete_event_state(e);
     });
 }
 
@@ -570,22 +647,25 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::update_eint_eos(Tsca
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
         Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-        sycl::buffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sham::DeviceBuffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
 
-        sycl::buffer<Tscal> &buf_divv = div_v.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_divv = div_v.get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor divv{buf_divv, cgh, sycl::read_only};
-            sycl::accessor eint{buf_eint, cgh, sycl::read_write};
+        sham::EventList depends_list;
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
 
+        auto divv = buf_divv.get_read_access(depends_list);
+        auto eint = buf_eint.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal fact = (dt / 2.) * (solver_config.eos_gamma - 1);
 
             shambase::parralel_for(
@@ -600,6 +680,11 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::update_eint_eos(Tsca
                     eint[id_a] *= (1 - factdivv) / (1 + factdivv);
                 });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        buf_divv.complete_event_state(e);
+        buf_eint.complete_event_state(e);
     });
 }
 

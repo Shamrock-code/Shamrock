@@ -60,7 +60,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_trees() {
               auto &field_pos = merged.pdat.get_field<TgridVec>(0);
 
               RTree tree(
-                  shamsys::instance::get_compute_queue(),
+                  shamsys::instance::get_compute_scheduler_ptr(),
                   {bmin, bmax},
                   field_pos.get_buf(),
                   field_pos.get_obj_cnt(),
@@ -93,17 +93,20 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::correct_bounding_box() 
         sycl::buffer<TgridVec> tmp_min_cell(tot_count);
         sycl::buffer<TgridVec> tmp_max_cell(tot_count);
 
-        MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(id);
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        MergedPDat &mpdat                          = storage.merged_patchdata_ghost.get().get(id);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::EventList depends_list;
+        auto acc_bmin = buf_cell_min.get_read_access(depends_list);
+        auto acc_bmax = buf_cell_max.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shamrock::tree::ObjectIterator cell_looper(tree, cgh);
 
             u32 leaf_offset = tree.tree_struct.internal_cell_count;
-
-            sycl::accessor acc_bmin{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor acc_bmax{buf_cell_max, cgh, sycl::read_only};
 
             sycl::accessor comp_min{tmp_min_cell, cgh, sycl::write_only, sycl::no_init};
             sycl::accessor comp_max{tmp_max_cell, cgh, sycl::write_only, sycl::no_init};
@@ -127,6 +130,9 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::correct_bounding_box() 
                 comp_max[leaf_offset + leaf_id] = max;
             });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
 
         auto ker_reduc_hmax = [&](sycl::handler &cgh) {
             u32 offset_leaf = internal_cell_count;
@@ -227,8 +233,8 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
 
         MergedPDat &mfield = storage.merged_patchdata_ghost.get().get(patch_id);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mfield.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mfield.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mfield.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mfield.pdat.get_field_buf_ref<TgridVec>(1);
 
         RTree &tree = storage.trees.get().get(patch_id);
 
@@ -244,87 +250,102 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
 
         logger::debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            tree::ObjectIterator cell_looper(tree, cgh);
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                tree::ObjectIterator cell_looper(tree, cgh);
 
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+                // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-            sycl::accessor neigh_cnt{neigh_count, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor neigh_cnt{neigh_count, cgh, sycl::write_only, sycl::no_init};
 
-            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
-                u32 id_a = (u32) gid;
+                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+                    u32 id_a = (u32) gid;
 
-                shammath::AABB<TgridVec> cell_aabb{cell_min[id_a], cell_max[id_a]};
+                    shammath::AABB<TgridVec> cell_aabb{cell_min[id_a], cell_max[id_a]};
 
-                u32 cnt = 0;
+                    u32 cnt = 0;
 
-                cell_looper.rtree_for(
-                    [&](u32 node_id, TgridVec bmin, TgridVec bmax) -> bool {
-                        return shammath::AABB<TgridVec>{bmin, bmax}
-                            .get_intersect(cell_aabb)
-                            .is_surface_or_volume();
-                    },
-                    [&](u32 id_b) {
-                        bool no_interact = !shammath::AABB<TgridVec>{cell_min[id_b], cell_max[id_b]}
-                                                .get_intersect(cell_aabb)
-                                                .is_surface();
+                    cell_looper.rtree_for(
+                        [&](u32 node_id, TgridVec bmin, TgridVec bmax) -> bool {
+                            return shammath::AABB<TgridVec>{bmin, bmax}
+                                .get_intersect(cell_aabb)
+                                .is_surface_or_volume();
+                        },
+                        [&](u32 id_b) {
+                            bool no_interact
+                                = !shammath::AABB<TgridVec>{cell_min[id_b], cell_max[id_b]}
+                                       .get_intersect(cell_aabb)
+                                       .is_surface();
 
-                        cnt += (no_interact) ? 0 : 1;
-                    });
+                            cnt += (no_interact) ? 0 : 1;
+                        });
 
-                // if(cell_aabb.lower.x() < 0 && cell_aabb.lower.y() == 10){
-                //     sycl::ext::oneapi::experimental::printf("%d (%ld %ld %ld) : %d\n", id_a,
-                //     cell_aabb.lower.x(),cell_aabb.lower.y(),cell_aabb.lower.z()
-                //     ,cnt);
-                // }
+                    // if(cell_aabb.lower.x() < 0 && cell_aabb.lower.y() == 10){
+                    //     sycl::ext::oneapi::experimental::printf("%d (%ld %ld %ld) : %d\n", id_a,
+                    //     cell_aabb.lower.x(),cell_aabb.lower.y(),cell_aabb.lower.z()
+                    //     ,cnt);
+                    // }
 
-                neigh_cnt[id_a] = cnt;
+                    neigh_cnt[id_a] = cnt;
+                });
             });
-        });
 
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+        }
         tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
 
         NamedStackEntry stack_loc2{"fill cache"};
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            tree::ObjectIterator cell_looper(tree, cgh);
+        {
 
-            // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                tree::ObjectIterator cell_looper(tree, cgh);
 
-            sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
-            sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
+                // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
-                u32 id_a = (u32) gid;
+                sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
+                sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
 
-                shammath::AABB<TgridVec> cell_aabb{cell_min[id_a], cell_max[id_a]};
+                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
+                    u32 id_a = (u32) gid;
 
-                u32 cnt = scanned_neigh_cnt[id_a];
+                    shammath::AABB<TgridVec> cell_aabb{cell_min[id_a], cell_max[id_a]};
 
-                cell_looper.rtree_for(
-                    [&](u32 node_id, TgridVec bmin, TgridVec bmax) -> bool {
-                        return shammath::AABB<TgridVec>{bmin, bmax}
-                            .get_intersect(cell_aabb)
-                            .is_surface_or_volume();
-                    },
-                    [&](u32 id_b) {
-                        bool no_interact = !shammath::AABB<TgridVec>{cell_min[id_b], cell_max[id_b]}
-                                                .get_intersect(cell_aabb)
-                                                .is_surface();
+                    u32 cnt = scanned_neigh_cnt[id_a];
 
-                        if (!no_interact) {
-                            neigh[cnt] = id_b;
-                        }
-                        cnt += (no_interact) ? 0 : 1;
-                    });
+                    cell_looper.rtree_for(
+                        [&](u32 node_id, TgridVec bmin, TgridVec bmax) -> bool {
+                            return shammath::AABB<TgridVec>{bmin, bmax}
+                                .get_intersect(cell_aabb)
+                                .is_surface_or_volume();
+                        },
+                        [&](u32 id_b) {
+                            bool no_interact
+                                = !shammath::AABB<TgridVec>{cell_min[id_b], cell_max[id_b]}
+                                       .get_intersect(cell_aabb)
+                                       .is_surface();
+
+                            if (!no_interact) {
+                                neigh[cnt] = id_b;
+                            }
+                            cnt += (no_interact) ? 0 : 1;
+                        });
+                });
             });
-        });
+
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+        }
 
         return pcache;
     }));

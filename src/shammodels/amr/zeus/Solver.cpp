@@ -108,27 +108,34 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
             u32 ivel_interf  = ghost_layout.get_field_idx<Tvec>("vel");
 
-            sycl::buffer<TgridVec> &cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-            sycl::buffer<TgridVec> &cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+            sham::DeviceBuffer<TgridVec> &cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+            sham::DeviceBuffer<TgridVec> &cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-            sycl::buffer<Tscal> &rho_merged  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-            sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
-            sycl::buffer<Tvec> &vel_merged   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+            sham::DeviceBuffer<Tscal> &rho_merged
+                = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+            sham::DeviceBuffer<Tscal> &eint_merged
+                = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+            sham::DeviceBuffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
             debug_dump.get_file(p.id_patch).change_table_name("cell_min", "i64_3");
-            debug_dump.get_file(p.id_patch).write_table(cell_min, mpdat.total_elements);
+            debug_dump.get_file(p.id_patch)
+                .write_table(cell_min.copy_to_stdvec(), mpdat.total_elements);
             debug_dump.get_file(p.id_patch).change_table_name("cell_max", "i64_3");
-            debug_dump.get_file(p.id_patch).write_table(cell_max, mpdat.total_elements);
+            debug_dump.get_file(p.id_patch)
+                .write_table(cell_max.copy_to_stdvec(), mpdat.total_elements);
 
             debug_dump.get_file(p.id_patch).change_table_name("rho", "f64");
             debug_dump.get_file(p.id_patch)
-                .write_table(rho_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    rho_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("eint", "f64");
             debug_dump.get_file(p.id_patch)
-                .write_table(eint_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    eint_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("vel", "f64_3");
             debug_dump.get_file(p.id_patch)
-                .write_table(vel_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    vel_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -173,11 +180,12 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            sycl::buffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tvec> &forces_buf = storage.forces.get().get_buf_check(p.id_patch);
 
             debug_dump.get_file(p.id_patch).change_table_name("force_press", "f64_3");
             debug_dump.get_file(p.id_patch)
-                .write_table(forces_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    forces_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -201,19 +209,23 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
             u32 ivel_interf  = ghost_layout.get_field_idx<Tvec>("vel");
 
-            sycl::buffer<TgridVec> &cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-            sycl::buffer<TgridVec> &cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+            sham::DeviceBuffer<TgridVec> &cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+            sham::DeviceBuffer<TgridVec> &cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-            sycl::buffer<Tscal> &rho_merged  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-            sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
-            sycl::buffer<Tvec> &vel_merged   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+            sham::DeviceBuffer<Tscal> &rho_merged
+                = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+            sham::DeviceBuffer<Tscal> &eint_merged
+                = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+            sham::DeviceBuffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
             debug_dump.get_file(p.id_patch).change_table_name("eint_post_source", "f64");
             debug_dump.get_file(p.id_patch)
-                .write_table(eint_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    eint_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("vel_post_source", "f64_3");
             debug_dump.get_file(p.id_patch)
-                .write_table(vel_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    vel_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -225,11 +237,11 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            sycl::buffer<Tscal> &divv = storage.div_v_n.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal> &divv = storage.div_v_n.get().get_buf_check(p.id_patch);
 
             debug_dump.get_file(p.id_patch).change_table_name("divv_source", "f64");
             debug_dump.get_file(p.id_patch)
-                .write_table(divv, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(divv.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -272,19 +284,23 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
             u32 ivel_interf  = ghost_layout.get_field_idx<Tvec>("vel");
 
-            sycl::buffer<TgridVec> &cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-            sycl::buffer<TgridVec> &cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+            sham::DeviceBuffer<TgridVec> &cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+            sham::DeviceBuffer<TgridVec> &cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-            sycl::buffer<Tscal> &rho_merged  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-            sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
-            sycl::buffer<Tvec> &vel_merged   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+            sham::DeviceBuffer<Tscal> &rho_merged
+                = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+            sham::DeviceBuffer<Tscal> &eint_merged
+                = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+            sham::DeviceBuffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
             debug_dump.get_file(p.id_patch).change_table_name("eint_start_transp", "f64");
             debug_dump.get_file(p.id_patch)
-                .write_table(eint_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    eint_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("vel_start_transp", "f64_3");
             debug_dump.get_file(p.id_patch)
-                .write_table(vel_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    vel_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -298,11 +314,12 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            sycl::buffer<Tvec> &vel_n_xp = storage.vel_n_xp.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tvec> &vel_n_xp = storage.vel_n_xp.get().get_buf_check(p.id_patch);
 
             debug_dump.get_file(p.id_patch).change_table_name("vel_n_xp", "f64_3");
             debug_dump.get_file(p.id_patch)
-                .write_table(vel_n_xp, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    vel_n_xp.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -369,11 +386,11 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            sycl::buffer<Tscal8> &Q_buf = storage.Q.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &Q_buf = storage.Q.get().get_buf_check(p.id_patch);
 
             debug_dump.get_file(p.id_patch).change_table_name("Q", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(Q_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(Q_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -389,19 +406,19 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            sycl::buffer<Tscal8> &ax_buf = storage.a_x.get().get_buf_check(p.id_patch);
-            sycl::buffer<Tscal8> &ay_buf = storage.a_y.get().get_buf_check(p.id_patch);
-            sycl::buffer<Tscal8> &az_buf = storage.a_z.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &ax_buf = storage.a_x.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &ay_buf = storage.a_y.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &az_buf = storage.a_z.get().get_buf_check(p.id_patch);
 
             debug_dump.get_file(p.id_patch).change_table_name("ax", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(ax_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(ax_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("ay", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(ay_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(ay_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("az", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(az_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(az_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -422,19 +439,25 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            sycl::buffer<Tscal8> &Qstarx_buf = storage.Qstar_x.get().get_buf_check(p.id_patch);
-            sycl::buffer<Tscal8> &Qstary_buf = storage.Qstar_y.get().get_buf_check(p.id_patch);
-            sycl::buffer<Tscal8> &Qstarz_buf = storage.Qstar_z.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &Qstarx_buf
+                = storage.Qstar_x.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &Qstary_buf
+                = storage.Qstar_y.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &Qstarz_buf
+                = storage.Qstar_z.get().get_buf_check(p.id_patch);
 
             debug_dump.get_file(p.id_patch).change_table_name("Qstar_x", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(Qstarx_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    Qstarx_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("Qstar_y", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(Qstary_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    Qstary_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("Qstar_z", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(Qstarz_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    Qstarz_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -446,19 +469,22 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            sycl::buffer<Tscal8> &Fluxx_buf = storage.Flux_x.get().get_buf_check(p.id_patch);
-            sycl::buffer<Tscal8> &Fluxy_buf = storage.Flux_y.get().get_buf_check(p.id_patch);
-            sycl::buffer<Tscal8> &Fluxz_buf = storage.Flux_z.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &Fluxx_buf = storage.Flux_x.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &Fluxy_buf = storage.Flux_y.get().get_buf_check(p.id_patch);
+            sham::DeviceBuffer<Tscal8> &Fluxz_buf = storage.Flux_z.get().get_buf_check(p.id_patch);
 
             debug_dump.get_file(p.id_patch).change_table_name("Flux_x", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(Fluxx_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    Fluxx_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("Flux_y", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(Fluxy_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    Fluxy_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("Flux_z", "f64_8");
             debug_dump.get_file(p.id_patch)
-                .write_table(Fluxz_buf, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    Fluxz_buf.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 
@@ -478,19 +504,24 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
             u32 ivel_interf  = ghost_layout.get_field_idx<Tvec>("vel");
 
-            sycl::buffer<Tscal> &rho_merged  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-            sycl::buffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
-            sycl::buffer<Tvec> &vel_merged   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+            sham::DeviceBuffer<Tscal> &rho_merged
+                = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+            sham::DeviceBuffer<Tscal> &eint_merged
+                = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+            sham::DeviceBuffer<Tvec> &vel_merged = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
             debug_dump.get_file(p.id_patch).change_table_name("rho_end_transp", "f64");
             debug_dump.get_file(p.id_patch)
-                .write_table(rho_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    rho_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("eint_end_transp", "f64");
             debug_dump.get_file(p.id_patch)
-                .write_table(eint_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    eint_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
             debug_dump.get_file(p.id_patch).change_table_name("vel_end_transp", "f64_3");
             debug_dump.get_file(p.id_patch)
-                .write_table(vel_merged, mpdat.total_elements * AMRBlock::block_size);
+                .write_table(
+                    vel_merged.copy_to_stdvec(), mpdat.total_elements * AMRBlock::block_size);
         });
     }
 

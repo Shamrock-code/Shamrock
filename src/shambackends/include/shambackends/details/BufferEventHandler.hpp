@@ -169,6 +169,20 @@ namespace sham::details {
          */
         void complete_state(
             const std::vector<sycl::event> &events, SourceLocation src_loc = SourceLocation{});
+
+        /**
+         * @brief Completes the state of the buffer event handler using an EventList.
+         *
+         * This function completes the state of the buffer event handler with the events
+         * contained in the provided EventList. Once the state is completed, the events
+         * in the EventList are marked as consumed.
+         *
+         * @param events The EventList containing events for which the state is completed.
+         */
+        inline void complete_state(sham::EventList &events) {
+            complete_state(events.events);
+            events.consumed = true;
+        }
     };
 
 } // namespace sham::details

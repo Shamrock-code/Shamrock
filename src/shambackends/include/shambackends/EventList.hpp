@@ -20,6 +20,10 @@
 
 namespace sham {
 
+    namespace details {
+        class BufferEventHandler;
+    }
+
     class EventList {
         public:
         void apply_dependancy(sycl::handler &h) { h.depends_on(events); }
@@ -52,5 +56,6 @@ namespace sham {
         SourceLocation loc_build;
 
         friend class DeviceQueue;
+        friend class details::BufferEventHandler;
     };
 } // namespace sham

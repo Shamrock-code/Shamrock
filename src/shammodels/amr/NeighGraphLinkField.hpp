@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambackends/DeviceQueue.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammodels/amr/NeighGraph.hpp"
 
@@ -36,11 +37,16 @@ namespace shammodels::basegodunov::modules {
     };
 
     template<class LinkFieldCompute, class T, class... Args>
-    NeighGraphLinkField<T> compute_link_field(sycl::queue &q, NeighGraph &graph, Args &&...args) {
+    NeighGraphLinkField<T> compute_link_field(
+        sham::DeviceQueue &q,
+        sham::EventList &depends_list,
+        sham::EventList result_list,
+        NeighGraph &graph,
+        Args &&...args) {
 
         NeighGraphLinkField<T> result{graph};
 
-        q.submit([&](sycl::handler &cgh) {
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             NeighGraphLinkiterator link_iter{graph, cgh};
             LinkFieldCompute compute(cgh, std::forward<Args>(args)...);
 
@@ -54,15 +60,22 @@ namespace shammodels::basegodunov::modules {
             });
         });
 
+        result_list.add_event(e);
+
         return result;
     }
     template<class LinkFieldCompute, class T, class... Args>
-    NeighGraphLinkField<T>
-    compute_link_field_indep_nvar(sycl::queue &q, NeighGraph &graph, u32 nvar, Args &&...args) {
+    NeighGraphLinkField<T> compute_link_field_indep_nvar(
+        sham::DeviceQueue &q,
+        sham::EventList &depends_list,
+        sham::EventList result_list,
+        NeighGraph &graph,
+        u32 nvar,
+        Args &&...args) {
 
         NeighGraphLinkField<T> result{graph, nvar};
 
-        q.submit([&](sycl::handler &cgh) {
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             NeighGraphLinkiterator link_iter{graph, cgh};
             LinkFieldCompute compute(cgh, nvar, std::forward<Args>(args)...);
 
@@ -80,6 +93,8 @@ namespace shammodels::basegodunov::modules {
                     });
                 });
         });
+
+        result_list.add_event(e);
 
         return result;
     }

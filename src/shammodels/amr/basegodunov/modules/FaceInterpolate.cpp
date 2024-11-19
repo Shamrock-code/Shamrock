@@ -155,8 +155,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sycl::queue &q    = shamsys::instance::get_compute_queue();
-        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
@@ -172,14 +172,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
 
         // TODO : restore asynchroneousness
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
-        auto ptr_buf_rho               = buf_rho.get_read_access_sync();
-        auto ptr_buf_grad_rho          = buf_grad_rho.get_read_access_sync();
-        auto ptr_buf_vel               = buf_vel.get_read_access_sync();
-        auto ptr_buf_dx_vel            = buf_dx_vel.get_read_access_sync();
-        auto ptr_buf_dy_vel            = buf_dy_vel.get_read_access_sync();
-        auto ptr_buf_dz_vel            = buf_dz_vel.get_read_access_sync();
+        sham::EventList depends_list;
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto ptr_buf_rho               = buf_rho.get_read_access(depends_list);
+        auto ptr_buf_grad_rho          = buf_grad_rho.get_read_access(depends_list);
+        auto ptr_buf_vel               = buf_vel.get_read_access(depends_list);
+        auto ptr_buf_dx_vel            = buf_dx_vel.get_read_access(depends_list);
+        auto ptr_buf_dy_vel            = buf_dy_vel.get_read_access(depends_list);
+        auto ptr_buf_dz_vel            = buf_dz_vel.get_read_access(depends_list);
+
+        sham::EventList resulting_event_list;
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho");
 
@@ -187,6 +190,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -201,6 +206,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -215,6 +222,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -229,6 +238,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -243,6 +254,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -257,6 +270,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -366,8 +381,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sycl::queue &q    = shamsys::instance::get_compute_queue();
-        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
@@ -383,23 +398,28 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::DeviceBuffer<Tvec> &buf_grad_P = storage.grad_P.get().get_buf(id);
 
         // TODO : restore asynchroneousness
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
+        sham::EventList depends_list;
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
 
-        auto ptr_vel    = buf_vel.get_read_access_sync();
-        auto ptr_dx_vel = buf_dx_vel.get_read_access_sync();
-        auto ptr_dy_vel = buf_dy_vel.get_read_access_sync();
-        auto ptr_dz_vel = buf_dz_vel.get_read_access_sync();
+        auto ptr_vel    = buf_vel.get_read_access(depends_list);
+        auto ptr_dx_vel = buf_dx_vel.get_read_access(depends_list);
+        auto ptr_dy_vel = buf_dy_vel.get_read_access(depends_list);
+        auto ptr_dz_vel = buf_dz_vel.get_read_access(depends_list);
 
-        auto ptr_rho    = buf_rho.get_read_access_sync();
-        auto ptr_grad_P = buf_grad_P.get_read_access_sync();
+        auto ptr_rho    = buf_rho.get_read_access(depends_list);
+        auto ptr_grad_P = buf_grad_P.get_read_access(depends_list);
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
+
+        sham::EventList resulting_event_list;
 
         vel_face_xp.add_obj(
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -414,6 +434,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -428,6 +450,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -442,6 +466,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -456,6 +482,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -470,6 +498,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -575,8 +605,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> press_face_zm;
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sycl::queue &q    = shamsys::instance::get_compute_queue();
-        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
@@ -592,16 +622,19 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
 
         // TODO : restore asynchroneousness
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
+        sham::EventList depends_list;
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
 
-        auto ptr_buf_press  = buf_press.get_read_access_sync();
-        auto ptr_buf_grad_P = buf_grad_P.get_read_access_sync();
+        auto ptr_buf_press  = buf_press.get_read_access(depends_list);
+        auto ptr_buf_grad_P = buf_grad_P.get_read_access(depends_list);
 
-        auto ptr_buf_vel    = buf_vel.get_read_access_sync();
-        auto ptr_buf_dx_vel = buf_dx_vel.get_read_access_sync();
-        auto ptr_buf_dy_vel = buf_dy_vel.get_read_access_sync();
-        auto ptr_buf_dz_vel = buf_dz_vel.get_read_access_sync();
+        auto ptr_buf_vel    = buf_vel.get_read_access(depends_list);
+        auto ptr_buf_dx_vel = buf_dx_vel.get_read_access(depends_list);
+        auto ptr_buf_dy_vel = buf_dy_vel.get_read_access(depends_list);
+        auto ptr_buf_dz_vel = buf_dz_vel.get_read_access(depends_list);
+
+        sham::EventList resulting_event_list;
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate press");
 
@@ -609,6 +642,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -624,6 +659,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -639,6 +676,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -654,6 +693,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -669,6 +710,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -684,6 +727,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
                 ptr_cell0block_aabb_lower,
                 ptr_block_cell_sizes,
@@ -815,8 +860,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
     u32 ndust                                      = solver_config.dust_config.ndust;
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sycl::queue &q    = shamsys::instance::get_compute_queue();
-        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
@@ -833,16 +878,19 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
         sham::DeviceBuffer<Tvec> &buf_dz_vel_dust = storage.dz_v_dust.get().get_buf(id);
 
         // TODO : restore asynchroneousness
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
+        sham::EventList depends_list;
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
 
-        auto ptr_rho_dust      = buf_rho_dust.get_read_access_sync();
-        auto ptr_grad_rho_dust = buf_grad_rho_dust.get_read_access_sync();
+        auto ptr_rho_dust      = buf_rho_dust.get_read_access(depends_list);
+        auto ptr_grad_rho_dust = buf_grad_rho_dust.get_read_access(depends_list);
 
-        auto ptr_vel_dust    = buf_vel_dust.get_read_access_sync();
-        auto ptr_dx_vel_dust = buf_dx_vel_dust.get_read_access_sync();
-        auto ptr_dy_vel_dust = buf_dy_vel_dust.get_read_access_sync();
-        auto ptr_dz_vel_dust = buf_dz_vel_dust.get_read_access_sync();
+        auto ptr_vel_dust    = buf_vel_dust.get_read_access(depends_list);
+        auto ptr_dx_vel_dust = buf_dx_vel_dust.get_read_access(depends_list);
+        auto ptr_dy_vel_dust = buf_dy_vel_dust.get_read_access(depends_list);
+        auto ptr_dz_vel_dust = buf_dz_vel_dust.get_read_access(depends_list);
+
+        sham::EventList resulting_event_list;
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho dust");
 
@@ -850,6 +898,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -865,6 +915,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -880,6 +932,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -895,6 +949,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -910,6 +966,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -925,6 +983,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -1037,8 +1097,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     u32 irho_dust_ghost                            = ghost_layout.get_field_idx<Tscal>("rho_dust");
     u32 ndust                                      = solver_config.dust_config.ndust;
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sycl::queue &q    = shamsys::instance::get_compute_queue();
-        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
@@ -1054,13 +1114,16 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
 
         // TODO : restore asynchroneousness
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access_sync();
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access_sync();
-        auto ptr_buf_vel_dust          = buf_vel_dust.get_read_access_sync();
-        auto ptr_buf_dx_vel_dust       = buf_dx_vel_dust.get_read_access_sync();
-        auto ptr_buf_dy_vel_dust       = buf_dy_vel_dust.get_read_access_sync();
-        auto ptr_buf_dz_vel_dust       = buf_dz_vel_dust.get_read_access_sync();
-        auto ptr_buf_rho_dust          = buf_rho_dust.get_read_access_sync();
+        sham::EventList depends_list;
+        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto ptr_buf_vel_dust          = buf_vel_dust.get_read_access(depends_list);
+        auto ptr_buf_dx_vel_dust       = buf_dx_vel_dust.get_read_access(depends_list);
+        auto ptr_buf_dy_vel_dust       = buf_dy_vel_dust.get_read_access(depends_list);
+        auto ptr_buf_dz_vel_dust       = buf_dz_vel_dust.get_read_access(depends_list);
+        auto ptr_buf_rho_dust          = buf_rho_dust.get_read_access(depends_list);
+
+        sham::EventList resulting_event_list;
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
 
@@ -1068,6 +1131,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -1082,6 +1147,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -1096,6 +1163,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -1110,6 +1179,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -1124,6 +1195,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
                 ndust,
                 ptr_cell0block_aabb_lower,
@@ -1138,6 +1211,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
+                depends_list,
+                resulting_event_list,
                 shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
                 ndust,
                 ptr_cell0block_aabb_lower,

@@ -24,7 +24,7 @@ TestStart(Unittest, base + ":constructor", patch_data_field_constructor, 1) {
 
     shamtest::asserts().assert_bool("name field match", d_check.get_name() == "test");
     shamtest::asserts().assert_bool("nvar field match", d_check.get_nvar() == 1);
-    shamtest::asserts().assert_bool("buffer not allocated", !d_check.get_buf());
+    shamtest::asserts().assert_bool("buffer allocated but empty", d_check.get_buf().is_empty());
 
     shamtest::asserts().assert_bool("is new field empty", d_check.size() == 0);
     shamtest::asserts().assert_bool("is new field empty", d_check.get_obj_cnt() == 0);

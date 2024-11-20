@@ -41,8 +41,8 @@ std::vector<T> fetch_data(std::string key, shamrock::patch::PatchData &pdat) {
         if (field.get_name() == key) {
 
             {
-                sycl::host_accessor acc{shambase::get_check_ref(field.get_buf())};
-                u32 len = field.size();
+                auto acc = field.get_buf().copy_to_stdvec();
+                u32 len  = field.size();
 
                 for (u32 i = 0; i < len; i++) {
                     vec.push_back(acc[i]);

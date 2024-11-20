@@ -202,7 +202,7 @@ class PatchDataField {
         StackEntry stack_loc{};
         std::set<u32> idx_cd{};
         if (get_obj_cnt() > 0) {
-            sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
+            auto acc = get_buf().copy_to_stdvec();
 
             for (u32 i = 0; i < get_obj_cnt(); i++) {
                 if (cd_true(acc, i * nvar, args...)) {

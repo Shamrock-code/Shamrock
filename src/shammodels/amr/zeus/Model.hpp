@@ -69,18 +69,18 @@ namespace shammodels::zeus {
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata([&](u64 patch_id,
                                                     shamrock::patch::PatchData &pdat) {
-                sycl::buffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
-                sycl::buffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
+                sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
+                sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
                 PatchDataField<T> &f
                     = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
                 {
-                    auto &buf = shambase::get_check_ref(f.get_buf());
-                    sycl::host_accessor acc{buf};
+                    auto &buf = f.get_buf();
+                    auto acc  = buf.copy_to_stdvec();
 
-                    sycl::host_accessor cell_min{buf_cell_min, sycl::read_only};
-                    sycl::host_accessor cell_max{buf_cell_max, sycl::read_only};
+                    auto cell_min = buf_cell_min.copy_to_stdvec();
+                    auto cell_max = buf_cell_max.copy_to_stdvec();
 
                     Tscal scale_factor = solver.solver_config.grid_coord_to_pos_fact;
                     for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {

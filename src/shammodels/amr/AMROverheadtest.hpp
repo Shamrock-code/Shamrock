@@ -37,16 +37,34 @@ class AMRTestModel {
 
     class RefineCritCellAccessor {
         public:
+        sham::DeviceBuffer<u64_3> &buf_cell_low_bound;
+        sham::DeviceBuffer<u64_3> &buf_cell_high_bound;
+
         const u64_3 *cell_low_bound;
         const u64_3 *cell_high_bound;
 
+        sham::EventList &depends_list;
+        sham::EventList &resulting_events;
+
         RefineCritCellAccessor(
-            sycl::handler &cgh,
+            sham::EventList &depends_list,
+            sham::EventList &resulting_events,
             u64 id_patch,
             shamrock::patch::Patch p,
             shamrock::patch::PatchData &pdat)
-            : cell_low_bound{pdat.get_field<u64_3>(0).get_buf().get_read_access_sync()},
-              cell_high_bound{pdat.get_field<u64_3>(1).get_buf().get_read_access_sync()} {}
+            : buf_cell_low_bound{pdat.get_field<u64_3>(0).get_buf()},
+              buf_cell_high_bound{pdat.get_field<u64_3>(1).get_buf()}, depends_list(depends_list),
+              resulting_events(resulting_events) {}
+
+        void init() {
+            cell_low_bound  = buf_cell_low_bound.get_read_access(depends_list);
+            cell_high_bound = buf_cell_high_bound.get_read_access(depends_list);
+        }
+
+        void finalize() {
+            buf_cell_low_bound.complete_event_state(resulting_events);
+            buf_cell_high_bound.complete_event_state(resulting_events);
+        }
     };
 
     template<class T>
@@ -58,9 +76,21 @@ class AMRTestModel {
     class RefineCellAccessor {
         public:
         u32 *field;
+        sham::DeviceBuffer<u32> &buf_field;
 
-        RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
-            : field{pdat.get_field<u32>(2).get_buf().get_write_access_sync()} {}
+        sham::EventList &depends_list;
+        sham::EventList &resulting_events;
+
+        RefineCellAccessor(
+            sham::EventList &depends_list,
+            sham::EventList &resulting_events,
+            shamrock::patch::PatchData &pdat)
+            : depends_list(depends_list), resulting_events(resulting_events),
+              buf_field{pdat.get_field<u32>(2).get_buf()} {}
+
+        void init() { field = buf_field.get_write_access(depends_list); }
+
+        void finalize() { buf_field.complete_event_state(resulting_events); }
     };
 
     inline void dump_patch(u64 id) {
@@ -179,7 +209,7 @@ class AMRTestModel {
 
         using namespace shamrock::patch;
 
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         grid.sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
             RadixTree<u64, u64_3> tree(
@@ -189,33 +219,49 @@ class AMRTestModel {
                 pdat.get_obj_cnt(),
                 0);
 
-            tree.compute_cell_ibounding_box(q);
+            tree.compute_cell_ibounding_box(q.q);
 
-            tree.convert_bounding_box(q);
+            tree.convert_bounding_box(q.q);
 
             class WalkAccessors {
                 public:
                 u32 *field;
+                sham::DeviceBuffer<u32> &buf_field;
 
-                WalkAccessors(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
-                    : field{pdat.get_field<u32>(2).get_buf().get_write_access_sync()} {}
+                sham::EventList &depends_list;
+                sham::EventList &resulting_events;
+
+                WalkAccessors(
+                    sham::EventList &depends_list,
+                    sham::EventList &resulting_events,
+                    shamrock::patch::PatchData &pdat)
+                    : depends_list(depends_list), resulting_events(resulting_events),
+                      buf_field{pdat.get_field<u32>(2).get_buf()} {}
+
+                void init() { field = buf_field.get_write_access(depends_list); }
+
+                void finalize() { buf_field.complete_event_state(resulting_events); }
             };
 
-            q.wait();
+            q.q.wait();
 
             shambase::Timer t;
             t.start();
 
-            q.submit([&](sycl::handler &cgh) {
+            sham::EventList depends_list;
+            sham::EventList resulting_events;
+
+            WalkAccessors uacc(depends_list, resulting_events, pdat);
+            uacc.init();
+
+            auto cell_low_bound  = pdat.get_field<u64_3>(0).get_buf().get_read_access(depends_list);
+            auto cell_high_bound = pdat.get_field<u64_3>(1).get_buf().get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 using Rta = walker::Radix_tree_accessor<u64, u64_3>;
                 Rta tree_acc(tree, cgh);
 
-                WalkAccessors uacc(cgh, pdat);
-
                 sycl::range range_npart{pdat.get_obj_cnt()};
-
-                auto cell_low_bound  = pdat.get_field<u64_3>(0).get_buf().get_read_access_sync();
-                auto cell_high_bound = pdat.get_field<u64_3>(1).get_buf().get_read_access_sync();
 
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                     u64_3 low_bound_a  = cell_low_bound[item];
@@ -242,7 +288,13 @@ class AMRTestModel {
                     uacc.field[item] = sum;
                 });
             });
-            q.wait();
+
+            resulting_events.add_event(e);
+            uacc.finalize();
+            pdat.get_field<u64_3>(0).get_buf().complete_event_state(e);
+            pdat.get_field<u64_3>(1).get_buf().complete_event_state(e);
+
+            q.q.wait();
             t.end();
 
             logger::debug_ln("AMR Test", "walk time", t.get_time_str());
@@ -254,20 +306,20 @@ class AMRTestModel {
                 RadixTree<u64, u64_3> &tree;
                 PatchData &pdat;
 
+                sycl::buffer<u64_3> buf_cell_low_bound;
+                sycl::buffer<u64_3> buf_cell_high_bound;
+
                 class Access {
                     public:
-                    const u64_3 *cell_low_bound;
-                    const u64_3 *cell_high_bound;
+                    sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_low_bound;
+                    sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_high_bound;
 
                     sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_min;
                     sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_max;
 
                     Access(InteractionCrit crit, sycl::handler &cgh)
-                        : cell_low_bound{crit.pdat.get_field<u64_3>(0)
-                                             .get_buf()
-                                             .get_read_access_sync()},
-                          cell_high_bound{
-                              crit.pdat.get_field<u64_3>(1).get_buf().get_read_access_sync()},
+                        : cell_low_bound{crit.buf_cell_low_bound, cgh, sycl::read_only},
+                          cell_high_bound{crit.buf_cell_high_bound, cgh, sycl::read_only},
                           tree_cell_coordrange_min{
                               *crit.tree.tree_cell_ranges.buf_pos_min_cell_flt,
                               cgh,
@@ -307,7 +359,14 @@ class AMRTestModel {
             using namespace shamrock::tree;
 
             TreeStructureWalker walk = generate_walk<Recompute>(
-                tree.tree_struct, pdat.get_obj_cnt(), InteractionCrit{{}, tree, pdat});
+                tree.tree_struct,
+                pdat.get_obj_cnt(),
+                InteractionCrit{
+                    {},
+                    tree,
+                    pdat,
+                    pdat.get_field<u64_3>(0).get_buf().copy_to_sycl_buffer(),
+                    pdat.get_field<u64_3>(1).get_buf().copy_to_sycl_buffer()});
 
             q.submit([&](sycl::handler &cgh) {
                 auto walker        = walk.get_access(cgh);

@@ -24,6 +24,9 @@ class fill_trailling_buf;
 template<class morton_t, class pos_t, u32 dim>
 class pos_to_morton;
 
+template<class morton_t, class pos_t, u32 dim>
+class pos_to_morton_usm;
+
 template<class morton_t, class _pos_t, u32 dim>
 class irange_to_range;
 
@@ -123,7 +126,7 @@ namespace shamrock::sfc {
 
             sycl::accessor m{*out_morton, cgh, sycl::write_only, sycl::no_init};
 
-            cgh.parallel_for<pos_to_morton<morton_t, pos_t, dim>>(
+            cgh.parallel_for<pos_to_morton_usm<morton_t, pos_t, dim>>(
                 range_cnt, [=](sycl::item<1> item) {
                     int i = (int) item.get_id(0);
 

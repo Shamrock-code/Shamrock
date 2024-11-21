@@ -59,13 +59,13 @@ namespace sham {
                 std::string err_msg = "";
                 if (alignment) {
                     err_msg = shambase::format(
-                        "USM allocation failed, details : sz={}, target={}, alignment={}",
+                        "USM allocation failed, details : sz={}, target={}, alignment={}, alloc result = {}",
                         sz,
                         target,
-                        *alignment);
+                        *alignment, usm_ptr);
                 } else {
                     err_msg = shambase::format(
-                        "USM allocation failed, details : sz={}, target={}", sz, target);
+                        "USM allocation failed, details : sz={}, target={}, alloc result = {}", sz, target, usm_ptr);
                 }
                 shambase::throw_with_loc<std::runtime_error>(err_msg);
             }

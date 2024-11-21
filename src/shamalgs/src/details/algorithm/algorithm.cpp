@@ -195,8 +195,8 @@ namespace shamalgs::algorithm {
         sham::DeviceBuffer<_arg_> &dest,                                                           \
         sham::DeviceBuffer<u32> &index_map,                                                        \
         u32 len,                                                                                   \
-        u32 nvar);                                                                                 \
-                                                                                                   \
+        u32 nvar);
+
     XMAC_TYPES
 
 #undef X

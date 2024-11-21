@@ -518,26 +518,49 @@ f64 amr_walk_perf(
 
     class RefineCritCellAccessor {
         public:
-        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> cell_low_bound;
-        sycl::accessor<u64_3, 1, sycl::access::mode::read, sycl::target::device> cell_high_bound;
+        sham::DeviceBuffer<u64_3> &buf_cell_low_bound;
+        sham::DeviceBuffer<u64_3> &buf_cell_high_bound;
 
+        const u64_3 *cell_low_bound;
+        const u64_3 *cell_high_bound;
+
+        sham::EventList &depends_list;
+        sham::EventList &resulting_events;
         shammath::CoordRangeTransform<u64_3, f32_3> transform;
-
         RefineCritCellAccessor(
-            sycl::handler &cgh,
+            sham::EventList &depends_list,
+            sham::EventList &resulting_events,
             u64 id_patch,
             shamrock::patch::Patch p,
             shamrock::patch::PatchData &pdat,
             shammath::CoordRange<u64_3> base_range,
             shammath::CoordRange<f32_3> real_coord_range)
-            : cell_low_bound{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
-              cell_high_bound{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only},
-              transform(base_range, real_coord_range) {}
+            : buf_cell_low_bound{pdat.get_field<u64_3>(0).get_buf()},
+              buf_cell_high_bound{pdat.get_field<u64_3>(1).get_buf()}, depends_list(depends_list),
+              resulting_events(resulting_events), transform(base_range, real_coord_range) {}
+
+        void init() {
+            cell_low_bound  = buf_cell_low_bound.get_read_access(depends_list);
+            cell_high_bound = buf_cell_high_bound.get_read_access(depends_list);
+        }
+
+        void finalize() {
+            buf_cell_low_bound.complete_event_state(resulting_events);
+            buf_cell_high_bound.complete_event_state(resulting_events);
+        }
     };
 
     class RefineCellAccessor {
         public:
-        RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat) {}
+        RefineCellAccessor(
+            sham::EventList &depends_list,
+            sham::EventList &resulting_events,
+            shamrock::patch::PatchData &pdat) {}
+
+
+        void init() {  }
+
+        void finalize() { }
     };
 
     sycl::queue &q = shamsys::instance::get_compute_queue();
@@ -617,6 +640,9 @@ f64 amr_walk_perf(
         RadixTree<u64, u64_3> &tree;
         PatchData &pdat;
 
+        sycl::buffer<u64_3> buf_cell_low_bound;
+        sycl::buffer<u64_3> buf_cell_high_bound;
+
         class Access {
             public:
             sycl::accessor<u64_3, 1, sycl::access::mode::read> cell_low_bound;
@@ -626,9 +652,8 @@ f64 amr_walk_perf(
             sycl::accessor<u64_3, 1, sycl::access::mode::read> tree_cell_coordrange_max;
 
             Access(InteractionCrit crit, sycl::handler &cgh)
-                : cell_low_bound{*crit.pdat.template get_field<u64_3>(0).get_buf(), cgh, sycl::read_only},
-                  cell_high_bound{
-                      *crit.pdat.template get_field<u64_3>(1).get_buf(), cgh, sycl::read_only},
+                : cell_low_bound{crit.buf_cell_low_bound, cgh, sycl::read_only},
+                  cell_high_bound{crit.buf_cell_high_bound, cgh, sycl::read_only},
                   tree_cell_coordrange_min{
                       *crit.tree.tree_cell_ranges.buf_pos_min_cell_flt, cgh, sycl::read_only},
                   tree_cell_coordrange_max{
@@ -677,7 +702,7 @@ f64 amr_walk_perf(
     shambase::Timer t_tree;
     t_tree.start();
     RadixTree<u64, u64_3> tree(
-        q,
+        shamsys::instance::get_compute_scheduler_ptr(),
         grid.sched.get_sim_box().patch_coord_to_domain<u64_3>(p),
         pdat.get_field<u64_3>(0).get_buf(),
         pdat.get_obj_cnt(),
@@ -691,7 +716,14 @@ f64 amr_walk_perf(
     t_tree.end();
 
     TreeStructureWalker walk = generate_walk<Recompute>(
-        tree.tree_struct, pdat.get_obj_cnt(), InteractionCrit{{}, tree, pdat});
+        tree.tree_struct,
+        pdat.get_obj_cnt(),
+        InteractionCrit{
+            {},
+            tree,
+            pdat,
+            pdat.get_field<u64_3>(0).get_buf().copy_to_sycl_buffer(),
+            pdat.get_field<u64_3>(1).get_buf().copy_to_sycl_buffer()});
 
     sycl::buffer<u32> neighbours(len_pos);
 
@@ -699,40 +731,43 @@ f64 amr_walk_perf(
         q.wait();
         shambase::Timer t;
         t.start();
+
+        sham::EventList depends_list;
+        auto cell_min = pdat.get_field<u64_3>(0).get_buf().get_read_access(depends_list);
+        auto cell_max = pdat.get_field<u64_3>(1).get_buf().get_read_access(depends_list);
+        depends_list.wait_and_throw();
+
         q.submit([&](sycl::handler &cgh) {
-            auto walker        = walk.get_access(cgh);
-            auto leaf_iterator = tree.get_leaf_access(cgh);
+             auto walker        = walk.get_access(cgh);
+             auto leaf_iterator = tree.get_leaf_access(cgh);
 
-            sycl::accessor cell_min{*pdat.get_field<u64_3>(0).get_buf(), cgh, sycl::read_only};
-            sycl::accessor cell_max{*pdat.get_field<u64_3>(1).get_buf(), cgh, sycl::read_only};
+             sycl::accessor neigh_count{neighbours, cgh, sycl::write_only, sycl::no_init};
 
-            sycl::accessor neigh_count{neighbours, cgh, sycl::write_only, sycl::no_init};
+             cgh.parallel_for(walker.get_sycl_range(), [=](sycl::item<1> item) {
+                 u32 sum = 0;
 
-            cgh.parallel_for(walker.get_sycl_range(), [=](sycl::item<1> item) {
-                u32 sum = 0;
+                 CriterionVal int_values{
+                     walker.criterion(), static_cast<u32>(item.get_linear_id())};
 
-                CriterionVal int_values{walker.criterion(), static_cast<u32>(item.get_linear_id())};
+                 walker.for_each_node(
+                     item,
+                     int_values,
+                     [&](u32 /*node_id*/, u32 leaf_iterator_id) {
+                         leaf_iterator.iter_object_in_leaf(leaf_iterator_id, [&](u32 obj_id) {
+                             shammath::AABB<u64_3> cell_bound{cell_min[obj_id], cell_max[obj_id]};
 
-                walker.for_each_node(
-                    item,
-                    int_values,
-                    [&](u32 /*node_id*/, u32 leaf_iterator_id) {
-                        leaf_iterator.iter_object_in_leaf(leaf_iterator_id, [&](u32 obj_id) {
-                            shammath::AABB<u64_3> cell_bound{cell_min[obj_id], cell_max[obj_id]};
+                             sum += cell_bound.get_intersect(int_values.cell_bound)
+                                            .is_surface_or_volume()
+                                        ? 1
+                                        : 0;
+                         });
+                     },
+                     [&](u32 node_id) {});
 
-                            sum += cell_bound.get_intersect(int_values.cell_bound)
-                                           .is_surface_or_volume()
-                                       ? 1
-                                       : 0;
-                        });
-                    },
-                    [&](u32 node_id) {});
+                 neigh_count[item] = sum;
+             });
+         }).wait();
 
-                neigh_count[item] = sum;
-            });
-        });
-
-        q.wait();
         t.end();
         return t.nanosec * 1e-9;
     };

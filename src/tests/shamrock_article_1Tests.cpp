@@ -557,10 +557,9 @@ f64 amr_walk_perf(
             sham::EventList &resulting_events,
             shamrock::patch::PatchData &pdat) {}
 
+        void init() {}
 
-        void init() {  }
-
-        void finalize() { }
+        void finalize() {}
     };
 
     sycl::queue &q = shamsys::instance::get_compute_queue();

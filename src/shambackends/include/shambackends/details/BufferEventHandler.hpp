@@ -97,6 +97,14 @@ namespace sham::details {
         bool up_to_date_events = true;
 
         /**
+         * @brief Source location of the last access to the buffer
+         *
+         * This is the source location of the last access to the buffer. It is used to
+         * report an error if the buffer is accessed in an incomplete state.
+         */
+        SourceLocation last_access_loc;
+
+        /**
          * @brief Adds events conditioning the validity of a buffer for read access to the
          * dependency list. Also sets the event handler to incomplete state (`up_to_date_events` =
          * false).

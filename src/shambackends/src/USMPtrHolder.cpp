@@ -32,6 +32,15 @@ namespace sham {
 
             if (alignment) {
 
+                if (sz % *alignment != 0) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "The size of the USM pointer is not aligned with the given alignment\n"
+                        "  size = {} | alignment = {} | size % alignment = {}",
+                        sz,
+                        *alignment,
+                        sz % *alignment));
+                }
+
                 // TODO upgrade alignment to 256-bit for CUDA ?
 
                 if constexpr (target == device) {
@@ -59,13 +68,18 @@ namespace sham {
                 std::string err_msg = "";
                 if (alignment) {
                     err_msg = shambase::format(
-                        "USM allocation failed, details : sz={}, target={}, alignment={}, alloc result = {}",
+                        "USM allocation failed, details : sz={}, target={}, alignment={}, alloc "
+                        "result = {}",
                         sz,
                         target,
-                        *alignment, usm_ptr);
+                        *alignment,
+                        usm_ptr);
                 } else {
                     err_msg = shambase::format(
-                        "USM allocation failed, details : sz={}, target={}, alloc result = {}", sz, target, usm_ptr);
+                        "USM allocation failed, details : sz={}, target={}, alloc result = {}",
+                        sz,
+                        target,
+                        usm_ptr);
                 }
                 shambase::throw_with_loc<std::runtime_error>(err_msg);
             }

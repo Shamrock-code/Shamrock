@@ -49,6 +49,10 @@ namespace sham {
             consumed = false;
         }
 
+        inline std::string get_state() {
+            return shambase::format("events : {}, consumed : {}", events.size(), consumed);
+        }
+
         EventList(SourceLocation loc = SourceLocation{}) : loc_build(loc) {}
 
         ~EventList();

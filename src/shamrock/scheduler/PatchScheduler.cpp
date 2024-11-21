@@ -875,6 +875,59 @@ void PatchScheduler::dump_local_patches(std::string filename) {
     }
 }
 
+struct Message {
+    std::unique_ptr<shamcomm::CommunicationBuffer> buf;
+    i32 rank;
+    i32 tag;
+};
+
+void send_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
+    for (auto &msg : msgs) {
+        rqs.push_back(MPI_Request{});
+        u32 rq_index = rqs.size() - 1;
+        auto &rq     = rqs[rq_index];
+
+        u64 bsize = msg.buf->get_bytesize();
+        if (bsize % 8 != 0) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "the following mpi comm assume that we can send longs to pack 8byte");
+        }
+        u64 lcount = bsize / 8;
+        if (lcount > i32_max) {
+            shambase::throw_with_loc<std::runtime_error>("The message is too large for MPI");
+        }
+
+        mpi::isend(
+            msg.buf->get_ptr(),
+            lcount,
+            get_mpi_type<u64>(),
+            msg.rank,
+            msg.tag,
+            MPI_COMM_WORLD,
+            &rq);
+    }
+}
+
+void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
+
+    for (auto &msg : msgs) {
+        rqs.push_back(MPI_Request{});
+        u32 rq_index = rqs.size() - 1;
+        auto &rq     = rqs[rq_index];
+
+        MPI_Status st;
+        i32 cnt;
+        mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
+        mpi::get_count(&st, get_mpi_type<u64>(), &cnt);
+
+        msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(
+            cnt * 8, shamsys::instance::get_compute_scheduler_ptr());
+
+        mpi::irecv(
+            msg.buf->get_ptr(), cnt, get_mpi_type<u64>(), msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
+    }
+}
+
 std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_data(u32 rank) {
 
     using namespace shamrock::patch;
@@ -882,29 +935,67 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     auto plist = this->patch_list.global;
     auto pdata = this->patch_data.owned_data;
 
-    std::vector<std::unique_ptr<PatchData>> ret;
+    auto serializer = [](shamrock::patch::PatchData &pdat) {
+        shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
+        ser.allocate(pdat.serialize_buf_byte_size());
+        pdat.serialize_buf(ser);
+        return ser.finalize();
+    };
 
-    if (shamcomm::world_rank() == 0) {
-        ret.resize(plist.size());
-    }
+    auto deserializer = [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
+        // exchange the buffer held by the distrib data and give it to the serializer
+        shamalgs::SerializeHelper ser(
+            shamsys::instance::get_compute_scheduler_ptr(),
+            std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+        return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
+    };
 
-    std::vector<PatchDataMpiRequest> rq_lst;
+    std::vector<Message> send_payloads;
 
     for (u32 i = 0; i < plist.size(); i++) {
         auto &cpatch = plist[i];
         if (cpatch.node_owner_id == shamcomm::world_rank()) {
-            patchdata_isend(pdata.get(cpatch.id_patch), rq_lst, 0, i, MPI_COMM_WORLD);
+            auto &patchdata = pdata.get(cpatch.id_patch);
+
+            std::unique_ptr<sycl::buffer<u8>> tmp = serializer(patchdata);
+
+            send_payloads.push_back(Message{
+                std::make_unique<shamcomm::CommunicationBuffer>(
+                    shambase::get_check_ref(tmp), shamsys::instance::get_compute_scheduler_ptr()),
+                0,
+                i32(i)});
         }
     }
+
+    std::vector<MPI_Request> rqs;
+    send_messages(send_payloads, rqs);
+
+    std::vector<Message> recv_payloads;
 
     if (shamcomm::world_rank() == 0) {
         for (u32 i = 0; i < plist.size(); i++) {
-            ret.at(i) = std::make_unique<PatchData>(pdl);
-            patchdata_irecv_probe(*ret.at(i), rq_lst, plist[i].node_owner_id, i, MPI_COMM_WORLD);
+            recv_payloads.push_back(Message{
+                std::unique_ptr<shamcomm::CommunicationBuffer>{},
+                i32(plist[i].node_owner_id),
+                i32(i)});
         }
     }
 
-    waitall_pdat_mpi_rq(rq_lst);
+    // receive
+    recv_probe_messages(recv_payloads, rqs);
+
+    std::vector<MPI_Status> st_lst(rqs.size());
+    mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
+
+    std::vector<std::unique_ptr<PatchData>> ret;
+    for (auto &recv_msg : recv_payloads) {
+        shamcomm::CommunicationBuffer comm_buf = shambase::extract_pointer(recv_msg.buf);
+
+        sycl::buffer<u8> buf = shamcomm::CommunicationBuffer::convert(std::move(comm_buf));
+
+        ret.push_back(std::make_unique<PatchData>(
+            deserializer(std::make_unique<sycl::buffer<u8>>(std::move(buf)))));
+    }
 
     return ret;
 }

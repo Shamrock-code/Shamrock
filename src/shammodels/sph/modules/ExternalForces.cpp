@@ -159,6 +159,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                     axyz[gid] += axyz_ext[gid];
                 });
         });
+
+        buf_axyz.complete_event_state(e);
+        buf_axyz_ext.complete_event_state(e);
     });
 
     using SolverConfigExtForce = typename Config::ExtForceConfig;

@@ -49,7 +49,22 @@ namespace sham {
          * @param sz The size in number of elements
          * @return The size in bytes
          */
-        static size_t to_bytesize(size_t sz) { return sz * sizeof(T); }
+        static size_t to_bytesize(size_t sz) {
+            size_t ret = sz * sizeof(T);
+
+            auto upgrade_multiple = [](size_t sz, size_t mult) -> size_t {
+                if (sz % mult)
+                    return sz + (mult - sz % mult);
+                return sz;
+            };
+
+            auto align = get_alignment();
+            if (align) {
+                ret = upgrade_multiple(ret, *align);
+            }
+
+            return ret;
+        }
 
         /**
          * @brief Construct a new Device Buffer object with a given USM pointer
@@ -219,8 +234,9 @@ namespace sham {
          *        accessing the buffer.
          * @return A const pointer to the buffer's data.
          */
-        [[nodiscard]] inline const T *get_read_access(sham::EventList &depends_list) const {
-            shambase::get_check_ref(events_hndl).read_access(depends_list);
+        [[nodiscard]] inline const T *get_read_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) const {
+            shambase::get_check_ref(events_hndl).read_access(depends_list, src_loc);
             return hold.template ptr_cast<T>();
         }
 
@@ -236,8 +252,9 @@ namespace sham {
          *        accessing the buffer.
          * @return A pointer to the buffer's data.
          */
-        [[nodiscard]] inline T *get_write_access(sham::EventList &depends_list) {
-            shambase::get_check_ref(events_hndl).write_access(depends_list);
+        [[nodiscard]] inline T *
+        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) {
+            shambase::get_check_ref(events_hndl).write_access(depends_list, src_loc);
             return hold.template ptr_cast<T>();
         }
 
@@ -728,10 +745,13 @@ namespace sham {
          * @param new_size The new size of the buffer.
          */
         inline void resize(u32 new_size) {
+
+            StackEntry __st{};
+
             if (to_bytesize(new_size) > hold.get_bytesize()) {
                 // expand storage
 
-                size_t new_storage_size = to_bytesize(new_size) * 1.5;
+                size_t new_storage_size = to_bytesize(new_size * 1.5);
 
                 DeviceBuffer new_buf(
                     new_size,

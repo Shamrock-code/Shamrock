@@ -124,7 +124,7 @@ if(shamrock.sys.world_rank() == 0):
 
 
     plt.style.use('custom_style.mplstyle')
-    if False:
+    if True:
 
         fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
 

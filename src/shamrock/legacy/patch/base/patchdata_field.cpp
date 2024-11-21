@@ -88,10 +88,13 @@ namespace patchdata_field {
             impl::copy_to_host::send::finalize<T>(comm_ptr);
 
         } else if (comm_mode == CopyToHost && comm_op == Recv_Probe) {
-            impl::copy_to_host::recv::finalize<T>(
-                std::make_unique<sycl::buffer<T>>(pdat_field.get_buf().copy_to_sycl_buffer()),
-                comm_ptr,
-                comm_val_cnt);
+
+            auto buf_recv
+                = std::make_unique<sycl::buffer<T>>(pdat_field.get_buf().copy_to_sycl_buffer());
+
+            impl::copy_to_host::recv::finalize<T>(buf_recv, comm_ptr, comm_val_cnt);
+
+            pdat_field.get_buf().copy_from_sycl_buffer(*buf_recv);
 
         } else if (comm_mode == DirectGPU && comm_op == Send) {
 
@@ -99,10 +102,12 @@ namespace patchdata_field {
 
         } else if (comm_mode == DirectGPU && comm_op == Recv_Probe) {
 
-            impl::copy_to_host::recv::finalize<T>(
-                std::make_unique<sycl::buffer<T>>(pdat_field.get_buf().copy_to_sycl_buffer()),
-                comm_ptr,
-                comm_val_cnt);
+            auto buf_recv
+                = std::make_unique<sycl::buffer<T>>(pdat_field.get_buf().copy_to_sycl_buffer());
+
+            impl::copy_to_host::recv::finalize<T>(buf_recv, comm_ptr, comm_val_cnt);
+
+            pdat_field.get_buf().copy_from_sycl_buffer(*buf_recv);
 
         } else {
             logger::err_ln(

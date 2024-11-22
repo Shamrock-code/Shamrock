@@ -76,21 +76,16 @@ class AMRTestModel {
         public:
         u32 *field;
 
-        RefineCellAccessor(
-            sham::EventList &depends_list,
-            shamrock::patch::PatchData &pdat) {
+        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchData &pdat) {
 
-                auto & buf_field = pdat.get_field<u32>(2).get_buf();
-                field = buf_field.get_write_access(depends_list);
-            }
+            auto &buf_field = pdat.get_field<u32>(2).get_buf();
+            field           = buf_field.get_write_access(depends_list);
+        }
 
-
-        void finalize(
-            sham::EventList &resulting_events,
-            shamrock::patch::PatchData &pdat) { 
-                auto & buf_field = pdat.get_field<u32>(2).get_buf();
-                buf_field.complete_event_state(resulting_events); 
-                }
+        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchData &pdat) {
+            auto &buf_field = pdat.get_field<u32>(2).get_buf();
+            buf_field.complete_event_state(resulting_events);
+        }
     };
 
     inline void dump_patch(u64 id) {
@@ -227,19 +222,15 @@ class AMRTestModel {
                 public:
                 u32 *field;
 
-                WalkAccessors(
-                    sham::EventList &depends_list,
-                    shamrock::patch::PatchData &pdat) {
-                        auto & buf_field = pdat.get_field<u32>(2).get_buf();
-                field = buf_field.get_write_access(depends_list); 
+                WalkAccessors(sham::EventList &depends_list, shamrock::patch::PatchData &pdat) {
+                    auto &buf_field = pdat.get_field<u32>(2).get_buf();
+                    field           = buf_field.get_write_access(depends_list);
                 }
 
-                void finalize(
-                    sham::EventList &resulting_events,
-                    shamrock::patch::PatchData &pdat) { 
-                        auto & buf_field = pdat.get_field<u32>(2).get_buf();
-                        buf_field.complete_event_state(resulting_events); 
-                        }
+                void finalize(sham::EventList &resulting_events, shamrock::patch::PatchData &pdat) {
+                    auto &buf_field = pdat.get_field<u32>(2).get_buf();
+                    buf_field.complete_event_state(resulting_events);
+                }
             };
 
             q.q.wait();

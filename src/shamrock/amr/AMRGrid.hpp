@@ -146,7 +146,7 @@ namespace shamrock::amr {
                 });
 
                 resulting_events.add_event(e);
-                uacc.finalize( resulting_events, id_patch, p, pdat, args...);
+                uacc.finalize(resulting_events, id_patch, p, pdat, args...);
             });
         }
 
@@ -243,7 +243,7 @@ namespace shamrock::amr {
                     });
 
                     resulting_events.add_event(e2);
-                    uacc.finalize( resulting_events, id_patch, cur_p, pdat);
+                    uacc.finalize(resulting_events, id_patch, cur_p, pdat);
                 }
 
                 auto [opt_buf, len] = shamalgs::numeric::stream_compact(
@@ -439,7 +439,7 @@ namespace shamrock::amr {
                     pdat.get_field<Tcoord>(0).get_buf().complete_event_state(e);
                     pdat.get_field<Tcoord>(1).get_buf().complete_event_state(e);
                     resulting_events.add_event(e);
-                    uacc.finalize(resulting_events,pdat);
+                    uacc.finalize(resulting_events, pdat);
 
                     // stream compact the flags
                     auto [opt_buf, len]

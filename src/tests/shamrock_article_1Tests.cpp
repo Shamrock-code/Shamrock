@@ -518,7 +518,6 @@ f64 amr_walk_perf(
 
     class RefineCritCellAccessor {
         public:
-
         const u64_3 *cell_low_bound;
         const u64_3 *cell_high_bound;
 
@@ -530,15 +529,14 @@ f64 amr_walk_perf(
             shamrock::patch::Patch p,
             shamrock::patch::PatchData &pdat,
             shammath::CoordRange<u64_3> base_range,
-            shammath::CoordRange<f32_3> real_coord_range) : transform(base_range, real_coord_range) {
+            shammath::CoordRange<f32_3> real_coord_range)
+            : transform(base_range, real_coord_range) {
 
-               auto &buf_cell_low_bound = pdat.get_field<u64_3>(0).get_buf();
-              auto &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
-cell_low_bound  = buf_cell_low_bound.get_read_access(depends_list);
-            cell_high_bound = buf_cell_high_bound.get_read_access(depends_list);
-
-              }
-
+            auto &buf_cell_low_bound  = pdat.get_field<u64_3>(0).get_buf();
+            auto &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
+            cell_low_bound            = buf_cell_low_bound.get_read_access(depends_list);
+            cell_high_bound           = buf_cell_high_bound.get_read_access(depends_list);
+        }
 
         void finalize(
             sham::EventList &resulting_events,
@@ -548,8 +546,8 @@ cell_low_bound  = buf_cell_low_bound.get_read_access(depends_list);
             shammath::CoordRange<u64_3> base_range,
             shammath::CoordRange<f32_3> real_coord_range) {
 
-               auto &buf_cell_low_bound = pdat.get_field<u64_3>(0).get_buf();
-              auto &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
+            auto &buf_cell_low_bound  = pdat.get_field<u64_3>(0).get_buf();
+            auto &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
             buf_cell_low_bound.complete_event_state(resulting_events);
             buf_cell_high_bound.complete_event_state(resulting_events);
         }
@@ -557,13 +555,9 @@ cell_low_bound  = buf_cell_low_bound.get_read_access(depends_list);
 
     class RefineCellAccessor {
         public:
-        RefineCellAccessor(
-            sham::EventList &depends_list,
-            shamrock::patch::PatchData &pdat) {}
+        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchData &pdat) {}
 
-        void finalize(
-            sham::EventList &resulting_events,
-            shamrock::patch::PatchData &pdat) {}
+        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchData &pdat) {}
     };
 
     sycl::queue &q = shamsys::instance::get_compute_queue();

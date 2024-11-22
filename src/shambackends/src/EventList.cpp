@@ -17,7 +17,7 @@
 #include "shamcomm/logs.hpp"
 
 sham::EventList::~EventList() {
-    if (!consumed) {
+    if (!consumed && !events.empty()) {
         std::string log_str = shambase::format(
             "EventList destroyed without being consumed :\n    -> creation : {}",
             loc_build.format_one_line());

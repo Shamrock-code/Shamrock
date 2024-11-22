@@ -97,3 +97,9 @@ jobs:
       - name: Run clang-tidy
         run: |
           run-clang-tidy-${{matrix.clang}} -p build/clang-tidy.mod -use-color -config-file .clang-tidy -export-fixes clang-tidy_results.yaml -extra-arg-before="-Wno-unused-command-line-argument"
+
+      - name: Run clang-tidy-diff
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD |
+          clang-tidy-diff-${{matrix.clang}}.py -clang-tidy-binary clang-tidy-${{matrix.clang}} -path build/clang-tidy.mod \
+            -use-color -p1 --config-file .clang-tidy -extra-arg-before="-Wno-unused-command-line-argument"

@@ -37,31 +37,30 @@ class AMRTestModel {
 
     class RefineCritCellAccessor {
         public:
-        sham::DeviceBuffer<u64_3> &buf_cell_low_bound;
-        sham::DeviceBuffer<u64_3> &buf_cell_high_bound;
-
         const u64_3 *cell_low_bound;
         const u64_3 *cell_high_bound;
 
-        sham::EventList &depends_list;
-        sham::EventList &resulting_events;
-
         RefineCritCellAccessor(
             sham::EventList &depends_list,
-            sham::EventList &resulting_events,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat)
-            : buf_cell_low_bound{pdat.get_field<u64_3>(0).get_buf()},
-              buf_cell_high_bound{pdat.get_field<u64_3>(1).get_buf()}, depends_list(depends_list),
-              resulting_events(resulting_events) {}
+            shamrock::patch::PatchData &pdat) {
 
-        void init() {
+            sham::DeviceBuffer<u64_3> &buf_cell_low_bound  = pdat.get_field<u64_3>(0).get_buf();
+            sham::DeviceBuffer<u64_3> &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
             cell_low_bound  = buf_cell_low_bound.get_read_access(depends_list);
             cell_high_bound = buf_cell_high_bound.get_read_access(depends_list);
         }
 
-        void finalize() {
+        void finalize(
+            sham::EventList &resulting_events,
+            u64 id_patch,
+            shamrock::patch::Patch p,
+            shamrock::patch::PatchData &pdat) {
+
+            sham::DeviceBuffer<u64_3> &buf_cell_low_bound  = pdat.get_field<u64_3>(0).get_buf();
+            sham::DeviceBuffer<u64_3> &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
+
             buf_cell_low_bound.complete_event_state(resulting_events);
             buf_cell_high_bound.complete_event_state(resulting_events);
         }
@@ -76,21 +75,22 @@ class AMRTestModel {
     class RefineCellAccessor {
         public:
         u32 *field;
-        sham::DeviceBuffer<u32> &buf_field;
-
-        sham::EventList &depends_list;
-        sham::EventList &resulting_events;
 
         RefineCellAccessor(
             sham::EventList &depends_list,
+            shamrock::patch::PatchData &pdat) {
+
+                auto & buf_field = pdat.get_field<u32>(2).get_buf();
+                field = buf_field.get_write_access(depends_list);
+            }
+
+
+        void finalize(
             sham::EventList &resulting_events,
-            shamrock::patch::PatchData &pdat)
-            : depends_list(depends_list), resulting_events(resulting_events),
-              buf_field{pdat.get_field<u32>(2).get_buf()} {}
-
-        void init() { field = buf_field.get_write_access(depends_list); }
-
-        void finalize() { buf_field.complete_event_state(resulting_events); }
+            shamrock::patch::PatchData &pdat) { 
+                auto & buf_field = pdat.get_field<u32>(2).get_buf();
+                buf_field.complete_event_state(resulting_events); 
+                }
     };
 
     inline void dump_patch(u64 id) {
@@ -226,21 +226,20 @@ class AMRTestModel {
             class WalkAccessors {
                 public:
                 u32 *field;
-                sham::DeviceBuffer<u32> &buf_field;
-
-                sham::EventList &depends_list;
-                sham::EventList &resulting_events;
 
                 WalkAccessors(
                     sham::EventList &depends_list,
+                    shamrock::patch::PatchData &pdat) {
+                        auto & buf_field = pdat.get_field<u32>(2).get_buf();
+                field = buf_field.get_write_access(depends_list); 
+                }
+
+                void finalize(
                     sham::EventList &resulting_events,
-                    shamrock::patch::PatchData &pdat)
-                    : depends_list(depends_list), resulting_events(resulting_events),
-                      buf_field{pdat.get_field<u32>(2).get_buf()} {}
-
-                void init() { field = buf_field.get_write_access(depends_list); }
-
-                void finalize() { buf_field.complete_event_state(resulting_events); }
+                    shamrock::patch::PatchData &pdat) { 
+                        auto & buf_field = pdat.get_field<u32>(2).get_buf();
+                        buf_field.complete_event_state(resulting_events); 
+                        }
             };
 
             q.q.wait();
@@ -251,8 +250,7 @@ class AMRTestModel {
             sham::EventList depends_list;
             sham::EventList resulting_events;
 
-            WalkAccessors uacc(depends_list, resulting_events, pdat);
-            uacc.init();
+            WalkAccessors uacc(depends_list, pdat);
 
             auto cell_low_bound  = pdat.get_field<u64_3>(0).get_buf().get_read_access(depends_list);
             auto cell_high_bound = pdat.get_field<u64_3>(1).get_buf().get_read_access(depends_list);
@@ -290,7 +288,7 @@ class AMRTestModel {
             });
 
             resulting_events.add_event(e);
-            uacc.finalize();
+            uacc.finalize(resulting_events, pdat);
             pdat.get_field<u64_3>(0).get_buf().complete_event_state(e);
             pdat.get_field<u64_3>(1).get_buf().complete_event_state(e);
 

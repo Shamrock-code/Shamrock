@@ -518,33 +518,38 @@ f64 amr_walk_perf(
 
     class RefineCritCellAccessor {
         public:
-        sham::DeviceBuffer<u64_3> &buf_cell_low_bound;
-        sham::DeviceBuffer<u64_3> &buf_cell_high_bound;
 
         const u64_3 *cell_low_bound;
         const u64_3 *cell_high_bound;
 
-        sham::EventList &depends_list;
-        sham::EventList &resulting_events;
         shammath::CoordRangeTransform<u64_3, f32_3> transform;
+
         RefineCritCellAccessor(
             sham::EventList &depends_list,
+            u64 id_patch,
+            shamrock::patch::Patch p,
+            shamrock::patch::PatchData &pdat,
+            shammath::CoordRange<u64_3> base_range,
+            shammath::CoordRange<f32_3> real_coord_range) : transform(base_range, real_coord_range) {
+
+               auto &buf_cell_low_bound = pdat.get_field<u64_3>(0).get_buf();
+              auto &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
+cell_low_bound  = buf_cell_low_bound.get_read_access(depends_list);
+            cell_high_bound = buf_cell_high_bound.get_read_access(depends_list);
+
+              }
+
+
+        void finalize(
             sham::EventList &resulting_events,
             u64 id_patch,
             shamrock::patch::Patch p,
             shamrock::patch::PatchData &pdat,
             shammath::CoordRange<u64_3> base_range,
-            shammath::CoordRange<f32_3> real_coord_range)
-            : buf_cell_low_bound{pdat.get_field<u64_3>(0).get_buf()},
-              buf_cell_high_bound{pdat.get_field<u64_3>(1).get_buf()}, depends_list(depends_list),
-              resulting_events(resulting_events), transform(base_range, real_coord_range) {}
+            shammath::CoordRange<f32_3> real_coord_range) {
 
-        void init() {
-            cell_low_bound  = buf_cell_low_bound.get_read_access(depends_list);
-            cell_high_bound = buf_cell_high_bound.get_read_access(depends_list);
-        }
-
-        void finalize() {
+               auto &buf_cell_low_bound = pdat.get_field<u64_3>(0).get_buf();
+              auto &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
             buf_cell_low_bound.complete_event_state(resulting_events);
             buf_cell_high_bound.complete_event_state(resulting_events);
         }
@@ -554,12 +559,11 @@ f64 amr_walk_perf(
         public:
         RefineCellAccessor(
             sham::EventList &depends_list,
-            sham::EventList &resulting_events,
             shamrock::patch::PatchData &pdat) {}
 
-        void init() {}
-
-        void finalize() {}
+        void finalize(
+            sham::EventList &resulting_events,
+            shamrock::patch::PatchData &pdat) {}
     };
 
     sycl::queue &q = shamsys::instance::get_compute_queue();

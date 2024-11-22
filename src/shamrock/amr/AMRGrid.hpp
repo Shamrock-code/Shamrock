@@ -135,8 +135,7 @@ namespace shamrock::amr {
                 sham::EventList depends_list;
                 sham::EventList resulting_events;
 
-                UserAcc uacc(depends_list, resulting_events, id_patch, p, pdat, args...);
-                uacc.init();
+                UserAcc uacc(depends_list, id_patch, p, pdat, args...);
 
                 auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     sycl::accessor refine_acc{refine_flags, cgh, sycl::write_only, sycl::no_init};
@@ -147,7 +146,7 @@ namespace shamrock::amr {
                 });
 
                 resulting_events.add_event(e);
-                uacc.finalize();
+                uacc.finalize( resulting_events, id_patch, p, pdat, args...);
             });
         }
 
@@ -230,8 +229,7 @@ namespace shamrock::amr {
                 {
                     sham::EventList depends_list;
                     sham::EventList resulting_events;
-                    UserAcc uacc(depends_list, resulting_events, id_patch, cur_p, pdat);
-                    uacc.init();
+                    UserAcc uacc(depends_list, id_patch, cur_p, pdat);
 
                     auto e2 = q.submit(depends_list, [&](sycl::handler &cgh) {
                         sycl::accessor acc_mergeable{mergeable_indexes, cgh, sycl::read_write};
@@ -245,7 +243,7 @@ namespace shamrock::amr {
                     });
 
                     resulting_events.add_event(e2);
-                    uacc.finalize();
+                    uacc.finalize( resulting_events, id_patch, cur_p, pdat);
                 }
 
                 auto [opt_buf, len] = shamalgs::numeric::stream_compact(
@@ -301,7 +299,7 @@ namespace shamrock::amr {
                         = pdat.get_field<Tcoord>(1).get_buf().get_write_access(depends_list);
 
                     sham::EventList resulting_events;
-                    UserAcc uacc(depends_list, resulting_events, pdat);
+                    UserAcc uacc(depends_list, pdat);
 
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         sycl::accessor index_to_ref{*refine_flags.idx, cgh, sycl::read_only};
@@ -349,7 +347,7 @@ namespace shamrock::amr {
                     pdat.get_field<Tcoord>(1).get_buf().complete_event_state(e);
 
                     resulting_events.add_event(e);
-                    uacc.finalize();
+                    uacc.finalize(resulting_events, pdat);
                 }
 
                 sum_cell_count += pdat.get_obj_cnt();
@@ -385,7 +383,7 @@ namespace shamrock::amr {
                         = pdat.get_field<Tcoord>(1).get_buf().get_write_access(depends_list);
 
                     sham::EventList resulting_events;
-                    UserAcc uacc(depends_list, resulting_events, pdat);
+                    UserAcc uacc(depends_list, pdat);
 
                     // edit cell content + make flag of cells to keep
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -441,7 +439,7 @@ namespace shamrock::amr {
                     pdat.get_field<Tcoord>(0).get_buf().complete_event_state(e);
                     pdat.get_field<Tcoord>(1).get_buf().complete_event_state(e);
                     resulting_events.add_event(e);
-                    uacc.finalize();
+                    uacc.finalize(resulting_events,pdat);
 
                     // stream compact the flags
                     auto [opt_buf, len]

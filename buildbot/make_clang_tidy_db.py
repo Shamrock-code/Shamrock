@@ -17,9 +17,11 @@ def remove_external_files():
 
     for a in dic:
         if not ("Shamrock/external" in a["file"]):
+            new_cmd = os.popen(a["command"] + " --acpp-dryrun").readlines()[0][:-1]
+            a["command"] = new_cmd
             ret_dic.append(a)
 
-    db = json.dumps(ret_dic)
+    db = json.dumps(ret_dic, indent=4)
 
 remove_external_files()
 

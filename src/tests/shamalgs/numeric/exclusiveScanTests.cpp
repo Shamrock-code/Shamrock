@@ -191,7 +191,7 @@ struct TestExclScanUSM {
             sham::EventList depends_list;
             u32 *res_ptr = buf.get_write_access(depends_list);
             depends_list.wait_and_throw();
-            buf.complete_event_state({});
+            buf.complete_event_state(sycl::event{});
         }
         q.wait();
 
@@ -203,7 +203,7 @@ struct TestExclScanUSM {
             sham::EventList depends_list;
             u32 *res_ptr = res.get_write_access(depends_list);
             depends_list.wait_and_throw();
-            res.complete_event_state({});
+            res.complete_event_state(sycl::event{});
         }
         t.end();
 

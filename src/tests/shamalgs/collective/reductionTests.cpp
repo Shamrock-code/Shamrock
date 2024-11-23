@@ -66,7 +66,7 @@ TestStart(
             ptr[i] = source_func(i);
         }
 
-        source.complete_event_state({});
+        source.complete_event_state(sycl::event{});
     }
 
     sham::DeviceBuffer<T> buf = source.copy_to<sham::device>();
@@ -84,6 +84,6 @@ TestStart(
             _AssertEqual(ptr[i], check_func(i));
         }
 
-        source.complete_event_state({});
+        source.complete_event_state(sycl::event{});
     }
 }

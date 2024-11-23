@@ -110,7 +110,7 @@ jobs:
           (github.event_name == 'pull_request_target' ||
             github.event_name == 'pull_request')
         run: run: |
-          echo "Clang-tidy diff output: 
+          echo "Clang-tidy diff output:
           \`\`\`
           $(cat clang-tidy-output.txt)
           \`\`\`

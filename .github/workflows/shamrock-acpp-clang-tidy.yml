@@ -21,7 +21,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - clang: 17
+          - clang: 18
             cuda: 11.0.2
             rocm: 5.4.3
             container: ghcr.io/shamrock-code/ci-ubuntu20:main
@@ -103,5 +103,4 @@ jobs:
           (github.event_name == 'pull_request_target' ||
             github.event_name == 'pull_request')
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD |
-          clang-tidy-diff-${{matrix.clang}}.py -clang-tidy-binary clang-tidy-${{matrix.clang}} -path build/clang-tidy.mod \
-            -use-color -p1 --config-file .clang-tidy -extra-arg-before="-Wno-unused-command-line-argument"
+          clang-tidy-diff-${{matrix.clang}}.py -clang-tidy-binary clang-tidy-${{matrix.clang}} -path build/clang-tidy.mod -use-color -p1 --config-file .clang-tidy -extra-arg-before="-Wno-unused-command-line-argument"

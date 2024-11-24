@@ -265,8 +265,7 @@ namespace shammodels {
 
         if (eos_type == "isothermal") {
             p.config = Isothermal{j.at("cs").get<Tscal>()};
-        }
-        if (eos_type == "adiabatic") {
+        } else if (eos_type == "adiabatic") {
             p.config = Adiabatic{j.at("gamma").get<Tscal>()};
         } else if (eos_type == "locally_isothermal") {
             p.config = LocIsoT{};

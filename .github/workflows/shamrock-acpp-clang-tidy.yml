@@ -103,7 +103,7 @@ jobs:
           (github.event_name == 'pull_request_target' ||
             github.event_name == 'pull_request')
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD |
-          clang-tidy-diff-${{matrix.clang}}.py -clang-tidy-binary clang-tidy-${{matrix.clang}} -path build/clang-tidy.mod -p1 -config-file .clang-tidy -extra-arg-before="-Wno-unused-command-line-argument" -fix 2>&1 | tee clang-tidy-output.txt
+          clang-tidy-diff-${{matrix.clang}}.py -j $(nproc) -clang-tidy-binary clang-tidy-${{matrix.clang}} -path build/clang-tidy.mod -p1 -config-file .clang-tidy -extra-arg-before="-Wno-unused-command-line-argument" -fix 2>&1 | tee clang-tidy-output.txt
 
       - name : Generate diff
         if: >

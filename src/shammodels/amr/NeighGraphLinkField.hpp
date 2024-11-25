@@ -40,7 +40,7 @@ namespace shammodels::basegodunov::modules {
     NeighGraphLinkField<T> compute_link_field(
         sham::DeviceQueue &q,
         sham::EventList &depends_list,
-        sham::EventList & result_list,
+        sham::EventList &result_list,
         NeighGraph &graph,
         Args &&...args) {
 

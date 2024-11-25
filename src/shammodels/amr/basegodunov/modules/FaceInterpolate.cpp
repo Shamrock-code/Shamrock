@@ -519,6 +519,15 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 dt_interp,
                 ptr_rho,
                 ptr_grad_P));
+
+        block_cell_sizes.complete_event_state(resulting_event_list);
+        cell0block_aabb_lower.complete_event_state(resulting_event_list);
+        buf_vel.complete_event_state(resulting_event_list);
+        buf_dx_vel.complete_event_state(resulting_event_list);
+        buf_dy_vel.complete_event_state(resulting_event_list);
+        buf_dz_vel.complete_event_state(resulting_event_list);
+        buf_rho.complete_event_state(resulting_event_list);
+        buf_grad_P.complete_event_state(resulting_event_list);
     });
 
     storage.vel_face_xp.set(std::move(vel_face_xp));
@@ -749,6 +758,15 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
                 ptr_buf_dz_vel));
+
+        block_cell_sizes.complete_event_state(resulting_event_list);
+        cell0block_aabb_lower.complete_event_state(resulting_event_list);
+        buf_press.complete_event_state(resulting_event_list);
+        buf_grad_P.complete_event_state(resulting_event_list);
+        buf_vel.complete_event_state(resulting_event_list);
+        buf_dx_vel.complete_event_state(resulting_event_list);
+        buf_dy_vel.complete_event_state(resulting_event_list);
+        buf_dz_vel.complete_event_state(resulting_event_list);
     });
 
     storage.press_face_xp.set(std::move(press_face_xp));
@@ -1005,6 +1023,15 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
                 ptr_dz_vel_dust));
+
+        block_cell_sizes.complete_event_state(resulting_event_list);
+        cell0block_aabb_lower.complete_event_state(resulting_event_list);
+        buf_rho_dust.complete_event_state(resulting_event_list);
+        buf_grad_rho_dust.complete_event_state(resulting_event_list);
+        buf_vel_dust.complete_event_state(resulting_event_list);
+        buf_dx_vel_dust.complete_event_state(resulting_event_list);
+        buf_dy_vel_dust.complete_event_state(resulting_event_list);
+        buf_dz_vel_dust.complete_event_state(resulting_event_list);
     });
     storage.rho_dust_face_xp.set(std::move(rho_dust_face_xp));
     storage.rho_dust_face_xm.set(std::move(rho_dust_face_xm));
@@ -1232,6 +1259,14 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dz_vel_dust,
                 dt_interp,
                 ptr_buf_rho_dust));
+
+        block_cell_sizes.complete_event_state(resulting_event_list);
+        cell0block_aabb_lower.complete_event_state(resulting_event_list);
+        buf_vel_dust.complete_event_state(resulting_event_list);
+        buf_dx_vel_dust.complete_event_state(resulting_event_list);
+        buf_dy_vel_dust.complete_event_state(resulting_event_list);
+        buf_dz_vel_dust.complete_event_state(resulting_event_list);
+        buf_rho_dust.complete_event_state(resulting_event_list);
     });
     storage.vel_dust_face_xp.set(std::move(vel_dust_face_xp));
     storage.vel_dust_face_xm.set(std::move(vel_dust_face_xm));

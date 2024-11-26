@@ -1211,7 +1211,7 @@ bool shammodels::sph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_al
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
+shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
     Tscal t_current = solver_config.get_time();
     Tscal dt        = solver_config.get_dt_sph();
@@ -1809,6 +1809,14 @@ void shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
     };
 
     solver_config.time_state.cfl_multiplier = get_next_cfl_mult();
+
+    TimestepLog log;
+    log.rank     = shamcomm::world_rank();
+    log.rate     = rate;
+    log.npart    = rank_count;
+    log.tcompute = tstep.elasped_sec();
+
+    return log;
 }
 
 using namespace shammath;

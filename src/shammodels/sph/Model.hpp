@@ -774,7 +774,7 @@ namespace shammodels::sph {
 
         f64 evolve_once_time_expl(f64 t_curr, f64 dt_input);
 
-        void timestep();
+        TimestepLog timestep();
 
         inline void evolve_once() {
             solver.evolve_once();

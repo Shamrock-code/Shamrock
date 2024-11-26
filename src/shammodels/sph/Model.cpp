@@ -43,8 +43,8 @@ f64 shammodels::sph::Model<Tvec, SPHKernel>::evolve_once_time_expl(f64 t_curr, f
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::Model<Tvec, SPHKernel>::timestep() {
-    solver.evolve_once();
+shammodels::sph::TimestepLog shammodels::sph::Model<Tvec, SPHKernel>::timestep() {
+    return solver.evolve_once();
 }
 
 template<class Tvec, template<class> class SPHKernel>

@@ -35,6 +35,19 @@
 #include <variant>
 namespace shammodels::sph {
 
+    struct TimestepLog {
+        i32 rank;
+        f64 rate;
+        u64 npart;
+        f64 tcompute;
+
+        inline f64 rate_sum() { return shamalgs::collective::allreduce_sum(rate); }
+
+        inline u64 npart_sum() { return shamalgs::collective::allreduce_sum(npart); }
+
+        inline f64 tcompute_max() { return shamalgs::collective::allreduce_max(tcompute); }
+    };
+
     /**
      * @brief The shamrock SPH model
      *
@@ -197,7 +210,7 @@ namespace shammodels::sph {
             }
         }
 
-        void evolve_once();
+        TimestepLog evolve_once();
 
         Tscal evolve_once_time_expl(Tscal t_current, Tscal dt_input) {
             solver_config.set_time(t_current);

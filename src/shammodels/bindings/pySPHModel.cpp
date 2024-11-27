@@ -702,4 +702,13 @@ Register_pymod(pysphmodel) {
         .def("get_dot", [](std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> &self) {
             return self->get_dot();
         });
+
+    py::class_<shammodels::sph::TimestepLog>(m, "TimestepLog")
+        .def(py::init<>())
+        .def_readwrite("rank", &shammodels::sph::TimestepLog::rank)
+        .def_readwrite("rate", &shammodels::sph::TimestepLog::rate)
+        .def_readwrite("npart", &shammodels::sph::TimestepLog::npart)
+        .def_readwrite("tcompute", &shammodels::sph::TimestepLog::tcompute)
+        .def("rate_sum", &shammodels::sph::TimestepLog::rate_sum)
+        .def("npart_sum", &shammodels::sph::TimestepLog::npart_sum);
 }

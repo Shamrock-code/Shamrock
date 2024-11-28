@@ -85,6 +85,15 @@ Register_pymod(pysyslibinit) {
     )pbdoc");
 
     m.def(
+        "version_string",
+        []() {
+            return version_string;
+        },
+        R"pbdoc(
+        Return version_string
+    )pbdoc");
+
+    m.def(
         "dump_profiling",
         [](std::string prefix) {
 #ifdef SHAMROCK_USE_PROFILING

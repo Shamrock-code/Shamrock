@@ -92,7 +92,6 @@ Register_pymod(pysyslibinit) {
         R"pbdoc(
         Return version_string
     )pbdoc");
-    
 
     m.def(
         "dump_profiling",

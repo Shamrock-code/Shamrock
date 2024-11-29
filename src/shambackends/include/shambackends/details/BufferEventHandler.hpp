@@ -179,6 +179,13 @@ namespace sham::details {
             const std::vector<sycl::event> &events, SourceLocation src_loc = SourceLocation{});
 
         /**
+         * @brief Filter the read and write events so that only pending events are stored.
+         *
+         * Events that are completed are removed from the read and write event lists.
+         */
+        void filter_events();
+
+        /**
          * @brief Completes the state of the buffer event handler using an EventList.
          *
          * This function completes the state of the buffer event handler with the events

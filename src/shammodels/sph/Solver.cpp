@@ -892,6 +892,10 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             reset_presteps_rint();
             reset_neighbors_cache();
 
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                pdat.synchronize_buf();
+            });
+
             continue;
         } else {
             if (shamcomm::world_rank() == 0) {

@@ -294,6 +294,15 @@ namespace sham {
             shambase::get_check_ref(events_hndl).complete_state(e);
         }
 
+        /**
+         * @brief Wait for all the events associated with the buffer to be completed
+         *
+         * This function waits for all the events associated with the buffer to be
+         * completed. The events are associated with the buffer by calling
+         * complete_event_state.
+         */
+        void synchronize() const { shambase::get_check_ref(events_hndl).wait_all(); }
+
         ///////////////////////////////////////////////////////////////////////
         // Event handling (End)
         ///////////////////////////////////////////////////////////////////////

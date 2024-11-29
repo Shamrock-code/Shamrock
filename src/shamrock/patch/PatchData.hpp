@@ -205,6 +205,14 @@ namespace shamrock::patch {
 
         inline bool is_empty() { return get_obj_cnt() == 0; }
 
+        void synchronize_buf() {
+            for (auto &field_var : fields) {
+                field_var.visit([&](auto &field) {
+                    field.synchronize_buf();
+                });
+            }
+        }
+
         void overwrite(PatchData &pdat, u32 obj_cnt);
 
         template<class T>

@@ -66,8 +66,10 @@ void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
         auto vel    = buf_vel.get_read_access(depends_list);
         auto grad_u = buf_grad_u.get_write_access(depends_list);
 
+        auto faces_xm_ptr = face_xm.neigh_info.get_read_access(depends_list);
+
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            tree::ObjectCacheIterator faces_xm(face_xm.neigh_info, cgh);
+            tree::ObjectCacheIterator faces_xm(faces_xm_ptr);
 
             shambase::parralel_for(cgh, pdat.get_obj_cnt(), "subsetp1", [=](u64 id_a) {
                 Tvec cell2_a = (cell_min[id_a] + cell_max[id_a]).template convert<Tscal>()
@@ -97,6 +99,10 @@ void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
         buf_cell_max.complete_event_state(e);
         buf_vel.complete_event_state(e);
         buf_grad_u.complete_event_state(e);
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        face_xm.neigh_info.complete_event_state(resulting_events);
     });
 }
 

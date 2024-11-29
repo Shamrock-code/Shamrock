@@ -47,11 +47,12 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         sham::EventList depends_list;
-        auto cell_min = buf_cell_min.get_read_access(depends_list);
-        auto cell_max = buf_cell_max.get_read_access(depends_list);
+        auto cell_min   = buf_cell_min.get_read_access(depends_list);
+        auto cell_max   = buf_cell_max.get_read_access(depends_list);
+        auto cloop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            tree::ObjectCacheIterator cell_looper(pcache, cgh);
+            tree::ObjectCacheIterator cell_looper(cloop_ptrs);
 
             sycl::accessor normals_lookup{
                 face_normals_lookup, cgh, sycl::write_only, sycl::no_init};
@@ -120,6 +121,10 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
 
         buf_cell_min.complete_event_state(e);
         buf_cell_max.complete_event_state(e);
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        pcache.complete_event_state(resulting_events);
 
         // store the buffer in distrib data
         face_normals_dat_lookup.add_obj(p.id_patch, std::move(face_normals_lookup));
@@ -220,17 +225,21 @@ template<class Tvec, class TgridVec>
 shamrock::tree::ObjectCache shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::isolate_lookups(
     shamrock::tree::ObjectCache &cache, sycl::buffer<u8> &face_normals_lookup, u8 lookup_value) {
 
-    u32 obj_cnt = cache.cnt_neigh.size();
+    u32 obj_cnt = cache.cnt_neigh.get_size();
 
-    sycl::buffer<u32> face_count(obj_cnt);
+    sham::DeviceBuffer<u32> face_count(obj_cnt, shamsys::instance::get_compute_scheduler_ptr());
 
-    shamsys::instance::get_compute_queue()
-        .submit([&](sycl::handler &cgh) {
-            shamrock::tree::ObjectCacheIterator cell_looper(cache, cgh);
+    {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        sham::EventList depends_list;
+
+        auto cloop_ptrs = cache.get_read_access(depends_list);
+        auto face_cnts  = face_count.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            shamrock::tree::ObjectCacheIterator cell_looper(cloop_ptrs);
 
             sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
-
-            sycl::accessor face_cnts{face_count, cgh, sycl::write_only, sycl::no_init};
 
             u8 wanted_lookup = lookup_value;
 
@@ -244,27 +253,36 @@ shamrock::tree::ObjectCache shammodels::zeus::modules::FaceFlagger<Tvec, TgridVe
 
                 face_cnts[id_a] = cnt;
             });
-        })
-        .wait();
+        });
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+
+        cache.complete_event_state(resulting_events);
+        face_count.complete_event_state(resulting_events);
+    }
 
     shamrock::tree::ObjectCache pcache
         = shamrock::tree::prepare_object_cache(std::move(face_count), obj_cnt);
 
     shamsys::instance::get_compute_queue().wait();
 
-    NamedStackEntry stack_loc2{"fill cache"};
+    {
+        NamedStackEntry stack_loc2{"fill cache"};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        sham::EventList depends_list;
 
-    // logger::raw_ln(obj_cnt, pcache.cnt_neigh.size(),pcache.scanned_cnt.size(),
-    // pcache.index_neigh_map.size());
+        auto cloop_ptrs        = cache.get_read_access(depends_list);
+        auto scanned_neigh_cnt = pcache.scanned_cnt.get_read_access(depends_list);
+        auto neigh             = pcache.index_neigh_map.get_write_access(depends_list);
 
-    shamsys::instance::get_compute_queue()
-        .submit([&](sycl::handler &cgh) {
-            shamrock::tree::ObjectCacheIterator cell_looper(cache, cgh);
+        // logger::raw_ln(obj_cnt, pcache.cnt_neigh.size(),pcache.scanned_cnt.size(),
+        // pcache.index_neigh_map.size());
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            shamrock::tree::ObjectCacheIterator cell_looper(cloop_ptrs);
 
             sycl::accessor normals_lookup{face_normals_lookup, cgh, sycl::read_only};
-
-            sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
-            sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
 
             u8 wanted_lookup = lookup_value;
 
@@ -284,8 +302,15 @@ shamrock::tree::ObjectCache shammodels::zeus::modules::FaceFlagger<Tvec, TgridVe
                     }
                 });
             });
-        })
-        .wait();
+        });
+
+        pcache.scanned_cnt.complete_event_state(e);
+        pcache.index_neigh_map.complete_event_state(e);
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        cache.complete_event_state(resulting_events);
+    }
 
     logger::debug_sycl_ln(
         "AMR::FaceFlagger", "lookup :", lookup_value, "found N =", pcache.sum_neigh_cnt);

@@ -38,6 +38,25 @@ namespace shamalgs::memory {
     T extract_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx);
 
     template<class T>
+    T extract_element(sham::DeviceQueue &q, sham::DeviceBuffer<T> &buf, u32 idx) {
+        T val;
+
+        sham::EventList depends_list;
+        auto acc = buf.get_read_access(depends_list);
+
+        T *dest = &val;
+
+        q.submit(depends_list, [&, idx](sycl::handler &cgh) {
+             cgh.copy(acc + idx, dest, 1);
+         }).wait_and_throw();
+        ;
+
+        buf.complete_event_state(sycl::event{});
+
+        return val;
+    }
+
+    template<class T>
     void
     set_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx, T val, bool discard_write = false) {
 

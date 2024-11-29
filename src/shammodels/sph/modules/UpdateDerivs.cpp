@@ -93,15 +93,16 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         sham::EventList depends_list;
 
-        auto xyz      = buf_xyz.get_read_access(depends_list);
-        auto axyz     = buf_axyz.get_write_access(depends_list);
-        auto du       = buf_duint.get_write_access(depends_list);
-        auto vxyz     = buf_vxyz.get_read_access(depends_list);
-        auto hpart    = buf_hpart.get_read_access(depends_list);
-        auto omega    = buf_omega.get_read_access(depends_list);
-        auto u        = buf_uint.get_read_access(depends_list); // TODO rename to uint
-        auto pressure = buf_pressure.get_read_access(depends_list);
-        auto cs       = buf_cs.get_read_access(depends_list);
+        auto xyz        = buf_xyz.get_read_access(depends_list);
+        auto axyz       = buf_axyz.get_write_access(depends_list);
+        auto du         = buf_duint.get_write_access(depends_list);
+        auto vxyz       = buf_vxyz.get_read_access(depends_list);
+        auto hpart      = buf_hpart.get_read_access(depends_list);
+        auto omega      = buf_omega.get_read_access(depends_list);
+        auto u          = buf_uint.get_read_access(depends_list); // TODO rename to uint
+        auto pressure   = buf_pressure.get_read_access(depends_list);
+        auto cs         = buf_cs.get_read_access(depends_list);
+        auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const Tscal pmass    = solver_config.gpart_mass;
@@ -118,7 +119,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
             // tree::LeafCacheObjectIterator
             // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-            tree::ObjectCacheIterator particle_looper(pcache, cgh);
+            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
@@ -223,6 +224,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         buf_uint.complete_event_state(e);
         buf_pressure.complete_event_state(e);
         buf_cs.complete_event_state(e);
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        pcache.complete_event_state(resulting_events);
     });
 }
 template<class Tvec, template<class> class SPHKernel>
@@ -279,16 +284,17 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         sham::EventList depends_list;
 
-        auto xyz      = buf_xyz.get_read_access(depends_list);
-        auto axyz     = buf_axyz.get_write_access(depends_list);
-        auto du       = buf_duint.get_write_access(depends_list);
-        auto vxyz     = buf_vxyz.get_read_access(depends_list);
-        auto hpart    = buf_hpart.get_read_access(depends_list);
-        auto omega    = buf_omega.get_read_access(depends_list);
-        auto u        = buf_uint.get_read_access(depends_list);
-        auto pressure = buf_pressure.get_read_access(depends_list);
-        auto alpha_AV = buf_alpha_AV.get_read_access(depends_list);
-        auto cs       = buf_cs.get_read_access(depends_list);
+        auto xyz        = buf_xyz.get_read_access(depends_list);
+        auto axyz       = buf_axyz.get_write_access(depends_list);
+        auto du         = buf_duint.get_write_access(depends_list);
+        auto vxyz       = buf_vxyz.get_read_access(depends_list);
+        auto hpart      = buf_hpart.get_read_access(depends_list);
+        auto omega      = buf_omega.get_read_access(depends_list);
+        auto u          = buf_uint.get_read_access(depends_list);
+        auto pressure   = buf_pressure.get_read_access(depends_list);
+        auto alpha_AV   = buf_alpha_AV.get_read_access(depends_list);
+        auto cs         = buf_cs.get_read_access(depends_list);
+        auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const Tscal pmass   = solver_config.gpart_mass;
@@ -303,7 +309,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
             // tree::LeafCacheObjectIterator
             // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-            tree::ObjectCacheIterator particle_looper(pcache, cgh);
+            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
@@ -418,6 +424,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         buf_pressure.complete_event_state(e);
         buf_alpha_AV.complete_event_state(e);
         buf_cs.complete_event_state(e);
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        pcache.complete_event_state(resulting_events);
     });
 }
 template<class Tvec, template<class> class SPHKernel>
@@ -471,16 +481,17 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         sham::EventList depends_list;
 
-        auto xyz      = buf_xyz.get_read_access(depends_list);
-        auto axyz     = buf_axyz.get_write_access(depends_list);
-        auto du       = buf_duint.get_write_access(depends_list);
-        auto vxyz     = buf_vxyz.get_read_access(depends_list);
-        auto hpart    = buf_hpart.get_read_access(depends_list);
-        auto omega    = buf_omega.get_read_access(depends_list);
-        auto u        = buf_uint.get_read_access(depends_list);
-        auto pressure = buf_pressure.get_read_access(depends_list);
-        auto alpha_AV = buf_alpha_AV.get_read_access(depends_list);
-        auto cs       = buf_cs.get_read_access(depends_list);
+        auto xyz        = buf_xyz.get_read_access(depends_list);
+        auto axyz       = buf_axyz.get_write_access(depends_list);
+        auto du         = buf_duint.get_write_access(depends_list);
+        auto vxyz       = buf_vxyz.get_read_access(depends_list);
+        auto hpart      = buf_hpart.get_read_access(depends_list);
+        auto omega      = buf_omega.get_read_access(depends_list);
+        auto u          = buf_uint.get_read_access(depends_list);
+        auto pressure   = buf_pressure.get_read_access(depends_list);
+        auto alpha_AV   = buf_alpha_AV.get_read_access(depends_list);
+        auto cs         = buf_cs.get_read_access(depends_list);
+        auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const Tscal pmass   = solver_config.gpart_mass;
@@ -495,7 +506,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
             // tree::LeafCacheObjectIterator
             // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-            tree::ObjectCacheIterator particle_looper(pcache, cgh);
+            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
@@ -591,6 +602,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         buf_pressure.complete_event_state(e);
         buf_alpha_AV.complete_event_state(e);
         buf_cs.complete_event_state(e);
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        pcache.complete_event_state(resulting_events);
     });
 }
 template<class Tvec, template<class> class SPHKernel>
@@ -644,15 +659,16 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         sham::EventList depends_list;
 
-        auto xyz      = buf_xyz.get_read_access(depends_list);
-        auto axyz     = buf_axyz.get_write_access(depends_list);
-        auto du       = buf_duint.get_write_access(depends_list);
-        auto vxyz     = buf_vxyz.get_read_access(depends_list);
-        auto hpart    = buf_hpart.get_read_access(depends_list);
-        auto omega    = buf_omega.get_read_access(depends_list);
-        auto u        = buf_uint.get_read_access(depends_list);
-        auto pressure = buf_pressure.get_read_access(depends_list);
-        auto cs       = buf_cs.get_read_access(depends_list);
+        auto xyz        = buf_xyz.get_read_access(depends_list);
+        auto axyz       = buf_axyz.get_write_access(depends_list);
+        auto du         = buf_duint.get_write_access(depends_list);
+        auto vxyz       = buf_vxyz.get_read_access(depends_list);
+        auto hpart      = buf_hpart.get_read_access(depends_list);
+        auto omega      = buf_omega.get_read_access(depends_list);
+        auto u          = buf_uint.get_read_access(depends_list);
+        auto pressure   = buf_pressure.get_read_access(depends_list);
+        auto cs         = buf_cs.get_read_access(depends_list);
+        auto ploop_ptrs = pcache.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const Tscal pmass    = solver_config.gpart_mass;
@@ -669,7 +685,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
             // tree::LeafCacheObjectIterator
             // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-            tree::ObjectCacheIterator particle_looper(pcache, cgh);
+            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
 
@@ -763,6 +779,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         buf_uint.complete_event_state(e);
         buf_pressure.complete_event_state(e);
         buf_cs.complete_event_state(e);
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        pcache.complete_event_state(resulting_events);
     });
 }
 

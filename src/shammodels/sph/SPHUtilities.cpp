@@ -42,15 +42,16 @@ namespace shammodels::sph {
 
         sham::EventList depends_list;
 
-        auto r     = merged_r.get_read_access(depends_list);
-        auto eps   = eps_h.get_write_access(depends_list);
-        auto h_new = hnew.get_write_access(depends_list);
-        auto h_old = hold.get_read_access(depends_list);
+        auto r          = merged_r.get_read_access(depends_list);
+        auto eps        = eps_h.get_write_access(depends_list);
+        auto h_new      = hnew.get_write_access(depends_list);
+        auto h_old      = hold.get_read_access(depends_list);
+        auto ploop_ptrs = neigh_cache.get_read_access(depends_list);
 
         auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
             // tree::ObjectIterator particle_looper(tree,cgh);
 
-            shamrock::tree::ObjectCacheIterator particle_looper(neigh_cache, cgh);
+            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             // sycl::accessor omega {omega_h, cgh, sycl::write_only, sycl::no_init};
 
@@ -118,6 +119,10 @@ namespace shammodels::sph {
         eps_h.complete_event_state(e);
         hnew.complete_event_state(e);
         hold.complete_event_state(e);
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        neigh_cache.complete_event_state(resulting_events);
     }
 
     template<class vec, class SPHKernel, class u_morton>
@@ -222,14 +227,15 @@ namespace shammodels::sph {
 
         sham::EventList depends_list;
 
-        auto r     = merged_r.get_read_access(depends_list);
-        auto hpart = h_part.get_read_access(depends_list);
-        auto omega = omega_h.get_write_access(depends_list);
+        auto r          = merged_r.get_read_access(depends_list);
+        auto hpart      = h_part.get_read_access(depends_list);
+        auto omega      = omega_h.get_write_access(depends_list);
+        auto ploop_ptrs = neigh_cache.get_read_access(depends_list);
 
         auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
             // tree::ObjectIterator particle_looper(tree,cgh);
 
-            ObjectCacheIterator particle_looper(neigh_cache, cgh);
+            ObjectCacheIterator particle_looper(ploop_ptrs);
 
             const flt part_mass = gpart_mass;
 
@@ -277,6 +283,10 @@ namespace shammodels::sph {
         merged_r.complete_event_state(e);
         h_part.complete_event_state(e);
         omega_h.complete_event_state(e);
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        neigh_cache.complete_event_state(resulting_events);
     }
 
     template class SPHUtilities<f64_3, shammath::M4<f64>>;

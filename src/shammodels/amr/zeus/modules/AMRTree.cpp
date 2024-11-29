@@ -244,7 +244,8 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
 
         using namespace shamrock;
 
-        sycl::buffer<u32> neigh_count(obj_cnt);
+        sham::DeviceBuffer<u32> neigh_count(
+            obj_cnt, shamsys::instance::get_compute_scheduler_ptr());
 
         shamsys::instance::get_compute_queue().wait_and_throw();
 
@@ -253,15 +254,14 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         {
             sham::EventList depends_list;
-            auto cell_min = buf_cell_min.get_read_access(depends_list);
-            auto cell_max = buf_cell_max.get_read_access(depends_list);
+            auto cell_min  = buf_cell_min.get_read_access(depends_list);
+            auto cell_max  = buf_cell_max.get_read_access(depends_list);
+            auto neigh_cnt = neigh_count.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 tree::ObjectIterator cell_looper(tree, cgh);
 
                 // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-
-                sycl::accessor neigh_cnt{neigh_count, cgh, sycl::write_only, sycl::no_init};
 
                 shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
                     u32 id_a = (u32) gid;
@@ -297,6 +297,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
 
             buf_cell_min.complete_event_state(e);
             buf_cell_max.complete_event_state(e);
+            neigh_count.complete_event_state(e);
         }
         tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
 
@@ -305,17 +306,15 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
         {
 
             sham::EventList depends_list;
-            auto cell_min = buf_cell_min.get_read_access(depends_list);
-            auto cell_max = buf_cell_max.get_read_access(depends_list);
+            auto cell_min          = buf_cell_min.get_read_access(depends_list);
+            auto cell_max          = buf_cell_max.get_read_access(depends_list);
+            auto scanned_neigh_cnt = pcache.scanned_cnt.get_read_access(depends_list);
+            auto neigh             = pcache.index_neigh_map.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 tree::ObjectIterator cell_looper(tree, cgh);
 
                 // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-
-                sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
-                sycl::accessor neigh{pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
-
                 shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
@@ -345,6 +344,8 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
 
             buf_cell_min.complete_event_state(e);
             buf_cell_max.complete_event_state(e);
+            pcache.scanned_cnt.complete_event_state(e);
+            pcache.index_neigh_map.complete_event_state(e);
         }
 
         return pcache;

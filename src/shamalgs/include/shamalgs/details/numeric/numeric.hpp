@@ -16,6 +16,8 @@
  *
  */
 
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 
 /**
@@ -26,6 +28,10 @@ namespace shamalgs::numeric {
 
     template<class T>
     sycl::buffer<T> exclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
+
+    template<class T>
+    sham::DeviceBuffer<T>
+    exclusive_sum(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len);
 
     template<class T>
     sycl::buffer<T> inclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);

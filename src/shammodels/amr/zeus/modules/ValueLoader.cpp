@@ -290,8 +290,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto cell_min = buf_cell_min.get_read_access(depends_list);
     auto cell_max = buf_cell_max.get_read_access(depends_list);
 
+    auto fptr = face_xm.neigh_info.get_read_access(depends_list);
+
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        tree::ObjectCacheIterator faces_xm(face_xm.neigh_info, cgh);
+        tree::ObjectCacheIterator faces_xm(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -323,6 +325,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     buf_src.complete_event_state(e);
     buf_cell_min.complete_event_state(e);
     buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_xm.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
@@ -353,8 +359,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto cell_min = buf_cell_min.get_read_access(depends_list);
     auto cell_max = buf_cell_max.get_read_access(depends_list);
 
+    auto fptr = face_xp.neigh_info.get_read_access(depends_list);
+
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        tree::ObjectCacheIterator faces_xp(face_xp.neigh_info, cgh);
+        tree::ObjectCacheIterator faces_xp(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -395,6 +403,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     buf_src.complete_event_state(e);
     buf_cell_min.complete_event_state(e);
     buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_xp.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
@@ -425,8 +437,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto cell_min = buf_cell_min.get_read_access(depends_list);
     auto cell_max = buf_cell_max.get_read_access(depends_list);
 
+    auto fptr = face_ym.neigh_info.get_read_access(depends_list);
+
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        tree::ObjectCacheIterator faces_xm(face_ym.neigh_info, cgh);
+        tree::ObjectCacheIterator faces_ym(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -440,7 +454,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
                 static_assert(dim == 3, "implemented only in dim 3");
-                faces_xm.for_each_object(block_id, [&](u32 block_id_b) {
+                faces_ym.for_each_object(block_id, [&](u32 block_id_b) {
                     auto tmp = cell_max[block_id_b] - cell_min[block_id_b];
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
@@ -458,6 +472,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     buf_src.complete_event_state(e);
     buf_cell_min.complete_event_state(e);
     buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_ym.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
@@ -488,8 +506,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto cell_min = buf_cell_min.get_read_access(depends_list);
     auto cell_max = buf_cell_max.get_read_access(depends_list);
 
+    auto fptr = face_yp.neigh_info.get_read_access(depends_list);
+
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        tree::ObjectCacheIterator faces_yp(face_yp.neigh_info, cgh);
+        tree::ObjectCacheIterator faces_yp(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -521,6 +541,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     buf_src.complete_event_state(e);
     buf_cell_min.complete_event_state(e);
     buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_yp.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
@@ -551,8 +575,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto cell_min = buf_cell_min.get_read_access(depends_list);
     auto cell_max = buf_cell_max.get_read_access(depends_list);
 
+    auto fptr = face_zm.neigh_info.get_read_access(depends_list);
+
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        tree::ObjectCacheIterator faces_xm(face_zm.neigh_info, cgh);
+        tree::ObjectCacheIterator faces_zm(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute zm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -566,7 +592,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
                 static_assert(dim == 3, "implemented only in dim 3");
-                faces_xm.for_each_object(block_id, [&](u32 block_id_b) {
+                faces_zm.for_each_object(block_id, [&](u32 block_id_b) {
                     auto tmp = cell_max[block_id_b] - cell_min[block_id_b];
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
@@ -584,6 +610,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     buf_src.complete_event_state(e);
     buf_cell_min.complete_event_state(e);
     buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_zm.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
@@ -614,8 +644,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto cell_min = buf_cell_min.get_read_access(depends_list);
     auto cell_max = buf_cell_max.get_read_access(depends_list);
 
+    auto fptr = face_zp.neigh_info.get_read_access(depends_list);
+
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        tree::ObjectCacheIterator faces_zp(face_zp.neigh_info, cgh);
+        tree::ObjectCacheIterator faces_zp(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute zm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -647,6 +679,10 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     buf_src.complete_event_state(e);
     buf_cell_min.complete_event_state(e);
     buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_zp.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>

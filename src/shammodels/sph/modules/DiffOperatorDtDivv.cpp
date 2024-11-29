@@ -87,17 +87,18 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
             sham::EventList depends_list;
 
-            auto xyz    = buf_xyz.get_read_access(depends_list);
-            auto vxyz   = buf_vxyz.get_read_access(depends_list);
-            auto axyz   = buf_axyz.get_read_access(depends_list);
-            auto hpart  = buf_hpart.get_read_access(depends_list);
-            auto omega  = buf_omega.get_read_access(depends_list);
-            auto dtdivv = buf_dtdivv.get_write_access(depends_list);
+            auto xyz        = buf_xyz.get_read_access(depends_list);
+            auto vxyz       = buf_vxyz.get_read_access(depends_list);
+            auto axyz       = buf_axyz.get_read_access(depends_list);
+            auto hpart      = buf_hpart.get_read_access(depends_list);
+            auto omega      = buf_omega.get_read_access(depends_list);
+            auto dtdivv     = buf_dtdivv.get_write_access(depends_list);
+            auto ploop_ptrs = pcache.get_read_access(depends_list);
 
             auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
                 const Tscal pmass = gpart_mass;
 
-                tree::ObjectCacheIterator particle_looper(pcache, cgh);
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
@@ -197,6 +198,9 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
             buf_hpart.complete_event_state(e);
             buf_omega.complete_event_state(e);
             buf_dtdivv.complete_event_state(e);
+            sham::EventList resulting_events;
+            resulting_events.add_event(e);
+            pcache.complete_event_state(resulting_events);
 
         } else {
 
@@ -206,19 +210,20 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
             sham::EventList depends_list;
 
-            auto xyz    = buf_xyz.get_read_access(depends_list);
-            auto vxyz   = buf_vxyz.get_read_access(depends_list);
-            auto axyz   = buf_axyz.get_read_access(depends_list);
-            auto hpart  = buf_hpart.get_read_access(depends_list);
-            auto omega  = buf_omega.get_read_access(depends_list);
-            auto divv   = buf_divv.get_write_access(depends_list);
-            auto curlv  = buf_curlv.get_write_access(depends_list);
-            auto dtdivv = buf_dtdivv.get_write_access(depends_list);
+            auto xyz        = buf_xyz.get_read_access(depends_list);
+            auto vxyz       = buf_vxyz.get_read_access(depends_list);
+            auto axyz       = buf_axyz.get_read_access(depends_list);
+            auto hpart      = buf_hpart.get_read_access(depends_list);
+            auto omega      = buf_omega.get_read_access(depends_list);
+            auto divv       = buf_divv.get_write_access(depends_list);
+            auto curlv      = buf_curlv.get_write_access(depends_list);
+            auto dtdivv     = buf_dtdivv.get_write_access(depends_list);
+            auto ploop_ptrs = pcache.get_read_access(depends_list);
 
             auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
                 const Tscal pmass = gpart_mass;
 
-                tree::ObjectCacheIterator particle_looper(pcache, cgh);
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
@@ -328,6 +333,9 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
             buf_divv.complete_event_state(e);
             buf_curlv.complete_event_state(e);
             buf_dtdivv.complete_event_state(e);
+            sham::EventList resulting_events;
+            resulting_events.add_event(e);
+            pcache.complete_event_state(resulting_events);
         }
     });
 }

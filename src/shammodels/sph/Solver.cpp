@@ -892,9 +892,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             reset_presteps_rint();
             reset_neighbors_cache();
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                pdat.synchronize_buf();
-            });
+            // scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            //     pdat.synchronize_buf();
+            // });
 
             continue;
         } else {
@@ -1578,13 +1578,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     auto &q = shamsys::instance::get_compute_scheduler().get_queue();
                     sham::EventList depends_list;
 
-                    auto xyz      = buf_xyz.get_read_access(depends_list);
-                    auto vxyz     = buf_vxyz.get_read_access(depends_list);
-                    auto hpart    = buf_hpart.get_read_access(depends_list);
-                    auto u        = buf_uint.get_read_access(depends_list);
-                    auto pressure = buf_pressure.get_read_access(depends_list);
-                    auto cs       = cs_buf.get_read_access(depends_list);
-                    auto vsig     = vsig_buf.get_write_access(depends_list);
+                    auto xyz                  = buf_xyz.get_read_access(depends_list);
+                    auto vxyz                 = buf_vxyz.get_read_access(depends_list);
+                    auto hpart                = buf_hpart.get_read_access(depends_list);
+                    auto u                    = buf_uint.get_read_access(depends_list);
+                    auto pressure             = buf_pressure.get_read_access(depends_list);
+                    auto cs                   = cs_buf.get_read_access(depends_list);
+                    auto vsig                 = vsig_buf.get_write_access(depends_list);
+                    auto particle_looper_ptrs = pcache.get_read_access(depends_list);
 
                     NamedStackEntry tmppp{"compute vsig"};
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -1593,7 +1594,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         const Tscal alpha_AV = 1.0;
                         const Tscal beta_AV  = 2.0;
 
-                        tree::ObjectCacheIterator particle_looper(pcache, cgh);
+                        tree::ObjectCacheIterator particle_looper(particle_looper_ptrs);
 
                         constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
@@ -1669,6 +1670,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     buf_pressure.complete_event_state(e);
                     cs_buf.complete_event_state(e);
                     vsig_buf.complete_event_state(e);
+
+                    sham::EventList resulting_events;
+                    resulting_events.add_event(e);
+                    pcache.complete_event_state(resulting_events);
                 }
             });
 

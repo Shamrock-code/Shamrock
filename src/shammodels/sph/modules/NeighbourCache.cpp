@@ -62,7 +62,8 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
 
             using namespace shamrock;
 
-            sycl::buffer<u32> neigh_count(obj_cnt);
+            sham::DeviceBuffer<u32> neigh_count(
+                obj_cnt, shamsys::instance::get_compute_scheduler_ptr());
 
             shamsys::instance::get_compute_queue().wait_and_throw();
 
@@ -71,8 +72,9 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
 
-                auto xyz   = buf_xyz.get_read_access(depends_list);
-                auto hpart = buf_hpart.get_read_access(depends_list);
+                auto xyz       = buf_xyz.get_read_access(depends_list);
+                auto hpart     = buf_hpart.get_read_access(depends_list);
+                auto neigh_cnt = neigh_count.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                     tree::ObjectIterator particle_looper(tree, cgh);
@@ -81,8 +83,6 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
                     // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
                     sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
-
-                    sycl::accessor neigh_cnt{neigh_count, cgh, sycl::write_only, sycl::no_init};
 
                     // sycl::stream out {4096,1024,cgh};
 
@@ -133,6 +133,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
 
                 buf_xyz.complete_event_state(e);
                 buf_hpart.complete_event_state(e);
+                neigh_count.complete_event_state(e);
             }
 
             tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
@@ -142,8 +143,10 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
 
-                auto xyz   = buf_xyz.get_read_access(depends_list);
-                auto hpart = buf_hpart.get_read_access(depends_list);
+                auto xyz               = buf_xyz.get_read_access(depends_list);
+                auto hpart             = buf_hpart.get_read_access(depends_list);
+                auto scanned_neigh_cnt = pcache.scanned_cnt.get_read_access(depends_list);
+                auto neigh             = pcache.index_neigh_map.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                     tree::ObjectIterator particle_looper(tree, cgh);
@@ -152,10 +155,6 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
                     // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
                     sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
-
-                    sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
-                    sycl::accessor neigh{
-                        pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
 
                     // sycl::stream out {4096,1024,cgh};
 
@@ -207,6 +206,8 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
 
                 buf_xyz.complete_event_state(e);
                 buf_hpart.complete_event_state(e);
+                pcache.scanned_cnt.complete_event_state(e);
+                pcache.index_neigh_map.complete_event_state(e);
             }
 
             return pcache;
@@ -266,7 +267,8 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
             // start by counting number of leaf neighbours
 
-            sycl::buffer<u32> neigh_count_leaf(leaf_cnt);
+            sham::DeviceBuffer<u32> neigh_count_leaf(
+                leaf_cnt, shamsys::instance::get_compute_scheduler_ptr());
 
             shamsys::instance::get_compute_queue().wait_and_throw();
 
@@ -276,15 +278,14 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
 
-                auto xyz   = buf_xyz.get_read_access(depends_list);
-                auto hpart = buf_hpart.get_read_access(depends_list);
+                auto xyz       = buf_xyz.get_read_access(depends_list);
+                auto hpart     = buf_hpart.get_read_access(depends_list);
+                auto neigh_cnt = neigh_count_leaf.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                     tree::LeafIterator leaf_looper(tree, cgh);
 
                     sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
-                    sycl::accessor neigh_cnt{
-                        neigh_count_leaf, cgh, sycl::write_only, sycl::no_init};
 
                     u32 offset_leaf = intnode_cnt;
 
@@ -321,6 +322,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
                 buf_xyz.complete_event_state(e);
                 buf_hpart.complete_event_state(e);
+                neigh_count_leaf.complete_event_state(e);
             }
 
             //{
@@ -350,8 +352,10 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
 
-                auto xyz   = buf_xyz.get_read_access(depends_list);
-                auto hpart = buf_hpart.get_read_access(depends_list);
+                auto xyz               = buf_xyz.get_read_access(depends_list);
+                auto hpart             = buf_hpart.get_read_access(depends_list);
+                auto scanned_neigh_cnt = pleaf_cache.scanned_cnt.get_read_access(depends_list);
+                auto neigh             = pleaf_cache.index_neigh_map.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                     tree::LeafIterator leaf_looper(tree, cgh);
@@ -359,10 +363,6 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                     sycl::accessor rint_tree{tree_field_rint, cgh, sycl::read_only};
 
                     u32 offset_leaf = intnode_cnt;
-
-                    sycl::accessor scanned_neigh_cnt{pleaf_cache.scanned_cnt, cgh, sycl::read_only};
-                    sycl::accessor neigh{
-                        pleaf_cache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
 
                     shambase::parralel_for(cgh, leaf_cnt, "compute neigh cache 2", [=](u64 gid) {
                         u32 id_a = (u32) gid;
@@ -396,6 +396,8 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
                 buf_xyz.complete_event_state(e);
                 buf_hpart.complete_event_state(e);
+                pleaf_cache.scanned_cnt.complete_event_state(e);
+                pleaf_cache.index_neigh_map.complete_event_state(e);
             }
             // search in which leaf each parts are
             sycl::buffer<u32> leaf_part_id(obj_cnt);
@@ -455,7 +457,8 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
             //    }
             //}
 
-            sycl::buffer<u32> neigh_count(obj_cnt);
+            sham::DeviceBuffer<u32> neigh_count(
+                obj_cnt, shamsys::instance::get_compute_scheduler_ptr());
 
             shamsys::instance::get_compute_queue().wait_and_throw();
 
@@ -465,14 +468,14 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
 
-                auto xyz   = buf_xyz.get_read_access(depends_list);
-                auto hpart = buf_hpart.get_read_access(depends_list);
+                auto xyz                   = buf_xyz.get_read_access(depends_list);
+                auto hpart                 = buf_hpart.get_read_access(depends_list);
+                auto acc_neigh_leaf_looper = pleaf_cache.get_read_access(depends_list);
+                auto neigh_cnt             = neigh_count.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
-                    tree::ObjectCacheIterator neigh_leaf_looper(pleaf_cache, cgh);
+                    tree::ObjectCacheIterator neigh_leaf_looper(acc_neigh_leaf_looper);
                     tree::ObjectIterator particle_looper(tree, cgh);
-
-                    sycl::accessor neigh_cnt{neigh_count, cgh, sycl::write_only, sycl::no_init};
 
                     sycl::accessor leaf_owner{leaf_part_id, cgh, sycl::read_only};
 
@@ -509,8 +512,13 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                     });
                 });
 
-                buf_xyz.complete_event_state(e);
-                buf_hpart.complete_event_state(e);
+                sham::EventList resulting_events;
+                resulting_events.add_event(e);
+
+                buf_xyz.complete_event_state(resulting_events);
+                buf_hpart.complete_event_state(resulting_events);
+                pleaf_cache.complete_event_state(resulting_events);
+                neigh_count.complete_event_state(resulting_events);
             }
 
             tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);
@@ -521,16 +529,16 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
 
-                auto xyz   = buf_xyz.get_read_access(depends_list);
-                auto hpart = buf_hpart.get_read_access(depends_list);
+                auto xyz                   = buf_xyz.get_read_access(depends_list);
+                auto hpart                 = buf_hpart.get_read_access(depends_list);
+                auto acc_neigh_leaf_looper = pleaf_cache.get_read_access(depends_list);
+                auto scanned_neigh_cnt     = pcache.scanned_cnt.get_read_access(depends_list);
+                auto neigh                 = pcache.index_neigh_map.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
-                    tree::ObjectCacheIterator neigh_leaf_looper(pleaf_cache, cgh);
+                    tree::ObjectCacheIterator neigh_leaf_looper(acc_neigh_leaf_looper);
                     tree::ObjectIterator particle_looper(tree, cgh);
 
-                    sycl::accessor scanned_neigh_cnt{pcache.scanned_cnt, cgh, sycl::read_only};
-                    sycl::accessor neigh{
-                        pcache.index_neigh_map, cgh, sycl::write_only, sycl::no_init};
                     sycl::accessor leaf_owner{leaf_part_id, cgh, sycl::read_only};
 
                     u32 offset_leaf = intnode_cnt;
@@ -564,8 +572,14 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                     });
                 });
 
-                buf_xyz.complete_event_state(e);
-                buf_hpart.complete_event_state(e);
+                sham::EventList resulting_events;
+                resulting_events.add_event(e);
+
+                buf_xyz.complete_event_state(resulting_events);
+                buf_hpart.complete_event_state(resulting_events);
+                pleaf_cache.complete_event_state(resulting_events);
+                pcache.scanned_cnt.complete_event_state(resulting_events);
+                pcache.index_neigh_map.complete_event_state(resulting_events);
             }
             return pcache;
         }));

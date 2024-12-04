@@ -68,7 +68,7 @@ pkgs.mkShell {
 
   shellHook = ''
     # Optional: Add custom message for debugging or confirmation
-    echo "Entering zsh shell with LLVM 18..."
-    echo $ACPP_INSTALL_DIR
+    echo "Entering Shamrock dev shell shell with LLVM 18 + AdaptiveCpp"
+    echo "acpp install path : $ACPP_INSTALL_DIR"
   '';
 }

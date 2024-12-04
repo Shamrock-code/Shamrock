@@ -59,6 +59,8 @@ pkgs.mkShell {
     pkgs.python312Packages.ipython
 
     pkgs.mpi
+
+    pkgs.pre-commit
   ];
 
   # Set environment variables directly

@@ -53,11 +53,18 @@ pkgs.mkShell {
     pkgs.cmake
     pkgs.zsh
 
+    pkgs.python312Packages.matplotlib
+    pkgs.python312Packages.numpy
+    pkgs.python312Packages.scipy
+    pkgs.python312Packages.ipython
+
     pkgs.mpi
   ];
 
   # Set environment variables directly
   ACPP_INSTALL_DIR = "${AdaptiveCpp}";
+
+  ACPP_DEBUG_LEVEL = "0";
 
   shellHook = ''
     # Optional: Add custom message for debugging or confirmation

@@ -28,64 +28,72 @@ namespace sham {
         sycl::device &dev       = dev_sched->ctx->device->dev;
         void *usm_ptr           = nullptr;
 
-        if (sz > 0) {
+        if (alignment) {
 
-            if (alignment) {
-
-                if (sz % *alignment != 0) {
-                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
-                        "The size of the USM pointer is not aligned with the given alignment\n"
-                        "  size = {} | alignment = {} | size % alignment = {}",
-                        sz,
-                        *alignment,
-                        sz % *alignment));
-                }
-
-                // TODO upgrade alignment to 256-bit for CUDA ?
-
-                if constexpr (target == device) {
-                    usm_ptr = sycl::aligned_alloc_device(*alignment, sz, dev, sycl_ctx);
-                } else if constexpr (target == shared) {
-                    usm_ptr = sycl::aligned_alloc_shared(*alignment, sz, dev, sycl_ctx);
-                } else if constexpr (target == host) {
-                    usm_ptr = sycl::aligned_alloc_host(*alignment, sz, sycl_ctx);
-                } else {
-                    shambase::throw_unimplemented();
-                }
-            } else {
-                if constexpr (target == device) {
-                    usm_ptr = sycl::malloc_device(sz, dev, sycl_ctx);
-                } else if constexpr (target == shared) {
-                    usm_ptr = sycl::malloc_shared(sz, dev, sycl_ctx);
-                } else if constexpr (target == host) {
-                    usm_ptr = sycl::malloc_host(sz, sycl_ctx);
-                } else {
-                    shambase::throw_unimplemented();
-                }
+            if (sz % *alignment != 0) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "The size of the USM pointer is not aligned with the given alignment\n"
+                    "  size = {} | alignment = {} | size % alignment = {}",
+                    sz,
+                    *alignment,
+                    sz % *alignment));
             }
 
-            if (usm_ptr == nullptr) {
-                std::string err_msg = "";
-                if (alignment) {
-                    err_msg = shambase::format(
-                        "USM allocation failed, details : sz={}, target={}, alignment={}, alloc "
-                        "result = {}",
-                        sz,
-                        target,
-                        *alignment,
-                        usm_ptr);
-                } else {
-                    err_msg = shambase::format(
-                        "USM allocation failed, details : sz={}, target={}, alloc result = {}",
-                        sz,
-                        target,
-                        usm_ptr);
-                }
-                shambase::throw_with_loc<std::runtime_error>(err_msg);
+            // TODO upgrade alignment to 256-bit for CUDA ?
+
+            if constexpr (target == device) {
+                usm_ptr = sycl::aligned_alloc_device(*alignment, sz, dev, sycl_ctx);
+            } else if constexpr (target == shared) {
+                usm_ptr = sycl::aligned_alloc_shared(*alignment, sz, dev, sycl_ctx);
+            } else if constexpr (target == host) {
+                usm_ptr = sycl::aligned_alloc_host(*alignment, sz, sycl_ctx);
+            } else {
+                shambase::throw_unimplemented();
+            }
+        } else {
+            if constexpr (target == device) {
+                usm_ptr = sycl::malloc_device(sz, dev, sycl_ctx);
+            } else if constexpr (target == shared) {
+                usm_ptr = sycl::malloc_shared(sz, dev, sycl_ctx);
+            } else if constexpr (target == host) {
+                usm_ptr = sycl::malloc_host(sz, sycl_ctx);
+            } else {
+                shambase::throw_unimplemented();
             }
         }
 
+        if (usm_ptr == nullptr) {
+            std::string err_msg = "";
+            if (alignment) {
+                err_msg = shambase::format(
+                    "USM allocation failed, details : sz={}, target={}, alignment={}, alloc "
+                    "result = {}",
+                    sz,
+                    target,
+                    *alignment,
+                    usm_ptr);
+            } else {
+                err_msg = shambase::format(
+                    "USM allocation failed, details : sz={}, target={}, alloc result = {}",
+                    sz,
+                    target,
+                    usm_ptr);
+            }
+            shambase::throw_with_loc<std::runtime_error>(err_msg);
+        }
+
         return USMPtrHolder<target>(usm_ptr, sz, dev_sched);
+    }
+
+    template<USMKindTarget target>
+    USMPtrHolder<target>
+    USMPtrHolder<target>::create_nullptr(std::shared_ptr<DeviceScheduler> dev_sched) {
+
+        sycl::context &sycl_ctx = dev_sched->ctx->ctx;
+        sycl::device &dev       = dev_sched->ctx->device->dev;
+        void *usm_ptr           = nullptr;
+
+        return USMPtrHolder<target>(usm_ptr, 0, dev_sched);
     }
 
     template<USMKindTarget target>

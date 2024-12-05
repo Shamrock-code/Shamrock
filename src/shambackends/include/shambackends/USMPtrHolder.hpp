@@ -87,6 +87,8 @@ namespace sham {
             std::shared_ptr<DeviceScheduler> dev_sched,
             std::optional<size_t> alignment = std::nullopt);
 
+        static USMPtrHolder create_nullptr(std::shared_ptr<DeviceScheduler> dev_sched);
+
         /**
          * @brief USM pointer holder destructor
          *

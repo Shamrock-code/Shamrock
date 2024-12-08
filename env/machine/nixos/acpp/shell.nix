@@ -1,6 +1,6 @@
-{ pkgs ? (import <nixpkgs> { 
+{ pkgs ? (import <nixpkgs> {
     config.allowUnfree = true;
-    config.segger-jlink.acceptLicense = true; 
+    config.segger-jlink.acceptLicense = true;
     config.cudaSupport = true;
 }), ... }:
 
@@ -31,7 +31,7 @@ let
       pkgs.libxml2
       pkgs.libffi
       pkgs.boost
-      
+
       llvm.clang-tools
       llvm.clang
       llvm.llvm
@@ -86,7 +86,7 @@ pkgs.mkShell {
     pkgs.pre-commit
 
     pkgs.texliveFull
-  
+
     pkgs.cudaPackages.cudatoolkit
     pkgs.cudaPackages.cuda_cudart
     (pkgs.lib.getOutput "stubs" pkgs.cudaPackages.cuda_cudart)

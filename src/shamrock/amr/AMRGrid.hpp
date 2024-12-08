@@ -130,15 +130,23 @@ namespace shamrock::amr {
                                               Patch p,
                                               PatchData &pdat,
                                               sycl::buffer<u32> &refine_flags) {
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor refine_acc{refine_flags, cgh, sycl::write_only, sycl::no_init};
+                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-                    UserAcc uacc(cgh, id_patch, p, pdat, args...);
+                sham::EventList depends_list;
+                sham::EventList resulting_events;
+
+                UserAcc uacc(depends_list, id_patch, p, pdat, args...);
+
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                    sycl::accessor refine_acc{refine_flags, cgh, sycl::write_only, sycl::no_init};
 
                     cgh.parallel_for(sycl::range<1>(pdat.get_obj_cnt()), [=](sycl::item<1> gid) {
                         refine_acc[gid] = lambd(gid.get_linear_id(), uacc);
                     });
                 });
+
+                resulting_events.add_event(e);
+                uacc.finalize(resulting_events, id_patch, p, pdat, args...);
             });
         }
 
@@ -171,9 +179,9 @@ namespace shamrock::amr {
                 std::unique_ptr<sycl::buffer<u32>> out_buf_particle_index_map;
 
                 MortonBuilder::build(
-                    shamsys::instance::get_compute_queue(),
+                    shamsys::instance::get_compute_scheduler_ptr(),
                     sched.get_sim_box().template patch_coord_to_domain<Tcoord>(cur_p),
-                    *pdat.get_field<Tcoord>(0).get_buf(),
+                    pdat.get_field<Tcoord>(0).get_buf(),
                     pdat.get_obj_cnt(),
                     out_buf_morton,
                     out_buf_particle_index_map);
@@ -190,12 +198,13 @@ namespace shamrock::amr {
 
                 sycl::buffer<u32> mergeable_indexes(obj_to_check);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor acc_min{
-                        *pdat.get_field<Tcoord>(0).get_buf(), cgh, sycl::read_only};
-                    sycl::accessor acc_max{
-                        *pdat.get_field<Tcoord>(1).get_buf(), cgh, sycl::read_only};
+                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+                sham::EventList depends_list;
+                auto acc_min = pdat.get_field<Tcoord>(0).get_buf().get_write_access(depends_list);
+                auto acc_max = pdat.get_field<Tcoord>(1).get_buf().get_write_access(depends_list);
+
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     sycl::accessor acc_mergeable{
                         mergeable_indexes, cgh, sycl::write_only, sycl::no_init};
 
@@ -214,17 +223,28 @@ namespace shamrock::amr {
                     });
                 });
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor acc_mergeable{mergeable_indexes, cgh, sycl::read_write};
+                pdat.get_field<Tcoord>(0).get_buf().complete_event_state(e);
+                pdat.get_field<Tcoord>(1).get_buf().complete_event_state(e);
 
-                    UserAcc uacc(cgh, id_patch, cur_p, pdat);
+                {
+                    sham::EventList depends_list;
+                    sham::EventList resulting_events;
+                    UserAcc uacc(depends_list, id_patch, cur_p, pdat);
 
-                    cgh.parallel_for(sycl::range<1>(pdat.get_obj_cnt()), [=](sycl::item<1> gid) {
-                        if (acc_mergeable[gid]) {
-                            acc_mergeable[gid] = lambd(gid.get_linear_id(), uacc);
-                        }
+                    auto e2 = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        sycl::accessor acc_mergeable{mergeable_indexes, cgh, sycl::read_write};
+
+                        cgh.parallel_for(
+                            sycl::range<1>(pdat.get_obj_cnt()), [=](sycl::item<1> gid) {
+                                if (acc_mergeable[gid]) {
+                                    acc_mergeable[gid] = lambd(gid.get_linear_id(), uacc);
+                                }
+                            });
                     });
-                });
+
+                    resulting_events.add_event(e2);
+                    uacc.finalize(resulting_events, id_patch, cur_p, pdat);
+                }
 
                 auto [opt_buf, len] = shamalgs::numeric::stream_compact(
                     shamsys::instance::get_compute_queue(), mergeable_indexes, obj_to_check);
@@ -269,19 +289,24 @@ namespace shamrock::amr {
 
                     pdat.expand(refine_flags.count * (split_count - 1));
 
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        sycl::accessor index_to_ref{*refine_flags.idx, cgh, sycl::read_only};
+                    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-                        sycl::accessor cell_bound_low{
-                            *pdat.get_field<Tcoord>(0).get_buf(), cgh, sycl::read_write};
-                        sycl::accessor cell_bound_high{
-                            *pdat.get_field<Tcoord>(1).get_buf(), cgh, sycl::read_write};
+                    sham::EventList depends_list;
+
+                    auto cell_bound_low
+                        = pdat.get_field<Tcoord>(0).get_buf().get_write_access(depends_list);
+                    auto cell_bound_high
+                        = pdat.get_field<Tcoord>(1).get_buf().get_write_access(depends_list);
+
+                    sham::EventList resulting_events;
+                    UserAcc uacc(depends_list, pdat);
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        sycl::accessor index_to_ref{*refine_flags.idx, cgh, sycl::read_only};
 
                         u32 start_index_push = old_obj_cnt;
 
                         constexpr u32 new_splits = split_count - 1;
-
-                        UserAcc uacc(cgh, pdat);
 
                         cgh.parallel_for(
                             sycl::range<1>(refine_flags.count), [=](sycl::item<1> gid) {
@@ -317,6 +342,12 @@ namespace shamrock::amr {
                                 lambd(idx_to_refine, cur_cell, cells_ids, cell_coords, uacc);
                             });
                     });
+
+                    pdat.get_field<Tcoord>(0).get_buf().complete_event_state(e);
+                    pdat.get_field<Tcoord>(1).get_buf().complete_event_state(e);
+
+                    resulting_events.add_event(e);
+                    uacc.finalize(resulting_events, pdat);
                 }
 
                 sum_cell_count += pdat.get_obj_cnt();
@@ -331,7 +362,7 @@ namespace shamrock::amr {
             using namespace patch;
 
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                sycl::queue &q = shamsys::instance::get_compute_queue();
+                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
                 u32 old_obj_cnt = pdat.get_obj_cnt();
 
@@ -340,23 +371,25 @@ namespace shamrock::amr {
                 if (derefine_flags.count > 0) {
 
                     // init flag table
-                    sycl::buffer<u32> keep_cell_flag
-                        = shamalgs::algorithm::gen_buffer_device(q, old_obj_cnt, [](u32 i) -> u32 {
-                              return 1;
-                          });
+                    sycl::buffer<u32> keep_cell_flag = shamalgs::algorithm::gen_buffer_device(
+                        q.q, old_obj_cnt, [](u32 i) -> u32 {
+                            return 1;
+                        });
+
+                    sham::EventList depends_list;
+                    auto cell_bound_low
+                        = pdat.get_field<Tcoord>(0).get_buf().get_write_access(depends_list);
+                    auto cell_bound_high
+                        = pdat.get_field<Tcoord>(1).get_buf().get_write_access(depends_list);
+
+                    sham::EventList resulting_events;
+                    UserAcc uacc(depends_list, pdat);
 
                     // edit cell content + make flag of cells to keep
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         sycl::accessor index_to_deref{*derefine_flags.idx, cgh, sycl::read_only};
 
-                        sycl::accessor cell_bound_low{
-                            *pdat.get_field<Tcoord>(0).get_buf(), cgh, sycl::read_write};
-                        sycl::accessor cell_bound_high{
-                            *pdat.get_field<Tcoord>(1).get_buf(), cgh, sycl::read_write};
-
                         sycl::accessor flag_keep{keep_cell_flag, cgh, sycl::read_write};
-
-                        UserAcc uacc(cgh, pdat);
 
                         cgh.parallel_for(
                             sycl::range<1>(derefine_flags.count), [=](sycl::item<1> gid) {
@@ -403,9 +436,14 @@ namespace shamrock::amr {
                             });
                     });
 
+                    pdat.get_field<Tcoord>(0).get_buf().complete_event_state(e);
+                    pdat.get_field<Tcoord>(1).get_buf().complete_event_state(e);
+                    resulting_events.add_event(e);
+                    uacc.finalize(resulting_events, pdat);
+
                     // stream compact the flags
-                    auto [opt_buf, len] = shamalgs::numeric::stream_compact(
-                        shamsys::instance::get_compute_queue(), keep_cell_flag, old_obj_cnt);
+                    auto [opt_buf, len]
+                        = shamalgs::numeric::stream_compact(q.q, keep_cell_flag, old_obj_cnt);
 
                     logger::debug_ln(
                         "AMR Grid",

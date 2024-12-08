@@ -101,7 +101,16 @@ namespace sham::details {
             " | mode =",
             get_mode_name<target>());
 
-        auto ret = USMPtrHolder<target>::create(size, dev_sched, alignment);
+        auto create = [&]() {
+            if (size > 0) {
+                return USMPtrHolder<target>::create(size, dev_sched, alignment);
+            } else {
+
+                return USMPtrHolder<target>::create_nullptr(dev_sched);
+            }
+        };
+
+        auto ret = create();
 
         if constexpr (target == device) {
             register_alloc_device(size);

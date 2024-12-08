@@ -201,17 +201,17 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
         logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor acc_h{
-                shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf()),
-                cgh,
-                sycl::read_only};
 
-            sycl::accessor acc_rho{
-                shambase::get_check_ref(density.get_buf(p.id_patch)),
-                cgh,
-                sycl::write_only,
-                sycl::no_init};
+        auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
+
+        auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+        auto &q   = sptr->get_queue();
+
+        sham::EventList depends_list;
+        const Tscal *acc_h = buf_hpart.get_read_access(depends_list);
+        auto acc_rho       = density.get_buf(p.id_patch).get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const Tscal part_mass = solver_config.gpart_mass;
 
             cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
@@ -221,6 +221,9 @@ void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
                 acc_rho[gid] = rho_ha;
             });
         });
+
+        buf_hpart.complete_event_state(e);
+        density.get_buf(p.id_patch).complete_event_state(e);
     });
 
     shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);
@@ -554,7 +557,7 @@ void shammodels::sph::Solver<Tvec, Kern>::build_merged_pos_trees() {
               Tvec bmax = merged.bounds.upper;
 
               RTree tree(
-                  shamsys::instance::get_compute_queue(),
+                  shamsys::instance::get_compute_scheduler_ptr(),
                   {bmin, bmax},
                   merged.field_pos.get_buf(),
                   merged.field_pos.get_obj_cnt(),
@@ -579,15 +582,17 @@ void shammodels::sph::Solver<Tvec, Kern>::build_merged_pos_trees() {
             sycl::buffer<Tvec> tmp_min_cell(tot_count);
             sycl::buffer<Tvec> tmp_max_cell(tot_count);
 
-            sycl::buffer<Tvec> &buf_part_pos
-                = shambase::get_check_ref(merged_xyzh.get(id).field_pos.get_buf());
+            sham::DeviceBuffer<Tvec> &buf_part_pos = merged_xyzh.get(id).field_pos.get_buf();
 
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sham::EventList depends_list;
+            auto acc_pos = buf_part_pos.get_read_access(depends_list);
+
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 shamrock::tree::ObjectIterator cell_looper(tree, cgh);
 
                 u32 leaf_offset = tree.tree_struct.internal_cell_count;
-
-                sycl::accessor acc_pos{buf_part_pos, cgh, sycl::read_only};
 
                 sycl::accessor comp_min{tmp_min_cell, cgh, sycl::write_only, sycl::no_init};
                 sycl::accessor comp_max{tmp_max_cell, cgh, sycl::write_only, sycl::no_init};
@@ -623,6 +628,8 @@ void shammodels::sph::Solver<Tvec, Kern>::build_merged_pos_trees() {
                     comp_max[leaf_offset + leaf_id] = max;
                 });
             });
+
+            buf_part_pos.complete_event_state(e);
 
             //{
             //    u32 leaf_offset = tree.tree_struct.internal_cell_count;
@@ -783,14 +790,12 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
                 logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "h iteration");
 
-                sycl::buffer<Tscal> &eps_h
-                    = shambase::get_check_ref(_epsilon_h.get_buf(p.id_patch));
-                sycl::buffer<Tscal> &hold = shambase::get_check_ref(_h_old.get_buf(p.id_patch));
+                sham::DeviceBuffer<Tscal> &eps_h = _epsilon_h.get_buf(p.id_patch);
+                sham::DeviceBuffer<Tscal> &hold  = _h_old.get_buf(p.id_patch);
 
-                sycl::buffer<Tscal> &hnew
-                    = shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf());
-                sycl::buffer<Tvec> &merged_r = shambase::get_check_ref(
-                    storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf());
+                sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
+                sham::DeviceBuffer<Tvec> &merged_r
+                    = storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf();
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -848,13 +853,14 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
                         add_info += "errored parts : \n";
                         sycl::buffer<u32> &idx_err = *std::get<0>(res);
 
-                        sycl::buffer<Tvec> &xyz    = pdat.get_field_buf_ref<Tvec>(0);
-                        sycl::buffer<Tscal> &hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
+                        sham::DeviceBuffer<Tvec> &xyz    = pdat.get_field_buf_ref<Tvec>(0);
+                        sham::DeviceBuffer<Tscal> &hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
+
+                        auto pos = xyz.copy_to_stdvec();
+                        auto h   = hpart.copy_to_stdvec();
 
                         {
                             sycl::host_accessor acc{idx_err};
-                            sycl::host_accessor pos{xyz};
-                            sycl::host_accessor h{hpart};
                             for (u32 i = 0; i < idx_err.size(); i++) {
                                 add_info += shambase::format(
                                     "{} - pos : {}, hpart : {}\n", acc[i], pos[acc[i]], h[acc[i]]);
@@ -886,6 +892,10 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             reset_presteps_rint();
             reset_neighbors_cache();
 
+            // scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            //     pdat.synchronize_buf();
+            // });
+
             continue;
         } else {
             if (shamcomm::world_rank() == 0) {
@@ -909,12 +919,11 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
                 logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "h iteration");
 
-                sycl::buffer<Tscal> &omega_h = shambase::get_check_ref(omega.get_buf(p.id_patch));
+                sham::DeviceBuffer<Tscal> &omega_h = omega.get_buf(p.id_patch);
 
-                sycl::buffer<Tscal> &hnew
-                    = shambase::get_check_ref(pdat.get_field<Tscal>(ihpart).get_buf());
-                sycl::buffer<Tvec> &merged_r = shambase::get_check_ref(
-                    storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf());
+                sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
+                sham::DeviceBuffer<Tvec> &merged_r
+                    = storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf();
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -1512,19 +1521,26 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 shamrock::ComputeField<Tscal> &alpha_av_updated = storage.alpha_av_updated.get();
 
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                    sycl::buffer<Tscal> &buf_alpha_av
-                        = shambase::get_check_ref(pdat.get_field<Tscal>(ialpha_AV).get_buf());
-                    sycl::buffer<Tscal> &buf_alpha_av_updated
+                    sham::DeviceBuffer<Tscal> &buf_alpha_av
+                        = pdat.get_field<Tscal>(ialpha_AV).get_buf();
+                    sham::DeviceBuffer<Tscal> &buf_alpha_av_updated
                         = alpha_av_updated.get_buf_check(cur_p.id_patch);
 
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        sycl::accessor alpha_av{buf_alpha_av, cgh, sycl::read_write};
-                        sycl::accessor alpha_av_updated{buf_alpha_av_updated, cgh, sycl::read_only};
+                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                    sham::EventList depends_list;
+
+                    auto alpha_av         = buf_alpha_av.get_write_access(depends_list);
+                    auto alpha_av_updated = buf_alpha_av_updated.get_read_access(depends_list);
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         shambase::parralel_for(
                             cgh, pdat.get_obj_cnt(), "write back alpha_av", [=](i32 id_a) {
                                 alpha_av[id_a] = alpha_av_updated[id_a];
                             });
                     });
+
+                    buf_alpha_av.complete_event_state(e);
+                    buf_alpha_av_updated.complete_event_state(e);
                 });
             }
 
@@ -1539,14 +1555,17 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
                 PatchData &mpdat              = merged_patch.pdat;
 
-                sycl::buffer<Tvec> &buf_xyz
-                    = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-                sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-                sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-                sycl::buffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-                sycl::buffer<Tscal> &buf_pressure
+                sham::DeviceBuffer<Tvec> &buf_xyz
+                    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+                sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                sham::DeviceBuffer<Tscal> &buf_hpart
+                    = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+                sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+                sham::DeviceBuffer<Tscal> &buf_pressure
                     = storage.pressure.get().get_buf_check(cur_p.id_patch);
-                sycl::buffer<Tscal> &vsig_buf = vsig_max_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &cs_buf
+                    = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &vsig_buf = vsig_max_dt.get_buf_check(cur_p.id_patch);
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -1555,27 +1574,27 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 /////////////////////////////////////////////
 
                 {
+
+                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                    sham::EventList depends_list;
+
+                    auto xyz                  = buf_xyz.get_read_access(depends_list);
+                    auto vxyz                 = buf_vxyz.get_read_access(depends_list);
+                    auto hpart                = buf_hpart.get_read_access(depends_list);
+                    auto u                    = buf_uint.get_read_access(depends_list);
+                    auto pressure             = buf_pressure.get_read_access(depends_list);
+                    auto cs                   = cs_buf.get_read_access(depends_list);
+                    auto vsig                 = vsig_buf.get_write_access(depends_list);
+                    auto particle_looper_ptrs = pcache.get_read_access(depends_list);
+
                     NamedStackEntry tmppp{"compute vsig"};
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         const Tscal pmass    = solver_config.gpart_mass;
                         const Tscal alpha_u  = 1.0;
                         const Tscal alpha_AV = 1.0;
                         const Tscal beta_AV  = 2.0;
 
-                        tree::ObjectCacheIterator particle_looper(pcache, cgh);
-
-                        sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                        sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
-                        sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-                        sycl::accessor u{buf_uint, cgh, sycl::read_only};
-                        sycl::accessor pressure{buf_pressure, cgh, sycl::read_only};
-
-                        sycl::accessor cs{
-                            storage.soundspeed.get().get_buf_check(cur_p.id_patch),
-                            cgh,
-                            sycl::read_only};
-
-                        sycl::accessor vsig{vsig_buf, cgh, sycl::write_only, sycl::no_init};
+                        tree::ObjectCacheIterator particle_looper(particle_looper_ptrs);
 
                         constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
@@ -1643,6 +1662,18 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                 vsig[id_a] = vsig_max;
                             });
                     });
+
+                    buf_xyz.complete_event_state(e);
+                    buf_vxyz.complete_event_state(e);
+                    buf_hpart.complete_event_state(e);
+                    buf_uint.complete_event_state(e);
+                    buf_pressure.complete_event_state(e);
+                    cs_buf.complete_event_state(e);
+                    vsig_buf.complete_event_state(e);
+
+                    sham::EventList resulting_events;
+                    resulting_events.add_event(e);
+                    pcache.complete_event_state(resulting_events);
                 }
             });
 
@@ -1651,19 +1682,21 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
                 MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
 
-                sycl::buffer<Tvec> &buf_axyz
-                    = shambase::get_check_ref(pdat.get_field<Tvec>(iaxyz).get_buf());
-                sycl::buffer<Tscal> &buf_hpart = shambase::get_check_ref(
-                    merged_patch.pdat.get_field<Tscal>(ihpart_interf).get_buf());
-                sycl::buffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
-                sycl::buffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field<Tvec>(iaxyz).get_buf();
+                sham::DeviceBuffer<Tscal> &buf_hpart
+                    = merged_patch.pdat.get_field<Tscal>(ihpart_interf).get_buf();
+                sham::DeviceBuffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                    sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-                    sycl::accessor a{buf_axyz, cgh, sycl::read_only};
-                    sycl::accessor vsig{vsig_buf, cgh, sycl::read_only};
-                    sycl::accessor cfl_dt{cfl_dt_buf, cgh, sycl::write_only, sycl::no_init};
+                auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                sham::EventList depends_list;
 
+                auto hpart  = buf_hpart.get_read_access(depends_list);
+                auto a      = buf_axyz.get_read_access(depends_list);
+                auto vsig   = vsig_buf.get_read_access(depends_list);
+                auto cfl_dt = cfl_dt_buf.get_write_access(depends_list);
+
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     Tscal C_cour = solver_config.cfl_config.cfl_cour
                                    * solver_config.time_state.cfl_multiplier;
                     Tscal C_force = solver_config.cfl_config.cfl_force
@@ -1680,6 +1713,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         cfl_dt[item] = sycl::min(dt_c, dt_f);
                     });
                 });
+
+                buf_hpart.complete_event_state(e);
+                buf_axyz.complete_event_state(e);
+                vsig_buf.complete_event_state(e);
+                cfl_dt_buf.complete_event_state(e);
             });
 
             Tscal rank_dt = cfl_dt.compute_rank_min();
@@ -1701,28 +1739,35 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             // we don't want to communicate it as it can be recomputed from the other fields
             // hence we copy the soundspeed at the end of the step to a field in the patchdata
             if (solver_config.has_field_soundspeed()) {
+
                 const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
+
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                    sycl::buffer<Tscal> &buf_cs = pdat.get_field_buf_ref<Tscal>(isoundspeed);
+                    sham::DeviceBuffer<Tscal> &buf_cs = pdat.get_field_buf_ref<Tscal>(isoundspeed);
+                    sham::DeviceBuffer<Tscal> &buf_cs_in
+                        = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
 
                     sycl::range range_npart{pdat.get_obj_cnt()};
 
                     /////////////////////////////////////////////
 
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        const Tscal pmass = solver_config.gpart_mass;
+                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                    sham::EventList depends_list;
 
-                        sycl::accessor cs_in{
-                            storage.soundspeed.get().get_buf_check(cur_p.id_patch),
-                            cgh,
-                            sycl::read_only};
-                        sycl::accessor cs{buf_cs, cgh, sycl::write_only, sycl::no_init};
+                    auto cs_in = buf_cs_in.get_read_access(depends_list);
+                    auto cs    = buf_cs.get_write_access(depends_list);
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        const Tscal pmass = solver_config.gpart_mass;
 
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                                 cs[item] = cs_in[item];
                             });
                     });
+
+                    buf_cs_in.complete_event_state(e);
+                    buf_cs.complete_event_state(e);
                 });
             }
 

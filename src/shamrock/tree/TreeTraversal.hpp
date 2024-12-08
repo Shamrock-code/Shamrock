@@ -276,17 +276,36 @@ namespace shamrock::tree {
 
     class LeafCache {
         public:
-        sycl::buffer<u32> cnt_neigh;
-        sycl::buffer<u32> scanned_cnt;
+        sham::DeviceBuffer<u32> cnt_neigh;
+        sham::DeviceBuffer<u32> scanned_cnt;
         u32 sum_neigh_cnt;
-        sycl::buffer<u32> index_neigh_map;
+        sham::DeviceBuffer<u32> index_neigh_map;
+
+        struct ptrs {
+            const u32 *cnt_neigh;
+            const u32 *scanned_cnt;
+            const u32 *index_neigh_map;
+        };
+
+        ptrs get_read_access(sham::EventList &depends_list) {
+            return ptrs{
+                cnt_neigh.get_read_access(depends_list),
+                scanned_cnt.get_read_access(depends_list),
+                index_neigh_map.get_read_access(depends_list)};
+        }
+
+        void complete_event_state(sham::EventList &resulting_events) {
+            cnt_neigh.complete_event_state(resulting_events);
+            scanned_cnt.complete_event_state(resulting_events);
+            index_neigh_map.complete_event_state(resulting_events);
+        }
     };
 
     class LeafCacheObjectIterator {
 
-        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> neigh_cnt;
-        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> table_neigh_offset;
-        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> table_neigh;
+        const u32 *neigh_cnt;
+        const u32 *table_neigh_offset;
+        const u32 *table_neigh;
 
         sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> cell_owner;
 
@@ -298,12 +317,12 @@ namespace shamrock::tree {
         public:
         // clang-format off
         template<class u_morton, class vec>
-        LeafCacheObjectIterator(RadixTree< u_morton,  vec> & rtree,sycl::buffer<u32> & ownerships, LeafCache & cache,sycl::handler & cgh):
+        LeafCacheObjectIterator(RadixTree< u_morton,  vec> & rtree,sycl::buffer<u32> & ownerships, LeafCache::ptrs & cache,sycl::handler & cgh):
             particle_index_map{shambase::get_check_ref(rtree.tree_morton_codes.buf_particle_index_map), cgh,sycl::read_only},
             cell_index_map{shambase::get_check_ref(rtree.tree_reduced_morton_codes.buf_reduc_index_map), cgh,sycl::read_only},
-            neigh_cnt          {cache.cnt_neigh       ,cgh,sycl::read_only},
-            table_neigh_offset {cache.scanned_cnt     ,cgh,sycl::read_only},
-            table_neigh        {cache.index_neigh_map ,cgh,sycl::read_only},
+            neigh_cnt          {cache.cnt_neigh       },
+            table_neigh_offset {cache.scanned_cnt     },
+            table_neigh        {cache.index_neigh_map },
             cell_owner         {ownerships            ,cgh,sycl::read_only},
             leaf_offset   (rtree.tree_struct.internal_cell_count)
         {}
@@ -354,54 +373,102 @@ namespace shamrock::tree {
     };
 
     struct ObjectCache {
-        sycl::buffer<u32> cnt_neigh;
-        sycl::buffer<u32> scanned_cnt;
+        sham::DeviceBuffer<u32> cnt_neigh;
+        sham::DeviceBuffer<u32> scanned_cnt;
         u32 sum_neigh_cnt;
-        sycl::buffer<u32> index_neigh_map;
+        sham::DeviceBuffer<u32> index_neigh_map;
 
         inline u64 get_memsize() {
-            return cnt_neigh.byte_size() + scanned_cnt.byte_size() + index_neigh_map.byte_size()
-                   + sizeof(u32);
+            return cnt_neigh.get_bytesize() + scanned_cnt.get_bytesize()
+                   + index_neigh_map.get_bytesize() + sizeof(u32);
         }
 
         inline HostObjectCache copy_to_host() {
             return HostObjectCache{
-                shamalgs::memory::buf_to_vec(cnt_neigh, cnt_neigh.size()),
-                shamalgs::memory::buf_to_vec(scanned_cnt, scanned_cnt.size()),
+                cnt_neigh.copy_to_stdvec(),
+                scanned_cnt.copy_to_stdvec(),
                 sum_neigh_cnt,
-                shamalgs::memory::buf_to_vec(index_neigh_map, index_neigh_map.size()),
+                index_neigh_map.copy_to_stdvec(),
             };
         }
 
         inline static ObjectCache build_from_host(HostObjectCache &cache) {
+            sham::DeviceBuffer<u32> cnt_neigh(
+                cache.cnt_neigh.size(), shamsys::instance::get_compute_scheduler_ptr());
+            sham::DeviceBuffer<u32> scanned_cnt(
+                cache.scanned_cnt.size(), shamsys::instance::get_compute_scheduler_ptr());
+            u32 sum_neigh_cnt = cache.sum_neigh_cnt;
+            sham::DeviceBuffer<u32> index_neigh_map(
+                cache.index_neigh_map.size(), shamsys::instance::get_compute_scheduler_ptr());
+
+            cnt_neigh.copy_from_stdvec(cache.cnt_neigh);
+            scanned_cnt.copy_from_stdvec(cache.scanned_cnt);
+            index_neigh_map.copy_from_stdvec(cache.index_neigh_map);
+
             return ObjectCache{
-                shamalgs::memory::vec_to_buf(cache.cnt_neigh),
-                shamalgs::memory::vec_to_buf(cache.scanned_cnt),
-                cache.sum_neigh_cnt,
-                shamalgs::memory::vec_to_buf(cache.index_neigh_map),
+                std::move(cnt_neigh),
+                std::move(scanned_cnt),
+                sum_neigh_cnt,
+                std::move(index_neigh_map),
             };
+        }
+
+        struct ptrs_read {
+            const u32 *cnt_neigh;
+            const u32 *scanned_cnt;
+            const u32 *index_neigh_map;
+        };
+
+        struct ptrs {
+            u32 *cnt_neigh;
+            u32 *scanned_cnt;
+            u32 *index_neigh_map;
+        };
+
+        ptrs_read get_read_access(sham::EventList &depends_list) {
+            return ptrs_read{
+                cnt_neigh.get_read_access(depends_list),
+                scanned_cnt.get_read_access(depends_list),
+                index_neigh_map.get_read_access(depends_list),
+            };
+        }
+
+        ptrs get_write_access(sham::EventList &depends_list) {
+            return ptrs{
+                cnt_neigh.get_write_access(depends_list),
+                scanned_cnt.get_write_access(depends_list),
+                index_neigh_map.get_write_access(depends_list),
+            };
+        }
+
+        void complete_event_state(sham::EventList &resulting_events) {
+            cnt_neigh.complete_event_state(resulting_events);
+            scanned_cnt.complete_event_state(resulting_events);
+            index_neigh_map.complete_event_state(resulting_events);
         }
     };
 
-    inline ObjectCache prepare_object_cache(sycl::buffer<u32> &&counts, u32 obj_cnt) {
+    inline ObjectCache prepare_object_cache(sham::DeviceBuffer<u32> &&counts, u32 obj_cnt) {
 
         logger::debug_sycl_ln("Cache", " reading last value ...");
         u32 neigh_last_val = shamalgs::memory::extract_element(
-            shamsys::instance::get_compute_queue(), counts, obj_cnt - 1);
+            shamsys::instance::get_compute_scheduler().get_queue(), counts, obj_cnt - 1);
 
         logger::debug_sycl_ln("Cache", " last value =", neigh_last_val);
 
-        sycl::buffer<u32> neigh_scanned_vals = shamalgs::numeric::exclusive_sum(
-            shamsys::instance::get_compute_queue(), counts, obj_cnt);
+        sham::DeviceBuffer<u32> neigh_scanned_vals = shamalgs::numeric::exclusive_sum(
+            shamsys::instance::get_compute_scheduler_ptr(), counts, obj_cnt);
 
-        u32 neigh_sum
-            = neigh_last_val
-              + shamalgs::memory::extract_element(
-                  shamsys::instance::get_compute_queue(), neigh_scanned_vals, obj_cnt - 1);
+        u32 neigh_sum = neigh_last_val
+                        + shamalgs::memory::extract_element(
+                            shamsys::instance::get_compute_scheduler().get_queue(),
+                            neigh_scanned_vals,
+                            obj_cnt - 1);
 
         logger::debug_sycl_ln("Cache", " cache for N=", obj_cnt, "size() =", neigh_sum);
 
-        sycl::buffer<u32> particle_neigh_map(neigh_sum);
+        sham::DeviceBuffer<u32> particle_neigh_map(
+            neigh_sum, shamsys::instance::get_compute_scheduler_ptr());
 
         tree::ObjectCache pcache{
             std::move(counts),
@@ -414,16 +481,16 @@ namespace shamrock::tree {
 
     class ObjectCacheIterator {
 
-        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> neigh_cnt;
-        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> table_neigh_offset;
-        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> table_neigh;
+        const u32 *neigh_cnt;
+        const u32 *table_neigh_offset;
+        const u32 *table_neigh;
 
         public:
         // clang-format off
-        ObjectCacheIterator(ObjectCache & cache,sycl::handler & cgh):
-            neigh_cnt          {cache.cnt_neigh       ,cgh,sycl::read_only},
-            table_neigh_offset {cache.scanned_cnt     ,cgh,sycl::read_only},
-            table_neigh        {cache.index_neigh_map ,cgh,sycl::read_only}
+        ObjectCacheIterator(ObjectCache::ptrs_read & cache):
+            neigh_cnt          {cache.cnt_neigh       },
+            table_neigh_offset {cache.scanned_cnt     },
+            table_neigh        {cache.index_neigh_map }
         {}
         // clang-format on
 

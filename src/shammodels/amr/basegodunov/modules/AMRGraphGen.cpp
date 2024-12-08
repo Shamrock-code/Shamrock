@@ -160,22 +160,30 @@ shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::
 
         OrientedAMRGraph result;
 
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         sycl::buffer<TgridVec> &tree_bmin
             = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_min_cell_flt);
         sycl::buffer<TgridVec> &tree_bmax
             = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_max_cell_flt);
 
-        sycl::buffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        sycl::buffer<TgridVec> buf_block_min_sycl = buf_block_min.copy_to_sycl_buffer();
+        sycl::buffer<TgridVec> buf_block_max_sycl = buf_block_max.copy_to_sycl_buffer();
 
         for (u32 dir = 0; dir < 6; dir++) {
 
             TgridVec dir_offset = result.offset_check[dir];
 
             AMRGraph rslt = compute_neigh_graph<AMRBlockFinder>(
-                q, mpdat.total_elements, tree, buf_block_min, buf_block_max, dir_offset);
+                q.q,
+                mpdat.total_elements,
+                tree,
+                buf_block_min_sycl,
+                buf_block_max_sycl,
+                dir_offset);
 
             logger::debug_ln(
                 "AMR Block Graph", "Patch", id, "direction", dir, "link cnt", rslt.link_count);
@@ -443,8 +451,11 @@ void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::
 
         sycl::queue &q = shamsys::instance::get_compute_queue();
 
-        sycl::buffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        sycl::buffer<TgridVec> buf_block_min_sycl = buf_block_min.copy_to_sycl_buffer();
+        sycl::buffer<TgridVec> buf_block_max_sycl = buf_block_max.copy_to_sycl_buffer();
 
         for (u32 dir = 0; dir < 6; dir++) {
 
@@ -455,7 +466,7 @@ void shammodels::basegodunov::modules::AMRGraphGen<Tvec, TgridVec>::
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
             AMRGraph rslt = compute_neigh_graph<AMRLowering>(
-                q, cell_count, block_graph, buf_block_min, buf_block_max, dir_offset);
+                q, cell_count, block_graph, buf_block_min_sycl, buf_block_max_sycl, dir_offset);
 
             logger::debug_ln(
                 "AMR Cell Graph", "Patch", id, "direction", dir, "link cnt", rslt.link_count);

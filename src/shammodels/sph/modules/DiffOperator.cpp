@@ -48,13 +48,12 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
 
-        sycl::buffer<Tvec> &buf_xyz
-            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-        sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-        sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-        sycl::buffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
-        sycl::buffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-        sycl::buffer<Tscal> &buf_divv  = pdat.get_field_buf_ref<Tscal>(idivv);
+        sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+        sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+        sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+        sham::DeviceBuffer<Tscal> &buf_divv  = pdat.get_field_buf_ref<Tscal>(idivv);
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -64,16 +63,22 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
         {
             NamedStackEntry tmppp{"compute divv"};
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+            sham::EventList depends_list;
+
+            auto xyz        = buf_xyz.get_read_access(depends_list);
+            auto vxyz       = buf_vxyz.get_read_access(depends_list);
+            auto hpart      = buf_hpart.get_read_access(depends_list);
+            auto omega      = buf_omega.get_read_access(depends_list);
+            auto divv       = buf_divv.get_write_access(depends_list);
+            auto ploop_ptrs = pcache.get_read_access(depends_list);
+
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 const Tscal pmass = gpart_mass;
 
-                tree::ObjectCacheIterator particle_looper(pcache, cgh);
-
-                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
-                sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-                sycl::accessor omega{buf_omega, cgh, sycl::read_only};
-                sycl::accessor divv{buf_divv, cgh, sycl::write_only, sycl::no_init};
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
@@ -122,6 +127,16 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
                     divv[id_a] = -inv_rho_omega_a * sum_nabla_v;
                 });
             });
+
+            buf_xyz.complete_event_state(e);
+            buf_vxyz.complete_event_state(e);
+            buf_hpart.complete_event_state(e);
+            buf_omega.complete_event_state(e);
+            buf_divv.complete_event_state(e);
+
+            sham::EventList resulting_events;
+            resulting_events.add_event(e);
+            pcache.complete_event_state(resulting_events);
         }
     });
 }
@@ -154,13 +169,12 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
 
-        sycl::buffer<Tvec> &buf_xyz
-            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-        sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-        sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-        sycl::buffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
-        sycl::buffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-        sycl::buffer<Tvec> &buf_curlv  = pdat.get_field_buf_ref<Tvec>(icurlv);
+        sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+        sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+        sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+        sham::DeviceBuffer<Tvec> &buf_curlv  = pdat.get_field_buf_ref<Tvec>(icurlv);
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -170,16 +184,21 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
         {
             NamedStackEntry tmppp{"compute curlv"};
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+            sham::EventList depends_list;
+            auto xyz        = buf_xyz.get_read_access(depends_list);
+            auto vxyz       = buf_vxyz.get_read_access(depends_list);
+            auto hpart      = buf_hpart.get_read_access(depends_list);
+            auto omega      = buf_omega.get_read_access(depends_list);
+            auto curlv      = buf_curlv.get_write_access(depends_list);
+            auto ploop_ptrs = pcache.get_read_access(depends_list);
+
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 const Tscal pmass = gpart_mass;
 
-                tree::ObjectCacheIterator particle_looper(pcache, cgh);
-
-                sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-                sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
-                sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-                sycl::accessor omega{buf_omega, cgh, sycl::read_only};
-                sycl::accessor curlv{buf_curlv, cgh, sycl::write_only, sycl::no_init};
+                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
@@ -228,6 +247,16 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
                     curlv[id_a] = -inv_rho_omega_a * sum_nabla_cross_v;
                 });
             });
+
+            buf_xyz.complete_event_state(e);
+            buf_vxyz.complete_event_state(e);
+            buf_hpart.complete_event_state(e);
+            buf_omega.complete_event_state(e);
+            buf_curlv.complete_event_state(e);
+
+            sham::EventList resulting_events;
+            resulting_events.add_event(e);
+            pcache.complete_event_state(resulting_events);
         }
     });
 }

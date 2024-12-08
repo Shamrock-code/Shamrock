@@ -115,16 +115,19 @@ namespace generic::setup::modifiers {
                 u32 cnt = pdat.get_obj_cnt();
 
                 auto &buf_xyz = xyz.get_buf();
-                sycl::host_accessor acc_xyz{*buf_xyz};
+                auto acc_xyz  = buf_xyz.copy_to_stdvec();
 
                 auto &buf_vxyz = vxyz.get_buf();
-                sycl::host_accessor acc_vxyz{*buf_vxyz};
+                auto acc_vxyz  = buf_vxyz.copy_to_stdvec();
 
                 for (u32 i = 0; i < cnt; i++) {
                     vec r       = acc_xyz[i];
                     flt rkphi   = sycl::dot(r, k) + phase;
                     acc_vxyz[i] = ampl * sycl::sin(rkphi);
                 }
+
+                buf_xyz.copy_from_stdvec(acc_xyz);
+                buf_vxyz.copy_from_stdvec(acc_vxyz);
             }
         });
     }

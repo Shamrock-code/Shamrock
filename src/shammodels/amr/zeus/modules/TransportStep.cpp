@@ -51,27 +51,33 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_cell_cent
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<Tscal> &buf_rho  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-        sycl::buffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
-        sycl::buffer<Tvec> &buf_vel   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+        sham::DeviceBuffer<Tscal> &buf_rho  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sham::DeviceBuffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sham::DeviceBuffer<Tvec> &buf_vel   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
-        sycl::buffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
-        sycl::buffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_xp = vel_n_xp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_yp = vel_n_yp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_vel_zp = vel_n_zp.get_buf_check(p.id_patch);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q = Q.get_buf_check(p.id_patch);
-        bool cons_transp                         = solver_config.use_consistent_transport;
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor rho{buf_rho, cgh, sycl::read_only};
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
-            sycl::accessor eint{buf_eint, cgh, sycl::read_only};
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q = Q.get_buf_check(p.id_patch);
 
-            sycl::accessor vel_xp{buf_vel_xp, cgh, sycl::read_only};
-            sycl::accessor vel_yp{buf_vel_yp, cgh, sycl::read_only};
-            sycl::accessor vel_zp{buf_vel_zp, cgh, sycl::read_only};
+        bool cons_transp = solver_config.use_consistent_transport;
 
-            sycl::accessor Q{buf_Q, cgh, sycl::write_only, sycl::no_init};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+        sham::EventList depends_list;
+
+        auto rho  = buf_rho.get_read_access(depends_list);
+        auto vel  = buf_vel.get_read_access(depends_list);
+        auto eint = buf_eint.get_read_access(depends_list);
+
+        auto vel_xp = buf_vel_xp.get_read_access(depends_list);
+        auto vel_yp = buf_vel_yp.get_read_access(depends_list);
+        auto vel_zp = buf_vel_zp.get_read_access(depends_list);
+
+        auto Q = buf_Q.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite Pis", [=](u32 /*block_id*/, u32 cell_gid) {
                     Tscal r  = rho[cell_gid];
@@ -103,6 +109,16 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_cell_cent
                     }
                 });
         });
+
+        buf_rho.complete_event_state(e);
+        buf_vel.complete_event_state(e);
+        buf_eint.complete_event_state(e);
+
+        buf_vel_xp.complete_event_state(e);
+        buf_vel_yp.complete_event_state(e);
+        buf_vel_zp.complete_event_state(e);
+
+        buf_Q.complete_event_state(e);
     });
 }
 
@@ -153,131 +169,162 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_limiter()
     ComputeField<Tscal8> &a_z = storage.a_z.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
-        MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(p.id_patch);
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q = Q.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q = Q.get_buf_check(p.id_patch);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_xm = Q_xm.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_xp = Q_xp.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_a_x  = a_x.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_xm = Q_xm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_xp = Q_xp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_a_x  = a_x.get_buf_check(p.id_patch);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_ym = Q_ym.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_yp = Q_yp.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_a_y  = a_y.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_ym = Q_ym.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_yp = Q_yp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_a_y  = a_y.get_buf_check(p.id_patch);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_zm = Q_zm.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_zp = Q_zp.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_a_z  = a_z.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_zm = Q_zm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_zp = Q_zp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_a_z  = a_z.get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor Q{buf_Q, cgh, sycl::read_only};
-            sycl::accessor Q_xm{buf_Q_xm, cgh, sycl::read_only};
-            sycl::accessor Q_xp{buf_Q_xp, cgh, sycl::read_only};
-            sycl::accessor a_x{buf_a_x, cgh, sycl::write_only, sycl::no_init};
+            auto Q    = buf_Q.get_read_access(depends_list);
+            auto Q_xm = buf_Q_xm.get_read_access(depends_list);
+            auto Q_xp = buf_Q_xp.get_read_access(depends_list);
+            auto a_x  = buf_a_x.get_write_access(depends_list);
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-            Block::for_each_cells(
-                cgh, mpdat.total_elements, "compite a_x", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().x()
-                          * coord_conv_fact;
+                Block::for_each_cells(
+                    cgh, mpdat.total_elements, "compite a_x", [=](u32 block_id, u32 cell_gid) {
+                        Tscal d_cell = (cell_max[block_id] - cell_min[block_id])
+                                           .template convert<Tscal>()
+                                           .x()
+                                       * coord_conv_fact;
 
-                    Tscal8 Qi  = Q[cell_gid];
-                    Tscal8 Qim = Q_xm[cell_gid];
-                    Tscal8 Qip = Q_xp[cell_gid];
+                        Tscal8 Qi  = Q[cell_gid];
+                        Tscal8 Qim = Q_xm[cell_gid];
+                        Tscal8 Qip = Q_xp[cell_gid];
 
-                    Tscal8 dqm = (Qi - Qim) / d_cell;
-                    Tscal8 dqp = (Qip - Qi) / d_cell;
+                        Tscal8 dqm = (Qi - Qim) / d_cell;
+                        Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_x[cell_gid] = Tscal8{
-                        shammath::van_leer_slope(dqm.s0(), dqp.s0()),
-                        shammath::van_leer_slope(dqm.s1(), dqp.s1()),
-                        shammath::van_leer_slope(dqm.s2(), dqp.s2()),
-                        shammath::van_leer_slope(dqm.s3(), dqp.s3()),
-                        shammath::van_leer_slope(dqm.s4(), dqp.s4()),
-                        shammath::van_leer_slope(dqm.s5(), dqp.s5()),
-                        shammath::van_leer_slope(dqm.s6(), dqp.s6()),
-                        shammath::van_leer_slope(dqm.s7(), dqp.s7())};
-                });
-        });
+                        a_x[cell_gid] = Tscal8{
+                            shammath::van_leer_slope(dqm.s0(), dqp.s0()),
+                            shammath::van_leer_slope(dqm.s1(), dqp.s1()),
+                            shammath::van_leer_slope(dqm.s2(), dqp.s2()),
+                            shammath::van_leer_slope(dqm.s3(), dqp.s3()),
+                            shammath::van_leer_slope(dqm.s4(), dqp.s4()),
+                            shammath::van_leer_slope(dqm.s5(), dqp.s5()),
+                            shammath::van_leer_slope(dqm.s6(), dqp.s6()),
+                            shammath::van_leer_slope(dqm.s7(), dqp.s7())};
+                    });
+            });
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+            buf_Q.complete_event_state(e);
+            buf_Q_xm.complete_event_state(e);
+            buf_Q_xp.complete_event_state(e);
+            buf_a_x.complete_event_state(e);
+        }
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor Q{buf_Q, cgh, sycl::read_only};
-            sycl::accessor Q_ym{buf_Q_ym, cgh, sycl::read_only};
-            sycl::accessor Q_yp{buf_Q_yp, cgh, sycl::read_only};
-            sycl::accessor a_y{buf_a_y, cgh, sycl::write_only, sycl::no_init};
+            auto Q    = buf_Q.get_read_access(depends_list);
+            auto Q_ym = buf_Q_ym.get_read_access(depends_list);
+            auto Q_yp = buf_Q_yp.get_read_access(depends_list);
+            auto a_y  = buf_a_y.get_write_access(depends_list);
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-            Block::for_each_cells(
-                cgh, mpdat.total_elements, "compite a_y", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().y()
-                          * coord_conv_fact;
+                Block::for_each_cells(
+                    cgh, mpdat.total_elements, "compite a_y", [=](u32 block_id, u32 cell_gid) {
+                        Tscal d_cell = (cell_max[block_id] - cell_min[block_id])
+                                           .template convert<Tscal>()
+                                           .y()
+                                       * coord_conv_fact;
 
-                    Tscal8 Qi  = Q[cell_gid];
-                    Tscal8 Qim = Q_ym[cell_gid];
-                    Tscal8 Qip = Q_yp[cell_gid];
+                        Tscal8 Qi  = Q[cell_gid];
+                        Tscal8 Qim = Q_ym[cell_gid];
+                        Tscal8 Qip = Q_yp[cell_gid];
 
-                    Tscal8 dqm = (Qi - Qim) / d_cell;
-                    Tscal8 dqp = (Qip - Qi) / d_cell;
+                        Tscal8 dqm = (Qi - Qim) / d_cell;
+                        Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_y[cell_gid] = Tscal8{
-                        shammath::van_leer_slope(dqm.s0(), dqp.s0()),
-                        shammath::van_leer_slope(dqm.s1(), dqp.s1()),
-                        shammath::van_leer_slope(dqm.s2(), dqp.s2()),
-                        shammath::van_leer_slope(dqm.s3(), dqp.s3()),
-                        shammath::van_leer_slope(dqm.s4(), dqp.s4()),
-                        shammath::van_leer_slope(dqm.s5(), dqp.s5()),
-                        shammath::van_leer_slope(dqm.s6(), dqp.s6()),
-                        shammath::van_leer_slope(dqm.s7(), dqp.s7())};
-                });
-        });
+                        a_y[cell_gid] = Tscal8{
+                            shammath::van_leer_slope(dqm.s0(), dqp.s0()),
+                            shammath::van_leer_slope(dqm.s1(), dqp.s1()),
+                            shammath::van_leer_slope(dqm.s2(), dqp.s2()),
+                            shammath::van_leer_slope(dqm.s3(), dqp.s3()),
+                            shammath::van_leer_slope(dqm.s4(), dqp.s4()),
+                            shammath::van_leer_slope(dqm.s5(), dqp.s5()),
+                            shammath::van_leer_slope(dqm.s6(), dqp.s6()),
+                            shammath::van_leer_slope(dqm.s7(), dqp.s7())};
+                    });
+            });
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+            buf_Q.complete_event_state(e);
+            buf_Q_ym.complete_event_state(e);
+            buf_Q_yp.complete_event_state(e);
+            buf_a_y.complete_event_state(e);
+        }
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor Q{buf_Q, cgh, sycl::read_only};
-            sycl::accessor Q_zm{buf_Q_zm, cgh, sycl::read_only};
-            sycl::accessor Q_zp{buf_Q_zp, cgh, sycl::read_only};
-            sycl::accessor a_z{buf_a_z, cgh, sycl::write_only, sycl::no_init};
+            auto Q    = buf_Q.get_read_access(depends_list);
+            auto Q_zm = buf_Q_zm.get_read_access(depends_list);
+            auto Q_zp = buf_Q_zp.get_read_access(depends_list);
+            auto a_z  = buf_a_z.get_write_access(depends_list);
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-            Block::for_each_cells(
-                cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().z()
-                          * coord_conv_fact;
+                Block::for_each_cells(
+                    cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
+                        Tscal d_cell = (cell_max[block_id] - cell_min[block_id])
+                                           .template convert<Tscal>()
+                                           .z()
+                                       * coord_conv_fact;
 
-                    Tscal8 Qi  = Q[cell_gid];
-                    Tscal8 Qim = Q_zm[cell_gid];
-                    Tscal8 Qip = Q_zp[cell_gid];
+                        Tscal8 Qi  = Q[cell_gid];
+                        Tscal8 Qim = Q_zm[cell_gid];
+                        Tscal8 Qip = Q_zp[cell_gid];
 
-                    Tscal8 dqm = (Qi - Qim) / d_cell;
-                    Tscal8 dqp = (Qip - Qi) / d_cell;
+                        Tscal8 dqm = (Qi - Qim) / d_cell;
+                        Tscal8 dqp = (Qip - Qi) / d_cell;
 
-                    a_z[cell_gid] = Tscal8{
-                        shammath::van_leer_slope(dqm.s0(), dqp.s0()),
-                        shammath::van_leer_slope(dqm.s1(), dqp.s1()),
-                        shammath::van_leer_slope(dqm.s2(), dqp.s2()),
-                        shammath::van_leer_slope(dqm.s3(), dqp.s3()),
-                        shammath::van_leer_slope(dqm.s4(), dqp.s4()),
-                        shammath::van_leer_slope(dqm.s5(), dqp.s5()),
-                        shammath::van_leer_slope(dqm.s6(), dqp.s6()),
-                        shammath::van_leer_slope(dqm.s7(), dqp.s7())};
-                });
-        });
+                        a_z[cell_gid] = Tscal8{
+                            shammath::van_leer_slope(dqm.s0(), dqp.s0()),
+                            shammath::van_leer_slope(dqm.s1(), dqp.s1()),
+                            shammath::van_leer_slope(dqm.s2(), dqp.s2()),
+                            shammath::van_leer_slope(dqm.s3(), dqp.s3()),
+                            shammath::van_leer_slope(dqm.s4(), dqp.s4()),
+                            shammath::van_leer_slope(dqm.s5(), dqp.s5()),
+                            shammath::van_leer_slope(dqm.s6(), dqp.s6()),
+                            shammath::van_leer_slope(dqm.s7(), dqp.s7())};
+                    });
+            });
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+            buf_Q.complete_event_state(e);
+            buf_Q_zm.complete_event_state(e);
+            buf_Q_zp.complete_event_state(e);
+            buf_a_z.complete_event_state(e);
+        }
 
         if (a_x.get_field(p.id_patch).has_nan()) {
             logger::err_ln("[Zeus]", "nan detected in a_x");
@@ -350,170 +397,209 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_face_cent
     u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
     u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
 
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
-        MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(p.id_patch);
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q = Q.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q = Q.get_buf_check(p.id_patch);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_xm = Q_xm.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_a_x  = a_x.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_a_xm = a_xm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_xm = Q_xm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_a_x  = a_x.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_a_xm = a_xm.get_buf_check(p.id_patch);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_ym = Q_ym.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_a_y  = a_y.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_a_ym = a_ym.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_ym = Q_ym.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_a_y  = a_y.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_a_ym = a_ym.get_buf_check(p.id_patch);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_zm = Q_zm.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_a_z  = a_z.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_a_zm = a_zm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_zm = Q_zm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_a_z  = a_z.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_a_zm = a_zm.get_buf_check(p.id_patch);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Qstar_x = Qstar_x.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Qstar_y = Qstar_y.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Qstar_z = Qstar_z.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Qstar_x = Qstar_x.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Qstar_y = Qstar_y.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Qstar_z = Qstar_z.get_buf_check(p.id_patch);
 
-        sycl::buffer<Tvec> &buf_vel = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+        sham::DeviceBuffer<Tvec> &buf_vel = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor Q{buf_Q, cgh, sycl::read_only};
-            sycl::accessor Q_xm{buf_Q_xm, cgh, sycl::read_only};
-            sycl::accessor a_x{buf_a_x, cgh, sycl::read_only};
-            sycl::accessor a_xm{buf_a_xm, cgh, sycl::read_only};
-            sycl::accessor Qstar_x{buf_Qstar_x, cgh, sycl::write_only, sycl::no_init};
+            auto Q       = buf_Q.get_read_access(depends_list);
+            auto Q_xm    = buf_Q_xm.get_read_access(depends_list);
+            auto a_x     = buf_a_x.get_read_access(depends_list);
+            auto a_xm    = buf_a_xm.get_read_access(depends_list);
+            auto Qstar_x = buf_Qstar_x.get_write_access(depends_list);
 
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
+            auto vel = buf_vel.get_read_access(depends_list);
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
-            Tscal dt              = dt_in;
-            bool enable_vanleer   = solver_config.use_van_leer;
-            Block::for_each_cells(
-                cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().x()
-                          * coord_conv_fact;
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
+                Tscal dt              = dt_in;
+                bool enable_vanleer   = solver_config.use_van_leer;
+                Block::for_each_cells(
+                    cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
+                        Tscal d_cell = (cell_max[block_id] - cell_min[block_id])
+                                           .template convert<Tscal>()
+                                           .x()
+                                       * coord_conv_fact;
 
-                    Tscal8 Qi  = Q[cell_gid];
-                    Tscal8 Qim = Q_xm[cell_gid];
-                    Tscal8 ai  = a_x[cell_gid];
-                    Tscal8 aim = a_xm[cell_gid];
-                    Tscal vx   = vel[cell_gid].x();
+                        Tscal8 Qi  = Q[cell_gid];
+                        Tscal8 Qim = Q_xm[cell_gid];
+                        Tscal8 ai  = a_x[cell_gid];
+                        Tscal8 aim = a_xm[cell_gid];
+                        Tscal vx   = vel[cell_gid].x();
 
-                    Tscal8 res;
+                        Tscal8 res;
 
-                    if (enable_vanleer) {
-                        if (vx >= 0) {
-                            res = Qim + 0.5 * (d_cell - vx * dt) * aim;
+                        if (enable_vanleer) {
+                            if (vx >= 0) {
+                                res = Qim + 0.5 * (d_cell - vx * dt) * aim;
+                            } else {
+                                res = Qi - 0.5 * (d_cell + vx * dt) * ai;
+                            }
                         } else {
-                            res = Qi - 0.5 * (d_cell + vx * dt) * ai;
+                            if (vx >= 0) {
+                                res = Qim;
+                            } else {
+                                res = Qi;
+                            }
                         }
-                    } else {
-                        if (vx >= 0) {
-                            res = Qim;
+
+                        Qstar_x[cell_gid] = res;
+                    });
+            });
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+            buf_Q.complete_event_state(e);
+            buf_Q_xm.complete_event_state(e);
+            buf_a_x.complete_event_state(e);
+            buf_a_xm.complete_event_state(e);
+            buf_Qstar_x.complete_event_state(e);
+            buf_vel.complete_event_state(e);
+        }
+
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
+
+            auto Q       = buf_Q.get_read_access(depends_list);
+            auto Q_ym    = buf_Q_ym.get_read_access(depends_list);
+            auto a_y     = buf_a_y.get_read_access(depends_list);
+            auto a_ym    = buf_a_ym.get_read_access(depends_list);
+            auto Qstar_y = buf_Qstar_y.get_write_access(depends_list);
+
+            auto vel = buf_vel.get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
+                Tscal dt              = dt_in;
+                bool enable_vanleer   = solver_config.use_van_leer;
+                Block::for_each_cells(
+                    cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
+                        Tscal d_cell = (cell_max[block_id] - cell_min[block_id])
+                                           .template convert<Tscal>()
+                                           .y()
+                                       * coord_conv_fact;
+
+                        Tscal8 Qi  = Q[cell_gid];
+                        Tscal8 Qim = Q_ym[cell_gid];
+                        Tscal8 ai  = a_y[cell_gid];
+                        Tscal8 aim = a_ym[cell_gid];
+                        Tscal vy   = vel[cell_gid].y();
+
+                        Tscal8 res;
+                        if (enable_vanleer) {
+                            if (vy >= 0) {
+                                res = Qim + aim * (d_cell - vy * dt) * 0.5;
+                            } else {
+                                res = Qi - ai * (d_cell + vy * dt) * 0.5;
+                            }
                         } else {
-                            res = Qi;
+                            if (vy >= 0) {
+                                res = Qim;
+                            } else {
+                                res = Qi;
+                            }
                         }
-                    }
 
-                    Qstar_x[cell_gid] = res;
-                });
-        });
+                        Qstar_y[cell_gid] = res;
+                    });
+            });
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+            buf_Q.complete_event_state(e);
+            buf_Q_ym.complete_event_state(e);
+            buf_a_y.complete_event_state(e);
+            buf_a_ym.complete_event_state(e);
+            buf_Qstar_y.complete_event_state(e);
+            buf_vel.complete_event_state(e);
+        }
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor Q{buf_Q, cgh, sycl::read_only};
-            sycl::accessor Q_ym{buf_Q_ym, cgh, sycl::read_only};
-            sycl::accessor a_y{buf_a_y, cgh, sycl::read_only};
-            sycl::accessor a_ym{buf_a_ym, cgh, sycl::read_only};
-            sycl::accessor Qstar_y{buf_Qstar_y, cgh, sycl::write_only, sycl::no_init};
+            auto Q       = buf_Q.get_read_access(depends_list);
+            auto Q_zm    = buf_Q_zm.get_read_access(depends_list);
+            auto a_z     = buf_a_z.get_read_access(depends_list);
+            auto a_zm    = buf_a_zm.get_read_access(depends_list);
+            auto Qstar_z = buf_Qstar_z.get_write_access(depends_list);
 
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
+            auto vel = buf_vel.get_read_access(depends_list);
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
-            Tscal dt              = dt_in;
-            bool enable_vanleer   = solver_config.use_van_leer;
-            Block::for_each_cells(
-                cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().y()
-                          * coord_conv_fact;
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
+                Tscal dt              = dt_in;
+                bool enable_vanleer   = solver_config.use_van_leer;
+                Block::for_each_cells(
+                    cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
+                        Tscal d_cell = (cell_max[block_id] - cell_min[block_id])
+                                           .template convert<Tscal>()
+                                           .z()
+                                       * coord_conv_fact;
 
-                    Tscal8 Qi  = Q[cell_gid];
-                    Tscal8 Qim = Q_ym[cell_gid];
-                    Tscal8 ai  = a_y[cell_gid];
-                    Tscal8 aim = a_ym[cell_gid];
-                    Tscal vy   = vel[cell_gid].y();
+                        Tscal8 Qi  = Q[cell_gid];
+                        Tscal8 Qim = Q_zm[cell_gid];
+                        Tscal8 ai  = a_z[cell_gid];
+                        Tscal8 aim = a_zm[cell_gid];
+                        Tscal vz   = vel[cell_gid].z();
 
-                    Tscal8 res;
-                    if (enable_vanleer) {
-                        if (vy >= 0) {
-                            res = Qim + aim * (d_cell - vy * dt) * 0.5;
+                        Tscal8 res;
+
+                        if (enable_vanleer) {
+                            if (vz >= 0) {
+                                res = Qim + aim * (d_cell - vz * dt) * 0.5;
+                            } else {
+                                res = Qi - ai * (d_cell + vz * dt) * 0.5;
+                            }
                         } else {
-                            res = Qi - ai * (d_cell + vy * dt) * 0.5;
+                            if (vz >= 0) {
+                                res = Qim;
+                            } else {
+                                res = Qi;
+                            }
                         }
-                    } else {
-                        if (vy >= 0) {
-                            res = Qim;
-                        } else {
-                            res = Qi;
-                        }
-                    }
 
-                    Qstar_y[cell_gid] = res;
-                });
-        });
+                        Qstar_z[cell_gid] = res;
+                    });
+            });
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
-
-            sycl::accessor Q{buf_Q, cgh, sycl::read_only};
-            sycl::accessor Q_zm{buf_Q_zm, cgh, sycl::read_only};
-            sycl::accessor a_z{buf_a_z, cgh, sycl::read_only};
-            sycl::accessor a_zm{buf_a_zm, cgh, sycl::read_only};
-            sycl::accessor Qstar_z{buf_Qstar_z, cgh, sycl::write_only, sycl::no_init};
-
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
-
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
-            Tscal dt              = dt_in;
-            bool enable_vanleer   = solver_config.use_van_leer;
-            Block::for_each_cells(
-                cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tscal d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>().z()
-                          * coord_conv_fact;
-
-                    Tscal8 Qi  = Q[cell_gid];
-                    Tscal8 Qim = Q_zm[cell_gid];
-                    Tscal8 ai  = a_z[cell_gid];
-                    Tscal8 aim = a_zm[cell_gid];
-                    Tscal vz   = vel[cell_gid].z();
-
-                    Tscal8 res;
-
-                    if (enable_vanleer) {
-                        if (vz >= 0) {
-                            res = Qim + aim * (d_cell - vz * dt) * 0.5;
-                        } else {
-                            res = Qi - ai * (d_cell + vz * dt) * 0.5;
-                        }
-                    } else {
-                        if (vz >= 0) {
-                            res = Qim;
-                        } else {
-                            res = Qi;
-                        }
-                    }
-
-                    Qstar_z[cell_gid] = res;
-                });
-        });
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+            buf_Q.complete_event_state(e);
+            buf_Q_zm.complete_event_state(e);
+            buf_a_z.complete_event_state(e);
+            buf_a_zm.complete_event_state(e);
+            buf_Qstar_z.complete_event_state(e);
+            buf_vel.complete_event_state(e);
+        }
     });
 }
 
@@ -584,124 +670,150 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_flux() {
     u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
     u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
 
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
-        MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(p.id_patch);
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Qstar_x = Qstar_x.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Qstar_y = Qstar_y.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Qstar_z = Qstar_z.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Qstar_x = Qstar_x.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Qstar_y = Qstar_y.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Qstar_z = Qstar_z.get_buf_check(p.id_patch);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Flux_x = Flux_x.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Flux_y = Flux_y.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Flux_z = Flux_z.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Flux_x = Flux_x.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Flux_y = Flux_y.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Flux_z = Flux_z.get_buf_check(p.id_patch);
 
-        sycl::buffer<Tvec> &buf_vel = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+        sham::DeviceBuffer<Tvec> &buf_vel = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor Qstar_x{buf_Qstar_x, cgh, sycl::read_only};
-            sycl::accessor Flux_x{buf_Flux_x, cgh, sycl::write_only, sycl::no_init};
+            auto Qstar_x = buf_Qstar_x.get_read_access(depends_list);
+            auto Flux_x  = buf_Flux_x.get_write_access(depends_list);
 
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
+            auto vel = buf_vel.get_read_access(depends_list);
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-            bool const_transp = solver_config.use_consistent_transport;
-            Block::for_each_cells(
-                cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tvec d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
-                          * coord_conv_fact;
+                bool const_transp = solver_config.use_consistent_transport;
+                Block::for_each_cells(
+                    cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
+                        Tvec d_cell
+                            = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                              * coord_conv_fact;
 
-                    Tscal8 Qstari = Qstar_x[cell_gid];
-                    Tscal vx      = vel[cell_gid].x();
+                        Tscal8 Qstari = Qstar_x[cell_gid];
+                        Tscal vx      = vel[cell_gid].x();
 
-                    // with consistent transport
-                    if (const_transp) {
-                        Qstari.s1() *= Qstari.s0();
-                        Qstari.s2() *= Qstari.s0();
-                        Qstari.s3() *= Qstari.s0();
-                        Qstari.s4() *= Qstari.s0();
-                        Qstari.s5() *= Qstari.s0();
-                        Qstari.s6() *= Qstari.s0();
-                        Qstari.s7() *= Qstari.s0();
-                    }
+                        // with consistent transport
+                        if (const_transp) {
+                            Qstari.s1() *= Qstari.s0();
+                            Qstari.s2() *= Qstari.s0();
+                            Qstari.s3() *= Qstari.s0();
+                            Qstari.s4() *= Qstari.s0();
+                            Qstari.s5() *= Qstari.s0();
+                            Qstari.s6() *= Qstari.s0();
+                            Qstari.s7() *= Qstari.s0();
+                        }
 
-                    Flux_x[cell_gid] = Qstari * (vx * d_cell.y() * d_cell.z());
-                });
-        });
+                        Flux_x[cell_gid] = Qstari * (vx * d_cell.y() * d_cell.z());
+                    });
+            });
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+            buf_Qstar_x.complete_event_state(e);
+            buf_Flux_x.complete_event_state(e);
+            buf_vel.complete_event_state(e);
+        }
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor Qstar_y{buf_Qstar_y, cgh, sycl::read_only};
-            sycl::accessor Flux_y{buf_Flux_y, cgh, sycl::write_only, sycl::no_init};
+            auto Qstar_y = buf_Qstar_y.get_read_access(depends_list);
+            auto Flux_y  = buf_Flux_y.get_write_access(depends_list);
 
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
+            auto vel = buf_vel.get_read_access(depends_list);
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-            bool const_transp = solver_config.use_consistent_transport;
-            Block::for_each_cells(
-                cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tvec d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
-                          * coord_conv_fact;
+                bool const_transp = solver_config.use_consistent_transport;
+                Block::for_each_cells(
+                    cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
+                        Tvec d_cell
+                            = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                              * coord_conv_fact;
 
-                    Tscal8 Qstari = Qstar_y[cell_gid];
-                    Tscal vy      = vel[cell_gid].y();
-                    // with consistent transport
-                    if (const_transp) {
-                        Qstari.s1() *= Qstari.s0();
-                        Qstari.s2() *= Qstari.s0();
-                        Qstari.s3() *= Qstari.s0();
-                        Qstari.s4() *= Qstari.s0();
-                        Qstari.s5() *= Qstari.s0();
-                        Qstari.s6() *= Qstari.s0();
-                        Qstari.s7() *= Qstari.s0();
-                    }
-                    Flux_y[cell_gid] = Qstari * (vy * d_cell.x() * d_cell.z());
-                });
-        });
+                        Tscal8 Qstari = Qstar_y[cell_gid];
+                        Tscal vy      = vel[cell_gid].y();
+                        // with consistent transport
+                        if (const_transp) {
+                            Qstari.s1() *= Qstari.s0();
+                            Qstari.s2() *= Qstari.s0();
+                            Qstari.s3() *= Qstari.s0();
+                            Qstari.s4() *= Qstari.s0();
+                            Qstari.s5() *= Qstari.s0();
+                            Qstari.s6() *= Qstari.s0();
+                            Qstari.s7() *= Qstari.s0();
+                        }
+                        Flux_y[cell_gid] = Qstari * (vy * d_cell.x() * d_cell.z());
+                    });
+            });
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+            buf_Qstar_y.complete_event_state(e);
+            buf_Flux_y.complete_event_state(e);
+            buf_vel.complete_event_state(e);
+        }
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        {
+            sham::EventList depends_list;
+            auto cell_min = buf_cell_min.get_read_access(depends_list);
+            auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor Qstar_z{buf_Qstar_z, cgh, sycl::read_only};
-            sycl::accessor Flux_z{buf_Flux_z, cgh, sycl::write_only, sycl::no_init};
+            auto Qstar_z = buf_Qstar_z.get_read_access(depends_list);
+            auto Flux_z  = buf_Flux_z.get_write_access(depends_list);
 
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
+            auto vel = buf_vel.get_read_access(depends_list);
 
-            Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
 
-            bool const_transp = solver_config.use_consistent_transport;
-            Block::for_each_cells(
-                cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
-                    Tvec d_cell
-                        = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
-                          * coord_conv_fact;
+                bool const_transp = solver_config.use_consistent_transport;
+                Block::for_each_cells(
+                    cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
+                        Tvec d_cell
+                            = (cell_max[block_id] - cell_min[block_id]).template convert<Tscal>()
+                              * coord_conv_fact;
 
-                    Tscal8 Qstari = Qstar_z[cell_gid];
-                    Tscal vz      = vel[cell_gid].z();
-                    // with consistent transport
-                    if (const_transp) {
-                        Qstari.s1() *= Qstari.s0();
-                        Qstari.s2() *= Qstari.s0();
-                        Qstari.s3() *= Qstari.s0();
-                        Qstari.s4() *= Qstari.s0();
-                        Qstari.s5() *= Qstari.s0();
-                        Qstari.s6() *= Qstari.s0();
-                        Qstari.s7() *= Qstari.s0();
-                    }
-                    Flux_z[cell_gid] = Qstari * (vz * d_cell.x() * d_cell.y());
-                });
-        });
+                        Tscal8 Qstari = Qstar_z[cell_gid];
+                        Tscal vz      = vel[cell_gid].z();
+                        // with consistent transport
+                        if (const_transp) {
+                            Qstari.s1() *= Qstari.s0();
+                            Qstari.s2() *= Qstari.s0();
+                            Qstari.s3() *= Qstari.s0();
+                            Qstari.s4() *= Qstari.s0();
+                            Qstari.s5() *= Qstari.s0();
+                            Qstari.s6() *= Qstari.s0();
+                            Qstari.s7() *= Qstari.s0();
+                        }
+                        Flux_z[cell_gid] = Qstari * (vz * d_cell.x() * d_cell.y());
+                    });
+            });
+            buf_cell_min.complete_event_state(e);
+            buf_cell_max.complete_event_state(e);
+            buf_Qstar_z.complete_event_state(e);
+            buf_Flux_z.complete_event_state(e);
+            buf_vel.complete_event_state(e);
+        }
     });
 
     storage.Qstar_x.reset();
@@ -756,31 +868,33 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::update_Q(Tscal dt
     ComputeField<Tscal8> &Flux_zp = storage.Flux_zp.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
-        MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(p.id_patch);
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q       = Q.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Flux_x  = Flux_x.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Flux_y  = Flux_y.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Flux_z  = Flux_z.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Flux_xp = Flux_xp.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Flux_yp = Flux_yp.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Flux_zp = Flux_zp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q       = Q.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Flux_x  = Flux_x.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Flux_y  = Flux_y.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Flux_z  = Flux_z.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Flux_xp = Flux_xp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Flux_yp = Flux_yp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Flux_zp = Flux_zp.get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor Q{buf_Q, cgh, sycl::read_write};
+        sham::EventList depends_list;
+        auto cell_min = buf_cell_min.get_read_access(depends_list);
+        auto cell_max = buf_cell_max.get_read_access(depends_list);
 
-            sycl::accessor Flux_x{buf_Flux_x, cgh, sycl::read_only};
-            sycl::accessor Flux_y{buf_Flux_y, cgh, sycl::read_only};
-            sycl::accessor Flux_z{buf_Flux_z, cgh, sycl::read_only};
-            sycl::accessor Flux_xp{buf_Flux_xp, cgh, sycl::read_only};
-            sycl::accessor Flux_yp{buf_Flux_yp, cgh, sycl::read_only};
-            sycl::accessor Flux_zp{buf_Flux_zp, cgh, sycl::read_only};
+        auto Q       = buf_Q.get_write_access(depends_list);
+        auto Flux_x  = buf_Flux_x.get_read_access(depends_list);
+        auto Flux_y  = buf_Flux_y.get_read_access(depends_list);
+        auto Flux_z  = buf_Flux_z.get_read_access(depends_list);
+        auto Flux_xp = buf_Flux_xp.get_read_access(depends_list);
+        auto Flux_yp = buf_Flux_yp.get_read_access(depends_list);
+        auto Flux_zp = buf_Flux_zp.get_read_access(depends_list);
 
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal _dt = dt;
 
             Tscal coord_conv_fact = solver_config.grid_coord_to_pos_fact / Block::Nside;
@@ -824,6 +938,15 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::update_Q(Tscal dt
                     Q[cell_gid] = Qtmp;
                 });
         });
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        buf_Q.complete_event_state(e);
+        buf_Flux_x.complete_event_state(e);
+        buf_Flux_y.complete_event_state(e);
+        buf_Flux_z.complete_event_state(e);
+        buf_Flux_xp.complete_event_state(e);
+        buf_Flux_yp.complete_event_state(e);
+        buf_Flux_zp.complete_event_state(e);
     });
 
     storage.Flux_x.reset();
@@ -867,25 +990,28 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_new_qte()
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<Tscal> &buf_rho  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-        sycl::buffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
-        sycl::buffer<Tvec> &buf_vel   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
+        sham::DeviceBuffer<Tscal> &buf_rho  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sham::DeviceBuffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sham::DeviceBuffer<Tvec> &buf_vel   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q    = Q.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_xm = Q_xm.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_ym = Q_ym.get_buf_check(p.id_patch);
-        sycl::buffer<sycl::vec<Tscal, 8>> &buf_Q_zm = Q_zm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q    = Q.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_xm = Q_xm.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_ym = Q_ym.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<sycl::vec<Tscal, 8>> &buf_Q_zm = Q_zm.get_buf_check(p.id_patch);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor Q{buf_Q, cgh, sycl::read_only};
-            sycl::accessor Q_xm{buf_Q_xm, cgh, sycl::read_only};
-            sycl::accessor Q_ym{buf_Q_ym, cgh, sycl::read_only};
-            sycl::accessor Q_zm{buf_Q_zm, cgh, sycl::read_only};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sycl::accessor rrho{buf_rho, cgh, sycl::write_only};
-            sycl::accessor reint{buf_eint, cgh, sycl::write_only};
-            sycl::accessor rvel{buf_vel, cgh, sycl::write_only};
+        sham::EventList depends_list;
+        auto Q    = buf_Q.get_read_access(depends_list);
+        auto Q_xm = buf_Q_xm.get_read_access(depends_list);
+        auto Q_ym = buf_Q_ym.get_read_access(depends_list);
+        auto Q_zm = buf_Q_zm.get_read_access(depends_list);
 
+        auto rrho  = buf_rho.get_write_access(depends_list);
+        auto reint = buf_eint.get_write_access(depends_list);
+        auto rvel  = buf_vel.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Block::for_each_cells(
                 cgh, mpdat.total_elements, "compite a_z", [=](u32 block_id, u32 cell_gid) {
                     Tscal8 Q_i_j_k   = Q[cell_gid];
@@ -906,6 +1032,15 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_new_qte()
                     rvel[cell_gid]  = {vx, vy, vz};
                 });
         });
+
+        buf_Q.complete_event_state(e);
+        buf_Q_xm.complete_event_state(e);
+        buf_Q_ym.complete_event_state(e);
+        buf_Q_zm.complete_event_state(e);
+
+        buf_rho.complete_event_state(e);
+        buf_eint.complete_event_state(e);
+        buf_vel.complete_event_state(e);
     });
 }
 

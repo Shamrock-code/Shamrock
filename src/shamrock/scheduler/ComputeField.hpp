@@ -42,15 +42,13 @@ namespace shamrock {
             });
         }
 
-        inline const std::unique_ptr<sycl::buffer<T>> &get_buf(u64 id_patch) {
+        inline sham::DeviceBuffer<T> &get_buf(u64 id_patch) {
             return field_data.get(id_patch).get_buf();
         }
 
         inline PatchDataField<T> &get_field(u64 id_patch) { return field_data.get(id_patch); }
 
-        inline sycl::buffer<T> &get_buf_check(u64 id) {
-            return shambase::get_check_ref(get_buf(id));
-        }
+        inline sham::DeviceBuffer<T> &get_buf_check(u64 id) { return get_buf(id); }
 
         inline T compute_rank_max() {
             StackEntry stack_loc{};
@@ -132,9 +130,9 @@ namespace shamrock {
 
                     if (pdat.get_obj_cnt() > 0) {
                         write_with_offset_into(
-                            shamsys::instance::get_compute_queue(),
+                            shamsys::instance::get_compute_scheduler().get_queue(),
                             get_check_ref(ret),
-                            get_check_ref(get_buf(id_patch)),
+                            get_buf(id_patch),
                             ptr,
                             pdat.get_obj_cnt() * nvar);
 

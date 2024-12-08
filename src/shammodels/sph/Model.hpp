@@ -182,17 +182,20 @@ namespace shammodels::sph {
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
                     {
-                        auto &buf = shambase::get_check_ref(f.get_buf());
-                        sycl::host_accessor acc{buf};
+                        auto &buf = f.get_buf();
+                        auto acc  = buf.copy_to_stdvec();
 
-                        auto &buf_xyz = shambase::get_check_ref(xyz.get_buf());
-                        sycl::host_accessor acc_xyz{buf_xyz};
+                        auto &buf_xyz = xyz.get_buf();
+                        auto acc_xyz  = buf_xyz.copy_to_stdvec();
 
                         for (u32 i = 0; i < f.size(); i++) {
                             Tvec r = acc_xyz[i];
 
                             acc[i] = pos_to_val(r);
                         }
+
+                        buf.copy_from_stdvec(acc);
+                        buf_xyz.copy_from_stdvec(acc_xyz);
                     }
                 });
         }
@@ -587,11 +590,11 @@ namespace shammodels::sph {
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
                     {
-                        auto &buf = shambase::get_check_ref(f.get_buf());
-                        sycl::host_accessor acc{buf};
+                        auto &buf = f.get_buf();
+                        auto acc  = buf.copy_to_stdvec();
 
-                        auto &buf_xyz = shambase::get_check_ref(xyz.get_buf());
-                        sycl::host_accessor acc_xyz{buf_xyz};
+                        auto &buf_xyz = xyz.get_buf();
+                        auto acc_xyz  = buf_xyz.copy_to_stdvec();
 
                         for (u32 i = 0; i < f.size(); i++) {
                             Tvec r = acc_xyz[i];
@@ -600,6 +603,9 @@ namespace shammodels::sph {
                                 acc[i] = val;
                             }
                         }
+
+                        buf.copy_from_stdvec(acc);
+                        buf_xyz.copy_from_stdvec(acc_xyz);
                     }
                 });
         }
@@ -618,11 +624,11 @@ namespace shammodels::sph {
 
                     Tscal r2 = radius * radius;
                     {
-                        auto &buf = shambase::get_check_ref(f.get_buf());
-                        sycl::host_accessor acc{buf};
+                        auto &buf = f.get_buf();
+                        auto acc  = buf.copy_to_stdvec();
 
-                        auto &buf_xyz = shambase::get_check_ref(xyz.get_buf());
-                        sycl::host_accessor acc_xyz{buf_xyz};
+                        auto &buf_xyz = xyz.get_buf();
+                        auto acc_xyz  = buf_xyz.copy_to_stdvec();
 
                         for (u32 i = 0; i < f.size(); i++) {
                             Tvec dr = acc_xyz[i] - center;
@@ -631,6 +637,9 @@ namespace shammodels::sph {
                                 acc[i] = val;
                             }
                         }
+
+                        buf.copy_from_stdvec(acc);
+                        buf_xyz.copy_from_stdvec(acc_xyz);
                     }
                 });
         }
@@ -648,11 +657,11 @@ namespace shammodels::sph {
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
                     {
-                        auto &buf = shambase::get_check_ref(f.get_buf());
-                        sycl::host_accessor acc{buf};
+                        auto &buf = f.get_buf();
+                        auto acc  = buf.copy_to_stdvec();
 
-                        auto &buf_xyz = shambase::get_check_ref(xyz.get_buf());
-                        sycl::host_accessor acc_xyz{buf_xyz};
+                        auto &buf_xyz = xyz.get_buf();
+                        auto acc_xyz  = buf_xyz.copy_to_stdvec();
 
                         for (u32 i = 0; i < f.size(); i++) {
                             Tvec dr = acc_xyz[i] - center;
@@ -661,6 +670,9 @@ namespace shammodels::sph {
 
                             acc[i] += val * Kernel::W_3d(r, h_ker);
                         }
+
+                        buf.copy_from_stdvec(acc);
+                        buf_xyz.copy_from_stdvec(acc_xyz);
                     }
                 });
         }

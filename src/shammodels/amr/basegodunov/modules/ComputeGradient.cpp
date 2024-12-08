@@ -205,12 +205,12 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
 
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::buffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
+        sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
 
         AMRGraph &graph_neigh_xp
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
@@ -225,25 +225,25 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
         AMRGraph &graph_neigh_zm
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
-        sycl::buffer<Tscal> &block_cell_sizes
+        sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sycl::buffer<Tvec> &cell0block_aabb_lower
+        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
             = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
 
-        q.submit([&](sycl::handler &cgh) {
+        sham::EventList depends_list;
+
+        auto acc_aabb_block_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto acc_aabb_cell_size   = block_cell_sizes.get_read_access(depends_list);
+        auto rho                  = buf_rho.get_read_access(depends_list);
+        auto grad_rho             = result.get_buf(id).get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
             AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
             AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
             AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
             AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
-            sycl::accessor acc_aabb_block_lower{cell0block_aabb_lower, cgh, sycl::read_only};
-            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
-
-            sycl::accessor rho{buf_rho, cgh, sycl::read_only};
-            sycl::accessor grad_rho{
-                shambase::get_check_ref(result.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
@@ -271,6 +271,11 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
                 grad_rho[cell_global_id] = {result[0], result[1], result[2]};
             });
         });
+
+        cell0block_aabb_lower.complete_event_state(e);
+        block_cell_sizes.complete_event_state(e);
+        buf_rho.complete_event_state(e);
+        result.get_buf(id).complete_event_state(e);
     });
 
     storage.grad_rho.set(std::move(result));
@@ -301,12 +306,12 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
 
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::buffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<Tvec> &buf_vel = shambase::get_check_ref(storage.vel.get().get_buf(id));
+        sham::DeviceBuffer<Tvec> &buf_vel = storage.vel.get().get_buf(id);
 
         AMRGraph &graph_neigh_xp
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
@@ -321,30 +326,27 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
         AMRGraph &graph_neigh_zm
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
-        sycl::buffer<Tscal> &block_cell_sizes
+        sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sycl::buffer<Tvec> &cell0block_aabb_lower
+        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
             = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
 
-        q.submit([&](sycl::handler &cgh) {
+        sham::EventList depends_list;
+
+        auto acc_aabb_block_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto acc_aabb_cell_size   = block_cell_sizes.get_read_access(depends_list);
+        auto vel                  = buf_vel.get_read_access(depends_list);
+        auto dx_vel               = resultx.get_buf(id).get_write_access(depends_list);
+        auto dy_vel               = resulty.get_buf(id).get_write_access(depends_list);
+        auto dz_vel               = resultz.get_buf(id).get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
             AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
             AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
             AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
             AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
-            sycl::accessor acc_aabb_block_lower{cell0block_aabb_lower, cgh, sycl::read_only};
-            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
-
-            sycl::accessor vel{buf_vel, cgh, sycl::read_only};
-
-            sycl::accessor dx_vel{
-                shambase::get_check_ref(resultx.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor dy_vel{
-                shambase::get_check_ref(resulty.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor dz_vel{
-                shambase::get_check_ref(resultz.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
@@ -376,6 +378,13 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
                 dz_vel[cell_global_id] = result[2];
             });
         });
+
+        cell0block_aabb_lower.complete_event_state(e);
+        block_cell_sizes.complete_event_state(e);
+        buf_vel.complete_event_state(e);
+        resultx.get_buf(id).complete_event_state(e);
+        resulty.get_buf(id).complete_event_state(e);
+        resultz.get_buf(id).complete_event_state(e);
     });
 
     storage.dx_v.set(std::move(resultx));
@@ -400,12 +409,12 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
 
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::buffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<Tscal> &buf_press = shambase::get_check_ref(storage.press.get().get_buf(id));
+        sham::DeviceBuffer<Tscal> &buf_press = storage.press.get().get_buf(id);
 
         AMRGraph &graph_neigh_xp
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
@@ -420,26 +429,25 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
         AMRGraph &graph_neigh_zm
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
-        sycl::buffer<Tscal> &block_cell_sizes
+        sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sycl::buffer<Tvec> &cell0block_aabb_lower
+        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
             = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
 
-        q.submit([&](sycl::handler &cgh) {
+        sham::EventList depends_list;
+
+        auto acc_aabb_block_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto acc_aabb_cell_size   = block_cell_sizes.get_read_access(depends_list);
+        auto press                = buf_press.get_read_access(depends_list);
+        auto grad_P               = result.get_buf(id).get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
             AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
             AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
             AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
             AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
-            sycl::accessor acc_aabb_block_lower{cell0block_aabb_lower, cgh, sycl::read_only};
-            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
-
-            sycl::accessor press{buf_press, cgh, sycl::read_only};
-
-            sycl::accessor grad_P{
-                shambase::get_check_ref(result.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
@@ -470,6 +478,11 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
                 grad_P[cell_global_id] = {result[0], result[1], result[2]};
             });
         });
+
+        cell0block_aabb_lower.complete_event_state(e);
+        block_cell_sizes.complete_event_state(e);
+        buf_press.complete_event_state(e);
+        result.get_buf(id).complete_event_state(e);
     });
 
     storage.grad_P.set(std::move(result));
@@ -548,12 +561,13 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
 
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::buffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<Tscal> &buf_rho_dust = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
+        sham::DeviceBuffer<Tscal> &buf_rho_dust
+            = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
 
         AMRGraph &graph_neigh_xp
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
@@ -568,25 +582,25 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
         AMRGraph &graph_neigh_zm
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
-        sycl::buffer<Tscal> &block_cell_sizes
+        sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sycl::buffer<Tvec> &cell0block_aabb_lower
+        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
             = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
 
-        q.submit([&](sycl::handler &cgh) {
+        sham::EventList depends_list;
+
+        auto acc_aabb_block_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto acc_aabb_cell_size   = block_cell_sizes.get_read_access(depends_list);
+        auto rho_dust             = buf_rho_dust.get_read_access(depends_list);
+        auto grad_rho_dust        = result.get_buf(id).get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
             AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
             AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
             AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
             AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
-            sycl::accessor acc_aabb_block_lower{cell0block_aabb_lower, cgh, sycl::read_only};
-            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
-
-            sycl::accessor rho_dust{buf_rho_dust, cgh, sycl::read_only};
-            sycl::accessor grad_rho_dust{
-                shambase::get_check_ref(result.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
             u32 nvar_dust  = ndust;
@@ -618,6 +632,11 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
                         = {result[0], result[1], result[2]};
                 });
         });
+
+        cell0block_aabb_lower.complete_event_state(e);
+        block_cell_sizes.complete_event_state(e);
+        buf_rho_dust.complete_event_state(e);
+        result.get_buf(id).complete_event_state(e);
     });
 
     storage.grad_rho_dust.set(std::move(result));
@@ -650,13 +669,12 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
 
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::buffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<Tvec> &buf_vel_dust
-            = shambase::get_check_ref(storage.vel_dust.get().get_buf(id));
+        sham::DeviceBuffer<Tvec> &buf_vel_dust = storage.vel_dust.get().get_buf(id);
 
         AMRGraph &graph_neigh_xp
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
@@ -671,30 +689,27 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
         AMRGraph &graph_neigh_zm
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
-        sycl::buffer<Tscal> &block_cell_sizes
+        sham::DeviceBuffer<Tscal> &block_cell_sizes
             = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sycl::buffer<Tvec> &cell0block_aabb_lower
+        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
             = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
 
-        q.submit([&](sycl::handler &cgh) {
+        sham::EventList depends_list;
+
+        auto acc_aabb_block_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto acc_aabb_cell_size   = block_cell_sizes.get_read_access(depends_list);
+        auto vel_dust             = buf_vel_dust.get_read_access(depends_list);
+        auto dx_vel_dust          = resultx.get_buf(id).get_write_access(depends_list);
+        auto dy_vel_dust          = resulty.get_buf(id).get_write_access(depends_list);
+        auto dz_vel_dust          = resultz.get_buf(id).get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
             AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
             AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
             AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
             AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
-            sycl::accessor acc_aabb_block_lower{cell0block_aabb_lower, cgh, sycl::read_only};
-            sycl::accessor acc_aabb_cell_size{block_cell_sizes, cgh, sycl::read_only};
-
-            sycl::accessor vel_dust{buf_vel_dust, cgh, sycl::read_only};
-
-            sycl::accessor dx_vel_dust{
-                shambase::get_check_ref(resultx.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor dy_vel_dust{
-                shambase::get_check_ref(resulty.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor dz_vel_dust{
-                shambase::get_check_ref(resultz.get_buf(id)), cgh, sycl::write_only, sycl::no_init};
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
@@ -728,6 +743,13 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
                     dz_vel_dust[cell_global_id * nvar_dust + ndust_off_loc] = result[2];
                 });
         });
+
+        cell0block_aabb_lower.complete_event_state(e);
+        block_cell_sizes.complete_event_state(e);
+        buf_vel_dust.complete_event_state(e);
+        resultx.get_buf(id).complete_event_state(e);
+        resulty.get_buf(id).complete_event_state(e);
+        resultz.get_buf(id).complete_event_state(e);
     });
 
     storage.dx_v_dust.set(std::move(resultx));

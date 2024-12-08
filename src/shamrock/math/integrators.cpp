@@ -28,49 +28,54 @@ namespace util  = shamrock::utilities;
 
 template<class flt, class T>
 void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<T> &buf_val,
-    sycl::buffer<T> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<T> &buf_val,
+    sham::DeviceBuffer<T> &buf_der,
     sycl::range<1> elem_range,
     flt dt) {
 
-    queue.submit([&](sycl::handler &cgh) {
-        sycl::accessor acc_u{buf_val, cgh, sycl::read_write};
-        sycl::accessor acc_du{buf_der, cgh, sycl::read_only};
+    sham::EventList depends_list;
 
+    auto acc_u  = buf_val.get_write_access(depends_list);
+    auto acc_du = buf_der.get_read_access(depends_list);
+
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
         cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
             u32 gid     = (u32) item.get_id();
             acc_u[item] = acc_u[item] + (dt) *acc_du[item];
         });
     });
+
+    buf_val.complete_event_state(e);
+    buf_der.complete_event_state(e);
 }
 
 #ifndef DOXYGEN
 template void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<f32_3> &buf_val,
-    sycl::buffer<f32_3> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32_3> &buf_val,
+    sham::DeviceBuffer<f32_3> &buf_der,
     sycl::range<1> elem_range,
     f32 dt);
 
 template void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<f32> &buf_val,
-    sycl::buffer<f32> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32> &buf_val,
+    sham::DeviceBuffer<f32> &buf_der,
     sycl::range<1> elem_range,
     f32 dt);
 
 template void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<f64_3> &buf_val,
-    sycl::buffer<f64_3> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64_3> &buf_val,
+    sham::DeviceBuffer<f64_3> &buf_der,
     sycl::range<1> elem_range,
     f64 dt);
 
 template void integ::forward_euler(
-    sycl::queue &queue,
-    sycl::buffer<f64> &buf_val,
-    sycl::buffer<f64> &buf_der,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64> &buf_val,
+    sham::DeviceBuffer<f64> &buf_der,
     sycl::range<1> elem_range,
     f64 dt);
 #endif
@@ -80,25 +85,22 @@ template void integ::forward_euler(
 
 template<class flt, class T>
 void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<T> &buf_val,
-    sycl::buffer<T> &buf_der,
-    sycl::buffer<T> &buf_der_old,
-    sycl::buffer<flt> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<T> &buf_val,
+    sham::DeviceBuffer<T> &buf_der,
+    sham::DeviceBuffer<T> &buf_der_old,
+    sham::DeviceBuffer<flt> &buf_eps_sq,
     sycl::range<1> elem_range,
     flt hdt) {
 
-    shambase::check_buffer_size(buf_val, elem_range.size());
-    shambase::check_buffer_size(buf_der, elem_range.size());
-    shambase::check_buffer_size(buf_der_old, elem_range.size());
-    shambase::check_buffer_size(buf_eps_sq, elem_range.size());
+    sham::EventList depends_list;
 
-    queue.submit([&](sycl::handler &cgh) {
-        sycl::accessor acc_u{buf_val, cgh, sycl::read_write};
-        sycl::accessor acc_du{buf_der, cgh, sycl::read_only};
-        sycl::accessor acc_du_old{buf_der_old, cgh, sycl::read_only};
-        sycl::accessor acc_epsilon_sq{buf_eps_sq, cgh, sycl::write_only, sycl::no_init};
+    auto acc_u          = buf_val.get_write_access(depends_list);
+    auto acc_du         = buf_der.get_read_access(depends_list);
+    auto acc_du_old     = buf_der_old.get_read_access(depends_list);
+    auto acc_epsilon_sq = buf_eps_sq.get_write_access(depends_list);
 
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
         cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
             u32 gid = (u32) item.get_id();
 
@@ -108,42 +110,47 @@ void integ::leapfrog_corrector(
             acc_epsilon_sq[item] = sycl::dot(incr, incr);
         });
     });
+
+    buf_val.complete_event_state(e);
+    buf_der.complete_event_state(e);
+    buf_der_old.complete_event_state(e);
+    buf_eps_sq.complete_event_state(e);
 }
 
 #ifndef DOXYGEN
 template void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<f32_3> &buf_val,
-    sycl::buffer<f32_3> &buf_der,
-    sycl::buffer<f32_3> &buf_der_old,
-    sycl::buffer<f32> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32_3> &buf_val,
+    sham::DeviceBuffer<f32_3> &buf_der,
+    sham::DeviceBuffer<f32_3> &buf_der_old,
+    sham::DeviceBuffer<f32> &buf_eps_sq,
     sycl::range<1> elem_range,
     f32 hdt);
 
 template void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<f32> &buf_val,
-    sycl::buffer<f32> &buf_der,
-    sycl::buffer<f32> &buf_der_old,
-    sycl::buffer<f32> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32> &buf_val,
+    sham::DeviceBuffer<f32> &buf_der,
+    sham::DeviceBuffer<f32> &buf_der_old,
+    sham::DeviceBuffer<f32> &buf_eps_sq,
     sycl::range<1> elem_range,
     f32 hdt);
 
 template void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<f64_3> &buf_val,
-    sycl::buffer<f64_3> &buf_der,
-    sycl::buffer<f64_3> &buf_der_old,
-    sycl::buffer<f64> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64_3> &buf_val,
+    sham::DeviceBuffer<f64_3> &buf_der,
+    sham::DeviceBuffer<f64_3> &buf_der_old,
+    sham::DeviceBuffer<f64> &buf_eps_sq,
     sycl::range<1> elem_range,
     f64 hdt);
 
 template void integ::leapfrog_corrector(
-    sycl::queue &queue,
-    sycl::buffer<f64> &buf_val,
-    sycl::buffer<f64> &buf_der,
-    sycl::buffer<f64> &buf_der_old,
-    sycl::buffer<f64> &buf_eps_sq,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64> &buf_val,
+    sham::DeviceBuffer<f64> &buf_der,
+    sham::DeviceBuffer<f64> &buf_der_old,
+    sham::DeviceBuffer<f64> &buf_eps_sq,
     sycl::range<1> elem_range,
     f64 hdt);
 #endif
@@ -153,11 +160,15 @@ template void integ::leapfrog_corrector(
 
 template<class T>
 void util::sycl_position_modulo(
-    sycl::queue &queue, sycl::buffer<T> &buf_xyz, sycl::range<1> elem_range, std::pair<T, T> box) {
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<T> &buf_xyz,
+    sycl::range<1> elem_range,
+    std::pair<T, T> box) {
 
-    queue.submit([&](sycl::handler &cgh) {
-        sycl::accessor xyz{buf_xyz, cgh, sycl::read_write};
+    sham::EventList depends_list;
+    auto xyz = buf_xyz.get_write_access(depends_list);
 
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
         T box_min = std::get<0>(box);
         T box_max = std::get<1>(box);
         T delt    = box_max - box_min;
@@ -175,18 +186,20 @@ void util::sycl_position_modulo(
             xyz[gid] = r;
         });
     });
+
+    buf_xyz.complete_event_state(e);
 }
 
 #ifndef DOXYGEN
 template void util::sycl_position_modulo(
-    sycl::queue &queue,
-    sycl::buffer<f32_3> &buf_xyz,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32_3> &buf_xyz,
     sycl::range<1> elem_range,
     std::pair<f32_3, f32_3> box);
 
 template void util::sycl_position_modulo(
-    sycl::queue &queue,
-    sycl::buffer<f64_3> &buf_xyz,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64_3> &buf_xyz,
     sycl::range<1> elem_range,
     std::pair<f64_3, f64_3> box);
 #endif
@@ -196,9 +209,9 @@ template void util::sycl_position_modulo(
 
 template<class T>
 void util::sycl_position_sheared_modulo(
-    sycl::queue &queue,
-    sycl::buffer<T> &buf_xyz,
-    sycl::buffer<T> &buf_vxyz,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<T> &buf_xyz,
+    sham::DeviceBuffer<T> &buf_vxyz,
     sycl::range<1> elem_range,
     std::pair<T, T> box,
     i32_3 shear_base,
@@ -206,69 +219,74 @@ void util::sycl_position_sheared_modulo(
     shambase::VecComponent<T> shear_value,
     shambase::VecComponent<T> shear_speed) {
 
-    queue.submit([&, shear_base, shear_value, shear_speed](sycl::handler &cgh) {
-        sycl::accessor xyz{buf_xyz, cgh, sycl::read_write};
-        sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_write};
+    sham::EventList depends_list;
+    auto xyz  = buf_xyz.get_write_access(depends_list);
+    auto vxyz = buf_vxyz.get_write_access(depends_list);
 
-        T box_min = std::get<0>(box);
-        T box_max = std::get<1>(box);
-        T delt    = box_max - box_min;
+    auto e
+        = queue.submit(depends_list, [&, shear_base, shear_value, shear_speed](sycl::handler &cgh) {
+              T box_min = std::get<0>(box);
+              T box_max = std::get<1>(box);
+              T delt    = box_max - box_min;
 
-        cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
-            u32 gid = (u32) item.get_id();
+              cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
+                  u32 gid = (u32) item.get_id();
 
-            T r = xyz[gid] - box_min;
+                  T r = xyz[gid] - box_min;
 
-            T roff = r / delt;
+                  T roff = r / delt;
 
-            // T dn = sycl::trunc(roff);
+                  // T dn = sycl::trunc(roff);
 
-            // auto d = sycl::dot(dn,shear_base.convert<shambase::VecComponent<T>>());
+                  // auto d = sycl::dot(dn,shear_base.convert<shambase::VecComponent<T>>());
 
-            //*
-            auto cnt_per = [](shambase::VecComponent<T> v) -> int {
-                return (v >= 0) ? int(v) : (int(v) - 1);
-            };
+                  //*
+                  auto cnt_per = [](shambase::VecComponent<T> v) -> int {
+                      return (v >= 0) ? int(v) : (int(v) - 1);
+                  };
 
-            i32 xoff = cnt_per(roff.x());
-            i32 yoff = cnt_per(roff.y());
-            i32 zoff = cnt_per(roff.z());
+                  i32 xoff = cnt_per(roff.x());
+                  i32 yoff = cnt_per(roff.y());
+                  i32 zoff = cnt_per(roff.z());
 
-            i32 dx = xoff * shear_base.x();
-            i32 dy = yoff * shear_base.y();
-            i32 dz = zoff * shear_base.z();
+                  i32 dx = xoff * shear_base.x();
+                  i32 dy = yoff * shear_base.y();
+                  i32 dz = zoff * shear_base.z();
 
-            i32 d = dx + dy + dz;
-            //*/
+                  i32 d = dx + dy + dz;
+                  //*/
 
-            T shift
-                = {(d * shear_dir.x()) * shear_value,
-                   (d * shear_dir.y()) * shear_value,
-                   (d * shear_dir.z()) * shear_value};
+                  T shift
+                      = {(d * shear_dir.x()) * shear_value,
+                         (d * shear_dir.y()) * shear_value,
+                         (d * shear_dir.z()) * shear_value};
 
-            T shift_speed
-                = {(d * shear_dir.x()) * shear_speed,
-                   (d * shear_dir.y()) * shear_speed,
-                   (d * shear_dir.z()) * shear_speed};
+                  T shift_speed
+                      = {(d * shear_dir.x()) * shear_speed,
+                         (d * shear_dir.y()) * shear_speed,
+                         (d * shear_dir.z()) * shear_speed};
 
-            vxyz[gid] -= shift_speed;
-            r -= shift;
+                  vxyz[gid] -= shift_speed;
+                  r -= shift;
 
-            r = sycl::fmod(r, delt);
-            r += delt;
-            r = sycl::fmod(r, delt);
-            r += box_min;
+                  r = sycl::fmod(r, delt);
+                  r += delt;
+                  r = sycl::fmod(r, delt);
+                  r += box_min;
 
-            xyz[gid] = r;
-        });
-    });
+                  xyz[gid] = r;
+              });
+          });
+
+    buf_xyz.complete_event_state(e);
+    buf_vxyz.complete_event_state(e);
 }
 
 #ifndef DOXYGEN
 template void util::sycl_position_sheared_modulo(
-    sycl::queue &queue,
-    sycl::buffer<f32_3> &buf_xyz,
-    sycl::buffer<f32_3> &buf_vxyz,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32_3> &buf_xyz,
+    sham::DeviceBuffer<f32_3> &buf_vxyz,
     sycl::range<1> elem_range,
     std::pair<f32_3, f32_3> box,
     i32_3 shear_base,
@@ -277,9 +295,9 @@ template void util::sycl_position_sheared_modulo(
     f32 shear_speed);
 
 template void util::sycl_position_sheared_modulo(
-    sycl::queue &queue,
-    sycl::buffer<f64_3> &buf_xyz,
-    sycl::buffer<f64_3> &buf_vxyz,
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64_3> &buf_xyz,
+    sham::DeviceBuffer<f64_3> &buf_vxyz,
     sycl::range<1> elem_range,
     std::pair<f64_3, f64_3> box,
     i32_3 shear_base,
@@ -292,12 +310,14 @@ template void util::sycl_position_sheared_modulo(
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class T>
-void util::swap_fields(sycl::queue &queue, sycl::buffer<T> &b1, sycl::buffer<T> &b2, u32 cnt) {
+void util::swap_fields(
+    sham::DeviceQueue &queue, sham::DeviceBuffer<T> &b1, sham::DeviceBuffer<T> &b2, u32 cnt) {
 
-    queue.submit([&](sycl::handler &cgh) {
-        sycl::accessor acc1{b1, cgh, sycl::read_write};
-        sycl::accessor acc2{b2, cgh, sycl::read_write};
+    sham::EventList depends_list;
+    auto acc1 = b1.get_write_access(depends_list);
+    auto acc2 = b2.get_write_access(depends_list);
 
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
         cgh.parallel_for(sycl::range<1>{cnt}, [=](sycl::item<1> item) {
             T v1 = acc1[item];
             T v2 = acc2[item];
@@ -306,20 +326,29 @@ void util::swap_fields(sycl::queue &queue, sycl::buffer<T> &b1, sycl::buffer<T> 
             acc2[item] = v1;
         });
     });
+
+    b1.complete_event_state(e);
+    b2.complete_event_state(e);
 }
 
 #ifndef DOXYGEN
-template void
-util::swap_fields(sycl::queue &queue, sycl::buffer<f32_3> &b1, sycl::buffer<f32_3> &b2, u32 cnt);
+template void util::swap_fields(
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f32_3> &b1,
+    sham::DeviceBuffer<f32_3> &b2,
+    u32 cnt);
 
-template void
-util::swap_fields(sycl::queue &queue, sycl::buffer<f32> &b1, sycl::buffer<f32> &b2, u32 cnt);
+template void util::swap_fields(
+    sham::DeviceQueue &queue, sham::DeviceBuffer<f32> &b1, sham::DeviceBuffer<f32> &b2, u32 cnt);
 
-template void
-util::swap_fields(sycl::queue &queue, sycl::buffer<f64_3> &b1, sycl::buffer<f64_3> &b2, u32 cnt);
+template void util::swap_fields(
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64_3> &b1,
+    sham::DeviceBuffer<f64_3> &b2,
+    u32 cnt);
 
-template void
-util::swap_fields(sycl::queue &queue, sycl::buffer<f64> &b1, sycl::buffer<f64> &b2, u32 cnt);
+template void util::swap_fields(
+    sham::DeviceQueue &queue, sham::DeviceBuffer<f64> &b1, sham::DeviceBuffer<f64> &b2, u32 cnt);
 #endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -21,6 +21,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shamalgs/serialize.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -68,17 +69,10 @@ class PatchDataField {
     using EnableIfVec = enable_if_t<is_in_type_list && (!isprimitive)>;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // constexpr parameters
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    constexpr static u32 min_capa  = 100;
-    constexpr static f32 safe_fact = 1.25;
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
     // member fields
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    shamalgs::ResizableBuffer<T> buf;
+    sham::DeviceBuffer<T> buf;
 
     std::string field_name;
 
@@ -109,25 +103,26 @@ class PatchDataField {
 
     inline PatchDataField(std::string name, u32 nvar)
         : field_name(std::move(name)), nvar(nvar), obj_cnt(0),
-          buf(shamsys::instance::get_compute_scheduler_ptr(), 0) {};
+          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {};
 
     inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
         : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt),
-          buf(shamsys::instance::get_compute_scheduler_ptr(), obj_cnt * nvar) {};
+          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {};
 
     inline PatchDataField(const PatchDataField &other)
-        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt), buf(other.buf) {}
+        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt),
+          buf(other.buf.copy()) {}
 
     inline PatchDataField(
-        shamalgs::ResizableBuffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
+        sham::DeviceBuffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
         : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(std::forward<shamalgs::ResizableBuffer<T>>(moved_buf)) {}
+          buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {}
 
     inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
         : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(shamsys::instance::get_compute_scheduler_ptr(),
-              std::forward<sycl::buffer<T>>(moved_buf),
-              obj_cnt * nvar) {}
+          buf(std::forward<sycl::buffer<T>>(moved_buf),
+              obj_cnt * nvar,
+              shamsys::instance::get_compute_scheduler_ptr()) {}
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
@@ -152,13 +147,13 @@ class PatchDataField {
         return std::make_unique<PatchDataField>(current);
     }
 
-    inline std::unique_ptr<sycl::buffer<T>> &get_buf() { return buf.get_buf_priviledge(); }
+    inline sham::DeviceBuffer<T> &get_buf() { return buf; }
 
-    [[nodiscard]] inline const u32 &size() const { return buf.size(); }
+    [[nodiscard]] inline u32 size() const { return buf.get_size(); }
 
     [[nodiscard]] inline bool is_empty() const { return size() == 0; }
 
-    [[nodiscard]] inline u64 memsize() const { return buf.memsize(); }
+    [[nodiscard]] inline u64 memsize() const { return buf.get_mem_usage(); }
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
@@ -189,6 +184,8 @@ class PatchDataField {
 
     void override(const T val);
 
+    inline void synchronize_buf() { buf.synchronize(); }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // get_subsets utilities
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -207,7 +204,7 @@ class PatchDataField {
         StackEntry stack_loc{};
         std::set<u32> idx_cd{};
         if (get_obj_cnt() > 0) {
-            sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
+            auto acc = get_buf().copy_to_stdvec();
 
             for (u32 i = 0; i < get_obj_cnt(); i++) {
                 if (cd_true(acc, i * nvar, args...)) {
@@ -233,7 +230,7 @@ class PatchDataField {
         StackEntry stack_loc{};
         std::vector<u32> idx_cd{};
         if (get_obj_cnt() > 0) {
-            sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
+            auto acc = buf.copy_to_stdvec();
 
             for (u32 i = 0; i < get_obj_cnt(); i++) {
                 if (cd_true(acc, i * nvar, args...)) {
@@ -264,8 +261,12 @@ class PatchDataField {
             // buffer of booleans to store result of the condition
             sycl::buffer<u32> mask(get_obj_cnt());
 
-            shamsys::instance::get_compute_queue().submit([&, args...](sycl::handler &cgh) {
-                sycl::accessor acc{shambase::get_check_ref(get_buf()), cgh, sycl::read_only};
+            sham::EventList depends_list;
+            const T *acc = buf.get_read_access(depends_list);
+
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            auto e = q.submit(depends_list, [&, args...](sycl::handler &cgh) {
                 sycl::accessor acc_mask{mask, cgh, sycl::write_only, sycl::no_init};
                 u32 nvar_field = nvar;
 
@@ -274,6 +275,8 @@ class PatchDataField {
                         acc_mask[id] = cd_true(acc, id * nvar_field, args...);
                     });
             });
+
+            buf.complete_event_state(e);
 
             return shamalgs::numeric::stream_compact(
                 shamsys::instance::get_compute_queue(), mask, get_obj_cnt());
@@ -346,7 +349,7 @@ class PatchDataField {
      * @param index_map
      * @param len the length of the map (must match with the current count)
      */
-    void index_remap(sycl::buffer<u32> &index_map, u32 len);
+    void index_remap(sham::DeviceBuffer<u32> &index_map, u32 len);
 
     /**
      * @brief this function remaps the patchdatafield like so
@@ -359,7 +362,7 @@ class PatchDataField {
      * @param index_map
      * @param len the length of the map
      */
-    void index_remap_resize(sycl::buffer<u32> &index_map, u32 len);
+    void index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len);
 
     /**
      * @brief minimal serialization
@@ -466,22 +469,26 @@ inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
 template<class T>
 inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
-    buf.overwrite(f2.buf, obj_cnt * f2.nvar);
+    StackEntry stack_loc{};
+    buf.copy_from(f2.buf, obj_cnt * f2.nvar);
 }
 
 template<class T>
 inline void PatchDataField<T>::override(sycl::buffer<T> &data, u32 cnt) {
-    buf.override(data, cnt);
+    StackEntry stack_loc{};
+    buf.copy_from_sycl_buffer(data, cnt);
 }
 
 template<class T>
 inline void PatchDataField<T>::override(std::vector<T> &data, u32 cnt) {
-    buf.override(data, cnt);
+    StackEntry stack_loc{};
+    buf.copy_from_stdvec(data, cnt);
 }
 
 template<class T>
 inline void PatchDataField<T>::override(const T val) {
-    buf.override(val);
+    StackEntry stack_loc{};
+    buf.fill(val);
 }
 
 template<class T>
@@ -517,7 +524,7 @@ PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) {
     */
 
     {
-        sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
+        auto acc = buf.copy_to_stdvec();
 
         for (u32 i = 0; i < size(); i++) {
             if (cd_true(acc[i], vmin, vmax)) {
@@ -567,7 +574,7 @@ PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::stri
 
     bool error = false;
     {
-        sycl::host_accessor acc{shambase::get_check_ref(get_buf())};
+        auto acc    = buf.copy_to_stdvec();
         u32 err_cnt = 0;
 
         for (u32 i = 0; i < size(); i++) {

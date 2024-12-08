@@ -22,6 +22,31 @@
 
 namespace sham::details {
 
+    void BufferEventHandler::filter_events() {
+
+        auto is_event_complete = [](const sycl::event &event) -> bool {
+            return (
+                event.get_info<sycl::info::event::command_execution_status>()
+                == sycl::info::event_command_status::complete);
+        };
+
+        auto filter_events = [&](std::vector<sycl::event> &events) -> std::vector<sycl::event> {
+            std::vector<sycl::event> ret;
+            for (auto &e : events) {
+                if (!is_event_complete(e)) {
+                    ret.emplace_back(std::move(e));
+                } else {
+                    // discard the event
+                }
+            }
+
+            return ret;
+        };
+
+        read_events  = filter_events(read_events);
+        write_events = filter_events(write_events);
+    }
+
     void BufferEventHandler::read_access(sham::EventList &depends_list, SourceLocation src_loc) {
 
         if (!up_to_date_events) {
@@ -35,6 +60,8 @@ namespace sham::details {
             shamcomm::logs::err_ln("Backends", err_msg);
             shambase::throw_with_loc<std::runtime_error>(err_msg);
         }
+
+        filter_events();
 
         up_to_date_events = false;
         last_access       = READ;
@@ -59,6 +86,8 @@ namespace sham::details {
             shambase::throw_with_loc<std::runtime_error>(err_msg);
         }
 
+        filter_events();
+
         up_to_date_events = false;
         last_access       = WRITE;
 
@@ -78,12 +107,17 @@ namespace sham::details {
 
     void BufferEventHandler::complete_state(
         const std::vector<sycl::event> &events, SourceLocation src_loc) {
+
+        StackEntry stack_loc{};
+
         if (up_to_date_events) {
             shambase::throw_with_loc<std::runtime_error>(
                 "the event state of that buffer is already complete"
                 "complete_state call location : "
                 + src_loc.format_one_line());
         }
+
+        filter_events();
 
         if (last_access == READ) {
 

@@ -15,7 +15,9 @@
  */
 
 #include "shammodels/amr/basegodunov/modules/AMRGridRefinementHandler.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/amr/basegodunov/modules/AMRSortBlocks.hpp"
+#include <stdexcept>
 
 template<class Tvec, class TgridVec>
 template<class UserAcc, class... T>
@@ -31,7 +33,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     u64 tot_derefine = 0;
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         u64 id_patch = cur_p.id_patch;
 
@@ -40,34 +42,45 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         sycl::buffer<u32> refine_flags(obj_cnt);
         sycl::buffer<u32> derefine_flags(obj_cnt);
+        {
+            sham::EventList depends_list;
 
-        // fill in the flags
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor refine_acc{refine_flags, cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor derefine_acc{derefine_flags, cgh, sycl::write_only, sycl::no_init};
+            UserAcc uacc(depends_list, id_patch, cur_p, pdat, args...);
 
-            UserAcc uacc(cgh, id_patch, cur_p, pdat, args...);
+            // fill in the flags
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                sycl::accessor refine_acc{refine_flags, cgh, sycl::write_only, sycl::no_init};
+                sycl::accessor derefine_acc{derefine_flags, cgh, sycl::write_only, sycl::no_init};
 
-            cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
-                bool flag_refine   = false;
-                bool flag_derefine = false;
-                uacc.refine_criterion(gid.get_linear_id(), uacc, flag_refine, flag_derefine);
+                cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
+                    bool flag_refine   = false;
+                    bool flag_derefine = false;
+                    uacc.refine_criterion(gid.get_linear_id(), uacc, flag_refine, flag_derefine);
 
-                // This is just a safe guard to avoid this nonsensicall case
-                if (flag_refine && flag_derefine) {
-                    flag_derefine = false;
-                }
+                    // This is just a safe guard to avoid this nonsensicall case
+                    if (flag_refine && flag_derefine) {
+                        flag_derefine = false;
+                    }
 
-                refine_acc[gid]   = (flag_refine) ? 1 : 0;
-                derefine_acc[gid] = (flag_derefine) ? 1 : 0;
+                    refine_acc[gid]   = (flag_refine) ? 1 : 0;
+                    derefine_acc[gid] = (flag_derefine) ? 1 : 0;
+                });
             });
-        });
+
+            sham::EventList resulting_events;
+            resulting_events.add_event(e);
+
+            uacc.finalize(resulting_events, id_patch, cur_p, pdat, args...);
+        }
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
+
+        sham::EventList depends_list;
+        auto acc_min = buf_cell_min.get_read_access(depends_list);
+        auto acc_max = buf_cell_max.get_read_access(depends_list);
 
         // keep only derefine flags on only if the eight cells want to merge and if they can
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor acc_min{*pdat.get_field<TgridVec>(0).get_buf(), cgh, sycl::read_only};
-            sycl::accessor acc_max{*pdat.get_field<TgridVec>(1).get_buf(), cgh, sycl::read_only};
-
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             sycl::accessor acc_merge_flag{derefine_flags, cgh, sycl::read_write};
 
             cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
@@ -96,12 +109,16 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             });
         });
 
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+
         ////////////////////////////////////////////////////////////////////////////////
         // refinement
         ////////////////////////////////////////////////////////////////////////////////
 
         // perform stream compactions on the refinement flags
-        auto [buf_refine, len_refine] = shamalgs::numeric::stream_compact(q, refine_flags, obj_cnt);
+        auto [buf_refine, len_refine]
+            = shamalgs::numeric::stream_compact(q.q, refine_flags, obj_cnt);
 
         logger::debug_ln("AMRGrid", "patch ", id_patch, "refine block count = ", len_refine);
 
@@ -116,7 +133,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         // perform stream compactions on the derefinement flags
         auto [buf_derefine, len_derefine]
-            = shamalgs::numeric::stream_compact(q, derefine_flags, obj_cnt);
+            = shamalgs::numeric::stream_compact(q.q, derefine_flags, obj_cnt);
 
         logger::debug_ln("AMRGrid", "patch ", id_patch, "merge block count = ", len_derefine);
 
@@ -140,7 +157,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     u64 sum_block_count = 0;
 
     scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         u32 old_obj_cnt = pdat.get_obj_cnt();
 
@@ -151,20 +168,21 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             // alloc memory for the new blocks to be created
             pdat.expand(refine_flags.count * (split_count - 1));
 
-            // Refine the block (set the positions) and fill the corresponding fields
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                sycl::accessor index_to_ref{*refine_flags.idx, cgh, sycl::read_only};
+            sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
+            sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
-                sycl::accessor block_bound_low{
-                    *pdat.get_field<TgridVec>(0).get_buf(), cgh, sycl::read_write};
-                sycl::accessor block_bound_high{
-                    *pdat.get_field<TgridVec>(1).get_buf(), cgh, sycl::read_write};
+            sham::EventList depends_list;
+            auto block_bound_low  = buf_cell_min.get_write_access(depends_list);
+            auto block_bound_high = buf_cell_max.get_write_access(depends_list);
+            UserAcc uacc(depends_list, pdat);
+
+            // Refine the block (set the positions) and fill the corresponding fields
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                sycl::accessor index_to_ref{*refine_flags.idx, cgh, sycl::read_only};
 
                 u32 start_index_push = old_obj_cnt;
 
                 constexpr u32 new_splits = split_count - 1;
-
-                UserAcc uacc(cgh, pdat);
 
                 cgh.parallel_for(sycl::range<1>(refine_flags.count), [=](sycl::item<1> gid) {
                     u32 tid = gid.get_linear_id();
@@ -201,6 +219,13 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     uacc.apply_refine(idx_to_refine, cur_block, blocks_ids, block_coords, uacc);
                 });
             });
+
+            sham::EventList resulting_events;
+
+            buf_cell_min.complete_event_state(resulting_events);
+            buf_cell_max.complete_event_state(resulting_events);
+
+            uacc.finalize(resulting_events, pdat);
         }
 
         sum_block_count += pdat.get_obj_cnt();
@@ -217,7 +242,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     using namespace shamrock::patch;
 
     scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         u32 old_obj_cnt = pdat.get_obj_cnt();
 
@@ -227,22 +252,23 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             // init flag table
             sycl::buffer<u32> keep_block_flag
-                = shamalgs::algorithm::gen_buffer_device(q, old_obj_cnt, [](u32 i) -> u32 {
+                = shamalgs::algorithm::gen_buffer_device(q.q, old_obj_cnt, [](u32 i) -> u32 {
                       return 1;
                   });
 
+            sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
+            sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
+
+            sham::EventList depends_list;
+            auto block_bound_low  = buf_cell_min.get_write_access(depends_list);
+            auto block_bound_high = buf_cell_max.get_write_access(depends_list);
+            UserAcc uacc(depends_list, pdat);
+
             // edit block content + make flag of blocks to keep
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 sycl::accessor index_to_deref{*derefine_flags.idx, cgh, sycl::read_only};
 
-                sycl::accessor block_bound_low{
-                    *pdat.get_field<TgridVec>(0).get_buf(), cgh, sycl::read_write};
-                sycl::accessor block_bound_high{
-                    *pdat.get_field<TgridVec>(1).get_buf(), cgh, sycl::read_write};
-
                 sycl::accessor flag_keep{keep_block_flag, cgh, sycl::read_write};
-
-                UserAcc uacc(cgh, pdat);
 
                 cgh.parallel_for(sycl::range<1>(derefine_flags.count), [=](sycl::item<1> gid) {
                     u32 tid = gid.get_linear_id();
@@ -283,9 +309,16 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 });
             });
 
+            sham::EventList resulting_events;
+
+            buf_cell_min.complete_event_state(resulting_events);
+            buf_cell_max.complete_event_state(resulting_events);
+
+            uacc.finalize(resulting_events, pdat);
+
             // stream compact the flags
-            auto [opt_buf, len] = shamalgs::numeric::stream_compact(
-                shamsys::instance::get_compute_queue(), keep_block_flag, old_obj_cnt);
+            auto [opt_buf, len]
+                = shamalgs::numeric::stream_compact(q.q, keep_block_flag, old_obj_cnt);
 
             logger::debug_ln(
                 "AMR Grid", "patch", id_patch, "derefine block count ", old_obj_cnt, "->", len);
@@ -333,11 +366,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
     class RefineCritBlock {
         public:
-        sycl::accessor<TgridVec, 1, sycl::access::mode::read, sycl::target::device> block_low_bound;
-        sycl::accessor<TgridVec, 1, sycl::access::mode::read, sycl::target::device>
-            block_high_bound;
-        sycl::accessor<Tscal, 1, sycl::access::mode::read, sycl::target::device>
-            block_density_field;
+        const TgridVec *block_low_bound;
+        const TgridVec *block_high_bound;
+        const Tscal *block_density_field;
 
         Tscal one_over_Nside = 1. / AMRBlock::Nside;
 
@@ -345,19 +376,38 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         Tscal wanted_mass;
 
         RefineCritBlock(
-            sycl::handler &cgh,
+            sham::EventList &depends_list,
             u64 id_patch,
             shamrock::patch::Patch p,
             shamrock::patch::PatchData &pdat,
             Tscal dxfact,
             Tscal wanted_mass)
-            : block_low_bound{*pdat.get_field<TgridVec>(0).get_buf(), cgh, sycl::read_only},
-              block_high_bound{*pdat.get_field<TgridVec>(1).get_buf(), cgh, sycl::read_only},
-              block_density_field{
-                  *pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("rho")).get_buf(),
-                  cgh,
-                  sycl::read_only},
-              dxfact(dxfact), wanted_mass(wanted_mass) {}
+            : dxfact(dxfact), wanted_mass(wanted_mass) {
+
+            block_low_bound  = pdat.get_field<TgridVec>(0).get_buf().get_read_access(depends_list);
+            block_high_bound = pdat.get_field<TgridVec>(1).get_buf().get_read_access(depends_list);
+            block_density_field = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("rho"))
+                                      .get_buf()
+                                      .get_read_access(depends_list);
+        }
+
+        void finalize(
+            sham::EventList &resulting_events,
+            u64 id_patch,
+            shamrock::patch::Patch p,
+            shamrock::patch::PatchData &pdat,
+            Tscal dxfact,
+            Tscal wanted_mass) {
+
+            sham::DeviceBuffer<i64_3> &buf_cell_low_bound  = pdat.get_field<i64_3>(0).get_buf();
+            sham::DeviceBuffer<i64_3> &buf_cell_high_bound = pdat.get_field<i64_3>(1).get_buf();
+
+            buf_cell_low_bound.complete_event_state(resulting_events);
+            buf_cell_high_bound.complete_event_state(resulting_events);
+            pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("rho"))
+                .get_buf()
+                .complete_event_state(resulting_events);
+        }
 
         void refine_criterion(
             u32 block_id, RefineCritBlock acc, bool &should_refine, bool &should_derefine) const {
@@ -395,14 +445,22 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
     class RefineCellAccessor {
         public:
-        sycl::accessor<f64, 1, sycl::access::mode::read_write, sycl::target::device> rho;
-        sycl::accessor<f64_3, 1, sycl::access::mode::read_write, sycl::target::device> rho_vel;
-        sycl::accessor<f64, 1, sycl::access::mode::read_write, sycl::target::device> rhoE;
+        f64 *rho;
+        f64_3 *rho_vel;
+        f64 *rhoE;
 
-        RefineCellAccessor(sycl::handler &cgh, shamrock::patch::PatchData &pdat)
-            : rho{*pdat.get_field<f64>(2).get_buf(), cgh, sycl::read_write},
-              rho_vel{*pdat.get_field<f64_3>(3).get_buf(), cgh, sycl::read_write},
-              rhoE{*pdat.get_field<f64>(4).get_buf(), cgh, sycl::read_write} {}
+        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchData &pdat) {
+
+            rho     = pdat.get_field<f64>(2).get_buf().get_write_access(depends_list);
+            rho_vel = pdat.get_field<f64_3>(3).get_buf().get_write_access(depends_list);
+            rhoE    = pdat.get_field<f64>(4).get_buf().get_write_access(depends_list);
+        }
+
+        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchData &pdat) {
+            pdat.get_field<f64>(2).get_buf().complete_event_state(resulting_events);
+            pdat.get_field<f64_3>(3).get_buf().complete_event_state(resulting_events);
+            pdat.get_field<f64>(4).get_buf().complete_event_state(resulting_events);
+        }
 
         void apply_refine(
             u32 cur_idx,

@@ -36,10 +36,10 @@ void shammodels::sph::modules::ParticleReordering<Tvec, Tmorton, SPHKernel>::reo
 
             shamrock::tree::TreeMortonCodes<Tmorton> builder;
             builder.build(
-                shamsys::instance::get_compute_queue(),
+                shamsys::instance::get_compute_scheduler_ptr(),
                 box,
                 obj_count,
-                shambase::get_check_ref(pos_field.get_buf()));
+                pos_field.get_buf());
 
             pdat.index_remap(shambase::get_check_ref(builder.buf_particle_index_map), obj_count);
         }

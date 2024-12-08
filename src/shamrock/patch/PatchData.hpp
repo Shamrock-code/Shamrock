@@ -205,6 +205,14 @@ namespace shamrock::patch {
 
         inline bool is_empty() { return get_obj_cnt() == 0; }
 
+        void synchronize_buf() {
+            for (auto &field_var : fields) {
+                field_var.visit([&](auto &field) {
+                    field.synchronize_buf();
+                });
+            }
+        }
+
         void overwrite(PatchData &pdat, u32 obj_cnt);
 
         template<class T>
@@ -241,14 +249,14 @@ namespace shamrock::patch {
         }
 
         template<class T>
-        sycl::buffer<T> &get_field_buf_ref(u32 idx) {
+        sham::DeviceBuffer<T> &get_field_buf_ref(u32 idx) {
 
             var_t &tmp = fields.at(idx);
 
             PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 
             if (pval) {
-                return shambase::get_check_ref(pval->get_buf());
+                return pval->get_buf();
             }
 
             throw shambase::make_except_with_loc<std::runtime_error>(
@@ -408,8 +416,8 @@ namespace shamrock::patch {
                     logger::debug_ln("PyShamrockCTX", "appending field", key);
 
                     if (!field.is_empty()) {
-                        sycl::host_accessor acc{shambase::get_check_ref(field.get_buf())};
-                        u32 len = field.size();
+                        auto acc = field.get_buf().copy_to_stdvec();
+                        u32 len  = field.size();
 
                         for (u32 i = 0; i < len; i++) {
                             vec.push_back(acc[i]);

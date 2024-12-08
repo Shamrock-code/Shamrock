@@ -38,6 +38,21 @@ namespace shamalgs::numeric {
     }
 
     template<class T>
+    sham::DeviceBuffer<T>
+    exclusive_sum(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len) {
+#ifdef __MACH__ // decoupled lookback perf on mac os is awfull
+        return details::exclusive_sum_fallback_usm(sched, buf1, len);
+#else
+    #ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
+        // SSCP does not compile decoupled lookback scan
+        return details::exclusive_sum_fallback_usm(sched, buf1, len);
+    #else
+        return details::exclusive_sum_atomic_decoupled_v5_usm<T, 512>(sched, buf1, len);
+    #endif
+#endif
+    }
+
+    template<class T>
     sycl::buffer<T> inclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
         return details::inclusive_sum_fallback(q, buf1, len);
     }
@@ -53,6 +68,8 @@ namespace shamalgs::numeric {
     }
 
     template sycl::buffer<u32> exclusive_sum(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sham::DeviceBuffer<u32>
+    exclusive_sum(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<u32> &buf1, u32 len);
     template sycl::buffer<u32> inclusive_sum(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     template void exclusive_sum_in_place(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);

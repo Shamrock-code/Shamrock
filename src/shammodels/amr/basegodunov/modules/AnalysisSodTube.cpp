@@ -62,18 +62,18 @@ auto shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>::compute_
         [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
             u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
-            sycl::buffer<TgridVec> &buf_block_min = pdat.get_field_buf_ref<TgridVec>(0);
-            sycl::buffer<TgridVec> &buf_block_max = pdat.get_field_buf_ref<TgridVec>(1);
-            sycl::buffer<Tscal> &buf_rho          = pdat.get_field_buf_ref<Tscal>(irho);
-            sycl::buffer<Tvec> &buf_rhov          = pdat.get_field_buf_ref<Tvec>(irhovel);
-            sycl::buffer<Tscal> &buf_rhoe         = pdat.get_field_buf_ref<Tscal>(irhoetot);
+            sham::DeviceBuffer<TgridVec> &buf_block_min = pdat.get_field_buf_ref<TgridVec>(0);
+            sham::DeviceBuffer<TgridVec> &buf_block_max = pdat.get_field_buf_ref<TgridVec>(1);
+            sham::DeviceBuffer<Tscal> &buf_rho          = pdat.get_field_buf_ref<Tscal>(irho);
+            sham::DeviceBuffer<Tvec> &buf_rhov          = pdat.get_field_buf_ref<Tvec>(irhovel);
+            sham::DeviceBuffer<Tscal> &buf_rhoe         = pdat.get_field_buf_ref<Tscal>(irhoetot);
 
             {
-                sycl::host_accessor acc_block_min{buf_block_min};
-                sycl::host_accessor acc_block_max{buf_block_max};
-                sycl::host_accessor acc_rho{buf_rho};
-                sycl::host_accessor acc_rhov{buf_rhov};
-                sycl::host_accessor acc_rhoe{buf_rhoe};
+                auto acc_block_min = buf_block_min.copy_to_stdvec();
+                auto acc_block_max = buf_block_max.copy_to_stdvec();
+                auto acc_rho       = buf_rho.copy_to_stdvec();
+                auto acc_rhov      = buf_rhov.copy_to_stdvec();
+                auto acc_rhoe      = buf_rhoe.copy_to_stdvec();
 
                 for (u32 i = 0; i < cell_count; i++) {
                     const u32 block_id    = i / AMRBlock::block_size;

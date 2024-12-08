@@ -16,6 +16,8 @@
  * @date 2023-08-02
  */
 
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 
@@ -45,6 +47,14 @@ class RadixTreeMortonBuilder {
         sycl::queue &queue,
         std::tuple<pos_t, pos_t> bounding_box,
         sycl::buffer<pos_t> &pos_buf,
+        u32 cnt_obj,
+        std::unique_ptr<sycl::buffer<morton_t>> &out_buf_morton,
+        std::unique_ptr<sycl::buffer<u32>> &out_buf_particle_index_map);
+
+    static void build(
+        sham::DeviceScheduler_ptr dev_sched,
+        std::tuple<pos_t, pos_t> bounding_box,
+        sham::DeviceBuffer<pos_t> &pos_buf,
         u32 cnt_obj,
         std::unique_ptr<sycl::buffer<morton_t>> &out_buf_morton,
         std::unique_ptr<sycl::buffer<u32>> &out_buf_particle_index_map);

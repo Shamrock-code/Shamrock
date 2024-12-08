@@ -49,22 +49,29 @@ void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
 
         PatchDataField<Tscal> &press = storage.pressure.get().get_field(p.id_patch);
 
-        sycl::buffer<Tscal> &buf_p    = pressure_field.get_buf_check(p.id_patch);
-        sycl::buffer<Tscal> &buf_rho  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
-        sycl::buffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
+        sham::DeviceBuffer<Tscal> &buf_p    = pressure_field.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_interf);
+        sham::DeviceBuffer<Tscal> &buf_eint = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-            sycl::accessor rho{buf_rho, cgh, sycl::read_only};
-            sycl::accessor eint{buf_eint, cgh, sycl::read_only};
-            sycl::accessor p{buf_p, cgh, sycl::write_only, sycl::no_init};
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+        sham::EventList depends_list;
+        auto rho      = buf_rho.get_read_access(depends_list);
+        auto eint     = buf_eint.get_read_access(depends_list);
+        auto pressure = buf_p.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal gamma = solver_config.eos_gamma;
 
             shambase::parralel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute pressure", [=](u64 id_a) {
-                    p[id_a] = (gamma - 1) /** rho[id_a]*/ * eint[id_a];
+                    pressure[id_a] = (gamma - 1) /** rho[id_a]*/ * eint[id_a];
                 });
         });
+
+        buf_rho.complete_event_state(e);
+        buf_eint.complete_event_state(e);
+        buf_p.complete_event_state(e);
     });
 }
 

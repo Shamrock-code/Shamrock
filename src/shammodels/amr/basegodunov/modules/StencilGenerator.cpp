@@ -113,14 +113,17 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
 
         sycl::buffer<amr::block::StencilElement> stencil_block_info(mpdat.total_elements);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        sham::EventList depends_list;
+
+        auto acc_cell_min = buf_cell_min.get_read_access(depends_list);
+        auto acc_cell_max = buf_cell_max.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shamrock::tree::ObjectIterator cell_looper(tree, cgh);
-
-            sycl::accessor acc_cell_min{buf_cell_min, cgh, sycl::read_only};
-            sycl::accessor acc_cell_max{buf_cell_max, cgh, sycl::read_only};
 
             sycl::accessor acc_stencil_info{
                 stencil_block_info, cgh, sycl::write_only, sycl::no_init};
@@ -133,11 +136,14 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
                         id_a,
                         relative_pos,
                         cell_looper,
-                        acc_cell_min.get_pointer(),
-                        acc_cell_max.get_pointer(),
+                        acc_cell_min,
+                        acc_cell_max,
                         acc_stencil_info.get_pointer());
                 });
         });
+
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
 
         block_stencil_element.add_obj(
             id, std::make_unique<sycl::buffer<amr::block::StencilElement>>(stencil_block_info));
@@ -175,20 +181,23 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
 
     sycl::buffer<amr::cell::StencilElement> ret(cell_count);
 
-    using MergedPDat                     = shamrock::MergedPatchData;
-    MergedPDat &mpdat                    = storage.merged_patchdata_ghost.get().get(patch_id);
-    sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-    sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+    using MergedPDat                           = shamrock::MergedPatchData;
+    MergedPDat &mpdat                          = storage.merged_patchdata_ghost.get().get(patch_id);
+    sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+    sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-    shambase::check_buffer_size(buf_cell_min, block_count);
-    shambase::check_buffer_size(buf_cell_max, block_count);
+    // shambase::check_buffer_size(buf_cell_min, block_count);
+    // shambase::check_buffer_size(buf_cell_max, block_count);
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    sham::EventList depends_list;
+
+    auto acc_block_min = buf_cell_min.get_read_access(depends_list);
+    auto acc_block_max = buf_cell_max.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         sycl::accessor acc_stencil_block{block_stencil_el, cgh, sycl::read_only};
         sycl::accessor acc_stencil_cell{ret, cgh, sycl::write_only, sycl::no_init};
-
-        sycl::accessor acc_block_min{buf_cell_min, cgh, sycl::read_only};
-        sycl::accessor acc_block_max{buf_cell_max, cgh, sycl::read_only};
 
         shambase::parralel_for(cgh, cell_count, "block stencil to cell lowering", [=](u64 gid) {
             u32 cell_global_id = (u32) gid;
@@ -287,6 +296,9 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
             acc_stencil_cell[cell_global_id] = ret;
         });
     });
+
+    buf_cell_min.complete_event_state(e);
+    buf_cell_max.complete_event_state(e);
 
     return ret;
 }

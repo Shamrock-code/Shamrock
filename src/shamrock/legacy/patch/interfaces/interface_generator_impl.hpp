@@ -62,11 +62,14 @@ namespace impl {
 
             PatchDataField<f32_3> &pos_field = pdat.get_field<f32_3>(field_ipos);
 
-            const auto &pos_s_buf = pos_field.get_buf();
+            auto sptr       = shamsys::instance::get_compute_scheduler_ptr();
+            auto &q         = sptr->get_queue();
+            auto &pos_s_buf = pos_field.get_buf();
 
-            queue.submit([&](sycl::handler &cgh) {
-                auto pos_s = pos_s_buf->get_access<sycl::access::mode::read>(cgh);
+            sham::EventList depends_list;
+            const f32_3 *pos_s = pos_s_buf.get_read_access(depends_list);
 
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 auto bmin = bmin_buf.get_access<sycl::access::mode::read>(cgh);
                 auto bmax = bmax_buf.get_access<sycl::access::mode::read>(cgh);
 
@@ -88,6 +91,8 @@ namespace impl {
                     }
                 });
             });
+
+            pos_s_buf.complete_event_state(e);
         }
 
         return flag_choice;
@@ -121,11 +126,14 @@ namespace impl {
 
             PatchDataField<f64_3> &pos_field = pdat.get_field<f64_3>(field_ipos);
 
+            auto sptr       = shamsys::instance::get_compute_scheduler_ptr();
+            auto &q         = sptr->get_queue();
             auto &pos_d_buf = pos_field.get_buf();
 
-            queue.submit([&](sycl::handler &cgh) {
-                auto pos_d = pos_d_buf->get_access<sycl::access::mode::read>(cgh);
+            sham::EventList depends_list;
+            const f64_3 *pos_d = pos_d_buf.get_read_access(depends_list);
 
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 auto bmin = bmin_buf.get_access<sycl::access::mode::read>(cgh);
                 auto bmax = bmax_buf.get_access<sycl::access::mode::read>(cgh);
 
@@ -146,6 +154,8 @@ namespace impl {
                     }
                 });
             });
+
+            pos_d_buf.complete_event_state(e);
         }
 
         return flag_choice;

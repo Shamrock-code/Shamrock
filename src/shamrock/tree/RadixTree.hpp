@@ -102,9 +102,7 @@ class RadixTree {
     }
 
     RadixTreeField<coord_t> compute_int_boxes(
-        sycl::queue &queue,
-        const std::unique_ptr<sycl::buffer<coord_t>> &int_rad_buf,
-        coord_t tolerance);
+        sycl::queue &queue, sham::DeviceBuffer<coord_t> &int_rad_buf, coord_t tolerance);
 
     void compute_cell_ibounding_box(sycl::queue &queue);
     void convert_bounding_box(sycl::queue &queue);
@@ -130,6 +128,13 @@ class RadixTree {
         sycl::queue &queue,
         std::tuple<Tvec, Tvec> treebox,
         sycl::buffer<Tvec> &pos_buf,
+        u32 cnt_obj,
+        u32 reduc_level);
+
+    RadixTree(
+        sham::DeviceScheduler_ptr dev_sched,
+        std::tuple<Tvec, Tvec> treebox,
+        sham::DeviceBuffer<Tvec> &pos_buf,
         u32 cnt_obj,
         u32 reduc_level);
 

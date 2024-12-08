@@ -24,6 +24,9 @@ class fill_trailling_buf;
 template<class morton_t, class pos_t, u32 dim>
 class pos_to_morton;
 
+template<class morton_t, class pos_t, u32 dim>
+class pos_to_morton_usm;
+
 template<class morton_t, class _pos_t, u32 dim>
 class irange_to_range;
 
@@ -98,6 +101,41 @@ namespace shamrock::sfc {
         }
 
         );
+    }
+
+    template<class morton_t, class _pos_t, u32 dim>
+    void MortonKernels<morton_t, _pos_t, dim>::sycl_xyz_to_morton(
+        sham::DeviceScheduler_ptr dev_sched,
+        u32 pos_count,
+        sham::DeviceBuffer<pos_t> &in_positions,
+        pos_t bounding_box_min,
+        pos_t bounding_box_max,
+        std::unique_ptr<sycl::buffer<morton_t>> &out_morton) {
+
+        logger::debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
+
+        sycl::range<1> range_cnt{pos_count};
+
+        auto q = dev_sched->get_queue();
+
+        sham::EventList el;
+        auto r = in_positions.get_read_access(el);
+
+        auto e = q.submit(el, [&](sycl::handler &cgh) {
+            auto transf = get_transform(bounding_box_min, bounding_box_max);
+
+            sycl::accessor m{*out_morton, cgh, sycl::write_only, sycl::no_init};
+
+            cgh.parallel_for<pos_to_morton_usm<morton_t, pos_t, dim>>(
+                range_cnt, [=](sycl::item<1> item) {
+                    int i = (int) item.get_id(0);
+
+                    ipos_t mr = to_morton_grid(r[i], transf);
+                    m[i]      = Morton::icoord_to_morton(mr.x(), mr.y(), mr.z());
+                });
+        });
+
+        in_positions.complete_event_state(e);
     }
 
     template<class morton_t, class _pos_t, u32 dim>

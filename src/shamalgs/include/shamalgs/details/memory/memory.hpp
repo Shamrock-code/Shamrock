@@ -17,6 +17,7 @@
  */
 
 #include "shambase/string.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/typeAliasVec.hpp"
@@ -35,6 +36,25 @@ namespace shamalgs::memory {
      */
     template<class T>
     T extract_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx);
+
+    template<class T>
+    T extract_element(sham::DeviceQueue &q, sham::DeviceBuffer<T> &buf, u32 idx) {
+        T val;
+
+        sham::EventList depends_list;
+        auto acc = buf.get_read_access(depends_list);
+
+        T *dest = &val;
+
+        q.submit(depends_list, [&, idx](sycl::handler &cgh) {
+             cgh.copy(acc + idx, dest, 1);
+         }).wait_and_throw();
+        ;
+
+        buf.complete_event_state(sycl::event{});
+
+        return val;
+    }
 
     template<class T>
     void
@@ -225,6 +245,51 @@ namespace shamalgs::memory {
                 dest[item.get_id(0) + off] = source[item];
             });
         });
+    }
+
+    template<class T>
+    void write_with_offset_into(
+        sham::DeviceQueue &q,
+        sham::DeviceBuffer<T> &buf_ctn,
+        sham::DeviceBuffer<T> &buf_in,
+        u32 offset,
+        u32 element_count) {
+
+        sham::EventList depends_list;
+        auto source = buf_in.get_read_access(depends_list);
+        auto dest   = buf_ctn.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            u32 off = offset;
+            cgh.parallel_for(sycl::range{element_count}, [=](sycl::item<1> item) {
+                dest[item.get_id(0) + off] = source[item];
+            });
+        });
+
+        buf_in.complete_event_state(e);
+        buf_ctn.complete_event_state(e);
+    }
+
+    template<class T>
+    void write_with_offset_into(
+        sham::DeviceQueue &q,
+        sycl::buffer<T> &buf_ctn,
+        sham::DeviceBuffer<T> &buf_in,
+        u32 offset,
+        u32 element_count) {
+
+        sham::EventList depends_list;
+        auto source = buf_in.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            sycl::accessor dest{buf_ctn, cgh, sycl::write_only, sycl::no_init};
+            u32 off = offset;
+            cgh.parallel_for(sycl::range{element_count}, [=](sycl::item<1> item) {
+                dest[item.get_id(0) + off] = source[item];
+            });
+        });
+
+        buf_in.complete_event_state(e);
     }
 
     template<class T>

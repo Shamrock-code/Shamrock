@@ -16,12 +16,18 @@
  *
  */
 
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 
 namespace shamalgs::numeric::details {
 
     template<class T>
     sycl::buffer<T> exclusive_sum_fallback(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
+
+    template<class T>
+    sham::DeviceBuffer<T> exclusive_sum_fallback_usm(
+        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 len);
 
     template<class T>
     sycl::buffer<T> inclusive_sum_fallback(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);

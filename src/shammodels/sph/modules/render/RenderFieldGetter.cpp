@@ -32,19 +32,19 @@ namespace shammodels::sph::modules {
 
                 scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
                     logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
-                    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                        sycl::accessor acc_h{
-                            shambase::get_check_ref(
-                                pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart"))
-                                    .get_buf()),
-                            cgh,
-                            sycl::read_only};
 
-                        sycl::accessor acc_rho{
-                            shambase::get_check_ref(density.get_buf(p.id_patch)),
-                            cgh,
-                            sycl::write_only,
-                            sycl::no_init};
+                    auto &buf_h
+                        = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf();
+                    auto &buf_rho = density.get_buf(p.id_patch);
+
+                    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+                    sham::EventList depends_list;
+
+                    auto acc_h   = buf_h.get_read_access(depends_list);
+                    auto acc_rho = buf_rho.get_write_access(depends_list);
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         const Tscal part_mass = solver_config.gpart_mass;
 
                         cgh.parallel_for(
@@ -55,11 +55,14 @@ namespace shammodels::sph::modules {
                                 acc_rho[gid] = rho_ha;
                             });
                     });
+
+                    buf_h.complete_event_state(e);
+                    buf_rho.complete_event_state(e);
                 });
 
                 auto field_source_getter
-                    = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat)
-                    -> const std::unique_ptr<sycl::buffer<Tfield>> & {
+                    = [&](const shamrock::patch::Patch cur_p,
+                          shamrock::patch::PatchData &pdat) -> const sham::DeviceBuffer<Tfield> & {
                     return density.get_buf(cur_p.id_patch);
                 };
 
@@ -67,9 +70,9 @@ namespace shammodels::sph::modules {
             }
         }
 
-        auto field_source_getter =
-            [&](const shamrock::patch::Patch cur_p,
-                shamrock::patch::PatchData &pdat) -> const std::unique_ptr<sycl::buffer<Tfield>> & {
+        auto field_source_getter
+            = [&](const shamrock::patch::Patch cur_p,
+                  shamrock::patch::PatchData &pdat) -> const sham::DeviceBuffer<Tfield> & {
             return pdat.get_field<Tfield>(pdat.pdl.get_field_idx<Tfield>(field_name)).get_buf();
         };
 

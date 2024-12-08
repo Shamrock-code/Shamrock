@@ -16,7 +16,6 @@
 
 #include "nbody_selfgrav.hpp"
 #include "shammath/symtensor_collections.hpp"
-#include "shammodels/generic/algs/integrators_utils.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/utility/full_tree_field.hpp"
@@ -46,45 +45,48 @@ void models::nbody::Nbody_SelfGrav<flt>::init() {}
 
 template<class flt, class vec3>
 void sycl_move_parts(
-    sycl::queue &queue,
+    sham::DeviceQueue &queue,
     u32 npart,
     flt dt,
-    const std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
-    const std::unique_ptr<sycl::buffer<vec3>> &buf_vxyz) {
+    sham::DeviceBuffer<vec3> &buf_xyz,
+    sham::DeviceBuffer<vec3> &buf_vxyz) {
 
     using namespace shamrock::patch;
 
     sycl::range<1> range_npart{npart};
 
-    auto ker_predict_step = [&](sycl::handler &cgh) {
-        auto acc_xyz  = buf_xyz->template get_access<sycl::access::mode::read_write>(cgh);
-        auto acc_vxyz = buf_vxyz->template get_access<sycl::access::mode::read_write>(cgh);
+    sham::EventList depends_list;
+    auto acc_xyz  = buf_xyz.get_write_access(depends_list);
+    auto acc_vxyz = buf_vxyz.get_read_access(depends_list);
 
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
         // Executing kernel
         cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
             u32 gid = (u32) item.get_id();
 
-            vec3 &vxyz = acc_vxyz[item];
+            vec3 vxyz = acc_vxyz[item];
 
             acc_xyz[item] = acc_xyz[item] + dt * vxyz;
         });
-    };
+    });
 
-    queue.submit(ker_predict_step);
+    buf_xyz.complete_event_state(e);
+    buf_vxyz.complete_event_state(e);
 }
 
 template<class vec3>
 void sycl_position_modulo(
-    sycl::queue &queue,
+    sham::DeviceQueue &queue,
     u32 npart,
-    const std::unique_ptr<sycl::buffer<vec3>> &buf_xyz,
+    sham::DeviceBuffer<vec3> &buf_xyz,
     std::tuple<vec3, vec3> box) {
 
     sycl::range<1> range_npart{npart};
 
-    auto ker_predict_step = [&](sycl::handler &cgh) {
-        auto xyz = buf_xyz->template get_access<sycl::access::mode::read_write>(cgh);
+    sham::EventList depends_list;
+    auto xyz = buf_xyz.get_write_access(depends_list);
 
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
         vec3 box_min = std::get<0>(box);
         vec3 box_max = std::get<1>(box);
         vec3 delt    = box_max - box_min;
@@ -102,9 +104,9 @@ void sycl_position_modulo(
 
             xyz[gid] = r;
         });
-    };
+    });
 
-    queue.submit(ker_predict_step);
+    buf_xyz.complete_event_state(e);
 }
 
 template<class flt>
@@ -177,7 +179,10 @@ class FMMInteract_cd {
 
 template<class Tree, class vec, class flt>
 void compute_multipoles(
-    Tree &rtree, sycl::buffer<vec> &pos_part, sycl::buffer<flt> &grav_multipoles, flt gpart_mass) {
+    Tree &rtree,
+    sham::DeviceBuffer<vec> &pos_part,
+    sycl::buffer<flt> &grav_multipoles,
+    flt gpart_mass) {
 
     using namespace shammath;
 
@@ -186,10 +191,15 @@ void compute_multipoles(
         "computing leaf moments (",
         rtree.tree_reduced_morton_codes.tree_leaf_count,
         ")");
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+
+    sham::DeviceQueue &queue = shamsys::instance::get_compute_scheduler().get_queue();
+
+    sham::EventList depends_list;
+    auto xyz = pos_part.get_read_access(depends_list);
+
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
         u32 offset_leaf = rtree.tree_struct.internal_cell_count;
 
-        auto xyz               = sycl::accessor{pos_part, cgh, sycl::read_only};
         auto cell_particle_ids = sycl::accessor{
             *rtree.tree_reduced_morton_codes.buf_reduc_index_map, cgh, sycl::read_only};
         auto particle_index_map
@@ -234,6 +244,8 @@ void compute_multipoles(
                 (gid + offset_leaf) * SymTensorCollection<flt, 0, fmm_order>::num_component);
         });
     });
+
+    pos_part.complete_event_state(e);
 
     auto buf_is_computed = std::make_unique<sycl::buffer<u8>>(
         (rtree.tree_struct.internal_cell_count + rtree.tree_reduced_morton_codes.tree_leaf_count));
@@ -318,6 +330,34 @@ void compute_multipoles(
     }
 }
 
+template<class T, class flt>
+inline void field_advance_time(
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<T> &buf_val,
+    sham::DeviceBuffer<T> &buf_der,
+    sycl::range<1> elem_range,
+    flt dt) {
+
+    sham::EventList depends_list;
+
+    auto acc_u  = buf_val.get_write_access(depends_list);
+    auto acc_du = buf_der.get_read_access(depends_list);
+
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
+        // Executing kernel
+        cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
+            u32 gid = (u32) item.get_id();
+
+            T du = acc_du[item];
+
+            acc_u[item] = acc_u[item] + (dt) * (du);
+        });
+    });
+
+    buf_val.complete_event_state(e);
+    buf_der.complete_event_state(e);
+}
+
 template<class flt>
 f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
     PatchScheduler &sched, f64 old_time, f64 target_time) {
@@ -342,48 +382,49 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
     // PatchComputeField<f32> pressure_field;
 
     auto lambda_update_time
-        = [&](sycl::queue &queue, PatchData &pdat, sycl::range<1> range_npart, flt hdt) {
-              sycl::buffer<vec3> &vxyz = *pdat.get_field<vec3>(ivxyz).get_buf();
-              sycl::buffer<vec3> &axyz = *pdat.get_field<vec3>(iaxyz).get_buf();
+        = [&](sham::DeviceQueue &queue, PatchData &pdat, sycl::range<1> range_npart, flt hdt) {
+              sham::DeviceBuffer<vec3> &vxyz = pdat.get_field<vec3>(ivxyz).get_buf();
+              sham::DeviceBuffer<vec3> &axyz = pdat.get_field<vec3>(iaxyz).get_buf();
 
               field_advance_time(queue, vxyz, axyz, range_npart, hdt);
           };
 
-    auto lambda_swap_der = [&](sycl::queue &queue, PatchData &pdat, sycl::range<1> range_npart) {
-        auto ker_predict_step = [&](sycl::handler &cgh) {
-            auto acc_axyz = pdat.get_field<vec3>(iaxyz)
-                                .get_buf()
-                                ->template get_access<sycl::access::mode::read_write>(cgh);
-            auto acc_axyz_old = pdat.get_field<vec3>(iaxyz_old)
-                                    .get_buf()
-                                    ->template get_access<sycl::access::mode::read_write>(cgh);
+    auto lambda_swap_der
+        = [&](sham::DeviceQueue &queue, PatchData &pdat, sycl::range<1> range_npart) {
+              sham::EventList depends_list;
 
-            // Executing kernel
-            cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
-                vec3 axyz     = acc_axyz[item];
-                vec3 axyz_old = acc_axyz_old[item];
+              auto acc_axyz = pdat.get_field<vec3>(iaxyz).get_buf().get_write_access(depends_list);
+              auto acc_axyz_old
+                  = pdat.get_field<vec3>(iaxyz_old).get_buf().get_write_access(depends_list);
 
-                acc_axyz[item]     = vec3{0, 0, 0};
-                acc_axyz_old[item] = axyz;
-            });
-        };
+              auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
+                  // Executing kernel
+                  cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
+                      vec3 axyz     = acc_axyz[item];
+                      vec3 axyz_old = acc_axyz_old[item];
 
-        queue.submit(ker_predict_step);
-    };
+                      acc_axyz[item]     = vec3{0, 0, 0};
+                      acc_axyz_old[item] = axyz;
+                  });
+              });
+
+              pdat.get_field<vec3>(iaxyz).get_buf().complete_event_state(e);
+              pdat.get_field<vec3>(iaxyz_old).get_buf().complete_event_state(e);
+          };
 
     auto lambda_correct =
-        [&](sycl::queue &queue, PatchData &buf, sycl::range<1> range_npart, flt hdt) {
-            auto ker_corect_step = [&](sycl::handler &cgh) {
-                auto acc_vxyz = buf.get_field<vec3>(ivxyz)
-                                    .get_buf()
-                                    ->template get_access<sycl::access::mode::read_write>(cgh);
-                auto acc_axyz = buf.get_field<vec3>(iaxyz)
-                                    .get_buf()
-                                    ->template get_access<sycl::access::mode::read_write>(cgh);
-                auto acc_axyz_old = buf.get_field<vec3>(iaxyz_old)
-                                        .get_buf()
-                                        ->template get_access<sycl::access::mode::read_write>(cgh);
+        [&](sham::DeviceQueue &queue, PatchData &buf, sycl::range<1> range_npart, flt hdt) {
+            sham::DeviceBuffer<vec3> &vxyz     = buf.get_field<vec3>(ivxyz).get_buf();
+            sham::DeviceBuffer<vec3> &axyz     = buf.get_field<vec3>(iaxyz).get_buf();
+            sham::DeviceBuffer<vec3> &axyz_old = buf.get_field<vec3>(iaxyz_old).get_buf();
 
+            sham::EventList depends_list;
+
+            auto acc_vxyz     = vxyz.get_write_access(depends_list);
+            auto acc_axyz     = axyz.get_write_access(depends_list);
+            auto acc_axyz_old = axyz_old.get_write_access(depends_list);
+
+            auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
                 // Executing kernel
                 cgh.parallel_for(range_npart, [=](sycl::item<1> item) {
                     // u32 gid = (u32)item.get_id();
@@ -395,9 +436,11 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                     // v^* = v^{n + 1/2} + dt/2 a^n
                     acc_vxyz[item] = acc_vxyz[item] + (hdt) * (acc_axyz[item] - acc_axyz_old[item]);
                 });
-            };
+            });
 
-            queue.submit(ker_corect_step);
+            vxyz.complete_event_state(e);
+            axyz.complete_event_state(e);
+            axyz_old.complete_event_state(e);
         };
 
     auto leapfrog_lambda = [&](flt old_time, bool do_force, bool do_corrector) -> flt {
@@ -439,20 +482,20 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
             logger::debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "predictor");
 
             lambda_update_time(
-                shamsys::instance::get_compute_queue(),
+                shamsys::instance::get_compute_scheduler().get_queue(),
                 pdat,
                 sycl::range<1>{pdat.get_obj_cnt()},
                 dt_cur / 2);
 
             sycl_move_parts(
-                shamsys::instance::get_compute_queue(),
+                shamsys::instance::get_compute_scheduler().get_queue(),
                 pdat.get_obj_cnt(),
                 dt_cur,
                 pdat.get_field<vec3>(ixyz).get_buf(),
                 pdat.get_field<vec3>(ivxyz).get_buf());
 
             lambda_update_time(
-                shamsys::instance::get_compute_queue(),
+                shamsys::instance::get_compute_scheduler().get_queue(),
                 pdat,
                 sycl::range<1>{pdat.get_obj_cnt()},
                 dt_cur / 2);
@@ -460,11 +503,13 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
             logger::debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "dt fields swap");
 
             lambda_swap_der(
-                shamsys::instance::get_compute_queue(), pdat, sycl::range<1>{pdat.get_obj_cnt()});
+                shamsys::instance::get_compute_scheduler().get_queue(),
+                pdat,
+                sycl::range<1>{pdat.get_obj_cnt()});
 
             if (periodic_bc) { // TODO generalise position modulo in the scheduler
                 sycl_position_modulo(
-                    shamsys::instance::get_compute_queue(),
+                    shamsys::instance::get_compute_scheduler().get_queue(),
                     pdat.get_obj_cnt(),
                     pdat.get_field<vec3>(ixyz).get_buf(),
                     sched.get_box_volume<vec3>());
@@ -503,7 +548,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
                 // radix tree computation
                 radix_trees[id_patch] = std::make_unique<RadTree>(
-                    shamsys::instance::get_compute_queue(),
+                    shamsys::instance::get_compute_scheduler_ptr(),
                     box,
                     buf_xyz,
                     pdat.get_obj_cnt(),
@@ -605,7 +650,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
             grav_multipoles = std::make_unique<sycl::buffer<flt>>(num_component_multipoles_fmm);
 
             compute_multipoles(
-                rtree, *pdat.get_field<vec3>(ixyz).get_buf(), *grav_multipoles, gpart_mass);
+                rtree, pdat.get_field<vec3>(ixyz).get_buf(), *grav_multipoles, gpart_mass);
         });
 
         // generate the tree field for the box size info
@@ -716,8 +761,8 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
             auto &pos_part_b  = pos_part_f.get_buf();
             auto &buf_force_b = buf_force_f.get_buf();
 
-            auto &pos_part  = *pos_part_b;
-            auto &buf_force = *buf_force_b;
+            auto &pos_part  = pos_part_b;
+            auto &buf_force = buf_force_b;
 
             auto &rtree = *radix_trees[id_patch];
 
@@ -730,7 +775,13 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
             auto &grav_multipoles_f = multipoles[id_patch];
             auto &grav_multipoles   = grav_multipoles_f->radix_tree_field_buf;
 
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+            sham::DeviceQueue &queue = shamsys::instance::get_compute_scheduler().get_queue();
+            sham::EventList depends_list;
+
+            auto xyz  = pos_part.get_read_access(depends_list);
+            auto fxyz = buf_force.get_write_access(depends_list);
+
+            auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
                 using vec = vec3;
 
                 using Rta = walker::Radix_tree_accessor<u_morton, vec>;
@@ -743,9 +794,6 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                     = sycl::range<1>{rtree.tree_reduced_morton_codes.tree_leaf_count};
 
                 u32 leaf_offset = rtree.tree_struct.internal_cell_count;
-
-                auto xyz  = sycl::accessor{pos_part, cgh, sycl::read_only};
-                auto fxyz = sycl::accessor{buf_force, cgh, sycl::read_write};
 
                 auto multipoles = sycl::accessor{*grav_multipoles, cgh, sycl::read_only};
 
@@ -865,13 +913,16 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                     });
                 });
             });
+
+            pos_part.complete_event_state(e);
+            buf_force.complete_event_state(e);
         });
 
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
             logger::debug_ln("Selfgrav", "summing interf self grav to patch :", cur_p.id_patch);
 
-            auto &pos_part  = *pdat.get_field<vec3>(ixyz).get_buf();
-            auto &buf_force = *pdat.get_field<vec3>(iaxyz).get_buf();
+            auto &pos_part  = pdat.get_field<vec3>(ixyz).get_buf();
+            auto &buf_force = pdat.get_field<vec3>(iaxyz).get_buf();
 
             auto &rtree_cur = *radix_trees[id_patch];
 
@@ -891,7 +942,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
                 auto &pdat_interf = *std::get<1>(interf_pdat[id_patch][interf_id]);
 
-                auto &pos_part_interf = *pdat_interf.template get_field<vec3>(ixyz).get_buf();
+                auto &pos_part_interf = pdat_interf.template get_field<vec3>(ixyz).get_buf();
 
                 auto &multipole_interf = *std::get<1>(interf_multipoles[id_patch][interf_id]);
 
@@ -933,7 +984,14 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                     });
                 });
 
-                shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+                sham::DeviceQueue &queue = shamsys::instance::get_compute_scheduler().get_queue();
+                sham::EventList depends_list;
+
+                auto xyz        = pos_part.get_read_access(depends_list);
+                auto xyz_interf = pos_part_interf.get_read_access(depends_list);
+                auto fxyz       = buf_force.get_write_access(depends_list);
+
+                auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
                     using vec = vec3;
 
                     using Rta = walker::Radix_tree_accessor<u_morton, vec>;
@@ -953,11 +1011,6 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
                     u32 cur_leaf_offset    = rtree_cur.tree_struct.internal_cell_count;
                     u32 interf_leaf_offset = rtree_interf.tree_struct.internal_cell_count;
-
-                    auto xyz = sycl::accessor{pos_part, cgh, sycl::read_only};
-
-                    auto xyz_interf = sycl::accessor{pos_part_interf, cgh, sycl::read_only};
-                    auto fxyz       = sycl::accessor{buf_force, cgh, sycl::read_write};
 
                     auto multipoles = sycl::accessor{
                         *multipole_interf.radix_tree_field_buf, cgh, sycl::read_only};
@@ -1075,6 +1128,10 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                     });
                 });
 
+                pos_part.complete_event_state(e);
+                pos_part_interf.complete_event_state(e);
+                buf_force.complete_event_state(e);
+
                 shamsys::instance::get_compute_queue().wait();
             }
         });
@@ -1084,7 +1141,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
             logger::debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "corrector");
 
             lambda_correct(
-                shamsys::instance::get_compute_queue(),
+                shamsys::instance::get_compute_scheduler().get_queue(),
                 pdat,
                 sycl::range<1>{pdat.get_obj_cnt()},
                 dt_cur / 2);

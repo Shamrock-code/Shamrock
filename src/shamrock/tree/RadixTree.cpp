@@ -65,6 +65,42 @@ RadixTree<u_morton, vec3>::RadixTree(
     u32 reduc_level)
     : RadixTree(queue, treebox, shambase::get_check_ref(pos_buf), cnt_obj, reduc_level) {}
 
+template<class u_morton, class Tvec>
+RadixTree<u_morton, Tvec>::RadixTree(
+    sham::DeviceScheduler_ptr dev_sched,
+    std::tuple<Tvec, Tvec> treebox,
+    sham::DeviceBuffer<Tvec> &pos_buf,
+    u32 cnt_obj,
+    u32 reduc_level) {
+
+    sycl::queue &queue = dev_sched->get_queue().q;
+
+    if (cnt_obj > i32_max - 1) {
+        throw shambase::make_except_with_loc<std::runtime_error>(
+            "number of element in patch above i32_max-1");
+    }
+
+    logger::debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
+
+    bounding_box = treebox;
+
+    tree_morton_codes.build(dev_sched, shammath::CoordRange<Tvec>{treebox}, cnt_obj, pos_buf);
+
+    bool one_cell_mode;
+
+    tree_reduced_morton_codes.build(
+        queue, tree_morton_codes.obj_cnt, reduc_level, tree_morton_codes, one_cell_mode);
+
+    if (!one_cell_mode) {
+        tree_struct.build(
+            queue,
+            tree_reduced_morton_codes.tree_leaf_count - 1,
+            *tree_reduced_morton_codes.buf_tree_morton);
+    } else {
+        tree_struct.build_one_cell_mode();
+    }
+}
+
 template<class u_morton, class vec3>
 void RadixTree<u_morton, vec3>::serialize(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{};
@@ -121,7 +157,7 @@ void RadixTree<morton_t, pos_t>::convert_bounding_box(sycl::queue &queue) {
 template<class u_morton, class vec>
 auto RadixTree<u_morton, vec>::compute_int_boxes(
     sycl::queue &queue,
-    const std::unique_ptr<sycl::buffer<coord_t>> &int_rad_buf,
+    sham::DeviceBuffer<coord_t> &int_rad_buf,
     coord_t tolerance) -> RadixTreeField<coord_t> {
 
     logger::debug_sycl_ln("RadixTree", "compute int boxes");
@@ -132,12 +168,16 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
 
     auto &buf_cell_int_rad_buf = buf_cell_interact_rad.radix_tree_field_buf;
 
-    queue.submit([&](sycl::handler &cgh) {
+    sham::DeviceQueue q = shamsys::instance::get_compute_scheduler().get_queue();
+    sham::EventList depends_list;
+
+    auto h = int_rad_buf.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         u32 offset_leaf = tree_struct.internal_cell_count;
 
         auto h_max_cell
             = buf_cell_int_rad_buf->template get_access<sycl::access::mode::discard_write>(cgh);
-        auto h = int_rad_buf->template get_access<sycl::access::mode::read>(cgh);
 
         auto cell_particle_ids = tree_reduced_morton_codes.buf_reduc_index_map
                                      ->template get_access<sycl::access::mode::read>(cgh);
@@ -162,6 +202,8 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
             h_max_cell[offset_leaf + gid] = h_tmp;
         });
     });
+
+    int_rad_buf.complete_event_state(e);
 
 #if false
     // debug code to track the DPCPP + prime number worker issue

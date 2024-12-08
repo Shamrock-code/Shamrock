@@ -73,7 +73,7 @@ namespace shammodels {
                       vec bmax = merged.bounds.upper;
 
                       RTree tree(
-                          shamsys::instance::get_compute_queue(),
+                          shamsys::instance::get_compute_scheduler_ptr(),
                           {bmin, bmax},
                           merged.field_pos.get_buf(),
                           merged.field_pos.get_obj_cnt(),

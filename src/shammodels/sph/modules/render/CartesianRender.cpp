@@ -133,7 +133,7 @@ namespace shammodels::sph::modules {
             u32 obj_cnt = main_field.get_obj_cnt();
 
             RTree tree(
-                shamsys::instance::get_compute_queue(),
+                shamsys::instance::get_compute_scheduler_ptr(),
                 {box.lower, box.upper},
                 buf_xyz,
                 obj_cnt,
@@ -152,12 +152,12 @@ namespace shammodels::sph::modules {
             sham::EventList depends_list;
             Tfield *render_field = ret.get_write_access(depends_list);
 
+            auto xyz      = buf_xyz.get_read_access(depends_list);
+            auto hpart    = buf_hpart.get_read_access(depends_list);
+            auto torender = buf_field_to_render.get_read_access(depends_list);
+
             sycl::event e2 = q.submit(depends_list, [&, render_field](sycl::handler &cgh) {
                 shamrock::tree::ObjectIterator particle_looper(tree, cgh);
-                sycl::accessor xyz{shambase::get_check_ref(buf_xyz), cgh, sycl::read_only};
-                sycl::accessor hpart{shambase::get_check_ref(buf_hpart), cgh, sycl::read_only};
-                sycl::accessor torender{
-                    shambase::get_check_ref(buf_field_to_render), cgh, sycl::read_only};
 
                 sycl::accessor hmax{
                     shambase::get_check_ref(hmax_tree.radix_tree_field_buf), cgh, sycl::read_only};
@@ -206,6 +206,9 @@ namespace shammodels::sph::modules {
                 });
             });
 
+            buf_xyz.complete_event_state(e2);
+            buf_hpart.complete_event_state(e2);
+            buf_field_to_render.complete_event_state(e2);
             ret.complete_event_state(e2);
         });
 
@@ -246,7 +249,7 @@ namespace shammodels::sph::modules {
             u32 obj_cnt = main_field.get_obj_cnt();
 
             RTree tree(
-                shamsys::instance::get_compute_queue(),
+                shamsys::instance::get_compute_scheduler_ptr(),
                 {box.lower, box.upper},
                 buf_xyz,
                 obj_cnt,
@@ -265,12 +268,12 @@ namespace shammodels::sph::modules {
             sham::EventList depends_list;
             Tfield *render_field = ret.get_write_access(depends_list);
 
+            auto xyz      = buf_xyz.get_read_access(depends_list);
+            auto hpart    = buf_hpart.get_read_access(depends_list);
+            auto torender = buf_field_to_render.get_read_access(depends_list);
+
             sycl::event e2 = q.submit(depends_list, [&, render_field](sycl::handler &cgh) {
                 shamrock::tree::ObjectIterator particle_looper(tree, cgh);
-                sycl::accessor xyz{shambase::get_check_ref(buf_xyz), cgh, sycl::read_only};
-                sycl::accessor hpart{shambase::get_check_ref(buf_hpart), cgh, sycl::read_only};
-                sycl::accessor torender{
-                    shambase::get_check_ref(buf_field_to_render), cgh, sycl::read_only};
 
                 sycl::accessor hmax{
                     shambase::get_check_ref(hmax_tree.radix_tree_field_buf), cgh, sycl::read_only};
@@ -326,6 +329,9 @@ namespace shammodels::sph::modules {
                 });
             });
 
+            buf_xyz.complete_event_state(e2);
+            buf_hpart.complete_event_state(e2);
+            buf_field_to_render.complete_event_state(e2);
             ret.complete_event_state(e2);
         });
 

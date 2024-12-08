@@ -23,15 +23,18 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_xm(
-    u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
+    u32 nobj, u32 nvar, sham::DeviceBuffer<T> &buf_src, sham::DeviceBuffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+    sham::EventList depends_list;
+    auto val_out = buf_dest.get_write_access(depends_list);
+    auto src     = buf_src.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute xm val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
@@ -45,19 +48,25 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_xp(
-    u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
+    u32 nobj, u32 nvar, sham::DeviceBuffer<T> &buf_src, sham::DeviceBuffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+    sham::EventList depends_list;
+    auto val_out = buf_dest.get_write_access(depends_list);
+    auto src     = buf_src.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute xp val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
@@ -71,19 +80,25 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_ym(
-    u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
+    u32 nobj, u32 nvar, sham::DeviceBuffer<T> &buf_src, sham::DeviceBuffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+    sham::EventList depends_list;
+    auto val_out = buf_dest.get_write_access(depends_list);
+    auto src     = buf_src.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
@@ -97,19 +112,25 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_yp(
-    u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
+    u32 nobj, u32 nvar, sham::DeviceBuffer<T> &buf_src, sham::DeviceBuffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+    sham::EventList depends_list;
+    auto val_out = buf_dest.get_write_access(depends_list);
+    auto src     = buf_src.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute yp val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
@@ -123,19 +144,25 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_zm(
-    u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
+    u32 nobj, u32 nvar, sham::DeviceBuffer<T> &buf_src, sham::DeviceBuffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+    sham::EventList depends_list;
+    auto val_out = buf_dest.get_write_access(depends_list);
+    auto src     = buf_src.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
@@ -149,19 +176,25 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_internal_block_zp(
-    u32 nobj, u32 nvar, sycl::buffer<T> &buf_src, sycl::buffer<T> &buf_dest) {
+    u32 nobj, u32 nvar, sham::DeviceBuffer<T> &buf_src, sham::DeviceBuffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+    sham::EventList depends_list;
+    auto val_out = buf_dest.get_write_access(depends_list);
+    auto src     = buf_src.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
@@ -175,6 +208,9 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
 }
 
 template<class Tvec, class TgridVec, class T>
@@ -182,8 +218,8 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
     std::array<Tgridscal, dim> offset,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest) {
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest) {
 
     StackEntry stack_loc{};
     using Block = typename Config::AMRBlock;
@@ -230,13 +266,13 @@ template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_xm(
 
     std::array<Tgridscal, dim> offset,
-    sycl::buffer<TgridVec> &buf_cell_min,
-    sycl::buffer<TgridVec> &buf_cell_max,
+    sham::DeviceBuffer<TgridVec> &buf_cell_min,
+    sham::DeviceBuffer<TgridVec> &buf_cell_max,
     shammodels::zeus::NeighFaceList<Tvec> &face_lists,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest
 
 ) {
     StackEntry stack_loc{};
@@ -246,13 +282,18 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
     OrientedNeighFaceList<Tvec> &face_xm = face_lists.xm();
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-        sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
-        tree::ObjectCacheIterator faces_xm(face_xm.neigh_info, cgh);
+    sham::EventList depends_list;
+    auto val_out  = buf_dest.get_write_access(depends_list);
+    auto src      = buf_src.get_read_access(depends_list);
+    auto cell_min = buf_cell_min.get_read_access(depends_list);
+    auto cell_max = buf_cell_max.get_read_access(depends_list);
+
+    auto fptr = face_xm.neigh_info.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+        tree::ObjectCacheIterator faces_xm(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -279,19 +320,28 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
+    buf_cell_min.complete_event_state(e);
+    buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_xm.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_xp(
 
     std::array<Tgridscal, dim> offset,
-    sycl::buffer<TgridVec> &buf_cell_min,
-    sycl::buffer<TgridVec> &buf_cell_max,
+    sham::DeviceBuffer<TgridVec> &buf_cell_min,
+    sham::DeviceBuffer<TgridVec> &buf_cell_max,
     shammodels::zeus::NeighFaceList<Tvec> &face_lists,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest
 
 ) {
     StackEntry stack_loc{};
@@ -301,13 +351,18 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
     OrientedNeighFaceList<Tvec> &face_xp = face_lists.xp();
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-        sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
-        tree::ObjectCacheIterator faces_xp(face_xp.neigh_info, cgh);
+    sham::EventList depends_list;
+    auto val_out  = buf_dest.get_write_access(depends_list);
+    auto src      = buf_src.get_read_access(depends_list);
+    auto cell_min = buf_cell_min.get_read_access(depends_list);
+    auto cell_max = buf_cell_max.get_read_access(depends_list);
+
+    auto fptr = face_xp.neigh_info.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+        tree::ObjectCacheIterator faces_xp(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -343,19 +398,28 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
+    buf_cell_min.complete_event_state(e);
+    buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_xp.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_ym(
 
     std::array<Tgridscal, dim> offset,
-    sycl::buffer<TgridVec> &buf_cell_min,
-    sycl::buffer<TgridVec> &buf_cell_max,
+    sham::DeviceBuffer<TgridVec> &buf_cell_min,
+    sham::DeviceBuffer<TgridVec> &buf_cell_max,
     shammodels::zeus::NeighFaceList<Tvec> &face_lists,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest
 
 ) {
     StackEntry stack_loc{};
@@ -365,13 +429,18 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
     OrientedNeighFaceList<Tvec> &face_ym = face_lists.ym();
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-        sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
-        tree::ObjectCacheIterator faces_xm(face_ym.neigh_info, cgh);
+    sham::EventList depends_list;
+    auto val_out  = buf_dest.get_write_access(depends_list);
+    auto src      = buf_src.get_read_access(depends_list);
+    auto cell_min = buf_cell_min.get_read_access(depends_list);
+    auto cell_max = buf_cell_max.get_read_access(depends_list);
+
+    auto fptr = face_ym.neigh_info.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+        tree::ObjectCacheIterator faces_ym(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -385,7 +454,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
                 static_assert(dim == 3, "implemented only in dim 3");
-                faces_xm.for_each_object(block_id, [&](u32 block_id_b) {
+                faces_ym.for_each_object(block_id, [&](u32 block_id_b) {
                     auto tmp = cell_max[block_id_b] - cell_min[block_id_b];
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
@@ -398,19 +467,28 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
+    buf_cell_min.complete_event_state(e);
+    buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_ym.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_yp(
 
     std::array<Tgridscal, dim> offset,
-    sycl::buffer<TgridVec> &buf_cell_min,
-    sycl::buffer<TgridVec> &buf_cell_max,
+    sham::DeviceBuffer<TgridVec> &buf_cell_min,
+    sham::DeviceBuffer<TgridVec> &buf_cell_max,
     shammodels::zeus::NeighFaceList<Tvec> &face_lists,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest
 
 ) {
     StackEntry stack_loc{};
@@ -420,13 +498,18 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
     OrientedNeighFaceList<Tvec> &face_yp = face_lists.yp();
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-        sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
-        tree::ObjectCacheIterator faces_yp(face_yp.neigh_info, cgh);
+    sham::EventList depends_list;
+    auto val_out  = buf_dest.get_write_access(depends_list);
+    auto src      = buf_src.get_read_access(depends_list);
+    auto cell_min = buf_cell_min.get_read_access(depends_list);
+    auto cell_max = buf_cell_max.get_read_access(depends_list);
+
+    auto fptr = face_yp.neigh_info.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+        tree::ObjectCacheIterator faces_yp(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -453,19 +536,28 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
+    buf_cell_min.complete_event_state(e);
+    buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_yp.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_zm(
 
     std::array<Tgridscal, dim> offset,
-    sycl::buffer<TgridVec> &buf_cell_min,
-    sycl::buffer<TgridVec> &buf_cell_max,
+    sham::DeviceBuffer<TgridVec> &buf_cell_min,
+    sham::DeviceBuffer<TgridVec> &buf_cell_max,
     shammodels::zeus::NeighFaceList<Tvec> &face_lists,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest
 
 ) {
     StackEntry stack_loc{};
@@ -475,13 +567,18 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
     OrientedNeighFaceList<Tvec> &face_zm = face_lists.zm();
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-        sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
-        tree::ObjectCacheIterator faces_xm(face_zm.neigh_info, cgh);
+    sham::EventList depends_list;
+    auto val_out  = buf_dest.get_write_access(depends_list);
+    auto src      = buf_src.get_read_access(depends_list);
+    auto cell_min = buf_cell_min.get_read_access(depends_list);
+    auto cell_max = buf_cell_max.get_read_access(depends_list);
+
+    auto fptr = face_zm.neigh_info.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+        tree::ObjectCacheIterator faces_zm(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute zm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -495,7 +592,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
                 i32 Va   = tmp.x() * tmp.y() * tmp.z();
 
                 static_assert(dim == 3, "implemented only in dim 3");
-                faces_xm.for_each_object(block_id, [&](u32 block_id_b) {
+                faces_zm.for_each_object(block_id, [&](u32 block_id_b) {
                     auto tmp = cell_max[block_id_b] - cell_min[block_id_b];
                     i32 nV   = tmp.x() * tmp.y() * tmp.z();
 
@@ -508,19 +605,28 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
+    buf_cell_min.complete_event_state(e);
+    buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_zm.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level_zp(
 
     std::array<Tgridscal, dim> offset,
-    sycl::buffer<TgridVec> &buf_cell_min,
-    sycl::buffer<TgridVec> &buf_cell_max,
+    sham::DeviceBuffer<TgridVec> &buf_cell_min,
+    sham::DeviceBuffer<TgridVec> &buf_cell_max,
     shammodels::zeus::NeighFaceList<Tvec> &face_lists,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest
 
 ) {
     StackEntry stack_loc{};
@@ -530,13 +636,18 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 
     OrientedNeighFaceList<Tvec> &face_zp = face_lists.zp();
 
-    shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-        sycl::accessor val_out{buf_dest, cgh, sycl::write_only, sycl::no_init};
-        sycl::accessor src{buf_src, cgh, sycl::read_only};
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sycl::accessor cell_min{buf_cell_min, cgh, sycl::read_only};
-        sycl::accessor cell_max{buf_cell_max, cgh, sycl::read_only};
-        tree::ObjectCacheIterator faces_zp(face_zp.neigh_info, cgh);
+    sham::EventList depends_list;
+    auto val_out  = buf_dest.get_write_access(depends_list);
+    auto src      = buf_src.get_read_access(depends_list);
+    auto cell_min = buf_cell_min.get_read_access(depends_list);
+    auto cell_max = buf_cell_max.get_read_access(depends_list);
+
+    auto fptr = face_zp.neigh_info.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+        tree::ObjectCacheIterator faces_zp(fptr);
 
         shambase::parralel_for(cgh, nobj * Block::block_size, "compute zm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
@@ -563,19 +674,28 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
             }
         });
     });
+
+    buf_dest.complete_event_state(e);
+    buf_src.complete_event_state(e);
+    buf_cell_min.complete_event_state(e);
+    buf_cell_max.complete_event_state(e);
+
+    sham::EventList resulting_events;
+    resulting_events.add_event(e);
+    face_zp.neigh_info.complete_event_state(resulting_events);
 }
 
 template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_same_level(
 
     std::array<Tgridscal, dim> offset,
-    sycl::buffer<TgridVec> &buf_cell_min,
-    sycl::buffer<TgridVec> &buf_cell_max,
+    sham::DeviceBuffer<TgridVec> &buf_cell_min,
+    sham::DeviceBuffer<TgridVec> &buf_cell_max,
     shammodels::zeus::NeighFaceList<Tvec> &face_lists,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest
 
 ) {
     StackEntry stack_loc{};
@@ -634,13 +754,13 @@ template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_level_up(
 
     std::array<Tgridscal, dim> offset,
-    sycl::buffer<TgridVec> &buf_cell_min,
-    sycl::buffer<TgridVec> &buf_cell_max,
+    sham::DeviceBuffer<TgridVec> &buf_cell_min,
+    sham::DeviceBuffer<TgridVec> &buf_cell_max,
     shammodels::zeus::NeighFaceList<Tvec> &face_lists,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest
 
 ) {
 
@@ -694,13 +814,13 @@ template<class Tvec, class TgridVec, class T>
 void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh_level_down(
 
     std::array<Tgridscal, dim> offset,
-    sycl::buffer<TgridVec> &buf_cell_min,
-    sycl::buffer<TgridVec> &buf_cell_max,
+    sham::DeviceBuffer<TgridVec> &buf_cell_min,
+    sham::DeviceBuffer<TgridVec> &buf_cell_max,
     shammodels::zeus::NeighFaceList<Tvec> &face_lists,
     u32 nobj,
     u32 nvar,
-    sycl::buffer<T> &buf_src,
-    sycl::buffer<T> &buf_dest
+    sham::DeviceBuffer<T> &buf_src,
+    sham::DeviceBuffer<T> &buf_dest
 
 ) {
     StackEntry stack_loc{};
@@ -776,8 +896,8 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
-        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
+        sham::DeviceBuffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
         load_patch_internal_block(offset, mpdat.total_elements, nvar, buf_src, buf_dest);
     });
@@ -785,11 +905,11 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
-        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
+        sham::DeviceBuffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
         shammodels::zeus::NeighFaceList<Tvec> &face_lists
             = storage.face_lists.get().get(p.id_patch);
@@ -808,11 +928,11 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
-        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
+        sham::DeviceBuffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
         shammodels::zeus::NeighFaceList<Tvec> &face_lists
             = storage.face_lists.get().get(p.id_patch);
@@ -831,11 +951,11 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
-        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
+        sham::DeviceBuffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
         shammodels::zeus::NeighFaceList<Tvec> &face_lists
             = storage.face_lists.get().get(p.id_patch);
@@ -879,8 +999,8 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
-        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
         load_patch_internal_block(
             offset,
@@ -893,11 +1013,11 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
-        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
         shammodels::zeus::NeighFaceList<Tvec> &face_lists
             = storage.face_lists.get().get(p.id_patch);
@@ -916,11 +1036,11 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
-        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
         shammodels::zeus::NeighFaceList<Tvec> &face_lists
             = storage.face_lists.get().get(p.id_patch);
@@ -939,11 +1059,11 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-        sycl::buffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
-        sycl::buffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
 
-        sycl::buffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
-        sycl::buffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
+        sham::DeviceBuffer<T> &buf_dest = tmp.get_buf_check(p.id_patch);
 
         shammodels::zeus::NeighFaceList<Tvec> &face_lists
             = storage.face_lists.get().get(p.id_patch);

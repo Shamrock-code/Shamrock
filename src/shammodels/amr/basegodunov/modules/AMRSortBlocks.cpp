@@ -27,9 +27,9 @@ void shammodels::basegodunov::modules::AMRSortBlocks<Tvec, TgridVec>::reorder_am
         std::unique_ptr<sycl::buffer<u32>> out_buf_particle_index_map;
 
         MortonBuilder::build(
-            shamsys::instance::get_compute_queue(),
+            shamsys::instance::get_compute_scheduler_ptr(),
             scheduler().get_sim_box().template patch_coord_to_domain<TgridVec>(cur_p),
-            *pdat.get_field<TgridVec>(0).get_buf(),
+            pdat.get_field<TgridVec>(0).get_buf(),
             pdat.get_obj_cnt(),
             out_buf_morton,
             out_buf_particle_index_map);

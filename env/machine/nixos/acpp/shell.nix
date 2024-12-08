@@ -1,7 +1,11 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ pkgs ? (import <nixpkgs> { 
+    config.allowUnfree = true;
+    config.segger-jlink.acceptLicense = true; 
+    config.cudaSupport = true;
+}), ... }:
 
 let
-  llvm18 = pkgs.llvmPackages_18;
+  llvm = pkgs.llvmPackages_18;
   gccForLibs = pkgs.stdenv.cc.cc;
 
   # Derivation to combine clang and clang-tools
@@ -16,19 +20,32 @@ let
       sha256 = "sha256:1d7ld2azk45sv7124zkrkj1nfkmq0dani5zlalyn8v5s7q6vdxjc";
     };
 
-    buildInputs = [
-      llvm18.clang-tools
-      llvm18.clang
-      llvm18.llvm
-      llvm18.libclang
-      pkgs.boost186
+    nativeBuildInputs = [
+      pkgs.autoAddDriverRunpath
+      pkgs.cudaPackages.cuda_nvcc
       pkgs.cmake
       pkgs.ninja
     ];
 
+    buildInputs = [
+      pkgs.libxml2
+      pkgs.libffi
+      pkgs.boost
+      
+      llvm.clang-tools
+      llvm.clang
+      llvm.llvm
+      llvm.libclang
+
+      pkgs.cudaPackages.cuda_cudart
+      (pkgs.lib.getOutput "stubs" pkgs.cudaPackages.cuda_cudart)
+    ];
+
+    # this hardening option breaks rocm builds
+    hardeningDisable = [ "zerocallusedregs" ];
+
     configurePhase = ''
-      ls
-      cmake -S . -GNinja -DCMAKE_INSTALL_PREFIX=$out -DCLANG_INCLUDE_PATH=${llvm18.libclang.dev}/include
+      cmake -S . -GNinja -DCMAKE_INSTALL_PREFIX=$out -DCLANG_INCLUDE_PATH=${llvm.libclang.dev}/include
     '';
 
     buildPhase = "ninja";
@@ -40,16 +57,22 @@ let
 in
 pkgs.mkShell {
 
+
+  nativeBuildInputs = [
+    pkgs.autoAddDriverRunpath
+    pkgs.cudaPackages.cuda_nvcc
+  ];
+
   buildInputs = [
     AdaptiveCpp
 
-    llvm18.clang-tools
-    llvm18.clang
-    llvm18.llvm
-    llvm18.openmp
-    llvm18.libclang
+    llvm.clang-tools
+    llvm.clang
+    llvm.llvm
+    llvm.openmp
+    llvm.libclang
 
-    pkgs.boost186
+    pkgs.boost
     pkgs.cmake
     pkgs.zsh
 
@@ -61,12 +84,21 @@ pkgs.mkShell {
     pkgs.mpi
 
     pkgs.pre-commit
+
+    pkgs.texliveFull
+  
+    pkgs.cudaPackages.cudatoolkit
+    pkgs.cudaPackages.cuda_cudart
+    (pkgs.lib.getOutput "stubs" pkgs.cudaPackages.cuda_cudart)
   ];
 
   # Set environment variables directly
   ACPP_INSTALL_DIR = "${AdaptiveCpp}";
 
   ACPP_DEBUG_LEVEL = "0";
+
+  # disable all hardening flags
+  NIX_HARDENING_ENABLE = "";
 
   shellHook = ''
     # Optional: Add custom message for debugging or confirmation

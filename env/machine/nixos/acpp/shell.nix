@@ -71,6 +71,7 @@ pkgs.mkShell {
     llvm.llvm
     llvm.openmp
     llvm.libclang
+    pkgs.lldb_18
 
     pkgs.boost
     pkgs.cmake

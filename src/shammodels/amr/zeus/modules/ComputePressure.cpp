@@ -68,6 +68,10 @@ void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
                     pressure[id_a] = (gamma - 1) /** rho[id_a]*/ * eint[id_a];
                 });
         });
+
+        buf_rho.complete_event_state(e);
+        buf_eint.complete_event_state(e);
+        buf_p.complete_event_state(e);
     });
 }
 

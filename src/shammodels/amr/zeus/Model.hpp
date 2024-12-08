@@ -93,6 +93,8 @@ namespace shammodels::zeus {
                             acc[i * Block::block_size + lid] = pos_to_val(bmin, bmin + delta_cell);
                         });
                     }
+
+                    buf.copy_from_stdvec(acc);
                 }
             });
         }

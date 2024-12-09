@@ -14,6 +14,7 @@
  */
 
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shambackends/fpe_except.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -45,6 +46,8 @@ int main(int argc, char *argv[]) {
 
     opts::register_opt("-o", {"(filepath)"}, "output test report in that file");
 
+    shamcmdopt::register_opt("--feenableexcept", "", "Enable FPE exceptions");
+
     opts::register_env_var_doc("REF_FILES_PATH", "reference test files path");
     shamcmdopt::register_env_var_doc("SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
@@ -60,6 +63,10 @@ int main(int argc, char *argv[]) {
     opts::init(argc, argv);
     if (opts::is_help_mode()) {
         return 0;
+    }
+
+    if (opts::has_option("--feenableexcept")) {
+        sham::enable_fpe_exceptions();
     }
 
     if (opts::has_option("--gen-test-list")) {

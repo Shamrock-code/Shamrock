@@ -80,7 +80,10 @@ namespace shamrock::scheduler::details {
 
         for (LBTileResult &tile : res) {
             tile.new_owner
-                = sycl::clamp(i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
+                = (target_datacnt == 0)
+                      ? 0
+                      : sycl::clamp(
+                            i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
         }
 
         if (shamcomm::world_rank() == 0) {
@@ -90,8 +93,11 @@ namespace shamrock::scheduler::details {
                     t.ordering_val,
                     t.accumulated_load_value,
                     t.index,
-                    sycl::clamp(i32(t.accumulated_load_value / target_datacnt), 0, i32(wsize) - 1),
-                    (t.accumulated_load_value / target_datacnt));
+                    (target_datacnt == 0)
+                        ? 0
+                        : sycl::clamp(
+                              i32(t.accumulated_load_value / target_datacnt), 0, i32(wsize) - 1),
+                    (target_datacnt == 0) ? 0 : (t.accumulated_load_value / target_datacnt));
             }
         }
 
@@ -131,7 +137,10 @@ namespace shamrock::scheduler::details {
 
         for (LBTileResult &tile : res) {
             tile.new_owner
-                = sycl::clamp(i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
+                = (target_datacnt == 0)
+                      ? 0
+                      : sycl::clamp(
+                            i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
         }
 
         if (shamcomm::world_rank() == 0) {
@@ -141,8 +150,11 @@ namespace shamrock::scheduler::details {
                     t.ordering_val,
                     t.accumulated_load_value,
                     t.index,
-                    sycl::clamp(i32(t.accumulated_load_value / target_datacnt), 0, i32(wsize) - 1),
-                    (t.accumulated_load_value / target_datacnt));
+                    (target_datacnt == 0)
+                        ? 0
+                        : sycl::clamp(
+                              i32(t.accumulated_load_value / target_datacnt), 0, i32(wsize) - 1),
+                    (target_datacnt == 0) ? 0 : (t.accumulated_load_value / target_datacnt));
             }
         }
 

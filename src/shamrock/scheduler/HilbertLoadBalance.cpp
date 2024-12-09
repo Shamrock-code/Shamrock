@@ -149,8 +149,12 @@ namespace shamrock::scheduler {
                 str += shambase::format("    min = {}\n", min);
                 str += shambase::format("    max = {}\n", max);
                 str += shambase::format("    avg = {}\n", avg);
-                str += shambase::format(
-                    "    efficiency = {:.2f}%", 100 - (100 * (max - min) / max));
+                if (max == 0) {
+                    str += "    efficiency = ???%";
+                } else {
+                    str += shambase::format(
+                        "    efficiency = {:.2f}%", 100 - (100 * (max - min) / max));
+                }
                 logger::info_ln("LoadBalance", str);
             }
         }

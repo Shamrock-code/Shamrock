@@ -22,6 +22,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shambackends/fpe_except.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/cmdopt.hpp"
@@ -68,6 +69,8 @@ int main(int argc, char *argv[]) {
         opts::register_opt("--force-dgpu-on", {}, "for direct mpi comm on");
         opts::register_opt("--force-dgpu-off", {}, "for direct mpi comm off");
 
+        shamcmdopt::register_opt("--feenableexcept", "", "Enable FPE exceptions");
+
         shamcmdopt::register_env_var_doc(
             "SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
@@ -84,6 +87,10 @@ int main(int argc, char *argv[]) {
 
         if (opts::is_help_mode()) {
             return 0;
+        }
+
+        if (opts::has_option("--feenableexcept")) {
+            sham::enable_fpe_exceptions();
         }
 
         if (opts::has_option("--loglevel")) {

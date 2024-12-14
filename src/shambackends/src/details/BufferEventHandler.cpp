@@ -57,7 +57,6 @@ namespace sham::details {
                 src_loc.format_one_line(),
                 last_access_loc.format_one_line());
 
-            shamcomm::logs::err_ln("Backends", err_msg);
             shambase::throw_with_loc<std::runtime_error>(err_msg);
         }
 
@@ -82,7 +81,7 @@ namespace sham::details {
                 "  last access location : {}\n",
                 src_loc.format_one_line(),
                 last_access_loc.format_one_line());
-            shamcomm::logs::err_ln("Backends", err_msg);
+                
             shambase::throw_with_loc<std::runtime_error>(err_msg);
         }
 

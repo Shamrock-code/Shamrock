@@ -25,4 +25,17 @@ namespace shambase {
         return loc.format_multiline(fmt_callstack());
     }
 
+    /// exception print callback func ptr
+    void (*exception_print_callback)(std::string msg) = nullptr;
+
+    void exception_gen_callback(std::string msg) {
+        if (exception_print_callback != nullptr) {
+            exception_print_callback(msg);
+        }
+    }
+
+    void set_exception_gen_callback(void (*callback)(std::string msg)) {
+        exception_print_callback = callback;
+    }
+
 } // namespace shambase

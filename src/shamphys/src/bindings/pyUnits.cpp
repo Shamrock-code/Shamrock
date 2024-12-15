@@ -94,6 +94,8 @@ Register_pymod(pyunits_init) {
 
                 X(G)
 
+                X(mu_0)
+
                     X(year)
 
                         X(au)

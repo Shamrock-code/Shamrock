@@ -59,6 +59,14 @@ namespace shammodels::sph::modules {
         void update_derivs_mm97(VaryingMM97 cfg);
         void update_derivs_cd10(VaryingCD10 cfg);
         void update_derivs_disc_visco(ConstantDisc cfg);
+
+        using Cfg_MHD = typename Config::MHDConfig;
+
+        using NoneMHD     = typename Cfg_MHD::None;
+        using IdealMHD    = typename Cfg_MHD::IdealMHD_constrained_hyper_para;
+        using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
+
+        void update_derivs_MHD(IdealMHD cfg);
     };
 
 } // namespace shammodels::sph::modules

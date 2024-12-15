@@ -41,7 +41,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
 
-    std::string cv_checks = "convervation infos :\n";
+    std::string cv_checks = "conservation infos :\n";
 
     ///////////////////////////////////
     // momentum check :

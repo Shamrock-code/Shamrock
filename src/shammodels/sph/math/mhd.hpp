@@ -590,7 +590,8 @@ namespace shamrock::spmhd {
             omega_b,
             r_ab_unit * dWab_a,
             r_ab_unit * dWab_b,
-            mu_0);
+            mu_0,
+            Tricco);
 
             dv_dt += sum_gas_pressure + sum_mag_pressure + sum_mag_tension + sum_fdivB;
             mag_pressure += sum_mag_pressure;

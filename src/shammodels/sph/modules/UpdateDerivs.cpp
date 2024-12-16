@@ -10,6 +10,7 @@
 /**
  * @file UpdateDerivs.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -825,62 +826,58 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     const u32 ipsi_propag   = pdl.get_field_idx<Tscal>("psi_propag");
     const u32 ipsi_diff   = pdl.get_field_idx<Tscal>("psi_diff");
     const u32 ipsi_cons   = pdl.get_field_idx<Tscal>("psi_cons");
-
     const u32 iu_mhd   = pdl.get_field_idx<Tscal>("u_mhd");
 
-    // const u32 icurlB = pdl.get_field_idx<Tvec>("curlB");
-
-Tscal mu_0 = 1.;
-    //Tscal mu_0 = solver_config.get_constant_mu_0(); @@@@@@@@@@@@@@
+    Tscal mu_0 = 1.;
+    //Tscal mu_0 = solver_config.get_constant_mu_0(); @@@ 
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iB_on_rho_interf                           = ghost_layout.get_field_idx<Tvec>("B/rho");
-    // u32 idB_on_rho_interf                           =
-    // ghost_layout.get_field_idx<Tvec>("dB_on_rho");
-    u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
-    // u32 idpsi_on_ch_interf                          =
-    // ghost_layout.get_field_idx<Tscal>("dpsi_on_ch");
     u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
-
+    u32 iB_on_rho_interf                           = ghost_layout.get_field_idx<Tvec>("B/rho");
+    u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
+    
     logger::raw_ln("charged the ghost fields.");
+
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     ComputeField<Tscal> &omega                        = storage.omega.get();
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
-    logger::raw_ln("merged the ghost fields.");
+
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
-        sycl::buffer<Tvec> &buf_xyz
-            = shambase::get_check_ref(merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
-        sycl::buffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
 
-        // logger::raw_ln("charged axyz.");
-        sycl::buffer<Tvec> &buf_dB_on_rho   = pdat.get_field_buf_ref<Tvec>(idB_on_rho);
-        sycl::buffer<Tscal> &buf_dpsi_on_ch = pdat.get_field_buf_ref<Tscal>(idpsi_on_ch);
+        sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field_buf_ref<Tvec>(iaxyz);
+        sham::DeviceBuffer<Tscal> &buf_duint = pdat.get_field_buf_ref<Tscal>(iduint);
+        sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+        sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+        sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+        sham::DeviceBuffer<Tscal> &buf_pressure
+            = storage.pressure.get().get_buf_check(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+
+        sham::DeviceBuffer<Tvec> &buf_dB_on_rho   = pdat.get_field_buf_ref<Tvec>(idB_on_rho);
+        sham::DeviceBuffer<Tscal> &buf_dpsi_on_ch = pdat.get_field_buf_ref<Tscal>(idpsi_on_ch);
         // logger::raw_ln("charged dB dpsi");
-        sycl::buffer<Tscal> &buf_duint     = pdat.get_field_buf_ref<Tscal>(iduint);
-        sycl::buffer<Tvec> &buf_vxyz       = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-        sycl::buffer<Tscal> &buf_hpart     = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-        sycl::buffer<Tscal> &buf_omega     = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
-        sycl::buffer<Tscal> &buf_uint      = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-        sycl::buffer<Tscal> &buf_pressure  = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sycl::buffer<Tvec> &buf_B_on_rho   = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
-        sycl::buffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
 
-        sycl::buffer<Tvec> &buf_mag_pressure   = pdat.get_field_buf_ref<Tvec>(imag_pressure);
-        sycl::buffer<Tvec> &buf_mag_tension    = pdat.get_field_buf_ref<Tvec>(imag_tension);
-        sycl::buffer<Tvec> &buf_gas_pressure   = pdat.get_field_buf_ref<Tvec>(igas_pressure);
-        sycl::buffer<Tvec> &buf_tensile_corr   = pdat.get_field_buf_ref<Tvec>(itensile_corr);
+        sham::DeviceBuffer<Tvec> &buf_B_on_rho   = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
+        sham::DeviceBuffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
 
-        sycl::buffer<Tscal> &buf_psi_propag   = pdat.get_field_buf_ref<Tscal>(ipsi_propag);
-        sycl::buffer<Tscal> &buf_psi_diff   = pdat.get_field_buf_ref<Tscal>(ipsi_diff);
-        sycl::buffer<Tscal> &buf_psi_cons   = pdat.get_field_buf_ref<Tscal>(ipsi_cons);
+        sham::DeviceBuffer<Tvec> &buf_mag_pressure   = pdat.get_field_buf_ref<Tvec>(imag_pressure);
+        sham::DeviceBuffer<Tvec> &buf_mag_tension    = pdat.get_field_buf_ref<Tvec>(imag_tension);
+        sham::DeviceBuffer<Tvec> &buf_gas_pressure   = pdat.get_field_buf_ref<Tvec>(igas_pressure);
+        sham::DeviceBuffer<Tvec> &buf_tensile_corr   = pdat.get_field_buf_ref<Tvec>(itensile_corr);
 
-        sycl::buffer<Tscal> &buf_u_mhd   = pdat.get_field_buf_ref<Tscal>(iu_mhd);
+        sham::DeviceBuffer<Tscal> &buf_psi_propag   = pdat.get_field_buf_ref<Tscal>(ipsi_propag);
+        sham::DeviceBuffer<Tscal> &buf_psi_diff   = pdat.get_field_buf_ref<Tscal>(ipsi_diff);
+        sham::DeviceBuffer<Tscal> &buf_psi_cons   = pdat.get_field_buf_ref<Tscal>(ipsi_cons);
+
+        sham::DeviceBuffer<Tscal> &buf_u_mhd   = pdat.get_field_buf_ref<Tscal>(iu_mhd);
         // logger::raw_ln("charged B psi");
         //  ADD curlBBBBBBBBB
 
@@ -890,7 +887,37 @@ Tscal mu_0 = 1.;
 
         /////////////////////////////////////////////
 
-        shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        sham::EventList depends_list;
+
+        auto xyz        = buf_xyz.get_read_access(depends_list);
+        auto axyz       = buf_axyz.get_write_access(depends_list);
+        auto du         = buf_duint.get_write_access(depends_list);
+        auto vxyz       = buf_vxyz.get_read_access(depends_list);
+        auto hpart      = buf_hpart.get_read_access(depends_list);
+        auto omega      = buf_omega.get_read_access(depends_list);
+        auto u          = buf_uint.get_read_access(depends_list);
+        auto pressure   = buf_pressure.get_read_access(depends_list);
+        auto cs         = buf_cs.get_read_access(depends_list);
+        auto B_on_rho = buf_B_on_rho.get_read_access(depends_list);
+        auto psi_on_ch = buf_psi_on_ch.get_read_access(depends_list);
+        auto dB_on_rho = buf_dB_on_rho.get_write_access(depends_list);
+        auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
+
+        auto mag_pressure = buf_mag_pressure.get_write_access(depends_list);
+        auto mag_tension  = buf_mag_tension.get_write_access(depends_list);
+        auto gas_pressure = buf_gas_pressure.get_write_access(depends_list);
+        auto tensile_corr = buf_tensile_corr.get_write_access(depends_list);
+
+        auto psi_propag = buf_psi_propag.get_write_access(depends_list);
+        auto psi_diff = buf_psi_diff.get_write_access(depends_list);
+        auto psi_cons = buf_psi_cons.get_write_access(depends_list);
+
+        auto u_mhd = buf_dpsi_on_ch.get_write_access(depends_list);
+
+        auto ploop_ptrs = pcache.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const Tscal pmass     = solver_config.gpart_mass;
             const Tscal sigma_mhd = cfg.sigma_mhd;
             const Tscal alpha_u   = cfg.alpha_u;
@@ -900,41 +927,7 @@ Tscal mu_0 = 1.;
             logger::debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
             logger::debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
 
-            // tree::ObjectIterator particle_looper(tree,cgh);
-
-            // tree::LeafCacheObjectIterator
-            // particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-
-            tree::ObjectCacheIterator particle_looper(pcache, cgh);
-
-            sycl::accessor xyz{buf_xyz, cgh, sycl::read_only};
-            sycl::accessor axyz{buf_axyz, cgh, sycl::write_only};
-            sycl::accessor du{buf_duint, cgh, sycl::write_only};
-            sycl::accessor dB_on_rho{buf_dB_on_rho, cgh, sycl::write_only};
-            sycl::accessor dpsi_on_ch{buf_dpsi_on_ch, cgh, sycl::write_only};
-            sycl::accessor vxyz{buf_vxyz, cgh, sycl::read_only};
-            sycl::accessor hpart{buf_hpart, cgh, sycl::read_only};
-            sycl::accessor omega{buf_omega, cgh, sycl::read_only};
-            sycl::accessor u{buf_uint, cgh, sycl::read_only};
-            sycl::accessor pressure{buf_pressure, cgh, sycl::read_only};
-            sycl::accessor cs{
-                storage.soundspeed.get().get_buf_check(cur_p.id_patch), cgh, sycl::read_only};
-            sycl::accessor B_on_rho{buf_B_on_rho, cgh, sycl::read_only};
-            sycl::accessor psi_on_ch{buf_psi_on_ch, cgh, sycl::read_only};
-
-            sycl::accessor mag_pressure{buf_mag_pressure, cgh, sycl::write_only};
-            sycl::accessor mag_tension{buf_mag_tension, cgh, sycl::write_only};
-            sycl::accessor gas_pressure{buf_gas_pressure, cgh, sycl::write_only};
-            sycl::accessor tensile_corr{buf_tensile_corr, cgh, sycl::write_only};
-
-            sycl::accessor psi_propag{buf_psi_propag, cgh, sycl::write_only};
-            sycl::accessor psi_diff{buf_psi_diff, cgh, sycl::write_only};
-            sycl::accessor psi_cons{buf_psi_cons, cgh, sycl::write_only};
-
-            sycl::accessor u_mhd{buf_u_mhd, cgh, sycl::write_only};
-            // sycl::accessor hmax_tree{tree_field_hmax, cgh, sycl::read_only};
-
-            // sycl::stream out {4096,1024,cgh};
+            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
@@ -1067,6 +1060,36 @@ Tscal mu_0 = 1.;
 
             });
         });
+
+        buf_xyz.complete_event_state(e);
+        buf_axyz.complete_event_state(e);
+        buf_duint.complete_event_state(e);
+        buf_vxyz.complete_event_state(e);
+        buf_hpart.complete_event_state(e);
+        buf_omega.complete_event_state(e);
+        buf_uint.complete_event_state(e);
+        buf_pressure.complete_event_state(e);
+        buf_cs.complete_event_state(e);
+        buf_B_on_rho.complete_event_state(e);
+        buf_psi_on_ch.complete_event_state(e);
+        buf_dB_on_rho.complete_event_state(e);
+        buf_dpsi_on_ch.complete_event_state(e);
+
+        buf_mag_pressure.complete_event_state(e);
+        buf_mag_tension.complete_event_state(e);
+        buf_gas_pressure.complete_event_state(e);
+        buf_tensile_corr.complete_event_state(e);
+
+        buf_psi_propag.complete_event_state(e);
+        buf_psi_diff.complete_event_state(e);
+        buf_psi_cons.complete_event_state(e);
+
+        buf_u_mhd.complete_event_state(e);
+
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        pcache.complete_event_state(resulting_events);
     });
 }
 

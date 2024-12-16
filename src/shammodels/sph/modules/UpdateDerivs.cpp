@@ -840,7 +840,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     u32 iB_on_rho_interf                           = ghost_layout.get_field_idx<Tvec>("B/rho");
     u32 ipsi_on_ch_interf                          = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
-    logger::raw_ln("charged the ghost fields.");
+    // logger::raw_ln("charged the ghost fields.");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     ComputeField<Tscal> &omega                        = storage.omega.get();

@@ -91,11 +91,7 @@ namespace shamrock::spmhd {
         Tscal v_a           = sycl::sqrt(cs_a * cs_a + v_A_a * v_A_a);
         Tscal vsig          = alpha_av * v_a + beta_av * abs_v_ab_r_ab;
         ;
-        if (vsig < 0) {
-            logger::raw_ln("BIG BIG BIG BIG BIG BIG BIG");
-            logger::raw_ln("BIG BIG BIG PROBLEM BIG BIG");
-            logger::raw_ln("BIG BIG BIG BIG BIG BIG BIG");
-        }
+
         return vsig;
     }
 

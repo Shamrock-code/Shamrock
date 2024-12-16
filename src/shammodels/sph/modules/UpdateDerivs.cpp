@@ -24,11 +24,11 @@
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
 
-    Cfg_AV cfg_av = solver_config.artif_viscosity;
+    Cfg_AV cfg_av   = solver_config.artif_viscosity;
     Cfg_MHD cfg_mhd = solver_config.mhd_config;
 
     if (None *v = std::get_if<None>(&cfg_av.config)) {
-        //shambase::throw_unimplemented();
+        // shambase::throw_unimplemented();
     } else if (Constant *v = std::get_if<Constant>(&cfg_av.config)) {
         update_derivs_constantAV(*v);
     } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&cfg_av.config)) {
@@ -42,7 +42,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
     }
 
     if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.config)) {
-        //shambase::throw_unimplemented();
+        // shambase::throw_unimplemented();
     } else if (IdealMHD *v = std::get_if<IdealMHD>(&cfg_mhd.config)) {
         update_derivs_MHD(*v);
     } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&cfg_mhd.config)) {
@@ -819,33 +819,32 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
     const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
 
-    bool do_MHD_debug = solver_config.do_MHD_debug();
-    const u32 imag_pressure   = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_pressure"): -1;
-    const u32 imag_tension    = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_tension") : -1;
-    const u32 igas_pressure   = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("gas_pressure"): -1;
-    const u32 itensile_corr   = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("tensile_corr"): -1;
-    const u32 ipsi_propag     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_propag"):  -1;
-    const u32 ipsi_diff       = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_diff"):    -1;
-    const u32 ipsi_cons       = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_cons"):    -1;
-    const u32 iu_mhd          = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("u_mhd"):       -1;
+    bool do_MHD_debug       = solver_config.do_MHD_debug();
+    const u32 imag_pressure = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_pressure") : -1;
+    const u32 imag_tension  = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_tension") : -1;
+    const u32 igas_pressure = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("gas_pressure") : -1;
+    const u32 itensile_corr = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("tensile_corr") : -1;
+    const u32 ipsi_propag   = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_propag") : -1;
+    const u32 ipsi_diff     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_diff") : -1;
+    const u32 ipsi_cons     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_cons") : -1;
+    const u32 iu_mhd        = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("u_mhd") : -1;
 
     Tscal mu_0 = 1.;
-    //Tscal mu_0 = solver_config.get_constant_mu_0(); @@@ 
+    // Tscal mu_0 = solver_config.get_constant_mu_0(); @@@
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
     u32 iB_on_rho_interf                           = ghost_layout.get_field_idx<Tvec>("B/rho");
-    u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
-    
+    u32 ipsi_on_ch_interf                          = ghost_layout.get_field_idx<Tscal>("psi/ch");
+
     logger::raw_ln("charged the ghost fields.");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     ComputeField<Tscal> &omega                        = storage.omega.get();
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
-
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
@@ -866,8 +865,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         sham::DeviceBuffer<Tscal> &buf_dpsi_on_ch = pdat.get_field_buf_ref<Tscal>(idpsi_on_ch);
         // logger::raw_ln("charged dB dpsi");
 
-        sham::DeviceBuffer<Tvec> &buf_B_on_rho   = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
-        sham::DeviceBuffer<Tscal> &buf_psi_on_ch = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
+        sham::DeviceBuffer<Tvec> &buf_B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
+        sham::DeviceBuffer<Tscal> &buf_psi_on_ch
+            = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
 
         // logger::raw_ln("charged B psi");
         //  ADD curlBBBBBBBBB
@@ -890,21 +890,44 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         auto u          = buf_uint.get_read_access(depends_list);
         auto pressure   = buf_pressure.get_read_access(depends_list);
         auto cs         = buf_cs.get_read_access(depends_list);
-        auto B_on_rho = buf_B_on_rho.get_read_access(depends_list);
-        auto psi_on_ch = buf_psi_on_ch.get_read_access(depends_list);
-        auto dB_on_rho = buf_dB_on_rho.get_write_access(depends_list);
+        auto B_on_rho   = buf_B_on_rho.get_read_access(depends_list);
+        auto psi_on_ch  = buf_psi_on_ch.get_read_access(depends_list);
+        auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
         auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
 
-        Tvec* mag_pressure = (do_MHD_debug) ? mpdat.get_field_buf_ref<Tvec>(imag_pressure).get_write_access(depends_list) : nullptr;
-        Tvec* mag_tension  = (do_MHD_debug) ? mpdat.get_field_buf_ref<Tvec>(imag_tension).get_write_access(depends_list) : nullptr;
-        Tvec* gas_pressure = (do_MHD_debug) ? mpdat.get_field_buf_ref<Tvec>(igas_pressure).get_write_access(depends_list) : nullptr;
-        Tvec* tensile_corr = (do_MHD_debug) ? mpdat.get_field_buf_ref<Tvec>(itensile_corr).get_write_access(depends_list) : nullptr;
+        Tvec *mag_pressure
+            = (do_MHD_debug)
+                  ? mpdat.get_field_buf_ref<Tvec>(imag_pressure).get_write_access(depends_list)
+                  : nullptr;
+        Tvec *mag_tension
+            = (do_MHD_debug)
+                  ? mpdat.get_field_buf_ref<Tvec>(imag_tension).get_write_access(depends_list)
+                  : nullptr;
+        Tvec *gas_pressure
+            = (do_MHD_debug)
+                  ? mpdat.get_field_buf_ref<Tvec>(igas_pressure).get_write_access(depends_list)
+                  : nullptr;
+        Tvec *tensile_corr
+            = (do_MHD_debug)
+                  ? mpdat.get_field_buf_ref<Tvec>(itensile_corr).get_write_access(depends_list)
+                  : nullptr;
 
-        Tscal* psi_propag = (do_MHD_debug) ? mpdat.get_field_buf_ref<Tscal>(ipsi_propag).get_write_access(depends_list) : nullptr;
-        Tscal* psi_diff   = (do_MHD_debug) ? mpdat.get_field_buf_ref<Tscal>(ipsi_diff).get_write_access(depends_list) : nullptr;
-        Tscal* psi_cons   = (do_MHD_debug) ? mpdat.get_field_buf_ref<Tscal>(ipsi_cons).get_write_access(depends_list) : nullptr;
+        Tscal *psi_propag
+            = (do_MHD_debug)
+                  ? mpdat.get_field_buf_ref<Tscal>(ipsi_propag).get_write_access(depends_list)
+                  : nullptr;
+        Tscal *psi_diff
+            = (do_MHD_debug)
+                  ? mpdat.get_field_buf_ref<Tscal>(ipsi_diff).get_write_access(depends_list)
+                  : nullptr;
+        Tscal *psi_cons
+            = (do_MHD_debug)
+                  ? mpdat.get_field_buf_ref<Tscal>(ipsi_cons).get_write_access(depends_list)
+                  : nullptr;
 
-        Tscal* u_mhd = (do_MHD_debug) ? mpdat.get_field_buf_ref<Tscal>(iu_mhd).get_write_access(depends_list) : nullptr;
+        Tscal *u_mhd = (do_MHD_debug)
+                           ? mpdat.get_field_buf_ref<Tscal>(iu_mhd).get_write_access(depends_list)
+                           : nullptr;
 
         auto ploop_ptrs = pcache.get_read_access(depends_list);
 
@@ -1038,19 +1061,18 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                 dB_on_rho[id_a]  = magnetic_eq;
                 dpsi_on_ch[id_a] = psi_eq;
 
-                if (do_MHD_debug){
-                mag_pressure[id_a]       = mag_pressure_term;
-                mag_tension[id_a]        = mag_tension_term;
-                gas_pressure[id_a]       = gas_pressure_term;
-                tensile_corr[id_a]       = tensile_corr_term;
+                if (do_MHD_debug) {
+                    mag_pressure[id_a] = mag_pressure_term;
+                    mag_tension[id_a]  = mag_tension_term;
+                    gas_pressure[id_a] = gas_pressure_term;
+                    tensile_corr[id_a] = tensile_corr_term;
 
-                psi_propag[id_a] = psi_propag_term;
-                psi_diff[id_a]   = psi_diff_term;
-                psi_cons[id_a]   = psi_cons_term;
+                    psi_propag[id_a] = psi_propag_term;
+                    psi_diff[id_a]   = psi_diff_term;
+                    psi_cons[id_a]   = psi_cons_term;
 
-                u_mhd[id_a]      = u_mhd_term;
+                    u_mhd[id_a] = u_mhd_term;
                 }
-
             });
         });
 

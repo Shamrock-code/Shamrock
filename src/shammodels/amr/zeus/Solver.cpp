@@ -25,6 +25,7 @@
 #include "shammodels/amr/zeus/modules/TransportStep.hpp"
 #include "shammodels/amr/zeus/modules/ValueLoader.hpp"
 #include "shammodels/amr/zeus/modules/WriteBack.hpp"
+#include "shammodels/timestep_report.hpp"
 #include "shamrock/io/AsciiSplitDump.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
@@ -33,6 +34,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     -> Tscal {
 
     StackEntry stack_loc{};
+    sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("amr::Zeus", shambase::format("t = {}, dt = {}", t_current, dt_input));
@@ -549,34 +551,27 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
     tstep.end();
 
+    sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
+
+    f64 t_dev_alloc
+        = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
+          + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);
+
     u64 rank_count = scheduler().get_rank_count() * AMRBlock::block_size;
     f64 rate       = f64(rank_count) / tstep.elasped_sec();
 
-    std::string log_rank_rate = shambase::format(
-        "\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:3.0f} % |",
-        shamcomm::world_rank(),
+    std::string log_step = report_perf_timestep(
         rate,
         rank_count,
         tstep.elasped_sec(),
-        100 * (storage.timings_details.interface / tstep.elasped_sec()),
-        100 * (storage.timings_details.neighbors / tstep.elasped_sec()),
-        100 * (storage.timings_details.io / tstep.elasped_sec()));
-
-    std::string gathered = "";
-    shamcomm::gather_str(log_rank_rate, gathered);
+        storage.timings_details.interface,
+        t_dev_alloc,
+        mem_perf_infos_end.max_allocated_byte_device);
 
     if (shamcomm::world_rank() == 0) {
-        std::string print = "processing rate infos : \n";
-        print += ("--------------------------------------------------------------------------------"
-                  "-\n");
-        print += ("| rank |  rate  (N.s^-1)  |      N      | t compute (s) | interf | neigh |   io "
-                  " |\n");
-        print += ("--------------------------------------------------------------------------------"
-                  "-");
-        print += (gathered) + "\n";
-        print += ("--------------------------------------------------------------------------------"
-                  "-");
-        logger::info_ln("amr::Zeus", print);
+        logger::info_ln("amr::Zeus", log_step);
+        logger::info_ln(
+            "amr::Zeus", "estimated rate :", dt_input * (3600 / tstep.elasped_sec()), "(tsim/hr)");
     }
 
     storage.timings_details.reset();

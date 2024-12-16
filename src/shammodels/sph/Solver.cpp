@@ -22,6 +22,8 @@
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/reduction.hpp"
+#include "shambackends/MemPerfInfos.hpp"
+#include "shambackends/details/memoryHandle.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
@@ -42,6 +44,7 @@
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
+#include "shammodels/timestep_report.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -1314,6 +1317,8 @@ bool shammodels::sph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_al
 template<class Tvec, template<class> class Kern>
 shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
+    sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
+
     Tscal t_current = solver_config.get_time();
     Tscal dt        = solver_config.get_dt_sph();
 
@@ -1950,20 +1955,30 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     tstep.end();
 
+    sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
+
+    f64 t_dev_alloc
+        = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
+          + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);
+
     u64 rank_count = scheduler().get_rank_count();
     f64 rate       = f64(rank_count) / tstep.elasped_sec();
 
     // logger::info_ln("SPHSolver", "process rate : ", rate, "particle.s-1");
 
-    std::string log_rank_rate = shambase::format(
-        "\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:3.0f} % |",
-        shamcomm::world_rank(),
+    std::string log_step = report_perf_timestep(
         rate,
         rank_count,
         tstep.elasped_sec(),
-        100 * (storage.timings_details.interface / tstep.elasped_sec()),
-        100 * (storage.timings_details.neighbors / tstep.elasped_sec()),
-        100 * (storage.timings_details.io / tstep.elasped_sec()));
+        storage.timings_details.interface,
+        t_dev_alloc,
+        mem_perf_infos_end.max_allocated_byte_device);
+
+    if (shamcomm::world_rank() == 0) {
+        logger::info_ln("sph::Model", log_step);
+        logger::info_ln(
+            "sph::Model", "estimated rate :", dt * (3600 / tstep.elasped_sec()), "(tsim/hr)");
+    }
 
     solve_logs.register_log(
         {t_current,              // f64 solver_t;
@@ -1973,25 +1988,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
          rate,                   // f64 rate;
          tstep.elasped_sec(),    // f64 elasped_sec;
          shambase::details::get_wtime()});
-
-    std::string gathered = "";
-    shamcomm::gather_str(log_rank_rate, gathered);
-
-    if (shamcomm::world_rank() == 0) {
-        std::string print = "processing rate infos : \n";
-        print += ("--------------------------------------------------------------------------------"
-                  "-\n");
-        print += ("| rank |  rate  (N.s^-1)  |      N      | t compute (s) | interf | neigh |   io "
-                  " |\n");
-        print += ("--------------------------------------------------------------------------------"
-                  "-");
-        print += (gathered) + "\n";
-        print += ("--------------------------------------------------------------------------------"
-                  "-");
-        logger::info_ln("sph::Model", print);
-        logger::info_ln(
-            "sph::Model", "estimated rate :", dt * (3600 / tstep.elasped_sec()), "(tsim/hr)");
-    }
 
     storage.timings_details.reset();
 

@@ -968,7 +968,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
                 Tvec B_a         = B_on_rho[id_a] * rho_a;
                 Tscal v_alfven_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
-                Tscal v_shock_a  = sycl::sqrt(sycl::pow(cs_a, 2) + sycl::pow(v_alfven_a, 2));
+                Tscal v_shock_a  = sycl::sqrt(cs_a * cs_a + v_alfven_a * v_alfven_a);
                 Tscal psi_a      = psi_on_ch[id_a] * v_shock_a;
 
                 Tscal omega_a_rho_a_inv = 1 / (omega_a * rho_a);
@@ -1010,7 +1010,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                     Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
                     Tvec B_b         = B_on_rho[id_b] * rho_b;
                     Tscal v_alfven_b = sycl::sqrt(sycl::dot(B_b, B_b) / (mu_0 * rho_b));
-                    Tscal v_shock_b  = sycl::sqrt(sycl::pow(cs_b, 2) + sycl::pow(v_alfven_b, 2));
+                    Tscal v_shock_b  = sycl::sqrt(cs_b * cs_b + v_alfven_b * v_alfven_b);
                     Tscal psi_b      = psi_on_ch[id_b] * v_shock_b;
                     // const Tscal alpha_a = alpha_AV;
                     // const Tscal alpha_b = alpha_AV;

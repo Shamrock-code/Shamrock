@@ -574,8 +574,8 @@ namespace shamrock::spmhd {
         // Tscal mu_0 = config.get_constant_mu_0();
         Tscal v_alfven_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
         Tscal v_alfven_b = sycl::sqrt(sycl::dot(B_b, B_b) / (mu_0 * rho_b));
-        Tscal v_shock_a  = sycl::sqrt(sycl::pow(cs_a, 2) + sycl::pow(v_alfven_a, 2));
-        Tscal v_shock_b  = sycl::sqrt(sycl::pow(cs_b, 2) + sycl::pow(v_alfven_b, 2));
+        Tscal v_shock_a  = sycl::sqrt(cs_a * cs_a + v_alfven_a * v_alfven_a);
+        Tscal v_shock_b  = sycl::sqrt(cs_b * cs_b + v_alfven_b * v_alfven_b);
 
         Tvec v_cross_r = sycl::cross(v_ab, r_ab_unit);
         Tscal vsig_B   = sycl::sqrt(

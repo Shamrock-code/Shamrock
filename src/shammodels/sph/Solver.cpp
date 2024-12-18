@@ -1722,15 +1722,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     auto u                    = buf_uint.get_read_access(depends_list);
                     auto pressure             = buf_pressure.get_read_access(depends_list);
                     auto cs                   = cs_buf.get_read_access(depends_list);
-                    Tvec *B_on_rho            = (has_psi_field)
-                                                    ? mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
-                                               .get_write_access(depends_list)
-                                                    : nullptr;
                     auto vsig                 = vsig_buf.get_write_access(depends_list);
-                    auto vclean               = vclean_buf.get_write_access(depends_list);
                     auto particle_looper_ptrs = pcache.get_read_access(depends_list);
 
-                    NamedStackEntry tmppp{"compute vsig (and vclean if MHD)"};
+                    NamedStackEntry tmppp{"compute vsig"};
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                         const Tscal pmass    = solver_config.gpart_mass;
                         const Tscal alpha_u  = 1.0;
@@ -1762,16 +1757,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                                 Tscal cs_a = cs[id_a];
 
-                                Tvec B_a = (B_on_rho == nullptr) ? B_on_rho[id_a] * rho_a : Tvec{0, 0, 0};
-
-                                Tscal const mu_0 = 1.; /// @@@ CAREFUL
-
                                 Tscal vsig_max = 0;
-                                Tscal vclean_a = 0;
-
-                                Tscal v_alfven_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
-
-                                vclean_a = sycl::sqrt(cs_a * cs_a + v_alfven_a * v_alfven_a);
 
                                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
                                     // compute only omega_a
@@ -1812,20 +1798,57 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                 });
 
                                 vsig[id_a]   = vsig_max;
-                                vclean[id_a] = vclean_a;
                             });
                     });
+                   
+
+                    if (has_psi_field){
+                        NamedStackEntry tmppp{"compute vclean"};
+
+                        Tvec *B_on_rho            = (has_psi_field)
+                                                        ? mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
+                                                .get_write_access(depends_list)
+                                                        : nullptr;
+                        auto vclean               = vclean_buf.get_write_access(depends_list);
+
+                        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                            const Tscal pmass    = solver_config.gpart_mass;
+
+                            tree::ObjectCacheIterator particle_looper(particle_looper_ptrs);
+
+                            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+                            shambase::parralel_for(
+                                cgh, pdat.get_obj_cnt(), "compute vsig", [=](i32 id_a) {
+                                    using namespace shamrock::sph;
+
+                                    Tscal h_a      = hpart[id_a];
+                                    Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
+                                    const Tscal u_a = u[id_a];
+                                    Tscal cs_a = cs[id_a];
+                                    Tvec B_a = (B_on_rho == nullptr) ? B_on_rho[id_a] * rho_a : Tvec{0, 0, 0};
+
+                                    Tscal const mu_0 = 1.; /// @@@ CAREFUL
+
+                                    Tscal v_alfven_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
+                                    Tscal vclean_a = sycl::sqrt(cs_a * cs_a + v_alfven_a * v_alfven_a);
+
+                                    vclean[id_a] = vclean_a;
+                                });
+                        });
+                        mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf).complete_event_state(e);
+                        vclean_buf.complete_event_state(e);
+
+                    };
+                    
 
                     buf_xyz.complete_event_state(e);
                     buf_vxyz.complete_event_state(e);
                     buf_hpart.complete_event_state(e);
                     buf_uint.complete_event_state(e);
                     buf_pressure.complete_event_state(e);
-                    cs_buf.complete_event_state(e);
-                    if (has_psi_field)
-                        mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf).complete_event_state(e);
+                    cs_buf.complete_event_state(e);    
                     vsig_buf.complete_event_state(e);
-                    vclean_buf.complete_event_state(e);
 
                     sham::EventList resulting_events;
                     resulting_events.add_event(e);

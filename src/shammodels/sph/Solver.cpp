@@ -1762,7 +1762,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                                 Tscal cs_a = cs[id_a];
 
-                                Tvec B_a = (has_psi_field) ? B_on_rho[id_a] * rho_a : Tvec{0, 0, 0};
+                                Tvec B_a = (B_on_rho == nullptr) ? B_on_rho[id_a] * rho_a : Tvec{0, 0, 0};
 
                                 Tscal const mu_0 = 1.; /// @@@ CAREFUL
 

@@ -6,20 +6,26 @@
   font-weight: bold
 }
 
-
-
 /* Increase logo + header size */
 
 .md-header__button.md-logo {
-  margin: 0;
-  padding: 4px;
+  width: 30px; /* Diameter of the circle */
+  height: 30px; /* Diameter of the circle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /*overflow: hidden; /* Ensures the logo doesn't exceed the circle */
+  transform: translate(0px,15px) scale(2.3);
+  padding-left: 30px; /* Add horizontal padding */
+  padding-right: 25px;
 }
 
 .md-header__button.md-logo img {
-  width: 70px;
-  height: 70px;
-}
-
-.md-header__topic {
-  font-size: x-large;
+  border-radius: 50%; /* Makes the container circular */
+  /*background-color: var(--md-primary-fg-color);*/
+  background-color: rgba(77, 98, 219,1); /* Background color of the circle */
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2); /* Optional shadow */
+  width: 30px;
+  height: 30px;
+  padding: 2.5px;
 }

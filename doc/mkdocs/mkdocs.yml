@@ -3,12 +3,12 @@ site_name: Shamrock
 repo_url: https://github.com/tdavidcl/Shamrock
 repo_name: Shamrock
 
-copyright: Copyright(C) 2021-2023 Timothée David--Cléris
-
+copyright: Copyright (c) 2021-2024 Timothée David--Cléris
 
 nav:
   - 'Mkdocs documentation': 'index.md'
   - 'Doxygen documentation': 'doxygen.md'
+  - 'Features': 'features.md'
 
   - 'User Documentation' :
     - 'QuickStart' : 'usermanual/quickstart.md'
@@ -65,8 +65,6 @@ nav:
 
 
 
-
-
 theme:
   name: material
   icon:
@@ -81,7 +79,7 @@ theme:
 
     - content.tooltips
 
-
+  custom_dir: overrides
   logo: assets/logo.png
 
   favicon: assets/logo.ico
@@ -104,7 +102,8 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
 
-
+extra:
+  generator: false
 
 extra_css:
   - stylesheets/extra.css

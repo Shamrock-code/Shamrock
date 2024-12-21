@@ -6,7 +6,7 @@ This page was made in order to list the features of the code as well as properly
 We list the features by categories as wel as their status which can be any of:
 ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)
 ![Ok](https://img.shields.io/badge/Ok-yellowgreen)
-![Draft](https://img.shields.io/badge/Draft-yellow)
+![WIP](https://img.shields.io/badge/WIP-yellow) (Work in progress)
 ![Broken](https://img.shields.io/badge/Broken-red)
 This page also trace the contributor who made the contributiona as well as the corresponding paper to cite for each features.
 If any feature is notated with
@@ -24,7 +24,7 @@ please wait for the corresponding feature to be published before publishing anyt
 | Gas solver | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
 | Sink particles | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
 | Pseudo-Newtonian <br> corrections | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #319](https://img.shields.io/badge/PR-%23319-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/319) |
-| MHD solver | ![Draft](https://img.shields.io/badge/Draft-yellow)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #707](https://img.shields.io/badge/PR-%23707-yellow?logo=github)](https://github.com/tdavidcl/Shamrock/pull/707) |
+| MHD solver | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #707](https://img.shields.io/badge/PR-%23707-yellow?logo=github)](https://github.com/tdavidcl/Shamrock/pull/707) |
 
 
 | Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
@@ -61,13 +61,14 @@ please wait for the corresponding feature to be published before publishing anyt
 | --- | --- | --- | --- |  --- |
 | Ramses solver | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | Needs some polishing to be considered production ready |
 | Refinement handling | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
-| Multifluid dust | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Léodasce Sewanou](https://github.com/Akos299) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
+| Multifluid dust | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Léodasce Sewanou](https://github.com/Akos299) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #636](https://img.shields.io/badge/PR-%23636-yellow?logo=github)](https://github.com/tdavidcl/Shamrock/pull/636) |
 
 #### Refinement criterions
 
 | Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
 | --- | --- | --- | --- |  --- |
 | Mass based refinement | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
+| Pseudo-gradient refinement | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Léodasce Sewanou](https://github.com/Akos299) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
 
 ### Zeus model
 
@@ -79,7 +80,7 @@ please wait for the corresponding feature to be published before publishing anyt
 
 | Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
 | --- | --- | --- | --- |  --- |
-| Core solver | ![Draft](https://img.shields.io/badge/Draft-yellow) |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical)  | Draft of a N-Body FMM self-gravity solver, physically correct but not usable for any production runs yet. |
+| Core solver | ![WIP](https://img.shields.io/badge/WIP-yellow) |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical)  | WIP of a N-Body FMM self-gravity solver, physically correct but not usable for any production runs yet. |
 
 ## Framework
 

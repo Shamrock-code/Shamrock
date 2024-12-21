@@ -8,7 +8,13 @@ copyright: Copyright (c) 2021-2024 Timothée David--Cléris
 nav:
   - 'Mkdocs documentation': 'index.md'
   - 'Doxygen documentation': 'doxygen.md'
-  - 'Features': 'features.md'
+
+  - 'Features':
+    - 'Feature list': 'features.md'
+    - 'SPH model':
+      - 'Phantom conformance': 'features/sph/conformance_phantom.md'
+      - 'Sink particles': 'features/sph/sinks.md'
+      - 'Shearing box' : 'features/sph/shearing_box.md'
 
   - 'User Documentation' :
     - 'QuickStart' : 'usermanual/quickstart.md'
@@ -29,7 +35,6 @@ nav:
   - 'Physical models' :
     - 'SPH' :
       - 'Scalling test' : 'models/sph/scalling.md'
-      - 'Shearing box' : 'models/sph/shearing_box.md'
 
   - 'Develloper Doc' :
     - 'Git guide' : 'devdoc/git_guide.md'

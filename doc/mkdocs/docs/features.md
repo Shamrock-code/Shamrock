@@ -70,6 +70,23 @@ please wait for the corresponding feature to be published before publishing anyt
 | Mass based refinement | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
 | Pseudo-gradient refinement | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Léodasce Sewanou](https://github.com/Akos299) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
 
+#### Slope limiters
+
+| Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
+| --- | --- | --- | --- |  --- |
+| None | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
+| Minmod | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
+| VanLeer | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
+| Symmetrized VanLeer | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
+
+#### Riemann solvers
+
+| Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
+| --- | --- | --- | --- |  --- |
+| Rusanov | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) |  |  |
+| HLL | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) |  |  |
+| HLLC | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Léodasce Sewanou](https://github.com/Akos299) |  |
+
 ### Zeus model
 
 | Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |

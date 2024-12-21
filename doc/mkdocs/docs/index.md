@@ -50,7 +50,7 @@ We can run some SPH, AMR, but not only that!
 
     Shamrock has plenty of features, be sure to check the list to know what's **available** and to **avoid duplicates**.
 
-    [:octicons-arrow-right-24: Features](https://github.com/tdavidcl/Shamrock/blob/main/LICENSE)
+    [:octicons-arrow-right-24: Features](./features.md)
 
 </div>
 

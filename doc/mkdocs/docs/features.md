@@ -17,14 +17,23 @@ please wait for the corresponding feature to be published before publishing anyt
 
 ### SPH model
 
-#### Main physical equation solved
+#### Core features
 
 | Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
 | --- | --- | --- | --- |  --- |
-| Core solver | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
+| Gas solver | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
 | Sink particles | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
 | Pseudo-Newtonian <br> corrections | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #319](https://img.shields.io/badge/PR-%23319-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/319) |
 | MHD solver | ![Draft](https://img.shields.io/badge/Draft-yellow)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #707](https://img.shields.io/badge/PR-%23707-yellow?logo=github)](https://github.com/tdavidcl/Shamrock/pull/707) |
+
+
+| Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
+| --- | --- | --- | --- |  --- |
+| [On the fly-plots](./usermanual/plotting.md) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #623](https://img.shields.io/badge/PR-%23623-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/623) |
+| Conformance with Phantom | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) <br> & [Yona Lapeyre](https://github.com/y-lapeyre) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
+| Setup graph | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
+| Shearing box | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
+| Periodic box | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
 
 #### Shock handling mechanisms
 
@@ -43,13 +52,6 @@ please wait for the corresponding feature to be published before publishing anyt
 | Adiabatic | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | | |
 | Isothermal - LP07 | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | | [![PR - #361](https://img.shields.io/badge/PR-%23361-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/361)  |
 | Isothermal - FA14 | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | | |
-
-| Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
-| --- | --- | --- | --- |  --- |
-| Conformance with Phantom | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) <br> & [Yona Lapeyre](https://github.com/y-lapeyre) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
-| Setup graph | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
-| Shearing box | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
-| Periodic box | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
 
 ### Godunov model
 

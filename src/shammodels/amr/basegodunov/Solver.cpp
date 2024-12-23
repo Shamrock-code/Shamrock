@@ -128,6 +128,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         modules::DragIntegrator drag_integ(context, solver_config, storage);
         drag_integ.involve_with_no_src(dt_input);
         drag_integ.enable_irk1_drag_integrator(dt_input);
+    } else {
+        shambase::throw_unimplemented();
     }
 
     if (false) {

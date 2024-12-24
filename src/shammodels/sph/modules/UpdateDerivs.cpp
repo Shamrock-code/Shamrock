@@ -829,8 +829,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     const u32 ipsi_cons     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_cons") : -1;
     const u32 iu_mhd        = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("u_mhd") : -1;
 
-    Tscal mu_0 = 1.;
-    // Tscal mu_0 = solver_config.get_constant_mu_0(); @@@
+    // Tscal mu_0 = 1.;
+    Tscal const mu_0 = solver_config.get_constant_mu_0();
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");

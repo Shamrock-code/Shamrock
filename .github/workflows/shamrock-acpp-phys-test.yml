@@ -7,7 +7,7 @@ jobs:
 
 
   shamrock_acpp:
-    name: test ${{ matrix.testfile }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}}
+    name: run ${{ matrix.testfile }} wz=${{ matrix.worldsize }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}}
     runs-on: [self-hosted,  docker-runner]
 
     container:
@@ -17,27 +17,39 @@ jobs:
       matrix:
         include:
           - clang: 15
-            cuda: 11.0.2
-            rocm: 5.4.3
             backend: omp
             arch: none
-            runtest: yes
+            worldsize: 1
             testfile: sod_tube_sph.py
             container: ghcr.io/shamrock-code/ci-ubuntu20:main
           - clang: 15
-            cuda: 11.0.2
-            rocm: 5.4.3
             backend: omp
             arch: none
-            runtest: yes
+            worldsize: 1
             testfile: sod_tube_godunov.py
             container: ghcr.io/shamrock-code/ci-ubuntu20:main
           - clang: 15
-            cuda: 11.0.2
-            rocm: 5.4.3
             backend: omp
             arch: none
-            runtest: yes
+            worldsize: 2
+            testfile: sod_tube_godunov.py
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
+          - clang: 15
+            backend: omp
+            arch: none
+            worldsize: 1
+            testfile: sod_tube_zeus.py
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
+          - clang: 15
+            backend: omp
+            arch: none
+            worldsize: 2
+            testfile: sod_tube_zeus.py
+            container: ghcr.io/shamrock-code/ci-ubuntu20:main
+          - clang: 15
+            backend: omp
+            arch: none
+            worldsize: 1
             testfile: reload_old_dump.py
             container: ghcr.io/shamrock-code/ci-ubuntu20:main
 
@@ -110,4 +122,4 @@ jobs:
       - name: run test
         run: |
           cd build
-          ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}
+          mpirun -report-bindings --allow-run-as-root --bind-to socket -n ${{matrix.worldsize}} ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}

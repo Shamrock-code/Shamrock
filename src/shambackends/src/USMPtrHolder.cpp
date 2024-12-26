@@ -16,7 +16,7 @@
 
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambase/string.hpp"
-#include "shambackends/details/memoryHandle.hpp"
+#include "shambackends/details/internal_alloc.hpp"
 #include <memory>
 
 namespace sham {

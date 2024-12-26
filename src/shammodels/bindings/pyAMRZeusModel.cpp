@@ -16,6 +16,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/amr/zeus/Model.hpp"
+#include "shammodels/amr/zeus/modules/AnalysisSodTube.hpp"
 #include <pybind11/functional.h>
 #include <memory>
 
@@ -26,8 +27,9 @@ namespace shammodels::zeus {
         using Tscal     = shambase::VecComponent<Tvec>;
         using Tgridscal = shambase::VecComponent<TgridVec>;
 
-        using T       = Model<Tvec, TgridVec>;
-        using TConfig = typename T::Solver::Config;
+        using T                = Model<Tvec, TgridVec>;
+        using TConfig          = typename T::Solver::Config;
+        using TAnalysisSodTube = shammodels::zeus::modules::AnalysisSodTube<Tvec, TgridVec>;
 
         logger::debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
         logger::debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
@@ -52,6 +54,12 @@ namespace shammodels::zeus {
                 self.use_van_leer = enable;
             });
 
+        std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
+        py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())
+            .def("compute_L2_dist", [](TAnalysisSodTube &self) -> std::tuple<Tscal, Tvec, Tscal> {
+                auto ret = self.compute_L2_dist();
+                return {ret.rho, ret.v, ret.P};
+            });
         py::class_<T>(m, name_model.c_str())
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
@@ -73,6 +81,26 @@ namespace shammodels::zeus {
                 "get_cell_coords",
                 [](T &self, std::pair<TgridVec, TgridVec> block_coord, u32 cell_local_id) {
                     return self.get_cell_coords(block_coord, cell_local_id);
+                })
+            .def(
+                "make_analysis_sodtube",
+                [](T &self,
+                   shamphys::SodTube sod,
+                   Tvec direction,
+                   Tscal time_val,
+                   Tscal x_ref,
+                   Tscal x_min,
+                   Tscal x_max) {
+                    return std::make_unique<TAnalysisSodTube>(
+                        self.ctx,
+                        self.solver.solver_config,
+                        self.solver.storage,
+                        sod,
+                        direction,
+                        time_val,
+                        x_ref,
+                        x_min,
+                        x_max);
                 });
     }
 } // namespace shammodels::zeus

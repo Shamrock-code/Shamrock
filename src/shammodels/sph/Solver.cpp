@@ -1681,7 +1681,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             logger::debug_ln("BasicGas", "computing next CFL");
 
             ComputeField<Tscal> vsig_max_dt = utility.make_compute_field<Tscal>("vsig_a", 1);
-            ComputeField<Tscal> vclean_dt   = utility.make_compute_field<Tscal>("vclean_a", 1);
+            std::unique_ptr<ComputeField<Tscal>> vclean_dt;
+            if (has_psi_field) {
+                vclean_dt = std::make_unique<ComputeField<Tscal>>(
+                    utility.make_compute_field<Tscal>("vclean_a", 1));
+            }
 
             shambase::DistributedData<MergedPatchData> &mpdat
                 = storage.merged_patchdata_ghost.get();
@@ -1701,8 +1705,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 sham::DeviceBuffer<Tscal> &cs_buf
                     = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
 
-                sham::DeviceBuffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
-                sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &vsig_buf = vsig_max_dt.get_buf_check(cur_p.id_patch);
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -1802,6 +1805,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                     if (has_psi_field) {
                         NamedStackEntry tmppp{"compute vclean"};
+                        sham::DeviceBuffer<Tscal> &vclean_buf
+                            = vclean_dt->get_buf_check(cur_p.id_patch);
 
                         Tvec *B_on_rho = (has_psi_field)
                                              ? mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
@@ -1817,7 +1822,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
                             shambase::parralel_for(
-                                cgh, pdat.get_obj_cnt(), "compute vsig", [=](i32 id_a) {
+                                cgh, pdat.get_obj_cnt(), "compute vclean", [=](i32 id_a) {
                                     using namespace shamrock::sph;
 
                                     Tscal h_a       = hpart[id_a];
@@ -1827,8 +1832,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                     Tvec B_a        = (B_on_rho == nullptr) ? B_on_rho[id_a] * rho_a
                                                                             : Tvec{0, 0, 0};
 
-                                    Tscal const mu_0
-                                        = solver_config.get_constant_mu_0(); /// @@@ CAREFUL
+                                    Tscal const mu_0 = solver_config.get_constant_mu_0();
 
                                     Tscal v_alfven_a
                                         = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
@@ -1865,7 +1869,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 sham::DeviceBuffer<Tscal> &buf_hpart
                     = merged_patch.pdat.get_field<Tscal>(ihpart_interf).get_buf();
                 sham::DeviceBuffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
-                sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt.get_buf_check(cur_p.id_patch);
                 sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
 
                 auto &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -1874,7 +1877,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 auto hpart  = buf_hpart.get_read_access(depends_list);
                 auto a      = buf_axyz.get_read_access(depends_list);
                 auto vsig   = vsig_buf.get_read_access(depends_list);
-                auto vclean = vclean_buf.get_read_access(depends_list);
                 auto cfl_dt = cfl_dt_buf.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -1884,24 +1886,37 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                     * solver_config.time_state.cfl_multiplier;
 
                     cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                        Tscal h_a      = hpart[item];
-                        Tscal vsig_a   = vsig[item];
-                        Tscal vclean_a = vclean[item];
-                        Tscal abs_a_a  = sycl::length(a[item]);
+                        Tscal h_a     = hpart[item];
+                        Tscal vsig_a  = vsig[item];
+                        Tscal abs_a_a = sycl::length(a[item]);
 
                         Tscal dt_c = C_cour * h_a / vsig_a;
                         Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
 
-                        Tscal dt_divB_cleaning = C_cour * h_a / vclean_a;
-                        if (vclean_a == 0 or !has_psi_field) {
-                            dt_divB_cleaning = sycl::max(dt_c, dt_f) + 1.;
-                        }
-
-                        // cfl_dt[item] = sycl::min(dt_c, dt_f);
-                        Tscal cfl_min = sycl::min(dt_c, dt_f);
-                        cfl_dt[item]  = sycl::min(cfl_min, dt_divB_cleaning);
+                        cfl_dt[item] = sycl::min(dt_c, dt_f);
                     });
                 });
+
+                if (has_psi_field) {
+                    sham::DeviceBuffer<Tscal> &vclean_buf
+                        = vclean_dt->get_buf_check(cur_p.id_patch);
+                    auto vclean = vclean_buf.get_read_access(depends_list);
+                    auto e      = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        Tscal C_cour = solver_config.cfl_config.cfl_cour
+                                       * solver_config.time_state.cfl_multiplier;
+
+                        cgh.parallel_for(
+                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                                Tscal h_a      = hpart[item];
+                                Tscal vclean_a = vclean[item];
+
+                                Tscal dt_divB_cleaning = C_cour * h_a / vclean_a;
+
+                                cfl_dt[item] = sycl::min(cfl_dt[item], dt_divB_cleaning);
+                            });
+                    });
+                    vclean_buf.complete_event_state(e);
+                };
 
                 buf_hpart.complete_event_state(e);
                 buf_axyz.complete_event_state(e);

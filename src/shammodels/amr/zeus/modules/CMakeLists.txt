@@ -9,6 +9,7 @@ DiffOperator.cpp
 ValueLoader.cpp
 WriteBack.cpp
 TransportStep.cpp
+AnalysisSodTube.cpp
 )
 set(Headers
 )

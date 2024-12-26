@@ -1805,6 +1805,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                     if (has_psi_field) {
                         NamedStackEntry tmppp{"compute vclean"};
+                        Tscal const mu_0 = solver_config.get_constant_mu_0();
                         sham::DeviceBuffer<Tscal> &vclean_buf
                             = vclean_dt->get_buf_check(cur_p.id_patch);
 
@@ -1832,7 +1833,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                     Tvec B_a        = (B_on_rho == nullptr) ? B_on_rho[id_a] * rho_a
                                                                             : Tvec{0, 0, 0};
 
-                                    Tscal const mu_0 = this->solver_config.get_constant_mu_0();
 
                                     Tscal v_alfven_a
                                         = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));

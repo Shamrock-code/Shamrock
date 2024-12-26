@@ -1833,7 +1833,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                     Tvec B_a        = (B_on_rho == nullptr) ? B_on_rho[id_a] * rho_a
                                                                             : Tvec{0, 0, 0};
 
-
                                     Tscal v_alfven_a
                                         = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
                                     Tscal vclean_a

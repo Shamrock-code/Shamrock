@@ -181,9 +181,20 @@ namespace shamalgs::random {
         return shamalgs::memory::vec_to_buf(mock_vector(seed, len, min_bound, max_bound));
     }
 
+    template<class T>
+    sham::DeviceBuffer<T>
+    mock_buffer_usm(sham::DeviceScheduler_ptr &sched, u64 seed, u32 len, T min_bound, T max_bound) {
+        auto vec = mock_vector(seed, len, min_bound, max_bound);
+        sham::DeviceBuffer<T> ret(len, sched);
+        ret.copy_from_stdvec(vec);
+        return ret;
+    }
+
 #define X(_arg_)                                                                                   \
     template sycl::buffer<_arg_> mock_buffer(u64 seed, u32 len, _arg_ min_bound, _arg_ max_bound); \
-    template std::vector<_arg_> mock_vector(u64 seed, u32 len, _arg_ min_bound, _arg_ max_bound);
+    template std::vector<_arg_> mock_vector(u64 seed, u32 len, _arg_ min_bound, _arg_ max_bound);  \
+    template sham::DeviceBuffer<_arg_> mock_buffer_usm(                                            \
+        sham::DeviceScheduler_ptr &sched, u64 seed, u32 len, _arg_ min_bound, _arg_ max_bound);
 
     X(f32);
     X(f32_2);

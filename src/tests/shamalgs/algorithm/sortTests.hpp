@@ -118,6 +118,45 @@ struct TestSortByKey {
         return ret;
     }
 };
+template<class Tkey, class Tval>
+struct TestSortByKeyUSM {
+
+    using vFunctionCall = void (*)(
+        sham::DeviceScheduler_ptr &, sham::DeviceBuffer<Tkey> &, sham::DeviceBuffer<Tval> &, u32);
+
+    vFunctionCall fct;
+
+    explicit TestSortByKeyUSM(vFunctionCall arg) : fct(arg) {};
+
+    void check() {
+
+        auto sched           = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceQueue &q = sched->get_queue();
+
+        u32 len = 1U << 8U;
+
+        sham::DeviceBuffer<u32> buf_key
+            = shamalgs::random::mock_buffer_usm<u32>(sched, 0x111, len, 0, 1U << 12U);
+        std::vector<u32> key_before_sort = buf_key.copy_to_stdvec();
+
+        sham::DeviceBuffer<u32> buf_vals = shamalgs::algorithm::gen_buffer_index_usm(sched, len);
+
+        fct(sched, buf_key, buf_vals, len);
+
+        std::vector<u32> sorted_keys = buf_key.copy_to_stdvec();
+        std::vector<u32> sorted_vals = buf_vals.copy_to_stdvec();
+
+        bool sort_ok = std::is_sorted(sorted_keys.begin(), sorted_keys.end());
+
+        bool check_map = true;
+        for (u32 i = 0; i < len; i++) {
+            check_map = check_map && (sorted_keys[i] == key_before_sort[sorted_vals[i]]);
+        }
+
+        shamtest::asserts().assert_bool("is sorted", sort_ok);
+        shamtest::asserts().assert_bool("values permutation ok", check_map);
+    }
+};
 
 struct TestStreamCompact {
 

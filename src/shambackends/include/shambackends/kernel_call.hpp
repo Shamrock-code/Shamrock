@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/optional.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include <optional>
 
@@ -34,8 +35,7 @@ namespace sham {
          */
         template<class T>
         const T *read_access_optional(
-            std::optional<std::reference_wrapper<sham::DeviceBuffer<T>>> buffer,
-            sham::EventList &depends_list) {
+            shambase::opt_ref<sham::DeviceBuffer<T>> buffer, sham::EventList &depends_list) {
             if (!buffer.has_value()) {
                 return nullptr;
             } else {
@@ -54,8 +54,7 @@ namespace sham {
          */
         template<class T>
         T *write_access_optional(
-            std::optional<std::reference_wrapper<sham::DeviceBuffer<T>>> buffer,
-            sham::EventList &depends_list) {
+            shambase::opt_ref<sham::DeviceBuffer<T>> buffer, sham::EventList &depends_list) {
             if (!buffer.has_value()) {
                 return nullptr;
             } else {
@@ -69,8 +68,7 @@ namespace sham {
          * buffer is completed with the given event.
          */
         template<class T>
-        void
-        complete_state_optional(sycl::event e, std::optional<std::reference_wrapper<T>> buffer) {
+        void complete_state_optional(sycl::event e, shambase::opt_ref<T> buffer) {
             if (buffer.has_value()) {
                 buffer.value().get().complete_event_state(e);
             }
@@ -85,7 +83,7 @@ namespace sham {
      * @return An std::optional containing a std::reference_wrapper of the object.
      */
     template<class T>
-    std::optional<std::reference_wrapper<T>> to_opt_ref(T &t) {
+    shambase::opt_ref<T> to_opt_ref(T &t) {
         return t;
     }
 
@@ -98,7 +96,7 @@ namespace sham {
      */
     template<class T>
     auto empty_buf_ref() {
-        return std::optional<std::reference_wrapper<sham::DeviceBuffer<T>>>{};
+        return shambase::opt_ref<sham::DeviceBuffer<T>>{};
     }
 
     /**
@@ -112,13 +110,13 @@ namespace sham {
     template<class... Targ>
     struct MultiRefOpt {
         /// A tuple of optional references to the buffers.
-        using storage_t = std::tuple<std::optional<std::reference_wrapper<Targ>>...>;
+        using storage_t = std::tuple<shambase::opt_ref<Targ>...>;
 
         /// The tuple of optional references to the buffers.
         storage_t storage;
 
         /// Constructor from a tuple of optional references to the buffers.
-        MultiRefOpt(std::optional<std::reference_wrapper<Targ>>... arg) : storage(arg...) {}
+        MultiRefOpt(shambase::opt_ref<Targ>... arg) : storage(arg...) {}
 
         /**
          * @brief Get a tuple of pointers to the data of the buffers, for reading.
@@ -182,7 +180,7 @@ namespace sham {
 
         /// internal_utility for MultiRef template deduction guide
         template<class T>
-        struct mapper<std::optional<std::reference_wrapper<T>>> {
+        struct mapper<shambase::opt_ref<T>> {
             /// The mapped type.
             using type = T;
         };
@@ -246,6 +244,54 @@ namespace sham {
                 storage);
         }
     };
+
+    namespace details {
+
+        /// internal implementation of typed_index_kernel_call
+        template<class index_t, class RefIn, class RefOut, class... Targs, class Functor>
+        void typed_index_kernel_call(
+            sham::DeviceQueue &q,
+            RefIn in,
+            RefOut in_out,
+            index_t n,
+            Functor &&func,
+            Targs... args) {
+
+            StackEntry stack_loc{};
+            sham::EventList depends_list;
+
+            auto acc_in     = in.get_read_access(depends_list);
+            auto acc_in_out = in_out.get_write_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.parallel_for(sycl::range<1>{n}, [=](sycl::item<1> item) {
+                    std::apply(
+                        [&](auto &...__acc_in) {
+                            std::apply(
+                                [&](auto &...__acc_in_out) {
+                                    shambase::check_functor_signature_deduce<void>(
+                                        func,
+                                        index_t(item.get_linear_id()),
+                                        __acc_in...,
+                                        __acc_in_out...,
+                                        args...);
+
+                                    func(
+                                        index_t(item.get_linear_id()),
+                                        __acc_in...,
+                                        __acc_in_out...,
+                                        args...);
+                                },
+                                acc_in_out);
+                        },
+                        acc_in);
+                });
+            });
+
+            in.complete_event_state(e);
+            in_out.complete_event_state(e);
+        }
+    } // namespace details
 
     /**
      * @brief Submit a kernel to a SYCL queue.
@@ -414,28 +460,16 @@ namespace sham {
     template<class RefIn, class RefOut, class... Targs, class Functor>
     void kernel_call(
         sham::DeviceQueue &q, RefIn in, RefOut in_out, u32 n, Functor &&func, Targs... args) {
-        StackEntry stack_loc{};
-        sham::EventList depends_list;
+        details::typed_index_kernel_call<u32, RefIn, RefOut>(
+            q, in, in_out, n, std::forward<Functor>(func), args...);
+    }
 
-        auto acc_in     = in.get_read_access(depends_list);
-        auto acc_in_out = in_out.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<1>{n}, [=](sycl::item<1> item) {
-                std::apply(
-                    [&](auto &...__acc_in) {
-                        std::apply(
-                            [&](auto &...__acc_in_out) {
-                                func(item.get_linear_id(), __acc_in..., __acc_in_out..., args...);
-                            },
-                            acc_in_out);
-                    },
-                    acc_in);
-            });
-        });
-
-        in.complete_event_state(e);
-        in_out.complete_event_state(e);
+    /// u64 indexed variant of kernel_call
+    template<class RefIn, class RefOut, class... Targs, class Functor>
+    void kernel_call_u64(
+        sham::DeviceQueue &q, RefIn in, RefOut in_out, u64 n, Functor &&func, Targs... args) {
+        details::typed_index_kernel_call<u64, RefIn, RefOut>(
+            q, in, in_out, n, std::forward<Functor>(func), args...);
     }
 
 } // namespace sham

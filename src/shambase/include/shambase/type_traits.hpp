@@ -233,4 +233,114 @@ namespace shambase {
     template<class>
     inline constexpr bool always_false_v = false;
 
+    /**
+     * @brief Helper variable template that is used to associate a type to a boolean value in the
+     * compile logs.
+     *
+     * @tparam val boolean value to transport
+     * @tparam type The dummy type to be associated with the boolean value
+     */
+    template<bool val, class type>
+    inline constexpr bool typed_false_v = val;
+
+    /**
+     * @brief Check if a lambda or a function has the correct signature.
+     *
+     * The function does nothing at runtime, but at compile time it checks if the
+     * given lambda or function has the correct signature. If the signature
+     * is wrong, the static assert will fail and the correct signature will be
+     * indicated in the signature of `always_false_v<...>`.
+     *
+     * @warning This does not work with capturing lambdas
+     *
+     * @code {.cpp}
+     * auto func = [](int a, int b) -> int { return a + b; };
+     * shambase::check_functor_nocapture<int(int, int)>(func);
+     * @endcode
+     */
+    template<class signature, class Func>
+    constexpr void check_functor_nocapture(Func &&func) {
+        constexpr bool result = std::is_assignable<signature *&, decltype(func)>::value;
+
+        static_assert(
+            typed_false_v<result, signature>,
+            "The lambda signature is incorrect, the correct type is indicated in the signature of "
+            "typed_false_v<...>.");
+    }
+
+    /**
+     * @brief Check if a callable object has the correct deduced signature.
+     *
+     * This function deduces the signature of the callable object using the provided
+     * return type and argument types, then checks if the callable matches this signature
+     * using `check_functor`.
+     *
+     * @tparam RetType The return type of the callable.
+     * @tparam Targ The types of the arguments the callable takes.
+     * @tparam Func The type of the callable object to check.
+     * @param func The callable object to be checked.
+     */
+    template<class RetType, class... Targ, class Func>
+    constexpr void check_functor_nocapture_deduce(Func &&func, Targ...) {
+        using signature = RetType(std::remove_reference_t<Targ>...);
+        check_functor_nocapture<signature>(func);
+    }
+
+    /**
+     * @brief Check if a callable object has the correct deduced signature.
+     *
+     * This function deduces the signature of the callable object using the provided
+     * return type and argument types, then checks if the callable matches this signature
+     * using `check_functor` and also checks if the return type matches the deduced return type.
+     *
+     * Exemple :
+     * @code {.cpp}
+     * int x = 0;
+     * auto func = [x](int a, int b) -> int { return a + b; };
+     * shambase::check_functor_signature<int(int, int)>(func);
+     * @endcode
+     *
+     * @note This function works also for lambda with captures
+     *
+     * @tparam RetType The return type of the callable.
+     * @tparam Targ The types of the arguments the callable takes.
+     * @tparam Func The type of the callable object to check.
+     * @param func The callable object to be checked.
+     */
+    template<class RetType, class... Targ, class Func>
+    constexpr void check_functor_signature(Func &&func) {
+
+        using signature = RetType(std::remove_reference_t<Targ>...);
+
+        constexpr bool result_call = std::is_invocable_v<decltype(func), Targ...>;
+        static_assert(
+            typed_false_v<result_call, signature>,
+            "The lambda signature is incorrect, the correct function signature is indicated in the "
+            "signature of typed_false_v<...>.");
+
+        using ret_t                 = decltype(func(std::declval<Targ>()...));
+        constexpr bool result_ret_t = std::is_same_v<ret_t, RetType>;
+        static_assert(
+            typed_false_v<result_ret_t, signature>,
+            "The lambda return type is incorrect, the correct function signature is indicated in "
+            "the signature of typed_false_v<...>.");
+    }
+
+    /**
+     * @brief Check if a callable object has the correct deduced signature.
+     *
+     * This function deduces the signature of the callable object using the provided
+     * return type and argument types, then checks if the callable matches this signature
+     * using `check_functor_signature`.
+     *
+     * @tparam RetType The return type of the callable.
+     * @tparam Targ The types of the arguments the callable takes.
+     * @tparam Func The type of the callable object to check.
+     * @param func The callable object to be checked.
+     */
+    template<class RetType, class... Targ, class Func>
+    constexpr void check_functor_signature_deduce(Func &&func, Targ...) {
+        check_functor_signature<RetType, Targ...>(func);
+    }
+
 } // namespace shambase

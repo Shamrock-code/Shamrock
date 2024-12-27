@@ -26,7 +26,7 @@ namespace shambase {
      * @tparam Tint The data type for the UUID
      * @tparam thread_safe Whether the UUID constructor should be thread-safe
      *
-     * @example Example usage:
+     * Example usage:
      * @code {.cpp}
      *    class A1 : public WithUUID<A1, u64> {};
      *    ...

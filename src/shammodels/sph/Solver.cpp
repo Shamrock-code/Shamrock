@@ -1576,11 +1576,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         ComputeField<Tscal> uepsilon_u_sq
             = utility.make_compute_field<Tscal>("umean epsilon_u^2", 1);
 
-        ComputeField<Tscal> BOR_epsilon_BOR_sq
-            = utility.make_compute_field<Tscal>("B/rho epsilon_B/rho^2", 1);
-        ComputeField<Tscal> POC_epsilon_POC_sq
-            = utility.make_compute_field<Tscal>("psi/ch epsilon_psi/ch^2", 1);
-
         // corrector
         logger::debug_ln("sph::BasicGas", "leapfrog corrector");
         utility.fields_leapfrog_corrector<Tvec>(
@@ -1589,10 +1584,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
 
         if (solver_config.has_field_B_on_rho()) {
+            ComputeField<Tscal> BOR_epsilon_BOR_sq
+                = utility.make_compute_field<Tscal>("B/rho epsilon_B/rho^2", 1);
             utility.fields_leapfrog_corrector<Tvec>(
                 iB_on_rho, idB_on_rho, storage.old_dB_on_rho.get(), BOR_epsilon_BOR_sq, dt / 2);
         }
         if (solver_config.has_field_B_on_rho()) {
+            ComputeField<Tscal> POC_epsilon_POC_sq
+                = utility.make_compute_field<Tscal>("psi/ch epsilon_psi/ch^2", 1);
             utility.fields_leapfrog_corrector<Tscal>(
                 ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt / 2);
         }

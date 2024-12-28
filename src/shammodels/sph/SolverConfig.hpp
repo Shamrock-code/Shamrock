@@ -143,14 +143,13 @@ struct shammodels::sph::SolverConfig {
 
     /// Retrieves the value of the constant mu_0 based on the unit system.
     inline Tscal get_constant_mu_0() {
-        // if (!unit_sys) {
-        //     logger::warn_ln("sph::Config", "the unit system is not set");
-        //     shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-        //     return ctes.mu_0();
-        // } else {
-        //     return shamunits::Constants<Tscal>{*unit_sys}.mu_0();
-        // }
-        return 1.;
+        if (!unit_sys) {
+            logger::warn_ln("sph::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.mu_0();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.mu_0();
+        }
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

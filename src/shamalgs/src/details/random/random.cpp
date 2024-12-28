@@ -190,11 +190,18 @@ namespace shamalgs::random {
         return ret;
     }
 
-#define X(_arg_)                                                                                   \
-    template sycl::buffer<_arg_> mock_buffer(u64 seed, u32 len, _arg_ min_bound, _arg_ max_bound); \
-    template std::vector<_arg_> mock_vector(u64 seed, u32 len, _arg_ min_bound, _arg_ max_bound);  \
-    template sham::DeviceBuffer<_arg_> mock_buffer_usm(                                            \
-        sham::DeviceScheduler_ptr &sched, u64 seed, u32 len, _arg_ min_bound, _arg_ max_bound);
+#ifndef DOXYGEN
+    #define X(_arg_)                                                                               \
+        template sycl::buffer<_arg_> mock_buffer(                                                  \
+            u64 seed, u32 len, _arg_ min_bound, _arg_ max_bound);                                  \
+        template std::vector<_arg_> mock_vector(                                                   \
+            u64 seed, u32 len, _arg_ min_bound, _arg_ max_bound);                                  \
+        template sham::DeviceBuffer<_arg_> mock_buffer_usm(                                        \
+            sham::DeviceScheduler_ptr &sched,                                                      \
+            u64 seed,                                                                              \
+            u32 len,                                                                               \
+            _arg_ min_bound,                                                                       \
+            _arg_ max_bound);
 
     X(f32);
     X(f32_2);
@@ -222,5 +229,6 @@ namespace shamalgs::random {
     X(u64_8);
     X(u64_16);
     X(i64_3);
+#endif
 
 } // namespace shamalgs::random

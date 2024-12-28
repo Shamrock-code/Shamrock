@@ -257,6 +257,10 @@ namespace sham {
             Functor &&func,
             Targs... args) {
 
+            if (n == 0) {
+                shambase::throw_with_loc<std::runtime_error>("kernel call with : n == 0");
+            }
+
             StackEntry stack_loc{};
             sham::EventList depends_list;
 

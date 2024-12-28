@@ -316,13 +316,12 @@ void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len)
 template<class T>
 PatchDataField<T>
 PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax) {
-    using Prop = shambase::VectorProperties<T>;
 
-    sycl::buffer<T> buf = shamalgs::random::mock_buffer<T>(seed, obj_cnt * nvar, vmin, vmax);
+    std::vector<T> buf = shamalgs::random::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
+    PatchDataField<T> ret(name, nvar, obj_cnt);
+    ret.get_buf().copy_from_stdvec(buf);
 
-    sham::DeviceBuffer<T> buf_dev{buf, shamsys::instance::get_compute_scheduler_ptr()};
-
-    return PatchDataField<T>(std::move(buf_dev), obj_cnt, name, nvar);
+    return ret;
 }
 
 template<class T>

@@ -1808,11 +1808,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         sham::DeviceBuffer<Tscal> &vclean_buf
                             = vclean_dt->get_buf_check(cur_p.id_patch);
 
-                        Tvec *B_on_rho = (has_psi_field)
-                                             ? mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
-                                                   .get_write_access(depends_list)
-                                             : nullptr;
-                        auto vclean    = vclean_buf.get_write_access(depends_list);
+                        Tvec *B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
+                                             .get_write_access(depends_list);
+
+                        auto vclean = vclean_buf.get_write_access(depends_list);
 
                         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                             const Tscal pmass = solver_config.gpart_mass;
@@ -1829,8 +1828,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                     Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
                                     const Tscal u_a = u[id_a];
                                     Tscal cs_a      = cs[id_a];
-                                    Tvec B_a        = (B_on_rho == nullptr) ? B_on_rho[id_a] * rho_a
-                                                                            : Tvec{0, 0, 0};
+                                    Tvec B_a        = B_on_rho[id_a] * rho_a;
 
                                     Tscal v_alfven_a
                                         = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));

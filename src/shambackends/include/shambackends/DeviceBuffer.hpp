@@ -411,15 +411,17 @@ namespace sham {
         [[nodiscard]] inline std::vector<T> copy_to_stdvec() const {
             std::vector<T> ret(size);
 
-            sham::EventList depends_list;
-            const T *ptr = get_read_access(depends_list);
+            if (size > 0) {
+                sham::EventList depends_list;
+                const T *ptr = get_read_access(depends_list);
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                cgh.copy(ptr, ret.data(), size);
-            });
+                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                    cgh.copy(ptr, ret.data(), size);
+                });
 
-            e.wait_and_throw();
-            complete_event_state(sycl::event{});
+                e.wait_and_throw();
+                complete_event_state(sycl::event{});
+            }
 
             return ret;
         }
@@ -441,15 +443,17 @@ namespace sham {
                     vec.size()));
             }
 
-            sham::EventList depends_list;
-            T *ptr = get_write_access(depends_list);
+            if (size > 0) {
+                sham::EventList depends_list;
+                T *ptr = get_write_access(depends_list);
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                cgh.copy(vec.data(), ptr, size);
-            });
+                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                    cgh.copy(vec.data(), ptr, size);
+                });
 
-            e.wait_and_throw();
-            complete_event_state(sycl::event{});
+                e.wait_and_throw();
+                complete_event_state(sycl::event{});
+            }
         }
 
         /**
@@ -472,15 +476,17 @@ namespace sham {
                     sz));
             }
 
-            sham::EventList depends_list;
-            T *ptr = get_write_access(depends_list);
+            if (sz > 0) {
+                sham::EventList depends_list;
+                T *ptr = get_write_access(depends_list);
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                cgh.copy(vec.data(), ptr, sz);
-            });
+                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                    cgh.copy(vec.data(), ptr, sz);
+                });
 
-            e.wait_and_throw();
-            complete_event_state(sycl::event{});
+                e.wait_and_throw();
+                complete_event_state(sycl::event{});
+            }
         }
 
         /**
@@ -494,15 +500,17 @@ namespace sham {
         [[nodiscard]] inline sycl::buffer<T> copy_to_sycl_buffer() const {
             sycl::buffer<T> ret(size);
 
-            sham::EventList depends_list;
-            const T *ptr = get_read_access(depends_list);
+            if (size > 0) {
+                sham::EventList depends_list;
+                const T *ptr = get_read_access(depends_list);
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                sycl::accessor acc(ret, cgh, sycl::write_only, sycl::no_init);
-                cgh.copy(ptr, acc);
-            });
+                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                    sycl::accessor acc(ret, cgh, sycl::write_only, sycl::no_init);
+                    cgh.copy(ptr, acc);
+                });
 
-            complete_event_state(e);
+                complete_event_state(e);
+            }
 
             return ret;
         }
@@ -524,15 +532,17 @@ namespace sham {
                     buf.size()));
             }
 
-            sham::EventList depends_list;
-            T *ptr = get_write_access(depends_list);
+            if (size > 0) {
+                sham::EventList depends_list;
+                T *ptr = get_write_access(depends_list);
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                sycl::accessor acc(buf, cgh, sycl::read_only);
-                cgh.copy(acc, ptr);
-            });
+                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                    sycl::accessor acc(buf, cgh, sycl::read_only);
+                    cgh.copy(acc, ptr);
+                });
 
-            complete_event_state(e);
+                complete_event_state(e);
+            }
         }
 
         /**
@@ -560,18 +570,20 @@ namespace sham {
                     "copy_from_sycl_buffer: size mismatch (sz > u32_max)\n  sz = {}", sz));
             }
 
-            sham::EventList depends_list;
-            T *ptr = get_write_access(depends_list);
+            if (size > 0) {
+                sham::EventList depends_list;
+                T *ptr = get_write_access(depends_list);
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                sycl::accessor acc(buf, cgh, sycl::read_only);
+                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                    sycl::accessor acc(buf, cgh, sycl::read_only);
 
-                shambase::parralel_for(cgh, sz, "copy field", [=](u32 gid) {
-                    ptr[gid] = acc[gid];
+                    shambase::parralel_for(cgh, sz, "copy field", [=](u32 gid) {
+                        ptr[gid] = acc[gid];
+                    });
                 });
-            });
 
-            complete_event_state(e);
+                complete_event_state(e);
+            }
         }
 
         /**
@@ -586,16 +598,18 @@ namespace sham {
         [[nodiscard]] inline DeviceBuffer<T, new_target> copy_to() const {
             DeviceBuffer<T, new_target> ret(size, get_dev_scheduler_ptr());
 
-            sham::EventList depends_list;
-            const T *ptr_src = get_read_access(depends_list);
-            T *ptr_dest      = ret.get_write_access(depends_list);
+            if (size > 0) {
+                sham::EventList depends_list;
+                const T *ptr_src = get_read_access(depends_list);
+                T *ptr_dest      = ret.get_write_access(depends_list);
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                cgh.copy(ptr_src, ptr_dest, size);
-            });
+                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                    cgh.copy(ptr_src, ptr_dest, size);
+                });
 
-            complete_event_state(e);
-            ret.complete_event_state(e);
+                complete_event_state(e);
+                ret.complete_event_state(e);
+            }
 
             return ret;
         }
@@ -622,16 +636,18 @@ namespace sham {
                     other.get_size()));
             }
 
-            sham::EventList depends_list;
-            T *ptr_dest      = get_write_access(depends_list);
-            const T *ptr_src = other.get_read_access(depends_list);
+            if (copy_size > 0) {
+                sham::EventList depends_list;
+                T *ptr_dest      = get_write_access(depends_list);
+                const T *ptr_src = other.get_read_access(depends_list);
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                cgh.copy(ptr_src, ptr_dest, copy_size);
-            });
+                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                    cgh.copy(ptr_src, ptr_dest, copy_size);
+                });
 
-            complete_event_state(e);
-            other.complete_event_state(e);
+                complete_event_state(e);
+                other.complete_event_state(e);
+            }
         }
 
         /**

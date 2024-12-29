@@ -49,9 +49,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     shambase::Timer tstep;
     tstep.start();
 
-    scheduler().update_local_load_value([&](shamrock::patch::Patch p) {
-        return scheduler().patch_data.owned_data.get(p.id_patch).get_obj_cnt();
-    });
+    // Scheduler step
+    auto update_load_val = [&]() {
+        logger::debug_ln("ComputeLoadBalanceValue", "update load balancing");
+        scheduler().update_local_load_value([&](shamrock::patch::Patch p) {
+            return scheduler().patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+        });
+    };
+    update_load_val();
+    scheduler().scheduler_step(true, true);
+    update_load_val();
+    scheduler().scheduler_step(false, false);
 
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();

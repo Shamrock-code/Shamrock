@@ -50,6 +50,12 @@ namespace shamalgs::algorithm {
     template void
     sort_by_key(sycl::queue &q, sycl::buffer<u64> &buf_key, sycl::buffer<u32> &buf_values, u32 len);
 
+    template void
+    sort_by_key(sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len);
+
+    template void
+    sort_by_key(sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u64> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len);
+
     sycl::buffer<u32> gen_buffer_index(sycl::queue &q, u32 len) {
         return gen_buffer_device(q, len, [](u32 i) -> u32 {
             return i;

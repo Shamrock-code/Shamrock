@@ -27,9 +27,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
     Cfg_AV cfg_av   = solver_config.artif_viscosity;
     Cfg_MHD cfg_mhd = solver_config.mhd_config;
 
-    if (None *v = std::get_if<None>(&cfg_av.config)) {
-        // shambase::throw_unimplemented();
-    } else if (Constant *v = std::get_if<Constant>(&cfg_av.config)) {
+    if (Constant *v = std::get_if<Constant>(&cfg_av.config)) {
         update_derivs_constantAV(*v);
     } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&cfg_av.config)) {
         update_derivs_mm97(*v);
@@ -37,15 +35,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
         update_derivs_cd10(*v);
     } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&cfg_av.config)) {
         update_derivs_disc_visco(*v);
-    } else {
-        shambase::throw_unimplemented();
-    }
-
-    if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.config)) {
-        // shambase::throw_unimplemented();
     } else if (IdealMHD *v = std::get_if<IdealMHD>(&cfg_mhd.config)) {
         update_derivs_MHD(*v);
     } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&cfg_mhd.config)) {
+        shambase::throw_unimplemented();
+    } else if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.config)) {
+        shambase::throw_unimplemented();
+    } else if (None *v = std::get_if<None>(&cfg_av.config)) {
         shambase::throw_unimplemented();
     } else {
         shambase::throw_unimplemented();

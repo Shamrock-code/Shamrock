@@ -19,6 +19,7 @@
 #include "shambackends/vec.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
+#include <variant>
 
 namespace shammodels::sph {
 

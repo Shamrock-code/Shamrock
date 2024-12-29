@@ -10,40 +10,94 @@ parser.add_argument('-o', '--output', help='output file', required=True)
 args = parser.parse_args()
 
 
+def filter_double_newline(lines):
+    ret = []
 
-buf = "# Cland tidy diff report\n"
-buf += "```\n"
+    is_last_line_only_return = False
+    for l in lines:
+        if l == "\n":
+            if is_last_line_only_return:
+                continue
+            is_last_line_only_return = True
+        else:
+            is_last_line_only_return = False
+
+        ret.append(l)
+
+    return ret
+
+def filter_non_warnings(lines):
+
+    ret = []
+    len_lines = len(lines)
+
+    enable_skip = -1
+
+    for i,l in enumerate(lines):
+
+        if (" warnings generated." in l) or (" warning generated." in l):
+            warn_cnt = int(l.split()[0])
+
+            if (lines[i+1].startswith("Suppressed")):
+                suppr_warn = int(lines[i+1].split()[1])
+
+                if suppr_warn == warn_cnt:
+                    if lines[i+2].startswith("Use -header-filter=.* to "):
+                        enable_skip = 3
+                    else:
+                        enable_skip = 2
+        if enable_skip <= 0:
+            ret.append(l)
+        else:
+            print("skipped :",l)
+            enable_skip -= 1
+
+    return ret
+
+
 
 f_in = open(args.input, 'r')
-is_last_line_only_return = False
-for l in f_in.readlines():
-
-    if l == "\n":
-
-        if is_last_line_only_return:
-            continue
-
-        is_last_line_only_return = True
-    else:
-        is_last_line_only_return = False
-
-    buf += l
-buf += "```\n"
-
+no_double_newline = filter_double_newline(f_in.readlines())
+lines_buf = filter_double_newline(filter_non_warnings(no_double_newline))
 
 f_fixes = open(args.fixes, 'r')
-buf += "## Suggested changes\n"
-buf += "<details>\n"
-buf += "<summary>\n"
-buf += "Detailed changes :\n"
-buf += "</summary>\n"
-buf += " \n"
-buf += "```diff\n"
-for l in f_fixes.readlines():
-    buf += l
-buf += "```\n"
-buf += "\n"
-buf += "</details>\n"
+fixes_lines = f_fixes.readlines()
+
+print(fixes_lines)
+
+print_warn = not (lines_buf == ["\n"])
+print_fixes = not (fixes_lines == [])
+
+
+buf = "# Clang-tidy diff report\n"
+
+if print_warn:
+    buf += "```\n"
+
+    for l in lines_buf:
+        buf += l
+
+    buf += "```\n"
+
+if print_fixes:
+    buf += "## Suggested changes\n"
+    buf += "<details>\n"
+    buf += "<summary>\n"
+    buf += "Detailed changes :\n"
+    buf += "</summary>\n"
+    buf += " \n"
+    buf += "```diff\n"
+    for l in fixes_lines:
+        buf += l
+    buf += "```\n"
+    buf += "\n"
+    buf += "</details>\n"
+
+if not print_warn and not print_fixes:
+    buf += "\n"
+    buf += "You have reached a new level of clang-tidy mastery, "
+    buf += "well done... You should now go back to your normal life"
+    buf += " while waiting for the review.\n"
 
 f_out = open(args.output, 'w')
 f_out.write(buf)

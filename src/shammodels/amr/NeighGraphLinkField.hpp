@@ -16,24 +16,28 @@
  *
  */
 
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammodels/amr/NeighGraph.hpp"
+#include "shamsys/NodeInstance.hpp"
 
 namespace shammodels::basegodunov::modules {
 
     template<class T>
     class NeighGraphLinkField {
         public:
-        sycl::buffer<T> link_graph_field;
+        sham::DeviceBuffer<T> link_graph_field;
         u32 link_count;
         u32 nvar;
 
         NeighGraphLinkField(NeighGraph &graph)
-            : link_graph_field(graph.link_count), link_count(graph.link_count), nvar(1) {}
+            : link_graph_field(graph.link_count, shamsys::instance::get_alt_scheduler_ptr()),
+              link_count(graph.link_count), nvar(1) {}
 
         NeighGraphLinkField(NeighGraph &graph, u32 nvar)
-            : link_graph_field(graph.link_count * nvar), link_count(graph.link_count), nvar(nvar) {}
+            : link_graph_field(graph.link_count * nvar, shamsys::instance::get_alt_scheduler_ptr()),
+              link_count(graph.link_count), nvar(nvar) {}
     };
 
     template<class LinkFieldCompute, class T, class... Args>
@@ -43,15 +47,15 @@ namespace shammodels::basegodunov::modules {
         sham::EventList &result_list,
         NeighGraph &graph,
         Args &&...args) {
+        StackEntry stack_loc{};
 
         NeighGraphLinkField<T> result{graph};
+
+        auto acc_link_field = result.link_graph_field.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             NeighGraphLinkiterator link_iter{graph, cgh};
             LinkFieldCompute compute(cgh, std::forward<Args>(args)...);
-
-            sycl::accessor acc_link_field{
-                result.link_graph_field, cgh, sycl::write_only, sycl::no_init};
 
             shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
                 link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
@@ -61,6 +65,7 @@ namespace shammodels::basegodunov::modules {
         });
 
         result_list.add_event(e);
+        result.link_graph_field.complete_event_state(e);
 
         return result;
     }
@@ -73,14 +78,15 @@ namespace shammodels::basegodunov::modules {
         u32 nvar,
         Args &&...args) {
 
+        StackEntry stack_loc{};
+
         NeighGraphLinkField<T> result{graph, nvar};
+
+        auto acc_link_field = result.link_graph_field.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             NeighGraphLinkiterator link_iter{graph, cgh};
             LinkFieldCompute compute(cgh, nvar, std::forward<Args>(args)...);
-
-            sycl::accessor acc_link_field{
-                result.link_graph_field, cgh, sycl::write_only, sycl::no_init};
 
             shambase::parralel_for(
                 cgh, graph.obj_cnt * nvar, "compute link field indep nvar", [=](u32 idvar_a) {
@@ -95,6 +101,7 @@ namespace shammodels::basegodunov::modules {
         });
 
         result_list.add_event(e);
+        result.link_graph_field.complete_event_state(e);
 
         return result;
     }

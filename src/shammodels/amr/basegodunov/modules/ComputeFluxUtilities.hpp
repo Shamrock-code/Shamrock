@@ -164,14 +164,14 @@ namespace shammodels::basegodunov::modules {
 
     template<RiemannSolverMode mode, class Tvec, class Tscal, Direction dir>
     void compute_fluxes_dir(
-        sycl::queue &q,
+        sham::DeviceQueue &q,
         u32 link_count,
-        sycl::buffer<std::array<Tscal, 2>> &rho_face_dir,
-        sycl::buffer<std::array<Tvec, 2>> &vel_face_dir,
-        sycl::buffer<std::array<Tscal, 2>> &press_face_dir,
-        sycl::buffer<Tscal> &flux_rho_face_dir,
-        sycl::buffer<Tvec> &flux_rhov_face_dir,
-        sycl::buffer<Tscal> &flux_rhoe_face_dir,
+        sham::DeviceBuffer<std::array<Tscal, 2>> &rho_face_dir,
+        sham::DeviceBuffer<std::array<Tvec, 2>> &vel_face_dir,
+        sham::DeviceBuffer<std::array<Tscal, 2>> &press_face_dir,
+        sham::DeviceBuffer<Tscal> &flux_rho_face_dir,
+        sham::DeviceBuffer<Tvec> &flux_rhov_face_dir,
+        sham::DeviceBuffer<Tscal> &flux_rhoe_face_dir,
         Tscal gamma) {
 
         using Flux            = FluxCompute<Tvec, mode, dir>;
@@ -204,15 +204,16 @@ namespace shammodels::basegodunov::modules {
         std::string kernel_name   = (std::string) "compute " + flux_name + cur_direction;
         const char *_kernel_name  = kernel_name.c_str();
 
-        q.submit([&, gamma](sycl::handler &cgh) {
-            sycl::accessor rho{rho_face_dir, cgh, sycl::read_only};
-            sycl::accessor vel{vel_face_dir, cgh, sycl::read_only};
-            sycl::accessor press{press_face_dir, cgh, sycl::read_only};
+        sham::EventList depends_list;
+        auto rho   = rho_face_dir.get_read_access(depends_list);
+        auto vel   = vel_face_dir.get_read_access(depends_list);
+        auto press = press_face_dir.get_read_access(depends_list);
 
-            sycl::accessor flux_rho{flux_rho_face_dir, cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor flux_rhov{flux_rhov_face_dir, cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor flux_rhoe{flux_rhoe_face_dir, cgh, sycl::write_only, sycl::no_init};
+        auto flux_rho  = flux_rho_face_dir.get_write_access(depends_list);
+        auto flux_rhov = flux_rhov_face_dir.get_write_access(depends_list);
+        auto flux_rhoe = flux_rhoe_face_dir.get_write_access(depends_list);
 
+        auto e = q.submit(depends_list, [&, gamma](sycl::handler &cgh) {
             shambase::parralel_for(cgh, link_count, _kernel_name, [=](u32 id_a) {
                 auto rho_ij   = rho[id_a];
                 auto vel_ij   = vel[id_a];
@@ -229,16 +230,24 @@ namespace shammodels::basegodunov::modules {
                 flux_rhoe[id_a] = flux_dir.rhoe;
             });
         });
+
+        rho_face_dir.complete_event_state(e);
+        vel_face_dir.complete_event_state(e);
+        press_face_dir.complete_event_state(e);
+
+        flux_rho_face_dir.complete_event_state(e);
+        flux_rhov_face_dir.complete_event_state(e);
+        flux_rhoe_face_dir.complete_event_state(e);
     }
 
     template<DustRiemannSolverMode mode, class Tvec, class Tscal, Direction dir>
     void dust_compute_fluxes_dir(
-        sycl::queue &q,
+        sham::DeviceQueue &q,
         u32 link_count,
-        sycl::buffer<std::array<Tscal, 2>> &rho_dust_dir,
-        sycl::buffer<std::array<Tvec, 2>> &vel_dust_dir,
-        sycl::buffer<Tscal> &flux_rho_dust_dir,
-        sycl::buffer<Tvec> &flux_rhov_dust_dir,
+        sham::DeviceBuffer<std::array<Tscal, 2>> &rho_dust_dir,
+        sham::DeviceBuffer<std::array<Tvec, 2>> &vel_dust_dir,
+        sham::DeviceBuffer<Tscal> &flux_rho_dust_dir,
+        sham::DeviceBuffer<Tvec> &flux_rhov_dust_dir,
         u32 nvar) {
 
         using d_Flux = DustFluxCompute<Tvec, mode, dir>;
@@ -266,13 +275,15 @@ namespace shammodels::basegodunov::modules {
         std::string kernel_name   = (std::string) "compute " + flux_name + cur_direction;
         const char *_kernel_name  = kernel_name.c_str();
 
-        q.submit([&](sycl::handler &cgh) {
-            sycl::accessor rho_dust{rho_dust_dir, cgh, sycl::read_only};
-            sycl::accessor vel_dust{vel_dust_dir, cgh, sycl::read_only};
+        sham::EventList depends_list;
 
-            sycl::accessor flux_rho_dust{flux_rho_dust_dir, cgh, sycl::write_only, sycl::no_init};
-            sycl::accessor flux_rhov_dust{flux_rhov_dust_dir, cgh, sycl::write_only, sycl::no_init};
+        auto rho_dust = rho_dust_dir.get_read_access(depends_list);
+        auto vel_dust = vel_dust_dir.get_read_access(depends_list);
 
+        auto flux_rho_dust  = flux_rho_dust_dir.get_write_access(depends_list);
+        auto flux_rhov_dust = flux_rhov_dust_dir.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             u32 ndust = nvar;
             shambase::parralel_for(cgh, link_count * nvar, _kernel_name, [=](u32 id_var_a) {
                 auto rho_ij = rho_dust[id_var_a];
@@ -286,6 +297,12 @@ namespace shammodels::basegodunov::modules {
                 flux_rhov_dust[id_var_a] = flux_dust_dir.rhovel;
             });
         });
+
+        rho_dust_dir.complete_event_state(e);
+        vel_dust_dir.complete_event_state(e);
+
+        flux_rho_dust_dir.complete_event_state(e);
+        flux_rhov_dust_dir.complete_event_state(e);
     }
 
 } // namespace shammodels::basegodunov::modules

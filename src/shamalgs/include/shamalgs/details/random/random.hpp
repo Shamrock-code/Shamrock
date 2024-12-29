@@ -17,6 +17,8 @@
  */
 
 #include "shambase/constants.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
@@ -51,6 +53,10 @@ namespace shamalgs::random {
     std::vector<T> mock_vector(u64 seed, u32 len, T min_bound, T max_bound);
     template<class T>
     sycl::buffer<T> mock_buffer(u64 seed, u32 len, T min_bound, T max_bound);
+
+    template<class T>
+    sham::DeviceBuffer<T>
+    mock_buffer_usm(sham::DeviceScheduler_ptr &sched, u64 seed, u32 len, T min_bound, T max_bound);
 
     template<class T>
     inline std::vector<T> mock_vector(u64 seed, u32 len) {

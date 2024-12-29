@@ -11,9 +11,14 @@
 #include "sortTests.hpp"
 
 TestStart(Unittest, "shamalgs/algorithm/sort_by_key", test_sort_by_key_func, 1) {
-
     TestSortByKey<u32, u32> test(
         (TestSortByKey<u32, u32>::vFunctionCall) shamalgs::algorithm::sort_by_key);
+    test.check();
+}
+
+TestStart(Unittest, "shamalgs/algorithm/sort_by_key(usm)", test_sort_by_key_func_usm, 1) {
+    TestSortByKeyUSM<u32, u32> test(
+        (TestSortByKeyUSM<u32, u32>::vFunctionCall) shamalgs::algorithm::sort_by_key<u32, u32>);
     test.check();
 }
 
@@ -28,6 +33,9 @@ TestStart(
 }
 
 TestStart(Unittest, "shamalgs/algorithm/index_remap", test_index_remap_func, 1) {
-
     TestIndexRemap<u32>(shamalgs::algorithm::index_remap<u32>).check();
+}
+
+TestStart(Unittest, "shamalgs/algorithm/index_remap(usm)", test_index_remap_func_usm, 1) {
+    TestIndexRemapUSM<u32>(shamalgs::algorithm::index_remap<u32>).check();
 }

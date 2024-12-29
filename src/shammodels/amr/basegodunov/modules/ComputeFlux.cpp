@@ -53,7 +53,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
     Tscal gamma = solver_config.eos_gamma;
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         NGLink<std::array<Tscal, 2>> &rho_face_xp = storage.rho_face_xp.get().get(id);
         NGLink<std::array<Tscal, 2>> &rho_face_xm = storage.rho_face_xm.get().get(id);
@@ -372,7 +372,7 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
     shambase::DistributedData<NGLink<Tvec>> flux_rhov_dust_face_zm;
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sycl::queue &q = shamsys::instance::get_compute_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         NGLink<std::array<Tscal, 2>> &rho_dust_face_xp = storage.rho_dust_face_xp.get().get(id);
         NGLink<std::array<Tscal, 2>> &rho_dust_face_xm = storage.rho_dust_face_xm.get().get(id);

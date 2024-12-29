@@ -184,4 +184,9 @@ namespace shambase {
         }
     }
 
+    template<u32 flag>
+    inline constexpr bool is_flag_on(u32 val) {
+        return (val & (u32) flag) == (u32) flag;
+    }
+
 } // namespace shambase

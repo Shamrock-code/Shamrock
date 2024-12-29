@@ -54,217 +54,240 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
     shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_zp = storage.flux_rhoe_face_zp.get();
     shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_zm = storage.flux_rhoe_face_zm.get();
 
-    scheduler().for_each_patchdata_nonempty(
-        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
-            logger::debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
+    scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
+                                                shamrock::patch::PatchData &pdat) {
+        logger::debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
 
-            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-            u32 id               = p.id_patch;
-            OrientedAMRGraph &oriented_cell_graph = storage.cell_link_graph.get().get(id);
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        u32 id               = p.id_patch;
+        OrientedAMRGraph &oriented_cell_graph = storage.cell_link_graph.get().get(id);
 
-            NGLink<Tscal> &patch_flux_rho_face_xp = flux_rho_face_xp.get(id);
-            NGLink<Tscal> &patch_flux_rho_face_xm = flux_rho_face_xm.get(id);
-            NGLink<Tscal> &patch_flux_rho_face_yp = flux_rho_face_yp.get(id);
-            NGLink<Tscal> &patch_flux_rho_face_ym = flux_rho_face_ym.get(id);
-            NGLink<Tscal> &patch_flux_rho_face_zp = flux_rho_face_zp.get(id);
-            NGLink<Tscal> &patch_flux_rho_face_zm = flux_rho_face_zm.get(id);
+        NGLink<Tscal> &patch_flux_rho_face_xp = flux_rho_face_xp.get(id);
+        NGLink<Tscal> &patch_flux_rho_face_xm = flux_rho_face_xm.get(id);
+        NGLink<Tscal> &patch_flux_rho_face_yp = flux_rho_face_yp.get(id);
+        NGLink<Tscal> &patch_flux_rho_face_ym = flux_rho_face_ym.get(id);
+        NGLink<Tscal> &patch_flux_rho_face_zp = flux_rho_face_zp.get(id);
+        NGLink<Tscal> &patch_flux_rho_face_zm = flux_rho_face_zm.get(id);
 
-            NGLink<Tvec> &patch_flux_rhov_face_xp = flux_rhov_face_xp.get(id);
-            NGLink<Tvec> &patch_flux_rhov_face_xm = flux_rhov_face_xm.get(id);
-            NGLink<Tvec> &patch_flux_rhov_face_yp = flux_rhov_face_yp.get(id);
-            NGLink<Tvec> &patch_flux_rhov_face_ym = flux_rhov_face_ym.get(id);
-            NGLink<Tvec> &patch_flux_rhov_face_zp = flux_rhov_face_zp.get(id);
-            NGLink<Tvec> &patch_flux_rhov_face_zm = flux_rhov_face_zm.get(id);
+        NGLink<Tvec> &patch_flux_rhov_face_xp = flux_rhov_face_xp.get(id);
+        NGLink<Tvec> &patch_flux_rhov_face_xm = flux_rhov_face_xm.get(id);
+        NGLink<Tvec> &patch_flux_rhov_face_yp = flux_rhov_face_yp.get(id);
+        NGLink<Tvec> &patch_flux_rhov_face_ym = flux_rhov_face_ym.get(id);
+        NGLink<Tvec> &patch_flux_rhov_face_zp = flux_rhov_face_zp.get(id);
+        NGLink<Tvec> &patch_flux_rhov_face_zm = flux_rhov_face_zm.get(id);
 
-            NGLink<Tscal> &patch_flux_rhoe_face_xp = flux_rhoe_face_xp.get(id);
-            NGLink<Tscal> &patch_flux_rhoe_face_xm = flux_rhoe_face_xm.get(id);
-            NGLink<Tscal> &patch_flux_rhoe_face_yp = flux_rhoe_face_yp.get(id);
-            NGLink<Tscal> &patch_flux_rhoe_face_ym = flux_rhoe_face_ym.get(id);
-            NGLink<Tscal> &patch_flux_rhoe_face_zp = flux_rhoe_face_zp.get(id);
-            NGLink<Tscal> &patch_flux_rhoe_face_zm = flux_rhoe_face_zm.get(id);
+        NGLink<Tscal> &patch_flux_rhoe_face_xp = flux_rhoe_face_xp.get(id);
+        NGLink<Tscal> &patch_flux_rhoe_face_xm = flux_rhoe_face_xm.get(id);
+        NGLink<Tscal> &patch_flux_rhoe_face_yp = flux_rhoe_face_yp.get(id);
+        NGLink<Tscal> &patch_flux_rhoe_face_ym = flux_rhoe_face_ym.get(id);
+        NGLink<Tscal> &patch_flux_rhoe_face_zp = flux_rhoe_face_zp.get(id);
+        NGLink<Tscal> &patch_flux_rhoe_face_zm = flux_rhoe_face_zm.get(id);
 
-            sycl::buffer<Tscal> &buf_flux_rho_face_xp  = patch_flux_rho_face_xp.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rho_face_xm  = patch_flux_rho_face_xm.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rho_face_yp  = patch_flux_rho_face_yp.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rho_face_ym  = patch_flux_rho_face_ym.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rho_face_zp  = patch_flux_rho_face_zp.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rho_face_zm  = patch_flux_rho_face_zm.link_graph_field;
-            sycl::buffer<Tvec> &buf_flux_rhov_face_xp  = patch_flux_rhov_face_xp.link_graph_field;
-            sycl::buffer<Tvec> &buf_flux_rhov_face_xm  = patch_flux_rhov_face_xm.link_graph_field;
-            sycl::buffer<Tvec> &buf_flux_rhov_face_yp  = patch_flux_rhov_face_yp.link_graph_field;
-            sycl::buffer<Tvec> &buf_flux_rhov_face_ym  = patch_flux_rhov_face_ym.link_graph_field;
-            sycl::buffer<Tvec> &buf_flux_rhov_face_zp  = patch_flux_rhov_face_zp.link_graph_field;
-            sycl::buffer<Tvec> &buf_flux_rhov_face_zm  = patch_flux_rhov_face_zm.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rhoe_face_xp = patch_flux_rhoe_face_xp.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rhoe_face_xm = patch_flux_rhoe_face_xm.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rhoe_face_yp = patch_flux_rhoe_face_yp.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rhoe_face_ym = patch_flux_rhoe_face_ym.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rhoe_face_zp = patch_flux_rhoe_face_zp.link_graph_field;
-            sycl::buffer<Tscal> &buf_flux_rhoe_face_zm = patch_flux_rhoe_face_zm.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_face_xp  = patch_flux_rho_face_xp.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_face_xm  = patch_flux_rho_face_xm.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_face_yp  = patch_flux_rho_face_yp.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_face_ym  = patch_flux_rho_face_ym.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_face_zp  = patch_flux_rho_face_zp.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_face_zm  = patch_flux_rho_face_zm.link_graph_field;
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_face_xp  = patch_flux_rhov_face_xp.link_graph_field;
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_face_xm  = patch_flux_rhov_face_xm.link_graph_field;
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_face_yp  = patch_flux_rhov_face_yp.link_graph_field;
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_face_ym  = patch_flux_rhov_face_ym.link_graph_field;
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_face_zp  = patch_flux_rhov_face_zp.link_graph_field;
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_face_zm  = patch_flux_rhov_face_zm.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rhoe_face_xp = patch_flux_rhoe_face_xp.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rhoe_face_xm = patch_flux_rhoe_face_xm.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rhoe_face_yp = patch_flux_rhoe_face_yp.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rhoe_face_ym = patch_flux_rhoe_face_ym.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rhoe_face_zp = patch_flux_rhoe_face_zp.link_graph_field;
+        sham::DeviceBuffer<Tscal> &buf_flux_rhoe_face_zm = patch_flux_rhoe_face_zm.link_graph_field;
 
-            sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf_check(id);
-            sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf_check(id);
-            sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf_check(id);
+        sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf_check(id);
+        sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf_check(id);
+        sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf_check(id);
 
-            AMRGraph &graph_neigh_xp
-                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
-            AMRGraph &graph_neigh_xm
-                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]);
-            AMRGraph &graph_neigh_yp
-                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]);
-            AMRGraph &graph_neigh_ym
-                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]);
-            AMRGraph &graph_neigh_zp
-                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
-            AMRGraph &graph_neigh_zm
-                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
+        AMRGraph &graph_neigh_xp
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
+        AMRGraph &graph_neigh_xm
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]);
+        AMRGraph &graph_neigh_yp
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]);
+        AMRGraph &graph_neigh_ym
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]);
+        AMRGraph &graph_neigh_zp
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
+        AMRGraph &graph_neigh_zm
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
-            sham::DeviceBuffer<Tscal> &block_cell_sizes
-                = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-            sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-                = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+        sham::DeviceBuffer<Tscal> &block_cell_sizes
+            = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
+            = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
 
-            sham::EventList depends_list;
-            auto acc_aabb_block_lower = cell0block_aabb_lower.get_read_access(depends_list);
-            auto acc_aabb_cell_size   = block_cell_sizes.get_read_access(depends_list);
-            auto acc_dt_rho_patch     = dt_rho_patch.get_write_access(depends_list);
-            auto acc_dt_rhov_patch    = dt_rhov_patch.get_write_access(depends_list);
-            auto acc_dt_rhoe_patch    = dt_rhoe_patch.get_write_access(depends_list);
+        sham::EventList depends_list;
+        auto acc_aabb_block_lower = cell0block_aabb_lower.get_read_access(depends_list);
+        auto acc_aabb_cell_size   = block_cell_sizes.get_read_access(depends_list);
+        auto acc_dt_rho_patch     = dt_rho_patch.get_write_access(depends_list);
+        auto acc_dt_rhov_patch    = dt_rhov_patch.get_write_access(depends_list);
+        auto acc_dt_rhoe_patch    = dt_rhoe_patch.get_write_access(depends_list);
 
-            u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+        u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
-                AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
-                AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
-                AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
-                AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
-                AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
+        auto flux_rho_face_xp = buf_flux_rho_face_xp.get_read_access(depends_list);
+        auto flux_rho_face_xm = buf_flux_rho_face_xm.get_read_access(depends_list);
+        auto flux_rho_face_yp = buf_flux_rho_face_yp.get_read_access(depends_list);
+        auto flux_rho_face_ym = buf_flux_rho_face_ym.get_read_access(depends_list);
+        auto flux_rho_face_zp = buf_flux_rho_face_zp.get_read_access(depends_list);
+        auto flux_rho_face_zm = buf_flux_rho_face_zm.get_read_access(depends_list);
 
-                sycl::accessor flux_rho_face_xp{buf_flux_rho_face_xp, cgh, sycl::read_only};
-                sycl::accessor flux_rho_face_xm{buf_flux_rho_face_xm, cgh, sycl::read_only};
-                sycl::accessor flux_rho_face_yp{buf_flux_rho_face_yp, cgh, sycl::read_only};
-                sycl::accessor flux_rho_face_ym{buf_flux_rho_face_ym, cgh, sycl::read_only};
-                sycl::accessor flux_rho_face_zp{buf_flux_rho_face_zp, cgh, sycl::read_only};
-                sycl::accessor flux_rho_face_zm{buf_flux_rho_face_zm, cgh, sycl::read_only};
-                sycl::accessor flux_rhov_face_xp{buf_flux_rhov_face_xp, cgh, sycl::read_only};
-                sycl::accessor flux_rhov_face_xm{buf_flux_rhov_face_xm, cgh, sycl::read_only};
-                sycl::accessor flux_rhov_face_yp{buf_flux_rhov_face_yp, cgh, sycl::read_only};
-                sycl::accessor flux_rhov_face_ym{buf_flux_rhov_face_ym, cgh, sycl::read_only};
-                sycl::accessor flux_rhov_face_zp{buf_flux_rhov_face_zp, cgh, sycl::read_only};
-                sycl::accessor flux_rhov_face_zm{buf_flux_rhov_face_zm, cgh, sycl::read_only};
-                sycl::accessor flux_rhoe_face_xp{buf_flux_rhoe_face_xp, cgh, sycl::read_only};
-                sycl::accessor flux_rhoe_face_xm{buf_flux_rhoe_face_xm, cgh, sycl::read_only};
-                sycl::accessor flux_rhoe_face_yp{buf_flux_rhoe_face_yp, cgh, sycl::read_only};
-                sycl::accessor flux_rhoe_face_ym{buf_flux_rhoe_face_ym, cgh, sycl::read_only};
-                sycl::accessor flux_rhoe_face_zp{buf_flux_rhoe_face_zp, cgh, sycl::read_only};
-                sycl::accessor flux_rhoe_face_zm{buf_flux_rhoe_face_zm, cgh, sycl::read_only};
+        auto flux_rhov_face_xp = buf_flux_rhov_face_xp.get_read_access(depends_list);
+        auto flux_rhov_face_xm = buf_flux_rhov_face_xm.get_read_access(depends_list);
+        auto flux_rhov_face_yp = buf_flux_rhov_face_yp.get_read_access(depends_list);
+        auto flux_rhov_face_ym = buf_flux_rhov_face_ym.get_read_access(depends_list);
+        auto flux_rhov_face_zp = buf_flux_rhov_face_zp.get_read_access(depends_list);
+        auto flux_rhov_face_zm = buf_flux_rhov_face_zm.get_read_access(depends_list);
 
-                auto get_cell_aabb = [=](u32 id) -> shammath::AABB<Tvec> {
-                    const u32 cell_global_id = (u32) id;
+        auto flux_rhoe_face_xp = buf_flux_rhoe_face_xp.get_read_access(depends_list);
+        auto flux_rhoe_face_xm = buf_flux_rhoe_face_xm.get_read_access(depends_list);
+        auto flux_rhoe_face_yp = buf_flux_rhoe_face_yp.get_read_access(depends_list);
+        auto flux_rhoe_face_ym = buf_flux_rhoe_face_ym.get_read_access(depends_list);
+        auto flux_rhoe_face_zp = buf_flux_rhoe_face_zp.get_read_access(depends_list);
+        auto flux_rhoe_face_zm = buf_flux_rhoe_face_zm.get_read_access(depends_list);
 
-                    const u32 block_id    = cell_global_id / AMRBlock::block_size;
-                    const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
+            AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
+            AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
+            AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
+            AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
+            AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
 
-                    // fetch current block info
-                    const Tvec cblock_min  = acc_aabb_block_lower[block_id];
-                    const Tscal delta_cell = acc_aabb_cell_size[block_id];
+            auto get_cell_aabb = [=](u32 id) -> shammath::AABB<Tvec> {
+                const u32 cell_global_id = (u32) id;
 
-                    std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
-                    Tvec offset = Tvec{lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]} * delta_cell;
+                const u32 block_id    = cell_global_id / AMRBlock::block_size;
+                const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
-                    Tvec aabb_min = cblock_min + offset;
-                    Tvec aabb_max = aabb_min + delta_cell;
+                // fetch current block info
+                const Tvec cblock_min  = acc_aabb_block_lower[block_id];
+                const Tscal delta_cell = acc_aabb_cell_size[block_id];
 
-                    return {aabb_min, aabb_max};
-                };
+                std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
+                Tvec offset = Tvec{lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]} * delta_cell;
 
-                auto get_face_surface = [=](u32 id_a, u32 id_b) -> Tscal {
-                    shammath::AABB<Tvec> aabb_cell_a = get_cell_aabb(id_a);
-                    shammath::AABB<Tvec> aabb_cell_b = get_cell_aabb(id_b);
+                Tvec aabb_min = cblock_min + offset;
+                Tvec aabb_max = aabb_min + delta_cell;
 
-                    shammath::AABB<Tvec> face_aabb = aabb_cell_a.get_intersect(aabb_cell_b);
+                return {aabb_min, aabb_max};
+            };
 
-                    Tvec delta_face = face_aabb.delt();
+            auto get_face_surface = [=](u32 id_a, u32 id_b) -> Tscal {
+                shammath::AABB<Tvec> aabb_cell_a = get_cell_aabb(id_a);
+                shammath::AABB<Tvec> aabb_cell_b = get_cell_aabb(id_b);
 
-                    delta_face.x() = (delta_face.x() == 0) ? 1 : delta_face.x();
-                    delta_face.y() = (delta_face.y() == 0) ? 1 : delta_face.y();
-                    delta_face.z() = (delta_face.z() == 0) ? 1 : delta_face.z();
+                shammath::AABB<Tvec> face_aabb = aabb_cell_a.get_intersect(aabb_cell_b);
 
-                    return delta_face.x() * delta_face.y() * delta_face.z();
-                };
+                Tvec delta_face = face_aabb.delt();
 
-                shambase::parralel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
-                    const u32 cell_global_id = (u32) id_a;
+                delta_face.x() = (delta_face.x() == 0) ? 1 : delta_face.x();
+                delta_face.y() = (delta_face.y() == 0) ? 1 : delta_face.y();
+                delta_face.z() = (delta_face.z() == 0) ? 1 : delta_face.z();
 
-                    const u32 block_id    = cell_global_id / AMRBlock::block_size;
-                    const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+                return delta_face.x() * delta_face.y() * delta_face.z();
+            };
 
-                    Tscal V_i = acc_aabb_cell_size[block_id];
-                    V_i       = V_i * V_i * V_i;
+            shambase::parralel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
+                const u32 cell_global_id = (u32) id_a;
 
-                    Tscal dtrho  = 0;
-                    Tvec dtrhov  = {0, 0, 0};
-                    Tscal dtrhoe = 0;
+                const u32 block_id    = cell_global_id / AMRBlock::block_size;
+                const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
-                    graph_iter_xp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
-                        Tscal S_ij = get_face_surface(id_a, id_b);
-                        dtrho -= flux_rho_face_xp[link_id] * S_ij;
-                        dtrhov -= flux_rhov_face_xp[link_id] * S_ij;
-                        dtrhoe -= flux_rhoe_face_xp[link_id] * S_ij;
-                    });
+                Tscal V_i = acc_aabb_cell_size[block_id];
+                V_i       = V_i * V_i * V_i;
 
-                    graph_iter_yp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
-                        Tscal S_ij = get_face_surface(id_a, id_b);
-                        dtrho -= flux_rho_face_yp[link_id] * S_ij;
-                        dtrhov -= flux_rhov_face_yp[link_id] * S_ij;
-                        dtrhoe -= flux_rhoe_face_yp[link_id] * S_ij;
-                    });
+                Tscal dtrho  = 0;
+                Tvec dtrhov  = {0, 0, 0};
+                Tscal dtrhoe = 0;
 
-                    graph_iter_zp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
-                        Tscal S_ij = get_face_surface(id_a, id_b);
-                        dtrho -= flux_rho_face_zp[link_id] * S_ij;
-                        dtrhov -= flux_rhov_face_zp[link_id] * S_ij;
-                        dtrhoe -= flux_rhoe_face_zp[link_id] * S_ij;
-                    });
-
-                    graph_iter_xm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
-                        Tscal S_ij = get_face_surface(id_a, id_b);
-                        dtrho -= flux_rho_face_xm[link_id] * S_ij;
-                        dtrhov -= flux_rhov_face_xm[link_id] * S_ij;
-                        dtrhoe -= flux_rhoe_face_xm[link_id] * S_ij;
-                    });
-
-                    graph_iter_ym.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
-                        Tscal S_ij = get_face_surface(id_a, id_b);
-                        dtrho -= flux_rho_face_ym[link_id] * S_ij;
-                        dtrhov -= flux_rhov_face_ym[link_id] * S_ij;
-                        dtrhoe -= flux_rhoe_face_ym[link_id] * S_ij;
-                    });
-
-                    graph_iter_zm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
-                        Tscal S_ij = get_face_surface(id_a, id_b);
-                        dtrho -= flux_rho_face_zm[link_id] * S_ij;
-                        dtrhov -= flux_rhov_face_zm[link_id] * S_ij;
-                        dtrhoe -= flux_rhoe_face_zm[link_id] * S_ij;
-                    });
-
-                    dtrho /= V_i;
-                    dtrhov /= V_i;
-                    dtrhoe /= V_i;
-
-                    acc_dt_rho_patch[id_a]  = dtrho;
-                    acc_dt_rhov_patch[id_a] = dtrhov;
-                    acc_dt_rhoe_patch[id_a] = dtrhoe;
+                graph_iter_xp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                    Tscal S_ij = get_face_surface(id_a, id_b);
+                    dtrho -= flux_rho_face_xp[link_id] * S_ij;
+                    dtrhov -= flux_rhov_face_xp[link_id] * S_ij;
+                    dtrhoe -= flux_rhoe_face_xp[link_id] * S_ij;
                 });
-            });
 
-            cell0block_aabb_lower.complete_event_state(e);
-            block_cell_sizes.complete_event_state(e);
-            dt_rho_patch.complete_event_state(e);
-            dt_rhov_patch.complete_event_state(e);
-            dt_rhoe_patch.complete_event_state(e);
+                graph_iter_yp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                    Tscal S_ij = get_face_surface(id_a, id_b);
+                    dtrho -= flux_rho_face_yp[link_id] * S_ij;
+                    dtrhov -= flux_rhov_face_yp[link_id] * S_ij;
+                    dtrhoe -= flux_rhoe_face_yp[link_id] * S_ij;
+                });
+
+                graph_iter_zp.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                    Tscal S_ij = get_face_surface(id_a, id_b);
+                    dtrho -= flux_rho_face_zp[link_id] * S_ij;
+                    dtrhov -= flux_rhov_face_zp[link_id] * S_ij;
+                    dtrhoe -= flux_rhoe_face_zp[link_id] * S_ij;
+                });
+
+                graph_iter_xm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                    Tscal S_ij = get_face_surface(id_a, id_b);
+                    dtrho -= flux_rho_face_xm[link_id] * S_ij;
+                    dtrhov -= flux_rhov_face_xm[link_id] * S_ij;
+                    dtrhoe -= flux_rhoe_face_xm[link_id] * S_ij;
+                });
+
+                graph_iter_ym.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                    Tscal S_ij = get_face_surface(id_a, id_b);
+                    dtrho -= flux_rho_face_ym[link_id] * S_ij;
+                    dtrhov -= flux_rhov_face_ym[link_id] * S_ij;
+                    dtrhoe -= flux_rhoe_face_ym[link_id] * S_ij;
+                });
+
+                graph_iter_zm.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                    Tscal S_ij = get_face_surface(id_a, id_b);
+                    dtrho -= flux_rho_face_zm[link_id] * S_ij;
+                    dtrhov -= flux_rhov_face_zm[link_id] * S_ij;
+                    dtrhoe -= flux_rhoe_face_zm[link_id] * S_ij;
+                });
+
+                dtrho /= V_i;
+                dtrhov /= V_i;
+                dtrhoe /= V_i;
+
+                acc_dt_rho_patch[id_a]  = dtrho;
+                acc_dt_rhov_patch[id_a] = dtrhov;
+                acc_dt_rhoe_patch[id_a] = dtrhoe;
+            });
         });
+
+        cell0block_aabb_lower.complete_event_state(e);
+        block_cell_sizes.complete_event_state(e);
+        dt_rho_patch.complete_event_state(e);
+        dt_rhov_patch.complete_event_state(e);
+        dt_rhoe_patch.complete_event_state(e);
+
+        buf_flux_rho_face_xp.complete_event_state(e);
+        buf_flux_rho_face_xm.complete_event_state(e);
+        buf_flux_rho_face_yp.complete_event_state(e);
+        buf_flux_rho_face_ym.complete_event_state(e);
+        buf_flux_rho_face_zp.complete_event_state(e);
+        buf_flux_rho_face_zm.complete_event_state(e);
+
+        buf_flux_rhov_face_xp.complete_event_state(e);
+        buf_flux_rhov_face_xm.complete_event_state(e);
+        buf_flux_rhov_face_yp.complete_event_state(e);
+        buf_flux_rhov_face_ym.complete_event_state(e);
+        buf_flux_rhov_face_zp.complete_event_state(e);
+        buf_flux_rhov_face_zm.complete_event_state(e);
+
+        buf_flux_rhoe_face_xp.complete_event_state(e);
+        buf_flux_rhoe_face_xm.complete_event_state(e);
+        buf_flux_rhoe_face_yp.complete_event_state(e);
+        buf_flux_rhoe_face_ym.complete_event_state(e);
+        buf_flux_rhoe_face_zp.complete_event_state(e);
+        buf_flux_rhoe_face_zm.complete_event_state(e);
+    });
 
     storage.dtrho.set(std::move(cfield_dtrho));
     storage.dtrhov.set(std::move(cfield_dtrhov));
@@ -332,29 +355,29 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         NGLink<Tvec> &patch_flux_rhov_dust_face_zp = flux_rhov_dust_face_zp.get(id);
         NGLink<Tvec> &patch_flux_rhov_dust_face_zm = flux_rhov_dust_face_zm.get(id);
 
-        sycl::buffer<Tscal> &buf_flux_rho_dust_face_xp
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_dust_face_xp
             = patch_flux_rho_dust_face_xp.link_graph_field;
-        sycl::buffer<Tscal> &buf_flux_rho_dust_face_xm
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_dust_face_xm
             = patch_flux_rho_dust_face_xm.link_graph_field;
-        sycl::buffer<Tscal> &buf_flux_rho_dust_face_yp
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_dust_face_yp
             = patch_flux_rho_dust_face_yp.link_graph_field;
-        sycl::buffer<Tscal> &buf_flux_rho_dust_face_ym
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_dust_face_ym
             = patch_flux_rho_dust_face_ym.link_graph_field;
-        sycl::buffer<Tscal> &buf_flux_rho_dust_face_zp
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_dust_face_zp
             = patch_flux_rho_dust_face_zp.link_graph_field;
-        sycl::buffer<Tscal> &buf_flux_rho_dust_face_zm
+        sham::DeviceBuffer<Tscal> &buf_flux_rho_dust_face_zm
             = patch_flux_rho_dust_face_zm.link_graph_field;
-        sycl::buffer<Tvec> &buf_flux_rhov_dust_face_xp
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_dust_face_xp
             = patch_flux_rhov_dust_face_xp.link_graph_field;
-        sycl::buffer<Tvec> &buf_flux_rhov_dust_face_xm
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_dust_face_xm
             = patch_flux_rhov_dust_face_xm.link_graph_field;
-        sycl::buffer<Tvec> &buf_flux_rhov_dust_face_yp
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_dust_face_yp
             = patch_flux_rhov_dust_face_yp.link_graph_field;
-        sycl::buffer<Tvec> &buf_flux_rhov_dust_face_ym
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_dust_face_ym
             = patch_flux_rhov_dust_face_ym.link_graph_field;
-        sycl::buffer<Tvec> &buf_flux_rhov_dust_face_zp
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_dust_face_zp
             = patch_flux_rhov_dust_face_zp.link_graph_field;
-        sycl::buffer<Tvec> &buf_flux_rhov_dust_face_zm
+        sham::DeviceBuffer<Tvec> &buf_flux_rhov_dust_face_zm
             = patch_flux_rhov_dust_face_zm.link_graph_field;
 
         sham::DeviceBuffer<Tscal> &dt_rho_dust_patch = cfield_dtrho_dust.get_buf_check(id);
@@ -386,6 +409,20 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
 
         u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
+        auto flux_rho_dust_face_xp = buf_flux_rho_dust_face_xp.get_read_access(depends_list);
+        auto flux_rho_dust_face_xm = buf_flux_rho_dust_face_xm.get_read_access(depends_list);
+        auto flux_rho_dust_face_yp = buf_flux_rho_dust_face_yp.get_read_access(depends_list);
+        auto flux_rho_dust_face_ym = buf_flux_rho_dust_face_ym.get_read_access(depends_list);
+        auto flux_rho_dust_face_zp = buf_flux_rho_dust_face_zp.get_read_access(depends_list);
+        auto flux_rho_dust_face_zm = buf_flux_rho_dust_face_zm.get_read_access(depends_list);
+
+        auto flux_rhov_dust_face_xp = buf_flux_rhov_dust_face_xp.get_read_access(depends_list);
+        auto flux_rhov_dust_face_xm = buf_flux_rhov_dust_face_xm.get_read_access(depends_list);
+        auto flux_rhov_dust_face_yp = buf_flux_rhov_dust_face_yp.get_read_access(depends_list);
+        auto flux_rhov_dust_face_ym = buf_flux_rhov_dust_face_ym.get_read_access(depends_list);
+        auto flux_rhov_dust_face_zp = buf_flux_rhov_dust_face_zp.get_read_access(depends_list);
+        auto flux_rhov_dust_face_zm = buf_flux_rhov_dust_face_zm.get_read_access(depends_list);
+
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
             AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
@@ -393,19 +430,6 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
             AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
             AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
             AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
-            sycl::accessor flux_rho_dust_face_xp{buf_flux_rho_dust_face_xp, cgh, sycl::read_only};
-            sycl::accessor flux_rho_dust_face_xm{buf_flux_rho_dust_face_xm, cgh, sycl::read_only};
-            sycl::accessor flux_rho_dust_face_yp{buf_flux_rho_dust_face_yp, cgh, sycl::read_only};
-            sycl::accessor flux_rho_dust_face_ym{buf_flux_rho_dust_face_ym, cgh, sycl::read_only};
-            sycl::accessor flux_rho_dust_face_zp{buf_flux_rho_dust_face_zp, cgh, sycl::read_only};
-            sycl::accessor flux_rho_dust_face_zm{buf_flux_rho_dust_face_zm, cgh, sycl::read_only};
-            sycl::accessor flux_rhov_dust_face_xp{buf_flux_rhov_dust_face_xp, cgh, sycl::read_only};
-            sycl::accessor flux_rhov_dust_face_xm{buf_flux_rhov_dust_face_xm, cgh, sycl::read_only};
-            sycl::accessor flux_rhov_dust_face_yp{buf_flux_rhov_dust_face_yp, cgh, sycl::read_only};
-            sycl::accessor flux_rhov_dust_face_ym{buf_flux_rhov_dust_face_ym, cgh, sycl::read_only};
-            sycl::accessor flux_rhov_dust_face_zp{buf_flux_rhov_dust_face_zp, cgh, sycl::read_only};
-            sycl::accessor flux_rhov_dust_face_zm{buf_flux_rhov_dust_face_zm, cgh, sycl::read_only};
 
             u32 ndust          = solver_config.dust_config.ndust;
             auto get_cell_aabb = [=](u32 id) -> shammath::AABB<Tvec> {
@@ -516,6 +540,20 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         block_cell_sizes.complete_event_state(e);
         dt_rho_dust_patch.complete_event_state(e);
         dt_rhov_dust_patch.complete_event_state(e);
+
+        buf_flux_rho_dust_face_xp.complete_event_state(e);
+        buf_flux_rho_dust_face_xm.complete_event_state(e);
+        buf_flux_rho_dust_face_yp.complete_event_state(e);
+        buf_flux_rho_dust_face_ym.complete_event_state(e);
+        buf_flux_rho_dust_face_zp.complete_event_state(e);
+        buf_flux_rho_dust_face_zm.complete_event_state(e);
+
+        buf_flux_rhov_dust_face_xp.complete_event_state(e);
+        buf_flux_rhov_dust_face_xm.complete_event_state(e);
+        buf_flux_rhov_dust_face_yp.complete_event_state(e);
+        buf_flux_rhov_dust_face_ym.complete_event_state(e);
+        buf_flux_rhov_dust_face_zp.complete_event_state(e);
+        buf_flux_rhov_dust_face_zm.complete_event_state(e);
     });
 
     storage.dtrho_dust.set(std::move(cfield_dtrho_dust));

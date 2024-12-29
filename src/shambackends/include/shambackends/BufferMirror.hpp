@@ -104,7 +104,7 @@ namespace sham {
          *
          * Copies the data from the mirror back to the original buffer.
          */
-        ~BufferMirror() { mirrored_buffer.template copy_from(mirror); }
+        ~BufferMirror() { mirrored_buffer.copy_from(mirror); }
     };
 
 } // namespace sham

@@ -63,10 +63,12 @@ lines_buf = filter_double_newline(filter_non_warnings(no_double_newline))
 f_fixes = open(args.fixes, 'r')
 fixes_lines = f_fixes.readlines()
 
+print(lines_buf)
 print(fixes_lines)
 
-print_warn = not (lines_buf == ["\n"])
-print_fixes = not (fixes_lines == [])
+no_relevant = not (lines_buf == ["No relevant changes found.\n"])
+print_warn = (not (lines_buf == ["\n"])) and no_relevant
+print_fixes = (not (fixes_lines == [])) and no_relevant
 
 
 buf = "# Clang-tidy diff report\n"
@@ -93,11 +95,12 @@ if print_fixes:
     buf += "\n"
     buf += "</details>\n"
 
-if not print_warn and not print_fixes:
+if (not print_warn and not print_fixes):
     buf += "\n"
-    buf += "You have reached a new level of clang-tidy mastery, "
-    buf += "well done... You should now go back to your normal life"
-    buf += " while waiting for the review.\n"
+    buf += "No relevant changes found.\n"
+    buf += "**Well done!**  \n\n"
+    buf += "You should now go back to your normal life and enjoy a hopefully sunny day "
+    buf += "while waiting for the review.\n"
 
 f_out = open(args.output, 'w')
 f_out.write(buf)

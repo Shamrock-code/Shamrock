@@ -40,6 +40,9 @@ namespace shambindings {
      * @param file_path path to the runscript
      */
     void run_py_file(std::string file_path, bool do_print);
+
+    /// Modify Python sys.path to point to one detected during cmake invocation
+    void modify_py_sys_path();
 #endif
 
 } // namespace shambindings

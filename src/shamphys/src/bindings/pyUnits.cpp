@@ -94,11 +94,13 @@ Register_pymod(pyunits_init) {
 
                 X(G)
 
-                    X(year)
+                    X(mu_0)
 
-                        X(au)
+                        X(year)
 
-                            X(earth_mass) X(jupiter_mass) X(sol_mass) X(guiness_density)
+                            X(au)
+
+                                X(earth_mass) X(jupiter_mass) X(sol_mass) X(guiness_density)
 
         ;
 }

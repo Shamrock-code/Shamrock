@@ -19,6 +19,7 @@
 #include "shambackends/vec.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
+#include <variant>
 
 namespace shammodels::sph {
 
@@ -66,9 +67,19 @@ struct shammodels::sph::MHDConfig {
         return is_psi;
     }
 
+    inline bool has_divB_field() {
+        bool is_divB = bool(std::get_if<IdealMHD_constrained_hyper_para>(&config));
+        return is_divB;
+    }
+
     inline bool has_curlB_field() {
         bool is_curlB = bool(std::get_if<NonIdealMHD>(&config));
         return is_curlB;
+    }
+
+    inline bool has_dtdivB_field() {
+        bool is_dtdivB = bool(std::get_if<NonIdealMHD>(&config));
+        return is_dtdivB;
     }
 
     inline void print_status() {

@@ -7,6 +7,7 @@ set(Sources
         src/comm/CommunicationBuffer.cpp
         src/details/BufferEventHandler.cpp
         src/details/memoryHandle.cpp
+        src/details/internal_alloc.cpp
         src/USMPtrHolder.cpp
         src/DeviceBuffer.cpp
         src/Device.cpp

@@ -227,5 +227,8 @@ namespace shamtest {
 /// REQUIRE macro alias to _Assert
 #define REQUIRE(a) _Assert(a)
 
+/// REQUIRE_EQUAL macro alias to _AssertEqual
+#define REQUIRE_EQUAL(a, b) _AssertEqual(a, b)
+
 /// REQUIRE macro alias to _Assert_throw
 #define REQUIRE_THROW_AS(call, expt_type) _Assert_throw(call, expt_type)

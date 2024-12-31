@@ -16,9 +16,12 @@ set(Sources
         src/details/algorithm/bitonicSort_updated_xor_swap.cpp
         src/details/algorithm/algorithm.cpp
         src/details/algorithm/bitonicSort_updated.cpp
+        src/details/algorithm/bitonicSort_updated_usm.cpp
         src/details/algorithm/bitonicSort_legacy.cpp
         src/details/random/random.cpp
         src/details/reduction/reduction.cpp
+        src/details/reduction/groupReduction_usm.cpp
+        src/details/reduction/fallbackReduction_usm.cpp
         src/serialize.cpp
         src/collective/distributedDataComm.cpp
     )

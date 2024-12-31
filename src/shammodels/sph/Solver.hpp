@@ -109,6 +109,24 @@ namespace shammodels::sph {
                 // hence we copy the soundspeed at the end of the step to a field in the patchdata
                 context.pdata_layout_add_field<Tscal>("soundspeed", 1);
             }
+
+            if (solver_config.has_field_B_on_rho()) {
+
+                context.pdata_layout_add_field<Tvec>("B/rho", 1);
+                context.pdata_layout_add_field<Tvec>("dB/rho", 1);
+            }
+
+            if (solver_config.has_field_psi_on_ch()) {
+                context.pdata_layout_add_field<Tscal>("psi/ch", 1);
+                context.pdata_layout_add_field<Tscal>("dpsi/ch", 1);
+            }
+            if (solver_config.has_field_divB()) {
+                context.pdata_layout_add_field<Tscal>("divB", 1);
+            }
+
+            if (solver_config.has_field_curlB()) {
+                context.pdata_layout_add_field<Tvec>("curlB", 1);
+            }
         }
 
         // serial patch tree control

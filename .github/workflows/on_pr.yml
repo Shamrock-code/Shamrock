@@ -38,16 +38,16 @@ jobs:
           echo "email=$(git show -s --format='%ae' HEAD~0)" >> $GITHUB_OUTPUT
 
       - name: Show email
-        run: echo "Commiter email is ${{ steps.author.outputs.email }}" > report_aaa_email.md
+        run: echo "Commiter email is ${{ steps.author.outputs.email }}" > report_______email.md
 
       - name: Validate author email
         if: ${{ endsWith(steps.author.outputs.EMAIL, 'noreply.github.com')  }}
-        run: echo "You are using github private e-mail. This prevent proper tracing of who contributed what, please disable it (see [Keep my email addresses private](https://github.com/settings/emails))." >> report_aaa_email.md
+        run: echo "You are using github private e-mail. This prevent proper tracing of who contributed what, please disable it (see [Keep my email addresses private](https://github.com/settings/emails))." >> report_______email.md
 
       - uses: actions/upload-artifact@v4
         with:
           name: report_email
-          path: ./report_aaa_email.md
+          path: ./report_______email.md
 
   src_check:
     name: Linting

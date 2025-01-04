@@ -79,7 +79,8 @@ jobs:
           merged_file="merged_report.md"
 
           echo " -- sort filelist"
-          filelist=$(echo *.md | tr ' ' '\n' | sort)
+          # add local set otherwise sort is weird
+          LC_ALL=C filelist=$(echo *.md | tr ' ' '\n' | sort)
           echo "$filelist"
 
           echo "## Workflow report" > "$merged_file"

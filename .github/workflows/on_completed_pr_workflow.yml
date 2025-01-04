@@ -78,7 +78,8 @@ jobs:
           merged_file="merged_report.md"
 
           # List and sort the .md files alphabetically (or by any custom criteria)
-          sorted_md_files=$(ls *.md | sort)  # Sort files alphabetically
+          sorted_md_files=$(echo *.md | tr ' ' '\n' | sort)  # Sort files alphabetically
+          echo "Sorted .md files: $sorted_md_files"
 
           echo "## Workflow report" > "$merged_file"
 

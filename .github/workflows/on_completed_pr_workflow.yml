@@ -73,16 +73,13 @@ jobs:
           rm *.zip
 
       - name: 'Merge all .md files into a single file'
+        shell: bash
         run: |
           # Create a merged file
           merged_file="merged_report.md"
 
-          # Find all .md files in the current directory
-          filelist=$(find . -type f -name "*.md" -print0 | xargs -0)
-          echo "$filelist"
-
           echo " -- sort filelist"
-          filelist=$(echo "$filelist" | tr ' ' '\n' | sort)
+          filelist=$(echo *.md | tr ' ' '\n' | sort)
           echo "$filelist"
 
           echo "## Workflow report" > "$merged_file"

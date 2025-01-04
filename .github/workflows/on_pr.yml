@@ -1,33 +1,58 @@
-name: On PR
+name: on PR
 
 # Controls when the workflow will run
-on:
-  pull_request_target:
-    # opened : pull request is created
-    # edited : title, body, or the base branch of the PR is modified
-    # synchronize : if commit pushed
-    # labeled : a label is applied to the pull request
-    # unlabeled : a label is removed from the pull request
-    types: [opened, synchronize]
-
-  pull_request:
-    paths:
-        - '.github/**'
-  #we do not use this one as the job is not launched on the corect branch (aka we cannot test the CI in PRs)
-  #pull_request_target:
-  #  types: [opened,edited,synchronize,labeled]
+on: [pull_request]
 
 jobs:
 
-  #detect_changes:
-  #  name: "Change detect"
-  #  uses: ./.github/workflows/detect_changes.yml
+  upload_pr_detail:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Save PR number
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          mkdir -p ./pr
+          echo $PR_NUMBER > ./pr_number.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report_pr_number
+          path: ./pr_number.txt
+
+
+  email_check:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Extract author email
+        id: author
+        run: |
+          git log -1
+          echo "email=$(git show -s --format='%ae' HEAD~0)" >> $GITHUB_OUTPUT
+
+      - name: Show email
+        run: echo "Commiter email is ${{ steps.author.outputs.email }}" > report_______email.md
+
+      - name: Validate author email
+        if: ${{ endsWith(steps.author.outputs.EMAIL, 'noreply.github.com')  }}
+        run: echo "You are using github private e-mail. This prevent proper tracing of who contributed what, please disable it (see [Keep my email addresses private](https://github.com/settings/emails))." >> report_______email.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report_email
+          path: ./report_______email.md
 
   src_check:
     name: Linting
     #needs: [detect_changes]
     uses: ./.github/workflows/source_checks.yml
-
 
   #make shamrock documentation
   make_documentation:
@@ -123,20 +148,17 @@ jobs:
 
       - name: 'Diff'
         run: |
-          python3 buildbot/doxygen_diff.py main_dox_output/warn_doxygen.txt PR_dox_output/warn_doxygen.txt > out_diff.md
+          python3 buildbot/doxygen_diff.py main_dox_output/warn_doxygen.txt PR_dox_output/warn_doxygen.txt > report_doc_diff.md
 
       - name: 'cat diff'
         run: |
-          cat out_diff.md
+          cat report_doc_diff.md
 
-      - name: Comment doxygen diff on PR
-        uses: thollander/actions-comment-pull-request@v2
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          filePath: out_diff.md
-          comment_tag: doxygen_diff
-          mode: recreate
-          create_if_not_exists: true
-
+          name: report_doc_diff
+          path: ./report_doc_diff.md
 
   shamrock_linux_acpp:
     needs: [src_check]

@@ -58,18 +58,7 @@ jobs:
         \`\`\`
 
         Test pipeline can run.
-        " > message.md
-
-    - name: Comment doxygen diff on PR
-      if: success() && github.event_name == 'pull_request_target'
-      uses: thollander/actions-comment-pull-request@v2
-      with:
-        filePath: message.md
-        comment_tag: pre-commit-comment
-        mode: recreate
-        create_if_not_exists: true
-
-
+        " > report_a_precommit.md
 
     - name : Generate diff
       if: failure() && github.event_name == 'pull_request_target'
@@ -81,16 +70,12 @@ jobs:
 
     - name: Run pre-commit-report
       if: failure() && github.event_name == 'pull_request_target'
-      run: python3 buildbot/precommit_report.py > out.md
+      run: python3 buildbot/precommit_report.py > report_a_precommit.md
 
-    - name: Comment doxygen diff on PR
-      if: failure() && github.event_name == 'pull_request_target'
-      uses: thollander/actions-comment-pull-request@v2
+    - uses: actions/upload-artifact@v4
       with:
-        filePath: out.md
-        comment_tag: pre-commit-comment
-        mode: recreate
-        create_if_not_exists: true
+        name: report_precommit
+        path: ./report_a_precommit.md
 
     - name: rm tmpfiles
       if: failure() && github.event_name == 'pull_request_target'
@@ -99,9 +84,3 @@ jobs:
     - name: Show diff
       if: failure() && github.event_name == 'pull_request_target'
       run: git diff
-
-    #- name: suggest changes
-    #  if: always() && github.event_name == 'pull_request_target'
-    #  uses: reviewdog/action-suggester@v1
-    #  with:
-    #    tool_name: git-pre-commit

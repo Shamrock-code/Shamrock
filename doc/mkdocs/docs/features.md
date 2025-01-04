@@ -24,7 +24,7 @@ please wait for the corresponding feature to be published before publishing anyt
 | Gas solver | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
 | [Sink particles](./features/sph/sinks.md) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | |
 | Pseudo-Newtonian <br> corrections | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #319](https://img.shields.io/badge/PR-%23319-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/319) |
-| MHD solver | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #707](https://img.shields.io/badge/PR-%23707-yellow?logo=github)](https://github.com/tdavidcl/Shamrock/pull/707) |
+| MHD solver | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) | [![PR - #707](https://img.shields.io/badge/PR-%23707-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/707) |
 
 
 | Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
@@ -69,6 +69,7 @@ please wait for the corresponding feature to be published before publishing anyt
 | --- | --- | --- | --- |  --- |
 | Mass based refinement | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
 | Pseudo-gradient refinement | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Léodasce Sewanou](https://github.com/Akos299) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
+| Modified second derivative refinement | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Léodasce Sewanou](https://github.com/Akos299) | ![Do not cite yet !](https://img.shields.io/badge/Do_not_cite_yet_!-critical) |  |
 
 #### Slope limiters
 
@@ -86,6 +87,8 @@ please wait for the corresponding feature to be published before publishing anyt
 | Rusanov | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) |  |  |
 | HLL | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) |  |  |
 | HLLC | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Léodasce Sewanou](https://github.com/Akos299) |  |
+| Dusty HLL | ![WIP](https://img.shields.io/badge/WIP-yellow) |  [Léodasce Sewanou](https://github.com/Akos299) |  |
+| HB dust solver | ![WIP](https://img.shields.io/badge/WIP-yellow) |  [Léodasce Sewanou](https://github.com/Akos299) |  |
 
 ### Zeus model
 

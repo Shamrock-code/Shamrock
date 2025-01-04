@@ -15,6 +15,7 @@ nav:
       - 'Phantom conformance': 'features/sph/conformance_phantom.md'
       - 'Sink particles': 'features/sph/sinks.md'
       - 'Shearing box' : 'features/sph/shearing_box.md'
+      - 'Setup Graph' : 'features/sph/setup_graph.md'
 
   - 'User Documentation' :
     - 'QuickStart' : 'usermanual/quickstart.md'

@@ -7,7 +7,7 @@ This solution is the generalized setups in a form of a graph where link pass Pat
 
 ## Node types
 
-Node can be generators (e.g. lattice hcp, monte carlo, ...) modifiers (strechmapping, disc warp, ...) or combiners (Just combining the result of two other nodes.
+Node can be generators (e.g. lattice hcp, monte carlo, ...) modifiers (strechmapping, disc warp, ...) or combiners (Just combining the result of two other nodes).
 
 ## Exemple
 

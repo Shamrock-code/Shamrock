@@ -5,37 +5,6 @@ on: [pull_request]
 
 jobs:
 
-  build1:
-    runs-on: ubuntu-latest
-    # if: false
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      - name: Run a one-line script
-        run: echo -e "## Report 1 \ntest1" > report_build1.md
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: report_build1
-          path: report_build1.md
-      - run: cat aaaaa.txt
-
-  build2:
-    runs-on: ubuntu-latest
-    # if: false
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      - name: Run a one-line script
-        run: echo -e "## Report 2 \ntest2" > report_build2.md
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: report_build2
-          path: report_build2.md
-
   upload_pr_detail:
     runs-on: ubuntu-latest
 

@@ -77,9 +77,13 @@ jobs:
           # Create a merged file
           merged_file="merged_report.md"
 
-          # List and sort the .md files alphabetically (or by any custom criteria)
-          sorted_md_files=$(echo *.md | tr ' ' '\n' | sort)  # Sort files alphabetically
-          echo "Sorted .md files: $sorted_md_files"
+          # Find all .md files in the current directory
+          filelist=$(find . -type f -name "*.md" -print0 | xargs -0)
+          echo "$filelist"
+
+          echo " -- sort filelist"
+          filelist=$(echo "$filelist" | tr ' ' '\n' | sort)
+          echo "$filelist"
 
           echo "## Workflow report" > "$merged_file"
 
@@ -88,7 +92,7 @@ jobs:
           echo "workflow report corresponding to commit $COMMIT_SHA" >> "$merged_file"
 
           # Append each .md file into the merged file in sorted order
-          for md_file in $sorted_md_files; do
+          for md_file in $filelist; do
             echo "Appending: $md_file"
             cat "$md_file" >> "$merged_file"
           done

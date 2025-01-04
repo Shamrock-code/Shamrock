@@ -50,6 +50,11 @@ jobs:
       run: pre-commit run --all-files > out
 
     - name: make file comment
+      if: always()
+      run: |
+        echo "## Pre-commit check report" > ./report_a_precommit.md
+
+    - name: make file comment
       if: success()
       run: |
         echo "Pre-commit check: ✅
@@ -58,7 +63,7 @@ jobs:
         \`\`\`
 
         Test pipeline can run.
-        " > ./report_a_precommit.md
+        " >> ./report_a_precommit.md
 
     - name : Generate diff
       if: failure()
@@ -70,7 +75,7 @@ jobs:
 
     - name: Run pre-commit-report
       if: failure()
-      run: python3 buildbot/precommit_report.py > ./report_a_precommit.md
+      run: python3 buildbot/precommit_report.py >> ./report_a_precommit.md
 
     - name: rm tmpfiles
       if: failure()

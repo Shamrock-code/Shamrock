@@ -8,6 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
+#include "shamalgs/details/algorithm/bitonicSort_updated_usm.hpp"
 #include "shamalgs/details/algorithm/radixSortOnesweep.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "sortTests.hpp"
@@ -25,6 +26,18 @@ TestStart(
     TestSortByKey<u32, u32> test(
         (TestSortByKey<u32, u32>::vFunctionCall)
             shamalgs::algorithm::details::sort_by_key_bitonic_updated<u32, u32, 16>);
+    test.check();
+}
+
+TestStart(
+    Unittest,
+    "shamalgs/algorithm/details/bitonicSort_updated_usm",
+    test_bitonic_sort_updated_usm,
+    1) {
+
+    TestSortByKeyUSM<u32, u32> test(
+        (TestSortByKeyUSM<u32, u32>::vFunctionCall)
+            shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<u32, u32, 16>);
     test.check();
 }
 

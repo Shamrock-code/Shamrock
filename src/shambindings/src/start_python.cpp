@@ -46,6 +46,8 @@ sys.path = paths
 
 namespace shambindings {
 
+    void modify_py_sys_path() { py::exec(modify_path); }
+
     void start_ipython(bool do_print) {
         py::scoped_interpreter guard{};
         py::exec(modify_path);

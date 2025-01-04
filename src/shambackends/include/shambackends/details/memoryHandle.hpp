@@ -44,31 +44,9 @@
 #include "shambackends/MemPerfInfos.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
+#include "shambackends/details/internal_alloc.hpp"
 
 namespace sham::details {
-
-    /**
-     * @brief Allocate a USM pointer with at least the given size in bytes.
-     *
-     * @param sz The minimum size of the USM pointer in bytes.
-     * @param dev_sched The SYCL queue used to allocate the USM pointer.
-     * @param alignment The alignment of the USM pointer (optional).
-     *
-     * @returns A pointer to the allocated USM memory.
-     */
-    template<USMKindTarget target>
-    void *internal_alloc(
-        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
-
-    /**
-     * @brief Free a USM pointer.
-     *
-     * @param usm_ptr The pointer to free.
-     * @param sz The size of the USM pointer in bytes.
-     * @param dev_sched The SYCL queue used to free the USM pointer.
-     */
-    template<USMKindTarget target>
-    void internal_free(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
 
     /**
      * @brief Create a USM pointer with at least the given size in bytes.
@@ -99,9 +77,5 @@ namespace sham::details {
      */
     template<USMKindTarget target>
     void release_usm_ptr(USMPtrHolder<target> &&usm_ptr_hold, details::BufferEventHandler &&events);
-
-    /// @brief Retrieve the memory performance information.
-    /// @return A MemPerfInfos object containing the memory performance data.
-    MemPerfInfos get_mem_perf_info();
 
 } // namespace sham::details

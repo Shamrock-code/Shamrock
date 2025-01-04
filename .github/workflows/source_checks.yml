@@ -46,11 +46,11 @@ jobs:
 
 
     - name: rerun precommit for logs
-      if: success() && github.event_name == 'pull_request_target'
+      if: success()
       run: pre-commit run --all-files > out
 
     - name: make file comment
-      if: success() && github.event_name == 'pull_request_target'
+      if: success()
       run: |
         echo "Pre-commit check: ✅
         \`\`\`
@@ -58,26 +58,26 @@ jobs:
         \`\`\`
 
         Test pipeline can run.
-        " > report_a_precommit.md
+        " > ./report_a_precommit.md
 
     - name : Generate diff
-      if: failure() && github.event_name == 'pull_request_target'
+      if: failure()
       run: git diff > diff-pre-commit
 
     - name : Cat diff
-      if: failure() && github.event_name == 'pull_request_target'
+      if: failure()
       run: cat diff-pre-commit
 
     - name: Run pre-commit-report
-      if: failure() && github.event_name == 'pull_request_target'
-      run: python3 buildbot/precommit_report.py > report_a_precommit.md
+      if: failure()
+      run: python3 buildbot/precommit_report.py > ./report_a_precommit.md
 
     - name: rm tmpfiles
-      if: failure() && github.event_name == 'pull_request_target'
+      if: failure()
       run: rm diff-pre-commit log_precommit_*
 
     - name: Show diff
-      if: failure() && github.event_name == 'pull_request_target'
+      if: failure()
       run: git diff
 
     - uses: actions/upload-artifact@v4

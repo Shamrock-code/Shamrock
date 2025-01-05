@@ -13,7 +13,8 @@
  * @file ComputeEos.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief
+ * @brief This is the compute eos module. The various equations of state are implemented
+ * in the cpp file.
  *
  */
 

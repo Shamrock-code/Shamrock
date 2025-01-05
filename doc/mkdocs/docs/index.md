@@ -57,4 +57,4 @@ We can run some SPH, AMR, but not only that!
 
 !!! note
 
-    The code is in active devellopement and not released yet dont expect the most polished thing
+    The code is in active development and not released yet don't expect the most polished thing

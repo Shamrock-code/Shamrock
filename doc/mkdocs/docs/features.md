@@ -3,12 +3,12 @@
 Here is a somewhat Exhaustive list of shamrock's features, do not hesitate to raise an issue if one appear to be missing.
 This page was made in order to list the features of the code as well as properly attributing contribution and avoid having multiple peoples working on the same features.
 
-We list the features by categories as wel as their status which can be any of:
+We list the features by categories as well as their status which can be any of:
 ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)
 ![Ok](https://img.shields.io/badge/Ok-yellowgreen)
 ![WIP](https://img.shields.io/badge/WIP-yellow) (Work in progress)
 ![Broken](https://img.shields.io/badge/Broken-red)
-This page also trace the contributor who made the contributiona as well as the corresponding paper to cite for each features.
+This page also trace the contributor who made the contribution as well as the corresponding paper to cite for each features.
 If any feature is notated with
 ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical)
 please wait for the corresponding feature to be published before publishing anything using it.

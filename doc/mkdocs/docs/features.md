@@ -59,7 +59,7 @@ please wait for the corresponding feature to be published before publishing anyt
 
 | Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
 | --- | --- | --- | --- |  --- |
-| Ramses solver | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | Needs some polishing to be considered production ready |
+| Ramses solver | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) & [Thomas Guillet](https://github.com/thomasguillet) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | Needs some polishing to be considered production ready |
 | Refinement handling | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) |  |
 | Multifluid dust | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Léodasce Sewanou](https://github.com/Akos299) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #636](https://img.shields.io/badge/PR-%23636-yellow?logo=github)](https://github.com/tdavidcl/Shamrock/pull/636) |
 
@@ -78,14 +78,14 @@ please wait for the corresponding feature to be published before publishing anyt
 | None | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) |  |
 | Minmod | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) |  |
 | VanLeer | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) |  |
-| Symmetrized VanLeer | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) |  |
+| Symmetrized VanLeer | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) & [Thomas Guillet](https://github.com/thomasguillet) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) |  |
 
 #### Riemann solvers
 
 | Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
 | --- | --- | --- | --- |  --- |
-| Rusanov | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) |  |  |
-| HLL | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) |  |  |
+| Rusanov | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) & [Thomas Guillet](https://github.com/thomasguillet) |  |  |
+| HLL | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) & [Thomas Guillet](https://github.com/thomasguillet) |  |  |
 | HLLC | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Léodasce Sewanou](https://github.com/Akos299) |  |
 | Dusty HLL | ![WIP](https://img.shields.io/badge/WIP-yellow) |  [Léodasce Sewanou](https://github.com/Akos299) |  |
 | HB dust solver | ![WIP](https://img.shields.io/badge/WIP-yellow) |  [Léodasce Sewanou](https://github.com/Akos299) |  |

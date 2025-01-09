@@ -1,10 +1,18 @@
-
+---
+title: Shamrock documentation
+---
+<style>
+  .md-typeset h1,
+  .md-content__button {
+    display: none;
+  }
+</style>
 
 ![The Rust Logo](assets/no_background_nocolor.png)
 
-Welcome to the documentation of the Shamrock code !
+Welcome to the documentation of the Shamrock code!
 
-We can run dome SPH, AMR, but not only that !
+We can run some SPH, AMR, but not only that!
 
 <div class="grid cards" markdown>
 
@@ -36,16 +44,17 @@ We can run dome SPH, AMR, but not only that !
 
     [:octicons-arrow-right-24: Customization](#)
 
--   :material-scale-balance:{ .lg .middle } __Open Source, CeCILL license__
+-   :fontawesome-solid-screwdriver-wrench:{ .lg .middle } __Features__
 
     ---
 
-    Shamrock is licensed under the open source CeCILL license
+    Shamrock has plenty of features, be sure to check the list to know what's **available** and to **avoid duplicates**.
 
-    [:octicons-arrow-right-24: License](https://github.com/tdavidcl/Shamrock/blob/main/LICENSE)
+    [:octicons-arrow-right-24: Features](./features.md)
 
 </div>
 
+
 !!! note
 
-    The code is in active devellopement and not released yet dont expect the most polished thing
+    The code is in active development and not released yet don't expect the most polished thing

@@ -1,0 +1,130 @@
+name: on PR (completed)
+
+# This workflow is triggered by the completion of the "on PR" workflow
+# which can be use to perform reporting while allowing the use of the pull_request
+# event to trigger the pr workflow.
+# 
+# This change is motivated by multiple reasons. The most important one is that in order
+# to allow commenting on PR from the bots we were required to use pull_request_target
+# which annoyingly does not behave like pull_request. This required weird trickery to get
+# the correct commit to test against.
+# 
+# The current approach upload reports in artifacts, then after the workflow completes,
+# the new workflow gets triggered on main, then read a comment the report on the PR.
+
+on:
+  workflow_run:
+    workflows: ['on PR']
+    types:
+    - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Set pending workflow status on commit
+        uses: myrotvorets/set-commit-status-action@master
+        if: always()
+        with:
+          sha: ${{ github.event.workflow_run.head_commit.id }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: pending
+          context: Post workflow comment
+
+
+      - name: 'Download reports artifact'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: context.payload.workflow_run.id,
+            });
+
+            // Filter artifacts whose name starts with 'report_'
+            let reportArtifacts = allArtifacts.data.artifacts.filter((artifact) => {
+              return artifact.name.startsWith("report_");
+            });
+
+            // Loop through each matching artifact and download it
+            const fs = require('fs');
+            for (const artifact of reportArtifacts) {
+              console.log(`Downloading artifact: ${artifact.name}`);
+
+              let download = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+                archive_format: 'zip',
+              });
+
+              // Save each artifact with its original name
+              fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${artifact.name}.zip`, Buffer.from(download.data));
+            }
+
+      - name: 'Unzip all zip files in workspace'
+        run: |
+          for file in *.zip; do
+            unzip -o "$file" -d .
+          done
+          rm *.zip
+
+      - name: 'Merge all .md files into a single file'
+        shell: bash
+        run: |
+          # Create a merged file
+          merged_file="merged_report.md"
+
+          echo " -- sort filelist"
+          # add local set otherwise sort is weird
+          LC_ALL=C filelist=$(echo *.md | tr ' ' '\n' | sort)
+          echo "$filelist"
+
+          echo "## Workflow report" > "$merged_file"
+
+          COMMIT_SHA="${{ github.event.workflow_run.head_commit.id }}"
+          echo "The commit that triggered this workflow: $COMMIT_SHA"
+          echo "workflow report corresponding to commit $COMMIT_SHA" >> "$merged_file"
+
+          # Append each .md file into the merged file in sorted order
+          for md_file in $filelist; do
+            echo "Appending: $md_file"
+            cat "$md_file" >> "$merged_file"
+          done
+
+      - name: 'cat the file'
+        run: cat merged_report.md
+
+      - name: 'List files in workspace'
+        run: ls
+
+      - name: Issue number
+        run: cat pr_number.txt
+
+      - name: Read PR number from file
+        id: read_pr
+        run: |
+          pr_number=$(cat pr_number.txt)
+          echo "PR Number: $pr_number"
+          echo "::set-output name=pr_number::$pr_number"
+
+      - name: 'Comment merged report on the PR'
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          file-path: merged_report.md
+          comment-tag: workflow_report
+          mode: recreate
+          create-if-not-exists: true
+          pr-number: ${{ steps.read_pr.outputs.pr_number }}
+
+      - name: Set final workflow status on commit
+        uses: myrotvorets/set-commit-status-action@master
+        if: always()
+        with:
+          sha: ${{ github.event.workflow_run.head_commit.id }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          status: ${{ job.status }}
+          context: Post workflow comment

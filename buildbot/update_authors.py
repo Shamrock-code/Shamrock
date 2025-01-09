@@ -11,10 +11,74 @@ file_list.sort()
 
 missing_doxygenfilehead = []
 
-def get_doxstring(path, filename):
-    tmp = " * @file "+ filename+"\n"
+authorlist = []
+
+def apply_mailmap(authors):
+    ret = []
+    for a in authors:
+
+        try:
+            cmd = f'git check-mailmap "{a['author']} <{a['email']}>"'
+            output = (subprocess.check_output(cmd,shell=True).decode())
+
+            match = re.search(r'(.*) <(.*)>', output)
+            if match is not None:
+                app = {'author':match.group(1), 'email':match.group(2)}
+                if not app in ret:
+                    ret.append(app)
+
+        except subprocess.CalledProcessError as err:
+            print(err)
+
+
+    return ret
+
+def get_author_list(path):
+    authors = []
+    coauthors = []
     try:
-        tmp+= (subprocess.check_output(R'git log --pretty=format:" * @author %aN (%aE)" '+path+' |sort |uniq',shell=True).decode())[:-1]
+        output = (subprocess.check_output(R'git log '+path,shell=True).decode())
+        for l in output.split('\n'):
+            # if we get an answer like
+            # Author: Timothée David--Cléris <tim.shamrock@proton.me>
+            # extract the author name and email
+            match = re.search(r'Author: (.*) <(.*)>', l)
+            if match is not None:
+                app = {'author':match.group(1), 'email':match.group(2)}
+                if not app in authors:
+                    authors.append(app)
+
+            match = re.search(r'Co-authored-by: (.*) <(.*)>', l)
+            if match is not None:
+                app = {'author':match.group(1), 'email':match.group(2)}
+                if not app in coauthors:
+                    coauthors.append(app)
+
+        print(authors,coauthors)
+
+    except subprocess.CalledProcessError as err:
+        print(err)
+
+    authors = apply_mailmap(authors)
+    coauthors = apply_mailmap(coauthors)
+
+    for a in coauthors:
+        if not a in authors:
+            authors.append(a)
+
+    for a in authors:
+        if not a in authorlist:
+            authorlist.append(a)
+
+    return authors
+
+def get_doxstring(path, filename):
+    tmp = " * @file "+ filename
+    try:
+        lst = get_author_list(path)
+        for a in lst:
+            tmp+= (f"\n * @author {a['author']} ({a['email']})")
+        #tmp+= (subprocess.check_output(R'git log --pretty=format:" * @author %aN (%aE)" '+path+' |sort |uniq',shell=True).decode())[:-1]
     except subprocess.CalledProcessError as err:
         print(err)
 
@@ -102,3 +166,7 @@ def run_autocorect():
 
 
 missing_doxygenfilehead = run_autocorect()
+
+print("Current author list:")
+for a in authorlist:
+    print(f"{a['author']} ({a['email']})")

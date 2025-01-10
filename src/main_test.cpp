@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
         "Use complete event instead of begin end for chrome tracing");
     shamcmdopt::register_env_var_doc(
         "SHAM_PROF_EVENT_RECORD_THRES", "Change the event recording threshold");
+    shamcmdopt::register_env_var_doc("SHAMLOG_ERR_ON_EXCEPT", "Enable logging of exceptions");
 
     opts::init(argc, argv);
     if (opts::is_help_mode()) {

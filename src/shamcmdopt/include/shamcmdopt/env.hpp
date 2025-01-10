@@ -30,6 +30,19 @@ namespace shamcmdopt {
     std::optional<std::string> getenv_str(const char *env_var);
 
     /**
+     * @brief Get the content of the environment variable if it exist, otherwise return the default
+     * value
+     *
+     * @param env_var the name of the env variable
+     * @param default_val the default value to return if the env variable does not exist
+     * @return std::string the value of the env variable if it exist, the default value otherwise
+     */
+    inline std::string getenv_str_default(const char *env_var, std::string default_val) {
+        auto val = getenv_str(env_var);
+        return val ? *val : default_val;
+    }
+
+    /**
      * @brief Register the documentation of an environment variable
      *
      * This function is used to register the documentation of an environment variable.

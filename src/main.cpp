@@ -71,9 +71,6 @@ int main(int argc, char *argv[]) {
 
         shamcmdopt::register_opt("--feenableexcept", "", "Enable FPE exceptions");
 
-        shamcmdopt::register_env_var_doc(
-            "SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
-
         shamcmdopt::register_env_var_doc("SHAM_PROF_PREFIX", "Prefix of shamrock profile outputs");
         shamcmdopt::register_env_var_doc("SHAM_PROF_USE_NVTX", "Enable NVTX profiling");
         shamcmdopt::register_env_var_doc("SHAM_PROFILING", "Enable Shamrock profiling");
@@ -82,8 +79,6 @@ int main(int argc, char *argv[]) {
             "Use complete event instead of begin end for chrome tracing");
         shamcmdopt::register_env_var_doc(
             "SHAM_PROF_EVENT_RECORD_THRES", "Change the event recording threshold");
-        shamcmdopt::register_env_var_doc(
-            "SHAMLOG_ERR_ON_EXCEPT", "Enable logging of exceptions (default to 1)");
 
         opts::init(argc, argv);
 

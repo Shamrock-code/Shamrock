@@ -33,16 +33,14 @@
 #include <string>
 #include <utility>
 
+// TODO find a way to add particles easily cf setup require public vector
+
 template<class T>
 class PatchDataField {
 
-    ///////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // constexpr utilities (using & constexpr vals)
-    ///////////////////////////////////
-
-    static constexpr bool isprimitive = std::is_same<T, f32>::value || std::is_same<T, f64>::value
-                                        || std::is_same<T, u32>::value
-                                        || std::is_same<T, u64>::value;
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     // clang-format off
     static constexpr bool is_in_type_list =
@@ -61,6 +59,12 @@ class PatchDataField {
     );
     // clang-format on
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    static constexpr bool isprimitive = std::is_same<T, f32>::value || std::is_same<T, f64>::value
+                                        || std::is_same<T, u32>::value
+                                        || std::is_same<T, u64>::value;
+
     template<bool B, class Tb = void>
     using enable_if_t = typename std::enable_if<B, Tb>;
 
@@ -69,25 +73,53 @@ class PatchDataField {
     using EnableIfVec = enable_if_t<is_in_type_list && (!isprimitive)>;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // member fields
+    // constexpr utilities (using & constexpr vals) (End)
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    sham::DeviceBuffer<T> buf;
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Member fields
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    std::string field_name;
+    sham::DeviceBuffer<T> buf; ///< the buffer storing the data
 
-    u32 nvar;    // number of variable per object
-    u32 obj_cnt; // number of contained object
+    std::string field_name; ///< the name of the field
+
+    u32 nvar;    ///< number of variable per object
+    u32 obj_cnt; ///< number of contained object
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Member fields (End)
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public:
+    /// The type of the field
+    using Field_type = T;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public:
+    // Copy & move constructors
+
+    /**
+     * @brief Move constructor for PatchDataField.
+     *
+     * @param other The PatchDataField object to move from.
+     */
     inline PatchDataField(PatchDataField &&other) noexcept
         : buf(std::move(other.buf)), field_name(std::move(other.field_name)),
-          nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)) {} // move constructor
+          nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)) {}
 
+    /**
+     * @brief Move assignment operator for PatchDataField.
+     *
+     * @param other The PatchDataField object to move from.
+     * @return A reference to the moved-to PatchDataField object.
+     */
     inline PatchDataField &operator=(PatchDataField &&other) noexcept {
         buf        = std::move(other.buf);
         field_name = std::move(other.field_name);
@@ -95,45 +127,103 @@ class PatchDataField {
         obj_cnt    = std::move(other.obj_cnt);
 
         return *this;
-    } // move assignment
+    }
 
-    // TODO find a way to add particles easily cf setup require public vector
+    /// Delete implicit copy constructor
+    PatchDataField &operator=(const PatchDataField &other) = delete;
 
-    using Field_type = T;
-
-    inline PatchDataField(std::string name, u32 nvar)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(0),
-          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {};
-
-    inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt),
-          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {};
-
+    /// Copy constructor for PatchDataField
     inline PatchDataField(const PatchDataField &other)
         : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt),
           buf(other.buf.copy()) {}
 
+    // Generic constructors
+
+    /**
+     * @brief Construct a new PatchDataField object with empty buffer.
+     *
+     * @param name The name of the field.
+     * @param nvar The number of variables per object.
+     */
+    inline PatchDataField(std::string name, u32 nvar)
+        : field_name(std::move(name)), nvar(nvar), obj_cnt(0),
+          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {};
+
+    /**
+     * @brief Construct a new PatchDataField object with buffer of size obj_cnt*nvar.
+     *
+     * @param name The name of the field.
+     * @param nvar The number of variables per object.
+     * @param obj_cnt The number of object in the buffer.
+     */
+    inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
+        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt),
+          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {};
+
+    /**
+     * @brief Construct a new PatchDataField object from a moved buffer.
+     *
+     * @param moved_buf The buffer to move.
+     * @param obj_cnt The number of object in the buffer.
+     * @param name The name of the field.
+     * @param nvar The number of variables per object.
+     *
+     * @note The buffer is moved, so the original buffer is left in an
+     * uninitialized state.
+     */
     inline PatchDataField(
         sham::DeviceBuffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
         : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
           buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {}
 
+    /**
+     * @brief Construct a new PatchDataField object from a moved SYCL buffer.
+     *
+     * @param moved_buf The SYCL buffer to move.
+     * @param obj_cnt The number of objects in the buffer.
+     * @param name The name of the field.
+     * @param nvar The number of variables per object.
+     *
+     * @note The SYCL buffer is moved, so the original buffer is left in an
+     * uninitialized state.
+     */
     inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
         : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
           buf(std::forward<sycl::buffer<T>>(moved_buf),
               obj_cnt * nvar,
               shamsys::instance::get_compute_scheduler_ptr()) {}
 
-    PatchDataField &operator=(const PatchDataField &other) = delete;
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Constructors (End)
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // member functions
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Duplicate functions
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Creates a copy of the current PatchDataField.
+     *
+     * @return A new PatchDataField object that is a duplicate of the current one.
+     */
 
     inline PatchDataField duplicate() const {
         const PatchDataField &current = *this;
         return PatchDataField(current);
     }
+
+    /**
+     * @brief Creates a copy of the current PatchDataField with a new name.
+     *
+     * This function duplicates the current PatchDataField and assigns
+     * a new name to the duplicated field.
+     *
+     * @param new_name The new name for the duplicated PatchDataField.
+     * @return A new PatchDataField object that is a duplicate of the current
+     * one but with the specified new name.
+     */
 
     inline PatchDataField duplicate(std::string new_name) const {
         const PatchDataField &current = *this;
@@ -142,19 +232,52 @@ class PatchDataField {
         return ret;
     }
 
+    /**
+     * @brief Creates a copy of the current PatchDataField and returns a unique pointer to it.
+     *
+     * This function duplicates the current PatchDataField and returns a unique pointer
+     * to the duplicated field.
+     *
+     * @return A unique pointer to a new PatchDataField object that is a duplicate of the current
+     * one.
+     */
     inline std::unique_ptr<PatchDataField> duplicate_to_ptr() const {
         const PatchDataField &current = *this;
         return std::make_unique<PatchDataField>(current);
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Duplicate functions (End)
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Data access
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Returns a reference to the internal buffer
+     *
+     * @return A reference to the internal buffer
+     */
     inline sham::DeviceBuffer<T> &get_buf() { return buf; }
 
-    [[nodiscard]] inline bool is_empty() const { return get_obj_cnt() == 0; }
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Data access (End)
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    [[nodiscard]] inline u64 memsize() const { return buf.get_mem_usage(); }
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Getters
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    /// @brief Get the number of variables per object
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
+    /// @brief Get the number of objects
     [[nodiscard]] inline const u32 &get_obj_cnt() const { return obj_cnt; }
 
     /**
@@ -168,20 +291,60 @@ class PatchDataField {
      */
     [[nodiscard]] inline u32 get_val_cnt() const { return get_obj_cnt() * get_nvar(); }
 
+    /// @brief Get the name of the field
     [[nodiscard]] inline const std::string &get_name() const { return field_name; }
 
-    // TODO add overflow check
+    /// @brief Check if the buffer is empty
+    [[nodiscard]] inline bool is_empty() const { return get_obj_cnt() == 0; }
+
+    /// @brief Get the amount of memory used by the buffer
+    [[nodiscard]] inline u64 memsize() const { return buf.get_mem_usage(); }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Getters (End)
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Size manipulation
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // every functions here should be implemented on top of resize & reserve
+
+    /**
+     * @brief Resize the buffer to accommodate a new number of objects.
+     *
+     * @param new_obj_cnt The new number of objects to resize the buffer to.
+     */
     void resize(u32 new_obj_cnt);
 
+    /**
+     * @brief Reserve space in the buffer for a new number of objects, without changing its size.
+     *
+     * @param new_obj_cnt The number of objects to reserve space for.
+     */
     void reserve(u32 new_obj_cnt);
 
+    /**
+     * @brief Expand the buffer by adding additional objects.
+     *
+     * @param obj_to_add The number of objects to add to the buffer.
+     */
     void expand(u32 obj_to_add);
 
+    /**
+     * @brief Shrink the buffer by removing a number of objects.
+     *
+     * @param obj_to_rem The number of objects to remove from the buffer.
+     */
     void shrink(u32 obj_to_rem);
 
-    void insert_element(T v);
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Size manipulation (End)
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void apply_offset(T off);
+    void insert_element(T v);
 
     void insert(PatchDataField<T> &f2);
 
@@ -195,12 +358,24 @@ class PatchDataField {
 
     inline void synchronize_buf() { buf.synchronize(); }
 
+    void apply_offset(T off);
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // get_subsets utilities
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * @brief Get the ids set where object
+     * @brief Returns a set of all the ids of elements in the field for which the given lambda evaluates to true.
+     *
+     * @code {.cpp}
+     * std::set<u32> idx_cd = field.get_ids_set_where(
+     *   [](auto access, u32 id, f64 vmin, f64 vmax) {
+     *       f64 tmp = access[id];
+     *       return tmp > vmin && tmp < vmax;
+     *   },
+     *   vmin,
+     *   vmax);
+     * @endcode
      *
      * @tparam Lambdacd
      * @tparam Args
@@ -439,42 +614,6 @@ class PatchDataField {
     static PatchDataField<T>
     mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax);
 };
-
-// TODO add overflow check
-template<class T>
-inline void PatchDataField<T>::resize(u32 new_obj_cnt) {
-
-    u32 new_size = new_obj_cnt * nvar;
-    // field_data.resize(new_size);
-
-    buf.resize(new_size);
-
-    obj_cnt = new_obj_cnt;
-}
-
-template<class T>
-inline void PatchDataField<T>::reserve(u32 new_obj_cnt) {
-
-    u32 add_cnt = new_obj_cnt * nvar;
-    buf.reserve(add_cnt);
-}
-
-template<class T>
-inline void PatchDataField<T>::expand(u32 obj_to_add) {
-    resize(obj_cnt + obj_to_add);
-}
-
-template<class T>
-inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
-
-    if (obj_to_rem > obj_cnt) {
-
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            "impossible to remove more object than there is in the patchdata field");
-    }
-
-    resize(obj_cnt - obj_to_rem);
-}
 
 template<class T>
 inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {

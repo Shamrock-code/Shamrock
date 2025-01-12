@@ -400,6 +400,9 @@ namespace shamrock::patch {
 
         /**
          * @brief Fetch data of a patchdata field into a std::vector
+         *
+         * @todo Improve for nvar != 1
+         *
          * @tparam T
          * @param key
          * @param pdat
@@ -417,7 +420,7 @@ namespace shamrock::patch {
 
                     if (!field.is_empty()) {
                         auto acc = field.get_buf().copy_to_stdvec();
-                        u32 len  = field.size();
+                        u32 len  = field.get_val_cnt();
 
                         for (u32 i = 0; i < len; i++) {
                             vec.push_back(acc[i]);

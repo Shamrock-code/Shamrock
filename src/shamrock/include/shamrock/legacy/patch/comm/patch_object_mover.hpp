@@ -44,12 +44,18 @@ get_new_id_map<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptree) {
             u32 ixyz                         = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
+            if (xyz_field.get_nvar() != 1) {
+                shambase::throw_unimplemented();
+            }
+
             auto &pos = xyz_field.get_buf();
 
             newid_buf_map.insert(
                 {id,
                  sptree.compute_patch_owner(
-                     shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
+                     shamsys::instance::get_compute_scheduler_ptr(),
+                     pos,
+                     xyz_field.get_obj_cnt())});
         }
     });
 
@@ -69,12 +75,18 @@ get_new_id_map<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptree) {
             u32 ixyz                         = sched.pdl.get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
+            if (xyz_field.get_nvar() != 1) {
+                shambase::throw_unimplemented();
+            }
+
             auto &pos = xyz_field.get_buf();
 
             newid_buf_map.insert(
                 {id,
                  sptree.compute_patch_owner(
-                     shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
+                     shamsys::instance::get_compute_scheduler_ptr(),
+                     pos,
+                     xyz_field.get_obj_cnt())});
         }
     });
 
@@ -101,12 +113,18 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
             u32 ixyz                         = sched.pdl.get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
+            if (xyz_field.get_nvar() != 1) {
+                shambase::throw_unimplemented();
+            }
+
             auto &pos = xyz_field.get_buf();
 
             newid_buf_map.insert(
                 {id,
                  sptree.compute_patch_owner(
-                     shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
+                     shamsys::instance::get_compute_scheduler_ptr(),
+                     pos,
+                     xyz_field.get_obj_cnt())});
 
             {
                 // auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
@@ -187,12 +205,18 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
                 u32 ixyz                         = sched.pdl.get_field_idx<f32_3>("xyz");
                 PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
+                if (xyz_field.get_nvar() != 1) {
+                    shambase::throw_unimplemented();
+                }
+
                 auto &pos = xyz_field.get_buf();
 
                 newid_buf_map.insert(
                     {id,
                      sptree.compute_patch_owner(
-                         shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
+                         shamsys::instance::get_compute_scheduler_ptr(),
+                         pos,
+                         xyz_field.get_obj_cnt())});
             }
         });
     }
@@ -327,12 +351,18 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
             u32 ixyz                         = sched.pdl.get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
+            if (xyz_field.get_nvar() != 1) {
+                shambase::throw_unimplemented();
+            }
+
             auto &pos = xyz_field.get_buf();
 
             newid_buf_map.insert(
                 {id,
                  sptree.compute_patch_owner(
-                     shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
+                     shamsys::instance::get_compute_scheduler_ptr(),
+                     pos,
+                     xyz_field.get_obj_cnt())});
 
             {
                 // auto nid = newid_buf_map.at(id).get_access<sycl::access::mode::read>();
@@ -414,12 +444,18 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
                 u32 ixyz                         = sched.pdl.get_field_idx<f64_3>("xyz");
                 PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
+                if (xyz_field.get_nvar() != 1) {
+                    shambase::throw_unimplemented();
+                }
+
                 auto &pos = xyz_field.get_buf();
 
                 newid_buf_map.insert(
                     {id,
                      sptree.compute_patch_owner(
-                         shamsys::instance::get_compute_scheduler_ptr(), pos, xyz_field.size())});
+                         shamsys::instance::get_compute_scheduler_ptr(),
+                         pos,
+                         xyz_field.get_obj_cnt())});
             }
         });
     }

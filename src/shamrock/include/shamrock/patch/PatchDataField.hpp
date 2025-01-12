@@ -149,15 +149,24 @@ class PatchDataField {
 
     inline sham::DeviceBuffer<T> &get_buf() { return buf; }
 
-    [[nodiscard]] inline u32 size() const { return buf.get_size(); }
-
-    [[nodiscard]] inline bool is_empty() const { return size() == 0; }
+    [[nodiscard]] inline bool is_empty() const { return get_obj_cnt() == 0; }
 
     [[nodiscard]] inline u64 memsize() const { return buf.get_mem_usage(); }
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
     [[nodiscard]] inline const u32 &get_obj_cnt() const { return obj_cnt; }
+
+    /**
+     * @brief Get the number of values stored in the field.
+     *
+     * This function was introduced to replace the legacy one size() which could be confused with
+     * the of the buffer, which is not required to be the same.
+     *
+     * @return u32 the total number of values of the field, which is the product of the number of
+     * objects and the number of variables per object.
+     */
+    [[nodiscard]] inline u32 get_val_cnt() const { return get_obj_cnt() * get_nvar(); }
 
     [[nodiscard]] inline const std::string &get_name() const { return field_name; }
 
@@ -523,10 +532,14 @@ PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) {
     }
     */
 
+    if (nvar != 1) {
+        shambase::throw_unimplemented();
+    }
+
     {
         auto acc = buf.copy_to_stdvec();
 
-        for (u32 i = 0; i < size(); i++) {
+        for (u32 i = 0; i < get_val_cnt(); i++) {
             if (cd_true(acc[i], vmin, vmax)) {
                 idxs.push_back(i);
             }
@@ -572,12 +585,16 @@ PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::stri
         return;
     }
 
+    if (nvar != 1) {
+        shambase::throw_unimplemented();
+    }
+
     bool error = false;
     {
         auto acc    = buf.copy_to_stdvec();
         u32 err_cnt = 0;
 
-        for (u32 i = 0; i < size(); i++) {
+        for (u32 i = 0; i < get_val_cnt(); i++) {
             if (!cd_true(acc[i], vmin, vmax)) {
                 logger::err_ln(
                     "PatchDataField",

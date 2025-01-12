@@ -182,6 +182,10 @@ namespace shammodels::sph {
                     PatchDataField<T> &f
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
+                    if (f.get_nvar() != 1) {
+                        shambase::throw_unimplemented();
+                    }
+
                     {
                         auto &buf = f.get_buf();
                         auto acc  = buf.copy_to_stdvec();
@@ -189,7 +193,7 @@ namespace shammodels::sph {
                         auto &buf_xyz = xyz.get_buf();
                         auto acc_xyz  = buf_xyz.copy_to_stdvec();
 
-                        for (u32 i = 0; i < f.size(); i++) {
+                        for (u32 i = 0; i < f.get_obj_cnt(); i++) {
                             Tvec r = acc_xyz[i];
 
                             acc[i] = pos_to_val(r);
@@ -590,11 +594,15 @@ namespace shammodels::sph {
                     PatchDataField<T> &f
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
+                    if (f.get_nvar() != 1) {
+                        shambase::throw_unimplemented();
+                    }
+
                     {
                         auto acc     = f.get_buf().template mirror_to<sham::host>();
                         auto acc_xyz = xyz.get_buf().template mirror_to<sham::host>();
 
-                        for (u32 i = 0; i < f.size(); i++) {
+                        for (u32 i = 0; i < f.get_obj_cnt(); i++) {
                             Tvec r = acc_xyz[i];
 
                             if (BBAA::is_coord_in_range(r, std::get<0>(box), std::get<1>(box))) {
@@ -617,12 +625,16 @@ namespace shammodels::sph {
                     PatchDataField<T> &f
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
+                    if (f.get_nvar() != 1) {
+                        shambase::throw_unimplemented();
+                    }
+
                     Tscal r2 = radius * radius;
                     {
                         auto acc     = f.get_buf().template mirror_to<sham::host>();
                         auto acc_xyz = xyz.get_buf().template mirror_to<sham::host>();
 
-                        for (u32 i = 0; i < f.size(); i++) {
+                        for (u32 i = 0; i < f.get_obj_cnt(); i++) {
                             Tvec dr = acc_xyz[i] - center;
 
                             if (sycl::dot(dr, dr) < r2) {
@@ -645,11 +657,15 @@ namespace shammodels::sph {
                     PatchDataField<T> &f
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
+                    if (f.get_nvar() != 1) {
+                        shambase::throw_unimplemented();
+                    }
+
                     {
                         auto acc     = f.get_buf().template mirror_to<sham::host>();
                         auto acc_xyz = xyz.get_buf().template mirror_to<sham::host>();
 
-                        for (u32 i = 0; i < f.size(); i++) {
+                        for (u32 i = 0; i < f.get_obj_cnt(); i++) {
                             Tvec dr = acc_xyz[i] - center;
 
                             Tscal r = sycl::length(dr);

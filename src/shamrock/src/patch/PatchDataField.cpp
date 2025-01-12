@@ -27,7 +27,7 @@
 
 template<class T>
 inline void PatchDataField<T>::resize(u32 new_obj_cnt) {
-// TODO add overflow check
+    // TODO add overflow check
 
     u32 new_size = new_obj_cnt * nvar;
     // field_data.resize(new_size);

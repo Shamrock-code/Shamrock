@@ -273,7 +273,6 @@ class PatchDataField {
     // Getters
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-
     /// @brief Get the number of variables per object
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
@@ -365,7 +364,8 @@ class PatchDataField {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * @brief Returns a set of all the ids of elements in the field for which the given lambda evaluates to true.
+     * @brief Returns a set of all the ids of elements in the field for which the given lambda
+     * evaluates to true.
      *
      * @code {.cpp}
      * std::set<u32> idx_cd = field.get_ids_set_where(

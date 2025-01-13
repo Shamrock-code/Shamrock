@@ -155,6 +155,8 @@ namespace shammodels::basegodunov {
             if (solver_config.is_dust_on()) {
                 u32 ndust = solver_config.dust_config.ndust;
 
+                std::cout << " ndust == " << ndust << "\n";
+
                 context.pdata_layout_add_field<Tscal>("rho_dust", (ndust * AMRBlock::block_size));
                 context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust * AMRBlock::block_size));
             }

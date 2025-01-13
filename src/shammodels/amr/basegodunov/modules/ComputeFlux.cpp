@@ -395,146 +395,146 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         const u32 izp = oriented_cell_graph.zp;
         const u32 izm = oriented_cell_graph.zm;
 
-        NGLink<Tscal> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
-        NGLink<Tscal> buf_flux_rho_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
-        NGLink<Tscal> buf_flux_rho_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
-        NGLink<Tscal> buf_flux_rho_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
-        NGLink<Tscal> buf_flux_rho_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
-        NGLink<Tscal> buf_flux_rho_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
+        auto ndust = solver_config.dust_config.ndust;
 
-        NGLink<Tvec> buf_flux_rhov_dust_face_xp{*oriented_cell_graph.graph_links[ixp]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_xm{*oriented_cell_graph.graph_links[ixm]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_yp{*oriented_cell_graph.graph_links[iyp]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_ym{*oriented_cell_graph.graph_links[iym]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_zp{*oriented_cell_graph.graph_links[izp]};
-        NGLink<Tvec> buf_flux_rhov_dust_face_zm{*oriented_cell_graph.graph_links[izm]};
+        NGLink<Tscal> buf_flux_rho_dust_face_xp{*oriented_cell_graph.graph_links[ixp], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_xm{*oriented_cell_graph.graph_links[ixm], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_yp{*oriented_cell_graph.graph_links[iyp], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_ym{*oriented_cell_graph.graph_links[iym], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_zp{*oriented_cell_graph.graph_links[izp], ndust};
+        NGLink<Tscal> buf_flux_rho_dust_face_zm{*oriented_cell_graph.graph_links[izm], ndust};
 
-        if (solver_config.is_dust_on()) {
-            u32 _ndust = solver_config.dust_config.ndust;
-            if (solver_config.dust_config.dust_riemann_config == DHLL) {
-                constexpr DustRiemannSolverMode mode = DHLL;
-                logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll xp patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
-                    q,
-                    rho_dust_face_xp.link_count,
-                    rho_dust_face_xp.link_graph_field,
-                    vel_dust_face_xp.link_graph_field,
-                    buf_flux_rho_dust_face_xp.link_graph_field,
-                    buf_flux_rhov_dust_face_xp.link_graph_field,
-                    _ndust);
+        NGLink<Tvec> buf_flux_rhov_dust_face_xp{*oriented_cell_graph.graph_links[ixp], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_xm{*oriented_cell_graph.graph_links[ixm], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_yp{*oriented_cell_graph.graph_links[iyp], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_ym{*oriented_cell_graph.graph_links[iym], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_zp{*oriented_cell_graph.graph_links[izp], ndust};
+        NGLink<Tvec> buf_flux_rhov_dust_face_zm{*oriented_cell_graph.graph_links[izm], ndust};
 
-                logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll yp patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
-                    q,
-                    rho_dust_face_yp.link_count,
-                    rho_dust_face_yp.link_graph_field,
-                    vel_dust_face_yp.link_graph_field,
-                    buf_flux_rho_dust_face_yp.link_graph_field,
-                    buf_flux_rhov_dust_face_yp.link_graph_field,
-                    _ndust);
+        u32 _ndust = solver_config.dust_config.ndust;
+        if (solver_config.dust_config.dust_riemann_config == DHLL) {
+            constexpr DustRiemannSolverMode mode = DHLL;
+            logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll xp patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
+                q,
+                rho_dust_face_xp.link_count,
+                rho_dust_face_xp.link_graph_field,
+                vel_dust_face_xp.link_graph_field,
+                buf_flux_rho_dust_face_xp.link_graph_field,
+                buf_flux_rhov_dust_face_xp.link_graph_field,
+                _ndust);
 
-                logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll zp patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
-                    q,
-                    rho_dust_face_zp.link_count,
-                    rho_dust_face_zp.link_graph_field,
-                    vel_dust_face_zp.link_graph_field,
-                    buf_flux_rho_dust_face_zp.link_graph_field,
-                    buf_flux_rhov_dust_face_zp.link_graph_field,
-                    _ndust);
+            logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll yp patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
+                q,
+                rho_dust_face_yp.link_count,
+                rho_dust_face_yp.link_graph_field,
+                vel_dust_face_yp.link_graph_field,
+                buf_flux_rho_dust_face_yp.link_graph_field,
+                buf_flux_rhov_dust_face_yp.link_graph_field,
+                _ndust);
 
-                logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll xm patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
-                    q,
-                    rho_dust_face_xm.link_count,
-                    rho_dust_face_xm.link_graph_field,
-                    vel_dust_face_xm.link_graph_field,
-                    buf_flux_rho_dust_face_xm.link_graph_field,
-                    buf_flux_rhov_dust_face_xm.link_graph_field,
-                    _ndust);
+            logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll zp patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
+                q,
+                rho_dust_face_zp.link_count,
+                rho_dust_face_zp.link_graph_field,
+                vel_dust_face_zp.link_graph_field,
+                buf_flux_rho_dust_face_zp.link_graph_field,
+                buf_flux_rhov_dust_face_zp.link_graph_field,
+                _ndust);
 
-                logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll ym patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
-                    q,
-                    rho_dust_face_ym.link_count,
-                    rho_dust_face_ym.link_graph_field,
-                    vel_dust_face_ym.link_graph_field,
-                    buf_flux_rho_dust_face_ym.link_graph_field,
-                    buf_flux_rhov_dust_face_ym.link_graph_field,
-                    _ndust);
+            logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll xm patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
+                q,
+                rho_dust_face_xm.link_count,
+                rho_dust_face_xm.link_graph_field,
+                vel_dust_face_xm.link_graph_field,
+                buf_flux_rho_dust_face_xm.link_graph_field,
+                buf_flux_rhov_dust_face_xm.link_graph_field,
+                _ndust);
 
-                logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll zm patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
-                    q,
-                    rho_dust_face_zm.link_count,
-                    rho_dust_face_zm.link_graph_field,
-                    vel_dust_face_zm.link_graph_field,
-                    buf_flux_rho_dust_face_zm.link_graph_field,
-                    buf_flux_rhov_dust_face_zm.link_graph_field,
-                    _ndust);
-            } else if (solver_config.dust_config.dust_riemann_config == HB) {
+            logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll ym patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
+                q,
+                rho_dust_face_ym.link_count,
+                rho_dust_face_ym.link_graph_field,
+                vel_dust_face_ym.link_graph_field,
+                buf_flux_rho_dust_face_ym.link_graph_field,
+                buf_flux_rhov_dust_face_ym.link_graph_field,
+                _ndust);
 
-                constexpr DustRiemannSolverMode mode = HB;
-                logger::debug_ln("[AMR Flux]", "compute dust huang-bai xp patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
-                    q,
-                    rho_dust_face_xp.link_count,
-                    rho_dust_face_xp.link_graph_field,
-                    vel_dust_face_xp.link_graph_field,
-                    buf_flux_rho_dust_face_xp.link_graph_field,
-                    buf_flux_rhov_dust_face_xp.link_graph_field,
-                    _ndust);
+            logger::debug_ln("[AMR Flux]", "compute dust rusanov/hll zm patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
+                q,
+                rho_dust_face_zm.link_count,
+                rho_dust_face_zm.link_graph_field,
+                vel_dust_face_zm.link_graph_field,
+                buf_flux_rho_dust_face_zm.link_graph_field,
+                buf_flux_rhov_dust_face_zm.link_graph_field,
+                _ndust);
+        } else if (solver_config.dust_config.dust_riemann_config == HB) {
 
-                logger::debug_ln("[AMR Flux]", "compute dust huang-bai yp patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
-                    q,
-                    rho_dust_face_yp.link_count,
-                    rho_dust_face_yp.link_graph_field,
-                    vel_dust_face_yp.link_graph_field,
-                    buf_flux_rho_dust_face_yp.link_graph_field,
-                    buf_flux_rhov_dust_face_yp.link_graph_field,
-                    _ndust);
+            constexpr DustRiemannSolverMode mode = HB;
+            logger::debug_ln("[AMR Flux]", "compute dust huang-bai xp patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xp>(
+                q,
+                rho_dust_face_xp.link_count,
+                rho_dust_face_xp.link_graph_field,
+                vel_dust_face_xp.link_graph_field,
+                buf_flux_rho_dust_face_xp.link_graph_field,
+                buf_flux_rhov_dust_face_xp.link_graph_field,
+                _ndust);
 
-                logger::debug_ln("[AMR Flux]", "compute dust huang-bai zp patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
-                    q,
-                    rho_dust_face_zp.link_count,
-                    rho_dust_face_zp.link_graph_field,
-                    vel_dust_face_zp.link_graph_field,
-                    buf_flux_rho_dust_face_zp.link_graph_field,
-                    buf_flux_rhov_dust_face_zp.link_graph_field,
-                    _ndust);
+            logger::debug_ln("[AMR Flux]", "compute dust huang-bai yp patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::yp>(
+                q,
+                rho_dust_face_yp.link_count,
+                rho_dust_face_yp.link_graph_field,
+                vel_dust_face_yp.link_graph_field,
+                buf_flux_rho_dust_face_yp.link_graph_field,
+                buf_flux_rhov_dust_face_yp.link_graph_field,
+                _ndust);
 
-                logger::debug_ln("[AMR Flux]", "compute dust huang-bai xm patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
-                    q,
-                    rho_dust_face_xm.link_count,
-                    rho_dust_face_xm.link_graph_field,
-                    vel_dust_face_xm.link_graph_field,
-                    buf_flux_rho_dust_face_xm.link_graph_field,
-                    buf_flux_rhov_dust_face_xm.link_graph_field,
-                    _ndust);
+            logger::debug_ln("[AMR Flux]", "compute dust huang-bai zp patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zp>(
+                q,
+                rho_dust_face_zp.link_count,
+                rho_dust_face_zp.link_graph_field,
+                vel_dust_face_zp.link_graph_field,
+                buf_flux_rho_dust_face_zp.link_graph_field,
+                buf_flux_rhov_dust_face_zp.link_graph_field,
+                _ndust);
 
-                logger::debug_ln("[AMR Flux]", "compute dust huang-bai ym patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
-                    q,
-                    rho_dust_face_ym.link_count,
-                    rho_dust_face_ym.link_graph_field,
-                    vel_dust_face_ym.link_graph_field,
-                    buf_flux_rho_dust_face_ym.link_graph_field,
-                    buf_flux_rhov_dust_face_ym.link_graph_field,
-                    _ndust);
+            logger::debug_ln("[AMR Flux]", "compute dust huang-bai xm patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::xm>(
+                q,
+                rho_dust_face_xm.link_count,
+                rho_dust_face_xm.link_graph_field,
+                vel_dust_face_xm.link_graph_field,
+                buf_flux_rho_dust_face_xm.link_graph_field,
+                buf_flux_rhov_dust_face_xm.link_graph_field,
+                _ndust);
 
-                logger::debug_ln("[AMR Flux]", "compute dust huang-bai zm patch", id);
-                dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
-                    q,
-                    rho_dust_face_zm.link_count,
-                    rho_dust_face_zm.link_graph_field,
-                    vel_dust_face_zm.link_graph_field,
-                    buf_flux_rho_dust_face_zm.link_graph_field,
-                    buf_flux_rhov_dust_face_zm.link_graph_field,
-                    _ndust);
-            }
+            logger::debug_ln("[AMR Flux]", "compute dust huang-bai ym patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::ym>(
+                q,
+                rho_dust_face_ym.link_count,
+                rho_dust_face_ym.link_graph_field,
+                vel_dust_face_ym.link_graph_field,
+                buf_flux_rho_dust_face_ym.link_graph_field,
+                buf_flux_rhov_dust_face_ym.link_graph_field,
+                _ndust);
+
+            logger::debug_ln("[AMR Flux]", "compute dust huang-bai zm patch", id);
+            dust_compute_fluxes_dir<mode, Tvec, Tscal, Direction::zm>(
+                q,
+                rho_dust_face_zm.link_count,
+                rho_dust_face_zm.link_graph_field,
+                vel_dust_face_zm.link_graph_field,
+                buf_flux_rho_dust_face_zm.link_graph_field,
+                buf_flux_rhov_dust_face_zm.link_graph_field,
+                _ndust);
         }
 
         flux_rho_dust_face_xp.add_obj(id, std::move(buf_flux_rho_dust_face_xp));

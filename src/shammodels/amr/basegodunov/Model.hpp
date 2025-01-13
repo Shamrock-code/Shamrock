@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/memory.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
@@ -50,7 +51,9 @@ namespace shammodels::basegodunov {
 
         template<class T>
         inline void set_field_value_lambda(
-            std::string field_name, const std::function<T(Tvec, Tvec)> pos_to_val) {
+            std::string field_name,
+            const std::function<T(Tvec, Tvec)> pos_to_val,
+            const i32 offset) {
 
             StackEntry stack_loc{};
 
@@ -67,6 +70,8 @@ namespace shammodels::basegodunov {
 
                 auto acc = f.get_buf().copy_to_stdvec();
 
+                auto f_nvar = f.get_nvar() / Block::block_size;
+
                 auto cell_min = buf_cell_min.copy_to_stdvec();
                 auto cell_max = buf_cell_max.copy_to_stdvec();
 
@@ -77,8 +82,9 @@ namespace shammodels::basegodunov {
                     Tvec delta_cell = (block_max - block_min) / Block::side_size;
 
                     Block::for_each_cell_in_block(delta_cell, [&](u32 lid, Tvec delta) {
-                        Tvec bmin                        = block_min + delta;
-                        acc[i * Block::block_size + lid] = pos_to_val(bmin, bmin + delta_cell);
+                        Tvec bmin = block_min + delta;
+                        acc[(i * Block::block_size + lid) * f_nvar + offset]
+                            = pos_to_val(bmin, bmin + delta_cell);
                     });
                 }
 

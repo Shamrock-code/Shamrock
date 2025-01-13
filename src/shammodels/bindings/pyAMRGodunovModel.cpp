@@ -148,8 +148,32 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("niter_max") = -1)
             .def("timestep", &T::timestep)
-            .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
-            .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
+            // .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
+            // .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
+            .def(
+                "set_field_value_lambda_f64",
+                [](T &self,
+                   std::string field_name,
+                   const std::function<f64(Tvec, Tvec)> pos_to_val,
+                   const i32 offset) {
+                    return self.template set_field_value_lambda<f64>(
+                        field_name, pos_to_val, offset);
+                },
+                py::arg("field_name"),
+                py::arg("pos_to_val"),
+                py::arg("offset") = 0)
+            .def(
+                "set_field_value_lambda_f64_3",
+                [](T &self,
+                   std::string field_name,
+                   const std::function<f64_3(Tvec, Tvec)> pos_to_val,
+                   const i32 offset) {
+                    return self.template set_field_value_lambda<f64_3>(
+                        field_name, pos_to_val, offset);
+                },
+                py::arg("field_name"),
+                py::arg("pos_to_val"),
+                py::arg("offset") = 0)
             .def(
                 "gen_default_config",
                 [](T &self) -> TConfig {

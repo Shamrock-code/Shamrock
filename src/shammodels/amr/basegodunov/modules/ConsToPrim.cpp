@@ -92,7 +92,8 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
     storage.press.set(std::move(P_ghost));
 
     if (solver_config.is_dust_on()) {
-        u32 ndust = solver_config.dust_config.ndust;
+        u32 ndust                                      = solver_config.dust_config.ndust;
+        shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
 
         shamrock::ComputeField<Tvec> v_dust_ghost = utility.make_compute_field<Tvec>(
             "vel_dust", ndust * AMRBlock::block_size, [&](u64 id) {
@@ -125,14 +126,15 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim(
                 u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
                 u32 nvar_dust = ndust;
-                shambase::parralel_for(cgh, nvar_dust * cell_count, "cons_to_prim", [=](u64 gid) {
-                    auto d_conststate
-                        = shammath::DustConsState<Tvec>{rho_dust[gid], rhovel_dust[gid]};
+                shambase::parralel_for(
+                    cgh, nvar_dust * cell_count, "cons_to_prim_dust", [=](u64 gid) {
+                        auto d_conststate
+                            = shammath::DustConsState<Tvec>{rho_dust[gid], rhovel_dust[gid]};
 
-                    auto d_prim_state = shammath::d_cons_to_prim(d_conststate);
+                        auto d_prim_state = shammath::d_cons_to_prim(d_conststate);
 
-                    vel_dust[gid] = d_prim_state.vel;
-                });
+                        vel_dust[gid] = d_prim_state.vel;
+                    });
             });
 
             buf_rho_dust.complete_event_state(e);

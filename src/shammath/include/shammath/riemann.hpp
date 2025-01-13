@@ -25,7 +25,9 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+
 namespace shammath {
+    using RiemannSolverMode = shammodels::basegodunov::RiemmanSolverMode;
 
     template<class Tvec_>
     struct ConsState {

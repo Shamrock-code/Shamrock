@@ -209,6 +209,45 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.vel.reset();
     storage.press.reset();
 
+    if (solver_config.is_dust_on()) {
+        storage.dtrho_dust.reset();
+        storage.dtrhov_dust.reset();
+
+        storage.flux_rho_dust_face_xp.reset();
+        storage.flux_rho_dust_face_xm.reset();
+        storage.flux_rho_dust_face_yp.reset();
+        storage.flux_rho_dust_face_ym.reset();
+        storage.flux_rho_dust_face_zp.reset();
+        storage.flux_rho_dust_face_zm.reset();
+        storage.flux_rhov_dust_face_xp.reset();
+        storage.flux_rhov_dust_face_xm.reset();
+        storage.flux_rhov_dust_face_yp.reset();
+        storage.flux_rhov_dust_face_ym.reset();
+        storage.flux_rhov_dust_face_zp.reset();
+        storage.flux_rhov_dust_face_zm.reset();
+
+        storage.rho_dust_face_xm.reset();
+        storage.rho_dust_face_yp.reset();
+        storage.rho_dust_face_ym.reset();
+        storage.rho_dust_face_xp.reset();
+        storage.rho_dust_face_zp.reset();
+        storage.rho_dust_face_zm.reset();
+
+        storage.vel_dust_face_xp.reset();
+        storage.vel_dust_face_xm.reset();
+        storage.vel_dust_face_yp.reset();
+        storage.vel_dust_face_ym.reset();
+        storage.vel_dust_face_zp.reset();
+        storage.vel_dust_face_zm.reset();
+
+        storage.grad_rho_dust.reset();
+        storage.dx_v_dust.reset();
+        storage.dy_v_dust.reset();
+        storage.dz_v_dust.reset();
+
+        storage.vel_dust.reset();
+    }
+
     storage.cell_infos.reset();
     storage.cell_link_graph.reset();
 

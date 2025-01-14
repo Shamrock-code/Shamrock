@@ -23,9 +23,9 @@ def run_sim(vanleer = True, label = "none"):
     cfg.set_scale_factor(scale_fact)
     cfg.set_eos_gamma(1.66667)
     cfg.set_slope_lim_minmod()
-    cfg.set_face_time_interpolation(True)
-    cfg.set_dust_mode_dhll(2)
-    # cfg.set_drag_mode_no_drag()
+    cfg.set_face_time_interpolation(False)
+    cfg.set_dust_mode_dhll(1)
+    cfg.set_drag_mode_no_drag()
 
     model.set_config(cfg)
     model.init_scheduler(int(1e7),1)
@@ -72,15 +72,15 @@ def run_sim(vanleer = True, label = "none"):
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
     model.set_field_value_lambda_f64("rho_dust", rho_d_map,0)
     model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map,0)
-    model.set_field_value_lambda_f64("rho_dust", rho_d_map_1,1)
-    model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map_1,1)
+    # model.set_field_value_lambda_f64("rho_dust", rho_d_map_1,1)
+    # model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map_1,1)
 
     freq = 50
     dt = 0.0000
     t = 0
     tend = 0.245
 
-    for i in range(100):
+    for i in range(10):
         # if i % freq == 0:
         model.dump_vtk("test"+str(i)+".vtk")
         next_dt = model.evolve_once_override_time(t,dt)

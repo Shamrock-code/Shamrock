@@ -10,6 +10,7 @@ set(Sources
     ComputeFlux.cpp
     ComputeTimeDerivative.cpp
     TimeIntegrator.cpp
+    DragIntegrator.cpp
     ConsToPrim.cpp
     ComputeCFL.cpp
     AnalysisSodTube.cpp

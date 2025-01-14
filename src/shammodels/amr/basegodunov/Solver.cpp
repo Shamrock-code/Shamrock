@@ -25,6 +25,7 @@
 #include "shammodels/amr/basegodunov/modules/ComputeGradient.hpp"
 #include "shammodels/amr/basegodunov/modules/ComputeTimeDerivative.hpp"
 #include "shammodels/amr/basegodunov/modules/ConsToPrim.hpp"
+#include "shammodels/amr/basegodunov/modules/DragIntegrator.hpp"
 #include "shammodels/amr/basegodunov/modules/FaceInterpolate.hpp"
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
@@ -133,14 +134,15 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     }
 
     // RK2 + flux lim
-
-    modules::TimeIntegrator dt_integ(context, solver_config, storage);
-    dt_integ.forward_euler(dt_input);
-
-    if (false) {
-        static u32 cnt_debug = 0;
-        do_debug_vtk_dump(shambase::format("debug_dump_{:04}.vtk", cnt_debug));
-        cnt_debug++;
+    if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
+        modules::TimeIntegrator dt_integ(context, solver_config, storage);
+        dt_integ.forward_euler(dt_input);
+    } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
+        modules::DragIntegrator drag_integ(context, solver_config, storage);
+        drag_integ.involve_with_no_src(dt_input);
+        drag_integ.enable_irk1_drag_integrator(dt_input);
+    } else {
+        shambase::throw_unimplemented();
     }
 
     modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
@@ -246,6 +248,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         storage.dz_v_dust.reset();
 
         storage.vel_dust.reset();
+    }
+
+    if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
+        storage.rho_next_no_drag.reset();
+        storage.rhov_next_no_drag.reset();
+        storage.rhoe_next_no_drag.reset();
+        storage.rho_d_next_no_drag.reset();
+        storage.rhov_d_next_no_drag.reset();
     }
 
     storage.cell_infos.reset();

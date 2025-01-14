@@ -189,6 +189,10 @@ namespace shammodels::basegodunov {
         Component<shamrock::ComputeField<Tvec>> dtrhov;
         Component<shamrock::ComputeField<Tscal>> dtrhoe;
 
+        Component<shamrock::ComputeField<Tscal>> rho_next_no_drag;
+        Component<shamrock::ComputeField<Tvec>> rhov_next_no_drag;
+        Component<shamrock::ComputeField<Tscal>> rhoe_next_no_drag;
+
         /**
          * @brief Dust velocity : primitives variables get from conservative rhovel_dust variable
          */
@@ -201,6 +205,10 @@ namespace shammodels::basegodunov {
         Component<shamrock::ComputeField<Tvec>> dy_v_dust;
         /// dust fields gradients (d vdust / d z)
         Component<shamrock::ComputeField<Tvec>> dz_v_dust;
+        // next time step dust density before drag
+        Component<shamrock::ComputeField<Tscal>> rho_d_next_no_drag;
+        // next time step dust momentum before drag
+        Component<shamrock::ComputeField<Tvec>> rhov_d_next_no_drag;
         /**
          * @brief dust densities in +x direction stored at the cells faces
          */

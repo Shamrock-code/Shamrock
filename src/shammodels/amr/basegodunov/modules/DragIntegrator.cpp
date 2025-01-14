@@ -104,18 +104,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
         auto acc_rhoe = rhoe_patch.get_write_access(depend_list);
 
         auto e1 = q.submit(depend_list, [&, dt](sycl::handler &cgh) {
-            // sycl::accessor acc_dt_rho_patch{dt_rho_patch, cgh, sycl::read_only};
-            // sycl::accessor acc_dt_rhov_patch{dt_rhov_patch, cgh, sycl::read_only};
-            // sycl::accessor acc_dt_rhoe_patch{dt_rhoe_patch, cgh, sycl::read_only};
-
-            // sycl::accessor rho{buf_rho, cgh, sycl::read_write};
-            // sycl::accessor rhov{buf_rhov, cgh, sycl::read_write};
-            // sycl::accessor rhoe{buf_rhoe, cgh, sycl::read_write};
-
-            // sycl::accessor acc_rho{rho_patch, cgh, sycl::write_only, sycl::no_init};
-            // sycl::accessor acc_rhov{rhov_patch, cgh, sycl::write_only, sycl::no_init};
-            // sycl::accessor acc_rhoe{rhoe_patch, cgh, sycl::write_only, sycl::no_init};
-
             shambase::parralel_for(cgh, cell_count, "evolve field with no drag", [=](u32 id_a) {
                 acc_rho[id_a]  = rho[id_a] + dt * acc_dt_rho_patch[id_a];
                 acc_rhov[id_a] = rhov[id_a] + dt * acc_dt_rhov_patch[id_a];

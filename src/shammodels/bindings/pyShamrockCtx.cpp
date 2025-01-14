@@ -170,7 +170,7 @@ void append_to_map(
 
             {
                 auto acc = field.get_buf().copy_to_stdvec();
-                u32 len  = field.size();
+                u32 len  = field.get_val_cnt();
 
                 for (u32 i = 0; i < len; i++) {
                     vec.push_back(acc[i]);

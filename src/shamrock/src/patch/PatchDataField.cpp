@@ -44,9 +44,9 @@ void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
         = [fast_extract_ptr](u32 pidx, PatchDataField<T> &from, PatchDataField<T> &to) {
               const u32 nvar        = from.get_nvar();
               const u32 idx_val     = pidx * nvar;
-              const u32 idx_out_val = to.size();
+              const u32 idx_out_val = to.get_val_cnt();
 
-              u32 from_sz = from.size();
+              u32 from_sz = from.get_val_cnt();
 
               to.expand(1);
 
@@ -107,7 +107,7 @@ void PatchDataField<T>::append_subset_to(
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "field must be similar for extraction");
 
-    const u32 start_enque = pfield.size();
+    const u32 start_enque = pfield.get_val_cnt();
 
     const u32 nvar = get_nvar();
 
@@ -196,7 +196,10 @@ class PdatField_insert_element;
 
 template<class T>
 void PatchDataField<T>::insert_element(T v) {
-    u32 ins_pos = size();
+    if (nvar != 1) {
+        shambase::throw_unimplemented();
+    }
+    u32 ins_pos = get_val_cnt();
     expand(1);
 
     auto sptr = shamsys::instance::get_compute_scheduler_ptr();
@@ -235,7 +238,7 @@ void PatchDataField<T>::apply_offset(T off) {
             auto val = off;
 
             cgh.parallel_for<PdatField_apply_offset<T>>(
-                sycl::range<1>{size()}, [=](sycl::id<1> idx) {
+                sycl::range<1>{get_val_cnt()}, [=](sycl::id<1> idx) {
                     acc[idx] += val;
                 });
         });
@@ -254,7 +257,7 @@ void PatchDataField<T>::insert(PatchDataField<T> &f2) {
     if (f2_len > 0) {
         logger::debug_sycl_ln("PatchDataField", "expand field buf by N =", f2_len);
 
-        const u32 old_val_cnt = size(); // field_data.size();
+        const u32 old_val_cnt = get_val_cnt(); // field_data.size();
         expand(f2.obj_cnt);
 
         auto sptr = shamsys::instance::get_compute_scheduler_ptr();
@@ -268,9 +271,10 @@ void PatchDataField<T>::insert(PatchDataField<T> &f2) {
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const u32 idx_st = old_val_cnt;
 
-            cgh.parallel_for<PdatField_insert<T>>(sycl::range<1>{f2.size()}, [=](sycl::id<1> idx) {
-                acc[idx_st + idx] = acc_f2[idx];
-            });
+            cgh.parallel_for<PdatField_insert<T>>(
+                sycl::range<1>{f2.get_val_cnt()}, [=](sycl::id<1> idx) {
+                    acc[idx_st + idx] = acc_f2[idx];
+                });
         });
 
         get_buf().complete_event_state(e);
@@ -446,7 +450,7 @@ bool PatchDataField<T>::has_nan() {
 
     auto tmp = buf.copy_to_sycl_buffer();
 
-    return shamalgs::reduction::has_nan(shamsys::instance::get_compute_queue(), tmp, size());
+    return shamalgs::reduction::has_nan(shamsys::instance::get_compute_queue(), tmp, get_val_cnt());
 }
 template<class T>
 bool PatchDataField<T>::has_inf() {
@@ -454,7 +458,7 @@ bool PatchDataField<T>::has_inf() {
 
     auto tmp = buf.copy_to_sycl_buffer();
 
-    return shamalgs::reduction::has_inf(shamsys::instance::get_compute_queue(), tmp, size());
+    return shamalgs::reduction::has_inf(shamsys::instance::get_compute_queue(), tmp, get_val_cnt());
 }
 template<class T>
 bool PatchDataField<T>::has_nan_or_inf() {
@@ -462,7 +466,8 @@ bool PatchDataField<T>::has_nan_or_inf() {
 
     auto tmp = buf.copy_to_sycl_buffer();
 
-    return shamalgs::reduction::has_nan_or_inf(shamsys::instance::get_compute_queue(), tmp, size());
+    return shamalgs::reduction::has_nan_or_inf(
+        shamsys::instance::get_compute_queue(), tmp, get_val_cnt());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -491,7 +496,7 @@ void PatchDataField<f32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     std::vector<f32> out(obj_cnt * nvar);
     std::uniform_real_distribution<f64> distf64(1, obj_mock_cnt);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f32(distf64(eng));
     }
 
@@ -505,7 +510,7 @@ void PatchDataField<f32_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f32_2> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f32_2{distf64(eng), distf64(eng)};
     }
     buf.copy_from_stdvec(out);
@@ -518,7 +523,7 @@ void PatchDataField<f32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f32_3> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f32_3{distf64(eng), distf64(eng), distf64(eng)};
     }
     buf.copy_from_stdvec(out);
@@ -531,7 +536,7 @@ void PatchDataField<f32_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f32_4> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f32_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
     }
     buf.copy_from_stdvec(out);
@@ -544,7 +549,7 @@ void PatchDataField<f32_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f32_8> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f32_8{
             distf64(eng),
             distf64(eng),
@@ -565,7 +570,7 @@ void PatchDataField<f32_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f32_16> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f32_16{
             distf64(eng),
             distf64(eng),
@@ -594,7 +599,7 @@ void PatchDataField<f64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f64> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f64(distf64(eng));
     }
     buf.copy_from_stdvec(out);
@@ -607,7 +612,7 @@ void PatchDataField<f64_2>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f64_2> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f64_2{distf64(eng), distf64(eng)};
     }
     buf.copy_from_stdvec(out);
@@ -620,7 +625,7 @@ void PatchDataField<f64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f64_3> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f64_3{distf64(eng), distf64(eng), distf64(eng)};
     }
     buf.copy_from_stdvec(out);
@@ -633,7 +638,7 @@ void PatchDataField<f64_4>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f64_4> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f64_4{distf64(eng), distf64(eng), distf64(eng), distf64(eng)};
     }
     buf.copy_from_stdvec(out);
@@ -646,7 +651,7 @@ void PatchDataField<f64_8>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f64_8> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f64_8{
             distf64(eng),
             distf64(eng),
@@ -667,7 +672,7 @@ void PatchDataField<f64_16>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<f64_16> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = f64_16{
             distf64(eng),
             distf64(eng),
@@ -696,7 +701,7 @@ void PatchDataField<u32>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<u32> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = distu32(eng);
     }
     buf.copy_from_stdvec(out);
@@ -708,7 +713,7 @@ void PatchDataField<u64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<u64> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = distu64(eng);
     }
     buf.copy_from_stdvec(out);
@@ -721,7 +726,7 @@ void PatchDataField<u32_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<u32_3> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = u32_3{distu32(eng), distu32(eng), distu32(eng)};
     }
     buf.copy_from_stdvec(out);
@@ -733,7 +738,7 @@ void PatchDataField<u64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<u64_3> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = u64_3{distu64(eng), distu64(eng), distu64(eng)};
     }
     buf.copy_from_stdvec(out);
@@ -746,7 +751,7 @@ void PatchDataField<i64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 
     std::vector<i64_3> out(obj_cnt * nvar);
 
-    for (u32 i = 0; i < size(); i++) {
+    for (u32 i = 0; i < get_val_cnt(); i++) {
         out[i] = i64_3{distu64(eng), distu64(eng), distu64(eng)};
     }
     buf.copy_from_stdvec(out);

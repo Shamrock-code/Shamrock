@@ -63,7 +63,7 @@ namespace patchdata_field {
         i32 tag,
         MPI_Comm comm) {
 
-        rq_lst.emplace_back(p, current_mode, Send, p.size());
+        rq_lst.emplace_back(p, current_mode, Send, p.get_val_cnt());
 
         u32 rq_index = rq_lst.size() - 1;
 
@@ -71,14 +71,14 @@ namespace patchdata_field {
 
         mpi::isend(
             rq.get_mpi_ptr(),
-            p.size(),
+            p.get_val_cnt(),
             get_mpi_type<T>(),
             rank_dest,
             tag,
             comm,
             &(rq_lst[rq_index].mpi_rq));
 
-        return sizeof(T) * p.size();
+        return sizeof(T) * p.get_val_cnt();
     }
 
     template<class T>
@@ -145,9 +145,9 @@ namespace patchdata_field {
     inline void file_write(MPI_File fh, PatchDataField<T> &p) {
         MPI_Status st;
 
-        PatchDataFieldMpiRequest<T> rq(p, current_mode, Send, p.size());
+        PatchDataFieldMpiRequest<T> rq(p, current_mode, Send, p.get_val_cnt());
 
-        mpi::file_write(fh, rq.get_mpi_ptr(), p.size(), get_mpi_type<T>(), &st);
+        mpi::file_write(fh, rq.get_mpi_ptr(), p.get_val_cnt(), get_mpi_type<T>(), &st);
 
         rq.finalize();
     }

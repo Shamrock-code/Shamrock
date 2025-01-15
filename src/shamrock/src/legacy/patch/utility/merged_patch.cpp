@@ -74,7 +74,7 @@ auto MergedPatchCompField<flt, T>::merge_patches_cfield(
 
         auto &merged_field = merged_data.at(id_patch);
 
-        merged_field.or_element_cnt = compfield.size();
+        merged_field.or_element_cnt = compfield.get_val_cnt();
         merged_field.buf.insert(compfield);
 
         std::vector<std::tuple<u64, std::unique_ptr<PatchDataField<T>>>> &p_interf_lst

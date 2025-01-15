@@ -21,13 +21,6 @@ endif()
 
 add_library(shambase::shambase ALIAS shambase)
 
-if(USE_SYSTEM_FMTLIB)
-target_link_libraries(shambase PUBLIC fmt::fmt)
-else()
-target_link_libraries(shambase PUBLIC fmt::fmt-header-only)
-endif()
-
-
 target_include_directories(shambase PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
@@ -37,3 +30,5 @@ target_include_directories(shambase PUBLIC
 if(SHAMROCK_USE_NVTX)
     target_link_libraries(shambase PUBLIC nvtx3-cpp)
 endif()
+
+target_link_libraries(shambase PUBLIC fmt::fmt-header-only)

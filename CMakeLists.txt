@@ -200,6 +200,13 @@ find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
 
 add_subdirectory(external)
 
+
+if(USE_SYSTEM_FMTLIB)
+    message(STATUS "Using system fmtlib")
+    find_package(fmt REQUIRED)
+endif()
+
+
 if("${BUILD_PYLIB}")
     # We must force fPIC because for unknown reasons cmake doesn't on those shared lib
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LIB_BUILD -fPIC")

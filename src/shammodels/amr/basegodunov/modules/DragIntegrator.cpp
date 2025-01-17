@@ -134,15 +134,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
         auto acc_rhov_d = rhov_d_patch.get_write_access(depend_list1);
 
         auto e2 = q.submit(depend_list1, [&, dt, ndust](sycl::handler &cgh) {
-            // sycl::accessor acc_dt_rho_d_patch{dt_rho_d_patch, cgh, sycl::read_only};
-            // sycl::accessor acc_dt_rhov_d_patch{dt_rhov_d_patch, cgh, sycl::read_only};
-
-            // sycl::accessor rho_d{buf_rho_d, cgh, sycl::read_write};
-            // sycl::accessor rhov_d{buf_rhov_d, cgh, sycl::read_write};
-
-            // sycl::accessor acc_rho_d{rho_d_patch, cgh, sycl::write_only, sycl::no_init};
-            // sycl::accessor acc_rhov_d{rhov_d_patch, cgh, sycl::write_only, sycl::no_init};
-
             shambase::parralel_for(
                 cgh, ndust * cell_count, "dust  evolve field no drag", [=](u32 id_a) {
                     acc_rho_d[id_a]  = rho_d[id_a] + dt * acc_dt_rho_d_patch[id_a];
@@ -241,19 +232,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
         auto acc_alphas = alphas_buf.get_read_access(depend_list);
 
         auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
-            // sycl::accessor acc_rho_new_patch{rho_new_patch, cgh, sycl::read_only};
-            // sycl::accessor acc_rhov_new_patch{rhov_new_patch, cgh, sycl::read_only};
-            // sycl::accessor acc_rhoe_new_patch{rhoe_new_patch, cgh, sycl::read_only};
-            // sycl::accessor acc_rho_d_new_patch{rho_d_new_patch, cgh, sycl::read_only};
-            // sycl::accessor acc_rhov_d_new_patch{rhov_d_new_patch, cgh, sycl::read_only};
-
-            // sycl::accessor acc_rho_old{rho_old, cgh, sycl::read_write};
-            // sycl::accessor acc_rhov_old{rhov_old, cgh, sycl::read_write};
-            // sycl::accessor acc_rhoe_old{rhoe_old, cgh, sycl::read_write};
-            // sycl::accessor acc_rho_d_old{rho_d_old, cgh, sycl::read_write};
-            // sycl::accessor acc_rhov_d_old{rhov_d_old, cgh, sycl::read_write};
-            // sycl::accessor acc_alphas{alphas_buf, cgh, sycl::read_only};
-
             shambase::parralel_for(cgh, cell_count, "add_drag [irk1]", [=](u32 id_a) {
                 f64_3 tmp_mom_1 = acc_rhov_new_patch[id_a];
                 f64 tmp_rho     = acc_rho_old[id_a];

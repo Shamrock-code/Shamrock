@@ -70,12 +70,16 @@ namespace shamrock {
 
                     PatchDataField<T> &pos_field = pdat.get_field<T>(ipos);
 
+                    if (pos_field.get_nvar() != 1) {
+                        shambase::throw_unimplemented();
+                    }
+
                     newid_buf_map.add_obj(
                         id,
                         sptree.compute_patch_owner(
                             shamsys::instance::get_compute_scheduler_ptr(),
                             pos_field.get_buf(),
-                            pos_field.size()));
+                            pos_field.get_obj_cnt()));
 
                     bool err_id_in_newid = false;
                     {

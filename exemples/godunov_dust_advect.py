@@ -21,10 +21,11 @@ def run_sim(vanleer = True, label = "none"):
     cfg = model.gen_default_config()
     scale_fact = 1/(sz*base*multx)
     cfg.set_scale_factor(scale_fact)
+    cfg.set_riemann_solver_hllc()
     cfg.set_eos_gamma(1.66667)
-    cfg.set_slope_lim_minmod()
+    cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(True)
-    cfg.set_dust_mode_dhll(2)
+    cfg.set_dust_mode_dhll(1)
     # cfg.set_drag_mode_no_drag()
 
     model.set_config(cfg)
@@ -72,8 +73,8 @@ def run_sim(vanleer = True, label = "none"):
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
     model.set_field_value_lambda_f64("rho_dust", rho_d_map,0)
     model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map,0)
-    model.set_field_value_lambda_f64("rho_dust", rho_d_map_1,1)
-    model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map_1,1)
+    # model.set_field_value_lambda_f64("rho_dust", rho_d_map_1,1)
+    # model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map_1,1)
 
     freq = 50
     dt = 0.0000

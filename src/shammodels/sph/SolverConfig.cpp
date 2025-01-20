@@ -7,8 +7,6 @@
 //
 // -------------------------------------------------------//
 
-#pragma once
-
 /**
  * @file SolverConfig.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)

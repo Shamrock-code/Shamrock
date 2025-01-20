@@ -7,7 +7,7 @@ target_sources(shamrock_lib
         SPHUtilities.cpp
         SolverLog.cpp
         io/PhantomDump.cpp
-
+        SolverConfig.cpp
     PUBLIC
     )
 

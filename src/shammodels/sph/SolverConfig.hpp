@@ -114,7 +114,10 @@ namespace shammodels::sph {
                 return cfg->ndust;
             } else if (MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
                 return cfg->ndust;
+            } else {
+                shambase::throw_unimplemented("How did you get here ???");
             }
+            return 0;
         }
 
         inline void check_config() {

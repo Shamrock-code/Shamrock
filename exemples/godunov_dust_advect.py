@@ -21,11 +21,14 @@ def run_sim(vanleer = True, label = "none"):
     cfg = model.gen_default_config()
     scale_fact = 1/(sz*base*multx)
     cfg.set_scale_factor(scale_fact)
+    cfg.set_riemann_solver_hllc()
     cfg.set_eos_gamma(1.66667)
-    cfg.set_slope_lim_minmod()
-    cfg.set_face_time_interpolation(False)
+
+    cfg.set_slope_lim_vanleer_sym()
+    cfg.set_face_time_interpolation(True)
     cfg.set_dust_mode_dhll(1)
-    cfg.set_drag_mode_no_drag()
+    # cfg.set_drag_mode_no_drag()
+
 
     model.set_config(cfg)
     model.init_scheduler(int(1e7),1)

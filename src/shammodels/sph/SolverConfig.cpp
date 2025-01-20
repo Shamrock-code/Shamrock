@@ -75,6 +75,16 @@ namespace shammodels::sph {
         if (has_field_curlB()) {
             pdl.add_field<Tvec>("curlB", 1);
         }
+
+        if (dust_config.has_epsilon_field()) {
+            u32 ndust = dust_config.get_dust_nvar();
+            pdl.add_field<Tscal>("epsilon", ndust);
+        }
+
+        if (dust_config.has_deltav_field()) {
+            u32 ndust = dust_config.get_dust_nvar();
+            pdl.add_field<Tvec>("deltav", ndust);
+        }
     }
 
     template<class Tvec, template<class> class SPHKernel>
@@ -104,6 +114,16 @@ namespace shammodels::sph {
 
         if (has_field_curlB()) {
             ghost_layout.add_field<Tvec>("curlB", 1);
+        }
+
+        if (dust_config.has_epsilon_field()) {
+            u32 ndust = dust_config.get_dust_nvar();
+            ghost_layout.add_field<Tscal>("epsilon", ndust);
+        }
+
+        if (dust_config.has_deltav_field()) {
+            u32 ndust = dust_config.get_dust_nvar();
+            ghost_layout.add_field<Tvec>("deltav", ndust);
         }
     }
 

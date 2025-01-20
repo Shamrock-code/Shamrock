@@ -28,6 +28,7 @@
 #include "shammodels/EOSConfig.hpp"
 #include "shammodels/ExtForceConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <shamunits/Constants.hpp>
@@ -75,6 +76,56 @@ namespace shammodels::sph {
          * @brief The CFL multiplier stiffness
          */
         Tscal cfl_multiplier_stiffness = 2;
+    };
+
+    template<class Tscal>
+    struct DustConfig {
+
+        struct None {};
+
+        struct MonofluidTVI {
+            u32 ndust;
+        };
+
+        struct MonofluidComplete {
+            u32 ndust;
+        };
+
+        /// Variant type to store the EOS configuration
+        using Variant = std::variant<None, MonofluidTVI, MonofluidComplete>;
+
+        Variant current_mode = None{};
+
+        inline bool has_epsilon_field() {
+            return bool(std::get_if<MonofluidTVI>(&current_mode))
+                   || bool(std::get_if<MonofluidComplete>(&current_mode));
+        }
+
+        inline bool has_deltav_field() {
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
+        }
+
+        inline u32 get_dust_nvar() {
+            if (None *cfg = std::get_if<None>(&current_mode)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "Querrying a dust nvar with no dust as config is ... discutable ...");
+                return 0;
+            } else if (MonofluidTVI *cfg = std::get_if<MonofluidTVI>(&current_mode)) {
+                return cfg->ndust;
+            } else if (MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
+                return cfg->ndust;
+            }
+        }
+
+        inline void check_config() {
+            bool is_not_none = bool(std::get_if<MonofluidTVI>(&current_mode))
+                               || bool(std::get_if<MonofluidComplete>(&current_mode));
+            if (is_not_none) {
+                logger::warn_ln(
+                    "SPH::config",
+                    "Dust config != None is work in progress, use it at your own risk");
+            }
+        }
     };
 
 } // namespace shammodels::sph
@@ -218,6 +269,17 @@ struct shammodels::sph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // MHD Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Dust config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using DustConfig       = DustConfig<Tscal>;
+    DustConfig dust_config = {};
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Dust config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -607,6 +669,11 @@ struct shammodels::sph::SolverConfig {
 
         logger::raw_ln("------------------------------------");
     }
+
+    inline void check_config() { dust_config.check_config(); }
+
+    void set_layout(shamrock::patch::PatchDataLayout &pdl);
+    void set_ghost_layout(shamrock::patch::PatchDataLayout &ghost_layout);
 };
 
 namespace shamunits {

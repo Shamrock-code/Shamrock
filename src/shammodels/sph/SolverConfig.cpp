@@ -1,0 +1,116 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file SolverConfig.cpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @brief
+ *
+ */
+
+#include "shammodels/sph/SolverConfig.hpp"
+
+namespace shammodels::sph {
+
+    template<class Tvec, template<class> class SPHKernel>
+    void SolverConfig<Tvec, SPHKernel>::set_layout(shamrock::patch::PatchDataLayout &pdl) {
+        pdl.add_field<Tvec>("xyz", 1);
+        pdl.add_field<Tvec>("vxyz", 1);
+        pdl.add_field<Tvec>("axyz", 1);
+        pdl.add_field<Tvec>("axyz_ext", 1);
+        pdl.add_field<Tscal>("hpart", 1);
+
+        if (has_field_uint()) {
+            pdl.add_field<Tscal>("uint", 1);
+            pdl.add_field<Tscal>("duint", 1);
+        }
+
+        if (has_field_alphaAV()) {
+            pdl.add_field<Tscal>("alpha_AV", 1);
+        }
+
+        if (has_field_divv()) {
+            pdl.add_field<Tscal>("divv", 1);
+        }
+
+        if (has_field_dtdivv()) {
+            pdl.add_field<Tscal>("dtdivv", 1);
+        }
+
+        if (has_field_curlv()) {
+            pdl.add_field<Tvec>("curlv", 1);
+        }
+
+        if (has_field_soundspeed()) {
+
+            // this should not be needed idealy, but we need the pressure on the ghosts and
+            // we don't want to communicate it as it can be recomputed from the other fields
+            // hence we copy the soundspeed at the end of the step to a field in the patchdata
+            pdl.add_field<Tscal>("soundspeed", 1);
+        }
+
+        if (has_field_B_on_rho()) {
+
+            pdl.add_field<Tvec>("B/rho", 1);
+            pdl.add_field<Tvec>("dB/rho", 1);
+        }
+
+        if (has_field_psi_on_ch()) {
+            pdl.add_field<Tscal>("psi/ch", 1);
+            pdl.add_field<Tscal>("dpsi/ch", 1);
+        }
+        if (has_field_divB()) {
+            pdl.add_field<Tscal>("divB", 1);
+        }
+
+        if (has_field_curlB()) {
+            pdl.add_field<Tvec>("curlB", 1);
+        }
+    }
+
+    template<class Tvec, template<class> class SPHKernel>
+    void SolverConfig<Tvec, SPHKernel>::set_ghost_layout(
+        shamrock::patch::PatchDataLayout &ghost_layout) {
+
+        ghost_layout.add_field<Tscal>("hpart", 1);
+        ghost_layout.add_field<Tscal>("uint", 1);
+        ghost_layout.add_field<Tvec>("vxyz", 1);
+
+        if (has_axyz_in_ghost()) {
+            ghost_layout.add_field<Tvec>("axyz", 1);
+        }
+        ghost_layout.add_field<Tscal>("omega", 1);
+
+        if (ghost_has_soundspeed()) {
+            ghost_layout.add_field<Tscal>("soundspeed", 1);
+        }
+
+        if (has_field_B_on_rho()) {
+            ghost_layout.add_field<Tvec>("B/rho", 1);
+        }
+
+        if (has_field_psi_on_ch()) {
+            ghost_layout.add_field<Tscal>("psi/ch", 1);
+        }
+
+        if (has_field_curlB()) {
+            ghost_layout.add_field<Tvec>("curlB", 1);
+        }
+    }
+
+}; // namespace shammodels::sph
+
+using namespace shammath;
+
+template class shammodels::sph::SolverConfig<f64_3, M4>;
+template class shammodels::sph::SolverConfig<f64_3, M6>;
+template class shammodels::sph::SolverConfig<f64_3, M8>;

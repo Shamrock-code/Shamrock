@@ -64,6 +64,13 @@ class ShamrockCtx {
     //    pdl->xyz_mode = xyz32;
     //}
 
+    inline shamrock::patch::PatchDataLayout &get_pdl_write() {
+        if (sched) {
+            throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
+        }
+        return *pdl;
+    }
+
     template<class T>
     inline void pdata_layout_add_field(std::string fname, u32 nvar) {
         if (sched) {

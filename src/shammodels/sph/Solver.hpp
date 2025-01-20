@@ -74,60 +74,7 @@ namespace shammodels::sph {
         Config solver_config;
         SolverLog solve_logs;
 
-        inline void init_required_fields() {
-            context.pdata_layout_add_field<Tvec>("xyz", 1);
-            context.pdata_layout_add_field<Tvec>("vxyz", 1);
-            context.pdata_layout_add_field<Tvec>("axyz", 1);
-            context.pdata_layout_add_field<Tvec>("axyz_ext", 1);
-            context.pdata_layout_add_field<Tscal>("hpart", 1);
-
-            if (solver_config.has_field_uint()) {
-                context.pdata_layout_add_field<Tscal>("uint", 1);
-                context.pdata_layout_add_field<Tscal>("duint", 1);
-            }
-
-            if (solver_config.has_field_alphaAV()) {
-                context.pdata_layout_add_field<Tscal>("alpha_AV", 1);
-            }
-
-            if (solver_config.has_field_divv()) {
-                context.pdata_layout_add_field<Tscal>("divv", 1);
-            }
-
-            if (solver_config.has_field_dtdivv()) {
-                context.pdata_layout_add_field<Tscal>("dtdivv", 1);
-            }
-
-            if (solver_config.has_field_curlv()) {
-                context.pdata_layout_add_field<Tvec>("curlv", 1);
-            }
-
-            if (solver_config.has_field_soundspeed()) {
-
-                // this should not be needed idealy, but we need the pressure on the ghosts and
-                // we don't want to communicate it as it can be recomputed from the other fields
-                // hence we copy the soundspeed at the end of the step to a field in the patchdata
-                context.pdata_layout_add_field<Tscal>("soundspeed", 1);
-            }
-
-            if (solver_config.has_field_B_on_rho()) {
-
-                context.pdata_layout_add_field<Tvec>("B/rho", 1);
-                context.pdata_layout_add_field<Tvec>("dB/rho", 1);
-            }
-
-            if (solver_config.has_field_psi_on_ch()) {
-                context.pdata_layout_add_field<Tscal>("psi/ch", 1);
-                context.pdata_layout_add_field<Tscal>("dpsi/ch", 1);
-            }
-            if (solver_config.has_field_divB()) {
-                context.pdata_layout_add_field<Tscal>("divB", 1);
-            }
-
-            if (solver_config.has_field_curlB()) {
-                context.pdata_layout_add_field<Tvec>("curlB", 1);
-            }
-        }
+        inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
 
         // serial patch tree control
         void gen_serial_patch_tree();

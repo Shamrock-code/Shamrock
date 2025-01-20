@@ -979,30 +979,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_ghost_layout() {
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
 
-    ghost_layout.add_field<Tscal>("hpart", 1);
-    ghost_layout.add_field<Tscal>("uint", 1);
-    ghost_layout.add_field<Tvec>("vxyz", 1);
-
-    if (solver_config.has_axyz_in_ghost()) {
-        ghost_layout.add_field<Tvec>("axyz", 1);
-    }
-    ghost_layout.add_field<Tscal>("omega", 1);
-
-    if (solver_config.ghost_has_soundspeed()) {
-        ghost_layout.add_field<Tscal>("soundspeed", 1);
-    }
-
-    if (solver_config.has_field_B_on_rho()) {
-        ghost_layout.add_field<Tvec>("B/rho", 1);
-    }
-
-    if (solver_config.has_field_psi_on_ch()) {
-        ghost_layout.add_field<Tscal>("psi/ch", 1);
-    }
-
-    if (solver_config.has_field_curlB()) {
-        ghost_layout.add_field<Tvec>("curlB", 1);
-    }
+    solver_config.set_ghost_layout(ghost_layout);
 }
 
 template<class Tvec, template<class> class Kern>

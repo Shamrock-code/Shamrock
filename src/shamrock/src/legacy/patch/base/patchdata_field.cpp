@@ -38,7 +38,11 @@ namespace patchdata_field {
           pdat_field(pdat_field) {
 
         logger::debug_mpi_ln(
-            "PatchDataField MPI Comm", "starting mpi sycl comm ", comm_val_cnt, comm_op, comm_mode);
+            "PatchDataField MPI Comm",
+            "starting mpi sycl comm ",
+            comm_val_cnt,
+            int(comm_op),
+            int(comm_mode));
 
         if (comm_mode == CopyToHost && comm_op == Send) {
 
@@ -64,8 +68,8 @@ namespace patchdata_field {
             logger::err_ln(
                 "PatchDataField MPI Comm",
                 "communication mode & op combination not implemented :",
-                comm_mode,
-                comm_op);
+                int(comm_mode),
+                int(comm_op));
         }
     }
 
@@ -76,8 +80,8 @@ namespace patchdata_field {
             "PatchDataField MPI Comm",
             "finalizing mpi sycl comm ",
             comm_val_cnt,
-            comm_op,
-            comm_mode);
+            int(comm_op),
+            int(comm_mode));
 
         if (comm_op == Recv_Probe) {
             pdat_field.resize(comm_val_cnt / pdat_field.get_nvar());
@@ -113,8 +117,8 @@ namespace patchdata_field {
             logger::err_ln(
                 "PatchDataField MPI Comm",
                 "communication mode & op combination not implemented :",
-                comm_mode,
-                comm_op);
+                int(comm_mode),
+                int(comm_op));
         }
     }
 

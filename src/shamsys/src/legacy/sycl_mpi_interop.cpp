@@ -209,7 +209,11 @@ namespace mpi_sycl_interop {
         : comm_mode(comm_mode), comm_op(comm_op), comm_sz(comm_sz), sycl_buf(sycl_buf) {
 
         logger::debug_mpi_ln(
-            "PatchDataField MPI Comm", "starting mpi sycl comm ", comm_sz, comm_op, comm_mode);
+            "PatchDataField MPI Comm",
+            "starting mpi sycl comm ",
+            comm_sz,
+            int(comm_op),
+            int(comm_mode));
 
         if (comm_mode == CopyToHost && comm_op == Send) {
 
@@ -231,8 +235,8 @@ namespace mpi_sycl_interop {
             logger::err_ln(
                 "PatchDataField MPI Comm",
                 "communication mode & op combination not implemented :",
-                comm_mode,
-                comm_op);
+                int(comm_mode),
+                int(comm_op));
         }
     }
 
@@ -240,7 +244,11 @@ namespace mpi_sycl_interop {
     void BufferMpiRequest<T>::finalize() {
 
         logger::debug_mpi_ln(
-            "PatchDataField MPI Comm", "finalizing mpi sycl comm ", comm_sz, comm_op, comm_mode);
+            "PatchDataField MPI Comm",
+            "finalizing mpi sycl comm ",
+            comm_sz,
+            int(comm_op),
+            int(comm_mode));
 
         sycl_buf = std::make_unique<sycl::buffer<T>>(comm_sz);
 
@@ -264,8 +272,8 @@ namespace mpi_sycl_interop {
             logger::err_ln(
                 "PatchDataField MPI Comm",
                 "communication mode & op combination not implemented :",
-                comm_mode,
-                comm_op);
+                int(comm_mode),
+                int(comm_op));
         }
     }
 

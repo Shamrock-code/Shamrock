@@ -250,6 +250,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         storage.vel_dust.reset();
     }
 
+
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
         storage.rho_next_no_drag.reset();
         storage.rhov_next_no_drag.reset();
@@ -257,6 +258,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         storage.rho_d_next_no_drag.reset();
         storage.rhov_d_next_no_drag.reset();
     }
+
 
     storage.cell_infos.reset();
     storage.cell_link_graph.reset();

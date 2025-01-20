@@ -29,7 +29,6 @@ def run_sim(vanleer = True, label = "none"):
     cfg.set_dust_mode_dhll(1)
     # cfg.set_drag_mode_no_drag()
 
-
     model.set_config(cfg)
     model.init_scheduler(int(1e7),1)
     model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
@@ -83,7 +82,9 @@ def run_sim(vanleer = True, label = "none"):
     t = 0
     tend = 0.245
 
-    for i in range(10):
+
+    for i in range(100):
+
         # if i % freq == 0:
         model.dump_vtk("test"+str(i)+".vtk")
         next_dt = model.evolve_once_override_time(t,dt)

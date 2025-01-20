@@ -203,14 +203,14 @@ namespace sham::details {
                     "USM allocation failed, details : sz={}, target={}, alignment={}, alloc "
                     "result = {}",
                     sz,
-                    target,
+                    get_mode_name<target>(),
                     *alignment,
                     usm_ptr);
             } else {
                 err_msg = shambase::format(
                     "USM allocation failed, details : sz={}, target={}, alloc result = {}",
                     sz,
-                    target,
+                    get_mode_name<target>(),
                     usm_ptr);
             }
             shambase::throw_with_loc<std::runtime_error>(err_msg);

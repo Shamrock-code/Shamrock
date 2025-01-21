@@ -15,11 +15,11 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "pyNodeInstance.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shammodels/common/bindings/pyNodeInstance.hpp"
+#include "shamrock/version.hpp"
 #include "shamsys/SignalCatch.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "version.hpp"
 
 Register_pymod(pysyslibinit) {
 

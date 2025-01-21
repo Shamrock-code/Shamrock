@@ -15,10 +15,10 @@
 
 #include "shambase/string.hpp"
 #include "shambackends/sycl.hpp"
+#include "shamrock/version.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "texTestReport.hpp"
-#include "version.hpp"
 #include <algorithm>
 #include <sstream>
 #include <string>

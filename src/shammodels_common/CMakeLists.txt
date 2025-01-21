@@ -4,6 +4,10 @@ project(Shammodels_common CXX C)
 
 set(Sources
     src/EOSConfig.cpp
+    src/pyAABB.cpp
+    src/pySfc.cpp
+    src/pyShamrockCtx.cpp
+    src/pyShamsys.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
@@ -17,6 +21,7 @@ endif()
 add_library(shammodels_common::shammodels_common ALIAS shammodels_common)
 
 target_link_libraries(shammodels_common PUBLIC shambackends)
+target_link_libraries(shammodels_common PUBLIC shamlib)
 target_link_libraries(shammodels_common PUBLIC shammath)
 target_link_libraries(shammodels_common PUBLIC shamphys)
 target_link_libraries(shammodels_common PUBLIC shamsys)

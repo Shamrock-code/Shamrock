@@ -22,6 +22,7 @@
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcmdopt/term_colors.hpp"
+#include "shamrock/version.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -29,7 +30,6 @@
 #include "shamtest.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/details/reporters/texTestReport.hpp"
-#include "version.hpp"
 #include <pybind11/embed.h>
 #include <unordered_map>
 #include <cmath>

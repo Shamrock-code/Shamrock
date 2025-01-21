@@ -4,12 +4,8 @@ target_sources(shamrock_lib
         pyAMRGrid.cpp
         pyAMRTestModel.cpp
         pyAMRZeusModel.cpp
-        pyPhantomDump.cpp
         pySPHModel.cpp
-        pySfc.cpp
-        pyShamrockCtx.cpp
-        pyShamsys.cpp
-        pyAABB.cpp
         pySPHKernels.cpp
+        pyPhantomDump.cpp
     PUBLIC
     )

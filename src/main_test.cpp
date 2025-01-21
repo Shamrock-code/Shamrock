@@ -18,11 +18,11 @@
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamrock/version.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
-#include "version.hpp"
 
 int main(int argc, char *argv[]) {
 

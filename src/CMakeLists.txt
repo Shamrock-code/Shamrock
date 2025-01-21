@@ -39,7 +39,7 @@ add_subdirectory(shamsys)
 add_subdirectory(shamtree)
 add_subdirectory(shamrock)
 
-add_subdirectory(shammodels_common)
+add_subdirectory(shammodels/common)
 
 
 

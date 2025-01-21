@@ -19,6 +19,7 @@
 #include "shambase/string.hpp"
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <variant>
 
 u32 chrome_pid = u32_max;

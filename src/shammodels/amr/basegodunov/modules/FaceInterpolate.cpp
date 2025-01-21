@@ -15,8 +15,8 @@
  */
 
 #include "shambase/memory.hpp"
-#include "shammodels/amr/NeighGraphLinkField.hpp"
 #include "shammodels/amr/basegodunov/modules/FaceInterpolate.hpp"
+#include "shammodels/common/amr/NeighGraphLinkField.hpp"
 #include <array>
 
 namespace {

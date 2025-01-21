@@ -15,7 +15,7 @@
 
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
-#include "shammodels/amr/AMROverheadtest.hpp"
+#include "shammodels/common/amr/AMROverheadtest.hpp"
 #include <pybind11/numpy.h>
 #include <memory>
 

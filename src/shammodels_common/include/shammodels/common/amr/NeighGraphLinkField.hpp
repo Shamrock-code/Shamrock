@@ -19,7 +19,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/sycl.hpp"
-#include "shammodels/amr/NeighGraph.hpp"
+#include "shammodels/common/amr/NeighGraph.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shammodels::basegodunov::modules {

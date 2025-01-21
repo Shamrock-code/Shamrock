@@ -17,9 +17,9 @@
  */
 
 #include "shambackends/vec.hpp"
-#include "shammodels/amr/NeighGraph.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
+#include "shammodels/common/amr/NeighGraph.hpp"
 
 namespace shammodels::basegodunov::modules {
 

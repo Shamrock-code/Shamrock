@@ -17,10 +17,10 @@
  */
 
 #include "shambackends/vec.hpp"
-#include "shammodels/amr/AMRBlockStencil.hpp"
-#include "shammodels/amr/AMRCellStencil.hpp"
 #include "shammodels/amr/basegodunov/Solver.hpp"
 #include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
+#include "shammodels/common/amr/AMRBlockStencil.hpp"
+#include "shammodels/common/amr/AMRCellStencil.hpp"
 
 namespace shammodels::basegodunov::modules {
 

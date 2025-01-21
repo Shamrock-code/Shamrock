@@ -17,7 +17,7 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/type_traits.hpp"
-#include "shammodels/amr/AMRBlock.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 #include <array>
 #include <variant>
 namespace shammodels::amr::cell {

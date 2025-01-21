@@ -15,7 +15,7 @@
  */
 
 #include "ComputeCellInfos.hpp"
-#include "shammodels/amr/AMRCellInfos.hpp"
+#include "shammodels/common/amr/AMRCellInfos.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, class TgridVec>

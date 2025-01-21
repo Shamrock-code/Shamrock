@@ -8,6 +8,9 @@ target_sources(shamrock_lib
         SolverLog.cpp
         io/PhantomDump.cpp
         SolverConfig.cpp
+        pySPHModel.cpp
+        pySPHKernels.cpp
+        pyPhantomDump.cpp
     PUBLIC
     )
 

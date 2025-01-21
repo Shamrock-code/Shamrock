@@ -5,4 +5,3 @@
 add_subdirectory(sph)
 add_subdirectory(nbody)
 add_subdirectory(amr)
-add_subdirectory(bindings)

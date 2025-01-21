@@ -16,9 +16,9 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambackends/sycl.hpp"
-#include "shammodels/amr/AMRBlockStencil.hpp"
-#include "shammodels/amr/AMRCellStencil.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
+#include "shammodels/common/amr/AMRBlockStencil.hpp"
+#include "shammodels/common/amr/AMRCellStencil.hpp"
 
 template<class Tvec, class TgridVec, class Objiter>
 void _kernel(

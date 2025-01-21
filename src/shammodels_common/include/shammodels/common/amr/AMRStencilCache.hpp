@@ -18,8 +18,8 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambackends/sycl.hpp"
-#include "shammodels/amr/AMRBlockStencil.hpp"
-#include "shammodels/amr/AMRCellStencil.hpp"
+#include "shammodels/common/amr/AMRBlockStencil.hpp"
+#include "shammodels/common/amr/AMRCellStencil.hpp"
 
 namespace shammodels::basegodunov {
 

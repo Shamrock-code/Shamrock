@@ -17,9 +17,9 @@
  */
 
 #include "shambackends/vec.hpp"
-#include "shammodels/amr/AMRBlock.hpp"
 #include "shammodels/amr/zeus/SolverConfig.hpp"
 #include "shammodels/amr/zeus/modules/SolverStorage.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 

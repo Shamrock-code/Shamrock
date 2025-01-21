@@ -172,7 +172,7 @@ namespace shammodels {
      * @param p EOSConfig to serialize
      */
     template<class Tvec>
-    inline void to_json(nlohmann::json &j, const EOSConfig<Tvec> &p);
+    void to_json(nlohmann::json &j, const EOSConfig<Tvec> &p);
 
     /**
      * @brief Deserializes an EOSConfig<Tvec> from a JSON object
@@ -187,6 +187,6 @@ namespace shammodels {
      * Throws an std::runtime_error if the JSON object is not in the expected format
      */
     template<class Tvec>
-    inline void from_json(const nlohmann::json &j, EOSConfig<Tvec> &p);
+    void from_json(const nlohmann::json &j, EOSConfig<Tvec> &p);
 
 } // namespace shammodels

@@ -18,8 +18,8 @@
 
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
-#include "shammodels/amr/AMRBlock.hpp"
 #include "shammodels/amr/basegodunov/modules/SolverStorage.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 namespace shammodels::basegodunov {

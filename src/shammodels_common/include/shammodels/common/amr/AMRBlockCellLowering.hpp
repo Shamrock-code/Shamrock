@@ -17,9 +17,9 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/type_traits.hpp"
-#include "shammodels/amr/AMRBlock.hpp"
-#include "shammodels/amr/AMRBlockStencil.hpp"
-#include "shammodels/amr/AMRCellStencil.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/common/amr/AMRBlockStencil.hpp"
+#include "shammodels/common/amr/AMRCellStencil.hpp"
 #include <array>
 #include <variant>
 

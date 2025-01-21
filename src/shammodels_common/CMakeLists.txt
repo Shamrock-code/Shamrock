@@ -8,6 +8,8 @@ set(Sources
     src/pySfc.cpp
     src/pyShamrockCtx.cpp
     src/pyShamsys.cpp
+    src/pyAMRTestModel.cpp
+    src/pyAMRGrid.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

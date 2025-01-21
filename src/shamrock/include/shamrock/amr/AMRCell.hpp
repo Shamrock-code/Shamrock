@@ -18,7 +18,7 @@
 
 #include "shambackends/math.hpp"
 #include "shambackends/sycl_utils.hpp"
-#include "shammodels/amr/AMRBlock.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 
 namespace shamrock::amr {
 

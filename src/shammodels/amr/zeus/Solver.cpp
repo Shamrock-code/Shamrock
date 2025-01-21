@@ -25,7 +25,7 @@
 #include "shammodels/amr/zeus/modules/TransportStep.hpp"
 #include "shammodels/amr/zeus/modules/ValueLoader.hpp"
 #include "shammodels/amr/zeus/modules/WriteBack.hpp"
-#include "shammodels/timestep_report.hpp"
+#include "shammodels/common/timestep_report.hpp"
 #include "shamrock/io/AsciiSplitDump.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 

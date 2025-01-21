@@ -30,7 +30,7 @@
 #include "shammodels/amr/basegodunov/modules/GhostZones.hpp"
 #include "shammodels/amr/basegodunov/modules/StencilGenerator.hpp"
 #include "shammodels/amr/basegodunov/modules/TimeIntegrator.hpp"
-#include "shammodels/timestep_report.hpp"
+#include "shammodels/common/timestep_report.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 
 template<class Tvec, class TgridVec>

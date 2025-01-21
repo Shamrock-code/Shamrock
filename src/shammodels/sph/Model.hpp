@@ -24,7 +24,7 @@
 #include "shambackends/vec.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
-#include "shammodels/generic/setup/generators.hpp"
+#include "shammodels/common/setup/generators.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/math/density.hpp"

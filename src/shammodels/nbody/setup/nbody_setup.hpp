@@ -16,8 +16,8 @@
  *
  */
 
-#include "shammodels/generic/setup/generators.hpp"
-#include "shammodels/generic/setup/modifiers.hpp"
+#include "shammodels/common/setup/generators.hpp"
+#include "shammodels/common/setup/modifiers.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"

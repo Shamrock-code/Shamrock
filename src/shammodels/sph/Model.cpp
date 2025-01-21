@@ -22,7 +22,7 @@
 #include "shambase/string.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shammodels/generic/setup/generators.hpp"
+#include "shammodels/common/setup/generators.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shamrock/patch/PatchData.hpp"

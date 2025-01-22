@@ -15,6 +15,7 @@ set(as_subproject
   shamlib
 
   shammodels_common
+  shammodels_sph
   )
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
@@ -40,6 +41,7 @@ add_subdirectory(shamtree)
 add_subdirectory(shamrock)
 
 add_subdirectory(shammodels/common)
+add_subdirectory(shammodels/sph)
 
 
 

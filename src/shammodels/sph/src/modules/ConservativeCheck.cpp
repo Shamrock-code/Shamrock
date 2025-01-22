@@ -14,7 +14,7 @@
  *
  */
 
-#include "ConservativeCheck.hpp"
+#include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
 

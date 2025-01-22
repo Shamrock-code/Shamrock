@@ -15,10 +15,10 @@
  *
  */
 
-#include "ComputeEos.hpp"
 #include "shambase/exception.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shamphys/eos.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"

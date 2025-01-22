@@ -15,7 +15,6 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "ExternalForces.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shamsys/legacy/log.hpp"

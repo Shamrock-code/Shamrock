@@ -14,7 +14,7 @@
  *
  */
 
-#include "ComputeLoadBalanceValue.hpp"
+#include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shamsys/legacy/log.hpp"
 

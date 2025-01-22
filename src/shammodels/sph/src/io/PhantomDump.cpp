@@ -16,13 +16,13 @@
  *
  */
 
-#include "PhantomDump.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/sph/config/AVConfig.hpp"
+#include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/UnitSystem.hpp"
 #include <string>

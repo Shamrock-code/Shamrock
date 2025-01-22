@@ -23,7 +23,6 @@
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/sph/config/AVConfig.hpp"
 #include "shamsys/legacy/log.hpp"
-#include "shamtest/details/TestResult.hpp"
 #include "shamunits/UnitSystem.hpp"
 #include <type_traits>
 #include <array>

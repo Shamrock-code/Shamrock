@@ -14,7 +14,7 @@
  *
  */
 
-#include "ExternalForces.hpp"
+#include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamsys/legacy/log.hpp"

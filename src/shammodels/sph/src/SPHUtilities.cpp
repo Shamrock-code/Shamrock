@@ -14,7 +14,7 @@
  *
  */
 
-#include "SPHUtilities.hpp"
+#include "shammodels/sph/SPHUtilities.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shamtree/TreeTraversal.hpp"
 

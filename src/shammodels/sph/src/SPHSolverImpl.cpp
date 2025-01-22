@@ -14,7 +14,7 @@
  *
  */
 
-#include "SPHSolverImpl.hpp"
+#include "shammodels/sph/SPHSolverImpl.hpp"
 
 shamrock::tree::ObjectCache shammodels::SPHSolverImpl::build_neigh_cache(
     u32 start_offset,

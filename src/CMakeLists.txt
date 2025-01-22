@@ -16,6 +16,7 @@ set(as_subproject
 
   shammodels_common
   shammodels_zeus
+  shammodels_sph
   )
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
@@ -42,6 +43,7 @@ add_subdirectory(shamrock)
 
 add_subdirectory(shammodels/common)
 add_subdirectory(shammodels/zeus)
+add_subdirectory(shammodels/sph)
 
 
 

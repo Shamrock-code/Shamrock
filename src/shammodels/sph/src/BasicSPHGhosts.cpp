@@ -152,8 +152,8 @@ int main(){
 */
 
 #include "shambase/exception.hpp"
-#include "BasicSPHGhosts.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shammodels/sph/BasicSPHGhosts.hpp"
 #include <functional>
 #include <vector>
 

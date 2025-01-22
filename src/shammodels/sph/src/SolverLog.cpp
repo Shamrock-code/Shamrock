@@ -14,9 +14,9 @@
  *
  */
 
-#include "SolverLog.hpp"
 #include "shambase/exception.hpp"
 #include "shamalgs/collective/reduction.hpp"
+#include "shammodels/sph/SolverLog.hpp"
 #include <stdexcept>
 
 f64 shammodels::sph::SolverLog::get_last_rate() {

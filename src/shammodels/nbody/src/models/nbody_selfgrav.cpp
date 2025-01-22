@@ -14,7 +14,7 @@
  *
  */
 
-#include "nbody_selfgrav.hpp"
+#include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammath/symtensor_collections.hpp"
 #include "shamphys/fmm.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"

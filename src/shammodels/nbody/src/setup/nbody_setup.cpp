@@ -14,7 +14,7 @@
  *
  */
 
-#include "nbody_setup.hpp"
+#include "shammodels/nbody/setup/nbody_setup.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamrock/patch/Patch.hpp"
 

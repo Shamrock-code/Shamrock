@@ -56,7 +56,9 @@ cur_path = os.path.realpath(current_path)
 
 # This is broken on MacOS and give shamrock instead i don't know why ... stupid python ...
 #sysyexec = os.path.realpath(sys.executable)
-sysprefix = os.path.realpath(sys.prefix)
+# So the fix is to check that the resolved path starts with base_exec_prefix
+# see https://docs.python.org/3/library/sys.html#sys.base_prefix
+sysprefix = os.path.realpath(sys.base_exec_prefix)
 
 #if cur_path != sysyexec:
 if not cur_path.startswith(sysprefix):

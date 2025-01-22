@@ -53,12 +53,17 @@ std::string check_python_is_excpeted_version = R"(
 
 import sys
 cur_path = os.path.realpath(current_path)
-sysyexec = os.path.realpath(sys.executable)
 
-if cur_path != sysyexec:
+# This is broken on MacOS and give shamrock instead i don't know why ... stupid python ...
+#sysyexec = os.path.realpath(sys.executable)
+sysprefix = os.path.realpath(sys.prefix)
+
+#if cur_path != sysyexec:
+if not cur_path.startswith(sysprefix):
     print("Current python is not the expected version, you may be using mismatched Pythons.")
     print("Current path : ",cur_path)
-    print("Expected path : ",sysyexec)
+    #print("Expected path : ",sysyexec)
+    print("Expected prefix : ",sysprefix)
 
 )";
 

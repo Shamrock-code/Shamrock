@@ -55,6 +55,8 @@ def setup(arg : SetupArg):
     ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
     ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
 
+    run_cmd("mkdir -p "+builddir)
+
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
 
@@ -67,7 +69,6 @@ def setup(arg : SetupArg):
     ENV_SCRIPT_HEADER += "export SHAMROCK_BUILD_TYPE=\""+cmake_build_type+"\"\n"
     ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='"+acpp_target+"'\"\n"
 
-    run_cmd("mkdir -p "+builddir)
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))

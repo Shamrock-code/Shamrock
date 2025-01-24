@@ -61,7 +61,7 @@ message("-- adding shamrock target")
 
 
 if("${BUILD_PYLIB}")
-pybind11_add_module(shamrock  )
+pybind11_add_module(shamrock main_lib.cpp)
 target_link_libraries(shamrock PUBLIC pybind11::module)
 else()
 add_executable(shamrock main.cpp)

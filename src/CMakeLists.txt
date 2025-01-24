@@ -17,6 +17,7 @@ set(as_subproject
   shammodels_common
   shammodels_nbody
   shammodels_zeus
+  shammodels_ramses
   shammodels_sph
   )
 
@@ -45,6 +46,7 @@ add_subdirectory(shamrock)
 add_subdirectory(shammodels/common)
 add_subdirectory(shammodels/nbody)
 add_subdirectory(shammodels/zeus)
+add_subdirectory(shammodels/ramses)
 add_subdirectory(shammodels/sph)
 
 
@@ -52,26 +54,6 @@ add_subdirectory(shammodels/sph)
 ######################
 # Shamrock Lib
 ######################
-
-message("-- adding shamrock_lib target")
-add_library(shamrock_lib OBJECT "")
-target_include_directories(shamrock_lib PUBLIC "${CMAKE_SOURCE_DIR}/src")
-
-if(SHAMROCK_USE_PCH)
-target_precompile_headers(shamrock_lib PRIVATE "<sycl/sycl.hpp>")
-endif()
-
-
-
-if("${BUILD_PYLIB}")
-    target_link_libraries(shamrock_lib PUBLIC pybind11::module)
-else()
-    target_link_libraries(shamrock_lib PUBLIC pybind11::embed)
-endif()
-
-target_link_libraries(shamrock_lib PUBLIC nlohmann_json::nlohmann_json)
-
-target_link_libraries(shamrock_lib PUBLIC ${as_subproject})
 
 
 
@@ -87,8 +69,6 @@ target_link_libraries(shamrock PUBLIC pybind11::embed)
 endif()
 
 target_link_libraries(shamrock PUBLIC nlohmann_json::nlohmann_json)
-
-target_link_libraries(shamrock PUBLIC shamrock_lib)
 
 
 target_link_libraries(shamrock PUBLIC ${as_subproject})
@@ -120,8 +100,6 @@ if("${BUILD_TEST}")
 
     target_link_libraries(shamrock_test PUBLIC pybind11::embed)
     target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
-
-    target_link_libraries(shamrock_test PUBLIC shamrock_lib)
 
     target_link_libraries(shamrock_test PUBLIC ${as_subproject})
 
@@ -164,8 +142,6 @@ endif()
 
 add_subdirectory(shamtest)
 
-
-add_subdirectory(shammodels)
 
 #add_subdirectory(runscript)
 

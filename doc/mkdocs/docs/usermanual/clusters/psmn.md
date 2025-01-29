@@ -91,7 +91,7 @@ cd ShamrockWorkspace
 
 activate it to register some script binary in the path :
 ```bash
-source activate
+source ./activate
 ```
 
 then run this :
@@ -121,7 +121,7 @@ cd $HOME/ShamrockWorkspace
 
 Now that Acpp is compiled rerun activate
 ```bash
-source activate
+source ./activate
 ```
 
 ```bash

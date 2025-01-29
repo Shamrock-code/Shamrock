@@ -78,7 +78,7 @@ jobs:
         # with this docker image, i never saw this behavior before
         run: |
           cd build
-          source activate && shamconfigure && shamconfigure
+          source ./activate && shamconfigure && shamconfigure
 
       - name: Generate version file
         run: |

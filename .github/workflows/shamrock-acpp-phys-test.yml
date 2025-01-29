@@ -105,19 +105,19 @@ jobs:
         shell: bash # In docker container github action default to sh
         run: |
           cd build
-          source activate && shamconfigure
+          source ./activate && shamconfigure
 
       - name: Build
         shell: bash # In docker container github action default to sh
         run: |
           cd build
-          source activate && shammake shamrock
+          source ./activate && shammake shamrock
 
       - name: Pull refs
         shell: bash # In docker container github action default to sh
         run: |
           cd build
-          source activate && pull_reffiles
+          source ./activate && pull_reffiles
 
       - name: run test
         run: |

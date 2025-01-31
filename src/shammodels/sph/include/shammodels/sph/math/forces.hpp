@@ -56,7 +56,7 @@ namespace shamrock::sph {
 
         // inv_sat(.,eps) mean that if sub_fact_. == 0, we return 0
         Tvec acc_a = ((P_a) *sham::inv_sat(sub_fact_a, eps)) * nabla_Wab_ha;
-        Tvec acc_b = ((P_b) *sham::inv_sat(sub_fact_a, eps)) * nabla_Wab_hb;
+        Tvec acc_b = ((P_b) *sham::inv_sat(sub_fact_b, eps)) * nabla_Wab_hb;
 
         return -m_b * (acc_a + acc_b);
     }

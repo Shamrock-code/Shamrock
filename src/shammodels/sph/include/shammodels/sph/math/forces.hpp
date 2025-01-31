@@ -124,7 +124,6 @@ namespace shamrock::sph {
         Tscal q_av_d;
         Tscal rho1   = 1. / rho;
         Tscal rabinv = sham::inv_sat(rab);
-        ;
 
         Tscal prefact = -Tscal(0.5) * rho * sham::abs(rabinv) * h;
 

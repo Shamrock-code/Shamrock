@@ -17,7 +17,7 @@ RSCRIPT=$(pwd)/runscript.py
 SHAMROCK_PATH=$SCRATCHDIR/Shamrock/build
 cd $SCRATCHDIR/Shamrock/build
 #
-source activate
+source ./activate
 #
 export DUMP_PATH=$WORKDIR
 #

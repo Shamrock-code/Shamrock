@@ -70,13 +70,13 @@ jobs:
         shell: bash # In docker container github action default to sh
         run: |
           cd acpp_omp_debug
-          source activate && shamconfigure
+          source ./activate && shamconfigure
 
       - name: Build
         shell: bash # In docker container github action default to sh
         run: |
           cd acpp_omp_debug
-          source activate && shammake
+          source ./activate && shammake
 
       - name: Pull reference files
         run: |
@@ -91,14 +91,14 @@ jobs:
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd acpp_omp_debug
-          mpirun --allow-run-as-root \
+          mpirun --allow-run-as-root --bind-to socket \
             -n 1 -x LLVM_PROFILE_FILE=utests_2_0.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_2_1.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd acpp_omp_debug
-          mpirun --allow-run-as-root --oversubscribe \
+          mpirun --allow-run-as-root --bind-to socket --oversubscribe \
             -n 1 -x LLVM_PROFILE_FILE=utests_3_0.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_3_1.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_3_2.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
@@ -106,7 +106,7 @@ jobs:
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd acpp_omp_debug
-          mpirun --allow-run-as-root --oversubscribe \
+          mpirun --allow-run-as-root --bind-to socket --oversubscribe \
             -n 1 -x LLVM_PROFILE_FILE=utests_4_0.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_4_1.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
             -n 1 -x LLVM_PROFILE_FILE=utests_4_2.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \

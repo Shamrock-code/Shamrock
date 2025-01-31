@@ -29,13 +29,13 @@
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamrock/version.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SignalCatch.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
-#include "version.hpp"
 #include <type_traits>
 #include <unordered_map>
 #include <array>
@@ -70,9 +70,6 @@ int main(int argc, char *argv[]) {
         opts::register_opt("--force-dgpu-off", {}, "for direct mpi comm off");
 
         shamcmdopt::register_opt("--feenableexcept", "", "Enable FPE exceptions");
-
-        shamcmdopt::register_env_var_doc(
-            "SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
         shamcmdopt::register_env_var_doc("SHAM_PROF_PREFIX", "Prefix of shamrock profile outputs");
         shamcmdopt::register_env_var_doc("SHAM_PROF_USE_NVTX", "Enable NVTX profiling");

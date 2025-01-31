@@ -5,7 +5,7 @@
 
 The radix tree in shamrock can be imported by
 ```c++
-#include "shamrock/tree/RadixTree.hpp"
+#include "shamtree/RadixTree.hpp"
 ```
 
 This define the class `RadixTree<...>`. This templated `RadixTree` can be instanciated like this :

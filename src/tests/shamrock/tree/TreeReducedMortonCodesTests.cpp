@@ -9,11 +9,11 @@
 
 #include "shamalgs/random.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shamrock/tree/TreeMortonCodes.hpp"
-#include "shamrock/tree/TreeReducedMortonCodes.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/TreeMortonCodes.hpp"
+#include "shamtree/TreeReducedMortonCodes.hpp"
 
 TestStart(
     Unittest,

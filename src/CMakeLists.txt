@@ -1,16 +1,3 @@
-######################
-# generate version.cpp
-######################
-#hack to rerun the version generator if ninja/make all
-#cf https://stackoverflow.com/questions/13920072/how-to-always-run-command-when-building-regardless-of-any-dependency
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
-           ${CMAKE_CURRENT_SOURCE_DIR}/version__.cpp
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../buildbot/make_version_file.py ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp "${CMAKE_CXX_FLAGS}" "${SHAMROCK_VERSION_STRING}"
-  )
-
-
-
 
 
 set(as_subproject
@@ -23,7 +10,16 @@ set(as_subproject
   shamsys
   shamphys
   shamcmdopt
-  shambindings)
+  shambindings
+  shamtree
+  shamlib
+
+  shammodels_common
+  shammodels_nbody
+  shammodels_zeus
+  shammodels_ramses
+  shammodels_sph
+  )
 
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
@@ -44,6 +40,14 @@ add_subdirectory(shammath)
 add_subdirectory(shamalgs)
 add_subdirectory(shamphys)
 add_subdirectory(shamsys)
+add_subdirectory(shamtree)
+add_subdirectory(shamrock)
+
+add_subdirectory(shammodels/common)
+add_subdirectory(shammodels/nbody)
+add_subdirectory(shammodels/zeus)
+add_subdirectory(shammodels/ramses)
+add_subdirectory(shammodels/sph)
 
 
 
@@ -51,33 +55,13 @@ add_subdirectory(shamsys)
 # Shamrock Lib
 ######################
 
-message("-- adding shamrock_lib target")
-add_library(shamrock_lib OBJECT version.cpp)
-target_include_directories(shamrock_lib PUBLIC "${CMAKE_SOURCE_DIR}/src")
-
-if(SHAMROCK_USE_PCH)
-target_precompile_headers(shamrock_lib PRIVATE "<sycl/sycl.hpp>")
-endif()
-
-
-
-if("${BUILD_PYLIB}")
-    target_link_libraries(shamrock_lib PUBLIC pybind11::module)
-else()
-    target_link_libraries(shamrock_lib PUBLIC pybind11::embed)
-endif()
-
-target_link_libraries(shamrock_lib PUBLIC nlohmann_json::nlohmann_json)
-
-target_link_libraries(shamrock_lib PUBLIC ${as_subproject})
-
 
 
 message("-- adding shamrock target")
 
 
 if("${BUILD_PYLIB}")
-pybind11_add_module(shamrock  )
+pybind11_add_module(shamrock main_lib.cpp)
 target_link_libraries(shamrock PUBLIC pybind11::module)
 else()
 add_executable(shamrock main.cpp)
@@ -85,8 +69,6 @@ target_link_libraries(shamrock PUBLIC pybind11::embed)
 endif()
 
 target_link_libraries(shamrock PUBLIC nlohmann_json::nlohmann_json)
-
-target_link_libraries(shamrock PUBLIC shamrock_lib)
 
 
 target_link_libraries(shamrock PUBLIC ${as_subproject})
@@ -118,8 +100,6 @@ if("${BUILD_TEST}")
 
     target_link_libraries(shamrock_test PUBLIC pybind11::embed)
     target_link_libraries(shamrock_test PUBLIC nlohmann_json::nlohmann_json)
-
-    target_link_libraries(shamrock_test PUBLIC shamrock_lib)
 
     target_link_libraries(shamrock_test PUBLIC ${as_subproject})
 
@@ -162,9 +142,6 @@ endif()
 
 add_subdirectory(shamtest)
 
-
-add_subdirectory(shamrock)
-add_subdirectory(shammodels)
 
 #add_subdirectory(runscript)
 

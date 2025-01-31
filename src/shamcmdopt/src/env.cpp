@@ -32,6 +32,14 @@ std::optional<std::string> shamcmdopt::getenv_str(const char *env_var) {
 std::vector<std::pair<std::string, std::string>> env_var_reg = {};
 
 void shamcmdopt::register_env_var_doc(std::string env_var, std::string desc) {
+
+    for (auto &[_env_var, _desc] : env_var_reg) {
+        if (_env_var == env_var) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                shambase::format("The env var {} is already registered", env_var));
+        }
+    }
+
     env_var_reg.push_back({env_var, desc});
 }
 

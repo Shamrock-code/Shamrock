@@ -41,8 +41,10 @@
  * provides a way to safely allocate, use, and deallocate memory in USM.
  */
 
+#include "shambackends/MemPerfInfos.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
+#include "shambackends/details/internal_alloc.hpp"
 
 namespace sham::details {
 
@@ -51,9 +53,12 @@ namespace sham::details {
      *
      * @note The USM pointer may have a larger allocation than the required size.
      *
+     * @todo should be renamed to aquire_...
+     *
      * @tparam target The target of the USM pointer.
      * @param size The size of the pointer in bytes.
      * @param dev_sched Pointer to the device scheduler.
+     * @param alignment The alignment of the USM pointer (optional).
      *
      * @return USMPtrHolder<target> The newly created USM pointer.
      */

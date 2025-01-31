@@ -78,12 +78,12 @@ jobs:
         # with this docker image, i never saw this behavior before
         run: |
           cd build
-          source activate && shamconfigure && shamconfigure
+          source ./activate && shamconfigure && shamconfigure
 
       - name: Generate version file
         run: |
           cd build
-          ninja src/CMakeFiles/shamrock_lib.dir/version.cpp.o
+          ninja src/shamrock/CMakeFiles/shamlib.dir/version.cpp.o
 
       - name: Copy DB
         run: |
@@ -116,15 +116,12 @@ jobs:
           (github.event_name == 'pull_request_target' ||
             github.event_name == 'pull_request')
         run: |
-          python3 buildbot/clang_tidy_diff_report.py -i clang-tidy-output.txt -f diff-clang-tidy -o message.md
+          python3 buildbot/clang_tidy_diff_report.py -i clang-tidy-output.txt -f diff-clang-tidy -o report_clang_tidy.md
 
-      - name: Comment doxygen diff on PR
+      - uses: actions/upload-artifact@v4
         if: >
           (github.event_name == 'pull_request_target' ||
             github.event_name == 'pull_request')
-        uses: thollander/actions-comment-pull-request@v2
         with:
-          filePath: message.md
-          comment_tag: clang-tidy-diff
-          mode: recreate
-          create_if_not_exists: true
+          name: report_clang_tidy
+          path: ./report_clang_tidy.md

@@ -14,12 +14,12 @@
 #include "shammath/sfc/morton.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
-#include "shamrock/sfc/MortonKernels.hpp"
-#include "shamrock/tree/RadixTree.hpp"
-#include "shamrock/tree/TreeStructureWalker.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/MortonKernels.hpp"
+#include "shamtree/RadixTree.hpp"
+#include "shamtree/TreeStructureWalker.hpp"
 #include "tests/shamrock/tree/TreeTests.hpp"
 
 auto get_Nmax = []() -> f64 {

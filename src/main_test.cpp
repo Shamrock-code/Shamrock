@@ -18,11 +18,11 @@
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamrock/version.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
-#include "version.hpp"
 
 int main(int argc, char *argv[]) {
 
@@ -49,7 +49,6 @@ int main(int argc, char *argv[]) {
     shamcmdopt::register_opt("--feenableexcept", "", "Enable FPE exceptions");
 
     opts::register_env_var_doc("REF_FILES_PATH", "reference test files path");
-    shamcmdopt::register_env_var_doc("SHAMLOGFORMATTER", "Change the log formatter (values :0-3)");
 
     shamcmdopt::register_env_var_doc("SHAM_PROF_PREFIX", "Prefix of shamrock profile outputs");
     shamcmdopt::register_env_var_doc("SHAM_PROF_USE_NVTX", "Enable NVTX profiling");

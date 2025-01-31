@@ -7,9 +7,9 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/legacy/utils/geometry_utils.hpp"
 #include "shamrock/scheduler/scheduler_patch_list.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/kernels/geometry_utils.hpp"
 #include "test_patch_utils.hpp"
 
 #if false

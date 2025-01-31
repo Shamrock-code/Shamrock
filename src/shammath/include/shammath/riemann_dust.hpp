@@ -162,7 +162,7 @@ namespace shammath {
         d_cst.rho       = c.rho;
         d_cst.rhovel[0] = c.rhovel[2];
         d_cst.rhovel[1] = c.rhovel[1];
-        d_cst.rhovel[2] = c.rhovel[0];
+        d_cst.rhovel[2] = -c.rhovel[0];
         return d_cst;
     }
 

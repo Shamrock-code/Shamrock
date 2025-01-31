@@ -9,8 +9,8 @@
 
 #include "shamalgs/random.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shamrock/tree/RadixTree.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/RadixTree.hpp"
 
 TestStart(Unittest, "shamrock/tree/RadixTree::serialize", testradixtreeserialize, 1) {
 

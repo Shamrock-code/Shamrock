@@ -9,12 +9,12 @@
 
 #include "shamalgs/random.hpp"
 #include "shammath/CoordRange.hpp"
-#include "shamrock/tree/TreeCellRanges.hpp"
-#include "shamrock/tree/TreeMortonCodes.hpp"
-#include "shamrock/tree/TreeReducedMortonCodes.hpp"
-#include "shamrock/tree/TreeStructure.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/TreeCellRanges.hpp"
+#include "shamtree/TreeMortonCodes.hpp"
+#include "shamtree/TreeReducedMortonCodes.hpp"
+#include "shamtree/TreeStructure.hpp"
 
 TestStart(Unittest, "shamrock/tree/TreeCellRanges::serialize", testcellrangesserialize, 1) {
 

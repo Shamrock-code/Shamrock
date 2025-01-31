@@ -29,18 +29,33 @@ def setup(arg : SetupArg):
 
     args = parser.parse_args(argv)
 
+    acpp_target = utils.acpp.get_acpp_target_env(args)
+    if (acpp_target == None):
+        print("-- target not specified using acpp default")
+    else:
+        print("-- setting acpp target to :",acpp_target)
+
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
+
+    ACPP_GIT_DIR = builddir+"/.env/acpp-git"
+    ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
+    ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
 
     ENV_SCRIPT_PATH = builddir+"/activate"
 
     ENV_SCRIPT_HEADER = ""
     ENV_SCRIPT_HEADER += "export SHAMROCK_DIR="+shamrockdir+"\n"
     ENV_SCRIPT_HEADER += "export BUILD_DIR="+builddir+"\n"
+    ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR="+ACPP_GIT_DIR+"\n"
+    ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR="+ACPP_BUILD_DIR+"\n"
+    ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR="+ACPP_INSTALL_DIR+"\n"
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
     ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
+
+    run_cmd("mkdir -p "+builddir)
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
@@ -52,8 +67,8 @@ def setup(arg : SetupArg):
 
     ENV_SCRIPT_HEADER += "export CMAKE_OPT=("+cmake_extra_args+")\n"
     ENV_SCRIPT_HEADER += "export SHAMROCK_BUILD_TYPE=\""+cmake_build_type+"\"\n"
+    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='"+acpp_target+"'\"\n"
 
-    run_cmd("mkdir -p "+builddir)
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))

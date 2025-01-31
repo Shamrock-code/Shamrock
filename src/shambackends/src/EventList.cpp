@@ -22,7 +22,6 @@ sham::EventList::~EventList() {
             "EventList destroyed without being consumed :\n    -> creation : {}",
             loc_build.format_one_line());
 
-        shamcomm::logs::err_ln("Backends", log_str);
         for (auto &e : events) {
             e.wait();
         }

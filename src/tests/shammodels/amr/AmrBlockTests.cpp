@@ -7,7 +7,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shammodels/amr/AMRBlock.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamtest/shamtest.hpp"
 
 TestStart(Unittest, "shammodels/amr/AMRBlock", test_amr_block_coords, 1) {

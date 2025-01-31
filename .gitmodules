@@ -14,3 +14,6 @@
 [submodule "external/json"]
 	path = external/nlohmann_json
 	url = https://github.com/nlohmann/json.git
+[submodule "doc/mkdocs/docs/assets/large-figures"]
+	path = doc/mkdocs/docs/assets/large-figures
+	url = https://github.com/Shamrock-code/doc-figures.git

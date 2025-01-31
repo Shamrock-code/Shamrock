@@ -9,7 +9,7 @@
 
 #include "shambase/print.hpp"
 #include "shamcomm/logs.hpp"
-#include "shammodels/EOSConfig.hpp"
+#include "shammodels/common/EOSConfig.hpp"
 #include "shamphys/eos_config.hpp"
 #include "shamtest/shamtest.hpp"
 

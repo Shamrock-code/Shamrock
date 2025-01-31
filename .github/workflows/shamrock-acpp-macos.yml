@@ -66,12 +66,12 @@ jobs:
       - name: Configure
         run: |
           cd build
-          source activate && shamconfigure
+          source ./activate && shamconfigure
 
       - name: Build
         run: |
           cd build
-          source activate && shammake
+          source ./activate && shammake
 
       - name: Pull reference files
         run: |

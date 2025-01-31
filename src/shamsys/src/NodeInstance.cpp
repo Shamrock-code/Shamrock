@@ -25,6 +25,7 @@
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcmdopt/cmdopt.hpp"
+#include "shamcmdopt/env.hpp"
 #include "shamcmdopt/tty.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
@@ -41,6 +42,12 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+
+std::string SHAMLOGFORMATTER = shamcmdopt::getenv_str_default_register(
+    "SHAMLOGFORMATTER", "3", "Change the log formatter (values :0-3) [default: 3]");
+
+std::string SHAMLOG_ERR_ON_EXCEPT = shamcmdopt::getenv_str_default_register(
+    "SHAMLOG_ERR_ON_EXCEPT", "1", "Enable logging of exceptions (default to 1)");
 
 /**
  * @brief Namespace for log formatters
@@ -208,6 +215,11 @@ namespace logformatter {
             args.content,
             shambase::term_colors::bold());
     }
+
+    void exception_gen_callback(std::string msg) {
+        shamcomm::logs::err_ln("Exception", "Exception created :\n" + msg);
+    }
+
 } // namespace logformatter
 
 namespace shamsys::instance::details {
@@ -616,27 +628,26 @@ namespace shamsys::instance {
 
         logger::debug_ln("Sys", "changing formatter to MPI form");
 
-        auto env_formatter = shamcmdopt::getenv_str("SHAMLOGFORMATTER");
-        if (env_formatter) {
-            if (*env_formatter == "0") {
-                logger::change_formaters(
-                    logformatter::style0_formatter_full, logformatter::style0_formatter_simple);
-            } else if (*env_formatter == "1") {
-                logger::change_formaters(
-                    logformatter::style1_formatter_full, logformatter::style1_formatter_simple);
-            } else if (*env_formatter == "2") {
-                logger::change_formaters(
-                    logformatter::style2_formatter_full, logformatter::style2_formatter_simple);
-            } else if (*env_formatter == "3") {
-                logger::change_formaters(
-                    logformatter::style3_formatter_full, logformatter::style3_formatter_simple);
-            } else {
-                logger::err_ln("Log", "Unknown formatter");
-                throw ShamsysInstanceException("Unknown formatter");
-            }
-        } else {
+        if (SHAMLOGFORMATTER == "0") {
+            logger::change_formaters(
+                logformatter::style0_formatter_full, logformatter::style0_formatter_simple);
+        } else if (SHAMLOGFORMATTER == "1") {
+            logger::change_formaters(
+                logformatter::style1_formatter_full, logformatter::style1_formatter_simple);
+        } else if (SHAMLOGFORMATTER == "2") {
+            logger::change_formaters(
+                logformatter::style2_formatter_full, logformatter::style2_formatter_simple);
+        } else if (SHAMLOGFORMATTER == "3") {
             logger::change_formaters(
                 logformatter::style3_formatter_full, logformatter::style3_formatter_simple);
+        } else {
+            logger::err_ln("Log", "Unknown formatter");
+            throw ShamsysInstanceException("Unknown formatter");
+        }
+
+        if (SHAMLOG_ERR_ON_EXCEPT == "1") {
+            logger::debug_ln("Log", "Enabling exception handler callback");
+            shambase::set_exception_gen_callback(&logformatter::exception_gen_callback);
         }
 
 #ifdef MPI_LOGGER_ENABLED

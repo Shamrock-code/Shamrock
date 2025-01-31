@@ -13,8 +13,8 @@
 #include "shamalgs/random.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
-#include "shamrock/tree/RadixTree.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/RadixTree.hpp"
 #include <vector>
 
 #if false

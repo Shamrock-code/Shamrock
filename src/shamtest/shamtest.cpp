@@ -19,8 +19,10 @@
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shambindings/start_python.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcmdopt/term_colors.hpp"
+#include "shamrock/version.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -28,7 +30,6 @@
 #include "shamtest.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/details/reporters/texTestReport.hpp"
-#include "version.hpp"
 #include <pybind11/embed.h>
 #include <unordered_map>
 #include <cmath>
@@ -547,6 +548,7 @@ namespace shamtest {
 
         logger::info_ln("Test", "start python interpreter");
         py::initialize_interpreter();
+        shambindings::modify_py_sys_path();
 
         std::filesystem::create_directories("tests/figures");
 

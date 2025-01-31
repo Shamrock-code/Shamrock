@@ -43,6 +43,13 @@ namespace shamalgs::algorithm {
     void sort_by_key(
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len);
 
+    template<class Tkey, class Tval>
+    void sort_by_key(
+        sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<Tkey> &buf_key,
+        sham::DeviceBuffer<Tval> &buf_values,
+        u32 len);
+
     /**
      * @brief generate a buffer from a lambda expression based on the indexes
      *
@@ -158,5 +165,14 @@ namespace shamalgs::algorithm {
      * @return sycl::buffer<u32> the returned buffer
      */
     sycl::buffer<u32> gen_buffer_index(sycl::queue &q, u32 len);
+
+    /**
+     * @brief generate a buffer such that for i in [0,len[, buf[i] = i
+     *
+     * @param sched the scheduler to run on
+     * @param len length of the buffer to generate
+     * @return sham::DeviceBuffer<u32> the returned buffer
+     */
+    sham::DeviceBuffer<u32> gen_buffer_index_usm(sham::DeviceScheduler_ptr sched, u32 len);
 
 } // namespace shamalgs::algorithm

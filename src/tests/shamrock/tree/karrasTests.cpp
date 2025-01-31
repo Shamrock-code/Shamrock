@@ -9,10 +9,10 @@
 
 // #include "test_tree.hpp"
 
-#include "shamrock/tree/kernels/karras_alg.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/kernels/karras_alg.hpp"
 #include <memory>
 #include <vector>
 

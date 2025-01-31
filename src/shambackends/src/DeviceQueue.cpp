@@ -18,6 +18,9 @@
 #include "shamcomm/logs.hpp"
 #include <utility>
 
+std::string SHAMROCK_WAIT_AFTER_SUBMIT = shamcmdopt::getenv_str_default_register(
+    "SHAMROCK_WAIT_AFTER_SUBMIT", "0", "Make queues wait after submit (default: 0)");
+
 namespace sham {
 
     auto build_queue = [](sycl::context &ctx, sycl::device &dev, bool in_order) -> sycl::queue {
@@ -29,18 +32,7 @@ namespace sham {
     };
 
     auto parse_wait_after_submit = []() -> bool {
-        shamcmdopt::register_env_var_doc(
-            "SHAMROCK_WAIT_AFTER_SUBMIT", "Make queues wait after submit");
-
-        std::optional<std::string> SHAMROCK_WAIT_AFTER_SUBMIT
-            = shamcmdopt::getenv_str("SHAMROCK_WAIT_AFTER_SUBMIT");
-
-        bool ret;
-        if (SHAMROCK_WAIT_AFTER_SUBMIT.has_value()) {
-            ret = *SHAMROCK_WAIT_AFTER_SUBMIT == "1";
-        } else {
-            ret = false;
-        }
+        bool ret = SHAMROCK_WAIT_AFTER_SUBMIT == "1";
 
         if (ret) {
             shamcomm::logs::warn_ln("Backends", "DeviceQueue :", "wait_after_submit is on !");

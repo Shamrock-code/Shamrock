@@ -38,6 +38,27 @@ namespace shambase {
     std::string exception_format(SourceLocation loc);
 
     /**
+     * @brief Set the exception generator callback
+     *
+     * This function sets a callback that is called whenever an exception is
+     * thrown. The callback is called with the formatted exception message
+     * as argument.
+     *
+     * @param callback The callback to set
+     */
+    void set_exception_gen_callback(void (*callback)(std::string msg));
+
+    /**
+     * @brief The callback called when an exception is thrown
+     *
+     * This callback is called with the formatted exception message as argument.
+     * It is settable with set_exception_gen_callback.
+     *
+     * @param msg The formatted exception message
+     */
+    void exception_gen_callback(std::string msg);
+
+    /**
      * @brief Create an exception with a message and a location
      *
      * This function creates an exception with a message that is richer,
@@ -52,7 +73,9 @@ namespace shambase {
     template<class ExcptTypes>
     inline ExcptTypes
     make_except_with_loc(std::string message, SourceLocation loc = SourceLocation{}) {
-        return ExcptTypes(message + exception_format(loc));
+        std::string msg = message + exception_format(loc);
+        exception_gen_callback(msg);
+        return ExcptTypes(msg);
     }
 
     /**

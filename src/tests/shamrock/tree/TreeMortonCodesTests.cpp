@@ -9,10 +9,10 @@
 
 #include "shamalgs/random.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamrock/tree/TreeMortonCodes.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/TreeMortonCodes.hpp"
 
 TestStart(
     Unittest, "shamrock/tree/TreeMortonCodes::serialize", test_tree_morton_code_serialize, 1) {

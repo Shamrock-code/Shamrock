@@ -8,11 +8,11 @@
 // -------------------------------------------------------//
 
 #include "shambase/time.hpp"
-#include "shamrock/tree/kernels/key_morton_sort.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/key_morton_sort.hpp"
 #include <random>
 
 template<class u_morton, SortImplType impl>

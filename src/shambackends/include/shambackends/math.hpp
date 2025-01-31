@@ -727,7 +727,7 @@ namespace sham {
     /**
      * @brief inverse saturated
      *
-     * Computes the inverse of v if v > minvsat, otherwise returns satval
+     * Computes the inverse of v if v < minsat return satval
      *
      * @param v
      * @param minvsat minimum value below which the inverse is not computed (default 1e-9)

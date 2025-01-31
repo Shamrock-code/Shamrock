@@ -16,6 +16,7 @@
  * @brief file containing formulas for sph forces
  */
 
+#include "shambase/numeric_limits.hpp"
 #include "shambackends/math.hpp"
 
 namespace shamrock::sph {
@@ -51,13 +52,11 @@ namespace shamrock::sph {
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
-        Tvec acc_a = ((P_a) / (sub_fact_a)) * nabla_Wab_ha;
-        Tvec acc_b = ((P_b) / (sub_fact_b)) * nabla_Wab_hb;
+        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
 
-        if (sub_fact_a == 0)
-            acc_a = {0, 0, 0};
-        if (sub_fact_b == 0)
-            acc_b = {0, 0, 0};
+        // inv_sat(.,eps) mean that if sub_fact_. == 0, we return 0
+        Tvec acc_a = ((P_a) *sham::inv_sat(sub_fact_a, eps)) * nabla_Wab_ha;
+        Tvec acc_b = ((P_b) *sham::inv_sat(sub_fact_a, eps)) * nabla_Wab_hb;
 
         return -m_b * (acc_a + acc_b);
     }
@@ -118,25 +117,18 @@ namespace shamrock::sph {
     inline Tscal q_av(Tscal rho, Tscal vsig, Tscal v_scal_rhat) {
         return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
     }
+
     template<class Tscal>
     inline Tscal q_av_disc(
         Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs, Tscal vsig, Tscal v_scal_rhat) {
         Tscal q_av_d;
         Tscal rho1   = 1. / rho;
-        Tscal rabinv = 1. / (rab);
-
-        if (rab < 1e-9) {
-            rabinv = 0;
-        }
+        Tscal rabinv = sham::inv_sat(rab);
+        ;
 
         Tscal prefact = -Tscal(0.5) * rho * sham::abs(rabinv) * h;
 
-        Tscal vsig_disc;
-        if (v_scal_rhat < Tscal(0)) {
-            vsig_disc = vsig;
-        } else {
-            vsig_disc = (alpha_av * cs);
-        }
+        Tscal vsig_disc = (v_scal_rhat < Tscal(0)) ? vsig : (alpha_av * cs);
 
         q_av_d = prefact * vsig_disc * v_scal_rhat;
 
@@ -224,11 +216,7 @@ namespace shamrock::sph {
 
         Tvec v_ab = vxyz_a - vxyz_b;
 
-        Tvec r_ab_unit = dr / rab;
-
-        if (rab < 1e-9) {
-            r_ab_unit = {0, 0, 0};
-        }
+        Tvec r_ab_unit = dr * sham::inv_sat(rab);
 
         // f32 P_b     = cs * cs * rho_b;
         Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);

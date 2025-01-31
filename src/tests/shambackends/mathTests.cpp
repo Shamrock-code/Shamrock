@@ -7,18 +7,35 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/aliases_float.hpp"
 #include "shambackends/math.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
 TestStart(Unittest, "shambackends/math.hpp:roundup_pow2_clz", shambackendsmathroundup_pow2_clz, 1) {
 
-    _AssertEqual(sham::roundup_pow2_clz<u32>(0), 1) _AssertEqual(sham::roundup_pow2_clz<u32>(1), 1)
-        _AssertEqual(sham::roundup_pow2_clz<u32>(2), 2)
-            _AssertEqual(sham::roundup_pow2_clz<u32>(3), 4)
+    _AssertEqual(sham::roundup_pow2_clz<u32>(0), 1);
+    _AssertEqual(sham::roundup_pow2_clz<u32>(1), 1);
+    _AssertEqual(sham::roundup_pow2_clz<u32>(2), 2);
+    _AssertEqual(sham::roundup_pow2_clz<u32>(3), 4);
 
-                _AssertEqual(sham::roundup_pow2_clz<u32>(2147483647), 2147483648)
-                    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483648), 2147483648)
-                        _AssertEqual(sham::roundup_pow2_clz<u32>(2147483649), 0)
-                            _AssertEqual(sham::roundup_pow2_clz<u32>(4294967295), 0)
+    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483647), 2147483648);
+    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483648), 2147483648);
+    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483649), 0);
+    _AssertEqual(sham::roundup_pow2_clz<u32>(4294967295), 0);
+}
+
+TestStart(Unittest, "shambackends/math.hpp:inv_sat", shambackendsmathinv_sat, 1) {
+
+    _AssertEqual(sham::inv_sat<f64>(1._f64), 1._f64 / 1._f64);
+    _AssertEqual(sham::inv_sat<f64>(2._f64), 1._f64 / 2._f64);
+    _AssertEqual(sham::inv_sat<f64>(3._f64), 1._f64 / 3._f64);
+    _AssertEqual(sham::inv_sat<f64>(4._f64), 1._f64 / 4._f64);
+    _AssertEqual(sham::inv_sat<f64>(5._f64), 1._f64 / 5._f64);
+    _AssertEqual(sham::inv_sat<f64>(6._f64), 1._f64 / 6._f64);
+    _AssertEqual(sham::inv_sat<f64>(7._f64), 1._f64 / 7._f64);
+
+    _AssertEqual(sham::inv_sat<f64>(100._f64), 1._f64 / 100._f64);
+    _AssertEqual(sham::inv_sat<f64>(1.e-9_f64), 1._f64 / 1.e-9_f64);
+    _AssertEqual(sham::inv_sat<f64>(1.e-10_f64), 0._f64);
 }

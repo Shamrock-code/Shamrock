@@ -33,15 +33,18 @@ namespace shammath::tree {
      */
     template<class Tmorton, class Tvec, u32 dim = shambase::VectorProperties<Tvec>::dimension>
     class MortonCodeSet {
-
+        public:
         /// The axis-aligned bounding box for the set of positions
         AABB<Tvec> bounding_box;
 
         /// The count of objects represented in the set
         u32 cnt_obj;
 
+        /// The count of Morton codes in the set
+        u32 morton_count;
+
         /// A unique pointer to a SYCL buffer holding the Morton codes
-        std::unique_ptr<sycl::buffer<Tmorton>> morton_codes;
+        sham::DeviceBuffer<Tmorton> morton_codes;
 
         /**
          * @brief Constructs a MortonCodeSet
@@ -55,7 +58,8 @@ namespace shammath::tree {
             sham::DeviceScheduler_ptr dev_sched,
             AABB<Tvec> bounding_box,
             sham::DeviceBuffer<Tvec> &pos_buf,
-            u32 cnt_obj);
+            u32 cnt_obj,
+            u32 morton_count);
     };
 
 } // namespace shammath::tree

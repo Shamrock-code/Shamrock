@@ -111,6 +111,10 @@ namespace shammath {
             return sham::component_have_at_most_one_zero(delt()) && (is_not_empty());
         }
 
+        [[nodiscard]] inline T clamp_coord(T coord) const noexcept {
+            return sycl::clamp(coord, lower, upper);
+        }
+
         [[nodiscard]] inline bool intersect_ray(Ray<T> ray) const noexcept {
             Tscal tmin = -shambase::get_infty<Tscal>(), tmax = shambase::get_infty<Tscal>();
 

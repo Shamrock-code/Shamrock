@@ -26,6 +26,12 @@ def load_file(fname):
 
 dic = []
 
+def trunctate_diff(st):
+    if len(st) > 32768:
+        return st[:32768] + "\n ... truncated ...\n"
+    else:
+        return st
+
 print("# Pre commit report")
 print()
 print("Some failures were detected in pre-commit checks.\n Check the `On PR / Linting / Pre-commit CI (pull_request)` job in the tests for more detailled output")
@@ -57,7 +63,7 @@ print("Detailed changes :")
 print("</summary>")
 print(f" ")
 print("```diff")
-print(load_file("diff-pre-commit"))
+print(trunctate_diff(load_file("diff-pre-commit")))
 print("```")
 print("")
 print("</details>")

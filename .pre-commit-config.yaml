@@ -77,11 +77,13 @@ repos:
   hooks:
   - id: black
     args: [--line-length=100]
+    log_file: log_precommit_black
 
 - repo: https://github.com/pycqa/isort
   rev: 5.13.2
   hooks:
     - id: isort
+      log_file: log_precommit_isort
 
 - repo: local
   hooks:

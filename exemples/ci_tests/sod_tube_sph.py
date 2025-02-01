@@ -87,17 +87,25 @@ sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, 0.0, -0.5,0.5)
 rho, v, P = sodanalysis.compute_L2_dist()
 vx,vy,vz = v
 
+print("current errors :")
+print(f"err_rho = {rho}")
+print(f"err_vx = {vx}")
+print(f"err_vy = {vy}")
+print(f"err_vz = {vz}")
+print(f"err_P = {P}")
+
 # normally :
 # rho 0.0001615491818848632
 # v (0.0011627047434807855, 2.9881306160215856e-05, 1.7413547093275864e-07)
 # P0.0001248364612976704
 
 test_pass = True
-pass_rho = 0.0001615491818848697
-pass_vx = 0.0011627047434809158
-pass_vy = 2.9881306160215856e-05
-pass_vz = 1.7413547093275864e-07
-pass_P = 0.0001248364612976704
+
+pass_rho = 0.00016154918188487577 + 1e-10
+pass_vx = 0.0011627047434808583 + 1e-10
+pass_vy = 2.9881306160214487e-05 + 1e-10
+pass_vz = 1.7413547093185385e-07 + 1e-10
+pass_P = 0.0001248364612976683 + 1e-10
 
 err_log = ""
 

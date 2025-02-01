@@ -1,0 +1,109 @@
+name: Acpp/clang
+
+
+on:
+  workflow_call:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+
+
+  shamrock_acpp:
+    name: AdaptiveCpp conda ${{ matrix.backend }}:${{matrix.arch}}
+    runs-on: [self-hosted,  docker-runner]
+
+    container:
+      image: continuumio/anaconda3
+
+    strategy:
+      matrix:
+        include:
+          - backend: omp
+            arch: none
+            runtest: yes
+
+    timeout-minutes: 60
+    steps:
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+      #### End Checkout part ####
+
+      - name: Setup env
+        run : ./env/new-env --machine conda.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
+
+      - name: Source env
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate
+
+      - name: Configure
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate && shamconfigure
+
+      - name: Build
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate && shammake
+
+      - name: Pull reference files
+        run: |
+          cd build
+          git clone https://github.com/Shamrock-code/reference-files.git
+
+      - name: run Shamrock help
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock --help
+          ./shamrock --help --color
+
+      - name: run Shamrock Test help
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock_test --help
+          ./shamrock_test --help --color
+
+      - name: run Shamrock Unittests world_size = 1
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 2
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun --allow-run-as-root --bind-to socket -n 2 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 3
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun --allow-run-as-root --bind-to socket --oversubscribe -n 3 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 4
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun --allow-run-as-root --bind-to socket --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi

@@ -1,0 +1,13 @@
+name: shamrock_dev_environment
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - cmake
+  - ninja
+  - adaptivecpp
+  - openmpi
+  - clang
+  - clangxx
+  - fmt=11.0.2
+  - boost

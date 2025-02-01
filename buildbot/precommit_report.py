@@ -28,7 +28,7 @@ dic = []
 
 def trunctate_diff(st):
     if len(st) > 32768:
-        return st[:32768] + "\n ... truncated ...\n" 
+        return st[:32768] + "\n ... truncated ...\n"
     else:
         return st
 

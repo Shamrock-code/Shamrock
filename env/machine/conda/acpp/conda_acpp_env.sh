@@ -3,16 +3,18 @@
 
 export CMAKE_GENERATOR="Ninja"
 
-# Try to activate the conda environment
-conda activate shamrock_dev_environment
-
-# Check if the activation was successful
-if [ $? -ne 0 ]; then
-    echo "Failed to activate 'shamrock_dev_environment'. Creating environment from environment.yml..."
+# Check if the activation failed
+if ! conda info --envs | grep -q "shamrock_dev_environment"; then
+    echo " -- Shamrock dev environment not found."
+    echo " --------- Creating environment from environment.yml... --------- "
     conda env create -f ./environment.yml
-    conda activate shamrock_dev_environment
+    echo " --------------------- Environment created ---------------------- "
 fi
 
+# Try to activate the conda environment
+echo " --------- Activating conda environment --------- "
+conda activate shamrock_dev_environment
+echo " ------------- Environment activated ------------ "
 
 function shamconfigure {
     cmake \

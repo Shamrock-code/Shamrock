@@ -1,6 +1,8 @@
 # Exports will be provided by the new env script above this line
 # will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
 
+export CMAKE_GENERATOR="Ninja"
+
 # Try to activate the conda environment
 conda activate shamrock_dev_environment
 

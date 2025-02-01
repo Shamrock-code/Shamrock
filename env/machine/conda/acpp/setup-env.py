@@ -48,11 +48,10 @@ def setup(arg : SetupArg):
 
 
     ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
+    ENV_SCRIPT_HEADER += "export MAKE_EXEC=ninja\n"
     ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
 
+    run_cmd("mkdir -p "+builddir)
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))

@@ -41,6 +41,8 @@ TestStart(Unittest, "shamtree/MortonCodeSet", test_morton_codeset, 1) {
     sham::DeviceBuffer<Tvec> partpos_buf(
         partpos.size(), shamsys::instance::get_compute_scheduler_ptr());
 
+    partpos_buf.copy_from_stdvec(partpos);
+
     auto set = shammath::tree::MortonCodeSet<Tmorton, Tvec, 3>(
         shamsys::instance::get_compute_scheduler_ptr(), bb, partpos_buf, partpos.size(), 16);
 

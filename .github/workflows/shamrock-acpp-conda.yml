@@ -24,6 +24,10 @@ jobs:
             arch: none
             runtest: yes
 
+    defaults:
+      run:
+        shell: bash -el {0}
+
     timeout-minutes: 60
     steps:
       #### Checkout part ####
@@ -44,25 +48,23 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
-      - run: conda init
+      - name: Run conda init
+        run: conda init bash
 
       - name: Setup env
         run : ./env/new-env --machine conda.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
 
       - name: Source env
-        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source ./activate
 
       - name: Configure
-        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source ./activate && shamconfigure
 
       - name: Build
-        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source ./activate && shammake

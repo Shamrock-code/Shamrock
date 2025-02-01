@@ -62,6 +62,10 @@ TestStart(Unittest, "shamtree/MortonCodeSet", test_morton_codeset, 1) {
            18446744073709551615U,
            18446744073709551615U};
 
+    logger::raw_ln("test mortons: ", test_mortons);
+    std::vector<Tmorton> mortons = set.morton_codes.copy_to_stdvec();
+    logger::raw_ln("calculated mortons: ", mortons);
+
     REQUIRE(set.cnt_obj == partpos.size());
     REQUIRE(set.morton_count == 16);
     REQUIRE(set.morton_codes.get_size() == 16);

@@ -72,6 +72,17 @@ repos:
     log_file: log_precommit_clang-format
 
 
+- repo: https://github.com/psf/black
+  rev: stable
+  hooks:
+  - id: black
+    args: [--line-length=100]
+
+- repo: https://github.com/pycqa/isort
+  rev: 5.13.2
+  hooks:
+    - id: isort
+
 - repo: local
   hooks:
     - id: doxygen_header

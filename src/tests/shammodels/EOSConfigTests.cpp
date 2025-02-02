@@ -31,7 +31,7 @@ void test_serialize_adiabatic() {
 
     if (Config *out_eos_config = std::get_if<Config>(&out_config.config)) {
         if (Config *in_eos_config = std::get_if<Config>(&in_config.config)) {
-            REQUIRE(*in_eos_config == *out_eos_config)
+            REQUIRE(*in_eos_config == *out_eos_config);
         } else {
             _Assert(false)
         }
@@ -85,7 +85,7 @@ void test_serialize_locally_isothermallp07() {
 
     if (Config *out_eos_config = std::get_if<Config>(&out_config.config)) {
         if (Config *in_eos_config = std::get_if<Config>(&in_config.config)) {
-            REQUIRE(*in_eos_config == *out_eos_config)
+            REQUIRE(*in_eos_config == *out_eos_config);
         } else {
             _Assert(false)
         }

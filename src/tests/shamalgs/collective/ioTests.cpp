@@ -37,7 +37,8 @@ TestStart(Unittest, "shamalgs/collective/io/header_val", test_collective_io_head
         shamcomm::open_read_only_file(mfile, TEST_FILE_NAME);
         auto read_val1 = shamalgs::collective::read_header_val(mfile, head_ptr);
         auto read_val2 = shamalgs::collective::read_header_val(mfile, head_ptr);
-        _AssertEqual(read_val1, TEST_VAL1) _AssertEqual(read_val2, TEST_VAL2);
+        REQUIRE_EQUAL(read_val1, TEST_VAL1);
+        REQUIRE_EQUAL(read_val2, TEST_VAL2);
 
         MPI_File_close(&mfile);
     }

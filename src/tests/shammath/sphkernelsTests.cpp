@@ -30,32 +30,32 @@ validate_kernel_3d(typename Ker::Tscal tol, typename Ker::Tscal dx, typename Ker
     using Tscal = typename Ker::Tscal;
 
     // test finite support
-    _AssertEqual(Ker::f(Ker::Rkern), 0);
-    _AssertEqual(Ker::W_3d(Ker::Rkern, 1), 0);
+    REQUIRE_EQUAL(Ker::f(Ker::Rkern), 0);
+    REQUIRE_EQUAL(Ker::W_3d(Ker::Rkern, 1), 0);
 
     Tscal gen_norm3d = Ker::Generator::norm_3d;
 
     // test f <-> W scale relations
-    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern), Ker::W_3d(Ker::Rkern, 1));
-    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 2), Ker::W_3d(Ker::Rkern / 2, 1));
-    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 3), Ker::W_3d(Ker::Rkern / 3, 1));
-    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 4), Ker::W_3d(Ker::Rkern / 4, 1));
+    REQUIRE_EQUAL(gen_norm3d * Ker::f(Ker::Rkern), Ker::W_3d(Ker::Rkern, 1));
+    REQUIRE_EQUAL(gen_norm3d * Ker::f(Ker::Rkern / 2), Ker::W_3d(Ker::Rkern / 2, 1));
+    REQUIRE_EQUAL(gen_norm3d * Ker::f(Ker::Rkern / 3), Ker::W_3d(Ker::Rkern / 3, 1));
+    REQUIRE_EQUAL(gen_norm3d * Ker::f(Ker::Rkern / 4), Ker::W_3d(Ker::Rkern / 4, 1));
 
-    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern) / 8, Ker::W_3d(2 * Ker::Rkern, 2));
-    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 2) / 8, Ker::W_3d(2 * Ker::Rkern / 2, 2));
-    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 3) / 8, Ker::W_3d(2 * Ker::Rkern / 3, 2));
-    _AssertEqual(gen_norm3d * Ker::f(Ker::Rkern / 4) / 8, Ker::W_3d(2 * Ker::Rkern / 4, 2));
+    REQUIRE_EQUAL(gen_norm3d * Ker::f(Ker::Rkern) / 8, Ker::W_3d(2 * Ker::Rkern, 2));
+    REQUIRE_EQUAL(gen_norm3d * Ker::f(Ker::Rkern / 2) / 8, Ker::W_3d(2 * Ker::Rkern / 2, 2));
+    REQUIRE_EQUAL(gen_norm3d * Ker::f(Ker::Rkern / 3) / 8, Ker::W_3d(2 * Ker::Rkern / 3, 2));
+    REQUIRE_EQUAL(gen_norm3d * Ker::f(Ker::Rkern / 4) / 8, Ker::W_3d(2 * Ker::Rkern / 4, 2));
 
     // test df <-> dW scale relations
-    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern), Ker::dW_3d(Ker::Rkern, 1));
-    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 2), Ker::dW_3d(Ker::Rkern / 2, 1));
-    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 3), Ker::dW_3d(Ker::Rkern / 3, 1));
-    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 4), Ker::dW_3d(Ker::Rkern / 4, 1));
+    REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern), Ker::dW_3d(Ker::Rkern, 1));
+    REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern / 2), Ker::dW_3d(Ker::Rkern / 2, 1));
+    REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern / 3), Ker::dW_3d(Ker::Rkern / 3, 1));
+    REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern / 4), Ker::dW_3d(Ker::Rkern / 4, 1));
 
-    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern) / 16, Ker::dW_3d(2 * Ker::Rkern, 2));
-    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 2) / 16, Ker::dW_3d(2 * Ker::Rkern / 2, 2));
-    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 3) / 16, Ker::dW_3d(2 * Ker::Rkern / 3, 2));
-    _AssertEqual(gen_norm3d * Ker::df(Ker::Rkern / 4) / 16, Ker::dW_3d(2 * Ker::Rkern / 4, 2));
+    REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern) / 16, Ker::dW_3d(2 * Ker::Rkern, 2));
+    REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern / 2) / 16, Ker::dW_3d(2 * Ker::Rkern / 2, 2));
+    REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern / 3) / 16, Ker::dW_3d(2 * Ker::Rkern / 3, 2));
+    REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern / 4) / 16, Ker::dW_3d(2 * Ker::Rkern / 4, 2));
 
     // is integral of W == 1 (1d)
     _AssertFloatEqual(

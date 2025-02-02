@@ -23,22 +23,25 @@ TestStart(Unittest, "shammath/flux_symmetry", flux_rotate, 1) {
     {
         Tcons f1 = shammath::rusanov_flux_x(state1, state2, 1.6666);
         Tcons f2 = shammath::rusanov_flux_mx(state2, state1, 1.6666);
-        _Assert(sham::equals(f1.rho, -f2.rho)) _Assert(sham::equals(f1.rhovel, -f2.rhovel))
-            _Assert(sham::equals(f1.rhoe, -f2.rhoe))
+        REQUIRE_EQUAL_CUSTOM_COMP(f1.rho, -f2.rho, sham::equals);
+        REQUIRE_EQUAL_CUSTOM_COMP(f1.rhovel, -f2.rhovel, sham::equals);
+        REQUIRE_EQUAL_CUSTOM_COMP(f1.rhoe, -f2.rhoe, sham::equals);
     }
 
     {
         Tcons f1 = shammath::rusanov_flux_y(state1, state2, 1.6666);
         Tcons f2 = shammath::rusanov_flux_my(state2, state1, 1.6666);
-        _Assert(sham::equals(f1.rho, -f2.rho)) _Assert(sham::equals(f1.rhovel, -f2.rhovel))
-            _Assert(sham::equals(f1.rhoe, -f2.rhoe))
+        REQUIRE_EQUAL_CUSTOM_COMP(f1.rho, -f2.rho, sham::equals);
+        REQUIRE_EQUAL_CUSTOM_COMP(f1.rhovel, -f2.rhovel, sham::equals);
+        REQUIRE_EQUAL_CUSTOM_COMP(f1.rhoe, -f2.rhoe, sham::equals);
     }
 
     {
         Tcons f1 = shammath::rusanov_flux_z(state1, state2, 1.6666);
         Tcons f2 = shammath::rusanov_flux_mz(state2, state1, 1.6666);
-        _Assert(sham::equals(f1.rho, -f2.rho)) _Assert(sham::equals(f1.rhovel, -f2.rhovel))
-            _Assert(sham::equals(f1.rhoe, -f2.rhoe))
+        REQUIRE_EQUAL_CUSTOM_COMP(f1.rho, -f2.rho, sham::equals);
+        REQUIRE_EQUAL_CUSTOM_COMP(f1.rhovel, -f2.rhovel, sham::equals);
+        REQUIRE_EQUAL_CUSTOM_COMP(f1.rhoe, -f2.rhoe, sham::equals);
     }
 
     Tcons state_xp = {1.1_f64, 0.8_f64, f64_3{1.1, 0, 0}};

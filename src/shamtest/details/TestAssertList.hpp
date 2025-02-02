@@ -31,6 +31,10 @@ namespace shamtest::details {
         // define member function here
         // to register asserts
 
+        inline void assert_bool_with_log(std::string assert_name, bool v, std::string log) {
+            asserts.push_back(TestAssert{v, std::move(assert_name), std::move(log)});
+        }
+
         /// Append the source location to the the supplied string to generate a comment
         inline static std::string gen_comment(std::string s, SourceLocation loc) {
             return s + "\n" + loc.format_multiline();

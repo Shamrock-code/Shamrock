@@ -224,11 +224,41 @@ namespace shamtest {
  */
 #define TEX_REPORT(src) shamtest::details::current_test.tex_output += src;
 
+#define STDSTRINGIFY(x) std::string(#x)
+
+// Note : the do-while are here to enforce the presence of a semicolumn after the call to the macros
+
 /// REQUIRE macro alias to _Assert
-#define REQUIRE(a) _Assert(a)
+#define REQUIRE(a)                                                                                 \
+    do {                                                                                           \
+        bool eval = a;                                                                             \
+        if (eval) {                                                                                \
+            shamtest::asserts().assert_bool_with_log(#a, eval, "");                                \
+        } else {                                                                                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                #a,                                                                                \
+                eval,                                                                              \
+                STDSTRINGIFY(a) + " evaluated to false\n"                                          \
+                    + " - location : " + SourceLocation{}.format_one_line());                      \
+        }                                                                                          \
+    } while (0)
 
 /// REQUIRE_EQUAL macro alias to _AssertEqual
-#define REQUIRE_EQUAL(a, b) _AssertEqual(a, b)
+#define REQUIRE_EQUAL(a, b)                                                                        \
+    do {                                                                                           \
+        bool eval               = a == b;                                                          \
+        std::string assert_name = #a " == " #b;                                                    \
+        if (eval) {                                                                                \
+            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
+        } else {                                                                                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                assert_name,                                                                       \
+                eval,                                                                              \
+                "(" + assert_name + ") evaluated to false\n" + shambase::format(#a " = {}", a)     \
+                    + "\n" + shambase::format(#b " = {}", b) + "\n"                                \
+                    + " - location : " + SourceLocation{}.format_one_line());                      \
+        }                                                                                          \
+    } while (0)
 
 /// REQUIRE macro alias to _Assert_throw
 #define REQUIRE_THROW_AS(call, expt_type) _Assert_throw(call, expt_type)

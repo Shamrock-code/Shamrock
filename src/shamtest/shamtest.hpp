@@ -154,16 +154,6 @@ namespace shamtest {
 #define _Assert(a) shamtest::asserts().assert_bool("_Assert(" #a ")", a);
 
 /**
- * @brief Assert macro for test, testing equality between two variables
- *
- * Usage :
- * \code{.cpp}
- * _AssertEqual(a , b)
- * \endcode
- */
-#define _AssertEqual(a, b) shamtest::asserts().assert_equal(#a "==" #b, a, b);
-#undef _AssertEqual
-/**
  * @brief Assert macro for test, testing equality between two variables, with a given precision
  *
  * Usage :

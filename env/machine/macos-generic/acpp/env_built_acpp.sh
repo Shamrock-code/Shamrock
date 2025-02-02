@@ -1,23 +1,24 @@
 # Exports will be provided by the new env script above this line
 # will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
 
-OMP_ROOT=`brew list libomp | grep libomp.a | sed -E "s/\/lib\/.*//"`
+# List of required packages
+required_packages=("cmake" "libomp" "boost" "open-mpi" "tdavidcl/adaptivecpp/adaptivecpp")
 
-export LD_LIBRARY_PATH=$OMP_ROOT/lib:$LD_LIBRARY_PATH
+echo " ---------- Activating sham environment ---------- "
+# Check if each package is installed
+for package in "${required_packages[@]}"; do
+    if ! brew list --versions "$package" &>/dev/null; then
+        echo "Error: $package is not installed. Please run 'brew install $package'."
+        return 1  # Abort sourcing the script and return to the current shell
+    else
+        echo "$package is installed."
+    fi
+done
 
-function setupcompiler {
-    cmake -S $ACPP_GIT_DIR  -B $ACPP_BUILD_DIR \
-        -DOpenMP_ROOT="${OMP_ROOT}" \
-        -DWITH_SSCP_COMPILER=OFF \
-        -DWITH_OPENCL_BACKEND=OFF \
-        -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR}
-    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
-}
+echo "All required packages are installed."
 
-function updatecompiler {
-    (cd ${ACPP_GIT_DIR} && git pull)
-    setupcompiler
-}
+ACPP_ROOT=`brew list adaptivecpp | grep acpp-info | sed -E "s/\/bin\/.*//"`
+echo " ------------- Environment activated ------------- "
 
 function shamconfigure {
     cmake \
@@ -25,9 +26,9 @@ function shamconfigure {
         -B $BUILD_DIR \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=ACPPDirect \
-        -DCMAKE_CXX_COMPILER="${ACPP_INSTALL_DIR}/bin/acpp" \
+        -DCMAKE_CXX_COMPILER="acpp" \
         -DCMAKE_CXX_FLAGS="-I$OMP_ROOT/include" \
-        -DACPP_PATH="${ACPP_INSTALL_DIR}" \
+        -DACPP_PATH="${ACPP_ROOT}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes \
         "${CMAKE_OPT[@]}"

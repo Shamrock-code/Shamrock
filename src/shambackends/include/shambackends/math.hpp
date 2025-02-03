@@ -740,7 +740,7 @@ namespace sham {
     }
 
     /**
-     * @brief inverse saturated (positive numbers only)
+     * @brief inverse saturated
      *
      * Computes the inverse of v if |v| < minsat return satval
      *

@@ -1,16 +1,16 @@
 import argparse
 import os
+from utils.oscmd import *
 import utils.acpp
 import utils.sysinfo
 import utils.envscript
+import utils.cuda_arch
+import utils.amd_arch
 from utils.setuparg import *
-from utils.oscmd import *
 
-NAME = "MacOS generic AdaptiveCpp"
-PATH = "machine/macos-generic/acpp"
+NAME = "Conda AdaptiveCpp"
+PATH = "machine/conda/acpp"
 
-def is_acpp_already_installed(installfolder):
-    return os.path.isfile(installfolder + "/bin/acpp")
 
 def setup(arg : SetupArg):
     argv = arg.argv
@@ -32,24 +32,26 @@ def setup(arg : SetupArg):
 
     args = parser.parse_args(argv)
 
+    acpp_target = utils.acpp.get_acpp_target_env(args)
+    if (acpp_target == None):
+        print("-- target not specified using acpp default")
+    else:
+        print("-- setting acpp target to :",acpp_target)
+
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
-
-    ACPP_GIT_DIR = builddir+"/.env/acpp-git"
-    ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
-    ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
-
-    run_cmd("mkdir -p "+builddir)
 
     ENV_SCRIPT_PATH = builddir+"/activate"
 
     ENV_SCRIPT_HEADER = ""
     ENV_SCRIPT_HEADER += "export SHAMROCK_DIR="+shamrockdir+"\n"
     ENV_SCRIPT_HEADER += "export BUILD_DIR="+builddir+"\n"
+
+
     ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
+    ENV_SCRIPT_HEADER += "export MAKE_EXEC=ninja\n"
     ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
+
+    run_cmd("mkdir -p "+builddir)
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
@@ -59,15 +61,28 @@ def setup(arg : SetupArg):
         cmake_extra_args += " -DBUILD_PYLIB=True"
         run_cmd("cp "+os.path.abspath(os.path.join(cur_file, "../"+"_pysetup.py")) +" "+ builddir+"/setup.py")
 
-    ENV_SCRIPT_HEADER += "export CMAKE_OPT=("+cmake_extra_args+")\n"
-    ENV_SCRIPT_HEADER += "export SHAMROCK_BUILD_TYPE=\""+cmake_build_type+"\"\n"
+    if lib_mode == "shared":
+        cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=On"
+    elif lib_mode == "object":
+        cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=Off"
 
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-    source_file = "env_built_acpp.sh"
+    ENV_SCRIPT_HEADER += "export CMAKE_OPT=("+cmake_extra_args+")\n"
+
+    ENV_SCRIPT_HEADER += "export SHAMROCK_BUILD_TYPE=\""+cmake_build_type+"\"\n"
+    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='"+acpp_target+"'\"\n"
+
+    source_file = "conda_acpp_env.sh"
     source_path = os.path.abspath(os.path.join(cur_file, "../"+source_file))
+
+    conda_env_file = "environment.yml"
+    conda_env_path = os.path.abspath(os.path.join(cur_file, "../"+conda_env_file))
 
     utils.envscript.write_env_file(
         source_path = source_path,
         header = ENV_SCRIPT_HEADER,
         path_write = ENV_SCRIPT_PATH)
+
+    utils.envscript.write_env_file(
+        source_path = conda_env_path,
+        header = "",
+        path_write = builddir+"/environment.yml")

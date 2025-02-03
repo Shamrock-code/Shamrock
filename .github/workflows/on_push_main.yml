@@ -27,6 +27,11 @@ jobs:
     name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang.yml
 
+  shamrock_linux_acpp_conda:
+    needs: [src_check]
+    name: Tests
+    uses: ./.github/workflows/shamrock-acpp-conda.yml
+
   shamrock_linux_acpp_pylib:
     needs: [src_check]
     name: Tests
@@ -123,7 +128,7 @@ jobs:
       #    destination: ./_site
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./
 
@@ -147,7 +152,7 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
 
 
 

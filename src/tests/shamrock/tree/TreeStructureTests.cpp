@@ -56,6 +56,6 @@ TestStart(Unittest, "shamrock/tree/TreeStructure::serialize", teststructureseria
 
         TreeStruct outser = TreeStruct::deserialize(ser2);
 
-        shamtest::asserts().assert_bool("input match out", outser == strc);
+        REQUIRE_NAMED("input match out", outser == strc);
     }
 }

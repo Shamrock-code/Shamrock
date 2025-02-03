@@ -83,10 +83,10 @@ TestStart(Unittest, "shambackends/DeviceBuffer:copy_to_stdvec", devbuf_testcopy_
 
     std::vector<T> v2 = b.copy_to_stdvec();
 
-    _AssertEqual(b.get_size(), v1.size());
-    _AssertEqual(v2.size(), v1.size());
+    REQUIRE_EQUAL(b.get_size(), v1.size());
+    REQUIRE_EQUAL(v2.size(), v1.size());
     for (size_t i = 0; i < b.get_size(); ++i) {
-        _AssertEqual(v2[i], v1[i]);
+        REQUIRE_EQUAL(v2[i], v1[i]);
     }
 }
 
@@ -113,8 +113,8 @@ TestStart(
 
     sycl::buffer<T> b2 = b.copy_to_sycl_buffer();
 
-    _AssertEqual(b1.size(), b2.size());
-    _AssertEqual(b.get_size(), b1.size());
+    REQUIRE_EQUAL(b1.size(), b2.size());
+    REQUIRE_EQUAL(b.get_size(), b1.size());
 
     shamalgs::reduction::equals(q, b1, b2);
 }
@@ -131,11 +131,11 @@ TestStart(Unittest, "shambackends/DeviceBuffer:fill", DeviceBuffer_fill1, 1) {
 
     {
         std::vector<int> b = buffer.copy_to_stdvec();
-        _AssertEqual(b.size(), 10);
+        REQUIRE_EQUAL(b.size(), 10);
 
         // Check that the buffer is filled with the correct value
         for (int i = 0; i < 10; i++) {
-            _AssertEqual(b[i], 5);
+            REQUIRE_EQUAL(b[i], 5);
         }
     }
 }
@@ -160,9 +160,9 @@ TestStart(Unittest, "shambackends/DeviceBuffer:fill(with count)", DeviceBuffer_f
         // Check that the buffer is filled with the correct value
         for (int i = 0; i < 10; i++) {
             if (i >= 2 && i < 7) {
-                _AssertEqual(b[i], 5);
+                REQUIRE_EQUAL(b[i], 5);
             } else {
-                _AssertEqual(b[i], 0);
+                REQUIRE_EQUAL(b[i], 0);
             }
         }
     }
@@ -176,7 +176,7 @@ TestStart(Unittest, "shambackends/DeviceBuffer:fill(exception)", DeviceBuffer_fi
     sham::DeviceBuffer<int> buffer(10, dev_sched);
 
     // Try to fill the buffer with value 5, starting from index 15, with count 5
-    _Assert_throw(buffer.fill(5, {15, 20}), std::invalid_argument);
+    REQUIRE_EXCEPTION_THROW(buffer.fill(5, {15, 20}), std::invalid_argument);
 }
 
 TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) {

@@ -14,6 +14,6 @@ TestStart(Unittest, "shambase/constants", checkconstantmatchsycl, 1) {
 
     using namespace shambase::constants;
 
-    _AssertFloatEqual(pi<f32>, 4 * sycl::atan(unity<f32>), 1e-25);
-    _AssertFloatEqual(pi<f64>, 4 * sycl::atan(unity<f64>), 1e-25);
+    REQUIRE_FLOAT_EQUAL(pi<f32>, 4 * sycl::atan(unity<f32>), 1e-25);
+    REQUIRE_FLOAT_EQUAL(pi<f64>, 4 * sycl::atan(unity<f64>), 1e-25);
 }

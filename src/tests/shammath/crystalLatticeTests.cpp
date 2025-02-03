@@ -113,7 +113,7 @@ TestStart(
         i32 ymax = shamalgs::random::mock_value(eng, 0, 7);
         i32 zmax = shamalgs::random::mock_value(eng, 0, 7);
 
-        shamtest ::asserts().assert_bool(
+        REQUIRE_NAMED(
             shambase::format(
                 "check periodicity : ({} {} {}) ({} {} {}) ({} {} {}) ",
                 xmin,
@@ -153,7 +153,7 @@ TestStart(
             = shammath::LatticeHCP<f64_3>::nearest_periodic_box_indices(
                 {xmin, ymin, zmin}, {xmax, ymax, zmax});
 
-        shamtest ::asserts().assert_bool(
+        REQUIRE_NAMED(
             shambase::format(
                 "check periodicity : ({} {} {}) ({} {} {}) ({} {} {})",
                 xmin,

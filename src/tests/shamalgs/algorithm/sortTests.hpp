@@ -122,7 +122,10 @@ template<class Tkey, class Tval>
 struct TestSortByKeyUSM {
 
     using vFunctionCall = void (*)(
-        sham::DeviceScheduler_ptr &, sham::DeviceBuffer<Tkey> &, sham::DeviceBuffer<Tval> &, u32);
+        const sham::DeviceScheduler_ptr &,
+        sham::DeviceBuffer<Tkey> &,
+        sham::DeviceBuffer<Tval> &,
+        u32);
 
     vFunctionCall fct;
 
@@ -237,7 +240,7 @@ struct TestIndexRemap {
 template<class T>
 struct TestIndexRemapUSM {
     using vFunctionCall = void (*)(
-        sham::DeviceScheduler_ptr &,
+        const sham::DeviceScheduler_ptr &,
         sham::DeviceBuffer<T> &,
         sham::DeviceBuffer<T> &,
         sham::DeviceBuffer<u32> &,

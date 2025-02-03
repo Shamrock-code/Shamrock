@@ -29,7 +29,7 @@ namespace shamalgs::algorithm::details {
 
     template<class Tkey, class Tval, u32 MaxStencilSize>
     void sort_by_key_bitonic_updated_usm(
-        sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<Tkey> &buf_key,
         sham::DeviceBuffer<Tval> &buf_values,
         u32 len);

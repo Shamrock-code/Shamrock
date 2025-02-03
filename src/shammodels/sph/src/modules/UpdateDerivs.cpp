@@ -180,7 +180,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tvec v_ab       = vxyz_a - vxyz_b;
                     const Tscal u_b = u[id_b];
 
-                    Tvec r_ab_unit = dr * sham::inv_sat(rab);
+                    Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
 
                     Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
                     Tscal P_b   = pressure[id_b];
@@ -368,7 +368,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                     Tvec v_ab       = vxyz_a - vxyz_b;
                     const Tscal u_b = u[id_b];
 
-                    Tvec r_ab_unit = dr * sham::inv_sat(rab);
+                    Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
 
                     Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
                     Tscal P_b   = pressure[id_b];

@@ -725,7 +725,7 @@ namespace sham {
     }
 
     /**
-     * @brief inverse saturated
+     * @brief inverse saturated (positive numbers only)
      *
      * Computes the inverse of v if v < minsat return satval
      *
@@ -735,8 +735,23 @@ namespace sham {
      * @return T
      */
     template<class T>
-    inline T inv_sat(T v, T minvsat = T{1e-9}, T satval = T{0.}) noexcept {
+    inline T inv_sat_positive(T v, T minvsat = T{1e-9}, T satval = T{0.}) noexcept {
         return (v < minvsat) ? satval : T{1.} / v;
+    }
+
+    /**
+     * @brief inverse saturated (positive numbers only)
+     *
+     * Computes the inverse of v if |v| < minsat return satval
+     *
+     * @param v
+     * @param minvsat minimum value below which the inverse is not computed (default 1e-9)
+     * @param satval saturation value (default 0)
+     * @return T
+     */
+    template<class T>
+    inline T inv_sat(T v, T minvsat = T{1e-9}, T satval = T{0.}) noexcept {
+        return (sham::abs(v) < minvsat) ? satval : T{1.} / v;
     }
 
 } // namespace sham

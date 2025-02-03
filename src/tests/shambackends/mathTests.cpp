@@ -38,4 +38,31 @@ TestStart(Unittest, "shambackends/math.hpp:inv_sat", shambackendsmathinv_sat, 1)
     REQUIRE_EQUAL(sham::inv_sat<f64>(100._f64), 1._f64 / 100._f64);
     REQUIRE_EQUAL(sham::inv_sat<f64>(1.e-9_f64), 1._f64 / 1.e-9_f64);
     REQUIRE_EQUAL(sham::inv_sat<f64>(1.e-10_f64), 0._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-1._f64), -1._f64 / 1._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-2._f64), -1._f64 / 2._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-3._f64), -1._f64 / 3._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-4._f64), -1._f64 / 4._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-5._f64), -1._f64 / 5._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-6._f64), -1._f64 / 6._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-7._f64), -1._f64 / 7._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-100._f64), -1._f64 / 100._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-1.e-9_f64), -1._f64 / 1.e-9_f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-1.e-10_f64), 0._f64);
+}
+
+TestStart(Unittest, "shambackends/math.hpp:inv_sat_positive", shambackendsmathinv_satpos, 1) {
+
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(1._f64), 1._f64 / 1._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(2._f64), 1._f64 / 2._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(3._f64), 1._f64 / 3._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(4._f64), 1._f64 / 4._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(5._f64), 1._f64 / 5._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(6._f64), 1._f64 / 6._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(7._f64), 1._f64 / 7._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(100._f64), 1._f64 / 100._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(1.e-9_f64), 1._f64 / 1.e-9_f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(1.e-10_f64), 0._f64);
 }

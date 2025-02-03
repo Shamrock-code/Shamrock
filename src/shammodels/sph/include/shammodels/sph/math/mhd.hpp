@@ -498,7 +498,7 @@ namespace shamrock::spmhd {
 
         using namespace shamrock::sph;
         Tvec v_ab      = vxyz_a - vxyz_b;
-        Tvec r_ab_unit = dr * sham::inv_sat(rab);
+        Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
 
         Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
         Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);

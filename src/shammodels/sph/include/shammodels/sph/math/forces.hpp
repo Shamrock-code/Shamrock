@@ -123,7 +123,7 @@ namespace shamrock::sph {
         Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs, Tscal vsig, Tscal v_scal_rhat) {
         Tscal q_av_d;
         Tscal rho1   = 1. / rho;
-        Tscal rabinv = sham::inv_sat(rab);
+        Tscal rabinv = sham::inv_sat_positive(rab);
 
         Tscal prefact = -Tscal(0.5) * rho * sham::abs(rabinv) * h;
 
@@ -215,7 +215,7 @@ namespace shamrock::sph {
 
         Tvec v_ab = vxyz_a - vxyz_b;
 
-        Tvec r_ab_unit = dr * sham::inv_sat(rab);
+        Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
 
         // f32 P_b     = cs * cs * rho_b;
         Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);

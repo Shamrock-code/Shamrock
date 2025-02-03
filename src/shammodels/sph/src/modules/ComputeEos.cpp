@@ -23,6 +23,72 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"
 
+template<class T>
+struct PatchDataFieldSpan{
+
+    using value_type = T;
+
+    PatchDataField<T> &field;
+    u32 nvar;
+
+    u32 begin;
+    u32 len;
+
+    PatchDataFieldSpan(PatchDataField<T> &field, u32 begin, u32 len) : field(field), begin(begin), len(len), nvar(field.get_nvar()) {
+
+        if(len+begin > field.get_obj_cnt()){
+            shambase::throw_with_loc<std::runtime_error>("span out of bounds");
+        }
+
+    }
+
+    struct accessed_read_only {
+        const T *ptr;
+
+        T operator()(u32 i, u32 loc_val,u32 nvar) const {
+            return ptr[i*nvar + loc_val];
+        }
+    };
+
+    struct accessed_read_write {
+        T *ptr;
+
+        T operator()(u32 i, u32 loc_val,u32 nvar) const {
+            return ptr[i*nvar + loc_val];
+        }
+    };
+
+    accessed_read_only get_read_access(sham::EventList &depends_list) {
+        auto ptr = field.get_buf().get_read_access(depends_list);
+        return accessed_read_only{ptr + begin*nvar};
+    }
+
+    accessed_read_write get_write_access(sham::EventList &depends_list) {
+        auto ptr = field.get_buf().get_read_write_access(depends_list);
+        return accessed_read_write{ptr + begin*nvar};
+    }
+
+    void complete_event_state(sycl::event e) { field.get_buf().complete_event_state(e);}
+
+};
+
+template<class T>
+struct DistributedFieldRef{
+
+    shambase::DistributedData<std::reference_wrapper<PatchDataFieldSpan<T>>> fields;
+
+    template<class T2>
+    static DistributedFieldRef<T> from(std::function<std::reference_wrapper<PatchDataFieldSpan<T>>(u64 i, T2 &)> mapper, shambase::DistributedData<T2>& other){
+
+        DistributedFieldRef<T> ret;
+        ret.fields = other.template map<std::reference_wrapper<PatchDataFieldSpan<T>>>(mapper);
+        return ret;
+    }
+
+};
+
+
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 
@@ -59,6 +125,13 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         = std::get_if<SolverEOS_Isothermal>(&solver_config.eos_config.config)) {
 
         using EOS = shamphys::EOS_Isothermal<Tscal>;
+
+        DistributedFieldRef<Tscal> pressure_field = DistributedFieldRef<Tscal>::from(
+            [&](u64 id, EOS &eos) {
+                return std::cref(storage.pressure.get().get_field(id));
+            },
+            storage.pressure.get()
+        );
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
             sham::DeviceBuffer<Tscal> &buf_P  = storage.pressure.get().get_buf_check(id);

@@ -17,7 +17,10 @@
  */
 
 #include "shambase/optional.hpp"
+#include "shambase/type_traits.hpp"
 #include "shambackends/DeviceBuffer.hpp"
+#include <shambackends/sycl.hpp>
+#include <functional>
 #include <optional>
 
 namespace sham {
@@ -295,6 +298,64 @@ namespace sham {
             in.complete_event_state(e);
             in_out.complete_event_state(e);
         }
+
+        /// internal implementation of typed_index_kernel_call
+        template<class index_t, class RefIn, class RefOut, class... Targs, class Functor>
+        void typed_index_kernel_call_handle(
+            sham::DeviceQueue &q,
+            RefIn in,
+            RefOut in_out,
+            index_t group_size,
+            index_t nthreads,
+            Functor &&func,
+            Targs... args) {
+
+            if (nthreads == 0) {
+                shambase::throw_with_loc<std::runtime_error>("kernel call with : n == 0");
+            }
+
+            if (group_size == 0) {
+                shambase::throw_with_loc<std::runtime_error>("kernel call with : group_size == 0");
+            }
+
+            if (nthreads % group_size != 0) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "kernel call with : nthreads % group_size != 0");
+            }
+
+            StackEntry stack_loc{};
+            sham::EventList depends_list;
+
+            auto acc_in     = in.get_read_access(depends_list);
+            auto acc_in_out = in_out.get_write_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                auto kernel = std::apply(
+                    [&](auto &...__acc_in) {
+                        return std::apply(
+                            [&](auto &...__acc_in_out) {
+                                shambase::check_functor_signature_deduce_noreturn_add_t<
+                                    sycl::handler &>(func, __acc_in..., __acc_in_out..., args...);
+
+                                return func(cgh, __acc_in..., __acc_in_out..., args...);
+                            },
+                            acc_in_out);
+                    },
+                    acc_in);
+
+                cgh.parallel_for(sycl::nd_range<1>{nthreads, group_size}, [=](sycl::nd_item<1> id) {
+                    index_t local_id      = id.get_local_id(0);
+                    index_t group_tile_id = id.get_group_linear_id();
+
+                    shambase::check_functor_signature_deduce<void>(kernel, group_tile_id, local_id);
+
+                    kernel(group_tile_id, local_id);
+                });
+            });
+
+            in.complete_event_state(e);
+            in_out.complete_event_state(e);
+        }
     } // namespace details
 
     /**
@@ -474,6 +535,33 @@ namespace sham {
         sham::DeviceQueue &q, RefIn in, RefOut in_out, u64 n, Functor &&func, Targs... args) {
         details::typed_index_kernel_call<u64, RefIn, RefOut>(
             q, in, in_out, n, std::forward<Functor>(func), args...);
+    }
+
+    template<class RefIn, class RefOut, class... Targs, class Functor>
+    void kernel_call_handle(
+        sham::DeviceQueue &q,
+        RefIn in,
+        RefOut in_out,
+        u32 group_size,
+        u32 nthreads,
+        Functor &&func,
+        Targs... args) {
+        details::typed_index_kernel_call_handle<u32, RefIn, RefOut>(
+            q, in, in_out, group_size, nthreads, std::forward<Functor>(func), args...);
+    }
+
+    /// u64 indexed variant of kernel_call
+    template<class RefIn, class RefOut, class... Targs, class Functor>
+    void kernel_call_handle_u64(
+        sham::DeviceQueue &q,
+        RefIn in,
+        RefOut in_out,
+        u64 group_size,
+        u64 nthreads,
+        Functor &&func,
+        Targs... args) {
+        details::typed_index_kernel_call_handle<u64, RefIn, RefOut>(
+            q, in, in_out, group_size, nthreads, std::forward<Functor>(func), args...);
     }
 
 } // namespace sham

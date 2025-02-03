@@ -16,6 +16,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
@@ -65,29 +66,19 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
             sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(id);
             sham::DeviceBuffer<Tscal> &buf_h  = mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf);
 
-            sham::EventList depends_list;
-
-            auto P  = buf_P.get_write_access(depends_list);
-            auto cs = buf_cs.get_write_access(depends_list);
-            auto h  = buf_h.get_read_access(depends_list);
-
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                Tscal pmass  = gpart_mass;
-                Tscal cs_cfg = eos_config->cs;
-
-                cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_h},
+                sham::MultiRef{buf_P, buf_cs},
+                mpdat.total_elements,
+                [pmass = gpart_mass, cs_cfg = eos_config->cs](
+                    u32 i, const Tscal *__restrict h, Tscal *__restrict P, Tscal *__restrict cs) {
                     using namespace shamrock::sph;
-
-                    Tscal rho_a = rho_h(pmass, h[item], Kernel::hfactd);
+                    Tscal rho_a = rho_h(pmass, h[i], Kernel::hfactd);
                     Tscal P_a   = EOS::pressure(cs_cfg, rho_a);
-                    P[item]     = P_a;
-                    cs[item]    = cs_cfg;
+                    P[i]        = P_a;
+                    cs[i]       = cs_cfg;
                 });
-            });
-
-            buf_P.complete_event_state(e);
-            buf_h.complete_event_state(e);
-            buf_cs.complete_event_state(e);
         });
     } else if (
         SolverEOS_Adiabatic *eos_config
@@ -101,32 +92,24 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf);
             sham::DeviceBuffer<Tscal> &buf_h = mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf);
 
-            sham::EventList depends_list;
-
-            auto P  = buf_P.get_write_access(depends_list);
-            auto cs = buf_cs.get_write_access(depends_list);
-            auto h  = buf_h.get_read_access(depends_list);
-            auto U  = buf_uint.get_read_access(depends_list);
-
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                Tscal pmass = gpart_mass;
-                Tscal gamma = eos_config->gamma;
-
-                cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_h, buf_uint},
+                sham::MultiRef{buf_P, buf_cs},
+                mpdat.total_elements,
+                [pmass = gpart_mass, gamma = eos_config->gamma](
+                    u32 i,
+                    const Tscal *__restrict h,
+                    const Tscal *__restrict U,
+                    Tscal *__restrict P,
+                    Tscal *__restrict cs) {
                     using namespace shamrock::sph;
-
-                    Tscal rho_a = rho_h(pmass, h[item], Kernel::hfactd);
-                    Tscal P_a   = EOS::pressure(gamma, rho_a, U[item]);
+                    Tscal rho_a = rho_h(pmass, h[i], Kernel::hfactd);
+                    Tscal P_a   = EOS::pressure(gamma, rho_a, U[i]);
                     Tscal cs_a  = EOS::cs_from_p(gamma, rho_a, P_a);
-                    P[item]     = P_a;
-                    cs[item]    = cs_a;
+                    P[i]        = P_a;
+                    cs[i]       = cs_a;
                 });
-            });
-
-            buf_P.complete_event_state(e);
-            buf_cs.complete_event_state(e);
-            buf_h.complete_event_state(e);
-            buf_uint.complete_event_state(e);
         });
 
     } else if (
@@ -145,35 +128,28 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
             sham::DeviceBuffer<Tscal> &buf_cs0
                 = mpdat.pdat.get_field_buf_ref<Tscal>(isoundspeed_interf);
 
-            sham::EventList depends_list;
-
-            auto P   = buf_P.get_write_access(depends_list);
-            auto cs  = buf_cs.get_write_access(depends_list);
-            auto h   = buf_h.get_read_access(depends_list);
-            auto U   = buf_uint.get_read_access(depends_list);
-            auto cs0 = buf_cs0.get_read_access(depends_list);
-
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                Tscal pmass = gpart_mass;
-
-                cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_h, buf_uint, buf_cs0},
+                sham::MultiRef{buf_P, buf_cs},
+                mpdat.total_elements,
+                [pmass = gpart_mass](
+                    u32 i,
+                    const Tscal *__restrict h,
+                    const Tscal *__restrict U,
+                    const Tscal *__restrict cs0,
+                    Tscal *__restrict P,
+                    Tscal *__restrict cs) {
                     using namespace shamrock::sph;
 
-                    Tscal cs_out = cs0[item];
-                    Tscal rho_a  = rho_h(pmass, h[item], Kernel::hfactd);
+                    Tscal cs_out = cs0[i];
+                    Tscal rho_a  = rho_h(pmass, h[i], Kernel::hfactd);
 
                     Tscal P_a = EOS::pressure_from_cs(cs_out * cs_out, rho_a);
 
-                    P[item]  = P_a;
-                    cs[item] = cs_out;
+                    P[i]  = P_a;
+                    cs[i] = cs_out;
                 });
-            });
-
-            buf_P.complete_event_state(e);
-            buf_cs.complete_event_state(e);
-            buf_h.complete_event_state(e);
-            buf_uint.complete_event_state(e);
-            buf_cs0.complete_event_state(e);
         });
 
     } else if (
@@ -192,42 +168,37 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf);
             sham::DeviceBuffer<Tscal> &buf_h = mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf);
 
-            sham::EventList depends_list;
+            Tscal cs0   = eos_config->cs0;
+            Tscal r0sq  = eos_config->r0 * eos_config->r0;
+            Tscal mq    = eos_config->q;
+            Tscal pmass = gpart_mass;
 
-            auto P   = buf_P.get_write_access(depends_list);
-            auto cs  = buf_cs.get_write_access(depends_list);
-            auto h   = buf_h.get_read_access(depends_list);
-            auto U   = buf_uint.get_read_access(depends_list);
-            auto xyz = buf_xyz.get_read_access(depends_list);
-
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                Tscal cs0   = eos_config->cs0;
-                Tscal mq    = -eos_config->q;
-                Tscal r0sq  = eos_config->r0 * eos_config->r0;
-                Tscal pmass = gpart_mass;
-
-                cgh.parallel_for(sycl::range<1>{mpdat.total_elements}, [=](sycl::item<1> item) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_h, buf_uint, buf_xyz},
+                sham::MultiRef{buf_P, buf_cs},
+                mpdat.total_elements,
+                [cs0, r0sq, mq, pmass](
+                    u32 i,
+                    const Tscal *__restrict h,
+                    const Tscal *__restrict U,
+                    const Tvec *__restrict xyz,
+                    Tscal *__restrict P,
+                    Tscal *__restrict cs) {
                     using namespace shamrock::sph;
 
-                    Tvec R = xyz[item];
+                    Tvec R = xyz[i];
 
                     Tscal Rsq    = sycl::dot(R, R);
                     Tscal cs_sq  = EOS::soundspeed_sq(cs0 * cs0, Rsq / r0sq, mq);
                     Tscal cs_out = sycl::sqrt(cs_sq);
-                    Tscal rho_a  = rho_h(pmass, h[item], Kernel::hfactd);
+                    Tscal rho_a  = rho_h(pmass, h[i], Kernel::hfactd);
 
                     Tscal P_a = EOS::pressure_from_cs(cs_out * cs_out, rho_a);
 
-                    P[item]  = P_a;
-                    cs[item] = cs_out;
+                    P[i]  = P_a;
+                    cs[i] = cs_out;
                 });
-            });
-
-            buf_P.complete_event_state(e);
-            buf_cs.complete_event_state(e);
-            buf_h.complete_event_state(e);
-            buf_uint.complete_event_state(e);
-            buf_xyz.complete_event_state(e);
         });
 
     } else if (
@@ -261,6 +232,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
             sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.pdat.get_field_buf_ref<Tscal>(iuint_interf);
             sham::DeviceBuffer<Tscal> &buf_h = mpdat.pdat.get_field_buf_ref<Tscal>(ihpart_interf);
+
+            // TODO: Use the complex kernel call when implemented
 
             sham::EventList depends_list;
 

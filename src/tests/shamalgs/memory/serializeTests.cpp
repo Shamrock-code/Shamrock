@@ -20,7 +20,7 @@
 template<class T>
 inline void check_buf(std::string prefix, sycl::buffer<T> &b1, sycl::buffer<T> &b2) {
 
-    shamtest::asserts().assert_equal(prefix + std::string("same size"), b1.size(), b2.size());
+    REQUIRE_EQUAL_NAMED(prefix + std::string("same size"), b1.size(), b2.size());
 
     {
         sycl::host_accessor acc1{b1};
@@ -37,7 +37,7 @@ inline void check_buf(std::string prefix, sycl::buffer<T> &b1, sycl::buffer<T> &
         }
 
         if (eq) {
-            shamtest::asserts().assert_bool("same content", eq);
+            REQUIRE_NAMED("same content", eq);
         } else {
             shamtest::asserts().assert_add_comment("same content", eq, id_err_list);
         }
@@ -94,8 +94,8 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
         // shamalgs::memory::print_buf(buf_comp1, n1, 16, "{} ");
         // shamalgs::memory::print_buf(buf1, n1, 16, "{} ");
 
-        shamtest::asserts().assert_bool("same", sham::equals(val, test_val));
-        shamtest::asserts().assert_bool("same", test_str == recv_str);
+        REQUIRE_NAMED("same", sham::equals(val, test_val));
+        REQUIRE_NAMED("same", test_str == recv_str);
         check_buf("buf 1", buf_comp1, buf1);
         check_buf("buf 2", buf_comp2, buf2);
     }

@@ -42,7 +42,7 @@ TestStart(Unittest, "patchdata.cpp/patch_data_check_match", patch_data_check_mat
 
     PatchData d_check = patchdata_gen_dummy_data(pdl, eng);
 
-    shamtest::asserts().assert_bool("reflexivity", patch_data_check_match(d_check, d_check));
+    REQUIRE_NAMED("reflexivity", patch_data_check_match(d_check, d_check));
 }
 
 /*

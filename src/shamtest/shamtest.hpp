@@ -155,6 +155,125 @@ namespace shamtest {
 
 // Note : the do-while are here to enforce the presence of a semicolumn after the call to the macros
 
+namespace shamtest::details {
+    /**
+     *@brief Format a string that is an assert name
+     *
+     * If the string is empty, returns an empty string
+     * Otherwise, returns the string with " | " appended
+     */
+    inline std::string format_assert_name(std::string s) {
+        if (s == "") {
+            return "";
+        }
+        return "\"" + s + "\" : ";
+    }
+} // namespace shamtest::details
+
+/**
+ * @brief Assert macro for test
+ * write the conditional, the name of the assert will be the condition
+ * Named variant
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_NAMED("assert name",a == 0)
+ * \endcode
+ */
+#define REQUIRE_NAMED(name, a)                                                                     \
+    do {                                                                                           \
+        using namespace shamtest::details;                                                         \
+        bool eval               = a;                                                               \
+        std::string assert_name = format_assert_name(name) + #a;                                   \
+        if (eval) {                                                                                \
+            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
+        } else {                                                                                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                assert_name,                                                                       \
+                eval,                                                                              \
+                STDSTRINGIFY(a) + " evaluated to false\n\n"                                        \
+                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+        }                                                                                          \
+    } while (0)
+
+/**
+ * @brief Assert macro for test to test for equalities using a custom comparison function
+ * Named variant
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_EQUAL_CUSTOM_COMP_NAMED("assert name",a , b)
+ * \endcode
+ */
+#define REQUIRE_EQUAL_CUSTOM_COMP_NAMED(name, a, b, comp)                                          \
+    do {                                                                                           \
+        using namespace shamtest::details;                                                         \
+        bool eval               = comp(a, b);                                                      \
+        std::string assert_name = format_assert_name(name) + #a " == " #b;                         \
+        if (eval) {                                                                                \
+            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
+        } else {                                                                                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                assert_name,                                                                       \
+                eval,                                                                              \
+                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #a " = {}", a)   \
+                    + "\n" + shambase::format(" -> " #b " = {}", b) + "\n"                         \
+                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+        }                                                                                          \
+    } while (0)
+
+/**
+ * @brief Assert macro for test to test for equalities
+ * Named variant
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_EQUAL_NAMED("assert_name", a , b)
+ * \endcode
+ */
+#define REQUIRE_EQUAL_NAMED(name, a, b)                                                            \
+    REQUIRE_EQUAL_CUSTOM_COMP_NAMED(name, a, b, [](const auto &p1, const auto &p2) {               \
+        return p1 == p2;                                                                           \
+    })
+
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision and
+ * a custom distance function
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("assert name",a , b, 1e-9, sycl::lenght)
+ * \endcode
+ */
+#define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, a, b, prec, dist)                              \
+    do {                                                                                           \
+        using namespace shamtest::details;                                                         \
+        bool eval               = dist((a) - (b)) < prec;                                          \
+        std::string assert_name = format_assert_name(name) + #dist "(" #a ") - (" #b ") < " #prec; \
+        if (eval) {                                                                                \
+            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
+        } else {                                                                                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                assert_name,                                                                       \
+                eval,                                                                              \
+                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #a " = {}", a)   \
+                    + "\n" + shambase::format(" -> " #b " = {}", b) + "\n"                         \
+                    + shambase::format(" -> " #prec " = {}", prec) + "\n"                          \
+                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+        }                                                                                          \
+    } while (0)
+
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_FLOAT_EQUAL(a , b, 1e-9)
+ * \endcode
+ */
+#define REQUIRE_FLOAT_EQUAL_NAMED(name, a, b, prec)                                                \
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, a, b, prec, std::abs)
+
 /**
  * @brief Assert macro for test
  * write the conditional, the name of the assert will be the condition
@@ -164,19 +283,7 @@ namespace shamtest {
  * REQUIRE(a == 0)
  * \endcode
  */
-#define REQUIRE(a)                                                                                 \
-    do {                                                                                           \
-        bool eval = a;                                                                             \
-        if (eval) {                                                                                \
-            shamtest::asserts().assert_bool_with_log(#a, eval, "");                                \
-        } else {                                                                                   \
-            shamtest::asserts().assert_bool_with_log(                                              \
-                #a,                                                                                \
-                eval,                                                                              \
-                STDSTRINGIFY(a) + " evaluated to false\n\n"                                        \
-                    + " -> location : " + SourceLocation{}.format_one_line());                     \
-        }                                                                                          \
-    } while (0)
+#define REQUIRE(a) REQUIRE_NAMED("", a)
 
 /**
  * @brief Assert macro for test to test for equalities using a custom comparison function
@@ -186,35 +293,40 @@ namespace shamtest {
  * REQUIRE_EQUAL_CUSTOM_COMP(a , b)
  * \endcode
  */
-#define REQUIRE_EQUAL_CUSTOM_COMP(a, b, comp)                                                      \
-    do {                                                                                           \
-        bool eval               = comp(a, b);                                                      \
-        std::string assert_name = #a " == " #b;                                                    \
-        if (eval) {                                                                                \
-            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
-        } else {                                                                                   \
-            shamtest::asserts().assert_bool_with_log(                                              \
-                assert_name,                                                                       \
-                eval,                                                                              \
-                "(" + assert_name + ") evaluated to false\n\n"                                     \
-                    + shambase::format(" -> " #a " = {}", a) + "\n"                                \
-                    + shambase::format(" -> " #b " = {}", b) + "\n"                                \
-                    + " -> location : " + SourceLocation{}.format_one_line());                     \
-        }                                                                                          \
-    } while (0)
+#define REQUIRE_EQUAL_CUSTOM_COMP(a, b, comp) REQUIRE_EQUAL_CUSTOM_COMP_NAMED("", a, b, comp)
 
 /**
  * @brief Assert macro for test to test for equalities
  *
  * Usage :
  * \code{.cpp}
- * REQUIRE(a == 0)
+ * REQUIRE_EQUAL(a , b)
  * \endcode
  */
-#define REQUIRE_EQUAL(a, b)                                                                        \
-    REQUIRE_EQUAL_CUSTOM_COMP(a, b, [](const auto &p1, const auto &p2) {                           \
-        return p1 == p2;                                                                           \
-    })
+#define REQUIRE_EQUAL(a, b) REQUIRE_EQUAL_NAMED("", a, b)
+
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision and
+ * a custom distance function
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a , b, 1e-9, sycl::lenght)
+ * \endcode
+ */
+#define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(name, a, b, prec, dist)                                    \
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("", a, b, prec, dist)
+
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_FLOAT_EQUAL(a , b, 1e-9)
+ * \endcode
+ */
+#define REQUIRE_FLOAT_EQUAL(a, b, prec)                                                            \
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("", a, b, prec, std::abs)
 
 /**
  * @brief Assert macro for test, testing that a given call throws a specific exception type
@@ -260,40 +372,3 @@ namespace shamtest {
                     + SourceLocation{}.format_one_line());                                         \
         }                                                                                          \
     } while (0)
-
-/**
- * @brief Assert macro for test, testing equality between two variables, with a given precision and
- * a custom distance function
- *
- * Usage :
- * \code{.cpp}
- * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a , b, 1e-9, sycl::lenght)
- * \endcode
- */
-#define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a, b, prec, dist)                                          \
-    do {                                                                                           \
-        bool eval               = dist((a) - (b)) < prec;                                          \
-        std::string assert_name = #dist "(" #a ") - (" #b ") < " #prec;                            \
-        if (eval) {                                                                                \
-            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
-        } else {                                                                                   \
-            shamtest::asserts().assert_bool_with_log(                                              \
-                assert_name,                                                                       \
-                eval,                                                                              \
-                "(" + assert_name + ") evaluated to false\n\n"                                     \
-                    + shambase::format(" -> " #a " = {}", a) + "\n"                                \
-                    + shambase::format(" -> " #b " = {}", b) + "\n"                                \
-                    + shambase::format(" -> " #prec " = {}", prec) + "\n"                          \
-                    + " -> location : " + SourceLocation{}.format_one_line());                     \
-        }                                                                                          \
-    } while (0)
-
-/**
- * @brief Assert macro for test, testing equality between two variables, with a given precision
- *
- * Usage :
- * \code{.cpp}
- * REQUIRE_FLOAT_EQUAL(a , b, 1e-9)
- * \endcode
- */
-#define REQUIRE_FLOAT_EQUAL(a, b, prec) REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a, b, prec, std::abs)

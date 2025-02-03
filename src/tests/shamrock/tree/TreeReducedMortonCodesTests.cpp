@@ -52,7 +52,6 @@ TestStart(
 
         TreeRedMorton outser = TreeRedMorton::deserialize(ser2);
 
-        // input should match output
-        REQUIRE(outser == redcodes);
+        REQUIRE_NAMED("input  match output", outser == redcodes);
     }
 }

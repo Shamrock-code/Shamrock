@@ -17,6 +17,8 @@
 #include "shamalgs/numeric.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shamtest/PyScriptHandle.hpp"
+#include "shamtest/shamtest.hpp"
+#include <vector>
 
 template<class T>
 struct TestExclScan {
@@ -50,13 +52,12 @@ struct TestExclScan {
             {
                 sycl::host_accessor acc{res, sycl::read_only};
 
-                // for (u32 i = 0; i < data_buf.size(); i++) {
-                //     //shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
-                //     eq = eq && (acc[i] == data[i]);
-                // }
+                std::vector<u32> result;
+                for (u32 i = 0; i < data_buf.size(); i++) {
+                    result.push_back(acc[i]);
+                }
 
-                shamtest::asserts().assert_equal_array(
-                    "inclusive scan match", acc, data, data_buf.size());
+                REQUIRE_EQUAL_NAMED("inclusive scan match", result, data);
             }
 
             // sycl::buffer<u32> tmp (data.data(), data.size());
@@ -152,23 +153,22 @@ struct TestExclScanUSM {
             sham::DeviceBuffer<u32> buf{
                 data_buf.size(), shamsys::instance::get_compute_scheduler_ptr()};
             buf.copy_from_stdvec(data_buf);
-            // shamalgs::memory::print_buf(buf, 4096, 16, "{:4} ");
+
+            REQUIRE_EQUAL(buf.get_size(), len_test);
 
             sham::DeviceBuffer<u32> res
                 = fct(shamsys::instance::get_compute_scheduler_ptr(), buf, data_buf.size());
+
+            REQUIRE_EQUAL(res.get_size(), len_test);
 
             // shamalgs::memory::print_buf(res, len_test, 16, "{:4} ");
 
             {
                 std::vector<u32> result = res.copy_to_stdvec();
 
-                // for (u32 i = 0; i < data_buf.size(); i++) {
-                //     //shamtest::asserts().assert_equal("inclusive scan elem", acc[i], data[i]);
-                //     eq = eq && (acc[i] == data[i]);
-                // }
+                REQUIRE_EQUAL(result.size(), data_buf.size());
 
-                shamtest::asserts().assert_equal_array(
-                    "exclusive scan match", result, data, data_buf.size());
+                REQUIRE_EQUAL_NAMED("exclusive scan match", result, data);
             }
 
             // sycl::buffer<u32> tmp (data.data(), data.size());
@@ -285,8 +285,12 @@ struct TestExclScanInplace {
             {
                 sycl::host_accessor acc{buf, sycl::read_only};
 
-                shamtest::asserts().assert_equal_array(
-                    "inclusive scan match", acc, data, data_buf.size());
+                std::vector<u32> result;
+                for (u32 i = 0; i < data_buf.size(); i++) {
+                    result.push_back(acc[i]);
+                }
+
+                REQUIRE_EQUAL_NAMED("inclusive scan match", result, data);
             }
         }
     }

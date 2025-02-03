@@ -122,11 +122,10 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
 
                 RefBuff &recv_buf = recv_data[ref_idx];
 
-                shamtest::asserts().assert_equal(
-                    prefix + "same sender", recv_buf.sender_rank, ref.sender_rank);
-                shamtest::asserts().assert_equal(
+                REQUIRE_EQUAL_NAMED(prefix + "same sender", recv_buf.sender_rank, ref.sender_rank);
+                REQUIRE_EQUAL_NAMED(
                     prefix + "same receiver", recv_buf.receiver_rank, ref.receiver_rank);
-                shamtest::asserts().assert_bool(
+                REQUIRE_NAMED(
                     prefix + "same buffer",
                     shamalgs::reduction::equals_ptr(
                         get_compute_queue(), ref.payload, recv_buf.payload));

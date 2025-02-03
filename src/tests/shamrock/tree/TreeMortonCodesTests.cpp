@@ -43,6 +43,6 @@ TestStart(
 
         TreeMorton outser = TreeMorton::deserialize(ser2);
 
-        shamtest::asserts().assert_bool("input match out", codes == outser);
+        REQUIRE_NAMED("input match out", codes == outser);
     }
 }

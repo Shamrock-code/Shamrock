@@ -35,7 +35,7 @@ TestStart(
 
         PatchDataField<u32_3> buf2 = PatchDataField<u32_3>::deserialize_buf(ser2, name, nvar);
 
-        shamtest::asserts().assert_bool("input match out", field.check_field_match(buf2));
+        REQUIRE_NAMED("input match out", field.check_field_match(buf2));
     }
 }
 
@@ -60,7 +60,7 @@ TestStart(
 
         PatchDataField<u32_3> buf2 = PatchDataField<u32_3>::deserialize_full(ser2);
 
-        shamtest::asserts().assert_bool("input match out", field.check_field_match(buf2));
+        REQUIRE_NAMED("input match out", field.check_field_match(buf2));
     }
 }
 

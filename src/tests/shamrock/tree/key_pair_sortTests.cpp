@@ -46,8 +46,8 @@ void unit_test_key_pair() {
     std::sort(unsorted.begin(), unsorted.end());
 
     for (u32 i = 0; i < size_test; i++) {
-        shamtest::asserts().assert_bool(
-            "index [" + shambase::format_printf("%d", i) + "]", unsorted[i] == morton_list[i]);
+        REQUIRE_EQUAL_NAMED(
+            "index [" + shambase::format_printf("%d", i) + "]", unsorted[i], morton_list[i]);
     }
 }
 

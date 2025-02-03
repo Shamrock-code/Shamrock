@@ -505,6 +505,8 @@ namespace shamalgs::numeric::details {
         buf1.complete_event_state(e);
         ret_buf.complete_event_state(e);
 
+        ret_buf.resize(len);
+
         return ret_buf;
     }
 

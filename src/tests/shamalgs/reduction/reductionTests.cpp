@@ -61,7 +61,7 @@ void unit_test_reduc_sum(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 
 template<class T, class Fct>
@@ -99,7 +99,7 @@ void unit_test_reduc_min(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 
 template<class T, class Fct>
@@ -137,7 +137,7 @@ void unit_test_reduc_max(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 template<class T, class Fct>
 void unit_test_reduc_sum_usm(std::string name, Fct &&red_fct) {
@@ -175,7 +175,7 @@ void unit_test_reduc_sum_usm(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 template<class T, class Fct>
 void unit_test_reduc_max_usm(std::string name, Fct &&red_fct) {
@@ -213,7 +213,7 @@ void unit_test_reduc_max_usm(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 
 template<class T, class Fct>
@@ -252,7 +252,7 @@ void unit_test_reduc_min_usm(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 
 void unit_test_reduc_sum() {

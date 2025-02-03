@@ -754,4 +754,18 @@ namespace sham {
         return (sham::abs(v) < minvsat) ? satval : T{1.} / v;
     }
 
+    /**
+     * @brief inverse saturated (zero version)
+     *
+     * Computes the inverse of v if v==0 return satval
+     *
+     * @param v
+     * @param satval saturation value (default 0)
+     * @return T
+     */
+    template<class T>
+    inline T inv_sat_zero(T v, T satval = T{0.}) noexcept {
+        return (v == 0) ? satval : T{1.} / v;
+    }
+
 } // namespace sham

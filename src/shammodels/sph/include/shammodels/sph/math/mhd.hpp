@@ -116,8 +116,8 @@ namespace shamrock::spmhd {
         Tscal B_dot_grad_W_a = sycl::dot(B_a, nabla_Wab_ha);
         Tscal B_dot_grad_W_b = sycl::dot(B_b, nabla_Wab_hb);
 
-        Tvec acc_a = ((B_dot_grad_W_a) *sham::inv_sat(sub_fact_a, eps)) * B_a / mu_0;
-        Tvec acc_b = ((B_dot_grad_W_b) *sham::inv_sat(sub_fact_b, eps)) * B_b / mu_0;
+        Tvec acc_a = ((B_dot_grad_W_a) *sham::inv_sat_zero(sub_fact_a)) * B_a / mu_0;
+        Tvec acc_b = ((B_dot_grad_W_b) *sham::inv_sat_zero(sub_fact_b)) * B_b / mu_0;
 
         return -m_b * (acc_a + acc_b);
     }
@@ -158,8 +158,8 @@ namespace shamrock::spmhd {
         Tscal q_ab_a = q_av(sycl::sqrt(rho_a_sq), vsig_a, v_scal_rhat);
         Tscal q_ab_b = q_av(sycl::sqrt(rho_b_sq), vsig_a, v_scal_rhat);
 
-        Tvec acc_a = (q_ab_a * sham::inv_sat(sub_fact_a, eps)) * nabla_Wab_ha;
-        Tvec acc_b = (q_ab_b * sham::inv_sat(sub_fact_b, eps)) * nabla_Wab_hb;
+        Tvec acc_a = (q_ab_a * sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha;
+        Tvec acc_b = (q_ab_b * sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb;
 
         vMHD += -m_b * (acc_a + acc_b); // shock term
 
@@ -178,14 +178,14 @@ namespace shamrock::spmhd {
                                                           // B_b[2]*B_b[2]); //sycl::pow(B_b, 2)
                 }
 
-                Tscal acc_MHD_a = (Mij_a * sham::inv_sat(sub_fact_a, eps)) * nabla_Wab_ha[j];
-                Tscal acc_MHD_b = (Mij_b * sham::inv_sat(sub_fact_b, eps)) * nabla_Wab_hb[j];
+                Tscal acc_MHD_a = (Mij_a * sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha[j];
+                Tscal acc_MHD_b = (Mij_b * sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb[j];
 
                 vMHD[i] += -m_b * (acc_MHD_a + acc_MHD_b);
             }
         }
-        Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) * sham::inv_sat(sub_fact_a, eps);
-        Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) * sham::inv_sat(sub_fact_b, eps);
+        Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) * sham::inv_sat_zero(sub_fact_a);
+        Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) * sham::inv_sat_zero(sub_fact_b);
 
         Tvec fdivB_a = -B_a * m_b * (acc_fdivB_a + acc_fdivB_b);
 
@@ -239,8 +239,8 @@ namespace shamrock::spmhd {
             Tscal sub_fact_a = rho_a_sq * omega_a;
             Tscal sub_fact_b = rho_b_sq * omega_b;
 
-            Tvec acc_a = ((P_a) *sham::inv_sat(sub_fact_a, eps)) * nabla_Wab_ha;
-            Tvec acc_b = ((P_b) *sham::inv_sat(sub_fact_b, eps)) * nabla_Wab_hb;
+            Tvec acc_a = ((P_a) *sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha;
+            Tvec acc_b = ((P_b) *sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb;
 
             pressure_term += -m_b * (acc_a + acc_b);
 
@@ -255,9 +255,9 @@ namespace shamrock::spmhd {
             //                                             too
 
             Tvec accB_a
-                = (1. / (2 * mu_0)) * ((B_a_sq) *sham::inv_sat(sub_fact_a, eps)) * nabla_Wab_ha;
+                = (1. / (2 * mu_0)) * ((B_a_sq) *sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha;
             Tvec accB_b
-                = (1. / (2 * mu_0)) * ((B_b_sq) *sham::inv_sat(sub_fact_b, eps)) * nabla_Wab_hb;
+                = (1. / (2 * mu_0)) * ((B_b_sq) *sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb;
 
             magnetic_pressure_term += -m_b * (accB_a + accB_b);
 
@@ -279,8 +279,9 @@ namespace shamrock::spmhd {
             //                    Tscal mag_tension_a =   -(1. / mu_0) * B_a[i] * B_a[j];
             //                    Tscal mag_tension_b =   -(1. / mu_0) * B_b[i] * B_b[j];
             //                    Tscal acc_mag_tension_a = mag_tension_a *
-            //                    sham::inv_sat(sub_fact_a,eps); Tscal acc_mag_tension_b =
-            //                    mag_tension_b *sham::inv_sat(sub_fact_b,eps); if (sub_fact_a == 0)
+            //                    sham::inv_sat_zero(sub_fact_a); Tscal acc_mag_tension_b =
+            //                    mag_tension_b *sham::inv_sat_zero(sub_fact_b); if (sub_fact_a ==
+            //                    0)
             //                        acc_mag_tension_a = 0.;
             //                    if (sub_fact_b == 0)
             //                        acc_mag_tension_b = 0.;
@@ -294,8 +295,8 @@ namespace shamrock::spmhd {
             for (int i = 0; i < 3; ++i) {
                 Tscal mag_pressure_a     = (1. / (2 * mu_0)) * sycl::dot(B_a, B_a);
                 Tscal mag_pressure_b     = (1. / (2 * mu_0)) * sycl::dot(B_b, B_b);
-                Tscal acc_mag_pressure_a = mag_pressure_a * sham::inv_sat(sub_fact_a, eps);
-                Tscal acc_mag_pressure_b = mag_pressure_b * sham::inv_sat(sub_fact_b, eps);
+                Tscal acc_mag_pressure_a = mag_pressure_a * sham::inv_sat_zero(sub_fact_a);
+                Tscal acc_mag_pressure_b = mag_pressure_b * sham::inv_sat_zero(sub_fact_b);
                 magnetic_pressure_term[i] += -m_b
                                              * (acc_mag_pressure_a * nabla_Wab_ha[i]
                                                 + acc_mag_pressure_b * nabla_Wab_hb[i]);
@@ -304,16 +305,16 @@ namespace shamrock::spmhd {
 
                     Tscal mag_tension_a     = -(1. / mu_0) * B_a[i] * B_a[j];
                     Tscal mag_tension_b     = -(1. / mu_0) * B_b[i] * B_b[j];
-                    Tscal acc_mag_tension_a = mag_tension_a * sham::inv_sat(sub_fact_a, eps);
-                    Tscal acc_mag_tension_b = mag_tension_b * sham::inv_sat(sub_fact_b, eps);
+                    Tscal acc_mag_tension_a = mag_tension_a * sham::inv_sat_zero(sub_fact_a);
+                    Tscal acc_mag_tension_b = mag_tension_b * sham::inv_sat_zero(sub_fact_b);
 
                     magnetic_tension_term[i] += -m_b
                                                 * (acc_mag_tension_a * nabla_Wab_ha[j]
                                                    + acc_mag_tension_b * nabla_Wab_hb[j]);
                 }
 
-                Tscal acc_gas_pressure_a = P_a * sham::inv_sat(sub_fact_a, eps);
-                Tscal acc_gas_pressure_b = P_b * sham::inv_sat(sub_fact_b, eps);
+                Tscal acc_gas_pressure_a = P_a * sham::inv_sat_zero(sub_fact_a);
+                Tscal acc_gas_pressure_b = P_b * sham::inv_sat_zero(sub_fact_b);
 
                 pressure_term[i] += -m_b
                                     * (acc_gas_pressure_a * nabla_Wab_ha[i]
@@ -321,8 +322,8 @@ namespace shamrock::spmhd {
             }
         }
 
-        Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) * sham::inv_sat(sub_fact_a, eps);
-        Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) * sham::inv_sat(sub_fact_b, eps);
+        Tscal acc_fdivB_a = sycl::dot(B_a, nabla_Wab_ha) * sham::inv_sat_zero(sub_fact_a);
+        Tscal acc_fdivB_b = sycl::dot(B_b, nabla_Wab_hb) * sham::inv_sat_zero(sub_fact_b);
 
         Tvec fdivB_a = -0.5 * B_a * m_b * (acc_fdivB_a + acc_fdivB_b)
                        / mu_0; // tested, this is what works best
@@ -355,8 +356,8 @@ namespace shamrock::spmhd {
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
         constexpr Tscal eps = shambase::get_epsilon<Tscal>();
-        Tscal acc_a         = Fab_a * sham::inv_sat(sub_fact_a, eps);
-        Tscal acc_b         = Fab_b * sham::inv_sat(sub_fact_b, eps);
+        Tscal acc_a         = Fab_a * sham::inv_sat_zero(sub_fact_a);
+        Tscal acc_b         = Fab_b * sham::inv_sat_zero(sub_fact_b);
 
         Tscal artres = -0.25 * m_b * vsigb * (acc_a + acc_b) * B_ab_sq;
         return artres;
@@ -370,7 +371,7 @@ namespace shamrock::spmhd {
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal induction_term_no_vab
-            = -sham::inv_sat(sub_fact_a, eps) * m_b * sycl::dot(B_a, nabla_Wab_ha);
+            = -sham::inv_sat_zero(sub_fact_a) * m_b * sycl::dot(B_a, nabla_Wab_ha);
 
         return induction_term_no_vab;
     }
@@ -392,8 +393,8 @@ namespace shamrock::spmhd {
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
-        Tvec psisubterm_a = ((psi_a) *sham::inv_sat(sub_fact_a, eps)) * nabla_Wab_ha;
-        Tvec psisubterm_b = ((psi_b) *sham::inv_sat(sub_fact_b, eps)) * nabla_Wab_hb;
+        Tvec psisubterm_a = ((psi_a) *sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha;
+        Tvec psisubterm_b = ((psi_b) *sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb;
 
         Tvec psiterm = -m_b * (psisubterm_a + psisubterm_a);
 
@@ -409,9 +410,9 @@ namespace shamrock::spmhd {
         Tscal sub_fact_a = rho_a * omega_a;
         Tvec B_ab        = (B_a - B_b);
 
-        Tscal divB_a = -(1. * sham::inv_sat(sub_fact_a, eps)) * m_b * sycl::dot(B_ab, nabla_Wab_ha);
+        Tscal divB_a = -(1. * sham::inv_sat_zero(sub_fact_a)) * m_b * sycl::dot(B_ab, nabla_Wab_ha);
 
-        Tscal parabolic_propag = m_b * (ch_a * sham::inv_sat(sub_fact_a, eps))
+        Tscal parabolic_propag = m_b * (ch_a * sham::inv_sat_zero(sub_fact_a))
                                  * sycl::dot(B_ab, nabla_Wab_ha); //-ch_a * divB_a;
 
         return parabolic_propag;
@@ -434,7 +435,7 @@ namespace shamrock::spmhd {
         Tvec v_ab        = v_a - v_b;
 
         Tscal parabolic_diff
-            = m_b * (psi_a * sham::inv_sat(sub_fact_a, eps)) * sycl::dot(v_ab, nabla_Wab_ha);
+            = m_b * (psi_a * sham::inv_sat_zero(sub_fact_a)) * sycl::dot(v_ab, nabla_Wab_ha);
 
         return parabolic_diff;
     }
@@ -620,8 +621,8 @@ namespace shamrock::spmhd {
 
         constexpr Tscal eps = shambase::get_epsilon<Tscal>();
 
-        Tscal rho_diss_term_a = Fab_a * sham::inv_sat(sub_fact_a, eps);
-        Tscal rho_diss_term_b = Fab_b * sham::inv_sat(sub_fact_b, eps);
+        Tscal rho_diss_term_a = Fab_a * sham::inv_sat_zero(sub_fact_a);
+        Tscal rho_diss_term_b = Fab_b * sham::inv_sat_zero(sub_fact_b);
 
         // Tvec dB_on_rho_dissipation_term
         //     = -0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;

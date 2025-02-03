@@ -99,13 +99,14 @@ inline void check_pdat_get_ids_where(u32 len, u32 nvar, std::string name, f64 vm
     logger::raw_ln("found : ", std::get<1>(idx_cd_sycl));
 
     // compare content
-    _Assert(bool(std::get<0>(idx_cd_sycl)) == (idx_cd.size() != 0))
+    REQUIRE(bool(std::get<0>(idx_cd_sycl)) == (idx_cd.size() != 0));
 
-        if (std::get<0>(idx_cd_sycl)) {
-        _Assert(idx_cd == shambase::set_from_vector(idx_cd_vec)) _Assert(
+    if (std::get<0>(idx_cd_sycl)) {
+        REQUIRE(idx_cd == shambase::set_from_vector(idx_cd_vec));
+        REQUIRE(
             idx_cd
             == shambase::set_from_vector(
-                shamalgs::memory::buf_to_vec(*std::get<0>(idx_cd_sycl), std::get<1>(idx_cd_sycl))))
+                shamalgs::memory::buf_to_vec(*std::get<0>(idx_cd_sycl), std::get<1>(idx_cd_sycl))));
     }
 }
 

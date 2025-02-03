@@ -41,6 +41,7 @@ namespace shamtest::details {
         }
 
         /// Test if the supplied boolean is true
+        [[deprecated("Please use the supplied testing macros instead")]]
         inline void
         assert_bool(std::string assert_name, bool v, SourceLocation loc = SourceLocation{}) {
 
@@ -50,6 +51,7 @@ namespace shamtest::details {
 
         /// Test for an equality
         template<class T1, class T2>
+        [[deprecated("Please use the supplied testing macros instead")]]
         inline void
         assert_equal(std::string assert_name, T1 a, T2 b, SourceLocation loc = SourceLocation{}) {
 
@@ -65,6 +67,7 @@ namespace shamtest::details {
 
         /// Assert equal on an array of values
         template<class Acca, class Accb>
+        [[deprecated("Please use the supplied testing macros instead")]]
         inline void assert_equal_array(
             std::string assert_name,
             Acca &acc_a,
@@ -98,6 +101,7 @@ namespace shamtest::details {
          * @param eps precision of the test
          * @param loc source location of the call
          */
+        [[deprecated("Please use the supplied testing macros instead")]]
         inline void assert_float_equal(
             std::string assert_name, f64 a, f64 b, f64 eps, SourceLocation loc = SourceLocation{}) {
             f64 diff = sycl::fabs(a - b);

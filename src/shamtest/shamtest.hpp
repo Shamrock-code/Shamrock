@@ -135,35 +135,6 @@ namespace shamtest {
         shamtest::details::Test{type, name, node_cnt, test_func_ptr_##func_name});                 \
     void test_func_##func_name()
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Assert macros
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-// temporary maybe do something else
-// i don't want a cumbersome name, but assert is kinda taken already
-
-/**
- * @brief Assert macro for test
- * write the conditional, the name of the assert will be the condition
- *
- * Usage :
- * \code{.cpp}
- * _Assert(a == 0)
- * \endcode
- */
-#define _Assert(a) shamtest::asserts().assert_bool("_Assert(" #a ")", a);
-
-/**
- * @brief Assert macro for test, testing equality between two variables, with a given precision
- *
- * Usage :
- * \code{.cpp}
- * _AssertFloatEqual(a , b, 1e-9)
- * \endcode
- */
-#define _AssertFloatEqual(a, b, prec)                                                              \
-    shamtest::asserts().assert_float_equal(#a " ==(" #prec ") " #b, a, b, prec);
-
 /**
  * @brief Macro to write stuff to the tex test report
  *
@@ -178,9 +149,21 @@ namespace shamtest {
 
 #define STDSTRINGIFY(x) std::string(#x)
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Assert macros
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 // Note : the do-while are here to enforce the presence of a semicolumn after the call to the macros
 
-/// REQUIRE macro alias to _Assert
+/**
+ * @brief Assert macro for test
+ * write the conditional, the name of the assert will be the condition
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE(a == 0)
+ * \endcode
+ */
 #define REQUIRE(a)                                                                                 \
     do {                                                                                           \
         bool eval = a;                                                                             \
@@ -195,7 +178,14 @@ namespace shamtest {
         }                                                                                          \
     } while (0)
 
-/// REQUIRE_EQUAL macro alias to _AssertEqual
+/**
+ * @brief Assert macro for test to test for equalities using a custom comparison function
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_EQUAL_CUSTOM_COMP(a , b)
+ * \endcode
+ */
 #define REQUIRE_EQUAL_CUSTOM_COMP(a, b, comp)                                                      \
     do {                                                                                           \
         bool eval               = comp(a, b);                                                      \
@@ -213,12 +203,30 @@ namespace shamtest {
         }                                                                                          \
     } while (0)
 
+/**
+ * @brief Assert macro for test to test for equalities
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE(a == 0)
+ * \endcode
+ */
 #define REQUIRE_EQUAL(a, b)                                                                        \
     REQUIRE_EQUAL_CUSTOM_COMP(a, b, [](const auto &p1, const auto &p2) {                           \
         return p1 == p2;                                                                           \
     })
 
-/// REQUIRE macro alias to _Assert_throw
+/**
+ * @brief Assert macro for test, testing that a given call throws a specific exception type
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_EXCEPTION_THROW(function_that_throws(), exception_type)
+ * \endcode
+ *
+ * @param call Call that is expected to throw the specified exception type
+ * @param exception_type Exception type that is expected to be thrown
+ */
 #define REQUIRE_EXCEPTION_THROW(call, exception_type)                                              \
     do {                                                                                           \
         try {                                                                                      \
@@ -254,14 +262,38 @@ namespace shamtest {
     } while (0)
 
 /**
- * @brief Assert macro for test, testing that a given call throws a specific exception type
+ * @brief Assert macro for test, testing equality between two variables, with a given precision and
+ * a custom distance function
  *
  * Usage :
  * \code{.cpp}
- * REQUIRE_EXCEPTION_THROW(function_that_throws(), exception_type)
+ * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a , b, 1e-9, sycl::lenght)
  * \endcode
- *
- * @param call Call that is expected to throw the specified exception type
- * @param exception_type Exception type that is expected to be thrown
  */
-#define _Assert_throw(call, exception_type) REQUIRE_EXCEPTION_THROW(call, exception_type)
+#define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a, b, prec, dist)                                          \
+    do {                                                                                           \
+        bool eval               = dist((a) - (b)) < prec;                                          \
+        std::string assert_name = #dist "(" #a ") - (" #b ") < " #prec;                            \
+        if (eval) {                                                                                \
+            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
+        } else {                                                                                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                assert_name,                                                                       \
+                eval,                                                                              \
+                "(" + assert_name + ") evaluated to false\n\n"                                     \
+                    + shambase::format(" -> " #a " = {}", a) + "\n"                                \
+                    + shambase::format(" -> " #b " = {}", b) + "\n"                                \
+                    + shambase::format(" -> " #prec " = {}", prec) + "\n"                          \
+                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+        }                                                                                          \
+    } while (0)
+
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_FLOAT_EQUAL(a , b, 1e-9)
+ * \endcode
+ */
+#define REQUIRE_FLOAT_EQUAL(a, b, prec) REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a, b, prec, std::abs)

@@ -58,7 +58,7 @@ validate_kernel_3d(typename Ker::Tscal tol, typename Ker::Tscal dx, typename Ker
     REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern / 4) / 16, Ker::dW_3d(2 * Ker::Rkern / 4, 2));
 
     // is integral of W == 1 (1d)
-    _AssertFloatEqual(
+    REQUIRE_FLOAT_EQUAL(
         1,
         shammath::integ_riemann_sum<Tscal>(
             0,
@@ -67,36 +67,35 @@ validate_kernel_3d(typename Ker::Tscal tol, typename Ker::Tscal dx, typename Ker
             [](Tscal x) {
                 return 2 * Ker::W_1d(x, 1);
             }),
-        tol)
+        tol);
 
-        // is integral of W == 1 (2d)
-        _AssertFloatEqual(
-            1,
-            shammath::integ_riemann_sum<Tscal>(
-                0,
-                Ker::Rkern,
-                dx_int,
-                [](Tscal x) {
-                    return 2 * pi<Tscal> * x * Ker::W_2d(x, 1);
-                }),
-            tol)
+    // is integral of W == 1 (2d)
+    REQUIRE_FLOAT_EQUAL(
+        1,
+        shammath::integ_riemann_sum<Tscal>(
+            0,
+            Ker::Rkern,
+            dx_int,
+            [](Tscal x) {
+                return 2 * pi<Tscal> * x * Ker::W_2d(x, 1);
+            }),
+        tol);
 
-        // is integral of W == 1 (3d)
-        _AssertFloatEqual(
-            1,
-            shammath::integ_riemann_sum<Tscal>(
-                0,
-                Ker::Rkern,
-                dx_int,
-                [](Tscal x) {
-                    return 4 * pi<Tscal> * x * x * Ker::W_3d(x, 1);
-                }),
-            tol)
+    // is integral of W == 1 (3d)
+    REQUIRE_FLOAT_EQUAL(
+        1,
+        shammath::integ_riemann_sum<Tscal>(
+            0,
+            Ker::Rkern,
+            dx_int,
+            [](Tscal x) {
+                return 4 * pi<Tscal> * x * x * Ker::W_3d(x, 1);
+            }),
+        tol);
 
-        // is df = f' ?
-        Tscal L2_sum
-        = 0;
-    Tscal step = 0.01;
+    // is df = f' ?
+    Tscal L2_sum = 0;
+    Tscal step   = 0.01;
     for (Tscal x = 0; x < Ker::Rkern; x += step) {
         Tscal diff = Ker::df(x) - shammath::derivative_upwind<Tscal>(x, dx, [](Tscal x) {
                          return Ker::f(x);
@@ -104,7 +103,7 @@ validate_kernel_3d(typename Ker::Tscal tol, typename Ker::Tscal dx, typename Ker
         diff *= gen_norm3d;
         L2_sum += diff * diff * step;
     }
-    _AssertFloatEqual(L2_sum, 0, tol)
+    REQUIRE_FLOAT_EQUAL(L2_sum, 0, tol);
 }
 
 TestStart(Unittest, "shammath/sphkernels/M4", validateM4kernel, 1) {

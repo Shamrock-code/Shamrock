@@ -33,7 +33,7 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_1d, 1) {
             }
         }
     }
-    _Assert(correct);
+    REQUIRE(correct);
 }
 
 TestStart(Unittest, "shambase::parralel_for", test_par_for_2d, 1) {
@@ -61,7 +61,7 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_2d, 1) {
             }
         }
     }
-    _Assert(correct);
+    REQUIRE(correct);
 }
 
 TestStart(Unittest, "shambase::parralel_for", test_par_for_3d, 1) {
@@ -102,5 +102,5 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_3d, 1) {
             }
         }
     }
-    _Assert(correct);
+    REQUIRE(correct);
 }

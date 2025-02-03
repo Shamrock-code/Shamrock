@@ -33,10 +33,10 @@ void test_serialize_adiabatic() {
         if (Config *in_eos_config = std::get_if<Config>(&in_config.config)) {
             REQUIRE(*in_eos_config == *out_eos_config);
         } else {
-            _Assert(false)
+            REQUIRE(false);
         }
     } else {
-        _Assert(false)
+        REQUIRE(false);
     }
 }
 
@@ -58,12 +58,12 @@ void test_serialize_locally_isothermal() {
 
     if (Config *out_eos_config = std::get_if<Config>(&out_config.config)) {
         if (Config *in_eos_config = std::get_if<Config>(&in_config.config)) {
-            _Assert(true)
+            REQUIRE(true);
         } else {
-            _Assert(false)
+            REQUIRE(false);
         }
     } else {
-        _Assert(false)
+        REQUIRE(false);
     }
 }
 
@@ -87,10 +87,10 @@ void test_serialize_locally_isothermallp07() {
         if (Config *in_eos_config = std::get_if<Config>(&in_config.config)) {
             REQUIRE(*in_eos_config == *out_eos_config);
         } else {
-            _Assert(false)
+            REQUIRE(false);
         }
     } else {
-        _Assert(false)
+        REQUIRE(false);
     }
 }
 

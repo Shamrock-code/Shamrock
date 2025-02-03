@@ -52,6 +52,7 @@ TestStart(
 
         TreeRedMorton outser = TreeRedMorton::deserialize(ser2);
 
-        shamtest::asserts().assert_bool("input match out", outser == redcodes);
+        // input should match output
+        REQUIRE(outser == redcodes);
     }
 }

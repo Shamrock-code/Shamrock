@@ -66,6 +66,7 @@ TestStart(Unittest, "shammath/flux_symmetry", flux_rotate, 1) {
         logger::debug_ln("Riemman Solver", fmz.rho, fmz.rhovel, fmz.rhoe);
         Tcons sum = fx + fy + fz + fmx + fmy + fmz;
         logger::debug_ln("Riemman Solver", "sum=", sum.rho, sum.rhovel, sum.rhoe);
-        _Assert(sum.rhovel[1] == 0) _Assert(sum.rhovel[2] == 0)
+        REQUIRE(sum.rhovel[1] == 0);
+        REQUIRE(sum.rhovel[2] == 0);
     }
 }

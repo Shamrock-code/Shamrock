@@ -45,6 +45,9 @@ namespace shammodels::sph::modules {
         void compute_eos();
 
         private:
+        template<class RhoGetGen>
+        void compute_eos_internal(RhoGetGen &&rho_getter_gen);
+
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };
 

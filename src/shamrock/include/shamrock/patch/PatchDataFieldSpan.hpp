@@ -15,7 +15,9 @@
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/format.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 
 namespace shamrock {
@@ -64,16 +66,13 @@ namespace shamrock {
         };
     } // namespace details
 
-    inline constexpr u32 dynamic_nvar = -1;
+    inline constexpr u32 dynamic_nvar = u32_max;
 
     template<class T, u32 nvar = dynamic_nvar>
     class PatchDataFieldSpan {
 
         inline static constexpr bool is_nvar_dynamic() { return nvar == dynamic_nvar; }
         inline static constexpr bool is_nvar_static() { return nvar != dynamic_nvar; }
-
-        PatchDataField<T> &field_ref;
-        u32 start, count;
 
         PatchDataFieldSpan(PatchDataField<T> &field_ref, u32 start, u32 count)
             : field_ref(field_ref), start(start), count(count) {
@@ -95,33 +94,39 @@ namespace shamrock {
             }
         }
 
-        template<std::enable_if_t<is_nvar_dynamic(), int> = 0>
+        template<typename Dummy = void, typename = std::enable_if_t<is_nvar_dynamic(), Dummy>>
         inline auto get_read_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_ro_dyn_nvar<T> {
             return details::PatchDataFieldSpan_access_ro_dyn_nvar<T>{
-                field_ref.get_read_access(depends_list), field_ref.get_nvar()};
+                get_buf().get_read_access(depends_list) + start, field_ref.get_nvar()};
         }
 
-        template<std::enable_if_t<is_nvar_static(), int> = 0>
-        inline auto get_read_access(sham::EventList &depends_list)
-            -> details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar> {
-            return details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar>{
-                field_ref.get_read_access(depends_list)};
-        }
-
-        template<std::enable_if_t<is_nvar_dynamic(), int> = 0>
+        template<typename Dummy = void, typename = std::enable_if_t<is_nvar_dynamic(), Dummy>>
         inline auto get_write_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_rw_dyn_nvar<T> {
             return details::PatchDataFieldSpan_access_rw_dyn_nvar<T>{
-                field_ref.get_write_access(depends_list), field_ref.get_nvar()};
+                get_buf().get_write_access(depends_list) + start, field_ref.get_nvar()};
         }
 
-        template<std::enable_if_t<is_nvar_static(), int> = 0>
+        template<typename Dummy = void, typename = std::enable_if_t<is_nvar_static(), Dummy>>
+        inline auto get_read_access(sham::EventList &depends_list)
+            -> details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar> {
+            return details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar>{
+                get_buf().get_read_access(depends_list) + start};
+        }
+
+        template<typename Dummy = void, typename = std::enable_if_t<is_nvar_static(), Dummy>>
         inline auto get_write_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar> {
             return details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar>{
-                field_ref.get_write_access(depends_list)};
+                get_buf().get_write_access(depends_list) + start};
         }
+
+        PatchDataField<T> &field_ref;
+        u32 start, count;
+
+        private:
+        inline sham::DeviceBuffer<T> &get_buf() { return field_ref.get_buf(); }
     };
 
 } // namespace shamrock

@@ -283,7 +283,7 @@ namespace shamalgs::algorithm::details {
 
     template<class Tkey, class Tval, u32 MaxStencilSize>
     void sort_by_key_bitonic_updated_usm(
-        sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<Tkey> &buf_key,
         sham::DeviceBuffer<Tval> &buf_values,
         u32 len) {
@@ -398,37 +398,37 @@ namespace shamalgs::algorithm::details {
     }
 
     template void sort_by_key_bitonic_updated_usm<u32, u32, 16>(
-        sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<u32> &buf_key,
         sham::DeviceBuffer<u32> &buf_values,
         u32 len);
 
     template void sort_by_key_bitonic_updated_usm<u64, u32, 16>(
-        sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<u64> &buf_key,
         sham::DeviceBuffer<u32> &buf_values,
         u32 len);
 
     template void sort_by_key_bitonic_updated_usm<u32, u32, 8>(
-        sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<u32> &buf_key,
         sham::DeviceBuffer<u32> &buf_values,
         u32 len);
 
     template void sort_by_key_bitonic_updated_usm<u64, u32, 8>(
-        sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<u64> &buf_key,
         sham::DeviceBuffer<u32> &buf_values,
         u32 len);
 
     template void sort_by_key_bitonic_updated_usm<u32, u32, 32>(
-        sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<u32> &buf_key,
         sham::DeviceBuffer<u32> &buf_values,
         u32 len);
 
     template void sort_by_key_bitonic_updated_usm<u64, u32, 32>(
-        sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<u64> &buf_key,
         sham::DeviceBuffer<u32> &buf_values,
         u32 len);

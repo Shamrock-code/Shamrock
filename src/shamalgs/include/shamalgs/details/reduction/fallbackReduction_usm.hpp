@@ -27,14 +27,23 @@ namespace shamalgs::reduction::details {
 
     template<class T>
     T sum_usm_fallback(
-        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> &buf1,
+        u32 start_id,
+        u32 end_id);
 
     template<class T>
     T min_usm_fallback(
-        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> &buf1,
+        u32 start_id,
+        u32 end_id);
 
     template<class T>
     T max_usm_fallback(
-        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> &buf1,
+        u32 start_id,
+        u32 end_id);
 
 } // namespace shamalgs::reduction::details

@@ -21,6 +21,13 @@
 namespace shambindings {
 
 #if defined(DOXYGEN) || defined(SHAMROCK_EXECUTABLE_BUILD)
+
+    /// set the value of sys.path before init
+    void setpypath(std::string path);
+
+    /// set the value of sys.path before init from the supplied binary
+    void setpypath_from_binary(std::string binary_path);
+
     /**
      * @brief Start shamrock embded ipython interpreter
      *

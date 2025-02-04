@@ -15,6 +15,7 @@
 
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/fpe_except.hpp"
+#include "shambindings/start_python.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -43,6 +44,9 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--long-test", {}, "run also long tests");
     opts::register_opt("--force-dgpu-on", {}, "for direct mpi comm on");
     opts::register_opt("--force-dgpu-off", {}, "for direct mpi comm off");
+
+    opts::register_opt("--pypath", "(sys.path)", "python sys.path to set");
+    opts::register_opt("--pypath-from-bin", "(python binary)", "set sys.path from python binary");
 
     opts::register_opt("-o", {"(filepath)"}, "output test report in that file");
 
@@ -150,6 +154,15 @@ int main(int argc, char *argv[]) {
             shambase::term_colors::col8b_cyan() + shambase::term_colors::blink() + "ROCK"
                 + shambase::term_colors::reset());
         logger::print_faint_row();
+    }
+
+    if (opts::has_option("--pypath")) {
+        shambindings::setpypath(std::string(opts::get_option("--pypath")));
+    }
+
+    if (opts::has_option("--pypath-from-bin")) {
+        std::string pybin = std::string(opts::get_option("--pypath-from-bin"));
+        shambindings::setpypath_from_binary(pybin);
     }
 
     shamtest::TestConfig cfg{};

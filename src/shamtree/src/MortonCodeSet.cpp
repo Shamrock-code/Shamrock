@@ -25,7 +25,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace shammath::tree {
+namespace shamtree {
 
     namespace details {
         template<class Tmorton, class Tvec, u32 dim>
@@ -61,7 +61,7 @@ namespace shammath::tree {
     template<class Tmorton, class Tvec, u32 dim>
     MortonCodeSet<Tmorton, Tvec, dim>::MortonCodeSet(
         sham::DeviceScheduler_ptr dev_sched,
-        AABB<Tvec> bounding_box,
+        shammath::AABB<Tvec> bounding_box,
         sham::DeviceBuffer<Tvec> &pos_buf,
         u32 cnt_obj,
         u32 morton_count)
@@ -106,7 +106,7 @@ namespace shammath::tree {
         }
     }
 
-} // namespace shammath::tree
+} // namespace shamtree
 
-template class shammath::tree::MortonCodeSet<u32, f64_3, 3>;
-template class shammath::tree::MortonCodeSet<u64, f64_3, 3>;
+template class shamtree::MortonCodeSet<u32, f64_3, 3>;
+template class shamtree::MortonCodeSet<u64, f64_3, 3>;

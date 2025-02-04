@@ -24,7 +24,7 @@ namespace shamalgs::reduction::details {
 
     template<class T, class BinaryOp>
     T reduc_internal(
-        sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id,
@@ -44,7 +44,10 @@ namespace shamalgs::reduction::details {
 
     template<class T>
     T sum_usm_fallback(
-        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> &buf1,
+        u32 start_id,
+        u32 end_id) {
 
         return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
             return lhs + rhs;
@@ -53,7 +56,10 @@ namespace shamalgs::reduction::details {
 
     template<class T>
     T max_usm_fallback(
-        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> &buf1,
+        u32 start_id,
+        u32 end_id) {
 
         return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
             return sham::max(lhs, rhs);
@@ -62,7 +68,10 @@ namespace shamalgs::reduction::details {
 
     template<class T>
     T min_usm_fallback(
-        sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id) {
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> &buf1,
+        u32 start_id,
+        u32 end_id) {
 
         return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
             return sham::min(lhs, rhs);
@@ -96,18 +105,18 @@ namespace shamalgs::reduction::details {
 
     #define X(_arg_)                                                                               \
         template _arg_ shamalgs::reduction::details::sum_usm_fallback<_arg_>(                      \
-            sham::DeviceScheduler_ptr & sched,                                                     \
-            sham::DeviceBuffer<_arg_> & buf1,                                                      \
+            const sham::DeviceScheduler_ptr &sched,                                                \
+            sham::DeviceBuffer<_arg_> &buf1,                                                       \
             u32 start_id,                                                                          \
             u32 end_id);                                                                           \
         template _arg_ shamalgs::reduction::details::max_usm_fallback<_arg_>(                      \
-            sham::DeviceScheduler_ptr & sched,                                                     \
-            sham::DeviceBuffer<_arg_> & buf1,                                                      \
+            const sham::DeviceScheduler_ptr &sched,                                                \
+            sham::DeviceBuffer<_arg_> &buf1,                                                       \
             u32 start_id,                                                                          \
             u32 end_id);                                                                           \
         template _arg_ shamalgs::reduction::details::min_usm_fallback<_arg_>(                      \
-            sham::DeviceScheduler_ptr & sched,                                                     \
-            sham::DeviceBuffer<_arg_> & buf1,                                                      \
+            const sham::DeviceScheduler_ptr &sched,                                                \
+            sham::DeviceBuffer<_arg_> &buf1,                                                       \
             u32 start_id,                                                                          \
             u32 end_id);
 

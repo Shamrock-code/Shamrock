@@ -46,7 +46,7 @@ namespace shamrock {
             T &operator()(u32 idx, u32 offset) const { return ptr[idx * nvar + offset]; }
 
             // same operator but without offset since nvar == 1, enable only if nvar is 1
-            template<std::enable_if_t<nvar == 1, int> = 0>
+            template<typename Dummy = void, typename = std::enable_if_t<nvar == 1, Dummy>>
             T &operator()(u32 idx) const {
                 return ptr[idx];
             }
@@ -59,8 +59,8 @@ namespace shamrock {
             const T &operator()(u32 idx, u32 offset) const { return ptr[idx * nvar + offset]; }
 
             // same operator but without offset since nvar == 1, enable only if nvar is 1
-            template<std::enable_if_t<nvar == 1, int> = 0>
-            T &operator()(u32 idx) const {
+            template<typename Dummy = void, typename = std::enable_if_t<nvar == 1, Dummy>>
+            const T &operator()(u32 idx) const {
                 return ptr[idx];
             }
         };
@@ -70,7 +70,7 @@ namespace shamrock {
 
     template<class T, u32 nvar = dynamic_nvar>
     class PatchDataFieldSpan {
-
+        public:
         inline static constexpr bool is_nvar_dynamic() { return nvar == dynamic_nvar; }
         inline static constexpr bool is_nvar_static() { return nvar != dynamic_nvar; }
 
@@ -121,6 +121,8 @@ namespace shamrock {
             return details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar>{
                 get_buf().get_write_access(depends_list) + start};
         }
+
+        inline void complete_event_state(sycl::event e) { get_buf().complete_event_state(e); }
 
         PatchDataField<T> &field_ref;
         u32 start, count;

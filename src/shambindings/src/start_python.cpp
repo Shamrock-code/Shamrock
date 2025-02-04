@@ -32,7 +32,7 @@
 extern const char *configure_time_py_sys_path();
 
 /// @brief path of the python executable that was used to configure sys.path
-const char *configure_time_py_executable();
+extern const char *configure_time_py_executable();
 
 /**
  * @brief Script to run ipython

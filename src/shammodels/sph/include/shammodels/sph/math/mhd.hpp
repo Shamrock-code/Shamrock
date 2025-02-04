@@ -108,8 +108,6 @@ namespace shamrock::spmhd {
         Tvec nabla_Wab_hb,
         Tscal mu_0) {
 
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
-
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
@@ -141,8 +139,6 @@ namespace shamrock::spmhd {
         Tvec nabla_Wab_ha,
         Tvec nabla_Wab_hb,
         Tscal mu_0) {
-
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
 
         Tvec vMHD = {0., 0., 0.};
 
@@ -214,8 +210,6 @@ namespace shamrock::spmhd {
         Tvec nabla_Wab_hb,
         Tscal mu_0,
         bool Tricco) {
-
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
 
         Tvec sum_fdivB        = {0., 0., 0.};
         Tvec sum_mag_tension  = {0., 0., 0.};
@@ -355,9 +349,8 @@ namespace shamrock::spmhd {
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
-        Tscal acc_a         = Fab_a * sham::inv_sat_zero(sub_fact_a);
-        Tscal acc_b         = Fab_b * sham::inv_sat_zero(sub_fact_b);
+        Tscal acc_a = Fab_a * sham::inv_sat_zero(sub_fact_a);
+        Tscal acc_b = Fab_b * sham::inv_sat_zero(sub_fact_b);
 
         Tscal artres = -0.25 * m_b * vsigb * (acc_a + acc_b) * B_ab_sq;
         return artres;
@@ -366,8 +359,6 @@ namespace shamrock::spmhd {
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
     inline Tscal dB_on_rho_induction_term(
         Tscal m_b, Tscal rho_a_sq, Tvec B_a, Tscal omega_a, Tvec nabla_Wab_ha) {
-
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal induction_term_no_vab
@@ -388,8 +379,6 @@ namespace shamrock::spmhd {
         Tvec nabla_Wab_ha,
         Tvec nabla_Wab_hb) {
 
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
-
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
@@ -404,8 +393,6 @@ namespace shamrock::spmhd {
     template<class Tvec, class Tscal, MHDType MHD_mode = Ideal>
     inline Tscal dpsi_on_ch_parabolic_propag(
         Tscal m_b, Tscal rho_a, Tvec B_a, Tvec B_b, Tscal omega_a, Tvec nabla_Wab_ha, Tscal ch_a) {
-
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
 
         Tscal sub_fact_a = rho_a * omega_a;
         Tvec B_ab        = (B_a - B_b);
@@ -428,8 +415,6 @@ namespace shamrock::spmhd {
         Tscal omega_a,
         Tvec nabla_Wab_ha,
         Tscal ch_a) {
-
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
 
         Tscal sub_fact_a = 2. * rho_a * omega_a * ch_a;
         Tvec v_ab        = v_a - v_b;
@@ -618,8 +603,6 @@ namespace shamrock::spmhd {
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b * rho_b * omega_b;
-
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
 
         Tscal rho_diss_term_a = Fab_a * sham::inv_sat_zero(sub_fact_a);
         Tscal rho_diss_term_b = Fab_b * sham::inv_sat_zero(sub_fact_b);

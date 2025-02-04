@@ -736,7 +736,7 @@ namespace sham {
      */
     template<class T>
     inline T inv_sat_positive(T v, T minvsat = T{1e-9}, T satval = T{0.}) noexcept {
-        return (v < minvsat) ? satval : T{1.} / v;
+        return (v >= minvsat) ? T{1.} / v : satval;
     }
 
     /**
@@ -751,7 +751,7 @@ namespace sham {
      */
     template<class T>
     inline T inv_sat(T v, T minvsat = T{1e-9}, T satval = T{0.}) noexcept {
-        return (sham::abs(v) < minvsat) ? satval : T{1.} / v;
+        return (std::abs(v) >= minvsat) ? T{1.} / v : satval;
     }
 
     /**
@@ -765,7 +765,8 @@ namespace sham {
      */
     template<class T>
     inline T inv_sat_zero(T v, T satval = T{0.}) noexcept {
-        return (v == 0) ? satval : T{1.} / v;
+        // return div only if v != 0 and is not NaN
+        return (v != T{0} && v == v) ? T{1.} / v : satval;
     }
 
 } // namespace sham

@@ -25,6 +25,8 @@ TestStart(Unittest, "shambackends/math.hpp:roundup_pow2_clz", shambackendsmathro
     REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(4294967295), 0);
 }
 
+inline f64 nan_val = std::numeric_limits<f64>::quiet_NaN();
+
 TestStart(Unittest, "shambackends/math.hpp:inv_sat", shambackendsmathinv_sat, 1) {
 
     REQUIRE_EQUAL(sham::inv_sat<f64>(1._f64), 1._f64 / 1._f64);
@@ -50,6 +52,8 @@ TestStart(Unittest, "shambackends/math.hpp:inv_sat", shambackendsmathinv_sat, 1)
     REQUIRE_EQUAL(sham::inv_sat<f64>(-100._f64), -1._f64 / 100._f64);
     REQUIRE_EQUAL(sham::inv_sat<f64>(-1.e-9_f64), -1._f64 / 1.e-9_f64);
     REQUIRE_EQUAL(sham::inv_sat<f64>(-1.e-10_f64), 0._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat<f64>(nan_val), 0._f64);
 }
 
 TestStart(Unittest, "shambackends/math.hpp:inv_sat_positive", shambackendsmathinv_satpos, 1) {
@@ -65,6 +69,8 @@ TestStart(Unittest, "shambackends/math.hpp:inv_sat_positive", shambackendsmathin
     REQUIRE_EQUAL(sham::inv_sat_positive<f64>(100._f64), 1._f64 / 100._f64);
     REQUIRE_EQUAL(sham::inv_sat_positive<f64>(1.e-9_f64), 1._f64 / 1.e-9_f64);
     REQUIRE_EQUAL(sham::inv_sat_positive<f64>(1.e-10_f64), 0._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(nan_val), 0._f64);
 }
 
 TestStart(Unittest, "shambackends/math.hpp:inv_sat_zero", shambackendsmathinv_satzero, 1) {
@@ -92,4 +98,6 @@ TestStart(Unittest, "shambackends/math.hpp:inv_sat_zero", shambackendsmathinv_sa
     REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-100._f64), -1._f64 / 100._f64);
     REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-1.e-9_f64), -1._f64 / 1.e-9_f64);
     REQUIRE_EQUAL(sham::inv_sat_zero<f64>(0), 0._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(nan_val), 0._f64);
 }

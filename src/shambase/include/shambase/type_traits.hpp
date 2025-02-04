@@ -326,6 +326,19 @@ namespace shambase {
             "the signature of typed_false_v<...>.");
     }
 
+    /// variant of check_functor_signature that does not check the return type
+    template<class... Targ, class Func>
+    constexpr void check_functor_signature_noreturn(Func &&func) {
+
+        using signature = void(std::remove_reference_t<Targ>...);
+
+        constexpr bool result_call = std::is_invocable_v<decltype(func), Targ...>;
+        static_assert(
+            typed_false_v<result_call, signature>,
+            "The lambda signature is incorrect, the correct function signature is indicated in the "
+            "signature of typed_false_v<...>, aside for the return type.");
+    }
+
     /**
      * @brief Check if a callable object has the correct deduced signature.
      *
@@ -341,6 +354,34 @@ namespace shambase {
     template<class RetType, class... Targ, class Func>
     constexpr void check_functor_signature_deduce(Func &&func, Targ...) {
         check_functor_signature<RetType, Targ...>(func);
+    }
+
+    /// variant of check_functor_signature_deduce that does not check the return type
+    template<class... Targ, class Func>
+    constexpr void check_functor_signature_deduce_noreturn(Func &&func, Targ...) {
+        check_functor_signature_noreturn<Targ...>(func);
+    }
+
+    /**
+     * @brief variant of check_functor_signature_deduce that does not check the return type and
+     * where some types can be specified manually
+     *
+     * For example when using a type with a reference, this is not properly deduced.
+     * This functions allows to specify the type manually with the reference.
+     *
+     * @code {.cpp}
+     * shambase::check_functor_signature_deduce_noreturn_add_t<sycl::handler&>(
+     *   func,
+     *   __acc_in...,
+     *   __acc_in_out...,
+     *   args...);
+     * @endcode
+     *
+     * Here the function signature will be auto(sycl::handler&, <other types>)
+     */
+    template<class... Targ2, class... Targ, class Func>
+    constexpr void check_functor_signature_deduce_noreturn_add_t(Func &&func, Targ...) {
+        check_functor_signature_noreturn<Targ2..., Targ...>(func);
     }
 
 } // namespace shambase

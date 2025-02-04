@@ -66,6 +66,6 @@ TestStart(Unittest, "shamrock/tree/TreeCellRanges::serialize", testcellrangesser
 
         TreeRanges outser = TreeRanges::deserialize(ser2);
 
-        shamtest::asserts().assert_bool("input match out", outser == rnge);
+        REQUIRE_NAMED("input match out", outser == rnge);
     }
 }

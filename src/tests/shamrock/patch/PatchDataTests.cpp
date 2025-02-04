@@ -53,6 +53,6 @@ TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataseri
 
         PatchData pdat2 = PatchData::deserialize_buf(ser2, pdl);
 
-        shamtest::asserts().assert_bool("input match out", pdat == pdat2);
+        REQUIRE_NAMED("input match out", pdat == pdat2);
     }
 }

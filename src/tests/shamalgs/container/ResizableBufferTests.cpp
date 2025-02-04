@@ -39,6 +39,6 @@ TestStart(Unittest, "shamalgs/container/ResizableBuffer", resizebuftestserialize
 
         ResizableBuffer<u32_3> buf2 = ResizableBuffer<u32_3>::deserialize_buf(ser2, len);
 
-        shamtest::asserts().assert_bool("input match out", buf.check_buf_match(buf2));
+        REQUIRE_NAMED("input match out", buf.check_buf_match(buf2));
     }
 }

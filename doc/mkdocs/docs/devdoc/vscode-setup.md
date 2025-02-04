@@ -12,7 +12,7 @@ git clone --recurse-submodules git@github.com:tdavidcl/Shamrock.git
 cd Shamrock
 ./env/new-env --builddir build --machine debian-generic.acpp -- --backend omp
 cd build
-source activate
+source ./activate
 shamconfigure
 ```
 

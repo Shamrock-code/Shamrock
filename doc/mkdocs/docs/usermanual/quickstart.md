@@ -41,10 +41,7 @@ First start by checking that you have the right packages installed on your syste
     === "MacOS"
 
         ```bash
-        brew install cmake
-        brew install libomp
-        brew install boost
-        brew install open-mpi
+        brew install cmake libomp boost open-mpi tdavidcl/adaptivecpp/adaptivecpp
         ```
 
 ## First use of the environments
@@ -68,7 +65,7 @@ And then to configure & compile Shamrock:
 # Now move in the build directory
 cd build
 # Activate the workspace, which will define some utility functions
-source activate
+source ./activate
 # Configure Shamrock
 shamconfigure
 # Build Shamrock
@@ -99,7 +96,7 @@ cd build
 
 Activate the workspace, which will define some utility bash functions:
 ```sh
-source activate
+source ./activate
 ```
 
 For exemple you have access to:

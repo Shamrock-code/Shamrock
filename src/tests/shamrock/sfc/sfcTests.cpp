@@ -24,8 +24,8 @@ TestStart(Unittest, "shamrock/sfc/morton/min-max", mortonminmaxval, 1) {
     u64 m_0_64   = Morton64::coord_to_morton(zerof32, zerof32, zerof32);
     u64 m_max_64 = Morton64::coord_to_morton(onef32, onef32, onef32);
 
-    shamtest::asserts().assert_bool("min morton 64 == b0", m_0_64 == 0x0);
-    shamtest::asserts().assert_bool("max morton 64 == b63x1", m_max_64 == 0x7fffffffffffffff);
-    shamtest::asserts().assert_bool("min morton 32 == b0x0", m_0_32 == 0x0);
-    shamtest::asserts().assert_bool("max morton 32 == b30x1", m_max_32 == 0x3fffffff);
+    REQUIRE_EQUAL_NAMED("min morton 64 == b0", m_0_64, 0x0);
+    REQUIRE_EQUAL_NAMED("max morton 64 == b63x1", m_max_64, 0x7fffffffffffffff);
+    REQUIRE_EQUAL_NAMED("min morton 32 == b0x0", m_0_32, 0x0);
+    REQUIRE_EQUAL_NAMED("max morton 32 == b30x1", m_max_32, 0x3fffffff);
 }

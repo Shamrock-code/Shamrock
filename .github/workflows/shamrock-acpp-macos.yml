@@ -54,10 +54,7 @@ jobs:
         run: |
           set +e
           brew update
-          brew install cmake
-          brew install libomp
-          brew install boost
-          brew install openmpi
+          brew install cmake libomp boost open-mpi tdavidcl/adaptivecpp/adaptivecpp
           set -e
 
       - name: Setup env
@@ -66,12 +63,12 @@ jobs:
       - name: Configure
         run: |
           cd build
-          source activate && shamconfigure
+          source ./activate && shamconfigure
 
       - name: Build
         run: |
           cd build
-          source activate && shammake
+          source ./activate && shammake
 
       - name: Pull reference files
         run: |

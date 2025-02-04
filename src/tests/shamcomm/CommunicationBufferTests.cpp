@@ -18,7 +18,7 @@
 
 inline void check_buf(std::string prefix, sycl::buffer<u8> &b1, sycl::buffer<u8> &b2) {
 
-    shamtest::asserts().assert_equal(prefix + std::string("same size"), b1.size(), b2.size());
+    REQUIRE_EQUAL_NAMED(prefix + std::string("same size"), b1.size(), b2.size());
 
     {
         sycl::host_accessor acc1{b1};
@@ -35,7 +35,7 @@ inline void check_buf(std::string prefix, sycl::buffer<u8> &b1, sycl::buffer<u8>
         }
 
         if (eq) {
-            shamtest::asserts().assert_bool("same content", eq);
+            REQUIRE_NAMED("same content", eq);
         } else {
             shamtest::asserts().assert_add_comment("same content", eq, id_err_list);
         }

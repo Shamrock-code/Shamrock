@@ -9,6 +9,7 @@
 
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/random.hpp"
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
 #include "shambackends/math.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
@@ -29,7 +30,7 @@ inline void test() {
         ref_sum += tmp;
     }
 
-    shamtest::asserts().assert_bool("same value", sham::equals(sum, ref_sum));
+    REQUIRE_EQUAL_CUSTOM_COMP(sum, ref_sum, sham::equals);
 }
 
 TestStart(Unittest, "shamalgs/collective/reduction/allreduce_sum", testsallreducesum, -1) {
@@ -81,7 +82,7 @@ TestStart(
         depends_list.wait_and_throw();
 
         for (u32 i = 0; i < size; i++) {
-            _AssertEqual(ptr[i], check_func(i));
+            REQUIRE_EQUAL(ptr[i], check_func(i));
         }
 
         source.complete_event_state(sycl::event{});

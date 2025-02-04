@@ -75,13 +75,13 @@ jobs:
         shell: bash # In docker container github action default to sh
         run: |
           cd build
-          source activate && shamconfigure
+          source ./activate && shamconfigure
 
       - name: Build
         shell: bash # In docker container github action default to sh
         run: |
           cd build
-          source activate && shammake
+          source ./activate && shammake
 
       - name: Pull reference files
         run: |

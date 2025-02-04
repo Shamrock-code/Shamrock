@@ -80,17 +80,17 @@ void distribdata_sparse_comm_test(std::string prefix) {
         }
     });
 
-    shamtest::asserts().assert_equal(
+    REQUIRE_EQUAL_NAMED(
         "expected number of recv",
         recv_data.get_element_count(),
         recv_data_ref.get_element_count());
 
     recv_data_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
-        shamtest::asserts().assert_bool("has expected key", recv_data.has_key(sender, receiver));
+        REQUIRE_NAMED("has expected key", recv_data.has_key(sender, receiver));
 
         auto it = recv_data.get_native().find({sender, receiver});
 
-        shamtest::asserts().assert_bool(
+        REQUIRE_NAMED(
             "correct buffer",
             shamalgs::reduction::equals_ptr(get_compute_queue(), buf, it->second));
     });

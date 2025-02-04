@@ -30,5 +30,5 @@ TestStart(Unittest, "phantom-read-write", pahntomread, 1) {
 
     int ret = system(cmd.c_str());
 
-    _Assert(ret == 0);
+    REQUIRE(ret == 0);
 }

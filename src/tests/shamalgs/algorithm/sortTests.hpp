@@ -50,8 +50,8 @@ struct TestSortByKey {
             check_map = check_map && (sorted_keys[i] == key_before_sort[sorted_vals[i]]);
         }
 
-        shamtest::asserts().assert_bool("is sorted", sort_ok);
-        shamtest::asserts().assert_bool("values permutation ok", check_map);
+        REQUIRE_NAMED("is sorted", sort_ok);
+        REQUIRE_NAMED("values permutation ok", check_map);
     }
 
     f64 benchmark_one(u32 len) {
@@ -122,7 +122,10 @@ template<class Tkey, class Tval>
 struct TestSortByKeyUSM {
 
     using vFunctionCall = void (*)(
-        sham::DeviceScheduler_ptr &, sham::DeviceBuffer<Tkey> &, sham::DeviceBuffer<Tval> &, u32);
+        const sham::DeviceScheduler_ptr &,
+        sham::DeviceBuffer<Tkey> &,
+        sham::DeviceBuffer<Tval> &,
+        u32);
 
     vFunctionCall fct;
 
@@ -153,8 +156,8 @@ struct TestSortByKeyUSM {
             check_map = check_map && (sorted_keys[i] == key_before_sort[sorted_vals[i]]);
         }
 
-        shamtest::asserts().assert_bool("is sorted", sort_ok);
-        shamtest::asserts().assert_bool("values permutation ok", check_map);
+        REQUIRE_NAMED("is sorted", sort_ok);
+        REQUIRE_NAMED("values permutation ok", check_map);
     }
 };
 
@@ -188,10 +191,10 @@ struct TestStreamCompact {
             }
         }
 
-        shamtest::asserts().assert_equal("same length", res_len, u32(idxs.size()));
+        REQUIRE_EQUAL_NAMED("same length", res_len, u32(idxs.size()));
 
         for (u32 idx = 0; idx < res_len; idx++) {
-            shamtest::asserts().assert_equal("sid_check", res_check[idx], idxs[idx]);
+            REQUIRE_EQUAL_NAMED("sid_check", res_check[idx], idxs[idx]);
         }
     }
 };
@@ -230,14 +233,14 @@ struct TestIndexRemap {
             match = match && (sorted_keys[i] == remaped_keys[i]);
         }
 
-        shamtest::asserts().assert_bool("permutation is corect", match);
+        REQUIRE_NAMED("permutation is corect", match);
     }
 };
 
 template<class T>
 struct TestIndexRemapUSM {
     using vFunctionCall = void (*)(
-        sham::DeviceScheduler_ptr &,
+        const sham::DeviceScheduler_ptr &,
         sham::DeviceBuffer<T> &,
         sham::DeviceBuffer<T> &,
         sham::DeviceBuffer<u32> &,
@@ -279,6 +282,6 @@ struct TestIndexRemapUSM {
             match = match && (sorted_keys[i] == remaped_keys[i]);
         }
 
-        shamtest::asserts().assert_bool("permutation is corect", match);
+        REQUIRE_NAMED("permutation is corect", match);
     }
 };

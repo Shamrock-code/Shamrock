@@ -34,7 +34,7 @@ TestStart(Unittest, "shamtest/PyScriptHandle(run)", shamtestpyscriptrun, 1) {
 
     PyScriptHandle hdnl{};
 
-    shamtest::asserts().assert_bool("succesfull", hdnl.exec(R"(
+    REQUIRE_NAMED("succesfull", hdnl.exec(R"(
             a=0
         )"));
 }
@@ -43,7 +43,7 @@ TestStart(Unittest, "shamtest/PyScriptHandle(run)", shamtestpyscriptrunfail, 1) 
 
     PyScriptHandle hdnl{};
 
-    shamtest::asserts().assert_bool("fail", !hdnl.exec(R"(
+    REQUIRE_NAMED("fail", !hdnl.exec(R"(
             a=b
         )"));
 }
@@ -52,7 +52,7 @@ TestStart(Unittest, "shamtest/PyScriptHandle(shamrock)", shamtestpyscriptrunsham
 
     PyScriptHandle hdnl{};
 
-    shamtest::asserts().assert_bool("success", hdnl.exec(R"(
+    REQUIRE_NAMED("success", hdnl.exec(R"(
             import shamrock
 
         )"));

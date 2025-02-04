@@ -672,7 +672,7 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
     }
 
     if (inclusion_valid) {
-        shamtest::asserts().assert_bool("inclusion ok", true);
+        REQUIRE_NAMED("inclusion ok", true);
     } else {
         shamtest::asserts().assert_add_comment(
             "inclusion ok",

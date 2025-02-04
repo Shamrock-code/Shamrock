@@ -55,8 +55,8 @@ namespace shamalgs::random {
     sycl::buffer<T> mock_buffer(u64 seed, u32 len, T min_bound, T max_bound);
 
     template<class T>
-    sham::DeviceBuffer<T>
-    mock_buffer_usm(sham::DeviceScheduler_ptr &sched, u64 seed, u32 len, T min_bound, T max_bound);
+    sham::DeviceBuffer<T> mock_buffer_usm(
+        const sham::DeviceScheduler_ptr &sched, u64 seed, u32 len, T min_bound, T max_bound);
 
     template<class T>
     inline std::vector<T> mock_vector(u64 seed, u32 len) {

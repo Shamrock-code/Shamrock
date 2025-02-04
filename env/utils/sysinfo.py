@@ -13,30 +13,34 @@ def is_ninja_available():
     return not (shutil.which("ninja") == None)
 
 def get_avail_mem():
-    free_mem = 0
+    import subprocess
+
     if psutil_found:
-        free_mem = (psutil.virtual_memory().available)/1e6
-    else:
-        try:
+        return (psutil.virtual_memory().available)/1e6
 
-            free_res = os.popen('free -m -t').readlines()[1:]
+    print("Available memory can not be detected using psutils")
 
-            out = 0
-            for l in free_res:
-                l = l.split()[1:]
-                if len(l) < 6:
-                    tot_m, used_m, free_m = map(int, l)
-                    out = max(out, free_m)
-                else:
-                    tot_m, used_m, free_m,sharedmem,bufcache,avail = map(int, l)
-                    out = max(out, free_m)
-                    out = max(out, avail)
+    free_available = not (os.popen('free -m -t').read() == "")
 
-            free_mem = out
-        except:
-            print("Available memory can not be detected -> assuming 16Go")
-            free_mem = 1e9*16
-    return free_mem
+    if free_available:
+        free_res = os.popen('free -m -t').readlines()[1:]
+        out = 0
+        for l in free_res:
+            l = l.split()[1:]
+            if len(l) < 6:
+                tot_m, used_m, free_m = map(int, l)
+                out = max(out, free_m)
+            else:
+                tot_m, used_m, free_m,sharedmem,bufcache,avail = map(int, l)
+                out = max(out, free_m)
+                out = max(out, avail)
+
+        return out
+    #else:
+    #    print(os.popen('vm_stat | grep page size').readlines())
+
+    print("Available memory can not be detected -> assuming 16Go")
+    return 1e9*16
 
 def should_limit_comp_cores():
     MAX_COMP_SZ = 1e9

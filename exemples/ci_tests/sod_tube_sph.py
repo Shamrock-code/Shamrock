@@ -101,28 +101,47 @@ print(f"err_P = {P}")
 
 test_pass = True
 
-pass_rho = 0.00016154918188487577 + 1e-10
-pass_vx = 0.0011627047434808583 + 1e-10
-pass_vy = 2.9881306160214487e-05 + 1e-10
-pass_vz = 1.7413547093185385e-07 + 1e-10
-pass_P = 0.0001248364612976683 + 1e-10
+expect_rho = 0.00016154918188486815
+expect_vx = 0.001162704743480841
+expect_vy = 2.988130616021184e-05
+expect_vz = 1.7413547093230376e-07
+expect_P = 0.00012483646129766217
+
+tol = 1e-11
+
+def float_equal (val1, val2, prec):
+    return abs(val1 - val2) < prec
 
 err_log = ""
 
-if rho > pass_rho:
-    err_log += ("error on rho is too high "+str(rho) +">"+str(pass_rho) ) + "\n"
+if not float_equal(rho, expect_rho, tol*expect_rho):
+    err_log += "error on rho is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_rho} +- {tol*expect_rho}\n"
+    err_log += f"  obtained error = {rho} (relative error = {(rho - expect_rho)/expect_rho})\n"
     test_pass = False
-if vx > pass_vx:
-    err_log += ("error on vx is too high "+str(vx) +">"+str(pass_vx) )+ "\n"
+
+if not float_equal(vx, expect_vx, tol*expect_vx):
+    err_log += "error on vx is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_vx} +- {tol*expect_vx}\n"
+    err_log += f"  obtained error = {vx} (relative error = {(vx - expect_vx)/expect_vx})\n"
     test_pass = False
-if vy > pass_vy:
-    err_log += ("error on vy is too high "+str(vy) +">"+str(pass_vy) )+ "\n"
+
+if not float_equal(vy, expect_vy, tol*expect_vy):
+    err_log += "error on vy is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_vy} +- {tol*expect_vy}\n"
+    err_log += f"  obtained error = {vy} (relative error = {(vy - expect_vy)/expect_vy})\n"
     test_pass = False
-if vz > pass_vz:
-    err_log += ("error on vz is too high "+str(vz) +">"+str(pass_vz) )+ "\n"
+
+if not float_equal(vz, expect_vz, tol*expect_vz):
+    err_log += "error on vz is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_vz} +- {tol*expect_vz}\n"
+    err_log += f"  obtained error = {vz} (relative error = {(vz - expect_vz)/expect_vz})\n"
     test_pass = False
-if P > pass_P:
-    err_log += ("error on P is too high "+str(P) +">"+str(pass_P) )+ "\n"
+
+if not float_equal(P, expect_P, tol*expect_P):
+    err_log += "error on P is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_P} +- {tol*expect_P}\n"
+    err_log += f"  obtained error = {P} (relative error = {(P - expect_P)/expect_P})\n"
     test_pass = False
 
 if test_pass == False:

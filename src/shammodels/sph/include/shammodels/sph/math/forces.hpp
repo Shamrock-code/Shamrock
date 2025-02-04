@@ -52,8 +52,6 @@ namespace shamrock::sph {
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
 
-        constexpr Tscal eps = shambase::get_epsilon<Tscal>();
-
         // inv_sat(.,eps) mean that if sub_fact_. == 0, we return 0
         Tvec acc_a = ((P_a) *sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha;
         Tvec acc_b = ((P_b) *sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb;

@@ -40,8 +40,18 @@ extern const char *configure_time_py_executable();
  */
 extern const char *run_ipython_src();
 
+/// value use to set the value of sys.path if set by the user at runtime
 std::optional<std::string> runtime_set_pypath = std::nullopt;
 
+/**
+ * @brief Retrieves the Python path to be used for the application.
+ *
+ * This function returns the Python path that should be used, prioritizing
+ * the runtime-set value if available. If no runtime value is set, it
+ * defaults to the path configured during the application's build time.
+ *
+ * @return std::string The Python path to be used.
+ */
 std::string get_pypath() {
     if (runtime_set_pypath.has_value()) {
         return runtime_set_pypath.value();
@@ -49,6 +59,7 @@ std::string get_pypath() {
     return configure_time_py_sys_path();
 }
 
+/// Script to check that the python distrib is the expected one
 std::string check_python_is_excpeted_version = R"(
 
 import sys

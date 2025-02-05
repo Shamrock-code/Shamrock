@@ -47,8 +47,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
 
         sham::DeviceBuffer<T> ret(test_vals.size(), shamsys::instance::get_compute_scheduler_ptr());
 
-        sham::EventList depends_list;
-
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
             sham::MultiRef{span},
@@ -70,8 +68,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
 
         sham::DeviceBuffer<T> ret(test_vals.size(), shamsys::instance::get_compute_scheduler_ptr());
 
-        sham::EventList depends_list;
-
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
             sham::MultiRef{span},
@@ -92,8 +88,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
         shamrock::PatchDataFieldSpan<T, 1> span(field, 0, cnt_test);
 
         sham::DeviceBuffer<T> ret(test_vals.size(), shamsys::instance::get_compute_scheduler_ptr());
-
-        sham::EventList depends_list;
 
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
@@ -117,8 +111,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
 
         sham::DeviceBuffer<T> ret(test_vals.size(), shamsys::instance::get_compute_scheduler_ptr());
 
-        sham::EventList depends_list;
-
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
             sham::MultiRef{span},
@@ -140,8 +132,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
         shamrock::PatchDataFieldSpan<T, 2> span(field, 0, cnt_test);
 
         sham::DeviceBuffer<T> ret(test_vals.size(), shamsys::instance::get_compute_scheduler_ptr());
-
-        sham::EventList depends_list;
 
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
@@ -165,8 +155,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
 
         shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> span(field, 0, cnt_test);
 
-        sham::EventList depends_list;
-
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
             sham::MultiRef{ret},
@@ -188,8 +176,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
 
         shamrock::PatchDataFieldSpan<T, 1> span(field, 0, cnt_test);
 
-        sham::EventList depends_list;
-
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
             sham::MultiRef{ret},
@@ -210,8 +196,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
         PatchDataField<T> field("test", 1, cnt_test);
 
         shamrock::PatchDataFieldSpan<T, 1> span(field, 0, cnt_test);
-
-        sham::EventList depends_list;
 
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
@@ -235,8 +219,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
 
         shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> span(field, 0, cnt_test);
 
-        sham::EventList depends_list;
-
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
             sham::MultiRef{ret},
@@ -258,8 +240,6 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
         PatchDataField<T> field("test", 2, cnt_test / 2);
 
         shamrock::PatchDataFieldSpan<T, 2> span(field, 0, cnt_test);
-
-        sham::EventList depends_list;
 
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),

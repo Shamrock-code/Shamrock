@@ -75,6 +75,22 @@ namespace shamrock {
         };
     } // namespace details
 
+    /// Alias for PatchDataFieldSpan_access_rw_dyn_nvar
+    template<class T>
+    using pdat_span_rw_dyn = details::PatchDataFieldSpan_access_rw_dyn_nvar<T>;
+
+    /// Alias for PatchDataFieldSpan_access_ro_dyn_nvar
+    template<class T>
+    using pdat_span_ro_dyn = details::PatchDataFieldSpan_access_ro_dyn_nvar<T>;
+
+    /// Alias for PatchDataFieldSpan_access_rw_static_nvar
+    template<class T, u32 nvar>
+    using pdat_span_rw = details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar>;
+
+    /// Alias for PatchDataFieldSpan_access_ro_static_nvar
+    template<class T, u32 nvar>
+    using pdat_span_ro = details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar>;
+
     /// Constant for dynamic number of variables
     inline constexpr u32 dynamic_nvar = u32_max;
 

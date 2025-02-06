@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file distrib_kernel_call.hpp
+ * @file kernel_call_distrib.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *

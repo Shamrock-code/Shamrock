@@ -11,7 +11,7 @@
 #include "shambase/SourceLocation.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
-#include "shambackends/distrib_kernel_call.hpp"
+#include "shambackends/kernel_call_distrib.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"

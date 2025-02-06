@@ -18,26 +18,30 @@ def get_avail_mem():
     if psutil_found:
         return (psutil.virtual_memory().available)/1e6
 
-    print("Available memory can not be detected using psutils")
+    try:
+        free_available = not (os.popen('free -m -t').read() == "")
 
-    free_available = not (os.popen('free -m -t').read() == "")
+        if free_available:
+            free_res = os.popen('free -m -t').readlines()[1:]
+            out = 0
+            for l in free_res:
+                l = l.split()[1:]
+                if len(l) < 6:
+                    tot_m, used_m, free_m = map(int, l)
+                    out = max(out, free_m)
+                else:
+                    tot_m, used_m, free_m,sharedmem,bufcache,avail = map(int, l)
+                    out = max(out, free_m)
+                    out = max(out, avail)
 
-    if free_available:
-        free_res = os.popen('free -m -t').readlines()[1:]
-        out = 0
-        for l in free_res:
-            l = l.split()[1:]
-            if len(l) < 6:
-                tot_m, used_m, free_m = map(int, l)
-                out = max(out, free_m)
-            else:
-                tot_m, used_m, free_m,sharedmem,bufcache,avail = map(int, l)
-                out = max(out, free_m)
-                out = max(out, avail)
-
-        return out
-    #else:
-    #    print(os.popen('vm_stat | grep page size').readlines())
+            return out
+        #else:
+        #    print(os.popen('vm_stat | grep page size').readlines())
+    except:
+        print("Available memory can not be detected using free")
+        print("Error was :")
+        import traceback
+        print(traceback.format_exc())
 
     print("Available memory can not be detected -> assuming 16Go")
     return 1e9*16

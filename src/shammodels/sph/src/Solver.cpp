@@ -36,6 +36,7 @@
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
+#include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
@@ -46,6 +47,7 @@
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -934,34 +936,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             }
         }
 
-        //// compute omega
-        storage.omega.set(utility.make_compute_field<Tscal>("omega", 1));
-        {
+        modules::ComputeOmega<Tvec, Kern> omega(context, solver_config, storage);
+        omega.compute_omega();
 
-            ComputeField<Tscal> &omega = storage.omega.get();
-            NamedStackEntry stack_loc2{"compute omega"};
-
-            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-                logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "h iteration");
-
-                sham::DeviceBuffer<Tscal> &omega_h = omega.get_buf(p.id_patch);
-
-                sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
-                sham::DeviceBuffer<Tvec> &merged_r
-                    = storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf();
-
-                sycl::range range_npart{pdat.get_obj_cnt()};
-
-                RTree &tree = storage.merged_pos_trees.get().get(p.id_patch);
-
-                tree::ObjectCache &neigh_cache
-                    = storage.neighbors_cache.get().get_cache(p.id_patch);
-                ;
-
-                sph_utils.compute_omega(
-                    merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);
-            });
-        }
         _epsilon_h.reset();
         _h_old.reset();
         break;

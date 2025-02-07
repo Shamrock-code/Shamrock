@@ -24,6 +24,7 @@ set(Sources
     src/modules/ComputeEos.cpp
     src/modules/UpdateDerivs.cpp
     src/modules/ComputeLoadBalanceValue.cpp
+    src/modules/ComputeOmega.cpp
     src/modules/NeighbourCache.cpp
     src/modules/ParticleReordering.cpp
     src/modules/AnalysisSodTube.cpp

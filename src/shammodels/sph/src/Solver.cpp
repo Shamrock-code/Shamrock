@@ -937,7 +937,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         }
 
         modules::ComputeOmega<Tvec, Kern> omega(context, solver_config, storage);
-        omega.compute_omega();
+        storage.omega.set(omega.compute_omega());
 
         _epsilon_h.reset();
         _h_old.reset();

@@ -19,7 +19,8 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
+auto shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega()
+    -> shamrock::ComputeField<Tscal> {
 
     NamedStackEntry stack_loc{"compute omega"};
 
@@ -52,7 +53,7 @@ void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
             merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);
     });
 
-    storage.omega.set(std::move(omega));
+    return omega;
 }
 
 using namespace shammath;

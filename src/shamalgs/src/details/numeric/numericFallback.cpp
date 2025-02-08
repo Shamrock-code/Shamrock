@@ -155,7 +155,6 @@ namespace shamalgs::numeric::details {
 
         {
             auto acc_src = buf_flags.copy_to_stdvec();
-            ;
 
             for (u32 idx = 0; idx < len; idx++) {
 

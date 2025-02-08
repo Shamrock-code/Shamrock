@@ -61,7 +61,7 @@ namespace shamalgs::numeric {
      * @param len the length of the buffer considered
      * @return std::tuple<sycl::buffer<u32>, u32> table of the index to extract and its size
      */
-    sham::DeviceBuffer<u32>
-    stream_compact(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<u32> &buf_flags, u32 len);
+    sham::DeviceBuffer<u32> stream_compact(
+        const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf_flags, u32 len);
 
 } // namespace shamalgs::numeric

@@ -16,10 +16,12 @@
 
 #include "shamalgs/details/numeric/streamCompactExclScan.hpp"
 #include "shambase/integer.hpp"
+#include "shambase/string.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/logs.hpp"
 
 class StreamCompactionAlg;
 
@@ -80,7 +82,7 @@ namespace shamalgs::numeric::details {
 
                     bool _if1 = (idx < last_idx);
                     bool should_write
-                        = (_if1 && (current_val < sum_vals[idx + 1])) || (bool(last_flag) && !_if1);
+                        = (_if1) ? (current_val < sum_vals[idx + 1]) : (bool(last_flag));
 
                     if (should_write) {
                         new_idx[current_val] = idx;
@@ -114,6 +116,9 @@ namespace shamalgs::numeric::details {
         sham::DeviceBuffer<u32> index_map{new_len, sched};
 
         if (new_len > 0) {
+            // logger::raw_ln(
+            //     shambase::format("len = {}, new_len = {}, end_flag = {}", len, new_len,
+            //     end_flag));
             sham::kernel_call(
                 sched->get_queue(),
                 sham::MultiRef{excl_sum},
@@ -125,7 +130,14 @@ namespace shamalgs::numeric::details {
 
                     bool _if1 = (idx < last_idx);
                     bool should_write
-                        = (_if1 && (current_val < sum_vals[idx + 1])) || (bool(last_flag) && !_if1);
+                        = (_if1) ? (current_val < sum_vals[idx + 1]) : (bool(last_flag));
+
+                    // logger::raw_ln(shambase::format(
+                    //     "idx = {}, sum = {}, _if1 = {}, should_write = {}",
+                    //     idx,
+                    //     sum_vals[idx],
+                    //     _if1,
+                    //     should_write));
 
                     if (should_write) {
                         new_idx[current_val] = idx;

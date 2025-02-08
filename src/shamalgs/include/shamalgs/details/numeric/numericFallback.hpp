@@ -41,4 +41,7 @@ namespace shamalgs::numeric::details {
     std::tuple<std::optional<sycl::buffer<u32>>, u32>
     stream_compact_fallback(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
 
+    sham::DeviceBuffer<u32> stream_compact_fallback(
+        const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf_flags, u32 len);
+
 } // namespace shamalgs::numeric::details

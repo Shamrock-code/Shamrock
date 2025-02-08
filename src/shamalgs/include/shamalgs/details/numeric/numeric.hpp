@@ -53,4 +53,15 @@ namespace shamalgs::numeric {
     std::tuple<std::optional<sycl::buffer<u32>>, u32>
     stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
 
+    /**
+     * @brief Stream compaction algorithm
+     *
+     * @param q the queue to run on
+     * @param buf_flags buffer of only 0 and ones
+     * @param len the length of the buffer considered
+     * @return std::tuple<sycl::buffer<u32>, u32> table of the index to extract and its size
+     */
+    sham::DeviceBuffer<u32>
+    stream_compact(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<u32> &buf_flags, u32 len);
+
 } // namespace shamalgs::numeric

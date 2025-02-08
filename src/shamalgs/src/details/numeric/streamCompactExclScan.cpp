@@ -19,6 +19,7 @@
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
+#include "shambackends/kernel_call.hpp"
 
 class StreamCompactionAlg;
 
@@ -89,5 +90,50 @@ namespace shamalgs::numeric::details {
 
         return {std::move(index_map), new_len};
     };
+
+    sham::DeviceBuffer<u32> stream_compact_excl_scan(
+        const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf_flags, u32 len) {
+
+        if (len < 2) {
+            return stream_compact_fallback(sched, buf_flags, len);
+        }
+
+        // perform the exclusive sum of the buf flag
+        sham::DeviceBuffer<u32> excl_sum = exclusive_sum(sched, buf_flags, len);
+
+        // recover the end value of the sum to know the new size
+        u32 new_len = excl_sum.get_val_at_idx(len - 1);
+
+        u32 end_flag = buf_flags.get_val_at_idx(len - 1);
+
+        if (end_flag) {
+            new_len++;
+        }
+
+        // create the index buffer that we will return
+        sham::DeviceBuffer<u32> index_map{new_len, sched};
+
+        if (new_len > 0) {
+            sham::kernel_call(
+                sched->get_queue(),
+                sham::MultiRef{excl_sum},
+                sham::MultiRef{index_map},
+                len,
+                [last_idx  = len - 1,
+                 last_flag = end_flag](u32 idx, const u32 *sum_vals, u32 *new_idx) {
+                    u32 current_val = sum_vals[idx];
+
+                    bool _if1 = (idx < last_idx);
+                    bool should_write
+                        = (_if1 && (current_val < sum_vals[idx + 1])) || (bool(last_flag) && !_if1);
+
+                    if (should_write) {
+                        new_idx[current_val] = idx;
+                    }
+                });
+        }
+
+        return index_map;
+    }
 
 } // namespace shamalgs::numeric::details

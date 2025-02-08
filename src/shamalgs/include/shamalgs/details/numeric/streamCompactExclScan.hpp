@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/sycl.hpp"
 
 namespace shamalgs::numeric::details {
@@ -30,5 +31,8 @@ namespace shamalgs::numeric::details {
      */
     std::tuple<std::optional<sycl::buffer<u32>>, u32>
     stream_compact_excl_scan(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
+
+    sham::DeviceBuffer<u32> stream_compact_excl_scan(
+        const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf_flags, u32 len);
 
 } // namespace shamalgs::numeric::details

@@ -427,6 +427,52 @@ namespace sham {
         }
 
         /**
+         * @brief Copies a specified range of elements from the buffer to a std::vector.
+         *
+         * This function creates a new std::vector containing elements from the buffer
+         * within the specified index range [begin, end). The function ensures that the
+         * indices are valid and throws an exception if they are not.
+         *
+         * @param begin The starting index of the range to copy, inclusive.
+         * @param end The ending index of the range to copy, exclusive.
+         * @return A std::vector containing the elements from the specified range.
+         * @throws std::invalid_argument if the end index is greater than the buffer size
+         *         or if the begin index is greater than or equal to the end index.
+         */
+        [[nodiscard]] inline std::vector<T>
+        copy_to_stdvec_idx_range(size_t begin, size_t end) const {
+
+            if (end > size) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_to_stdvec_idx_range: end > size\n  end = {},\n  size = {}", end, size));
+            }
+
+            if (begin >= end) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_to_stdvec_idx_range: begin >= end\n  begin = {},\n  end = {}",
+                    begin,
+                    end));
+            }
+
+            u32 size_cp = end - begin;
+            std::vector<T> ret(size_cp);
+
+            if (size_cp > 0) {
+                sham::EventList depends_list;
+                const T *ptr = get_read_access(depends_list);
+
+                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                    cgh.copy(ptr + begin, ret.data(), size_cp);
+                });
+
+                e.wait_and_throw();
+                complete_event_state(sycl::event{});
+            }
+
+            return ret;
+        }
+
+        /**
          * @brief Copy the content of a std::vector into the buffer
          *
          * This function copies the content of a given std::vector into the buffer.
@@ -770,6 +816,26 @@ namespace sham {
 
         ///////////////////////////////////////////////////////////////////////
         // Filler fcts (END)
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////////////////////
+        // Getter fcts
+        ///////////////////////////////////////////////////////////////////////
+
+        /**
+         * @brief Get the value at a given index in the buffer.
+         *
+         * This function returns the value at the given index in the buffer.
+         *
+         * @param idx The index of the value to retrieve
+         * @return The value at the given index
+         */
+        T get_val_at_idx(size_t idx) const { return copy_to_stdvec_idx_range(idx, idx + 1)[0]; }
+
+        ///////////////////////////////////////////////////////////////////////
+        // Getter fcts (END)
         ///////////////////////////////////////////////////////////////////////
 
         ///////////////////////////////////////////////////////////////////////

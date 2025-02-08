@@ -59,14 +59,14 @@ namespace shamtree {
     } // namespace details
 
     template<class Tmorton, class Tvec, u32 dim>
-    MortonCodeSet<Tmorton, Tvec, dim>::MortonCodeSet(
+    MortonCodeSet<Tmorton, Tvec, dim> morton_code_set_from_positions(
         sham::DeviceScheduler_ptr dev_sched,
         shammath::AABB<Tvec> bounding_box,
         sham::DeviceBuffer<Tvec> &pos_buf,
         u32 cnt_obj,
-        u32 morton_count)
-        : bounding_box(bounding_box), cnt_obj(cnt_obj), morton_count(morton_count),
-          morton_codes(morton_count, dev_sched) {
+        u32 morton_count) {
+
+        sham::DeviceBuffer<Tmorton> morton_codes(morton_count, dev_sched);
 
         if (morton_count < cnt_obj) {
             shambase::throw_with_loc<std::invalid_argument>(shambase::format(
@@ -104,9 +104,29 @@ namespace shamtree {
                     morton[cnt_obj + i] = err_code;
                 });
         }
+
+        return MortonCodeSet<Tmorton, Tvec, dim>(
+            std::move(bounding_box),
+            std::move(cnt_obj),
+            std::move(morton_count),
+            std::move(morton_codes));
     }
 
 } // namespace shamtree
 
 template class shamtree::MortonCodeSet<u32, f64_3, 3>;
 template class shamtree::MortonCodeSet<u64, f64_3, 3>;
+
+template shamtree::MortonCodeSet<u32, f64_3, 3> shamtree::morton_code_set_from_positions(
+    sham::DeviceScheduler_ptr dev_sched,
+    shammath::AABB<f64_3> bounding_box,
+    sham::DeviceBuffer<f64_3> &pos_buf,
+    u32 cnt_obj,
+    u32 morton_count);
+
+template shamtree::MortonCodeSet<u64, f64_3, 3> shamtree::morton_code_set_from_positions(
+    sham::DeviceScheduler_ptr dev_sched,
+    shammath::AABB<f64_3> bounding_box,
+    sham::DeviceBuffer<f64_3> &pos_buf,
+    u32 cnt_obj,
+    u32 morton_count);

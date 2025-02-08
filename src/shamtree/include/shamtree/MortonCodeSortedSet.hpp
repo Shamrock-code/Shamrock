@@ -45,18 +45,6 @@ namespace shamtree {
         /// Device buffer holding the map from sorted Morton code to object id
         sham::DeviceBuffer<u32> map_morton_id_to_obj_id;
 
-        /**
-         * @brief Constructs a MortonCodeSet
-         *
-         * @param dev_sched The device scheduler for managing SYCL operations
-         * @param bounding_box The bounding box encapsulating the input positions
-         * @param pos_buf The buffer containing the input positions
-         * @param cnt_obj The number of positions in the buffer
-         */
-        MortonCodeSortedSet(
-            sham::DeviceScheduler_ptr dev_sched,
-            MortonCodeSet<Tmorton, Tvec, dim> &&morton_codes_set);
-
         /// Move constructor from each members
         MortonCodeSortedSet(
             shammath::AABB<Tvec> &&bounding_box,
@@ -69,5 +57,17 @@ namespace shamtree {
               sorted_morton_codes(std::move(sorted_morton_codes)),
               map_morton_id_to_obj_id(std::move(map_morton_id_to_obj_id)) {}
     };
+
+    /**
+     * @brief Constructs a MortonCodeSet
+     *
+     * @param dev_sched The device scheduler for managing SYCL operations
+     * @param bounding_box The bounding box encapsulating the input positions
+     * @param pos_buf The buffer containing the input positions
+     * @param cnt_obj The number of positions in the buffer
+     */
+    template<class Tmorton, class Tvec, u32 dim>
+    MortonCodeSortedSet<Tmorton, Tvec, dim> sort_morton_set(
+        sham::DeviceScheduler_ptr dev_sched, MortonCodeSet<Tmorton, Tvec, dim> &&morton_codes_set);
 
 } // namespace shamtree

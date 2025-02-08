@@ -46,21 +46,6 @@ namespace shamtree {
         /// Device buffer holding the Morton codes
         sham::DeviceBuffer<Tmorton> morton_codes;
 
-        /**
-         * @brief Constructs a MortonCodeSet
-         *
-         * @param dev_sched The device scheduler for managing SYCL operations
-         * @param bounding_box The bounding box encapsulating the input positions
-         * @param pos_buf The buffer containing the input positions
-         * @param cnt_obj The number of positions in the buffer
-         */
-        MortonCodeSet(
-            sham::DeviceScheduler_ptr dev_sched,
-            shammath::AABB<Tvec> bounding_box,
-            sham::DeviceBuffer<Tvec> &pos_buf,
-            u32 cnt_obj,
-            u32 morton_count);
-
         /// Move constructor from each members
         MortonCodeSet(
             shammath::AABB<Tvec> &&bounding_box,
@@ -70,5 +55,21 @@ namespace shamtree {
             : bounding_box(std::move(bounding_box)), cnt_obj(std::move(cnt_obj)),
               morton_count(std::move(morton_count)), morton_codes(std::move(morton_codes)) {}
     };
+
+    /**
+     * @brief Constructs a MortonCodeSet
+     *
+     * @param dev_sched The device scheduler for managing SYCL operations
+     * @param bounding_box The bounding box encapsulating the input positions
+     * @param pos_buf The buffer containing the input positions
+     * @param cnt_obj The number of positions in the buffer
+     */
+    template<class Tmorton, class Tvec, u32 dim>
+    MortonCodeSet<Tmorton, Tvec, dim> morton_code_set_from_positions(
+        sham::DeviceScheduler_ptr dev_sched,
+        shammath::AABB<Tvec> bounding_box,
+        sham::DeviceBuffer<Tvec> &pos_buf,
+        u32 cnt_obj,
+        u32 morton_count);
 
 } // namespace shamtree

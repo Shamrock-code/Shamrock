@@ -85,7 +85,7 @@ TestStart(Unittest, "shamtree/MortonCodeSet", test_morton_codeset, 1) {
 
     partpos_buf.copy_from_stdvec(partpos);
 
-    auto set = shamtree::MortonCodeSet<Tmorton, Tvec, 3>(
+    auto set = shamtree::morton_code_set_from_positions<Tmorton, Tvec, 3>(
         shamsys::instance::get_compute_scheduler_ptr(), bb, partpos_buf, partpos.size(), 16);
 
     REQUIRE_EQUAL(set.cnt_obj, partpos.size());
@@ -103,7 +103,7 @@ TestStart(Unittest, "shamtree/MortonCodeSortedSet", test_morton_code_sort_set, 1
 
     partpos_buf.copy_from_stdvec(partpos);
 
-    auto set = shamtree::MortonCodeSet<Tmorton, Tvec, 3>(
+    auto set = shamtree::morton_code_set_from_positions<Tmorton, Tvec, 3>(
         shamsys::instance::get_compute_scheduler_ptr(), bb, partpos_buf, partpos.size(), 16);
 
     std::vector<Tmorton> mortons = set.morton_codes.copy_to_stdvec();
@@ -113,8 +113,8 @@ TestStart(Unittest, "shamtree/MortonCodeSortedSet", test_morton_code_sort_set, 1
     REQUIRE_EQUAL(set.morton_codes.get_size(), 16);
     REQUIRE_EQUAL(set.morton_codes.copy_to_stdvec(), test_mortons);
 
-    auto sorted_set = shamtree::MortonCodeSortedSet<Tmorton, Tvec, 3>(
-        shamsys::instance::get_compute_scheduler_ptr(), std::move(set));
+    auto sorted_set
+        = shamtree::sort_morton_set(shamsys::instance::get_compute_scheduler_ptr(), std::move(set));
 
     REQUIRE_EQUAL(sorted_set.cnt_obj, partpos.size());
     REQUIRE_EQUAL(sorted_set.morton_count, 16);

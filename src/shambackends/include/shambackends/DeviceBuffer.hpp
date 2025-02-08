@@ -447,7 +447,7 @@ namespace sham {
                     "copy_to_stdvec_idx_range: end > size\n  end = {},\n  size = {}", end, size));
             }
 
-            if (begin >= end) {
+            if (begin > end) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
                     "copy_to_stdvec_idx_range: begin >= end\n  begin = {},\n  end = {}",
                     begin,

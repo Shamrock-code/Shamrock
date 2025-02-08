@@ -233,8 +233,8 @@ TestStart(
         REQUIRE_EQUAL(v2[4], 4);
     }
 
-    REQUIRE_EXCEPTION_THROW(buffer.copy_to_stdvec_idx_range(5, 2), std::invalid_argument);
-    REQUIRE_EXCEPTION_THROW(buffer.copy_to_stdvec_idx_range(0, 11), std::invalid_argument);
+    REQUIRE_EXCEPTION_THROW([[maybe_unused]] auto _ = buffer.copy_to_stdvec_idx_range(5, 2), std::invalid_argument);
+    REQUIRE_EXCEPTION_THROW([[maybe_unused]] auto _ = buffer.copy_to_stdvec_idx_range(0, 11), std::invalid_argument);
 }
 
 TestStart(Unittest, "shambackends/DeviceBuffer:get_val_at_idx", DeviceBuffer_get_val_at_idx, 1) {

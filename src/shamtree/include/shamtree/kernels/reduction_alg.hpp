@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/sycl.hpp"
 #include <memory>
 #include <vector>
@@ -39,3 +40,16 @@ void sycl_morton_remap_reduction(
     std::unique_ptr<sycl::buffer<u_morton>> &buf_morton,
     // out
     std::unique_ptr<sycl::buffer<u_morton>> &buf_leaf_morton);
+
+template<class split_int>
+struct reduc_ret_t {
+    sham::DeviceBuffer<split_int> buf_reduc_index_map;
+    u32 morton_leaf_count;
+};
+
+template<class u_morton>
+reduc_ret_t<u32> reduction_alg(
+    const sham::DeviceScheduler_ptr &dev_sched,
+    u32 morton_count,
+    sham::DeviceBuffer<u_morton> &buf_morton,
+    u32 reduction_level);

@@ -1,0 +1,65 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file MortonReducedSet.hpp
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @brief
+ */
+
+#include "shamtree/MortonCodeSortedSet.hpp"
+
+namespace shamtree {
+
+    /**
+     * @brief Class representing a set of Morton codes with associated bounding box and position
+     * data
+     *
+     * @tparam Tmorton The type used for Morton codes
+     * @tparam Tvec The vector type representing positions
+     * @tparam dim The dimensionality, inferred from Tvec if not provided
+     */
+    template<class Tmorton, class Tvec, u32 dim = shambase::VectorProperties<Tvec>::dimension>
+    class MortonReducedSet {
+        public:
+        MortonCodeSortedSet<Tmorton, Tvec> morton_codes_set;
+
+        u32 reduce_code_count; // was called tree_leaf_count
+
+        sham::DeviceBuffer<u32> buf_reduc_index_map;      // was called buf_reduc_index_map
+        sham::DeviceBuffer<Tmorton> reduced_morton_codes; // was called buf_tree_morton
+
+        /// Move constructor from each members
+        MortonReducedSet(
+            MortonCodeSortedSet<Tmorton, Tvec> &&morton_codes_set,
+            u32 reduce_code_count,
+            sham::DeviceBuffer<u32> &&buf_reduc_index_map,
+            sham::DeviceBuffer<Tmorton> &&reduced_morton_codes)
+            : morton_codes_set(std::move(morton_codes_set)), reduce_code_count(reduce_code_count),
+              buf_reduc_index_map(std::move(buf_reduc_index_map)),
+              reduced_morton_codes(std::move(reduced_morton_codes)) {}
+    };
+
+    /**
+     * @brief Constructs a MortonCodeSet
+     *
+     * @param dev_sched The device scheduler for managing SYCL operations
+     * @param bounding_box The bounding box encapsulating the input positions
+     * @param pos_buf The buffer containing the input positions
+     * @param cnt_obj The number of positions in the buffer
+     */
+    template<class Tmorton, class Tvec, u32 dim>
+    MortonReducedSet<Tmorton, Tvec, dim> reduce_morton_set(
+        sham::DeviceScheduler_ptr dev_sched,
+        MortonCodeSortedSet<Tmorton, Tvec, dim> &&morton_codes_set,
+        u32 reduction_level);
+
+} // namespace shamtree

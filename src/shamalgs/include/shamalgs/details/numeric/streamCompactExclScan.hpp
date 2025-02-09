@@ -32,6 +32,14 @@ namespace shamalgs::numeric::details {
     std::tuple<std::optional<sycl::buffer<u32>>, u32>
     stream_compact_excl_scan(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
 
+    /**
+     * @brief Performs stream compaction using exclusive scan on a device.
+     *
+     * @param sched Device scheduler that manages the computation queue.
+     * @param buf_flags Buffer containing flags (0s and 1s) indicating elements to keep.
+     * @param len Length of the buffer, representing the number of elements to process.
+     * @return A DeviceBuffer containing the indices of the elements to keep.
+     */
     sham::DeviceBuffer<u32> stream_compact_excl_scan(
         const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf_flags, u32 len);
 

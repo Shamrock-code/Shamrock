@@ -209,7 +209,7 @@ void sycl_reduction_iteration(
         [_morton_cnt = morton_count](
             u32 i,
             const u_morton *__restrict m,
-            split_int *__restrict split_in,
+            const split_int *__restrict split_in,
             split_int *__restrict split_out) {
             auto DELTA = [=](i32 x, i32 y) {
                 return sham::karras_delta(x, y, _morton_cnt, m);
@@ -360,17 +360,14 @@ reduc_ret_t<split_int> make_indexmap(
     u32 morton_count,
     sham::DeviceBuffer<split_int> &buf_split_table) {
 
-    auto [buf, len] = shamalgs::numeric::stream_compact(dev_sched, buf_split_table, morton_count);
+    auto buf = shamalgs::numeric::stream_compact(dev_sched, buf_split_table, morton_count);
 
-    u32 morton_leaf_count = len;
+    u32 morton_leaf_count = buf.get_size();
 
     sham::DeviceBuffer<u32> buf_reduc_index_map(morton_leaf_count + 2, dev_sched);
 
-    if (buf) {
-        update_morton_buf(dev_sched->get_queue(), len, morton_count, buf, buf_reduc_index_map);
-    } else {
-        throw shambase::make_except_with_loc<std::runtime_error>("this result shouldn't be null");
-    }
+    update_morton_buf(
+        dev_sched->get_queue(), morton_leaf_count, morton_count, buf, buf_reduc_index_map);
 
     return {std::move(buf_reduc_index_map), morton_leaf_count};
 }

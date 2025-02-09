@@ -47,6 +47,9 @@ namespace shamtree {
             throw shambase::make_except_with_loc<std::runtime_error>("0 leaf tree cannot exists");
         }
 
+        // here the old "One cell mode" is not implemented as I want to get rid of this confusing
+        // mess, seriously this thing was giving me never ending headaches ...
+
         sham::DeviceBuffer<Tmorton> buf_tree_morton(res.morton_leaf_count, dev_sched);
 
         sycl_morton_remap_reduction(

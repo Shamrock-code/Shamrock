@@ -40,7 +40,7 @@ namespace shamtree {
         /// The count of objects represented in the set
         u32 cnt_obj;
 
-        /// The count of Morton codes in the set (rounded to a power of 2)
+        /// The count of Morton codes in the set (every code after cnt_obj is err_code)
         u32 morton_count;
 
         /// Device buffer holding the Morton codes
@@ -66,7 +66,7 @@ namespace shamtree {
      */
     template<class Tmorton, class Tvec, u32 dim>
     MortonCodeSet<Tmorton, Tvec, dim> morton_code_set_from_positions(
-        sham::DeviceScheduler_ptr dev_sched,
+        const sham::DeviceScheduler_ptr &dev_sched,
         shammath::AABB<Tvec> bounding_box,
         sham::DeviceBuffer<Tvec> &pos_buf,
         u32 cnt_obj,

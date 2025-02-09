@@ -58,7 +58,7 @@ namespace shamtree {
      */
     template<class Tmorton, class Tvec, u32 dim>
     MortonReducedSet<Tmorton, Tvec, dim> reduce_morton_set(
-        sham::DeviceScheduler_ptr dev_sched,
+        const sham::DeviceScheduler_ptr &dev_sched,
         MortonCodeSortedSet<Tmorton, Tvec, dim> &&morton_codes_set,
         u32 reduction_level);
 

@@ -201,3 +201,56 @@ TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) 
         }
     }
 }
+
+TestStart(
+    Unittest,
+    "shambackends/DeviceBuffer:copy_to_stdvec_idx_range",
+    DeviceBuffer_copy_to_stdvec_idx_range,
+    1) {
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceBuffer<int> buffer(10, dev_sched);
+    std::vector<int> v1 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    buffer.copy_from_stdvec(v1);
+
+    {
+        std::vector<int> v2 = buffer.copy_to_stdvec_idx_range(2, 5);
+        REQUIRE_EQUAL(v2.size(), 3);
+        REQUIRE_EQUAL(v2[0], 2);
+        REQUIRE_EQUAL(v2[1], 3);
+        REQUIRE_EQUAL(v2[2], 4);
+    }
+
+    {
+        std::vector<int> v2 = buffer.copy_to_stdvec_idx_range(0, 5);
+        REQUIRE_EQUAL(v2.size(), 5);
+        REQUIRE_EQUAL(v2[0], 0);
+        REQUIRE_EQUAL(v2[1], 1);
+        REQUIRE_EQUAL(v2[2], 2);
+        REQUIRE_EQUAL(v2[3], 3);
+        REQUIRE_EQUAL(v2[4], 4);
+    }
+
+    REQUIRE_EXCEPTION_THROW(
+        [[maybe_unused]] auto _ = buffer.copy_to_stdvec_idx_range(5, 2), std::invalid_argument);
+    REQUIRE_EXCEPTION_THROW(
+        [[maybe_unused]] auto _ = buffer.copy_to_stdvec_idx_range(0, 11), std::invalid_argument);
+}
+
+TestStart(Unittest, "shambackends/DeviceBuffer:get_val_at_idx", DeviceBuffer_get_val_at_idx, 1) {
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceBuffer<int> buffer(10, dev_sched);
+    std::vector<int> init_values = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    buffer.copy_from_stdvec(init_values);
+
+    for (size_t i = 0; i < init_values.size(); ++i) {
+        REQUIRE_EQUAL(buffer.get_val_at_idx(i), init_values[i]);
+    }
+
+    REQUIRE_EXCEPTION_THROW(buffer.get_val_at_idx(10), std::invalid_argument);
+}

@@ -57,7 +57,7 @@ reduc_ret_t<u32> reduction_alg(
 template<class u_morton>
 void sycl_morton_remap_reduction(
     // in
-    const sham::DeviceScheduler_ptr &dev_sched,
+    sham::DeviceQueue &queue,
     u32 morton_leaf_count,
     sham::DeviceBuffer<u32> &buf_reduc_index_map,
     sham::DeviceBuffer<u_morton> &buf_morton,

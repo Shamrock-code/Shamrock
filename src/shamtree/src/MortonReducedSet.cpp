@@ -53,7 +53,7 @@ namespace shamtree {
         sham::DeviceBuffer<Tmorton> buf_tree_morton(res.morton_leaf_count, dev_sched);
 
         sycl_morton_remap_reduction(
-            dev_sched,
+            dev_sched->get_queue(),
             res.morton_leaf_count,
             res.buf_reduc_index_map,
             morton_codes_set.sorted_morton_codes,

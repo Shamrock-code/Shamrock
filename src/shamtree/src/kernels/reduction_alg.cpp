@@ -204,7 +204,7 @@ void sycl_reduction_iteration(
     sham::kernel_call(
         queue,
         sham::MultiRef{buf_morton, buf_split_table_in},
-        sham::MultiRef{buf_split_table_in},
+        sham::MultiRef{buf_split_table_out},
         morton_count,
         [_morton_cnt = morton_count](
             u32 i,
@@ -560,3 +560,44 @@ void sycl_morton_remap_reduction<u64>(
     __sycl_morton_remap_reduction<u64, Kernel_remap_morton_code_morton64>(
         queue, morton_leaf_count, buf_reduc_index_map, buf_morton, buf_leaf_morton);
 }
+
+template<class u_morton>
+void sycl_morton_remap_reduction(
+    // in
+    sham::DeviceQueue &queue,
+    u32 morton_leaf_count,
+    sham::DeviceBuffer<u32> &buf_reduc_index_map,
+    sham::DeviceBuffer<u_morton> &buf_morton,
+    // out
+    sham::DeviceBuffer<u_morton> &buf_leaf_morton) {
+
+    sham::kernel_call(
+        queue,
+        sham::MultiRef{buf_reduc_index_map, buf_morton},
+        sham::MultiRef{buf_leaf_morton},
+        morton_leaf_count,
+        [](u32 i,
+           const u32 *__restrict id_remaped,
+           const u_morton *__restrict m,
+           u_morton *__restrict m_remaped) {
+            m_remaped[i] = m[id_remaped[i]];
+        });
+}
+
+template void sycl_morton_remap_reduction<u32>(
+    // in
+    sham::DeviceQueue &queue,
+    u32 morton_leaf_count,
+    sham::DeviceBuffer<u32> &buf_reduc_index_map,
+    sham::DeviceBuffer<u32> &buf_morton,
+    // out
+    sham::DeviceBuffer<u32> &buf_leaf_morton);
+
+template void sycl_morton_remap_reduction<u64>(
+    // in
+    sham::DeviceQueue &queue,
+    u32 morton_leaf_count,
+    sham::DeviceBuffer<u32> &buf_reduc_index_map,
+    sham::DeviceBuffer<u64> &buf_morton,
+    // out
+    sham::DeviceBuffer<u64> &buf_leaf_morton);

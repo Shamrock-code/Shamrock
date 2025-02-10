@@ -736,13 +736,20 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     const u32 iuint      = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
 
-    bool has_B_field   = solver_config.has_field_B_on_rho();
-    bool has_psi_field = solver_config.has_field_psi_on_ch();
+    bool has_B_field       = solver_config.has_field_B_on_rho();
+    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
     const u32 iB_on_rho   = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0;
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
+
+    const u32 iepsilon  = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 idepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
+    const u32 ideltav   = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+    const u32 iddeltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
 
     shamrock::SchedulerUtility utility(scheduler());
 
@@ -772,6 +779,12 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     }
     if (has_psi_field) {
         utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
+    }
+    if (has_epsilon_field) {
+        utility.fields_forward_euler<Tscal>(iepsilon, idepsilon, dt / 2);
+    }
+    if (has_deltav_field) {
+        utility.fields_forward_euler<Tvec>(ideltav, iddeltav, dt / 2);
     }
 }
 
@@ -1014,9 +1027,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_alphaAV_field    = solver_config.has_field_alphaAV();
     bool has_soundspeed_field = solver_config.ghost_has_soundspeed();
 
-    bool has_B_field     = solver_config.has_field_B_on_rho();
-    bool has_psi_field   = solver_config.has_field_psi_on_ch();
-    bool has_curlB_field = solver_config.has_field_curlB();
+    bool has_B_field       = solver_config.has_field_B_on_rho();
+    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_curlB_field   = solver_config.has_field_curlB();
+    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
@@ -1035,6 +1050,9 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
     const u32 icurlB      = (has_curlB_field) ? pdl.get_field_idx<Tvec>("curlB") : 0;
 
+    const u32 iepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
@@ -1047,11 +1065,13 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 isoundspeed_interf
         = (has_soundspeed_field) ? ghost_layout.get_field_idx<Tscal>("soundspeed") : 0;
 
-    const u32 iB_interf = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
-
-    const u32 ipsi_interf = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
-
+    const u32 iB_interf     = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
+    const u32 ipsi_interf   = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 icurlB_interf = (has_curlB_field) ? ghost_layout.get_field_idx<Tvec>("curlB") : 0;
+
+    const u32 iepsilon_interf
+        = (has_epsilon_field) ? ghost_layout.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 ideltav_interf = (has_deltav_field) ? ghost_layout.get_field_idx<Tvec>("deltav") : 0;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -1113,6 +1133,16 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_curlB_field) {
                 sender_patch.get_field<Tvec>(icurlB).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tvec>(icurlB_interf));
+            }
+
+            if (has_epsilon_field) {
+                sender_patch.get_field<Tscal>(iepsilon).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(iepsilon_interf));
+            }
+
+            if (has_deltav_field) {
+                sender_patch.get_field<Tvec>(ideltav).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tvec>(ideltav_interf));
             }
         });
 
@@ -1178,6 +1208,15 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                     pdat_new.get_field<Tvec>(icurlB_interf).insert(pdat.get_field<Tvec>(icurlB));
                 }
 
+                if (has_epsilon_field) {
+                    pdat_new.get_field<Tscal>(iepsilon_interf)
+                        .insert(pdat.get_field<Tscal>(iepsilon));
+                }
+
+                if (has_deltav_field) {
+                    pdat_new.get_field<Tvec>(ideltav_interf).insert(pdat.get_field<Tvec>(ideltav));
+                }
+
                 pdat_new.check_field_obj_cnt_match();
 
                 return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
@@ -1233,8 +1272,11 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     shamrock::SchedulerUtility utility(scheduler());
     PatchDataLayout &pdl = scheduler().pdl;
 
-    bool has_B_field      = solver_config.has_field_B_on_rho();
-    bool has_psi_field    = solver_config.has_field_psi_on_ch();
+    bool has_B_field       = solver_config.has_field_B_on_rho();
+    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
+
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
@@ -1249,6 +1291,14 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     }
     if (has_psi_field) {
         storage.old_dpsi_on_ch.set(utility.save_field<Tscal>(idpsi_on_ch, "dpsi/ch_old"));
+    }
+    if (has_epsilon_field) {
+        storage.old_depsilon.set(
+            utility.save_field<Tscal>(pdl.get_field_idx<Tscal>("dtepsilon"), "dtepsilon_old"));
+    }
+    if (has_deltav_field) {
+        storage.old_ddeltav.set(
+            utility.save_field<Tvec>(pdl.get_field_idx<Tvec>("dtdeltav"), "dtdeltav_old"));
     }
 }
 
@@ -1298,8 +1348,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    bool has_B_field   = solver_config.has_field_B_on_rho();
-    bool has_psi_field = solver_config.has_field_psi_on_ch();
+    bool has_B_field       = solver_config.has_field_B_on_rho();
+    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
     PatchDataLayout &pdl = scheduler().pdl;
 
@@ -1313,6 +1365,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
+    const u32 iepsilon    = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 idepsilon   = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
+    const u32 ideltav     = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+    const u32 iddeltav    = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
 
     shamrock::SchedulerUtility utility(scheduler());
 
@@ -1550,6 +1606,20 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt / 2);
         }
 
+        if (solver_config.dust_config.has_epsilon_field()) {
+            ComputeField<Tscal> epsilon_epsilon_sq
+                = utility.make_compute_field<Tscal>("epsilon epsilon^2", 1);
+            utility.fields_leapfrog_corrector<Tscal>(
+                iepsilon, idepsilon, storage.old_depsilon.get(), epsilon_epsilon_sq, dt / 2);
+        }
+
+        if (solver_config.dust_config.has_deltav_field()) {
+            ComputeField<Tscal> epsilon_deltav_sq
+                = utility.make_compute_field<Tscal>("deltav deltav^2", 1);
+            utility.fields_leapfrog_corrector<Tvec>(
+                ideltav, iddeltav, storage.old_ddeltav.get(), epsilon_deltav_sq, dt / 2);
+        }
+
         storage.old_axyz.reset();
         storage.old_duint.reset();
         if (solver_config.has_field_B_on_rho()) {
@@ -1557,6 +1627,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         }
         if (solver_config.has_field_B_on_rho()) {
             storage.old_dpsi_on_ch.reset();
+        }
+
+        if (solver_config.dust_config.has_epsilon_field()) {
+            storage.old_depsilon.reset();
+        }
+
+        if (solver_config.dust_config.has_deltav_field()) {
+            storage.old_ddeltav.reset();
         }
 
         Tscal rank_veps_v = sycl::sqrt(vepsilon_v_sq.compute_rank_max());

@@ -135,7 +135,23 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_boundary_free", &TConfig::set_boundary_free)
         .def("set_boundary_periodic", &TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic", &TConfig::set_boundary_shearing_periodic)
-
+        .def(
+            "set_dust_mode_none",
+            [](TConfig &self) {
+                self.dust_config.set_none();
+            })
+        .def(
+            "set_dust_mode_monofluid_tvi",
+            [](TConfig &self, u32 nvar) {
+                self.dust_config.set_monofluid_tvi(nvar);
+            })
+        .def(
+            "set_dust_mode_monofluid_complete",
+            [](TConfig &self, u32 ndust) {
+                self.dust_config.set_monofluid_complete(ndust);
+            },
+            py::kw_only(),
+            py::arg("ndust"))
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
         .def(
             "add_ext_force_lense_thirring",

@@ -77,11 +77,13 @@ namespace shammodels::sph {
         if (dust_config.has_epsilon_field()) {
             u32 ndust = dust_config.get_dust_nvar();
             pdl.add_field<Tscal>("epsilon", ndust);
+            pdl.add_field<Tscal>("dtepsilon", ndust);
         }
 
         if (dust_config.has_deltav_field()) {
             u32 ndust = dust_config.get_dust_nvar();
             pdl.add_field<Tvec>("deltav", ndust);
+            pdl.add_field<Tvec>("dtdeltav", ndust);
         }
     }
 

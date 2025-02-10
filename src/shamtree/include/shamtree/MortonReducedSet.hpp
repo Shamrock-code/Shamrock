@@ -21,7 +21,7 @@ namespace shamtree {
 
     /**
      * @brief Class representing a set of Morton codes with associated bounding box and position
-     * data
+     * data that was reduced.
      *
      * @tparam Tmorton The type used for Morton codes
      * @tparam Tvec The vector type representing positions
@@ -30,12 +30,22 @@ namespace shamtree {
     template<class Tmorton, class Tvec, u32 dim = shambase::VectorProperties<Tvec>::dimension>
     class MortonReducedSet {
         public:
+        /// The source Morton codes set
         MortonCodeSortedSet<Tmorton, Tvec> morton_codes_set;
 
-        u32 reduce_code_count; // was called tree_leaf_count
+        /**
+         * @brief The count of Morton codes in the reduced set
+         * This was called tree_leaf_count
+         */
+        u32 reduce_code_count;
 
-        sham::DeviceBuffer<u32> buf_reduc_index_map;      // was called buf_reduc_index_map
-        sham::DeviceBuffer<Tmorton> reduced_morton_codes; // was called buf_tree_morton
+        /// Indexes of the morton codes in the reduced set
+        /// This was called buf_reduc_index_map
+        sham::DeviceBuffer<u32> buf_reduc_index_map;
+
+        /// The reduced Morton codes
+        /// This was called buf_tree_morton
+        sham::DeviceBuffer<Tmorton> reduced_morton_codes;
 
         /// Move constructor from each members
         MortonReducedSet(
@@ -49,12 +59,13 @@ namespace shamtree {
     };
 
     /**
-     * @brief Constructs a MortonCodeSet
+     * @brief Reduces the given Morton code set by grouping together Morton codes
+     * that are close to each other in the tree.
      *
-     * @param dev_sched The device scheduler for managing SYCL operations
-     * @param bounding_box The bounding box encapsulating the input positions
-     * @param pos_buf The buffer containing the input positions
-     * @param cnt_obj The number of positions in the buffer
+     * @param dev_sched The device scheduler to use for the reduction
+     * @param morton_codes_set The set of Morton codes to reduce
+     * @param reduction_level The amount of reduction to apply
+     * @return The reduced set of Morton codes
      */
     template<class Tmorton, class Tvec, u32 dim>
     MortonReducedSet<Tmorton, Tvec, dim> reduce_morton_set(

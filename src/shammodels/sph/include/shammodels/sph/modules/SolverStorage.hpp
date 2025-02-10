@@ -77,8 +77,8 @@ namespace shammodels::sph {
         Component<shamrock::ComputeField<Tvec>> old_dB_on_rho;
         Component<shamrock::ComputeField<Tscal>> old_dpsi_on_ch;
 
-        Component<shamrock::ComputeField<Tscal>> old_depsilon;
-        Component<shamrock::ComputeField<Tvec>> old_ddeltav;
+        Component<shamrock::ComputeField<Tscal>> old_dtepsilon;
+        Component<shamrock::ComputeField<Tvec>> old_dtdeltav;
 
         Component<std::vector<SinkParticle<Tvec>>> sinks;
 

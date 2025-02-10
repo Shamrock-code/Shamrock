@@ -746,10 +746,10 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
 
-    const u32 iepsilon  = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
-    const u32 idepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
-    const u32 ideltav   = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
-    const u32 iddeltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
+    const u32 iepsilon   = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 idtepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
+    const u32 ideltav    = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+    const u32 idtdeltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
 
     shamrock::SchedulerUtility utility(scheduler());
 
@@ -781,10 +781,10 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
         utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
     }
     if (has_epsilon_field) {
-        utility.fields_forward_euler<Tscal>(iepsilon, idepsilon, dt / 2);
+        utility.fields_forward_euler<Tscal>(iepsilon, idtepsilon, dt / 2);
     }
     if (has_deltav_field) {
-        utility.fields_forward_euler<Tvec>(ideltav, iddeltav, dt / 2);
+        utility.fields_forward_euler<Tvec>(ideltav, idtdeltav, dt / 2);
     }
 }
 
@@ -1293,11 +1293,11 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
         storage.old_dpsi_on_ch.set(utility.save_field<Tscal>(idpsi_on_ch, "dpsi/ch_old"));
     }
     if (has_epsilon_field) {
-        storage.old_depsilon.set(
+        storage.old_dtepsilon.set(
             utility.save_field<Tscal>(pdl.get_field_idx<Tscal>("dtepsilon"), "dtepsilon_old"));
     }
     if (has_deltav_field) {
-        storage.old_ddeltav.set(
+        storage.old_dtdeltav.set(
             utility.save_field<Tvec>(pdl.get_field_idx<Tvec>("dtdeltav"), "dtdeltav_old"));
     }
 }
@@ -1366,9 +1366,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
     const u32 iepsilon    = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
-    const u32 idepsilon   = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
+    const u32 idtepsilon  = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
     const u32 ideltav     = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
-    const u32 iddeltav    = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
+    const u32 idtdeltav   = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
 
     shamrock::SchedulerUtility utility(scheduler());
 
@@ -1610,14 +1610,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             ComputeField<Tscal> epsilon_epsilon_sq
                 = utility.make_compute_field<Tscal>("epsilon epsilon^2", 1);
             utility.fields_leapfrog_corrector<Tscal>(
-                iepsilon, idepsilon, storage.old_depsilon.get(), epsilon_epsilon_sq, dt / 2);
+                iepsilon, idtepsilon, storage.old_dtepsilon.get(), epsilon_epsilon_sq, dt / 2);
         }
 
         if (solver_config.dust_config.has_deltav_field()) {
             ComputeField<Tscal> epsilon_deltav_sq
                 = utility.make_compute_field<Tscal>("deltav deltav^2", 1);
             utility.fields_leapfrog_corrector<Tvec>(
-                ideltav, iddeltav, storage.old_ddeltav.get(), epsilon_deltav_sq, dt / 2);
+                ideltav, idtdeltav, storage.old_dtdeltav.get(), epsilon_deltav_sq, dt / 2);
         }
 
         storage.old_axyz.reset();
@@ -1630,11 +1630,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         }
 
         if (solver_config.dust_config.has_epsilon_field()) {
-            storage.old_depsilon.reset();
+            storage.old_dtepsilon.reset();
         }
 
         if (solver_config.dust_config.has_deltav_field()) {
-            storage.old_ddeltav.reset();
+            storage.old_dtdeltav.reset();
         }
 
         Tscal rank_veps_v = sycl::sqrt(vepsilon_v_sq.compute_rank_max());

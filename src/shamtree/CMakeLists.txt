@@ -13,6 +13,7 @@ set(Sources
     src/kernels/reduction_alg.cpp
     src/MortonCodeSet.cpp
     src/MortonCodeSortedSet.cpp
+    src/MortonReducedSet.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

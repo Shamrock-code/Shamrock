@@ -40,7 +40,7 @@ namespace shamtree {
         /// The count of objects represented in the set
         u32 cnt_obj;
 
-        /// The count of Morton codes in the set (rounded to a power of 2)
+        /// The count of Morton codes in the set (every code after cnt_obj is err_code)
         u32 morton_count;
 
         /// Device buffer holding the Morton codes
@@ -57,16 +57,26 @@ namespace shamtree {
     };
 
     /**
-     * @brief Constructs a MortonCodeSet
+     * @brief Generate a set of Morton codes from a buffer of positions
      *
-     * @param dev_sched The device scheduler for managing SYCL operations
-     * @param bounding_box The bounding box encapsulating the input positions
-     * @param pos_buf The buffer containing the input positions
-     * @param cnt_obj The number of positions in the buffer
+     * @param dev_sched The device scheduler for the computation
+     * @param bounding_box The bounding box containing all positions
+     * @param pos_buf The device buffer containing the positions
+     * @param cnt_obj The count of objects in the buffer
+     * @param morton_count The count of Morton codes in the output set
+     * (can be different from cnt_obj)
+     *
+     * If morton_count > cnt_obj, the extra Morton codes will be set to an error code larger than
+     * any valid Morton code.
+     *
+     * @return The MortonCodeSet, containing the bounding box, the count of objects
+     * and the Morton codes. The Morton codes are sorted in ascending order.
+     *
+     * @note morton_count >= cnt_obj
      */
     template<class Tmorton, class Tvec, u32 dim>
     MortonCodeSet<Tmorton, Tvec, dim> morton_code_set_from_positions(
-        sham::DeviceScheduler_ptr dev_sched,
+        const sham::DeviceScheduler_ptr &dev_sched,
         shammath::AABB<Tvec> bounding_box,
         sham::DeviceBuffer<Tvec> &pos_buf,
         u32 cnt_obj,

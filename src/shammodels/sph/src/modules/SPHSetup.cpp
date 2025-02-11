@@ -103,6 +103,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
     }
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::warp_disc(
+    Tscal Rwarp, Tscal Hwarp, Tscal inclination) {}
+
 using namespace shammath;
 template class shammodels::sph::modules::SPHSetup<f64_3, M4>;
 template class shammodels::sph::modules::SPHSetup<f64_3, M6>;

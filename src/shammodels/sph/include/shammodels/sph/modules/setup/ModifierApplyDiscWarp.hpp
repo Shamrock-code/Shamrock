@@ -23,27 +23,26 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 namespace shammodels::sph::modules {
-template<class Tvec>
-class ModifierApplyDiscWarp : public ISPHSetupNode {
-    using Tscal              = shambase::VecComponent<Tvec>;
-    static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+    template<class Tvec, template<class> class SPHKernel>
+    class ModifierApplyDiscWarp : public ISPHSetupNode {
+        using Tscal              = shambase::VecComponent<Tvec>;
+        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-    ShamrockCtx &context;
+        ShamrockCtx &context;
 
-    SetupNodePtr parent;
+        SetupNodePtr parent;
 
-    public:
-    ModifierApplyDiscWarp(ShamrockCtx &context, SetupNodePtr parent)
-        : context(context), parent(parent) {}
+        public:
+        ModifierApplyDiscWarp(ShamrockCtx &context, SetupNodePtr parent)
+            : context(context), parent(parent) {}
 
-    bool is_done() { return parent->is_done(); }
+        bool is_done() { return parent->is_done(); }
 
-    shamrock::patch::PatchData next_n(u32 nmax);
+        shamrock::patch::PatchData next_n(u32 nmax);
 
-    std::string get_name() { return "ApplyDiscWarp"; }
-    ISPHSetupNode_Dot get_dot_subgraph() {
-        return ISPHSetupNode_Dot{
-            get_name(), 2, {parent->get_dot_subgraph()}};
-    }
-};
+        std::string get_name() { return "ApplyDiscWarp"; }
+        ISPHSetupNode_Dot get_dot_subgraph() {
+            return ISPHSetupNode_Dot{get_name(), 2, {parent->get_dot_subgraph()}};
+        }
+    };
 } // namespace shammodels::sph::modules

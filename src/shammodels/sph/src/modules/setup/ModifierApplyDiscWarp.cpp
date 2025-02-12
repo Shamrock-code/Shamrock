@@ -58,7 +58,7 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
 
             Tscal r = sycl::sqrt(sycl::dot(xyz_a, xyz_a));
 
-            Tvec k    = Tvec(-std::sin(posangle), std::cos(posangle), 0.);
+            Tvec k    = Tvec(-sycl::sin(posangle), sycl::cos(posangle), 0.);
             Tscal psi = 0.;
 
             // convert to radians (sycl functions take radians)
@@ -97,6 +97,7 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
 
     return tmp;
 }
+
 using namespace shammath;
 template class shammodels::sph::modules::ModifierApplyDiscWarp<f64_3, M4>;
 template class shammodels::sph::modules::ModifierApplyDiscWarp<f64_3, M6>;

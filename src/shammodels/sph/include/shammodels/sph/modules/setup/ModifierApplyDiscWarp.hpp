@@ -19,6 +19,7 @@
  */
 
 #include "shamalgs/collective/indexing.hpp"
+#include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
@@ -28,13 +29,26 @@ namespace shammodels::sph::modules {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
+        using Config = SolverConfig<Tvec, SPHKernel>;
+
         ShamrockCtx &context;
 
         SetupNodePtr parent;
 
+        Tscal Rwarp_;
+        Tscal Hwarp_;
+        Tscal inclination_;
+
         public:
-        ModifierApplyDiscWarp(ShamrockCtx &context, SetupNodePtr parent)
-            : context(context), parent(parent) {}
+        ModifierApplyDiscWarp(
+            ShamrockCtx &context,
+            Config &solver_config,
+            SetupNodePtr parent,
+            Tscal Rwarp,
+            Tscal Hwarp,
+            Tscal inclination)
+            : context(context), parent(parent), Rwarp_(Rwarp), Hwarp_(Hwarp),
+              inclination_(inclination) {}
 
         bool is_done() { return parent->is_done(); }
 

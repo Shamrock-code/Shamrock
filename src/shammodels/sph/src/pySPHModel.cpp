@@ -237,7 +237,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal Rwarp,
                Tscal Hwarp,
                Tscal inclination) {
-                return self.warp_disc(parent, Rwarp, Hwarp, inclination);
+                return self.make_modifier_warp_disc(parent, Rwarp, Hwarp, inclination);
             },
             py::kw_only(),
             py::arg("setup2warp"),

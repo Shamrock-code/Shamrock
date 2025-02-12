@@ -213,8 +213,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tscal abs_dp  = sham::abs(P_a - P_b);
                     Tscal vsig_u  = sycl::sqrt(abs_dp / rho_avg);
 
-                    Tscal qa_ab = q_av(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
-                    Tscal qb_ab = q_av(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
+                    Tscal qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
+                    Tscal qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
 
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,
@@ -423,8 +423,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                     Tscal abs_dp  = sham::abs(P_a - P_b);
                     Tscal vsig_u  = sycl::sqrt(abs_dp / rho_avg);
 
-                    Tscal qa_ab = q_av(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
-                    Tscal qb_ab = q_av(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
+                    Tscal qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
+                    Tscal qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
 
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,
@@ -633,8 +633,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                     Tscal abs_dp  = sham::abs(P_a - P_b);
                     Tscal vsig_u  = sycl::sqrt(abs_dp / rho_avg);
 
-                    Tscal qa_ab = q_av(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
-                    Tscal qb_ab = q_av(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
+                    Tscal qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
+                    Tscal qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
 
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,

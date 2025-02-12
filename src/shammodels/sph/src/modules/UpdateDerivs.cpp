@@ -198,7 +198,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
                     // clang-format off
-                    add_to_derivs_sph_artif_visco_cond<Kernel>(
+                    add_to_derivs_sph_artif_visco_cond(
                         pmass,
                         dr, rab,
                         rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
@@ -213,7 +213,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                         beta_AV, alpha_u,
 
                         force_pressure,
-                        tmpdU_pressure);
+                        tmpdU_pressure,
+                        lambda_q_av<Tscal>);
                     // clang-format on
                 });
                 axyz[id_a] = force_pressure;
@@ -385,7 +386,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
                     // clang-format off
-                    add_to_derivs_sph_artif_visco_cond<Kernel>(
+                    add_to_derivs_sph_artif_visco_cond(
                         pmass,
                         dr, rab,
                         rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
@@ -400,7 +401,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                         beta_AV, alpha_u,
 
                         force_pressure,
-                        tmpdU_pressure);
+                        tmpdU_pressure,
+                        lambda_q_av<Tscal>);
                     // clang-format on
                 });
 
@@ -569,7 +571,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
                     // clang-format off
-                    add_to_derivs_sph_artif_visco_cond<Kernel>(
+                    add_to_derivs_sph_artif_visco_cond(
                         pmass,
                         dr, rab,
                         rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
@@ -585,7 +587,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                         beta_AV, alpha_u,
 
                         force_pressure,
-                        tmpdU_pressure);
+                        tmpdU_pressure,
+                        lambda_q_av<Tscal>);
                     // clang-format on
                 });
 
@@ -747,7 +750,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                     Tscal Fab_b         = Kernel::dW_3d(rab, h_b);
 
                     // clang-format off
-                    add_to_derivs_sph_artif_visco_cond<Kernel,Tvec, Tscal, shamrock::sph::Disc>(
+                    add_to_derivs_sph_artif_visco_cond(
                         pmass,
                         dr, rab,
                         rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
@@ -763,7 +766,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                         beta_AV, alpha_u,
 
                         force_pressure,
-                        tmpdU_pressure);
+                        tmpdU_pressure,
+                        lambda_q_av_disc<Tscal>);
                     // clang-format on
                 });
 

@@ -111,26 +111,35 @@ namespace shamrock::sph {
      * @param v_scal_rhat
      * @return Tscal
      */
-    template<class Tscal>
-    inline Tscal q_av(Tscal rho, Tscal vsig, Tscal v_scal_rhat) {
-        return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
+    template<class Tscal, class Par>
+    inline Tscal q_av(const Par &par) {
+        return sham::max(-Tscal(0.5) * par.rho * par.vsig * par.v_scal_rhat, Tscal(0));
     }
 
-    template<class Tscal>
-    inline Tscal q_av_disc(
-        Tscal rho, Tscal h, Tscal rab, Tscal alpha_av, Tscal cs, Tscal vsig, Tscal v_scal_rhat) {
+    template<class Tscal, class Par>
+    inline Tscal q_av_disc(const Par &par) {
         Tscal q_av_d;
-        Tscal rho1   = 1. / rho;
-        Tscal rabinv = sham::inv_sat_positive(rab);
+        Tscal rho1   = 1. / par.rho;
+        Tscal rabinv = sham::inv_sat_positive(par.rab);
 
-        Tscal prefact = -Tscal(0.5) * rho * sham::abs(rabinv) * h;
+        Tscal prefact = -Tscal(0.5) * par.rho * sham::abs(rabinv) * par.h;
 
-        Tscal vsig_disc = (v_scal_rhat < Tscal(0)) ? vsig : (alpha_av * cs);
+        Tscal vsig_disc = (par.v_scal_rhat < Tscal(0)) ? par.vsig : (par.alpha_av * par.cs);
 
-        q_av_d = prefact * vsig_disc * v_scal_rhat;
+        q_av_d = prefact * vsig_disc * par.v_scal_rhat;
 
         return q_av_d;
     }
+
+    template<class Tscal>
+    inline constexpr auto lambda_q_av = [](const auto &par) {
+        return q_av<Tscal>(par);
+    };
+
+    template<class Tscal>
+    inline constexpr auto lambda_q_av_disc = [](const auto &par) {
+        return q_av_disc<Tscal>(par);
+    };
 
     enum ViscosityType { Standard = 0, Disc = 1 };
 
@@ -178,7 +187,7 @@ namespace shamrock::sph {
                * (Fab_inv_omega_a_rho_a + Fab_inv_omega_b_rho_b);
     }
 
-    template<class Kernel, class Tvec, class Tscal, ViscosityType visco_mode = Standard>
+    template<class Tvec, class Tscal, class Lambda_qab>
     inline void add_to_derivs_sph_artif_visco_cond(
         Tscal pmass,
         Tvec dr,
@@ -209,7 +218,8 @@ namespace shamrock::sph {
         Tscal alpha_u,
 
         Tvec &dv_dt,
-        Tscal &du_dt) {
+        Tscal &du_dt,
+        Lambda_qab &&qab_func) {
 
         Tvec v_ab = vxyz_a - vxyz_b;
 
@@ -230,21 +240,15 @@ namespace shamrock::sph {
         Tscal abs_dp  = sham::abs(P_a - P_b);
         Tscal vsig_u  = sycl::sqrt(abs_dp / rho_avg);
 
+        struct Q_PARAMS {
+            const Tscal &rho, h, rab, alpha_av, cs, vsig, v_scal_rhat;
+        };
+
+        Tscal qa_ab = qab_func(Q_PARAMS{rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab});
+        Tscal qb_ab = qab_func(Q_PARAMS{rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab});
+
         Tscal dWab_a = Fab_a;
         Tscal dWab_b = Fab_b;
-
-        Tscal qa_ab;
-        Tscal qb_ab;
-
-        if constexpr (visco_mode == Standard) {
-            qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
-            qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
-        }
-
-        if constexpr (visco_mode == Disc) { // from Phantom 2018, eq 120
-            qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
-            qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
-        }
 
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;

@@ -111,35 +111,39 @@ namespace shamrock::sph {
      * @param v_scal_rhat
      * @return Tscal
      */
-    template<class Tscal, class Par>
-    inline Tscal q_av(const Par &par) {
-        return sham::max(-Tscal(0.5) * par.rho * par.vsig * par.v_scal_rhat, Tscal(0));
+    template<class Tscal>
+    inline Tscal q_av(
+        const Tscal &rho,
+        const Tscal &h,
+        const Tscal &rab,
+        const Tscal &alpha_av,
+        const Tscal &cs,
+        const Tscal &vsig,
+        const Tscal &v_scal_rhat) {
+        return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
     }
 
-    template<class Tscal, class Par>
-    inline Tscal q_av_disc(const Par &par) {
+    template<class Tscal>
+    inline Tscal q_av_disc(
+        const Tscal &rho,
+        const Tscal &h,
+        const Tscal &rab,
+        const Tscal &alpha_av,
+        const Tscal &cs,
+        const Tscal &vsig,
+        const Tscal &v_scal_rhat) {
         Tscal q_av_d;
-        Tscal rho1   = 1. / par.rho;
-        Tscal rabinv = sham::inv_sat_positive(par.rab);
+        Tscal rho1   = 1. / rho;
+        Tscal rabinv = sham::inv_sat_positive(rab);
 
-        Tscal prefact = -Tscal(0.5) * par.rho * sham::abs(rabinv) * par.h;
+        Tscal prefact = -Tscal(0.5) * rho * sham::abs(rabinv) * h;
 
-        Tscal vsig_disc = (par.v_scal_rhat < Tscal(0)) ? par.vsig : (par.alpha_av * par.cs);
+        Tscal vsig_disc = (v_scal_rhat < Tscal(0)) ? vsig : (alpha_av * cs);
 
-        q_av_d = prefact * vsig_disc * par.v_scal_rhat;
+        q_av_d = prefact * vsig_disc * v_scal_rhat;
 
         return q_av_d;
     }
-
-    template<class Tscal>
-    inline constexpr auto lambda_q_av = [](const auto &par) {
-        return q_av<Tscal>(par);
-    };
-
-    template<class Tscal>
-    inline constexpr auto lambda_q_av_disc = [](const auto &par) {
-        return q_av_disc<Tscal>(par);
-    };
 
     enum ViscosityType { Standard = 0, Disc = 1 };
 
@@ -187,12 +191,9 @@ namespace shamrock::sph {
                * (Fab_inv_omega_a_rho_a + Fab_inv_omega_b_rho_b);
     }
 
-    template<class Tvec, class Tscal, class Lambda_qab>
+    template<class Tvec, class Tscal>
     inline void add_to_derivs_sph_artif_visco_cond(
         Tscal pmass,
-        Tvec dr,
-        Tscal rab,
-        Tscal rho_a,
         Tscal rho_a_sq,
         Tscal omega_a_rho_a_inv,
         Tscal rho_a_inv,
@@ -201,51 +202,20 @@ namespace shamrock::sph {
         Tscal omega_b,
         Tscal Fab_a,
         Tscal Fab_b,
-        Tvec vxyz_a,
-        Tvec vxyz_b,
         Tscal u_a,
         Tscal u_b,
         Tscal P_a,
         Tscal P_b,
-        Tscal cs_a,
-        Tscal cs_b,
-        Tscal alpha_a,
-        Tscal alpha_b,
-        Tscal h_a,
-        Tscal h_b,
-
-        Tscal beta_AV,
         Tscal alpha_u,
 
+        Tvec v_ab,
+        Tvec r_ab_unit,
+        Tscal vsig_u,
+        Tscal qa_ab,
+        Tscal qb_ab,
+
         Tvec &dv_dt,
-        Tscal &du_dt,
-        Lambda_qab &&qab_func) {
-
-        Tvec v_ab = vxyz_a - vxyz_b;
-
-        Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
-
-        // f32 P_b     = cs * cs * rho_b;
-        Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
-        Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
-
-        /////////////////
-        // internal energy update
-        //  scalar : f32  | vector : f32_3
-        Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
-        Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
-
-        // Tscal vsig_u = abs_v_ab_r_ab;
-        Tscal rho_avg = (rho_a + rho_b) * 0.5;
-        Tscal abs_dp  = sham::abs(P_a - P_b);
-        Tscal vsig_u  = sycl::sqrt(abs_dp / rho_avg);
-
-        struct Q_PARAMS {
-            const Tscal &rho, h, rab, alpha_av, cs, vsig, v_scal_rhat;
-        };
-
-        Tscal qa_ab = qab_func(Q_PARAMS{rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab});
-        Tscal qb_ab = qab_func(Q_PARAMS{rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab});
+        Tscal &du_dt) {
 
         Tscal dWab_a = Fab_a;
         Tscal dWab_b = Fab_b;

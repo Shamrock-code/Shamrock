@@ -232,10 +232,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "warp_disc",
-            [](TSPHSetup &self, Tscal Rwarp, Tscal Hwarp, Tscal inclination) {
-                return self.warp_disc(Rwarp, Hwarp, inclination);
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               Tscal Rwarp,
+               Tscal Hwarp,
+               Tscal inclination) {
+                return self.warp_disc(parent, Rwarp, Hwarp, inclination);
             },
             py::kw_only(),
+            py::arg("setup2warp"),
             py::arg("Rwarp"),
             py::arg("Hwarp"),
             py::arg("inclination"))

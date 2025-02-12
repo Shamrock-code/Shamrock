@@ -107,9 +107,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
 shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::warp_disc(
-    Tscal Rwarp, Tscal Hwarp, Tscal inclination) {
+    SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination) {
     return std::shared_ptr<ISPHSetupNode>(new ModifierApplyDiscWarp<Tvec, SPHKernel>(
-        context, solver_config, Rwarp, Hwarp, inclination));
+        context, solver_config, parent, Rwarp, Hwarp, inclination));
 }
 
 using namespace shammath;

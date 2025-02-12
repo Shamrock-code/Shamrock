@@ -20,6 +20,7 @@
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
+#include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
@@ -104,8 +105,12 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::warp_disc(
-    Tscal Rwarp, Tscal Hwarp, Tscal inclination) {}
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
+shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::warp_disc(
+    SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination) {
+    return std::shared_ptr<ISPHSetupNode>(new ModifierApplyDiscWarp<Tvec, SPHKernel>(
+        context, solver_config, parent, Rwarp, Hwarp, inclination));
+}
 
 using namespace shammath;
 template class shammodels::sph::modules::SPHSetup<f64_3, M4>;

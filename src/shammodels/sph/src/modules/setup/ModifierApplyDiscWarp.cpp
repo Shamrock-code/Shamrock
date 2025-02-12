@@ -73,7 +73,7 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
                     * (1. + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (r - Rwarp)))
                     * sycl::sin(incl_rad));
                 psi = shambase::constants::pi<Tscal> * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
-                      / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl_rad), 2)));
+                      / sycl::sqrt(1. - (0.5 * sycl::pown(sycl::sin(incl_rad), 2)));
                 Tscal psimax = sycl::max(psimax, psi);
                 Tscal x      = xyz_a.x();
                 Tscal y      = xyz_a.y();

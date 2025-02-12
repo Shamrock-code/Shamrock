@@ -30,6 +30,7 @@ set(Sources
     src/modules/AnalysisSodTube.cpp
     src/modules/SPHSetup.cpp
     src/modules/setup/GeneratorMCDisc.cpp
+    src/modules/setup/ModifierApplyDiscWarp.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
 )

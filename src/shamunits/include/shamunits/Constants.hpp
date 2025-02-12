@@ -37,6 +37,41 @@
 #define Cget(constant_name, mult_pow)                                                              \
     details::pow_constexpr_fast_inv<(mult_pow) * power>(constant_name, 1 / constant_name)
 
+#define UNITS_CONSTANTS                                                                            \
+    /* si base ctes  */                                                                            \
+    X(delta_nu_cs /**/, Uget(Hertz, 1))                                                            \
+    X(c /************/, Uget(m, 1) * Uget(s, -1))                                                  \
+    X(h /************/, Uget(Joule, 1) * Uget(s, -1))                                              \
+    X(e /************/, Uget(Coulomb, 1))                                                          \
+    X(k /************/, Uget(Joule, 1) * Uget(Kelvin, -1))                                         \
+    X(Na /***********/, Uget(mole, -1))                                                            \
+    X(Kcd /**********/, Uget(lm, 1) * Uget(Watt, -1))                                              \
+    /* times */                                                                                    \
+    X(hour /**/, Uget(s, 1))                                                                       \
+    X(day /***/, Uget(s, 1))                                                                       \
+    X(year /**/, Uget(s, 1))                                                                       \
+    /* sizes */                                                                                    \
+    X(au /**/, Uget(m, 1))                                                                         \
+    X(light_year /*********/, Uget(m, 1))                                                          \
+    X(parsec /*************/, Uget(m, 1))                                                          \
+    X(planck_length /******/, Uget(m, 1))                                                          \
+    /* masses */                                                                                   \
+    X(proton_mass /****/, Uget(kg, 1))                                                             \
+    X(electron_mass /**/, Uget(kg, 1))                                                             \
+    X(earth_mass /*****/, Uget(kg, 1))                                                             \
+    X(jupiter_mass /***/, Uget(kg, 1))                                                             \
+    X(sol_mass /*******/, Uget(kg, 1))                                                             \
+    X(planck_mass /****/, Uget(kg, 1))                                                             \
+    /* densities */                                                                                \
+    X(guiness_density, Uget(kg, 1) * Uget(m, -1))                                                  \
+    /* derived ctes  */                                                                            \
+    X(G /**********/, Uget(N, 1) * Uget(m, 2) * Uget(kg, -2))                                      \
+    X(hbar /*******/, Uget(Joule, 1) * Uget(s, -1))                                                \
+    X(mu_0 /*******/, Uget(N, 1) * Uget(A, -2))                                                    \
+    X(Z_0 /********/, Uget(Ohm, 1))                                                                \
+    X(epsilon_0 /**/, Uget(F, 1) * Uget(m, -1))                                                    \
+    X(ke /*********/, Uget(N, 1) * Uget(m, 2) * Uget(Coulomb, -2))
+
 namespace shamunits {
 
     /**
@@ -83,18 +118,19 @@ namespace shamunits {
             static constexpr T G         = 6.6743015e-11;               // (N.m2.kg-2)
             static constexpr T hbar      = 1.054571817e-34;             // (J.s-1)
             static constexpr T mu_0      = 1.2566370621219e-6;          // (N.A-2)
-            static constexpr T Z_0       = mu_0 * c;                    //
-            static constexpr T epsilon_0 = 1 / (Z_0 * c);               //
-            static constexpr T ke        = 1 / (4 * pi<T> * epsilon_0); //
+            static constexpr T Z_0       = mu_0 * c;                    // (Ohm)
+            static constexpr T epsilon_0 = 1 / (Z_0 * c);               // (F.m-1)
+            static constexpr T ke        = 1 / (4 * pi<T> * epsilon_0); // (N.m2.C-2)
 
             static constexpr T hour = Conv::hr_to_s; //(s)
             static constexpr T day  = Conv::dy_to_s; //(s)
             static constexpr T year = Conv::yr_to_s; //(s)
 
-            static constexpr T astronomical_unit = Conv::au_to_m;  //(m)
-            static constexpr T light_year        = Conv::ly_to_m;  //(m)
-            static constexpr T parsec            = Conv::pc_to_m;  //(m)
-            static constexpr T planck_length     = 1.61625518e-35; //(m)
+            static constexpr T astronomical_unit = Conv::au_to_m;     //(m)
+            static constexpr T au                = astronomical_unit; //(m)
+            static constexpr T light_year        = Conv::ly_to_m;     //(m)
+            static constexpr T parsec            = Conv::pc_to_m;     //(m)
+            static constexpr T planck_length     = 1.61625518e-35;    //(m)
 
             static constexpr T proton_mass   = 1.67262192e-27;                         //(kg)
             static constexpr T electron_mass = proton_mass * electron_proton_ratio<T>; //(kg)
@@ -112,34 +148,10 @@ namespace shamunits {
         /// Construct the \ref shamunits::Constants class with a unit system
         explicit Constants(const UnitSystem<T> units) : units(units) {}
 
-        // clang-format off
-
-        addconstant(delta_nu_cs) { return Cget(Si::delta_nu_cs,1) * Uget(Hertz, 1); }
-        addconstant(c)           { return Cget(Si::c,1)   * Uget(m, 1)* Uget(s, -1); }
-        addconstant(h)           { return Cget(Si::h,1)   * Uget(Joule, 1) * Uget(s, -1); }
-        addconstant(e)           { return Cget(Si::e,1)   * Uget(Coulomb, 1); }
-        addconstant(k)           { return Cget(Si::k,1)   * Uget(Joule, 1) * Uget(Kelvin, -1); }
-        addconstant(Na)          { return Cget(Si::Na,1)  * Uget(mole, -1); }
-        addconstant(Kcd)         { return Cget(Si::Kcd,1) * Uget(lm, 1)    * Uget(Watt, -1); }
-
-
-        addconstant(year)         { return Cget(Si::year,1) * Uget(s,1) ; }
-
-        addconstant(au)         { return Cget(Si::astronomical_unit,1) * Uget(s,1) ; }
-
-        addconstant(N)         { return Cget(Si::N,1); }
-        addconstant(A)         { return Cget(Si::A,1); }
-
-        addconstant(G)         { return Cget(Si::G,1) * Uget(N,1) * Uget(m,2) * Uget(kg,-2)  ; }
-
-        addconstant(mu_0)         { return Cget(Si::mu_0,1) * Uget(N,1) * Uget(A,-2)  ; }
-
-        addconstant(earth_mass)         { return Cget(Si::earth_mass,1) * Uget(kg,1) ; }
-        addconstant(jupiter_mass)         { return Cget(Si::jupiter_mass,1) * Uget(kg,1) ; }
-        addconstant(sol_mass)         { return Cget(Si::sol_mass,1) * Uget(kg,1) ; }
-        addconstant(guiness_density)         { return Cget(Si::guiness_density,1) *Uget(kg,1)* Uget(m,-3) ; }
-
-        // clang-format on
+#define X(name, conv)                                                                              \
+    addconstant(name) { return Cget(Si::name, 1) * conv; }
+        UNITS_CONSTANTS
+#undef X
     };
 
 } // namespace shamunits

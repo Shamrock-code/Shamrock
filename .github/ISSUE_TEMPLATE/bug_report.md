@@ -1,10 +1,9 @@
 ---
 name: Bug report
 about: File a bug report
-title: "[Bug]: "
-labels: ["bug", "triage"]
-assignees:
-  - tdavidcl
+title: "[Name of the buggy module] Description of the issue "
+labels: bug
+assignees: ''
 
 ---
 
@@ -13,19 +12,17 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+- do that
+- then that
+- oh shit i get that error
+- Dammit i spent xxx GPU hours because of this bug please fix it ASAP
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Desktop (please complete the following information):**
+**Shamrock environment used + OS/Cluster :**
  - OS: [e.g. MacOS, Linux]
+ - Env: aka the command you used when you've done `./env/new-new ....`
 
 **Additional context**
 Add any other context about the problem here.

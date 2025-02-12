@@ -1,3 +1,18 @@
+function(_git_submod_is_empty directory)
+    file(GLOB files RELATIVE "${directory}" "${directory}/*")
+    if(NOT files)
+
+        message(FATAL_ERROR
+            "The git submodule '${directory}' is empty\n"
+            "please do : git submodule update --init --recursive\n"
+        )
+
+    endif()
+    message(STATUS "The subdirectory '${directory}' contains ${files}")
+endfunction()
+
+_git_submod_is_empty(${CMAKE_CURRENT_SOURCE_DIR}/pybind11)
+
 add_subdirectory(pybind11)
 
 option(USE_SYSTEM_FMTLIB "use fmt lib from the host system" Off)

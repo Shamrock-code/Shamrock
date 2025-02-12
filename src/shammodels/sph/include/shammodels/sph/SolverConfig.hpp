@@ -31,6 +31,7 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/RadixTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <variant>
@@ -160,6 +161,8 @@ struct shammodels::sph::SolverConfig {
     using Kernel = SPHKernel<Tscal>;
     /// The type of the Morton code for the tree
     using u_morton = u32;
+
+    using RTree = RadixTree<u_morton, Tvec>;
 
     /// The radius of the sph kernel
     static constexpr Tscal Rkern = Kernel::Rkern;

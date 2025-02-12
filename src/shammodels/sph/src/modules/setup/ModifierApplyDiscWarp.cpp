@@ -35,39 +35,27 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
 
     ////////////////////////// constants //////////////////////////
     constexpr Tscal _2pi = 2 * shambase::constants::pi<Tscal>;
-    // Tscal central_mass   = 1.;
-    Tscal Rwarp = Rwarp_;
-    Tscal Hwarp = Hwarp_;
-    // Tscal theta          = 1.;
-    // Tscal Gauss          = 1.;
-    Tscal posangle    = 1.;
-    Tscal inclination = 1;
-    // Tscal G              =  solver_config.get_constant_G();
-
-    if (!is_done()) {
-        logger::debug_ln("Warping the disc");
-    }
+    Tscal Rwarp          = Rwarp_;
+    Tscal Hwarp          = Hwarp_;
+    Tscal inclination    = inclination_;
+    Tscal posangle       = 1.;
 
     ////////////////////////// load data //////////////////////////
     sham::DeviceBuffer<Tvec> &buf_xyz
         = tmp.get_field_buf_ref<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tvec> &buf_vxyz
         = tmp.get_field_buf_ref<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
-    sham::DeviceBuffer<Tscal> &buf_cs
-        = tmp.get_field_buf_ref<Tscal>(sched.pdl.get_field_idx<Tvec>("soundspeed"));
 
     auto &q = shamsys::instance::get_compute_scheduler().get_queue();
     sham::EventList depends_list;
 
-    auto acc_xyz  = buf_xyz.get_read_access(depends_list);
-    auto acc_vxyz = buf_vxyz.get_read_access(depends_list);
-    auto acc_cs   = buf_cs.get_read_access(depends_list);
+    auto acc_xyz  = buf_xyz.get_write_access(depends_list);
+    auto acc_vxyz = buf_vxyz.get_write_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         shambase::parralel_for(cgh, tmp.get_obj_cnt(), "Warp", [=](i32 id_a) {
-            Tvec xyz_a  = acc_xyz[id_a];
-            Tvec vxyz_a = acc_vxyz[id_a];
-            Tscal cs    = acc_cs[id_a];
+            Tvec &xyz_a  = acc_xyz[id_a];
+            Tvec &vxyz_a = acc_vxyz[id_a];
 
             Tscal r = sycl::sqrt(sycl::dot(xyz_a, xyz_a));
 
@@ -107,10 +95,6 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
 
     buf_xyz.complete_event_state(e);
     buf_vxyz.complete_event_state(e);
-    buf_cs.complete_event_state(e);
-
-    sham::EventList resulting_events;
-    resulting_events.add_event(e);
 
     return tmp;
 }

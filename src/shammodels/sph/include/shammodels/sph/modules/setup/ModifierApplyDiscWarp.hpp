@@ -43,12 +43,10 @@ namespace shammodels::sph::modules {
         ModifierApplyDiscWarp(
             ShamrockCtx &context,
             Config &solver_config,
-            SetupNodePtr parent,
             Tscal Rwarp,
             Tscal Hwarp,
             Tscal inclination)
-            : context(context), parent(parent), Rwarp_(Rwarp), Hwarp_(Hwarp),
-              inclination_(inclination) {}
+            : context(context), Rwarp_(Rwarp), Hwarp_(Hwarp), inclination_(inclination) {}
 
         bool is_done() { return parent->is_done(); }
 

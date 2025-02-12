@@ -64,8 +64,7 @@ namespace shammodels::sph::modules {
         std::shared_ptr<ISPHSetupNode>
         make_combiner_add(SetupNodePtr parent1, SetupNodePtr parent2);
 
-        std::shared_ptr<ISPHSetupNode>
-        warp_disc(SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination);
+        std::shared_ptr<ISPHSetupNode> warp_disc(Tscal Rwarp, Tscal Hwarp, Tscal inclination);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

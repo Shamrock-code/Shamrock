@@ -231,6 +231,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_combiner_add(parent1, parent2);
             })
         .def(
+            "warp_disc",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               Tscal Rwarp,
+               Tscal Hwarp,
+               Tscal inclination) {
+                return self.make_modifier_warp_disc(parent, Rwarp, Hwarp, inclination);
+            },
+            py::kw_only(),
+            py::arg("setup2warp"),
+            py::arg("Rwarp"),
+            py::arg("Hwarp"),
+            py::arg("inclination"))
+        .def(
             "apply_setup",
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr setup,

@@ -70,7 +70,9 @@
     X(mu_0 /*******/, Uget(N, 1) * Uget(A, -2))                                                    \
     X(Z_0 /********/, Uget(Ohm, 1))                                                                \
     X(epsilon_0 /**/, Uget(F, 1) * Uget(m, -1))                                                    \
-    X(ke /*********/, Uget(N, 1) * Uget(m, 2) * Uget(Coulomb, -2))
+    X(ke /*********/, Uget(N, 1) * Uget(m, 2) * Uget(Coulomb, -2))                                 \
+    X(kb /*********/, Uget(J, 1) * Uget(K, -1))                                                    \
+    X(sigma /******/, Uget(W, 1) * Uget(m, -2) * Uget(K, -4))
 
 namespace shamunits {
 
@@ -116,11 +118,15 @@ namespace shamunits {
 
             // other constants in si units
             static constexpr T G         = 6.6743015e-11;               // (N.m2.kg-2)
-            static constexpr T hbar      = 1.054571817e-34;             // (J.s-1)
+            static constexpr T hbar      = h / (2 * pi<T>);             // (J.s-1)
             static constexpr T mu_0      = 1.2566370621219e-6;          // (N.A-2)
             static constexpr T Z_0       = mu_0 * c;                    // (Ohm)
             static constexpr T epsilon_0 = 1 / (Z_0 * c);               // (F.m-1)
             static constexpr T ke        = 1 / (4 * pi<T> * epsilon_0); // (N.m2.C-2)
+            static constexpr T kb        = 1.380649e-23;                // (J.K-1)
+
+            /// Stephan Boltzmann constant (W.m-2.K-4)
+            static constexpr T sigma = 5.670374419e-8; // (W.m-2.K-4)
 
             static constexpr T hour = Conv::hr_to_s; //(s)
             static constexpr T day  = Conv::dy_to_s; //(s)

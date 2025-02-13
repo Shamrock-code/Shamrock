@@ -81,7 +81,8 @@ Register_pymod(pyunits_init) {
         .def(py::init([](UnitSystem s) {
             return std::make_unique<shamunits::Constants<f64>>(s);
         }))
-
+////////////////// Xmacro
+/// X macro to define the conversion constants bindings
 #define X(st, conv)                                                                                \
     .def(                                                                                          \
         #st,                                                                                       \
@@ -89,8 +90,11 @@ Register_pymod(pyunits_init) {
             return sycl::pown(cte.st(), power);                                                    \
         },                                                                                         \
         py::arg("power") = 1)
-
-            UNITS_CONSTANTS
+        //////////////////
+        UNITS_CONSTANTS
+//////////////////
+#undef X
+        //////////////////
 
         ;
 }

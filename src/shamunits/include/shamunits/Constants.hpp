@@ -23,9 +23,10 @@
 
 /// @brief Macro to add a constant to the \ref shamunits::Constants class
 /// For exemple one can add a new constant by adding the following statment inside
-/// shamunits::Constants \code{.cpp} addconstant(delta_nu_cs) { return Cget(Si::delta_nu_cs,1) *
-/// Uget(Hertz, 1); } \endcode
-///
+/// shamunits::Constants
+/// \code{.cpp}
+///     addconstant(delta_nu_cs) { return Cget(Si::delta_nu_cs,1) * Uget(Hertz, 1); }
+/// \endcode
 #define addconstant(name)                                                                          \
     template<int power = 1>                                                                        \
     inline constexpr T name()
@@ -37,6 +38,7 @@
 #define Cget(constant_name, mult_pow)                                                              \
     details::pow_constexpr_fast_inv<(mult_pow) * power>(constant_name, 1 / constant_name)
 
+/// X macro to list all constants conversion & bindings
 #define UNITS_CONSTANTS                                                                            \
     /* si base ctes  */                                                                            \
     X(delta_nu_cs /**/, Uget(Hertz, 1))                                                            \
@@ -51,7 +53,8 @@
     X(day /***/, Uget(s, 1))                                                                       \
     X(year /**/, Uget(s, 1))                                                                       \
     /* sizes */                                                                                    \
-    X(au /**/, Uget(m, 1))                                                                         \
+    X(au /*****************/, Uget(m, 1))                                                          \
+    X(astronomical_unit /**/, Uget(m, 1))                                                          \
     X(light_year /*********/, Uget(m, 1))                                                          \
     X(parsec /*************/, Uget(m, 1))                                                          \
     X(planck_length /******/, Uget(m, 1))                                                          \
@@ -126,7 +129,7 @@ namespace shamunits {
             static constexpr T kb        = 1.380649e-23;                // (J.K-1)
 
             /// Stephan Boltzmann constant (W.m-2.K-4)
-            static constexpr T sigma = 5.670374419e-8; // (W.m-2.K-4)
+            static constexpr T sigma = 5.670374419e-8;
 
             static constexpr T hour = Conv::hr_to_s; //(s)
             static constexpr T day  = Conv::dy_to_s; //(s)
@@ -154,6 +157,7 @@ namespace shamunits {
         /// Construct the \ref shamunits::Constants class with a unit system
         explicit Constants(const UnitSystem<T> units) : units(units) {}
 
+/// Define the constant conversions functions
 #define X(name, conv)                                                                              \
     addconstant(name) { return Cget(Si::name, 1) * conv; }
         UNITS_CONSTANTS
@@ -164,129 +168,200 @@ namespace shamunits {
 
 /**
  * \fn shamunits::Constants::delta_nu_cs()
- * \brief get delta_nu_cs in the current unit system @ref units
+ * \brief get delta_nu_cs in the current unit system @ref units (s-1)
  *
  * \fn shamunits::Constants::Si::delta_nu_cs()
- * \brief get delta_nu_cs in the si unit system
+ * \brief get delta_nu_cs in the si unit system (s-1)
  *
  * \fn shamunits::Constants::c()
- * \brief get c in the current unit system @ref units
+ * \brief get c in the current unit system @ref units (m.s-1)
  *
  * \fn shamunits::Constants::Si::c()
- * \brief get c in the si unit system
+ * \brief get c in the si unit system (m.s-1)
  *
  * \fn shamunits::Constants::h()
- * \brief get h in the current unit system @ref units
+ * \brief get h in the current unit system @ref units (J.s-1)
  *
  * \fn shamunits::Constants::Si::h()
- * \brief get h in the si unit system
+ * \brief get h in the si unit system (J.s-1)
  *
  * \fn shamunits::Constants::e()
- * \brief get e in the current unit system @ref units
+ * \brief get e in the current unit system @ref units (C)
  *
  * \fn shamunits::Constants::Si::e()
- * \brief get e in the si unit system
+ * \brief get e in the si unit system (C)
  *
  * \fn shamunits::Constants::k()
- * \brief get k in the current unit system @ref units
+ * \brief get k in the current unit system @ref units (J.K-1 )
  *
  * \fn shamunits::Constants::Si::k()
- * \brief get k in the si unit system
+ * \brief get k in the si unit system (J.K-1 )
  *
  * \fn shamunits::Constants::Na()
- * \brief get Na in the current unit system @ref units
+ * \brief get Na in the current unit system @ref units (mol-1 )
  *
  * \fn shamunits::Constants::Si::Na()
- * \brief get Na in the si unit system
+ * \brief get Na in the si unit system (mol-1 )
  *
  * \fn shamunits::Constants::Kcd()
- * \brief get Kcd in the current unit system @ref units
+ * \brief get Kcd in the current unit system @ref units (lm.W-1)
  *
  * \fn shamunits::Constants::Si::Kcd()
- * \brief get Kcd in the si unit system
+ * \brief get Kcd in the si unit system (lm.W-1)
+ */
+
+/**
+ * \fn shamunits::Constants::G()
+ * \brief get the value of G in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::G()
+ * \brief get the value of G in the si unit system (N.m2.kg-2)
+ *
+ * \fn shamunits::Constants::hbar()
+ * \brief get the value of hbar in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::hbar()
+ * \brief get the value of hbar in the si unit system (J.s-1)
+ *
+ * \fn shamunits::Constants::mu_0()
+ * \brief get the value of mu_0 in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::mu_0()
+ * \brief get the value of mu_0 in the si unit system (N.A-2)
+ *
+ * \fn shamunits::Constants::Z_0()
+ * \brief get the value of Z_0 in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::Z_0()
+ * \brief get the value of Z_0 in the si unit system (Ohm)
+ *
+ * \fn shamunits::Constants::epsilon_0()
+ * \brief get the value of epsilon_0 in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::epsilon_0()
+ * \brief get the value of epsilon_0 in the si unit system (F.m-1)
+ *
+ * \fn shamunits::Constants::ke()
+ * \brief get the value of ke in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::ke()
+ * \brief get the value of ke in the si unit system (N.m2.C-2)
+ *
+ * \fn shamunits::Constants::kb()
+ * \brief get the value of kb in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::kb()
+ * \brief get the value of kb in the si unit system (J.K-1)
+ *
+ */
+
+/**
+ * \fn shamunits::Constants::sigma()
+ * \brief get the value of sigma (Stephan Boltzmann constant) in the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::sigma()
+ * \brief get the value of sigma (Stephan Boltzmann constant) in the si unit system (W.m-2.K-4)
+ */
+
+/**
+ * \fn shamunits::Constants::hour()
+ * \brief get the value of a hour in the time unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::hour()
+ * \brief get the value of a hour in the time unit of the si unit system (s)
+ *
+ * \fn shamunits::Constants::day()
+ * \brief get the value of a day in the time unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::day()
+ * \brief get the value of a day in the time unit of the si unit system (s)
  *
  * \fn shamunits::Constants::year()
  * \brief get the value of a year in the time unit of the current unit system @ref units
  *
  * \fn shamunits::Constants::Si::year()
- * \brief get the value of a year in the time unit of the si unit system
+ * \brief get the value of a year in the time unit of the si unit system (s)
+ */
+
+/**
+ * \fn shamunits::Constants::astronomical_unit()
+ * \brief get the value of an astronomical_unit in the distance unit of the current unit system
+ * @ref units
+ *
+ * \fn shamunits::Constants::Si::astronomical_unit()
+ * \brief get the value of an astronomical_unit in the distance unit of the si unit system (m)
  *
  * \fn shamunits::Constants::au()
  * \brief get the value of an au in the distance unit of the current unit system @ref units
  *
- * \fn shamunits::Constants::Si::astronomical_unit()
- * \brief get the value of an au in the distance unit of the si unit system
+ * \fn shamunits::Constants::Si::au()
+ * \brief get the value of an au in the distance unit of the si unit system (m)
  *
- * \fn shamunits::Constants::G()
- * \brief get the value of G in the current unit system @ref units
+ * \fn shamunits::Constants::light_year()
+ * \brief get the value of a light_year in the distance unit of the current unit system @ref units
  *
- * \fn shamunits::Constants::Si::G()
- * \brief get the value of G in the si unit system
+ * \fn shamunits::Constants::Si::light_year()
+ * \brief get the value of a light_year in the distance unit of the si unit system (m)
+ *
+ * \fn shamunits::Constants::parsec()
+ * \brief get the value of a parsec in the distance unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::parsec()
+ * \brief get the value of a parsec in the distance unit of the si unit system (m)
+ *
+ * \fn shamunits::Constants::planck_length()
+ * \brief get the value of a planck_length in the distance unit of the current unit system @ref
+ * units
+ *
+ * \fn shamunits::Constants::Si::planck_length()
+ * \brief get the value of a planck_length in the distance unit of the si unit system (m)
+ */
+
+/**
+ * \fn shamunits::Constants::proton_mass()
+ * \brief get the value of a proton_mass in the mass unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::proton_mass()
+ * \brief get the value of a proton_mass in the mass unit of the si unit system (kg)
+ *
+ * \fn shamunits::Constants::electron_mass()
+ * \brief get the value of a electron_mass in the mass unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::electron_mass()
+ * \brief get the value of a electron_mass in the mass unit of the si unit system (kg)
  *
  * \fn shamunits::Constants::earth_mass()
  * \brief get the value of a earth_mass in the mass unit of the current unit system @ref units
  *
  * \fn shamunits::Constants::Si::earth_mass()
- * \brief get the value of a earth_mass in the mass unit of the si unit system
+ * \brief get the value of a earth_mass in the mass unit of the si unit system (kg)
  *
  * \fn shamunits::Constants::jupiter_mass()
  * \brief get the value of a jupiter_mass in the mass unit of the current unit system @ref units
  *
  * \fn shamunits::Constants::Si::jupiter_mass()
- * \brief get the value of a jupiter_mass in the mass unit of the si unit system
+ * \brief get the value of a jupiter_mass in the mass unit of the si unit system (kg)
  *
  * \fn shamunits::Constants::sol_mass()
  * \brief get the value of a sol_mass in the mass unit of the current unit system @ref units
  *
  * \fn shamunits::Constants::Si::sol_mass()
- * \brief get the value of a sol_mass in the mass unit of the si unit system
+ * \brief get the value of a sol_mass in the mass unit of the si unit system (kg)
  *
+ * \fn shamunits::Constants::planck_mass()
+ * \brief get the value of a planck_mass in the mass unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::planck_mass()
+ * \brief get the value of a planck_mass in the mass unit of the si unit system (kg)
+ */
+
+/**
  * \fn shamunits::Constants::guiness_density()
  * \brief get the value of the guiness density in the density unit of the current unit system @ref
  * units
  *
  * \fn shamunits::Constants::Si::guiness_density()
- * \brief get the value of a guiness_density in the density of the si unit system
- *
- * \fn shamunits::Constants::Si::hbar()
- * \brief get the value of a hbar in the si unit system
- *
- * \fn shamunits::Constants::Si::mu_0()
- * \brief get the value of a mu_0 in the si unit system
- *
- * \fn shamunits::Constants::Si::Z_0()
- * \brief get the value of a Z_0 in the si unit system
- *
- * \fn shamunits::Constants::Si::epsilon_0()
- * \brief get the value of a epsilon_0 in the si unit system
- *
- * \fn shamunits::Constants::Si::ke()
- * \brief get the value of a ke in the si unit system
- *
- * \fn shamunits::Constants::Si::hour()
- * \brief get the duration of an hour in the si unit system
- *
- * \fn shamunits::Constants::Si::day()
- * \brief get the duration of a day in the si unit system
- *
- * \fn shamunits::Constants::Si::light_year()
- * \brief get the lenght of a light_year in the si unit system
- *
- * \fn shamunits::Constants::Si::parsec()
- * \brief get the lenght of a parsec in the si unit system
- *
- * \fn shamunits::Constants::Si::planck_length()
- * \brief get the lenght of a planck_length in the si unit system
- *
- * \fn shamunits::Constants::Si::proton_mass()
- * \brief get the mass of a proton in the si unit system
- *
- * \fn shamunits::Constants::Si::electron_mass()
- * \brief get the mass of a electron in the si unit system
- *
- * \fn shamunits::Constants::Si::planck_mass()
- * \brief get the value of a planck mass in the si unit system
- *
+ * \brief get the value of a guiness_density in the density of the si unit system (kg.m-3)
  */
 
 #undef Uget

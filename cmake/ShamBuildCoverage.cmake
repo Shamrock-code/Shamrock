@@ -15,7 +15,7 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${coverage_flags}")
 # disable shared lib if coverage is enabled
 if(CMAKE_BUILD_TYPE STREQUAL "COVERAGE")
     if(SHAMROCK_USE_SHARED_LIB)
-    message(STATUS 
+    message(STATUS
         "forcing SHAMROCK_USE_SHARED_LIB=Off with coverage enabled, "
         "without it llvm-cov will show only the main binary functions")
     endif()

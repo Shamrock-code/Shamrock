@@ -383,18 +383,26 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::string field_type,
                pybind11::object value,
                f64_3 box_min,
-               f64_3 box_max) {
+               f64_3 box_max,
+               u32 ivar) {
                 if (field_type == "f64") {
                     f64 val = value.cast<f64>();
-                    self.set_value_in_a_box(field_name, val, {box_min, box_max});
+                    self.set_value_in_a_box(field_name, val, {box_min, box_max}, ivar);
                 } else if (field_type == "f64_3") {
                     f64_3 val = value.cast<f64_3>();
-                    self.set_value_in_a_box(field_name, val, {box_min, box_max});
+                    self.set_value_in_a_box(field_name, val, {box_min, box_max}, ivar);
                 } else {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
                         "unknown field type");
                 }
-            })
+            },
+            py::arg("field_name"),
+            py::arg("field_type"),
+            py::arg("value"),
+            py::arg("box_min"),
+            py::arg("box_max"),
+            py::kw_only(),
+            py::arg("ivar") = 0)
         .def(
             "set_value_in_sphere",
             [](T &self,

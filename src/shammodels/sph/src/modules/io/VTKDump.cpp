@@ -15,8 +15,10 @@
  */
 
 #include "shammodels/sph/modules/io/VTKDump.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class vec>
@@ -221,6 +223,16 @@ namespace shammodels::sph::modules {
             fnum++;
         }
 
+        if (solver_config.dust_config.has_epsilon_field()) {
+            const u32 ndust = solver_config.dust_config.get_dust_nvar();
+            fnum += ndust;
+        }
+
+        if (solver_config.dust_config.has_deltav_field()) {
+            const u32 ndust = solver_config.dust_config.get_dust_nvar();
+            fnum += ndust;
+        }
+
         writter.add_field_data_section(fnum);
 
         if (add_patch_world_id) {
@@ -259,7 +271,75 @@ namespace shammodels::sph::modules {
         }
 
         vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
-    };
+
+        if (solver_config.dust_config.has_epsilon_field()) {
+            const u32 iepsilon = pdl.get_field_idx<Tscal>("epsilon");
+            const u32 ndust    = solver_config.dust_config.get_dust_nvar();
+
+            for (u32 idust = 0; idust < ndust; idust++) {
+                ComputeField<Tscal> tmp_epsilon
+                    = utility.make_compute_field<Tscal>("tmp_epsilon", 1);
+
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                    logger::debug_ln(
+                        "sph::vtk",
+                        "compute extract epsilon field with idust =",
+                        idust,
+                        p.id_patch);
+
+                    auto &buf_epsilon = pdat.get_field<Tscal>(iepsilon);
+                    PatchDataFieldSpan<Tscal> span_epsilon{buf_epsilon, 0, pdat.get_obj_cnt()};
+
+                    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+                    auto &q   = sptr->get_queue();
+
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{span_epsilon},
+                        sham::MultiRef{tmp_epsilon.get_buf(p.id_patch)},
+                        pdat.get_obj_cnt(),
+                        [&, idust](u32 i, auto epsilon_field, Tscal *acc_epsilon) {
+                            acc_epsilon[i] = epsilon_field(i, idust);
+                        });
+                });
+
+                vtk_dump_add_compute_field(
+                    scheduler(), writter, tmp_epsilon, "epsilon_" + std::to_string(idust));
+            }
+        }
+
+        if (solver_config.dust_config.has_deltav_field()) {
+            const u32 ideltav = pdl.get_field_idx<Tvec>("deltav");
+            const u32 ndust   = solver_config.dust_config.get_dust_nvar();
+
+            for (u32 idust = 0; idust < ndust; idust++) {
+                ComputeField<Tvec> tmp_deltav = utility.make_compute_field<Tvec>("tmp_deltav", 1);
+
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                    logger::debug_ln(
+                        "sph::vtk", "compute extract deltav field with idust =", idust, p.id_patch);
+
+                    auto &buf_deltav = pdat.get_field<Tvec>(ideltav);
+                    PatchDataFieldSpan<Tvec> span_deltav{buf_deltav, 0, pdat.get_obj_cnt()};
+
+                    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+                    auto &q   = sptr->get_queue();
+
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{span_deltav},
+                        sham::MultiRef{tmp_deltav.get_buf(p.id_patch)},
+                        pdat.get_obj_cnt(),
+                        [&, idust](u32 i, auto deltav_field, Tvec *acc_deltav) {
+                            acc_deltav[i] = deltav_field(i, idust);
+                        });
+                });
+
+                vtk_dump_add_compute_field(
+                    scheduler(), writter, tmp_deltav, "deltav_" + std::to_string(idust));
+            }
+        }
+    }
 
 } // namespace shammodels::sph::modules
 

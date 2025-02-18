@@ -117,7 +117,7 @@ namespace shamrock::sph {
         return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
     }
 
-    enum ViscosityType{Standard = 0, Disc = 1, MHD = 2};
+    enum ViscosityType { Standard = 0, Disc = 1, MHD = 2 };
     /**
      * @brief \cite Phantom_2018 eq.35
      *
@@ -162,12 +162,7 @@ namespace shamrock::sph {
                * (Fab_inv_omega_a_rho_a + Fab_inv_omega_b_rho_b);
     }
 
-    template<
-        class Kernel,
-        class Tvec,
-        class Tscal,
-        ViscosityType visco_mode = Standard,
-        class Lambda_qav>
+    template<class Tvec, class Tscal>
     inline void add_to_derivs_sph_artif_visco_cond(
         Tscal pmass,
         Tscal rho_a_sq,
@@ -182,43 +177,17 @@ namespace shamrock::sph {
         Tscal u_b,
         Tscal P_a,
         Tscal P_b,
-        Tscal cs_a,
-        Tscal cs_b,
-
-        Tscal alpha_a,
-        Tscal alpha_b,
-        Tscal h_a,
-        Tscal h_b,
-
-        Tscal beta_AV,
         Tscal alpha_u,
 
         Tvec v_ab,
         Tvec r_ab_unit,
         Tscal vsig_u,
-        Lambda_qav &&qav_func,
+
+        Tscal qa_ab,
+        Tscal qb_ab,
 
         Tvec &dv_dt,
         Tscal &du_dt) {
-
-
-        // f32 P_b     = cs * cs * rho_b;
-        Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
-        Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
-
-        /////////////////
-        // internal energy update
-        //  scalar : f32  | vector : f32_3
-        // Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
-        // Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
-
-        // Tscal vsig_u = abs_v_ab_r_ab;
-        //Tscal rho_a = 1. / rho_a_inv;
-
-        Tscal qa_ab = qav_func();
-        Tscal qb_ab = qav_func();
-
-
 
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;

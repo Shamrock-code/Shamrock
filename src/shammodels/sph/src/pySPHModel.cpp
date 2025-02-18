@@ -236,14 +236,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                shammodels::sph::modules::SetupNodePtr parent,
                Tscal Rwarp,
                Tscal Hwarp,
-               Tscal inclination) {
-                return self.make_modifier_warp_disc(parent, Rwarp, Hwarp, inclination);
+               Tscal inclination,
+               Tscal posangle) {
+                return self.make_modifier_warp_disc(parent, Rwarp, Hwarp, inclination, posangle);
             },
             py::kw_only(),
             py::arg("setup2warp"),
             py::arg("Rwarp"),
             py::arg("Hwarp"),
-            py::arg("inclination"))
+            py::arg("inclination"),
+            py::arg("posangle"))
         .def(
             "apply_setup",
             [](TSPHSetup &self,

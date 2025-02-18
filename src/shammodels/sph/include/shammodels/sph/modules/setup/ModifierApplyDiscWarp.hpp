@@ -36,6 +36,7 @@ namespace shammodels::sph::modules {
         Tscal Rwarp_;
         Tscal Hwarp_;
         Tscal inclination_;
+        Tscal posangle_;
 
         public:
         ModifierApplyDiscWarp(
@@ -44,9 +45,10 @@ namespace shammodels::sph::modules {
             SetupNodePtr parent,
             Tscal Rwarp,
             Tscal Hwarp,
-            Tscal inclination)
+            Tscal inclination,
+            Tscal posangle)
             : context(context), parent(parent), Rwarp_(Rwarp), Hwarp_(Hwarp),
-              inclination_(inclination) {}
+              inclination_(inclination), posangle_(posangle) {}
 
         bool is_done() { return parent->is_done(); }
 

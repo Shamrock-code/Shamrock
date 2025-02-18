@@ -272,7 +272,7 @@ namespace shamrock::spmhd {
         // return psi_a * 1.0 / h_a;
     }
 
-    template<class Kernel, class Tvec, class Tscal, MHDType MHD_mode = Ideal, class Lambda_qab>
+    template<class Kernel, class Tvec, class Tscal, MHDType MHD_mode = Ideal>
     inline void add_to_derivs_spmhd(
         Tscal pmass,
         Tvec dr,

@@ -37,10 +37,9 @@ namespace shamphys {
         };
 
         inline static constexpr Tscal
-        vsig_hydro(Tscal abs_v_ab_r_ab, Tscal v_A_a, Tscal cs_a, Tscal alpha_av, Tscal beta_av) {
-            Tscal v_a  = sycl::sqrt(cs_a * cs_a + v_A_a * v_A_a);
-            Tscal vsig = alpha_av * v_a + beta_av * abs_v_ab_r_ab;
-            return vsig;
+        vsig_hydro(Tscal abs_v_ab_r_ab, Tscal cs_a, Tscal alpha_av, Tscal beta_av) {
+            return alpha_av * cs_a + beta_av * abs_v_ab_r_ab;
+            ;
         };
 
         inline static constexpr Tscal vsigB(Tvec v_ab, Tvec r_ab_unit) {

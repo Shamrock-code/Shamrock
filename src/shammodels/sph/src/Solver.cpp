@@ -49,6 +49,7 @@
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/modules/io/VTKDump.hpp"
 #include "shamphys/mhd.hpp"
+#include "shamphys/q_ab.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
@@ -64,7 +65,6 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
-#include "shamphys/q_ab.hpp"
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
@@ -917,9 +917,8 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
-    using namespace shamphys;
 
-    modules::UpdateDerivs<Tvec, Kern, q_ab_lambdas<Tvec, Tscal>> derivs(context, solver_config, storage);
+    modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
     derivs.update_derivs();
 
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);

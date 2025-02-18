@@ -245,7 +245,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Rwarp"),
             py::arg("Hwarp"),
             py::arg("inclination"),
-            py::arg("posangle"))
+            py::arg("posangle") = 0.)
         .def(
             "apply_setup",
             [](TSPHSetup &self,

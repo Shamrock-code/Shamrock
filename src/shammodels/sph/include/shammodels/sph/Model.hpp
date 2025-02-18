@@ -18,6 +18,7 @@
  */
 
 #include "shambase/constants.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shamalgs/collective/exchanges.hpp"
 #include "shambackends/BufferMirror.hpp"
@@ -38,6 +39,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
 #include <pybind11/functional.h>
+#include <stdexcept>
 #include <vector>
 
 namespace shammodels::sph {
@@ -583,7 +585,8 @@ namespace shammodels::sph {
             std::vector<Tscal> &part_u_insert);
 
         template<class T>
-        inline void set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box) {
+        inline void
+        set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box, u32 ivar) {
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
@@ -594,9 +597,16 @@ namespace shammodels::sph {
                     PatchDataField<T> &f
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
 
-                    if (f.get_nvar() != 1) {
-                        shambase::throw_unimplemented();
+                    if (ivar >= f.get_nvar()) {
+                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                            "You are trying to set value in a box for field ({}) with "
+                            "ivar ({}) >= f.get_nvar ({})",
+                            field_name,
+                            ivar,
+                            f.get_nvar()));
                     }
+
+                    u32 nvar = f.get_nvar();
 
                     {
                         auto acc     = f.get_buf().template mirror_to<sham::host>();
@@ -606,7 +616,7 @@ namespace shammodels::sph {
                             Tvec r = acc_xyz[i];
 
                             if (BBAA::is_coord_in_range(r, std::get<0>(box), std::get<1>(box))) {
-                                acc[i] = val;
+                                acc[i * nvar + ivar] = val;
                             }
                         }
                     }

@@ -81,26 +81,20 @@ Register_pymod(pyunits_init) {
         .def(py::init([](UnitSystem s) {
             return std::make_unique<shamunits::Constants<f64>>(s);
         }))
-
-#define X(st)                                                                                      \
+////////////////// Xmacro
+/// X macro to define the conversion constants bindings
+#define X(st, conv)                                                                                \
     .def(                                                                                          \
         #st,                                                                                       \
         [](shamunits::Constants<f64> &cte, i32 power) {                                            \
             return sycl::pown(cte.st(), power);                                                    \
         },                                                                                         \
         py::arg("power") = 1)
-
-            X(delta_nu_cs) X(c) X(h) X(e) X(k) X(Na) X(Kcd)
-
-                X(G)
-
-                    X(mu_0)
-
-                        X(year)
-
-                            X(au)
-
-                                X(earth_mass) X(jupiter_mass) X(sol_mass) X(guiness_density)
+        //////////////////
+        UNITS_CONSTANTS
+//////////////////
+#undef X
+        //////////////////
 
         ;
 }

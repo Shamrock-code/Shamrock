@@ -22,9 +22,11 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/mhd.hpp"
+#include "shamphys/mhd.hpp"
+#include "shamphys/q_ab.hpp"
 
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
+template<class Tvec, template<class> class SPHKernel, class Lambda_qav>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel, Lambda_qav>::update_derivs() {
 
     Cfg_AV cfg_av   = solver_config.artif_viscosity;
     Cfg_MHD cfg_mhd = solver_config.mhd_config;
@@ -50,11 +52,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
     }
 }
 
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_noAV(None cfg) {}
+template<class Tvec, template<class> class SPHKernel, class Lambda_qav>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel, Lambda_qav>::update_derivs_noAV(None cfg) {}
 
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_constantAV(
+template<class Tvec, template<class> class SPHKernel, class Lambda_qav>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel, Lambda_qav>::update_derivs_constantAV(
     Constant cfg) {
     StackEntry stack_loc{};
 
@@ -195,22 +197,48 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
+                    Tvec v_ab = vxyz_a - vxyz_b;
+                    Tscal vsig_u = shamphys::MHD_physics<Tvec,Tscal>::vsig_u(P_a, P_b, rho_a, rho_b);
+                    Tvec r_ab_unit = dr / rab;
+                     Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
+
+
+                    //if constexpr (visco_mode == Standard) {
+                    //    qa_ab = shamphys::q_ab_lambdas<Tvec,Tscal>::lambda_qav(rho_a, cs_a, v_ab_r_ab, alpha_a, beta_AV);
+                    //    qb_ab = shamphys::q_ab_lambdas<Tvec,Tscal>::lambda_qav(rho_b, cs_b, v_ab_r_ab, alpha_b, beta_AV);
+                    //} 
+                    //if constexpr (visco_mode == Disc) { // from Phantom 2018, eq 120
+                    //    qa_ab = shamphys::q_ab_lambdas<Tvec,Tscal>::lambda_qav_disc(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
+                    //    qb_ab = shamphys::q_ab_lambdas<Tvec,Tscal>::lambda_qav_disc(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
+                    //}
+                    //if constexpr (visco_mode == MHD) { // from Phantom 2018, eq 120
+                    //    qa_ab = q_av_disc(rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
+                    //    qb_ab = q_av_disc(rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
+                    //}
+
+                    auto qav_func = shamphys::q_ab_lambdas<Tvec, Tscal>::lambda_qav;
+                    if (solver_config.has_field_B_on_rho()){
+                        qav_func = shamphys::q_ab_lambdas<Tvec, Tscal>::lambda_qav_mhd;
+                    }
+                    
                     // clang-format off
-                    add_to_derivs_sph_artif_visco_cond<Kernel>(
+                    add_to_derivs_sph_artif_visco_cond<Kernel, Tvec, Tscal, Standard, Lambda_qav>(
                         pmass,
-                        dr, rab,
-                        rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
+                        rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
                         omega_a, omega_b,
                         Fab_a, Fab_b,
-                        vxyz_a, vxyz_b,
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
-                        lambda_qav,
                         alpha_a, alpha_b,
                         h_a, h_b,
                         
                         beta_AV, alpha_u,
+
+                        v_ab,
+                        r_ab_unit,
+                         vsig_u,
+                         qav_func,
 
                         force_pressure,
                         tmpdU_pressure);
@@ -237,8 +265,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         pcache.complete_event_state(resulting_events);
     });
 }
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97(VaryingMM97 cfg) {
+template<class Tvec, template<class> class SPHKernel, class Lambda_qav>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel, Lambda_qav>::update_derivs_mm97(VaryingMM97 cfg) {
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -382,21 +410,30 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
+                    Tvec v_ab = vxyz_a - vxyz_b;
+                    Tscal vsig_u = shamphys::MHD_physics<Tvec,Tscal>::vsig_u(P_a, P_b, rho_a, rho_b);
+                    Tvec r_ab_unit = dr / rab;
+                     Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
+
+
                     // clang-format off
                     add_to_derivs_sph_artif_visco_cond<Kernel>(
                         pmass,
-                        dr, rab,
-                        rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
+                        rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
                         omega_a, omega_b,
                         Fab_a, Fab_b,
-                        vxyz_a, vxyz_b,
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
-                        lambda_qav,
                         alpha_a, alpha_b,
                         h_a, h_b,
+                        
                         beta_AV, alpha_u,
+
+                        v_ab,
+                        r_ab_unit,
+                         vsig_u,
+                         qav_func,
 
                         force_pressure,
                         tmpdU_pressure);
@@ -431,8 +468,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         pcache.complete_event_state(resulting_events);
     });
 }
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10(VaryingCD10 cfg) {
+template<class Tvec, template<class> class SPHKernel, class Lambda_qav>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel, Lambda_qav>::update_derivs_cd10(VaryingCD10 cfg) {
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -567,22 +604,30 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                     Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
+                    Tvec v_ab = vxyz_a - vxyz_b;
+                    Tscal vsig_u = shamphys::MHD_physics<Tvec,Tscal>::vsig_u(P_a, P_b, rho_a, rho_b);
+                    Tvec r_ab_unit = dr / rab;
+                    Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
+
+
                     // clang-format off
-                    add_to_derivs_sph_artif_visco_cond<Kernel>(
+                    add_to_derivs_sph_artif_visco_cond<Kernel,Tvec, Tscal, Lambda_qav>(
                         pmass,
-                        dr, rab,
-                        rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
+                        rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
                         omega_a, omega_b,
                         Fab_a, Fab_b,
-                        vxyz_a, vxyz_b,
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
-                        lambda_qav,
                         alpha_a, alpha_b,
                         h_a, h_b,
-
+                        
                         beta_AV, alpha_u,
+
+                        v_ab,
+                        r_ab_unit,
+                         vsig_u,
+                         shamphys::q_ab_lambdas<Tvec, Tscal>::lambda_qav,
 
                         force_pressure,
                         tmpdU_pressure);
@@ -611,8 +656,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         pcache.complete_event_state(resulting_events);
     });
 }
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc_visco(
+template<class Tvec, template<class> class SPHKernel, class Lambda_qav>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel, Lambda_qav>::update_derivs_disc_visco(
     ConstantDisc cfg) {
     StackEntry stack_loc{};
 
@@ -747,21 +792,30 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                     Tscal Fab_a         = Kernel::dW_3d(rab, h_a);
                     Tscal Fab_b         = Kernel::dW_3d(rab, h_b);
 
+                    Tvec v_ab = vxyz_a - vxyz_b;
+                    Tscal vsig_u = shamphys::MHD_physics<Tvec,Tscal>::vsig_u(P_a, P_b, rho_a, rho_b);
+                    Tvec r_ab_unit = dr / rab;
+                    Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
+
+
                     // clang-format off
-                    add_to_derivs_sph_artif_visco_cond<Kernel,Tvec, Tscal, shamrock::sph::Disc>(
+                    add_to_derivs_sph_artif_visco_cond<Kernel,Tvec, Tscal, shamrock::sph::Disc, Lambda_qav>(
                         pmass,
-                        dr, rab,
-                        rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
+                        rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
                         omega_a, omega_b,
                         Fab_a, Fab_b,
-                        vxyz_a, vxyz_b,
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
-                        lambda_qav,
                         alpha_a, alpha_b,
-                        h_a, h_b
+                        h_a, h_b,
+                        
                         beta_AV, alpha_u,
+
+                        v_ab,
+                        r_ab_unit,
+                         vsig_u,
+                         qav_func,
 
                         force_pressure,
                         tmpdU_pressure);
@@ -789,8 +843,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     });
 }
 
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(IdealMHD cfg) {
+template<class Tvec, template<class> class SPHKernel, class Lambda_qav>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel, Lambda_qav>::update_derivs_MHD(IdealMHD cfg) {
     StackEntry stack_loc{};
 
     using namespace shamrock;
@@ -1009,7 +1063,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
                     // clang-format off
                     //Tscal sigma_mhd = 0.3;
-                    spmhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, Ideal>(
+                    spmhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, Ideal, Lambda_qav>(
                         pmass,
                         dr, rab,
                         rho_a, rho_a_sq, omega_a_rho_a_inv, rho_a_inv, rho_b,
@@ -1019,7 +1073,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                         u_a, u_b,
                         P_a, P_b,
                         cs_a, cs_b,
-                        lambda_qav_mhd,
                         h_a, h_b,
 
                         alpha_u,
@@ -1101,6 +1154,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 }
 
 using namespace shammath;
-template class shammodels::sph::modules::UpdateDerivs<f64_3, M4>;
-template class shammodels::sph::modules::UpdateDerivs<f64_3, M6>;
-template class shammodels::sph::modules::UpdateDerivs<f64_3, M8>;
+using namespace shamphys;
+template class shammodels::sph::modules::UpdateDerivs<f64_3, M4, q_ab_lambdas<f64_3, f64>>;
+template class shammodels::sph::modules::UpdateDerivs<f64_3, M6, q_ab_lambdas<f64_3, f64>>;
+template class shammodels::sph::modules::UpdateDerivs<f64_3, M8, q_ab_lambdas<f64_3, f64>>;

@@ -24,7 +24,7 @@
 
 namespace shammodels::sph::modules {
 
-    template<class Tvec, template<class> class SPHKernel>
+    template<class Tvec, template<class> class SPHKernel, class Lambda_qav>
     class UpdateDerivs {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;

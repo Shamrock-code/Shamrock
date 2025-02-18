@@ -294,7 +294,6 @@ namespace shamrock::spmhd {
         Tscal P_b,
         Tscal cs_a,
         Tscal cs_b,
-        Lambda_qab &&qab_func,
         Tscal h_a,
         Tscal h_b,
 

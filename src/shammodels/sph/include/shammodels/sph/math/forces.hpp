@@ -166,7 +166,8 @@ namespace shamrock::sph {
         class Kernel,
         class Tvec,
         class Tscal,
-        ViscosityType visco_mode = Standard>
+        ViscosityType visco_mode = Standard,
+        class Lambda_qav>
     inline void add_to_derivs_sph_artif_visco_cond(
         Tscal pmass,
         Tscal rho_a_sq,
@@ -195,8 +196,7 @@ namespace shamrock::sph {
         Tvec v_ab,
         Tvec r_ab_unit,
         Tscal vsig_u,
-        Tscal qa_ab,
-        Tscal qb_ab,
+        Lambda_qav &&qav_func,
 
         Tvec &dv_dt,
         Tscal &du_dt) {
@@ -214,6 +214,9 @@ namespace shamrock::sph {
 
         // Tscal vsig_u = abs_v_ab_r_ab;
         //Tscal rho_a = 1. / rho_a_inv;
+
+        Tscal qa_ab = qav_func();
+        Tscal qb_ab = qav_func();
 
 
 

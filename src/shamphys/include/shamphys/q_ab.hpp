@@ -19,6 +19,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
 #include "shambackends/math.hpp"
+#include "shamphys/mhd.hpp"
 
 namespace shamphys {
 template<class Tvec, class Tscal>
@@ -35,7 +36,7 @@ template<class Tvec, class Tscal>
             = [](Tscal rho, Tscal cs, Tscal v_scal_rhat, Tscal alpha_AV, 
                  Tscal beta_AV, Tvec r_ab_unit, Tvec v_ab, Tscal cs_a, Tscal B_a, Tscal mu_0) {
                   Tscal abs_v_ab_r_ab = sycl::fabs(v_scal_rhat);
-                  Tscal vsig          = vsig_MHD(v_ab, r_ab_unit,cs_a, B_a,rho,mu_0,alpha_AV,beta_AV);
+                  Tscal vsig          = MHD_physics<Tvec, Tscal>::vsig_MHD(v_ab, r_ab_unit,cs_a, B_a,rho,mu_0,alpha_AV,beta_AV);
                   return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
               };
 

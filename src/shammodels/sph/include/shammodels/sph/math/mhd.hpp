@@ -26,14 +26,9 @@
 #include "shamunits/Constants.hpp"
 #include <tuple>
 
-namespace shamrock::spmhd {
+namespace shamrock::sph::mhd {
 
     enum MHDType { Ideal = 0, NonIdeal = 1 };
-
-    template<class Tscal>
-    inline Tscal q_av(Tscal rho, Tscal vsig, Tscal v_scal_rhat) {
-        return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
-    }
 
     template<class Tvec, class Tscal>
     inline Tvec B_dot_grad_W(
@@ -345,8 +340,8 @@ namespace shamrock::spmhd {
         Tscal v_shock_b = shamphys::MHD_physics<Tvec, Tscal>::v_shock(cs_b, B_b, rho_b, mu_0);
         Tscal vsig_B    = shamphys::MHD_physics<Tvec, Tscal>::vsig_B(v_ab, r_ab_unit);
 
-        Tscal qa_ab = q_av(rho_a, vsig_a, v_ab_r_ab);
-        Tscal qb_ab = q_av(rho_b, vsig_b, v_ab_r_ab);
+        Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
+        Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
         Tscal AV_P_a = P_a; //+ qa_ab;
         Tscal AV_P_b = P_b; //+ qb_ab;
@@ -458,4 +453,4 @@ namespace shamrock::spmhd {
         dpsi_on_ch_dt += -psi_cons;
     }
 
-} // namespace shamrock::spmhd
+} // namespace shamrock::sph::mhd

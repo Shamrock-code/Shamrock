@@ -103,22 +103,6 @@ namespace shamrock::sph {
     }
 
     /**
-     * @brief \cite Phantom_2018 eq.40
-     *
-     * @tparam Tscal
-     * @param rho
-     * @param vsig
-     * @param v_scal_rhat
-     * @return Tscal
-     */
-    template<class Tscal>
-    inline Tscal q_av(const Tscal &rho, const Tscal &vsig, const Tscal &v_scal_rhat) {
-
-        return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
-    }
-
-    enum ViscosityType { Standard = 0, Disc = 1, MHD = 2 };
-    /**
      * @brief \cite Phantom_2018 eq.35
      *
      * @tparam Tvec

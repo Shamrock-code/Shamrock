@@ -408,7 +408,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                     Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
 
-                    Tscal vsig_u = shamrock::sph::vsig_hydro(P_a, P_b, rho_a, rho_b);
+                    Tscal vsig_u = shamrock::sph::vsig_u(P_a, P_b, rho_a, rho_b);
 
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
@@ -613,7 +613,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                     Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
 
-                    Tscal vsig_u = shamrock::sph::vsig_hydro(P_a, P_b, rho_a, rho_b);
+                    Tscal vsig_u = shamrock::sph::vsig_u(P_a, P_b, rho_a, rho_b);
 
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
@@ -811,7 +811,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                     Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
 
-                    Tscal vsig_u = shamrock::sph::vsig_hydro(P_a, P_b, rho_a, rho_b);
+                    Tscal vsig_u = shamrock::sph::vsig_u(P_a, P_b, rho_a, rho_b);
 
                     Tscal qa_ab = shamrock::sph::q_av_disc(
                         rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);

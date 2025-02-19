@@ -21,14 +21,14 @@
 
 namespace shamrock::sph {
 
-    template<class Tvec, class Tscal>
+    template<class Tscal>
     inline static constexpr Tscal
     vsig_hydro(Tscal abs_v_ab_r_ab, Tscal cs_a, Tscal alpha_av, Tscal beta_av) {
         return alpha_av * cs_a + beta_av * abs_v_ab_r_ab;
         ;
     };
 
-    template<class Tvec, class Tscal>
+    template<class Tscal>
     inline static constexpr Tscal vsig_u(Tscal P_a, Tscal P_b, Tscal rho_a, Tscal rho_b) {
         Tscal rho_avg = (rho_a + rho_b) * 0.5;
         Tscal abs_dp  = sham::abs(P_a - P_b);

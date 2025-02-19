@@ -21,8 +21,8 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/mhd.hpp"
+#include "shammodels/sph/math/q_ab.hpp"
 #include "shamphys/mhd.hpp"
-#include "shamphys/q_ab.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
@@ -204,7 +204,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
                     Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
 
-                    Tscal vsig_u = shamrock::sph::vsig_hydro(P_a, P_b, rho_a, rho_b);
+                    Tscal vsig_u = shamrock::sph::vsig_u(P_a, P_b, rho_a, rho_b);
 
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
@@ -1014,7 +1014,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
-                using namespace shamrock::spmhd;
 
                 Tvec sum_axyz  = {0, 0, 0};
                 Tscal sum_du_a = 0;
@@ -1083,7 +1082,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                     Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
                     // Tscal sigma_mhd = 0.3;
-                    spmhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, Ideal>(
+                    shamrock::sph::mhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal>(
                         pmass,
                         dr,
                         rab,

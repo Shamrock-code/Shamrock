@@ -201,11 +201,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
                     Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
                     Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
 
-                    Tscal vsig_u
-                        = shamphys::MHD_physics<Tvec, Tscal>::vsig_u(P_a, P_b, rho_a, rho_b);
+                    Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+                    Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
 
-                    Tscal qa_ab = shamrock::sph::q_av(rho_a, cs_a, v_ab_r_ab, alpha_a, beta_AV);
-                    Tscal qb_ab = shamrock::sph::q_av(rho_b, cs_b, v_ab_r_ab, alpha_b, beta_AV);
+                    Tscal vsig_u = shamrock::sph::vsig_hydro(P_a, P_b, rho_a, rho_b);
+
+                    Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
+                    Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,
@@ -403,11 +405,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                     Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
                     Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
 
-                    Tscal vsig_u
-                        = shamphys::MHD_physics<Tvec, Tscal>::vsig_u(P_a, P_b, rho_a, rho_b);
+                    Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+                    Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
 
-                    Tscal qa_ab = shamrock::sph::q_av(rho_a, cs_a, v_ab_r_ab, alpha_a, beta_AV);
-                    Tscal qb_ab = shamrock::sph::q_av(rho_b, cs_b, v_ab_r_ab, alpha_b, beta_AV);
+                    Tscal vsig_u = shamrock::sph::vsig_hydro(P_a, P_b, rho_a, rho_b);
+
+                    Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
+                    Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,
@@ -606,11 +610,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                     Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
                     Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
 
-                    Tscal vsig_u
-                        = shamphys::MHD_physics<Tvec, Tscal>::vsig_u(P_a, P_b, rho_a, rho_b);
+                    Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+                    Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
 
-                    Tscal qa_ab = shamrock::sph::q_av(rho_a, cs_a, v_ab_r_ab, alpha_a, beta_AV);
-                    Tscal qb_ab = shamrock::sph::q_av(rho_b, cs_b, v_ab_r_ab, alpha_b, beta_AV);
+                    Tscal vsig_u = shamrock::sph::vsig_hydro(P_a, P_b, rho_a, rho_b);
+
+                    Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
+                    Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,
@@ -802,13 +808,15 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                     Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
                     Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
 
-                    Tscal vsig_u
-                        = shamphys::MHD_physics<Tvec, Tscal>::vsig_u(P_a, P_b, rho_a, rho_b);
+                    Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+                    Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
+
+                    Tscal vsig_u = shamrock::sph::vsig_hydro(P_a, P_b, rho_a, rho_b);
 
                     Tscal qa_ab = shamrock::sph::q_av_disc(
-                        rho_a, cs_a, v_ab_r_ab, alpha_a, beta_AV, h_a, rab);
+                        rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av_disc(
-                        rho_b, cs_b, v_ab_r_ab, alpha_b, beta_AV, h_b, rab);
+                        rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
 
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,
@@ -1179,7 +1187,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 }
 
 using namespace shammath;
-using namespace shamphys;
 template class shammodels::sph::modules::UpdateDerivs<f64_3, M4>;
 template class shammodels::sph::modules::UpdateDerivs<f64_3, M6>;
 template class shammodels::sph::modules::UpdateDerivs<f64_3, M8>;

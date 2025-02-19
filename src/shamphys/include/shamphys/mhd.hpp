@@ -29,19 +29,6 @@ namespace shamphys {
             return sycl::sqrt(cs * cs + v_alfven(B, rho, mu_0) * v_alfven(B, rho, mu_0));
         };
 
-        inline static constexpr Tscal vsig_B(Tvec v_ab, Tvec r_ab_unit) {
-            Tvec v_cross_r = sycl::cross(v_ab, r_ab_unit);
-            return sycl::sqrt(
-                v_cross_r[0] * v_cross_r[0] + v_cross_r[1] * v_cross_r[1]
-                + v_cross_r[2] * v_cross_r[2]);
-        };
-
-        inline static constexpr Tscal
-        vsig_hydro(Tscal abs_v_ab_r_ab, Tscal cs_a, Tscal alpha_av, Tscal beta_av) {
-            return alpha_av * cs_a + beta_av * abs_v_ab_r_ab;
-            ;
-        };
-
         inline static constexpr Tscal vsigB(Tvec v_ab, Tvec r_ab_unit) {
             Tvec v_cross_r = sycl::cross(v_ab, r_ab_unit);
             Tscal vsig_B_a = sycl::sqrt(
@@ -49,13 +36,6 @@ namespace shamphys {
                 + v_cross_r[2] * v_cross_r[2]);
             return vsig_B_a;
         };
-
-        inline static constexpr Tscal vsig_u(Tscal P_a, Tscal P_b, Tscal rho_a, Tscal rho_b) {
-            Tscal rho_avg = (rho_a + rho_b) * 0.5;
-            Tscal abs_dp  = sham::abs(P_a - P_b);
-            return sycl::sqrt(abs_dp / rho_avg);
-            // Tscal vsig_u = abs_v_ab_r_ab;
-        }
 
         inline static constexpr Tscal vsig_MHD(
             Tvec v_ab,

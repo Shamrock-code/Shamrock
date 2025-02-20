@@ -21,6 +21,21 @@
 
 namespace shamrock::sph {
 
+    template<class Tscal>
+    inline static constexpr Tscal
+    vsig_hydro(Tscal abs_v_ab_r_ab, Tscal cs_a, Tscal alpha_av, Tscal beta_av) {
+        return alpha_av * cs_a + beta_av * abs_v_ab_r_ab;
+        ;
+    };
+
+    template<class Tscal>
+    inline static constexpr Tscal vsig_u(Tscal P_a, Tscal P_b, Tscal rho_a, Tscal rho_b) {
+        Tscal rho_avg = (rho_a + rho_b) * 0.5;
+        Tscal abs_dp  = sham::abs(P_a - P_b);
+        return sycl::sqrt(abs_dp / rho_avg);
+        // Tscal vsig_u = abs_v_ab_r_ab;
+    }
+
     /**
      * @brief \cite Phantom_2018 eq.34, with \f$q^a_{ab} = q^b_{ab} = 0\f$
      *
@@ -103,45 +118,6 @@ namespace shamrock::sph {
     }
 
     /**
-     * @brief \cite Phantom_2018 eq.40
-     *
-     * @tparam Tscal
-     * @param rho
-     * @param vsig
-     * @param v_scal_rhat
-     * @return Tscal
-     */
-    template<class Tscal>
-    inline Tscal q_av(const Tscal &rho, const Tscal &vsig, const Tscal &v_scal_rhat) {
-
-        return sham::max(-Tscal(0.5) * rho * vsig * v_scal_rhat, Tscal(0));
-    }
-
-    template<class Tscal>
-    inline Tscal q_av_disc(
-        const Tscal &rho,
-        const Tscal &h,
-        const Tscal &rab,
-        const Tscal &alpha_av,
-        const Tscal &cs,
-        const Tscal &vsig,
-        const Tscal &v_scal_rhat) {
-        Tscal q_av_d;
-        Tscal rho1   = 1. / rho;
-        Tscal rabinv = sham::inv_sat_positive(rab);
-
-        Tscal prefact = -Tscal(0.5) * rho * sham::abs(rabinv) * h;
-
-        Tscal vsig_disc = (v_scal_rhat < Tscal(0)) ? vsig : (alpha_av * cs);
-
-        q_av_d = prefact * vsig_disc * v_scal_rhat;
-
-        return q_av_d;
-    }
-
-    enum ViscosityType { Standard = 0, Disc = 1 };
-
-    /**
      * @brief \cite Phantom_2018 eq.35
      *
      * @tparam Tvec
@@ -205,14 +181,12 @@ namespace shamrock::sph {
         Tvec v_ab,
         Tvec r_ab_unit,
         Tscal vsig_u,
+
         Tscal qa_ab,
         Tscal qb_ab,
 
         Tvec &dv_dt,
         Tscal &du_dt) {
-
-        Tscal dWab_a = Fab_a;
-        Tscal dWab_b = Fab_b;
 
         Tscal AV_P_a = P_a + qa_ab;
         Tscal AV_P_b = P_b + qb_ab;
@@ -225,22 +199,22 @@ namespace shamrock::sph {
             AV_P_b,
             omega_a,
             omega_b,
-            r_ab_unit * dWab_a,
-            r_ab_unit * dWab_b);
+            r_ab_unit * Fab_a,
+            r_ab_unit * Fab_b);
 
         // compared to Phantom_2018 eq.35 we move lambda shock artificial viscosity
         // pressure part as just a modified SPH pressure (which is the case already in
         // phantom paper but not written that way)
         du_dt += duint_dt_pressure(
-            pmass, AV_P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * dWab_a);
+            pmass, AV_P_a, omega_a_rho_a_inv * rho_a_inv, v_ab, r_ab_unit * Fab_a);
 
         du_dt += lambda_shock_conductivity(
             pmass,
             alpha_u,
             vsig_u,
             u_a - u_b,
-            dWab_a * omega_a_rho_a_inv,
-            dWab_b / (rho_b * omega_b));
+            Fab_a * omega_a_rho_a_inv,
+            Fab_b / (rho_b * omega_b));
     }
 
 } // namespace shamrock::sph

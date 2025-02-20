@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Shamrock python bindings'
+project = 'python bindings'
 copyright = '2025, Timothee David--Cléris'
 author = 'Timothee David--Cléris'
 
@@ -50,7 +50,7 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = 'pydata_sphinx_theme'
-html_logo = "_static/large-figures/figures/logo.png"
+html_logo = "_static/large-figures/figures/no_background_nocolor.png"
 #html_favicon = "_static/logo.png"
 html_sourcelink_suffix = ""
 html_last_updated_fmt = ""  # to reveal the build date in the pages meta
@@ -73,6 +73,10 @@ html_context = {
     "github_version": "main",
     "doc_path": "doc/sphinx/source",
 }
+
+html_css_files = [
+    'css/custom.css',
+]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

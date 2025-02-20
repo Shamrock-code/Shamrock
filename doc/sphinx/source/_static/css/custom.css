@@ -1,0 +1,7 @@
+a.navbar-brand {
+    padding: .1rem 0;
+}
+
+html {
+	--pst-header-height: 4rem;
+}

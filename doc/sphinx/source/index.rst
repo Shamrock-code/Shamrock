@@ -10,6 +10,8 @@ Welcome to Shamrock python bindings's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   Home page <self>
+   Python API <_autosummary/shamrock>
 
 Indices and tables
 ==================
@@ -17,8 +19,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-.. automodule:: shamrock
-   :members:
-   :undoc-members:
-   :show-inheritance:

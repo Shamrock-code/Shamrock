@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'python bindings'
-copyright = '2025, Timothee David--Cléris'
+copyright = '2020 -- Timothee David--Cléris'
 author = 'Timothee David--Cléris'
 
 # The full version, including alpha/beta/rc tags
@@ -33,6 +33,7 @@ release = '2024.10.0'
 extensions = [
     'sphinx.ext.autodoc',  # For documenting Python code
     'sphinx.ext.viewcode',  # For linking to the source code in the docs
+    'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
 ]
 
 # Add any paths that contain templates here, relative to this directory.

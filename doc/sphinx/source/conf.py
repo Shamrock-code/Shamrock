@@ -49,7 +49,30 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'pydata_sphinx_theme'
+html_logo = "_static/large-figures/figures/logo.png"
+#html_favicon = "_static/logo.png"
+html_sourcelink_suffix = ""
+html_last_updated_fmt = ""  # to reveal the build date in the pages meta
+
+html_theme_options = {
+    "logo": {
+        "text": project,
+        "image_dark": html_logo,
+    },
+    "use_edit_page_button": True,
+    "footer_start": ["copyright"],
+    "footer_center": ["sphinx-version"],
+    "search_as_you_type": True,
+}
+
+html_context = {
+    "github_url": "https://github.com", # or your GitHub Enterprise site
+    "github_user": "tdavidcl",
+    "github_repo": "Shamrock",
+    "github_version": "main",
+    "doc_path": "doc/sphinx/source",
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

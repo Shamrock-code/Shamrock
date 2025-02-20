@@ -10,8 +10,7 @@ on:
 jobs:
 
   make_GithubPage:
-    name: "Build : GithubPage"
-
+    name: "Build & upload"
     runs-on: ubuntu-latest
 
     steps:

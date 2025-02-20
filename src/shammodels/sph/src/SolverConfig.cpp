@@ -85,6 +85,17 @@ namespace shammodels::sph {
             pdl.add_field<Tvec>("deltav", ndust);
             pdl.add_field<Tvec>("dtdeltav", ndust);
         }
+        if (do_MHD_debug()) {
+            pdl.add_field<Tvec>("gas_pressure", 1);
+            pdl.add_field<Tvec>("mag_pressure", 1);
+            pdl.add_field<Tvec>("mag_tension", 1);
+            pdl.add_field<Tvec>("tensile_corr", 1);
+
+            pdl.add_field<Tscal>("psi_propag", 1);
+            pdl.add_field<Tscal>("psi_diff", 1);
+            pdl.add_field<Tscal>("psi_cons", 1);
+            pdl.add_field<Tscal>("u_mhd", 1);
+        }
     }
 
     template<class Tvec, template<class> class SPHKernel>

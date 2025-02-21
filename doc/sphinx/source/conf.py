@@ -33,7 +33,8 @@ release = '2024.10.0'
 extensions = [
     'sphinx.ext.autodoc',  # For documenting Python code
     'sphinx.ext.intersphinx', # to have link in source code
-    #'sphinx.ext.viewcode',  # For linking to the source code in the docs
+    # 'sphinx.ext.viewcode',  # For linking to the source code in the docs
+    # sadly this does not seems to work as it expect real python sources which do not exist here
     'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
     'sphinx_gallery.gen_gallery', # generate thumbnail and exemple lib
 ]
@@ -58,10 +59,12 @@ intersphinx_mapping = {
 
 sphinx_gallery_conf = {
     'backreferences_dir': '_as_gen', # link to source from exemples
-    'doc_module': ('shamrock'),
+    'doc_module': ('shamrock'), # The name of the module that is documented
     'examples_dirs': '../exemples',   # path to your example scripts
     'gallery_dirs': '_as_gen',  # path to where to save gallery generated output
-    'line_numbers': True,
+    'line_numbers': True, # line numbers in exemples
+    # The 3 next args are a bit like dark magic which allows the link
+    # to functions in the exemple to exist
     'reference_url': {'shamrock': None},
     'prefer_full_module': {r'shamrock\.'},
     'remove_config_comments': True,

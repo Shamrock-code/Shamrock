@@ -84,6 +84,11 @@ jobs:
           ACPP_DEBUG_LEVEL=3 \
           python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init(0,0)"
 
+      - name: Pip install package for doc
+        run : |
+          cd build
+          pip install matplotlib numpy scipy
+
       - name: Build sphinx documentation
         run: |
           cd doc/sphinx

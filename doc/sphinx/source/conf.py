@@ -32,7 +32,8 @@ release = '2024.10.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',  # For documenting Python code
-    'sphinx.ext.viewcode',  # For linking to the source code in the docs
+    'sphinx.ext.intersphinx', # to have link in source code
+    #'sphinx.ext.viewcode',  # For linking to the source code in the docs
     'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
     'sphinx_gallery.gen_gallery', # generate thumbnail and exemple lib
 ]
@@ -45,12 +46,25 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+
+intersphinx_mapping = {
+    'ipykernel': ('https://ipykernel.readthedocs.io/en/latest/', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'python': ('https://docs.python.org/3/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
+    'pip': ('https://pip.pypa.io/en/stable/', None),
+    'matplotlib': ('https://matplotlib.org/stable/', None)
+}
+
 sphinx_gallery_conf = {
-    'backreferences_dir': '_gen_exemples/backreferences', # link to source from exemples
+    'backreferences_dir': '_as_gen', # link to source from exemples
     'doc_module': ('shamrock'),
     'examples_dirs': '../exemples',   # path to your example scripts
-    'gallery_dirs': '_gen_exemples',  # path to where to save gallery generated output
+    'gallery_dirs': '_as_gen',  # path to where to save gallery generated output
     'line_numbers': True,
+    'reference_url': {'shamrock': None},
+    'prefer_full_module': {r'shamrock\.'},
+    'remove_config_comments': True,
 }
 
 # -- Options for HTML output -------------------------------------------------

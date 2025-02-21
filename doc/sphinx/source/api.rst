@@ -5,7 +5,7 @@
    package page. DO NOT REMOVE THIS FILE!
 
 .. autosummary::
-   :toctree: _autosummary
+   :toctree: _as_gen
    :template: custom-module-template.rst
    :recursive:
 

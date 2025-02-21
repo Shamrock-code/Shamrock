@@ -1,6 +1,6 @@
 """
 Testing Ray AABB intersection
-=========================
+=============================
 
 This example shows how to use Ray AABB intersection in matplotlib
 """
@@ -79,64 +79,63 @@ def draw_ray(ax,ray, color):
     ax.plot3D([xmin, nx+xmin], [ymin, ny+ymin], [zmin, nz+zmin], c=color)
 
 
-def plot_aabb_intersect():
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
 
-    aabb1 = shamrock.AABB_f64_3((-1.,-1.,-1.),(2.,2.,2.))
-    aabb2 = shamrock.AABB_f64_3((-2.,-2.,-2.),(1.,1.,1.))
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
 
-    draw_aabb(ax,aabb1, 'b',0.1)
-    draw_aabb(ax,aabb2, 'r',0.1)
-    draw_aabb(ax,aabb1.get_intersect(aabb2), 'g',0.5)
+aabb1 = shamrock.AABB_f64_3((-1.,-1.,-1.),(2.,2.,2.))
+aabb2 = shamrock.AABB_f64_3((-2.,-2.,-2.),(1.,1.,1.))
 
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+draw_aabb(ax,aabb1, 'b',0.1)
+draw_aabb(ax,aabb2, 'r',0.1)
+draw_aabb(ax,aabb1.get_intersect(aabb2), 'g',0.5)
 
-    ax.set_xlim(-2, 2)
-    ax.set_ylim(-2, 2)
-    ax.set_zlim(-2, 2)
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
 
-    plt.show()
+ax.set_xlim(-2, 2)
+ax.set_ylim(-2, 2)
+ax.set_zlim(-2, 2)
 
-def plot_aabb_ray_intersect():
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+plt.show()
 
-    aabb1 = shamrock.AABB_f64_3((-1.,-1.,-1.),(1.,1.,1.))
 
-    draw_aabb(ax,aabb1, 'b',0.1)
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
 
-    def add_ray(ray):
-        cd = aabb1.intersect_ray(ray)
+aabb1 = shamrock.AABB_f64_3((-1.,-1.,-1.),(1.,1.,1.))
 
-        print(cd)
+draw_aabb(ax,aabb1, 'b',0.1)
 
-        if cd:
-            draw_ray(ax,ray, 'g')
-        else:
-            draw_ray(ax,ray, 'r')
+def add_ray(ray):
+    cd = aabb1.intersect_ray(ray)
 
-    add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(2.0,2.,2.)))
-    add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(1.0,2.,2.)))
-    add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.7,2.,2.)))
-    add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.6,2.,2.)))
-    add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.5,2.,2.)))
-    add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.1,2.,2.)))
-    add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.0,2.,2.)))
-    add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.0,0.0,2.)))
+    print(cd)
 
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
+    if cd:
+        draw_ray(ax,ray, 'g')
+    else:
+        draw_ray(ax,ray, 'r')
 
-    ax.set_xlim(-2, 2)
-    ax.set_ylim(-2, 2)
-    ax.set_zlim(-2, 2)
+add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(2.0,2.,2.)))
+add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(1.0,2.,2.)))
+add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.7,2.,2.)))
+add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.6,2.,2.)))
+add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.5,2.,2.)))
+add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.1,2.,2.)))
+add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.0,2.,2.)))
+add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.0,0.0,2.)))
 
-    plt.show()
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
 
-plot_aabb_ray_intersect()
+ax.set_xlim(-2, 2)
+ax.set_ylim(-2, 2)
+ax.set_zlim(-2, 2)
+
+plt.show()
+
 
 #draw_ray(0, 0.5, 0, 0.5, 0, 1, 'g')

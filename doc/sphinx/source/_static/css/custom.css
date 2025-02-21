@@ -2,6 +2,15 @@ a.navbar-brand {
     padding: .1rem 0;
 }
 
+a[class^="sphx-glr-backref-module-"] {
+    text-decoration: none;
+    color: inherit;
+}
+
+a[class^="sphx-glr-backref-module-shamrock"] {
+    text-decoration: underline;
+}
+
 html {
 	--pst-header-height: 4rem;
 }

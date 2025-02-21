@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.autodoc',  # For documenting Python code
     'sphinx.ext.viewcode',  # For linking to the source code in the docs
     'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
+    'sphinx_gallery.gen_gallery', # generate thumbnail and exemple lib
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -44,6 +45,13 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+sphinx_gallery_conf = {
+    'backreferences_dir': '_gen_exemples/backreferences', # link to source from exemples
+    'doc_module': ('shamrock'),
+    'examples_dirs': '../exemples',   # path to your example scripts
+    'gallery_dirs': '_gen_exemples',  # path to where to save gallery generated output
+    'line_numbers': True,
+}
 
 # -- Options for HTML output -------------------------------------------------
 

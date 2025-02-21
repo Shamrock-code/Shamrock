@@ -12,6 +12,7 @@ Welcome to Shamrock python bindings's documentation!
 
    Home page <self>
    Python API <_autosummary/shamrock>
+   Exemples <_gen_exemples/index>
 
 Indices and tables
 ==================

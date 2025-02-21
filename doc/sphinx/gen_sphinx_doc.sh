@@ -22,4 +22,10 @@ if [ -z "$(pip list | grep pydata-sphinx-theme)" ]; then
     pip install pydata-sphinx-theme
 fi
 
+if [ -z "$(pip list | grep sphinx-gallery)" ]; then
+    echo "You need to have sphinx-gallery installed to generate the sphinx doc"
+    echo "Running : pip install sphinx-gallery"
+    pip install sphinx-gallery
+fi
+
 make html

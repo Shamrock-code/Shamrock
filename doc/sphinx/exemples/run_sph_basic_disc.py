@@ -1,5 +1,5 @@
 """
-A very basic disc in SPH
+Basic disc simulation
 ========================
 
 This simple example shows how to run a basic disc simulation in SPH
@@ -7,11 +7,11 @@ This simple example shows how to run a basic disc simulation in SPH
 
 import shamrock
 
-# remove this two lines if using shamrock as interpreter,
-# use those only if using shamrock as python lib
-shamrock.change_loglevel(1)
-shamrock.sys.init(0,0)
-
+# If we use the shamrock executable to run this script instead of the python interpreter,
+# we should not initialize the system as the shamrock executable needs to handle specific MPI logic
+if not shamrock.sys.is_initialized():
+    shamrock.change_loglevel(1)
+    shamrock.sys.init(0,0)
 
 # %%
 # Setup units
@@ -204,8 +204,11 @@ print(model.get_sinks())
 # %%
 # Get the fields as python dictionary of numpy arrays
 #
-# WARNING : Do not do this on a large distributed simulation as this gather all data on MPI rank 0
-# and will use a lot of memory (and crash if the simulation is too large)
+
+# %%
+# .. warning::
+#     Do not do this on a large distributed simulation as this gather all data on MPI rank 0
+#     and will use a lot of memory (and crash if the simulation is too large)
 print(ctx.collect_data())
 
 # %%

@@ -11,7 +11,7 @@ Welcome to Shamrock python bindings's documentation!
    :caption: Contents:
 
    Home page <self>
-   Python API <_as_gen/shamrock>
+   Python API <api>
    Exemples <_as_gen/index>
 
 Indices and tables

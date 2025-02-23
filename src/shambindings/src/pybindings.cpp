@@ -75,4 +75,7 @@ namespace shambindings {
 } // namespace shambindings
 
 /// Call bindings init for the shamrock python module
-SHAMROCK_PY_MODULE(shamrock, m) { shambindings::init(m); }
+SHAMROCK_PY_MODULE(shamrock, m) {
+    m.attr("__doc__") = R"doc(Python bindings for Shamrock)doc";
+    shambindings::init(m);
+}

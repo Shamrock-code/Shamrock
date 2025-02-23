@@ -56,13 +56,12 @@
 
 {% block modules %}
 {% if modules %}
-.. rubric:: Modules
-
 .. autosummary::
-:toctree: {{ fullname }}/submodules
-
-{% for submodule in modules %}
-{{ fullname }}.{{ submodule }}
-{% endfor %}
+   :toctree:
+   :template: custom-module-template.rst
+   :recursive:
+{% for item in modules %}
+   {{ item }}
+{%- endfor %}
 {% endif %}
 {% endblock %}

@@ -5,9 +5,8 @@ Shearing box in SPH
 This simple example shows how to run an unstratified shearing box simulaiton
 """
 
+# sphinx_gallery_multi_image = "single"
 
-# %%
-# Init
 import shamrock
 
 # If we use the shamrock executable to run this script instead of the python interpreter,
@@ -16,9 +15,9 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init(0,0)
 
-from math import exp
 import matplotlib.pyplot as plt
-
+import numpy as np
+from math import exp
 
 # %%
 # Initialize context & attach a SPH model to it
@@ -34,7 +33,7 @@ gamma = 5./3.
 rho = 1
 uint = 1
 
-dr = 0.01
+dr = 0.02
 bmin = (-0.6,-0.6,-0.1)
 bmax = ( 0.6, 0.6, 0.1)
 pmass = -1
@@ -119,40 +118,41 @@ print(f"v_shear = {shear_speed} | dv = {MM-mm}")
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
 
+# %%
+dump_folder = "_to_trash"
+import os
+os.system("mkdir -p "+dump_folder)
 
+# %%
+# Perform the plot
+def plot():
+    dic = ctx.collect_data()
+    fig, axs = plt.subplots(2,1, figsize=(5,8),sharex= True)
+    fig.suptitle("t = {:.2f}".format(model.get_time()))
+    axs[0].scatter(dic["xyz"][:,0], dic["xyz"][:,1],s=1)
+    axs[1].scatter(dic["xyz"][:,0], dic["vxyz"][:,1],s=1)
 
+    axs[0].set_ylabel("y")
+    axs[1].set_ylabel("vy")
+    axs[1].set_xlabel("x")
 
+    plt.tight_layout()
+    plt.show()
 
-#for i in range(9):
-#    model.evolve(5e-4, False, False, "", False)
+# %%
+# Performing the timestep loop
+model.timestep()
 
-current_dt = model.evolve_once_override_time(0,0)
+dt_stop = 0.1
+for i in range(2):
 
+    t_target = i * dt_stop
+    # skip if the model is already past the target
+    if model.get_time() > t_target:
+        continue
 
+    model.evolve_until(i * dt_stop)
 
-dump = model.make_phantom_dump()
-fname = "dump_phinit"
-dump.save_dump(fname)
-
-
-t_sum = 0
-t_target = 0
-
-i_dump = 1
-dt_dump = 1./100
-
-do_dump = False
-next_dt_target = t_sum + dt_dump
-
-
-while t_sum <= next_dt_target:
-
-    fname = "dump_{:04}.phfile".format(i_dump)
-
-    model.evolve_until(next_dt_target)
-    dump = model.make_phantom_dump()
-    dump.save_dump(fname)
-
-    i_dump += 1
-
-    next_dt_target += dt_dump
+    # Dump name is "dump_xxxx.sham" where xxxx is the timestep
+    model.do_vtk_dump(dump_folder+"/dump_{:04}.vtk".format(i), True)
+    plot()

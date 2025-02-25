@@ -21,7 +21,7 @@ def draw_aabb(ax,aabb, color, alpha):
     ----------
     ax : matplotlib.Axes3D
         The axis to draw the AABB on
-    aabb : shamrock.AABB_f64_3
+    aabb : shamrock.math.AABB_f64_3
         The AABB to draw
     color : str
         The color of the AABB
@@ -96,7 +96,7 @@ def draw_ray(ax,ray, color):
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-aabb1 = shamrock.AABB_f64_3((-1.,-1.,-1.),(1.,1.,1.))
+aabb1 = shamrock.math.AABB_f64_3((-1.,-1.,-1.),(1.,1.,1.))
 
 draw_aabb(ax,aabb1, 'b',0.1)
 
@@ -110,14 +110,14 @@ def add_ray(ray):
     else:
         draw_ray(ax,ray, 'r')
 
-add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(2.0,2.,2.)))
-add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(1.0,2.,2.)))
-add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.7,2.,2.)))
-add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.6,2.,2.)))
-add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.5,2.,2.)))
-add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.1,2.,2.)))
-add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.0,2.,2.)))
-add_ray(shamrock.Ray_f64_3((-2.,-2.,-2.),(0.0,0.0,2.)))
+add_ray(shamrock.math.Ray_f64_3((-2.,-2.,-2.),(2.0,2.,2.)))
+add_ray(shamrock.math.Ray_f64_3((-2.,-2.,-2.),(1.0,2.,2.)))
+add_ray(shamrock.math.Ray_f64_3((-2.,-2.,-2.),(0.7,2.,2.)))
+add_ray(shamrock.math.Ray_f64_3((-2.,-2.,-2.),(0.6,2.,2.)))
+add_ray(shamrock.math.Ray_f64_3((-2.,-2.,-2.),(0.5,2.,2.)))
+add_ray(shamrock.math.Ray_f64_3((-2.,-2.,-2.),(0.1,2.,2.)))
+add_ray(shamrock.math.Ray_f64_3((-2.,-2.,-2.),(0.0,2.,2.)))
+add_ray(shamrock.math.Ray_f64_3((-2.,-2.,-2.),(0.0,0.0,2.)))
 
 ax.set_xlabel('X')
 ax.set_ylabel('Y')

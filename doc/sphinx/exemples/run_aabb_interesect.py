@@ -21,7 +21,7 @@ def draw_aabb(ax,aabb, color, alpha):
     ----------
     ax : matplotlib.Axes3D
         The axis to draw the AABB on
-    aabb : shamrock.AABB_f64_3
+    aabb : shamrock.math.AABB_f64_3
         The AABB to draw
     color : str
         The color of the AABB
@@ -73,8 +73,8 @@ def draw_aabb(ax,aabb, color, alpha):
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-aabb1 = shamrock.AABB_f64_3((-1.,-1.,-1.),(2.,2.,2.))
-aabb2 = shamrock.AABB_f64_3((-2.,-2.,-2.),(1.,1.,1.))
+aabb1 = shamrock.math.AABB_f64_3((-1.,-1.,-1.),(2.,2.,2.))
+aabb2 = shamrock.math.AABB_f64_3((-2.,-2.,-2.),(1.,1.,1.))
 
 draw_aabb(ax,aabb1, 'b',0.1)
 draw_aabb(ax,aabb2, 'r',0.1)

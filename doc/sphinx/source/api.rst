@@ -8,6 +8,7 @@ Python API documentation
    :template: custom-module-template.rst
 
    shamrock
+   shamrock.math
    shamrock.sys
    shamrock.sfc
    shamrock.sphkernel

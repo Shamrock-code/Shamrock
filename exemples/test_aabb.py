@@ -68,8 +68,8 @@ def plot_aabb_intersect():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    aabb1 = shamrock.AABB_f64_3((-1.,-1.,-1.),(2.,2.,2.))
-    aabb2 = shamrock.AABB_f64_3((-2.,-2.,-2.),(1.,1.,1.))
+    aabb1 = shamrock.math.AABB_f64_3((-1.,-1.,-1.),(2.,2.,2.))
+    aabb2 = shamrock.math.AABB_f64_3((-2.,-2.,-2.),(1.,1.,1.))
 
     draw_aabb(ax,aabb1, 'b',0.1)
     draw_aabb(ax,aabb2, 'r',0.1)
@@ -89,7 +89,7 @@ def plot_aabb_ray_intersect():
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
-    aabb1 = shamrock.AABB_f64_3((-1.,-1.,-1.),(1.,1.,1.))
+    aabb1 = shamrock.math.AABB_f64_3((-1.,-1.,-1.),(1.,1.,1.))
 
     draw_aabb(ax,aabb1, 'b',0.1)
 

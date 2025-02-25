@@ -1,5 +1,5 @@
-This is my gallery
-==================
+Shamrock's exemple gallery
+==========================
 
 Below is a gallery of examples
 

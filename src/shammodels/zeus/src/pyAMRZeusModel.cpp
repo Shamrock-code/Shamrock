@@ -115,7 +115,7 @@ Register_pymod(pyamrzeusmodel) {
     using VariantAMRZeusBind = std::variant<std::unique_ptr<Model<f64_3, i64_3>>>;
 
     m.def(
-        "get_AMRZeus",
+        "get_Model_Zeus",
         [](ShamrockCtx &ctx, std::string vector_type, std::string grid_repr) -> VariantAMRZeusBind {
             VariantAMRZeusBind ret;
 

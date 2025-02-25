@@ -251,7 +251,7 @@ Register_pymod(pybasegodunovmodel) {
     using VariantAMRGodunovBind = std::variant<std::unique_ptr<Model<f64_3, i64_3>>>;
 
     m.def(
-        "get_AMRGodunov",
+        "get_Model_Ramses",
         [](ShamrockCtx &ctx,
            std::string vector_type,
            std::string grid_repr) -> VariantAMRGodunovBind {

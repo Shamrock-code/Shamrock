@@ -24,7 +24,7 @@ from math import exp
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
+model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 
 
 # %%

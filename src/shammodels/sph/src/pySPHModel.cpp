@@ -735,7 +735,7 @@ Register_pymod(pysphmodel) {
         std::unique_ptr<Model<f64_3, shammath::M8>>>;
 
     m.def(
-        "get_SPHModel",
+        "get_Model_SPH",
         [](ShamrockCtx &ctx, std::string vector_type, std::string kernel) -> VariantSPHModelBind {
             VariantSPHModelBind ret;
 

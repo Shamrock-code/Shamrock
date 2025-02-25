@@ -100,7 +100,7 @@ ctx.pdata_layout_new()
 # %%
 # Attach a SPH model to the data and configure it
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
+model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 
 # Generate the default config
 cfg = model.gen_default_config()

@@ -47,7 +47,7 @@ import shamrock
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 
 dump = shamrock.load_phantom_dump("reference-files/blast_00010")
 

@@ -12,7 +12,6 @@ set(Sources
     src/io/PhantomDump.cpp
     src/SolverConfig.cpp
     src/pySPHModel.cpp
-    src/pySPHKernels.cpp
     src/pyPhantomDump.cpp
 
     src/modules/SolverStorage.cpp

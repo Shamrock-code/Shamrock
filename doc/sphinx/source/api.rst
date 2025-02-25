@@ -10,6 +10,6 @@ Python API documentation
    shamrock
    shamrock.math
    shamrock.math.sfc
+   shamrock.math.sphkernel
    shamrock.sys
-   shamrock.sphkernel
    shamrock.phys

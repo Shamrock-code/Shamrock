@@ -17,6 +17,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shampylib/math/pyAABB.hpp"
 #include "shampylib/math/pyRay.hpp"
+#include "shampylib/math/pySPHKernels.hpp"
 #include "shampylib/math/pySfc.hpp"
 
 Register_pymod(pysham_mathinit) {
@@ -26,4 +27,5 @@ Register_pymod(pysham_mathinit) {
     shampylib::init_shamrock_math_AABB<f64_3>(math_module, "AABB_f64_3");
     shampylib::init_shamrock_math_Ray<f64_3>(math_module, "Ray_f64_3");
     shampylib::init_shamrock_math_sfc(math_module);
+    shampylib::init_shamrock_math_sphkernels(math_module);
 }

@@ -1,3 +1,12 @@
+"""
+SPH projected kernels
+========================
+
+This exemple shows the convergence of the projected M4 kernels
+"""
+
+# sphinx_gallery_multi_image = "single"
+
 import shamrock
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,8 +29,8 @@ plt.plot(q,fint_M4_4,label="$f_{int,M4,n=4}(q)$")
 plt.plot(q,fint_M4_1024,label="$f_{int,M4,n=1024}(q)$")
 plt.legend()
 plt.xlabel(r"$q$")
-plt.savefig("integ_kernel.pdf")
-plt.savefig("integ_kernel.svg")
+#plt.savefig("integ_kernel.pdf")
+#plt.savefig("integ_kernel.svg")
 plt.figure()
 
 plt.plot(q,np.abs(fint_M4_4 - fint_M4_1024),label="n=4")
@@ -35,6 +44,6 @@ plt.legend()
 plt.yscale("log")
 plt.ylabel(r"$\vert f_{int,n} - f_{int,1024} \vert $")
 plt.xlabel(r"$q$")
-plt.savefig("estim_integ_kernel.pdf")
-plt.savefig("estim_integ_kernel.svg")
+#plt.savefig("estim_integ_kernel.pdf")
+#plt.savefig("estim_integ_kernel.svg")
 plt.show()

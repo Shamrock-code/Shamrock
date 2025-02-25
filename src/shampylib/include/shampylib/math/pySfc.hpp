@@ -7,23 +7,18 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
- * @file pyshammath.cpp
+ * @file pySfc.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  */
 
-#include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybindaliases.hpp"
-#include "shampylib/math/pyAABB.hpp"
-#include "shampylib/math/pyRay.hpp"
-#include "shampylib/math/pySfc.hpp"
 
-Register_pymod(pysham_mathinit) {
+namespace shampylib {
 
-    py::module math_module = m.def_submodule("math", "Shamrock math lib");
+    void init_shamrock_math_sfc(py::module &m);
 
-    shampylib::init_shamrock_math_AABB<f64_3>(math_module, "AABB_f64_3");
-    shampylib::init_shamrock_math_Ray<f64_3>(math_module, "Ray_f64_3");
-    shampylib::init_shamrock_math_sfc(math_module);
 }

@@ -446,7 +446,7 @@ else:
     print("sinks baryenceter : velocity {} position {}".format(vel_bary,pos_bary))
 
     #plot_sim_orbit(sink_list)
-    plot_sim_orbit2(sink_list)
+    #plot_sim_orbit2(sink_list)
 
     model.set_particle_mass(pmass)
     for s in sink_list:

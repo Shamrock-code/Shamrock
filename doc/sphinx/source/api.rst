@@ -11,5 +11,8 @@ Python API documentation
    shamrock.math
    shamrock.math.sfc
    shamrock.math.sphkernel
-   shamrock.sys
+   shamrock.model_ramses
+   shamrock.model_sph
+   shamrock.model_zeus
    shamrock.phys
+   shamrock.sys

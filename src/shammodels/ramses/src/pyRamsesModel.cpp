@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file pyAMRGodunovModel.cpp
+ * @file pyRamsesModel.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
@@ -242,11 +242,14 @@ namespace shammodels::basegodunov {
 } // namespace shammodels::basegodunov
 
 Register_pymod(pybasegodunovmodel) {
-    std::string base_name = "AMRGodunov";
+
+    py::module mramses = m.def_submodule("model_ramses", "Shamrock Ramses solver");
+
+    std::string base_name = "RamsesModel";
     using namespace shammodels::basegodunov;
 
     add_instance<f64_3, i64_3>(
-        m, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");
+        mramses, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");
 
     using VariantAMRGodunovBind = std::variant<std::unique_ptr<Model<f64_3, i64_3>>>;
 

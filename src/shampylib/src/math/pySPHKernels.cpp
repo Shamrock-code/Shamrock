@@ -21,7 +21,7 @@ namespace shampylib {
 
     void init_shamrock_math_sphkernels(py::module &m) {
 
-        py::module sphkernel_module = m.def_submodule("sphkernel", "Space Filling curve Library");
+        py::module sphkernel_module = m.def_submodule("sphkernel", "Shamrock sph kernels math lib");
 
         sphkernel_module.def("M4_Rkern", []() {
             return shammath::M4<f64>::Rkern;

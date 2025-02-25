@@ -4,7 +4,7 @@ project(Shammodels_ramses CXX C)
 
 set(Sources
     src/Model.cpp
-    src/pyAMRGodunovModel.cpp
+    src/pyRamsesModel.cpp
     src/Solver.cpp
 
     src/modules/AMRGraphGen.cpp

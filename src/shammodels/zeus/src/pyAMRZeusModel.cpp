@@ -106,11 +106,14 @@ namespace shammodels::zeus {
 } // namespace shammodels::zeus
 
 Register_pymod(pyamrzeusmodel) {
-    std::string base_name = "AMRZeus";
+
+    py::module mzeus = m.def_submodule("model_zeus", "Shamrock Zeus solver");
+
+    std::string base_name = "ZeusModel";
     using namespace shammodels::zeus;
 
     add_instance<f64_3, i64_3>(
-        m, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");
+        mzeus, base_name + "_f64_3_i64_3_SolverConfig", base_name + "_f64_3_i64_3_Model");
 
     using VariantAMRZeusBind = std::variant<std::unique_ptr<Model<f64_3, i64_3>>>;
 

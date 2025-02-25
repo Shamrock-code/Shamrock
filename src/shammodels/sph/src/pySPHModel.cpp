@@ -718,16 +718,17 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("load_from_dump", &T::load_from_dump)
         .def("dump", &T::dump)
         .def("get_setup", &T::get_setup);
-    ;
 }
 
 Register_pymod(pysphmodel) {
 
+    py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
+
     using namespace shammodels::sph;
 
-    add_instance<f64_3, shammath::M4>(m, "SPHModel_f64_3_M4_SolverConfig", "SPHModel_f64_3_M4");
-    add_instance<f64_3, shammath::M6>(m, "SPHModel_f64_3_M6_SolverConfig", "SPHModel_f64_3_M6");
-    add_instance<f64_3, shammath::M8>(m, "SPHModel_f64_3_M8_SolverConfig", "SPHModel_f64_3_M8");
+    add_instance<f64_3, shammath::M4>(msph, "SPHModel_f64_3_M4_SolverConfig", "SPHModel_f64_3_M4");
+    add_instance<f64_3, shammath::M6>(msph, "SPHModel_f64_3_M6_SolverConfig", "SPHModel_f64_3_M6");
+    add_instance<f64_3, shammath::M8>(msph, "SPHModel_f64_3_M8_SolverConfig", "SPHModel_f64_3_M8");
 
     using VariantSPHModelBind = std::variant<
         std::unique_ptr<Model<f64_3, shammath::M4>>,
@@ -759,12 +760,12 @@ Register_pymod(pysphmodel) {
 
     py::class_<
         shammodels::sph::modules::ISPHSetupNode,
-        std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>>(m, "ISPHSetupNode")
+        std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>>(msph, "ISPHSetupNode")
         .def("get_dot", [](std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> &self) {
             return self->get_dot();
         });
 
-    py::class_<shammodels::sph::TimestepLog>(m, "TimestepLog")
+    py::class_<shammodels::sph::TimestepLog>(msph, "TimestepLog")
         .def(py::init<>())
         .def_readwrite("rank", &shammodels::sph::TimestepLog::rank)
         .def_readwrite("rate", &shammodels::sph::TimestepLog::rate)

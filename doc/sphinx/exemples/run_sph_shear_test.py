@@ -13,7 +13,7 @@ import shamrock
 # we should not initialize the system as the shamrock executable needs to handle specific MPI logic
 if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
-    shamrock.sys.init(0,0)
+    shamrock.sys.init('0:0')
 
 import matplotlib.pyplot as plt
 import numpy as np

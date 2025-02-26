@@ -286,7 +286,7 @@ namespace shamsys::instance {
         syclinit::device_alt->update_mpi_prop();
     }
 
-    void init_devices(std::string search_key, MPIInitInfo mpi_info) {
+    void init_sycl_mpi(std::string search_key, MPIInitInfo mpi_info) {
 
         start_sycl_auto(search_key);
 
@@ -313,7 +313,7 @@ namespace shamsys::instance {
 
             // logger::debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
-            init_devices(sycl_cfg, {argc, argv, forced_state});
+            init_sycl_mpi(sycl_cfg, {argc, argv, forced_state});
 
         } else {
 

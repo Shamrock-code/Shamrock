@@ -88,7 +88,7 @@ namespace shamsys::instance {
      */
     void init(int argc, char *argv[]);
 
-    void init_devices(std::string search_key, MPIInitInfo mpi_info);
+    void init_sycl_mpi(std::string search_key, MPIInitInfo mpi_info);
 
     /**
      * @brief close the NodeInstance

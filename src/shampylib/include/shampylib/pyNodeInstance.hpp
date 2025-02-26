@@ -28,7 +28,7 @@ namespace shamsys::instance {
         m.def(
             "init",
             [](std::string sycl_cfg) {
-                init_devices(sycl_cfg, MPIInitInfo{opts::get_argc(), opts::get_argv()});
+                init_sycl_mpi(sycl_cfg, MPIInitInfo{opts::get_argc(), opts::get_argv()});
             },
             R"pbdoc(
 

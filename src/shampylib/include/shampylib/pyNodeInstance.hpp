@@ -27,10 +27,8 @@ namespace shamsys::instance {
 
         m.def(
             "init",
-            [](u32 alt_id, u32 compute_id) {
-                init(
-                    SyclInitInfo{alt_id, compute_id},
-                    MPIInitInfo{opts::get_argc(), opts::get_argv()});
+            [](std::string sycl_cfg) {
+                init_devices(sycl_cfg, MPIInitInfo{opts::get_argc(), opts::get_argv()});
             },
             R"pbdoc(
 

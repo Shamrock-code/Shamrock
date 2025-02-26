@@ -88,6 +88,8 @@ namespace shamsys::instance {
      */
     void init(int argc, char *argv[]);
 
+    void start_mpi(MPIInitInfo mpi_info);
+
     void init_sycl_mpi(std::string search_key, MPIInitInfo mpi_info);
 
     /**

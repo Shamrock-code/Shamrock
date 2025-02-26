@@ -153,11 +153,7 @@ namespace shamsys::instance {
 
     u32 get_compute_queue_eu_count(u32 id) { return compute_queue_eu_count; }
 
-    bool is_initialized() {
-        int flag = false;
-        mpi::initialized(&flag);
-        return syclinit::initialized && flag;
-    };
+    bool is_initialized() { return syclinit::initialized && shamcomm::is_mpi_initialized(); };
 
     void print_queue_map() {
         u32 rank = shamcomm::world_rank();
@@ -281,9 +277,6 @@ namespace shamsys::instance {
             logger::debug_ln("NodeInstance", "------------ MPI / SYCL init ok ------------");
         }
         mpidtypehandler::init_mpidtype();
-
-        syclinit::device_compute->update_mpi_prop();
-        syclinit::device_alt->update_mpi_prop();
     }
 
     void init_sycl_mpi(std::string search_key, MPIInitInfo mpi_info) {
@@ -291,6 +284,9 @@ namespace shamsys::instance {
         start_sycl_auto(search_key);
 
         start_mpi(mpi_info);
+
+        syclinit::device_compute->update_mpi_prop();
+        syclinit::device_alt->update_mpi_prop();
     }
 
     void init(int argc, char *argv[]) {

@@ -40,4 +40,10 @@ namespace shamcomm {
         shambase::profiling::chrome::set_chrome_pid(world_rank());
     }
 
+    bool is_mpi_initialized() {
+        int flag = false;
+        MPICHECK(MPI_Initialized(&flag));
+        return flag;
+    }
+
 } // namespace shamcomm

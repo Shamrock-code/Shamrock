@@ -10,29 +10,24 @@ if ! python3 -c "import shamrock" &> /dev/null; then
     exit 1
 fi
 
-if [ -z "$(pip list | grep Sphinx)" ]; then
-    echo "You need to have sphinx installed to generate the sphinx doc"
-    echo "Running : pip install sphinx"
-    pip install sphinx
-fi
+pip_list=(
+    "sphinx"
+    "pydata-sphinx-theme"
+    "sphinx-gallery"
+    "memory-profiler"
+    "sphinx-copybutton"
+    "sphinx_design"
+    )
 
-if [ -z "$(pip list | grep pydata-sphinx-theme)" ]; then
-    echo "You need to have pydata-sphinx-theme installed to generate the sphinx doc"
-    echo "Running : pip install pydata-sphinx-theme"
-    pip install pydata-sphinx-theme
-fi
-
-if [ -z "$(pip list | grep sphinx-gallery)" ]; then
-    echo "You need to have sphinx-gallery installed to generate the sphinx doc"
-    echo "Running : pip install sphinx-gallery"
-    pip install sphinx-gallery
-fi
-
-if [ -z "$(pip list | grep memory-profiler)" ]; then
-    echo "You need to have memory-profiler installed to generate the sphinx doc"
-    echo "Running : pip install memory-profiler"
-    pip install memory-profiler
-fi
+for package in "${pip_list[@]}"; do
+    if [ -z "$(pip list | grep $package)" ]; then
+        echo "You need to have $package installed to generate the sphinx doc"
+        echo "Running : pip install $package"
+        pip install $package
+    else
+        echo "$package is installed."
+    fi
+done
 
 make html
 

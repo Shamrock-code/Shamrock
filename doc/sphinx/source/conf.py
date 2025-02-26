@@ -37,6 +37,8 @@ extensions = [
     # sadly this does not seems to work as it expect real python sources which do not exist here
     'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
     'sphinx_gallery.gen_gallery', # generate thumbnail and exemple lib
+    'sphinx_copybutton', # add a copy button to code blocks
+    'sphinx_design' # Add grid tabs and fancy html stuff
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -17,6 +17,9 @@
 
 namespace shamsys {
 
+    /**
+     * @brief Print information about all available SYCL devices in the cluster.
+     */
     void shamrock_smi();
 
-}
+} // namespace shamsys

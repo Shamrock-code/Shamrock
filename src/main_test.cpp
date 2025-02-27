@@ -23,6 +23,7 @@
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamsys/shamrock_smi.hpp"
 #include "shamtest/shamtest.hpp"
 
 int main(int argc, char *argv[]) {
@@ -30,6 +31,9 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--sycl-cfg", "(idcomp:idalt) ", "specify the compute & alt queue index");
     opts::register_opt("--sycl-ls", {}, "list available devices");
     opts::register_opt("--sycl-ls-map", {}, "list available devices & list of queue bindings");
+    opts::register_opt(
+        "--smi", {}, "print information about all available SYCL devices in the cluster");
+
     opts::register_opt("--loglevel", "(logvalue)", "specify a log level");
     opts::register_opt("--benchmark-mpi", {}, "micro benchmark for MPI");
 
@@ -143,6 +147,17 @@ int main(int argc, char *argv[]) {
         }
         shamsys::instance::print_device_list();
         shamsys::instance::print_queue_map();
+    }
+
+    if (opts::has_option("--smi")) {
+        if (!shamcomm::is_mpi_initialized()) {
+            using namespace shamsys::instance;
+            start_mpi(MPIInitInfo{opts::get_argc(), opts::get_argv()});
+        }
+        shamsys::shamrock_smi();
+        if (shamsys::instance::is_initialized()) {
+            shamsys::instance::print_queue_map();
+        }
     }
 
     if (shamcomm::world_rank() == 0) {

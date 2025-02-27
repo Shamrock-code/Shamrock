@@ -9,6 +9,7 @@ set(Sources
         src/MicroBenchmark.cpp
         src/change_log_format.cpp
         src/device_select.cpp
+        src/shamrock_smi.cpp
         src/legacy/sycl_handler.cpp
         src/legacy/sycl_mpi_interop.cpp
     )

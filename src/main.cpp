@@ -36,6 +36,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
+#include "shamsys/shamrock_smi.hpp"
 #include <type_traits>
 #include <unordered_map>
 #include <array>
@@ -58,6 +59,10 @@ int main(int argc, char *argv[]) {
 
         opts::register_opt("--sycl-ls", {}, "list available devices");
         opts::register_opt("--sycl-ls-map", {}, "list available devices & list of queue bindings");
+
+        opts::register_opt(
+            "--smi", {}, "print information about all available SYCL devices in the cluster");
+
         opts::register_opt("--benchmark-mpi", {}, "micro benchmark for MPI");
 
         opts::register_opt(
@@ -160,6 +165,17 @@ int main(int argc, char *argv[]) {
             }
             shamsys::instance::print_device_list();
             shamsys::instance::print_queue_map();
+        }
+
+        if (opts::has_option("--smi")) {
+            if (!shamcomm::is_mpi_initialized()) {
+                using namespace shamsys::instance;
+                start_mpi(MPIInitInfo{opts::get_argc(), opts::get_argv()});
+            }
+            shamsys::shamrock_smi();
+            if (shamsys::instance::is_initialized()) {
+                shamsys::instance::print_queue_map();
+            }
         }
 
         if (shamcomm::world_rank() == 0) {

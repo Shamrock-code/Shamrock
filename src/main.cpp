@@ -52,7 +52,9 @@
 //%Impl status : Should rewrite
 
 int main(int argc, char *argv[]) {
+
     {
+
         StackEntry stack_loc{};
 
         opts::register_opt("--sycl-ls", {}, "list available devices");

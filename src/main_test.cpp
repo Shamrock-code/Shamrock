@@ -96,29 +96,40 @@ int main(int argc, char *argv[]) {
 
     if (opts::has_option("--sycl-cfg")) {
         shamsys::instance::init(argc, argv);
+    } else {
+        logger::warn_ln(
+            "Init", "No kernel can be run without a sycl configuration (--sycl-cfg x:x)");
+        using namespace shamsys::instance;
+        start_mpi(MPIInitInfo{opts::get_argc(), opts::get_argv()});
     }
 
     if (shamcomm::world_rank() == 0) {
         print_title_bar();
 
         logger::print_faint_row();
+        if (shamsys::instance::is_initialized()) {
+            logger::raw_ln("MPI status : ");
 
-        logger::raw_ln("MPI status : ");
+            logger::raw_ln(
+                " - MPI & SYCL init :",
+                shambase::term_colors::col8b_green() + "Ok" + shambase::term_colors::reset());
 
-        logger::raw_ln(
-            " - MPI & SYCL init :",
-            shambase::term_colors::col8b_green() + "Ok" + shambase::term_colors::reset());
+            shamsys::instance::print_mpi_capabilities();
 
-        shamsys::instance::print_mpi_capabilities();
-
-        shamsys::instance::check_dgpu_available();
+            shamsys::instance::check_dgpu_available();
+            auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+            shamcomm::validate_comm(sptr);
+        }
     }
 
-    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    shamcomm::validate_comm(sptr);
-
     if (opts::has_option("--benchmark-mpi")) {
-        shamsys::run_micro_benchmark();
+        if (shamsys::instance::is_initialized()) {
+            shamsys::run_micro_benchmark();
+        } else {
+            logger::warn_ln(
+                "Init",
+                "--benchmark-mpi can't be run without a sycl configuration (--sycl-cfg x:x)");
+        }
     }
 
     if (shamcomm::world_rank() == 0) {
@@ -146,13 +157,14 @@ int main(int argc, char *argv[]) {
             logger::print_faint_row();
         }
         shamsys::instance::print_device_list();
-        shamsys::instance::print_queue_map();
+        if (shamsys::instance::is_initialized()) {
+            shamsys::instance::print_queue_map();
+        }
     }
 
     if (opts::has_option("--smi")) {
-        if (!shamcomm::is_mpi_initialized()) {
-            using namespace shamsys::instance;
-            start_mpi(MPIInitInfo{opts::get_argc(), opts::get_argv()});
+        if (shamcomm::world_rank() == 0) {
+            logger::print_faint_row();
         }
         shamsys::shamrock_smi();
         if (shamsys::instance::is_initialized()) {
@@ -160,54 +172,59 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (shamcomm::world_rank() == 0) {
-        logger::print_faint_row();
-        logger::raw_ln(
-            " - Code init",
-            shambase::term_colors::col8b_green() + "DONE" + shambase::term_colors::reset(),
-            "now it's time to",
-            shambase::term_colors::col8b_cyan() + shambase::term_colors::blink() + "ROCK"
-                + shambase::term_colors::reset());
-        logger::print_faint_row();
-    }
-
-    if (opts::has_option("--pypath")) {
-        shambindings::setpypath(std::string(opts::get_option("--pypath")));
-    }
-
-    if (opts::has_option("--pypath-from-bin")) {
-        std::string pybin = std::string(opts::get_option("--pypath-from-bin"));
-        shambindings::setpypath_from_binary(pybin);
-    }
-
-    shamtest::TestConfig cfg{};
-
-    cfg.print_test_list_exit = false;
-
-    cfg.full_output = opts::has_option("--full-output");
-
-    cfg.output_tex = true;
-    if (opts::has_option("-o")) {
-        if (opts::get_option("-o").size() == 0) {
-            opts::print_help();
+    if (shamsys::instance::is_initialized()) {
+        if (shamcomm::world_rank() == 0) {
+            logger::print_faint_row();
+            logger::raw_ln(
+                " - Code init",
+                shambase::term_colors::col8b_green() + "DONE" + shambase::term_colors::reset(),
+                "now it's time to",
+                shambase::term_colors::col8b_cyan() + shambase::term_colors::blink() + "ROCK"
+                    + shambase::term_colors::reset());
+            logger::print_faint_row();
         }
-        cfg.json_output = opts::get_option("-o");
+
+        if (opts::has_option("--pypath")) {
+            shambindings::setpypath(std::string(opts::get_option("--pypath")));
+        }
+
+        if (opts::has_option("--pypath-from-bin")) {
+            std::string pybin = std::string(opts::get_option("--pypath-from-bin"));
+            shambindings::setpypath_from_binary(pybin);
+        }
+
+        shamtest::TestConfig cfg{};
+
+        cfg.print_test_list_exit = false;
+
+        cfg.full_output = opts::has_option("--full-output");
+
+        cfg.output_tex = true;
+        if (opts::has_option("-o")) {
+            if (opts::get_option("-o").size() == 0) {
+                opts::print_help();
+            }
+            cfg.json_output = opts::get_option("-o");
+        }
+
+        cfg.run_long_tests = opts::has_option("--long-test");
+
+        cfg.run_benchmark  = opts::has_option("--benchmark");
+        cfg.run_validation = opts::has_option("--validation");
+        cfg.run_unittest   = opts::has_option("--unittest");
+        if ((cfg.run_benchmark || cfg.run_unittest || cfg.run_validation) == false) {
+            cfg.run_unittest   = true;
+            cfg.run_validation = true;
+            cfg.run_benchmark  = false;
+        }
+
+        if (opts::has_option("--run-only")) {
+            cfg.run_only = opts::get_option("--run-only");
+        }
+
+        return shamtest::run_all_tests(argc, argv, cfg);
+    } else {
+        logger::warn_ln("Init", "No sycl configuration (--sycl-cfg x:x) has been set, early exit");
+        return 0;
     }
-
-    cfg.run_long_tests = opts::has_option("--long-test");
-
-    cfg.run_benchmark  = opts::has_option("--benchmark");
-    cfg.run_validation = opts::has_option("--validation");
-    cfg.run_unittest   = opts::has_option("--unittest");
-    if ((cfg.run_benchmark || cfg.run_unittest || cfg.run_validation) == false) {
-        cfg.run_unittest   = true;
-        cfg.run_validation = true;
-        cfg.run_benchmark  = false;
-    }
-
-    if (opts::has_option("--run-only")) {
-        cfg.run_only = opts::get_option("--run-only");
-    }
-
-    return shamtest::run_all_tests(argc, argv, cfg);
 }

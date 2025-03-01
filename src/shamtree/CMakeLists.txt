@@ -11,6 +11,9 @@ set(Sources
     src/kernels/convert_ranges.cpp
     src/kernels/karras_alg.cpp
     src/kernels/reduction_alg.cpp
+    src/MortonCodeSet.cpp
+    src/MortonCodeSortedSet.cpp
+    src/MortonReducedSet.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

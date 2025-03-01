@@ -64,12 +64,10 @@ TestStart(Unittest, "patchdata::", send_recv_patchdata, 2) {
     waitall_pdat_mpi_rq(rq_lst);
 
     if (shamcomm::world_rank() == 0) {
-        shamtest::asserts().assert_bool(
-            "recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
+        REQUIRE_NAMED("recv_d == d2_check", patch_data_check_match(recv_d, d2_check));
     }
 
     if (shamcomm::world_rank() == 1) {
-        shamtest::asserts().assert_bool(
-            "recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
+        REQUIRE_NAMED("recv_d == d1_check", patch_data_check_match(recv_d, d1_check));
     }
 }

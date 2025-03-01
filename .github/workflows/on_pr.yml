@@ -160,11 +160,18 @@ jobs:
           name: report_doc_diff
           path: ./report_doc_diff.md
 
+
   shamrock_linux_acpp:
     needs: [src_check]
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang.yml
+
+  shamrock_linux_acpp_conda:
+    needs: [src_check]
+    name: Tests
+    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
+    uses: ./.github/workflows/shamrock-acpp-conda.yml
 
   shamrock_linux_acpp_pylib:
     needs: [src_check]
@@ -213,3 +220,10 @@ jobs:
     name: Tests (Phys)
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-phys-test.yml
+
+  make_github_page:
+    name: "GithubPage"
+    needs: [make_documentation, shamrock_linux_acpp_pylib, shamrock_linux_acpp_cov]
+    uses: ./.github/workflows/make_website.yml
+    with:
+      upload-page-artifact: false

@@ -135,83 +135,6 @@ namespace shamtest {
         shamtest::details::Test{type, name, node_cnt, test_func_ptr_##func_name});                 \
     void test_func_##func_name()
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Assert macros
-///////////////////////////////////////////////////////////////////////////////////////////////////
-
-// temporary maybe do something else
-// i don't want a cumbersome name, but assert is kinda taken already
-
-/**
- * @brief Assert macro for test
- * write the conditional, the name of the assert will be the condition
- *
- * Usage :
- * \code{.cpp}
- * _Assert(a == 0)
- * \endcode
- */
-#define _Assert(a) shamtest::asserts().assert_bool("_Assert(" #a ")", a);
-
-/**
- * @brief Assert macro for test, testing equality between two variables
- *
- * Usage :
- * \code{.cpp}
- * _AssertEqual(a , b)
- * \endcode
- */
-#define _AssertEqual(a, b) shamtest::asserts().assert_equal(#a "==" #b, a, b);
-
-/**
- * @brief Assert macro for test, testing equality between two variables, with a given precision
- *
- * Usage :
- * \code{.cpp}
- * _AssertFloatEqual(a , b, 1e-9)
- * \endcode
- */
-#define _AssertFloatEqual(a, b, prec)                                                              \
-    shamtest::asserts().assert_float_equal(#a " ==(" #prec ") " #b, a, b, prec);
-
-/**
- * @brief Assert macro for test, testing that a given call throws a specific exception type
- *
- * Usage :
- * \code{.cpp}
- * REQUIRE_THROW_AS(function_that_throws(), exception_type)
- * \endcode
- *
- * @param call Call that is expected to throw the specified exception type
- * @param exception_type Exception type that is expected to be thrown
- */
-#define _Assert_throw(call, exception_type)                                                        \
-    try {                                                                                          \
-        /* Try to call the function that is expected to throw */                                   \
-        call;                                                                                      \
-        /* If no exception is thrown, assert that the test failed                               */ \
-        shamtest::asserts().assert_bool(                                                           \
-            "Expected throw of type " #exception_type ", but nothing was thrown",                  \
-            false,                                                                                 \
-            SourceLocation{});                                                                     \
-    } catch (const exception_type &ex) {                                                           \
-        /* If wanted exception is thrown, assert that the test pass */                             \
-        shamtest::asserts().assert_bool(                                                           \
-            "Found wanted throw of type " #exception_type, true, SourceLocation{});                \
-    } catch (const std::exception &e) {                                                            \
-        /* If another exception type is thrown, assert that the test failed                     */ \
-        shamtest::asserts().assert_bool(                                                           \
-            "Expected throw of type " #exception_type ", but got " + std::string(e.what()),        \
-            false,                                                                                 \
-            SourceLocation{});                                                                     \
-    } catch (...) {                                                                                \
-        /* If an unknown exception is thrown, assert that the test failed                      */  \
-        shamtest::asserts().assert_bool(                                                           \
-            "Expected throw of type " #exception_type ", but got unknown exception",               \
-            false,                                                                                 \
-            SourceLocation{});                                                                     \
-    }
-
 /**
  * @brief Macro to write stuff to the tex test report
  *
@@ -224,11 +147,228 @@ namespace shamtest {
  */
 #define TEX_REPORT(src) shamtest::details::current_test.tex_output += src;
 
-/// REQUIRE macro alias to _Assert
-#define REQUIRE(a) _Assert(a)
+#define STDSTRINGIFY(x) std::string(#x)
 
-/// REQUIRE_EQUAL macro alias to _AssertEqual
-#define REQUIRE_EQUAL(a, b) _AssertEqual(a, b)
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Assert macros
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
-/// REQUIRE macro alias to _Assert_throw
-#define REQUIRE_THROW_AS(call, expt_type) _Assert_throw(call, expt_type)
+// Note : the do-while are here to enforce the presence of a semicolumn after the call to the macros
+
+namespace shamtest::details {
+    /**
+     *@brief Format a string that is an assert name
+     *
+     * If the string is empty, returns an empty string
+     * Otherwise, returns the string with " | " appended
+     */
+    inline std::string format_assert_name(std::string s) {
+        if (s == "") {
+            return "";
+        }
+        return "\"" + s + "\" : ";
+    }
+} // namespace shamtest::details
+
+/**
+ * @brief Assert macro for test
+ * write the conditional, the name of the assert will be the condition
+ * Named variant
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_NAMED("assert name",a == 0)
+ * \endcode
+ */
+#define REQUIRE_NAMED(name, a)                                                                     \
+    do {                                                                                           \
+        using namespace shamtest::details;                                                         \
+        bool eval               = a;                                                               \
+        std::string assert_name = format_assert_name(name) + #a;                                   \
+        if (eval) {                                                                                \
+            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
+        } else {                                                                                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                assert_name,                                                                       \
+                eval,                                                                              \
+                STDSTRINGIFY(a) + " evaluated to false\n\n"                                        \
+                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+        }                                                                                          \
+    } while (0)
+
+/**
+ * @brief Assert macro for test to test for equalities using a custom comparison function
+ * Named variant
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_EQUAL_CUSTOM_COMP_NAMED("assert name",a , b)
+ * \endcode
+ */
+#define REQUIRE_EQUAL_CUSTOM_COMP_NAMED(name, a, b, comp)                                          \
+    do {                                                                                           \
+        using namespace shamtest::details;                                                         \
+        bool eval               = comp(a, b);                                                      \
+        std::string assert_name = format_assert_name(name) + #a " == " #b;                         \
+        if (eval) {                                                                                \
+            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
+        } else {                                                                                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                assert_name,                                                                       \
+                eval,                                                                              \
+                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #a " = {}", a)   \
+                    + "\n" + shambase::format(" -> " #b " = {}", b) + "\n"                         \
+                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+        }                                                                                          \
+    } while (0)
+
+/**
+ * @brief Assert macro for test to test for equalities
+ * Named variant
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_EQUAL_NAMED("assert_name", a , b)
+ * \endcode
+ */
+#define REQUIRE_EQUAL_NAMED(name, a, b)                                                            \
+    REQUIRE_EQUAL_CUSTOM_COMP_NAMED(name, a, b, [](const auto &p1, const auto &p2) {               \
+        return p1 == p2;                                                                           \
+    })
+
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision and
+ * a custom distance function
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("assert name",a , b, 1e-9, sycl::lenght)
+ * \endcode
+ */
+#define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, a, b, prec, dist)                              \
+    do {                                                                                           \
+        using namespace shamtest::details;                                                         \
+        bool eval               = dist((a) - (b)) < prec;                                          \
+        std::string assert_name = format_assert_name(name) + #dist "(" #a ") - (" #b ") < " #prec; \
+        if (eval) {                                                                                \
+            shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
+        } else {                                                                                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                assert_name,                                                                       \
+                eval,                                                                              \
+                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #a " = {}", a)   \
+                    + "\n" + shambase::format(" -> " #b " = {}", b) + "\n"                         \
+                    + shambase::format(" -> " #prec " = {}", prec) + "\n"                          \
+                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+        }                                                                                          \
+    } while (0)
+
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_FLOAT_EQUAL(a , b, 1e-9)
+ * \endcode
+ */
+#define REQUIRE_FLOAT_EQUAL_NAMED(name, a, b, prec)                                                \
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, a, b, prec, std::abs)
+
+/**
+ * @brief Assert macro for test
+ * write the conditional, the name of the assert will be the condition
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE(a == 0)
+ * \endcode
+ */
+#define REQUIRE(a) REQUIRE_NAMED("", a)
+
+/**
+ * @brief Assert macro for test to test for equalities using a custom comparison function
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_EQUAL_CUSTOM_COMP(a , b)
+ * \endcode
+ */
+#define REQUIRE_EQUAL_CUSTOM_COMP(a, b, comp) REQUIRE_EQUAL_CUSTOM_COMP_NAMED("", a, b, comp)
+
+/**
+ * @brief Assert macro for test to test for equalities
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_EQUAL(a , b)
+ * \endcode
+ */
+#define REQUIRE_EQUAL(a, b) REQUIRE_EQUAL_NAMED("", a, b)
+
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision and
+ * a custom distance function
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a , b, 1e-9, sycl::lenght)
+ * \endcode
+ */
+#define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(name, a, b, prec, dist)                                    \
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("", a, b, prec, dist)
+
+/**
+ * @brief Assert macro for test, testing equality between two variables, with a given precision
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_FLOAT_EQUAL(a , b, 1e-9)
+ * \endcode
+ */
+#define REQUIRE_FLOAT_EQUAL(a, b, prec)                                                            \
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("", a, b, prec, std::abs)
+
+/**
+ * @brief Assert macro for test, testing that a given call throws a specific exception type
+ *
+ * Usage :
+ * \code{.cpp}
+ * REQUIRE_EXCEPTION_THROW(function_that_throws(), exception_type)
+ * \endcode
+ *
+ * @param call Call that is expected to throw the specified exception type
+ * @param exception_type Exception type that is expected to be thrown
+ */
+#define REQUIRE_EXCEPTION_THROW(call, exception_type)                                              \
+    do {                                                                                           \
+        try {                                                                                      \
+            /* Try to call the function that is expected to throw */                               \
+            call;                                                                                  \
+            /* If no exception is thrown, assert that the test failed */                           \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                #exception_type " was not thrown",                                                 \
+                false,                                                                             \
+                "Expected throw of type " #exception_type ", but nothing was thrown\n"             \
+                " -> location : "                                                                  \
+                    + SourceLocation{}.format_one_line());                                         \
+        } catch (const exception_type &ex) {                                                       \
+            /* If wanted exception is thrown, assert that the test pass */                         \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                "Found wanted throw of type " #exception_type, true, "");                          \
+        } catch (const std::exception &e) {                                                        \
+            /* If another exception type is thrown, assert that the test failed */                 \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                #exception_type " was not thrown",                                                 \
+                false,                                                                             \
+                "Expected throw of type " #exception_type ", but got " + std::string(e.what())     \
+                    + "\n" + " -> location : " + SourceLocation{}.format_one_line());              \
+        } catch (...) {                                                                            \
+            /* If an unknown exception is thrown, assert that the test failed */                   \
+            shamtest::asserts().assert_bool_with_log(                                              \
+                #exception_type " was not thrown",                                                 \
+                false,                                                                             \
+                "Expected throw of type " #exception_type ", but got unknown exception\n"          \
+                " -> location : "                                                                  \
+                    + SourceLocation{}.format_one_line());                                         \
+        }                                                                                          \
+    } while (0)

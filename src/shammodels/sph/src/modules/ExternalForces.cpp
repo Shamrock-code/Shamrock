@@ -15,6 +15,7 @@
  */
 
 #include "shammodels/sph/modules/ExternalForces.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -54,24 +55,17 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                 sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-                sham::EventList depends_list;
-                auto xyz      = buf_xyz.get_read_access(depends_list);
-                auto axyz_ext = buf_axyz_ext.get_write_access(depends_list);
-
-                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                    Tscal mGM = -cmass * G;
-
-                    shambase::parralel_for(
-                        cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
-                            Tvec r_a       = xyz[gid];
-                            Tscal abs_ra   = sycl::length(r_a);
-                            Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
-                            axyz_ext[gid] += mGM * r_a / abs_ra_3;
-                        });
-                });
-
-                buf_xyz.complete_event_state(e);
-                buf_axyz_ext.complete_event_state(e);
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{buf_xyz},
+                    sham::MultiRef{buf_axyz_ext},
+                    pdat.get_obj_cnt(),
+                    [mGM = -cmass * G](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
+                        Tvec r_a       = xyz[gid];
+                        Tscal abs_ra   = sycl::length(r_a);
+                        Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
+                        axyz_ext[gid] += mGM * r_a / abs_ra_3;
+                    });
             });
 
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
@@ -83,21 +77,17 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                 sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-                sham::EventList depends_list;
-                auto xyz      = buf_xyz.get_read_access(depends_list);
-                auto axyz_ext = buf_axyz_ext.get_write_access(depends_list);
-
-                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                    Tscal mGM = -cmass * G;
-
-                    shambase::parralel_for(
-                        cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
-                            Tvec r_a       = xyz[gid];
-                            Tscal abs_ra   = sycl::length(r_a);
-                            Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
-                            axyz_ext[gid] += mGM * r_a / abs_ra_3;
-                        });
-                });
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{buf_xyz},
+                    sham::MultiRef{buf_axyz_ext},
+                    pdat.get_obj_cnt(),
+                    [mGM = -cmass * G](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
+                        Tvec r_a       = xyz[gid];
+                        Tscal abs_ra   = sycl::length(r_a);
+                        Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
+                        axyz_ext[gid] += mGM * r_a / abs_ra_3;
+                    });
             });
         } else if (
             EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
@@ -106,19 +96,15 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                 sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-                sham::EventList depends_list;
-                auto xyz      = buf_xyz.get_read_access(depends_list);
-                auto axyz_ext = buf_axyz_ext.get_write_access(depends_list);
-
-                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                    Tscal two_eta = 2 * ext_force->eta;
-
-                    shambase::parralel_for(
-                        cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
-                            Tvec r_a = xyz[gid];
-                            axyz_ext[gid] += Tvec{r_a.x() * two_eta, 0, 0};
-                        });
-                });
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{buf_xyz},
+                    sham::MultiRef{buf_axyz_ext},
+                    pdat.get_obj_cnt(),
+                    [two_eta = 2 * ext_force->eta](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
+                        Tvec r_a = xyz[gid];
+                        axyz_ext[gid] += Tvec{r_a.x() * two_eta, 0, 0};
+                    });
             });
 
         } else {
@@ -185,34 +171,26 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                 sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
                 sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
 
-                sham::EventList depends_list;
+                Tvec S = ext_force->a_spin * GM * GM * ext_force->dir_spin / (c * c * c);
 
-                auto xyz  = buf_xyz.get_read_access(depends_list);
-                auto vxyz = buf_vxyz.get_read_access(depends_list);
-                auto axyz = buf_axyz.get_write_access(depends_list);
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{buf_xyz, buf_vxyz},
+                    sham::MultiRef{buf_axyz},
+                    pdat.get_obj_cnt(),
+                    [S](u32 gid, const Tvec *xyz, const Tvec *vxyz, Tvec *axyz) {
+                        Tvec r_a       = xyz[gid];
+                        Tvec v_a       = vxyz[gid];
+                        Tscal abs_ra   = sycl::length(r_a);
+                        Tscal abs_ra_2 = abs_ra * abs_ra;
+                        Tscal abs_ra_3 = abs_ra_2 * abs_ra;
+                        Tscal abs_ra_5 = abs_ra_2 * abs_ra_2 * abs_ra;
 
-                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                    Tvec S = ext_force->a_spin * GM * GM * ext_force->dir_spin / (c * c * c);
-
-                    shambase::parralel_for(
-                        cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
-                            Tvec r_a       = xyz[gid];
-                            Tvec v_a       = vxyz[gid];
-                            Tscal abs_ra   = sycl::length(r_a);
-                            Tscal abs_ra_2 = abs_ra * abs_ra;
-                            Tscal abs_ra_3 = abs_ra_2 * abs_ra;
-                            Tscal abs_ra_5 = abs_ra_2 * abs_ra_2 * abs_ra;
-
-                            Tvec omega_a
-                                = (S * (2 / abs_ra_3)) - (6 * sham::dot(S, r_a) * r_a) / abs_ra_5;
-                            Tvec acc_lt = sycl::cross(v_a, omega_a);
-                            axyz[gid] += acc_lt;
-                        });
-                });
-
-                buf_xyz.complete_event_state(e);
-                buf_vxyz.complete_event_state(e);
-                buf_axyz.complete_event_state(e);
+                        Tvec omega_a
+                            = (S * (2 / abs_ra_3)) - (6 * sham::dot(S, r_a) * r_a) / abs_ra_5;
+                        Tvec acc_lt = sycl::cross(v_a, omega_a);
+                        axyz[gid] += acc_lt;
+                    });
             });
         } else if (
             EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
@@ -228,29 +206,24 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                 sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
                 sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
 
-                sham::EventList depends_list;
+                Tscal Omega_0    = ext_force->Omega_0;
+                Tscal Omega_0_sq = Omega_0 * Omega_0;
+                Tscal q_         = ext_force->q;
 
-                auto xyz  = buf_xyz.get_read_access(depends_list);
-                auto vxyz = buf_vxyz.get_read_access(depends_list);
-                auto axyz = buf_axyz.get_write_access(depends_list);
-
-                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                    Tscal Omega_0    = ext_force->Omega_0;
-                    Tscal Omega_0_sq = Omega_0 * Omega_0;
-                    Tscal q          = ext_force->q;
-
-                    shambase::parralel_for(
-                        cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
-                            Tvec r_a = xyz[gid];
-                            Tvec v_a = vxyz[gid];
-                            axyz[gid] += Tvec{
-                                2 * Omega_0 * (q * Omega_0 * r_a.x() + v_a.y()),
-                                -2 * Omega_0 * v_a.x(),
-                                -Omega_0_sq * r_a.z()};
-
-                            ;
-                        });
-                });
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{buf_xyz, buf_vxyz},
+                    sham::MultiRef{buf_axyz},
+                    pdat.get_obj_cnt(),
+                    [Omega_0, Omega_0_sq, q = q_](
+                        u32 gid, const Tvec *xyz, const Tvec *vxyz, Tvec *axyz) {
+                        Tvec r_a = xyz[gid];
+                        Tvec v_a = vxyz[gid];
+                        axyz[gid] += Tvec{
+                            2 * Omega_0 * (q * Omega_0 * r_a.x() + v_a.y()),
+                            -2 * Omega_0 * v_a.x(),
+                            -Omega_0_sq * r_a.z()};
+                    });
             });
 
         } else {

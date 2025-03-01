@@ -41,11 +41,12 @@ First start by checking that you have the right packages installed on your syste
     === "MacOS"
 
         ```bash
-        brew install cmake
-        brew install libomp
-        brew install boost
-        brew install open-mpi
+        brew install cmake libomp boost open-mpi tdavidcl/adaptivecpp/adaptivecpp
         ```
+
+    === "Conda"
+
+        Nothing to do at this stage
 
 ## First use of the environments
 
@@ -61,6 +62,11 @@ Now you can initialise a Shamrock environment:
 
     ```bash
     ./env/new-env --builddir build --machine macos-generic.acpp -- --backend omp
+    ```
+=== "Conda"
+
+    ```bash
+    ./env/new-env --machine conda.acpp --builddir build -- --backend omp
     ```
 
 And then to configure & compile Shamrock:

@@ -34,8 +34,11 @@
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
+#include "shammodels/sph/math/q_ab.hpp"
+#include "shammodels/sph/modules/BuildTrees.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
+#include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
@@ -45,7 +48,9 @@
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shammodels/sph/modules/io/VTKDump.hpp"
+#include "shamphys/mhd.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchData.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -61,245 +66,11 @@
 #include <stdexcept>
 #include <vector>
 
-template<class vec>
-shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
-    StackEntry stack_loc{};
-    shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
-
-    using namespace shamrock::patch;
-
-    u64 num_obj = sched.get_rank_count();
-
-    logger::debug_mpi_ln("sph::BasicGas", "rank count =", num_obj);
-
-    std::unique_ptr<sycl::buffer<vec>> pos = sched.rankgather_field<vec>(0);
-
-    writer.write_points(pos, num_obj);
-
-    return writer;
-}
-
-void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
-    StackEntry stack_loc{};
-
-    u64 num_obj = sched.get_rank_count();
-
-    using namespace shamrock::patch;
-
-    if (num_obj > 0) {
-        // TODO aggregate field ?
-        sycl::buffer<u64> idp(num_obj);
-
-        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
-
-            write_with_offset_into(
-                shamsys::instance::get_compute_queue(),
-                idp,
-                cur_p.id_patch,
-                ptr,
-                pdat.get_obj_cnt());
-
-            ptr += pdat.get_obj_cnt();
-        });
-
-        writter.write_field("patchid", idp, num_obj);
-    } else {
-        writter.write_field_no_buf<u64>("patchid");
-    }
-}
-
-void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
-    StackEntry stack_loc{};
-
-    using namespace shamrock::patch;
-    u64 num_obj = sched.get_rank_count();
-
-    if (num_obj > 0) {
-
-        // TODO aggregate field ?
-        sycl::buffer<u32> idp(num_obj);
-
-        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
-
-            write_with_offset_into<u32>(
-                shamsys::instance::get_compute_queue(),
-                idp,
-                shamcomm::world_rank(),
-                ptr,
-                pdat.get_obj_cnt());
-
-            ptr += pdat.get_obj_cnt();
-        });
-
-        writter.write_field("world_rank", idp, num_obj);
-
-    } else {
-        writter.write_field_no_buf<u32>("world_rank");
-    }
-}
-
-template<class T>
-void vtk_dump_add_compute_field(
-    PatchScheduler &sched,
-    shamrock::LegacyVtkWritter &writter,
-    shamrock::ComputeField<T> &field,
-    std::string field_dump_name) {
-    StackEntry stack_loc{};
-
-    using namespace shamrock::patch;
-    u64 num_obj = sched.get_rank_count();
-
-    if (num_obj > 0) {
-        std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
-
-        writter.write_field(field_dump_name, field_vals, num_obj);
-    } else {
-        writter.write_field_no_buf<T>(field_dump_name);
-    }
-}
-
-template<class T>
-void vtk_dump_add_field(
-    PatchScheduler &sched,
-    shamrock::LegacyVtkWritter &writter,
-    u32 field_idx,
-    std::string field_dump_name) {
-    StackEntry stack_loc{};
-
-    using namespace shamrock::patch;
-    u64 num_obj = sched.get_rank_count();
-
-    if (num_obj > 0) {
-        std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
-
-        writter.write_field(field_dump_name, field_vals, num_obj);
-    } else {
-        writter.write_field_no_buf<T>(field_dump_name);
-    }
-}
-
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
     std::string filename, bool add_patch_world_id) {
 
-    StackEntry stack_loc{};
-
-    using namespace shamrock;
-    using namespace shamrock::patch;
-    shamrock::SchedulerUtility utility(scheduler());
-    PatchDataLayout &pdl        = scheduler().pdl;
-    const u32 ixyz              = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz             = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz             = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint             = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint            = pdl.get_field_idx<Tscal>("duint");
-    const u32 ihpart            = pdl.get_field_idx<Tscal>("hpart");
-    ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
-
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-        logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
-
-        auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
-
-        auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-        auto &q   = sptr->get_queue();
-
-        sham::EventList depends_list;
-        const Tscal *acc_h = buf_hpart.get_read_access(depends_list);
-        auto acc_rho       = density.get_buf(p.id_patch).get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            const Tscal part_mass = solver_config.gpart_mass;
-
-            cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                u32 gid = (u32) item.get_id();
-                using namespace shamrock::sph;
-                Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
-                acc_rho[gid] = rho_ha;
-            });
-        });
-
-        buf_hpart.complete_event_state(e);
-        density.get_buf(p.id_patch).complete_event_state(e);
-    });
-
-    shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);
-    writter.add_point_data_section();
-
-    u32 fnum = 0;
-    if (add_patch_world_id) {
-        fnum += 2;
-    }
-    fnum++;
-    fnum++;
-    fnum++;
-    fnum++;
-    fnum++;
-
-    if (solver_config.has_field_alphaAV()) {
-        fnum++;
-    }
-
-    if (solver_config.has_field_divv()) {
-        fnum++;
-    }
-
-    if (solver_config.has_field_curlv()) {
-        fnum++;
-    }
-
-    if (solver_config.has_field_soundspeed()) {
-        fnum++;
-    }
-
-    if (solver_config.has_field_dtdivv()) {
-        fnum++;
-    }
-
-    writter.add_field_data_section(fnum);
-
-    if (add_patch_world_id) {
-        vtk_dump_add_patch_id(scheduler(), writter);
-        vtk_dump_add_worldrank(scheduler(), writter);
-    }
-
-    vtk_dump_add_field<Tscal>(scheduler(), writter, ihpart, "h");
-    vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
-    vtk_dump_add_field<Tvec>(scheduler(), writter, ivxyz, "v");
-    vtk_dump_add_field<Tvec>(scheduler(), writter, iaxyz, "a");
-
-    if (solver_config.has_field_alphaAV()) {
-        const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
-        vtk_dump_add_field<Tscal>(scheduler(), writter, ialpha_AV, "alpha_AV");
-    }
-
-    if (solver_config.has_field_divv()) {
-        const u32 idivv = pdl.get_field_idx<Tscal>("divv");
-        vtk_dump_add_field<Tscal>(scheduler(), writter, idivv, "divv");
-    }
-
-    if (solver_config.has_field_dtdivv()) {
-        const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
-        vtk_dump_add_field<Tscal>(scheduler(), writter, idtdivv, "dtdivv");
-    }
-
-    if (solver_config.has_field_curlv()) {
-        const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
-        vtk_dump_add_field<Tvec>(scheduler(), writter, icurlv, "curlv");
-    }
-
-    if (solver_config.has_field_soundspeed()) {
-        const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
-        vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
-    }
-
-    vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
+    modules::VTKDump(context, solver_config).do_dump(filename, add_patch_world_id);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -547,173 +318,7 @@ void shammodels::sph::Solver<Tvec, Kern>::merge_position_ghost() {
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::build_merged_pos_trees() {
-
-    StackEntry stack_loc{};
-
-    SPHSolverImpl solver(context);
-
-    auto &merged_xyzh = storage.merged_xyzh.get();
-
-    shambase::DistributedData<RTree> trees
-        = merged_xyzh.template map<RTree>([&](u64 id, PreStepMergedField &merged) {
-              Tvec bmin = merged.bounds.lower;
-              Tvec bmax = merged.bounds.upper;
-
-              RTree tree(
-                  shamsys::instance::get_compute_scheduler_ptr(),
-                  {bmin, bmax},
-                  merged.field_pos.get_buf(),
-                  merged.field_pos.get_obj_cnt(),
-                  solver_config.tree_reduction_level);
-
-              return tree;
-          });
-
-    trees.for_each([&](u64 id, RTree &tree) {
-        tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
-        tree.convert_bounding_box(shamsys::instance::get_compute_queue());
-    });
-
-    bool corect_boxes = solver_config.use_two_stage_search;
-    if (corect_boxes) {
-
-        trees.for_each([&](u64 id, RTree &tree) {
-            u32 leaf_count          = tree.tree_reduced_morton_codes.tree_leaf_count;
-            u32 internal_cell_count = tree.tree_struct.internal_cell_count;
-            u32 tot_count           = leaf_count + internal_cell_count;
-
-            sycl::buffer<Tvec> tmp_min_cell(tot_count);
-            sycl::buffer<Tvec> tmp_max_cell(tot_count);
-
-            sham::DeviceBuffer<Tvec> &buf_part_pos = merged_xyzh.get(id).field_pos.get_buf();
-
-            sham::EventList depends_list;
-            auto acc_pos = buf_part_pos.get_read_access(depends_list);
-
-            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                shamrock::tree::ObjectIterator cell_looper(tree, cgh);
-
-                u32 leaf_offset = tree.tree_struct.internal_cell_count;
-
-                sycl::accessor comp_min{tmp_min_cell, cgh, sycl::write_only, sycl::no_init};
-                sycl::accessor comp_max{tmp_max_cell, cgh, sycl::write_only, sycl::no_init};
-
-                // how to lose a f****ing afternoon :
-                // 1 - code a nice algorithm that should optimize the code
-                // 2 - pass all the tests
-                // 3 - benchmark it and discover big loss in perf for no reasons
-                // 4 - change a parameter and discover a segfault (on GPU to have more fun ....)
-                // 5 - find that actually the core algorithm of the code create a bug in the new
-                // thing 6 - discover that every value in everything is wrong 7 - spent the whole
-                // night on it 8 - start putting prints everywhere 9 - isolate a bugged id 10 - try
-                // to understand why a f***ing leaf is as big as the root of the tree 11 - **** a
-                // few hours latter 12 - the goddam c++ standard define
-                // std::numeric_limits<float>::min() to be epsilon instead of -max 13 - road rage 14
-                // - open a bier alt f4 the ide
-
-                Tvec imin = shambase::VectorProperties<Tvec>::get_max();
-                Tvec imax = -shambase::VectorProperties<Tvec>::get_max();
-
-                shambase::parralel_for(cgh, leaf_count, "compute leaf boxes", [=](u64 leaf_id) {
-                    Tvec min = imin;
-                    Tvec max = imax;
-
-                    cell_looper.iter_object_in_cell(leaf_id + leaf_offset, [&](u32 part_id) {
-                        Tvec r = acc_pos[part_id];
-
-                        min = sham::min(min, r);
-                        max = sham::max(max, r);
-                    });
-
-                    comp_min[leaf_offset + leaf_id] = min;
-                    comp_max[leaf_offset + leaf_id] = max;
-                });
-            });
-
-            buf_part_pos.complete_event_state(e);
-
-            //{
-            //    u32 leaf_offset = tree.tree_struct.internal_cell_count;
-            //    sycl::host_accessor pos_min_cell  {tmp_min_cell};
-            //    sycl::host_accessor pos_max_cell  {tmp_max_cell};
-            //
-            //    for (u32 i = 0; i < 1000; i++) {
-            //            logger::raw_ln(i,pos_max_cell[i+leaf_offset] -
-            //            pos_min_cell[i+leaf_offset]);
-            //
-            //    }
-            //}
-
-            auto ker_reduc_hmax = [&](sycl::handler &cgh) {
-                u32 offset_leaf = internal_cell_count;
-
-                sycl::accessor comp_min{tmp_min_cell, cgh, sycl::read_write};
-                sycl::accessor comp_max{tmp_max_cell, cgh, sycl::read_write};
-
-                sycl::accessor rchild_id{
-                    shambase::get_check_ref(tree.tree_struct.buf_rchild_id), cgh, sycl::read_only};
-                sycl::accessor lchild_id{
-                    shambase::get_check_ref(tree.tree_struct.buf_lchild_id), cgh, sycl::read_only};
-                sycl::accessor rchild_flag{
-                    shambase::get_check_ref(tree.tree_struct.buf_rchild_flag),
-                    cgh,
-                    sycl::read_only};
-                sycl::accessor lchild_flag{
-                    shambase::get_check_ref(tree.tree_struct.buf_lchild_flag),
-                    cgh,
-                    sycl::read_only};
-
-                shambase::parralel_for(cgh, internal_cell_count, "propagate up", [=](u64 gid) {
-                    u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
-                    u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
-
-                    Tvec bminl = comp_min[lid];
-                    Tvec bminr = comp_min[rid];
-                    Tvec bmaxl = comp_max[lid];
-                    Tvec bmaxr = comp_max[rid];
-
-                    Tvec bmin = sham::min(bminl, bminr);
-                    Tvec bmax = sham::max(bmaxl, bmaxr);
-
-                    comp_min[gid] = bmin;
-                    comp_max[gid] = bmax;
-                });
-            };
-
-            for (u32 i = 0; i < tree.tree_depth; i++) {
-                shamsys::instance::get_compute_queue().submit(ker_reduc_hmax);
-            }
-
-            sycl::buffer<Tvec> &tree_bmin
-                = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_min_cell_flt);
-            sycl::buffer<Tvec> &tree_bmax
-                = shambase::get_check_ref(tree.tree_cell_ranges.buf_pos_max_cell_flt);
-
-            shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
-                shamrock::tree::ObjectIterator cell_looper(tree, cgh);
-
-                u32 leaf_offset = tree.tree_struct.internal_cell_count;
-
-                sycl::accessor comp_bmin{tmp_min_cell, cgh, sycl::read_only};
-                sycl::accessor comp_bmax{tmp_max_cell, cgh, sycl::read_only};
-
-                sycl::accessor tree_buf_min{tree_bmin, cgh, sycl::read_write};
-                sycl::accessor tree_buf_max{tree_bmax, cgh, sycl::read_write};
-
-                shambase::parralel_for(cgh, tot_count, "write in tree range", [=](u64 nid) {
-                    Tvec load_min = comp_bmin[nid];
-                    Tvec load_max = comp_bmax[nid];
-
-                    tree_buf_min[nid] = load_min;
-                    tree_buf_max[nid] = load_max;
-                });
-            });
-        });
-    }
-
-    storage.merged_pos_trees.set(std::move(trees));
+    modules::BuildTrees(context, solver_config, storage).build_merged_pos_trees();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -734,13 +339,20 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     const u32 iuint      = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
 
-    bool has_B_field   = solver_config.has_field_B_on_rho();
-    bool has_psi_field = solver_config.has_field_psi_on_ch();
+    bool has_B_field       = solver_config.has_field_B_on_rho();
+    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
     const u32 iB_on_rho   = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0;
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
+
+    const u32 iepsilon   = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 idtepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
+    const u32 ideltav    = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+    const u32 idtdeltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
 
     shamrock::SchedulerUtility utility(scheduler());
 
@@ -770,6 +382,12 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     }
     if (has_psi_field) {
         utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
+    }
+    if (has_epsilon_field) {
+        utility.fields_forward_euler<Tscal>(iepsilon, idtepsilon, dt / 2);
+    }
+    if (has_deltav_field) {
+        utility.fields_forward_euler<Tvec>(ideltav, idtdeltav, dt / 2);
     }
 }
 
@@ -807,6 +425,14 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         _h_old     = utility.save_field<Tscal>(ihpart, "h_old");
 
         Tscal max_eps_h;
+
+        if (solver_config.gpart_mass == 0) {
+            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                "invalid gpart_mass {}, this configuration can not converge.\n"
+                "Please set it using either model.set_particle_mass(pmass) or "
+                "cfg.set_particle_mass(pmass)",
+                solver_config.gpart_mass));
+        }
 
         u32 iter_h = 0;
         for (; iter_h < solver_config.h_iter_per_subcycles; iter_h++) {
@@ -934,34 +560,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             }
         }
 
-        //// compute omega
-        storage.omega.set(utility.make_compute_field<Tscal>("omega", 1));
-        {
+        modules::ComputeOmega<Tvec, Kern> omega(context, solver_config, storage);
+        storage.omega.set(omega.compute_omega());
 
-            ComputeField<Tscal> &omega = storage.omega.get();
-            NamedStackEntry stack_loc2{"compute omega"};
-
-            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-                logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "h iteration");
-
-                sham::DeviceBuffer<Tscal> &omega_h = omega.get_buf(p.id_patch);
-
-                sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
-                sham::DeviceBuffer<Tvec> &merged_r
-                    = storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf();
-
-                sycl::range range_npart{pdat.get_obj_cnt()};
-
-                RTree &tree = storage.merged_pos_trees.get().get(p.id_patch);
-
-                tree::ObjectCache &neigh_cache
-                    = storage.neighbors_cache.get().get_cache(p.id_patch);
-                ;
-
-                sph_utils.compute_omega(
-                    merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);
-            });
-        }
         _epsilon_h.reset();
         _h_old.reset();
         break;
@@ -1037,9 +638,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_alphaAV_field    = solver_config.has_field_alphaAV();
     bool has_soundspeed_field = solver_config.ghost_has_soundspeed();
 
-    bool has_B_field     = solver_config.has_field_B_on_rho();
-    bool has_psi_field   = solver_config.has_field_psi_on_ch();
-    bool has_curlB_field = solver_config.has_field_curlB();
+    bool has_B_field       = solver_config.has_field_B_on_rho();
+    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_curlB_field   = solver_config.has_field_curlB();
+    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
@@ -1058,6 +661,19 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
     const u32 icurlB      = (has_curlB_field) ? pdl.get_field_idx<Tvec>("curlB") : 0;
 
+    bool do_MHD_debug       = solver_config.do_MHD_debug();
+    const u32 imag_pressure = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_pressure") : -1;
+    const u32 imag_tension  = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_tension") : -1;
+    const u32 igas_pressure = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("gas_pressure") : -1;
+    const u32 itensile_corr = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("tensile_corr") : -1;
+    const u32 ipsi_propag   = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_propag") : -1;
+    const u32 ipsi_diff     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_diff") : -1;
+    const u32 ipsi_cons     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_cons") : -1;
+    const u32 iu_mhd        = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("u_mhd") : -1;
+
+    const u32 iepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
@@ -1070,11 +686,13 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 isoundspeed_interf
         = (has_soundspeed_field) ? ghost_layout.get_field_idx<Tscal>("soundspeed") : 0;
 
-    const u32 iB_interf = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
-
-    const u32 ipsi_interf = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
-
+    const u32 iB_interf     = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
+    const u32 ipsi_interf   = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 icurlB_interf = (has_curlB_field) ? ghost_layout.get_field_idx<Tvec>("curlB") : 0;
+
+    const u32 iepsilon_interf
+        = (has_epsilon_field) ? ghost_layout.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 ideltav_interf = (has_deltav_field) ? ghost_layout.get_field_idx<Tvec>("deltav") : 0;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -1136,6 +754,16 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_curlB_field) {
                 sender_patch.get_field<Tvec>(icurlB).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tvec>(icurlB_interf));
+            }
+
+            if (has_epsilon_field) {
+                sender_patch.get_field<Tscal>(iepsilon).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(iepsilon_interf));
+            }
+
+            if (has_deltav_field) {
+                sender_patch.get_field<Tvec>(ideltav).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tvec>(ideltav_interf));
             }
         });
 
@@ -1201,6 +829,15 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                     pdat_new.get_field<Tvec>(icurlB_interf).insert(pdat.get_field<Tvec>(icurlB));
                 }
 
+                if (has_epsilon_field) {
+                    pdat_new.get_field<Tscal>(iepsilon_interf)
+                        .insert(pdat.get_field<Tscal>(iepsilon));
+                }
+
+                if (has_deltav_field) {
+                    pdat_new.get_field<Tvec>(ideltav_interf).insert(pdat.get_field<Tvec>(ideltav));
+                }
+
                 pdat_new.check_field_obj_cnt_match();
 
                 return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
@@ -1256,8 +893,11 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     shamrock::SchedulerUtility utility(scheduler());
     PatchDataLayout &pdl = scheduler().pdl;
 
-    bool has_B_field      = solver_config.has_field_B_on_rho();
-    bool has_psi_field    = solver_config.has_field_psi_on_ch();
+    bool has_B_field       = solver_config.has_field_B_on_rho();
+    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
+
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
@@ -1272,6 +912,14 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     }
     if (has_psi_field) {
         storage.old_dpsi_on_ch.set(utility.save_field<Tscal>(idpsi_on_ch, "dpsi/ch_old"));
+    }
+    if (has_epsilon_field) {
+        storage.old_dtepsilon.set(
+            utility.save_field<Tscal>(pdl.get_field_idx<Tscal>("dtepsilon"), "dtepsilon_old"));
+    }
+    if (has_deltav_field) {
+        storage.old_dtdeltav.set(
+            utility.save_field<Tvec>(pdl.get_field_idx<Tvec>("dtdeltav"), "dtdeltav_old"));
     }
 }
 
@@ -1321,8 +969,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    bool has_B_field   = solver_config.has_field_B_on_rho();
-    bool has_psi_field = solver_config.has_field_psi_on_ch();
+    bool has_B_field       = solver_config.has_field_B_on_rho();
+    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
     PatchDataLayout &pdl = scheduler().pdl;
 
@@ -1336,6 +986,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
+    const u32 iepsilon    = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 idtepsilon  = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
+    const u32 ideltav     = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+    const u32 idtdeltav   = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
 
     shamrock::SchedulerUtility utility(scheduler());
 
@@ -1573,6 +1227,20 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt / 2);
         }
 
+        if (solver_config.dust_config.has_epsilon_field()) {
+            ComputeField<Tscal> epsilon_epsilon_sq
+                = utility.make_compute_field<Tscal>("epsilon epsilon^2", 1);
+            utility.fields_leapfrog_corrector<Tscal>(
+                iepsilon, idtepsilon, storage.old_dtepsilon.get(), epsilon_epsilon_sq, dt / 2);
+        }
+
+        if (solver_config.dust_config.has_deltav_field()) {
+            ComputeField<Tscal> epsilon_deltav_sq
+                = utility.make_compute_field<Tscal>("deltav deltav^2", 1);
+            utility.fields_leapfrog_corrector<Tvec>(
+                ideltav, idtdeltav, storage.old_dtdeltav.get(), epsilon_deltav_sq, dt / 2);
+        }
+
         storage.old_axyz.reset();
         storage.old_duint.reset();
         if (solver_config.has_field_B_on_rho()) {
@@ -1580,6 +1248,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         }
         if (solver_config.has_field_B_on_rho()) {
             storage.old_dpsi_on_ch.reset();
+        }
+
+        if (solver_config.dust_config.has_epsilon_field()) {
+            storage.old_dtepsilon.reset();
+        }
+
+        if (solver_config.dust_config.has_deltav_field()) {
+            storage.old_dtdeltav.reset();
         }
 
         Tscal rank_veps_v = sycl::sqrt(vepsilon_v_sq.compute_rank_max());
@@ -1807,10 +1483,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                     Tscal cs_a      = cs[id_a];
                                     Tvec B_a        = B_on_rho[id_a] * rho_a;
 
-                                    Tscal v_alfven_a
-                                        = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
-                                    Tscal vclean_a
-                                        = sycl::sqrt(cs_a * cs_a + v_alfven_a * v_alfven_a);
+                                    Tscal vclean_a = shamphys::MHD_physics<Tvec, Tscal>::v_shock(
+                                        cs_a, B_a, rho_a, mu_0);
 
                                     vclean[id_a] = vclean_a;
                                 });

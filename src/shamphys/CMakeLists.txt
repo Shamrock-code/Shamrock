@@ -5,8 +5,6 @@ project(Shamphys CXX C)
 set(Sources
     src/HydroSoundwave.cpp
     src/SodTube.cpp
-    src/bindings/pyShamphys.cpp
-    src/bindings/pyUnits.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

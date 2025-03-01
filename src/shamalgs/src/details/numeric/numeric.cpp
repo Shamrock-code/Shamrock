@@ -80,4 +80,9 @@ namespace shamalgs::numeric {
         return details::stream_compact_excl_scan(q, buf_flags, len);
     };
 
+    sham::DeviceBuffer<u32> stream_compact(
+        const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf_flags, u32 len) {
+        return details::stream_compact_excl_scan(sched, buf_flags, len);
+    }
+
 } // namespace shamalgs::numeric

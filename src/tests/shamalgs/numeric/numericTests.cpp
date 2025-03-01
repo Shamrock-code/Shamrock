@@ -16,7 +16,12 @@
 #include <numeric>
 
 TestStart(Unittest, "shamalgs/numeric/stream_compact", streamcompactalg, 1) {
-
     TestStreamCompact test((TestStreamCompact::vFunctionCall) shamalgs::numeric::stream_compact);
+    test.check();
+}
+
+TestStart(Unittest, "shamalgs/numeric/stream_compact(usm)", streamcompactalgusm, 1) {
+    TestStreamCompactUSM test(
+        (TestStreamCompactUSM::vFunctionCall) shamalgs::numeric::stream_compact);
     test.check();
 }

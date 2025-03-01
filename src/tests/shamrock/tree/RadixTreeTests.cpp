@@ -37,6 +37,6 @@ TestStart(Unittest, "shamrock/tree/RadixTree::serialize", testradixtreeserialize
 
         RadixTree<u_morton, f32_3> outser = RadixTree<u_morton, f32_3>::deserialize(ser2);
 
-        shamtest::asserts().assert_bool("input match out", outser == tree);
+        REQUIRE_NAMED("input match out", outser == tree);
     }
 }

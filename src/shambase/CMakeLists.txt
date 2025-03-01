@@ -7,6 +7,7 @@ set(Sources
     src/stacktrace.cpp
     src/SourceLocation.cpp
     src/print.cpp
+    src/popen.cpp
     src/profiling/chrome.cpp
     src/profiling/profiling.cpp
 )

@@ -14,28 +14,92 @@
 
 TestStart(Unittest, "shambackends/math.hpp:roundup_pow2_clz", shambackendsmathroundup_pow2_clz, 1) {
 
-    _AssertEqual(sham::roundup_pow2_clz<u32>(0), 1);
-    _AssertEqual(sham::roundup_pow2_clz<u32>(1), 1);
-    _AssertEqual(sham::roundup_pow2_clz<u32>(2), 2);
-    _AssertEqual(sham::roundup_pow2_clz<u32>(3), 4);
+    REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(0), 1);
+    REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(1), 1);
+    REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(2), 2);
+    REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(3), 4);
 
-    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483647), 2147483648);
-    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483648), 2147483648);
-    _AssertEqual(sham::roundup_pow2_clz<u32>(2147483649), 0);
-    _AssertEqual(sham::roundup_pow2_clz<u32>(4294967295), 0);
+    REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(2147483647), 2147483648);
+    REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(2147483648), 2147483648);
+    REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(2147483649), 0);
+    REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(4294967295), 0);
 }
+
+inline f64 nan_val = std::numeric_limits<f64>::quiet_NaN();
 
 TestStart(Unittest, "shambackends/math.hpp:inv_sat", shambackendsmathinv_sat, 1) {
 
-    _AssertEqual(sham::inv_sat<f64>(1._f64), 1._f64 / 1._f64);
-    _AssertEqual(sham::inv_sat<f64>(2._f64), 1._f64 / 2._f64);
-    _AssertEqual(sham::inv_sat<f64>(3._f64), 1._f64 / 3._f64);
-    _AssertEqual(sham::inv_sat<f64>(4._f64), 1._f64 / 4._f64);
-    _AssertEqual(sham::inv_sat<f64>(5._f64), 1._f64 / 5._f64);
-    _AssertEqual(sham::inv_sat<f64>(6._f64), 1._f64 / 6._f64);
-    _AssertEqual(sham::inv_sat<f64>(7._f64), 1._f64 / 7._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(1._f64), 1._f64 / 1._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(2._f64), 1._f64 / 2._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(3._f64), 1._f64 / 3._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(4._f64), 1._f64 / 4._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(5._f64), 1._f64 / 5._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(6._f64), 1._f64 / 6._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(7._f64), 1._f64 / 7._f64);
 
-    _AssertEqual(sham::inv_sat<f64>(100._f64), 1._f64 / 100._f64);
-    _AssertEqual(sham::inv_sat<f64>(1.e-9_f64), 1._f64 / 1.e-9_f64);
-    _AssertEqual(sham::inv_sat<f64>(1.e-10_f64), 0._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(100._f64), 1._f64 / 100._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(1.e-9_f64), 1._f64 / 1.e-9_f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(1.e-10_f64), 0._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-1._f64), -1._f64 / 1._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-2._f64), -1._f64 / 2._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-3._f64), -1._f64 / 3._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-4._f64), -1._f64 / 4._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-5._f64), -1._f64 / 5._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-6._f64), -1._f64 / 6._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-7._f64), -1._f64 / 7._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-100._f64), -1._f64 / 100._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-1.e-9_f64), -1._f64 / 1.e-9_f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(-1.e-10_f64), 0._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat<f64>(0._f64), 0._f64);
+    REQUIRE_EQUAL(sham::inv_sat<f64>(nan_val), 0._f64);
+}
+
+TestStart(Unittest, "shambackends/math.hpp:inv_sat_positive", shambackendsmathinv_satpos, 1) {
+
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(1._f64), 1._f64 / 1._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(2._f64), 1._f64 / 2._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(3._f64), 1._f64 / 3._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(4._f64), 1._f64 / 4._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(5._f64), 1._f64 / 5._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(6._f64), 1._f64 / 6._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(7._f64), 1._f64 / 7._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(100._f64), 1._f64 / 100._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(1.e-9_f64), 1._f64 / 1.e-9_f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(1.e-10_f64), 0._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(0._f64), 0._f64);
+    REQUIRE_EQUAL(sham::inv_sat_positive<f64>(nan_val), 0._f64);
+}
+
+TestStart(Unittest, "shambackends/math.hpp:inv_sat_zero", shambackendsmathinv_satzero, 1) {
+
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(1._f64), 1._f64 / 1._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(2._f64), 1._f64 / 2._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(3._f64), 1._f64 / 3._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(4._f64), 1._f64 / 4._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(5._f64), 1._f64 / 5._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(6._f64), 1._f64 / 6._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(7._f64), 1._f64 / 7._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(100._f64), 1._f64 / 100._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(1.e-9_f64), 1._f64 / 1.e-9_f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(0), 0._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-1._f64), -1._f64 / 1._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-2._f64), -1._f64 / 2._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-3._f64), -1._f64 / 3._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-4._f64), -1._f64 / 4._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-5._f64), -1._f64 / 5._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-6._f64), -1._f64 / 6._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-7._f64), -1._f64 / 7._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-100._f64), -1._f64 / 100._f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(-1.e-9_f64), -1._f64 / 1.e-9_f64);
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(0), 0._f64);
+
+    REQUIRE_EQUAL(sham::inv_sat_zero<f64>(nan_val), 0._f64);
 }

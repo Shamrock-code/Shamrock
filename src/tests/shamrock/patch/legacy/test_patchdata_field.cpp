@@ -22,12 +22,12 @@ TestStart(Unittest, base + ":constructor", patch_data_field_constructor, 1) {
 
     PatchDataField<f32> d_check("test", 1);
 
-    shamtest::asserts().assert_bool("name field match", d_check.get_name() == "test");
-    shamtest::asserts().assert_bool("nvar field match", d_check.get_nvar() == 1);
-    shamtest::asserts().assert_bool("buffer allocated but empty", d_check.get_buf().is_empty());
+    REQUIRE_NAMED("name field match", d_check.get_name() == "test");
+    REQUIRE_NAMED("nvar field match", d_check.get_nvar() == 1);
+    REQUIRE_NAMED("buffer allocated but empty", d_check.get_buf().is_empty());
 
-    shamtest::asserts().assert_bool("is new field empty", d_check.get_val_cnt() == 0);
-    shamtest::asserts().assert_bool("is new field empty", d_check.get_obj_cnt() == 0);
+    REQUIRE_NAMED("is new field empty", d_check.get_val_cnt() == 0);
+    REQUIRE_NAMED("is new field empty", d_check.get_obj_cnt() == 0);
 }
 
 TestStart(Unittest, base + ":patch_data_field_check_match", patch_data_field_check_match, 1) {
@@ -36,7 +36,7 @@ TestStart(Unittest, base + ":patch_data_field_check_match", patch_data_field_che
     PatchDataField<f32> d_check("test", 1);
     d_check.gen_mock_data(10000, eng);
 
-    shamtest::asserts().assert_bool("reflexivity", d_check.check_field_match(d_check));
+    REQUIRE_NAMED("reflexivity", d_check.check_field_match(d_check));
 }
 
 TestStart(Unittest, base + ":isend_irecv_f32", isend_irecv_f32, 2) {
@@ -70,12 +70,12 @@ TestStart(Unittest, base + ":isend_irecv_f32", isend_irecv_f32, 2) {
     if (shamcomm::world_rank() == 0) {
         PatchDataField<f32> &p1 = recv_d;
         PatchDataField<f32> &p2 = d2_check;
-        shamtest::asserts().assert_bool("recv_d == d1_check (f32)", p1.check_field_match(p2));
+        REQUIRE_NAMED("recv_d == d1_check (f32)", p1.check_field_match(p2));
     }
 
     if (shamcomm::world_rank() == 1) {
         PatchDataField<f32> &p1 = recv_d;
         PatchDataField<f32> &p2 = d1_check;
-        shamtest::asserts().assert_bool("recv_d == d1_check (f32)", p1.check_field_match(p2));
+        REQUIRE_NAMED("recv_d == d1_check (f32)", p1.check_field_match(p2));
     }
 }

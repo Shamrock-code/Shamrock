@@ -23,21 +23,6 @@ namespace shamrock::sfc {
 
     namespace details {
 
-        template<class morton_t>
-        struct MortonInfo {
-            static constexpr morton_t err_code;
-        };
-
-        template<>
-        struct MortonInfo<u32> {
-            static constexpr u32 err_code = 4294967295U;
-        };
-
-        template<>
-        struct MortonInfo<u64> {
-            static constexpr u64 err_code = 18446744073709551615UL;
-        };
-
         /**
          * @brief fill the end of a buffer (indices from morton_count up to fill_count-1) with error
          * values (maximum int value)

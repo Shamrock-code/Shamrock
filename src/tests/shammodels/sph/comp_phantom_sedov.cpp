@@ -309,7 +309,10 @@ void compare_results(
     TEX_REPORT(R"==(\end{itemize})=="
                "\n")
 
-    _Assert(l2_r < 1e-9) _Assert(l2_vr < 28e-06) _Assert(l2_h < 4e-08) _Assert(l2_u < 2e-07)
+    REQUIRE(l2_r < 1e-9);
+    REQUIRE(l2_vr < 28e-06);
+    REQUIRE(l2_h < 4e-08);
+    REQUIRE(l2_u < 2e-07);
 }
 
 void do_test(bool long_version) {

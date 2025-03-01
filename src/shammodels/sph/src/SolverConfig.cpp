@@ -77,11 +77,24 @@ namespace shammodels::sph {
         if (dust_config.has_epsilon_field()) {
             u32 ndust = dust_config.get_dust_nvar();
             pdl.add_field<Tscal>("epsilon", ndust);
+            pdl.add_field<Tscal>("dtepsilon", ndust);
         }
 
         if (dust_config.has_deltav_field()) {
             u32 ndust = dust_config.get_dust_nvar();
             pdl.add_field<Tvec>("deltav", ndust);
+            pdl.add_field<Tvec>("dtdeltav", ndust);
+        }
+        if (do_MHD_debug()) {
+            pdl.add_field<Tvec>("gas_pressure", 1);
+            pdl.add_field<Tvec>("mag_pressure", 1);
+            pdl.add_field<Tvec>("mag_tension", 1);
+            pdl.add_field<Tvec>("tensile_corr", 1);
+
+            pdl.add_field<Tscal>("psi_propag", 1);
+            pdl.add_field<Tscal>("psi_diff", 1);
+            pdl.add_field<Tscal>("psi_cons", 1);
+            pdl.add_field<Tscal>("u_mhd", 1);
         }
     }
 

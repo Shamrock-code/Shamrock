@@ -32,6 +32,7 @@
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 template<class T>
 class PatchDataField {
@@ -194,6 +195,12 @@ class PatchDataField {
     void override(const T val);
 
     inline void synchronize_buf() { buf.synchronize(); }
+
+    inline std::vector<T> copy_to_stdvec() {
+        auto tmp = buf.copy_to_stdvec();
+        tmp.resize(get_val_cnt());
+        return tmp;
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // get_subsets utilities

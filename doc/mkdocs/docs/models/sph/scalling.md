@@ -84,7 +84,7 @@ pmass = -1
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 model.init_scheduler(scheduler_split_val,scheduler_merge_val)
 bmin,bmax = model.get_ideal_fcc_box(dr,bmin,bmax)
 xm,ym,zm = bmin
@@ -100,7 +100,7 @@ del ctx
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 
 cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)

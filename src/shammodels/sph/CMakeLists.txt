@@ -12,9 +12,10 @@ set(Sources
     src/io/PhantomDump.cpp
     src/SolverConfig.cpp
     src/pySPHModel.cpp
-    src/pySPHKernels.cpp
     src/pyPhantomDump.cpp
+
     src/modules/SolverStorage.cpp
+    src/modules/BuildTrees.cpp
     src/modules/UpdateViscosity.cpp
     src/modules/DiffOperator.cpp
     src/modules/DiffOperatorDtDivv.cpp
@@ -24,13 +25,18 @@ set(Sources
     src/modules/ComputeEos.cpp
     src/modules/UpdateDerivs.cpp
     src/modules/ComputeLoadBalanceValue.cpp
+    src/modules/ComputeOmega.cpp
     src/modules/NeighbourCache.cpp
     src/modules/ParticleReordering.cpp
     src/modules/AnalysisSodTube.cpp
     src/modules/SPHSetup.cpp
+
     src/modules/setup/GeneratorMCDisc.cpp
+    src/modules/setup/ModifierApplyDiscWarp.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
+
+    src/modules/io/VTKDump.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

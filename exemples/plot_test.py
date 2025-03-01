@@ -177,6 +177,22 @@ def kepler_to_cartesian_no_rotation(m1, m2, a, e):
 
     return r1, r2, v1, v2
 
+def split_as_binary(sink,m1, m2, a, e):
+    r1, r2, v1, v2 = kepler_to_cartesian_no_rotation(m1, m2, a, e)
+
+    s1 = sink.copy()
+    print(s1)
+    s1["mass"] = m1
+    s1["pos"] = r1 + sink.pos
+    s1["vel"] = v1 + sink.vel
+
+    s2 = sink.copy()
+    print(s2)
+    s2["mass"] = m2
+    s2["pos"] = r2 + sink.pos
+    s2["vel"] = v2 + sink.vel
+
+    return s1, s2
 
 ####################################################
 # Dump handling
@@ -284,6 +300,80 @@ def plot_sim_orbit(sink_list):
     plt.grid()
     plt.show()
 
+def plot_sim_orbit2(sink_list):
+
+    import numpy as np
+    from scipy.integrate import odeint
+    import matplotlib.pyplot as plt
+
+    # Define the N-body problem
+    def nbody(y, t, N, masses):
+        # y: array containing position and velocity of all bodies, shape: (N, 6)
+        # t: time
+        # N: number of bodies
+        # masses: array of masses of the bodies
+
+        # Unpack the positions and velocities from y
+        pos = y[:N*3].reshape((N, 3))   # Positions, shape (N, 3)
+        vel = y[N*3:].reshape((N, 3))   # Velocities, shape (N, 3)
+
+        # Initialize the derivatives of position and velocity
+        dydt = np.zeros_like(y)
+
+        # Compute the forces
+        forces = np.zeros_like(pos)
+        for i in range(N):
+            for j in range(i + 1, N):
+                # Vector between body i and body j
+                r = pos[j] - pos[i]
+                dist = np.linalg.norm(r)
+                force_magnitude = G * masses[i] * masses[j] / dist**2
+                force = force_magnitude * r / dist
+                forces[i] += force
+                forces[j] -= force  # Action and reaction
+
+        # Derivative of position is the velocity
+        dydt[:N*3] = vel.flatten()
+
+        # Derivative of velocity is the acceleration
+        dydt[N*3:] = (forces / masses[:, np.newaxis]).flatten()
+
+        return dydt
+
+    # Initial conditions
+    N = len(sink_list)  # Number of bodies
+    masses = np.array([s["mass"] for s in sink_list])  # Masses of the bodies (kg)
+    positions = np.array([s["pos"] for s in sink_list])  # Initial positions (m)
+    velocities = np.array([s["vel"] for s in sink_list])  # Initial velocities (m/s)
+
+    print(f"masses = {masses}")
+    print(f"positions = {positions}")
+    print(f"velocities = {velocities}")
+
+    # Combine initial conditions into a single array
+    y0 = np.hstack((positions.flatten(), velocities.flatten()))
+
+    # Time grid for integration
+    t = np.linspace(0, 6.12, 1000)  # Time from 0 to 1e5 seconds
+
+    # Integrate the equations of motion
+    solution = odeint(nbody, y0, t, args=(N, masses))
+
+    # Extract positions from the solution
+    positions = solution[:, :N*3].reshape((-1, N, 3))
+
+    # Plot the orbits
+    plt.figure(figsize=(8, 8))
+    for i in range(N):
+        plt.plot(positions[:, i, 0], positions[:, i, 1], label=f'Body {i+1}')
+
+    plt.xlabel('x')
+    plt.ylabel('y')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
 ####################################################
 ####################################################
 ####################################################
@@ -291,7 +381,7 @@ def plot_sim_orbit(sink_list):
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
+model = shamrock.get_ModelSPH(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
 
 if idump_last_dump is not None:
     model.load_from_dump(get_dump_name(idump_last_dump))
@@ -356,6 +446,7 @@ else:
     print("sinks baryenceter : velocity {} position {}".format(vel_bary,pos_bary))
 
     #plot_sim_orbit(sink_list)
+    #plot_sim_orbit2(sink_list)
 
     model.set_particle_mass(pmass)
     for s in sink_list:

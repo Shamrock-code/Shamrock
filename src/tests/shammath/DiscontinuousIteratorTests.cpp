@@ -36,7 +36,7 @@ void test_range(i32 min, i32 max) {
         test_set.insert(tmp);
     }
 
-    _Assert(set_compare(ref_set, test_set))
+    REQUIRE(set_compare(ref_set, test_set));
 }
 
 TestStart(Unittest, "shammath/DiscontinuousIterator", iterator, 1) {

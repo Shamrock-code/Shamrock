@@ -83,3 +83,19 @@ jobs:
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init(0,0)"
+
+      - name: Pip install package for doc
+        run : |
+          cd build
+          pip install matplotlib numpy scipy
+
+      - name: Build sphinx documentation
+        run: |
+          cd doc/sphinx
+          bash gen_sphinx_doc.sh #generate the doc in doc/sphinx/build/html
+
+      - name: Upload doc artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sphinx_doc
+          path: doc/sphinx/build/html

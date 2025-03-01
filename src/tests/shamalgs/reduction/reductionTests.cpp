@@ -61,7 +61,7 @@ void unit_test_reduc_sum(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 
 template<class T, class Fct>
@@ -99,7 +99,7 @@ void unit_test_reduc_min(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 
 template<class T, class Fct>
@@ -137,7 +137,7 @@ void unit_test_reduc_max(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 template<class T, class Fct>
 void unit_test_reduc_sum_usm(std::string name, Fct &&red_fct) {
@@ -175,7 +175,7 @@ void unit_test_reduc_sum_usm(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 template<class T, class Fct>
 void unit_test_reduc_max_usm(std::string name, Fct &&red_fct) {
@@ -213,7 +213,7 @@ void unit_test_reduc_max_usm(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 
 template<class T, class Fct>
@@ -252,7 +252,7 @@ void unit_test_reduc_min_usm(std::string name, Fct &&red_fct) {
     T delt   = (sycl_ret - check_val) / 1e8;
     auto dot = sham::dot(delt, delt);
 
-    shamtest::asserts().assert_float_equal(name, dot, 0, 1e-9);
+    REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 
 void unit_test_reduc_sum() {
@@ -287,7 +287,7 @@ void unit_test_reduc_sum_usm_group_impl() {
 
     unit_test_reduc_sum_usm<f64>(
         "reduction : main (f64)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
@@ -296,7 +296,7 @@ void unit_test_reduc_sum_usm_group_impl() {
 
     unit_test_reduc_sum_usm<f32>(
         "reduction : main (f32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
@@ -305,7 +305,7 @@ void unit_test_reduc_sum_usm_group_impl() {
 
     unit_test_reduc_sum_usm<u32>(
         "reduction : main (u32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
@@ -314,7 +314,7 @@ void unit_test_reduc_sum_usm_group_impl() {
 
     unit_test_reduc_sum_usm<f64_3>(
         "reduction : main (f64_3)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
@@ -325,7 +325,7 @@ void unit_test_reduc_min_usm_group_impl() {
 
     unit_test_reduc_min_usm<f64>(
         "reduction : main (f64)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
@@ -334,7 +334,7 @@ void unit_test_reduc_min_usm_group_impl() {
 
     unit_test_reduc_min_usm<f32>(
         "reduction : main (f32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
@@ -343,7 +343,7 @@ void unit_test_reduc_min_usm_group_impl() {
 
     unit_test_reduc_min_usm<u32>(
         "reduction : main (u32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
@@ -352,7 +352,7 @@ void unit_test_reduc_min_usm_group_impl() {
 
     unit_test_reduc_min_usm<f64_3>(
         "reduction : main (f64_3)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
@@ -363,7 +363,7 @@ void unit_test_reduc_max_usm_group_impl() {
 
     unit_test_reduc_max_usm<f64>(
         "reduction : main (f64)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
@@ -372,7 +372,7 @@ void unit_test_reduc_max_usm_group_impl() {
 
     unit_test_reduc_max_usm<f32>(
         "reduction : main (f32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
@@ -381,7 +381,7 @@ void unit_test_reduc_max_usm_group_impl() {
 
     unit_test_reduc_max_usm<u32>(
         "reduction : main (u32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
@@ -390,7 +390,7 @@ void unit_test_reduc_max_usm_group_impl() {
 
     unit_test_reduc_max_usm<f64_3>(
         "reduction : main (f64_3)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
@@ -403,7 +403,7 @@ void unit_test_reduc_sum_usm_fallback_impl() {
 
     unit_test_reduc_sum_usm<f64>(
         "reduction : main (f64)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
@@ -412,7 +412,7 @@ void unit_test_reduc_sum_usm_fallback_impl() {
 
     unit_test_reduc_sum_usm<f32>(
         "reduction : main (f32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
@@ -421,7 +421,7 @@ void unit_test_reduc_sum_usm_fallback_impl() {
 
     unit_test_reduc_sum_usm<u32>(
         "reduction : main (u32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
@@ -430,7 +430,7 @@ void unit_test_reduc_sum_usm_fallback_impl() {
 
     unit_test_reduc_sum_usm<f64_3>(
         "reduction : main (f64_3)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
@@ -441,7 +441,7 @@ void unit_test_reduc_min_usm_fallback_impl() {
 
     unit_test_reduc_min_usm<f64>(
         "reduction : main (f64)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
@@ -450,7 +450,7 @@ void unit_test_reduc_min_usm_fallback_impl() {
 
     unit_test_reduc_min_usm<f32>(
         "reduction : main (f32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
@@ -459,7 +459,7 @@ void unit_test_reduc_min_usm_fallback_impl() {
 
     unit_test_reduc_min_usm<u32>(
         "reduction : main (u32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
@@ -468,7 +468,7 @@ void unit_test_reduc_min_usm_fallback_impl() {
 
     unit_test_reduc_min_usm<f64_3>(
         "reduction : main (f64_3)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
@@ -479,7 +479,7 @@ void unit_test_reduc_max_usm_fallback_impl() {
 
     unit_test_reduc_max_usm<f64>(
         "reduction : main (f64)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
@@ -488,7 +488,7 @@ void unit_test_reduc_max_usm_fallback_impl() {
 
     unit_test_reduc_max_usm<f32>(
         "reduction : main (f32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
@@ -497,7 +497,7 @@ void unit_test_reduc_max_usm_fallback_impl() {
 
     unit_test_reduc_max_usm<u32>(
         "reduction : main (u32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
@@ -506,7 +506,7 @@ void unit_test_reduc_max_usm_fallback_impl() {
 
     unit_test_reduc_max_usm<f64_3>(
         "reduction : main (f64_3)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
@@ -517,7 +517,7 @@ void unit_test_reduc_sum_usm() {
 
     unit_test_reduc_sum_usm<f64>(
         "reduction : main (f64)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
@@ -526,7 +526,7 @@ void unit_test_reduc_sum_usm() {
 
     unit_test_reduc_sum_usm<f32>(
         "reduction : main (f32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
@@ -535,7 +535,7 @@ void unit_test_reduc_sum_usm() {
 
     unit_test_reduc_sum_usm<u32>(
         "reduction : main (u32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
@@ -544,7 +544,7 @@ void unit_test_reduc_sum_usm() {
 
     unit_test_reduc_sum_usm<f64_3>(
         "reduction : main (f64_3)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
@@ -555,7 +555,7 @@ void unit_test_reduc_min_usm() {
 
     unit_test_reduc_min_usm<f64>(
         "reduction : main (f64)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
@@ -564,7 +564,7 @@ void unit_test_reduc_min_usm() {
 
     unit_test_reduc_min_usm<f32>(
         "reduction : main (f32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
@@ -573,7 +573,7 @@ void unit_test_reduc_min_usm() {
 
     unit_test_reduc_min_usm<u32>(
         "reduction : main (u32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
@@ -582,7 +582,7 @@ void unit_test_reduc_min_usm() {
 
     unit_test_reduc_min_usm<f64_3>(
         "reduction : main (f64_3)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
@@ -593,7 +593,7 @@ void unit_test_reduc_max_usm() {
 
     unit_test_reduc_max_usm<f64>(
         "reduction : main (f64)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
@@ -602,7 +602,7 @@ void unit_test_reduc_max_usm() {
 
     unit_test_reduc_max_usm<f32>(
         "reduction : main (f32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
@@ -611,7 +611,7 @@ void unit_test_reduc_max_usm() {
 
     unit_test_reduc_max_usm<u32>(
         "reduction : main (u32)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
@@ -620,7 +620,7 @@ void unit_test_reduc_max_usm() {
 
     unit_test_reduc_max_usm<f64_3>(
         "reduction : main (f64_3)",
-        [](sham::DeviceScheduler_ptr &sched,
+        [](const sham::DeviceScheduler_ptr &sched,
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {

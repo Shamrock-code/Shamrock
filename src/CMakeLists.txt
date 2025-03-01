@@ -13,6 +13,7 @@ set(as_subproject
   shambindings
   shamtree
   shamlib
+  shampylib
 
   shammodels_common
   shammodels_nbody
@@ -42,6 +43,7 @@ add_subdirectory(shamphys)
 add_subdirectory(shamsys)
 add_subdirectory(shamtree)
 add_subdirectory(shamrock)
+add_subdirectory(shampylib)
 
 add_subdirectory(shammodels/common)
 add_subdirectory(shammodels/nbody)

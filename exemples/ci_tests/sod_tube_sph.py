@@ -19,7 +19,7 @@ resol = 128
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_SPHModel(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
+model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M6")
 
 cfg = model.gen_default_config()
 #cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
@@ -87,34 +87,61 @@ sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, 0.0, -0.5,0.5)
 rho, v, P = sodanalysis.compute_L2_dist()
 vx,vy,vz = v
 
+print("current errors :")
+print(f"err_rho = {rho}")
+print(f"err_vx = {vx}")
+print(f"err_vy = {vy}")
+print(f"err_vz = {vz}")
+print(f"err_P = {P}")
+
 # normally :
 # rho 0.0001615491818848632
 # v (0.0011627047434807855, 2.9881306160215856e-05, 1.7413547093275864e-07)
 # P0.0001248364612976704
 
 test_pass = True
-pass_rho = 0.0001615491818848697
-pass_vx = 0.0011627047434809158
-pass_vy = 2.9881306160215856e-05
-pass_vz = 1.7413547093275864e-07
-pass_P = 0.0001248364612976704
+
+expect_rho = 0.00016154918188486815
+expect_vx = 0.001162704743480841
+expect_vy = 2.988130616021184e-05
+expect_vz = 1.7413547093230376e-07
+expect_P = 0.00012483646129766217
+
+tol = 1e-11
+
+def float_equal (val1, val2, prec):
+    return abs(val1 - val2) < prec
 
 err_log = ""
 
-if rho > pass_rho:
-    err_log += ("error on rho is too high "+str(rho) +">"+str(pass_rho) ) + "\n"
+if not float_equal(rho, expect_rho, tol*expect_rho):
+    err_log += "error on rho is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_rho} +- {tol*expect_rho}\n"
+    err_log += f"  obtained error = {rho} (relative error = {(rho - expect_rho)/expect_rho})\n"
     test_pass = False
-if vx > pass_vx:
-    err_log += ("error on vx is too high "+str(vx) +">"+str(pass_vx) )+ "\n"
+
+if not float_equal(vx, expect_vx, tol*expect_vx):
+    err_log += "error on vx is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_vx} +- {tol*expect_vx}\n"
+    err_log += f"  obtained error = {vx} (relative error = {(vx - expect_vx)/expect_vx})\n"
     test_pass = False
-if vy > pass_vy:
-    err_log += ("error on vy is too high "+str(vy) +">"+str(pass_vy) )+ "\n"
+
+if not float_equal(vy, expect_vy, tol*expect_vy):
+    err_log += "error on vy is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_vy} +- {tol*expect_vy}\n"
+    err_log += f"  obtained error = {vy} (relative error = {(vy - expect_vy)/expect_vy})\n"
     test_pass = False
-if vz > pass_vz:
-    err_log += ("error on vz is too high "+str(vz) +">"+str(pass_vz) )+ "\n"
+
+if not float_equal(vz, expect_vz, tol*expect_vz):
+    err_log += "error on vz is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_vz} +- {tol*expect_vz}\n"
+    err_log += f"  obtained error = {vz} (relative error = {(vz - expect_vz)/expect_vz})\n"
     test_pass = False
-if P > pass_P:
-    err_log += ("error on P is too high "+str(P) +">"+str(pass_P) )+ "\n"
+
+if not float_equal(P, expect_P, tol*expect_P):
+    err_log += "error on P is outside of tolerances:\n"
+    err_log += f"  expected error = {expect_P} +- {tol*expect_P}\n"
+    err_log += f"  obtained error = {P} (relative error = {(P - expect_P)/expect_P})\n"
     test_pass = False
 
 if test_pass == False:

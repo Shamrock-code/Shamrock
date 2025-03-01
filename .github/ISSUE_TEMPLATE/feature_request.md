@@ -1,8 +1,8 @@
 ---
 name: Feature request
 about: Suggest an idea for this project
-title: ''
-labels: ''
+title: "[Name of the concerned module] Name of the issue"
+labels: feature-request
 assignees: ''
 
 ---

@@ -31,6 +31,7 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/RadixTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <variant>
@@ -96,6 +97,10 @@ namespace shammodels::sph {
 
         Variant current_mode = None{};
 
+        inline void set_none() { current_mode = None{}; }
+        inline void set_monofluid_tvi(u32 nvar) { current_mode = MonofluidTVI{nvar}; }
+        inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
+
         inline bool has_epsilon_field() {
             return bool(std::get_if<MonofluidTVI>(&current_mode))
                    || bool(std::get_if<MonofluidComplete>(&current_mode));
@@ -156,6 +161,8 @@ struct shammodels::sph::SolverConfig {
     using Kernel = SPHKernel<Tscal>;
     /// The type of the Morton code for the tree
     using u_morton = u32;
+
+    using RTree = RadixTree<u_morton, Tvec>;
 
     /// The radius of the sph kernel
     static constexpr Tscal Rkern = Kernel::Rkern;

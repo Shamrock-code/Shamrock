@@ -17,3 +17,6 @@
 [submodule "doc/mkdocs/docs/assets/large-figures"]
 	path = doc/mkdocs/docs/assets/large-figures
 	url = https://github.com/Shamrock-code/doc-figures.git
+[submodule "doc/sphinx/source/_static/large-figures"]
+	path = doc/sphinx/source/_static/large-figures
+	url = https://github.com/Shamrock-code/doc-figures.git

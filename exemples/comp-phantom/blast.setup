@@ -1,6 +1,0 @@
-# input file for Sedov Blast Wave setup routine
-
-# particle resolution & placement
-              npartx =          50    ! number of particles in x-direction
-             lattice =           2    ! particle lattice (1=cubic,2=closepacked,3=hcp,4=random)
-       shuffle_parts =           F    ! relax particles by shuffling

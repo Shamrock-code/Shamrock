@@ -1,0 +1,60 @@
+name: GithubPage
+
+on:
+  workflow_call:
+    inputs:
+      upload-page-artifact:
+        type: boolean
+        required: true
+
+jobs:
+
+  make_GithubPage:
+    name: "Build & upload"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 'Download Doc'
+        uses: actions/download-artifact@v4
+        with:
+          name: shamrock_documentation
+
+      - name: ls local
+        run : ls -la
+
+      - name: 'Extract Doc'
+        run: |
+          tar -xvf documentation.tar.gz
+
+      - name: ls local
+        run : ls -la
+
+      - name: 'Clean Files'
+        run: |
+          rm documentation.tar.gz
+          mv doc/_build/* .
+          rm -r doc
+
+      - name: 'Download coverage report'
+        uses: actions/download-artifact@v4
+        with:
+          name: code-coverage-report-acpp_omp_debug
+          path: coverage
+
+      - name: 'Download Py doc'
+        uses: actions/download-artifact@v4
+        with:
+          name: sphinx_doc
+          path: sphinx
+
+      - name: Archive generated page
+        uses: actions/upload-artifact@v4
+        with:
+          name: shamrock_github_page
+          path: ./
+
+      - name: Upload page artifact
+        if: ${{ inputs.upload-page-artifact }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./

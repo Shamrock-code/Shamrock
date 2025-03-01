@@ -4,10 +4,6 @@ project(Shammodels_common CXX C)
 
 set(Sources
     src/EOSConfig.cpp
-    src/pyAABB.cpp
-    src/pySfc.cpp
-    src/pyShamrockCtx.cpp
-    src/pyShamsys.cpp
     src/pyAMRTestModel.cpp
     src/pyAMRGrid.cpp
 )

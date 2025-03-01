@@ -60,11 +60,12 @@ namespace shammodels::sph {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
-        using u_morton           = u32;
-
-        static constexpr Tscal Rkern = Kernel::Rkern;
 
         using Config = SolverConfig<Tvec, SPHKernel>;
+
+        using u_morton = typename Config::u_morton;
+
+        static constexpr Tscal Rkern = Kernel::Rkern;
 
         ShamrockCtx &context;
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
@@ -124,7 +125,7 @@ namespace shammodels::sph {
         void merge_position_ghost();
 
         // trees
-        using RTree = RadixTree<u_morton, Tvec>;
+        using RTree = typename Config::RTree;
         void build_merged_pos_trees();
         void clear_merged_pos_trees();
 

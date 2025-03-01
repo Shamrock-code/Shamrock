@@ -115,11 +115,13 @@ int main(int argc, char *argv[]) {
                 shambase::term_colors::col8b_green() + "Ok" + shambase::term_colors::reset());
 
             shamsys::instance::print_mpi_capabilities();
-
-            shamsys::instance::check_dgpu_available();
-            auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-            shamcomm::validate_comm(sptr);
         }
+    }
+
+    if (shamsys::instance::is_initialized()) {
+        shamsys::instance::check_dgpu_available();
+        auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+        shamcomm::validate_comm(sptr);
     }
 
     if (opts::has_option("--benchmark-mpi")) {

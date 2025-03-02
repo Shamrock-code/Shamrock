@@ -69,7 +69,7 @@ namespace shamtree {
         sham::DeviceBuffer<Tmorton> &&cache_buf_morton_codes) {
 
         sham::DeviceBuffer<Tmorton> morton_codes
-            = std::forward<sham::DeviceBuffer<Tmorton>>(morton_codes);
+            = std::forward<sham::DeviceBuffer<Tmorton>>(cache_buf_morton_codes);
 
         if (morton_count < cnt_obj) {
             shambase::throw_with_loc<std::invalid_argument>(shambase::format(

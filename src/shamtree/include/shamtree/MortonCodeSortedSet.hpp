@@ -72,4 +72,21 @@ namespace shamtree {
         const sham::DeviceScheduler_ptr &dev_sched,
         MortonCodeSet<Tmorton, Tvec, dim> &&morton_codes_set);
 
+    /**
+     * @brief Sorts a set of Morton codes and creates a new
+     * MortonCodeSortedSet object with the sorted codes and the
+     * associated map from sorted Morton code to object id
+     *
+     * @param dev_sched The SYCL device scheduler to use
+     * @param morton_codes_set The MortonCodeSet to be sorted
+     * @param cached_map_morton_id_to_obj_id A pre-allocated device buffer to store the map
+     * from sorted Morton code to object id
+     * @return A new MortonCodeSortedSet object with the sorted codes and the associated map
+     */
+    template<class Tmorton, class Tvec, u32 dim>
+    MortonCodeSortedSet<Tmorton, Tvec, dim> sort_morton_set(
+        const sham::DeviceScheduler_ptr &dev_sched,
+        MortonCodeSet<Tmorton, Tvec, dim> &&morton_codes_set,
+        sham::DeviceBuffer<u32> &&cached_map_morton_id_to_obj_id);
+
 } // namespace shamtree

@@ -21,6 +21,28 @@ axs[1,0].plot(r_theo, p_theo/((gamma - 1)*rho_theo),c = 'red',label = "u (theory
 axs[0,1].plot(r_theo, rho_theo,c = 'red',label = "rho (theory)")
 axs[1,1].plot(r_theo, p_theo,c = 'red',label = "P (theory)")
 
+print("double r_theo[] ={")
+for a in r_theo:
+    print(f"    {a:.17e},")
+print("};")
+
+
+print("double vr_theo[] ={")
+for a in vr_theo:
+    print(f"    {a:.17e},")
+print("};")
+
+
+print("double rho_theo[] ={")
+for a in rho_theo:
+    print(f"    {a:.17e},")
+print("};")
+
+
+print("double p_theo[] ={")
+for a in p_theo:
+    print(f"    {a:.17e},")
+print("};")
 
 axs[0,0].set_ylabel(r"$v$")
 axs[1,0].set_ylabel(r"$u$")

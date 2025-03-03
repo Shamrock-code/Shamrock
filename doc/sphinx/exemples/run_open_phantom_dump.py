@@ -31,3 +31,5 @@ dump = shamrock.load_phantom_dump(filename)
 # Print the data
 
 dump.print_state()
+
+a=b

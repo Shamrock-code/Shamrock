@@ -43,4 +43,13 @@ namespace shamcomm {
      */
     void fetch_world_info();
 
+    /**
+     * @brief Check if MPI is initialized
+     *
+     * This function returns true if MPI has been initialized, false otherwise.
+     *
+     * @return true if MPI is initialized, false otherwise
+     */
+    bool is_mpi_initialized();
+
 } // namespace shamcomm

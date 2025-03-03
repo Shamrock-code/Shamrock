@@ -68,13 +68,20 @@ namespace shamalgs::algorithm {
         });
     }
 
+    void
+    fill_buffer_index_usm(sham::DeviceScheduler_ptr sched, u32 len, sham::DeviceBuffer<u32> &buf) {
+        buf.resize(len);
+
+        sham::kernel_call(
+            sched->get_queue(), sham::MultiRef{}, sham::MultiRef{buf}, len, [](u32 i, u32 *idx) {
+                idx[i] = i;
+            });
+    }
+
     sham::DeviceBuffer<u32> gen_buffer_index_usm(sham::DeviceScheduler_ptr sched, u32 len) {
         sham::DeviceBuffer<u32> ret(len, sched);
 
-        sham::kernel_call(
-            sched->get_queue(), sham::MultiRef{}, sham::MultiRef{ret}, len, [](u32 i, u32 *idx) {
-                idx[i] = i;
-            });
+        fill_buffer_index_usm(sched, len, ret);
 
         return ret;
     }

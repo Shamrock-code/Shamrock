@@ -87,30 +87,10 @@ namespace shamsys::instance {
      * ```
      */
     void init(int argc, char *argv[]);
-    void init_auto(std::string search_key, MPIInitInfo mpi_info);
 
-    /**
-     * @brief select & start the sycl queues
-     *
-     * @param alt_id
-     * @param compute_id
-     */
-    void start_sycl(u32 alt_id, u32 compute_id);
+    void start_mpi(MPIInitInfo mpi_info);
 
-    void start_sycl_auto(std::string search_key);
-
-    /**
-     * @brief initialize the NodeInstance from user inputs
-     * ```
-     * int main(int argc, char *argv[]){
-     *     shamsys::instance::init(SyclInitInfo{alt_id, comp_id}, MPIInitInfo{argc, argv});
-     *     ... do stuff ...
-     *     shamsys::instance::close();
-     * }
-     * ```
-     */
-    void init(SyclInitInfo sycl_info, MPIInitInfo mpi_info);
-    void init_auto(std::string search_key, MPIInitInfo mpi_info);
+    void init_sycl_mpi(std::string search_key, MPIInitInfo mpi_info);
 
     /**
      * @brief close the NodeInstance

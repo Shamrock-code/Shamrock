@@ -65,6 +65,34 @@ namespace shamtree {
      * @param cnt_obj The count of objects in the buffer
      * @param morton_count The count of Morton codes in the output set
      * (can be different from cnt_obj)
+     * @param cache_buf_morton_codes A device buffer to be reused for the output Morton codes
+     *
+     * If morton_count > cnt_obj, the extra Morton codes will be set to an error code larger than
+     * any valid Morton code.
+     *
+     * @return The MortonCodeSet, containing the bounding box, the count of objects
+     * and the Morton codes. The Morton codes are sorted in ascending order.
+     *
+     * @note morton_count >= cnt_obj
+     */
+    template<class Tmorton, class Tvec, u32 dim>
+    MortonCodeSet<Tmorton, Tvec, dim> morton_code_set_from_positions(
+        const sham::DeviceScheduler_ptr &dev_sched,
+        shammath::AABB<Tvec> bounding_box,
+        sham::DeviceBuffer<Tvec> &pos_buf,
+        u32 cnt_obj,
+        u32 morton_count,
+        sham::DeviceBuffer<Tmorton> &&cache_buf_morton_codes);
+
+    /**
+     * @brief Generate a set of Morton codes from a buffer of positions
+     *
+     * @param dev_sched The device scheduler for the computation
+     * @param bounding_box The bounding box containing all positions
+     * @param pos_buf The device buffer containing the positions
+     * @param cnt_obj The count of objects in the buffer
+     * @param morton_count The count of Morton codes in the output set
+     * (can be different from cnt_obj)
      *
      * If morton_count > cnt_obj, the extra Morton codes will be set to an error code larger than
      * any valid Morton code.

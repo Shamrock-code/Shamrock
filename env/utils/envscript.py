@@ -1,5 +1,6 @@
 import os
 
+
 def write_env_file(source_path, header, path_write):
 
     ENV_SCRIPT_CONTENT = header + "\n"

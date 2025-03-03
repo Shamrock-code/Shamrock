@@ -1,28 +1,29 @@
-
+import importlib.util
 import os
 import shutil
 
-import importlib.util
 psutil_spec = importlib.util.find_spec("psutil")
 psutil_found = psutil_spec is not None
 
 if psutil_found:
     import psutil
 
+
 def is_ninja_available():
     return not (shutil.which("ninja") == None)
+
 
 def get_avail_mem():
     import subprocess
 
     if psutil_found:
-        return (psutil.virtual_memory().available)/1e6
+        return (psutil.virtual_memory().available) / 1e6
 
     try:
-        free_available = not (os.popen('free -m -t').read() == "")
+        free_available = not (os.popen("free -m -t").read() == "")
 
         if free_available:
-            free_res = os.popen('free -m -t').readlines()[1:]
+            free_res = os.popen("free -m -t").readlines()[1:]
             out = 0
             for l in free_res:
                 l = l.split()[1:]
@@ -30,25 +31,27 @@ def get_avail_mem():
                     tot_m, used_m, free_m = map(int, l)
                     out = max(out, free_m)
                 else:
-                    tot_m, used_m, free_m,sharedmem,bufcache,avail = map(int, l)
+                    tot_m, used_m, free_m, sharedmem, bufcache, avail = map(int, l)
                     out = max(out, free_m)
                     out = max(out, avail)
 
             return out
-        #else:
+        # else:
         #    print(os.popen('vm_stat | grep page size').readlines())
     except:
         print("Available memory can not be detected using free")
         print("Error was :")
         import traceback
+
         print(traceback.format_exc())
 
     print("Available memory can not be detected -> assuming 16Go")
-    return 1e9*16
+    return 1e9 * 16
+
 
 def should_limit_comp_cores():
     MAX_COMP_SZ = 1e9
-    avail = get_avail_mem()*1e6
+    avail = get_avail_mem() * 1e6
 
     limit = False
     cnt = os.cpu_count()
@@ -61,11 +64,9 @@ def should_limit_comp_cores():
         limit = True
         if cnt < 1:
             cnt = 1
-        print("   ->  limiting to", cnt,"cores")
+        print("   ->  limiting to", cnt, "cores")
 
-    return limit,cnt
-
-
+    return limit, cnt
 
 
 def select_generator(args, buildtype):
@@ -84,18 +85,18 @@ def select_generator(args, buildtype):
     cmake_gen = ""
     if gen == "make":
         cmake_gen = "Unix Makefiles"
-        gen_opt = " -j "+str(cores)
+        gen_opt = " -j " + str(cores)
     elif gen == "ninja":
         cmake_gen = "Ninja"
         if limit_cores:
-            gen_opt = " -j "+str(cores)
+            gen_opt = " -j " + str(cores)
         else:
             gen_opt = ""
     else:
-        raise "unknown generator "+gen
+        raise "unknown generator " + gen
 
     if args.gen == None:
-        print("-- generator not specified, defaulting to :",gen)
+        print("-- generator not specified, defaulting to :", gen)
 
     cmake_buildt = "Release"
     if buildtype == "release":
@@ -111,4 +112,4 @@ def select_generator(args, buildtype):
     else:
         raise "Unknown build type"
 
-    return gen, gen_opt, cmake_gen,cmake_buildt
+    return gen, gen_opt, cmake_gen, cmake_buildt

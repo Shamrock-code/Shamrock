@@ -1,15 +1,17 @@
 import argparse
 import os
+
 import utils.acpp
-import utils.sysinfo
 import utils.envscript
-from utils.setuparg import *
+import utils.sysinfo
 from utils.oscmd import *
+from utils.setuparg import *
 
 NAME = "NixOS generic AdaptiveCpp"
 PATH = "machine/nixos/acpp"
 
-def setup(arg : SetupArg):
+
+def setup(arg: SetupArg):
     argv = arg.argv
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
@@ -18,44 +20,44 @@ def setup(arg : SetupArg):
     lib_mode = arg.lib_mode
 
     print("------------------------------------------")
-    print("Running env setup for : "+NAME)
+    print("Running env setup for : " + NAME)
     print("------------------------------------------")
 
-    parser = argparse.ArgumentParser(prog=PATH,description= NAME+' env for Shamrock')
+    parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
-    parser.add_argument("--backend", action='store', help="sycl backend to use")
-    parser.add_argument("--arch", action='store', help="arch to build")
-    parser.add_argument("--gen", action='store', help="generator to use (ninja or make)")
+    parser.add_argument("--backend", action="store", help="sycl backend to use")
+    parser.add_argument("--arch", action="store", help="arch to build")
+    parser.add_argument("--gen", action="store", help="generator to use (ninja or make)")
 
     args = parser.parse_args(argv)
 
     acpp_target = utils.acpp.get_acpp_target_env(args)
-    if (acpp_target == None):
+    if acpp_target == None:
         print("-- target not specified using acpp default")
     else:
-        print("-- setting acpp target to :",acpp_target)
+        print("-- setting acpp target to :", acpp_target)
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
-    ACPP_GIT_DIR = builddir+"/.env/acpp-git"
+    ACPP_GIT_DIR = builddir + "/.env/acpp-git"
     ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
     ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
 
-    ENV_SCRIPT_PATH = builddir+"/activate"
+    ENV_SCRIPT_PATH = builddir + "/activate"
 
     ENV_SCRIPT_HEADER = ""
-    ENV_SCRIPT_HEADER += "export SHAMROCK_DIR="+shamrockdir+"\n"
-    ENV_SCRIPT_HEADER += "export BUILD_DIR="+builddir+"\n"
-    ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR="+ACPP_GIT_DIR+"\n"
-    ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR="+ACPP_BUILD_DIR+"\n"
-    ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR="+ACPP_INSTALL_DIR+"\n"
+    ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
+    ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
+    ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR=" + ACPP_GIT_DIR + "\n"
+    ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR=" + ACPP_BUILD_DIR + "\n"
+    ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR=" + ACPP_INSTALL_DIR + "\n"
     ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export CMAKE_GENERATOR=\""+cmake_gen+"\"\n"
+    ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'
     ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC="+gen+"\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=("+gen_opt+")\n"
+    ENV_SCRIPT_HEADER += "export MAKE_EXEC=" + gen + "\n"
+    ENV_SCRIPT_HEADER += "export MAKE_OPT=(" + gen_opt + ")\n"
 
-    run_cmd("mkdir -p "+builddir)
+    run_cmd("mkdir -p " + builddir)
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
@@ -63,27 +65,30 @@ def setup(arg : SetupArg):
     cmake_extra_args = ""
     if pylib:
         cmake_extra_args += " -DBUILD_PYLIB=True"
-        run_cmd("cp "+os.path.abspath(os.path.join(cur_file, "../"+"_pysetup.py")) +" "+ builddir+"/setup.py")
+        run_cmd(
+            "cp "
+            + os.path.abspath(os.path.join(cur_file, "../" + "_pysetup.py"))
+            + " "
+            + builddir
+            + "/setup.py"
+        )
 
-    ENV_SCRIPT_HEADER += "export CMAKE_OPT=("+cmake_extra_args+")\n"
-    ENV_SCRIPT_HEADER += "export SHAMROCK_BUILD_TYPE=\""+cmake_build_type+"\"\n"
-    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='"+acpp_target+"'\"\n"
-
+    ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
+    ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'
+    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='" + acpp_target + "'\"\n"
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
     source_file = "env_built_acpp.sh"
     source_nix_file = "shell.nix"
-    source_path = os.path.abspath(os.path.join(cur_file, "../"+source_file))
-    source_nix_path = os.path.abspath(os.path.join(cur_file, "../"+source_nix_file))
+    source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
+    source_nix_path = os.path.abspath(os.path.join(cur_file, "../" + source_nix_file))
 
     utils.envscript.write_env_file(
-        source_path = source_path,
-        header = ENV_SCRIPT_HEADER,
-        path_write = ENV_SCRIPT_PATH)
+        source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
+    )
 
-    INTEL_LLVM_CLONE_HELPER = builddir+"/shell.nix"
+    INTEL_LLVM_CLONE_HELPER = builddir + "/shell.nix"
     utils.envscript.write_env_file(
-        source_path = source_nix_path,
-        header = "",
-        path_write = INTEL_LLVM_CLONE_HELPER)
+        source_path=source_nix_path, header="", path_write=INTEL_LLVM_CLONE_HELPER
+    )

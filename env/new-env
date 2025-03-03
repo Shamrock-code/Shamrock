@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
+import importlib
 import os
 import sys
-import importlib
+
 from utils.setuparg import *
 
 # Get current file path
@@ -15,14 +16,20 @@ abs_proj_dir = os.path.abspath(os.path.join(cur_file, "../.."))
 # Get env directory
 abs_env_dir = os.path.abspath(os.path.join(abs_proj_dir, "env"))
 
+
 def get_machine_list():
     list_machines = {}
 
     import glob
-    for i in glob.glob(abs_env_dir+"/machine/**/setup-env.py", recursive=True):
 
-        path = os.path.relpath(i,abs_env_dir+"/machine").replace("/",".").replace(".setup-env.py","")
-        mod = importlib.import_module("machine."+path+".setup-env")
+    for i in glob.glob(abs_env_dir + "/machine/**/setup-env.py", recursive=True):
+
+        path = (
+            os.path.relpath(i, abs_env_dir + "/machine")
+            .replace("/", ".")
+            .replace(".setup-env.py", "")
+        )
+        mod = importlib.import_module("machine." + path + ".setup-env")
 
         list_machines[path] = mod.NAME
     return list_machines
@@ -31,8 +38,10 @@ def get_machine_list():
 # Customer formatter required to print help message for "--" option.
 class CustomHelpFormatter(argparse.HelpFormatter):
     def format_help(self):
-        USAGESTR="usage: new-env [-h] --machine MACHINE --builddir BUILDDIR"
-        original_help = super().format_help().replace(USAGESTR,USAGESTR+" -- (argument for the env)")
+        USAGESTR = "usage: new-env [-h] --machine MACHINE --builddir BUILDDIR"
+        original_help = (
+            super().format_help().replace(USAGESTR, USAGESTR + " -- (argument for the env)")
+        )
 
         machines = "\nEnvironment list :\n"
         list_machines = get_machine_list()
@@ -41,8 +50,12 @@ class CustomHelpFormatter(argparse.HelpFormatter):
         for k in klist:
             machines += "  " + "{:30s}".format(k) + " " + list_machines[k] + "\n"
 
-        return original_help + "  --                   Everything after this"+ \
-            " will be forwarded to the env. \n" + machines
+        return (
+            original_help
+            + "  --                   Everything after this"
+            + " will be forwarded to the env. \n"
+            + machines
+        )
 
 
 if __name__ == "__main__":
@@ -52,20 +65,32 @@ if __name__ == "__main__":
     for idx, arg in enumerate(sys.argv):
         if arg == "--":
             wrapper_program_args = sys.argv[1:idx]
-            underlying_tool_args = sys.argv[idx + 1:]
+            underlying_tool_args = sys.argv[idx + 1 :]
             break
         else:
             wrapper_program_args = sys.argv[1:]
             underlying_tool_args = []
 
-    parser = argparse.ArgumentParser(formatter_class=CustomHelpFormatter,description='Environment utility for Shamrock')
+    parser = argparse.ArgumentParser(
+        formatter_class=CustomHelpFormatter, description="Environment utility for Shamrock"
+    )
 
-    parser.add_argument("--machine", action='store', required=True , help="machine assumed for the environment")
-    parser.add_argument("--builddir", action='store', required=True , help="build directory to use")
-    parser.add_argument("--type", action='store', default="release", help="build type to use")
-    parser.add_argument("--pylib", action='store_true', default=False, help="build the project as python lib")
+    parser.add_argument(
+        "--machine", action="store", required=True, help="machine assumed for the environment"
+    )
+    parser.add_argument("--builddir", action="store", required=True, help="build directory to use")
+    parser.add_argument("--type", action="store", default="release", help="build type to use")
+    parser.add_argument(
+        "--pylib", action="store_true", default=False, help="build the project as python lib"
+    )
 
-    parser.add_argument("--lib",choices=["shared","object"], action='store', default="shared", help="shamrock libraries mode")
+    parser.add_argument(
+        "--lib",
+        choices=["shared", "object"],
+        action="store",
+        default="shared",
+        help="shamrock libraries mode",
+    )
 
     args = parser.parse_args(wrapper_program_args)
     args.underlying_tool_args = underlying_tool_args
@@ -76,14 +101,14 @@ if __name__ == "__main__":
     # Load the machine file
     # TODO add check that the file exist
     importlib.invalidate_caches()
-    mod = importlib.import_module("machine."+args.machine+".setup-env")
+    mod = importlib.import_module("machine." + args.machine + ".setup-env")
     mod.setup(
-            SetupArg(
-                argv = underlying_tool_args,
-                builddir = os.path.abspath(os.path.expanduser(args.builddir)),
-                shamrockdir = abs_proj_dir,
-                buildtype = args.type,
-                pylib = args.pylib,
-                lib_mode = args.lib
-            )
+        SetupArg(
+            argv=underlying_tool_args,
+            builddir=os.path.abspath(os.path.expanduser(args.builddir)),
+            shamrockdir=abs_proj_dir,
+            buildtype=args.type,
+            pylib=args.pylib,
+            lib_mode=args.lib,
         )
+    )

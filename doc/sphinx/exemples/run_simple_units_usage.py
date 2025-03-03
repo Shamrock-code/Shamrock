@@ -16,7 +16,7 @@ si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
 
 # %%
-print("An au in SI units is",sicte.au())
+print("An au in SI units is", sicte.au())
 
 # %%
 
@@ -25,9 +25,10 @@ print("An au in SI units is",sicte.au())
 
 # Create a unit system with time in years, length in au, mass in solar masses
 codeu = shamrock.UnitSystem(
-    unit_time = 3600*24*365,
-    unit_length = sicte.au(),
-    unit_mass = sicte.sol_mass(), )
+    unit_time=3600 * 24 * 365,
+    unit_length=sicte.au(),
+    unit_mass=sicte.sol_mass(),
+)
 
 # Get the physical constants in this unit system
 ucte = shamrock.Constants(codeu)

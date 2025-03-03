@@ -4,27 +4,28 @@ import sys
 import yaml
 
 precommit_yaml = {}
-with open('.pre-commit-config.yaml', 'r') as file:
-   precommit_yaml = yaml.safe_load(file)
+with open(".pre-commit-config.yaml", "r") as file:
+    precommit_yaml = yaml.safe_load(file)
 
 logfiles_map = {}
 for repos in precommit_yaml["repos"]:
     for hooks in repos["hooks"]:
         if "log_file" in hooks:
-            logfiles_map[hooks["log_file"]] = {
-                    "id" : hooks["id"]
-                }
-#print(logfiles_map)
+            logfiles_map[hooks["log_file"]] = {"id": hooks["id"]}
+# print(logfiles_map)
 
-file_list = glob.glob("log_precommit_*",recursive=True)
+file_list = glob.glob("log_precommit_*", recursive=True)
+
 
 def load_file(fname):
-    f = open(fname,'r')
+    f = open(fname, "r")
     source = f.read()
     f.close()
     return source
 
+
 dic = []
+
 
 def trunctate_diff(st):
     if len(st) > 32768:
@@ -32,14 +33,17 @@ def trunctate_diff(st):
     else:
         return st
 
+
 print("# Pre commit report")
 print()
-print("Some failures were detected in pre-commit checks.\n Check the `On PR / Linting / Pre-commit CI (pull_request)` job in the tests for more detailled output")
+print(
+    "Some failures were detected in pre-commit checks.\n Check the `On PR / Linting / Pre-commit CI (pull_request)` job in the tests for more detailled output"
+)
 print()
 for f in file_list:
-    #print(f)
+    # print(f)
     log_f = load_file(f)
-    #print(log_f)
+    # print(log_f)
 
     if f == "log_precommit_check_sycl_include":
         print(log_f)
@@ -50,7 +54,7 @@ for f in file_list:
     elif f == "log_precommit_doxygen_header":
         print(log_f)
     else:
-        print("# ❌",logfiles_map[f]["id"])
+        print("# ❌", logfiles_map[f]["id"])
         print("```")
         print(log_f)
         print("```")

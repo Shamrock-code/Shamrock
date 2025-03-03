@@ -1,15 +1,13 @@
-import shamrock
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
-def run_sim(vanleer = True, label = "none"):
+import shamrock
+
+
+def run_sim(vanleer=True, label="none"):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
-    model = shamrock.get_Model_Ramses(
-        context = ctx,
-        vector_type = "f64_3",
-        grid_repr = "i64_3")
-
+    model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
     multx = 1
     multy = 1
@@ -19,7 +17,7 @@ def run_sim(vanleer = True, label = "none"):
     base = 32
 
     cfg = model.gen_default_config()
-    scale_fact = 1/(sz*base*multx)
+    scale_fact = 1 / (sz * base * multx)
     cfg.set_scale_factor(scale_fact)
     cfg.set_riemann_solver_hllc()
     cfg.set_eos_gamma(1.66667)
@@ -30,50 +28,50 @@ def run_sim(vanleer = True, label = "none"):
     # cfg.set_drag_mode_no_drag()
 
     model.set_config(cfg)
-    model.init_scheduler(int(1e7),1)
-    model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
+    model.init_scheduler(int(1e7), 1)
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
-    def rho_map(rmin,rmax):
-        x,y,z = rmin
+    def rho_map(rmin, rmax):
+        x, y, z = rmin
         if x > 0.25 and x < 0.75:
             return 2
-        return 1.
+        return 1.0
 
-    def rhoe_map(rmin,rmax):
-        rho = rho_map(rmin,rmax)
-        return 1.*rho
+    def rhoe_map(rmin, rmax):
+        rho = rho_map(rmin, rmax)
+        return 1.0 * rho
 
-    def rhovel_map(rmin,rmax):
-        rho = rho_map(rmin,rmax)
-        return (1 *rho,0 *rho,0 *rho)
+    def rhovel_map(rmin, rmax):
+        rho = rho_map(rmin, rmax)
+        return (1 * rho, 0 * rho, 0 * rho)
 
-    def rho_d_map(rmin,rmax):
-        x,y,z = rmin
+    def rho_d_map(rmin, rmax):
+        x, y, z = rmin
         if x > 0.25 and x < 0.75:
             return 2
-        return 1.
+        return 1.0
 
-    def rhovel_d_map(rmin,rmax):
-        x,y,z = rmin
-        rho = rho_d_map(rmin,rmax)
-        return (1 *rho,0 *rho,0 *rho)
+    def rhovel_d_map(rmin, rmax):
+        x, y, z = rmin
+        rho = rho_d_map(rmin, rmax)
+        return (1 * rho, 0 * rho, 0 * rho)
 
-    def rho_d_map_1(rmin,rmax):
-        x,y,z = rmin
+    def rho_d_map_1(rmin, rmax):
+        x, y, z = rmin
         if x > 0.25 and x < 0.75:
             return 2
-        return 1.
+        return 1.0
 
-    def rhovel_d_map_1(rmin,rmax):
-        x,y,z = rmin
-        rho = rho_d_map_1(rmin,rmax)
-        return (1.25 *rho,0 *rho,0 *rho)
+    def rhovel_d_map_1(rmin, rmax):
+        x, y, z = rmin
+        rho = rho_d_map_1(rmin, rmax)
+        return (1.25 * rho, 0 * rho, 0 * rho)
 
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
-    model.set_field_value_lambda_f64("rho_dust", rho_d_map,0)
-    model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map,0)
+    model.set_field_value_lambda_f64("rho_dust", rho_d_map, 0)
+    model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map, 0)
     # model.set_field_value_lambda_f64("rho_dust", rho_d_map_1,1)
     # model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map_1,1)
 
@@ -82,12 +80,11 @@ def run_sim(vanleer = True, label = "none"):
     t = 0
     tend = 0.245
 
-
     for i in range(100):
 
         # if i % freq == 0:
-        model.dump_vtk("test"+str(i)+".vtk")
-        next_dt = model.evolve_once_override_time(t,dt)
+        model.dump_vtk("test" + str(i) + ".vtk")
+        next_dt = model.evolve_once_override_time(t, dt)
 
         t += dt
         dt = next_dt
@@ -99,8 +96,8 @@ def run_sim(vanleer = True, label = "none"):
 
     def convert_to_cell_coords(dic):
 
-        cmin = dic['cell_min']
-        cmax = dic['cell_max']
+        cmin = dic["cell_min"]
+        cmax = dic["cell_max"]
 
         xmin = []
         ymin = []
@@ -111,20 +108,20 @@ def run_sim(vanleer = True, label = "none"):
 
         for i in range(len(cmin)):
 
-            m,M = cmin[i],cmax[i]
+            m, M = cmin[i], cmax[i]
 
-            mx,my,mz = m
-            Mx,My,Mz = M
+            mx, my, mz = m
+            Mx, My, Mz = M
 
             for j in range(8):
-                a,b = model.get_cell_coords(((mx,my,mz), (Mx,My,Mz)),j)
+                a, b = model.get_cell_coords(((mx, my, mz), (Mx, My, Mz)), j)
 
-                x,y,z = a
+                x, y, z = a
                 xmin.append(x)
                 ymin.append(y)
                 zmin.append(z)
 
-                x,y,z = b
+                x, y, z = b
                 xmax.append(x)
                 ymax.append(y)
                 zmax.append(z)
@@ -150,10 +147,11 @@ def run_sim(vanleer = True, label = "none"):
         rho.append(dic["rho"][i])
         rho_d.append(dic["rho_dust"][i])
 
-    plt.plot(X,rho,'.',label='rho')
-    plt.plot(X,rho_d,'.',label='rho_d')
+    plt.plot(X, rho, ".", label="rho")
+    plt.plot(X, rho_d, ".", label="rho_d")
 
-run_sim(vanleer = True, label = "van leer")
+
+run_sim(vanleer=True, label="van leer")
 plt.legend()
 plt.grid()
 plt.savefig("dusty_advect_test.png")

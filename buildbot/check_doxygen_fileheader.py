@@ -1,21 +1,24 @@
-from lib.buildbot import *
 import glob
 import sys
 
+from lib.buildbot import *
+
 print_buildbot_info("licence check tool")
 
-file_list = glob.glob(str(abs_src_dir)+"/**",recursive=True)
+file_list = glob.glob(str(abs_src_dir) + "/**", recursive=True)
 
 file_list.sort()
 
 missing_doxygenfilehead = []
 
+
 def has_header(filedata, filename):
 
-    has_file_tag = ("@file "+filename) in filedata
-    has_author_tag =  ("@author ") in filedata
+    has_file_tag = ("@file " + filename) in filedata
+    has_author_tag = ("@author ") in filedata
 
     return has_file_tag and has_author_tag
+
 
 for fname in file_list:
 
@@ -32,26 +35,25 @@ for fname in file_list:
     if "godbolt.cpp" in fname:
         continue
 
-
-    f = open(fname,'r')
+    f = open(fname, "r")
     res = has_header(f.read(), os.path.basename(fname))
     f.close()
 
-    if not res :
+    if not res:
         missing_doxygenfilehead.append(fname)
 
 
 import re
+
+
 def autocorect(source, filename):
 
-    do_replace = not (("@file "+filename) in source) and (" * @file " in source)
+    do_replace = not (("@file " + filename) in source) and (" * @file " in source)
 
+    source = re.sub(r" \* @file (.+)\n", r" * @file " + filename + "\n", source)
 
+    return do_replace, source
 
-    source = re.sub(r" \* @file (.+)\n", r" * @file "+filename+"\n",source)
-
-
-    return do_replace,source
 
 def run_autocorect():
 
@@ -70,35 +72,32 @@ def run_autocorect():
         if "godbolt.cpp" in fname:
             continue
 
-
-
-        f = open(fname,'r')
+        f = open(fname, "r")
         source = f.read()
         f.close()
 
-
         res = has_header(source, os.path.basename(fname))
 
-        if not res :
-            change, source = autocorect(source,os.path.basename(fname))
+        if not res:
+            change, source = autocorect(source, os.path.basename(fname))
 
             if change:
-                print("autocorect : ",fname.split(abs_proj_dir)[-1])
-                f = open(fname,'w')
+                print("autocorect : ", fname.split(abs_proj_dir)[-1])
+                f = open(fname, "w")
                 f.write(source)
                 f.close()
 
 
-
 def write_file(fname, source):
-    f = open(fname,'w')
+    f = open(fname, "w")
     f.write(source)
     f.close()
+
 
 def make_check_pr_report():
     rep = ""
     rep += "## ❌ Check doxygen headers"
-    rep +="""
+    rep += """
 
 The pre-commit checks have found some files without or with a wrong doxygen file header
 
@@ -120,19 +119,19 @@ At some point we will refer to a guide in the doc about this
     rep += "List of files with errors :\n\n"
 
     for i in missing_doxygenfilehead:
-        rep += (" - `"+i.split(abs_proj_dir)[-1]+"`\n")
+        rep += " - `" + i.split(abs_proj_dir)[-1] + "`\n"
 
     write_file("log_precommit_doxygen_header", rep)
-
 
 
 if len(missing_doxygenfilehead) > 0:
     print(" => \033[1;34mDoxygen header missing in \033[0;0m: ")
 
     for i in missing_doxygenfilehead:
-        print(" -",i.split(abs_proj_dir)[-1])
+        print(" -", i.split(abs_proj_dir)[-1])
 
-    print(r"""
+    print(
+        r"""
 
     Please add a doxygen header in the file above, similar to this :
 
@@ -142,11 +141,12 @@ if len(missing_doxygenfilehead) > 0:
      * @brief ...
      */
 
-    """)
+    """
+    )
 
     run_autocorect()
     make_check_pr_report()
 
     sys.exit("Missing doxygen header for some source files")
-else :
+else:
     print(" => \033[1;34mLicense status \033[0;0m: OK !")

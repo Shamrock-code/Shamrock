@@ -1,7 +1,6 @@
-from enum import Enum
 import json
 import math
-
+from enum import Enum
 
 Tex_template = r"""
 
@@ -76,8 +75,8 @@ class ReportFormat(Enum):
     HTML = 1
     Txt = 1
 
-def load_test_report(file):
 
+def load_test_report(file):
 
     print(file)
 
@@ -89,31 +88,26 @@ def load_test_report(file):
     cur_world_sz = -1
     cur_world_rk = -1
 
-
     cur_assert = ""
     cur_assert_log = ""
     cur_assert_result = -1
 
     cur_assert_log_state = False
 
-
-
-
     dic_loaded = {}
 
-
-    for l in (lst_ln):
+    for l in lst_ln:
         if l.startswith(r"%test_name = "):
 
-            test_name = l[l.find("\"")+1:l.find("\"",l.find("\"")+1)]
+            test_name = l[l.find('"') + 1 : l.find('"', l.find('"') + 1)]
             cur_test = test_name
-            #print(" -> starting_test", test_name)
+            # print(" -> starting_test", test_name)
 
             if not (cur_test in dic_loaded.keys()):
                 dic_loaded[cur_test] = {}
 
         elif l.startswith(r"%end_test"):
-            #print(" -> end_test", test_name)
+            # print(" -> end_test", test_name)
 
             cur_test = ""
             cur_world_sz = -1
@@ -126,58 +120,55 @@ def load_test_report(file):
         #     dic_loaded[cur_test]["world_size"] = cur_world_sz
 
         elif l.startswith(r"%world_rank = "):
-            cur_world_rk = int(l[len("%world_rank = "):])
-            #print("     -> world rank",cur_world_rk)
+            cur_world_rk = int(l[len("%world_rank = ") :])
+            # print("     -> world rank",cur_world_rk)
 
             dic_loaded[cur_test][cur_world_rk] = []
 
-
         elif l.startswith(r"%start_assert"):
-            assert_name = l[l.find("\"")+1:l.find("\"",l.find("\"")+1)]
+            assert_name = l[l.find('"') + 1 : l.find('"', l.find('"') + 1)]
             cur_assert = assert_name
-            #print("         -> start_assert",assert_name)
-
+            # print("         -> start_assert",assert_name)
 
         elif l.startswith(r"%end_assert"):
-            #print("         -> end_assert",cur_assert)
+            # print("         -> end_assert",cur_assert)
 
-            dic_loaded[cur_test][cur_world_rk].append({"name" : cur_assert, "log" : cur_assert_log, "result" : cur_assert_result})
+            dic_loaded[cur_test][cur_world_rk].append(
+                {"name": cur_assert, "log": cur_assert_log, "result": cur_assert_result}
+            )
 
             cur_assert = ""
             cur_assert_log = ""
             cur_assert_result = -1
 
-
-
         elif l.startswith(r"%result = "):
-            cur_assert_result = int(l[len("%result = "):])
-            #print("             -> assert result",assert_name,cur_assert_result)
+            cur_assert_result = int(l[len("%result = ") :])
+            # print("             -> assert result",assert_name,cur_assert_result)
 
         elif l.startswith(r"%startlog"):
             cur_assert_log_state = True
-            #print("             -> start log")
+            # print("             -> start log")
         elif l.startswith(r"%endlog"):
             cur_assert_log_state = False
 
-            #print("             -> end log content : \n",cur_assert_log)
+            # print("             -> end log content : \n",cur_assert_log)
 
         elif cur_assert_log_state:
             cur_assert_log += l + "\n"
 
-
-    return (dic_loaded)
+    return dic_loaded
 
 
 def get_succes_count_data(dt):
     out_dic = {}
-    for k_cur_test in  dt.keys():
+    for k_cur_test in dt.keys():
 
         tmp = {}
 
         sum_cnt_assert = 0
         sum_cnt_succes = 0
 
-        for k_cur_wrk in  dt[k_cur_test].keys():
+        for k_cur_wrk in dt[k_cur_test].keys():
 
             cnt_assert = 0
             cnt_succes = 0
@@ -189,10 +180,8 @@ def get_succes_count_data(dt):
             sum_cnt_assert += cnt_assert
             sum_cnt_succes += cnt_succes
 
-            #print("test ",k_cur_test, "world size =",k_cur_wrk,"| succes rate =",cnt_succes,"/",len(dt[k_cur_test][k_cur_wrk]))
-            tmp[k_cur_wrk] = {"suc_cnt":cnt_succes,"assert_cnt":cnt_assert}
-
-
+            # print("test ",k_cur_test, "world size =",k_cur_wrk,"| succes rate =",cnt_succes,"/",len(dt[k_cur_test][k_cur_wrk]))
+            tmp[k_cur_wrk] = {"suc_cnt": cnt_succes, "assert_cnt": cnt_assert}
 
         tmp["suc_cnt"] = sum_cnt_succes
         tmp["assert_cnt"] = sum_cnt_assert
@@ -201,17 +190,7 @@ def get_succes_count_data(dt):
     return out_dic
 
 
-
-
-
-
-
 def make_tex_repport(dat):
-
-
-
-
-
 
     dic_int = {}
 
@@ -220,19 +199,16 @@ def make_tex_repport(dat):
 
         for k in conf_dic.keys():
             if k.startswith("world_size="):
-                wsz = int(k[len("world_size="):])
+                wsz = int(k[len("world_size=") :])
 
                 dic_int["world size = " + str(wsz)] = {}
-
-
-
 
     for config_k in dat.keys():
         conf_dic = dat[config_k]
 
         for k in conf_dic.keys():
             if k.startswith("world_size="):
-                wsz = int(k[len("world_size="):])
+                wsz = int(k[len("world_size=") :])
 
                 dic_res = load_test_report(dat[config_k][k])
                 dic_suc_cnt = get_succes_count_data(dic_res)
@@ -241,26 +217,22 @@ def make_tex_repport(dat):
                 cnt_succes = 0
 
                 for ktest in dic_suc_cnt.keys():
-                    #cnt_assert += dic_suc_cnt[ktest]["assert_cnt"]
-                    #cnt_succes += dic_suc_cnt[ktest]["suc_cnt"]
+                    # cnt_assert += dic_suc_cnt[ktest]["assert_cnt"]
+                    # cnt_succes += dic_suc_cnt[ktest]["suc_cnt"]
 
                     cnt_test += 1
                     cnt_succes += dic_suc_cnt[ktest]["suc_cnt"] == dic_suc_cnt[ktest]["assert_cnt"]
 
-                dic_int["world size = " + str(wsz)][ dat[config_k]["description"]] = {
-                    "results" : dic_res,
-                    "succes_cnt" : dic_suc_cnt,
-                    "global_suc_cnt" : cnt_succes,
-                    "global_test_cnt" : cnt_test
+                dic_int["world size = " + str(wsz)][dat[config_k]["description"]] = {
+                    "results": dic_res,
+                    "succes_cnt": dic_suc_cnt,
+                    "global_suc_cnt": cnt_succes,
+                    "global_test_cnt": cnt_test,
                 }
 
-
-
     out_file = open("tmp.json", "w")
-    json.dump(dic_int, out_file, indent = 6)
+    json.dump(dic_int, out_file, indent=6)
     out_file.close()
-
-
 
     dic_suc_cnt_global = {}
 
@@ -272,14 +244,15 @@ def make_tex_repport(dat):
         for kconfig in dic_int[kworldsz].keys():
 
             cnt_config += 1
-            cnt_succes +=dic_int[kworldsz][kconfig]["global_suc_cnt"] == dic_int[kworldsz][kconfig]["global_test_cnt"]
+            cnt_succes += (
+                dic_int[kworldsz][kconfig]["global_suc_cnt"]
+                == dic_int[kworldsz][kconfig]["global_test_cnt"]
+            )
 
         dic_suc_cnt_global[kworldsz] = {
-            "global_suc_cnt" : cnt_succes,
-            "global_config_cnt" : cnt_config
+            "global_suc_cnt": cnt_succes,
+            "global_config_cnt": cnt_config,
         }
-
-
 
     tabl_world_sz_res = ""
 
@@ -302,28 +275,26 @@ def make_tex_repport(dat):
         else:
             tabl_world_sz_res += "\FAIL & "
 
-        tabl_world_sz_res += "$" + str(config_suc_cnt) + "/" + str(config_cnt) +r"$\\ \hline"+"\n"
+        tabl_world_sz_res += (
+            "$" + str(config_suc_cnt) + "/" + str(config_cnt) + r"$\\ \hline" + "\n"
+        )
 
     tabl_world_sz_res += r"""
         \end{tabular}\end{center}
     """
 
-
-
-
-
-
-
-
     str_file = ""
 
-
     for kworldsz in dic_int.keys():
-        str_file += r"""
+        str_file += (
+            r"""
             \newpage
              \begin{center}
-            \section{""" +kworldsz + r"""}
+            \section{"""
+            + kworldsz
+            + r"""}
         """
+        )
 
         str_file += r"""
             \begin{tabular}{|c|c|c|}
@@ -344,19 +315,21 @@ def make_tex_repport(dat):
             else:
                 str_file += "\FAIL & "
 
-            str_file += "$" + str(test_suc_cnt) + "/" + str(test_cnt) +r"$\\ \hline"+"\n"
+            str_file += "$" + str(test_suc_cnt) + "/" + str(test_cnt) + r"$\\ \hline" + "\n"
 
         str_file += r"""
             \end{tabular}\end{center}
         """
 
-
         for kconfig in dic_int[kworldsz].keys():
 
-            str_file += r"""
-                \subsection{""" +kconfig + r"""}
+            str_file += (
+                r"""
+                \subsection{"""
+                + kconfig
+                + r"""}
             """
-
+            )
 
             str_file += r"""
             \begin{center}
@@ -371,24 +344,22 @@ def make_tex_repport(dat):
 
                 succes = assert_suc_cnt == assert_cnt
 
-                str_file += r"\verb|"+ktest + "| & "
+                str_file += r"\verb|" + ktest + "| & "
 
                 if succes:
                     str_file += "\OK & "
                 else:
                     str_file += "\FAIL & "
 
-                str_file += "$" + str(assert_suc_cnt) + "/" + str(assert_cnt) +r"$\\ \hline"+"\n"
+                str_file += "$" + str(assert_suc_cnt) + "/" + str(assert_cnt) + r"$\\ \hline" + "\n"
 
             str_file += r"""
                 \end{tabular}\end{center}
             """
 
-
-
-
-
-    out_tex = Tex_template.replace(r"%%tabl_world_sz_res%%",tabl_world_sz_res).replace(r"%%content%%",str_file)
+    out_tex = Tex_template.replace(r"%%tabl_world_sz_res%%", tabl_world_sz_res).replace(
+        r"%%content%%", str_file
+    )
 
     print(out_tex)
 
@@ -397,31 +368,19 @@ def make_tex_repport(dat):
     out_file.close()
 
 
-
-
-
-
-
-
-
-
-
 def make_report(format, out_res_map_file):
 
     out_file = open(out_res_map_file, "r")
     data = json.load(out_file)
     out_file.close()
 
-    #print(data)
+    # print(data)
 
     if format == ReportFormat.Tex:
         make_tex_repport(data)
 
 
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     make_report(ReportFormat.Tex, "../../test_pipeline/test_result_list.json")
 
     # dat_ld = load_test_report("/home/tim/Documents/these/codes/sycl_workspace/shamrock/test_pipeline/build_ss/test_res_2.sutest")

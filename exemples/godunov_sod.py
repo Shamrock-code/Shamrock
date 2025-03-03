@@ -1,18 +1,16 @@
-import shamrock
-import numpy as np
-import matplotlib.pyplot as plt
 import os
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+import shamrock
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_Model_Ramses(
-    context = ctx,
-    vector_type = "f64_3",
-    grid_repr = "i64_3")
+model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
-model.init_scheduler(int(1e7),1)
+model.init_scheduler(int(1e7), 1)
 
 multx = 4
 multy = 1
@@ -20,61 +18,64 @@ multz = 1
 
 sz = 1 << 1
 base = 32
-model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
+model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
 cfg = model.gen_default_config()
-scale_fact = 2/(sz*base*multx)
+scale_fact = 2 / (sz * base * multx)
 cfg.set_scale_factor(scale_fact)
 
 gamma = 1.4
 cfg.set_eos_gamma(gamma)
-#cfg.set_riemann_solver_rusanov()
+# cfg.set_riemann_solver_rusanov()
 cfg.set_riemann_solver_hll()
 
-#cfg.set_slope_lim_none()
-#cfg.set_slope_lim_vanleer_f()
-#cfg.set_slope_lim_vanleer_std()
-#cfg.set_slope_lim_vanleer_sym()
+# cfg.set_slope_lim_none()
+# cfg.set_slope_lim_vanleer_f()
+# cfg.set_slope_lim_vanleer_std()
+# cfg.set_slope_lim_vanleer_sym()
 cfg.set_slope_lim_minmod()
 model.set_config(cfg)
 
 
-kx,ky,kz = 2*np.pi,0,0
+kx, ky, kz = 2 * np.pi, 0, 0
 delta_rho = 1e-2
 
-def rho_map(rmin,rmax):
 
-    x,y,z = rmin
+def rho_map(rmin, rmax):
+
+    x, y, z = rmin
     if x < 1:
         return 1
     else:
         return 0.125
 
 
-etot_L = 1./(gamma-1)
-etot_R = 0.1/(gamma-1)
+etot_L = 1.0 / (gamma - 1)
+etot_R = 0.1 / (gamma - 1)
 
-def rhoetot_map(rmin,rmax):
 
-    rho = rho_map(rmin,rmax)
+def rhoetot_map(rmin, rmax):
 
-    x,y,z = rmin
+    rho = rho_map(rmin, rmax)
+
+    x, y, z = rmin
     if x < 1:
         return etot_L
     else:
         return etot_R
 
-def rhovel_map(rmin,rmax):
-    rho = rho_map(rmin,rmax)
 
-    return (0,0,0)
+def rhovel_map(rmin, rmax):
+    rho = rho_map(rmin, rmax)
+
+    return (0, 0, 0)
 
 
 model.set_field_value_lambda_f64("rho", rho_map)
 model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
 model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
-#model.evolve_once(0,0.1)
+# model.evolve_once(0,0.1)
 freq = 50
 dt = 0.0000
 t = 0
@@ -83,9 +84,9 @@ tend = 0.245
 for i in range(701):
 
     if i % freq == 0:
-        model.dump_vtk("test"+str(i//freq)+".vtk")
+        model.dump_vtk("test" + str(i // freq) + ".vtk")
 
-    next_dt = model.evolve_once_override_time(t,dt)
+    next_dt = model.evolve_once_override_time(t, dt)
 
     t += dt
     dt = next_dt
@@ -96,11 +97,10 @@ for i in range(701):
         break
 
 
-
 def convert_to_cell_coords(dic):
 
-    cmin = dic['cell_min']
-    cmax = dic['cell_max']
+    cmin = dic["cell_min"]
+    cmax = dic["cell_max"]
 
     xmin = []
     ymin = []
@@ -111,20 +111,20 @@ def convert_to_cell_coords(dic):
 
     for i in range(len(cmin)):
 
-        m,M = cmin[i],cmax[i]
+        m, M = cmin[i], cmax[i]
 
-        mx,my,mz = m
-        Mx,My,Mz = M
+        mx, my, mz = m
+        Mx, My, Mz = M
 
         for j in range(8):
-            a,b = model.get_cell_coords(((mx,my,mz), (Mx,My,Mz)),j)
+            a, b = model.get_cell_coords(((mx, my, mz), (Mx, My, Mz)), j)
 
-            x,y,z = a
+            x, y, z = a
             xmin.append(x)
             ymin.append(y)
             zmin.append(z)
 
-            x,y,z = b
+            x, y, z = b
             xmax.append(x)
             ymax.append(y)
             zmax.append(z)
@@ -142,7 +142,6 @@ def convert_to_cell_coords(dic):
 dic = convert_to_cell_coords(ctx.collect_data())
 
 
-
 X = []
 rho = []
 rhovelx = []
@@ -150,7 +149,7 @@ rhoetot = []
 
 for i in range(len(dic["xmin"])):
 
-    X.append(dic["xmin"][i]-0.5)
+    X.append(dic["xmin"][i] - 0.5)
     rho.append(dic["rho"][i])
     rhovelx.append(dic["rhovel"][i][0])
     rhoetot.append(dic["rhoetot"][i])
@@ -162,13 +161,13 @@ rhoetot = np.array(rhoetot)
 
 vx = rhovelx / rho
 
-plt.plot(X,rho,'.',label="rho")
-plt.plot(X,vx,'.',label="v")
-plt.plot(X,(rhoetot - 0.5*rho*(vx**2))*(gamma-1),'.',label="P")
-#plt.plot(X,rhoetot,'.',label="rhoetot")
+plt.plot(X, rho, ".", label="rho")
+plt.plot(X, vx, ".", label="v")
+plt.plot(X, (rhoetot - 0.5 * rho * (vx**2)) * (gamma - 1), ".", label="P")
+# plt.plot(X,rhoetot,'.',label="rhoetot")
 plt.legend()
 plt.grid()
-plt.ylim(0,1.1)
-plt.xlim(0,1)
-plt.title("t="+str(t))
+plt.ylim(0, 1.1)
+plt.xlim(0, 1)
+plt.title("t=" + str(t))
 plt.show()

@@ -1,18 +1,16 @@
-import shamrock
-import numpy as np
-import matplotlib.pyplot as plt
 import os
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+import shamrock
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_Model_Zeus(
-    context = ctx,
-    vector_type = "f64_3",
-    grid_repr = "i64_3")
+model = shamrock.get_Model_Zeus(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
-model.init_scheduler(int(1e7),1)
+model.init_scheduler(int(1e7), 1)
 
 multx = 4
 multy = 1
@@ -20,10 +18,10 @@ multz = 1
 
 sz = 1 << 1
 base = 32
-model.make_base_grid((0,0,0),(sz,sz,sz),(base*multx,base*multy,base*multz))
+model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
 cfg = model.gen_default_config()
-scale_fact = 2/(sz*base*multx)
+scale_fact = 2 / (sz * base * multx)
 cfg.set_scale_factor(scale_fact)
 
 gamma = 1.4
@@ -32,26 +30,29 @@ cfg.set_consistent_transport(True)
 cfg.set_van_leer(True)
 model.set_config(cfg)
 
-def rho_map(rmin,rmax):
-    x,y,z = rmin
+
+def rho_map(rmin, rmax):
+    x, y, z = rmin
     if x < 1:
         return 1
     else:
         return 0.125
 
 
-eint_L = 1./(gamma-1)
-eint_R = 0.1/(gamma-1)
+eint_L = 1.0 / (gamma - 1)
+eint_R = 0.1 / (gamma - 1)
 
-def eint_map(rmin,rmax):
-    x,y,z = rmin
+
+def eint_map(rmin, rmax):
+    x, y, z = rmin
     if x < 1:
         return eint_L
     else:
         return eint_R
 
-def vel_map(rmin,rmax):
-    return (0,0,0)
+
+def vel_map(rmin, rmax):
+    return (0, 0, 0)
 
 
 model.set_field_value_lambda_f64("rho", rho_map)
@@ -61,25 +62,23 @@ model.set_field_value_lambda_f64_3("vel", vel_map)
 t_target = 0.245
 
 
-#model.evolve_once(0,0.1)
+# model.evolve_once(0,0.1)
 freq = 50
 dt = 0.0010
 t = 0
 for i in range(701):
-    model.evolve_once(i*dt,dt)
-    t = i*dt
-    if i*dt >= t_target:
+    model.evolve_once(i * dt, dt)
+    t = i * dt
+    if i * dt >= t_target:
         break
 
-#model.evolve_until(t_target)
+# model.evolve_until(t_target)
 
-#model.evolve_once()
+# model.evolve_once()
 xref = 1.0
 xrange = 0.5
-sod = shamrock.phys.SodTube(gamma = gamma, rho_1 = 1,P_1 = 1,rho_5 = 0.125,P_5 = 0.1)
-sodanalysis = model.make_analysis_sodtube(sod, (1,0,0), t_target, xref, -xrange,xrange)
-
-
+sod = shamrock.phys.SodTube(gamma=gamma, rho_1=1, P_1=1, rho_5=0.125, P_5=0.1)
+sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_target, xref, -xrange, xrange)
 
 
 #################
@@ -90,8 +89,8 @@ if False:
 
     def convert_to_cell_coords(dic):
 
-        cmin = dic['cell_min']
-        cmax = dic['cell_max']
+        cmin = dic["cell_min"]
+        cmax = dic["cell_max"]
 
         xmin = []
         ymin = []
@@ -102,20 +101,20 @@ if False:
 
         for i in range(len(cmin)):
 
-            m,M = cmin[i],cmax[i]
+            m, M = cmin[i], cmax[i]
 
-            mx,my,mz = m
-            Mx,My,Mz = M
+            mx, my, mz = m
+            Mx, My, Mz = M
 
             for j in range(8):
-                a,b = model.get_cell_coords(((mx,my,mz), (Mx,My,Mz)),j)
+                a, b = model.get_cell_coords(((mx, my, mz), (Mx, My, Mz)), j)
 
-                x,y,z = a
+                x, y, z = a
                 xmin.append(x)
                 ymin.append(y)
                 zmin.append(z)
 
-                x,y,z = b
+                x, y, z = b
                 xmax.append(x)
                 ymax.append(y)
                 zmax.append(z)
@@ -129,9 +128,7 @@ if False:
 
         return dic
 
-
     dic = convert_to_cell_coords(ctx.collect_data())
-
 
     X = []
     rho = []
@@ -140,28 +137,27 @@ if False:
 
     for i in range(len(dic["xmin"])):
 
-        X.append(dic["xmin"][i]-0.5)
+        X.append(dic["xmin"][i] - 0.5)
         rho.append(dic["rho"][i])
         velx.append(dic["vel"][i][0])
-        P.append(dic["eint"][i]*(gamma-1))
+        P.append(dic["eint"][i] * (gamma - 1))
 
     X = np.array(X)
     rho = np.array(rho)
     velx = np.array(velx)
     P = np.array(P)
 
-    fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(9,6),dpi=125)
+    fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), dpi=125)
 
-    plt.scatter(X,rho, rasterized=True,label="rho")
-    plt.scatter(X,vx, rasterized=True,label="v")
-    plt.scatter(X,P, rasterized=True,label="P")
-    #plt.scatter(X,rhoetot, rasterized=True,label="rhoetot")
+    plt.scatter(X, rho, rasterized=True, label="rho")
+    plt.scatter(X, vx, rasterized=True, label="v")
+    plt.scatter(X, P, rasterized=True, label="P")
+    # plt.scatter(X,rhoetot, rasterized=True,label="rhoetot")
     plt.legend()
     plt.grid()
 
-
     #### add analytical soluce
-    arr_x = np.linspace(xref-xrange,xref+xrange,1000)
+    arr_x = np.linspace(xref - xrange, xref + xrange, 1000)
 
     arr_rho = []
     arr_P = []
@@ -170,16 +166,16 @@ if False:
     for i in range(len(arr_x)):
         x_ = arr_x[i] - xref
 
-        _rho,_vx,_P = sod.get_value(t_target, x_)
+        _rho, _vx, _P = sod.get_value(t_target, x_)
         arr_rho.append(_rho)
         arr_vx.append(_vx)
         arr_P.append(_P)
 
-    plt.plot(arr_x,arr_rho,color = "black",label="analytic")
-    plt.plot(arr_x,arr_vx,color = "black")
-    plt.plot(arr_x,arr_P,color = "black")
-    plt.ylim(-0.1,1.1)
-    plt.xlim(0.5,1.5)
+    plt.plot(arr_x, arr_rho, color="black", label="analytic")
+    plt.plot(arr_x, arr_vx, color="black")
+    plt.plot(arr_x, arr_P, color="black")
+    plt.ylim(-0.1, 1.1)
+    plt.xlim(0.5, 1.5)
     #######
     plt.show()
 
@@ -187,10 +183,10 @@ if False:
 ### Test CD
 #################
 rho, v, P = sodanalysis.compute_L2_dist()
-vx,vy,vz = v
+vx, vy, vz = v
 
 if shamrock.sys.world_rank() == 0:
-    print ("L2 norm : rho = ", rho, " v = ", v, " P = ", P)
+    print("L2 norm : rho = ", rho, " v = ", v, " P = ", P)
 
 test_pass = True
 pass_rho = 0.08027925640209972 + 1e-7
@@ -202,20 +198,20 @@ pass_P = 0.1263222182067176 + 1e-7
 err_log = ""
 
 if rho > pass_rho:
-    err_log += ("error on rho is too high "+str(rho) +">"+str(pass_rho) ) + "\n"
+    err_log += ("error on rho is too high " + str(rho) + ">" + str(pass_rho)) + "\n"
     test_pass = False
 if vx > pass_vx:
-    err_log += ("error on vx is too high "+str(vx) +">"+str(pass_vx) )+ "\n"
+    err_log += ("error on vx is too high " + str(vx) + ">" + str(pass_vx)) + "\n"
     test_pass = False
 if vy > pass_vy:
-    err_log += ("error on vy is too high "+str(vy) +">"+str(pass_vy) )+ "\n"
+    err_log += ("error on vy is too high " + str(vy) + ">" + str(pass_vy)) + "\n"
     test_pass = False
 if vz > pass_vz:
-    err_log += ("error on vz is too high "+str(vz) +">"+str(pass_vz) )+ "\n"
+    err_log += ("error on vz is too high " + str(vz) + ">" + str(pass_vz)) + "\n"
     test_pass = False
 if P > pass_P:
-    err_log += ("error on P is too high "+str(P) +">"+str(pass_P) )+ "\n"
+    err_log += ("error on P is too high " + str(P) + ">" + str(pass_P)) + "\n"
     test_pass = False
 
 if test_pass == False:
-    exit("Test did not pass L2 margins : \n"+err_log)
+    exit("Test did not pass L2 margins : \n" + err_log)

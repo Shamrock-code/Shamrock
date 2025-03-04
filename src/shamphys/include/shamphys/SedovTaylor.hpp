@@ -33,7 +33,7 @@ namespace shamphys {
      */
     class SedovTaylor {
         public:
-        SedovTaylor();
+        inline SedovTaylor() {}
 
         struct field_val {
             f64 rho, vx, P;

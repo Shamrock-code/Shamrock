@@ -5,6 +5,7 @@ project(Shamphys CXX C)
 set(Sources
     src/HydroSoundwave.cpp
     src/SodTube.cpp
+    src/SedovTaylor.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

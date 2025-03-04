@@ -20,6 +20,7 @@
 #include "shamphys/BlackHoles.hpp"
 #include "shamphys/HydroSoundwave.hpp"
 #include "shamphys/Planets.hpp"
+#include "shamphys/SedovTaylor.hpp"
 #include "shamphys/SodTube.hpp"
 #include <pybind11/complex.h>
 #include <complex>
@@ -142,6 +143,16 @@ Register_pymod(shamphyslibinit) {
             py::arg("P_5"))
         .def("get_value", [](shamphys::SodTube &self, f64 t, f64 x) {
             auto ret = self.get_value(t, x);
+            return std::tuple<f64, f64, f64>{ret.rho, ret.vx, ret.P};
+        });
+
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.SedovTaylor");
+    py::class_<shamphys::SedovTaylor>(shamphys_module, "SedovTaylor")
+        .def(py::init([]() {
+            return std::make_unique<shamphys::SedovTaylor>(shamphys::SedovTaylor{});
+        }))
+        .def("get_value", [](shamphys::SedovTaylor &self, f64 x) {
+            auto ret = self.get_value(x);
             return std::tuple<f64, f64, f64>{ret.rho, ret.vx, ret.P};
         });
 }

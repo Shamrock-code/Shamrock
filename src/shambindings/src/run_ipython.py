@@ -5,7 +5,6 @@ import signal
 # registering the handler fix it ...
 # i swear python c api is horrible to works with
 import shamrock.sys
-
 from IPython import start_ipython
 from traitlets.config.loader import Config
 

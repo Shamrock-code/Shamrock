@@ -29,6 +29,10 @@ for package in "${pip_list[@]}"; do
     fi
 done
 
+set -e
+
 make html
+
+set +e
 
 rm -rf exemples/_to_trash

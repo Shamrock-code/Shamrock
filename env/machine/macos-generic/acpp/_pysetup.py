@@ -1,15 +1,15 @@
-
 # This file must be copied to the build directory in order for `pip install -e .` to work
 
 import os
 import re
 import subprocess
 import sys
-from pathlib import Path
 import time
+from pathlib import Path
 
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
+
 
 # A CMakeExtension needs a sourcedir instead of a file list.
 # The name must be the _single_ output extension from the CMake build.
@@ -20,7 +20,6 @@ class ShamEnvExtension(Extension):
         self.sourcedir = os.fspath(Path(sourcedir).resolve())
 
 
-
 class ShamEnvBuild(build_ext):
     def build_extension(self, ext: ShamEnvExtension) -> None:
         # Must be in this form due to bug in .resolve() only fixed in Python 3.10+
@@ -29,19 +28,15 @@ class ShamEnvBuild(build_ext):
 
         cmake_lib_out = f"{extdir}{os.sep}"
 
-        print(ext_fullpath,extdir,cmake_lib_out)
+        print(ext_fullpath, extdir, cmake_lib_out)
 
         subprocess.run(
             ["bash", "-c", "source ./activate && shamconfigure && shammake shamrock"], check=True
         )
 
-        subprocess.run(
-            ["bash", "-c", f"mkdir -p {extdir}"], check=True
-        )
+        subprocess.run(["bash", "-c", f"mkdir -p {extdir}"], check=True)
 
-        subprocess.run(
-            ["bash", "-c", f"cp -v *.so {extdir}"], check=True
-        )
+        subprocess.run(["bash", "-c", f"cp -v *.so {extdir}"], check=True)
 
 
 # The information here can also be placed in setup.cfg - better separation of

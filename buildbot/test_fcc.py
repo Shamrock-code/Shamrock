@@ -1,8 +1,7 @@
 import matplotlib.pyplot as plt
 
 
-
-def plot_fcc(nx,ny,nz):
+def plot_fcc(nx, ny, nz):
     X = []
     Y = []
     Z = []
@@ -11,17 +10,17 @@ def plot_fcc(nx,ny,nz):
         for j in range(ny):
             for k in range(nz):
 
-                x = 2*i + ((j+k) % 2)
-                y = (3.**0.5)*(j + (1)*(k % 2))
-                z = 2*(6.**0.5)*k/3.
+                x = 2 * i + ((j + k) % 2)
+                y = (3.0**0.5) * (j + (1) * (k % 2))
+                z = 2 * (6.0**0.5) * k / 3.0
 
                 X.append(x)
                 Y.append(y)
                 Z.append(z)
-    return X,Y,Z
+    return X, Y, Z
 
 
-def plot_fcc_new(nx,ny,nz):
+def plot_fcc_new(nx, ny, nz):
     X = []
     Y = []
     Z = []
@@ -30,21 +29,19 @@ def plot_fcc_new(nx,ny,nz):
         for j in range(ny):
             for k in range(nz):
 
-
-
-                x = 2*i + (j%2)
-                y = (3**0.5)*j
-                z = 2*(6.**0.5)*k/3.
+                x = 2 * i + (j % 2)
+                y = (3**0.5) * j
+                z = 2 * (6.0**0.5) * k / 3.0
 
                 X.append(x)
                 Y.append(y)
                 Z.append(z)
 
-    return X,Y,Z
+    return X, Y, Z
 
 
-X1, Y1, Z1 = plot_fcc(10,10,10)
-X2, Y2, Z2 = plot_fcc_new(0,0,0)
+X1, Y1, Z1 = plot_fcc(10, 10, 10)
+X2, Y2, Z2 = plot_fcc_new(0, 0, 0)
 
 plt.figure()
 plt.scatter(X1, Y1)

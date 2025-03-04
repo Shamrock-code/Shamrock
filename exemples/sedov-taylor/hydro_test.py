@@ -1,85 +1,86 @@
-import shamrock
-import matplotlib.pyplot as plt
 import os
 
-gamma = 5./3.
+import matplotlib.pyplot as plt
+
+import shamrock
+
+gamma = 5.0 / 3.0
 rho_g = 1
 target_tot_u = 1
 
 
 dr = 0.01
 
-bmin = (-0.6,-0.6,-0.6)
-bmax = ( 0.6, 0.6, 0.6)
+bmin = (-0.6, -0.6, -0.6)
+bmax = (0.6, 0.6, 0.6)
 pmass = -1
-
-
 
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_Model_SPH(context = ctx, vector_type = "f64_3",sph_kernel = "M4")
+model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
 
 cfg = model.gen_default_config()
-#cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
-#cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-cfg.set_artif_viscosity_VaryingCD10(alpha_min = 0.0,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+# cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
+# cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+cfg.set_artif_viscosity_VaryingCD10(
+    alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
+)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e5),1)
+model.init_scheduler(int(1e5), 1)
 
 
-bmin,bmax = model.get_ideal_hcp_box(dr,bmin,bmax)
-xm,ym,zm = bmin
-xM,yM,zM = bmax
+bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
+xm, ym, zm = bmin
+xM, yM, zM = bmax
 
-model.resize_simulation_box(bmin,bmax)
+model.resize_simulation_box(bmin, bmax)
 
-#model.add_cube_hcp_3d_v2(dr, bmin,bmax)
+# model.add_cube_hcp_3d_v2(dr, bmin,bmax)
 
 setup = model.get_setup()
-gen = setup.make_generator_lattice_hcp(dr, bmin,bmax)
+gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
 setup.apply_setup(gen)
 
-xc,yc,zc = model.get_closest_part_to((0,0,0))
-print("closest part to (0,0,0) is in :",xc,yc,zc)
+xc, yc, zc = model.get_closest_part_to((0, 0, 0))
+print("closest part to (0,0,0) is in :", xc, yc, zc)
 
-vol_b = (xM - xm)*(yM - ym)*(zM - zm)
+vol_b = (xM - xm) * (yM - ym) * (zM - zm)
 
-totmass = (rho_g*vol_b)
-#print("Total mass :", totmass)
+totmass = rho_g * vol_b
+# print("Total mass :", totmass)
 
 pmass = model.total_mass_to_part_mass(totmass)
 
-model.set_value_in_a_box("uint","f64", 0 , bmin,bmax)
+model.set_value_in_a_box("uint", "f64", 0, bmin, bmax)
 
-rinj = 0.008909042924642563*2
-#rinj = 0.008909042924642563*2*2
-#rinj = 0.01718181
+rinj = 0.008909042924642563 * 2
+# rinj = 0.008909042924642563*2*2
+# rinj = 0.01718181
 u_inj = 1
-model.add_kernel_value("uint","f64", u_inj,(0,0,0),rinj)
+model.add_kernel_value("uint", "f64", u_inj, (0, 0, 0), rinj)
 
 
-tot_u = pmass*model.get_sum("uint","f64")
-print("total u :",tot_u)
+tot_u = pmass * model.get_sum("uint", "f64")
+print("total u :", tot_u)
 
 
-#print("Current part mass :", pmass)
+# print("Current part mass :", pmass)
 
-#for it in range(5):
+# for it in range(5):
 #    setup.update_smoothing_length(ctx)
 
 
-
-#print("Current part mass :", pmass)
+# print("Current part mass :", pmass)
 model.set_particle_mass(pmass)
 
 
-tot_u = pmass*model.get_sum("uint","f64")
+tot_u = pmass * model.get_sum("uint", "f64")
 
 model.set_cfl_cour(0.1)
 model.set_cfl_force(0.1)
@@ -96,73 +97,70 @@ model.do_vtk_dump("end.vtk", True)
 
 
 import numpy as np
+
 dic = ctx.collect_data()
 
 
-if(shamrock.sys.world_rank() == 0):
+if shamrock.sys.world_rank() == 0:
 
-
-    r = np.sqrt(dic['xyz'][:,0]**2 + dic['xyz'][:,1]**2 +dic['xyz'][:,2]**2)
-    vr = np.sqrt(dic['vxyz'][:,0]**2 + dic['vxyz'][:,1]**2 +dic['vxyz'][:,2]**2)
-
+    r = np.sqrt(dic["xyz"][:, 0] ** 2 + dic["xyz"][:, 1] ** 2 + dic["xyz"][:, 2] ** 2)
+    vr = np.sqrt(dic["vxyz"][:, 0] ** 2 + dic["vxyz"][:, 1] ** 2 + dic["vxyz"][:, 2] ** 2)
 
     hpart = dic["hpart"]
     uint = dic["uint"]
 
-    gamma = 5./3.
+    gamma = 5.0 / 3.0
 
-    rho = pmass*(model.get_hfact()/hpart)**3
-    P = (gamma-1) * rho *uint
-
+    rho = pmass * (model.get_hfact() / hpart) ** 3
+    P = (gamma - 1) * rho * uint
 
     import sys
+
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from array_io import *
 
-    fdata = os.path.dirname(os.path.abspath(__file__))+"/sedov_taylor.txt"
+    fdata = os.path.dirname(os.path.abspath(__file__)) + "/sedov_taylor.txt"
     r_theo, rho_theo, p_theo, vr_theo = read_four_arrays(fdata)
 
-
-    plt.style.use('custom_style.mplstyle')
+    plt.style.use("custom_style.mplstyle")
     if True:
 
-        fig,axs = plt.subplots(nrows=2,ncols=2,figsize=(9,6),dpi=125)
+        fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(9, 6), dpi=125)
 
-        axs[0,0].scatter(r, vr,c = 'black',s=1,label = "v", rasterized=True)
-        axs[0,0].plot(r_theo, vr_theo,c = 'red',label = "v (theory)")
-        axs[1,0].scatter(r, uint,c = 'black',s=1,label = "u", rasterized=True)
-        axs[0,1].scatter(r, rho,c = 'black',s=1,label = "rho", rasterized=True)
-        axs[0,1].plot(r_theo, rho_theo,c = 'red',label = "rho (theory)")
-        axs[1,1].scatter(r, P,c = 'black',s=1,label = "P", rasterized=True)
-        axs[1,1].plot(r_theo, p_theo,c = 'red',label = "P (theory)")
+        axs[0, 0].scatter(r, vr, c="black", s=1, label="v", rasterized=True)
+        axs[0, 0].plot(r_theo, vr_theo, c="red", label="v (theory)")
+        axs[1, 0].scatter(r, uint, c="black", s=1, label="u", rasterized=True)
+        axs[0, 1].scatter(r, rho, c="black", s=1, label="rho", rasterized=True)
+        axs[0, 1].plot(r_theo, rho_theo, c="red", label="rho (theory)")
+        axs[1, 1].scatter(r, P, c="black", s=1, label="P", rasterized=True)
+        axs[1, 1].plot(r_theo, p_theo, c="red", label="P (theory)")
 
+        axs[0, 0].set_ylabel(r"$v$")
+        axs[1, 0].set_ylabel(r"$u$")
+        axs[0, 1].set_ylabel(r"$\rho$")
+        axs[1, 1].set_ylabel(r"$P$")
 
-        axs[0,0].set_ylabel(r"$v$")
-        axs[1,0].set_ylabel(r"$u$")
-        axs[0,1].set_ylabel(r"$\rho$")
-        axs[1,1].set_ylabel(r"$P$")
+        axs[0, 0].set_xlabel("$r$")
+        axs[1, 0].set_xlabel("$r$")
+        axs[0, 1].set_xlabel("$r$")
+        axs[1, 1].set_xlabel("$r$")
 
-        axs[0,0].set_xlabel("$r$")
-        axs[1,0].set_xlabel("$r$")
-        axs[0,1].set_xlabel("$r$")
-        axs[1,1].set_xlabel("$r$")
-
-        axs[0,0].set_xlim(0,0.55)
-        axs[1,0].set_xlim(0,0.55)
-        axs[0,1].set_xlim(0,0.55)
-        axs[1,1].set_xlim(0,0.55)
+        axs[0, 0].set_xlim(0, 0.55)
+        axs[1, 0].set_xlim(0, 0.55)
+        axs[0, 1].set_xlim(0, 0.55)
+        axs[1, 1].set_xlim(0, 0.55)
     else:
 
-        fig,axs = plt.subplots(nrows=1,ncols=1,figsize=(5,3),dpi=125)
+        fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(5, 3), dpi=125)
 
-        axs.scatter(r, rho,c = 'black',s=1,label = "rho", rasterized=True)
-        axs.plot(r_theo, rho_theo,c = 'red',label = "rho (theory)")
+        axs.scatter(r, rho, c="black", s=1, label="rho", rasterized=True)
+        axs.plot(r_theo, rho_theo, c="red", label="rho (theory)")
 
         axs.set_ylabel(r"$\rho$")
 
         axs.set_xlabel("$r$")
 
-        axs.set_xlim(0,0.55)
+        axs.set_xlim(0, 0.55)
 
     plt.tight_layout()
     plt.show()

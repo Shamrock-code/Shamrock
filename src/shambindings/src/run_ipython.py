@@ -1,6 +1,3 @@
-from IPython import start_ipython
-from traitlets.config.loader import Config
-
 import signal
 
 # here the signal interup for sigint is None
@@ -8,11 +5,15 @@ import signal
 # registering the handler fix it ...
 # i swear python c api is horrible to works with
 import shamrock.sys
+
+from IPython import start_ipython
+from traitlets.config.loader import Config
+
 signal.signal(signal.SIGINT, shamrock.sys.signal_handler)
 
 c = Config()
 
-banner ="SHAMROCK Ipython terminal\n" + "Python %s\n"%sys.version.split("\n")[0]
+banner = "SHAMROCK Ipython terminal\n" + "Python %s\n" % sys.version.split("\n")[0]
 
 c.TerminalInteractiveShell.banner1 = banner
 

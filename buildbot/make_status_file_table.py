@@ -1,22 +1,22 @@
 import glob
+
 from lib.buildbot import *
 
 print_buildbot_info("make status file table")
 
-import os
 import json
+import os
 
 
-
-def get_new_state(state1 : str, state2 : str):
+def get_new_state(state1: str, state2: str):
     dic = {
-        "?" : -1000,
-        "Deprecated" : -1,
-        "Should rewrite" : 0,
-        "Need cleaning" : 1,
-        "Clean unfinished" : 2,
-        "Good" : 3,
-        "Clean" : 4
+        "?": -1000,
+        "Deprecated": -1,
+        "Should rewrite": 0,
+        "Need cleaning": 1,
+        "Clean unfinished": 2,
+        "Good": 3,
+        "Clean": 4,
     }
 
     dic_inv = {}
@@ -26,13 +26,13 @@ def get_new_state(state1 : str, state2 : str):
     st1 = dic[state1]
     st2 = dic[state2]
 
-    st = [st1,st2]
+    st = [st1, st2]
     st.sort()
 
     if -1000 in st:
         return dic_inv[-1000]
 
-    elif st == [-1,-1]:
+    elif st == [-1, -1]:
         return dic_inv[-1]
 
     elif -1 in st:
@@ -40,66 +40,57 @@ def get_new_state(state1 : str, state2 : str):
 
     else:
 
-
-        return dic_inv[min(st[0],st[1])]
-
-
-
+        return dic_inv[min(st[0], st[1])]
 
 
 def path_to_dict(path):
-    d = {'name': os.path.basename(path)}
+    d = {"name": os.path.basename(path)}
     if os.path.isdir(path):
-        d['type'] = "directory"
-        d['children'] = []
-
+        d["type"] = "directory"
+        d["children"] = []
 
         for x in os.listdir(path):
             if not x.endswith(".txt"):
-                d['children'].append(path_to_dict(os.path.join(path,x)) )
-
+                d["children"].append(path_to_dict(os.path.join(path, x)))
 
         status = ""
 
-        for c in d['children']:
+        for c in d["children"]:
             if "implstatus" in c.keys():
                 if status == "":
                     status = c["implstatus"]
                 else:
 
-                    status = get_new_state(c["implstatus"],status)
+                    status = get_new_state(c["implstatus"], status)
 
             else:
                 status = "?"
 
         if not (status == ""):
-            d['implstatus'] = status
-
-
-
+            d["implstatus"] = status
 
     else:
-        d['type'] = "file"
+        d["type"] = "file"
 
-        f = open(path,'r')
+        f = open(path, "r")
 
         flag = "//%Impl status : "
 
         for l in f.readlines():
             if l.startswith(flag):
-                d['implstatus'] = l[len(flag):][:-1]
+                d["implstatus"] = l[len(flag) :][:-1]
 
         f.close()
 
     return d
 
+
 j_out = path_to_dict(abs_src_dir)
 
-#print(j_out)
+# print(j_out)
 
 
-
-def print_node(prefix , node):
+def print_node(prefix, node):
 
     color = ""
     spacing = ""
@@ -126,15 +117,15 @@ def print_node(prefix , node):
             color = "\x1b[31m"
             spacing = "     "
 
-        impl_str = "("+color+node["implstatus"]+"\x1b[0m"+")"
+        impl_str = "(" + color + node["implstatus"] + "\x1b[0m" + ")"
 
+    str = prefix + " " + color + node["name"] + "\x1b[0m"
 
-    str = prefix +" "+ color + node["name"] + "\x1b[0m"
+    print(str.ljust(60) + spacing + impl_str)
 
-    print(str.ljust(60) +spacing+ impl_str)
-
-    if 'children' in node.keys():
-        for c in node['children']:
+    if "children" in node.keys():
+        for c in node["children"]:
             print_node(prefix + " | ", c)
+
 
 print_node("", j_out)

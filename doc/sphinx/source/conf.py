@@ -17,12 +17,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'python bindings'
-copyright = '2020 -- Timothee David--Cléris'
-author = 'Timothee David--Cléris'
+project = "python bindings"
+copyright = "2020 -- Timothee David--Cléris"
+author = "Timothee David--Cléris"
 
 # The full version, including alpha/beta/rc tags
-release = '2024.10.0'
+release = "2024.10.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,18 +31,18 @@ release = '2024.10.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',  # For documenting Python code
-    'sphinx.ext.intersphinx', # to have link in source code
+    "sphinx.ext.autodoc",  # For documenting Python code
+    "sphinx.ext.intersphinx",  # to have link in source code
     # 'sphinx.ext.viewcode',  # For linking to the source code in the docs
-    # sadly this does not seems to work as it expect real python sources which do not exist here
-    'sphinx.ext.autosummary',  # Create neat summary tables for modules/classes/methods etc
-    'sphinx_gallery.gen_gallery', # generate thumbnail and exemple lib
-    'sphinx_copybutton', # add a copy button to code blocks
-    'sphinx_design' # Add grid tabs and fancy html stuff
+    # sadly this does not seems to work as it expect real python sources which do not exist here
+    "sphinx.ext.autosummary",  # Create neat summary tables for modules/classes/methods etc
+    "sphinx_gallery.gen_gallery",  # generate thumbnail and exemple lib
+    "sphinx_copybutton",  # add a copy button to code blocks
+    "sphinx_design",  # Add grid tabs and fancy html stuff
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -51,28 +51,28 @@ exclude_patterns = []
 
 
 intersphinx_mapping = {
-    'ipykernel': ('https://ipykernel.readthedocs.io/en/latest/', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'python': ('https://docs.python.org/3/', None),
-    'scipy': ('https://docs.scipy.org/doc/scipy/', None),
-    'pip': ('https://pip.pypa.io/en/stable/', None),
-    'matplotlib': ('https://matplotlib.org/stable/', None)
+    "ipykernel": ("https://ipykernel.readthedocs.io/en/latest/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "pip": ("https://pip.pypa.io/en/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
 }
 
 sphinx_gallery_conf = {
-    'backreferences_dir': '_as_gen', # link to source from exemples
-    'doc_module': ('shamrock'), # The name of the module that is documented
-    'examples_dirs': '../exemples',   # path to your example scripts
-    'gallery_dirs': '_as_gen',  # path to where to save gallery generated output
-    'line_numbers': True, # line numbers in exemples
-    # The 3 next args are a bit like dark magic which allows the link
-    # to functions in the exemple to exist
-    'reference_url': {'shamrock': None},
-    'prefer_full_module': {r'shamrock\.'},
-    'remove_config_comments': True,
-    'filename_pattern': '/run_', # Run all exemples that start with run_
-    'write_computation_times': True, # write sg_execution_times
-    'show_memory': True,
+    "backreferences_dir": "_as_gen",  # link to source from exemples
+    "doc_module": ("shamrock"),  # The name of the module that is documented
+    "examples_dirs": "../exemples",  # path to your example scripts
+    "gallery_dirs": "_as_gen",  # path to where to save gallery generated output
+    "line_numbers": True,  # line numbers in exemples
+    # The 3 next args are a bit like dark magic which allows the link
+    # to functions in the exemple to exist
+    "reference_url": {"shamrock": None},
+    "prefer_full_module": {r"shamrock\."},
+    "remove_config_comments": True,
+    "filename_pattern": "/run_",  # Run all exemples that start with run_
+    "write_computation_times": True,  # write sg_execution_times
+    "show_memory": True,
 }
 
 # -- Options for HTML output -------------------------------------------------
@@ -80,9 +80,9 @@ sphinx_gallery_conf = {
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'pydata_sphinx_theme'
+html_theme = "pydata_sphinx_theme"
 html_logo = "_static/large-figures/figures/no_background_nocolor.png"
-#html_favicon = "_static/logo.png"
+# html_favicon = "_static/logo.png"
 html_sourcelink_suffix = ""
 html_last_updated_fmt = ""  # to reveal the build date in the pages meta
 
@@ -98,7 +98,7 @@ html_theme_options = {
 }
 
 html_context = {
-    "github_url": "https://github.com", # or your GitHub Enterprise site
+    "github_url": "https://github.com",  # or your GitHub Enterprise site
     "github_user": "tdavidcl",
     "github_repo": "Shamrock",
     "github_version": "main",
@@ -106,10 +106,10 @@ html_context = {
 }
 
 html_css_files = [
-    'css/custom.css',
+    "css/custom.css",
 ]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]

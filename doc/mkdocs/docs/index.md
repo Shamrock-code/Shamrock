@@ -28,9 +28,9 @@ We can run some SPH, AMR, but not only that!
 
     ---
 
-    You don't need to know about GPUs, c++ whatever, the frontend just require the use of python
+    You don't need to know about GPUs, C++ whatever, the frontend just require the use of python
 
-    [:octicons-arrow-right-24: Reference](#)
+    [:octicons-arrow-right-24: Python frontend documentation](../sphinx/index.html)
 
 -   :fontawesome-solid-gears:{ .lg .middle } __Can run on any hardware__
 

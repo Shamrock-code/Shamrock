@@ -12,9 +12,8 @@ import os
 
 os.system("mkdir -p " + dump_folder)
 
-url = (
-    "https://raw.githubusercontent.com/Shamrock-code/" "reference-files/refs/heads/main/blast_00010"
-)
+url = "https://raw.githubusercontent.com/Shamrock-code/reference-files/refs/heads/main/blast_00010"
+
 filename = dump_folder + "/blast_00010"
 
 from urllib.request import urlretrieve

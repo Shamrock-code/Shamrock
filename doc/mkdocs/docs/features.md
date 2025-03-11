@@ -23,15 +23,15 @@ please wait for the corresponding feature to be published before publishing anyt
 | --- | --- | --- | --- |  --- |
 | Gas solver | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | |
 | [Sink particles](./features/sph/sinks.md) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | |
-| Pseudo-Newtonian <br> corrections | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #319](https://img.shields.io/badge/PR-%23319-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/319) |
-| MHD solver | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #707](https://img.shields.io/badge/PR-%23707-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/707) |
+| Pseudo-Newtonian <br> corrections | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #319](https://img.shields.io/badge/PR-%23319-brightgreen?logo=github)](https://github.com/Shamrock-code/Shamrock/pull/319) |
+| MHD solver | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #707](https://img.shields.io/badge/PR-%23707-brightgreen?logo=github)](https://github.com/Shamrock-code/Shamrock/pull/707) |
 
 
 | Feature  | Status   | Contributor / Maintainer  |  Paper to cite | Details |
 | --- | --- | --- | --- |  --- |
-| [On the fly-plots](./usermanual/plotting.md) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #623](https://img.shields.io/badge/PR-%23623-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/623) |
+| [On the fly-plots](./usermanual/plotting.md) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #623](https://img.shields.io/badge/PR-%23623-brightgreen?logo=github)](https://github.com/Shamrock-code/Shamrock/pull/623) |
 | [Conformance with Phantom](./features/sph/conformance_phantom.md) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) <br> & [Yona Lapeyre](https://github.com/y-lapeyre) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | |
-| [Setup graph](./features/sph/setup_graph.md) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #593](https://img.shields.io/badge/PR-%23593-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/593) |
+| [Setup graph](./features/sph/setup_graph.md) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #593](https://img.shields.io/badge/PR-%23593-brightgreen?logo=github)](https://github.com/Shamrock-code/Shamrock/pull/593) |
 | [Shearing box](./features/sph/shearing_box.md) | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | |
 | Periodic box | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | |
 
@@ -50,7 +50,7 @@ please wait for the corresponding feature to be published before publishing anyt
 | --- | --- | --- | --- |  --- |
 | Isothermal | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | | |
 | Adiabatic | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | | |
-| Isothermal - LP07 | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | | [![PR - #361](https://img.shields.io/badge/PR-%23361-brightgreen?logo=github)](https://github.com/tdavidcl/Shamrock/pull/361)  |
+| Isothermal - LP07 | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | | [![PR - #361](https://img.shields.io/badge/PR-%23361-brightgreen?logo=github)](https://github.com/Shamrock-code/Shamrock/pull/361)  |
 | Isothermal - FA14 | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | | |
 
 ### Godunov model
@@ -61,7 +61,7 @@ please wait for the corresponding feature to be published before publishing anyt
 | --- | --- | --- | --- |  --- |
 | Ramses solver | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) & [Thomas Guillet](https://github.com/thomasguillet) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | Needs some polishing to be considered production ready |
 | Refinement handling | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) |  |
-| Multifluid dust | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Léodasce Sewanou](https://github.com/Akos299) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #636](https://img.shields.io/badge/PR-%23636-yellow?logo=github)](https://github.com/tdavidcl/Shamrock/pull/636) |
+| Multifluid dust | ![WIP](https://img.shields.io/badge/WIP-yellow)  |  [Léodasce Sewanou](https://github.com/Akos299) | ![Wait for the paper !](https://img.shields.io/badge/Wait_for_the_paper_!-critical) | [![PR - #636](https://img.shields.io/badge/PR-%23636-yellow?logo=github)](https://github.com/Shamrock-code/Shamrock/pull/636) |
 
 #### Refinement criterions
 

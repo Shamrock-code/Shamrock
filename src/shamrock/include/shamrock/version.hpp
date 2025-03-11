@@ -27,6 +27,7 @@ extern const std::string git_info_str;
 extern const std::string git_commit_hash;
 extern const std::string compile_arg;
 extern const std::string version_string;
+extern const bool is_git;
 
 const u32 term_width = 64;
 

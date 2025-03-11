@@ -12,7 +12,7 @@ jobs:
 
   shamrock_acpp_omp_tidy:
     name: AdaptiveCpp omp tidy clang-${{ matrix.clang }}
-    runs-on: [self-hosted,  docker-runner]
+    runs-on: ubuntu-latest
 
     container:
       image: ${{ matrix.container }}

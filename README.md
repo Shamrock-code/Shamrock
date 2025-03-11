@@ -1,6 +1,6 @@
 <img src="doc/mkdocs/docs/assets/no_background_nocolor.png"  width="600">
 
-![badge1](https://github.com/tdavidcl/Shamrock/actions/workflows/on_push_main.yml/badge.svg?branch=main) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
+![badge1](https://github.com/Shamrock-code/Shamrock/actions/workflows/on_push_main.yml/badge.svg?branch=main) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 # The Shamrock code
 
@@ -21,15 +21,15 @@ Join us on [Discord](https://discord.gg/Q69s5buyr5)! Alternatively, open a discu
 ## Contributing
 
 Shamrock accept contributions through github pull request :
-1. Code contributions via [Pull request](https://github.com/tdavidcl/Shamrock/compare)
-2. Documentation contributions via [Pull request](https://github.com/tdavidcl/Shamrock/compare)
-3. Issue report & feature requests via [Github issues](https://github.com/tdavidcl/Shamrock/issues/new/choose)
+1. Code contributions via [Pull request](https://github.com/Shamrock-code/Shamrock/compare)
+2. Documentation contributions via [Pull request](https://github.com/Shamrock-code/Shamrock/compare)
+3. Issue report & feature requests via [Github issues](https://github.com/Shamrock-code/Shamrock/issues/new/choose)
 
 If you want to contribute please fork the code and submit your pull requests from your fork.
 
 ## Citing the code
 
-The day MNRAS will accept the paper 😅
+Comming soon on the arXiv and MNRAS ...
 
 ## Compiler support
 
@@ -46,15 +46,15 @@ AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)
 # Documentation
 
 We provide both a book like documentation and the more classic doxygen style for more details about the sources
- - The documentation is available here: [Shamrock documentation](https://tdavidcl.github.io/Shamrock/mkdocs/index.html)
+ - The documentation is available here: [Shamrock documentation](https://shamrock-code.github.io/Shamrock/mkdocs/index.html)
 
 # Getting started
 
-The whole getting started guide can be found here: [Getting started](https://tdavidcl.github.io/Shamrock/mkdocs/usermanual/quickstart/)
+The whole getting started guide can be found here: [Getting started](https://shamrock-code.github.io/Shamrock/mkdocs/usermanual/quickstart/)
 
 Note that a convenient way to pull the Shamrock repo is the following command to also pull the submodules:
 ```bash
-git clone --recurse-submodules git@github.com:tdavidcl/Shamrock.git
+git clone --recurse-submodules https://github.com/Shamrock-code/Shamrock.git
 ```
 
 # Licensing

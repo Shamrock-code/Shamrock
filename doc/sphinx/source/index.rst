@@ -18,7 +18,7 @@ This page aims at documenting the python layer of shamrock.
       The main documentation of the code, it includes installation, and usage of the code.
 
       If something is unclear or not documented please open an issue
-      `here <https://github.com/tdavidcl/Shamrock/issues/new?template=documentation-request.md>`_.
+      `here <https://github.com/Shamrock-code/Shamrock/issues/new?template=documentation-request.md>`_.
 
    .. grid-item-card::
 
@@ -28,7 +28,7 @@ This page aims at documenting the python layer of shamrock.
       A very nice list of exemples of Shamrock scripts, for those who prefer exemples. :)
 
       If any exemples goes amiss please open an issue
-      `here <https://github.com/tdavidcl/Shamrock/issues/new?template=documentation-request.md>`_.
+      `here <https://github.com/Shamrock-code/Shamrock/issues/new?template=documentation-request.md>`_.
 
 .. grid:: 2
 
@@ -41,7 +41,7 @@ This page aims at documenting the python layer of shamrock.
       classes, and modules are listed.
 
       If any functionally does not possess a corresponding python binding please open an issue
-      `here <https://github.com/tdavidcl/Shamrock/issues/new?template=feature_request.md>`_.
+      `here <https://github.com/Shamrock-code/Shamrock/issues/new?template=feature_request.md>`_.
 
    .. grid-item-card::
 
@@ -54,7 +54,7 @@ This page aims at documenting the python layer of shamrock.
       is rather than an end-user documentation.
 
       If something is unclear or not documented please open an issue
-      `here <https://github.com/tdavidcl/Shamrock/issues/new?template=documentation-request.md>`_.
+      `here <https://github.com/Shamrock-code/Shamrock/issues/new?template=documentation-request.md>`_.
 
 .. toctree::
    :maxdepth: 1

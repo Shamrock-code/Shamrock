@@ -59,7 +59,7 @@ Open a branch called, `feature/...`, `doc/...`, whatever as long as it's clear. 
 
 To clone a repository and its submodules
 ```bash
-git clone --recurse-submodules git@github.com:tdavidcl/Shamrock.git
+git clone --recurse-submodules git@github.com:Shamrock-code/Shamrock.git
 ```
 
 ## Git configuration

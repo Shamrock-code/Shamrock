@@ -5,7 +5,7 @@
 You have two options: Using your fork of shamrock,Using the main repo
 
 ```bash
-git clone --recurse-submodules git@github.com:tdavidcl/Shamrock.git
+git clone --recurse-submodules git@github.com:Shamrock-code/Shamrock.git
 ```
 If you want to use your fork clone it using (replace `<login>` by your github username):
 ```bash

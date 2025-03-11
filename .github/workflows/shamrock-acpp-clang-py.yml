@@ -12,7 +12,7 @@ jobs:
 
   shamrock_acpp:
     name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} (pylib)
-    runs-on: [self-hosted,  docker-runner]
+    runs-on: ubuntu-latest
 
     container:
       image: ${{ matrix.container }}
@@ -29,7 +29,7 @@ jobs:
             runtest: yes
             container: ghcr.io/shamrock-code/ci-ubuntu20:main
 
-    timeout-minutes: 20
+    timeout-minutes: 60
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default

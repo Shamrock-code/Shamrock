@@ -12,7 +12,7 @@ jobs:
   #make shamrock documentation
   make_documentation:
     name: "Build : Documentation"
-    runs-on: [self-hosted,  docker-runner]
+    runs-on: ubuntu-latest
 
     container:
       image: ghcr.io/shamrock-code/ci-ubuntu-latest:main
@@ -43,22 +43,32 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
+      - name: create venv
+        shell: bash
+        run: |
+          python3 -m venv .pyvenv
+          source .pyvenv/bin/activate
 
       - name: pip install packages (Jupyter book)
-        run: pip install -U jupyter-book sphinx_proof matplotlib numpy
+        shell: bash
+        run: |
+          source .pyvenv/bin/activate
+          pip install -U jupyter-book sphinx_proof matplotlib numpy
 
       - name: pip install packages (mkdocs)
-        run: pip install mkdocs-material mkdocs-git-committers-plugin-2 mkdocs-git-authors-plugin mkdocs-git-revision-date-plugin mkdocs-git-revision-date-localized-plugin
+        shell: bash
+        run: |
+          source .pyvenv/bin/activate
+          pip install mkdocs-material mkdocs-git-committers-plugin-2 mkdocs-git-authors-plugin mkdocs-git-revision-date-plugin mkdocs-git-revision-date-localized-plugin
 
       - name : Install pck (doxygen)
         run: |
           sudo apt-get install -y -qq doxygen graphviz
 
       - name: Gen doc
+        shell: bash
         run: |
+          source .pyvenv/bin/activate
           cd doc
           sh make_doc.sh
 

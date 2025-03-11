@@ -8,7 +8,7 @@ jobs:
 
   shamrock_acpp:
     name: run ${{ matrix.testfile }} wz=${{ matrix.worldsize }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}}
-    runs-on: [self-hosted,  docker-runner]
+    runs-on: ubuntu-latest
 
     container:
       image: ${{ matrix.container }}
@@ -122,4 +122,4 @@ jobs:
       - name: run test
         run: |
           cd build
-          mpirun -report-bindings --allow-run-as-root --bind-to socket -n ${{matrix.worldsize}} ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}
+          mpirun -report-bindings --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n ${{matrix.worldsize}} ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/ci_tests/${{ matrix.testfile }}

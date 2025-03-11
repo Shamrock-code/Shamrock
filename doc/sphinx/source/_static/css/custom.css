@@ -14,3 +14,21 @@ a[class^="sphx-glr-backref-module-shamrock"] {
 html {
 	--pst-header-height: 4rem;
 }
+
+/* hide download note in exemples, see https://github.com/matplotlib/matplotlib/pull/21455/files
+ */
+ div.sphx-glr-download-link-note {
+    display: none;
+}
+
+/* re-style the download button, see https://github.com/matplotlib/matplotlib/pull/21455/files */
+div.sphx-glr-download a {
+    background-color: #E3F0F6;
+    background-image: none;
+    color: #11557c;
+    border: 0;
+}
+
+div.sphx-glr-download a:hover {
+    background-color: #BCD4DF;
+}

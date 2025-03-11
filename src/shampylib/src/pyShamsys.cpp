@@ -94,6 +94,15 @@ Register_pymod(pysyslibinit) {
     )pbdoc");
 
     m.def(
+        "is_git",
+        []() {
+            return is_git;
+        },
+        R"pbdoc(
+        Return is_git
+    )pbdoc");
+
+    m.def(
         "dump_profiling",
         [](std::string prefix) {
 #ifdef SHAMROCK_USE_PROFILING

@@ -22,6 +22,8 @@
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <shamunits/Constants.hpp>
+#include <shamunits/UnitSystem.hpp>
 namespace shammodels::basegodunov {
 
     enum RiemmanSolverMode { Rusanov = 0, HLL = 1, HLLC = 2 };
@@ -238,5 +240,21 @@ namespace shammodels::basegodunov {
             return true;
         }
     };
+
+    /**
+     * @brief Serialize a SolverConfig to a JSON object
+     *
+     * @param[out] j  The JSON object to write to
+     * @param[in] p  The SolverConfig to serialize
+     */
+    template<class Tvec, class TgridVec>
+    inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, TgridVec> &p) {
+        using T = SolverConfig<Tvec, TgridVec>;
+
+        j = nlohmann::json{
+            {"RiemmanSolverMode", p.riemman_config},
+            {"SlopeMode", p.slope_config},
+            {"DustRiemannSolverMode", p.Csafe}};
+    }
 
 } // namespace shammodels::basegodunov

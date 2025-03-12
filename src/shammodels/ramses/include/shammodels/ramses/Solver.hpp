@@ -121,6 +121,11 @@ namespace shammodels::basegodunov {
         RiemmanSolverMode riemman_config  = HLL;
         SlopeMode slope_config            = VanLeer_sym;
         bool face_half_time_interpolation = true;
+
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        // Dust config
+        //////////////////////////////////////////////////////////////////////////////////////////////
+
         DustConfig dust_config{};
         DragConfig drag_config{};
 
@@ -132,10 +137,29 @@ namespace shammodels::basegodunov {
             drag_config.alphas.push_back(alpha_values);
         }
 
-        Tscal Csafe = 0.9;
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        // Dust config (END)
+        //////////////////////////////////////////////////////////////////////////////////////////////
 
         /// AMR refinement mode
         AMRMode<Tvec, TgridVec> amr_mode = {};
+
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        // Units Config
+        //////////////////////////////////////////////////////////////////////////////////////////////
+
+        /// The unit system of the simulation
+        std::optional<shamunits::UnitSystem<Tscal>> unit_sys = {};
+
+        /// Set the unit system of the simulation
+        inline void set_units(shamunits::UnitSystem<Tscal> new_sys) { unit_sys = new_sys; }
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        // Units Config (END)
+        //////////////////////////////////////////////////////////////////////////////////////////////
+
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        // Solver status variables
+        //////////////////////////////////////////////////////////////////////////////////////////////
 
         /// Alias to SolverStatusVar type
         using SolverStatusVar = SolverStatusVar<Tvec>;
@@ -149,6 +173,11 @@ namespace shammodels::basegodunov {
         inline Tscal get_time() { return time_state.time; }
         /// Get the time step for the next iteration
         inline Tscal get_dt() { return time_state.dt; }
+
+        Tscal Csafe = 0.9;
+        //////////////////////////////////////////////////////////////////////////////////////////////
+        // Solver status variables (END)
+        //////////////////////////////////////////////////////////////////////////////////////////////
     };
 
     template<class Tvec, class TgridVec>
@@ -251,10 +280,76 @@ namespace shammodels::basegodunov {
     inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, TgridVec> &p) {
         using T = SolverConfig<Tvec, TgridVec>;
 
+        nlohmann::json junit;
+
         j = nlohmann::json{
             {"RiemmanSolverMode", p.riemman_config},
             {"SlopeMode", p.slope_config},
-            {"DustRiemannSolverMode", p.Csafe}};
+            {"DustRiemannSolverMode", p.Csafe},
+            {"unit_sys", junit},
+            {"time_state", p.time_state}};
+    }
+
+    namespace shamunits {
+
+        /**
+         * @brief Converts a UnitSystem object to a JSON object.
+         *
+         * @param j The JSON object to be populated.
+         * @param p The UnitSystem object to be converted.
+         */
+        template<class Tscal>
+        inline void to_json(nlohmann::json &j, const ::shamunits::UnitSystem<Tscal> &p) {
+            j = nlohmann::json{
+                {"unit_time", p.s_inv},
+                {"unit_length", p.m_inv},
+                {"unit_mass", p.kg_inv},
+                {"unit_current", p.A_inv},
+                {"unit_temperature", p.K_inv},
+                {"unit_qte", p.mol_inv},
+                {"unit_lumint", p.cd_inv}};
+        }
+
+        template<class Tvec>
+        inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
+            j = nlohmann::json{{"time", p.time}, {"dt", p.dt}};
+        }
+
+        template<class Tvec>
+        inline void from_json(const nlohmann::json &j, SolverStatusVar<Tvec> &p) {
+            using Tscal = typename SolverStatusVar<Tvec>::Tscal;
+            j.at("time").get_to<Tscal>(p.time);
+            j.at("dt").get_to<Tscal>(p.dt);
+        }
+
+    } // namespace shamunits
+
+    template<class T>
+    inline void to_json_optional(nlohmann::json &j, const std::optional<T> &p) {
+        if (p) {
+            j = *p;
+        } else {
+            j = {};
+        }
+    }
+
+    /**
+     * @brief Deserializes an optional value from a JSON object.
+     *
+     * @param j The JSON object to deserialize from.
+     * @param p The optional value to populate.
+     *
+     * @return None
+     *
+     * @throws std::bad_optional_access if j is not a valid JSON object
+     */
+    template<class T>
+    inline void from_json_optional(const nlohmann::json &j, std::optional<T> &p) {
+        if (j.is_null()) {
+            p = std::nullopt;
+        } else {
+            p = j.get<T>();
+        }
     }
 
 } // namespace shammodels::basegodunov

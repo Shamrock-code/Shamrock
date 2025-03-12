@@ -166,6 +166,7 @@ namespace shammodels::basegodunov {
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
+            .def("dump", &T::dump)
             .def("evolve_once_override_time", &T::evolve_once_time_expl)
             .def("evolve_once", &T::evolve_once)
             .def(

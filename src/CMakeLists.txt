@@ -88,10 +88,15 @@ endif()
 target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/src")
 #target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
-#do lib build instead if building the pylib
-
-
-
+# Installing the library
+install(TARGETS shamrock ${as_subproject}
+        EXPORT "shamrock-config"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        PRIVATE_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 if("${BUILD_TEST}")
 

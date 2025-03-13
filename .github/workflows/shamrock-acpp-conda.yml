@@ -64,10 +64,16 @@ jobs:
           cd build
           source ./activate && shamconfigure
 
-      - name: Build
+      - name: Configure sham install
         run: |
           cd build
-          source ./activate && shammake
+          source ./activate &&  \
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test
+
+      - name: Build & install
+        run: |
+          cd build
+          source ./activate && shammake install
 
       - name: Pull reference files
         run: |
@@ -118,3 +124,10 @@ jobs:
           cd build
           source ./activate
           mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: Try starting Shamrock (installed version)
+        if: matrix.runtest
+        run: |
+          cd build/install_test/bin
+          ls ..
+          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0

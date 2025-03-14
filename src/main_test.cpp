@@ -15,6 +15,7 @@
 
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/fpe_except.hpp"
+#include "shambindings/pybindings.hpp"
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
@@ -25,6 +26,10 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/shamrock_smi.hpp"
 #include "shamtest/shamtest.hpp"
+#include <pybind11/embed.h>
+
+/// Call bindings init for the shamrock python module
+PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }
 
 int main(int argc, char *argv[]) {
 

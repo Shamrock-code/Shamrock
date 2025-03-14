@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambindings/pybindaliases.hpp"
@@ -60,22 +61,66 @@ void register_pybind_init_func(fct_sig fct) {
 
 namespace shambindings {
 
+    enum { None, Lib, Embed } init_state = None;
+
+    template<bool is_lib_mode>
     void init(py::module &m) {
-#ifdef SHAMROCK_LIB_BUILD
-        shambase::change_printer(&py_func_printer_normal, &py_func_printer_ln, &py_func_flush_func);
-#endif
+
+        if (is_lib_mode) {
+            shambase::change_printer(
+                &py_func_printer_normal, &py_func_printer_ln, &py_func_flush_func);
+        }
 
         if (static_init_shamrock_pybind) {
             for (auto fct : *static_init_shamrock_pybind) {
                 fct(m);
             }
         }
+
+        if (is_lib_mode) {
+            init_state = Lib;
+        } else {
+            init_state = Embed;
+        }
+    }
+
+    void init_lib(py::module &m) { shambindings::init<true>(m); }
+
+    void init_embed(py::module &m) { shambindings::init<false>(m); }
+
+    void expect_init_lib(SourceLocation loc) {
+        if (init_state != Lib) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "python bindings not initialized as lib mode", loc);
+        }
+    }
+
+    void expect_init_embed(SourceLocation loc) {
+        if (init_state != Embed) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "python bindings not initialized as embed mode", loc);
+        }
     }
 
 } // namespace shambindings
 
+#ifdef SHAMROCK_EXECUTABLE_BUILD
+    #include <pybind11/embed.h>
+    #define SHAMROCK_PY_MODULE(name, module) PYBIND11_EMBEDDED_MODULE(name, module)
+#endif
+
+#ifdef SHAMROCK_LIB_BUILD
+    #include <pybind11/pybind11.h>
+    #define SHAMROCK_PY_MODULE(name, module) PYBIND11_MODULE(name, module)
+#endif
+
 /// Call bindings init for the shamrock python module
 SHAMROCK_PY_MODULE(shamrock, m) {
     m.attr("__doc__") = R"doc(Python bindings for Shamrock)doc";
-    shambindings::init(m);
+
+#ifdef SHAMROCK_LIB_BUILD
+    shambindings::init_lib(m);
+#else
+    shambindings::init_embed(m);
+#endif
 }

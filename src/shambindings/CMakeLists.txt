@@ -34,35 +34,31 @@ target_include_directories(shambindings PUBLIC
 
 message(STATUS "Python_EXECUTABLE : ${Python_EXECUTABLE}")
 
-if(NOT "${BUILD_PYLIB}")
-  execute_process(
-    COMMAND
-      "${Python_EXECUTABLE}" "-c" "import sys;print(sys.path, end= '')"
-    RESULT_VARIABLE __PYTHON_SYS_PATH_RESULT
-    OUTPUT_VARIABLE __PYTHON_SYS_PATH_OUT
-    ERROR_VARIABLE __PYTHON_SYS_PATH_ERROR)
+execute_process(
+  COMMAND
+    "${Python_EXECUTABLE}" "-c" "import sys;print(sys.path, end= '')"
+  RESULT_VARIABLE __PYTHON_SYS_PATH_RESULT
+  OUTPUT_VARIABLE __PYTHON_SYS_PATH_OUT
+  ERROR_VARIABLE __PYTHON_SYS_PATH_ERROR)
 
-    #message(status " Python_EXECUTABLE        : ${Python_EXECUTABLE}")
-    #message(status " __PYTHON_SYS_PATH_RESULT : ${__PYTHON_SYS_PATH_RESULT}")
-    #message(status " __PYTHON_SYS_PATH_OUT    : ${__PYTHON_SYS_PATH_OUT}")
-    #message(status " __PYTHON_SYS_PATH_ERROR  : ${__PYTHON_SYS_PATH_ERROR}")
+  #message(status " Python_EXECUTABLE        : ${Python_EXECUTABLE}")
+  #message(status " __PYTHON_SYS_PATH_RESULT : ${__PYTHON_SYS_PATH_RESULT}")
+  #message(status " __PYTHON_SYS_PATH_OUT    : ${__PYTHON_SYS_PATH_OUT}")
+  #message(status " __PYTHON_SYS_PATH_ERROR  : ${__PYTHON_SYS_PATH_ERROR}")
 
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp
-    "
-    const char* configure_time_py_sys_path() { return \"${__PYTHON_SYS_PATH_OUT}\"; }
-    const char* configure_time_py_executable() { return \"${Python_EXECUTABLE}\"; }
-    "
-  )
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp
+  "
+  const char* configure_time_py_sys_path() { return \"${__PYTHON_SYS_PATH_OUT}\"; }
+  const char* configure_time_py_executable() { return \"${Python_EXECUTABLE}\"; }
+  "
+)
 
-  target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp)
+target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp)
 
-  file(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/run_ipython.py __CAT_RUNIPYTHON_OUT)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/run_ipython.py __CAT_RUNIPYTHON_OUT)
 
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/run_ipython_src.cpp
-    "const char* run_ipython_src() { return R\"=(\n${__CAT_RUNIPYTHON_OUT}\n)=\"; }"
-  )
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/run_ipython_src.cpp
+  "const char* run_ipython_src() { return R\"=(\n${__CAT_RUNIPYTHON_OUT}\n)=\"; }"
+)
 
-  target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/run_ipython_src.cpp)
-
-
-endif()
+target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/run_ipython_src.cpp)

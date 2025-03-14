@@ -83,24 +83,15 @@ if not cur_path.startswith(sysprefix):
 
 namespace shambindings {
 
-    void setpypath(std::string path) {
-
-        shambindings::expect_init_embed();
-
-        runtime_set_pypath = path;
-    }
+    void setpypath(std::string path) { runtime_set_pypath = path; }
 
     void setpypath_from_binary(std::string binary_path) {
-
-        shambindings::expect_init_embed();
 
         std::string cmd    = binary_path + " -c \"import sys;print(sys.path, end= '')\"";
         runtime_set_pypath = shambase::popen_fetch_output(cmd.c_str());
     }
 
     void modify_py_sys_path() {
-
-        shambindings::expect_init_embed();
 
         shambase::println(
             "Shamrock configured with Python path : \n    "
@@ -117,8 +108,6 @@ namespace shambindings {
     }
 
     void start_ipython(bool do_print) {
-
-        shambindings::expect_init_embed();
 
         py::scoped_interpreter guard{};
         modify_py_sys_path();

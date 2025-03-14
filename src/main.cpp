@@ -24,6 +24,7 @@
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/fpe_except.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shambindings/pybindings.hpp"
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
@@ -37,6 +38,7 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamsys/shamrock_smi.hpp"
+#include <pybind11/embed.h>
 #include <type_traits>
 #include <unordered_map>
 #include <array>
@@ -50,6 +52,9 @@
 #include <vector>
 
 //%Impl status : Should rewrite
+
+/// Call bindings init for the shamrock python module
+PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }
 
 int main(int argc, char *argv[]) {
 

@@ -21,13 +21,15 @@ endif()
 add_library(shambindings::shambindings ALIAS shambindings)
 
 target_link_libraries(shambindings PUBLIC shambase)
-
 target_link_libraries(shambindings PUBLIC pybind11::pybind11)
 
 target_include_directories(shambindings PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
 
+if(NOT DEFINED PYTHON_EXECUTABLE)
+    message(FATAL_ERROR "This should have been defined in the main CmakeLists.txt")
+endif()
 message(STATUS "PYTHON_EXECUTABLE : ${PYTHON_EXECUTABLE}")
 
 execute_process(

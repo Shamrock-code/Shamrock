@@ -96,16 +96,17 @@ message(STATUS "Shamrock version : ${SHAMROCK_VERSION_STRING}")
 ################################
 
 option(SHAMROCK_WITH_MPI "use MPI libraries" On)
-option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
 option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
 option(SHAMROCK_USE_PCH "use precompiled headers" Off)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 
+option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
+
 if(APPLE)
-if(SHAMROCK_USE_SHARED_LIB)
-message(STATUS "forcing SHAMROCK_USE_SHARED_LIB=Off on Macos because of known issues")
-endif()
-set(SHAMROCK_USE_SHARED_LIB Off)
+    if(SHAMROCK_USE_SHARED_LIB)
+        message(STATUS "forcing SHAMROCK_USE_SHARED_LIB=Off on Macos because of known issues")
+    endif()
+    set(SHAMROCK_USE_SHARED_LIB Off)
 endif()
 
 ######################
@@ -131,6 +132,13 @@ if(NOT "${CMAKE_BUILD_TYPE}" IN_LIST ValidShamBuildType)
 endif()
 message(STATUS "current build type : CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
+######################
+# Force -fPIC for object lib mode as the python lib require it
+######################
+if(NOT SHAMROCK_USE_SHARED_LIB)
+    message(WARNING "using shamrock in object lib mode force the use of -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
 
 ######################
 # Compiler selection
@@ -167,51 +175,67 @@ if(SHAMROCK_USE_NVTX)
 endif()
 
 ######################
-# Add external libraries
+# add MPI
 ######################
 if(SHAMROCK_WITH_MPI)
     include(ShamConfigureMPI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
 endif()
 
-if(NOT DEFINED Python_EXECUTABLE)
-  if(DEFINED ENV{VIRTUAL_ENV})
-    find_program(
-      Python_EXECUTABLE python
-      PATHS "$ENV{VIRTUAL_ENV}" "$ENV{VIRTUAL_ENV}/bin"
-      NO_DEFAULT_PATH)
-  elseif(DEFINED ENV{CONDA_PREFIX})
-    find_program(
-      Python_EXECUTABLE python
-      PATHS "$ENV{CONDA_PREFIX}" "$ENV{CONDA_PREFIX}/bin"
-      NO_DEFAULT_PATH)
-  elseif(DEFINED ENV{pythonLocation})
-    find_program(
-      Python_EXECUTABLE python
-      PATHS "$ENV{pythonLocation}" "$ENV{pythonLocation}/bin"
-      NO_DEFAULT_PATH)
-  endif()
-  if(NOT Python_EXECUTABLE)
-    unset(Python_EXECUTABLE)
-  endif()
+
+######################
+# Python selection part
+######################
+if(NOT DEFINED PYTHON_EXECUTABLE)
+    message(WARNING "PYTHON_EXECUTABLE is not defined, please set it as follows:\n"
+        "-DPYTHON_EXECUTABLE=$(python3 -c \"import sys; print(sys.executable)\")")
 endif()
 
-find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
+if(NOT DEFINED PYTHON_EXECUTABLE)
+    message(STATUS "Trying to autodetect python executable: python3")
+    execute_process(COMMAND python3 -c "import sys; print(sys.executable)"
+        OUTPUT_VARIABLE PYTHON_EXECUTABLE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE STATUS
+    )
+    if(STATUS AND NOT STATUS EQUAL 0)
+        message(STATUS "Failed autodetect with python3:\n ${STATUS}")
+        unset(PYTHON_EXECUTABLE)
+    endif()
+endif()
+
+if(NOT DEFINED PYTHON_EXECUTABLE)
+    message(STATUS "Trying to autodetect python executable: python")
+    execute_process(COMMAND python -c "import sys; print(sys.executable)"
+        OUTPUT_VARIABLE PYTHON_EXECUTABLE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE STATUS
+    )
+    if(STATUS AND NOT STATUS EQUAL 0)
+        message(STATUS "Failed autodetect with python:\n ${STATUS}")
+        unset(PYTHON_EXECUTABLE)
+    endif()
+endif()
+
+message(STATUS "PYTHON_EXECUTABLE : ${PYTHON_EXECUTABLE}")
+
+if(NOT DEFINED PYTHON_EXECUTABLE)
+    message(FATAL_ERROR "PYTHON_EXECUTABLE is not defined and autodetect failed, please set it as follows:\n"
+        "-DPYTHON_EXECUTABLE=$(python3 -c \"import sys; print(sys.executable)\")")
+endif()
+
+# Cache the result to avoid rerunning detection next time
+set(PYTHON_EXECUTABLE "${PYTHON_EXECUTABLE}" CACHE INTERNAL "")
+
+######################
+# Add external libraries
+######################
 
 add_subdirectory(external)
-
 
 if(USE_SYSTEM_FMTLIB)
     message(STATUS "Using system fmtlib")
     find_package(fmt REQUIRED)
-endif()
-
-
-if("${BUILD_PYLIB}")
-    # We must force fPIC because for unknown reasons cmake doesn't on those shared lib
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LIB_BUILD -fPIC")
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_EXECUTABLE_BUILD")
 endif()
 
 include_directories(external/plf_nanotimer)

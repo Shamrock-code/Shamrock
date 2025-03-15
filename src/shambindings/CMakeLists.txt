@@ -21,27 +21,25 @@ endif()
 add_library(shambindings::shambindings ALIAS shambindings)
 
 target_link_libraries(shambindings PUBLIC shambase)
-
-if("${BUILD_PYLIB}")
-    target_link_libraries(shambindings PUBLIC pybind11::module)
-else()
-    target_link_libraries(shambindings PUBLIC pybind11::embed)
-endif()
+target_link_libraries(shambindings PUBLIC pybind11::pybind11)
 
 target_include_directories(shambindings PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
 
-message(STATUS "Python_EXECUTABLE : ${Python_EXECUTABLE}")
+if(NOT DEFINED PYTHON_EXECUTABLE)
+    message(FATAL_ERROR "This should have been defined in the main CmakeLists.txt")
+endif()
+message(STATUS "PYTHON_EXECUTABLE : ${PYTHON_EXECUTABLE}")
 
 execute_process(
   COMMAND
-    "${Python_EXECUTABLE}" "-c" "import sys;print(sys.path, end= '')"
+    "${PYTHON_EXECUTABLE}" "-c" "import sys;print(sys.path, end= '')"
   RESULT_VARIABLE __PYTHON_SYS_PATH_RESULT
   OUTPUT_VARIABLE __PYTHON_SYS_PATH_OUT
   ERROR_VARIABLE __PYTHON_SYS_PATH_ERROR)
 
-  #message(status " Python_EXECUTABLE        : ${Python_EXECUTABLE}")
+  #message(status " PYTHON_EXECUTABLE        : ${PYTHON_EXECUTABLE}")
   #message(status " __PYTHON_SYS_PATH_RESULT : ${__PYTHON_SYS_PATH_RESULT}")
   #message(status " __PYTHON_SYS_PATH_OUT    : ${__PYTHON_SYS_PATH_OUT}")
   #message(status " __PYTHON_SYS_PATH_ERROR  : ${__PYTHON_SYS_PATH_ERROR}")
@@ -49,7 +47,7 @@ execute_process(
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp
   "
   const char* configure_time_py_sys_path() { return \"${__PYTHON_SYS_PATH_OUT}\"; }
-  const char* configure_time_py_executable() { return \"${Python_EXECUTABLE}\"; }
+  const char* configure_time_py_executable() { return \"${PYTHON_EXECUTABLE}\"; }
   "
 )
 

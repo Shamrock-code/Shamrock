@@ -31,7 +31,12 @@ class ShamEnvBuild(build_ext):
         print(ext_fullpath, extdir, cmake_lib_out)
 
         subprocess.run(
-            ["bash", "-c", "source ./activate && shamconfigure && shammake shamrock shamrock_pylib"], check=True
+            [
+                "bash",
+                "-c",
+                "source ./activate && shamconfigure && shammake shamrock shamrock_pylib",
+            ],
+            check=True,
         )
 
         subprocess.run(["bash", "-c", f"mkdir -p {extdir}"], check=True)

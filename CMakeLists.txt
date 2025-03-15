@@ -174,44 +174,21 @@ if(SHAMROCK_WITH_MPI)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
 endif()
 
-if(NOT DEFINED Python_EXECUTABLE)
-  if(DEFINED ENV{VIRTUAL_ENV})
-    find_program(
-      Python_EXECUTABLE python
-      PATHS "$ENV{VIRTUAL_ENV}" "$ENV{VIRTUAL_ENV}/bin"
-      NO_DEFAULT_PATH)
-  elseif(DEFINED ENV{CONDA_PREFIX})
-    find_program(
-      Python_EXECUTABLE python
-      PATHS "$ENV{CONDA_PREFIX}" "$ENV{CONDA_PREFIX}/bin"
-      NO_DEFAULT_PATH)
-  elseif(DEFINED ENV{pythonLocation})
-    find_program(
-      Python_EXECUTABLE python
-      PATHS "$ENV{pythonLocation}" "$ENV{pythonLocation}/bin"
-      NO_DEFAULT_PATH)
-  endif()
-  if(NOT Python_EXECUTABLE)
-    unset(Python_EXECUTABLE)
-  endif()
+if(NOT DEFINED PYTHON_EXECUTABLE)
+    message(WARNING "PYTHON_EXECUTABLE is not defined, please set it as follows:\n"
+        "-DPYTHON_EXECUTABLE=$(python3 -c \"import sys; print(sys.executable)\")")
+    execute_process(COMMAND python3 -c "import sys; print(sys.executable)"
+        OUTPUT_VARIABLE PYTHON_EXECUTABLE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
 endif()
-
-find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
+message(STATUS "PYTHON_EXECUTABLE : ${PYTHON_EXECUTABLE}")
 
 add_subdirectory(external)
-
 
 if(USE_SYSTEM_FMTLIB)
     message(STATUS "Using system fmtlib")
     find_package(fmt REQUIRED)
-endif()
-
-
-if("${BUILD_PYLIB}")
-    # We must force fPIC because for unknown reasons cmake doesn't on those shared lib
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LIB_BUILD -fPIC")
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_EXECUTABLE_BUILD")
 endif()
 
 include_directories(external/plf_nanotimer)

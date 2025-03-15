@@ -54,7 +54,7 @@ add_subdirectory(shammodels/sph)
 
 
 ######################
-# Shamrock Lib
+# Shamrock lib & exe targets
 ######################
 
 
@@ -65,6 +65,7 @@ message("-- adding shamrock target")
 if("${BUILD_PYLIB}")
 pybind11_add_module(shamrock main_lib.cpp)
 target_link_libraries(shamrock PUBLIC pybind11::module)
+set_property(TARGET shamrock PROPERTY POSITION_INDEPENDENT_CODE ON)
 else()
 add_executable(shamrock main.cpp)
 target_link_libraries(shamrock PUBLIC pybind11::embed)
@@ -83,8 +84,6 @@ target_precompile_headers(shamrock REUSE_FROM shamrock_lib)
 endif()
 
 
-
-
 target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/src")
 #target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/external")
 
@@ -97,6 +96,10 @@ install(TARGETS shamrock ${as_subproject}
         PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
         PRIVATE_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
         INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+
+######################
+# Shamrock test target
+######################
 
 if("${BUILD_TEST}")
 

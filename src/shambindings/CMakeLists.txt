@@ -22,15 +22,7 @@ add_library(shambindings::shambindings ALIAS shambindings)
 
 target_link_libraries(shambindings PUBLIC shambase)
 
-if("${BUILD_PYLIB}")
-    target_link_libraries(shambindings PUBLIC pybind11::module)
-else()
-    target_link_libraries(shambindings PUBLIC pybind11::embed)
-endif()
-
-target_include_directories(shambindings PUBLIC
-"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-"$<INSTALL_INTERFACE:include>")
+target_link_libraries(shambindings PUBLIC pybind11::pybind11)
 
 target_include_directories(shambindings PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"

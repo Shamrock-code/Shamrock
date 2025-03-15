@@ -96,16 +96,22 @@ message(STATUS "Shamrock version : ${SHAMROCK_VERSION_STRING}")
 ################################
 
 option(SHAMROCK_WITH_MPI "use MPI libraries" On)
-option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
 option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
 option(SHAMROCK_USE_PCH "use precompiled headers" Off)
 option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
+
+option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
 
 if(APPLE)
 if(SHAMROCK_USE_SHARED_LIB)
 message(STATUS "forcing SHAMROCK_USE_SHARED_LIB=Off on Macos because of known issues")
 endif()
 set(SHAMROCK_USE_SHARED_LIB Off)
+endif()
+
+if(NOT SHAMROCK_USE_SHARED_LIB)
+    message(WARNING "using shamrock in object lib mode force the use of -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 
 ######################

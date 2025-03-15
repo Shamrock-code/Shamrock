@@ -109,11 +109,6 @@ if(APPLE)
     set(SHAMROCK_USE_SHARED_LIB Off)
 endif()
 
-if(NOT SHAMROCK_USE_SHARED_LIB)
-    message(WARNING "using shamrock in object lib mode force the use of -fPIC")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
-endif()
-
 ######################
 #checking compiler flag support
 ######################
@@ -137,6 +132,13 @@ if(NOT "${CMAKE_BUILD_TYPE}" IN_LIST ValidShamBuildType)
 endif()
 message(STATUS "current build type : CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
+######################
+# Force -fPIC for object lib mode as the python lib require it
+######################
+if(NOT SHAMROCK_USE_SHARED_LIB)
+    message(WARNING "using shamrock in object lib mode force the use of -fPIC")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
 
 ######################
 # Compiler selection

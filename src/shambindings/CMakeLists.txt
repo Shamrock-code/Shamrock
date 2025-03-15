@@ -32,6 +32,10 @@ target_include_directories(shambindings PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
 
+target_include_directories(shambindings PUBLIC
+"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+"$<INSTALL_INTERFACE:include>")
+
 message(STATUS "PYTHON_EXECUTABLE : ${PYTHON_EXECUTABLE}")
 
 execute_process(

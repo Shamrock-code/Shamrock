@@ -29,7 +29,9 @@ If you want to contribute please fork the code and submit your pull requests fro
 
 ## Citing the code
 
-Comming soon on the arXiv and MNRAS ...
+[![bibtex](https://img.shields.io/badge/bibtex-file-green.svg)](./CITATION.bib)
+[![Nasa ads](https://img.shields.io/badge/nasa_ADS-2503.09713-blue.svg)](https://ui.adsabs.harvard.edu/abs/arXiv:2503.09713)
+[![arXiv](https://img.shields.io/badge/arXiv-2503.09713-b31b1b.svg)](https://arxiv.org/abs/2503.09713)
 
 ## Compiler support
 

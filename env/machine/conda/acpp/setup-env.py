@@ -58,7 +58,6 @@ def setup(arg: SetupArg):
 
     cmake_extra_args = ""
     if pylib:
-        cmake_extra_args += " -DBUILD_PYLIB=True"
         run_cmd(
             "cp "
             + os.path.abspath(os.path.join(cur_file, "../" + "_pysetup.py"))

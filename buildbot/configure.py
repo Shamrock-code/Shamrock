@@ -369,7 +369,7 @@ cmake_cmd += " -DSHAMROCK_ENABLE_BACKEND=SYCL"
 
 
 if args.lib:
-    cmake_cmd += " -DBUILD_PYLIB=true"
+    cmake_cmd += ""
 
 if args.tests:
     cmake_cmd += " -DBUILD_TEST=true"

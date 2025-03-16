@@ -1,3 +1,12 @@
+## -------------------------------------------------------
+##
+## SHAMROCK code for hydrodynamics
+## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+##
+## -------------------------------------------------------
+
 include(CheckCXXCompilerFlag)
 
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection")  # or 11, 14, 17, 20

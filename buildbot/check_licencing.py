@@ -5,7 +5,12 @@ from lib.buildbot import *
 
 print_buildbot_info("licence check tool")
 
-licence = R"""// -------------------------------------------------------//
+
+####################################################################################################
+# Licenses
+####################################################################################################
+
+licence_cpp = R"""// -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
 // Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
@@ -14,26 +19,66 @@ licence = R"""// -------------------------------------------------------//
 //
 // -------------------------------------------------------//"""
 
-file_list = glob.glob(str(abs_src_dir) + "/**", recursive=True)
+
+def selector_cpp(fname):
+    import re
+
+    pattern = re.compile(r".*\.(cpp|hpp)$")
+    return bool(pattern.match(fname))
+
+
+licence_cmake = R"""## -------------------------------------------------------
+##
+## SHAMROCK code for hydrodynamics
+## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+##
+## -------------------------------------------------------"""
+
+
+def selector_cmake(fname):
+    t1 = fname.endswith("/CMakeLists.txt")
+    import re
+
+    pattern = re.compile(r".*\.cmake$")
+    return bool(pattern.match(fname)) or t1
+
+
+checkers = [(selector_cpp, licence_cpp), (selector_cmake, licence_cmake)]
+
+
+####################################################################################################
+# File listing
+####################################################################################################
+
+
+file_list = glob.glob(str(abs_proj_dir) + "/cmake/**", recursive=True)
+file_list += glob.glob(str(abs_src_dir) + "/**", recursive=True)
 
 file_list.sort()
+
+
+####################################################################################################
+# Check part
+####################################################################################################
+
 
 missing_licence = []
 
 for fname in file_list:
+    print("checking", fname)
+    for selector, licence in checkers:
+        if selector(fname):
 
-    if (not fname.endswith(".cpp")) and (not fname.endswith(".hpp")):
-        continue
+            print(" -", fname)
 
-    if fname.endswith("version.cpp"):
-        continue
+            f = open(fname, "r")
+            res = f.read().startswith(licence)
+            f.close()
 
-    f = open(fname, "r")
-    res = f.read().startswith(licence)
-    f.close()
-
-    if not res:
-        missing_licence.append(fname)
+            if not res:
+                missing_licence.append(fname)
 
 
 def write_file(fname, source):

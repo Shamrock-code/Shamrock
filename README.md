@@ -16,7 +16,7 @@ This code aims to be:
 
 ## Getting in touch
 
-Join us on [Discord](https://discord.gg/Q69s5buyr5)! Alternatively, open a discussion or issue in this repository.
+Join us on [Discord](https://discord.gg/Q69s5buyr5), or [Slack](https://shamrock-code.slack.com)! Alternatively, open a discussion or issue in this repository.
 
 ## Contributing
 

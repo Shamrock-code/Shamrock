@@ -7,16 +7,15 @@
 #SBATCH --ntasks-per-node=8     # 8 MPI ranks per node, 16 total (2x8)
 #SBATCH --gpus-per-node=8       # Allocate one gpu per MPI rank
 #SBATCH --time=00:10:00       # Run time (d-hh:mm:ss)
-#SBATCH --account=project_465001405  # Project for billing
+#SBATCH --account=<project account>  # Project for billing
 #
 echo "The job ${SLURM_JOB_ID} is running on these nodes:"
 echo ${SLURM_NODELIST}
 echo
 #
-SHAMROCK_PATH=/scratch/project_465001405/Shamrock_scalling/Shamrock
-cd $SHAMROCK_PATH/build_acpp
+SHAMROCK_BIN_PATH=<path to folder with binary>
 #
-RSCRIPT=$SHAMROCK_PATH/exemples/sedov_scale_test_updated.py
+RSCRIPT=<runscript>
 #
 source activate
 #
@@ -38,5 +37,5 @@ export ACPP_DEBUG_LEVEL=0
 
 #
 srun --cpu-bind=${CPU_BIND} -- \
-    ./select_gpu ./shamrock --force-dgpu-on --sycl-cfg auto:HIP --loglevel 1 --sycl-ls-map \
+    ./select_gpu $SHAMROCK_BIN_PATH/shamrock --force-dgpu-on --sycl-cfg auto:HIP --loglevel 1 --sycl-ls-map \
     --rscript $RSCRIPT

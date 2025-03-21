@@ -1,3 +1,5 @@
+#### Before this lines are env specific definitions
+
 module purge
 
 module load LUMI/24.03
@@ -6,9 +8,11 @@ module load cray-python
 module load rocm/6.0.3
 module load Boost/1.83.0-cpeAMD-24.03
 
+export ACPP_VERSION=v24.10.0
+. $BUILD_DIR/.env/clone-acpp
+
 export PATH=$HOME/.local/bin:$PATH
 pip3 install -U ninja cmake
-
 
 export ACPP_TARGETS="hip:gfx90a"
 
@@ -16,7 +20,7 @@ export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
 export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
 
 export LUMI_WORKSPACE_OUTPUT=$(lumi-workspaces)
-export SCRATCH=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch[^ ]*')
+export PROJECT_SCRATCH=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch[^ ]*')
 export PROJECT_NUM=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch/[^ ]*' | cut -d'/' -f3)
 
 function setupcompiler {

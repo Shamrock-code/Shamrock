@@ -1,6 +1,6 @@
 #### Before this lines are env specific definitions
 
-module purge
+module --force purge
 
 module load LUMI/24.03
 module load partition/G

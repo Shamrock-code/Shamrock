@@ -13,6 +13,12 @@ export MPICH_GPU_SUPPORT_ENABLED=1
 export PATH=$HOME/.local/bin:$PATH
 pip3 install -U ninja cmake
 
+export LLVM_VERSION=llvmorg-18.1.8
+export LLVM_GIT_DIR=$BUILD_DIR/.env/llvm-git
+export LLVM_BUILD_DIR=$BUILD_DIR/.env/llvm-build
+export LLVM_INSTALL_DIR=$BUILD_DIR/.env/llvm-install
+. $BUILD_DIR/.env/clone-llvm
+
 export ACPP_VERSION=v24.10.0
 export ACPP_TARGETS="hip:gfx90a"
 . $BUILD_DIR/.env/clone-acpp
@@ -20,16 +26,50 @@ export ACPP_TARGETS="hip:gfx90a"
 export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
 export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
 
-export LUMI_WORKSPACE_OUTPUT=$(lumi-workspaces)
-export PROJECT_SCRATCH=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch[^ ]*')
-export PROJECT_NUM=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch/[^ ]*' | cut -d'/' -f3)
+#export LUMI_WORKSPACE_OUTPUT=$(lumi-workspaces)
+#export PROJECT_SCRATCH=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch[^ ]*')
+#export PROJECT_NUM=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch/[^ ]*' | cut -d'/' -f3)
+
+function llvm_setup {
+    set -e
+    cmake -S ${LLVM_GIT_DIR}/llvm -B ${LLVM_BUILD_DIR} \
+        -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;lld;openmp" \
+        -DOPENMP_ENABLE_LIBOMPTARGET=OFF \
+        -DCMAKE_C_COMPILER=gcc-12 \
+        -DCMAKE_CXX_COMPILER=g++-12 \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=$LLVM_INSTALL_DIR \
+        -DLLVM_ENABLE_ASSERTIONS=OFF \
+        -DLLVM_TARGETS_TO_BUILD="AMDGPU;NVPTX;X86" \
+        -DCLANG_ANALYZER_ENABLE_Z3_SOLVER=0 \
+        -DLLVM_INCLUDE_BENCHMARKS=0 \
+        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+        -DCMAKE_INSTALL_RPATH=$LLVM_INSTALL_DIR/lib \
+        -DLLVM_ENABLE_OCAMLDOC=OFF \
+        -DLLVM_ENABLE_BINDINGS=OFF \
+        -DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=OFF \
+        -DLLVM_ENABLE_DUMP=OFF
+
+    (cd ${LLVM_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+    set +e
+}
+
+
+if [ ! -f "$LLVM_INSTALL_DIR/bin/clang++" ]; then
+    echo " ----- llvm is not configured, compiling it ... -----"
+    llvm_setup
+    echo " ----- llvm configured ! -----"
+fi
+
+return
 
 function setupcompiler {
+    set -e
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
         -DROCM_PATH=$ROCM_PATH \
-        -DCMAKE_C_COMPILER=${ROCM_PATH}/llvm/bin/clang \
-        -DCMAKE_CXX_COMPILER=${ROCM_PATH}/llvm/bin/clang++ \
+        -DCMAKE_C_COMPILER=${LLVM_INSTALL_DIR}/bin/clang \
+        -DCMAKE_CXX_COMPILER=${LLVM_INSTALL_DIR}/bin/clang++ \
         -DWITH_ACCELERATED_CPU=ON \
         -DWITH_CPU_BACKEND=ON \
         -DWITH_CUDA_BACKEND=OFF \
@@ -40,19 +80,17 @@ function setupcompiler {
         -DBoost_NO_BOOST_CMAKE=TRUE \
         -DBoost_NO_SYSTEM_PATHS=TRUE \
         -DWITH_SSCP_COMPILER=OFF \
-        -DLLVM_DIR=${ROCM_PATH}/llvm/lib/cmake/llvm/
+        -DLLVM_DIR=${LLVM_INSTALL_DIR}/lib/cmake/llvm/
 
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+    set +e
 }
 
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
     echo " ----- acpp is not configured, compiling it ... -----"
-
     setupcompiler
-
     echo " ----- acpp configured ! -----"
 fi
-
 
 function shamconfigure {
     cmake \

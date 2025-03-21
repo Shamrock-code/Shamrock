@@ -67,6 +67,12 @@ def setup(arg: SetupArg):
         path_write=ACPP_CLONE_HELPER,
     )
 
+    LLVM_CLONE_HELPER = builddir + "/.env/clone-llvm"
+    utils.envscript.copy_env_file(
+        source_path=shamrockdir + "/env/helpers/clone-llvm.sh",
+        path_write=LLVM_CLONE_HELPER,
+    )
+
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'
     ENV_SCRIPT_HEADER += "\n"

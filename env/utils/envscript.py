@@ -14,3 +14,6 @@ def write_env_file(source_path, header, path_write):
 
     with open(path_write, "w") as env_script:
         env_script.write(ENV_SCRIPT_CONTENT)
+
+def copy_env_file(source_path, path_write):
+    write_env_file(source_path, "", path_write)

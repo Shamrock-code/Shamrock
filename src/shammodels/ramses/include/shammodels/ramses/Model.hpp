@@ -21,6 +21,8 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
+#include "shamrock/io/ShamrockDump.hpp"
+#include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
@@ -114,6 +116,22 @@ namespace shammodels::basegodunov {
 
         inline bool evolve_until(Tscal target_time, i32 niter_max) {
             return solver.evolve_until(target_time, niter_max);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        /////// I/O
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        inline void dump(std::string fname) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("Godunov", "Dumping state to", fname);
+            }
+
+            nlohmann::json metadata;
+            metadata["solver_config"] = solver.solver_config;
+
+            shamrock::write_shamrock_dump(
+                fname, metadata.dump(4), shambase::get_check_ref(ctx.sched));
         }
     };
 

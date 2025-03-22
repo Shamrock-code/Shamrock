@@ -8,8 +8,8 @@ import utils.sysinfo
 from utils.oscmd import *
 from utils.setuparg import *
 
-NAME = "Lumi-G Intel AdaptiveCpp ROCM"
-PATH = "machine/lumi/standard-g/acpp"
+NAME = "Lumi-G Intel AdaptiveCpp Custom LLVM"
+PATH = "machine/lumi/standard-g/acpp-custom-llvm"
 
 
 def is_intel_llvm_already_installed(installfolder):
@@ -65,6 +65,12 @@ def setup(arg: SetupArg):
     utils.envscript.copy_env_file(
         source_path=shamrockdir + "/env/helpers/clone-acpp.sh",
         path_write=ACPP_CLONE_HELPER,
+    )
+
+    LLVM_CLONE_HELPER = builddir + "/.env/clone-llvm"
+    utils.envscript.copy_env_file(
+        source_path=shamrockdir + "/env/helpers/clone-llvm.sh",
+        path_write=LLVM_CLONE_HELPER,
     )
 
     ENV_SCRIPT_HEADER += "\n"

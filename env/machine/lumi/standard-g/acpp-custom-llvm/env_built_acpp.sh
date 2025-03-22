@@ -1,5 +1,9 @@
 #### Before this lines are env specific definitions
 
+# On LUMI using the default (256) result in killed jobs as the login node is destroyed ^^
+export MAKE_OPT=( -j 128)
+export NINJA_STATUS="[%f/%t j=%r] "
+
 module --force purge
 
 module load LUMI/24.03
@@ -33,18 +37,18 @@ export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
 function llvm_setup {
     set -e
     cmake -S ${LLVM_GIT_DIR}/llvm -B ${LLVM_BUILD_DIR} \
-        -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;lld;openmp" \
-        -DOPENMP_ENABLE_LIBOMPTARGET=OFF \
         -DCMAKE_C_COMPILER=gcc-12 \
         -DCMAKE_CXX_COMPILER=g++-12 \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=$LLVM_INSTALL_DIR \
-        -DLLVM_ENABLE_ASSERTIONS=OFF \
+        -DCMAKE_INSTALL_RPATH=$LLVM_INSTALL_DIR/lib \
+        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
+        -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;lld;openmp" \
         -DLLVM_TARGETS_TO_BUILD="AMDGPU;NVPTX;X86" \
+        -DOPENMP_ENABLE_LIBOMPTARGET=OFF \
+        -DLLVM_ENABLE_ASSERTIONS=OFF \
         -DCLANG_ANALYZER_ENABLE_Z3_SOLVER=0 \
         -DLLVM_INCLUDE_BENCHMARKS=0 \
-        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
-        -DCMAKE_INSTALL_RPATH=$LLVM_INSTALL_DIR/lib \
         -DLLVM_ENABLE_OCAMLDOC=OFF \
         -DLLVM_ENABLE_BINDINGS=OFF \
         -DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=OFF \
@@ -73,16 +77,8 @@ function setupcompiler {
         -DROCM_PATH=$ROCM_PATH \
         -DCMAKE_C_COMPILER=${LLVM_INSTALL_DIR}/bin/clang \
         -DCMAKE_CXX_COMPILER=${LLVM_INSTALL_DIR}/bin/clang++ \
-        -DWITH_ACCELERATED_CPU=ON \
-        -DWITH_CPU_BACKEND=ON \
-        -DWITH_CUDA_BACKEND=OFF \
-        -DWITH_ROCM_BACKEND=ON \
-        -DWITH_OPENCL_BACKEND=OFF \
-        -DWITH_LEVEL_ZERO_BACKEND=OFF \
-        -DACPP_TARGETS="gfx90a" \
         -DBoost_NO_BOOST_CMAKE=TRUE \
         -DBoost_NO_SYSTEM_PATHS=TRUE \
-        -DWITH_SSCP_COMPILER=OFF \
         -DLLVM_DIR=${LLVM_INSTALL_DIR}/lib/cmake/llvm/
 
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
@@ -101,6 +97,7 @@ function shamconfigure {
         -B $BUILD_DIR \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=ACPPDirect \
+        -DCMAKE_C_COMPILER=${LLVM_INSTALL_DIR}/bin/clang \
         -DCMAKE_CXX_COMPILER="${ACPP_INSTALL_DIR}/bin/acpp" \
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
@@ -108,6 +105,7 @@ function shamconfigure {
         -DCMAKE_EXE_LINKER_FLAGS="-L"${CRAY_MPICH_PREFIX}/lib" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \
+        -DPYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
         "${CMAKE_OPT[@]}"
 }
 

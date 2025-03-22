@@ -4,7 +4,7 @@
 export MAKE_OPT=( -j 128)
 export NINJA_STATUS="[%f/%t j=%r] "
 
-module --force purge
+module purge
 
 module load LUMI/24.03
 module load partition/G

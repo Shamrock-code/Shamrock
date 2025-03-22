@@ -18,7 +18,7 @@ module load cray-python
 module load rocm/6.0.3
 
 # necessay for mpi but may mess the intel llvm compilation, to check ...
-module load PrgEnv-amd
+# module load PrgEnv-amd
 
 export MPICH_GPU_SUPPORT_ENABLED=1
 
@@ -46,19 +46,17 @@ function setupcompiler {
     echo " ---- Running compiler setup ----"
 
     # See : https://dci.dci-gitlab.cines.fr/webextranet/software_stack/libraries/index.html#compiling-intel-llvm
-    cd ${INTEL_LLVM_GIT_DIR}
+    #cd ${INTEL_LLVM_GIT_DIR}
 
-    python3 buildbot/configure.py \
+    python3 ${INTEL_LLVM_GIT_DIR}/buildbot/configure.py \
         --hip \
+        -DUR_HIP_ROCM_DIR=/usr/local/rocm \
         --cmake-opt="-DCMAKE_C_COMPILER=amdclang" \
         --cmake-opt="-DCMAKE_CXX_COMPILER=amdclang++" \
-        --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=${ROCM_PATH}" \
         --cmake-opt="-DCMAKE_INSTALL_PREFIX=${INTEL_LLVM_INSTALL_DIR}" \
         --cmake-gen="Ninja"
 
-    cd build
-
-    ($MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+    (cd ${INTEL_LLVM_GIT_DIR}/build && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
 
     set +e
 }

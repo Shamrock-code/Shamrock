@@ -50,10 +50,10 @@ function setupcompiler {
 
     python3 ${INTEL_LLVM_GIT_DIR}/buildbot/configure.py \
         --hip \
-        -DUR_HIP_ROCM_DIR=/usr/local/rocm \
         --cmake-opt="-DCMAKE_C_COMPILER=amdclang" \
         --cmake-opt="-DCMAKE_CXX_COMPILER=amdclang++" \
         --cmake-opt="-DCMAKE_INSTALL_PREFIX=${INTEL_LLVM_INSTALL_DIR}" \
+        --cmake-opt="-DUR_HIP_ROCM_DIR=${ROCM_PATH}" \
         --cmake-gen="Ninja"
 
     (cd ${INTEL_LLVM_GIT_DIR}/build && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)

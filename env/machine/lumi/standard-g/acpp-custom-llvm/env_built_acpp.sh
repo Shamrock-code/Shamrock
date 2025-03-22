@@ -27,10 +27,10 @@ export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 
 case "$ACPPMODE" in
     "SSCP")
-        export ACPP_TARGETS=hip:gfx90a
+        export ACPP_TARGETS=generic
         ;;
     "SMCP")
-        export ACPP_TARGETS=generic
+        export ACPP_TARGETS=hip:gfx90a
         ;;
     *)
         echo "Unknown ACPPMODE: $ACPPMODE"

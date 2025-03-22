@@ -18,8 +18,8 @@ export PATH=$HOME/.local/bin:$PATH
 pip3 install -U ninja cmake
 
 export LLVM_VERSION=llvmorg-18.1.8
-export LLVM_GIT_DIR=$BUILD_DIR/.env/llvm-git
-export LLVM_BUILD_DIR=$BUILD_DIR/.env/llvm-build
+export LLVM_GIT_DIR=/tmp/llvm-git
+export LLVM_BUILD_DIR=/tmp/llvm-build
 export LLVM_INSTALL_DIR=$BUILD_DIR/.env/llvm-install
 
 export ACPP_VERSION=v24.10.0
@@ -47,6 +47,7 @@ function llvm_setup {
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
         -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;lld;openmp" \
         -DLLVM_TARGETS_TO_BUILD="AMDGPU;NVPTX;X86" \
+        -DLLVM_BUILD_LLVM_DYLIB=ON \
         -DOPENMP_ENABLE_LIBOMPTARGET=OFF \
         -DLLVM_ENABLE_ASSERTIONS=OFF \
         -DCLANG_ANALYZER_ENABLE_Z3_SOLVER=0 \

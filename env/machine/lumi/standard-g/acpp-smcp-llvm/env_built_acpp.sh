@@ -51,17 +51,20 @@ function llvm_setup {
         -DLLVM_ENABLE_DUMP=OFF
 
     (cd ${LLVM_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+
+    echo "int main() { return 0; }" > test.cpp
+    ${LLVM_INSTALL_DIR}/bin/clang++ -O3 -fopenmp test.cpp
+    ./a.out
+    rm a.out test.cpp
+
     set +e
 }
-
 
 if [ ! -f "$LLVM_INSTALL_DIR/bin/clang++" ]; then
     echo " ----- llvm is not configured, compiling it ... -----"
     llvm_setup
     echo " ----- llvm configured ! -----"
 fi
-
-return
 
 function setupcompiler {
     set -e

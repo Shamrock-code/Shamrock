@@ -33,8 +33,8 @@ function setupcompiler {
 
     # See : https://dci.dci-gitlab.cines.fr/webextranet/software_stack/libraries/index.html#compiling-intel-llvm
     echo " -- clone inte/llvm"
-    git clone --branch="sycl" https://github.com/intel/llvm ${INTELLLVM_GIT_DIR} || true
-    cd ${INTELLLVM_GIT_DIR}
+    git clone --branch="sycl" https://github.com/intel/llvm ${INTEL_LLVM_GIT_DIR} || true
+    cd ${INTEL_LLVM_GIT_DIR}
 
     module purge
 

@@ -48,7 +48,7 @@ def setup(arg: SetupArg):
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
-    INTELLLVM_GIT_DIR = builddir + "/.env/intel-llvm-git"
+    INTEL_LLVM_GIT_DIR = builddir + "/.env/intel-llvm-git"
     INTELLLVM_INSTALL_DIR = builddir + "/.env/intel-llvm-installdir"
 
     configure_args = utils.intel_llvm.get_llvm_configure_arg(args)
@@ -59,7 +59,7 @@ def setup(arg: SetupArg):
     ENV_SCRIPT_HEADER = ""
     ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
     ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-    ENV_SCRIPT_HEADER += "export INTELLLVM_GIT_DIR=" + INTELLLVM_GIT_DIR + "\n"
+    ENV_SCRIPT_HEADER += "export INTEL_LLVM_GIT_DIR=" + INTEL_LLVM_GIT_DIR + "\n"
     ENV_SCRIPT_HEADER += "export INTELLLVM_INSTALL_DIR=" + INTELLLVM_INSTALL_DIR + "\n"
     ENV_SCRIPT_HEADER += "export INTELLLVM_CONFIGURE_ARGS=(" + configure_args + ")\n"
     ENV_SCRIPT_HEADER += 'export INTEL_LLVM_VERSION="nightly-2024-10-27"\n'

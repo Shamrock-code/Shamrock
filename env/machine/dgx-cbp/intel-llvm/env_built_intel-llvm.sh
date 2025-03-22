@@ -5,14 +5,14 @@ export LD_LIBRARY_PATH=$INTELLLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 
 function setupcompiler {
 
-    python3 ${INTELLLVM_GIT_DIR}/buildbot/configure.py \
+    python3 ${INTEL_LLVM_GIT_DIR}/buildbot/configure.py \
         --cuda \
         --cmake-opt="-DCUDA_TOOLKIT_ROOT_DIR=/usr/lib/cuda" \
         --cmake-gen "${CMAKE_GENERATOR}" \
         --cmake-opt="-DCMAKE_INSTALL_PREFIX=${INTELLLVM_INSTALL_DIR}"
 
-    (cd ${INTELLLVM_GIT_DIR}/build && $MAKE_EXEC "${MAKE_OPT[@]}" all libsycldevice)
-    (cd ${INTELLLVM_GIT_DIR}/build && $MAKE_EXEC install)
+    (cd ${INTEL_LLVM_GIT_DIR}/build && $MAKE_EXEC "${MAKE_OPT[@]}" all libsycldevice)
+    (cd ${INTEL_LLVM_GIT_DIR}/build && $MAKE_EXEC install)
 
 }
 

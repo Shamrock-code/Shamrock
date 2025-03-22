@@ -48,7 +48,7 @@ def setup(arg: SetupArg):
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
     INTEL_LLVM_GIT_DIR = builddir + "/.env/intel-llvm-git"
-    INTELLLVM_INSTALL_DIR = builddir + "/.env/intel-llvm-installdir"
+    INTEL_LLVM_INSTALL_DIR = builddir + "/.env/intel-llvm-installdir"
 
     ENV_SCRIPT_PATH = builddir + "/activate"
 
@@ -56,7 +56,7 @@ def setup(arg: SetupArg):
     ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
     ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
     ENV_SCRIPT_HEADER += "export INTEL_LLVM_GIT_DIR=" + INTEL_LLVM_GIT_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export INTELLLVM_INSTALL_DIR=" + INTELLLVM_INSTALL_DIR + "\n"
+    ENV_SCRIPT_HEADER += "export INTEL_LLVM_INSTALL_DIR=" + INTEL_LLVM_INSTALL_DIR + "\n"
 
     run_cmd("mkdir -p " + builddir + "/.env")
 
@@ -115,7 +115,7 @@ def setup(arg: SetupArg):
         source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
     )
 
-    if is_intel_llvm_already_installed(INTELLLVM_INSTALL_DIR):
+    if is_intel_llvm_already_installed(INTEL_LLVM_INSTALL_DIR):
         print("-- intel llvm already installed => skipping")
     else:
         print("-- running compiler setup")

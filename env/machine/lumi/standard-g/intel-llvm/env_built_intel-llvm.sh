@@ -5,12 +5,7 @@
 export MAKE_OPT=( -j 128)
 export NINJA_STATUS="[%f/%t j=%r] "
 
-echo " -- Restoring env default"
-source /opt/cray/pe/cpe/23.12/restore_lmod_system_defaults.sh
-echo " -- module purge"
 module purge
-source /opt/cray/pe/cpe/23.12/restore_lmod_system_defaults.sh
-module list
 
 module load LUMI/24.03
 module load partition/G

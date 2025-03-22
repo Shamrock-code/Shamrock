@@ -39,8 +39,8 @@ function llvm_setup {
     . $BUILD_DIR/.env/clone-llvm
 
     cmake -S ${LLVM_GIT_DIR}/llvm -B ${LLVM_BUILD_DIR} \
-        -DCMAKE_C_COMPILER=gcc-12 \
-        -DCMAKE_CXX_COMPILER=g++-12 \
+        -DCMAKE_C_COMPILER=gcc-13 \
+        -DCMAKE_CXX_COMPILER=g++-13 \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=$LLVM_INSTALL_DIR \
         -DCMAKE_INSTALL_RPATH=$LLVM_INSTALL_DIR/lib \
@@ -95,6 +95,11 @@ if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
 fi
 
 function shamconfigure {
+
+    # see https://github.com/audacity/audacity/issues/3173 for why "-Wl,--copy-dt-needed-entries" 
+    # is needed 
+    # If not one gets /usr/lib64/gcc/x86_64-suse-linux/13/../../../../x86_64-suse-linux/bin/ld: /lib64/libpthread.so.0: error adding symbols: DSO missing from command line
+
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \

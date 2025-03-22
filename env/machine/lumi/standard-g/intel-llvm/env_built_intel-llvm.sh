@@ -1,12 +1,9 @@
 # Exports will be provided by the new env script above this line
 # will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
 
-if [ ! -f "$INTELLLVM_GIT_DIR/README.md" ]; then
-    echo " ------ Clonning LLVM ------ "
-    echo "-> git clone --depth 1 -b sycl https://github.com/intel/llvm.git $INTELLLVM_GIT_DIR"
-    git clone --depth 1 -b sycl https://github.com/intel/llvm.git $INTELLLVM_GIT_DIR
-    echo " ------  LLVM Cloned  ------ "
-fi
+# On LUMI using the default (256) result in killed jobs as the login node is destroyed ^^
+export MAKE_OPT=( -j 128)
+export NINJA_STATUS="[%f/%t j=%r] "
 
 echo " -- Restoring env default"
 source /opt/cray/pe/cpe/23.12/restore_lmod_system_defaults.sh
@@ -23,20 +20,33 @@ module load rocm/6.0.3
 # necessay for mpi but may mess the intel llvm compilation, to check ...
 module load PrgEnv-amd
 
+export MPICH_GPU_SUPPORT_ENABLED=1
+
 export PATH=$HOME/.local/bin:$PATH
+pip3 install -U ninja cmake
+
+
+export INTELLLVM_VERSION=v6.0.0
+export INTELLLVM_GIT_DIR=/tmp/intelllvm-git
+export INTELLLVM_INSTALL_DIR=$BUILD_DIR/.env/intelllvm-install
 
 export PATH=$INTELLLVM_INSTALL_DIR/bin:$PATH
 export LD_LIBRARY_PATH=$INTELLLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 
-export MPICH_GPU_SUPPORT_ENABLED=1
-
 function setupcompiler {
+
+    set -e
+
+    echo " -> cleaning intel/llvm build dirs ..."
+    rm -rf ${INTELLLVM_GIT_DIR} =
+    echo " -> done"
+
+    . $BUILD_DIR/.env/clone-intel-llvm
+
     echo " ---- Running compiler setup ----"
 
     # See : https://dci.dci-gitlab.cines.fr/webextranet/software_stack/libraries/index.html#compiling-intel-llvm
     cd ${INTELLLVM_GIT_DIR}
-
-    pip3 install -U ninja cmake
 
     python3 buildbot/configure.py \
         --hip \
@@ -48,9 +58,9 @@ function setupcompiler {
 
     cd build
 
-    time ninja "${MAKE_OPT[@]}" -k0 all lib/all tools/libdevice/libsycldevice
-    time ninja "${MAKE_OPT[@]}" -k0 install
+    ($MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
 
+    set +e
 }
 
 if [ ! -f "${INTELLLVM_INSTALL_DIR}/bin/clang++" ]; then
@@ -58,12 +68,6 @@ if [ ! -f "${INTELLLVM_INSTALL_DIR}/bin/clang++" ]; then
     setupcompiler
     echo " ----- intel llvm configured ! -----"
 fi
-
-
-function updatecompiler {
-    (cd ${ACPP_GIT_DIR} && git pull)
-    setupcompiler
-}
 
 function shamconfigure {
     cmake \

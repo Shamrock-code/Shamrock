@@ -26,19 +26,19 @@ export PATH=$HOME/.local/bin:$PATH
 pip3 install -U ninja cmake
 
 
-export INTELLLVM_VERSION=v6.0.0
-export INTELLLVM_GIT_DIR=/tmp/intelllvm-git
-export INTELLLVM_INSTALL_DIR=$BUILD_DIR/.env/intelllvm-install
+export INTEL_LLVM_VERSION=v6.0.0
+export INTEL_LLVM_GIT_DIR=/tmp/intelllvm-git
+export INTEL_LLVM_INSTALL_DIR=$BUILD_DIR/.env/intelllvm-install
 
-export PATH=$INTELLLVM_INSTALL_DIR/bin:$PATH
-export LD_LIBRARY_PATH=$INTELLLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH
+export PATH=$INTEL_LLVM_INSTALL_DIR/bin:$PATH
+export LD_LIBRARY_PATH=$INTEL_LLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 
 function setupcompiler {
 
     set -e
 
     echo " -> cleaning intel/llvm build dirs ..."
-    rm -rf ${INTELLLVM_GIT_DIR} =
+    rm -rf ${INTEL_LLVM_GIT_DIR} =
     echo " -> done"
 
     . $BUILD_DIR/.env/clone-intel-llvm
@@ -46,14 +46,14 @@ function setupcompiler {
     echo " ---- Running compiler setup ----"
 
     # See : https://dci.dci-gitlab.cines.fr/webextranet/software_stack/libraries/index.html#compiling-intel-llvm
-    cd ${INTELLLVM_GIT_DIR}
+    cd ${INTEL_LLVM_GIT_DIR}
 
     python3 buildbot/configure.py \
         --hip \
         --cmake-opt="-DCMAKE_C_COMPILER=amdclang" \
         --cmake-opt="-DCMAKE_CXX_COMPILER=amdclang++" \
         --cmake-opt="-DSYCL_BUILD_PI_HIP_ROCM_DIR=${ROCM_PATH}" \
-        --cmake-opt="-DCMAKE_INSTALL_PREFIX=${INTELLLVM_INSTALL_DIR}" \
+        --cmake-opt="-DCMAKE_INSTALL_PREFIX=${INTEL_LLVM_INSTALL_DIR}" \
         --cmake-gen="Ninja"
 
     cd build
@@ -63,7 +63,7 @@ function setupcompiler {
     set +e
 }
 
-if [ ! -f "${INTELLLVM_INSTALL_DIR}/bin/clang++" ]; then
+if [ ! -f "${INTEL_LLVM_INSTALL_DIR}/bin/clang++" ]; then
     echo " ----- intel llvm is not configured, compiling it ... -----"
     setupcompiler
     echo " ----- intel llvm configured ! -----"
@@ -75,9 +75,9 @@ function shamconfigure {
         -B $BUILD_DIR \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=IntelLLVM \
-        -DINTEL_LLVM_PATH="${INTELLLVM_INSTALL_DIR}" \
-        -DCMAKE_CXX_COMPILER="${INTELLLVM_INSTALL_DIR}/bin/clang++" \
-        -DCMAKE_C_COMPILER="${INTELLLVM_INSTALL_DIR}/bin/clang" \
+        -DINTEL_LLVM_PATH="${INTEL_LLVM_INSTALL_DIR}" \
+        -DCMAKE_CXX_COMPILER="${INTEL_LLVM_INSTALL_DIR}/bin/clang++" \
+        -DCMAKE_C_COMPILER="${INTEL_LLVM_INSTALL_DIR}/bin/clang" \
         -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=${ROCM_PATH} -isystem ${CRAY_MPICH_PREFIX}/include" \
         -DCMAKE_EXE_LINKER_FLAGS="-L"${CRAY_MPICH_PREFIX}/lib" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \

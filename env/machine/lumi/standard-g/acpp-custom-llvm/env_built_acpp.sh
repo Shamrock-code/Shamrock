@@ -24,6 +24,20 @@ export LLVM_INSTALL_DIR=$BUILD_DIR/.env/llvm-install
 
 export ACPP_VERSION=v24.10.0
 export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
+
+case "$ACPPMODE" in
+    "SSCP")
+        export ACPP_TARGETS=hip:gfx90a
+        ;;
+    "SMCP")
+        export ACPP_TARGETS=generic
+        ;;
+    *)
+        echo "Unknown ACPPMODE: $ACPPMODE"
+        return
+        ;;
+esac
+
 . $BUILD_DIR/.env/clone-acpp
 
 export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
@@ -35,6 +49,10 @@ export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
 
 function llvm_setup {
     set -e
+
+    echo " -> cleaning llvm build dirs ..."
+    rm -rf ${LLVM_GIT_DIR} ${LLVM_BUILD_DIR}
+    echo " -> done"
 
     . $BUILD_DIR/.env/clone-llvm
 
@@ -110,7 +128,7 @@ function shamconfigure {
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DCMAKE_CXX_FLAGS="-march=znver3 -isystem ${CRAY_MPICH_PREFIX}/include" \
-        -DCMAKE_EXE_LINKER_FLAGS="-L"${CRAY_MPICH_PREFIX}/lib" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
+        -DCMAKE_EXE_LINKER_FLAGS="-Wl,--copy-dt-needed-entries -L"${CRAY_MPICH_PREFIX}/lib" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \
         -DPYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \

@@ -74,9 +74,9 @@ def setup(arg: SetupArg):
     ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR=" + ACPP_INSTALL_DIR + "\n"
 
     if mode == "SMCP":
-        ENV_SCRIPT_HEADER += "export ACPP_TARGETS=\"hip:gfx90a\"\n"
+        ENV_SCRIPT_HEADER += "export ACPPMODE=SMCP\n"
     elif mode == "SSCP":
-        ENV_SCRIPT_HEADER += "export ACPP_TARGETS=\"generic\"\n"
+        ENV_SCRIPT_HEADER += "export ACPPMODE=SSCP\n"
     else:
         raise "unknown mode, can be SMCP or SSCP"
 

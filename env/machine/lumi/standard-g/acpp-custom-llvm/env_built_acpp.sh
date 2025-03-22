@@ -21,7 +21,6 @@ export LLVM_VERSION=llvmorg-18.1.8
 export LLVM_GIT_DIR=$BUILD_DIR/.env/llvm-git
 export LLVM_BUILD_DIR=$BUILD_DIR/.env/llvm-build
 export LLVM_INSTALL_DIR=$BUILD_DIR/.env/llvm-install
-. $BUILD_DIR/.env/clone-llvm
 
 export ACPP_VERSION=v24.10.0
 export ACPP_TARGETS="hip:gfx90a"
@@ -36,6 +35,9 @@ export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
 
 function llvm_setup {
     set -e
+
+    . $BUILD_DIR/.env/clone-llvm
+
     cmake -S ${LLVM_GIT_DIR}/llvm -B ${LLVM_BUILD_DIR} \
         -DCMAKE_C_COMPILER=gcc-12 \
         -DCMAKE_CXX_COMPILER=g++-12 \

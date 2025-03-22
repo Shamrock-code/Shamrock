@@ -20,9 +20,9 @@ export ACPP_TARGETS="hip:gfx90a"
 export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
 export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
 
-export LUMI_WORKSPACE_OUTPUT=$(lumi-workspaces)
-export PROJECT_SCRATCH=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch[^ ]*')
-export PROJECT_NUM=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch/[^ ]*' | cut -d'/' -f3)
+#export LUMI_WORKSPACE_OUTPUT=$(lumi-workspaces)
+#export PROJECT_SCRATCH=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch[^ ]*')
+#export PROJECT_NUM=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch/[^ ]*' | cut -d'/' -f3)
 
 function setupcompiler {
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
@@ -47,9 +47,7 @@ function setupcompiler {
 
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
     echo " ----- acpp is not configured, compiling it ... -----"
-
     setupcompiler
-
     echo " ----- acpp configured ! -----"
 fi
 
@@ -63,10 +61,11 @@ function shamconfigure {
         -DCMAKE_CXX_COMPILER="${ACPP_INSTALL_DIR}/bin/acpp" \
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
-        -DCMAKE_CXX_FLAGS="-isystem ${CRAY_MPICH_PREFIX}/include" \
+        -DCMAKE_CXX_FLAGS="-march=znver3 -isystem ${CRAY_MPICH_PREFIX}/include" \
         -DCMAKE_EXE_LINKER_FLAGS="-L"${CRAY_MPICH_PREFIX}/lib" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \
+        -DPYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
         "${CMAKE_OPT[@]}"
 }
 

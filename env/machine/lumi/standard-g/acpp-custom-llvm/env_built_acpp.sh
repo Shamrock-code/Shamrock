@@ -23,7 +23,7 @@ export LLVM_BUILD_DIR=/tmp/llvm-build
 export LLVM_INSTALL_DIR=$BUILD_DIR/.env/llvm-install
 
 export ACPP_VERSION=v24.10.0
-export ACPP_TARGETS="hip:gfx90a"
+export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 . $BUILD_DIR/.env/clone-acpp
 
 export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
@@ -104,7 +104,7 @@ function shamconfigure {
         -DCMAKE_CXX_COMPILER="${ACPP_INSTALL_DIR}/bin/acpp" \
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
-        -DCMAKE_CXX_FLAGS="-isystem ${CRAY_MPICH_PREFIX}/include" \
+        -DCMAKE_CXX_FLAGS="-march=znver3 -isystem ${CRAY_MPICH_PREFIX}/include" \
         -DCMAKE_EXE_LINKER_FLAGS="-L"${CRAY_MPICH_PREFIX}/lib" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \

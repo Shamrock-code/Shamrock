@@ -37,7 +37,19 @@ def setup(arg: SetupArg):
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
+    parser.add_argument("--mode", action="store", help="use adaptivecpp SMCP or SSCP")
+
+    mode = None
     args = parser.parse_args(argv)
+    if args.mode == None:
+        raise "no mode specified, can be SMCP or SSCP"
+    elif args.mode == "SMCP":
+        mode = "SMCP"
+    elif args.mode == "SSCP":
+        mode = "SSCP"
+    else:
+        raise "unknown mode, can be SMCP or SSCP"
+
     args.gen = "ninja"
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
@@ -60,6 +72,13 @@ def setup(arg: SetupArg):
     ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR=" + ACPP_GIT_DIR + "\n"
     ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR=" + ACPP_BUILD_DIR + "\n"
     ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR=" + ACPP_INSTALL_DIR + "\n"
+
+    if mode == "SMCP":
+        ENV_SCRIPT_HEADER += "export ACPP_TARGETS=\"hip:gfx90a\"\n"
+    elif mode == "SSCP":
+        ENV_SCRIPT_HEADER += "export ACPP_TARGETS=\"generic\"\n"
+    else:
+        raise "unknown mode, can be SMCP or SSCP"
 
     ACPP_CLONE_HELPER = builddir + "/.env/clone-acpp"
     utils.envscript.copy_env_file(

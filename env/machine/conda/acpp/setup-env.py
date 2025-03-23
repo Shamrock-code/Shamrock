@@ -60,4 +60,4 @@ def setup(arg: SetupArg, envgen: EnvGen):
     envgen.gen_env_file("conda_acpp_env.sh")
     envgen.copy_env_file("environment.yml", "environment.yml")
     if pylib:
-        envgen.copy_env_file("_pysetup.py", "pysetup.py")
+        envgen.copy_env_file("_pysetup.py", "setup.py")

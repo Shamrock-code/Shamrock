@@ -56,4 +56,4 @@ def setup(arg: SetupArg, envgen: EnvGen):
     envgen.gen_env_file("env_built_acpp.sh")
     envgen.copy_env_file("shell.nix", "shell.nix")
     if pylib:
-        envgen.copy_env_file("_pysetup.py", "pysetup.py")
+        envgen.copy_env_file("_pysetup.py", "setup.py")

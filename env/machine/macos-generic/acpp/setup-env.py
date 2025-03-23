@@ -51,7 +51,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     cmake_extra_args = ""
     if pylib:
-        envgen.copy_env_file("_pysetup.py", "pysetup.py")
+        envgen.copy_env_file("_pysetup.py", "setup.py")
 
     ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
     ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'

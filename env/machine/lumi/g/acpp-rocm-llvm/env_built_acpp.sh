@@ -1,5 +1,7 @@
 #### Before this lines are env specific definitions
 
+export MAKE_OPT=( -j 128)
+export NINJA_STATUS="[%f/%t j=%r] "
 
 module --force purge
 

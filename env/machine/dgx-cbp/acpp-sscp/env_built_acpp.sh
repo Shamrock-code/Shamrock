@@ -1,7 +1,11 @@
-# Exports will be provided by the new env script above this line
-# will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
+# Everything before this line will be provided by the new-env script
 
 export ACPP_TARGETS="generic"
+export ACPP_VERSION=v24.10.0
+export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
+export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
+export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
+export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
 
 function setupcompiler {
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \

@@ -1,14 +1,10 @@
-# Exports will be provided by the new env script above this line
-# will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
+# Everything before this line will be provided by the new-env script
 
-if [ -z ${ACPP_GIT_DIR+x} ]; then echo "ACPP_GIT_DIR is unset"; return; fi
-
-if [ ! -f "$ACPP_GIT_DIR/README.md" ]; then
-    echo " ------ Clonning AdaptiveCpp ------ "
-    git clone https://github.com/AdaptiveCpp/AdaptiveCpp.git $ACPP_GIT_DIR
-    echo " ------  AdaptiveCpp Cloned  ------ "
-
-fi
+export ACPP_VERSION=v24.10.0
+export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
+export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
+export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
+export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
 
 function setupcompiler {
     cmake \

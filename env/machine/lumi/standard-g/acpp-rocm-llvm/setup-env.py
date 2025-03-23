@@ -12,10 +12,6 @@ NAME = "Lumi-G Intel AdaptiveCpp ROCM/LLVM"
 PATH = "machine/lumi/standard-g/acpp-rocm-llvm"
 
 
-def is_intel_llvm_already_installed(installfolder):
-    return os.path.isfile(installfolder + "/bin/clang++")
-
-
 def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir

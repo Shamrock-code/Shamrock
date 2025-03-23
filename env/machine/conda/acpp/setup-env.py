@@ -37,45 +37,27 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
-    ENV_SCRIPT_PATH = builddir + "/activate"
-
-    ENV_SCRIPT_HEADER = ""
-    ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
-    ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC=ninja\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=(" + gen_opt + ")\n"
-
-    run_cmd("mkdir -p " + builddir)
-
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-
     cmake_extra_args = ""
-    if pylib:
-        envgen.copy_env_file("_pysetup.py", "pysetup.py")
-
     if lib_mode == "shared":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=On"
     elif lib_mode == "object":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=Off"
 
-    ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
+    envgen.export_list = {
+        "SHAMROCK_DIR": shamrockdir,
+        "BUILD_DIR": builddir,
+        "MAKE_EXEC": "ninja",
+        "MAKE_OPT": f"({gen_opt})",
+        "CMAKE_OPT": f"({cmake_extra_args})",
+        "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+        "SHAMROCK_CXX_FLAGS": "\" --acpp-targets='" + acpp_target + "'\"",
+    }
 
-    ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'
-    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='" + acpp_target + "'\"\n"
+    envgen.ext_script_list = [
+        shamrockdir + "/env/helpers/pull_reffiles.sh",
+    ]
 
-    source_file = "conda_acpp_env.sh"
-    source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
-
-    conda_env_file = "environment.yml"
-    conda_env_path = os.path.abspath(os.path.join(cur_file, "../" + conda_env_file))
-
-    utils.envscript.write_env_file(
-        source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
-    )
-
-    utils.envscript.write_env_file(
-        source_path=conda_env_path, header="", path_write=builddir + "/environment.yml"
-    )
+    envgen.gen_env_file("conda_acpp_env.sh")
+    envgen.copy_env_file("environment.yml", "environment.yml")
+    if pylib:
+        envgen.copy_env_file("_pysetup.py", "pysetup.py")

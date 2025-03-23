@@ -12,10 +12,6 @@ NAME = "Lumi-G Intel AdaptiveCpp Custom LLVM"
 PATH = "machine/lumi/standard-g/acpp-custom-llvm"
 
 
-def is_intel_llvm_already_installed(installfolder):
-    return os.path.isfile(installfolder + "/bin/clang++")
-
-
 def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir
@@ -49,15 +45,6 @@ def setup(arg: SetupArg, envgen: EnvGen):
     args.gen = "ninja"
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
-
-    run_cmd("mkdir -p " + builddir)
-    run_cmd("mkdir -p " + builddir + "/.env")
-
-    ACPP_GIT_DIR = builddir + "/.env/acpp-git"
-    ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
-    ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
-
-    ENV_SCRIPT_PATH = builddir + "/activate"
 
     ##############################
     # Generate env script header

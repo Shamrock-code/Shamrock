@@ -1,14 +1,16 @@
-# Exports will be provided by the new env script above this line
-# will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
+# Everything before this line will be provided by the new-env script
 
-. $BUILD_DIR/.env/clone-intel-llvm
+export INTEL_LLVM_VERSION=v6.0.0
+export INTEL_LLVM_GIT_DIR=/tmp/intelllvm-git
+export INTEL_LLVM_INSTALL_DIR=$BUILD_DIR/.env/intelllvm-install
+clone_intel_llvm || return
 
 export LD_LIBRARY_PATH=$INTEL_LLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 
 function setupcompiler {
 
     python3 ${INTEL_LLVM_GIT_DIR}/buildbot/configure.py \
-        "${INTELLLVM_CONFIGURE_ARGS[@]}" \
+        "${INTEL_LLVM_CONFIGURE_ARGS[@]}" \
         --cmake-gen "${CMAKE_GENERATOR}" \
         --cmake-opt="-DCMAKE_INSTALL_PREFIX=${INTEL_LLVM_INSTALL_DIR}" || return
 

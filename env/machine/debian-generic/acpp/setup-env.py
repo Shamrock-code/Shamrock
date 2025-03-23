@@ -37,28 +37,15 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
-    ENV_SCRIPT_PATH = builddir + "/activate"
-
-    run_cmd("mkdir -p " + builddir + "/.env")
-
-    ENV_SCRIPT_HEADER = ""
-
     cmake_extra_args = ""
     if lib_mode == "shared":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=On"
     elif lib_mode == "object":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=Off"
 
-    ACPP_GIT_DIR = builddir + "/.env/acpp-git"
-    ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
-    ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
-
     envgen.export_list = {
         "SHAMROCK_DIR": shamrockdir,
         "BUILD_DIR": builddir,
-        "ACPP_GIT_DIR": ACPP_GIT_DIR,
-        "ACPP_BUILD_DIR": ACPP_BUILD_DIR,
-        "ACPP_INSTALL_DIR": ACPP_INSTALL_DIR,
         "CMAKE_GENERATOR": cmake_gen,
         "MAKE_EXEC": gen,
         "MAKE_OPT": f"({gen_opt})",
@@ -71,9 +58,6 @@ def setup(arg: SetupArg, envgen: EnvGen):
         shamrockdir + "/env/helpers/clone-acpp.sh",
         shamrockdir + "/env/helpers/pull_reffiles.sh",
     ]
-
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
 
     envgen.gen_env_file("env_built_acpp.sh")
 

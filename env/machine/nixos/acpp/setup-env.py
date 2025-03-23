@@ -44,9 +44,6 @@ def setup(arg: SetupArg, envgen: EnvGen):
     ENV_SCRIPT_HEADER = ""
     ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
     ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR=" + ACPP_GIT_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR=" + ACPP_BUILD_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR=" + ACPP_INSTALL_DIR + "\n"
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'
     ENV_SCRIPT_HEADER += "\n"

@@ -1,5 +1,9 @@
-# Exports will be provided by the new env script above this line
-# will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
+# Everything before this line will be provided by the new-env script
+
+export INTEL_LLVM_VERSION=v6.0.0
+export INTEL_LLVM_GIT_DIR=/tmp/intelllvm-git
+export INTEL_LLVM_INSTALL_DIR=$BUILD_DIR/.env/intelllvm-install
+
 function loadmodules {
     module purge
 
@@ -32,8 +36,8 @@ function setupcompiler {
     module list
 
     # See : https://dci.dci-gitlab.cines.fr/webextranet/software_stack/libraries/index.html#compiling-intel-llvm
-    echo " -- clone inte/llvm"
-    git clone --branch="sycl" https://github.com/intel/llvm ${INTEL_LLVM_GIT_DIR} || true
+    echo " -- clone intel/llvm"
+    clone_intel_llvm || return
     cd ${INTEL_LLVM_GIT_DIR}
 
     module purge

@@ -36,10 +36,10 @@ class EnvGen:
             self.ENV_SCRIPT_HEADER += utils.envscript.file_to_string(f)
             self.ENV_SCRIPT_HEADER += f"{spacer}{spacer}{spacer}\n"
 
-        run_cmd("mkdir -p " + self.builddir)
-
         ENV_SCRIPT_PATH = self.builddir + "/activate"
         source_path = os.path.join(self.machinefolder, source_file)
+
+        run_cmd(f"mkdir -p {os.path.dirname(ENV_SCRIPT_PATH)}")
 
         print("-- Generating env file " + ENV_SCRIPT_PATH)
         print("     -> From Base file " + source_path)
@@ -52,6 +52,8 @@ class EnvGen:
 
         source_path = os.path.join(self.machinefolder, source_file)
         ENV_SCRIPT_PATH = self.builddir + "/" + dest_file
+
+        run_cmd(f"mkdir -p {os.path.dirname(ENV_SCRIPT_PATH)}")
 
         print("-- Copying env file " + ENV_SCRIPT_PATH)
         print("     -> From Base file " + source_path)

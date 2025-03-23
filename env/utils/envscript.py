@@ -30,6 +30,7 @@ def copy_env_file(source_path, path_write):
     with open(path_write, "w") as env_script:
         env_script.write(ENV_SCRIPT_CONTENT)
 
+
 def file_to_string(path):
     with open(path) as f:
         contents = f.read()

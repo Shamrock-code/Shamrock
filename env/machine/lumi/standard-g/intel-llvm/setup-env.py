@@ -11,6 +11,7 @@ from utils.setuparg import *
 NAME = "Lumi-G Intel LLVM ROCM"
 PATH = "machine/lumi/standard-g/intel-llvm"
 
+
 def setup(arg: SetupArg):
     argv = arg.argv
     builddir = arg.builddir
@@ -41,7 +42,6 @@ def setup(arg: SetupArg):
     ENV_SCRIPT_HEADER = ""
     ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
     ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-
 
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'

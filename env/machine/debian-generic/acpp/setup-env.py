@@ -62,28 +62,30 @@ def setup(arg: SetupArg):
     ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
 
     export_list = {
-        "SHAMROCK_DIR" : shamrockdir,
-        "BUILD_DIR" : builddir,
+        "SHAMROCK_DIR": shamrockdir,
+        "BUILD_DIR": builddir,
         "ACPP_GIT_DIR": ACPP_GIT_DIR,
         "ACPP_BUILD_DIR": ACPP_BUILD_DIR,
         "ACPP_INSTALL_DIR": ACPP_INSTALL_DIR,
         "CMAKE_GENERATOR": cmake_gen,
-        "MAKE_EXEC" : gen,
-        "MAKE_OPT" : f"({gen_opt})",
-        "CMAKE_OPT" : f"({cmake_extra_args})",
-        "SHAMROCK_BUILD_TYPE" : f"'{cmake_build_type}'",
-        "SHAMROCK_CXX_FLAGS" : "\" --acpp-targets='" + acpp_target + "'\""
+        "MAKE_EXEC": gen,
+        "MAKE_OPT": f"({gen_opt})",
+        "CMAKE_OPT": f"({cmake_extra_args})",
+        "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+        "SHAMROCK_CXX_FLAGS": "\" --acpp-targets='" + acpp_target + "'\"",
     }
 
     ext_script_list = [
-       shamrockdir + "/env/helpers/clone-acpp.sh",
-       shamrockdir + "/env/helpers/pull_reffiles.sh"
+        shamrockdir + "/env/helpers/clone-acpp.sh",
+        shamrockdir + "/env/helpers/pull_reffiles.sh",
     ]
-    
+
     for k in export_list.keys():
         ENV_SCRIPT_HEADER += "export " + k + "=" + export_list[k] + "\n"
 
-    spacer ="\n####################################################################################"
+    spacer = (
+        "\n####################################################################################"
+    )
     for f in ext_script_list:
         ENV_SCRIPT_HEADER += f"{spacer}\n# Imported script " + f + f"{spacer}\n"
         ENV_SCRIPT_HEADER += utils.envscript.file_to_string(f)

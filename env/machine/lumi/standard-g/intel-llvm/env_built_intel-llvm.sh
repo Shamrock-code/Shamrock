@@ -11,15 +11,12 @@ module load LUMI/24.03
 module load partition/G
 module load cray-python
 module load rocm/6.0.3
-
-# necessay for mpi but may mess the intel llvm compilation, to check ...
-# module load PrgEnv-amd
+module load cpeAMD/24.03 # For MPIch
 
 export MPICH_GPU_SUPPORT_ENABLED=1
 
 export PATH=$HOME/.local/bin:$PATH
 pip3 install -U ninja cmake
-
 
 export INTEL_LLVM_VERSION=v6.0.0
 export INTEL_LLVM_GIT_DIR=/tmp/intelllvm-git

@@ -28,7 +28,7 @@ export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
 export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
 
-case "$ACPPMODE" in
+case "$ACPP_MODE" in
     "SSCP")
         export ACPP_TARGETS=generic
         ;;

@@ -15,9 +15,9 @@ function setupcompiler {
         -DWITH_CUDA_BACKEND=ON \
         -DWITH_ROCM_BACKEND=Off \
         -DWITH_LEVEL_ZERO_BACKEND=Off \
-        -DWITH_SSCP_COMPILER=Off
+        -DWITH_SSCP_COMPILER=Off || return
 
-    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
 }
 
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
@@ -36,15 +36,9 @@ function shamconfigure {
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes \
-        "${CMAKE_OPT[@]}"
+        "${CMAKE_OPT[@]}" || return
 }
 
 function shammake {
-    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
-}
-
-export REF_FILES_PATH=$BUILD_DIR/reference-files
-
-function pull_reffiles {
-    git clone https://github.com/Shamrock-code/reference-files.git $REF_FILES_PATH
+    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}") || return
 }

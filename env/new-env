@@ -110,5 +110,6 @@ if __name__ == "__main__":
             buildtype=args.type,
             pylib=args.pylib,
             lib_mode=args.lib,
-        )
+        ),
+        EnvGen(),
     )

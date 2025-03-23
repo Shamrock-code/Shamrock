@@ -13,11 +13,7 @@ NAME = "Debian generic AdaptiveCpp"
 PATH = "machine/debian-generic/acpp"
 
 
-def is_acpp_already_installed(installfolder):
-    return os.path.isfile(installfolder + "/bin/acpp")
-
-
-def setup(arg: SetupArg):
+def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
@@ -61,7 +57,7 @@ def setup(arg: SetupArg):
     ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
     ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
 
-    export_list = {
+    envgen.export_list = {
         "SHAMROCK_DIR": shamrockdir,
         "BUILD_DIR": builddir,
         "ACPP_GIT_DIR": ACPP_GIT_DIR,
@@ -75,21 +71,10 @@ def setup(arg: SetupArg):
         "SHAMROCK_CXX_FLAGS": "\" --acpp-targets='" + acpp_target + "'\"",
     }
 
-    ext_script_list = [
+    envgen.ext_script_list = [
         shamrockdir + "/env/helpers/clone-acpp.sh",
         shamrockdir + "/env/helpers/pull_reffiles.sh",
     ]
-
-    for k in export_list.keys():
-        ENV_SCRIPT_HEADER += "export " + k + "=" + export_list[k] + "\n"
-
-    spacer = (
-        "\n####################################################################################"
-    )
-    for f in ext_script_list:
-        ENV_SCRIPT_HEADER += f"{spacer}\n# Imported script " + f + f"{spacer}\n"
-        ENV_SCRIPT_HEADER += utils.envscript.file_to_string(f)
-        ENV_SCRIPT_HEADER += f"{spacer}{spacer}{spacer}\n"
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
@@ -97,9 +82,7 @@ def setup(arg: SetupArg):
     source_file = "env_built_acpp.sh"
     source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
 
-    utils.envscript.write_env_file(
-        source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
-    )
+    envgen.gen_env_file(source_path, builddir)
 
     if pylib:
         run_cmd(

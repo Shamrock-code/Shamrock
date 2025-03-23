@@ -55,7 +55,7 @@ function setupcompiler {
 
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
     echo " ----- acpp is not configured, compiling it ... -----"
-    setupcompiler  || return
+    setupcompiler || return
     echo " ----- acpp configured ! -----"
 fi
 

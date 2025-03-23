@@ -56,6 +56,7 @@ def setup(arg: SetupArg):
 
     run_cmd("mkdir -p " + builddir)
     run_cmd("mkdir -p " + builddir + "/.env")
+    ENV_SCRIPT_HEADER = ""
 
     ACPP_GIT_DIR = builddir + "/.env/acpp-git"
     ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
@@ -66,41 +67,38 @@ def setup(arg: SetupArg):
     ##############################
     # Generate env script header
     ##############################
-    ENV_SCRIPT_HEADER = ""
-    ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
-    ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR=" + ACPP_GIT_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR=" + ACPP_BUILD_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR=" + ACPP_INSTALL_DIR + "\n"
-
     if mode == "SMCP":
-        ENV_SCRIPT_HEADER += "export ACPPMODE=SMCP\n"
+        ACPP_MODE = "SMCP\n"
     elif mode == "SSCP":
-        ENV_SCRIPT_HEADER += "export ACPPMODE=SSCP\n"
+        ACPP_MODE = "SSCP\n"
     else:
         raise "unknown mode, can be SMCP or SSCP"
 
-    ACPP_CLONE_HELPER = builddir + "/.env/clone-acpp"
-    utils.envscript.copy_env_file(
-        source_path=shamrockdir + "/env/helpers/clone-acpp.sh",
-        path_write=ACPP_CLONE_HELPER,
-    )
+    export_list = {
+        "SHAMROCK_DIR": shamrockdir,
+        "BUILD_DIR": builddir,
+        "ACPP_MODE": ACPP_MODE,
+        "CMAKE_GENERATOR": cmake_gen,
+        "MAKE_EXEC": gen,
+        "MAKE_OPT": f"({gen_opt})",
+        "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+    }
 
-    LLVM_CLONE_HELPER = builddir + "/.env/clone-llvm"
-    utils.envscript.copy_env_file(
-        source_path=shamrockdir + "/env/helpers/clone-llvm.sh",
-        path_write=LLVM_CLONE_HELPER,
-    )
+    ext_script_list = [
+        shamrockdir + "/env/helpers/clone-acpp.sh",
+        shamrockdir + "/env/helpers/clone-llvm.sh",
+        shamrockdir + "/env/helpers/pull_reffiles.sh",
+    ]
 
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC=" + gen + "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=(" + gen_opt + ")\n"
-    cmake_extra_args = ""
-    ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
-    ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'
-    ENV_SCRIPT_HEADER += "\n"
+    for k in export_list.keys():
+        ENV_SCRIPT_HEADER += "export " + k + "=" + export_list[k] + "\n"
+
+    spacer = "\n####################################################################################################"
+
+    for f in ext_script_list:
+        ENV_SCRIPT_HEADER += f"{spacer}\n# Imported script " + f + f"{spacer}\n\n"
+        ENV_SCRIPT_HEADER += utils.envscript.file_to_string(f)
+        ENV_SCRIPT_HEADER += f"{spacer}{spacer}{spacer}\n"
 
     exemple_batch_file = "exemple_batch.sh"
     exemple_batch_path = os.path.abspath(os.path.join(cur_file, "../" + exemple_batch_file))

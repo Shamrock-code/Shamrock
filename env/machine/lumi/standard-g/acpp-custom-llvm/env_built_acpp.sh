@@ -1,4 +1,4 @@
-#### Before this lines are env specific definitions
+# Everything before this line will be provided by the new-env script
 
 # On LUMI using the default (256) result in killed jobs as the login node is destroyed ^^
 export MAKE_OPT=( -j 128)
@@ -24,6 +24,9 @@ export LLVM_INSTALL_DIR=$BUILD_DIR/.env/llvm-install
 
 export ACPP_VERSION=v24.10.0
 export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
+export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
+export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
+export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
 
 case "$ACPPMODE" in
     "SSCP")
@@ -38,8 +41,6 @@ case "$ACPPMODE" in
         ;;
 esac
 
-. $BUILD_DIR/.env/clone-acpp
-
 export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
 export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
 
@@ -48,13 +49,12 @@ export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
 #export PROJECT_NUM=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch/[^ ]*' | cut -d'/' -f3)
 
 function llvm_setup {
-    set -e
 
     echo " -> cleaning llvm build dirs ..."
     rm -rf ${LLVM_GIT_DIR} ${LLVM_BUILD_DIR}
     echo " -> done"
 
-    . $BUILD_DIR/.env/clone-llvm
+    clone_llvm || return
 
     cmake -S ${LLVM_GIT_DIR}/llvm -B ${LLVM_BUILD_DIR} \
         -DCMAKE_C_COMPILER=gcc-13 \
@@ -73,26 +73,26 @@ function llvm_setup {
         -DLLVM_ENABLE_OCAMLDOC=OFF \
         -DLLVM_ENABLE_BINDINGS=OFF \
         -DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=OFF \
-        -DLLVM_ENABLE_DUMP=OFF
+        -DLLVM_ENABLE_DUMP=OFF  || return
 
-    (cd ${LLVM_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+    (cd ${LLVM_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)  || return
 
     echo "int main() { return 0; }" > test.cpp
-    ${LLVM_INSTALL_DIR}/bin/clang++ -O3 -fopenmp test.cpp
-    ./a.out
+    ${LLVM_INSTALL_DIR}/bin/clang++ -O3 -fopenmp test.cpp  || return
+    ./a.out  || return
     rm a.out test.cpp
 
-    set +e
 }
 
 if [ ! -f "$LLVM_INSTALL_DIR/bin/clang++" ]; then
     echo " ----- llvm is not configured, compiling it ... -----"
-    llvm_setup
+    llvm_setup || return
     echo " ----- llvm configured ! -----"
 fi
 
 function setupcompiler {
-    set -e
+    clone_acpp || return
+
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
         -DROCM_PATH=$ROCM_PATH \
@@ -100,15 +100,15 @@ function setupcompiler {
         -DCMAKE_CXX_COMPILER=${LLVM_INSTALL_DIR}/bin/clang++ \
         -DBoost_NO_BOOST_CMAKE=TRUE \
         -DBoost_NO_SYSTEM_PATHS=TRUE \
-        -DLLVM_DIR=${LLVM_INSTALL_DIR}/lib/cmake/llvm/
+        -DLLVM_DIR=${LLVM_INSTALL_DIR}/lib/cmake/llvm/  || return
 
-    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
-    set +e
+    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)  || return
+
 }
 
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
     echo " ----- acpp is not configured, compiling it ... -----"
-    setupcompiler
+    setupcompiler || return
     echo " ----- acpp configured ! -----"
 fi
 
@@ -132,9 +132,9 @@ function shamconfigure {
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \
         -DPYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
-        "${CMAKE_OPT[@]}"
+        "${CMAKE_OPT[@]}" || return
 }
 
 function shammake {
-    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
+    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}") || return
 }

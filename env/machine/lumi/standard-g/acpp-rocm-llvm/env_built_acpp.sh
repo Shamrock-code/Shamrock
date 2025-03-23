@@ -1,5 +1,6 @@
 #### Before this lines are env specific definitions
 
+
 module --force purge
 
 module load LUMI/24.03
@@ -15,7 +16,9 @@ pip3 install -U ninja cmake
 
 export ACPP_VERSION=v24.10.0
 export ACPP_TARGETS="hip:gfx90a"
-. $BUILD_DIR/.env/clone-acpp
+export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
+export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
+export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
 
 export C_INCLUDE_PATH=$ROCM_PATH/llvm/include
 export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
@@ -25,6 +28,9 @@ export CPLUS_INCLUDE_PATH=$ROCM_PATH/llvm/include
 #export PROJECT_NUM=$(echo $LUMI_WORKSPACE_OUTPUT | grep -o '/scratch/[^ ]*' | cut -d'/' -f3)
 
 function setupcompiler {
+
+    clone_acpp || return
+
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
         -DROCM_PATH=$ROCM_PATH \
@@ -40,14 +46,14 @@ function setupcompiler {
         -DBoost_NO_BOOST_CMAKE=TRUE \
         -DBoost_NO_SYSTEM_PATHS=TRUE \
         -DWITH_SSCP_COMPILER=OFF \
-        -DLLVM_DIR=${ROCM_PATH}/llvm/lib/cmake/llvm/
+        -DLLVM_DIR=${ROCM_PATH}/llvm/lib/cmake/llvm/  || return
 
-    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
 }
 
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
     echo " ----- acpp is not configured, compiling it ... -----"
-    setupcompiler
+    setupcompiler  || return
     echo " ----- acpp configured ! -----"
 fi
 
@@ -66,9 +72,9 @@ function shamconfigure {
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \
         -DPYTHON_EXECUTABLE=$(python3 -c "import sys; print(sys.executable)") \
-        "${CMAKE_OPT[@]}"
+        "${CMAKE_OPT[@]}" || return
 }
 
 function shammake {
-    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
+    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}") || return
 }

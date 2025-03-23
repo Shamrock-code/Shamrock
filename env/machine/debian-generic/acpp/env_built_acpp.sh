@@ -23,9 +23,9 @@ function shamconfigure {
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes \
-        "${CMAKE_OPT[@]}"
+        "${CMAKE_OPT[@]}" || return
 }
 
 function shammake {
-    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
+    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}") || return
 }

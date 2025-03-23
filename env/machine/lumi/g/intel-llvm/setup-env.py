@@ -48,4 +48,5 @@ def setup(arg: SetupArg, envgen: EnvGen):
         shamrockdir + "/env/helpers/pull_reffiles.sh",
     ]
 
-    envgen.gen_env_file("env_built_intel-llvm.sh")
+    envgen.copy_env_file("exemple_batch.sh", "exemple_batch.sh")
+    envgen.gen_env_file("env_built_acpp.sh")

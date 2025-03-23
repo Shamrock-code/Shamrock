@@ -72,13 +72,5 @@ def setup(arg: SetupArg, envgen: EnvGen):
         shamrockdir + "/env/helpers/pull_reffiles.sh",
     ]
 
-    exemple_batch_file = "exemple_batch.sh"
-    exemple_batch_path = os.path.abspath(os.path.join(cur_file, "../" + exemple_batch_file))
-    utils.envscript.copy_env_file(
-        source_path=exemple_batch_path, path_write=builddir + "/exemple_batch.sh"
-    )
-
-    source_file = "env_built_acpp.sh"
-    source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
-
-    envgen.gen_env_file(source_path, builddir)
+    envgen.copy_env_file("exemple_batch.sh", "exemple_batch.sh")
+    envgen.gen_env_file("env_built_acpp.sh")

@@ -54,13 +54,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     cmake_extra_args = ""
     if pylib:
-        run_cmd(
-            "cp "
-            + os.path.abspath(os.path.join(cur_file, "../" + "_pysetup.py"))
-            + " "
-            + builddir
-            + "/setup.py"
-        )
+        envgen.copy_env_file("_pysetup.py", "pysetup.py")
 
     if lib_mode == "shared":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=On"

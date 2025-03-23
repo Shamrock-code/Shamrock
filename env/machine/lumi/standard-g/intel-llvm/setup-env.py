@@ -12,17 +12,13 @@ NAME = "Lumi-G Intel LLVM ROCM"
 PATH = "machine/lumi/standard-g/intel-llvm"
 
 
-def setup(arg: SetupArg):
+def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
     buildtype = arg.buildtype
     pylib = arg.pylib
     lib_mode = arg.lib_mode
-
-    print("------------------------------------------")
-    print("Running env setup for : " + NAME)
-    print("------------------------------------------")
 
     if pylib:
         print("this env does not support --pylib")

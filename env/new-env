@@ -98,18 +98,30 @@ if __name__ == "__main__":
     # Make everything in env importable by python
     sys.path.insert(0, abs_env_dir)
 
+    machine_folder = os.path.join(abs_env_dir, "machine", args.machine.replace(".", "/"))
+
+    # print(f"-- Loading {machine_folder}/setup.py")
+
+    builddir = os.path.abspath(os.path.expanduser(args.builddir))
+
     # Load the machine file
     # TODO add check that the file exist
     importlib.invalidate_caches()
     mod = importlib.import_module("machine." + args.machine + ".setup-env")
+
+    print("------------------------------------------")
+    print("Running env setup for : " + mod.NAME)
+    print("Using machine folder :  " + machine_folder)
+    print("------------------------------------------")
+
     mod.setup(
         SetupArg(
             argv=underlying_tool_args,
-            builddir=os.path.abspath(os.path.expanduser(args.builddir)),
+            builddir=builddir,
             shamrockdir=abs_proj_dir,
             buildtype=args.type,
             pylib=args.pylib,
             lib_mode=args.lib,
         ),
-        EnvGen(),
+        EnvGen(machinefolder=machine_folder, builddir=builddir),
     )

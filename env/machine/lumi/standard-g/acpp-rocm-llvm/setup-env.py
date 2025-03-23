@@ -16,7 +16,7 @@ def is_intel_llvm_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/clang++")
 
 
-def setup(arg: SetupArg):
+def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
@@ -26,10 +26,6 @@ def setup(arg: SetupArg):
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
-
-    print("------------------------------------------")
-    print("Running env setup for : " + NAME)
-    print("------------------------------------------")
 
     if pylib:
         print("this env does not support --pylib")

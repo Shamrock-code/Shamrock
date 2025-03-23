@@ -13,17 +13,13 @@ NAME = "Conda AdaptiveCpp"
 PATH = "machine/conda/acpp"
 
 
-def setup(arg: SetupArg):
+def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
     buildtype = arg.buildtype
     pylib = arg.pylib
     lib_mode = arg.lib_mode
-
-    print("------------------------------------------")
-    print("Running env setup for : " + NAME)
-    print("------------------------------------------")
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 

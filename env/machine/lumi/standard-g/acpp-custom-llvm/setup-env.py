@@ -16,7 +16,7 @@ def is_intel_llvm_already_installed(installfolder):
     return os.path.isfile(installfolder + "/bin/clang++")
 
 
-def setup(arg: SetupArg):
+def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
@@ -26,10 +26,6 @@ def setup(arg: SetupArg):
 
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
-
-    print("------------------------------------------")
-    print("Running env setup for : " + NAME)
-    print("------------------------------------------")
 
     if pylib:
         print("this env does not support --pylib")
@@ -56,7 +52,6 @@ def setup(arg: SetupArg):
 
     run_cmd("mkdir -p " + builddir)
     run_cmd("mkdir -p " + builddir + "/.env")
-    ENV_SCRIPT_HEADER = ""
 
     ACPP_GIT_DIR = builddir + "/.env/acpp-git"
     ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
@@ -74,7 +69,7 @@ def setup(arg: SetupArg):
     else:
         raise "unknown mode, can be SMCP or SSCP"
 
-    export_list = {
+    envgen.export_list = {
         "SHAMROCK_DIR": shamrockdir,
         "BUILD_DIR": builddir,
         "ACPP_MODE": ACPP_MODE,
@@ -84,21 +79,11 @@ def setup(arg: SetupArg):
         "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
     }
 
-    ext_script_list = [
+    envgen.ext_script_list = [
         shamrockdir + "/env/helpers/clone-acpp.sh",
         shamrockdir + "/env/helpers/clone-llvm.sh",
         shamrockdir + "/env/helpers/pull_reffiles.sh",
     ]
-
-    for k in export_list.keys():
-        ENV_SCRIPT_HEADER += "export " + k + "=" + export_list[k] + "\n"
-
-    spacer = "\n####################################################################################################"
-
-    for f in ext_script_list:
-        ENV_SCRIPT_HEADER += f"{spacer}\n# Imported script " + f + f"{spacer}\n\n"
-        ENV_SCRIPT_HEADER += utils.envscript.file_to_string(f)
-        ENV_SCRIPT_HEADER += f"{spacer}{spacer}{spacer}\n"
 
     exemple_batch_file = "exemple_batch.sh"
     exemple_batch_path = os.path.abspath(os.path.join(cur_file, "../" + exemple_batch_file))
@@ -109,6 +94,4 @@ def setup(arg: SetupArg):
     source_file = "env_built_acpp.sh"
     source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
 
-    utils.envscript.write_env_file(
-        source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
-    )
+    envgen.gen_env_file(source_path, builddir)

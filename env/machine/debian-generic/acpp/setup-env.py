@@ -21,10 +21,6 @@ def setup(arg: SetupArg, envgen: EnvGen):
     pylib = arg.pylib
     lib_mode = arg.lib_mode
 
-    print("------------------------------------------")
-    print("Running env setup for : " + NAME)
-    print("------------------------------------------")
-
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
     parser.add_argument("--backend", action="store", help="sycl backend to use")
@@ -79,16 +75,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
     # Get current file path
     cur_file = os.path.realpath(os.path.expanduser(__file__))
 
-    source_file = "env_built_acpp.sh"
-    source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
-
-    envgen.gen_env_file(source_path, builddir)
+    envgen.gen_env_file("env_built_acpp.sh")
 
     if pylib:
-        run_cmd(
-            "cp "
-            + os.path.abspath(os.path.join(cur_file, "../" + "_pysetup.py"))
-            + " "
-            + builddir
-            + "/setup.py"
-        )
+        envgen.copy_env_file("_pysetup.py", "pysetup.py")

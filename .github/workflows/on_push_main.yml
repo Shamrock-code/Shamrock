@@ -139,7 +139,7 @@ jobs:
     runs-on: [self-hosted,  docker-runner]
 
     container:
-      image: ghcr.io/shamrock-code/ci-ubuntu20:main
+      image: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
 
 
     needs: [shamrock_linux_acpp_cov, make_documentation]

@@ -45,7 +45,7 @@ namespace impl::copy_to_host {
                     const T *src = acc.get_pointer();
                     T *dest      = comm_ptr;
 
-                    memcpy(dest, src, sizeof(T) * comm_sz);
+                    std::memcpy(dest, src, sizeof(T) * comm_sz);
                 }
 
             } else {
@@ -94,7 +94,7 @@ namespace impl::copy_to_host {
                     const T *src = comm_ptr;
                     T *dest      = acc.get_pointer();
 
-                    memcpy(dest, src, sizeof(T) * comm_sz);
+                    std::memcpy(dest, src, sizeof(T) * comm_sz);
                 }
 
             } else {

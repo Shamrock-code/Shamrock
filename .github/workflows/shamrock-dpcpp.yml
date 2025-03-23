@@ -1,4 +1,4 @@
-name: Shamrock (DPCPP)
+name: Shamrock (Intel/LLVM)
 
 
 on:
@@ -9,80 +9,26 @@ on:
 
 
 jobs:
-  shamrock_dpcpp_nativecpu:
-    name: DPCPP Native CPU
+
+  shamrock_intel_llvm:
+    name: Intel/llvm ${{ matrix.machine }}
     runs-on: [self-hosted,  docker-runner]
 
     container:
-      image: ghcr.io/shamrock-code/ci-ubuntu20cuda11dpcpp:main
-
-
-    #for now this is quite buggy
-    if: false
-
-    steps:
-
-      #### Checkout part ####
-      # Checkout merge commit if PR otherwise default
-      - name : Reconfigure git
-        run:  |
-          git config --global --add safe.directory '*'
-          git config --global --list
-      - uses: actions/checkout@v4
-        if: github.event_name == 'pull_request_target'
-        with:
-          fetch-depth: 0
-          submodules: recursive
-          ref: "refs/pull/${{ github.event.number }}/merge"
-
-      - uses: actions/checkout@v4
-        if: github.event_name != 'pull_request_target'
-        with:
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Show diff against main
-        if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
-      #### End Checkout part ####
-
-      - name : Check binary
-        run: |
-          /home/docker/compilers/DPCPP/bin/clang++ --version
-
-      - name: configure Shamrock
-        run: |
-          python3 buildbot/configure.py --gen ninja --tests --build release \
-            --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile native_cpu
-
-      - name: compile Shamrock
-        run: |
-          cd build
-          ninja
-
-      - name: run Shamrock
-        run: |
-          cd build
-          export DPCPP_HOME=/home/docker/compilers/DPCPP
-          export PATH=$DPCPP_HOME/bin:$PATH
-          export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-          ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --unittest
-
-
-  shamrock_dpcpp_cuda:
-    name: DPCPP CUDA ${{ matrix.cuda }}
-    runs-on: [self-hosted,  docker-runner]
-
-    container:
-      image: ghcr.io/shamrock-code/ci-ubuntu20cuda11dpcpp:main
-
+      image: ${{ matrix.container }}
 
     strategy:
       matrix:
-        cuda: [11.0.2]
+        include:
+          - machine: cuda
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20cuda12dpcpp
+            runtest: false
+          - machine: rocm
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20rocm543dpcpp
+            runtest: false
 
+    timeout-minutes: 60
     steps:
-
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
       - name : Reconfigure git
@@ -107,107 +53,75 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
-      - name : Check binary
-        run: |
-          /home/docker/compilers/DPCPP/bin/clang++ --version
+      - name: Setup env
+        run : ./env/new-env --machine ci.intel-llvm.${{ matrix.machine }} --builddir build --
 
-      - name: configure Shamrock
+      - name: Configure
+        shell: bash # In docker container github action default to sh
         run: |
-          python3 buildbot/configure.py --gen ninja --tests --build release \
-            --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile cuda \
-            --cxxflags="--cuda-path=/opt/cuda" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
+          cd build
+          source ./activate && shamconfigure
+
+      - name: Configure sham install
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate &&  \
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test
+
+      - name: Build & install
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate && shammake install
 
       - name: Pull reference files
         run: |
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
 
-      - name: compile Shamrock
+      - name: run Shamrock help
+        if: matrix.runtest
         run: |
           cd build
-          export DPCPP_HOME=/home/docker/compilers/DPCPP
-          export PATH=$DPCPP_HOME/bin:$PATH
-          export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-          ninja
+          ./shamrock --help
+          ./shamrock --help --color
 
-      # no device to run on
-      #- name: run Shamrock
-      #  run: |
-      #    cd build
-      #    export DPCPP_HOME=/home/docker/compilers/DPCPP
-      #    export PATH=$DPCPP_HOME/bin:$PATH
-      #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-      #    export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
-      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
-
-
-  shamrock_dpcpp_hip:
-    name: DPCPP HIP ROCM ${{ matrix.rocm }}
-    runs-on: [self-hosted,  docker-runner]
-
-    container:
-      image: ghcr.io/shamrock-code/ci-ubuntu20rocm543dpcpp:main
-
-    strategy:
-      matrix:
-        rocm: [5.4.3]
-
-    steps:
-
-      #### Checkout part ####
-      # Checkout merge commit if PR otherwise default
-      - name : Reconfigure git
-        run:  |
-          git config --global --add safe.directory '*'
-          git config --global --list
-      - uses: actions/checkout@v4
-        if: github.event_name == 'pull_request_target'
-        with:
-          fetch-depth: 0
-          submodules: recursive
-          ref: "refs/pull/${{ github.event.number }}/merge"
-
-      - uses: actions/checkout@v4
-        if: github.event_name != 'pull_request_target'
-        with:
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Show diff against main
-        if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
-      #### End Checkout part ####
-
-      - name : Check binary
-        run: |
-          /home/docker/compilers/DPCPP/bin/clang++ --version
-
-
-      - name: configure Shamrock
-        run: |
-          python3 buildbot/configure.py --gen ninja --tests --build release \
-            --builddir build --cxxpath /home/docker/compilers/DPCPP --compiler intel_llvm --profile hip-gfx906 \
-            --cxxflags="--rocm-path=/opt/rocm" --cmakeargs="-DSHAMROCK_USE_SHARED_LIB=off"
-
-      - name: Pull reference files
+      - name: run Shamrock Test help
+        if: matrix.runtest
         run: |
           cd build
-          git clone https://github.com/Shamrock-code/reference-files.git
+          ./shamrock_test --help
+          ./shamrock_test --help --color
 
-      - name: compile Shamrock
+      - name: run Shamrock Unittests world_size = 1
+        if: matrix.runtest
         run: |
           cd build
-          export DPCPP_HOME=/home/docker/compilers/DPCPP
-          export PATH=$DPCPP_HOME/bin:$PATH
-          export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-          ninja
+          ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
-      # no device to run on
-      #- name: run Shamrock
-      #  run: |
-      #    cd build
-      #    export DPCPP_HOME=/home/docker/compilers/DPCPP
-      #    export PATH=$DPCPP_HOME/bin:$PATH
-      #    export LD_LIBRARY_PATH=$DPCPP_HOME/lib:$LD_LIBRARY_PATH
-      #    export ONEAPI_DEVICE_SELECTOR=ext_intel_esimd_emulator:gpu
-      #    ./shamrock_test --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi --unittest
+      - name: run Shamrock Unittests world_size = 2
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 3
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 4
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: Try starting Shamrock (installed version)
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtest
+        run: |
+          cd build/install_test/bin
+          ls ..
+          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0

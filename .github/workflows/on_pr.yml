@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: ghcr.io/shamrock-code/ci-ubuntu-latest:main
+      image: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4

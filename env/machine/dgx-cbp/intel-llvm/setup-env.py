@@ -13,10 +13,6 @@ NAME = "CBP Nvidia DGX A100 Intel LLVM CUDA"
 PATH = "machine/debian-generic/intel-llvm"
 
 
-def is_intel_llvm_already_installed(installfolder):
-    return os.path.isfile(installfolder + "/bin/clang++")
-
-
 def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir
@@ -43,35 +39,22 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
-    INTEL_LLVM_GIT_DIR = builddir + "/.env/intel-llvm-git"
-    INTEL_LLVM_INSTALL_DIR = builddir + "/.env/intel-llvm-installdir"
-
-    ENV_SCRIPT_PATH = builddir + "/activate"
-
-    ENV_SCRIPT_HEADER = ""
-    ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
-    ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-    ENV_SCRIPT_HEADER += "export INTEL_LLVM_GIT_DIR=" + INTEL_LLVM_GIT_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export INTEL_LLVM_INSTALL_DIR=" + INTEL_LLVM_INSTALL_DIR + "\n"
-
-    run_cmd("mkdir -p " + builddir + "/.env")
-
-    INTEL_LLVM_CLONE_HELPER = builddir + "/.env/clone-llvm"
-    utils.envscript.write_env_file(
-        source_path=shamrockdir + "/env/helpers/clone-intel-llvm.sh",
-        header="",
-        path_write=INTEL_LLVM_CLONE_HELPER,
-    )
-
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC=" + gen + "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=(" + gen_opt + ")\n"
     cmake_extra_args = ""
-    ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
-    ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'
-    ENV_SCRIPT_HEADER += "\n"
+
+    envgen.export_list = {
+        "SHAMROCK_DIR": shamrockdir,
+        "BUILD_DIR": builddir,
+        "CMAKE_GENERATOR": cmake_gen,
+        "MAKE_EXEC": gen,
+        "MAKE_OPT": f"({gen_opt})",
+        "CMAKE_OPT": f"({cmake_extra_args})",
+        "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+    }
+
+    envgen.ext_script_list = [
+        shamrockdir + "/env/helpers/clone-intel-llvm.sh",
+        shamrockdir + "/env/helpers/pull_reffiles.sh",
+    ]
 
     if args.custommpi:
 
@@ -80,38 +63,19 @@ def setup(arg: SetupArg, envgen: EnvGen):
         OMPI_SOURCE_DIR = builddir + "/.env/ompi-sources"
         CUDA_PATH = "/usr/lib/cuda"
 
-        MPI_ENV = builddir + "/.env/activate-ompi"
-
         if args.ucxurl is None or args.ompiurl is None:
             raise "ucxurl and ompiurl must be set if custom mpi on"
 
-        OMPI_HEADER = ""
-        ENV_SCRIPT_HEADER += "#### mpi setup ####\n"
-        ENV_SCRIPT_HEADER += 'export UCX_URL="' + args.ucxurl + '"\n'
-        ENV_SCRIPT_HEADER += 'export OMPI_URL="' + args.ompiurl + '"\n'
-        ENV_SCRIPT_HEADER += 'export CUDA_PATH="' + CUDA_PATH + '"\n'
+        envgen.ENV_SCRIPT_HEADER += "#### mpi setup ####\n"
+        envgen.ENV_SCRIPT_HEADER += 'export UCX_URL="' + args.ucxurl + '"\n'
+        envgen.ENV_SCRIPT_HEADER += 'export OMPI_URL="' + args.ompiurl + '"\n'
+        envgen.ENV_SCRIPT_HEADER += 'export CUDA_PATH="' + CUDA_PATH + '"\n'
 
-        ENV_SCRIPT_HEADER += 'export UCX_INSTALL_PATH="' + UCX_INSTALL_PATH + '"\n'
-        ENV_SCRIPT_HEADER += 'export OMPI_INSTALL_PATH="' + OMPI_INSTALL_PATH + '"\n'
-        ENV_SCRIPT_HEADER += 'export OMPI_SOURCE_DIR="' + OMPI_SOURCE_DIR + '"\n'
-        ENV_SCRIPT_HEADER += ". " + MPI_ENV + "\n"
-        ENV_SCRIPT_HEADER += "#### ######### ####\n"
+        envgen.ENV_SCRIPT_HEADER += 'export UCX_INSTALL_PATH="' + UCX_INSTALL_PATH + '"\n'
+        envgen.ENV_SCRIPT_HEADER += 'export OMPI_INSTALL_PATH="' + OMPI_INSTALL_PATH + '"\n'
+        envgen.ENV_SCRIPT_HEADER += 'export OMPI_SOURCE_DIR="' + OMPI_SOURCE_DIR + '"\n'
+        envgen.ENV_SCRIPT_HEADER += "#### ######### ####\n"
 
-        utils.envscript.write_env_file(
-            source_path=shamrockdir + "/env/helpers/setup_mpi.sh", header="", path_write=MPI_ENV
-        )
+        envgen.ext_script_list.append(shamrockdir + "/env/helpers/setup_mpi.sh")
 
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-    source_file = "env_built_intel-llvm.sh"
-    source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
-
-    utils.envscript.write_env_file(
-        source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
-    )
-
-    if is_intel_llvm_already_installed(INTEL_LLVM_INSTALL_DIR):
-        print("-- intel llvm already installed => skipping")
-    else:
-        print("-- running compiler setup")
-        os.system("bash -c 'cd " + builddir + " && source ./activate &&  updatecompiler'")
+    envgen.gen_env_file("env_built_intel-llvm.sh")

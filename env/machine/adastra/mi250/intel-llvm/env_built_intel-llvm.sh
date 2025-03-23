@@ -68,10 +68,11 @@ function setupcompiler {
 
 }
 
-function updatecompiler {
-    (cd ${ACPP_GIT_DIR} && git pull)
-    setupcompiler
-}
+if [ ! -f "${INTEL_LLVM_INSTALL_DIR}/bin/clang++" ]; then
+    echo " ----- intel llvm is not configured, compiling it ... -----"
+    setupcompiler || return
+    echo " ----- intel llvm configured ! -----"
+fi
 
 function shamconfigure {
     cmake \

@@ -22,11 +22,6 @@ function setupcompiler {
     #(cd ${INTEL_LLVM_GIT_DIR}/build && $MAKE_EXEC "${MAKE_OPT[@]}" all libsycldevice)
 }
 
-function updatecompiler {
-    (cd ${ACPP_GIT_DIR} && git pull)
-    setupcompiler || return
-}
-
 if [ ! -f "${INTEL_LLVM_INSTALL_DIR}/bin/clang++" ]; then
     echo " ----- intel llvm is not configured, compiling it ... -----"
     setupcompiler || return

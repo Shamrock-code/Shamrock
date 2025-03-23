@@ -24,11 +24,6 @@ if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
 
 fi
 
-function updatecompiler {
-    (cd ${ACPP_GIT_DIR} && git pull)
-    setupcompiler
-}
-
 function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \

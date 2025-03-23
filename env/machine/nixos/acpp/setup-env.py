@@ -35,46 +35,25 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
-    ACPP_GIT_DIR = builddir + "/.env/acpp-git"
-    ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
-    ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
-
-    ENV_SCRIPT_PATH = builddir + "/activate"
-
-    ENV_SCRIPT_HEADER = ""
-    ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
-    ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC=" + gen + "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=(" + gen_opt + ")\n"
-
-    run_cmd("mkdir -p " + builddir)
-
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-
     cmake_extra_args = ""
+
+    envgen.export_list = {
+        "SHAMROCK_DIR": shamrockdir,
+        "BUILD_DIR": builddir,
+        "CMAKE_GENERATOR": cmake_gen,
+        "MAKE_EXEC": gen,
+        "MAKE_OPT": f"({gen_opt})",
+        "CMAKE_OPT": f"({cmake_extra_args})",
+        "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+        "SHAMROCK_CXX_FLAGS": "\" --acpp-targets='" + acpp_target + "'\"",
+    }
+
+    envgen.ext_script_list = [
+        shamrockdir + "/env/helpers/clone-acpp.sh",
+        shamrockdir + "/env/helpers/pull_reffiles.sh",
+    ]
+
+    envgen.gen_env_file("env_built_acpp.sh")
+    envgen.copy_env_file("shell.nix", "shell.nix")
     if pylib:
         envgen.copy_env_file("_pysetup.py", "pysetup.py")
-
-    ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
-    ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'
-    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='" + acpp_target + "'\"\n"
-
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-    source_file = "env_built_acpp.sh"
-    source_nix_file = "shell.nix"
-    source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
-    source_nix_path = os.path.abspath(os.path.join(cur_file, "../" + source_nix_file))
-
-    utils.envscript.write_env_file(
-        source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
-    )
-
-    NIX_SHELL_FILE = builddir + "/shell.nix"
-    utils.envscript.write_env_file(
-        source_path=source_nix_path, header="", path_write=NIX_SHELL_FILE
-    )

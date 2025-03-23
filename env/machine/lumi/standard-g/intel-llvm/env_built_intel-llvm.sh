@@ -32,7 +32,7 @@ function setupcompiler {
     rm -rf ${INTEL_LLVM_GIT_DIR} =
     echo " -> done"
 
-    . $BUILD_DIR/.env/clone-intel-llvm
+    clone_intel_llvm
 
     echo " ---- Running compiler setup ----"
 

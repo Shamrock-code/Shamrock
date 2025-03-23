@@ -7,19 +7,22 @@ export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
 export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
 
 function setupcompiler {
+
+    clone_acpp || return
+
     cmake \
         -S ${ACPP_GIT_DIR} \
         -B ${ACPP_BUILD_DIR} \
         -GNinja \
         -DCMAKE_INSTALL_PREFIX=$out \
         -DCLANG_INCLUDE_PATH=$CMAKE_CLANG_INCLUDE_PATH \
-        -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR}
-    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+        -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} || return
+    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
 }
 
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
     echo " ------ Compiling AdaptiveCpp ------ "
-    setupcompiler
+    setupcompiler || return
     echo " ------  AdaptiveCpp Compiled  ------ "
 
 fi
@@ -35,9 +38,9 @@ function shamconfigure {
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes \
-        "${CMAKE_OPT[@]}"
+        "${CMAKE_OPT[@]}" || return
 }
 
 function shammake {
-    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
+    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}") || return
 }

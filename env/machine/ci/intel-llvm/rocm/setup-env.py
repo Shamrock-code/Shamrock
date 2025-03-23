@@ -38,7 +38,7 @@ def setup(arg: SetupArg):
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
     cmake_extra_args = ""
-    
+
     envgen.export_list = {
         "SHAMROCK_DIR": shamrockdir,
         "BUILD_DIR": builddir,
@@ -53,5 +53,5 @@ def setup(arg: SetupArg):
         shamrockdir + "/env/helpers/clone-intel-llvm.sh",
         shamrockdir + "/env/helpers/pull_reffiles.sh",
     ]
-    
+
     envgen.gen_env_file("env_built_intel-llvm.sh")

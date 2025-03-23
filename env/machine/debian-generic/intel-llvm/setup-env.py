@@ -72,7 +72,6 @@ def setup(arg: SetupArg):
         header="",
         path_write=INTEL_LLVM_CLONE_HELPER,
     )
-    ENV_SCRIPT_HEADER += ". " + INTEL_LLVM_CLONE_HELPER + "\n"
 
     ENV_SCRIPT_HEADER += "\n"
     ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'

@@ -1,6 +1,8 @@
 # Exports will be provided by the new env script above this line
 # will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
 
+. $BUILD_DIR/.env/clone-intel-llvm
+
 export LD_LIBRARY_PATH=$INTEL_LLVM_INSTALL_DIR/lib:$LD_LIBRARY_PATH
 
 function setupcompiler {

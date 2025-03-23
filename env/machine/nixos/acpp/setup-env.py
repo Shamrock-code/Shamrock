@@ -87,7 +87,7 @@ def setup(arg: SetupArg):
         source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
     )
 
-    INTEL_LLVM_CLONE_HELPER = builddir + "/shell.nix"
+    NIX_SHELL_FILE = builddir + "/shell.nix"
     utils.envscript.write_env_file(
-        source_path=source_nix_path, header="", path_write=INTEL_LLVM_CLONE_HELPER
+        source_path=source_nix_path, header="", path_write=NIX_SHELL_FILE
     )

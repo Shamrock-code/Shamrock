@@ -1,15 +1,16 @@
-# Exports will be provided by the new env script above this line
-# will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
+# Everything before this line will be provided by the new-env script
 
 function setupcompiler {
-    cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR}
-    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+    clone_acpp || return
+    cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} || return
+    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
 }
 
-function updatecompiler {
-    (cd ${ACPP_GIT_DIR} && git pull)
-    setupcompiler
-}
+if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
+    echo " ----- acpp is not configured, compiling it ... -----"
+    setupcompiler || return
+    echo " ----- acpp configured ! -----"
+fi
 
 function shamconfigure {
     cmake \
@@ -27,10 +28,4 @@ function shamconfigure {
 
 function shammake {
     (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
-}
-
-export REF_FILES_PATH=$BUILD_DIR/reference-files
-
-function pull_reffiles {
-    git clone https://github.com/Shamrock-code/reference-files.git $REF_FILES_PATH
 }

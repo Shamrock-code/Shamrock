@@ -45,49 +45,52 @@ def setup(arg: SetupArg):
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
-    ACPP_GIT_DIR = builddir + "/.env/acpp-git"
-    ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
-    ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
-
-    utils.acpp.clone_acpp(ACPP_GIT_DIR)
-
     ENV_SCRIPT_PATH = builddir + "/activate"
 
+    run_cmd("mkdir -p " + builddir + "/.env")
+
     ENV_SCRIPT_HEADER = ""
-    ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
-    ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR=" + ACPP_GIT_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR=" + ACPP_BUILD_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR=" + ACPP_INSTALL_DIR + "\n"
-
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC=" + gen + "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=(" + gen_opt + ")\n"
-
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
 
     cmake_extra_args = ""
-    if pylib:
-        run_cmd(
-            "cp "
-            + os.path.abspath(os.path.join(cur_file, "../" + "_pysetup.py"))
-            + " "
-            + builddir
-            + "/setup.py"
-        )
-
     if lib_mode == "shared":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=On"
     elif lib_mode == "object":
         cmake_extra_args += " -DSHAMROCK_USE_SHARED_LIB=Off"
 
-    ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
+    ACPP_GIT_DIR = builddir + "/.env/acpp-git"
+    ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
+    ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
 
-    ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'
-    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='" + acpp_target + "'\"\n"
+    export_list = {
+        "SHAMROCK_DIR" : shamrockdir,
+        "BUILD_DIR" : builddir,
+        "ACPP_GIT_DIR": ACPP_GIT_DIR,
+        "ACPP_BUILD_DIR": ACPP_BUILD_DIR,
+        "ACPP_INSTALL_DIR": ACPP_INSTALL_DIR,
+        "CMAKE_GENERATOR": cmake_gen,
+        "MAKE_EXEC" : gen,
+        "MAKE_OPT" : f"({gen_opt})",
+        "CMAKE_OPT" : f"({cmake_extra_args})",
+        "SHAMROCK_BUILD_TYPE" : f"'{cmake_build_type}'",
+        "SHAMROCK_CXX_FLAGS" : "\" --acpp-targets='" + acpp_target + "'\""
+    }
+
+    ext_script_list = [
+       shamrockdir + "/env/helpers/clone-acpp.sh",
+       shamrockdir + "/env/helpers/pull_reffiles.sh"
+    ]
+    
+    for k in export_list.keys():
+        ENV_SCRIPT_HEADER += "export " + k + "=" + export_list[k] + "\n"
+
+    spacer ="\n####################################################################################"
+    for f in ext_script_list:
+        ENV_SCRIPT_HEADER += f"{spacer}\n# Imported script " + f + f"{spacer}\n"
+        ENV_SCRIPT_HEADER += utils.envscript.file_to_string(f)
+        ENV_SCRIPT_HEADER += f"{spacer}{spacer}{spacer}\n"
+
+    # Get current file path
+    cur_file = os.path.realpath(os.path.expanduser(__file__))
 
     source_file = "env_built_acpp.sh"
     source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
@@ -96,8 +99,11 @@ def setup(arg: SetupArg):
         source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
     )
 
-    if is_acpp_already_installed(ACPP_INSTALL_DIR):
-        print("-- acpp already installed => skipping")
-    else:
-        print("-- running compiler setup")
-        run_cmd("cd " + builddir + " && . ./activate &&  updatecompiler")
+    if pylib:
+        run_cmd(
+            "cp "
+            + os.path.abspath(os.path.join(cur_file, "../" + "_pysetup.py"))
+            + " "
+            + builddir
+            + "/setup.py"
+        )

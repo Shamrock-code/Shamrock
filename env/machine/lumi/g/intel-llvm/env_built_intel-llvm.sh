@@ -39,8 +39,8 @@ function setupcompiler {
 
     python3 ${INTEL_LLVM_GIT_DIR}/buildbot/configure.py \
         --hip \
-        --cmake-opt="-DCMAKE_C_COMPILER=gcc-13" \
-        --cmake-opt="-DCMAKE_CXX_COMPILER=g++-13" \
+        --cmake-opt="-DCMAKE_C_COMPILER=amdclang" \
+        --cmake-opt="-DCMAKE_CXX_COMPILER=amdclang++" \
         --cmake-opt="-DCMAKE_INSTALL_PREFIX=${INTEL_LLVM_INSTALL_DIR}" \
         --cmake-opt="-DUR_HIP_ROCM_DIR=${ROCM_PATH}" \
         --cmake-gen="Ninja" || return
@@ -57,8 +57,9 @@ fi
 
 function shamconfigure {
 
-    # Why the FFFF is pthread not linked by default ?
-    # If one invoke a c++ thread that compile to something that uses pthread
+    # see https://github.com/audacity/audacity/issues/3173 for why "-Wl,--copy-dt-needed-entries"
+    # is needed
+    # If not one gets /usr/lib64/gcc/x86_64-suse-linux/13/../../../../x86_64-suse-linux/bin/ld: /lib64/libpthread.so.0: error adding symbols: DSO missing from command line
 
     cmake \
         -S $SHAMROCK_DIR \
@@ -69,7 +70,7 @@ function shamconfigure {
         -DCMAKE_CXX_COMPILER="${INTEL_LLVM_INSTALL_DIR}/bin/clang++" \
         -DCMAKE_C_COMPILER="${INTEL_LLVM_INSTALL_DIR}/bin/clang" \
         -DCMAKE_CXX_FLAGS="-march=znver3 -fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a --rocm-path=${ROCM_PATH} -isystem ${CRAY_MPICH_PREFIX}/include" \
-        -DCMAKE_EXE_LINKER_FLAGS="-lpthread -L"${CRAY_MPICH_PREFIX}/lib" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
+        -DCMAKE_EXE_LINKER_FLAGS="-Wl,--copy-dt-needed-entries -L"${CRAY_MPICH_PREFIX}/lib" -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes \
         -DCXX_FLAG_ARCH_NATIVE=off \

@@ -453,7 +453,7 @@ test_exclusive_sum_atomic_decoupled_v4, 1){
 
 }
 */
-#ifndef SYCL2020_FEATURE_GROUP_REDUCTION
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 TestStart(
     Unittest,
     "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5",
@@ -467,7 +467,7 @@ TestStart(
 }
 #endif
 
-#ifndef SYCL2020_FEATURE_GROUP_REDUCTION
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 TestStart(
     Unittest,
     "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5_usm",
@@ -490,7 +490,7 @@ TestStart(
 //
 // }
 
-#ifndef SYCL2020_FEATURE_GROUP_REDUCTION
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 TestStart(
     Unittest,
     "shamalgs/numeric/details/exclusive_sum_sycl_jointalg",

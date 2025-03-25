@@ -76,6 +76,11 @@ namespace sham {
         }
     }
 
+    // Note here
+    // Never ever capture the sycl::group<1> by reference
+    // This messes up the reduction and every component will be reduced by the same value
+    // I have no feaking idea why
+
     template<class T>
     inline T sum_over_group(const sycl::group<1> &g, const T &v) {
     #ifdef SYCL_COMP_INTEL_LLVM

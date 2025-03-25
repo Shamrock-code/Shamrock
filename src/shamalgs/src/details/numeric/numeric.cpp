@@ -29,10 +29,9 @@ namespace shamalgs::numeric {
         return details::exclusive_sum_fallback(q, buf1, len);
 #else
     #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        // SSCP does not compile decoupled lookback scan
-        return details::exclusive_sum_fallback(q, buf1, len);
-    #else
         return details::exclusive_sum_atomic_decoupled_v5<T, 512>(q, buf1, len);
+    #else
+        return details::exclusive_sum_fallback(q, buf1, len);
     #endif
 #endif
     }
@@ -44,10 +43,9 @@ namespace shamalgs::numeric {
         return details::exclusive_sum_fallback_usm(sched, buf1, len);
 #else
     #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        // SSCP does not compile decoupled lookback scan
-        return details::exclusive_sum_fallback_usm(sched, buf1, len);
-    #else
         return details::exclusive_sum_atomic_decoupled_v5_usm<T, 512>(sched, buf1, len);
+    #else
+        return details::exclusive_sum_fallback_usm(sched, buf1, len);
     #endif
 #endif
     }

@@ -805,6 +805,8 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
             exp_test));
 #endif
 
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+
     results.emplace(
         "slicegroup8",
         shambase::benchmark_pow_len(
@@ -885,8 +887,6 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
             10,
             max_N,
             exp_test));
-
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 
     results.emplace(
         "usmgroup128",

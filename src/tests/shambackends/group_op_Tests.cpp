@@ -19,7 +19,7 @@
 
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 
-TestStart(Unittest, "sham::sum_over_group test", sum_over_group_test, 1) {
+TestStart(Unittest, "sham::sum_over_group", sum_over_group_test, 1) {
 
     // Initialize data
     std::vector<f64_3> input_data
@@ -54,8 +54,11 @@ TestStart(Unittest, "sham::sum_over_group test", sum_over_group_test, 1) {
 
     // Check results
     output_data = output_buf.copy_to_stdvec();
-    f64_3 expected_sum
-        = std::accumulate(input_data.begin(), input_data.end(), f64_3{0.0, 0.0, 0.0});
+
+    f64_3 expected_sum = {0.0, 0.0, 0.0};
+    for (auto o : input_data) {
+        expected_sum += o;
+    }
 
     for (size_t i = 0; i < output_data.size(); ++i) {
         REQUIRE_EQUAL(output_data[i][0], expected_sum[0]);
@@ -63,7 +66,8 @@ TestStart(Unittest, "sham::sum_over_group test", sum_over_group_test, 1) {
         REQUIRE_EQUAL(output_data[i][2], expected_sum[2]);
     }
 }
-TestStart(Unittest, "sham::min_over_group test", min_over_group_test, 1) {
+
+TestStart(Unittest, "sham::min_over_group", min_over_group_test, 1) {
 
     // Initialize data
     std::vector<f64_3> input_data
@@ -97,9 +101,10 @@ TestStart(Unittest, "sham::min_over_group test", min_over_group_test, 1) {
     output_buf.complete_event_state(e);
 
     // Check results
-    output_data        = output_buf.copy_to_stdvec();
-    f64_3 expected_min = output_data[0];
-    for (auto o : output_data) {
+    output_data = output_buf.copy_to_stdvec();
+
+    f64_3 expected_min = input_data[0];
+    for (auto o : input_data) {
         expected_min = sham::min(expected_min, o);
     }
 
@@ -110,7 +115,7 @@ TestStart(Unittest, "sham::min_over_group test", min_over_group_test, 1) {
     }
 }
 
-TestStart(Unittest, "sham::max_over_group test", max_over_group_test, 1) {
+TestStart(Unittest, "sham::max_over_group", max_over_group_test, 1) {
 
     // Initialize data
     std::vector<f64_3> input_data
@@ -145,8 +150,8 @@ TestStart(Unittest, "sham::max_over_group test", max_over_group_test, 1) {
 
     // Check results
     output_data        = output_buf.copy_to_stdvec();
-    f64_3 expected_max = output_data[0];
-    for (auto o : output_data) {
+    f64_3 expected_max = input_data[0];
+    for (auto o : input_data) {
         expected_max = sham::max(expected_max, o);
     }
 

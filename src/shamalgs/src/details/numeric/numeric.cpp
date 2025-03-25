@@ -28,7 +28,7 @@ namespace shamalgs::numeric {
 #ifdef __MACH__ // decoupled lookback perf on mac os is awfull
         return details::exclusive_sum_fallback(q, buf1, len);
 #else
-    #ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
+    #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         // SSCP does not compile decoupled lookback scan
         return details::exclusive_sum_fallback(q, buf1, len);
     #else
@@ -43,7 +43,7 @@ namespace shamalgs::numeric {
 #ifdef __MACH__ // decoupled lookback perf on mac os is awfull
         return details::exclusive_sum_fallback_usm(sched, buf1, len);
 #else
-    #ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
+    #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         // SSCP does not compile decoupled lookback scan
         return details::exclusive_sum_fallback_usm(sched, buf1, len);
     #else

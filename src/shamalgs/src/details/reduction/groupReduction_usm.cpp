@@ -137,7 +137,7 @@ namespace shamalgs::reduction::details {
 
 #ifndef DOXYGEN
 
-    #ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+    #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 
         #define XMAC_TYPES                                                                         \
             X(f32)                                                                                 \

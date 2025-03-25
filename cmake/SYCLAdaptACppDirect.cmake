@@ -59,19 +59,28 @@ check_cxx_source_compiles(
       "
       SYCL2020_FEATURE_CLZ)
 
-if(NOT DEFINED SYCL_feature_reduc2020)
-  message(STATUS "Performing Test " SYCL_feature_reduc2020)
+if(NOT DEFINED SYCL2020_FEATURE_REDUCTION)
   try_compile(
     SYCL_feature_reduc2020 ${CMAKE_BINARY_DIR}/compile_tests
     ${CMAKE_SOURCE_DIR}/cmake/feature_test/sycl2020_reduc.cpp)
   if(SYCL_feature_reduc2020)
-    message(STATUS "Performing Test " SYCL_feature_reduc2020 " - Success")
-    set(SYCL2020_FEATURE_REDUCTION ON)
+    set(SYCL2020_FEATURE_REDUCTION ON CACHE INTERNAL "" FORCE)
   else()
-    message(STATUS "Performing Test " SYCL_feature_reduc2020 " - Failed")
-    set(SYCL2020_FEATURE_REDUCTION Off)
+    set(SYCL2020_FEATURE_REDUCTION Off CACHE INTERNAL "" FORCE)
   endif()
 endif()
+
+if(NOT DEFINED SYCL2020_FEATURE_GROUP_REDUCTION)
+  try_compile(
+    SYCL_feature_group_reduc2020 ${CMAKE_BINARY_DIR}/compile_tests
+    ${CMAKE_SOURCE_DIR}/cmake/feature_test/sycl2020_group_reduc.cpp)
+  if(SYCL_feature_group_reduc2020)
+    set(SYCL2020_FEATURE_GROUP_REDUCTION ON CACHE INTERNAL "" FORCE)
+  else()
+    set(SYCL2020_FEATURE_GROUP_REDUCTION Off CACHE INTERNAL "" FORCE)
+  endif()
+endif()
+
 
 set(SYCL_COMPILER "ACPP")
 

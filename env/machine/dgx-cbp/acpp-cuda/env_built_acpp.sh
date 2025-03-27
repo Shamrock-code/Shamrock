@@ -1,7 +1,7 @@
 # Everything before this line will be provided by the new-env script
 
 export ACPP_TARGETS="cuda:sm_80"
-export ACPP_VERSION=v24.10.0
+export ACPP_VERSION=develop
 export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir

@@ -369,10 +369,14 @@ namespace shamsys::instance {
     void check_dgpu_available() {
 
         using namespace shambase::term_colors;
-        if (shambase::get_check_ref(syclinit::device_compute).mpi_prop.is_mpi_direct_capable) {
-            logger::raw_ln(" - MPI use Direct Comm :", col8b_green() + "Yes" + reset());
-        } else {
-            logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "No" + reset());
+
+        // TODO : This should be replaced by a reduction of some kind
+        if (shamcomm::world_rank() == 0) {
+            if (shambase::get_check_ref(syclinit::device_compute).mpi_prop.is_mpi_direct_capable) {
+                logger::raw_ln(" - MPI use Direct Comm :", col8b_green() + "Yes" + reset());
+            } else {
+                logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "No" + reset());
+            }
         }
     }
 

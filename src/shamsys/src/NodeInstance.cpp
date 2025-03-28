@@ -18,6 +18,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
@@ -370,12 +371,24 @@ namespace shamsys::instance {
 
         using namespace shambase::term_colors;
 
-        // TODO : This should be replaced by a reduction of some kind
+        u32 loc_use_direct_gpu
+            = shambase::get_check_ref(syclinit::device_compute).mpi_prop.is_mpi_direct_capable;
+
+        u32 num_dgpu_use = shamalgs::collective::allreduce_sum(loc_use_direct_gpu);
+
         if (shamcomm::world_rank() == 0) {
-            if (shambase::get_check_ref(syclinit::device_compute).mpi_prop.is_mpi_direct_capable) {
-                logger::raw_ln(" - MPI use Direct Comm :", col8b_green() + "Yes" + reset());
+            if (num_dgpu_use == shamcomm::world_size()) {
+                logger::raw_ln(shambase::format(
+                    " - MPI use Direct Comm : {}", col8b_green() + "Yes" + reset()));
+            } else if (num_dgpu_use > 0) {
+                logger::raw_ln(shambase::format(
+                    " - MPI use Direct Comm : {} ({} of {})",
+                    col8b_yellow() + "Partial" + reset(),
+                    num_dgpu_use,
+                    shamcomm::world_size()));
             } else {
-                logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "No" + reset());
+                logger::raw_ln(
+                    shambase::format(" - MPI use Direct Comm : {}", col8b_red() + "No" + reset()));
             }
         }
     }

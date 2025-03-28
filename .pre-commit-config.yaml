@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v5.0.0
   hooks:
   - id: trailing-whitespace
     exclude: \.svg$|LICENSE
@@ -24,7 +24,7 @@ repos:
   - id: check-case-conflict
     log_file: log_precommit_check-case-conflict
 
-  #- id: check-symlinks
+  - id: check-symlinks
   #- id: check-xml
   - id: check-yaml
     args: [--unsafe]
@@ -35,10 +35,10 @@ repos:
 
   #- id: pretty-format-json
 
-#- repo: https://github.com/Lucas-C/pre-commit-hooks
-#  rev: "v1.5.5"
-#  hooks:
-#  - id: forbid-tabs
+- repo: https://github.com/Lucas-C/pre-commit-hooks
+  rev: "v1.5.5"
+  hooks:
+  - id: forbid-tabs
 
 #- repo: https://github.com/cheshirekow/cmake-format-precommit
 #  rev: v0.6.10
@@ -65,7 +65,7 @@ repos:
 
 # Clang format the codebase automatically
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: "v18.1.8"
+  rev: v19.1.7
   hooks:
   - id: clang-format
     types_or: [c++, c, cuda]
@@ -73,17 +73,22 @@ repos:
 
 
 - repo: https://github.com/psf/black
-  rev: stable
+  rev: 25.1.0
   hooks:
   - id: black
     args: [--line-length=100]
     log_file: log_precommit_black
 
 - repo: https://github.com/pycqa/isort
-  rev: 5.13.2
+  rev: 6.0.1
   hooks:
     - id: isort
       log_file: log_precommit_isort
+
+#- repo: https://github.com/rhysd/actionlint
+#  rev: v1.7.7
+#  hooks:
+#    - id: actionlint
 
 - repo: local
   hooks:

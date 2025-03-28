@@ -157,9 +157,8 @@ void RadixTree<morton_t, pos_t>::convert_bounding_box(sycl::queue &queue) {
 
 template<class u_morton, class vec>
 auto RadixTree<u_morton, vec>::compute_int_boxes(
-    sycl::queue &queue,
-    sham::DeviceBuffer<coord_t> &int_rad_buf,
-    coord_t tolerance) -> RadixTreeField<coord_t> {
+    sycl::queue &queue, sham::DeviceBuffer<coord_t> &int_rad_buf, coord_t tolerance)
+    -> RadixTreeField<coord_t> {
 
     logger::debug_sycl_ln("RadixTree", "compute int boxes");
 

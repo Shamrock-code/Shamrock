@@ -132,6 +132,8 @@ namespace shamrock::patch {
                     return "u32_3";
                 } else if (std::is_same<base_t, u64_3>::value) {
                     return "u64_3";
+                } else if (std::is_same<base_t, i64_3>::value) {
+                    return "i64_3";
                 } else {
                     shambase::throw_unimplemented();
                     return "";

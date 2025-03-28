@@ -39,7 +39,10 @@ repos:
   rev: "v1.5.5"
   hooks:
   - id: forbid-tabs
+    exclude: Makefile|\.gitmodules
     log_file: log_precommit_forbit-tabs
+  - id: remove-tabs
+    exclude: Makefile|\.gitmodules
 
 #- repo: https://github.com/cheshirekow/cmake-format-precommit
 #  rev: v0.6.10
@@ -85,6 +88,12 @@ repos:
   hooks:
     - id: isort
       log_file: log_precommit_isort
+
+#- repo: https://github.com/johnor/pre-commit-lizard
+#  rev: 'v1.17.10'
+#  hooks:
+#    - id: lizard-cpp
+
 
 #- repo: https://github.com/rhysd/actionlint
 #  rev: v1.7.7

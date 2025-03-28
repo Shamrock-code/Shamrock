@@ -50,22 +50,22 @@ namespace shamunits::details {
     /*derived units*/                                                                              \
     X1(Hertz, Hz)    /* hertz : frequency (s−1) */                                                 \
     X1(Newtown, N)   /* (kg⋅m⋅s−2)*/                                                               \
-    X1(Pascal, Pa)   /* (kg⋅m−1⋅s−2) 	(N/m2)*/                                                   \
-    X1(Joule, J)     /* (kg⋅m2⋅s−2) 	(N⋅m = Pa⋅m3)*/                                            \
-    X1(Watt, W)      /* (kg⋅m2⋅s−3) 	(J/s)*/                                                    \
+    X1(Pascal, Pa)   /* (kg⋅m−1⋅s−2) (N/m2)*/                                                      \
+    X1(Joule, J)     /* (kg⋅m2⋅s−2) (N⋅m = Pa⋅m3)*/                                                \
+    X1(Watt, W)      /* (kg⋅m2⋅s−3) (J/s)*/                                                        \
     X1(Coulomb, C)   /* (s⋅A)*/                                                                    \
-    X1(Volt, V)      /* (kg⋅m2⋅s−3⋅A−1) 	(W/A) = (J/C)*/                                    \
-    X1(Farad, F)     /* (kg−1⋅m−2⋅s4⋅A2) 	(C/V) = (C2/J)*/                                   \
-    X1(Ohm, ohm)     /* (kg⋅m2⋅s−3⋅A−2) 	(V/A) = (J⋅s/C2)*/                                 \
-    X1(Siemens, S)   /* (kg−1⋅m−2⋅s3⋅A2) 	(ohm−1)*/                                          \
-    X1(Weber, Wb)    /* (kg⋅m2⋅s−2⋅A−1) 	(V⋅s)*/                                            \
-    X1(Tesla, T)     /* (kg⋅s−2⋅A−1) 	(Wb/m2)*/                                                  \
-    X1(Henry, H)     /* (kg⋅m2⋅s−2⋅A−2) 	(Wb/A)*/                                           \
-    X1(lumens, lm)   /* (cd.sr) 	(cd.sr)*/                                                         \
-    X1(lux, lx)      /* (cd.sr.m−2) 	(lm/m2)*/                                                   \
+    X1(Volt, V)      /* (kg⋅m2⋅s−3⋅A−1) (W/A) = (J/C)*/                                            \
+    X1(Farad, F)     /* (kg−1⋅m−2⋅s4⋅A2) (C/V) = (C2/J)*/                                          \
+    X1(Ohm, ohm)     /* (kg⋅m2⋅s−3⋅A−2) (V/A) = (J⋅s/C2)*/                                         \
+    X1(Siemens, S)   /* (kg−1⋅m−2⋅s3⋅A2) (ohm−1)*/                                                 \
+    X1(Weber, Wb)    /* (kg⋅m2⋅s−2⋅A−1) (V⋅s)*/                                                    \
+    X1(Tesla, T)     /* (kg⋅s−2⋅A−1) (Wb/m2)*/                                                     \
+    X1(Henry, H)     /* (kg⋅m2⋅s−2⋅A−2) (Wb/A)*/                                                   \
+    X1(lumens, lm)   /* (cd.sr) (cd.sr)*/                                                          \
+    X1(lux, lx)      /* (cd.sr.m−2) (lm/m2)*/                                                      \
     X1(Bequerel, Bq) /* (s−1)*/                                                                    \
-    X1(Gray, Gy)     /* (m2.s−2) 	(J/kg)*/                                                       \
-    X1(Sievert, Sv)  /* (m2.s−2) 	(J/kg)*/                                                       \
+    X1(Gray, Gy)     /* (m2.s−2) (J/kg)*/                                                          \
+    X1(Sievert, Sv)  /* (m2.s−2) (J/kg)*/                                                          \
     X1(katal, kat)   /* (mol.s-1) */                                                               \
     /*relative units*/                                                                             \
     X1(minutes, mn)                                                                                \

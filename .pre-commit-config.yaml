@@ -39,6 +39,7 @@ repos:
   rev: "v1.5.5"
   hooks:
   - id: forbid-tabs
+    log_file: log_precommit_forbit-tabs
 
 #- repo: https://github.com/cheshirekow/cmake-format-precommit
 #  rev: v0.6.10

@@ -17,7 +17,8 @@ export MPICH_GPU_SUPPORT_ENABLED=1
 export PATH=$HOME/.local/bin:$PATH
 pip3 install -U ninja cmake
 
-export LLVM_VERSION=llvmorg-18.1.8
+# In acpp llvm version must be lower or equal to rocm llvm version (Rocm 6.0.3 -> llvm 17.0.0)
+export LLVM_VERSION=llvmorg-17.0.6
 export LLVM_GIT_DIR=/tmp/llvm-git
 export LLVM_BUILD_DIR=/tmp/llvm-build
 export LLVM_INSTALL_DIR=$BUILD_DIR/.env/llvm-install

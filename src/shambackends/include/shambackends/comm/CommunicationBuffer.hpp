@@ -25,11 +25,13 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceContext.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
+#include <utility>
 
 namespace shamcomm {
 
@@ -52,7 +54,7 @@ namespace shamcomm {
         using Protocol = CommunicationProtocol;
 
         public:
-        inline CommunicationBuffer(u64 bytelen, std::shared_ptr<sham::DeviceScheduler> dev_sched) {
+        inline CommunicationBuffer(u64 bytelen, sham::DeviceScheduler_ptr dev_sched) {
             sham::Device &dev  = *dev_sched->ctx->device;
             Protocol comm_mode = get_protocol(dev);
             if (comm_mode == CopyToHost) {
@@ -66,8 +68,7 @@ namespace shamcomm {
             }
         }
 
-        inline CommunicationBuffer(
-            sycl::buffer<u8> &bytebuf, std::shared_ptr<sham::DeviceScheduler> dev_sched) {
+        inline CommunicationBuffer(sycl::buffer<u8> &bytebuf, sham::DeviceScheduler_ptr dev_sched) {
             sham::Device &dev  = *dev_sched->ctx->device;
             Protocol comm_mode = get_protocol(dev);
             if (comm_mode == CopyToHost) {
@@ -82,7 +83,7 @@ namespace shamcomm {
         }
 
         inline CommunicationBuffer(
-            sycl::buffer<u8> &&bytebuf, std::shared_ptr<sham::DeviceScheduler> dev_sched) {
+            sycl::buffer<u8> &&bytebuf, sham::DeviceScheduler_ptr dev_sched) {
             sham::Device &dev  = *dev_sched->ctx->device;
             Protocol comm_mode = get_protocol(dev);
             if (comm_mode == CopyToHost) {
@@ -91,6 +92,36 @@ namespace shamcomm {
             } else if (comm_mode == DirectGPU) {
                 _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(
                     std::forward<sycl::buffer<u8>>(bytebuf), dev_sched);
+            } else {
+                throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
+            }
+        }
+
+        inline CommunicationBuffer(
+            sham::DeviceBuffer<u8> &&bytebuf, sham::DeviceScheduler_ptr dev_sched) {
+            sham::Device &dev  = *dev_sched->ctx->device;
+            Protocol comm_mode = get_protocol(dev);
+            if (comm_mode == CopyToHost) {
+                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(
+                    bytebuf.copy_to_sycl_buffer(), dev_sched);
+            } else if (comm_mode == DirectGPU) {
+                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(
+                    bytebuf.copy_to_sycl_buffer(), dev_sched);
+            } else {
+                throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
+            }
+        }
+
+        inline CommunicationBuffer(
+            sham::DeviceBuffer<u8> &bytebuf, sham::DeviceScheduler_ptr dev_sched) {
+            sham::Device &dev  = *dev_sched->ctx->device;
+            Protocol comm_mode = get_protocol(dev);
+            if (comm_mode == CopyToHost) {
+                _int_type = std::make_unique<details::CommunicationBuffer<CopyToHost>>(
+                    bytebuf.copy_to_sycl_buffer(), dev_sched);
+            } else if (comm_mode == DirectGPU) {
+                _int_type = std::make_unique<details::CommunicationBuffer<DirectGPU>>(
+                    bytebuf.copy_to_sycl_buffer(), dev_sched);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }
@@ -149,6 +180,7 @@ namespace shamcomm {
         inline std::unique_ptr<CommunicationBuffer> duplicate_to_ptr() {
             return std::make_unique<CommunicationBuffer>(duplicate());
         }
+
         /**
          * @brief destroy the buffer and recover the held object
          *
@@ -160,6 +192,21 @@ namespace shamcomm {
                 [=](auto &&arg) {
                     using _t = typename std::remove_reference<decltype(*arg)>::type;
                     return _t::convert(std::forward<_t>(*arg));
+                },
+                buf._int_type);
+        }
+
+        /**
+         * @brief destroy the buffer and recover the held object
+         *
+         * @param buf
+         * @return T
+         */
+        inline static sham::DeviceBuffer<u8> convert_usm(CommunicationBuffer &&buf) {
+            return std::visit(
+                [=](auto &&arg) {
+                    using _t = typename std::remove_reference<decltype(*arg)>::type;
+                    return _t::convert_usm(std::forward<_t>(*arg));
                 },
                 buf._int_type);
         }

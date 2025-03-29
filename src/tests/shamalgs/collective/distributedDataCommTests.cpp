@@ -12,6 +12,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
@@ -53,17 +54,18 @@ void distribdata_sparse_comm_test(std::string prefix) {
             dat_ref.add_obj(
                 sender,
                 receiver,
-                std::make_unique<sycl::buffer<u8>>(shamalgs::random::mock_buffer<u8>(
-                    rnd, shamalgs::random::mock_value<i32>(eng, 1, length))));
+                shamalgs::random::mock_buffer_usm<u8>(
+                    get_compute_scheduler_ptr(),
+                    rnd,
+                    shamalgs::random::mock_value<i32>(eng, 1, length)));
         }
     }
 
     shamalgs::collective::SerializedDDataComm send_data;
 
-    dat_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
+    dat_ref.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u8> &buf) {
         if (rank_owner[sender] == wrank) {
-            send_data.add_obj(
-                sender, receiver, shamalgs::memory::duplicate(get_compute_queue(), buf));
+            send_data.add_obj(sender, receiver, buf.copy());
         }
     });
 
@@ -73,10 +75,9 @@ void distribdata_sparse_comm_test(std::string prefix) {
     });
 
     shamalgs::collective::SerializedDDataComm recv_data_ref;
-    dat_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
+    dat_ref.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u8> &buf) {
         if (rank_owner[receiver] == wrank) {
-            recv_data_ref.add_obj(
-                sender, receiver, shamalgs::memory::duplicate(get_compute_queue(), buf));
+            recv_data_ref.add_obj(sender, receiver, buf.copy());
         }
     });
 
@@ -85,14 +86,14 @@ void distribdata_sparse_comm_test(std::string prefix) {
         recv_data.get_element_count(),
         recv_data_ref.get_element_count());
 
-    recv_data_ref.for_each([&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
+    recv_data_ref.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u8> &buf) {
         REQUIRE_NAMED("has expected key", recv_data.has_key(sender, receiver));
 
         auto it = recv_data.get_native().find({sender, receiver});
 
         REQUIRE_NAMED(
             "correct buffer",
-            shamalgs::reduction::equals_ptr(get_compute_queue(), buf, it->second));
+            shamalgs::reduction::equals(get_compute_scheduler_ptr(), buf, it->second));
     });
 }
 

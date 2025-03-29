@@ -126,6 +126,20 @@ namespace shamalgs::reduction {
     }
 
     template<class T>
+    inline bool equals(
+        const sham::DeviceScheduler_ptr &q,
+        sham::DeviceBuffer<T> &buf1,
+        sham::DeviceBuffer<T> &buf2) {
+
+        bool same_size = buf1.get_size() == buf2.get_size();
+        if (!same_size) {
+            return false;
+        }
+
+        return equals(q, buf1, buf2, buf1.get_size());
+    }
+
+    template<class T>
     bool has_nan(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>

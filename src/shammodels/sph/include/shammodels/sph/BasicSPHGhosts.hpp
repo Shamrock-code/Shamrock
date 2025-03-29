@@ -349,12 +349,12 @@ namespace shammodels::sph {
 
                     return ser.finalize();
                 },
-                [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
+                [&](sham::DeviceBuffer<u8> &&buf) {
                     // exchange the buffer held by the distrib data and give it to the
                     // serializer
                     shamalgs::SerializeHelper ser(
                         shamsys::instance::get_compute_scheduler_ptr(),
-                        std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                        std::forward<sham::DeviceBuffer<u8>>(buf));
 
                     PatchDataField<vec> f = PatchDataField<vec>::deserialize_buf(ser, "xyz", 1);
                     PatchDataField<flt> hpart
@@ -390,11 +390,11 @@ namespace shammodels::sph {
                     pdat.serialize_buf(ser);
                     return ser.finalize();
                 },
-                [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
+                [&](sham::DeviceBuffer<u8> &&buf) {
                     // exchange the buffer held by the distrib data and give it to the serializer
                     shamalgs::SerializeHelper ser(
                         shamsys::instance::get_compute_scheduler_ptr(),
-                        std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                        std::forward<sham::DeviceBuffer<u8>>(buf));
                     return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
                 });
 
@@ -421,11 +421,11 @@ namespace shammodels::sph {
                     pdat.serialize_full(ser);
                     return ser.finalize();
                 },
-                [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
+                [&](sham::DeviceBuffer<u8> &&buf) {
                     // exchange the buffer held by the distrib data and give it to the serializer
                     shamalgs::SerializeHelper ser(
                         shamsys::instance::get_compute_scheduler_ptr(),
-                        std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                        std::forward<sham::DeviceBuffer<u8>>(buf));
                     return PatchDataField<T>::deserialize_full(ser);
                 });
 

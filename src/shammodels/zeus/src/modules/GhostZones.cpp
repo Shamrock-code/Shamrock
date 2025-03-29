@@ -222,11 +222,11 @@ shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
             pdat.serialize_buf(ser);
             return ser.finalize();
         },
-        [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
+        [&](sham::DeviceBuffer<u8> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
-                std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                std::forward<sham::DeviceBuffer<u8>>(buf));
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         });
 
@@ -255,11 +255,11 @@ shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat_field(
             pdat.serialize_buf(ser);
             return ser.finalize();
         },
-        [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
+        [&](sham::DeviceBuffer<u8> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
-                std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                std::forward<sham::DeviceBuffer<u8>>(buf));
             return PatchDataField<T>::deserialize_full(ser);
         });
 

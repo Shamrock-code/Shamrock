@@ -68,12 +68,12 @@ mkdir build
 cd $HOME/llvm-project-17.0.1.src/build
 cmake \
     -DLLVM_TARGETS_TO_BUILD="host" \
-	-DLLVM_ENABLE_PROJECTS="llvm;clang;clang-tools-extra;openmp;polly;libc" \
-	-DLLVM_ENABLE_RUNTIMES="libc;libcxx;libcxxabi" \
-	-DCMAKE_INSTALL_PREFIX="$HOME/llvm-17.x-local" \
-	-DCMAKE_BUILD_TYPE=Release \
-	-G "Unix Makefiles" \
-	../llvm
+    -DLLVM_ENABLE_PROJECTS="llvm;clang;clang-tools-extra;openmp;polly;libc" \
+    -DLLVM_ENABLE_RUNTIMES="libc;libcxx;libcxxabi" \
+    -DCMAKE_INSTALL_PREFIX="$HOME/llvm-17.x-local" \
+    -DCMAKE_BUILD_TYPE=Release \
+    -G "Unix Makefiles" \
+    ../llvm
 
 make -j install
 ```
@@ -102,13 +102,13 @@ cd $HOME/ShamrockWorkspace/sycl_compiler_gits/AdaptiveCpp
 
 cmake \
     -DBoost_USE_STATIC_LIBS=on \
-	-DCLANG_EXECUTABLE_PATH=$HOME/llvm-17.x-local/bin/clang++ \
-	-DLLVM_DIR=$HOME/llvm-17.x-local/lib/cmake/llvm \
-	-DWITH_SSCP_COMPILER=OFF -DWITH_OPENCL_BACKEND=OFF \
-	-DWITH_LEVEL_ZERO_BACKEND=OFF \
-	-DCMAKE_INSTALL_PREFIX=$HOME/ShamrockWorkspace/sycl_compilers/acpp \
-	-B build \
-	.
+    -DCLANG_EXECUTABLE_PATH=$HOME/llvm-17.x-local/bin/clang++ \
+    -DLLVM_DIR=$HOME/llvm-17.x-local/lib/cmake/llvm \
+    -DWITH_SSCP_COMPILER=OFF -DWITH_OPENCL_BACKEND=OFF \
+    -DWITH_LEVEL_ZERO_BACKEND=OFF \
+    -DCMAKE_INSTALL_PREFIX=$HOME/ShamrockWorkspace/sycl_compilers/acpp \
+    -B build \
+    .
 
 cd build
 make -j install

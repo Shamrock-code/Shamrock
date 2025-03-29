@@ -18,6 +18,7 @@
 
 #include "shamalgs/details/reduction/group_reduc_utils.hpp"
 #include "shamalgs/memory.hpp"
+#include "shambackends/group_op.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
@@ -33,6 +34,8 @@ template<class T, u32 work_group_size>
 class KernelSliceReduceMax;
 
 namespace shamalgs::reduction::details {
+
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 
     template<class T, u32 work_group_size>
     struct GroupReduction {
@@ -78,8 +81,7 @@ namespace shamalgs::reduction::details {
                         T val_read = (iread < max_id) ? global_mem[iread]
                                                       : shambase::VectorProperties<T>::get_zero();
 
-                        T local_red
-                            = sycl::reduce_over_group(item.get_group(), val_read, SYCL_SUM_OP);
+                        T local_red = sham::sum_over_group(item.get_group(), val_read);
 
                         // can be removed if i change the index in the look back ?
                         if (lid == 0) {
@@ -161,8 +163,7 @@ namespace shamalgs::reduction::details {
                         T val_read = (iread < max_id) ? global_mem[iread]
                                                       : shambase::VectorProperties<T>::get_max();
 
-                        T local_red
-                            = sycl::reduce_over_group(item.get_group(), val_read, SYCL_MIN_OP);
+                        T local_red = sham::min_over_group(item.get_group(), val_read);
 
                         // can be removed if i change the index in the look back ?
                         if (lid == 0) {
@@ -244,8 +245,7 @@ namespace shamalgs::reduction::details {
                         T val_read = (iread < max_id) ? global_mem[iread]
                                                       : shambase::VectorProperties<T>::get_min();
 
-                        T local_red
-                            = sycl::reduce_over_group(item.get_group(), val_read, SYCL_MAX_OP);
+                        T local_red = sham::max_over_group(item.get_group(), val_read);
 
                         // can be removed if i change the index in the look back ?
                         if (lid == 0) {
@@ -292,5 +292,6 @@ namespace shamalgs::reduction::details {
 
         return ret;
     }
+#endif
 
 } // namespace shamalgs::reduction::details

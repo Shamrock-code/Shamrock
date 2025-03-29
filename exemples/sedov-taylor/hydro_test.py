@@ -114,13 +114,22 @@ if shamrock.sys.world_rank() == 0:
     rho = pmass * (model.get_hfact() / hpart) ** 3
     P = (gamma - 1) * rho * uint
 
-    import sys
+    sedov_sol = shamrock.phys.SedovTaylor()
 
-    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-    from array_io import *
+    r_theo = np.linspace(0, 1, 300)
+    p_theo = []
+    vr_theo = []
+    rho_theo = []
+    for i in range(len(r_theo)):
+        _rho_theo, _vr_theo, _p_theo = sedov_sol.get_value(r_theo[i])
+        p_theo.append(_p_theo)
+        vr_theo.append(_vr_theo)
+        rho_theo.append(_rho_theo)
 
-    fdata = os.path.dirname(os.path.abspath(__file__)) + "/sedov_taylor.txt"
-    r_theo, rho_theo, p_theo, vr_theo = read_four_arrays(fdata)
+    r_theo = np.array(r_theo)
+    p_theo = np.array(p_theo)
+    vr_theo = np.array(vr_theo)
+    rho_theo = np.array(rho_theo)
 
     plt.style.use("custom_style.mplstyle")
     if True:

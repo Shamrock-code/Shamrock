@@ -154,9 +154,8 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
 
 template<class Tvec, class TgridVec>
 auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_block_slot_to_cell(
-    i64_3 relative_pos,
-    StencilOffsets result_offset,
-    dd_block_stencil_el_buf &block_stencil_el) -> dd_cell_stencil_el_buf {
+    i64_3 relative_pos, StencilOffsets result_offset, dd_block_stencil_el_buf &block_stencil_el)
+    -> dd_cell_stencil_el_buf {
 
     return block_stencil_el.map<std::unique_ptr<cell_stencil_el_buf>>(
         [&](u64 id, std::unique_ptr<block_stencil_el_buf> &block_stencil_el_b) {

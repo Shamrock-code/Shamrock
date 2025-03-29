@@ -282,7 +282,7 @@ void unit_test_reduc_sum() {
         });
 }
 
-#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 void unit_test_reduc_sum_usm_group_impl() {
 
     unit_test_reduc_sum_usm<f64>(
@@ -630,7 +630,7 @@ void unit_test_reduc_max_usm() {
 
 TestStart(Unittest, "shamalgs/reduction/sum", reduc_kernel_utestsum, 1) { unit_test_reduc_sum(); }
 
-#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 TestStart(
     Unittest, "shamalgs/reduction/sum(usm:group_impl)", reduc_kernel_utestsum_usm_group_impl, 1) {
     unit_test_reduc_sum_usm_group_impl();
@@ -805,6 +805,8 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
             exp_test));
 #endif
 
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+
     results.emplace(
         "slicegroup8",
         shambase::benchmark_pow_len(
@@ -885,8 +887,6 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
             10,
             max_N,
             exp_test));
-
-#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
 
     results.emplace(
         "usmgroup128",

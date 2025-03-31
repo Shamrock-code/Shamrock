@@ -24,6 +24,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
+#include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <array>
@@ -200,6 +201,19 @@ class PatchDataField {
         auto tmp = buf.copy_to_stdvec();
         tmp.resize(get_val_cnt());
         return tmp;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Span utilities
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template<u32 nvar>
+    inline shamrock::PatchDataFieldSpan<T, nvar> get_span() {
+        return shamrock::PatchDataFieldSpan<T, nvar>(*this, 0, get_obj_cnt());
+    }
+
+    inline shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> get_span_nvar_dynamic() {
+        return get_span<shamrock::dynamic_nvar>();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -17,8 +17,11 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/format.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/DeviceBuffer.hpp"
-#include "shamrock/patch/PatchDataField.hpp"
+
+template<class T>
+class PatchDataField;
 
 namespace shamrock {
 
@@ -173,6 +176,14 @@ namespace shamrock {
                         field_ref.get_nvar()));
                 }
             }
+
+            if (start + count > field_ref.get_obj_cnt()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "PatchDataFieldSpan out of bounds: {} + {} > {}",
+                    start,
+                    count,
+                    field_ref.get_obj_cnt()));
+            }
         }
 
         /**
@@ -189,7 +200,8 @@ namespace shamrock {
         inline auto get_read_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_ro_dyn_nvar<T> {
             return details::PatchDataFieldSpan_access_ro_dyn_nvar<T>{
-                get_buf().get_read_access(depends_list) + start, field_ref.get_nvar()};
+                get_buf().get_read_access(depends_list) + start * field_ref.get_nvar(),
+                field_ref.get_nvar()};
         }
 
         /**
@@ -206,7 +218,8 @@ namespace shamrock {
         inline auto get_write_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_rw_dyn_nvar<T> {
             return details::PatchDataFieldSpan_access_rw_dyn_nvar<T>{
-                get_buf().get_write_access(depends_list) + start, field_ref.get_nvar()};
+                get_buf().get_write_access(depends_list) + start * field_ref.get_nvar(),
+                field_ref.get_nvar()};
         }
 
         /**
@@ -223,7 +236,7 @@ namespace shamrock {
         inline auto get_read_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar> {
             return details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar>{
-                get_buf().get_read_access(depends_list) + start};
+                get_buf().get_read_access(depends_list) + start * field_ref.get_nvar()};
         }
 
         /**
@@ -240,7 +253,7 @@ namespace shamrock {
         inline auto get_write_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar> {
             return details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar>{
-                get_buf().get_write_access(depends_list) + start};
+                get_buf().get_write_access(depends_list) + start * field_ref.get_nvar()};
         }
 
         /**
@@ -253,7 +266,7 @@ namespace shamrock {
         /// Reference to the PatchDataField.
         PatchDataField<T> &field_ref;
 
-        /// Starting index of the span.
+        /// Starting element index of the span.
         u32 start;
 
         /// Number of elements

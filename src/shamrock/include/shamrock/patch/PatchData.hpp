@@ -288,7 +288,7 @@ namespace shamrock::patch {
          */
         template<class T, u32 nvar>
         PatchDataFieldSpan<T, shamrock::dynamic_nvar> get_field_span_nvar_dynamic(u32 idx) {
-            return get_field<T>(idx).template get_span_nvar_dynamic();
+            return get_field<T>(idx).get_span_nvar_dynamic();
         }
 
         /**

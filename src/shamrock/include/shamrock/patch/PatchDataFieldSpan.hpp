@@ -15,8 +15,10 @@
  * @brief
  */
 
+#include "shambase/SourceLocation.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shambase/format.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 
@@ -159,31 +161,41 @@ namespace shamrock {
          * @throws std::invalid_argument If the number of variables is static and does
          * not match the number of variables in the PatchDataField.
          */
-        PatchDataFieldSpan(PatchDataField<T> &field_ref, u32 start, u32 count)
+        PatchDataFieldSpan(
+            PatchDataField<T> &field_ref,
+            u32 start,
+            u32 count,
+            SourceLocation loc = SourceLocation{})
             : field_ref(field_ref), start(start), count(count) {
+
+            StackEntry stack_loc{};
 
             // ensure that the underlying USM pointer can be accessed
             if (field_ref.get_buf().is_empty()) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    "PatchDataFieldSpan can not be binded to empty buffer");
+                    "PatchDataFieldSpan can not be binded to empty buffer", loc);
             }
 
             if (is_nvar_static()) {
                 if (field_ref.get_nvar() != nvar) {
-                    shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                        "You are trying to bind a PatchDataFieldSpan with static nvar={} to a "
-                        "PatchDataField with nvar={}",
-                        nvar,
-                        field_ref.get_nvar()));
+                    shambase::throw_with_loc<std::invalid_argument>(
+                        shambase::format(
+                            "You are trying to bind a PatchDataFieldSpan with static nvar={} to a "
+                            "PatchDataField with nvar={}",
+                            nvar,
+                            field_ref.get_nvar()),
+                        loc);
                 }
             }
 
             if (start + count > field_ref.get_obj_cnt()) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "PatchDataFieldSpan out of bounds: {} + {} > {}",
-                    start,
-                    count,
-                    field_ref.get_obj_cnt()));
+                shambase::throw_with_loc<std::invalid_argument>(
+                    shambase::format(
+                        "PatchDataFieldSpan out of bounds: {} + {} > {}",
+                        start,
+                        count,
+                        field_ref.get_obj_cnt()),
+                    loc);
             }
         }
 
@@ -200,6 +212,7 @@ namespace shamrock {
         template<typename Dummy = void, typename = std::enable_if_t<is_nvar_dynamic(), Dummy>>
         inline auto get_read_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_ro_dyn_nvar<T> {
+            StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_ro_dyn_nvar<T>{
                 get_buf().get_read_access(depends_list) + start * field_ref.get_nvar(),
                 field_ref.get_nvar()};
@@ -218,6 +231,7 @@ namespace shamrock {
         template<typename Dummy = void, typename = std::enable_if_t<is_nvar_dynamic(), Dummy>>
         inline auto get_write_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_rw_dyn_nvar<T> {
+            StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_rw_dyn_nvar<T>{
                 get_buf().get_write_access(depends_list) + start * field_ref.get_nvar(),
                 field_ref.get_nvar()};
@@ -236,6 +250,7 @@ namespace shamrock {
         template<typename Dummy = void, typename = std::enable_if_t<is_nvar_static(), Dummy>>
         inline auto get_read_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar> {
+            StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar>{
                 get_buf().get_read_access(depends_list) + start * field_ref.get_nvar()};
         }
@@ -253,6 +268,7 @@ namespace shamrock {
         template<typename Dummy = void, typename = std::enable_if_t<is_nvar_static(), Dummy>>
         inline auto get_write_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar> {
+            StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar>{
                 get_buf().get_write_access(depends_list) + start * field_ref.get_nvar()};
         }
@@ -262,7 +278,10 @@ namespace shamrock {
          *
          * @param e Event to complete.
          */
-        inline void complete_event_state(sycl::event e) { get_buf().complete_event_state(e); }
+        inline void complete_event_state(sycl::event e) {
+            StackEntry stack_loc{};
+            get_buf().complete_event_state(e);
+        }
 
         /// Reference to the PatchDataField.
         PatchDataField<T> &field_ref;

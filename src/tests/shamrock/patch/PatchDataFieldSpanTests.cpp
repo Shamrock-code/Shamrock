@@ -18,6 +18,8 @@
 
 TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan, 1) {
 
+    StackEntry stack_loc{};
+
     using T = f64;
 
     std::vector<T> test_vals{0, 1, 2, 3, 4, 5, 6, 7};

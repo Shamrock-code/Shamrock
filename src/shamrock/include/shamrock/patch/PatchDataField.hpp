@@ -215,6 +215,7 @@ class PatchDataField {
      */
     template<u32 nvar>
     inline shamrock::PatchDataFieldSpan<T, nvar> get_span() {
+        StackEntry stack_loc{};
         return shamrock::PatchDataFieldSpan<T, nvar>(*this, 0, get_obj_cnt());
     }
 
@@ -225,6 +226,7 @@ class PatchDataField {
      * of variables.
      */
     inline shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> get_span_nvar_dynamic() {
+        StackEntry stack_loc{};
         return get_span<shamrock::dynamic_nvar>();
     }
 

@@ -20,6 +20,7 @@
 #include "shambase/string.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 
+// forward declare PatchDataField
 template<class T>
 class PatchDataField;
 

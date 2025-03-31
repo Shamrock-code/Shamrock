@@ -207,11 +207,23 @@ class PatchDataField {
     // Span utilities
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * @brief Returns a shamrock::PatchDataFieldSpan pointing to the current PatchDataField.
+     *
+     * @tparam nvar The number of variables in the span.
+     * @return A shamrock::PatchDataFieldSpan pointing to this PatchDataField.
+     */
     template<u32 nvar>
     inline shamrock::PatchDataFieldSpan<T, nvar> get_span() {
         return shamrock::PatchDataFieldSpan<T, nvar>(*this, 0, get_obj_cnt());
     }
 
+    /**
+     * @brief Returns a shamrock::PatchDataFieldSpan pointing to the current PatchDataField.
+     *
+     * @return A shamrock::PatchDataFieldSpan pointing to this PatchDataField with dynamic number
+     * of variables.
+     */
     inline shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> get_span_nvar_dynamic() {
         return get_span<shamrock::dynamic_nvar>();
     }

@@ -24,7 +24,7 @@ class EnvGen:
         self.machinefolder = machinefolder
         self.builddir = builddir
 
-    def gen_env_file(self, source_file, destname = "activate"):
+    def gen_env_file(self, source_file, destname="activate"):
 
         ENV_SCRIPT_HEADER = self.ENV_SCRIPT_HEADER
 
@@ -38,7 +38,7 @@ class EnvGen:
             ENV_SCRIPT_HEADER += utils.envscript.file_to_string(f)
             ENV_SCRIPT_HEADER += f"{spacer}{spacer}{spacer}\n"
 
-        ENV_SCRIPT_PATH = self.builddir + "/"+destname
+        ENV_SCRIPT_PATH = self.builddir + "/" + destname
         source_path = os.path.join(self.machinefolder, source_file)
 
         run_cmd(f"mkdir -p {os.path.dirname(ENV_SCRIPT_PATH)}")

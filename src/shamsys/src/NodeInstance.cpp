@@ -197,7 +197,7 @@ namespace shamsys::instance {
         void print_device_list_debug() {
             u32 rank = 0;
 
-            std::string print_buf = "device avail : ";
+            std::string print_buf = "device avail : \n";
 
             for_each_device(
                 [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
@@ -208,7 +208,7 @@ namespace shamsys::instance {
                     std::string platname = PlatformName;
                     std::string devtype  = "truc";
 
-                    print_buf += std::to_string(key_global) + " " + devname + platname + "\n";
+                    print_buf += std::to_string(key_global) + " " + devname + " " + platname + "\n";
                 });
 
             logger::debug_sycl_ln("InitSYCL", print_buf);
@@ -218,6 +218,8 @@ namespace shamsys::instance {
 
     void start_sycl_auto(std::string search_key) {
         // start sycl
+
+        tmp::print_device_list_debug();
 
         if (syclinit::initialized) {
             throw ShamsysInstanceException("Sycl is already initialized");
@@ -280,19 +282,28 @@ namespace shamsys::instance {
         mpidtypehandler::init_mpidtype();
     }
 
+    auto init_strategy = shamcmdopt::getenv_str_default_register(
+        "SHAM_MPI_INIT_STRATEGY",
+        "syclfirst",
+        "Select the MPI init strategy (mpifirst, syclfirst) [default: syclfirst]");
+
     void init_sycl_mpi(std::string search_key, MPIInitInfo mpi_info) {
 
-        start_sycl_auto(search_key);
-
-        start_mpi(mpi_info);
+        if (init_strategy == "syclfirst") {
+            start_sycl_auto(search_key);
+            start_mpi(mpi_info);
+        } else if (init_strategy == "mpifirst") {
+            start_mpi(mpi_info);
+            start_sycl_auto(search_key);
+        } else {
+            shambase::throw_unimplemented();
+        }
 
         syclinit::device_compute->update_mpi_prop();
         syclinit::device_alt->update_mpi_prop();
     }
 
     void init(int argc, char *argv[]) {
-
-        tmp::print_device_list_debug();
 
         std::optional<shamcomm::StateMPI_Aware> forced_state = std::nullopt;
 

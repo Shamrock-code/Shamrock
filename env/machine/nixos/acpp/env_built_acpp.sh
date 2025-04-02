@@ -6,7 +6,9 @@ export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
 export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
 
-# I don't know why CUDA has no devices if started before mpi
+# For some reasons on nix the CUDA stubs are not linked to shamrock
+# As a result if we start SYCL first no cuda devices are available
+# inversely if we start MPI first, MPI cuda aware loads the correct stubs
 export SHAM_MPI_INIT_STRATEGY=mpifirst
 
 function setupcompiler {

@@ -38,6 +38,8 @@ namespace shamrock {
 
             /// Access to element at index idx and offset var
             T &operator()(u32 idx, u32 offset) const { return ptr[idx * nvar + offset]; }
+
+            T &operator[](u32 idx) const { return ptr[idx]; }
         };
 
         /// Accessor for read-only access to dynamic nvar buffer data
@@ -48,6 +50,8 @@ namespace shamrock {
 
             /// Access to element at index idx and offset var
             const T &operator()(u32 idx, u32 offset) const { return ptr[idx * nvar + offset]; }
+
+            T &operator[](u32 idx) const { return ptr[idx]; }
         };
 
         /// Accessor for read-write access to static nvar buffer data
@@ -100,6 +104,9 @@ namespace shamrock {
     /// Constant for dynamic number of variables
     inline constexpr u32 dynamic_nvar = u32_max;
 
+    inline constexpr bool access_t_pointer = true;
+    inline constexpr bool access_t_span    = !access_t_pointer;
+
     /**
      * @class PatchDataFieldSpan
      * @brief Represents a span of data within a PatchDataField.
@@ -130,7 +137,7 @@ namespace shamrock {
      * @tparam nvar The number of variables in the PatchDataField. Defaults to
      * dynamic_nvar.
      */
-    template<class T, u32 nvar = dynamic_nvar>
+    template<class T, u32 nvar = dynamic_nvar, bool pointer_access = access_t_span>
     class PatchDataFieldSpan {
         public:
         /**
@@ -146,6 +153,11 @@ namespace shamrock {
          * @return True if the number of variables is static, false otherwise.
          */
         inline static constexpr bool is_nvar_static() { return nvar != dynamic_nvar; }
+
+        inline static constexpr bool is_pointer_access() {
+            return pointer_access == access_t_pointer;
+        }
+        inline static constexpr bool is_span_access() { return pointer_access == access_t_span; }
 
         /**
          * @brief Constructor.
@@ -209,7 +221,9 @@ namespace shamrock {
          *
          * @return Read-only accessor to the data in the span.
          */
-        template<typename Dummy = void, typename = std::enable_if_t<is_nvar_dynamic(), Dummy>>
+        template<
+            typename Dummy = void,
+            typename       = std::enable_if_t<is_nvar_dynamic() && is_span_access(), Dummy>>
         inline auto get_read_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_ro_dyn_nvar<T> {
             StackEntry stack_loc{};
@@ -228,7 +242,9 @@ namespace shamrock {
          *
          * @return Read-write accessor to the data in the span.
          */
-        template<typename Dummy = void, typename = std::enable_if_t<is_nvar_dynamic(), Dummy>>
+        template<
+            typename Dummy = void,
+            typename       = std::enable_if_t<is_nvar_dynamic() && is_span_access(), Dummy>>
         inline auto get_write_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_rw_dyn_nvar<T> {
             StackEntry stack_loc{};
@@ -247,7 +263,9 @@ namespace shamrock {
          *
          * @return Read-only accessor to the data in the span.
          */
-        template<typename Dummy = void, typename = std::enable_if_t<is_nvar_static(), Dummy>>
+        template<
+            typename Dummy = void,
+            typename       = std::enable_if_t<is_nvar_static() && is_span_access(), Dummy>>
         inline auto get_read_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar> {
             StackEntry stack_loc{};
@@ -265,12 +283,26 @@ namespace shamrock {
          *
          * @return Read-write accessor to the data in the span.
          */
-        template<typename Dummy = void, typename = std::enable_if_t<is_nvar_static(), Dummy>>
+        template<
+            typename Dummy = void,
+            typename       = std::enable_if_t<is_nvar_static() && is_span_access(), Dummy>>
         inline auto get_write_access(sham::EventList &depends_list)
             -> details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar> {
             StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar>{
                 get_buf().get_write_access(depends_list) + start * field_ref.get_nvar()};
+        }
+
+        template<typename Dummy = void, typename = std::enable_if_t<is_pointer_access(), Dummy>>
+        inline auto get_read_access(sham::EventList &depends_list) -> const T *const {
+            StackEntry stack_loc{};
+            return {get_buf().get_read_access(depends_list) + start * field_ref.get_nvar()};
+        }
+
+        template<typename Dummy = void, typename = std::enable_if_t<is_pointer_access(), Dummy>>
+        inline auto get_write_access(sham::EventList &depends_list) -> T * {
+            StackEntry stack_loc{};
+            return {get_buf().get_write_access(depends_list) + start * field_ref.get_nvar()};
         }
 
         /**
@@ -296,5 +328,8 @@ namespace shamrock {
         /// Returns the underlying buffer of the PatchDataField.
         inline sham::DeviceBuffer<T> &get_buf() { return field_ref.get_buf(); }
     };
+
+    template<class T>
+    using PatchDataFieldSpanPointer = PatchDataFieldSpan<T, dynamic_nvar, access_t_pointer>;
 
 } // namespace shamrock

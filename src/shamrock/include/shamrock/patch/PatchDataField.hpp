@@ -213,10 +213,10 @@ class PatchDataField {
      * @tparam nvar The number of variables in the span.
      * @return A shamrock::PatchDataFieldSpan pointing to this PatchDataField.
      */
-    template<u32 nvar>
-    inline shamrock::PatchDataFieldSpan<T, nvar> get_span() {
+    template<u32 nvar, bool is_pointer_access = shamrock::access_t_span>
+    inline shamrock::PatchDataFieldSpan<T, nvar, is_pointer_access> get_span() {
         StackEntry stack_loc{};
-        return shamrock::PatchDataFieldSpan<T, nvar>(*this, 0, get_obj_cnt());
+        return shamrock::PatchDataFieldSpan<T, nvar, is_pointer_access>(*this, 0, get_obj_cnt());
     }
 
     /**
@@ -227,7 +227,13 @@ class PatchDataField {
      */
     inline shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> get_span_nvar_dynamic() {
         StackEntry stack_loc{};
-        return get_span<shamrock::dynamic_nvar>();
+        return get_span<shamrock::dynamic_nvar, shamrock::access_t_span>();
+    }
+
+    inline shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar, shamrock::access_t_pointer>
+    get_pointer_span() {
+        StackEntry stack_loc{};
+        return get_span<shamrock::dynamic_nvar, shamrock::access_t_pointer>();
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

@@ -101,7 +101,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::get_old_fields() {
         buf_rho.complete_event_state(e);
         buf_rhov.complete_event_state(e);
         buf_rhoe.complete_event_state(e);
-        buf_rho_old.cpmplete_event_state(e);
+        buf_rho_old.complete_event_state(e);
         buf_rhovel_old.complete_event_state(e);
         buf_rhoetot_old.complete_event_state(e);
     });
@@ -269,8 +269,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::set_old_fields() {
                 });
             });
 
-            rho_old_dust_patch.complete_event_state(e);
-            rhov_old_dust_patch.complete_event_state(e);
+            rho_dust_old_patch.complete_event_state(e);
+            rhov_dust_old_patch.complete_event_state(e);
 
             buf_rho_dust.complete_event_state(e);
             buf_rhov_dust.complete_event_state(e);

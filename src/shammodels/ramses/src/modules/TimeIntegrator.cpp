@@ -21,9 +21,11 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_ol
 
     StackEntry stack_loc{};
 
-    using MergedPDat = shamrock::MergedPatchData;
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
 
-    shamrock::SchedulerUtility utility(scheduler());
+    using MergedPDat = shamrock::MergedPatchData;
 
     storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPDat &mpdat) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -39,9 +41,9 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_ol
         u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
         sham::EventList depends_list;
-        auto acc_dt_rho  = dt_rho.get_read_access(depends_list);
-        auto acc_dt_rhov = dt_rhov.get_read_access(depends_list);
-        auto acc_dt_rhoe = dt_rhoe.get_read_access(depends_list);
+        auto acc_dt_rho  = dtrho.get_read_access(depends_list);
+        auto acc_dt_rhov = dtrhov.get_read_access(depends_list);
+        auto acc_dt_rhoe = dtrhoe.get_read_access(depends_list);
 
         auto rho  = buf_rho.get_write_access(depends_list);
         auto rhov = buf_rhov.get_write_access(depends_list);
@@ -57,9 +59,9 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_ol
             });
         });
 
-        dt_rho.complete_event_state(e);
-        dt_rhov.complete_event_state(e);
-        dt_rhoe.complete_event_state(e);
+        dtrho.complete_event_state(e);
+        dtrhov.complete_event_state(e);
+        dtrhoe.complete_event_state(e);
 
         buf_rho.complete_event_state(e);
         buf_rhov.complete_event_state(e);
@@ -77,8 +79,8 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_ol
             shamrock::DeviceBuffer<Tscal> &dt_rho_dust = storage.dtrho_dust.get().get_buf(id);
             shamrock::DeviceBuffer<Tvec> &dt_rhov_dust = storage.dtrhov_dust.get().get_buf(id);
 
-            cell_count = (mpdat.total_elements) * AMRBlock::block_size;
-            u32 ndust  = solver_config.dust_config.ndust;
+            u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
+            u32 ndust      = solver_config.dust_config.ndust;
 
             sham::EventList depends_list;
             auto dt_rho_dust  = dt_rho_dust.get_read_access(depends_list);
@@ -113,7 +115,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_in
     using namespace shamrock;
     using namespace shammath;
 
-    shamrock::ComputeField<Tscal> &cfiled_rho_old  = storage.rho_old.get();
+    shamrock::ComputeField<Tscal> &cfield_rho_old  = storage.rho_old.get();
     shamrock::ComputeField<Tvec> &cfield_rhov_old  = storage.rhovel_old.get();
     shamrock::ComputeField<Tscal> &cfield_rhoe_old = storage.rhoetot_old.get();
 

@@ -50,14 +50,14 @@ void shammodels::basegodunov::modules::FluxDivergence<Tvec, TgridVec>::
     modules::FaceInterpolate face_interpolator(
         context, solver_config, storage); /** change the class name to reconstruction is more
                                              general than interpolation ?*/
-    bool is_muscl = solver_config.is_muscl_scheme();
-    face_interpolator.interpolate_rho_to_face(dt_input, is_muscl);
-    face_interpolator.interpolate_v_to_face(dt_input, is_muscl);
-    face_interpolator.interpolate_P_to_face(dt_input, is_muscl);
+    // bool is_muscl = solver_config.is_muscl_scheme();
+    face_interpolator.interpolate_rho_to_face(dt_input);
+    face_interpolator.interpolate_v_to_face(dt_input);
+    face_interpolator.interpolate_P_to_face(dt_input);
 
     if (solver_config.is_dust_on()) {
-        face_interpolator.interpolate_rho_dust_to_face(dt_input, is_muscl);
-        face_interpolator.interpolate_v_dust_to_face(dt_input, is_muscl);
+        face_interpolator.interpolate_rho_dust_to_face(dt_input);
+        face_interpolator.interpolate_v_dust_to_face(dt_input);
     }
 
     // flux at cell faces

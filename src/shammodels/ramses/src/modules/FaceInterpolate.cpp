@@ -75,7 +75,7 @@ namespace {
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpolate_rho_to_face(
-    Tscal dt, bool is_muscl) {
+    Tscal dt) {
 
     class RhoInterpolate {
         public:
@@ -136,10 +136,10 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             /** prediction step in primitives variables */
             Tscal rho_face_a = rho_a
                                + get_div_rho(rho_a, vel_a, grad_rho_a, dx_v_a, dy_v_a, dz_v_a) * dt
-                                     * 0.5 * is_muscl;
+                                     * 0.5 * solver_config.is_muscl_scheme();
             Tscal rho_face_b = rho_b
                                + get_div_rho(rho_b, vel_b, grad_rho_b, dx_v_b, dy_v_b, dz_v_b) * dt
-                                     * 0.5 * is_muscl;
+                                     * 0.5 * solver_config.is_muscl_scheme();
 
             /** time-centered interface values using old gradients */
             rho_face_a += sycl::dot(grad_rho_a, shift_a);
@@ -314,7 +314,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpolate_v_to_face(
-    Tscal dt, bool is_muscl) {
+    Tscal dt) {
 
     class VelInterpolate {
 
@@ -382,8 +382,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             Tvec dt_v_b = get_div_v(v_b, dx_vel_b, dy_vel_b, dz_vel_b, rho_b, grad_P_b);
 
             /** prediction step in primitives variables*/
-            Tvec vel_face_a = v_a + dt_v_a * dt * 0.5 * is_muscl;
-            Tvec vel_face_b = v_b + dt_v_b * dt * 0.5 * is_muscl;
+            Tvec vel_face_a = v_a + dt_v_a * dt * 0.5 * solver_config.is_muscl_scheme();
+            Tvec vel_face_b = v_b + dt_v_b * dt * 0.5 * solver_config.is_muscl_scheme();
 
             /** time-centered interface values using old gradients  */
             vel_face_a += dx_v_a_dot_shift;
@@ -559,7 +559,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpolate_P_to_face(
-    Tscal dt, bool is_muscl) {
+    Tscal dt) {
 
     Tscal gamma = solver_config.eos_gamma;
 
@@ -626,8 +626,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             Tscal dtP_cell_b = get_div_P(P_b, grad_P_b, v_b, dx_v_b, dy_v_b, dz_v_b, gamma);
 
             /** */
-            Tscal P_face_a = P_a + dtP_cell_a * dt * 0.5 * is_muscl;
-            Tscal P_face_b = P_b + dtP_cell_b * dt * 0.5 * is_muscl;
+            Tscal P_face_a = P_a + dtP_cell_a * dt * 0.5 * solver_config.is_muscl_scheme();
+            Tscal P_face_b = P_b + dtP_cell_b * dt * 0.5 * solver_config.is_muscl_scheme();
 
             /** */
             P_face_a += sycl::dot(grad_P_a, shift_a);
@@ -805,7 +805,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
-    interpolate_rho_dust_to_face(Tscal dt, bool is_muscl) {
+    interpolate_rho_dust_to_face(Tscal dt) {
 
     class RhoDustInterpolate {
         public:
@@ -886,7 +886,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                                           dx_v_dust_a,
                                           dy_v_dust_a,
                                           dz_v_dust_a)
-                                          * dt * is_muscl;
+                                          * dt * solver_config.is_muscl_scheme();
             Tscal rho_dust_face_b = rho_dust_b
                                     + get_div_rho_dust(
                                           rho_dust_b,
@@ -895,7 +895,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                                           dx_v_dust_b,
                                           dy_v_dust_b,
                                           dz_v_dust_b)
-                                          * dt * is_muscl;
+                                          * dt * solver_config.is_muscl_scheme();
 
             /** time-centered interface values using old gradients*/
             rho_dust_face_a += sycl::dot(grad_rho_dust_a, shift_a);
@@ -1078,7 +1078,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpolate_v_dust_to_face(
-    Tscal dt, bool is_muscl) {
+    Tscal dt) {
 
     class VelDustInterpolate {
 
@@ -1147,8 +1147,10 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 = get_div_v_dust(v_dust_b, dx_vel_dust_b, dy_vel_dust_b, dz_vel_dust_b, rho_dust_b);
 
             /** */
-            Tvec vel_dust_face_a = v_dust_a + dt_v_dust_a * dt * 0.5 * is_muscl;
-            Tvec vel_dust_face_b = v_dust_b + dt_v_dust_b * dt * 0.5 * is_muscl;
+            Tvec vel_dust_face_a
+                = v_dust_a + dt_v_dust_a * dt * 0.5 * solver_config.is_muscl_scheme();
+            Tvec vel_dust_face_b
+                = v_dust_b + dt_v_dust_b * dt * 0.5 * solver_config.is_muscl_scheme();
 
             /** */
             vel_dust_face_a += dx_v_dust_a_dot_shift;

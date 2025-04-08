@@ -48,12 +48,12 @@ namespace shammodels::basegodunov::modules {
 
         /** When is_muscl = 0 then no prediction step (i.e no muscl scheme) so we only need the
          * reconstruction at cells interfaces.*/
-        void interpolate_rho_to_face(Tscal dt, bool is_muscl = 0);
-        void interpolate_v_to_face(Tscal dt, bool is_muscl = 0);
-        void interpolate_P_to_face(Tscal dt, bool is_muscl = 0);
+        void interpolate_rho_to_face(Tscal dt);
+        void interpolate_v_to_face(Tscal dt);
+        void interpolate_P_to_face(Tscal dt);
 
-        void interpolate_rho_dust_to_face(Tscal dt, bool is_muscl = 0);
-        void interpolate_v_dust_to_face(Tscal dt, bool is_muscl = 0);
+        void interpolate_rho_dust_to_face(Tscal dt);
+        void interpolate_v_dust_to_face(Tscal dt);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

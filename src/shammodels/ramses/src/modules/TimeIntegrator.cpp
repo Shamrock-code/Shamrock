@@ -32,11 +32,10 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_ol
 
         sham::DeviceBuffer<Tscal> &buf_rho  = storage.rho_old.get().get_buf(id);
         sham::DeviceBuffer<Tvec> &buf_rhov  = storage.rhovel_old.get().get_buf(id);
-        sham::DeviceBuffer<Tscal> &buf_rhoe = storage.rhoetot_old.get().get_buf(id);
-
-        shamrock::DeviceBuffer<Tscal> &dtrho  = storage.dtrho.get().get_buf(id);
-        shamrock::DeviceBuffer<Tvec> &dtrhov  = storage.dtrhov.get().get_buf(id);
-        shamrock::DeviceBuffer<Tscal> &dtrhoe = storage.dtrhoe.get().get_buf(id);
+        sham::DeviceBuffer<Tscal> &buf_rhoe = storage.rhoetot_old.get().get_buf(i
+        sham::DeviceBuffer<Tscal> &dtrho  = storage.dtrho.get().get_buf(id);
+        sham::DeviceBuffer<Tvec> &dtrhov  = storage.dtrhov.get().get_buf(id);
+        sham::DeviceBuffer<Tscal> &dtrhoe = storage.dtrhoe.get().get_buf(id);
 
         u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
@@ -76,15 +75,15 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_ol
             sham::DeviceBuffer<Tscal> &buf_rho_dust = storage.rho_dust_old.get().get_buf(id);
             sham::DeviceBuffer<Tvec> &buf_rhov_dust = storage.rhovel_dust_old.get().get_buf(id);
 
-            shamrock::DeviceBuffer<Tscal> &dt_rho_dust = storage.dtrho_dust.get().get_buf(id);
-            shamrock::DeviceBuffer<Tvec> &dt_rhov_dust = storage.dtrhov_dust.get().get_buf(id);
+            shamrock::DeviceBuffer<Tscal> &buf_dt_rho_dust = storage.dtrho_dust.get().get_buf(id);
+            shamrock::DeviceBuffer<Tvec> &buf_dt_rhov_dust = storage.dtrhov_dust.get().get_buf(id);
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
             u32 ndust      = solver_config.dust_config.ndust;
 
             sham::EventList depends_list;
-            auto dt_rho_dust  = dt_rho_dust.get_read_access(depends_list);
-            auto dt_rhov_dust = dt_rhov_dust.get_read_access(depends_list);
+            auto dt_rho_dust  = buf_dt_rho_dust.get_read_access(depends_list);
+            auto dt_rhov_dust = buf_dt_rhov_dust.get_read_access(depends_list);
 
             auto rho_dust  = buf_rho_dust.get_write_access(depends_list);
             auto rhov_dust = buf_rhov_dust.get_write_access(depends_list);
@@ -97,8 +96,8 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_ol
                     });
             });
 
-            dt_rho_dust.complete_event_state(e);
-            dt_rhov_dust.complete_event_state(e);
+            buf_dt_rho_dust.complete_event_state(e);
+            buf_dt_rhov_dust.complete_event_state(e);
             buf_rho_dust.complete_event_state(e);
             buf_rhov_dust.complete_event_state(e);
         });
@@ -192,7 +191,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_in
         });
 
     if (solver_config.is_dust_on()) {
-        shamrock::ComputeField<Tscal> &cfiled_rho_dust_old = storage.rho_dust_old.get();
+        shamrock::ComputeField<Tscal> &cfield_rho_dust_old = storage.rho_dust_old.get();
         shamrock::ComputeField<Tvec> &cfield_rhov_dust_old = storage.rhovel_dust_old.get();
 
         shamrock::ComputeField<Tscal> &cfield_dtrho_dust = storage.dtrho_dust.get();
@@ -216,6 +215,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_in
             sham::DeviceBuffer<Tvec> &rhov_dust_old_patch = cfield_rhov_dust_old.get_buf_check(id);
 
             u32 cell_count                          = pdat.get_obj_cnt() * AMRBlock::block_size;
+            u32 ndust                               = solver_config.dust_config.ndust;
             sham::DeviceBuffer<Tscal> &buf_rho_dust = pdat.get_field_buf_ref<Tscal>(irho_dust);
             sham::DeviceBuffer<Tvec> &buf_rhov_dust = pdat.get_field_buf_ref<Tvec>(irhovel_dust);
 
@@ -241,8 +241,8 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::evolve_in
             dt_rho_dust_patch.complete_event_state(e);
             dt_rhov_dust_patch.complete_event_state(e);
 
-            rho_old_dust_patch.complete_event_state(e);
-            rhov_old_dust_patch.complete_event_state(e);
+            rho_dust_old_patch.complete_event_state(e);
+            rhov_dust_old_patch.complete_event_state(e);
 
             buf_rho_dust.complete_event_state(e);
             buf_rhov_dust.complete_event_state(e);

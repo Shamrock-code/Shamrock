@@ -33,6 +33,7 @@
 #include "shammodels/ramses/modules/StencilGenerator.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::get_old_fields() {
@@ -136,16 +137,16 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::get_old_fields() {
             sham::DeviceBuffer<Tvec> &buf_rhov_dust
                 = mpdat.pdat.get_field_buf_ref<Tvec>(irhov_dust_ghost);
 
-            sham::DeviceBuffer<Tvec> &buf_rhovel_dust = rhovel_dust_ghost.get_buf(id);
-            sham::DeviceBuffer<Tscal> &buf_rho_dust   = rho_dust_ghost.get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_rhovel_dust_old = rhovel_dust_old.get_buf(id);
+            sham::DeviceBuffer<Tscal> &buf_rho_dust_old   = rho_dust_old.get_buf(id);
 
             sham::EventList depends_list;
 
             auto rho_dust    = buf_rho_dust.get_read_access(depends_list);
             auto rhovel_dust = buf_rhov_dust.get_read_access(depends_list);
 
-            auto rhovel_dust_old = buf_rhovel_dust.get_write_access(depends_list);
-            auto rho_dust_old    = buf_rho_dust.get_write_access(depends_list);
+            auto rhovel_dust_old = buf_rhovel_dust_old.get_write_access(depends_list);
+            auto rho_dust_old    = buf_rho_dust_old.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
@@ -176,7 +177,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::set_old_fields() {
     using namespace shamrock;
     using namespace shammath;
 
-    shamrock::ComputeField<Tscal> &cfiled_rho_old  = storage.rho_old.get();
+    shamrock::ComputeField<Tscal> &cfield_rho_old  = storage.rho_old.get();
     shamrock::ComputeField<Tvec> &cfield_rhov_old  = storage.rhovel_old.get();
     shamrock::ComputeField<Tscal> &cfield_rhoe_old = storage.rhoetot_old.get();
 
@@ -190,7 +191,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::set_old_fields() {
     const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
 
     scheduler().for_each_patchdata_nonempty(
-        [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
             logger::debug_ln("[AMR Flux]", "set old fields patch", p.id_patch);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -215,10 +216,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::set_old_fields() {
             auto rhov_old = rhov_old_patch.get_read_access(depends_list);
             auto rhoe_old = rhoe_old_patch.get_read_access(depends_list);
 
-            auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 shambase::parralel_for(cgh, cell_count, "set old fields", [=](u32 id_a) {
-                    const u32 cell_global_id = (u32) id_a;
-
                     rho[id_a]  = rho_old[id_a];
                     rhov[id_a] = rhov[id_a];
                     rhoe[id_a] = rhoe_old[id_a];
@@ -235,18 +234,18 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::set_old_fields() {
         });
 
     if (solver_config.is_dust_on()) {
-        shamrock::ComputeField<Tscal> &cfiled_rho_dust_old = storage.rho_dust_old.get();
+        shamrock::ComputeField<Tscal> &cfield_rho_dust_old = storage.rho_dust_old.get();
         shamrock::ComputeField<Tvec> &cfield_rhov_dust_old = storage.rhovel_dust_old.get();
 
         const u32 irho_dust    = pdl.get_field_idx<Tscal>("rho_dust");
         const u32 irhovel_dust = pdl.get_field_idx<Tvec>("rhovel_dust");
 
-        scheduler().for_each_patchdata_nonempty([&, dt](
-                                                    const shamrock::patch::Patch p,
+        scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
                                                     shamrock::patch::PatchData &pdat) {
             logger::debug_ln("[AMR Flux]", "set old fields dust patch [dust]", p.id_patch);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+            u32 id               = p.id_patch;
 
             sham::DeviceBuffer<Tscal> &rho_dust_old_patch = cfield_rho_dust_old.get_buf_check(id);
             sham::DeviceBuffer<Tvec> &rhov_dust_old_patch = cfield_rhov_dust_old.get_buf_check(id);
@@ -263,7 +262,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::set_old_fields() {
             auto rho_old_dust  = rho_dust_old_patch.get_read_access(depends_list);
             auto rhov_old_dust = rhov_dust_old_patch.get_read_access(depends_list);
 
-            auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 shambase::parralel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
                     rho_dust[id_a]  = rho_old_dust[id_a];
                     rhov_dust[id_a] = rhov_old_dust[id_a];

@@ -91,6 +91,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         const Tvec *acc_dz_v_cell;
 
         Tscal dt;
+        bool is_muscl;
 
         RhoInterpolate(
             sycl::handler &cgh,
@@ -103,10 +104,12 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             const Tvec *&vel_cell,
             const Tvec *&dx_v_cell,
             const Tvec *&dy_v_cell,
-            const Tvec *&dz_v_cell)
+            const Tvec *&dz_v_cell,
+            bool is_muscl)
             : shift_get(aabb_block_lower, aabb_cell_size), acc_rho_cell{rho_cell},
               acc_grad_rho_cell{grad_rho_cell}, dt(dt), acc_vel_cell{vel_cell},
-              acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell} {}
+              acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell},
+              is_muscl(is_muscl) {}
 
         /** This is divergence of mass density flux is unsplit fashion. if One need directional
            splitting so take carefully the right dx_v[k] whith k = 0 (x dir), k = 1 (y dir) and k =
@@ -136,10 +139,10 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             /** prediction step in primitives variables */
             Tscal rho_face_a = rho_a
                                + get_div_rho(rho_a, vel_a, grad_rho_a, dx_v_a, dy_v_a, dz_v_a) * dt
-                                     * 0.5 * solver_config.is_muscl_scheme();
+                                     * 0.5 * is_muscl;
             Tscal rho_face_b = rho_b
                                + get_div_rho(rho_b, vel_b, grad_rho_b, dx_v_b, dy_v_b, dz_v_b) * dt
-                                     * 0.5 * solver_config.is_muscl_scheme();
+                                     * 0.5 * is_muscl;
 
             /** time-centered interface values using old gradients */
             rho_face_a += sycl::dot(grad_rho_a, shift_a);
@@ -197,6 +200,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho");
 
+        bool is_muscl = solver_config.is_muscl_scheme();
+
         rho_face_xp.add_obj(
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
@@ -212,7 +217,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         rho_face_xm.add_obj(
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
@@ -228,7 +234,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         rho_face_yp.add_obj(
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
@@ -244,7 +251,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         rho_face_ym.add_obj(
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
@@ -260,7 +268,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         rho_face_zp.add_obj(
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
@@ -276,7 +285,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         rho_face_zm.add_obj(
             id,
             compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
@@ -292,7 +302,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
 
         block_cell_sizes.complete_event_state(resulting_event_list);
         cell0block_aabb_lower.complete_event_state(resulting_event_list);
@@ -331,6 +342,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         const Tvec *acc_grad_P_cell;
 
         Tscal dt;
+        bool is_muscl;
 
         VelInterpolate(
             sycl::handler &cgh,
@@ -343,10 +355,11 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             // For time interpolation
             Tscal dt,
             const Tscal *rho_cell,
-            const Tvec *grad_P_cell)
+            const Tvec *grad_P_cell,
+            bool is_mucl)
             : shift_get(aabb_block_lower, aabb_cell_size), acc_vel_cell{vel_cell},
               acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell}, dt(dt),
-              acc_rho_cell{rho_cell}, acc_grad_P_cell{grad_P_cell} {}
+              acc_rho_cell{rho_cell}, acc_grad_P_cell{grad_P_cell}, is_muscl(is_muscl) {}
         /** This is divergence of momemtum flux is unsplit fashion. if One need directional
            splitting so take carefully the right dk_v, v[k], grad_P[k] whith k = 0 (x dir), k = 1 (y
            dir) , k = 2 (z dir)*/
@@ -382,8 +395,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             Tvec dt_v_b = get_div_v(v_b, dx_vel_b, dy_vel_b, dz_vel_b, rho_b, grad_P_b);
 
             /** prediction step in primitives variables*/
-            Tvec vel_face_a = v_a + dt_v_a * dt * 0.5 * solver_config.is_muscl_scheme();
-            Tvec vel_face_b = v_b + dt_v_b * dt * 0.5 * solver_config.is_muscl_scheme();
+            Tvec vel_face_a = v_a + dt_v_a * dt * 0.5 * is_muscl;
+            Tvec vel_face_b = v_b + dt_v_b * dt * 0.5 * is_muscl;
 
             /** time-centered interface values using old gradients  */
             vel_face_a += dx_v_a_dot_shift;
@@ -439,6 +452,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         auto ptr_grad_P = buf_grad_P.get_read_access(depends_list);
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
+        bool is_muscl = solver_config.is_muscl_scheme();
 
         sham::EventList resulting_event_list;
 
@@ -457,7 +471,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dz_vel,
                 dt,
                 ptr_rho,
-                ptr_grad_P));
+                ptr_grad_P,
+                is_muscl));
         vel_face_xm.add_obj(
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
@@ -473,7 +488,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dz_vel,
                 dt,
                 ptr_rho,
-                ptr_grad_P));
+                ptr_grad_P,
+                is_muscl));
         vel_face_yp.add_obj(
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
@@ -489,7 +505,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dz_vel,
                 dt,
                 ptr_rho,
-                ptr_grad_P));
+                ptr_grad_P,
+                is_muscl));
         vel_face_ym.add_obj(
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
@@ -505,7 +522,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dz_vel,
                 dt,
                 ptr_rho,
-                ptr_grad_P));
+                ptr_grad_P,
+                is_muscl));
         vel_face_zp.add_obj(
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
@@ -521,7 +539,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dz_vel,
                 dt,
                 ptr_rho,
-                ptr_grad_P));
+                ptr_grad_P,
+                is_muscl));
         vel_face_zm.add_obj(
             id,
             compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
@@ -537,7 +556,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dz_vel,
                 dt,
                 ptr_rho,
-                ptr_grad_P));
+                ptr_grad_P,
+                is_muscl));
 
         block_cell_sizes.complete_event_state(resulting_event_list);
         cell0block_aabb_lower.complete_event_state(resulting_event_list);
@@ -578,6 +598,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
         Tscal gamma;
         Tscal dt;
+        bool is_muscl;
 
         PressInterpolate(
             sycl::handler &cgh,
@@ -591,10 +612,12 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             const Tvec *vel_cell,
             const Tvec *dx_v_cell,
             const Tvec *dy_v_cell,
-            const Tvec *dz_v_cell)
+            const Tvec *dz_v_cell,
+            bool is_muscl)
             : shift_get(aabb_block_lower, aabb_cell_size), acc_P_cell{P_cell},
               acc_grad_P_cell{grad_P_cell}, dt(dt), gamma(gamma), acc_vel_cell{vel_cell},
-              acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell} {}
+              acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell},
+              is_muscl(is_muscl) {}
 
         /** This is divergence of energy flux is unsplit fashion. if One need directional splitting
            so take carefully the right dk_v[k], v[k], grad_P[k] whith k = 0 (x dir), k = 1 (y dir) ,
@@ -626,8 +649,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             Tscal dtP_cell_b = get_div_P(P_b, grad_P_b, v_b, dx_v_b, dy_v_b, dz_v_b, gamma);
 
             /** */
-            Tscal P_face_a = P_a + dtP_cell_a * dt * 0.5 * solver_config.is_muscl_scheme();
-            Tscal P_face_b = P_b + dtP_cell_b * dt * 0.5 * solver_config.is_muscl_scheme();
+            Tscal P_face_a = P_a + dtP_cell_a * dt * 0.5 * is_muscl;
+            Tscal P_face_b = P_b + dtP_cell_b * dt * 0.5 * is_muscl;
 
             /** */
             P_face_a += sycl::dot(grad_P_a, shift_a);
@@ -681,6 +704,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::EventList resulting_event_list;
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate press");
+        bool is_muscl = solver_config.is_muscl_scheme();
 
         press_face_xp.add_obj(
             id,
@@ -698,7 +722,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         press_face_xm.add_obj(
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
@@ -715,7 +740,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         press_face_yp.add_obj(
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
@@ -732,7 +758,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         press_face_ym.add_obj(
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
@@ -749,7 +776,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         press_face_zp.add_obj(
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
@@ -766,7 +794,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
         press_face_zm.add_obj(
             id,
             compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
@@ -783,7 +812,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+                ptr_buf_dz_vel,
+                is_muscl));
 
         block_cell_sizes.complete_event_state(resulting_event_list);
         cell0block_aabb_lower.complete_event_state(resulting_event_list);
@@ -822,6 +852,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
         const Tvec *acc_dz_v_dust_cell;
 
         Tscal dt;
+        bool is_muscl;
 
         RhoDustInterpolate(
             sycl::handler &cgh,
@@ -835,11 +866,13 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             const Tvec *vel_dust_cell,
             const Tvec *dx_v_dust_cell,
             const Tvec *dy_v_dust_cell,
-            const Tvec *dz_v_dust_cell)
+            const Tvec *dz_v_dust_cell,
+            bool is_muscl)
             : shift_get(aabb_block_lower, aabb_cell_size), nvar(nvar),
               acc_rho_dust_cell{rho_dust_cell}, acc_grad_rho_dust_cell{grad_rho_dust_cell}, dt(dt),
               acc_vel_dust_cell{vel_dust_cell}, acc_dx_v_dust_cell{dx_v_dust_cell},
-              acc_dy_v_dust_cell{dy_v_dust_cell}, acc_dz_v_dust_cell{dz_v_dust_cell} {}
+              acc_dy_v_dust_cell{dy_v_dust_cell}, acc_dz_v_dust_cell{dz_v_dust_cell},
+              is_muscl(is_muscl) {}
 
         /** This is divergence of dust mass density flux is unsplit fashion. if One need directional
            splitting so take carefully the right dx_v[k] whith k = 0 (x dir), k = 1 (y dir) and k =
@@ -886,7 +919,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                                           dx_v_dust_a,
                                           dy_v_dust_a,
                                           dz_v_dust_a)
-                                          * dt * solver_config.is_muscl_scheme();
+                                          * dt * is_muscl;
             Tscal rho_dust_face_b = rho_dust_b
                                     + get_div_rho_dust(
                                           rho_dust_b,
@@ -895,7 +928,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                                           dx_v_dust_b,
                                           dy_v_dust_b,
                                           dz_v_dust_b)
-                                          * dt * solver_config.is_muscl_scheme();
+                                          * dt * is_muscl;
 
             /** time-centered interface values using old gradients*/
             rho_dust_face_a += sycl::dot(grad_rho_dust_a, shift_a);
@@ -956,6 +989,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho dust");
 
+        bool is_muscl = solver_config.is_muscl_scheme();
+
         rho_dust_face_xp.add_obj(
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
@@ -972,7 +1007,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
+                ptr_dz_vel_dust,
+                is_muscl));
         rho_dust_face_xm.add_obj(
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
@@ -989,7 +1025,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
+                ptr_dz_vel_dust,
+                is_muscl));
         rho_dust_face_yp.add_obj(
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
@@ -1006,7 +1043,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
+                ptr_dz_vel_dust,
+                is_muscl));
         rho_dust_face_ym.add_obj(
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
@@ -1023,7 +1061,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
+                ptr_dz_vel_dust,
+                is_muscl));
         rho_dust_face_zp.add_obj(
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
@@ -1040,7 +1079,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
+                ptr_dz_vel_dust,
+                is_muscl));
         rho_dust_face_zm.add_obj(
             id,
             compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
@@ -1057,7 +1097,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
+                ptr_dz_vel_dust,
+                is_muscl));
 
         block_cell_sizes.complete_event_state(resulting_event_list);
         cell0block_aabb_lower.complete_event_state(resulting_event_list);
@@ -1095,6 +1136,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         const Tscal *acc_rho_dust_cell;
 
         Tscal dt;
+        bool is_muscl;
 
         VelDustInterpolate(
             sycl::handler &cgh,
@@ -1107,11 +1149,12 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             const Tvec *dz_v_dust_cell,
             // For time interpolation
             Tscal dt,
-            const Tscal *rho_dust_cell)
+            const Tscal *rho_dust_cell,
+            bool is_muscl)
             : shift_get(aabb_block_lower, aabb_cell_size), nvar(nvar),
               acc_vel_dust_cell{vel_dust_cell}, acc_dx_v_dust_cell{dx_v_dust_cell},
               acc_dy_v_dust_cell{dy_v_dust_cell}, acc_dz_v_dust_cell{dz_v_dust_cell}, dt(dt),
-              acc_rho_dust_cell{rho_dust_cell} {}
+              acc_rho_dust_cell{rho_dust_cell}, is_muscl(is_muscl) {}
 
         Tvec get_div_v_dust(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho) const {
             return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v);
@@ -1147,10 +1190,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 = get_div_v_dust(v_dust_b, dx_vel_dust_b, dy_vel_dust_b, dz_vel_dust_b, rho_dust_b);
 
             /** */
-            Tvec vel_dust_face_a
-                = v_dust_a + dt_v_dust_a * dt * 0.5 * solver_config.is_muscl_scheme();
-            Tvec vel_dust_face_b
-                = v_dust_b + dt_v_dust_b * dt * 0.5 * solver_config.is_muscl_scheme();
+            Tvec vel_dust_face_a = v_dust_a + dt_v_dust_a * dt * 0.5 * is_muscl;
+            Tvec vel_dust_face_b = v_dust_b + dt_v_dust_b * dt * 0.5 * is_muscl;
 
             /** */
             vel_dust_face_a += dx_v_dust_a_dot_shift;
@@ -1206,6 +1247,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::EventList resulting_event_list;
 
         logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
+        bool is_muscl = solver_config.is_muscl_scheme();
 
         vel_dust_face_xp.add_obj(
             id,
@@ -1222,7 +1264,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
                 dt,
-                ptr_buf_rho_dust));
+                ptr_buf_rho_dust,
+                is_muscl));
         vel_dust_face_xm.add_obj(
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
@@ -1238,7 +1281,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
                 dt,
-                ptr_buf_rho_dust));
+                ptr_buf_rho_dust,
+                is_muscl));
         vel_dust_face_yp.add_obj(
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
@@ -1254,7 +1298,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
                 dt,
-                ptr_buf_rho_dust));
+                ptr_buf_rho_dust,
+                is_muscl));
         vel_dust_face_ym.add_obj(
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
@@ -1270,7 +1315,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
                 dt,
-                ptr_buf_rho_dust));
+                ptr_buf_rho_dust,
+                is_muscl));
         vel_dust_face_zp.add_obj(
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
@@ -1286,7 +1332,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
                 dt,
-                ptr_buf_rho_dust));
+                ptr_buf_rho_dust,
+                is_muscl));
         vel_dust_face_zm.add_obj(
             id,
             compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
@@ -1302,7 +1349,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
                 dt,
-                ptr_buf_rho_dust));
+                ptr_buf_rho_dust,
+                is_muscl));
 
         block_cell_sizes.complete_event_state(resulting_event_list);
         cell0block_aabb_lower.complete_event_state(resulting_event_list);

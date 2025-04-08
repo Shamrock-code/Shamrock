@@ -20,13 +20,13 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/Solver.hpp"
+#include "shammodels/ramses/modules/ComputeFlux.hpp"
+#include "shammodels/ramses/modules/ComputeGradient.hpp"
+#include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
+#include "shammodels/ramses/modules/ConsToPrim.hpp"
+#include "shammodels/ramses/modules/FaceInterpolate.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
-#include "shamrock/scheduler/ComputeFlux.hpp"
-#include "shamrock/scheduler/ComputeGradient.hpp"
-#include "shamrock/scheduler/ComputeTimeDerivative.hpp"
-#include "shamrock/scheduler/ConsToPrim.hpp"
-#include "shamrock/scheduler/FaceInterpolate.hpp"
 
 namespace shammodels::basegodunov::modules {
 

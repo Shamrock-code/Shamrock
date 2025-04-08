@@ -1,7 +1,6 @@
 { pkgs ? (import <nixpkgs> {
     config.allowUnfree = true;
-    config.segger-jlink.acceptLicense = true;
-    #config.cudaSupport = true;
+    config.cudaSupport = true;
 }), ... }:
 
 let
@@ -14,11 +13,11 @@ pkgs.mkShell {
   nativeBuildInputs = [
       pkgs.autoAddDriverRunpath
       pkgs.cudaPackages.cuda_nvcc
-      pkgs.ninja
+      pkgs.cudaPackages.cuda_cudart
+      (pkgs.lib.getOutput "stubs" pkgs.cudaPackages.cuda_cudart)
   ];
 
   buildInputs = [
-    #AdaptiveCpp
 
     llvm.clang-tools
     llvm.clang
@@ -35,6 +34,8 @@ pkgs.mkShell {
     pkgs.python312Packages.numpy
     pkgs.python312Packages.scipy
     pkgs.python312Packages.ipython
+    #pkgs.python312Packages.pybind11
+    #pkgs.adaptivecpp
 
     #pkgs.pocl
 
@@ -48,10 +49,8 @@ pkgs.mkShell {
     pkgs.texliveFull
 
     pkgs.cudaPackages.cudatoolkit
-    pkgs.cudaPackages.cuda_cudart
-    (pkgs.lib.getOutput "stubs" pkgs.cudaPackages.cuda_cudart)
 
-    #pkgs.cudaPackages.nsight_systems
+    pkgs.cudaPackages.nsight_systems.bin
     #pkgs.cudaPackages.nsight_compute
   ];
 

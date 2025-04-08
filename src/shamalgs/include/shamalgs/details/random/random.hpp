@@ -59,6 +59,13 @@ namespace shamalgs::random {
         const sham::DeviceScheduler_ptr &sched, u64 seed, u32 len, T min_bound, T max_bound);
 
     template<class T>
+    inline sham::DeviceBuffer<T>
+    mock_buffer_usm(const sham::DeviceScheduler_ptr &sched, u64 seed, u32 len) {
+        using Prop = shambase::VectorProperties<T>;
+        return mock_buffer_usm(sched, seed, len, Prop::get_min(), Prop::get_max());
+    }
+
+    template<class T>
     inline std::vector<T> mock_vector(u64 seed, u32 len) {
         using Prop = shambase::VectorProperties<T>;
         return mock_vector(seed, len, Prop::get_min(), Prop::get_max());

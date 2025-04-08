@@ -19,6 +19,9 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/serialize.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
+#include <memory>
 #include <vector>
 
 namespace shamalgs::collective {
@@ -28,7 +31,7 @@ namespace shamalgs::collective {
             u64 sender;
             u64 receiver;
             u64 length;
-            std::unique_ptr<sycl::buffer<u8>> &data;
+            sham::DeviceBuffer<u8> &data;
 
             SerializeSize get_ser_sz() {
                 return SerializeHelper::serialize_byte_size<u64>() * 3
@@ -61,7 +64,7 @@ namespace shamalgs::collective {
                     ser.write(d.sender);
                     ser.write(d.receiver);
                     ser.write(d.length);
-                    ser.write_buf(shambase::get_check_ref(d.data), d.length);
+                    ser.write_buf(d.data, d.length);
                 }
             }
 
@@ -70,10 +73,8 @@ namespace shamalgs::collective {
 
     } // namespace details
 
-    using SerializedDDataComm = shambase::DistributedDataShared<std::unique_ptr<sycl::buffer<u8>>>;
-
     void distributed_data_sparse_comm(
-        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        sham::DeviceScheduler_ptr dev_sched,
         SerializedDDataComm &send_distrib_data,
         SerializedDDataComm &recv_distrib_data,
         std::function<i32(u64)> rank_getter,
@@ -86,23 +87,22 @@ namespace shamalgs::collective {
 
         // prepare map
         std::map<std::pair<i32, i32>, std::vector<DataTmp>> send_data;
-        send_distrib_data.for_each(
-            [&](u64 sender, u64 receiver, std::unique_ptr<sycl::buffer<u8>> &buf) {
-                std::pair<i32, i32> key = {rank_getter(sender), rank_getter(receiver)};
+        send_distrib_data.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u8> &buf) {
+            std::pair<i32, i32> key = {rank_getter(sender), rank_getter(receiver)};
 
-                send_data[key].push_back(DataTmp{sender, receiver, get_check_ref(buf).size(), buf});
-            });
+            send_data[key].push_back(DataTmp{sender, receiver, buf.get_size(), buf});
+        });
 
         // serialize together similar communications
         std::map<std::pair<i32, i32>, SerializeHelper> serializers
             = details::serialize_group_data(dev_sched, send_data);
 
         // recover bufs from serializers
-        std::map<std::pair<i32, i32>, std::unique_ptr<sycl::buffer<u8>>> send_bufs;
+        std::map<std::pair<i32, i32>, std::unique_ptr<sham::DeviceBuffer<u8>>> send_bufs;
         {
             NamedStackEntry stack_loc2{"recover bufs"};
             for (auto &[key, ser] : serializers) {
-                send_bufs[key] = ser.finalize();
+                send_bufs[key] = std::make_unique<sham::DeviceBuffer<u8>>(ser.finalize());
             }
         }
 
@@ -114,7 +114,7 @@ namespace shamalgs::collective {
                 send_payoad.push_back(
                     {key.second,
                      std::make_unique<shamcomm::CommunicationBuffer>(
-                         get_check_ref(buf), dev_sched)});
+                         shambase::extract_pointer(buf), dev_sched)});
             }
         }
 
@@ -141,12 +141,11 @@ namespace shamalgs::collective {
 
                 shamcomm::CommunicationBuffer comm_buf = extract_pointer(payload.payload);
 
-                sycl::buffer<u8> buf = shamcomm::CommunicationBuffer::convert(std::move(comm_buf));
+                sham::DeviceBuffer<u8> buf
+                    = shamcomm::CommunicationBuffer::convert_usm(std::move(comm_buf));
 
                 recv_payload_bufs.push_back(RecvPayloadSer{
-                    payload.sender_ranks,
-                    SerializeHelper(
-                        dev_sched, std::make_unique<sycl::buffer<u8>>(std::move(buf)))});
+                    payload.sender_ranks, SerializeHelper(dev_sched, std::move(buf))});
             }
         }
 
@@ -173,9 +172,9 @@ namespace shamalgs::collective {
                     }
 
                     auto it = recv_distrib_data.add_obj(
-                        sender, receiver, std::make_unique<sycl::buffer<u8>>(length));
+                        sender, receiver, sham::DeviceBuffer<u8>(length, dev_sched));
 
-                    recv.ser.load_buf(*it->second, length);
+                    recv.ser.load_buf(it->second, length);
                 }
             }
         }

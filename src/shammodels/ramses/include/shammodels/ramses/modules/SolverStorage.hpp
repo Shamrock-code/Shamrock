@@ -62,6 +62,12 @@ namespace shammodels::basegodunov {
             shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>>>
             cell_link_graph;
 
+        Component<shamrock::ComputeField<Tscal>> rho_old;
+        Component<shamrock::ComputeField<Tvec>> rhovel_old;
+        Component<shamrock::ComputeField<Tscal>> rhoetot_old;
+        Component<shamrock::ComputeField<Tscal>> rho_dust_old;
+        Component<shamrock::ComputeField<Tvec>> rhovel_dust_old;
+
         Component<shamrock::ComputeField<Tvec>> vel;
         Component<shamrock::ComputeField<Tscal>> press;
 
@@ -90,6 +96,28 @@ namespace shammodels::basegodunov {
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_face_zm;
 
+        /**/
+
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_tilde_xp;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_tilde_xm;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_tilde_yp;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_tilde_ym;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_tilde_zp;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_tilde_zm;
+        /**/
+
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
             vel_face_xp;
@@ -109,6 +137,27 @@ namespace shammodels::basegodunov {
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
             vel_face_zm;
 
+        /**/
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_tilde_xp;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_tilde_xm;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_tilde_yp;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_tilde_ym;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_tilde_zp;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_tilde_zm;
+        /**/
+
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             press_face_xp;
@@ -127,6 +176,27 @@ namespace shammodels::basegodunov {
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             press_face_zm;
+
+        /**/
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            press_tilde_xp;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            press_tilde_xm;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            press_tilde_yp;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            press_tilde_ym;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            press_tilde_zp;
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            press_tilde_zm;
+        /**/
 
         Component<
             shambase::DistributedData<shammodels::basegodunov::modules::NeighGraphLinkField<Tscal>>>
@@ -210,41 +280,79 @@ namespace shammodels::basegodunov {
         // next time step dust momentum before drag
         Component<shamrock::ComputeField<Tvec>> rhov_d_next_no_drag;
         /**
-         * @brief dust densities in +x direction stored at the cells faces
+         * @brief dust densities +x direction stored at the cells faces
          */
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_xp;
         /**
-         * @brief dust densities in -x direction stored at the cells faces
+         * @brief dust densities -x direction stored at the cells faces
          */
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_xm;
         /**
-         * @brief dust densities in +y direction stored at the cells faces
+         * @brief dust densities +y direction stored at the cells faces
          */
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_yp;
         /**
-         * @brief dust densities in -y direction stored at the cells faces
+         * @brief dust densities -y direction stored at the cells faces
          */
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_ym;
         /**
-         * @brief dust densities in +z direction stored at the cells faces
+         * @brief dust densities +z direction stored at the cells faces
          */
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_zp;
         /**
-         * @brief dust densities in -z direction stored at the cells faces
+         * @brief dust densities -z direction stored at the cells faces
          */
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
             rho_dust_face_zm;
+
+        /**
+         * @brief dust densities reconstruct in +x direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_dust_tilde_xp;
+        /**
+         * @brief dust densities reconstruct in -x direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_dust_tilde_xm;
+        /**
+         * @brief dust densities reconstruct in +y direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_dust_tilde_yp;
+        /**
+         * @brief dust densities reconstruct in -y direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_dust_tilde_ym;
+        /**
+         * @brief dust densities reconstruct in +z direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_dust_tilde_zp;
+        /**
+         * @brief dust densities reconstruct in -z direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
+            rho_dust_tilde_zm;
+
         /**
          * @brief dust velocities in +x direction stored at the cells faces
          */
@@ -281,6 +389,44 @@ namespace shammodels::basegodunov {
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
             vel_dust_face_zm;
+
+        /**
+         * @brief dust velocities reconstruct in +x direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_dust_tilde_xp;
+        /**
+         * @brief dust velocities reconstruct in -x direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_dust_tilde_xm;
+        /**
+         * @brief dust velocities reconstruct in +y direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_dust_tilde_yp;
+        /**
+         * @brief dust velocities reconstruct in -y direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_dust_tilde_ym;
+        /**
+         * @brief dust velocities reconstruct in +z direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_dust_tilde_zp;
+        /**
+         * @brief dust velocities reconstruct in -z direction stored at the cells faces
+         */
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
+            vel_dust_tilde_zm;
+
         /**
          * @brief dust density flux at cells interfaces in +x direction
          */

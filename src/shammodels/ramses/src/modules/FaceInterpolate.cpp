@@ -10,6 +10,7 @@
 /**
  * @file FaceInterpolate.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *
  */
@@ -74,7 +75,7 @@ namespace {
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpolate_rho_to_face(
-    Tscal dt_interp) {
+    Tscal dt, bool is_muscl) {
 
     class RhoInterpolate {
         public:
@@ -89,7 +90,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         const Tvec *acc_dy_v_cell;
         const Tvec *acc_dz_v_cell;
 
-        Tscal dt_interp;
+        Tscal dt;
 
         RhoInterpolate(
             sycl::handler &cgh,
@@ -98,16 +99,19 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             const Tscal *&rho_cell,
             const Tvec *&grad_rho_cell,
             // For time interpolation
-            Tscal dt_interp,
+            Tscal dt,
             const Tvec *&vel_cell,
             const Tvec *&dx_v_cell,
             const Tvec *&dy_v_cell,
             const Tvec *&dz_v_cell)
             : shift_get(aabb_block_lower, aabb_cell_size), acc_rho_cell{rho_cell},
-              acc_grad_rho_cell{grad_rho_cell}, dt_interp(dt_interp), acc_vel_cell{vel_cell},
+              acc_grad_rho_cell{grad_rho_cell}, dt(dt), acc_vel_cell{vel_cell},
               acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell} {}
 
-        Tscal get_dt_rho(Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
+        /** This is divergence of mass density flux is unsplit fashion. if One need directional
+           splitting so take carefully the right dx_v[k] whith k = 0 (x dir), k = 1 (y dir) and k =
+           2 (z dir)*/
+        Tscal get_div_rho(Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
             return -(sham::dot(v, grad_rho) + rho * (dx_v[0] + dy_v[1] + dz_v[2]));
         }
 
@@ -129,12 +133,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             Tvec dy_v_b = acc_dy_v_cell[id_b];
             Tvec dz_v_b = acc_dz_v_cell[id_b];
 
-            Tscal rho_face_a
-                = rho_a + sycl::dot(grad_rho_a, shift_a)
-                  + get_dt_rho(rho_a, vel_a, grad_rho_a, dx_v_a, dy_v_a, dz_v_a) * dt_interp;
-            Tscal rho_face_b
-                = rho_b + sycl::dot(grad_rho_b, shift_b)
-                  + get_dt_rho(rho_a, vel_a, grad_rho_a, dx_v_a, dy_v_a, dz_v_a) * dt_interp;
+            /** prediction step in primitives variables */
+            Tscal rho_face_a = rho_a
+                               + get_div_rho(rho_a, vel_a, grad_rho_a, dx_v_a, dy_v_a, dz_v_a) * dt
+                                     * 0.5 * is_muscl;
+            Tscal rho_face_b = rho_b
+                               + get_div_rho(rho_b, vel_b, grad_rho_b, dx_v_b, dy_v_b, dz_v_b) * dt
+                                     * 0.5 * is_muscl;
+
+            /** time-centered interface values using old gradients */
+            rho_face_a += sycl::dot(grad_rho_a, shift_a);
+            rho_face_b += sycl::dot(grad_rho_b, shift_b);
 
             return {rho_face_a, rho_face_b};
         }
@@ -163,7 +172,9 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
             = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
 
-        sham::DeviceBuffer<Tscal> &buf_rho     = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
+        // sham::DeviceBuffer<Tscal> &buf_rho     = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
+
+        sham::DeviceBuffer<Tscal> &buf_rho     = storage.rho_old.get().get_buf(id);
         sham::DeviceBuffer<Tvec> &buf_grad_rho = storage.grad_rho.get().get_buf(id);
 
         sham::DeviceBuffer<Tvec> &buf_vel    = storage.vel.get().get_buf(id);
@@ -197,7 +208,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_rho,
                 ptr_buf_grad_rho,
-                dt_interp,
+                dt,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
@@ -213,7 +224,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_rho,
                 ptr_buf_grad_rho,
-                dt_interp,
+                dt,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
@@ -229,7 +240,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_rho,
                 ptr_buf_grad_rho,
-                dt_interp,
+                dt,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
@@ -245,7 +256,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_rho,
                 ptr_buf_grad_rho,
-                dt_interp,
+                dt,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
@@ -261,7 +272,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_rho,
                 ptr_buf_grad_rho,
-                dt_interp,
+                dt,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
@@ -277,7 +288,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_rho,
                 ptr_buf_grad_rho,
-                dt_interp,
+                dt,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
                 ptr_buf_dy_vel,
@@ -303,7 +314,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpolate_v_to_face(
-    Tscal dt_interp) {
+    Tscal dt, bool is_muscl) {
 
     class VelInterpolate {
 
@@ -319,7 +330,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         const Tscal *acc_rho_cell;
         const Tvec *acc_grad_P_cell;
 
-        Tscal dt_interp;
+        Tscal dt;
 
         VelInterpolate(
             sycl::handler &cgh,
@@ -330,14 +341,16 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             const Tvec *dy_v_cell,
             const Tvec *dz_v_cell,
             // For time interpolation
-            Tscal dt_interp,
+            Tscal dt,
             const Tscal *rho_cell,
             const Tvec *grad_P_cell)
             : shift_get(aabb_block_lower, aabb_cell_size), acc_vel_cell{vel_cell},
-              acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell},
-              dt_interp(dt_interp), acc_rho_cell{rho_cell}, acc_grad_P_cell{grad_P_cell} {}
-
-        Tvec get_dt_v(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho, Tvec grad_P) const {
+              acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell}, dt(dt),
+              acc_rho_cell{rho_cell}, acc_grad_P_cell{grad_P_cell} {}
+        /** This is divergence of momemtum flux is unsplit fashion. if One need directional
+           splitting so take carefully the right dk_v, v[k], grad_P[k] whith k = 0 (x dir), k = 1 (y
+           dir) , k = 2 (z dir)*/
+        Tvec get_div_v(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho, Tvec grad_P) const {
             return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v + grad_P / rho);
         }
 
@@ -365,11 +378,16 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             Tvec dx_v_b_dot_shift
                 = shift_b.x() * dx_vel_b + shift_b.y() * dy_vel_b + shift_b.z() * dz_vel_b;
 
-            Tvec dt_v_a = get_dt_v(v_a, dx_vel_a, dy_vel_a, dz_vel_a, rho_a, grad_P_a);
-            Tvec dt_v_b = get_dt_v(v_b, dx_vel_b, dy_vel_b, dz_vel_b, rho_b, grad_P_b);
+            Tvec dt_v_a = get_div_v(v_a, dx_vel_a, dy_vel_a, dz_vel_a, rho_a, grad_P_a);
+            Tvec dt_v_b = get_div_v(v_b, dx_vel_b, dy_vel_b, dz_vel_b, rho_b, grad_P_b);
 
-            Tvec vel_face_a = v_a + dx_v_a_dot_shift + dt_v_a * dt_interp;
-            Tvec vel_face_b = v_b + dx_v_b_dot_shift + dt_v_b * dt_interp;
+            /** prediction step in primitives variables*/
+            Tvec vel_face_a = v_a + dt_v_a * dt * 0.5 * is_muscl;
+            Tvec vel_face_b = v_b + dt_v_b * dt * 0.5 * is_muscl;
+
+            /** time-centered interface values using old gradients  */
+            vel_face_a += dx_v_a_dot_shift;
+            vel_face_b += dx_v_b_dot_shift;
 
             return {vel_face_a, vel_face_b};
         }
@@ -403,7 +421,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::DeviceBuffer<Tvec> &buf_dy_vel = storage.dy_v.get().get_buf(id);
         sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
 
-        sham::DeviceBuffer<Tscal> &buf_rho   = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
+        // sham::DeviceBuffer<Tscal> &buf_rho   = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
+        sham::DeviceBuffer<Tscal> &buf_rho   = storage.rho_old.get().get_buf(id);
         sham::DeviceBuffer<Tvec> &buf_grad_P = storage.grad_P.get().get_buf(id);
 
         // TODO : restore asynchroneousness
@@ -436,7 +455,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dx_vel,
                 ptr_dy_vel,
                 ptr_dz_vel,
-                dt_interp,
+                dt,
                 ptr_rho,
                 ptr_grad_P));
         vel_face_xm.add_obj(
@@ -452,7 +471,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dx_vel,
                 ptr_dy_vel,
                 ptr_dz_vel,
-                dt_interp,
+                dt,
                 ptr_rho,
                 ptr_grad_P));
         vel_face_yp.add_obj(
@@ -468,7 +487,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dx_vel,
                 ptr_dy_vel,
                 ptr_dz_vel,
-                dt_interp,
+                dt,
                 ptr_rho,
                 ptr_grad_P));
         vel_face_ym.add_obj(
@@ -484,7 +503,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dx_vel,
                 ptr_dy_vel,
                 ptr_dz_vel,
-                dt_interp,
+                dt,
                 ptr_rho,
                 ptr_grad_P));
         vel_face_zp.add_obj(
@@ -500,7 +519,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dx_vel,
                 ptr_dy_vel,
                 ptr_dz_vel,
-                dt_interp,
+                dt,
                 ptr_rho,
                 ptr_grad_P));
         vel_face_zm.add_obj(
@@ -516,7 +535,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_dx_vel,
                 ptr_dy_vel,
                 ptr_dz_vel,
-                dt_interp,
+                dt,
                 ptr_rho,
                 ptr_grad_P));
 
@@ -540,7 +559,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpolate_P_to_face(
-    Tscal dt_interp) {
+    Tscal dt, bool is_muscl) {
 
     Tscal gamma = solver_config.eos_gamma;
 
@@ -558,7 +577,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         const Tvec *acc_dz_v_cell;
 
         Tscal gamma;
-        Tscal dt_interp;
+        Tscal dt;
 
         PressInterpolate(
             sycl::handler &cgh,
@@ -567,19 +586,21 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             const Tscal *P_cell,
             const Tvec *grad_P_cell,
             // For time interpolation
-            Tscal dt_interp,
+            Tscal dt,
             Tscal gamma,
             const Tvec *vel_cell,
             const Tvec *dx_v_cell,
             const Tvec *dy_v_cell,
             const Tvec *dz_v_cell)
             : shift_get(aabb_block_lower, aabb_cell_size), acc_P_cell{P_cell},
-              acc_grad_P_cell{grad_P_cell}, dt_interp(dt_interp), gamma(gamma),
-              acc_vel_cell{vel_cell}, acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell},
-              acc_dz_v_cell{dz_v_cell} {}
+              acc_grad_P_cell{grad_P_cell}, dt(dt), gamma(gamma), acc_vel_cell{vel_cell},
+              acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell} {}
 
-        Tscal
-        get_dt_P(Tscal P, Tvec grad_P, Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal gamma) const {
+        /** This is divergence of energy flux is unsplit fashion. if One need directional splitting
+           so take carefully the right dk_v[k], v[k], grad_P[k] whith k = 0 (x dir), k = 1 (y dir) ,
+           k = 2 (z dir)*/
+        Tscal get_div_P(
+            Tscal P, Tvec grad_P, Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal gamma) const {
             return -(gamma * P * (dx_v[0] + dy_v[1] + dz_v[2]) + sham::dot(v, grad_P));
         }
 
@@ -601,11 +622,16 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             Tvec dy_v_b = acc_dy_v_cell[id_b];
             Tvec dz_v_b = acc_dz_v_cell[id_b];
 
-            Tscal dtP_cell_a = get_dt_P(P_a, grad_P_a, v_a, dx_v_a, dy_v_a, dz_v_a, gamma);
-            Tscal dtP_cell_b = get_dt_P(P_b, grad_P_b, v_b, dx_v_b, dy_v_b, dz_v_b, gamma);
+            Tscal dtP_cell_a = get_div_P(P_a, grad_P_a, v_a, dx_v_a, dy_v_a, dz_v_a, gamma);
+            Tscal dtP_cell_b = get_div_P(P_b, grad_P_b, v_b, dx_v_b, dy_v_b, dz_v_b, gamma);
 
-            Tscal P_face_a = P_a + sycl::dot(grad_P_a, shift_a) + dtP_cell_a * dt_interp;
-            Tscal P_face_b = P_b + sycl::dot(grad_P_b, shift_b) + dtP_cell_b * dt_interp;
+            /** */
+            Tscal P_face_a = P_a + dtP_cell_a * dt * 0.5 * is_muscl;
+            Tscal P_face_b = P_b + dtP_cell_b * dt * 0.5 * is_muscl;
+
+            /** */
+            P_face_a += sycl::dot(grad_P_a, shift_a);
+            P_face_b += sycl::dot(grad_P_b, shift_b);
 
             return {P_face_a, P_face_b};
         }
@@ -667,7 +693,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_press,
                 ptr_buf_grad_P,
-                dt_interp,
+                dt,
                 gamma,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
@@ -684,7 +710,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_press,
                 ptr_buf_grad_P,
-                dt_interp,
+                dt,
                 gamma,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
@@ -701,7 +727,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_press,
                 ptr_buf_grad_P,
-                dt_interp,
+                dt,
                 gamma,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
@@ -718,7 +744,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_press,
                 ptr_buf_grad_P,
-                dt_interp,
+                dt,
                 gamma,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
@@ -735,7 +761,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_press,
                 ptr_buf_grad_P,
-                dt_interp,
+                dt,
                 gamma,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
@@ -752,7 +778,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_block_cell_sizes,
                 ptr_buf_press,
                 ptr_buf_grad_P,
-                dt_interp,
+                dt,
                 gamma,
                 ptr_buf_vel,
                 ptr_buf_dx_vel,
@@ -779,7 +805,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
-    interpolate_rho_dust_to_face(Tscal dt_interp) {
+    interpolate_rho_dust_to_face(Tscal dt, bool is_muscl) {
 
     class RhoDustInterpolate {
         public:
@@ -795,7 +821,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
         const Tvec *acc_dy_v_dust_cell;
         const Tvec *acc_dz_v_dust_cell;
 
-        Tscal dt_interp;
+        Tscal dt;
 
         RhoDustInterpolate(
             sycl::handler &cgh,
@@ -805,18 +831,20 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             const Tscal *rho_dust_cell,
             const Tvec *grad_rho_dust_cell,
             // For time interpolation
-            Tscal dt_interp,
+            Tscal dt,
             const Tvec *vel_dust_cell,
             const Tvec *dx_v_dust_cell,
             const Tvec *dy_v_dust_cell,
             const Tvec *dz_v_dust_cell)
             : shift_get(aabb_block_lower, aabb_cell_size), nvar(nvar),
-              acc_rho_dust_cell{rho_dust_cell}, acc_grad_rho_dust_cell{grad_rho_dust_cell},
-              dt_interp(dt_interp), acc_vel_dust_cell{vel_dust_cell},
-              acc_dx_v_dust_cell{dx_v_dust_cell}, acc_dy_v_dust_cell{dy_v_dust_cell},
-              acc_dz_v_dust_cell{dz_v_dust_cell} {}
+              acc_rho_dust_cell{rho_dust_cell}, acc_grad_rho_dust_cell{grad_rho_dust_cell}, dt(dt),
+              acc_vel_dust_cell{vel_dust_cell}, acc_dx_v_dust_cell{dx_v_dust_cell},
+              acc_dy_v_dust_cell{dy_v_dust_cell}, acc_dz_v_dust_cell{dz_v_dust_cell} {}
 
-        Tscal get_dt_rho_dust(
+        /** This is divergence of dust mass density flux is unsplit fashion. if One need directional
+           splitting so take carefully the right dx_v[k] whith k = 0 (x dir), k = 1 (y dir) and k =
+           2 (z dir)*/
+        Tscal get_div_rho_dust(
             Tscal rho_dust,
             Tvec v_dust,
             Tvec grad_rho_dust,
@@ -848,24 +876,30 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             Tvec dy_v_dust_b = acc_dy_v_dust_cell[id_b];
             Tvec dz_v_dust_b = acc_dz_v_dust_cell[id_b];
 
-            Tscal rho_dust_face_a = rho_dust_a + sycl::dot(grad_rho_dust_a, shift_a)
-                                    + get_dt_rho_dust(
+            /** prediction step */
+
+            Tscal rho_dust_face_a = rho_dust_a
+                                    + get_div_rho_dust(
                                           rho_dust_a,
                                           vel_dust_a,
                                           grad_rho_dust_a,
                                           dx_v_dust_a,
                                           dy_v_dust_a,
                                           dz_v_dust_a)
-                                          * dt_interp;
-            Tscal rho_dust_face_b = rho_dust_b + sycl::dot(grad_rho_dust_b, shift_b)
-                                    + get_dt_rho_dust(
-                                          rho_dust_a,
-                                          vel_dust_a,
-                                          grad_rho_dust_a,
-                                          dx_v_dust_a,
-                                          dy_v_dust_a,
-                                          dz_v_dust_a)
-                                          * dt_interp;
+                                          * dt * is_muscl;
+            Tscal rho_dust_face_b = rho_dust_b
+                                    + get_div_rho_dust(
+                                          rho_dust_b,
+                                          vel_dust_b,
+                                          grad_rho_dust_b,
+                                          dx_v_dust_b,
+                                          dy_v_dust_b,
+                                          dz_v_dust_b)
+                                          * dt * is_muscl;
+
+            /** time-centered interface values using old gradients*/
+            rho_dust_face_a += sycl::dot(grad_rho_dust_a, shift_a);
+            rho_dust_face_b += sycl::dot(grad_rho_dust_b, shift_b);
 
             return {rho_dust_face_a, rho_dust_face_b};
         }
@@ -895,8 +929,9 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
         sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
             = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
 
-        sham::DeviceBuffer<Tscal> &buf_rho_dust
-            = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
+        // sham::DeviceBuffer<Tscal> &buf_rho_dust
+        //     = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
+        sham::DeviceBuffer<Tscal> &buf_rho_dust     = storage.rho_dust_old.get().get_buf(id);
         sham::DeviceBuffer<Tvec> &buf_grad_rho_dust = storage.grad_rho_dust.get().get_buf(id);
 
         sham::DeviceBuffer<Tvec> &buf_vel_dust    = storage.vel_dust.get().get_buf(id);
@@ -933,7 +968,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_block_cell_sizes,
                 ptr_rho_dust,
                 ptr_grad_rho_dust,
-                dt_interp,
+                dt,
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
@@ -950,7 +985,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_block_cell_sizes,
                 ptr_rho_dust,
                 ptr_grad_rho_dust,
-                dt_interp,
+                dt,
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
@@ -967,7 +1002,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_block_cell_sizes,
                 ptr_rho_dust,
                 ptr_grad_rho_dust,
-                dt_interp,
+                dt,
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
@@ -984,7 +1019,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_block_cell_sizes,
                 ptr_rho_dust,
                 ptr_grad_rho_dust,
-                dt_interp,
+                dt,
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
@@ -1001,7 +1036,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_block_cell_sizes,
                 ptr_rho_dust,
                 ptr_grad_rho_dust,
-                dt_interp,
+                dt,
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
@@ -1018,7 +1053,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_block_cell_sizes,
                 ptr_rho_dust,
                 ptr_grad_rho_dust,
-                dt_interp,
+                dt,
                 ptr_vel_dust,
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
@@ -1043,7 +1078,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpolate_v_dust_to_face(
-    Tscal dt_interp) {
+    Tscal dt, bool is_muscl) {
 
     class VelDustInterpolate {
 
@@ -1059,7 +1094,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         // For time interpolation
         const Tscal *acc_rho_dust_cell;
 
-        Tscal dt_interp;
+        Tscal dt;
 
         VelDustInterpolate(
             sycl::handler &cgh,
@@ -1071,14 +1106,14 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             const Tvec *dy_v_dust_cell,
             const Tvec *dz_v_dust_cell,
             // For time interpolation
-            Tscal dt_interp,
+            Tscal dt,
             const Tscal *rho_dust_cell)
             : shift_get(aabb_block_lower, aabb_cell_size), nvar(nvar),
               acc_vel_dust_cell{vel_dust_cell}, acc_dx_v_dust_cell{dx_v_dust_cell},
-              acc_dy_v_dust_cell{dy_v_dust_cell}, acc_dz_v_dust_cell{dz_v_dust_cell},
-              dt_interp(dt_interp), acc_rho_dust_cell{rho_dust_cell} {}
+              acc_dy_v_dust_cell{dy_v_dust_cell}, acc_dz_v_dust_cell{dz_v_dust_cell}, dt(dt),
+              acc_rho_dust_cell{rho_dust_cell} {}
 
-        Tvec get_dt_v_dust(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho) const {
+        Tvec get_div_v_dust(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho) const {
             return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v);
         }
 
@@ -1107,12 +1142,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                                          + shift_b.z() * dz_vel_dust_b;
 
             Tvec dt_v_dust_a
-                = get_dt_v_dust(v_dust_a, dx_vel_dust_a, dy_vel_dust_a, dz_vel_dust_a, rho_dust_a);
+                = get_div_v_dust(v_dust_a, dx_vel_dust_a, dy_vel_dust_a, dz_vel_dust_a, rho_dust_a);
             Tvec dt_v_dust_b
-                = get_dt_v_dust(v_dust_b, dx_vel_dust_b, dy_vel_dust_b, dz_vel_dust_b, rho_dust_b);
+                = get_div_v_dust(v_dust_b, dx_vel_dust_b, dy_vel_dust_b, dz_vel_dust_b, rho_dust_b);
 
-            Tvec vel_dust_face_a = v_dust_a + dx_v_dust_a_dot_shift + dt_v_dust_a * dt_interp;
-            Tvec vel_dust_face_b = v_dust_b + dx_v_dust_b_dot_shift + dt_v_dust_b * dt_interp;
+            /** */
+            Tvec vel_dust_face_a = v_dust_a + dt_v_dust_a * dt * 0.5 * is_muscl;
+            Tvec vel_dust_face_b = v_dust_b + dt_v_dust_b * dt * 0.5 * is_muscl;
+
+            /** */
+            vel_dust_face_a += dx_v_dust_a_dot_shift;
+            vel_dust_face_b += dx_v_dust_b_dot_shift;
 
             return {vel_dust_face_a, vel_dust_face_b};
         }
@@ -1146,8 +1186,10 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         sham::DeviceBuffer<Tvec> &buf_dy_vel_dust = storage.dy_v_dust.get().get_buf(id);
         sham::DeviceBuffer<Tvec> &buf_dz_vel_dust = storage.dz_v_dust.get().get_buf(id);
 
-        sham::DeviceBuffer<Tscal> &buf_rho_dust
-            = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
+        // sham::DeviceBuffer<Tscal> &buf_rho_dust
+        //     = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
+
+        sham::DeviceBuffer<Tscal> &buf_rho_dust = storage.rho_dust_old.get().get_buf(id);
 
         // TODO : restore asynchroneousness
         sham::EventList depends_list;
@@ -1177,7 +1219,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dx_vel_dust,
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
-                dt_interp,
+                dt,
                 ptr_buf_rho_dust));
         vel_dust_face_xm.add_obj(
             id,
@@ -1193,7 +1235,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dx_vel_dust,
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
-                dt_interp,
+                dt,
                 ptr_buf_rho_dust));
         vel_dust_face_yp.add_obj(
             id,
@@ -1209,7 +1251,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dx_vel_dust,
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
-                dt_interp,
+                dt,
                 ptr_buf_rho_dust));
         vel_dust_face_ym.add_obj(
             id,
@@ -1225,7 +1267,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dx_vel_dust,
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
-                dt_interp,
+                dt,
                 ptr_buf_rho_dust));
         vel_dust_face_zp.add_obj(
             id,
@@ -1241,7 +1283,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dx_vel_dust,
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
-                dt_interp,
+                dt,
                 ptr_buf_rho_dust));
         vel_dust_face_zm.add_obj(
             id,
@@ -1257,7 +1299,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dx_vel_dust,
                 ptr_buf_dy_vel_dust,
                 ptr_buf_dz_vel_dust,
-                dt_interp,
+                dt,
                 ptr_buf_rho_dust));
 
         block_cell_sizes.complete_event_state(resulting_event_list);

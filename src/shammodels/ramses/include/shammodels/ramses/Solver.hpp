@@ -34,6 +34,8 @@ namespace shammodels::basegodunov {
         Minmod      = 4,
     };
 
+    enum TimeIntegratorMode { MUSCL = 0, RK1 = 1, RK2 = 2, RK3 = 3, VL2 = 4 };
+
     enum DustRiemannSolverMode {
         NoDust = 0,
         DHLL   = 1, // Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
@@ -45,6 +47,17 @@ namespace shammodels::basegodunov {
         IRK1   = 1, // Implicit RK1
         IRK2   = 2, // Implicit RK2
         EXPO   = 3  // Matrix exponential
+    };
+
+    struct TimeIntegratorConfig {
+        TimeIntegratorMode time_integrator = MUSCL;
+
+        inline bool is_muscl_scheme() {
+            if (time_integrator == MUSCL) {
+                return true;
+            }
+            return false;
+        }
     };
 
     /**
@@ -121,6 +134,8 @@ namespace shammodels::basegodunov {
         bool face_half_time_interpolation = true;
         DustConfig dust_config{};
         DragConfig drag_config{};
+        TimeIntegratorConfig time_integrator_config{};
+        inline bool is_muscl_scheme() { return time_integrator_config.is_muscl_scheme(); }
 
         inline bool is_dust_on() { return dust_config.is_dust_on(); }
         // get alpha values from user
@@ -195,6 +210,11 @@ namespace shammodels::basegodunov {
                     "Godunov", "time since start :", shambase::details::get_wtime(), "(s)");
             }
         }
+
+        void get_old_fields();
+        void set_old_fields();
+
+        void reset_old_fields();
 
         void evolve_once();
 

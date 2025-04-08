@@ -10,6 +10,7 @@
 /**
  * @file ComputeGradient.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *
  */
@@ -139,7 +140,7 @@ namespace {
      * @return std::array<T, 3>
      */
     template<class T, class Tvec, SlopeMode mode, class ACCField>
-    inline std::array<T, 3> get_3d_grad(
+    inline std::array<T, 3> get_3d_slope(
         const u32 cell_global_id,
         const shambase::VecComponent<Tvec> delta_cell,
         const AMRGraphLinkiterator &graph_iter_xp,
@@ -186,8 +187,7 @@ namespace {
 
 template<class Tvec, class TgridVec>
 template<SlopeMode mode>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
-    _compute_grad_rho_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::_slope_rho() {
 
     StackEntry stack_loc{};
 
@@ -247,7 +247,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
 
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
-            shambase::parralel_for(cgh, cell_count, "compute_grad_rho", [=](u64 gid) {
+            shambase::parralel_for(cgh, cell_count, "slope_rho", [=](u64 gid) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
@@ -255,7 +255,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
 
                 Tscal delta_cell = acc_aabb_cell_size[block_id];
 
-                auto result = get_3d_grad<Tscal, Tvec, mode>(
+                auto result = get_3d_slope<Tscal, Tvec, mode>(
                     cell_global_id,
                     delta_cell,
                     graph_iter_xp,
@@ -283,7 +283,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
 
 template<class Tvec, class TgridVec>
 template<SlopeMode mode>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute_grad_v_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::_slope_v() {
 
     StackEntry stack_loc{};
 
@@ -352,7 +352,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
 
             Tscal dxfact = solver_config.grid_coord_to_pos_fact;
 
-            shambase::parralel_for(cgh, cell_count, "compute_grad_v", [=](u64 gid) {
+            shambase::parralel_for(cgh, cell_count, "slope_v", [=](u64 gid) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
@@ -360,7 +360,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
 
                 Tscal delta_cell = acc_aabb_cell_size[block_id];
 
-                auto result = get_3d_grad<Tvec, Tvec, mode>(
+                auto result = get_3d_slope<Tvec, Tvec, mode>(
                     cell_global_id,
                     delta_cell,
                     graph_iter_xp,
@@ -394,7 +394,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
 
 template<class Tvec, class TgridVec>
 template<SlopeMode mode>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute_grad_P_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::_slope_P() {
 
     StackEntry stack_loc{};
 
@@ -454,7 +454,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
             Tscal dxfact = solver_config.grid_coord_to_pos_fact;
             Tscal gamma  = solver_config.eos_gamma;
 
-            shambase::parralel_for(cgh, cell_count, "compute_grad_rho", [=](u64 gid) {
+            shambase::parralel_for(cgh, cell_count, "slope_rho", [=](u64 gid) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
@@ -462,7 +462,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
 
                 Tscal delta_cell = acc_aabb_cell_size[block_id];
 
-                auto result = get_3d_grad<Tscal, Tvec, mode>(
+                auto result = get_3d_slope<Tscal, Tvec, mode>(
                     cell_global_id,
                     delta_cell,
                     graph_iter_xp,
@@ -489,52 +489,51 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::_compute
 }
 
 template<class Tvec, class TgridVec>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
-    compute_grad_rho_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::slope_rho() {
     if (solver_config.slope_config == SlopeMode::None) {
-        _compute_grad_rho_van_leer<SlopeMode::None>();
+        _slope_rho<SlopeMode::None>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_f) {
-        _compute_grad_rho_van_leer<SlopeMode::VanLeer_f>();
+        _slope_rho<SlopeMode::VanLeer_f>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_std) {
-        _compute_grad_rho_van_leer<SlopeMode::VanLeer_std>();
+        _slope_rho<SlopeMode::VanLeer_std>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_sym) {
-        _compute_grad_rho_van_leer<SlopeMode::VanLeer_sym>();
+        _slope_rho<SlopeMode::VanLeer_sym>();
     } else if (solver_config.slope_config == SlopeMode::Minmod) {
-        _compute_grad_rho_van_leer<SlopeMode::Minmod>();
+        _slope_rho<SlopeMode::Minmod>();
     } else {
         shambase::throw_unimplemented();
     }
 }
 
 template<class Tvec, class TgridVec>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_v_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::slope_v() {
     if (solver_config.slope_config == SlopeMode::None) {
-        _compute_grad_v_van_leer<SlopeMode::None>();
+        _slope_v<SlopeMode::None>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_f) {
-        _compute_grad_v_van_leer<SlopeMode::VanLeer_f>();
+        _slope_v<SlopeMode::VanLeer_f>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_std) {
-        _compute_grad_v_van_leer<SlopeMode::VanLeer_std>();
+        _slope_v<SlopeMode::VanLeer_std>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_sym) {
-        _compute_grad_v_van_leer<SlopeMode::VanLeer_sym>();
+        _slope_v<SlopeMode::VanLeer_sym>();
     } else if (solver_config.slope_config == SlopeMode::Minmod) {
-        _compute_grad_v_van_leer<SlopeMode::Minmod>();
+        _slope_v<SlopeMode::Minmod>();
     } else {
         shambase::throw_unimplemented();
     }
 }
 
 template<class Tvec, class TgridVec>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_grad_P_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::slope_P() {
     if (solver_config.slope_config == SlopeMode::None) {
-        _compute_grad_P_van_leer<SlopeMode::None>();
+        _slope_P<SlopeMode::None>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_f) {
-        _compute_grad_P_van_leer<SlopeMode::VanLeer_f>();
+        _slope_P<SlopeMode::VanLeer_f>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_std) {
-        _compute_grad_P_van_leer<SlopeMode::VanLeer_std>();
+        _slope_P<SlopeMode::VanLeer_std>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_sym) {
-        _compute_grad_P_van_leer<SlopeMode::VanLeer_sym>();
+        _slope_P<SlopeMode::VanLeer_sym>();
     } else if (solver_config.slope_config == SlopeMode::Minmod) {
-        _compute_grad_P_van_leer<SlopeMode::Minmod>();
+        _slope_P<SlopeMode::Minmod>();
     } else {
         shambase::throw_unimplemented();
     }
@@ -542,8 +541,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::compute_
 
 template<class Tvec, class TgridVec>
 template<SlopeMode mode>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
-    _compute_grad_rho_dust_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::_slope_rho_dust() {
 
     StackEntry stack_loc{};
 
@@ -605,32 +603,31 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
             u32 nvar_dust  = ndust;
 
-            shambase::parralel_for(
-                cgh, cell_count * nvar_dust, "compute_grad_rho_dust", [=](u64 gid) {
-                    const u32 tmp_gid        = (u32) gid;
-                    const u32 cell_global_id = tmp_gid / nvar_dust;
-                    const u32 ndust_off_loc  = tmp_gid % nvar_dust;
+            shambase::parralel_for(cgh, cell_count * nvar_dust, "slope_rho_dust", [=](u64 gid) {
+                const u32 tmp_gid        = (u32) gid;
+                const u32 cell_global_id = tmp_gid / nvar_dust;
+                const u32 ndust_off_loc  = tmp_gid % nvar_dust;
 
-                    const u32 block_id    = cell_global_id / AMRBlock::block_size;
-                    const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+                const u32 block_id    = cell_global_id / AMRBlock::block_size;
+                const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
-                    Tscal delta_cell = acc_aabb_cell_size[block_id];
+                Tscal delta_cell = acc_aabb_cell_size[block_id];
 
-                    auto result = get_3d_grad<Tscal, Tvec, mode>(
-                        cell_global_id,
-                        delta_cell,
-                        graph_iter_xp,
-                        graph_iter_xm,
-                        graph_iter_yp,
-                        graph_iter_ym,
-                        graph_iter_zp,
-                        graph_iter_zm,
-                        [=](u32 id) {
-                            return rho_dust[nvar_dust * id + ndust_off_loc];
-                        });
-                    grad_rho_dust[nvar_dust * cell_global_id + ndust_off_loc]
-                        = {result[0], result[1], result[2]};
-                });
+                auto result = get_3d_slope<Tscal, Tvec, mode>(
+                    cell_global_id,
+                    delta_cell,
+                    graph_iter_xp,
+                    graph_iter_xm,
+                    graph_iter_yp,
+                    graph_iter_ym,
+                    graph_iter_zp,
+                    graph_iter_zm,
+                    [=](u32 id) {
+                        return rho_dust[nvar_dust * id + ndust_off_loc];
+                    });
+                grad_rho_dust[nvar_dust * cell_global_id + ndust_off_loc]
+                    = {result[0], result[1], result[2]};
+            });
         });
 
         cell0block_aabb_lower.complete_event_state(e);
@@ -644,8 +641,7 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
 
 template<class Tvec, class TgridVec>
 template<SlopeMode mode>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
-    _compute_grad_v_dust_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::_slope_v_dust() {
 
     StackEntry stack_loc{};
 
@@ -714,34 +710,33 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
             u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
 
             u32 nvar_dust = ndust;
-            shambase::parralel_for(
-                cgh, cell_count * nvar_dust, "compute_grad_v_dust", [=](u64 gid) {
-                    const u32 tmp_gid        = (u32) gid;
-                    const u32 cell_global_id = tmp_gid / nvar_dust;
-                    const u32 ndust_off_loc  = tmp_gid % nvar_dust;
+            shambase::parralel_for(cgh, cell_count * nvar_dust, "slope_v_dust", [=](u64 gid) {
+                const u32 tmp_gid        = (u32) gid;
+                const u32 cell_global_id = tmp_gid / nvar_dust;
+                const u32 ndust_off_loc  = tmp_gid % nvar_dust;
 
-                    const u32 block_id    = cell_global_id / AMRBlock::block_size;
-                    const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+                const u32 block_id    = cell_global_id / AMRBlock::block_size;
+                const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
-                    Tscal delta_cell = acc_aabb_cell_size[block_id];
+                Tscal delta_cell = acc_aabb_cell_size[block_id];
 
-                    auto result = get_3d_grad<Tvec, Tvec, mode>(
-                        cell_global_id,
-                        delta_cell,
-                        graph_iter_xp,
-                        graph_iter_xm,
-                        graph_iter_yp,
-                        graph_iter_ym,
-                        graph_iter_zp,
-                        graph_iter_zm,
-                        [=](u32 id) {
-                            return vel_dust[id * nvar_dust + ndust_off_loc];
-                        });
+                auto result = get_3d_slope<Tvec, Tvec, mode>(
+                    cell_global_id,
+                    delta_cell,
+                    graph_iter_xp,
+                    graph_iter_xm,
+                    graph_iter_yp,
+                    graph_iter_ym,
+                    graph_iter_zp,
+                    graph_iter_zm,
+                    [=](u32 id) {
+                        return vel_dust[id * nvar_dust + ndust_off_loc];
+                    });
 
-                    dx_vel_dust[cell_global_id * nvar_dust + ndust_off_loc] = result[0];
-                    dy_vel_dust[cell_global_id * nvar_dust + ndust_off_loc] = result[1];
-                    dz_vel_dust[cell_global_id * nvar_dust + ndust_off_loc] = result[2];
-                });
+                dx_vel_dust[cell_global_id * nvar_dust + ndust_off_loc] = result[0];
+                dy_vel_dust[cell_global_id * nvar_dust + ndust_off_loc] = result[1];
+                dz_vel_dust[cell_global_id * nvar_dust + ndust_off_loc] = result[2];
+            });
         });
 
         cell0block_aabb_lower.complete_event_state(e);
@@ -758,39 +753,37 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
-    compute_grad_rho_dust_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::slope_rho_dust() {
     if (solver_config.slope_config == SlopeMode::None) {
-        _compute_grad_rho_dust_van_leer<SlopeMode::None>();
+        _slope_rho_dust<SlopeMode::None>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_f) {
-        _compute_grad_rho_dust_van_leer<SlopeMode::VanLeer_f>();
+        _slope_rho_dust<SlopeMode::VanLeer_f>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_std) {
-        _compute_grad_rho_dust_van_leer<SlopeMode::VanLeer_std>();
+        _slope_rho_dust<SlopeMode::VanLeer_std>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_sym) {
-        _compute_grad_rho_dust_van_leer<SlopeMode::VanLeer_sym>();
+        _slope_rho_dust<SlopeMode::VanLeer_sym>();
     } else if (solver_config.slope_config == SlopeMode::Minmod) {
-        _compute_grad_rho_dust_van_leer<SlopeMode::Minmod>();
+        _slope_rho_dust<SlopeMode::Minmod>();
     } else {
         shambase::throw_unimplemented();
     }
 }
 
 template<class Tvec, class TgridVec>
-void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
-    compute_grad_v_dust_van_leer() {
+void shammodels::basegodunov::modules::Slopes<Tvec, TgridVec>::slope_v_dust() {
     if (solver_config.slope_config == SlopeMode::None) {
-        _compute_grad_v_dust_van_leer<SlopeMode::None>();
+        _slope_v_dust<SlopeMode::None>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_f) {
-        _compute_grad_v_dust_van_leer<SlopeMode::VanLeer_f>();
+        _slope_v_dust<SlopeMode::VanLeer_f>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_std) {
-        _compute_grad_v_dust_van_leer<SlopeMode::VanLeer_std>();
+        _slope_v_dust<SlopeMode::VanLeer_std>();
     } else if (solver_config.slope_config == SlopeMode::VanLeer_sym) {
-        _compute_grad_v_dust_van_leer<SlopeMode::VanLeer_sym>();
+        _slope_v_dust<SlopeMode::VanLeer_sym>();
     } else if (solver_config.slope_config == SlopeMode::Minmod) {
-        _compute_grad_v_dust_van_leer<SlopeMode::Minmod>();
+        _slope_v_dust<SlopeMode::Minmod>();
     } else {
         shambase::throw_unimplemented();
     }
 }
 
-template class shammodels::basegodunov::modules::ComputeGradient<f64_3, i64_3>;
+template class shammodels::basegodunov::modules::Slopes<f64_3, i64_3>;

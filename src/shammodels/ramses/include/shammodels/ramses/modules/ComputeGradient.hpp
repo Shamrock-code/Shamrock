@@ -12,6 +12,7 @@
 /**
  * @file ComputeGradient.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *
  */
@@ -25,7 +26,7 @@
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
-    class ComputeGradient {
+    class Slopes {
 
         public:
         using Tscal                      = shambase::VecComponent<Tvec>;
@@ -43,26 +44,26 @@ namespace shammodels::basegodunov::modules {
         Config &solver_config;
         Storage &storage;
 
-        ComputeGradient(ShamrockCtx &context, Config &solver_config, Storage &storage)
+        Slopes(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void compute_grad_rho_van_leer();
-        void compute_grad_v_van_leer();
-        void compute_grad_P_van_leer();
-        void compute_grad_rho_dust_van_leer();
-        void compute_grad_v_dust_van_leer();
+        void slope_rho();
+        void slope_v();
+        void slope_P();
+        void slope_rho_dust();
+        void slope_v_dust();
 
         private:
         template<SlopeMode mode>
-        void _compute_grad_rho_van_leer();
+        void _slope_rho();
         template<SlopeMode mode>
-        void _compute_grad_v_van_leer();
+        void _slope_v();
         template<SlopeMode mode>
-        void _compute_grad_P_van_leer();
+        void _slope_P();
         template<SlopeMode mode>
-        void _compute_grad_rho_dust_van_leer();
+        void _slope_rho_dust();
         template<SlopeMode mode>
-        void _compute_grad_v_dust_van_leer();
+        void _slope_v_dust();
 
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

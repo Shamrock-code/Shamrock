@@ -28,10 +28,279 @@
 #include "shammodels/ramses/modules/ConsToPrim.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
 #include "shammodels/ramses/modules/FaceInterpolate.hpp"
+#include "shammodels/ramses/modules/FluxDivergence.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
 #include "shammodels/ramses/modules/StencilGenerator.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::Solver<Tvec, TgridVec>::get_old_fields() {
+
+    StackEntry stack_loc{};
+
+    using MergedPDat = shamrock::MergedPatchData;
+
+    shamrock::SchedulerUtility utility(scheduler());
+
+    shamrock::ComputeField<Tvec> rhovel_old
+        = utility.make_compute_field<Tvec>("rhovel", AMRBlock::block_size, [&](u64 id) {
+              return storage.merged_patchdata_ghost.get().get(id).total_elements;
+          });
+
+    shamrock::ComputeField<Tscal> rhoetot_old
+        = utility.make_compute_field<Tscal>("rhoetot", AMRBlock::block_size, [&](u64 id) {
+              return storage.merged_patchdata_ghost.get().get(id).total_elements;
+          });
+
+    shamrock::ComputeField<Tscal> rho_old
+        = utility.make_compute_field<Tscal>("rho", AMRBlock::block_size, [&](u64 id) {
+              return storage.merged_patchdata_ghost.get().get(id).total_elements;
+          });
+
+    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 irhov_ghost                                = ghost_layout.get_field_idx<Tvec>("rhovel");
+    u32 irhoe_ghost                                = ghost_layout.get_field_idx<Tscal>("rhoetot");
+
+    storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPDat &mpdat) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+        sham::DeviceBuffer<Tscal> &buf_rho  = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
+        sham::DeviceBuffer<Tvec> &buf_rhov  = mpdat.pdat.get_field_buf_ref<Tvec>(irhov_ghost);
+        sham::DeviceBuffer<Tscal> &buf_rhoe = mpdat.pdat.get_field_buf_ref<Tscal>(irhoe_ghost);
+
+        sham::DeviceBuffer<Tvec> &buf_rhovel_old   = rhovel_old.get_buf(id);
+        sham::DeviceBuffer<Tscal> &buf_rhoetot_old = rhoetot_old.get_buf(id);
+        sham::DeviceBuffer<Tscal> &buf_rho_old     = rho_old.get_buf(id);
+
+        sham::EventList depends_list;
+
+        auto rho    = buf_rho.get_read_access(depends_list);
+        auto rhovel = buf_rhov.get_read_access(depends_list);
+        auto rhoe   = buf_rhoe.get_read_access(depends_list);
+
+        auto rhovel_old  = buf_rhovel_old.get_write_access(depends_list);
+        auto rhoetot_old = buf_rhoetot_old.get_write_access(depends_list);
+        auto rho_old     = buf_rho_old.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
+
+            shambase::parralel_for(cgh, cell_count, "get old state", [=](u64 gid) {
+                rho_old[gid]     = rho[gid];
+                rhovel_old[gid]  = rhovel[gid];
+                rhoetot_old[gid] = rhoe[gid];
+            });
+        });
+
+        buf_rho.complete_event_state(e);
+        buf_rhov.complete_event_state(e);
+        buf_rhoe.complete_event_state(e);
+        buf_rho_old.cpmplete_event_state(e);
+        buf_rhovel_old.complete_event_state(e);
+        buf_rhoetot_old.complete_event_state(e);
+    });
+
+    storage.rho_old.set(std::move(rho_old));
+    storage.rhovel_old.set(std::move(rhovel_old));
+    storage.rhoetot_old.set(std::move(rhoetot_old));
+
+    if (solver_config.is_dust_on()) {
+        u32 ndust                                      = solver_config.dust_config.ndust;
+        shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+
+        shamrock::ComputeField<Tvec> rhovel_dust_old = utility.make_compute_field<Tvec>(
+            "rhovel_dust", ndust * AMRBlock::block_size, [&](u64 id) {
+                return storage.merged_patchdata_ghost.get().get(id).total_elements;
+            });
+
+        shamrock::ComputeField<Tscal> rho_dust_old = utility.make_compute_field<Tscal>(
+            "rho_dust", ndust * AMRBlock::block_size, [&](u64 id) {
+                return storage.merged_patchdata_ghost.get().get(id).total_elements;
+            });
+        u32 irho_dust_ghost  = ghost_layout.get_field_idx<Tscal>("rho_dust");
+        u32 irhov_dust_ghost = ghost_layout.get_field_idx<Tvec>("rhovel_dust");
+
+        storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPDat &mpdat) {
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+            sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+            sham::DeviceBuffer<Tscal> &buf_rho_dust
+                = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
+            sham::DeviceBuffer<Tvec> &buf_rhov_dust
+                = mpdat.pdat.get_field_buf_ref<Tvec>(irhov_dust_ghost);
+
+            sham::DeviceBuffer<Tvec> &buf_rhovel_dust = rhovel_dust_ghost.get_buf(id);
+            sham::DeviceBuffer<Tscal> &buf_rho_dust   = rho_dust_ghost.get_buf(id);
+
+            sham::EventList depends_list;
+
+            auto rho_dust    = buf_rho_dust.get_read_access(depends_list);
+            auto rhovel_dust = buf_rhov_dust.get_read_access(depends_list);
+
+            auto rhovel_dust_old = buf_rhovel_dust.get_write_access(depends_list);
+            auto rho_dust_old    = buf_rho_dust.get_write_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
+
+                u32 nvar_dust = ndust;
+                shambase::parralel_for(
+                    cgh, nvar_dust * cell_count, "get old state dust", [=](u64 gid) {
+                        rho_dust_old[gid]    = rho_dust[gid];
+                        rhovel_dust_old[gid] = rhovel_dust[gid];
+                    });
+            });
+
+            buf_rho_dust.complete_event_state(e);
+            buf_rhov_dust.complete_event_state(e);
+            buf_rho_dust_old.complete_event_state(e);
+            buf_rhovel_dust_old.complete_event_state(e);
+        });
+        storage.rho_dust_old.set(std::move(rho_dust_old));
+        storage.rhovel_dust_old.set(std::move(rhovel_dust_old));
+    }
+}
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::Solver<Tvec, TgridVec>::set_old_fields() {
+
+    StackEntry stack_loc{};
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+
+    shamrock::ComputeField<Tscal> &cfiled_rho_old  = storage.rho_old.get();
+    shamrock::ComputeField<Tvec> &cfield_rhov_old  = storage.rhovel_old.get();
+    shamrock::ComputeField<Tscal> &cfield_rhoe_old = storage.rhoetot_old.get();
+
+    // load layout info
+    PatchDataLayout &pdl = scheduler().pdl;
+
+    const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
+    const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
+    const u32 irho      = pdl.get_field_idx<Tscal>("rho");
+    const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
+    const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
+
+    scheduler().for_each_patchdata_nonempty(
+        [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+            logger::debug_ln("[AMR Flux]", "set old fields patch", p.id_patch);
+
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+            u32 id               = p.id_patch;
+
+            sham::DeviceBuffer<Tscal> &rho_old_patch  = cfield_rho_old.get_buf_check(id);
+            sham::DeviceBuffer<Tvec> &rhov_old_patch  = cfield_rhov_old.get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &rhoe_old_patch = cfield_rhoe_old.get_buf_check(id);
+
+            u32 cell_count                      = pdat.get_obj_cnt() * AMRBlock::block_size;
+            sham::DeviceBuffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
+            sham::DeviceBuffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
+            sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
+
+            sham::EventList depends_list;
+
+            auto rho  = buf_rho.get_write_access(depends_list);
+            auto rhov = buf_rhov.get_write_access(depends_list);
+            auto rhoe = buf_rhoe.get_write_access(depends_list);
+
+            auto rho_old  = rho_old_patch.get_read_access(depends_list);
+            auto rhov_old = rhov_old_patch.get_read_access(depends_list);
+            auto rhoe_old = rhoe_old_patch.get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
+                shambase::parralel_for(cgh, cell_count, "set old fields", [=](u32 id_a) {
+                    const u32 cell_global_id = (u32) id_a;
+
+                    rho[id_a]  = rho_old[id_a];
+                    rhov[id_a] = rhov[id_a];
+                    rhoe[id_a] = rhoe_old[id_a];
+                });
+            });
+
+            rho_old_patch.complete_event_state(e);
+            rhov_old_patch.complete_event_state(e);
+            rhoe_old_patch.complete_event_state(e);
+
+            buf_rho.complete_event_state(e);
+            buf_rhov.complete_event_state(e);
+            buf_rhoe.complete_event_state(e);
+        });
+
+    if (solver_config.is_dust_on()) {
+        shamrock::ComputeField<Tscal> &cfiled_rho_dust_old = storage.rho_dust_old.get();
+        shamrock::ComputeField<Tvec> &cfield_rhov_dust_old = storage.rhovel_dust_old.get();
+
+        const u32 irho_dust    = pdl.get_field_idx<Tscal>("rho_dust");
+        const u32 irhovel_dust = pdl.get_field_idx<Tvec>("rhovel_dust");
+
+        scheduler().for_each_patchdata_nonempty([&, dt](
+                                                    const shamrock::patch::Patch p,
+                                                    shamrock::patch::PatchData &pdat) {
+            logger::debug_ln("[AMR Flux]", "set old fields dust patch [dust]", p.id_patch);
+
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            sham::DeviceBuffer<Tscal> &rho_dust_old_patch = cfield_rho_dust_old.get_buf_check(id);
+            sham::DeviceBuffer<Tvec> &rhov_dust_old_patch = cfield_rhov_dust_old.get_buf_check(id);
+
+            u32 cell_count                          = pdat.get_obj_cnt() * AMRBlock::block_size;
+            sham::DeviceBuffer<Tscal> &buf_rho_dust = pdat.get_field_buf_ref<Tscal>(irho_dust);
+            sham::DeviceBuffer<Tvec> &buf_rhov_dust = pdat.get_field_buf_ref<Tvec>(irhovel_dust);
+
+            sham::EventList depends_list;
+
+            auto rho_dust  = buf_rho_dust.get_write_access(depends_list);
+            auto rhov_dust = buf_rhov_dust.get_write_access(depends_list);
+
+            auto rho_old_dust  = rho_dust_old_patch.get_read_access(depends_list);
+            auto rhov_old_dust = rhov_dust_old_patch.get_read_access(depends_list);
+
+            auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
+                shambase::parralel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
+                    rho_dust[id_a]  = rho_old_dust[id_a];
+                    rhov_dust[id_a] = rhov_old_dust[id_a];
+                });
+            });
+
+            rho_old_dust_patch.complete_event_state(e);
+            rhov_old_dust_patch.complete_event_state(e);
+
+            buf_rho_dust.complete_event_state(e);
+            buf_rhov_dust.complete_event_state(e);
+        });
+    }
+}
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::Solver<Tvec, TgridVec>::reset_old_fields() {
+
+    StackEntry stack_loc{};
+
+    storage.rho_old.reset();
+    storage.rhovel_old.reset();
+    storage.rhoetot_old.reset();
+
+    if (solver_config.is_dust_on()) {
+        storage.rho_dust_old.reset();
+        storage.rhovel_dust_old.reset();
+    }
+
+    if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
+        storage.rho_next_no_drag.reset();
+        storage.rhov_next_no_drag.reset();
+        storage.rhoe_next_no_drag.reset();
+        storage.rho_d_next_no_drag.reset();
+        storage.rhov_d_next_no_drag.reset();
+    }
+}
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
@@ -91,59 +360,258 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     graph_gen.lower_AMR_block_graph_to_cell_common_face_graph(block_oriented_graph);
 
-    // compute prim variable
-    modules::ConsToPrim ctop(context, solver_config, storage);
-    ctop.cons_to_prim();
+    // get old fields from shamrock::MergedPatchData
+    get_old_fields();
 
-    // compute & limit gradients
-    modules::ComputeGradient grad_compute(context, solver_config, storage);
-    grad_compute.compute_grad_rho_van_leer();
-    grad_compute.compute_grad_v_van_leer();
-    grad_compute.compute_grad_P_van_leer();
-    if (solver_config.is_dust_on()) {
-        grad_compute.compute_grad_rho_dust_van_leer();
-        grad_compute.compute_grad_v_dust_van_leer();
-    }
+    // time integration and drag integration steps
 
-    // shift values
-    modules::FaceInterpolate face_interpolator(context, solver_config, storage);
-    Tscal dt_face_interp = 0;
-    if (solver_config.face_half_time_interpolation) {
-        dt_face_interp = dt_input / 2.0;
-    }
-    face_interpolator.interpolate_rho_to_face(dt_face_interp);
-    face_interpolator.interpolate_v_to_face(dt_face_interp);
-    face_interpolator.interpolate_P_to_face(dt_face_interp);
-
-    if (solver_config.is_dust_on()) {
-        face_interpolator.interpolate_rho_dust_to_face(dt_face_interp);
-        face_interpolator.interpolate_v_dust_to_face(dt_face_interp);
-    }
-
-    // flux
-    modules::ComputeFlux flux_compute(context, solver_config, storage);
-    flux_compute.compute_flux();
-    if (solver_config.is_dust_on()) {
-        flux_compute.compute_flux_dust();
-    }
-    // compute dt fields
-    modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
-    dt_compute.compute_dt_fields();
-    if (solver_config.is_dust_on()) {
-        dt_compute.compute_dt_dust_fields();
-    }
-
-    // RK2 + flux lim
     if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
-        modules::TimeIntegrator dt_integ(context, solver_config, storage);
-        dt_integ.forward_euler(dt_input);
-    } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
+
+        if (solver_config.time_integrator_config.time_integrator == TimeIntegratorMode::MUSCL
+            || solver_config.time_integrator_config.time_integrator == TimeIntegratorMode::RK1) {
+            modules::FluxDivergence flux_op(context, solver_config, storage);
+            flux_op.eval_flux_divergence_hydro_fields();
+            if (solver_config.is_dust_on())
+                flux_op.eval_flux_divergence_dust_fields();
+
+            modules::TimeIntegrator dt_integ(context, solver_config, storage);
+            dt_integ.evolve_old_fields(dt_input, 1.0);
+
+            flux_op.reset_storage_buffers_hydro();
+            if (solver_config.is_dust_on()) {
+                flux_op.reset_storage_buffers_dust();
+            }
+        }
+
+        else if (solver_config.time_integrator_config.time_integrator == TimeIntegratorMode::RK2) {
+            /***************** First stage::start **************/
+            modules::FluxDivergence flux_op(context, solver_config, storage);
+            flux_op.eval_flux_divergence_hydro_fields();
+            if (solver_config.is_dust_on())
+                flux_op.eval_flux_divergence_dust_fields();
+
+            modules::TimeIntegrator dt_integ(context, solver_config, storage);
+            dt_integ.evolve_old_fields(dt_input, 1.0);
+
+            /***************** First stage::end **************/
+
+            // ================================================
+
+            // have a reset call here before next flux div call
+
+            flux_op.reset_storage_buffers_hydro();
+            if (solver_config.is_dust_on()) {
+                flux_op.reset_storage_buffers_dust();
+            }
+
+            // ================================================
+
+            /***************** Second stage::start **************/
+            flux_op.eval_flux_divergence_hydro_fields();
+            if (solver_config.is_dust_on())
+                flux_op.eval_flux_divergence_dust_fields();
+
+            dt_integ.evolve_intermediate(dt_input, 0.5, 0.5);
+            /***************** Second stage::end **************/
+
+            flux_op.reset_storage_buffers_hydro();
+            if (solver_config.is_dust_on()) {
+                flux_op.reset_storage_buffers_dust();
+            }
+        }
+
+        else if (solver_config.time_integrator_config.time_integrator == TimeIntegratorMode::RK3) {
+            /***************** First stage::start **************/
+            modules::FluxDivergence flux_op(context, solver_config, storage);
+            flux_op.eval_flux_divergence_hydro_fields();
+
+            if (solver_config.is_dust_on())
+                flux_op.eval_flux_divergence_dust_fields();
+
+            modules::TimeIntegrator dt_integ(context, solver_config, storage);
+            dt_integ.evolve_old_fields(dt_input, 1.0);
+
+            /***************** First stage::end **************/
+
+            // ================================================
+
+            // have a reset call here before next flux div call
+
+            flux_op.reset_storage_buffers_hydro();
+            if (solver_config.is_dust_on()) {
+                flux_op.reset_storage_buffers_dust();
+            }
+
+            // ================================================
+
+            /***************** Second stage::start **************/
+
+            flux_op.eval_flux_divergence_hydro_fields();
+            if (solver_config.is_dust_on())
+                flux_op.eval_flux_divergence_dust_fields();
+
+            dt_integ.evolve_intermediate(dt_input, 3. / 4., 1. / 4.);
+            /***************** Second stage::end **************/
+
+            // ================================================
+
+            // have a reset call here before next flux div call
+
+            flux_op.reset_storage_buffers_hydro();
+            if (solver_config.is_dust_on()) {
+                flux_op.reset_storage_buffers_dust();
+            }
+
+            // ================================================
+
+            /***************** Third stage::start **************/
+
+            flux_op.eval_flux_divergence_hydro_fields();
+            if (solver_config.is_dust_on())
+                flux_op.eval_flux_divergence_dust_fields();
+
+            dt_integ.evolve_intermediate(dt_input, 1. / 3., 2. / 3.);
+            /***************** Thrid stage::end **************/
+
+            flux_op.reset_storage_buffers_hydro();
+            if (solver_config.is_dust_on()) {
+                flux_op.reset_storage_buffers_dust();
+            }
+
+        }
+
+        else if (solver_config.time_integrator_config.time_integrator == TimeIntegratorMode::VL2) {
+            /***************** First stage::start **************/
+            modules::FluxDivergence flux_op(context, solver_config, storage);
+            flux_op.eval_flux_divergence_hydro_fields();
+            if (solver_config.is_dust_on())
+                flux_op.eval_flux_divergence_dust_fields();
+
+            modules::TimeIntegrator dt_integ(context, solver_config, storage);
+            dt_integ.evolve_old_fields(dt_input, 0.5);
+
+            /***************** First stage::end **************/
+
+            // ================================================
+
+            // have a reset call here before next flux div call
+            flux_op.reset_storage_buffers_hydro();
+            if (solver_config.is_dust_on()) {
+                flux_op.reset_storage_buffers_dust();
+            }
+
+            // ================================================
+
+            /***************** Second stage::start **************/
+            flux_op.eval_flux_divergence_hydro_fields();
+            if (solver_config.is_dust_on())
+                flux_op.eval_flux_divergence_dust_fields();
+
+            dt_integ.evolve_old_fields(dt_input, 1.0);
+            /***************** Second stage::end **************/
+
+            flux_op.reset_storage_buffers_hydro();
+            if (solver_config.is_dust_on()) {
+                flux_op.reset_storage_buffers_dust();
+            }
+        }
+
+        else {
+            shambase::throw_unimplemented();
+        }
+
+        // set old fields in patch data. This give the next steps fields after transport step
+        set_old_fields();
+
+    }
+
+    else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
         modules::DragIntegrator drag_integ(context, solver_config, storage);
         drag_integ.involve_with_no_src(dt_input);
         drag_integ.enable_irk1_drag_integrator(dt_input);
     } else {
         shambase::throw_unimplemented();
     }
+
+    // reset old fields members of storage
+    reset_old_fields();
+
+    /*
+        // compute prim variable
+        modules::ConsToPrim ctop(context, solver_config, storage);
+        ctop.cons_to_prim();
+
+        // compute & limit gradients /
+        modules::Slopes slopes(context, solver_config, storage);
+        slopes.slope_rho();
+        slopes.slope_v();
+        slopes.slope_P();
+        if (solver_config.is_dust_on()) {
+            slopes.slope_rho_dust();
+            slopes.slope_v_dust();
+        }
+
+        // shift values
+        modules::FaceInterpolate face_interpolator(context, solver_config, storage);
+        // Tscal dt_face_interp = 0;
+        // if (solver_config.face_half_time_interpolation) {
+        //     dt_face_interp = dt_input / 2.0;
+        // }
+        bool is_muscl = solver_config.is_muscl_scheme();
+
+        face_interpolator.interpolate_rho_to_face(dt_input, is_muscl);
+        face_interpolator.interpolate_v_to_face(dt_input, is_muscl);
+        face_interpolator.interpolate_P_to_face(dt_input, is_muscl);
+
+        if (solver_config.is_dust_on()) {
+            face_interpolator.interpolate_rho_dust_to_face(dt_input,is_muscl);
+            face_interpolator.interpolate_v_dust_to_face(dt_input,is_muscl);
+        }
+
+        // flux
+        modules::ComputeFlux flux_compute(context, solver_config, storage);
+        flux_compute.compute_flux();
+        if (solver_config.is_dust_on()) {
+            flux_compute.compute_flux_dust();
+        }
+        // compute dt fields
+        modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
+        dt_compute.compute_dt_fields();
+        if (solver_config.is_dust_on()) {
+            dt_compute.compute_dt_dust_fields();
+        }
+
+
+        if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag)
+        {
+            if(solver_config.time_integrator_config.time_integrator == TimeIntegratorMode::MUSCL ||
+       solver_config.time_integrator_config.time_integrator == TimeIntegratorMode::RK1)
+            {
+                modules::TimeIntegrator dt_integ(context, solver_config, storage);
+                dt_integ.forward_euler(dt_input);
+            }
+
+            else if (solver_config.time_integrator == TimeIntegratorMode::RK2)
+            {
+
+            }
+        }
+
+
+
+        // RK2 + flux lim
+        if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
+            modules::TimeIntegrator dt_integ(context, solver_config, storage);
+            dt_integ.forward_euler(dt_input);
+        } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
+            modules::DragIntegrator drag_integ(context, solver_config, storage);
+            drag_integ.involve_with_no_src(dt_input);
+            drag_integ.enable_irk1_drag_integrator(dt_input);
+        } else {
+            shambase::throw_unimplemented();
+        }
+
+    */
 
     modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
     refinement.update_refinement();
@@ -157,106 +625,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     solver_config.set_next_dt(new_dt);
     solver_config.set_time(t_current + dt_input);
-
-    storage.dtrho.reset();
-    storage.dtrhov.reset();
-    storage.dtrhoe.reset();
-
-    storage.flux_rho_face_xp.reset();
-    storage.flux_rho_face_xm.reset();
-    storage.flux_rho_face_yp.reset();
-    storage.flux_rho_face_ym.reset();
-    storage.flux_rho_face_zp.reset();
-    storage.flux_rho_face_zm.reset();
-    storage.flux_rhov_face_xp.reset();
-    storage.flux_rhov_face_xm.reset();
-    storage.flux_rhov_face_yp.reset();
-    storage.flux_rhov_face_ym.reset();
-    storage.flux_rhov_face_zp.reset();
-    storage.flux_rhov_face_zm.reset();
-    storage.flux_rhoe_face_xp.reset();
-    storage.flux_rhoe_face_xm.reset();
-    storage.flux_rhoe_face_yp.reset();
-    storage.flux_rhoe_face_ym.reset();
-    storage.flux_rhoe_face_zp.reset();
-    storage.flux_rhoe_face_zm.reset();
-
-    storage.rho_face_xp.reset();
-    storage.rho_face_xm.reset();
-    storage.rho_face_yp.reset();
-    storage.rho_face_ym.reset();
-    storage.rho_face_zp.reset();
-    storage.rho_face_zm.reset();
-
-    storage.vel_face_xp.reset();
-    storage.vel_face_xm.reset();
-    storage.vel_face_yp.reset();
-    storage.vel_face_ym.reset();
-    storage.vel_face_zp.reset();
-    storage.vel_face_zm.reset();
-
-    storage.press_face_xp.reset();
-    storage.press_face_xm.reset();
-    storage.press_face_yp.reset();
-    storage.press_face_ym.reset();
-    storage.press_face_zp.reset();
-    storage.press_face_zm.reset();
-
-    storage.grad_rho.reset();
-    storage.dx_v.reset();
-    storage.dy_v.reset();
-    storage.dz_v.reset();
-    storage.grad_P.reset();
-
-    storage.vel.reset();
-    storage.press.reset();
-
-    if (solver_config.is_dust_on()) {
-        storage.dtrho_dust.reset();
-        storage.dtrhov_dust.reset();
-
-        storage.flux_rho_dust_face_xp.reset();
-        storage.flux_rho_dust_face_xm.reset();
-        storage.flux_rho_dust_face_yp.reset();
-        storage.flux_rho_dust_face_ym.reset();
-        storage.flux_rho_dust_face_zp.reset();
-        storage.flux_rho_dust_face_zm.reset();
-        storage.flux_rhov_dust_face_xp.reset();
-        storage.flux_rhov_dust_face_xm.reset();
-        storage.flux_rhov_dust_face_yp.reset();
-        storage.flux_rhov_dust_face_ym.reset();
-        storage.flux_rhov_dust_face_zp.reset();
-        storage.flux_rhov_dust_face_zm.reset();
-
-        storage.rho_dust_face_xm.reset();
-        storage.rho_dust_face_yp.reset();
-        storage.rho_dust_face_ym.reset();
-        storage.rho_dust_face_xp.reset();
-        storage.rho_dust_face_zp.reset();
-        storage.rho_dust_face_zm.reset();
-
-        storage.vel_dust_face_xp.reset();
-        storage.vel_dust_face_xm.reset();
-        storage.vel_dust_face_yp.reset();
-        storage.vel_dust_face_ym.reset();
-        storage.vel_dust_face_zp.reset();
-        storage.vel_dust_face_zm.reset();
-
-        storage.grad_rho_dust.reset();
-        storage.dx_v_dust.reset();
-        storage.dy_v_dust.reset();
-        storage.dz_v_dust.reset();
-
-        storage.vel_dust.reset();
-    }
-
-    if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
-        storage.rho_next_no_drag.reset();
-        storage.rhov_next_no_drag.reset();
-        storage.rhoe_next_no_drag.reset();
-        storage.rho_d_next_no_drag.reset();
-        storage.rhov_d_next_no_drag.reset();
-    }
 
     storage.cell_infos.reset();
     storage.cell_link_graph.reset();

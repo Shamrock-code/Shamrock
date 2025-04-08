@@ -10,8 +10,9 @@
 #pragma once
 
 /**
- * @file FaceInterpolate.hpp
+ * @file FluxDivergence.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *
  */
@@ -19,13 +20,18 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/Solver.hpp"
+#include "shammodels/ramses/modules/ComputeFlux.hpp"
+#include "shammodels/ramses/modules/ComputeGradient.hpp"
+#include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
+#include "shammodels/ramses/modules/ConsToPrim.hpp"
+#include "shammodels/ramses/modules/FaceInterpolate.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
-    class FaceInterpolate {
+    class FluxDivergence {
 
         public:
         using Tscal                      = shambase::VecComponent<Tvec>;
@@ -43,17 +49,17 @@ namespace shammodels::basegodunov::modules {
         Config &solver_config;
         Storage &storage;
 
-        FaceInterpolate(ShamrockCtx &context, Config &solver_config, Storage &storage)
+        FluxDivergence(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        /** When is_muscl = 0 then no prediction step (i.e no muscl scheme) so we only need the
-         * reconstruction at cells interfaces.*/
-        void interpolate_rho_to_face(Tscal dt);
-        void interpolate_v_to_face(Tscal dt);
-        void interpolate_P_to_face(Tscal dt);
+        /** compute the Flux at cell interfaces by solving Riemann problems*/
+        // modules::ComputeFlux flux_compute(context, solver_config, storage);
 
-        void interpolate_rho_dust_to_face(Tscal dt);
-        void interpolate_v_dust_to_face(Tscal dt);
+        void eval_flux_divergence_hydro_fields();
+        void eval_flux_divergence_dust_fields();
+
+        void reset_storage_buffers_hydro();
+        void reset_storage_buffers_dust();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

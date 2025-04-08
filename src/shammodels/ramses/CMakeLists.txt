@@ -33,6 +33,7 @@ set(Sources
     src/modules/ComputeCFL.cpp
     src/modules/ConsToPrim.cpp
     src/modules/StencilGenerator.cpp
+    src/modules/FluxDivergence.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

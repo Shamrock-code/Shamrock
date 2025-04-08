@@ -47,6 +47,7 @@ namespace shammodels::basegodunov::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         void cons_to_prim();
+        void cons_to_prim_dust();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

@@ -59,6 +59,11 @@ jobs:
       - name: Setup env
         run : ./env/new-env --machine ${{ matrix.machine }} --builddir build --
 
+      - name: Cat activate file
+        shell: bash # In docker container github action default to sh
+        run: |
+          cat build/activate
+
       - name: Configure
         shell: bash # In docker container github action default to sh
         run: |

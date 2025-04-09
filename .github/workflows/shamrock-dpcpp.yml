@@ -20,11 +20,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - machine: cuda
+          - machine: ci.intel-llvm.cuda
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20cuda12dpcpp
             runtest: false
-          - machine: rocm
+          - machine: ci.intel-llvm.rocm
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20rocm543dpcpp
+            runtest: false
+          - machine: docker.intel_oneapi
+            container: intel/oneapi
             runtest: false
 
     timeout-minutes: 60
@@ -54,7 +57,7 @@ jobs:
       #### End Checkout part ####
 
       - name: Setup env
-        run : ./env/new-env --machine ci.intel-llvm.${{ matrix.machine }} --builddir build --
+        run : ./env/new-env --machine ${{ matrix.machine }} --builddir build --
 
       - name: Configure
         shell: bash # In docker container github action default to sh

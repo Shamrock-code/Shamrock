@@ -2,7 +2,7 @@
 # will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
 
 apt update
-apt install python3-dev
+apt install -y python3-dev
 
 function shamconfigure {
     cmake \

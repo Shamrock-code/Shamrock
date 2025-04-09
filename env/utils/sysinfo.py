@@ -84,10 +84,10 @@ def select_generator(args, buildtype):
 
     cmake_gen = ""
     if gen == "make":
-        cmake_gen = "Unix Makefiles"
+        cmake_gen = '"Unix Makefiles"'
         gen_opt = " -j " + str(cores)
     elif gen == "ninja":
-        cmake_gen = "Ninja"
+        cmake_gen = '"Ninja"'
         if limit_cores:
             gen_opt = " -j " + str(cores)
         else:

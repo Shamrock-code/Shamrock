@@ -71,7 +71,7 @@ jobs:
 
 
       - name: Setup env
-        run : ./env/new-env --machine debian-generic.acpp --builddir build --pylib -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
+        run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
 
       - name: Pip install Shamrock
         run : |
@@ -83,6 +83,12 @@ jobs:
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init('0:0')"
+
+      - name: Try shamrock startup (executable)
+        run: |
+          ACPP_VISIBILITY_MASK=omp \
+          ACPP_DEBUG_LEVEL=3 \
+          shamrock --smi --sycl-cfg 0:0 --loglevel 125
 
       - name: Pip install package for doc
         run : |

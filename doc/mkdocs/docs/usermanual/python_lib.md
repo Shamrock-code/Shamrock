@@ -5,14 +5,14 @@ Aside from using Shamrock as a python interpreter for runscripts, it is also pos
 This can be done in 3 steps:
 
 - Activate a python virtual environment
-- Create a Shamrock environment with the flag `--pylib`
+- Create a Shamrock environment
 - In the environment build directory run ``
 
 For exemple the following should work:
 ```bash
 python -m venv .shamrock-venv
 source .shamrock-venv/bin/activate
-./env/new-env --machine debian-generic.acpp --builddir build_pylib --pylib -- --backend omp
+./env/new-env --machine debian-generic.acpp --builddir build_pylib -- --backend omp
 cd build_pylib
 pip install --verbose -e .
 ```

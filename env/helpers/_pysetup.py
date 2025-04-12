@@ -54,6 +54,7 @@ setup(
     description="SHAMROCK Code for astrophysics",
     long_description="",
     ext_modules=[ShamEnvExtension("shamrock")],
+    data_files=[("bin", ["shamrock"])],
     cmdclass={"build_ext": ShamEnvBuild},
     zip_safe=False,
     extras_require={},

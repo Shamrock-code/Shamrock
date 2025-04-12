@@ -18,12 +18,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
     buildtype = arg.buildtype
-    pylib = arg.pylib
     lib_mode = arg.lib_mode
-
-    if pylib:
-        print("this env does not support --pylib")
-        raise ""
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
@@ -68,5 +63,4 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     envgen.gen_env_file("env_built_intel-llvm.sh")
 
-    if pylib:
-        envgen.copy_env_file("_pysetup.py", "setup.py")
+    envgen.copy_file(shamrockdir + "/env/helpers/_pysetup.py", "setup.py")

@@ -63,4 +63,4 @@ class EnvGen:
     def copy_env_file(self, source_file, dest_file):
 
         source_path = os.path.join(self.machinefolder, source_file)
-        copy_file(source_path, dest_file)
+        self.copy_file(source_path, dest_file)

@@ -73,10 +73,11 @@ jobs:
       - name: Setup env
         run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
 
+      # -e was removed as shamrock executable is not installed otherwise
       - name: Pip install Shamrock
         run : |
           cd build
-          pip install --verbose -e .
+          pip install --verbose .
 
       - name: Try shamrock startup
         run: |

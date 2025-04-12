@@ -14,10 +14,12 @@ python -m venv .shamrock-venv
 source .shamrock-venv/bin/activate
 ./env/new-env --machine debian-generic.acpp --builddir build_pylib -- --backend omp
 cd build_pylib
-pip install --verbose -e .
+pip install --verbose .
 ```
 
-This create an editable library meaning that you change a source file and just rerun `pip install --verbose -e .` in the build directory to update the installation.
+This create an editable library meaning that you change a source file and just rerun `pip install --verbose .` in the build directory to update the installation.
+
+Note that the shamrock executable will only be installed in the normal pip mode. If `-e` is used on pip install to use the editable mode the shamrock executable will not be installed.
 
 ## Jupyter notebook
 

@@ -1,4 +1,4 @@
-# This file must be copied to the build directory in order for `pip install -e .` to work
+# This file must be copied to the build directory in order for `pip install .` to work
 
 import os
 import re
@@ -48,9 +48,9 @@ class ShamEnvBuild(build_ext):
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
     name="shamrock",
-    version="0.0.0.0.0",
+    version="2025.03.1",
     author="Timothée David--Cléris",
-    author_email="timothee.david--cleris@ens-lyon.fr",
+    author_email="tim.shamrock@proton.me",
     description="SHAMROCK Code for astrophysics",
     long_description="",
     ext_modules=[ShamEnvExtension("shamrock")],

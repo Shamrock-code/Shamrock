@@ -45,3 +45,4 @@ def setup(arg: SetupArg, envgen: EnvGen):
     ]
 
     envgen.gen_env_file("env_built_intel-llvm.sh")
+    envgen.copy_file(shamrockdir + "/env/helpers/_pysetup.py", "setup.py")

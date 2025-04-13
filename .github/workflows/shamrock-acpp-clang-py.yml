@@ -82,15 +82,14 @@ jobs:
 
       - name: Init py venv
         run :  |
-          cd build
           python3 -m venv .pyvenv
 
       # -e was removed as shamrock executable is not installed otherwise
       - name: Pip install Shamrock
         shell: bash # In docker container github action default to sh
         run : |
-          cd build
           source .pyvenv/bin/activate
+          cd build
           pip install --verbose .
 
       - name: Try shamrock startup
@@ -112,15 +111,15 @@ jobs:
       - name: Pip install package for doc
         shell: bash # In docker container github action default to sh
         run : |
-          cd build
           source .pyvenv/bin/activate
+          cd build
           pip install matplotlib numpy scipy
 
       - name: Build sphinx documentation
         shell: bash # In docker container github action default to sh
         run: |
-          cd build
           source .pyvenv/bin/activate
+          cd build
           cd ../doc/sphinx
           bash gen_sphinx_doc.sh #generate the doc in doc/sphinx/build/html
 

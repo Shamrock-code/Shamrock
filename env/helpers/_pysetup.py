@@ -40,9 +40,15 @@ class ShamEnvBuild(build_ext):
                     activate_build_dir = line.split("=")[1].strip()
                     break
 
-        print(f"### {activate_build_dir=}")
         if activate_build_dir is None:
             raise Exception("BUILD_DIR not found in local env")
+
+        cwd = os.getcwd()
+        cwd_is_build = cwd == activate_build_dir
+
+        print(f"### {cwd=}")
+        print(f"### {activate_build_dir=}")
+        print(f"### {cwd_is_build=}")
 
         print("-- Activating env")
         subprocess.run(
@@ -80,10 +86,13 @@ class ShamEnvBuild(build_ext):
 
         print("-- Copy lib&exe to output dir")
         subprocess.run(["bash", "-c", f"ls {activate_build_dir}"], check=True)
-        subprocess.run(
-            ["bash", "-c", f" cp -v {activate_build_dir}/*.so {activate_build_dir}/shamrock ."],
-            check=True,
-        )
+
+        if not cwd_is_build:
+            subprocess.run(
+                ["bash", "-c", f" cp -v {activate_build_dir}/*.so {activate_build_dir}/shamrock ."],
+                check=True,
+            )
+
         subprocess.run(["bash", "-c", f"ls {activate_build_dir}"], check=True)
         subprocess.run(["bash", "-c", f"cp -v {activate_build_dir}/*.so {extdir}"], check=True)
 

@@ -75,22 +75,31 @@ jobs:
 
 
       - name: Setup env
-        run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
+        run : |
+          ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
+
+      - name: Init py venv
+        run :  |
+          cd build
+          python3 -m venv .pyvenv
 
       # -e was removed as shamrock executable is not installed otherwise
       - name: Pip install Shamrock
         run : |
           cd build
+          source .pyvenv/bin/activate
           pip install --verbose .
 
       - name: Try shamrock startup
         run: |
+          source .pyvenv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init('0:0')"
 
       - name: Try shamrock startup (executable)
         run: |
+          source .pyvenv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           shamrock --smi --sycl-cfg 0:0 --loglevel 125
@@ -98,11 +107,14 @@ jobs:
       - name: Pip install package for doc
         run : |
           cd build
+          source .pyvenv/bin/activate
           pip install matplotlib numpy scipy
 
       - name: Build sphinx documentation
         run: |
-          cd doc/sphinx
+          cd build
+          source .pyvenv/bin/activate
+          cd ../doc/sphinx
           bash gen_sphinx_doc.sh #generate the doc in doc/sphinx/build/html
 
       - name: Upload doc artifact

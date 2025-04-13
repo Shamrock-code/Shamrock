@@ -85,12 +85,14 @@ jobs:
 
       # -e was removed as shamrock executable is not installed otherwise
       - name: Pip install Shamrock
+        shell: bash # In docker container github action default to sh
         run : |
           cd build
           source .pyvenv/bin/activate
           pip install --verbose .
 
       - name: Try shamrock startup
+        shell: bash # In docker container github action default to sh
         run: |
           source .pyvenv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
@@ -98,6 +100,7 @@ jobs:
           python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init('0:0')"
 
       - name: Try shamrock startup (executable)
+        shell: bash # In docker container github action default to sh
         run: |
           source .pyvenv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
@@ -105,12 +108,14 @@ jobs:
           shamrock --smi --sycl-cfg 0:0 --loglevel 125
 
       - name: Pip install package for doc
+        shell: bash # In docker container github action default to sh
         run : |
           cd build
           source .pyvenv/bin/activate
           pip install matplotlib numpy scipy
 
       - name: Build sphinx documentation
+        shell: bash # In docker container github action default to sh
         run: |
           cd build
           source .pyvenv/bin/activate

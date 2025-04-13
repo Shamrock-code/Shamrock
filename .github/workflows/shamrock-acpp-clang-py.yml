@@ -11,23 +11,27 @@ jobs:
 
 
   shamrock_acpp:
-    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} (pylib)
+    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} ${{matrix.label}} (pylib)
     runs-on: ubuntu-latest
 
     container:
       image: ${{ matrix.container }}
 
-
     strategy:
       matrix:
         include:
           - clang: 15
-            cuda: 11.0.2
-            rocm: 5.4.3
             backend: omp
             arch: none
             runtest: yes
+            label: "ubuntu 20"
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+          - clang: 18
+            backend: omp
+            arch: none
+            runtest: yes
+            label: "ubuntu latest"
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntulatest
 
     timeout-minutes: 60
     steps:

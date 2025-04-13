@@ -28,20 +28,64 @@ class ShamEnvBuild(build_ext):
 
         cmake_lib_out = f"{extdir}{os.sep}"
 
-        print(ext_fullpath, extdir, cmake_lib_out)
+        print("-- Installing shamrock lib")
+        print(f"### {ext_fullpath=}\n### {extdir=}\n### {cmake_lib_out=}")
 
+        print("-- Modify builddir in local env")
+
+        activate_build_dir = None
+        with open(Path.cwd() / "activate", "r") as f:
+            for line in f:
+                if line.startswith("export BUILD_DIR="):
+                    activate_build_dir = line.split("=")[1].strip()
+                    break
+
+        print(f"### {activate_build_dir=}")
+        if activate_build_dir is None:
+            raise Exception("BUILD_DIR not found in local env")
+
+        print("-- Activating env")
         subprocess.run(
             [
                 "bash",
                 "-c",
-                "source ./activate && shamconfigure && shammake shamrock shamrock_pylib",
+                "source ./activate",
             ],
             check=True,
         )
 
+        print("-- Configure")
+        subprocess.run(
+            [
+                "bash",
+                "-c",
+                "source ./activate && shamconfigure",
+            ],
+            check=True,
+        )
+
+        print("-- Compile")
+        subprocess.run(
+            [
+                "bash",
+                "-c",
+                "source ./activate && shammake shamrock shamrock_pylib",
+            ],
+            check=True,
+        )
+
+        print("-- mkdir output dir")
+        print(f" -> mkdir -p {extdir}")
         subprocess.run(["bash", "-c", f"mkdir -p {extdir}"], check=True)
 
-        subprocess.run(["bash", "-c", f"cp -v *.so {extdir}"], check=True)
+        print("-- Copy lib&exe to output dir")
+        subprocess.run(["bash", "-c", f"ls {activate_build_dir}"], check=True)
+        subprocess.run(
+            ["bash", "-c", f" cp -v {activate_build_dir}/*.so {activate_build_dir}/shamrock ."],
+            check=True,
+        )
+        subprocess.run(["bash", "-c", f"ls {activate_build_dir}"], check=True)
+        subprocess.run(["bash", "-c", f"cp -v {activate_build_dir}/*.so {extdir}"], check=True)
 
 
 # The information here can also be placed in setup.cfg - better separation of

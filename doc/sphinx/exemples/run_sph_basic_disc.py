@@ -272,3 +272,45 @@ plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
 plt.xlabel("x")
 plt.ylabel("z")
 plt.show()
+
+
+# %%
+# Plot vertical profiles at r=1
+import numpy as np
+
+dat = ctx.collect_data()
+
+z = []
+h = []
+vz = []
+az = []
+
+delta_r = 0.01
+
+for i in range(len(dat["xyz"])):
+    r = (dat["xyz"][i][0] ** 2 + dat["xyz"][i][1] ** 2) ** 0.5
+    if r < 1.0 + delta_r and r > 1.0 - delta_r:
+        z.append(dat["xyz"][i][2])
+        h.append(dat["hpart"][i])
+        vz.append(dat["vxyz"][i][2])
+        az.append(dat["axyz"][i][2])
+
+rho = pmass * (model.get_hfact() / np.array(h)) ** 3
+
+fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True)
+
+axs[0].scatter(z, rho, label="rho")
+axs[0].set_ylabel("rho")
+axs[0].legend()
+
+axs[1].scatter(z, vz, label="vz")
+axs[1].set_ylabel("vz")
+axs[1].legend()
+
+axs[2].scatter(z, az, label="az")
+axs[2].set_ylabel("az")
+axs[2].set_xlabel("z")
+axs[2].legend()
+
+plt.tight_layout()
+plt.show()

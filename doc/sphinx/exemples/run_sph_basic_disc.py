@@ -5,6 +5,8 @@ Basic disc simulation
 This simple example shows how to run a basic disc simulation in SPH
 """
 
+# sphinx_gallery_multi_image = "single"
+
 import shamrock
 
 # If we use the shamrock executable to run this script instead of the python interpreter,
@@ -41,7 +43,7 @@ center_racc = 0.1
 disc_mass = 0.01  # sol mass
 rout = 10  # au
 rin = 1  # au
-H_r_in = 0.05
+H_r_0 = 0.05
 q = 0.5
 p = 3.0 / 2.0
 r0 = 1
@@ -58,8 +60,8 @@ C_force = 0.25
 
 # Disc profiles
 def sigma_profile(r):
-    sigma_0 = 1
-    return sigma_0 * (r / rin) ** (-p)
+    sigma_0 = 1  # We do not care as it will be renormalized
+    return sigma_0 * (r / r0) ** (-p)
 
 
 def kep_profile(r):
@@ -71,8 +73,8 @@ def omega_k(r):
 
 
 def cs_profile(r):
-    cs_in = (H_r_in * rin) * omega_k(rin)
-    return ((r / rin) ** (-q)) * cs_in
+    cs_in = (H_r_0 * r0) * omega_k(r0)
+    return ((r / r0) ** (-q)) * cs_in
 
 
 # %%
@@ -83,7 +85,7 @@ pmass = disc_mass / Npart
 bmin = (-rout * 2, -rout * 2, -rout * 2)
 bmax = (rout * 2, rout * 2, rout * 2)
 
-cs0 = cs_profile(rin)
+cs0 = cs_profile(r0)
 
 
 def rot_profile(r):
@@ -280,37 +282,45 @@ import numpy as np
 
 dat = ctx.collect_data()
 
-z = []
-h = []
-vz = []
-az = []
+for rcenter in [1.0, 2.0, 3.0]:
 
-delta_r = 0.01
+    z = []
+    h = []
+    vz = []
+    az = []
 
-for i in range(len(dat["xyz"])):
-    r = (dat["xyz"][i][0] ** 2 + dat["xyz"][i][1] ** 2) ** 0.5
-    if r < 1.0 + delta_r and r > 1.0 - delta_r:
-        z.append(dat["xyz"][i][2])
-        h.append(dat["hpart"][i])
-        vz.append(dat["vxyz"][i][2])
-        az.append(dat["axyz"][i][2])
+    delta_r = 0.01
 
-rho = pmass * (model.get_hfact() / np.array(h)) ** 3
+    for i in range(len(dat["xyz"])):
+        r = (dat["xyz"][i][0] ** 2 + dat["xyz"][i][1] ** 2) ** 0.5
+        if r < rcenter + delta_r and r > rcenter - delta_r:
+            z.append(dat["xyz"][i][2])
+            h.append(dat["hpart"][i])
+            vz.append(dat["vxyz"][i][2])
+            az.append(dat["axyz"][i][2])
 
-fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True)
+    rho = pmass * (model.get_hfact() / np.array(h)) ** 3
 
-axs[0].scatter(z, rho, label="rho")
-axs[0].set_ylabel("rho")
-axs[0].legend()
+    fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True)
 
-axs[1].scatter(z, vz, label="vz")
-axs[1].set_ylabel("vz")
-axs[1].legend()
+    axs[0].scatter(z, rho, label="rho")
+    axs[0].set_ylabel("rho")
+    axs[0].legend()
 
-axs[2].scatter(z, az, label="az")
-axs[2].set_ylabel("az")
-axs[2].set_xlabel("z")
-axs[2].legend()
+    axs[1].scatter(z, vz, label="vz")
+    axs[1].set_ylabel("vz")
+    axs[1].legend()
 
-plt.tight_layout()
-plt.show()
+    axs[2].scatter(z, az, label="az")
+
+    az_fit = np.polyfit(z, az, 1)
+    az_fit_fn = np.poly1d(az_fit)
+    print(f"r={rcenter} az_fit={az_fit}")
+    axs[2].plot(z, az_fit_fn(z), c="red", label="linear fit")
+
+    axs[2].set_ylabel("az")
+    axs[2].set_xlabel("z")
+    axs[2].legend()
+
+    plt.tight_layout()
+    plt.show()

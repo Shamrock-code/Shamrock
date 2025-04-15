@@ -36,22 +36,22 @@ G = ucte.G()
 Npart = 1000000
 
 # Sink parameters
-center_mass = 1
+center_mass = 1.0
 center_racc = 0.1
 
 # Disc parameter
 disc_mass = 0.01  # sol mass
-rout = 10  # au
-rin = 1  # au
+rout = 10.0  # au
+rin = 1.0  # au
 H_r_0 = 0.05
 q = 0.5
 p = 3.0 / 2.0
-r0 = 1
+r0 = 1.0
 
 # Viscosity parameter
-alpha_AV = 1e-3 / 0.08
-alpha_u = 1
-beta_AV = 2
+alpha_AV = 1.0e-3 / 0.08
+alpha_u = 1.0
+beta_AV = 2.0
 
 # Integrator parameters
 C_cour = 0.3
@@ -60,7 +60,7 @@ C_force = 0.25
 
 # Disc profiles
 def sigma_profile(r):
-    sigma_0 = 1  # We do not care as it will be renormalized
+    sigma_0 = 1.0  # We do not care as it will be renormalized
     return sigma_0 * (r / r0) ** (-p)
 
 
@@ -95,7 +95,7 @@ def rot_profile(r):
 def H_profile(r):
     H = cs_profile(r) / omega_k(r)
     # fact = (2.**0.5) * 3. # factor taken from phantom, to fasten thermalizing
-    fact = 1
+    fact = 1.0
     return fact * H
 
 

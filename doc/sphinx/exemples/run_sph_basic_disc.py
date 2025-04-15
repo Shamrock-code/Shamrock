@@ -303,11 +303,40 @@ for rcenter in [1.0, 2.0, 3.0]:
 
     fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True)
 
+    from scipy.optimize import curve_fit
+
+    def func(x, a, c):
+        return a * np.exp(-((x / c) ** 2) / 2)
+
+    rho_0 = 0.001
+    p0 = [rho_0, H_profile(rcenter)]  # a, b, c
+    popt, pcov = curve_fit(func, z, rho, p0=p0)
+
+    z_ana = np.linspace(-5.0 * H_profile(rcenter), 5.0 * H_profile(rcenter), 100)
+    rho_fit = func(z_ana, *popt)
+
     axs[0].scatter(z, rho, label="rho")
+
+    axs[0].plot(z_ana, rho_fit, c="black", label="gaussian fit")
+    stddev = abs(popt[1])
+    axs[0].annotate(
+        f"Stddev: {stddev:.5f}",
+        xy=(0.05, 0.95),
+        xycoords="axes fraction",
+        fontsize=10,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round", fc="w"),
+    )
+
     axs[0].set_ylabel("rho")
     axs[0].legend()
 
     axs[1].scatter(z, vz, label="vz")
+
+    vz_fit = np.polyfit(z, vz, 1)
+    vz_fit_fn = np.poly1d(vz_fit)
+    axs[1].plot(z_ana, vz_fit_fn(z_ana), c="red", label="linear fit")
+
     axs[1].set_ylabel("vz")
     axs[1].legend()
 
@@ -316,7 +345,7 @@ for rcenter in [1.0, 2.0, 3.0]:
     az_fit = np.polyfit(z, az, 1)
     az_fit_fn = np.poly1d(az_fit)
     print(f"r={rcenter} az_fit={az_fit}")
-    axs[2].plot(z, az_fit_fn(z), c="red", label="linear fit")
+    axs[2].plot(z_ana, az_fit_fn(z_ana), c="red", label="linear fit")
 
     axs[2].set_ylabel("az")
     axs[2].set_xlabel("z")

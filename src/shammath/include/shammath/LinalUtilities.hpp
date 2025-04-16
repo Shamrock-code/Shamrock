@@ -58,6 +58,12 @@ namespace shammath {
         }
     }
 
+    inline void compute_add_id_scal(Array2D &M, const f64 alpha = 1., const f64 beta = 1.0) {
+        for (int i = 0; i < ndust + 1; i++) {
+            M[i][i] = alpha * M[i][i] + beta;
+        }
+    }
+
     inline void compute_MatVecMut(const Array2D &M, Array1D &x, const size_t size) {
         Array1D tmp;
         copy_between_1d_array(tmp, x, size);

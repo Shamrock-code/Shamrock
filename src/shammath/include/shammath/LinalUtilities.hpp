@@ -112,7 +112,7 @@ namespace shammath {
             for (auto j = 0; j < size; j++) {
                 f64 r = 0;
                 for (auto k = 0; k < size; k++) {
-                    r += M1[i][k] * Res[k][i];
+                    r += M1[i][k] * Res[k][j];
                 }
 
                 M2[i][j] = alpha * beta * r;

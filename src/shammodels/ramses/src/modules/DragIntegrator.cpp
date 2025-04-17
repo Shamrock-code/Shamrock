@@ -428,7 +428,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 shammath::compute_add_id_scal(jacob, 1.0, -mu);
 
                 const i32 K_exp = 9;
-                shammath::mat_expo(K, jacob, ndust + 1);
+                shammath::mat_expo(K_exp, jacob, ndust + 1);
 
                 shammath::compute_scalMat(jacob, sycl::exp(mu), ndust + 1);
                 f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};

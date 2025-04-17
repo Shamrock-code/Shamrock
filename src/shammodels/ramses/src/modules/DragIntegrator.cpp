@@ -420,7 +420,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 mu *= (-dt / (ndust + 1));
 
                 // construct jacobian matrix for current cell
-                std::array<std::array<f64, ndust + 1>, ndust + 1> jacob = {};
+                std::array<std::array<ndust + 1>, ndust + 1> jacob = {0};
                 get_jacobian(id_a, jacob);
 
                 //
@@ -466,25 +466,13 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     for (auto j = 1; j <= ndust; j++) {
 
                         r += jacob[d_id][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
-
-                        // r[0] += jacob[d_id][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][0];
-                        // r[1] += jacob[d_id][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][1];
-                        // r[2] += jacob[d_id][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][2];
                     }
 
                     dd = r - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
 
-                    // dd[0] = r[0] - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][0];
-                    // dd[1] = r[1] - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][1];
-                    // dd[2] = r[2] - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][2];
-
                     inv_rho = 1.0 / (acc_rho_d_new_patch[id_a * ndust + (d_id - 1)]);
 
                     v_bf = inv_rho * acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
-
-                    // v_bf[0] = acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][0] * inv_rho;
-                    // v_bf[1] = acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][1] * inv_rho;
-                    // v_bf[2] = acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][2] * inv_rho;
 
                     v_af = inv_rho * r;
 

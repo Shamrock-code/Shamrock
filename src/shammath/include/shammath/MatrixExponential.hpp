@@ -289,8 +289,8 @@ namespace shammath {
         Array2D B = {0}, I = {0}, Id = {0};
         set_nul_to_identity_2d_array(Id, size);
         for (auto k = r - 1; k >= 0; k--) {
-            // set_nul_2d_array(I,size);
-            // set_nul_2d_array(B,size);
+            set_nul_2d_array(I, size);
+            set_nul_2d_array(B, size);
             set_nul_to_identity_2d_array(I, size);
             i64 cc = 0;
 
@@ -349,41 +349,41 @@ namespace shammath {
         copy_between_2d_array(A, I, size_A);
     }
 
-    // inline
-    // void test_matrix_eponential()
-    // {
-    //     int K=9;
-    //     int size_A = 3;
-    //     Array2D A = {0};
-    //
-    //     // cas test 1
-    //     // set_nul_to_identity_2d_array(A,size_A);
-    //
-    //
-    //      // cas test 2
-    //     // A[0][0] = -3; A[0][1] = 0.5; A[0][2] = 2.5;
-    //     // A[1][0] = 0.5; A[1][1] = -0.5; A[1][2] = 0;
-    //     // A[2][0] = 2.5; A[2][1] = 0; A[2][2] =-2.5;
-    //
-    //     // cas test 3
-    //     A[0][0] = -0.075; A[0][1] = 0.025; A[0][2] = 0.05;
-    //     A[1][0] = 0.025; A[1][1] = -0.025; A[1][2] = 0;
-    //     A[2][0] = 0.05; A[2][1] = 0; A[2][2] =-0.05;
+    inline void test_matrix_eponential() {
+        int K      = 9;
+        int size_A = 3;
+        Array2D A  = {0};
 
-    //     mat_expo(K, A, size_A);
+        // cas test 1
+        // set_nul_to_identity_2d_array(A,size_A);
 
-    //     std::cout << "\n\n " << "=============== exponential of A ================= " << "\n\n";
-    //     for(int i = 0; i <size_A; i++)
-    //     {
-    //         std::cout << "line ( " << i << " )" << "\n\n";
-    //         for(int j = 0; j < size_A; j++)
-    //         {
-    //             std::cout << "colonne ( " <<  i << ", " << j << " )" <<  A[i][j] << "\n\n";
-    //         }
+        // cas test 2
+        // A[0][0] = -3; A[0][1] = 0.5; A[0][2] = 2.5;
+        // A[1][0] = 0.5; A[1][1] = -0.5; A[1][2] = 0;
+        // A[2][0] = 2.5; A[2][1] = 0; A[2][2] =-2.5;
 
-    //         std::cout << "\n\n";
-    //     }
+        // cas test 3
+        A[0][0] = -0.075;
+        A[0][1] = 0.025;
+        A[0][2] = 0.05;
+        A[1][0] = 0.025;
+        A[1][1] = -0.025;
+        A[1][2] = 0;
+        A[2][0] = 0.05;
+        A[2][1] = 0;
+        A[2][2] = -0.05;
 
-    // }
+        mat_expo(K, A, size_A);
+
+        std::cout << "\n\n " << "=============== exponential of A ================= " << "\n\n";
+        for (int i = 0; i < size_A; i++) {
+            std::cout << "line ( " << i << " )" << "\n\n";
+            for (int j = 0; j < size_A; j++) {
+                std::cout << "colonne ( " << i << ", " << j << " )" << A[i][j] << "\n\n";
+            }
+
+            std::cout << "\n\n";
+        }
+    }
 
 } // namespace shammath

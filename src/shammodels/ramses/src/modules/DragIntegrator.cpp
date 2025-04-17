@@ -327,6 +327,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     using namespace shamrock;
     using namespace shammath;
 
+    // /*
+
     shamrock::ComputeField<Tscal> &cfield_rho_new   = storage.rho_next_no_drag.get();
     shamrock::ComputeField<Tvec> &cfield_rhov_new   = storage.rhov_next_no_drag.get();
     shamrock::ComputeField<Tscal> &cfield_rhoe_new  = storage.rhoe_next_no_drag.get();
@@ -346,7 +348,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
     // const u32 ndust = solver_config.dust_config.ndust;
 
-    const u32 ndust = 1;
+    const u32 ndust = 2;
     // alphas are dust collision rates
     auto alphas_vector = solver_config.drag_config.alphas;
     std::vector<f32> inv_dt_alphas(ndust);
@@ -404,7 +406,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 for (auto i = 1; i < ndust + 1; i++) {
                     jacobian[i][0]
                         = acc_alphas[i - 1]
-                          * (acc_rho_new_patch[id] / acc_rho_d_new_patch[id * ndust + (i - 1)]);
+                          * (acc_rho_d_new_patch[id * ndust + (i - 1)] / acc_rho_new_patch[id]);
                     jacobian[0][0] -= jacobian[i][0];
                 }
                 // fill diagonal from (i,j)=(1,1)
@@ -427,7 +429,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
                 //
                 shammath::compute_scalMat(jacob, dt, ndust + 1);
-                shammath::compute_add_id_scal(jacob, 1.0, -mu);
+                shammath::compute_add_id_scal(jacob, ndust + 1, 1.0, -mu);
 
                 const i32 K_exp = 9;
                 shammath::mat_expo(K_exp, jacob, ndust + 1);
@@ -437,14 +439,17 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 r += jacob[0][0] * acc_rhov_new_patch[id_a];
 
                 for (auto j = 1; j < ndust + 1; j++) {
-                    r[0] += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][0];
-                    r[1] += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][1];
-                    r[2] += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][2];
+                    r += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
+                    // r[0] += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][0];
+                    // r[1] += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][1];
+                    // r[2] += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][2];
                 }
 
-                dd[0] = r[0] - acc_rhov_new_patch[id_a][0];
-                dd[1] = r[1] - acc_rhov_new_patch[id_a][1];
-                dd[2] = r[2] - acc_rhov_new_patch[id_a][2];
+                dd = r - acc_rhov_new_patch[id_a];
+
+                // dd[0] = r[0] - acc_rhov_new_patch[id_a][0];
+                // dd[1] = r[1] - acc_rhov_new_patch[id_a][1];
+                // dd[2] = r[2] - acc_rhov_new_patch[id_a][2];
 
                 // f64 Eg = acc_rhoe_new_patch [id_a];
                 f64 dissipation = 0, drag_work = 0;
@@ -505,5 +510,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
         alphas_buf.complete_event_state(e);
     });
+
+    // */
 }
 template class shammodels::basegodunov::modules::DragIntegrator<f64_3, i64_3>;

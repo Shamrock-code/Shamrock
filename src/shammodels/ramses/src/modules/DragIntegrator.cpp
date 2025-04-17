@@ -420,7 +420,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 mu *= (-dt / (ndust + 1));
 
                 // construct jacobian matrix for current cell
-                std::array<std::array<ndust + 1>, ndust + 1> jacob = {0};
+                std::array<std::array<f64, ndust + 1>, ndust + 1> jacob = {};
                 get_jacobian(id_a, jacob);
 
                 //

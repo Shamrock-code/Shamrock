@@ -16,6 +16,7 @@
  */
 
 #include "LinalUtilities.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shammath {
 
@@ -123,7 +124,7 @@ namespace shammath {
         return seq;
     }
 
-    inline auto sequence_nheta_mk() {
+    inline auto sequence_ntheta_mk() {
         std::array<f64, 9> seq = {0};
         seq[0]                 = 8.7334e-6;
         seq[1]                 = 1.6778e-3;
@@ -211,7 +212,7 @@ namespace shammath {
     }
 
     inline void order_scale(
-        const int K,
+        const i64 K,
         std::array<i64, 9> &seq_mk,
         std::array<f64, 9> &seq_theta_mk,
         const Array2D &A,
@@ -226,9 +227,9 @@ namespace shammath {
         f64 norm_A = 0;
         compute_L1_norm(A, size_A, norm_A);
 
-        i64 s_tilde = static_cast<i64>(
-            sycl::ceil(sycl::fmax(0.0f, sycl::log2(norm_A / seq_theta_mk[K - 1]))));
-        s_star = s_tilde;
+        i64 s_tilde = static_cast<i64>(sycl::ceil(sycl::max(
+            static_cast<f64>(0.0), static_cast<f64>(sycl::log2(norm_A / seq_theta_mk[K - 1])))));
+        s_star      = s_tilde;
 
         i64 k     = 2;
         bool cond = false;
@@ -238,32 +239,32 @@ namespace shammath {
             k_star = cond * k + !cond * k_star;
         }
 
-        i64 k_choice = sycl::fmin(K, k); // if we break the preceding loop then use k else K
-        auto ld_7    = [&](real_t s_val) {
+        i64 k_choice = sycl::min(K, k); // if we break the preceding loop then use k else K
+        auto ld_7    = [&](f64 s_val) {
             k_star = k_choice - 1;
-            s_star = sycl::max(0, s_val);
+            s_star = fmax(0, s_val);
             m_star = seq_mk[k_star - 1];
         };
 
-        auto ld_8 = [&](real_t s_val) {
+        auto ld_8 = [&](f64 s_val) {
             k_star = k_choice - 2;
-            s_star = sycl::fmax(1, s_val + 1);
+            s_star = fmax(1, s_val + 1);
             m_star = seq_mk[k_star - 1];
         };
 
-        auto ld_9 = [&](real_t s_val) {
+        auto ld_9 = [&](f64 s_val) {
             k_star = k_choice - 3;
             s_star = sycl::fmax(2, s_val + 2);
             m_star = seq_mk[k_star - 1];
         };
 
-        f64 cmp_1 = norm_A / sycl::pow(2, s_tilde);
+        f64 cmp_1 = norm_A / (1 << s_tilde);
 
         i64 val_2 = ((k_choice >= 8) && (cmp_1 <= 2 * seq_theta_mk[k_choice - 3])) * 2;
         i64 val_3 = ((k_choice >= 9) && (cmp_1 <= 4 * seq_theta_mk[k_choice - 4])) * 3;
         i64 val_1 = ((k_choice >= 7) && (cmp_1 <= seq_theta_mk[k_choice - 2]));
 
-        i64 val = sycl::fmax(val_1, sycl::fmax(val_2, val_3));
+        i64 val = sycl::max(val_1, sycl::max(val_2, val_3));
 
         auto process_val = [&](int val) {
             if (val == 1) {
@@ -312,12 +313,12 @@ namespace shammath {
         compute_MatMatAdd(F, Id, size); // do this with a function that dont need to stock Id
     }
 
-    inline void mat_expo(i64 K, Array2D &, const size_t size_A) {
-        auto seq_mk        = define_sequence_mk();
-        auto seq_qk        = define_sequence_qk();
-        auto seq_rk        = define_sequence_rk();
-        auto seq_theta_mk  = define_sequence_theta_mk();
-        auto seq_ntheta_mk = define_sequence_ntheta_mk();
+    inline void mat_expo(i64 K, Array2D &A, const size_t size_A) {
+        auto seq_mk        = sequence_mk();
+        auto seq_qk        = sequence_qk();
+        auto seq_rk        = sequence_rk();
+        auto seq_theta_mk  = sequence_theta_mk();
+        auto seq_ntheta_mk = sequence_ntheta_mk();
         auto seq_bi        = define_bexp_coef2();
         auto seq_bi_exp    = define_bexp_coef1();
         f64 _u16           = 1.110e-16;
@@ -330,12 +331,13 @@ namespace shammath {
         i64 q = seq_qk[k_star - 1];
 
         // scaling step
-        i64 pw           = sycl::pow(2, s_star);
+        i64 pw = (1 << s_star);
+        // sycl::pow(2, s_star);
         f64 scale_factor = 1.0 / pw;
         compute_scalMat(A, scale_factor, size_A);
 
         // Taylor polynomial evaluation
-        Array2d F = {0};
+        Array2D F = {0};
         modified_taylor_eval(r, q, seq_bi, size_A, A, F);
 
         // squaring step

@@ -17,7 +17,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/EventList.hpp"
-#include "shammath/include/MatrixExponential.hpp"
+#include "shammath/MatrixExponential.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <sys/types.h>
@@ -344,7 +344,9 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     const u32 irho_d    = pdl.get_field_idx<Tscal>("rho_dust");
     const u32 irhovel_d = pdl.get_field_idx<Tvec>("rhovel_dust");
 
-    const u32 ndust = solver_config.dust_config.ndust;
+    // const u32 ndust = solver_config.dust_config.ndust;
+
+    const u32 ndust = 1;
     // alphas are dust collision rates
     auto alphas_vector = solver_config.drag_config.alphas;
     std::vector<f32> inv_dt_alphas(ndust);
@@ -394,20 +396,20 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
         auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
             // sparse jacobian matrix
             auto get_jacobian = [=](u32 id,
-                                    std::array<std::array<f64, ndust + 1> & jacobian, ndust + 1>) {
+                                    std::array<std::array<f64, ndust + 1>, ndust + 1> &jacobian) {
                 // fill first row
                 for (auto j = 1; j < ndust + 1; j++)
-                    jacobian[0][j] = alphas_buf[j - 1];
+                    jacobian[0][j] = acc_alphas[j - 1];
                 // fil first column
                 for (auto i = 1; i < ndust + 1; i++) {
                     jacobian[i][0]
-                        = alphas_buf[i - 1]
+                        = acc_alphas[i - 1]
                           * (acc_rho_new_patch[id] / acc_rho_d_new_patch[id * ndust + (i - 1)]);
                     jacobian[0][0] -= jacobian[i][0];
                 }
                 // fill diagonal from (i,j)=(1,1)
                 for (auto i = 1; i < ndust + 1; i++)
-                    jacobian[i][i] = -alphas_buf[i - 1];
+                    jacobian[i][i] = -acc_alphas[i - 1];
                 // the rest of the buffer is set to zero
             };
 
@@ -415,7 +417,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 f64 mu = 0;
                 for (auto i = 0; i < ndust; i++) {
                     mu += (1 + (acc_rho_d_new_patch[id_a * ndust + i] / acc_rho_new_patch[id_a]))
-                          * alphas_buf[i];
+                          * acc_alphas[i];
                 }
                 mu *= (-dt / (ndust + 1));
 
@@ -484,7 +486,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     acc_rhov_d_old[id_a * ndust + (d_id - 1)] = r;
                 }
 
-                acc_rhoe_new_patch[id_a]
+                acc_rhoe_old[id_a]
                     += (1 - friction_control) * drag_work - friction_control * dissipation;
             });
         });

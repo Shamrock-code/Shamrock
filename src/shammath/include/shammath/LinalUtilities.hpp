@@ -15,11 +15,13 @@
  * @brief
  */
 
-#include <cmath>
+#include "shambase/aliases_float.hpp"
+#include "shambase/aliases_int.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shammath {
 
-    const int Ndust = 2;
+    const int Ndust = 1;
     using Array2D   = std::array<std::array<f64, Ndust + 1>, Ndust + 1>;
     using Array1D   = std::array<f64, Ndust + 1>;
 
@@ -58,8 +60,9 @@ namespace shammath {
         }
     }
 
-    inline void compute_add_id_scal(Array2D &M, const f64 alpha = 1., const f64 beta = 1.0) {
-        for (int i = 0; i < ndust + 1; i++) {
+    inline void
+    compute_add_id_scal(Array2D &M, const size_t size, const f64 alpha = 1., const f64 beta = 1.0) {
+        for (int i = 0; i < size; i++) {
             M[i][i] = alpha * M[i][i] + beta;
         }
     }

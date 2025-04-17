@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include <experimental/mdspan>
 #include <cmath>
 
 namespace shammath {
@@ -119,9 +120,9 @@ namespace shammath {
         for (int i = 0; i < size.i++) {
             f64 sum = 0;
             for (auto j = 0; j < size; j++) {
-                sum += fabs(M[i][j]);
+                sum += sycl::abs(M[i][j]);
             }
-            res = fmax(res, sum);
+            res = sycl::max(res, sum);
         }
     }
 

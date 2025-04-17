@@ -20,3 +20,6 @@
 [submodule "doc/sphinx/source/_static/large-figures"]
 	path = doc/sphinx/source/_static/large-figures
 	url = https://github.com/Shamrock-code/doc-figures.git
+[submodule "external/mdspan"]
+	path = external/mdspan
+	url = git@github.com:kokkos/mdspan.git

@@ -14,6 +14,8 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include <experimental/mdspan>
+#include <memory>
 #include <vector>
 
 TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan, 1) {
@@ -225,9 +227,13 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
             sham::MultiRef{ret},
             sham::MultiRef{span},
             cnt_test / 2,
-            [](u32 i, const T *in_val, auto sp) {
-                sp(i, 0) = in_val[i * 2 + 0];
-                sp(i, 1) = in_val[i * 2 + 1];
+            [=](u32 i, const T *in_val, auto sp) {
+                using nvar_extent = std::extents<u32, std::dynamic_extent, 2>;
+                using nvar_mdspan = std::mdspan<const T, nvar_extent, std::layout_right>;
+                auto span         = nvar_mdspan(in_val, cnt_test / 2);
+
+                sp(i, 0) = span(i, 0);
+                sp(i, 1) = span(i, 1);
             });
 
         REQUIRE_EQUAL_NAMED("dynamic nvar 2| write", test_vals, field.copy_to_stdvec());
@@ -247,9 +253,13 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
             sham::MultiRef{ret},
             sham::MultiRef{span},
             cnt_test / 2,
-            [](u32 i, const T *in_val, auto sp) {
-                sp(i, 0) = in_val[i * 2 + 0];
-                sp(i, 1) = in_val[i * 2 + 1];
+            [=](u32 i, const T *in_val, auto sp) {
+                using nvar_extent = std::extents<u32, std::dynamic_extent, 2>;
+                using nvar_mdspan = std::mdspan<const T, nvar_extent, std::layout_right>;
+                auto span         = nvar_mdspan(in_val, cnt_test / 2);
+
+                sp(i, 0) = span(i, 0);
+                sp(i, 1) = span(i, 1);
             });
 
         REQUIRE_EQUAL_NAMED("static nvar 2| write", test_vals, field.copy_to_stdvec());
@@ -272,9 +282,13 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
             sham::MultiRef{ret},
             sham::MultiRef{span},
             cnt_test / 2,
-            [](u32 i, const T *in_val, auto sp) {
-                sp(i, 0) = in_val[i * 2 + 0];
-                sp(i, 1) = in_val[i * 2 + 1];
+            [=](u32 i, const T *in_val, auto sp) {
+                using nvar_extent = std::extents<u32, std::dynamic_extent, 2>;
+                using nvar_mdspan = std::mdspan<const T, nvar_extent, std::layout_right>;
+                auto span         = nvar_mdspan(in_val, cnt_test / 2);
+
+                sp(i, 0) = span(i, 0);
+                sp(i, 1) = span(i, 1);
             });
 
         std::vector<T> test_vals_with_offset = std::vector<T>(10, 0);

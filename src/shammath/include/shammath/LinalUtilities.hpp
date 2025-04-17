@@ -122,7 +122,7 @@ namespace shammath {
 
     inline void compute_L1_norm(const Array2D &M, const size_t size, f64 &res) {
         res = 0;
-        for (int i = 0; i < size.i++) {
+        for (int i = 0; i < size; i++) {
             f64 sum = 0;
             for (auto j = 0; j < size; j++) {
                 sum += fabs(M[i][j]);

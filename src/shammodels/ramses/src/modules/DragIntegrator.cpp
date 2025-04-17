@@ -413,13 +413,10 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
             shambase::parralel_for(cgh, cell_count, "add_drag [expo]", [=](u32 id_a) {
                 f64 mu = 0;
-                for (auto i = 0; i < ndust + 1; i++) {
-                    mu += (1
-                           + (acc_rho_new_patch[id_a]
-                              / acc_rho_d_new_patch[id_a * ndust + (i - 1)]))
-                          * alphas_buf[i - 1];
+                for (auto i = 0; i < ndust; i++) {
+                    mu += (1 + (acc_rho_d_new_patch[id_a * ndust + i] / acc_rho_new_patch[id_a]))
+                          * alphas_buf[i];
                 }
-
                 mu *= (-dt / (ndust + 1));
 
                 // construct jacobian matrix for current cell
@@ -435,30 +432,23 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
                 shammath::compute_scalMat(jacob, sycl::exp(mu), ndust + 1);
                 f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};
-                const auto r_old = acc_rhov_new_patch[id_a];
-                r += jacob[0][0] * r_old;
+                r += jacob[0][0] * acc_rhov_new_patch[id_a];
 
-                std::array<f64, ndust> drx_old, dry_old, drz_old;
                 for (auto j = 1; j < ndust + 1; j++) {
                     r[0] += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][0];
-                    drx_old[j - 1] = acc_rhov_d_new_patch[id_a * ndust + (j - 1)][0];
-
                     r[1] += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][1];
-                    dry_old[j - 1] = acc_rhov_d_new_patch[id_a * ndust + (j - 1)][1];
-
                     r[2] += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][2];
-                    drz_old[j - 1] = acc_rhov_d_new_patch[id_a * ndust + (j - 1)][2];
                 }
 
-                dd[0] = r[0] - r_old[0];
-                dd[1] = r[1] - r_old[1];
-                dd[2] = r[2] - r_old[2];
+                dd[0] = r[0] - acc_rhov_new_patch[id_a][0];
+                dd[1] = r[1] - acc_rhov_new_patch[id_a][1];
+                dd[2] = r[2] - acc_rhov_new_patch[id_a][2];
 
                 // f64 Eg = acc_rhoe_new_patch [id_a];
                 f64 dissipation = 0, drag_work = 0;
                 f64 inv_rho = 1.0 / (acc_rho_new_patch[id_a]);
 
-                f64_3 v_bf = inv_rho * r_old;
+                f64_3 v_bf = inv_rho * acc_rhov_new_patch[id_a];
                 f64_3 v_af = inv_rho * r;
 
                 drag_work = 0.5
@@ -471,22 +461,30 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 //
                 for (auto d_id = 1; d_id <= ndust; d_id++) {
                     r *= 0;
-                    r += jacob[d_id][0] * r_old;
+                    r += jacob[d_id][0] * acc_rhov_new_patch[id_a];
 
                     for (auto j = 1; j <= ndust; j++) {
-                        r[0] += jacob[d_id][j] * drx_old[j - 1];
-                        r[1] += jacob[d_id][j] * dry_old[j - 1];
-                        r[2] += jacob[d_id][j] * drz_old[j - 1];
+
+                        r += jacob[d_id][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
+
+                        // r[0] += jacob[d_id][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][0];
+                        // r[1] += jacob[d_id][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][1];
+                        // r[2] += jacob[d_id][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)][2];
                     }
 
-                    dd[0] = r[0] - drx_old[d_id - 1];
-                    dd[1] = r[1] - dry_old[d_id - 1];
-                    dd[2] = r[2] - drz_old[d_id - 1];
+                    dd = r - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
+
+                    // dd[0] = r[0] - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][0];
+                    // dd[1] = r[1] - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][1];
+                    // dd[2] = r[2] - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][2];
 
                     inv_rho = 1.0 / (acc_rho_d_new_patch[id_a * ndust + (d_id - 1)]);
-                    v_bf[0] = drx_old[d_id - 1] * inv_rho;
-                    v_bf[1] = dry_old[d_id - 1] * inv_rho;
-                    v_bf[2] = drz_old[d_id - 1] * inv_rho;
+
+                    v_bf = inv_rho * acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
+
+                    // v_bf[0] = acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][0] * inv_rho;
+                    // v_bf[1] = acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][1] * inv_rho;
+                    // v_bf[2] = acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)][2] * inv_rho;
 
                     v_af = inv_rho * r;
 
@@ -502,6 +500,20 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     += (1 - friction_control) * drag_work - friction_control * dissipation;
             });
         });
+
+        rho_new_patch.complete_event_state(e);
+        rhov_new_patch.complete_event_state(e);
+        rhoe_new_patch.complete_event_state(e);
+        rho_d_new_patch.complete_event_state(e);
+        rhov_d_new_patch.complete_event_state(e);
+
+        rho_old.complete_event_state(e);
+        rhov_old.complete_event_state(e);
+        rhoe_old.complete_event_state(e);
+        rho_d_old.complete_event_state(e);
+        rhov_d_old.complete_event_state(e);
+
+        alphas_buf.complete_event_state(e);
     });
 }
 template class shammodels::basegodunov::modules::DragIntegrator<f64_3, i64_3>;

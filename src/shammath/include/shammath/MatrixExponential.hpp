@@ -298,14 +298,18 @@ namespace shammath {
                 cc = q * k + j;
                 compute_MatMatAdd(B, I, size, 1.0, bi_seq[cc]);
             }
-
             i64 cond = (k >= 1);
             compute_MatMatAdd(F, B, size);
-            compute_MatMatAdd(I, Id, size, cond, (1 - cond));
+            compute_MatMatAdd(
+                I,
+                Id,
+                size,
+                cond,
+                (1 - cond)); // do this with a function that dont need to stock Id
             compute_MatMatMut(I, F, size);
         }
 
-        compute_MatMatAdd(F, Id, size);
+        compute_MatMatAdd(F, Id, size); // do this with a function that dont need to stock Id
     }
 
     inline void mat_expo(i64 K, Array2D &, const size_t size_A) {
@@ -338,7 +342,7 @@ namespace shammath {
         Array2D I = {0};
         set_nul_to_identity_2d_array(I, size_A);
         for (int j = 1; j <= pw; j++) {
-            ompute_MatMatMut(F, I, size_A);
+            compute_MatMatMut(F, I, size_A);
         }
         copy_between_2d_array(A, I, size_A);
     }

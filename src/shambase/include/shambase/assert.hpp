@@ -16,8 +16,8 @@
  *
  */
 
-#define ASSERT_MODE_CASSERT 1
-#define ASSERT_MODE_RUNTIME_ERROR 2
+#define ASSERT_MODE_CASSERT 1       ///< Use C assert for shamrock assertion
+#define ASSERT_MODE_RUNTIME_ERROR 2 ///< Use C++ exception for shamrock assertion
 
 #ifdef SHAM_ASSERT_IS
     #if SHAM_ASSERT_IS == ASSERT_MODE_RUNTIME_ERROR
@@ -60,4 +60,5 @@
 
 #endif
 
+/// Shorthand for SHAM_ASSERT_NAMED without a message
 #define SHAM_ASSERT(x) SHAM_ASSERT_NAMED(#x, x)

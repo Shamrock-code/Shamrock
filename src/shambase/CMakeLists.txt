@@ -36,8 +36,13 @@ target_include_directories(shambase PUBLIC
     "$<INSTALL_INTERFACE:include>")
 
 # Assertion handling
+
+if(NOT DEFINED SHAM_ASSERT_MODE_DEFAULT)
+    set(SHAM_ASSERT_MODE_DEFAULT NONE)
+endif()
+
 set(ValidSHAM_ASSERT_MODE "NONE" "CASSERT" "RUNTIME_ERROR")
-set(SHAM_ASSERT_MODE "NONE" CACHE STRING "Shamrock mode to handle asserts")
+set(SHAM_ASSERT_MODE ${SHAM_ASSERT_MODE_DEFAULT} CACHE STRING "Shamrock mode to handle asserts")
 set_property(CACHE SHAM_ASSERT_MODE PROPERTY STRINGS ${ValidSHAM_ASSERT_MODE})
 if(NOT "${SHAM_ASSERT_MODE}" IN_LIST ValidSHAM_ASSERT_MODE)
     message(FATAL_ERROR

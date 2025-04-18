@@ -34,20 +34,20 @@
 /**
  * @brief Macro to assert that a condition is true
  */
-#define SHAM_ASSERT(message, condition)                                                            \
+#define SHAM_ASSERT_NAMED(message, condition)                                                            \
     do {                                                                                           \
     } while (false)
 
 #ifdef SHAM_ASSERT_IS
-    #undef SHAM_ASSERT // we are about to redefine it
+    #undef SHAM_ASSERT_NAMED // we are about to redefine it
 
     #if SHAM_ASSERT_IS == ASSERT_MODE_CASSERT
-        #define SHAM_ASSERT(message, condition)                                                    \
+        #define SHAM_ASSERT_NAMED(message, condition)                                                    \
             do {                                                                                   \
                 assert(((void) message, condition));                                               \
             } while (false)
     #elif SHAM_ASSERT_IS == ASSERT_MODE_RUNTIME_ERROR
-        #define SHAM_ASSERT(message, condition)                                                    \
+        #define SHAM_ASSERT_NAMED(message, condition)                                                    \
             do {                                                                                   \
                 if (!(condition)) {                                                                \
                     shambase::throw_with_loc<std::runtime_error>(message);                         \
@@ -59,3 +59,5 @@
     #endif
 
 #endif
+
+#define SHAM_ASSERT(x) SHAM_ASSERT_NAMED(#x, x)

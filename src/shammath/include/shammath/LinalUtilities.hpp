@@ -14,9 +14,9 @@
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  */
-
+#include "shambackends/sycl.hpp"
 #include <experimental/mdspan>
-#include <cmath>
+#include <array>
 
 namespace shammath {
 

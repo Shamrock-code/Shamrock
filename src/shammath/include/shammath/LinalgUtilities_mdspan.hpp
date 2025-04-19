@@ -285,17 +285,16 @@ namespace shammath {
         class Layout2,
         class Accessor1,
         class Accessor2>
-    inline void mat_scal_id(
+    inline void mat_add_scal_id(
         const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
         const std::mdspan<T, Extents2, Layout2, Accessor2> &output,
-        const U alpha,
         const U beta) {
 
         SHAM_ASSERT(input.extent(0) == output.extent(0));
         SHAM_ASSERT(input.extent(1) == output.extent(1));
 
         for (int i = 0; i < input.extent(0); i++) {
-            output(i, i) = alpha * input(i, i) + beta;
+            output(i, i) = input(i, i) + beta;
         }
     }
 

@@ -123,9 +123,9 @@ TestStart(Unittest, "shammath/Linalg::mat_daxpy", test_mat_daxpy, 1) {
     };
     shammath::mat<f64, 3, 3> ex_res{
         // clang-format off
-         -1.5, -11.5, -7.5,
+         -1.5, -10.5, -7.5,
          0.5, 0.5, -6,
-        1.5,  -4.7,  -0.125
+        1.5,  -4.7,  -0.375
         // clang-format on
     };
 
@@ -150,7 +150,7 @@ TestStart(Unittest, "shammath/Linalg::vec_daxpy", test_vec_daxpy, 1) {
     f32 a = -0.5, b = 1.;
     shammath::vect<f64, 5> ex_res{
         // clang-format off
-         0.77, -0.375, -4.4
+         -0.17, -0.375, -3.6
         // clang-format on
     };
     shammath::vec_daxpy(v1.get_mdspan(), v2.get_mdspan(), a, b);
@@ -176,9 +176,9 @@ TestStart(Unittest, "shammath/Linalg::mat_gemm", test_mat_gemm, 1) {
 
     shammath::mat<f64, 3, 3> ex_res{
         // clang-format off
-         0,-40,-22.5,
-         -6,-36,-30,
-         -9.5,-1.5,-20.125
+         0,-40,-14.5,
+         -6,-36,-22,
+         -9.5,-1.5,-28.125
         // clang-format on
     };
     shammath::mat<f64, 3, 3> res;
@@ -226,16 +226,16 @@ TestStart(Unittest, "shammath/Linalg::mat_scal_id", test_mat_scal_id, 1) {
         -1,  3,  0.25
         // clang-format on
     };
-    i32 a = -1, b = 2;
+    i32 b = 2;
     shammath::mat<f64, 3, 3> ex_res{
         // clang-format off
-         1, -2, -5,
-         -1, -1, -4,
-        1,  -3,  1.75
+         3, 2, 5,
+         1, 5, 4,
+        -1,  3,  2.25
         // clang-format on
     };
     shammath::mat<f64, 3, 3> res;
-    shammath::mat_scal_id(M1.get_mdspan(), res.get_mdspan(), a, b);
+    shammath::mat_add_scal_id(M1.get_mdspan(), res.get_mdspan(), b);
     REQUIRE(res == ex_res);
 }
 
@@ -264,7 +264,7 @@ TestStart(Unittest, "shammath/Linalg::mat_L1_norm", test_mat_L1_norm, 1) {
         7, 8, 9
         // clang-format on
     };
-    f64 ex_res = 18;
+    f64 ex_res = 24;
     f64 res;
     shammath::mat_L1_norm(M.get_mdspan(), res);
     REQUIRE_EQUAL(ex_res, res);

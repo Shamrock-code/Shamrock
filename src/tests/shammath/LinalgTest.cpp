@@ -150,7 +150,7 @@ TestStart(Unittest, "shammath/Linalg::vec_daxpy", test_vec_daxpy, 1) {
     f32 a = -0.5, b = 1.;
     shammath::vect<f64, 5> ex_res{
         // clang-format off
-         -0.17, -0.375, -3.6
+         -0.67, -0.375, -3.6
         // clang-format on
     };
     shammath::vec_daxpy(v1.get_mdspan(), v2.get_mdspan(), a, b);
@@ -218,7 +218,7 @@ TestStart(Unittest, "shammath/Linalg::mat_scal", test_mat_scal, 1) {
     REQUIRE(res == ex_res);
 }
 
-TestStart(Unittest, "shammath/Linalg::mat_scal_id", test_mat_scal_id, 1) {
+TestStart(Unittest, "shammath/Linalg::mat_add_scal_id", test_mat_scal_id, 1) {
     shammath::mat<f64, 3, 3> M1{
         // clang-format off
          1, 2, 5,

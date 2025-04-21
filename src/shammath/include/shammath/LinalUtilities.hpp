@@ -20,7 +20,7 @@
 
 namespace shammath {
 
-    const int Ndust = 2;
+    const int Ndust = 1;
     using Array2D   = std::array<std::array<f64, Ndust + 1>, Ndust + 1>;
     using Array1D   = std::array<f64, Ndust + 1>;
 

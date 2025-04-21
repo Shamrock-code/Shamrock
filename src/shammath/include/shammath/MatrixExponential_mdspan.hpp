@@ -325,6 +325,7 @@ namespace shammath {
         // mdspan_scalMat<T>(A, scale_factor);
         // Taylor polynomial evaluation
         mdspan_taylor_eval<T>(r, q, seq_bi, size_A, A, F, B, I, Id);
+
         // squaring step
         mat_set_identity<T>(Id);
         mat_set_identity<T>(I);
@@ -334,5 +335,8 @@ namespace shammath {
             mat_prod<T>(F, I, Id);
         }
         mat_copy<T>(Id, A);
+
+        /*
+         */
     }
 } // namespace shammath

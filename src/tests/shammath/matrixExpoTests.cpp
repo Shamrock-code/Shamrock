@@ -7,9 +7,8 @@
 //
 // -------------------------------------------------------//
 
-// #include "shammath/matrix.hpp"
-// #include "shammath/matrix_op.hpp"
-#include "shammath/MatrixExponential_mdspan.hpp"
+#include "shammath/matrix.hpp"
+#include "shammath/matrix_exponential.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 

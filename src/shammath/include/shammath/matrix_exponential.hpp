@@ -10,13 +10,13 @@
 #pragma once
 
 /**
- * @file MatrixExponential_mdspan.hpp
+ * @file matrix_exponential.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  */
-
-#include "LinalgUtilities_mdspan.hpp"
-// #include "matrix_op.hpp"
+#include "shambase/type_traits.hpp"
+#include "matrix_op.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shammath {
 

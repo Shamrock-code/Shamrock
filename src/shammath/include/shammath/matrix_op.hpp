@@ -397,4 +397,156 @@ namespace shammath {
             }
         }
     }
+
+    template<class T, class Extents, class Layout, class Accessor>
+    inline void vec_set_nul(const std::mdspan<T, Extents, Layout, Accessor> &input) {
+        for (auto i = 0; i < input.extent(0); i++)
+            input(i) = 0;
+    }
+
+    template<class T, class Extents, class Layout, class Accessor>
+    inline void vec_copy(
+        const std::mdspan<T, Extents, Layout, Accessor> &input,
+        const std::mdspan<T, Extents, Layout, Accessor> &output) {
+        SHAM_ASSERT(input.extent(0) == output.extent(0));
+
+        for (int i = 0; i < input.extent(0); i++) {
+            output(i) = input(i);
+        }
+    }
+
+    template<
+        class T,
+        class U,
+        class Extents1,
+        class Extents2,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void mat_daxpy(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &output,
+        const U alpha,
+        const U beta) {
+
+        SHAM_ASSERT(input1.extent(0) == output.extent(0));
+        SHAM_ASSERT(input1.extent(1) == output.extent(1));
+
+        for (int i = 0; i < input1.extent(0); i++) {
+            for (int j = 0; j < input1.extent(1); j++) {
+                output(i, j) = alpha * input1(i, j) + beta * output(i, j);
+            }
+        }
+    }
+
+    template<
+        class T,
+        class U,
+        class Extents1,
+        class Extents2,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void vec_daxpy(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &output,
+        const U alpha,
+        const U beta) {
+
+        SHAM_ASSERT(input1.extent(0) == output.extent(0));
+
+        for (int i = 0; i < input1.extent(0); i++) {
+            output(i) = alpha * input1(i) + beta * output(i);
+        }
+    }
+
+    template<
+        class T,
+        class U,
+        class Extents1,
+        class Extents2,
+        class Extents3,
+        class Layout1,
+        class Layout2,
+        class Layout3,
+        class Accessor1,
+        class Accessor2,
+        class Accessor3>
+    inline void mat_gemm(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &input2,
+        const std::mdspan<T, Extents3, Layout3, Accessor3> &output,
+        const U alpha,
+        const U beta) {
+
+        SHAM_ASSERT(input1.extent(0) == output.extent(0));
+        SHAM_ASSERT(input1.extent(1) == input2.extent(0));
+        SHAM_ASSERT(input2.extent(1) == output.extent(1));
+
+        for (int i = 0; i < input1.extent(0); i++) {
+            for (int j = 0; j < input2.extent(1); j++) {
+                T sum = 0;
+                for (int k = 0; k < input1.extent(1); k++) {
+                    sum += input1(i, k) * input2(k, j);
+                }
+                output(i, j) = alpha * beta * sum;
+            }
+        }
+    }
+
+    template<
+        class T,
+        class U,
+        class Extents1,
+        class Extents2,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void mat_add_scal_id(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &output,
+        const U beta) {
+
+        SHAM_ASSERT(input.extent(0) == output.extent(0));
+        SHAM_ASSERT(input.extent(1) == output.extent(1));
+
+        for (int i = 0; i < input.extent(0); i++) {
+            output(i, i) = input(i, i) + beta;
+        }
+    }
+
+    template<
+        class T,
+        class U,
+        class Extents1,
+        class Extents2,
+        class Extents3,
+        class Layout1,
+        class Layout2,
+        class Layout3,
+        class Accessor1,
+        class Accessor2,
+        class Accessor3>
+    inline void mat_gemv(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &M,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &x,
+        const std::mdspan<T, Extents3, Layout3, Accessor3> &y,
+        const U alpha,
+        const U beta) {
+
+        SHAM_ASSERT(M.extent(1) == x.extent(0));
+        SHAM_ASSERT(M.extent(0) == y.extent(0));
+
+        for (int i = 0; i < M.extent(0); i++) {
+            T sum = 0;
+            for (int j = 0; j < M.extent(1); j++) {
+                sum += M(i, j) * x(j);
+            }
+            y(i) = alpha * sum + beta * y(i);
+        }
+    }
+
 } // namespace shammath

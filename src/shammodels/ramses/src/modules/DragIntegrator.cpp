@@ -396,26 +396,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
         auto acc_alphas = alphas_buf.get_read_access(depend_list);
 
         auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
-            // sparse jacobian matrix
-            // auto get_jacobian = [=](u32 id,
-            //                         std::array<std::array<f64, ndust + 1>, ndust + 1> &jacobian)
-            //                         {
-            //     // fill first row
-            //     for (auto j = 1; j < ndust + 1; j++)
-            //         jacobian[0][j] = acc_alphas[j - 1];
-            //     // fil first column
-            //     for (auto i = 1; i < ndust + 1; i++) {
-            //         jacobian[i][0]
-            //             = acc_alphas[i - 1]
-            //               * (acc_rho_d_new_patch[id * ndust + (i - 1)] / acc_rho_new_patch[id]);
-            //         jacobian[0][0] -= jacobian[i][0];
-            //     }
-            //     // fill diagonal from (i,j)=(1,1)
-            //     for (auto i = 1; i < ndust + 1; i++)
-            //         jacobian[i][i] = -acc_alphas[i - 1];
-            //     // the rest of the buffer is set to zero
-            // };
-
             // local/shared memory alloc for each work-item
             const size_t group_size       = 32;
             const size_t mat_size         = ndust + 1;
@@ -435,6 +415,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     if (id_a >= cell_count)
                         return;
 
+                    // sparse jacobian matrix
                     auto get_jacobian
                         = [=](u32 id,
                               std::mdspan<
@@ -499,9 +480,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
                     // post-processing step
                     shammath::mat_scal_in_place<f64, f64>(mdspan_A, sycl::exp(mu));
-
-                    // shammath::mat_expo(K_exp, jacob, ndust + 1);
-                    // shammath::compute_scalMat(jacob, sycl::exp(mu), ndust + 1);
 
                     // use the matrix exponential to for to updates momemtum
                     f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};

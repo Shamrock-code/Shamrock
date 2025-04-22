@@ -15,7 +15,7 @@
  */
 
 #include "shambase/memory.hpp"
-#include "shammath/matrix.hpp"
+#include "shammath/matrix_legacy.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"

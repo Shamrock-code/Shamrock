@@ -16,80 +16,77 @@
  *
  */
 
+#include "shambase/assert.hpp"
 #include "shambackends/sycl.hpp"
+#include "shammath/matrix_op.hpp"
+#include <experimental/mdspan>
 #include <array>
 
 namespace shammath {
 
-    template<class T>
-    inline auto
-    compute_inv_33(std::array<sycl::vec<T, 3>, 3> mat) -> std::array<sycl::vec<T, 3>, 3> {
+    /**
+     * @brief Matrix class based on std::array storage and mdspan
+     * @tparam T the type of the matrix entries
+     * @tparam m the number of rows
+     * @tparam n the number of columns
+     */
+    template<class T, int m, int n>
+    class mat {
+        public:
+        /// The matrix data
+        std::array<T, m * n> data;
 
-        using vec = sycl::vec<T, 3>;
+        /// Get the matrix data as a mdspan
+        inline constexpr auto get_mdspan() {
+            return std::mdspan<T, std::extents<size_t, m, n>>(data.data());
+        }
 
-        T a00 = mat[0].x();
-        T a10 = mat[1].x();
-        T a20 = mat[2].x();
+        /// Access the matrix entry at position (i, j)
+        inline constexpr T &operator()(int i, int j) { return get_mdspan()(i, j); }
 
-        T a01 = mat[0].y();
-        T a11 = mat[1].y();
-        T a21 = mat[2].y();
+        /// Check if this matrix is equal to another one
+        bool operator==(const mat<T, m, n> &other) { return data == other.data; }
+    };
 
-        T a02 = mat[0].z();
-        T a12 = mat[1].z();
-        T a22 = mat[2].z();
-
-        T det
-            = (-a02 * a11 * a20 + a01 * a12 * a20 + a02 * a10 * a21 - a00 * a12 * a21
-               - a01 * a10 * a22 + a00 * a11 * a22);
-
-        return {
-            (vec{-a12 * a21 + a11 * a22, a02 * a21 - a01 * a22, -a02 * a11 + a01 * a12} / det),
-            (vec{a12 * a20 - a10 * a22, -a02 * a20 + a00 * a22, a02 * a10 - a00 * a12} / det),
-            (vec{-a11 * a20 + a10 * a21, a01 * a20 - a00 * a21, -a01 * a10 + a00 * a11} / det)};
+    /// Returns the identity matrix of size n
+    template<class T, int n>
+    inline constexpr mat<T, n, n> mat_identity() {
+        mat<T, n, n> res{};
+        mat_set_identity(res.get_mdspan());
+        return res;
     }
 
-    template<class T>
-    inline auto
-    mat_prod_33(std::array<sycl::vec<T, 3>, 3> mat_a, std::array<sycl::vec<T, 3>, 3> mat_b)
-        -> std::array<sycl::vec<T, 3>, 3> {
+    /**
+     * @brief Vector class based on std::array storage and mdspan
+     * @tparam T the type of the vector entries
+     * @tparam n the number of entries
+     */
+    template<class T, int n>
+    class vec {
+        public:
+        /// The vector data
+        std::array<T, n> data;
 
-        using vec = sycl::vec<T, 3>;
+        /// Get the vector data as a mdspan
+        inline constexpr auto get_mdspan() {
+            return std::mdspan<T, std::extents<size_t, n>>(data.data());
+        }
 
-        T a00 = mat_a[0].x();
-        T a10 = mat_a[1].x();
-        T a20 = mat_a[2].x();
+        /// Get the vector data as a mdspan of a matrix with one column
+        inline constexpr auto get_mdspan_mat_col() {
+            return std::mdspan<T, std::extents<size_t, n, 1>>(data.data());
+        }
 
-        T a01 = mat_a[0].y();
-        T a11 = mat_a[1].y();
-        T a21 = mat_a[2].y();
+        /// Get the vector data as a mdspan of a matrix with one row
+        inline constexpr auto get_mdspan_mat_row() {
+            return std::mdspan<T, std::extents<size_t, 1, n>>(data.data());
+        }
 
-        T a02 = mat_a[0].z();
-        T a12 = mat_a[1].z();
-        T a22 = mat_a[2].z();
+        /// Access the vector entry at position i
+        inline constexpr T &operator[](int i) { return get_mdspan()(i); }
 
-        T b00 = mat_b[0].x();
-        T b10 = mat_b[1].x();
-        T b20 = mat_b[2].x();
-
-        T b01 = mat_b[0].y();
-        T b11 = mat_b[1].y();
-        T b21 = mat_b[2].y();
-
-        T b02 = mat_b[0].z();
-        T b12 = mat_b[1].z();
-        T b22 = mat_b[2].z();
-
-        return {
-            vec{a00 * b00 + a01 * b10 + a02 * b20,
-                a00 * b01 + a01 * b11 + a02 * b21,
-                a00 * b02 + a01 * b12 + a02 * b22},
-            vec{a10 * b00 + a11 * b10 + a12 * b20,
-                a10 * b01 + a11 * b11 + a12 * b21,
-                a10 * b02 + a11 * b12 + a12 * b22},
-            vec{a20 * b00 + a21 * b10 + a22 * b20,
-                a20 * b01 + a21 * b11 + a22 * b21,
-                a20 * b02 + a21 * b12 + a22 * b22}};
-    }
+        /// Check if this vector is equal to another one
+        bool operator==(const vec<T, n> &other) { return data == other.data; }
+    };
 
 } // namespace shammath

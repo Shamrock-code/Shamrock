@@ -27,13 +27,14 @@ TestStart(Unittest, "shammath/matrix_expo::scaling_and_squaring", test_mat_expo,
     shammath::mat_expo<f32, f32>(
         K, A.get_mdspan(), F.get_mdspan(), B.get_mdspan(), I.get_mdspan(), Id.get_mdspan(), size_A);
 
-    std::cout << "\n\n " << "=============== exponential of A ================= " << "\n\n";
-    for (int i = 0; i < size_A; i++) {
-        std::cout << "line ( " << i << " )" << "\n\n";
-        for (int j = 0; j < size_A; j++) {
-            std::cout << "colonne ( " << i << ", " << j << " )" << A.get_mdspan()(i, j) << "\n\n";
-        }
+    // std::cout << "\n\n " << "=============== exponential of A ================= " << "\n\n";
+    // for (int i = 0; i < size_A; i++) {
+    //     std::cout << "line ( " << i << " )" << "\n\n";
+    //     for (int j = 0; j < size_A; j++) {
+    //         std::cout << "colonne ( " << i << ", " << j << " )" << A.get_mdspan()(i, j) <<
+    //         "\n\n";
+    //     }
 
-        std::cout << "\n\n";
-    }
+    //     std::cout << "\n\n";
+    // }
 }

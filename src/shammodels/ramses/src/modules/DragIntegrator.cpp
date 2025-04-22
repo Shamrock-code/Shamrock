@@ -453,6 +453,9 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     u32 loc_id = id.get_local_id();
                     u32 id_a   = id.get_global_id();
 
+                    if (id_a >= cell_count)
+                        return;
+
                     f64 mu = 0;
                     for (auto i = 0; i < ndust; i++) {
                         mu += (1
@@ -482,26 +485,18 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
                     // get local Jacobian matrix
                     get_jacobian(id_a, mdspan_A);
-                    // scal the local jacobian by dt
-
-                    // construct jacobian matrix for current cell
-                    // std::array<std::array<f64, ndust + 1>, ndust + 1> jacob = {0};
-                    // get_jacobian(id_a, jacob);
 
                     // pre-processing step
-                    shammath::mat_scal<f64>(mdspan_A, mdspan_A, dt);
-                    shammath::mat_add_scal_id<f64>(mdspan_A, mdspan_A, -mu);
-
-                    // shammath::compute_scalMat(jacob, dt, ndust + 1);
-                    // shammath::compute_add_id_scal(jacob, ndust + 1, 1.0, -mu);
+                    shammath::mat_set_identity<f64>(mdspan_Id);
+                    shammath::mat_daxpy<f64, f64>(mdspan_Id, mdspan_A, -mu, dt);
 
                     // compute matrix exponential
                     const i32 K_exp = 9;
-                    shammath::mat_expo<f64>(
+                    shammath::mat_expo<f64, f64>(
                         K_exp, mdspan_A, mdspan_F, mdspan_B, mdspan_I, mdspan_Id, ndust + 1);
 
                     // post-processing step
-                    shammath::mat_add_scal_id<f64>(mdspan_A, mdspan_A, sycl::exp(mu));
+                    shammath::mat_scal_in_place<f64, f64>(mdspan_A, sycl::exp(mu));
 
                     // shammath::mat_expo(K_exp, jacob, ndust + 1);
                     // shammath::compute_scalMat(jacob, sycl::exp(mu), ndust + 1);
@@ -510,11 +505,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};
                     r += mdspan_A(0, 0) * acc_rhov_new_patch[id_a];
 
-                    // r += jacob[0][0] * acc_rhov_new_patch[id_a];
-
                     for (auto j = 1; j < ndust + 1; j++) {
                         r += mdspan_A(0, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
-                        // r += jacob[0][j] * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
                     }
 
                     dd = r - acc_rhov_new_patch[id_a];
@@ -538,12 +530,10 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     for (auto d_id = 1; d_id <= ndust; d_id++) {
                         r *= 0;
                         r += mdspan_A(d_id, 0) * acc_rhov_new_patch[id_a];
-                        // r += jacob[d_id][0] * acc_rhov_new_patch[id_a];
 
                         for (auto j = 1; j <= ndust; j++) {
 
                             r += mdspan_A(d_id, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
-                            // r += jacob[d_id][j] * acc_rhov_d_new_patch[id_a *ndust + (j - 1)];
                         }
 
                         dd = r - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];

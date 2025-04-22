@@ -1,4 +1,3 @@
-
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
@@ -17,11 +16,12 @@
  */
 
 #include "LinalgUtilities_mdspan.hpp"
+// #include "matrix_op.hpp"
 
 namespace shammath {
 
     inline auto sequence_mk() {
-        std::array<i32, 9> seq = {0};
+        std::array<i64, 9> seq = {0};
         seq[0]                 = 2;
         seq[1]                 = 4;
         seq[2]                 = 6;
@@ -36,7 +36,7 @@ namespace shammath {
     }
 
     inline auto sequence_qk() {
-        std::array<i32, 9> seq = {0};
+        std::array<i64, 9> seq = {0};
         seq[0]                 = 1;
         seq[1]                 = 2;
         seq[2]                 = 2;
@@ -50,7 +50,7 @@ namespace shammath {
     }
 
     inline auto sequence_rk() {
-        std::array<i32, 9> seq = {0};
+        std::array<i64, 9> seq = {0};
         seq[0]                 = 2;
         seq[1]                 = 2;
         seq[2]                 = 3;
@@ -166,14 +166,14 @@ namespace shammath {
 
     template<class T, class Extents1, class Layout1, class Accessor1>
     inline void mdspan_order_scale(
-        const i32 K,
-        std::array<i32, 9> &seq_mk,
+        const i64 K,
+        std::array<i64, 9> &seq_mk,
         std::array<f64, 9> &seq_theta_mk,
         const std::mdspan<T, Extents1, Layout1, Accessor1> &A,
         const size_t size_A,
-        i32 &k_star,
-        i32 &m_star,
-        i32 &s_star) {
+        i64 &k_star,
+        i64 &m_star,
+        i64 &s_star) {
         m_star = seq_mk[K - 1];
         k_star = K;
         s_star = 0;
@@ -181,17 +181,17 @@ namespace shammath {
         T norm_A = 0;
         mat_L1_norm<T>(A, norm_A);
 
-        i32 s_tilde = static_cast<i32>(sycl::ceil(sycl::max(
+        i64 s_tilde = static_cast<i64>(sycl::ceil(sycl::max(
             static_cast<f64>(0.0), static_cast<f64>(sycl::log2(norm_A / seq_theta_mk[K - 1])))));
         s_star      = s_tilde;
-        i32 k       = 2;
+        i64 k       = 2;
         bool cond   = false;
         for (; k < (K + 1) && !cond; k++) {
             cond   = (norm_A <= seq_theta_mk[k - 1]) && (norm_A <= seq_theta_mk[K - 1]);
             m_star = cond * seq_mk[k - 1] + !cond * m_star;
             k_star = cond * k + !cond * k_star;
         }
-        i32 k_choice = sycl::min(K, k); // if we break the preceding loop then use k else K
+        i64 k_choice = sycl::min(K, k); // if we break the preceding loop then use k else K
         auto ld_7    = [&](f64 s_val) {
             k_star = k_choice - 1;
             s_star = fmax(0, s_val);
@@ -212,11 +212,11 @@ namespace shammath {
 
         f64 cmp_1 = norm_A / (1 << s_tilde);
 
-        i32 val_2 = ((k_choice >= 8) && (cmp_1 <= 2 * seq_theta_mk[k_choice - 3])) * 2;
-        i32 val_3 = ((k_choice >= 9) && (cmp_1 <= 4 * seq_theta_mk[k_choice - 4])) * 3;
-        i32 val_1 = ((k_choice >= 7) && (cmp_1 <= seq_theta_mk[k_choice - 2]));
+        i64 val_2 = ((k_choice >= 8) && (cmp_1 <= 2 * seq_theta_mk[k_choice - 3])) * 2;
+        i64 val_3 = ((k_choice >= 9) && (cmp_1 <= 4 * seq_theta_mk[k_choice - 4])) * 3;
+        i64 val_1 = ((k_choice >= 7) && (cmp_1 <= seq_theta_mk[k_choice - 2]));
 
-        i32 val = sycl::max(val_1, sycl::max(val_2, val_3));
+        i64 val = sycl::max(val_1, sycl::max(val_2, val_3));
 
         auto process_val = [&](int val) {
             if (val == 1) {
@@ -233,6 +233,7 @@ namespace shammath {
 
     template<
         typename T,
+        class U,
         class Extents1,
         class Extents2,
         class Extents3,
@@ -249,8 +250,8 @@ namespace shammath {
         class Accessor4,
         class Accessor5>
     inline void mdspan_taylor_eval(
-        const i32 r,
-        const i32 q,
+        const i64 r,
+        const i64 q,
         std::array<f64, 30> &bi_seq,
         const size_t size,
         const std::mdspan<T, Extents1, Layout1, Accessor1> &A,
@@ -258,32 +259,36 @@ namespace shammath {
         const std::mdspan<T, Extents3, Layout3, Accessor3> B,
         const std::mdspan<T, Extents4, Layout4, Accessor4> I,
         const std::mdspan<T, Extents5, Layout5, Accessor5> Id) {
+        mat_set_nul<T>(F);
 
         for (auto k = r - 1; k >= 0; k--) {
-
-            mat_set_identity<T>(Id);
             mat_set_identity<T>(I);
-            i32 cc = 0;
-            for (auto j = 1; j <= q; j++) {
-                mat_copy<T>(Id, I);
-                mat_prod<T>(A, I, Id);
-                cc = q * k + j;
-                mat_scal<T>(Id, Id, bi_seq[cc]);
-                mat_add<T>(B, Id, B);
-            }
+            mat_set_identity<T>(Id);
+            mat_set_nul<T>(B);
+            i64 cc = 0;
 
-            i32 cond = (k >= 1);
-            mat_add<T>(F, B, F);
-            mat_scal<T>(Id, Id, cond);
-            mat_scal<T>(I, I, 1 - cond);
-            mat_prod<T>(F, Id, I);
-            mat_copy<T>(I, F);
+            for (auto j = 1; j <= q; j++) {
+                mat_copy<T>(I, Id);
+                mat_gemm<T, U>(A, Id, I, 1, 1);
+                cc = q * k + j;
+                mat_daxpy<T, U>(I, B, bi_seq[cc], 1);
+            }
+            mat_set_identity<T>(Id);
+
+            i64 cond = (k >= 1);
+            mat_daxpy<T, U>(B, F, 1, 1);
+            mat_daxpy<T, U>(Id, I, 1 - cond, cond);
+
+            mat_gemm<T, U>(I, F, B, 1, 1);
+            mat_copy<T>(B, F);
         }
-        mat_add_scal_id<T>(F, F, 1.0);
+        mat_set_identity<T>(Id);
+        mat_daxpy<T, U>(Id, F, 1, 1);
     }
 
     template<
         typename T,
+        class U,
         class Extents1,
         class Extents2,
         class Extents3,
@@ -300,7 +305,7 @@ namespace shammath {
         class Accessor4,
         class Accessor5>
     inline void mat_expo(
-        const i32 K,
+        const i64 K,
         const std::mdspan<T, Extents1, Layout1, Accessor1> &A,
         const std::mdspan<T, Extents2, Layout2, Accessor2> &F,
         const std::mdspan<T, Extents3, Layout3, Accessor3> B,
@@ -313,30 +318,27 @@ namespace shammath {
         auto seq_ntheta_mk = sequence_ntheta_mk();
         auto seq_bi        = define_bexp_coef2();
 
-        i32 k_star{0}, m_star{0}, s_star{0};
+        i64 k_star{0}, m_star{0}, s_star{0};
         // computation of k*, s*, m*
         mdspan_order_scale<T>(K, seq_mk, seq_ntheta_mk, A, size_A, k_star, m_star, s_star);
-        i32 r = seq_rk[k_star - 1];
-        i32 q = seq_qk[k_star - 1];
+        i64 r = seq_rk[k_star - 1];
+        i64 q = seq_qk[k_star - 1];
         // scaling step
-        i32 pw           = (1 << s_star);
+        i64 pw           = (1 << s_star);
         f64 scale_factor = 1.0 / pw;
-        mat_scal<T>(A, A, scale_factor);
-        // mdspan_scalMat<T>(A, scale_factor);
+        mat_scal_in_place<T, f64>(A, scale_factor);
+
         // Taylor polynomial evaluation
-        mdspan_taylor_eval<T>(r, q, seq_bi, size_A, A, F, B, I, Id);
+        mdspan_taylor_eval<T, U>(r, q, seq_bi, size_A, A, F, B, I, Id);
 
         // squaring step
         mat_set_identity<T>(Id);
         mat_set_identity<T>(I);
 
         for (auto j = 1; j <= pw; j++) {
-            mat_copy<T>(Id, I);
-            mat_prod<T>(F, I, Id);
+            mat_copy<T>(I, Id);
+            mat_gemm<T, U>(F, Id, I, 1, 1);
         }
-        mat_copy<T>(Id, A);
-
-        /*
-         */
+        mat_copy<T>(I, A);
     }
 } // namespace shammath

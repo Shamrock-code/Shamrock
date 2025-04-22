@@ -276,6 +276,17 @@ namespace shammath {
         }
     }
 
+    template<class T, class U, class Extents, class Layout, class Accessor>
+    inline void
+    mat_scal_in_place(const std::mdspan<T, Extents, Layout, Accessor> &input, const U scal) {
+
+        for (int i = 0; i < input.extent(0); i++) {
+            for (int j = 0; j < input.extent(1); j++) {
+                input(i, j) = scal * input(i, j);
+            }
+        }
+    }
+
     template<
         class T,
         class U,

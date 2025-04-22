@@ -377,4 +377,24 @@ namespace shammath {
         output(2, 2) = (-a01 * a10 + a00 * a11) / det;
     }
 
+    template<class T, class Extents, class Layout, class Accessor>
+    inline void mat_L1_norm(const std::mdspan<T, Extents, Layout, Accessor> &M, T &res) {
+        res = 0;
+        for (auto i = 0; i < M.extent(0); i++) {
+            T sum = 0;
+            for (auto j = 0; j < M.extent(1); j++) {
+                sum += abs(M(i, j));
+            }
+            res = sycl::max(res, sum);
+        }
+    }
+
+    template<class T, class Extents, class Layout, class Accessor>
+    inline void mat_set_nul(const std::mdspan<T, Extents, Layout, Accessor> &input) {
+        for (int i = 0; i < input.extent(0); i++) {
+            for (int j = 0; j < input.extent(1); j++) {
+                input(i, j) = 0;
+            }
+        }
+    }
 } // namespace shammath

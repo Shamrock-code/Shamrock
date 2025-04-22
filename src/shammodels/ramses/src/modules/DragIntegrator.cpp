@@ -416,27 +416,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
             //     // the rest of the buffer is set to zero
             // };
 
-            auto get_jacobian =
-                [=](u32 id,
-                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
-                        &jacobian) {
-                    // fill first row
-                    for (auto j = 1; j < jacobian.extent(1); j++)
-                        jacobian(0, j) = acc_alphas[j - 1];
-                    // fil first column
-                    for (auto i = 1; i < jacobian.extent(0); i++) {
-                        jacobian(i, 0)
-                            = acc_alphas[i - 1]
-                              * (acc_rho_d_new_patch[id * ndust + (i - 1)] / acc_rho_new_patch[id]);
-                        jacobian(0, 0) -= jacobian(i, 0);
-                    }
-                    // fill diagonal from (i,j)=(1,1)
-                    for (auto i = 1; i < jacobian.extent(0); i++)
-                        jacobian(i, i) = -acc_alphas[i - 1];
-                    // the rest of the buffer is set to zero
-                };
-
             // local/shared memory alloc for each work-item
+            const size_t group_size       = 32;
             const size_t mat_size         = ndust + 1;
             const size_t mat_size_squared = mat_size * mat_size;
             const size_t loc_acc_size     = mat_size_squared * shambase::default_gsize_2d;
@@ -448,13 +429,33 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
             logger::debug_sycl_ln("SYCL", shambase::format("parallel_for add_drag [expo]"));
             cgh.parallel_for(
-                sycl::nd_range<1>{cell_count, shambase::default_gsize_2d},
-                [=](sycl::nd_item<1> id) {
+                shambase::make_range(cell_count, group_size), [=](sycl::nd_item<1> id) {
                     u32 loc_id = id.get_local_id();
                     u32 id_a   = id.get_global_id();
-
                     if (id_a >= cell_count)
                         return;
+
+                    auto get_jacobian
+                        = [=](u32 id,
+                              std::mdspan<
+                                  f64,
+                                  std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                                  &jacobian) {
+                              // fill first row
+                              for (auto j = 1; j < jacobian.extent(1); j++)
+                                  jacobian(0, j) = acc_alphas[j - 1];
+                              // fil first column
+                              for (auto i = 1; i < jacobian.extent(0); i++) {
+                                  jacobian(i, 0) = acc_alphas[i - 1]
+                                                   * (acc_rho_d_new_patch[id * ndust + (i - 1)]
+                                                      / acc_rho_new_patch[id]);
+                                  jacobian(0, 0) -= jacobian(i, 0);
+                              }
+                              // fill diagonal from (i,j)=(1,1)
+                              for (auto i = 1; i < jacobian.extent(0); i++)
+                                  jacobian(i, i) = -acc_alphas[i - 1];
+                              // the rest of the buffer is set to zero
+                          };
 
                     f64 mu = 0;
                     for (auto i = 0; i < ndust; i++) {
@@ -484,6 +485,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         mdspan_Id(ptr_loc_Id, mat_size, mat_size);
 
                     // get local Jacobian matrix
+                    mat_set_nul<f64>(mdspan_A);
                     get_jacobian(id_a, mdspan_A);
 
                     // pre-processing step

@@ -248,9 +248,9 @@ TestStart(Unittest, "shammath/matrix::mat_set_identity", test_mat_set_identity, 
 TestStart(Unittest, "shammath/matrix::mat_L1_norm", test_mat_L1_norm, 1) {
     shammath::mat<f32, 3, 3> M{
         // clang-format off
-         1, -2, 3,
-         4, 5, 6,
-        7,  8,  9
+         1, -2,  3,
+         4,  5,  6,
+         7,  8,  9
         // clang-format on
     };
 
@@ -349,16 +349,16 @@ TestStart(Unittest, "shammath/matrix::vec_axpy", test_vec_axpy, 1) {
 TestStart(Unittest, "shammath/matrix::mat_axpy_beta", test_mat_axpy_beta, 1) {
     shammath::mat<f64, 3, 3> M{
         // clang-format off
-         1,  7,  5,
-         5,  3,  4,
+          1,  7,  5,
+          5,  3,  4,
          -1,  3,  0.25
         // clang-format on
     };
 
     shammath::mat<f64, 3, 3> N{
         // clang-format off
-         1,  7,  5,
-         1,  0.5, 4 ,
+          1,  7,    5,
+          1,  0.5,  4 ,
          -1,  3.1,  0.25
         // clang-format on
     };
@@ -366,8 +366,8 @@ TestStart(Unittest, "shammath/matrix::mat_axpy_beta", test_mat_axpy_beta, 1) {
     shammath::mat<f64, 3, 3> ex_res{
         // clang-format off
          -1.5,  -10.5,  -7.5,
-         0.5,  0.5,  -6,
-         1.5,  -4.7,  -0.375
+          0.5,    0.5,  -6,
+          1.5,   -4.7,  -0.375
         // clang-format on
     };
     const f32 b = 0.5, a = -2;
@@ -378,25 +378,25 @@ TestStart(Unittest, "shammath/matrix::mat_axpy_beta", test_mat_axpy_beta, 1) {
 TestStart(Unittest, "shammath/matrix::mat_axpy", test_mat_axpy, 1) {
     shammath::mat<f64, 3, 3> M{
         // clang-format off
-         1,  7,  5,
-         5,  3,  4,
+          1,  7,  5,
+          5,  3,  4,
          -1,  3,  0.25
         // clang-format on
     };
 
     shammath::mat<f64, 3, 3> N{
         // clang-format off
-         1,  7,5,
-         1,0.5,4,
-        -1,3.1,0.25
+         1,  7,   5,
+         1,  0.5, 4,
+        -1,  3.1, 0.25
         // clang-format on
     };
 
     shammath::mat<f64, 3, 3> ex_res{
         // clang-format off
-         -1,  -7,  -5,
-         3,  2,  -4,
-         1,  -3.2,  -0.25
+         -1, -7,   -5,
+          3,  2,   -4,
+          1, -3.2, -0.25
         // clang-format on
     };
     const f32 a = -2;
@@ -408,8 +408,8 @@ TestStart(Unittest, "shammath/matrix::mat_gemm", test_mat_gemm, 1) {
     shammath::mat<f32, 3, 3> A{
         // clang-format off
          1,  2,  3,
-         4,  1,  -1,
-         0,  -1,  0
+         4,  1, -1,
+         0, -1,  0
         // clang-format on
     };
 
@@ -417,23 +417,23 @@ TestStart(Unittest, "shammath/matrix::mat_gemm", test_mat_gemm, 1) {
         // clang-format off
          0,  3,  0,
          2,  1,  1,
-         0,  -1,  0
+         0, -1,  0
         // clang-format on
     };
 
     shammath::mat<f32, 3, 3> C{
         // clang-format off
-         1,  0,  0.5,
-         0.25,  1,  0,
-         0,  0,  1
+         1,    0,  0.5,
+         0.25, 1,  0,
+         0,    0,  1
         // clang-format on
     };
 
     shammath::mat<f32, 3, 3> ex_res{
         // clang-format off
-         3,  2,  1.5,
-         1.75,  13,  1,
-         -2,  -1,  -2
+          3,     2,   1.5,
+          1.75, 13,   1,
+         -2,    -1,  -2
         // clang-format on
     };
     const i32 a = 1, b = -1;
@@ -456,7 +456,7 @@ TestStart(Unittest, "shammath/matrix::mat_plus_equal_scalar_id", test_mat_plus_e
         // clang-format off
          2,  3,  0,
          2,  3,  1,
-         0,  -1,  2
+         0, -1,  2
         // clang-format on
     };
     shammath::mat_plus_equal_scalar_id(A.get_mdspan(), b);
@@ -466,19 +466,19 @@ TestStart(Unittest, "shammath/matrix::mat_plus_equal_scalar_id", test_mat_plus_e
 TestStart(Unittest, "shammath/matrix::mat_gemv", test_mat_gemv, 1) {
     shammath::mat<f32, 3, 3> B{
         // clang-format off
-         1,2,3,
-         4,5,6,
-         7,8,9
+         1, 2, 3,
+         4, 5, 6,
+         7, 8, 9
         // clang-format on
     };
     shammath::vec<f32, 3> x{
         // clang-format off
-         1,-1,1
+         1, -1, 1
         // clang-format on
     };
     shammath::vec<f32, 3> y{
         // clang-format off
-         2,3,1
+         2, 3, 1
         // clang-format on
     };
     f32 a = 2, b = -0.5;

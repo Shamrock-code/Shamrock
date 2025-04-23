@@ -302,7 +302,7 @@ TestStart(Unittest, "shammath/matrix::vec_copy", test_vec_copy, 1) {
     REQUIRE_EQUAL(v_res.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::vec_axpy", test_vec_axpy, 1) {
+TestStart(Unittest, "shammath/matrix::vec_axpy_beta", test_vec_axpy_beta, 1) {
     shammath::vec<f32, 3> v1{
         // clang-format off
          1,  0.25,  8,
@@ -320,11 +320,33 @@ TestStart(Unittest, "shammath/matrix::vec_axpy", test_vec_axpy, 1) {
          1,  -0.5,  -6,
         // clang-format on
     };
-    shammath::vec_axpy(a, v1.get_mdspan(), b, v2.get_mdspan());
+    shammath::vec_axpy_beta(a, v1.get_mdspan(), b, v2.get_mdspan());
     REQUIRE_EQUAL(v2.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_axpy", test_mat_axpy, 1) {
+TestStart(Unittest, "shammath/matrix::vec_axpy", test_vec_axpy, 1) {
+    shammath::vec<f32, 3> v1{
+        // clang-format off
+         1,  0.25,  8,
+        // clang-format on
+    };
+
+    shammath::vec<f32, 3> v2{
+        // clang-format off
+         2,  -0.25,  2,
+        // clang-format on
+    };
+    i32 a = -1;
+    shammath::vec<f32, 3> ex_res{
+        // clang-format off
+         1,  -0.5,  -6,
+        // clang-format on
+    };
+    shammath::vec_axpy(a, v1.get_mdspan(), v2.get_mdspan());
+    REQUIRE_EQUAL(v2.data, ex_res.data);
+}
+
+TestStart(Unittest, "shammath/matrix::mat_axpy_beta", test_mat_axpy_beta, 1) {
     shammath::mat<f64, 3, 3> M{
         // clang-format off
          1,  7,  5,
@@ -349,7 +371,36 @@ TestStart(Unittest, "shammath/matrix::mat_axpy", test_mat_axpy, 1) {
         // clang-format on
     };
     const f32 b = 0.5, a = -2;
-    shammath::mat_axpy(a, N.get_mdspan(), b, M.get_mdspan());
+    shammath::mat_axpy_beta(a, N.get_mdspan(), b, M.get_mdspan());
+    REQUIRE_EQUAL(M.data, ex_res.data);
+}
+
+TestStart(Unittest, "shammath/matrix::mat_axpy", test_mat_axpy, 1) {
+    shammath::mat<f64, 3, 3> M{
+        // clang-format off
+         1,  7,  5,
+         5,  3,  4,
+         -1,  3,  0.25
+        // clang-format on
+    };
+
+    shammath::mat<f64, 3, 3> N{
+        // clang-format off
+         1,  7,5,
+         1,0.5,4,
+        -1,3.1,0.25
+        // clang-format on
+    };
+
+    shammath::mat<f64, 3, 3> ex_res{
+        // clang-format off
+         -1,  -7,  -5,
+         3,  2,  -4,
+         1,  -3.2,  -0.25
+        // clang-format on
+    };
+    const f32 a = -2;
+    shammath::mat_axpy(a, N.get_mdspan(), M.get_mdspan());
     REQUIRE_EQUAL(M.data, ex_res.data);
 }
 

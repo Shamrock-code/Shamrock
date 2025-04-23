@@ -21,5 +21,8 @@ if(SHAMROCK_EXTERNAL_JSON)
     find_package(nlohmann_json 3.11.3 REQUIRED)
 else()
     set(JSON_BuildTests OFF CACHE INTERNAL "")
+
+    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/nlohmann_json 9cca280a)
+
     add_subdirectory(external/nlohmann_json)
 endif()

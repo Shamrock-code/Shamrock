@@ -459,14 +459,14 @@ namespace shammath {
         class Accessor2>
     inline void vec_axpy_beta(
         const U alpha,
-        const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
         const U beta,
         const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
 
-        SHAM_ASSERT(input1.extent(0) == output.extent(0));
+        SHAM_ASSERT(input.extent(0) == output.extent(0));
 
-        for (int i = 0; i < input1.extent(0); i++) {
-            output(i) = alpha * input1(i) + beta * output(i);
+        for (int i = 0; i < input.extent(0); i++) {
+            output(i) = alpha * input(i) + beta * output(i);
         }
     }
 
@@ -475,7 +475,6 @@ namespace shammath {
      *
      * @param alpha a scalar ->
      * @param input a vector ->x
-     * @param beta  a scalar
      * @param output a vector ->y
      */
     template<
@@ -489,10 +488,10 @@ namespace shammath {
         class Accessor2>
     inline void vec_axpy(
         const U alpha,
-        const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
         const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
 
-        vec_axpy_beta(alpha, input1, U{1}, output);
+        vec_axpy_beta(alpha, input, U{1}, output);
     }
 
     /**
@@ -533,7 +532,6 @@ namespace shammath {
      *
      * @param alpha a scalar
      * @param input a matrix -> N
-     * @param beta  a scalar
      * @param output a matrix -> M
      */
     template<
@@ -557,8 +555,8 @@ namespace shammath {
      * @brief This function compute C = alpha*A*B + beta*C with A,B,C are matrices
      *
      * @param alpha a scalar
-     * @param input a matrix -> A
-     * @param input a matrix -> B
+     * @param input1 a matrix -> A
+     * @param input2 a matrix -> B
      * @param beta  a scalar
      * @param output a matrix -> C
      */
@@ -614,6 +612,12 @@ namespace shammath {
     }
 
     /**
+     * @brief This function performs matrix-vector multiplication as y = a*Mx + b*y
+     * @param alpha a scalar ->a
+     * @param M a matrix
+     * @param x vector
+     * @param beta a scalar ->b
+     * @param y a vector
      */
     template<
         class T,

@@ -135,11 +135,10 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-
   build_push_docker:
     name: Build dockerfiles
     needs: [shamrock_linux_dpcpp]
-    uses: ./.github/workflows/build-dockerfiles.yml
+    uses: ./.github/dockerfiles/build-dockerfiles.yml
 
   publish_release:
 

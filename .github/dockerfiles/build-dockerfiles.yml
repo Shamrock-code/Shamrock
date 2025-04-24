@@ -20,7 +20,7 @@ jobs:
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
 
-    uses: ./.github/workflows/build-and-push.yml
+    uses: ./.github/dockerfiles/build-and-push.yml
     with:
       imagename: shamrock-ci
       imagetag:  shamrock

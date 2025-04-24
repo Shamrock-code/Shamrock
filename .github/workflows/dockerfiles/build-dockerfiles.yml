@@ -20,9 +20,9 @@ jobs:
       # with sigstore/fulcio when running outside of PRs.
       id-token: write
 
-    uses: ./.github/dockerfiles/build-and-push.yml
+    uses: ./.github/workflows/dockerfiles/build-and-push.yml
     with:
       imagename: shamrock-ci
       imagetag:  shamrock
-      imagepath: .github/dockerfiles/intel_oneapi
+      imagepath: .github/workflows/dockerfiles/intel_oneapi
       runson: ubuntu-latest

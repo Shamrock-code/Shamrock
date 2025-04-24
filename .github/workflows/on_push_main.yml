@@ -138,7 +138,7 @@ jobs:
   build_push_docker:
     name: Build dockerfiles
     needs: [shamrock_linux_dpcpp]
-    uses: ./.github/dockerfiles/build-dockerfiles.yml
+    uses: ./.github/workflows/dockerfiles/build-dockerfiles.yml
 
   publish_release:
 

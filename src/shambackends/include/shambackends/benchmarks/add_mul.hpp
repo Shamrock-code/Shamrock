@@ -91,7 +91,7 @@ namespace sham::benchmarks {
 
         double milliseconds = t.elasped_sec() * 1e3;
 
-        int flop_per_thread = nrotation * 6;
+        int flop_per_thread = nrotation * 6 * float_count;
         double flop_count   = double(N) * flop_per_thread;
         double flops        = flop_count / (milliseconds / 1e3);
 

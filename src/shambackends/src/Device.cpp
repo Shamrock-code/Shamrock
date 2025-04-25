@@ -54,6 +54,15 @@ namespace sham {
         return Backend::UNKNOWN; // Unknown backend
     }
 
+    DeviceType get_device_type(const sycl::device &dev) {
+        auto DeviceType = dev.get_info<sycl::info::device::device_type>();
+        switch (DeviceType) {
+        case sycl::info::device_type::cpu: return DeviceType::CPU;
+        case sycl::info::device_type::gpu: return DeviceType::GPU;
+        default: return DeviceType::UNKNOWN;
+        }
+    }
+
 #define FETCH_PROP(info_, info_type) info_type info_ = dev.get_info<sycl::info::device::info_>();
 #define FETCH_PROPN(info_, info_type, n) info_type n = dev.get_info<sycl::info::device::info_>();
 
@@ -154,6 +163,7 @@ namespace sham {
         return {
             Vendor::UNKNOWN,         // We cannot determine the vendor
             get_device_backend(dev), // Query the backend based on the platform name
+            get_device_type(dev),
             global_mem_size,
             global_mem_cache_line_size,
             global_mem_cache_size,

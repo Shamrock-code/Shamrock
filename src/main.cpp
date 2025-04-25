@@ -107,18 +107,22 @@ int main(int argc, char *argv[]) {
 
         if (i8(a) != a) {
             logger::err_ln("Cmd OPT", "you must select a loglevel in a 8bit integer range");
+            shambase::throw_with_loc<std::invalid_argument>(
+                "you must select a loglevel in a 8bit integer range");
+        } else {
+            logger::set_loglevel(i8(a));
         }
-
-        logger::set_loglevel(a);
     }
 
     if (opts::has_option("--sycl-cfg")) {
         shamsys::instance::init(argc, argv);
     } else {
-        logger::warn_ln(
-            "Init", "No kernel can be run without a sycl configuration (--sycl-cfg x:x)");
         using namespace shamsys::instance;
         start_mpi(MPIInitInfo{opts::get_argc(), opts::get_argv()});
+        if (shamcomm::world_rank() == 0) {
+            logger::warn_ln(
+                "Init", "No kernel can be run without a sycl configuration (--sycl-cfg x:x)");
+        }
     }
 
     if (shamcomm::world_rank() == 0) {
@@ -146,9 +150,11 @@ int main(int argc, char *argv[]) {
         if (shamsys::instance::is_initialized()) {
             shamsys::run_micro_benchmark();
         } else {
-            logger::warn_ln(
-                "Init",
-                "--benchmark-mpi can't be run without a sycl configuration (--sycl-cfg x:x)");
+            if (shamcomm::world_rank() == 0) {
+                logger::warn_ln(
+                    "Init",
+                    "--benchmark-mpi can't be run without a sycl configuration (--sycl-cfg x:x)");
+            }
         }
     }
 
@@ -215,14 +221,20 @@ int main(int argc, char *argv[]) {
                 shambindings::run_py_file(fname, shamcomm::world_rank() == 0);
 
             } else {
-                logger::raw_ln("Nothing to do ... exiting");
+                if (shamcomm::world_rank() == 0) {
+                    logger::raw_ln("Nothing to do ... exiting");
+                }
             }
         }
 
         shamsys::instance::close();
 
     } else {
-        logger::warn_ln("Init", "No sycl configuration (--sycl-cfg x:x) has been set, early exit");
+        if (shamcomm::world_rank() == 0) {
+            logger::warn_ln(
+                "Init", "No sycl configuration (--sycl-cfg x:x) has been set, early exit");
+        }
+        shamsys::instance::close_mpi();
         return 0;
     }
 }

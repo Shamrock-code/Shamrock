@@ -98,6 +98,9 @@ namespace shamsys::instance {
      */
     void close();
 
+    /// Finalize MPI
+    void close_mpi();
+
     void print_device_list();
     void print_queue_map();
 

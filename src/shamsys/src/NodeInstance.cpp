@@ -332,8 +332,7 @@ namespace shamsys::instance {
         }
     }
 
-    void close() {
-
+    void close_mpi() {
         mpidtypehandler::free_mpidtype();
 
         if (shamcomm::world_rank() == 0) {
@@ -341,7 +340,14 @@ namespace shamsys::instance {
             logger::raw_ln(" - MPI finalize \nExiting ...\n");
             logger::raw_ln(" Hopefully it was quick :')\n");
         }
+
         mpi::finalize();
+    }
+
+    void close() {
+
+        close_mpi();
+
         syclinit::finalize();
     }
 

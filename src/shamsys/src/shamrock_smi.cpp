@@ -41,10 +41,11 @@ namespace shamsys {
 
         std::string print_buf = "";
 
-        u32 ncpu         = 0;
-        u32 ngpu         = 0;
-        u32 naccelerator = 0;
-        f64 total_mem    = 0;
+        u32 ncpu            = 0;
+        u32 ngpu            = 0;
+        u32 naccelerator    = 0;
+        u64 n_compute_units = 0;
+        f64 total_mem       = 0;
 
         for_each_device([&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
             auto PlatformName = plat.get_info<sycl::info::platform::name>();
@@ -64,39 +65,42 @@ namespace shamsys {
 
             f64 mem = device.prop.global_mem_size;
             total_mem += mem;
-
             std::string memstr = shambase::readable_sizeof(mem);
 
+            n_compute_units += device.prop.max_compute_units;
+
             print_buf += shambase::format(
-                             "| {:>4} | {:>2} | {:>25.25} | {:>22.22} | {:>6} | {:>12} |",
+                             "| {:>4} | {:>2} | {:>25.25} | {:>22.22} | {:>6} | {:>12} | {:>8} | ",
                              rank,
                              key_global,
                              devname,
                              platname,
                              devtype,
-                             memstr)
+                             memstr,
+                             device.prop.max_compute_units)
                          + "\n";
         });
 
         std::string recv;
         shamcomm::gather_str(print_buf, recv);
 
-        u32 ncpu_global         = shamalgs::collective::allreduce_sum(ncpu);
-        u32 ngpu_global         = shamalgs::collective::allreduce_sum(ngpu);
-        u32 naccelerator_global = shamalgs::collective::allreduce_sum(naccelerator);
-        f64 total_mem_global    = shamalgs::collective::allreduce_sum(total_mem);
+        u32 ncpu_global            = shamalgs::collective::allreduce_sum(ncpu);
+        u32 ngpu_global            = shamalgs::collective::allreduce_sum(ngpu);
+        u32 naccelerator_global    = shamalgs::collective::allreduce_sum(naccelerator);
+        f64 total_mem_global       = shamalgs::collective::allreduce_sum(total_mem);
+        u64 n_compute_units_global = shamalgs::collective::allreduce_sum(n_compute_units);
 
         if (rank == 0) {
             std::string print = "Cluster SYCL Info : \n";
             print += ("----------------------------------------------------------------------------"
-                      "--------------\n");
+                      "-------------------------\n");
             print += ("| rank | id |      Device name          |      Platform name     |  Type  | "
-                      "   Memsize   |\n");
+                      "   Memsize   | c. units |\n");
             print += ("----------------------------------------------------------------------------"
-                      "--------------\n");
+                      "-------------------------\n");
             print += (recv);
             print += ("----------------------------------------------------------------------------"
-                      "--------------\n");
+                      "-------------------------\n");
             printf("%s\n", print.data());
 
             printf("Summary : \n");
@@ -104,6 +108,7 @@ namespace shamsys {
             printf("  Number of CPU devices : %u\n", ncpu_global);
             printf("  Number of GPU devices : %u\n", ngpu_global);
             printf("  Number of accelerator devices : %u\n", naccelerator_global);
+            printf("  Number of compute units : %llu\n", n_compute_units_global);
             printf("  Total memory : %s\n\n", shambase::readable_sizeof(total_mem_global).data());
             shamcomm::logs::print_faint_row();
         }

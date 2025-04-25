@@ -160,6 +160,14 @@ namespace sham {
         FETCH_PROP(partition_type_property, sycl::info::partition_property)
         FETCH_PROP(partition_type_affinity_domain, sycl::info::partition_affinity_domain)
 
+        /*
+        #ifdef SYCL_COMP_ACPP
+        if(get_device_backend(dev) == Backend::OPENMP) {
+            // Correct memory size
+        }
+        #endif
+        */
+
         return {
             Vendor::UNKNOWN,         // We cannot determine the vendor
             get_device_backend(dev), // Query the backend based on the platform name
@@ -167,7 +175,8 @@ namespace sham {
             global_mem_size,
             global_mem_cache_line_size,
             global_mem_cache_size,
-            local_mem_size};
+            local_mem_size,
+            max_compute_units};
     }
 
     /**

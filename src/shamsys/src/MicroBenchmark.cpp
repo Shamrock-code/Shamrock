@@ -41,6 +41,7 @@ void shamsys::run_micro_benchmark() {
     StackEntry stack_loc{};
 
     if (shamcomm::world_rank() == 0) {
+        logger::raw_ln("");
         logger::raw_ln("Running micro benchamrks :");
     }
 
@@ -104,8 +105,8 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv) {
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(shambase::format(
-            " - p2p bandwith : {:0.2f} GB.s^-1 (ranks : {} -> {}) (loops : {})",
-            (f64(length * loops) / t) * 1e-9,
+            " - p2p bandwith    : {:.4e} B.s^-1 (ranks : {} -> {}) (loops : {})",
+            (f64(length * loops) / t),
             wr_sender,
             wr_receiv,
             loops));
@@ -159,7 +160,7 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(shambase::format(
-            " - p2p latency  : {:.4e} s (ranks : {} <-> {}) (loops : {})",
+            " - p2p latency     : {:.4e} s (ranks : {} <-> {}) (loops : {})",
             t / f64(loops),
             wr1,
             wr2,
@@ -180,14 +181,16 @@ void shamsys::microbench::saxpy() {
         {2.0f, 2.0f, 2.0f, 2.0f},
         vec4_size);
 
-    f64 min_bw = shamalgs::collective::allreduce_min(result.bandwidth);
-    f64 max_bw = shamalgs::collective::allreduce_max(result.bandwidth);
-    f64 sum_bw = shamalgs::collective::allreduce_sum(result.bandwidth);
+    f64 bw = result.bandwidth * 1e9;
+
+    f64 min_bw = shamalgs::collective::allreduce_min(bw);
+    f64 max_bw = shamalgs::collective::allreduce_max(bw);
+    f64 sum_bw = shamalgs::collective::allreduce_sum(bw);
     f64 avg_bw = sum_bw / (f64) shamcomm::world_size();
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(shambase::format(
-            " - saxpy (f32_4) : {:.2f} GB.s^-1 (min = {:.2f}, max = {:.2f}, avg = {:.2f}) ({:.2f} "
+            " - saxpy (f32_4)   : {:.3e} B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) ({:.1e} "
             "ms)",
             sum_bw,
             min_bw,
@@ -212,16 +215,14 @@ void shamsys::microbench::add_mul_rotation_f32() {
         10000,
         4);
 
-    f64 gflops = result.flops / 1e9;
-
-    f64 min_flop = shamalgs::collective::allreduce_min(gflops);
-    f64 max_flop = shamalgs::collective::allreduce_max(gflops);
-    f64 sum_flop = shamalgs::collective::allreduce_sum(gflops);
+    f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
+    f64 max_flop = shamalgs::collective::allreduce_max(result.flops);
+    f64 sum_flop = shamalgs::collective::allreduce_sum(result.flops);
     f64 avg_flop = sum_flop / (f64) shamcomm::world_size();
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(shambase::format(
-            " - add_mul (f32_4) : {:.2f} Gflops (min = {:.2f}, max = {:.2f}, avg = {:.2f}) ({:.2f} "
+            " - add_mul (f32_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) ({:.1e} "
             "ms)",
             sum_flop,
             min_flop,
@@ -246,16 +247,14 @@ void shamsys::microbench::add_mul_rotation_f64() {
         10000,
         4);
 
-    f64 gflops = result.flops / 1e9;
-
-    f64 min_flop = shamalgs::collective::allreduce_min(gflops);
-    f64 max_flop = shamalgs::collective::allreduce_max(gflops);
-    f64 sum_flop = shamalgs::collective::allreduce_sum(gflops);
+    f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
+    f64 max_flop = shamalgs::collective::allreduce_max(result.flops);
+    f64 sum_flop = shamalgs::collective::allreduce_sum(result.flops);
     f64 avg_flop = sum_flop / (f64) shamcomm::world_size();
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(shambase::format(
-            " - add_mul (f64_4) : {:.2f} Gflops (min = {:.2f}, max = {:.2f}, avg = {:.2f}) ({:.2f} "
+            " - add_mul (f64_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) ({:.1e} "
             "ms)",
             sum_flop,
             min_flop,

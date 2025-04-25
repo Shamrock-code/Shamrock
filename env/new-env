@@ -80,9 +80,6 @@ if __name__ == "__main__":
     )
     parser.add_argument("--builddir", action="store", required=True, help="build directory to use")
     parser.add_argument("--type", action="store", default="release", help="build type to use")
-    parser.add_argument(
-        "--pylib", action="store_true", default=False, help="build the project as python lib"
-    )
 
     parser.add_argument(
         "--lib",
@@ -120,7 +117,6 @@ if __name__ == "__main__":
             builddir=builddir,
             shamrockdir=abs_proj_dir,
             buildtype=args.type,
-            pylib=args.pylib,
             lib_mode=args.lib,
         ),
         EnvGen(machinefolder=machine_folder, builddir=builddir),

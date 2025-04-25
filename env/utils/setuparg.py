@@ -7,12 +7,11 @@ from utils.oscmd import *
 class SetupArg:
     """argument that will be passed to the machine setups"""
 
-    def __init__(self, argv, builddir, shamrockdir, buildtype, pylib, lib_mode):
+    def __init__(self, argv, builddir, shamrockdir, buildtype, lib_mode):
         self.argv = argv
         self.builddir = builddir
         self.shamrockdir = shamrockdir
         self.buildtype = buildtype
-        self.pylib = pylib
         self.lib_mode = lib_mode
 
 
@@ -50,9 +49,8 @@ class EnvGen:
             source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
         )
 
-    def copy_env_file(self, source_file, dest_file):
+    def copy_file(self, source_path, dest_file):
 
-        source_path = os.path.join(self.machinefolder, source_file)
         ENV_SCRIPT_PATH = self.builddir + "/" + dest_file
 
         run_cmd(f"mkdir -p {os.path.dirname(ENV_SCRIPT_PATH)}")
@@ -61,3 +59,8 @@ class EnvGen:
         print("     -> From Base file " + source_path)
 
         utils.envscript.copy_env_file(source_path=source_path, path_write=ENV_SCRIPT_PATH)
+
+    def copy_env_file(self, source_file, dest_file):
+
+        source_path = os.path.join(self.machinefolder, source_file)
+        self.copy_file(source_path, dest_file)

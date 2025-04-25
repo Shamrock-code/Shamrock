@@ -7,21 +7,12 @@
 ##
 ## -------------------------------------------------------
 
-message("   ---- NVTX section ----")
-
-option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
+message("   ---- MDSPAN section ----")
 
 ###############################################################################
-### NVTX
+### MDSPAN
 ###############################################################################
 
-if(SHAMROCK_USE_NVTX)
-    #include(NVTX/c/nvtxImportedTargets.cmake)
+_check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/mdspan 414a5dc)
 
-    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/NVTX b44f81c)
-
-    add_subdirectory(external/NVTX/c)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_USE_NVTX")
-endif()
-
-message(STATUS "SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
+include_directories(external/mdspan/include)

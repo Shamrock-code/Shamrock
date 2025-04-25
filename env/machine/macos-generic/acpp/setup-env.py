@@ -16,7 +16,6 @@ def setup(arg: SetupArg, envgen: EnvGen):
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
     buildtype = arg.buildtype
-    pylib = arg.pylib
     lib_mode = arg.lib_mode
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
@@ -50,8 +49,8 @@ def setup(arg: SetupArg, envgen: EnvGen):
     cur_file = os.path.realpath(os.path.expanduser(__file__))
 
     cmake_extra_args = ""
-    if pylib:
-        envgen.copy_env_file("_pysetup.py", "setup.py")
+
+    envgen.copy_file(shamrockdir + "/env/helpers/_pysetup.py", "setup.py")
 
     ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
     ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'

@@ -6,7 +6,7 @@
 if ! dpkg -l python3.*-dev &> /dev/null; then
     echo "python3-dev is not installed. Installing it."
     apt update
-    apt install -y python3-dev
+    apt install -y python3-dev ninja-build python3-full python3-pip
 fi
 
 function shamconfigure {
@@ -19,6 +19,7 @@ function shamconfigure {
         -DCMAKE_CXX_COMPILER=$(which icpx) \
         -DCMAKE_CXX_FLAGS="-fsycl -fp-model=precise" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
+        -DCXX_FLAG_ARCH_NATIVE=off \
         -DBUILD_TEST=Yes \
         "${CMAKE_OPT[@]}"
 }

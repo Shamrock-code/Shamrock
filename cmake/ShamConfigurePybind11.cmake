@@ -65,5 +65,8 @@ if(SHAMROCK_EXTERNAL_PYBIND11)
     find_package(pybind11 REQUIRED)
 else()
     message(STATUS "Using git submodule pybind11")
+
+    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/pybind11 a2e59f0e)
+
     add_subdirectory(external/pybind11)
 endif()

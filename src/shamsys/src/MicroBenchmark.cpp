@@ -42,6 +42,7 @@ void shamsys::run_micro_benchmark() {
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln("");
+        logger::print_faint_row();
         logger::raw_ln("Running micro benchamrks :");
     }
 

@@ -129,16 +129,6 @@ int main(int argc, char *argv[]) {
         shamcomm::validate_comm(sptr);
     }
 
-    if (opts::has_option("--benchmark-mpi")) {
-        if (shamsys::instance::is_initialized()) {
-            shamsys::run_micro_benchmark();
-        } else {
-            logger::warn_ln(
-                "Init",
-                "--benchmark-mpi can't be run without a sycl configuration (--sycl-cfg x:x)");
-        }
-    }
-
     if (shamcomm::world_rank() == 0) {
         logger::print_faint_row();
         logger::raw_ln("log status : ");
@@ -150,32 +140,24 @@ int main(int argc, char *argv[]) {
         logger::print_active_level();
     }
 
-    if (opts::has_option("--sycl-ls")) {
-
-        if (shamcomm::world_rank() == 0) {
-            logger::print_faint_row();
-        }
-        shamsys::instance::print_device_list();
-    }
-
-    if (opts::has_option("--sycl-ls-map")) {
-
-        if (shamcomm::world_rank() == 0) {
-            logger::print_faint_row();
-        }
-        shamsys::instance::print_device_list();
-        if (shamsys::instance::is_initialized()) {
-            shamsys::instance::print_queue_map();
-        }
-    }
-
-    if (opts::has_option("--smi")) {
+    if (opts::has_option("--sycl-ls") || opts::has_option("--sycl-ls-map")
+        || opts::has_option("--smi")) {
         if (shamcomm::world_rank() == 0) {
             logger::print_faint_row();
         }
         shamsys::shamrock_smi();
         if (shamsys::instance::is_initialized()) {
             shamsys::instance::print_queue_map();
+        }
+    }
+
+    if (opts::has_option("--benchmark-mpi")) {
+        if (shamsys::instance::is_initialized()) {
+            shamsys::run_micro_benchmark();
+        } else {
+            logger::warn_ln(
+                "Init",
+                "--benchmark-mpi can't be run without a sycl configuration (--sycl-cfg x:x)");
         }
     }
 

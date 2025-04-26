@@ -64,7 +64,9 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--sycl-ls-map", {}, "list available devices & list of queue bindings");
 
     opts::register_opt(
-        "--smi", {}, "print information about all available SYCL devices in the cluster");
+        "--smi", {}, "print information about available SYCL devices in the cluster");
+    opts::register_opt(
+        "--smi-full", {}, "print information about EVERY available SYCL devices in the cluster");
 
     opts::register_opt("--benchmark-mpi", {}, "micro benchmark for MPI");
 
@@ -169,12 +171,14 @@ int main(int argc, char *argv[]) {
         logger::print_active_level();
     }
 
-    if (opts::has_option("--sycl-ls") || opts::has_option("--sycl-ls-map")
-        || opts::has_option("--smi")) {
+    bool is_smi      = opts::has_option("--smi");
+    bool is_smi_full = opts::has_option("--smi-full");
+
+    if (is_smi || is_smi_full) {
         if (shamcomm::world_rank() == 0) {
             logger::print_faint_row();
         }
-        shamsys::shamrock_smi();
+        shamsys::shamrock_smi(is_smi_full);
         if (shamcomm::world_rank() == 0) {
             logger::print_faint_row();
         }

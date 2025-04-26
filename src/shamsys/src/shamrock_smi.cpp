@@ -31,9 +31,6 @@
 #include <string>
 #include <vector>
 
-std::string SHAMROCK_VERBOSE_SMI = shamcmdopt::getenv_str_default_register(
-    "SHAMROCK_VERBOSE_SMI", "0", "List all available devices");
-
 namespace shamsys {
 
     void shamrock_smi_summary() {
@@ -151,14 +148,14 @@ namespace shamsys {
     }
 
     /// Print SMI for selected devices
-    void shamrock_smi_selected() {
+    void shamrock_smi_selected(bool list_all_devices) {
         if (!shamcomm::is_mpi_initialized()) {
             shambase::throw_with_loc<std::runtime_error>("MPI should be initialized");
         }
 
         if (shamsys::instance::is_initialized()) {
 
-            if (SHAMROCK_VERBOSE_SMI == "1") {
+            if (list_all_devices) {
                 shamsys::instance::print_queue_map();
             }
 
@@ -194,18 +191,18 @@ namespace shamsys {
         }
     }
 
-    void shamrock_smi() {
+    void shamrock_smi(bool list_all_devices) {
         if (shamcomm::world_rank() == 0) {
             logger::raw_ln(" ----- Shamrock SMI ----- \n");
         }
 
-        if (SHAMROCK_VERBOSE_SMI == "1") {
+        if (list_all_devices) {
             shamrock_smi_all();
         } else {
             shamrock_smi_summary();
         }
 
-        shamrock_smi_selected();
+        shamrock_smi_selected(list_all_devices);
     }
 
 } // namespace shamsys

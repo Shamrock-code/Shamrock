@@ -82,7 +82,7 @@ namespace sham {
         } catch (...) {                                                                            \
             logger::warn_ln(                                                                       \
                 "Device",                                                                          \
-                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",    \
+                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
                 name);                                                                             \
             return {};                                                                             \
         }                                                                                          \
@@ -96,7 +96,7 @@ namespace sham {
         } catch (...) {                                                                            \
             logger::warn_ln(                                                                       \
                 "Device",                                                                          \
-                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",    \
+                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
                 name);                                                                             \
             return {};                                                                             \
         }                                                                                          \
@@ -113,7 +113,7 @@ namespace sham {
 
         // Just to ensure that this one is not empty
         std::string name = "?";
-        FETCH_PROPN(name, std::string,dev_name);
+        FETCH_PROPN(name, std::string, dev_name);
         if (dev_name) {
             name = *dev_name;
         }

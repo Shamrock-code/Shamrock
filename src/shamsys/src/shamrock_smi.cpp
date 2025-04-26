@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/memory.hpp"
 #include "shambase/string.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
@@ -25,14 +26,17 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/for_each_device.hpp"
+#include <unordered_map>
 #include <functional>
+#include <string>
+#include <vector>
 
 std::string SHAMROCK_LIST_ALL_DEVICES = shamcmdopt::getenv_str_default_register(
     "SHAMROCK_LIST_ALL_DEVICES", "0", "List all available devices");
 
 namespace shamsys {
 
-    void shamrock_smi() {
+    void shamrock_smi_all() {
         if (!shamcomm::is_mpi_initialized()) {
             shambase::throw_with_loc<std::runtime_error>("MPI should be initialized");
         }
@@ -40,12 +44,6 @@ namespace shamsys {
         u32 rank = shamcomm::world_rank();
 
         std::string print_buf = "";
-
-        u32 ncpu            = 0;
-        u32 ngpu            = 0;
-        u32 naccelerator    = 0;
-        u64 n_compute_units = 0;
-        f64 total_mem       = 0;
 
         for_each_device([&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
             auto PlatformName = plat.get_info<sycl::info::platform::name>();
@@ -57,17 +55,8 @@ namespace shamsys {
             std::string platname = shambase::trunc_str(PlatformName, 22);
             std::string devtype  = shambase::trunc_str(sham::device_type_name(device.prop.type), 6);
 
-            switch (device.prop.type) {
-            case sham::DeviceType::CPU: ncpu++; break;
-            case sham::DeviceType::GPU: ngpu++; break;
-            default: naccelerator++;
-            }
-
-            f64 mem = device.prop.global_mem_size;
-            total_mem += mem;
+            f64 mem            = device.prop.global_mem_size;
             std::string memstr = shambase::readable_sizeof(mem);
-
-            n_compute_units += device.prop.max_compute_units;
 
             print_buf += shambase::format(
                              "| {:>4} | {:>2} | {:>25.25} | {:>22.22} | {:>6} | {:>12} | {:>8} | ",
@@ -83,13 +72,6 @@ namespace shamsys {
 
         std::string recv;
         shamcomm::gather_str(print_buf, recv);
-
-        u32 ncpu_global            = shamalgs::collective::allreduce_sum(ncpu);
-        u32 ngpu_global            = shamalgs::collective::allreduce_sum(ngpu);
-        u32 naccelerator_global    = shamalgs::collective::allreduce_sum(naccelerator);
-        f64 total_mem_global       = shamalgs::collective::allreduce_sum(total_mem);
-        u64 n_compute_units_global = shamalgs::collective::allreduce_sum(n_compute_units);
-
         if (rank == 0) {
             std::string print = "Cluster SYCL Info : \n";
             print += ("----------------------------------------------------------------------------"
@@ -102,16 +84,59 @@ namespace shamsys {
             print += ("----------------------------------------------------------------------------"
                       "-------------------------\n");
             printf("%s\n", print.data());
-
-            printf("Summary : \n");
-            printf("  Number of ranks : %u\n", shamcomm::world_size());
-            printf("  Number of CPU devices : %u\n", ncpu_global);
-            printf("  Number of GPU devices : %u\n", ngpu_global);
-            printf("  Number of accelerator devices : %u\n", naccelerator_global);
-            printf("  Number of compute units : %llu\n", n_compute_units_global);
-            printf("  Total memory : %s\n\n", shambase::readable_sizeof(total_mem_global).data());
-            shamcomm::logs::print_faint_row();
         }
+    }
+
+    void shamrock_smi_selected() {
+        if (!shamcomm::is_mpi_initialized()) {
+            shambase::throw_with_loc<std::runtime_error>("MPI should be initialized");
+        }
+
+        if (shamsys::instance::is_initialized()) {
+            shamsys::instance::print_queue_map();
+
+            sham::Device &dev
+                = shambase::get_check_ref(instance::get_compute_scheduler().ctx->device);
+
+            std::string DeviceName = dev.dev.get_info<sycl::info::device::name>();
+            DeviceName += "\n";
+
+            f64 mem           = dev.prop.global_mem_size;
+            u64 compute_units = dev.prop.max_compute_units;
+
+            std::string gathered = "";
+            shamcomm::gather_str(DeviceName, gathered);
+
+            f64 total_mem       = shamalgs::collective::allreduce_sum(mem);
+            u64 n_compute_units = shamalgs::collective::allreduce_sum(compute_units);
+
+            if (shamcomm::world_rank() == 0) {
+
+                std::vector<std::string> splitted = shambase::split_str(gathered, "\n");
+
+                std::unordered_map<std::string, u32> map;
+
+                for (u32 i = 0; i < splitted.size(); i++) {
+                    map[splitted[i]] += 1;
+                }
+
+                std::string print = "\nSelected devices : \n";
+
+                for (auto &[key, value] : map) {
+                    print += shambase::format("  - {} x {}", value, key) + "\n";
+                }
+                print += "  Total memory : " + shambase::readable_sizeof(total_mem) + "\n";
+                print += "  Total compute units : " + std::to_string(n_compute_units) + "\n";
+
+                printf("%s\n", print.data());
+            }
+        }
+    }
+
+    void shamrock_smi() {
+
+        shamrock_smi_all();
+        shamrock_smi_selected();
     }
 
 } // namespace shamsys

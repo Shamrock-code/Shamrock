@@ -175,8 +175,8 @@ int main(int argc, char *argv[]) {
             logger::print_faint_row();
         }
         shamsys::shamrock_smi();
-        if (shamsys::instance::is_initialized()) {
-            shamsys::instance::print_queue_map();
+        if (shamcomm::world_rank() == 0) {
+            logger::print_faint_row();
         }
     }
 

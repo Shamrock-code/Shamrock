@@ -35,7 +35,7 @@ namespace sham::benchmarks {
             x    = xx;
             y    = yy;
         }
-        out[i] = dot(x, y);
+        out[i] = sham::dot(x, y);
     }
 
     struct add_mul_result {

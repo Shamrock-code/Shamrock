@@ -155,13 +155,12 @@ int main(int argc, char *argv[]) {
             logger::print_faint_row();
         }
         shamsys::shamrock_smi(is_smi_full);
-        if (shamcomm::world_rank() == 0) {
-            logger::print_faint_row();
-
-        }
     }
 
     if (opts::has_option("--benchmark-mpi")) {
+        if (shamcomm::world_rank() == 0) {
+            logger::print_faint_row();
+        }
         if (shamsys::instance::is_initialized()) {
             shamsys::run_micro_benchmark();
         } else {
@@ -170,7 +169,7 @@ int main(int argc, char *argv[]) {
                 "--benchmark-mpi can't be run without a sycl configuration (--sycl-cfg x:x)");
         }
     }
-  
+
     if (shamsys::instance::is_initialized()) {
         if (shamcomm::world_rank() == 0) {
             logger::print_faint_row();

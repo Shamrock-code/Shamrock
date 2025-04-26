@@ -54,6 +54,16 @@ namespace sham {
         return Backend::UNKNOWN; // Unknown backend
     }
 
+    /**
+     * @brief Returns the type of a SYCL device.
+     *
+     * This function takes a SYCL device and returns a DeviceType enum that
+     * represents the type of device. The type can be either CPU, GPU, or
+     * UNKNOWN.
+     *
+     * @param dev The SYCL device to query.
+     * @return A DeviceType enum that represents the type of device.
+     */
     DeviceType get_device_type(const sycl::device &dev) {
         auto DeviceType = dev.get_info<sycl::info::device::device_type>();
         switch (DeviceType) {
@@ -63,7 +73,10 @@ namespace sham {
         }
     }
 
+    /// Fetches a property of a SYCL device
 #define FETCH_PROP(info_, info_type) info_type info_ = dev.get_info<sycl::info::device::info_>();
+
+    /// Fetches a property of a SYCL device (for cases where multiple prop would have the same name)
 #define FETCH_PROPN(info_, info_type, n) info_type n = dev.get_info<sycl::info::device::info_>();
 
     /**

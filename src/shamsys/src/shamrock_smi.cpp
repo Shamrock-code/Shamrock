@@ -31,11 +31,74 @@
 #include <string>
 #include <vector>
 
-std::string SHAMROCK_LIST_ALL_DEVICES = shamcmdopt::getenv_str_default_register(
-    "SHAMROCK_LIST_ALL_DEVICES", "0", "List all available devices");
+std::string SHAMROCK_VERBOSE_SMI = shamcmdopt::getenv_str_default_register(
+    "SHAMROCK_VERBOSE_SMI", "0", "List all available devices");
 
 namespace shamsys {
 
+    void shamrock_smi_summary() {
+        if (!shamcomm::is_mpi_initialized()) {
+            shambase::throw_with_loc<std::runtime_error>("MPI should be initialized");
+        }
+
+        u32 rank = shamcomm::world_rank();
+
+        auto add_array = [&](std::string &print, std::string header, std::string data) {
+            print
+                += (header
+                    + "----------------------------------------------------------------------------"
+                      "---------------")
+                       .substr(0, 91)
+                   + "\n";
+            print += ("| id |      Device name          |      Platform name     |  Type  | "
+                      "   Memsize   | units |\n");
+            print += ("----------------------------------------------------------------------------"
+                      "---------------\n");
+            print += (data);
+            print += ("----------------------------------------------------------------------------"
+                      "---------------\n");
+        };
+
+        std::string nodeconfig = "";
+        for_each_device([&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
+            auto PlatformName = plat.get_info<sycl::info::platform::name>();
+            auto DeviceName   = dev.get_info<sycl::info::device::name>();
+
+            auto device = sham::sycl_dev_to_sham_dev(key_global, dev);
+
+            std::string devname  = shambase::trunc_str(DeviceName, 25);
+            std::string platname = shambase::trunc_str(PlatformName, 22);
+            std::string devtype  = shambase::trunc_str(sham::device_type_name(device.prop.type), 6);
+
+            f64 mem            = device.prop.global_mem_size;
+            std::string memstr = shambase::readable_sizeof(mem);
+
+            nodeconfig += shambase::format(
+                              "| {:>2} | {:>25.25} | {:>22.22} | {:>6} | {:>12} | {:>5} | ",
+                              key_global,
+                              devname,
+                              platname,
+                              devtype,
+                              memstr,
+                              device.prop.max_compute_units)
+                          + "\n";
+        });
+
+        std::unordered_map<std::string, int> nodeconfig_histogram
+            = shamcomm::string_histogram({nodeconfig}, "@#%");
+
+        if (rank == 0) {
+            std::string print = "Available devices :\n";
+            for (auto &[node_conf, count] : nodeconfig_histogram) {
+                std::string arr = "";
+                add_array(arr, shambase::format("{} x Nodes: ", count), node_conf);
+                print += shambase::format("\n{}\n", arr);
+            }
+            printf("%s", print.data());
+        }
+    }
+
+    /// Print SMI for all devices
     void shamrock_smi_all() {
         if (!shamcomm::is_mpi_initialized()) {
             shambase::throw_with_loc<std::runtime_error>("MPI should be initialized");
@@ -73,7 +136,7 @@ namespace shamsys {
         std::string recv;
         shamcomm::gather_str(print_buf, recv);
         if (rank == 0) {
-            std::string print = "Cluster SYCL Info : \n";
+            std::string print = "Available devices :\n";
             print += ("----------------------------------------------------------------------------"
                       "----------------------\n");
             print += ("| rank | id |      Device name          |      Platform name     |  Type  | "
@@ -87,42 +150,40 @@ namespace shamsys {
         }
     }
 
+    /// Print SMI for selected devices
     void shamrock_smi_selected() {
         if (!shamcomm::is_mpi_initialized()) {
             shambase::throw_with_loc<std::runtime_error>("MPI should be initialized");
         }
 
         if (shamsys::instance::is_initialized()) {
-            shamsys::instance::print_queue_map();
+
+            if (SHAMROCK_VERBOSE_SMI == "1") {
+                shamsys::instance::print_queue_map();
+            }
 
             sham::Device &dev
                 = shambase::get_check_ref(instance::get_compute_scheduler().ctx->device);
 
             std::string DeviceName = dev.dev.get_info<sycl::info::device::name>();
-            DeviceName += "\n";
+
+            std::string dev_with_id = shambase::format("{} (id={})", DeviceName, dev.device_id);
+
+            std::unordered_map<std::string, int> devicename_histogram
+                = shamcomm::string_histogram({dev_with_id}, "\n");
 
             f64 mem           = dev.prop.global_mem_size;
             u64 compute_units = dev.prop.max_compute_units;
-
-            std::string gathered = "";
-            shamcomm::gather_str(DeviceName, gathered);
 
             f64 total_mem       = shamalgs::collective::allreduce_sum(mem);
             u64 n_compute_units = shamalgs::collective::allreduce_sum(compute_units);
 
             if (shamcomm::world_rank() == 0) {
 
-                std::vector<std::string> splitted = shambase::split_str(gathered, "\n");
+                std::string print = "Selected devices : (totals can we wrong if using multiple "
+                                    "rank per devices)\n";
 
-                std::unordered_map<std::string, u32> map;
-
-                for (u32 i = 0; i < splitted.size(); i++) {
-                    map[splitted[i]] += 1;
-                }
-
-                std::string print = "\nSelected devices : \n";
-
-                for (auto &[key, value] : map) {
+                for (auto &[key, value] : devicename_histogram) {
                     print += shambase::format("  - {} x {}", value, key) + "\n";
                 }
                 print += "  Total memory : " + shambase::readable_sizeof(total_mem) + "\n";
@@ -134,8 +195,16 @@ namespace shamsys {
     }
 
     void shamrock_smi() {
+        if (shamcomm::world_rank() == 0) {
+            logger::raw_ln(" ----- Shamrock SMI ----- \n");
+        }
 
-        shamrock_smi_all();
+        if (SHAMROCK_VERBOSE_SMI == "1") {
+            shamrock_smi_all();
+        } else {
+            shamrock_smi_summary();
+        }
+
         shamrock_smi_selected();
     }
 

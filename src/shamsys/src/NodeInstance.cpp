@@ -188,7 +188,7 @@ namespace shamsys::instance {
             print += ("----------------------------------------------------\n");
             print += (recv);
             print += ("----------------------------------------------------");
-            printf("%s\n", print.data());
+            printf("%s\n\n", print.data());
         }
     }
 

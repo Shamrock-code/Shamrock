@@ -88,22 +88,22 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          mpirun --oversubscribe -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --oversubscribe -n 2 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --oversubscribe -n 3 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --oversubscribe -n 4 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
 
       - name: Try starting Shamrock (installed version)

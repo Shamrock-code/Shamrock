@@ -17,6 +17,7 @@
 #include "shambackends/Device.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/string.hpp"
+#include "shambackends/sysinfo.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiInfo.hpp"
 
@@ -203,13 +204,17 @@ namespace sham {
         FETCH_PROP(partition_type_property, sycl::info::partition_property)
         FETCH_PROP(partition_type_affinity_domain, sycl::info::partition_affinity_domain)
 
-        /*
-        #ifdef SYCL_COMP_ACPP
-        if(get_device_backend(dev) == Backend::OPENMP) {
+// On acpp 2^64-1 is returned, so we need to correct it
+// see : https://github.com/AdaptiveCpp/AdaptiveCpp/issues/1573
+#ifdef SYCL_COMP_ACPP
+        if (get_device_backend(dev) == Backend::OPENMP) {
             // Correct memory size
+            auto physmem = sham::getPhysicalMemory();
+            if (physmem) {
+                global_mem_size = {*physmem};
+            }
         }
-        #endif
-        */
+#endif
 
         return {
             Vendor::UNKNOWN,         // We cannot determine the vendor

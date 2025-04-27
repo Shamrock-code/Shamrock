@@ -189,7 +189,7 @@ void shamsys::microbench::saxpy() {
 
         for (; N <= (1 << 30) && N <= max_size; N *= 2) {
             auto result = bench_step(N);
-            std::cout << N << " " << result.milliseconds << std::endl;
+            std::cout << N << " " << result.milliseconds << " " << result.bandwidth << std::endl;
             if (result.milliseconds > 5) {
                 return result;
             }

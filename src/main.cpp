@@ -60,9 +60,6 @@ int main(int argc, char *argv[]) {
 
     StackEntry stack_loc{};
 
-    opts::register_opt("--sycl-ls", {}, "list available devices");
-    opts::register_opt("--sycl-ls-map", {}, "list available devices & list of queue bindings");
-
     opts::register_opt(
         "--smi", {}, "print information about available SYCL devices in the cluster");
     opts::register_opt(

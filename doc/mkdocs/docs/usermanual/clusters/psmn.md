@@ -194,7 +194,7 @@ mpirun --bind-to socket -npernode 2 \
     -x LD_LIBRARY_PATH=$HOME/llvm-17.x-local/lib:$LD_LIBRARY_PATH \
     -x OMP_NUM_THREADS=96 \
     -x ACPP_DEBUG_LEVEL=0 \
-    ./shamrock --sycl-cfg 0:0 --loglevel 1 --sycl-ls-map \
+    ./shamrock --sycl-cfg 0:0 --loglevel 1 --smi \
     --rscript ../../exemples/sedov_scale_test.py
 ```
 

@@ -34,8 +34,6 @@ PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }
 int main(int argc, char *argv[]) {
 
     opts::register_opt("--sycl-cfg", "(idcomp:idalt) ", "specify the compute & alt queue index");
-    opts::register_opt("--sycl-ls", {}, "list available devices");
-    opts::register_opt("--sycl-ls-map", {}, "list available devices & list of queue bindings");
 
     opts::register_opt(
         "--smi", {}, "print information about all available SYCL devices in the cluster");

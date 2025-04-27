@@ -168,17 +168,38 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
 }
 
 void shamsys::microbench::saxpy() {
-    int N = (1 << 27);
 
     using vec4    = sycl::vec<float, 4>;
     int vec4_size = sizeof(vec4);
-    auto result   = sham::benchmarks::saxpy_bench<vec4>(
-        instance::get_compute_scheduler_ptr(),
-        N,
-        {1.0f, 1.0f, 1.0f, 1.0f},
-        {2.0f, 2.0f, 2.0f, 2.0f},
-        {2.0f, 2.0f, 2.0f, 2.0f},
-        vec4_size);
+
+    auto bench_step = [&](int N) {
+        return sham::benchmarks::saxpy_bench<vec4>(
+            instance::get_compute_scheduler_ptr(),
+            N,
+            {1.0f, 1.0f, 1.0f, 1.0f},
+            {2.0f, 2.0f, 2.0f, 2.0f},
+            {2.0f, 2.0f, 2.0f, 2.0f},
+            vec4_size);
+    };
+
+    auto benchmark = [&]() {
+        int N           = (1 << 15);
+        auto &dev       = instance::get_compute_scheduler().ctx->device;
+        double max_size = double(dev->prop.global_mem_size) / (vec4_size * 4);
+
+        for (; N <= (1 << 30) && N <= max_size; N *= 2) {
+            auto result = bench_step(N);
+            std::cout << N << " " << result.milliseconds << std::endl;
+            if (result.milliseconds > 5) {
+                return result;
+            }
+        }
+
+        auto result = bench_step(N);
+        return result;
+    };
+
+    auto result = benchmark();
 
     f64 bw = result.bandwidth * 1e9;
 

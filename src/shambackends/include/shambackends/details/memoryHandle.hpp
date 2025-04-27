@@ -64,7 +64,7 @@ namespace sham::details {
      */
     template<USMKindTarget target>
     USMPtrHolder<target> create_usm_ptr(
-        u32 size,
+        size_t size,
         std::shared_ptr<DeviceScheduler> dev_sched,
         std::optional<size_t> alignment = std::nullopt);
 

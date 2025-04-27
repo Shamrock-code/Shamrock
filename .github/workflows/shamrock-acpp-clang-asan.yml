@@ -27,7 +27,7 @@ jobs:
 
     #if: false
 
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default

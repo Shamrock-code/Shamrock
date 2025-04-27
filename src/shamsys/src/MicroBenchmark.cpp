@@ -187,15 +187,25 @@ void shamsys::microbench::saxpy() {
         auto &dev       = instance::get_compute_scheduler().ctx->device;
         double max_size = double(dev->prop.global_mem_size) / (vec4_size * 4);
 
+        auto result = bench_step(N);
+
         for (; N <= (1 << 30) && N <= max_size; N *= 2) {
-            auto result = bench_step(N);
-            std::cout << N << " " << result.milliseconds << " " << result.bandwidth << std::endl;
+            auto result_new = bench_step(N);
+            std::cout << N << " " << result_new.milliseconds << " " << result_new.bandwidth
+                      << std::endl;
+
+            // We are kinda forced to do that as on some machine the current condition will stop
+            // basically on the worst performing case. Using instead the best one make the result
+            // more consistent.
+            if (result_new.bandwidth > result.bandwidth) {
+                result = result_new;
+            }
+
             if (result.milliseconds > 5) {
-                return result;
+                break;
             }
         }
 
-        auto result = bench_step(N);
         return result;
     };
 

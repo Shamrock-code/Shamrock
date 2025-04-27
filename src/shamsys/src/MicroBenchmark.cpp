@@ -179,7 +179,8 @@ void shamsys::microbench::saxpy() {
             {1.0f, 1.0f, 1.0f, 1.0f},
             {2.0f, 2.0f, 2.0f, 2.0f},
             {2.0f, 2.0f, 2.0f, 2.0f},
-            vec4_size);
+            vec4_size,
+            N < (1 << 20));
     };
 
     auto benchmark = [&]() {
@@ -191,8 +192,9 @@ void shamsys::microbench::saxpy() {
 
         for (; N <= (1 << 30) && N <= max_size; N *= 2) {
             auto result_new = bench_step(N);
-            std::cout << N << " " << result_new.milliseconds << " " << result_new.bandwidth
-                      << std::endl;
+
+            // std::cout << N << " " << result_new.milliseconds << " " << result_new.bandwidth
+            //           << std::endl;
 
             // We are kinda forced to do that as on some machine the current condition will stop
             // basically on the worst performing case. Using instead the best one make the result

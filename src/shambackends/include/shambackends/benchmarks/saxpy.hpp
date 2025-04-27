@@ -37,8 +37,14 @@ namespace sham::benchmarks {
 
     // From https://developer.nvidia.com/blog/how-implement-performance-metrics-cuda-cc/
     template<class T>
-    inline saxpy_result
-    saxpy_bench(DeviceScheduler_ptr sched, int N, T init_x, T init_y, T a, int load_size) {
+    inline saxpy_result saxpy_bench(
+        DeviceScheduler_ptr sched,
+        int N,
+        T init_x,
+        T init_y,
+        T a,
+        int load_size,
+        bool check_correctness) {
 
         sham::DeviceQueue &q = sched->get_queue();
 
@@ -77,25 +83,27 @@ namespace sham::benchmarks {
 
         T expected = a * init_x + init_y;
 
-        T maxError = {};
-        for (int i = 0; i < N; i++) {
-            T delt = y_res[i] - expected;
+        if (check_correctness) {
+            T maxError = {};
+            for (int i = 0; i < N; i++) {
+                T delt = y_res[i] - expected;
 
-            if constexpr (std::is_same_v<T, sycl::marray<float, 3>>) {
-                maxError[0] = sham::max(maxError[0], sham::abs(delt[0]));
-                maxError[1] = sham::max(maxError[1], sham::abs(delt[1]));
-                maxError[2] = sham::max(maxError[2], sham::abs(delt[2]));
-            } else if constexpr (std::is_same_v<T, sycl::marray<float, 4>>) {
-                maxError[0] = sham::max(maxError[0], sham::abs(delt[0]));
-                maxError[1] = sham::max(maxError[1], sham::abs(delt[1]));
-                maxError[2] = sham::max(maxError[2], sham::abs(delt[2]));
-                maxError[3] = sham::max(maxError[3], sham::abs(delt[3]));
-            } else {
-                maxError = sham::max(maxError, sham::abs(delt));
+                if constexpr (std::is_same_v<T, sycl::marray<float, 3>>) {
+                    maxError[0] = sham::max(maxError[0], sham::abs(delt[0]));
+                    maxError[1] = sham::max(maxError[1], sham::abs(delt[1]));
+                    maxError[2] = sham::max(maxError[2], sham::abs(delt[2]));
+                } else if constexpr (std::is_same_v<T, sycl::marray<float, 4>>) {
+                    maxError[0] = sham::max(maxError[0], sham::abs(delt[0]));
+                    maxError[1] = sham::max(maxError[1], sham::abs(delt[1]));
+                    maxError[2] = sham::max(maxError[2], sham::abs(delt[2]));
+                    maxError[3] = sham::max(maxError[3], sham::abs(delt[3]));
+                } else {
+                    maxError = sham::max(maxError, sham::abs(delt));
+                }
             }
-        }
 
-        SHAM_ASSERT(sham::equals(maxError, T{}));
+            SHAM_ASSERT(sham::equals(maxError, T{}));
+        }
 
         return {
             SourceLocation{}.loc.function_name(),

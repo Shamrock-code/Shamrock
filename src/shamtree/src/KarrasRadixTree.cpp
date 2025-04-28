@@ -34,6 +34,11 @@ void __karras_alg(
     sham::DeviceBuffer<u8> &out_buf_rchild_flag,
     sham::DeviceBuffer<u32> &out_buf_endrange) {
 
+    // Early return if the tree is a single leaf as there is no tree structure in this case.
+    if (internal_cell_count == 0) {
+        return;
+    }
+
     sham::kernel_call(
         queue,
         sham::MultiRef{in_morton},

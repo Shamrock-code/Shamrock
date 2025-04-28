@@ -70,3 +70,33 @@ TestStart(Unittest, "shamtree/KarrasRadixTree", test_karras_radix_tree, 1) {
     REQUIRE_EQUAL(tree.buf_rchild_flag.copy_to_stdvec(), expected_rchild_flag);
     REQUIRE_EQUAL(tree.buf_endrange.copy_to_stdvec(), expected_endrange);
 }
+
+TestStart(Unittest, "shamtree/KarrasRadixTree(one-cell)", test_karras_radix_tree_one_cell, 1) {
+
+    // In this test we supply only a single morton code, as such the tree is just a single leaf.
+    // As such every buffer should be empty as there is no tree structure.
+
+    std::vector<Tmorton> test_morton_codes = {
+        0b0000000000100100000000100100000000100100000000100100000000100100,
+    };
+
+    std::vector<u32> expected_lchild_id  = {};
+    std::vector<u8> expected_lchild_flag = {};
+    std::vector<u32> expected_rchild_id  = {};
+    std::vector<u8> expected_rchild_flag = {};
+    std::vector<u32> expected_endrange   = {};
+
+    sham::DeviceBuffer<Tmorton> morton_codes(
+        test_morton_codes.size(), shamsys::instance::get_compute_scheduler_ptr());
+
+    morton_codes.copy_from_stdvec(test_morton_codes);
+
+    auto tree = shamtree::karras_tree_from_reduced_morton_set(
+        shamsys::instance::get_compute_scheduler_ptr(), test_morton_codes.size(), morton_codes);
+
+    REQUIRE_EQUAL(tree.buf_lchild_id.copy_to_stdvec(), expected_lchild_id);
+    REQUIRE_EQUAL(tree.buf_rchild_id.copy_to_stdvec(), expected_rchild_id);
+    REQUIRE_EQUAL(tree.buf_lchild_flag.copy_to_stdvec(), expected_lchild_flag);
+    REQUIRE_EQUAL(tree.buf_rchild_flag.copy_to_stdvec(), expected_rchild_flag);
+    REQUIRE_EQUAL(tree.buf_endrange.copy_to_stdvec(), expected_endrange);
+}

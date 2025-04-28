@@ -46,6 +46,20 @@ namespace shammath {
 
         /// Check if this matrix is equal to another one
         bool operator==(const mat<T, m, n> &other) { return data == other.data; }
+
+        /// check if this matrix is eauql to another one at a given precison
+        bool equal_at_precision(const mat<T, m, n> &other, const T precision) {
+            bool res = true;
+            for (auto i = 0; i < m; i++) {
+                for (auto j = 0; j < n; j++) {
+                    if (sham::abs(data[i * n + j] - other.data[i * n + j]) < precision) {
+                        res = false;
+                        break;
+                    }
+                }
+            }
+            return res;
+        }
     };
 
     /// Returns the identity matrix of size n

@@ -10,12 +10,14 @@
 #pragma once
 
 /**
- * @file MatrixExponential.hpp
+ * @file matrix_exponential.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  */
 
-#include "LinalUtilities.hpp"
+#include "shambase/type_traits.hpp"
+#include "matrix_op.hpp"
+#include "shambackends/sycl.hpp"
 
 namespace shammath {
 
@@ -210,11 +212,25 @@ namespace shammath {
         return coefs;
     }
 
+    /**
+     * @brief this function compute the Taylor's polynomial order (m_star)
+     * the optimal number of matrix product during the taylor evaluation step(k_star)
+     * and the optimal scaling factor (s_star)
+     * @param K maximum number of matrix product allow
+     * @param seq_mk precompute set of Polynomial order
+     * @param seq_theta_mk precomopute set of precompute parameters
+     * @param A the matrix
+     * @param size_A the matrix A size
+     * @param k_start the optimal number of matrix product during the taylor evaluation step
+     * @param m_start the Taylor's polynomial order
+     * @param s_star the optimal scaling factor
+     */
+    template<class T, class Extents1, class Layout1, class Accessor1>
     inline void order_scale(
-        const int K,
+        const i64 K,
         std::array<i64, 9> &seq_mk,
         std::array<f64, 9> &seq_theta_mk,
-        const Array2D &A,
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &A,
         const size_t size_A,
         i64 &k_star,
         i64 &m_star,
@@ -223,47 +239,45 @@ namespace shammath {
         k_star = K;
         s_star = 0;
 
-        f64 norm_A = 0;
-        compute_L1_norm(A, size_A, norm_A);
+        T norm_A = 0;
+        mat_L1_norm<T>(A, norm_A);
 
-        i64 s_tilde = static_cast<i64>(
-            sycl::ceil(sycl::fmax(0.0f, sycl::log2(norm_A / seq_theta_mk[K - 1]))));
-        s_star = s_tilde;
-
-        i64 k     = 2;
-        bool cond = false;
+        i64 s_tilde = static_cast<i64>(sycl::ceil(sham::max(
+            static_cast<f64>(0.0), static_cast<f64>(sycl::log2(norm_A / seq_theta_mk[K - 1])))));
+        s_star      = s_tilde;
+        i64 k       = 2;
+        bool cond   = false;
         for (; k < (K + 1) && !cond; k++) {
             cond   = (norm_A <= seq_theta_mk[k - 1]) && (norm_A <= seq_theta_mk[K - 1]);
             m_star = cond * seq_mk[k - 1] + !cond * m_star;
             k_star = cond * k + !cond * k_star;
         }
-
-        i64 k_choice = sycl::fmin(K, k); // if we break the preceding loop then use k else K
-        auto ld_7    = [&](real_t s_val) {
+        i64 k_choice = sycl::min(K, k); // if we break the preceding loop then use k else K
+        auto ld_7    = [&](i64 s_val) {
             k_star = k_choice - 1;
-            s_star = sycl::max(0, s_val);
+            s_star = sham::max(0LL, s_val);
             m_star = seq_mk[k_star - 1];
         };
 
-        auto ld_8 = [&](real_t s_val) {
+        auto ld_8 = [&](i64 s_val) {
             k_star = k_choice - 2;
-            s_star = sycl::fmax(1, s_val + 1);
+            s_star = sham::max(1LL, s_val + 1);
             m_star = seq_mk[k_star - 1];
         };
 
-        auto ld_9 = [&](real_t s_val) {
+        auto ld_9 = [&](i64 s_val) {
             k_star = k_choice - 3;
-            s_star = sycl::fmax(2, s_val + 2);
+            s_star = sham::max(2LL, s_val + 2);
             m_star = seq_mk[k_star - 1];
         };
 
-        f64 cmp_1 = norm_A / sycl::pow(2, s_tilde);
+        f64 cmp_1 = norm_A / (1 << s_tilde);
 
         i64 val_2 = ((k_choice >= 8) && (cmp_1 <= 2 * seq_theta_mk[k_choice - 3])) * 2;
         i64 val_3 = ((k_choice >= 9) && (cmp_1 <= 4 * seq_theta_mk[k_choice - 4])) * 3;
         i64 val_1 = ((k_choice >= 7) && (cmp_1 <= seq_theta_mk[k_choice - 2]));
 
-        i64 val = sycl::fmax(val_1, sycl::fmax(val_2, val_3));
+        i64 val = sham::max(val_1, sham::max(val_2, val_3));
 
         auto process_val = [&](int val) {
             if (val == 1) {
@@ -278,106 +292,132 @@ namespace shammath {
         process_val(val);
     }
 
-    inline void modified_taylor_eval(
+    /**
+     * @brief This function compute the Taylor polynomial up to order m_star
+     * @param q Paterson-Stockmeyer interger (it's used to compute the matrix power)
+     * @param r Paterson-Stockmeyer polynomial degree
+     * @param bi_seq sequence of coef needed for Paterson-Stockmeyer coefficient B_k
+     * @param size size of matrices
+     * @param A input matrix
+     * @param F output matrix
+     * @param B,I,Id matrices for intermediate computations
+     */
+    template<
+        typename T,
+        class U,
+        class Extents1,
+        class Extents2,
+        class Extents3,
+        class Extents4,
+        class Extents5,
+        class Layout1,
+        class Layout2,
+        class Layout3,
+        class Layout4,
+        class Layout5,
+        class Accessor1,
+        class Accessor2,
+        class Accessor3,
+        class Accessor4,
+        class Accessor5>
+    inline void taylor_eval(
         const i64 r,
         const i64 q,
         std::array<f64, 30> &bi_seq,
         const size_t size,
-        Array2D &A,
-        Array2D &F) {
-        Array2D B = {0}, I = {0}, Id = {0};
-        set_nul_to_identity_2d_array(Id, size);
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &A,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &F,
+        const std::mdspan<T, Extents3, Layout3, Accessor3> B,
+        const std::mdspan<T, Extents4, Layout4, Accessor4> I,
+        const std::mdspan<T, Extents5, Layout5, Accessor5> Id) {
+        mat_set_nul<T>(F);
+
         for (auto k = r - 1; k >= 0; k--) {
-            // set_nul_2d_array(I,size);
-            // set_nul_2d_array(B,size);
-            set_nul_to_identity_2d_array(I, size);
+            mat_set_identity<T>(I);
+            mat_set_identity<T>(Id);
+            mat_set_nul<T>(B);
             i64 cc = 0;
 
             for (auto j = 1; j <= q; j++) {
-                compute_MatMatMut(A, I, size);
+                mat_copy<T>(I, Id);
+                mat_gemm<T, U>(1, A, Id, 0, I);
                 cc = q * k + j;
-                compute_MatMatAdd(B, I, size, 1.0, bi_seq[cc]);
+                mat_axpy_beta<T, U>(bi_seq[cc], I, 1, B);
             }
+            mat_set_identity<T>(Id);
 
             i64 cond = (k >= 1);
-            compute_MatMatAdd(F, B, size);
-            compute_MatMatAdd(I, Id, size, cond, (1 - cond));
-            compute_MatMatMut(I, F, size);
-        }
+            mat_axpy_beta<T, U>(1, B, 1, F);
+            mat_axpy_beta<T, U>(1 - cond, Id, cond, I);
 
-        compute_MatMatAdd(F, Id, size);
+            mat_gemm<T, U>(1, F, I, 0, B);
+            mat_copy<T>(B, F);
+        }
+        mat_set_identity<T>(Id);
+        mat_axpy_beta<T, U>(1, Id, 1, F);
     }
 
-    inline void mat_expo(i64 K, Array2D &, const size_t size_A) {
-        auto seq_mk        = define_sequence_mk();
-        auto seq_qk        = define_sequence_qk();
-        auto seq_rk        = define_sequence_rk();
-        auto seq_theta_mk  = define_sequence_theta_mk();
-        auto seq_ntheta_mk = define_sequence_ntheta_mk();
+    /**
+     * @brief matrix scaling-squaring Talylor-based matrix exponential
+     * @param K maximum number of matrix product allow
+     * @param A input matrix
+     * @param F output matrix
+     * @param B,I,Id matrices
+     * @param size_A size of matrices
+     */
+    template<
+        typename T,
+        class U,
+        class Extents1,
+        class Extents2,
+        class Extents3,
+        class Extents4,
+        class Extents5,
+        class Layout1,
+        class Layout2,
+        class Layout3,
+        class Layout4,
+        class Layout5,
+        class Accessor1,
+        class Accessor2,
+        class Accessor3,
+        class Accessor4,
+        class Accessor5>
+    inline void mat_expo(
+        const i64 K,
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &A,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &F,
+        const std::mdspan<T, Extents3, Layout3, Accessor3> B,
+        const std::mdspan<T, Extents4, Layout4, Accessor4> I,
+        const std::mdspan<T, Extents5, Layout5, Accessor5> Id,
+        const size_t size_A) {
+        auto seq_mk        = sequence_mk();
+        auto seq_qk        = sequence_qk();
+        auto seq_rk        = sequence_rk();
+        auto seq_ntheta_mk = sequence_nheta_mk();
         auto seq_bi        = define_bexp_coef2();
-        auto seq_bi_exp    = define_bexp_coef1();
-        f64 _u16           = 1.110e-16;
 
         i64 k_star{0}, m_star{0}, s_star{0};
         // computation of k*, s*, m*
-        // order_scale(K,seq_mk,seq_theta_mk,A,size_A,k_star,m_star,s_star);
-        order_scale(K, seq_mk, seq_ntheta_mk, A, size_A, k_star, m_star, s_star);
+        order_scale<T>(K, seq_mk, seq_ntheta_mk, A, size_A, k_star, m_star, s_star);
         i64 r = seq_rk[k_star - 1];
         i64 q = seq_qk[k_star - 1];
-
         // scaling step
-        i64 pw           = sycl::pow(2, s_star);
+        i64 pw           = (1 << s_star);
         f64 scale_factor = 1.0 / pw;
-        compute_scalMat(A, scale_factor, size_A);
+        mat_mul_scalar<T>(A, scale_factor);
 
         // Taylor polynomial evaluation
-        Array2d F = {0};
-        modified_taylor_eval(r, q, seq_bi, size_A, A, F);
+        taylor_eval<T, U>(r, q, seq_bi, size_A, A, F, B, I, Id);
 
         // squaring step
-        Array2D I = {0};
-        set_nul_to_identity_2d_array(I, size_A);
-        for (int j = 1; j <= pw; j++) {
-            ompute_MatMatMut(F, I, size_A);
+        mat_set_identity<T>(Id);
+        mat_set_identity<T>(I);
+
+        for (auto j = 1; j <= pw; j++) {
+            mat_copy<T>(I, Id);
+            mat_gemm<T, U>(1, F, Id, 0, I);
         }
-        copy_between_2d_array(A, I, size_A);
+        mat_copy<T>(I, A);
     }
-
-    // inline
-    // void test_matrix_eponential()
-    // {
-    //     int K=9;
-    //     int size_A = 3;
-    //     Array2D A = {0};
-    //
-    //     // cas test 1
-    //     // set_nul_to_identity_2d_array(A,size_A);
-    //
-    //
-    //      // cas test 2
-    //     // A[0][0] = -3; A[0][1] = 0.5; A[0][2] = 2.5;
-    //     // A[1][0] = 0.5; A[1][1] = -0.5; A[1][2] = 0;
-    //     // A[2][0] = 2.5; A[2][1] = 0; A[2][2] =-2.5;
-    //
-    //     // cas test 3
-    //     A[0][0] = -0.075; A[0][1] = 0.025; A[0][2] = 0.05;
-    //     A[1][0] = 0.025; A[1][1] = -0.025; A[1][2] = 0;
-    //     A[2][0] = 0.05; A[2][1] = 0; A[2][2] =-0.05;
-
-    //     mat_expo(K, A, size_A);
-
-    //     std::cout << "\n\n " << "=============== exponential of A ================= " << "\n\n";
-    //     for(int i = 0; i <size_A; i++)
-    //     {
-    //         std::cout << "line ( " << i << " )" << "\n\n";
-    //         for(int j = 0; j < size_A; j++)
-    //         {
-    //             std::cout << "colonne ( " <<  i << ", " << j << " )" <<  A[i][j] << "\n\n";
-    //         }
-
-    //         std::cout << "\n\n";
-    //     }
-
-    // }
-
 } // namespace shammath

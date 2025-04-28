@@ -255,19 +255,19 @@ namespace shammath {
         i64 k_choice = sycl::min(K, k); // if we break the preceding loop then use k else K
         auto ld_7    = [&](i64 s_val) {
             k_star = k_choice - 1;
-            s_star = sham::max(0LL, s_val);
+            s_star = sham::max(static_cast<i64>(0), s_val);
             m_star = seq_mk[k_star - 1];
         };
 
         auto ld_8 = [&](i64 s_val) {
             k_star = k_choice - 2;
-            s_star = sham::max(1LL, s_val + 1);
+            s_star = sham::max(static_cast<i64>(1), s_val + 1);
             m_star = seq_mk[k_star - 1];
         };
 
         auto ld_9 = [&](i64 s_val) {
             k_star = k_choice - 3;
-            s_star = sham::max(2LL, s_val + 2);
+            s_star = sham::max(static_cast<i64>(2), s_val + 2);
             m_star = seq_mk[k_star - 1];
         };
 

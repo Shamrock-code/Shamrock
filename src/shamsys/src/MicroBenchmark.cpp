@@ -30,10 +30,19 @@
 #include <stdexcept>
 
 namespace shamsys::microbench {
+    /// MPI point-to-point bandwidth benchmark
     void p2p_bandwith(u32 wr_sender, u32 wr_receiv);
+
+    /// MPI point-to-point latency benchmark
     void p2p_latency(u32 wr1, u32 wr2);
+
+    /// SAXPY benchmark, to get the maximum bandwidth
     void saxpy();
+
+    /// ADD_MUL benchmark to get the maximum floating point performance
     void add_mul_rotation_f32();
+
+    /// same as add_mul_rotation_f32 but for double
     void add_mul_rotation_f64();
 } // namespace shamsys::microbench
 

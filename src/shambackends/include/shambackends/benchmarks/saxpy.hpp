@@ -23,19 +23,47 @@
 
 namespace sham::benchmarks {
 
+    /** @brief saxpy function for benchmarking.
+     *
+     * @param[in] i        Index to start the computation.
+     * @param[in] n        Number of elements to process.
+     * @param[in] a        Coefficient in the saxpy operation.
+     * @param[in] x        Input array.
+     * @param[inout] y     Output array.
+     */
     template<class T>
     inline void saxpy(u32 i, int n, T a, T *__restrict x, T *__restrict y) {
         if (i < n)
             y[i] = a * x[i] + y[i];
     }
 
+    /// Structure containing the results of a saxpy benchmark.
     struct saxpy_result {
+        /// Name of the function.
         std::string func_name;
+        /// Computation time in milliseconds.
         f64 milliseconds;
+        /// Bandwidth in gibibytes per second.
         f64 bandwidth;
     };
 
-    // From https://developer.nvidia.com/blog/how-implement-performance-metrics-cuda-cc/
+    /**
+     * @brief saxpy function for benchmarking.
+     *
+     * @param[in] sched         Device scheduler.
+     * @param[in] N             Number of elements to process.
+     * @param[in] init_x        Initial value for the input array.
+     * @param[in] init_y        Initial value for the output array.
+     * @param[in] a             Coefficient in the saxpy operation.
+     * @param[in] load_size     Number of bytes processed per element.
+     * @param[in] check_correctness Check if the result is correct.
+     *
+     *From https://developer.nvidia.com/blog/how-implement-performance-metrics-cuda-cc/
+     *
+     * @return saxpy_result containing the computation time in milliseconds,
+     *         the bandwidth in gibibytes per second, and the name of the
+     *         function.
+     */
     template<class T>
     inline saxpy_result saxpy_bench(
         DeviceScheduler_ptr sched,

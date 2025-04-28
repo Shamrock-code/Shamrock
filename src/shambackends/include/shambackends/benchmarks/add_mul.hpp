@@ -23,6 +23,21 @@
 
 namespace sham::benchmarks {
 
+    /**
+     * @brief kernel for the add_mul benchmark
+     *
+     * Saturate the fpu to hide away memory latency
+     * Since we now that there are 6 flops per iteration
+     * this kernel can be used to compute the flops
+     *
+     * @param i the index of the element to rotate
+     * @param nrotation the number of rotations to apply
+     * @param cs the cosine of the angle of rotation
+     * @param sn the sine of the angle of rotation
+     * @param in1 the first input vector
+     * @param in2 the second input vector
+     * @param out the output vector
+     */
     template<class T>
     inline void add_mul(
         u32 i, int nrotation, T cs, T sn, T *__restrict in1, T *__restrict in2, T *__restrict out) {
@@ -38,13 +53,28 @@ namespace sham::benchmarks {
         out[i] = sham::dot(x, y);
     }
 
+    /// Structure containing the results of an add_mul benchmark
     struct add_mul_result {
-        std::string func_name;
-        f64 milliseconds;
-        f64 flops;
+        std::string func_name; ///< Name of the function
+        f64 milliseconds;      ///< Computation time in milliseconds
+        f64 flops;             ///< Flops per second
     };
 
-    // From https://www.bealto.com/gpu-benchmarks_flops.html
+    /**
+     * @brief Run the add_mul benchmark
+     *
+     * From https://www.bealto.com/gpu-benchmarks_flops.html
+     *
+     * @param sched the scheduler for the device
+     * @param N the number of elements to process
+     * @param init_x the initial value of the first input vector
+     * @param init_y the initial value of the second input vector
+     * @param cs the cosine of the rotation angle
+     * @param sn the sine of the rotation angle
+     * @param nrotation the number of rotations to apply
+     * @param float_count the number of floats per element
+     * @return the result of the benchmark as an add_mul_result
+     */
     template<class T>
     inline add_mul_result add_mul_bench(
         DeviceScheduler_ptr sched,

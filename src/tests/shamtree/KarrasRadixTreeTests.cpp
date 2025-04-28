@@ -7,18 +7,11 @@
 //
 // -------------------------------------------------------//
 
-#include "shambase/integer.hpp"
 #include "shambackends/DeviceBuffer.hpp"
-#include "shambackends/fmt_bindings/fmt_defs.hpp"
-#include "shamcomm/logs.hpp"
-#include "shammath/AABB.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamtree/KarrasRadixTree.hpp"
-#include "shamtree/MortonCodeSet.hpp"
-#include "shamtree/MortonCodeSortedSet.hpp"
-#include "shamtree/MortonReducedSet.hpp"
 #include <vector>
 
 using Tmorton = u64;

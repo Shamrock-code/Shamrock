@@ -10,6 +10,11 @@ on:
 
   workflow_dispatch:
 
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository_owner }}
 
 jobs:
 
@@ -130,8 +135,10 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-
-
+  build_push_docker:
+    name: Build dockerfiles
+    needs: [src_check]
+    uses: ./.github/workflows/build-dockerfiles.yml
 
   publish_release:
 

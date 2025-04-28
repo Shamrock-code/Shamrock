@@ -24,7 +24,9 @@ execute_process(
 # With a release tarball, "git status" will fail (return non zero)
 if(GIT_STATUS)
     set(SHAMROCK_VERSION_SUFFIX "")
+    set(SHAMROCK_FOLDER_IS_GIT 0)
 else()
+    set(SHAMROCK_FOLDER_IS_GIT 1)
     # Get the latest abbreviated commit hash of the working branch
     execute_process(
         COMMAND git log -1 --format=%h

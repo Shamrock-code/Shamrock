@@ -10,16 +10,25 @@
 #pragma once
 
 /**
- * @file shamrock_smi.hpp
+ * @file sysinfo.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
+ *
  */
 
-namespace shamsys {
+#include <cstddef>
+#include <optional>
+
+namespace sham {
 
     /**
-     * @brief Print information about all available SYCL devices in the cluster.
+     * @brief Get the amount of physical memory (RAM) available on the system, in bytes.
+     *
+     * @return The amount of physical memory available, or std::nullopt if the information
+     *         cannot be retrieved.
+     *
+     * @details This function is implemented for Mac OS X and Linux. Other platforms will
+     *          return std::nullopt.
      */
-    void shamrock_smi(bool list_all_devices);
-
-} // namespace shamsys
+    std::optional<std::size_t> getPhysicalMemory();
+} // namespace sham

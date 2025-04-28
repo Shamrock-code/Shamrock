@@ -69,6 +69,12 @@ TestStart(Unittest, "shamtree/KarrasRadixTree", test_karras_radix_tree, 1) {
     REQUIRE_EQUAL(tree.buf_lchild_flag.copy_to_stdvec(), expected_lchild_flag);
     REQUIRE_EQUAL(tree.buf_rchild_flag.copy_to_stdvec(), expected_rchild_flag);
     REQUIRE_EQUAL(tree.buf_endrange.copy_to_stdvec(), expected_endrange);
+
+    REQUIRE_EQUAL(tree.buf_lchild_id.get_size(), 11);
+    REQUIRE_EQUAL(tree.buf_rchild_id.get_size(), 11);
+    REQUIRE_EQUAL(tree.buf_lchild_flag.get_size(), 11);
+    REQUIRE_EQUAL(tree.buf_rchild_flag.get_size(), 11);
+    REQUIRE_EQUAL(tree.buf_endrange.get_size(), 11);
 }
 
 TestStart(Unittest, "shamtree/KarrasRadixTree(one-cell)", test_karras_radix_tree_one_cell, 1) {
@@ -99,4 +105,10 @@ TestStart(Unittest, "shamtree/KarrasRadixTree(one-cell)", test_karras_radix_tree
     REQUIRE_EQUAL(tree.buf_lchild_flag.copy_to_stdvec(), expected_lchild_flag);
     REQUIRE_EQUAL(tree.buf_rchild_flag.copy_to_stdvec(), expected_rchild_flag);
     REQUIRE_EQUAL(tree.buf_endrange.copy_to_stdvec(), expected_endrange);
+
+    REQUIRE_EQUAL(tree.buf_lchild_id.get_size(), 0);
+    REQUIRE_EQUAL(tree.buf_rchild_id.get_size(), 0);
+    REQUIRE_EQUAL(tree.buf_lchild_flag.get_size(), 0);
+    REQUIRE_EQUAL(tree.buf_rchild_flag.get_size(), 0);
+    REQUIRE_EQUAL(tree.buf_endrange.get_size(), 0);
 }

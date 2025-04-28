@@ -15,7 +15,9 @@
  */
 
 #include "shambackends/Device.hpp"
+#include "shambase/memory.hpp"
 #include "shambase/string.hpp"
+#include "shambackends/sysinfo.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiInfo.hpp"
 
@@ -54,8 +56,52 @@ namespace sham {
         return Backend::UNKNOWN; // Unknown backend
     }
 
-#define FETCH_PROP(info_, info_type) info_type info_ = dev.get_info<sycl::info::device::info_>();
-#define FETCH_PROPN(info_, info_type, n) info_type n = dev.get_info<sycl::info::device::info_>();
+    /**
+     * @brief Returns the type of a SYCL device.
+     *
+     * This function takes a SYCL device and returns a DeviceType enum that
+     * represents the type of device. The type can be either CPU, GPU, or
+     * UNKNOWN.
+     *
+     * @param dev The SYCL device to query.
+     * @return A DeviceType enum that represents the type of device.
+     */
+    DeviceType get_device_type(const sycl::device &dev) {
+        auto DeviceType = dev.get_info<sycl::info::device::device_type>();
+        switch (DeviceType) {
+        case sycl::info::device_type::cpu: return DeviceType::CPU;
+        case sycl::info::device_type::gpu: return DeviceType::GPU;
+        default: return DeviceType::UNKNOWN;
+        }
+    }
+
+    /// Fetches a property of a SYCL device
+#define FETCH_PROP(info_, info_type)                                                               \
+    std::optional<info_type> info_ = [&]() -> std::optional<info_type> {                           \
+        try {                                                                                      \
+            return {dev.get_info<sycl::info::device::info_>()};                                    \
+        } catch (...) {                                                                            \
+            logger::warn_ln(                                                                       \
+                "Device",                                                                          \
+                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
+                name);                                                                             \
+            return {};                                                                             \
+        }                                                                                          \
+    }();
+
+    /// Fetches a property of a SYCL device (for cases where multiple prop would have the same name)
+#define FETCH_PROPN(info_, info_type, n)                                                           \
+    std::optional<info_type> n = [&]() -> std::optional<info_type> {                               \
+        try {                                                                                      \
+            return {dev.get_info<sycl::info::device::info_>()};                                    \
+        } catch (...) {                                                                            \
+            logger::warn_ln(                                                                       \
+                "Device",                                                                          \
+                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
+                name);                                                                             \
+            return {};                                                                             \
+        }                                                                                          \
+    }();
 
     /**
      * @brief Fetches the properties of a SYCL device.
@@ -65,6 +111,15 @@ namespace sham {
      *         SYCL device.
      */
     DeviceProperties fetch_properties(const sycl::device &dev) {
+
+        // Just to ensure that this one is not empty
+        std::string name = "?";
+        FETCH_PROPN(name, std::string, dev_name);
+        if (dev_name) {
+            name = *dev_name;
+        }
+
+        FETCH_PROP(vendor, std::string)
 
         FETCH_PROP(device_type, sycl::info::device_type)
         FETCH_PROP(vendor_id, uint32_t)
@@ -132,8 +187,6 @@ namespace sham {
         // FETCH_PROP(built_in_kernel_ids,std::vector<sycl::kernel_id>)
         // FETCH_PROP(built_in_kernels, std::vector<std::string>)
         // FETCH_PROP(platform, sycl::platform)
-        FETCH_PROP(name, std::string)
-        FETCH_PROP(vendor, std::string)
 
         FETCH_PROP(driver_version, std::string)
         FETCH_PROP(version, std::string)
@@ -151,13 +204,27 @@ namespace sham {
         FETCH_PROP(partition_type_property, sycl::info::partition_property)
         FETCH_PROP(partition_type_affinity_domain, sycl::info::partition_affinity_domain)
 
+// On acpp 2^64-1 is returned, so we need to correct it
+// see : https://github.com/AdaptiveCpp/AdaptiveCpp/issues/1573
+#ifdef SYCL_COMP_ACPP
+        if (get_device_backend(dev) == Backend::OPENMP) {
+            // Correct memory size
+            auto physmem = sham::getPhysicalMemory();
+            if (physmem) {
+                global_mem_size = {*physmem};
+            }
+        }
+#endif
+
         return {
             Vendor::UNKNOWN,         // We cannot determine the vendor
             get_device_backend(dev), // Query the backend based on the platform name
-            global_mem_size,
-            global_mem_cache_line_size,
-            global_mem_cache_size,
-            local_mem_size};
+            get_device_type(dev),
+            shambase::get_check_ref(global_mem_size),
+            shambase::get_check_ref(global_mem_cache_line_size),
+            shambase::get_check_ref(global_mem_cache_size),
+            shambase::get_check_ref(local_mem_size),
+            shambase::get_check_ref(max_compute_units)};
     }
 
     /**

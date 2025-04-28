@@ -83,14 +83,14 @@ Runing the code on 8 gpu per nodes
 ```bash
 module load hip
 module load openmpi
-$(which mpirun) -machinefile $OAR_NODEFILE -npernode 8 -x PATH=~/dpcpp_compiler/bin:$PATH -x LD_LIBRARY_PATH=~/dpcpp_compiler/lib:$LD_LIBRARY_PATH ./shamrock --sycl-cfg auto:HIP --loglevel 1 --sycl-ls-map  --benchmark-mpi --rscript ../exemples/spherical_wave.py
+$(which mpirun) -machinefile $OAR_NODEFILE -npernode 8 -x PATH=~/dpcpp_compiler/bin:$PATH -x LD_LIBRARY_PATH=~/dpcpp_compiler/lib:$LD_LIBRARY_PATH ./shamrock --sycl-cfg auto:HIP --loglevel 1 --smi  --benchmark-mpi --rscript ../exemples/spherical_wave.py
 ```
 
 
 ```bash
 module load hip
 module load openmpi
-$(which mpirun) -machinefile $OAR_NODEFILE -npernode 8 --mca pml ucx -x UCX_TLS=self,sm,rocm -x PATH=~/dpcpp_compiler/bin:$PATH -x LD_LIBRARY_PATH=~/dpcpp_compiler/lib:$LD_LIBRARY_PATH ./shamrock --sycl-cfg auto:HIP --loglevel 1 --sycl-ls-map  --benchmark-mpi --rscript ../exemples/spherical_wave.py
+$(which mpirun) -machinefile $OAR_NODEFILE -npernode 8 --mca pml ucx -x UCX_TLS=self,sm,rocm -x PATH=~/dpcpp_compiler/bin:$PATH -x LD_LIBRARY_PATH=~/dpcpp_compiler/lib:$LD_LIBRARY_PATH ./shamrock --sycl-cfg auto:HIP --loglevel 1 --smi  --benchmark-mpi --rscript ../exemples/spherical_wave.py
 ```
 
 

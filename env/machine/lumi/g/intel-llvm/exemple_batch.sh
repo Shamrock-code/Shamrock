@@ -37,5 +37,5 @@ export ACPP_DEBUG_LEVEL=0
 
 #
 srun --cpu-bind=${CPU_BIND} -- \
-    ./select_gpu $SHAMROCK_BIN_PATH/shamrock --force-dgpu-on --sycl-cfg auto:HIP --loglevel 1 --sycl-ls-map \
+    ./select_gpu $SHAMROCK_BIN_PATH/shamrock --force-dgpu-on --sycl-cfg auto:HIP --loglevel 1 --smi \
     --rscript $RSCRIPT

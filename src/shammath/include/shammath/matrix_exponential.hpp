@@ -253,7 +253,7 @@ namespace shammath {
             m_star = cond * seq_mk[k - 1] + !cond * m_star;
             k_star = cond * k + !cond * k_star;
         }
-        i32 k_choice = sycl::min(K, k); // if we break the preceding loop then use k else K
+        i32 k_choice = sham::min(K, k); // if we break the preceding loop then use k else K
         auto ld_7    = [&](i32 s_val) {
             k_star = k_choice - 1;
             s_star = sham::max(static_cast<i32>(0), s_val);

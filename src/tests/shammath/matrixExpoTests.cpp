@@ -37,21 +37,5 @@ TestStart(Unittest, "shammath/matrix_expo::scaling_and_squaring", test_mat_expo,
     i32 K = 9, size_A = 3;
     shammath::mat_expo<f64, f64>(
         K, A.get_mdspan(), F.get_mdspan(), B.get_mdspan(), I.get_mdspan(), Id.get_mdspan(), size_A);
-    shammath::mat_sub_equal<f64>(ex_res.get_mdspan(), A.get_mdspan());
-    f64 n_l1 = 0;
-    shammath::mat_L1_norm<f64>(ex_res.get_mdspan(), n_l1);
-
-    // // std::cout << "\n\n " << "=============== exponential of A ================= " << "\n\n";
-    // for (int i = 0; i < size_A; i++) {
-    //     std::cout << "line ( " << i << " )" << "\n\n";
-    //     for (int j = 0; j < size_A; j++) {
-    //         std::cout << "colonne ( " << i << ", " << j << " )" <<
-    //         std::setprecision(20)<<A.get_mdspan()(i, j) <<
-    //         "\n\n";
-    //     }
-
-    //     std::cout << "\n\n";
-    // }
-
     REQUIRE_EQUAL(A.equal_at_precision(ex_res, 1e-10), true);
 }

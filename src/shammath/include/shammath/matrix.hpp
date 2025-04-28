@@ -52,7 +52,7 @@ namespace shammath {
             bool res = true;
             for (auto i = 0; i < m; i++) {
                 for (auto j = 0; j < n; j++) {
-                    if (sham::abs(data[i * n + j] - other.data[i * n + j]) < precision) {
+                    if (sham::abs(data[i * n + j] - other.data[i * n + j]) >= precision) {
                         res = false;
                     }
                 }

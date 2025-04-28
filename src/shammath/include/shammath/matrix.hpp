@@ -54,7 +54,6 @@ namespace shammath {
                 for (auto j = 0; j < n; j++) {
                     if (sham::abs(data[i * n + j] - other.data[i * n + j]) < precision) {
                         res = false;
-                        break;
                     }
                 }
             }

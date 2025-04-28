@@ -201,6 +201,8 @@ namespace shamtree {
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Explicit instantiations
     ////////////////////////////////////////////////////////////////////////////////////////////////
+
+#ifndef DOXYGEN // To avoid doxygen complaining like always ...
     template KarrasRadixTree karras_tree_from_reduced_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
@@ -222,5 +224,6 @@ namespace shamtree {
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<u64> &morton_codes);
+#endif
 
 } // namespace shamtree

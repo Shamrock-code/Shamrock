@@ -23,6 +23,7 @@ set(Sources
     src/MortonCodeSet.cpp
     src/MortonCodeSortedSet.cpp
     src/MortonReducedSet.cpp
+    src/KarrasRadixTree.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

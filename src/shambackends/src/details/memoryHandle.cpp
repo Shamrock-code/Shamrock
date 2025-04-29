@@ -28,7 +28,7 @@ namespace sham::details {
 
     template<USMKindTarget target>
     USMPtrHolder<target> create_usm_ptr(
-        u32 size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment) {
+        size_t size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment) {
 
         StackEntry __st{};
 
@@ -36,7 +36,6 @@ namespace sham::details {
             if (size > 0) {
                 return USMPtrHolder<target>::create(size, dev_sched, alignment);
             } else {
-
                 return USMPtrHolder<target>::create_nullptr(dev_sched);
             }
         };
@@ -58,11 +57,11 @@ namespace sham::details {
 
 #ifndef DOXYGEN
     template USMPtrHolder<device> create_usm_ptr<device>(
-        u32 size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+        size_t size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
     template USMPtrHolder<shared> create_usm_ptr<shared>(
-        u32 size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+        size_t size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
     template USMPtrHolder<host> create_usm_ptr<host>(
-        u32 size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+        size_t size, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
 
     template void release_usm_ptr<device>(
         USMPtrHolder<device> &&usm_ptr_hold, details::BufferEventHandler &&events);

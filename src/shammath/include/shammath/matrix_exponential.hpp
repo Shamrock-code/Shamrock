@@ -169,8 +169,8 @@ namespace shammath {
      * @param seq_theta_mk precomputed set of parameters
      * @param A the matrix
      * @param size_A the matrix A size
-     * @param k_start the optimal number of matrix product during the taylor evaluation step
-     * @param m_start the Taylor's polynomial order
+     * @param k_star the optimal number of matrix product during the taylor evaluation step
+     * @param m_star the Taylor's polynomial order
      * @param s_star the optimal scaling factor
      */
     template<class T, class Extents1, class Layout1, class Accessor1>

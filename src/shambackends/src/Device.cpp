@@ -241,15 +241,13 @@ namespace sham {
 
         // If CUDA-aware MPI is enabled, and the device is a CUDA device,
         // then we can use it
-        if ((shamcomm::get_mpi_cuda_aware_status() == shamcomm::Yes
-             || shamcomm::get_mpi_cuda_aware_status() == shamcomm::ForcedYes)
+        if (shamcomm::is_direct_comm_aware(shamcomm::get_mpi_cuda_aware_status())
             && (prop.backend == Backend::CUDA)) {
             dgpu_capable = true;
         }
 
         // Same for ROCm-aware MPI and ROCm devices
-        if ((shamcomm::get_mpi_rocm_aware_status() == shamcomm::Yes
-             || shamcomm::get_mpi_rocm_aware_status() == shamcomm::ForcedYes)
+        if (shamcomm::is_direct_comm_aware(shamcomm::get_mpi_rocm_aware_status())
             && (prop.backend == Backend::ROCM)) {
             dgpu_capable = true;
         }
@@ -257,6 +255,11 @@ namespace sham {
         // And for OpenMP since the data is on host is it by definition aware
         if (prop.backend == Backend::OPENMP) {
             dgpu_capable = true;
+        }
+
+        // For other cases we can still force the DGPU state by setting a forced state
+        if (auto forcing = shamcomm::should_force_dgpu_state()) {
+            dgpu_capable = shamcomm::is_direct_comm_aware(*forcing);
         }
 
         return DeviceMPIProperties{dgpu_capable};

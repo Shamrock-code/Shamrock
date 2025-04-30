@@ -4,11 +4,24 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-from array_io import *
+import shamrock
 
-fdata = os.path.dirname(os.path.abspath(__file__)) + "/sedov_taylor.txt"
-r_theo, rho_theo, p_theo, vr_theo = read_four_arrays(fdata)
+sedov_sol = shamrock.phys.SedovTaylor()
+
+r_theo = np.linspace(0, 1, 300)
+p_theo = []
+vr_theo = []
+rho_theo = []
+for i in range(len(r_theo)):
+    _rho_theo, _vr_theo, _p_theo = sedov_sol.get_value(r_theo[i])
+    p_theo.append(_p_theo)
+    vr_theo.append(_vr_theo)
+    rho_theo.append(_rho_theo)
+
+r_theo = np.array(r_theo)
+p_theo = np.array(p_theo)
+vr_theo = np.array(vr_theo)
+rho_theo = np.array(rho_theo)
 
 gamma = 5.0 / 3.0
 

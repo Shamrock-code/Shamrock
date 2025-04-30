@@ -1,3 +1,14 @@
+## -------------------------------------------------------
+##
+## SHAMROCK code for hydrodynamics
+## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+##
+## -------------------------------------------------------
+
+message("   ---- c++ config section ----")
+
 include(CheckCXXCompilerFlag)
 
 set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection")  # or 11, 14, 17, 20
@@ -7,7 +18,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)  # optional, keep compiler extensions off
 check_cxx_compiler_flag("-march=native" COMPILER_SUPPORT_MARCHNATIVE)
 check_cxx_compiler_flag("-pedantic-errors" COMPILER_SUPPORT_PEDANTIC)
 check_cxx_compiler_flag("-fcolor-diagnostics" COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
-
 check_cxx_compiler_flag("-Werror=return-type" COMPILER_SUPPORT_ERROR_RETURN_TYPE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
@@ -69,8 +79,29 @@ if(NOT CXX_VALARRAY_COMPILE)
 endif()
 
 
-message( " ---- Shamrock C++ config ---- ")
-message( "  CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
-message( "  CMAKE_CXX_FLAGS_DEBUG : ${CMAKE_CXX_FLAGS_DEBUG}")
-message( "  CMAKE_CXX_FLAGS_RELEASE : ${CMAKE_CXX_FLAGS_RELEASE}")
-message( " ----------------------------- ")
+message( STATUS "CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
+message( STATUS "CMAKE_CXX_FLAGS_DEBUG : ${CMAKE_CXX_FLAGS_DEBUG}")
+message( STATUS "CMAKE_CXX_FLAGS_RELEASE : ${CMAKE_CXX_FLAGS_RELEASE}")
+
+######################
+# add build types
+######################
+
+include(ShamBuildAsan)
+include(ShamBuildUBsan)
+include(ShamBuildCoverage)
+
+set(ValidShamBuildType "Debug" "Release" "ASAN" "UBSAN" "COVERAGE")
+if(NOT CMAKE_BUILD_TYPE)
+    #set default build to release
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Cmake build type" FORCE)
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${ValidShamBuildType})
+endif()
+if(NOT "${CMAKE_BUILD_TYPE}" IN_LIST ValidShamBuildType)
+    message(FATAL_ERROR
+        "The required build type in unknown -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}. "
+        "please use a build type in the following list (case-sensitive) "
+        "${ValidShamBuildType}")
+endif()
+message(STATUS "current build type : CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${ValidShamBuildType})

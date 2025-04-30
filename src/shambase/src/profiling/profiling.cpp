@@ -17,6 +17,7 @@
 #include "shambase/profiling/chrome.hpp"
 #include "shambase/profiling/profiling.hpp"
 #include "shambase/string.hpp"
+#include "fmt/base.h"
 #include <fstream>
 #include <iostream>
 
@@ -33,8 +34,8 @@ std::string src_loc_to_name(const SourceLocation &loc) {
         loc.loc.column());
 }
 
-auto get_nvtx = []() {
-    const char *val = std::getenv("SHAM_PROF_USE_NVTX");
+auto get_profiling = []() {
+    const char *val = std::getenv("SHAM_PROFILING");
     if (val != nullptr) {
         if (std::string(val) == "1") {
             return true;
@@ -45,10 +46,17 @@ auto get_nvtx = []() {
     return false;
 };
 
-auto get_profiling = []() {
-    const char *val = std::getenv("SHAM_PROFILING");
+auto get_nvtx = []() {
+    const char *val = std::getenv("SHAM_PROF_USE_NVTX");
     if (val != nullptr) {
         if (std::string(val) == "1") {
+
+            if (!get_profiling()) {
+                fmt::println(
+                    "-- SHAM_PROF_USE_NVTX is set to 1 but SHAM_PROFILING is not set to 1.\n"
+                    "     please set SHAM_PROFILING=1 before SHAM_PROF_USE_NVTX=1");
+            }
+
             return true;
         } else if (std::string(val) == "0") {
             return false;
@@ -77,10 +85,10 @@ auto get_threshold = []() {
     return 1e-5;
 };
 
-bool enable_nvtx        = get_nvtx();
 bool enable_profiling   = get_profiling();
 bool use_complete_event = get_complete_event();
 f64 threshold           = get_threshold();
+bool enable_nvtx        = get_nvtx();
 
 void shambase::profiling::set_enable_nvtx(bool enable) { enable_nvtx = enable; }
 void shambase::profiling::set_enable_profiling(bool enable) { enable_profiling = enable; }

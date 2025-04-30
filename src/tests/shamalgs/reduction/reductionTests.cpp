@@ -35,10 +35,8 @@ void unit_test_reduc_sum(std::string name, Fct &&red_fct) {
     T min_b = Prop::get_min(), max_b = Prop::get_max();
 
     if constexpr (Prop::is_float_based) {
-        max_b /= Prop::get_max();
-        min_b /= Prop::get_min();
-        max_b *= 1e6;
-        min_b *= -1e6;
+        max_b = 1e6;
+        min_b = -1e6;
     }
 
     std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111, size_test, min_b, max_b);
@@ -73,10 +71,8 @@ void unit_test_reduc_min(std::string name, Fct &&red_fct) {
     T min_b = Prop::get_min(), max_b = Prop::get_max();
 
     if constexpr (Prop::is_float_based) {
-        max_b /= Prop::get_max();
-        min_b /= Prop::get_min();
-        max_b *= 1e6;
-        min_b *= -1e6;
+        max_b = 1e6;
+        min_b = -1e6;
     }
 
     std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111, size_test, min_b, max_b);
@@ -111,10 +107,8 @@ void unit_test_reduc_max(std::string name, Fct &&red_fct) {
     T min_b = Prop::get_min(), max_b = Prop::get_max();
 
     if constexpr (Prop::is_float_based) {
-        max_b /= Prop::get_max();
-        min_b /= Prop::get_min();
-        max_b *= 1e6;
-        min_b *= -1e6;
+        max_b = 1e6;
+        min_b = -1e6;
     }
 
     std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111, size_test, min_b, max_b);
@@ -148,10 +142,8 @@ void unit_test_reduc_sum_usm(std::string name, Fct &&red_fct) {
     T min_b = Prop::get_min(), max_b = Prop::get_max();
 
     if constexpr (Prop::is_float_based) {
-        max_b /= Prop::get_max();
-        min_b /= Prop::get_min();
-        max_b *= 1e6;
-        min_b *= -1e6;
+        max_b = 1e6;
+        min_b = -1e6;
     }
 
     std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111, size_test, min_b, max_b);
@@ -186,10 +178,8 @@ void unit_test_reduc_max_usm(std::string name, Fct &&red_fct) {
     T min_b = Prop::get_min(), max_b = Prop::get_max();
 
     if constexpr (Prop::is_float_based) {
-        max_b /= Prop::get_max();
-        min_b /= Prop::get_min();
-        max_b *= 1e6;
-        min_b *= -1e6;
+        max_b = 1e6;
+        min_b = -1e6;
     }
 
     std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111, size_test, min_b, max_b);
@@ -225,10 +215,8 @@ void unit_test_reduc_min_usm(std::string name, Fct &&red_fct) {
     T min_b = Prop::get_min(), max_b = Prop::get_max();
 
     if constexpr (Prop::is_float_based) {
-        max_b /= Prop::get_max();
-        min_b /= Prop::get_min();
-        max_b *= 1e6;
-        min_b *= -1e6;
+        max_b = 1e6;
+        min_b = -1e6;
     }
 
     std::vector<T> vals = shamalgs::random::mock_vector<T>(0x1111, size_test, min_b, max_b);
@@ -282,7 +270,7 @@ void unit_test_reduc_sum() {
         });
 }
 
-#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 void unit_test_reduc_sum_usm_group_impl() {
 
     unit_test_reduc_sum_usm<f64>(
@@ -630,7 +618,7 @@ void unit_test_reduc_max_usm() {
 
 TestStart(Unittest, "shamalgs/reduction/sum", reduc_kernel_utestsum, 1) { unit_test_reduc_sum(); }
 
-#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 TestStart(
     Unittest, "shamalgs/reduction/sum(usm:group_impl)", reduc_kernel_utestsum_usm_group_impl, 1) {
     unit_test_reduc_sum_usm_group_impl();
@@ -805,6 +793,8 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
             exp_test));
 #endif
 
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+
     results.emplace(
         "slicegroup8",
         shambase::benchmark_pow_len(
@@ -885,8 +875,6 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
             10,
             max_N,
             exp_test));
-
-#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
 
     results.emplace(
         "usmgroup128",

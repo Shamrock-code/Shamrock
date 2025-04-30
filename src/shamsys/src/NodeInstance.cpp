@@ -18,6 +18,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
@@ -187,7 +188,7 @@ namespace shamsys::instance {
             print += ("----------------------------------------------------\n");
             print += (recv);
             print += ("----------------------------------------------------");
-            printf("%s\n", print.data());
+            printf("%s\n\n", print.data());
         }
     }
 
@@ -196,7 +197,7 @@ namespace shamsys::instance {
         void print_device_list_debug() {
             u32 rank = 0;
 
-            std::string print_buf = "device avail : ";
+            std::string print_buf = "device avail : \n";
 
             for_each_device(
                 [&](u32 key_global, const sycl::platform &plat, const sycl::device &dev) {
@@ -207,7 +208,7 @@ namespace shamsys::instance {
                     std::string platname = PlatformName;
                     std::string devtype  = "truc";
 
-                    print_buf += std::to_string(key_global) + " " + devname + platname + "\n";
+                    print_buf += std::to_string(key_global) + " " + devname + " " + platname + "\n";
                 });
 
             logger::debug_sycl_ln("InitSYCL", print_buf);
@@ -217,6 +218,8 @@ namespace shamsys::instance {
 
     void start_sycl_auto(std::string search_key) {
         // start sycl
+
+        tmp::print_device_list_debug();
 
         if (syclinit::initialized) {
             throw ShamsysInstanceException("Sycl is already initialized");
@@ -279,19 +282,28 @@ namespace shamsys::instance {
         mpidtypehandler::init_mpidtype();
     }
 
+    auto init_strategy = shamcmdopt::getenv_str_default_register(
+        "SHAM_MPI_INIT_STRATEGY",
+        "syclfirst",
+        "Select the MPI init strategy (mpifirst, syclfirst) [default: syclfirst]");
+
     void init_sycl_mpi(std::string search_key, MPIInitInfo mpi_info) {
 
-        start_sycl_auto(search_key);
-
-        start_mpi(mpi_info);
+        if (init_strategy == "syclfirst") {
+            start_sycl_auto(search_key);
+            start_mpi(mpi_info);
+        } else if (init_strategy == "mpifirst") {
+            start_mpi(mpi_info);
+            start_sycl_auto(search_key);
+        } else {
+            shambase::throw_unimplemented();
+        }
 
         syclinit::device_compute->update_mpi_prop();
         syclinit::device_alt->update_mpi_prop();
     }
 
     void init(int argc, char *argv[]) {
-
-        tmp::print_device_list_debug();
 
         std::optional<shamcomm::StateMPI_Aware> forced_state = std::nullopt;
 
@@ -320,8 +332,7 @@ namespace shamsys::instance {
         }
     }
 
-    void close() {
-
+    void close_mpi() {
         mpidtypehandler::free_mpidtype();
 
         if (shamcomm::world_rank() == 0) {
@@ -329,7 +340,14 @@ namespace shamsys::instance {
             logger::raw_ln(" - MPI finalize \nExiting ...\n");
             logger::raw_ln(" Hopefully it was quick :')\n");
         }
+
         mpi::finalize();
+    }
+
+    void close() {
+
+        close_mpi();
+
         syclinit::finalize();
     }
 
@@ -369,10 +387,26 @@ namespace shamsys::instance {
     void check_dgpu_available() {
 
         using namespace shambase::term_colors;
-        if (shambase::get_check_ref(syclinit::device_compute).mpi_prop.is_mpi_direct_capable) {
-            logger::raw_ln(" - MPI use Direct Comm :", col8b_green() + "Yes" + reset());
-        } else {
-            logger::raw_ln(" - MPI use Direct Comm :", col8b_red() + "No" + reset());
+
+        u32 loc_use_direct_gpu
+            = shambase::get_check_ref(syclinit::device_compute).mpi_prop.is_mpi_direct_capable;
+
+        u32 num_dgpu_use = shamalgs::collective::allreduce_sum(loc_use_direct_gpu);
+
+        if (shamcomm::world_rank() == 0) {
+            if (num_dgpu_use == shamcomm::world_size()) {
+                logger::raw_ln(shambase::format(
+                    " - MPI use Direct Comm : {}", col8b_green() + "Yes" + reset()));
+            } else if (num_dgpu_use > 0) {
+                logger::raw_ln(shambase::format(
+                    " - MPI use Direct Comm : {} ({} of {})",
+                    col8b_yellow() + "Partial" + reset(),
+                    num_dgpu_use,
+                    shamcomm::world_size()));
+            } else {
+                logger::raw_ln(
+                    shambase::format(" - MPI use Direct Comm : {}", col8b_red() + "No" + reset()));
+            }
         }
     }
 

@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/SourceLocation.hpp"
 #include <shambindings/pybindaliases.hpp>
 
 namespace shambindings {
@@ -25,6 +26,23 @@ namespace shambindings {
      *
      * @param m the python module to bind definitions on
      */
-    void init(py::module &m);
+    void init_lib(py::module &m);
+
+    /**
+     * @brief Init python bindings and register them to Python API
+     *
+     * @param m the python module to bind definitions on
+     */
+    void init_embed(py::module &m);
+
+    /**
+     * @brief Expect python bindings to be initialized as lib mode, throws if not
+     */
+    void expect_init_lib(SourceLocation loc = SourceLocation{});
+
+    /**
+     * @brief Expect python bindings to be initialized as embed mode, throws if not
+     */
+    void expect_init_embed(SourceLocation loc = SourceLocation{});
 
 } // namespace shambindings

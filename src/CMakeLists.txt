@@ -1,4 +1,11 @@
-
+## -------------------------------------------------------
+##
+## SHAMROCK code for hydrodynamics
+## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+##
+## -------------------------------------------------------
 
 set(as_subproject
   shamunits
@@ -54,7 +61,7 @@ add_subdirectory(shammodels/sph)
 
 
 ######################
-# Shamrock Lib
+# Shamrock lib & exe targets
 ######################
 
 
@@ -62,36 +69,47 @@ add_subdirectory(shammodels/sph)
 message("-- adding shamrock target")
 
 
-if("${BUILD_PYLIB}")
-pybind11_add_module(shamrock main_lib.cpp)
-target_link_libraries(shamrock PUBLIC pybind11::module)
-else()
-add_executable(shamrock main.cpp)
-target_link_libraries(shamrock PUBLIC pybind11::embed)
-endif()
+pybind11_add_module(shamrock_pylib main_lib.cpp)
+target_link_libraries(shamrock_pylib PUBLIC pybind11::module)
+set_property(TARGET shamrock_pylib PROPERTY POSITION_INDEPENDENT_CODE ON)
 
-target_link_libraries(shamrock PUBLIC nlohmann_json::nlohmann_json)
+add_executable(shamrock_exe main.cpp)
+target_link_libraries(shamrock_exe PUBLIC pybind11::embed)
+
+function(target_link_lib_and_install tgt)
+    target_link_libraries(${tgt} PUBLIC nlohmann_json::nlohmann_json)
+
+    target_link_libraries(${tgt} PUBLIC ${as_subproject})
+
+    if(SHAMROCK_USE_PCH)
+        target_precompile_headers(${tgt} REUSE_FROM shamrock_lib)
+    endif()
+
+    target_include_directories(${tgt} PUBLIC "${CMAKE_SOURCE_DIR}/src")
+    #target_include_directories(${tgt} PUBLIC "${CMAKE_SOURCE_DIR}/external")
+
+endfunction()
+
+target_link_lib_and_install(shamrock_exe)
+target_link_lib_and_install(shamrock_pylib)
+
+set_property(TARGET shamrock_exe PROPERTY OUTPUT_NAME shamrock)
+set_property(TARGET shamrock_pylib PROPERTY OUTPUT_NAME shamrock)
+
+# Installing the library
+install(TARGETS shamrock_exe shamrock_pylib ${as_subproject}
+        EXPORT "shamrock-config"
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        PRIVATE_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+        INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 
-target_link_libraries(shamrock PUBLIC ${as_subproject})
-
-
-
-
-if(SHAMROCK_USE_PCH)
-target_precompile_headers(shamrock REUSE_FROM shamrock_lib)
-endif()
-
-
-
-
-target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/src")
-#target_include_directories(shamrock PUBLIC "${CMAKE_SOURCE_DIR}/external")
-
-#do lib build instead if building the pylib
-
-
-
+######################
+# Shamrock test target
+######################
 
 if("${BUILD_TEST}")
 

@@ -19,7 +19,7 @@
 
 namespace impl::copy_to_host {
 
-    using namespace mpi_sycl_interop;
+    // using namespace mpi_sycl_interop;
 
     namespace send {
         template<class T>
@@ -45,7 +45,7 @@ namespace impl::copy_to_host {
                     const T *src = acc.get_pointer();
                     T *dest      = comm_ptr;
 
-                    memcpy(dest, src, sizeof(T) * comm_sz);
+                    std::memcpy(dest, src, sizeof(T) * comm_sz);
                 }
 
             } else {
@@ -55,6 +55,10 @@ namespace impl::copy_to_host {
 
             return comm_ptr;
         }
+
+#define X(_t) template _t *init<_t>(const std::unique_ptr<sycl::buffer<_t>> &buf, u32 comm_sz);
+        XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
 
         template<class T>
         void finalize(T *comm_ptr) {
@@ -66,6 +70,10 @@ namespace impl::copy_to_host {
 
             sycl::free(comm_ptr, get_compute_queue());
         }
+
+#define X(_t) template void finalize(_t *comm_ptr);
+        XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
     } // namespace send
 
     namespace recv {
@@ -81,6 +89,9 @@ namespace impl::copy_to_host {
             return comm_ptr;
         };
 
+#define X(_t) template _t *init(u32 comm_sz);
+        XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
         template<class T>
         void finalize(const std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
 
@@ -94,7 +105,7 @@ namespace impl::copy_to_host {
                     const T *src = comm_ptr;
                     T *dest      = acc.get_pointer();
 
-                    memcpy(dest, src, sizeof(T) * comm_sz);
+                    std::memcpy(dest, src, sizeof(T) * comm_sz);
                 }
 
             } else {
@@ -107,6 +118,11 @@ namespace impl::copy_to_host {
 
             sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
         }
+
+#define X(_t)                                                                                      \
+    template void finalize(const std::unique_ptr<sycl::buffer<_t>> &buf, _t *comm_ptr, u32 comm_sz);
+        XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
     } // namespace recv
 
 } // namespace impl::copy_to_host
@@ -146,6 +162,10 @@ namespace impl::directgpu {
             return comm_ptr;
         }
 
+#define X(_t) template _t *init<_t>(const std::unique_ptr<sycl::buffer<_t>> &buf, u32 comm_sz);
+        XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
+
         template<class T>
         void finalize(T *comm_ptr) {
             logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
@@ -153,6 +173,9 @@ namespace impl::directgpu {
             sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
         }
 
+#define X(_t) template void finalize(_t *comm_ptr);
+        XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
     } // namespace send
 
     namespace recv {
@@ -165,6 +188,9 @@ namespace impl::directgpu {
             return comm_ptr;
         };
 
+#define X(_t) template _t *init(u32 comm_sz);
+        XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
         template<class T>
         void finalize(const std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
 
@@ -192,6 +218,11 @@ namespace impl::directgpu {
 
             sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
         }
+#define X(_t)                                                                                      \
+    template void finalize(const std::unique_ptr<sycl::buffer<_t>> &buf, _t *comm_ptr, u32 comm_sz);
+        XMAC_SYCLMPI_TYPE_ENABLED
+#undef X
+
     } // namespace recv
 
 } // namespace impl::directgpu

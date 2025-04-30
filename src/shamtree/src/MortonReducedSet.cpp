@@ -25,7 +25,11 @@ namespace shamtree {
     MortonReducedSet<Tmorton, Tvec, dim> reduce_morton_set(
         const sham::DeviceScheduler_ptr &dev_sched,
         MortonCodeSortedSet<Tmorton, Tvec, dim> &&morton_codes_set,
-        u32 reduction_level) {
+        u32 reduction_level,
+        sham::DeviceBuffer<u32> &&cache_buf_reduc_index_map,
+        sham::DeviceBuffer<Tmorton> &&cache_reduced_morton_codes) {
+
+        // cache_buf_reduc_index_map is not yet recycled
 
         reduc_ret_t<u32> res = reduction_alg(
             dev_sched,
@@ -50,7 +54,9 @@ namespace shamtree {
         // here the old "One cell mode" is not implemented as I want to get rid of this confusing
         // mess, seriously this thing was giving me never ending headaches ...
 
-        sham::DeviceBuffer<Tmorton> buf_tree_morton(res.morton_leaf_count, dev_sched);
+        sham::DeviceBuffer<Tmorton> buf_tree_morton
+            = std::forward<sham::DeviceBuffer<Tmorton>>(cache_reduced_morton_codes);
+        buf_tree_morton.resize(res.morton_leaf_count);
 
         sycl_morton_remap_reduction(
             dev_sched->get_queue(),
@@ -64,6 +70,20 @@ namespace shamtree {
             res.morton_leaf_count,
             std::move(res.buf_reduc_index_map),
             std::move(buf_tree_morton));
+    }
+
+    template<class Tmorton, class Tvec, u32 dim>
+    MortonReducedSet<Tmorton, Tvec, dim> reduce_morton_set(
+        const sham::DeviceScheduler_ptr &dev_sched,
+        MortonCodeSortedSet<Tmorton, Tvec, dim> &&morton_codes_set,
+        u32 reduction_level) {
+
+        return reduce_morton_set(
+            dev_sched,
+            std::forward<MortonCodeSortedSet<Tmorton, Tvec, dim>>(morton_codes_set),
+            reduction_level,
+            sham::DeviceBuffer<u32>(0, dev_sched),
+            sham::DeviceBuffer<Tmorton>(0, dev_sched));
     }
 
 } // namespace shamtree

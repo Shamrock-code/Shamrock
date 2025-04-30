@@ -5,19 +5,21 @@ Aside from using Shamrock as a python interpreter for runscripts, it is also pos
 This can be done in 3 steps:
 
 - Activate a python virtual environment
-- Create a Shamrock environment with the flag `--pylib`
+- Create a Shamrock environment
 - In the environment build directory run ``
 
 For exemple the following should work:
 ```bash
 python -m venv .shamrock-venv
 source .shamrock-venv/bin/activate
-./env/new-env --machine debian-generic.acpp --builddir build_pylib --pylib -- --backend omp
+./env/new-env --machine debian-generic.acpp --builddir build_pylib -- --backend omp
 cd build_pylib
-pip install --verbose -e .
+pip install --verbose .
 ```
 
-This create an editable library meaning that you change a source file and just rerun `pip install --verbose -e .` in the build directory to update the installation.
+This create an editable library meaning that you change a source file and just rerun `pip install --verbose .` in the build directory to update the installation.
+
+Note that the shamrock executable will only be installed in the normal pip mode. If `-e` is used on pip install to use the editable mode the shamrock executable will not be installed.
 
 ## Jupyter notebook
 

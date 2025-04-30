@@ -88,8 +88,10 @@ namespace shamsys::instance {
      */
     void init(int argc, char *argv[]);
 
+    /// Start MPI
     void start_mpi(MPIInitInfo mpi_info);
 
+    /// Start SYCL & MPI
     void init_sycl_mpi(std::string search_key, MPIInitInfo mpi_info);
 
     /**
@@ -98,7 +100,13 @@ namespace shamsys::instance {
      */
     void close();
 
+    /// Finalize MPI
+    void close_mpi();
+
+    [[deprecated("Please use shamrock smi instead")]]
     void print_device_list();
+
+    /// Print SYCL queue map
     void print_queue_map();
 
     ////////////////////////////

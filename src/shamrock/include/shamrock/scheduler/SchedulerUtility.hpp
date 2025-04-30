@@ -164,7 +164,7 @@ namespace shamrock {
             using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_zero();
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-                ret = sham::min(ret, pdat.get_field<T>(field_idx).compute_sum());
+                ret += pdat.get_field<T>(field_idx).compute_sum();
             });
 
             return ret;

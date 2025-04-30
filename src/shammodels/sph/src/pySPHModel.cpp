@@ -214,7 +214,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::function<Tscal(Tscal)> H_profile,
                std::function<Tscal(Tscal)> rot_profile,
                std::function<Tscal(Tscal)> cs_profile,
-               u64 random_seed) {
+               u64 random_seed,
+               Tscal init_h_factor) {
                 return self.make_generator_disc_mc(
                     part_mass,
                     disc_mass,
@@ -224,7 +225,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     H_profile,
                     rot_profile,
                     cs_profile,
-                    std::mt19937(random_seed));
+                    std::mt19937(random_seed),
+                    init_h_factor);
             },
             py::kw_only(),
             py::arg("part_mass"),
@@ -235,7 +237,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("H_profile"),
             py::arg("rot_profile"),
             py::arg("cs_profile"),
-            py::arg("random_seed"))
+            py::arg("random_seed"),
+            py::arg("init_h_factor") = 0.8)
         .def(
             "make_combiner_add",
             [](TSPHSetup &self,

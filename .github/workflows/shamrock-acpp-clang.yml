@@ -27,32 +27,32 @@ jobs:
             arch: none
             runtest: yes
             uploadartifact: yes
-            container: ghcr.io/shamrock-code/ci-ubuntu20:main
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
             backend: generic
             arch: none
             runtest: yes
-            container: ghcr.io/shamrock-code/ci-ubuntu20:main
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
             backend: cuda.explicit-multipass
             arch: sm_80
-            container: ghcr.io/shamrock-code/ci-ubuntu20cuda11:main
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20cuda11
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
             backend: cuda.integrated-multipass
             arch: sm_80
-            container: ghcr.io/shamrock-code/ci-ubuntu20cuda11:main
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20cuda11
           - clang: 15
             cuda: 11.0.2
             rocm: 5.4.3
             backend: hip
             arch: gfx906
-            container: ghcr.io/shamrock-code/ci-ubuntu20rocm543:main
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20rocm543
 
     timeout-minutes: 60
     steps:
@@ -103,11 +103,18 @@ jobs:
           cd build
           source ./activate && shamconfigure
 
-      - name: Build
+      - name: Configure sham install
         shell: bash # In docker container github action default to sh
         run: |
           cd build
-          source ./activate && shammake
+          source ./activate &&  \
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test
+
+      - name: Build & install
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate && shammake install
 
       - name: Pull reference files
         run: |
@@ -132,22 +139,30 @@ jobs:
         if: matrix.runtest
         run: |
           cd build
-          ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 2
         if: matrix.runtest
         run: |
           cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 3
         if: matrix.runtest
         run: |
           cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 4
         if: matrix.runtest
         run: |
           cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: Try starting Shamrock (installed version)
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtest
+        run: |
+          cd build/install_test/bin
+          ls ..
+          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0

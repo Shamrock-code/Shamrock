@@ -22,6 +22,7 @@
 #include "details/SerializeHelperMember.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shambackends/EventList.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include <type_traits>
@@ -129,36 +130,28 @@ namespace shamalgs {
 
         u64 header_size = 0;
 
-        std::unique_ptr<sycl::buffer<u8>> storage       = {};
-        std::unique_ptr<std::vector<u8>> storage_header = {};
-        u64 head_device                                 = 0;
-        u64 head_host                                   = 0;
+        sham::DeviceBuffer<u8> storage;
+        std::vector<u8> storage_header = {};
+        u64 head_device                = 0;
+        u64 head_host                  = 0;
 
         static constexpr u64 alignment = 8;
 
         inline void check_head_move_device(u64 off) {
-            if (!storage) {
-                throw shambase::make_except_with_loc<std::runtime_error>(
-                    ("the buffer is not allocated, the head cannot be moved"));
-            }
-            if (head_device + off > storage->size()) {
+            if (head_device + off > storage.get_size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
                     "the buffer is not allocated, the head_device cannot be moved\n "
                     "storage size : {}, requested head_device : {}",
-                    storage->size(),
+                    storage.get_size(),
                     head_device + off));
             }
         }
         inline void check_head_move_host(u64 off) {
-            if (!storage_header) {
-                throw shambase::make_except_with_loc<std::runtime_error>(
-                    ("the buffer is not allocated, the head cannot be moved"));
-            }
-            if (head_host + off > storage_header->size()) {
+            if (head_host + off > storage_header.size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
                     "the buffer is not allocated, the head_host cannot be moved\n "
                     "storage_header size : {}, requested head_host : {}",
-                    storage_header->size(),
+                    storage_header.size(),
                     head_host + off));
             }
         }
@@ -175,12 +168,11 @@ namespace shamalgs {
         SerializeHelper(std::shared_ptr<sham::DeviceScheduler> dev_sched);
 
         SerializeHelper(
-            std::shared_ptr<sham::DeviceScheduler> dev_sched,
-            std::unique_ptr<sycl::buffer<u8>> &&storage);
+            std::shared_ptr<sham::DeviceScheduler> dev_sched, sham::DeviceBuffer<u8> &&storage);
 
         void allocate(SerializeSize szinfo);
 
-        std::unique_ptr<sycl::buffer<u8>> finalize();
+        sham::DeviceBuffer<u8> finalize();
 
         template<class T>
         inline static SerializeSize serialize_byte_size() {
@@ -207,7 +199,7 @@ namespace shamalgs {
             u64 offset = align_repr(Helper::szrepr);
             check_head_move_host(offset);
 
-            Helper::store(&(*storage_header)[current_head], val);
+            Helper::store(&(storage_header)[current_head], val);
 
             head_host += offset;
         }
@@ -225,7 +217,7 @@ namespace shamalgs {
             { // using host_acc rather than anything else since other options causes addition
               // latency
 
-                val = Helper::load(&(*storage_header)[current_head]);
+                val = Helper::load(&(storage_header)[current_head]);
             }
 
             head_host += offset;
@@ -271,15 +263,21 @@ namespace shamalgs {
             u64 offset = align_repr(len * Helper::szrepr);
             check_head_move_device(offset);
 
-            dev_sched->get_queue().q.submit([&, current_head](sycl::handler &cgh) {
-                sycl::accessor accbufbyte{*storage, cgh, sycl::write_only};
-                sycl::accessor accbuf{buf, cgh, sycl::read_only};
+            sham::EventList depends_list;
 
-                cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
-                    u64 head = current_head + id.get_linear_id() * Helper::szrepr;
-                    Helper::store(&accbufbyte[head], accbuf[id]);
+            auto accbufbyte = storage.get_write_access(depends_list);
+
+            auto e = dev_sched->get_queue().submit(
+                depends_list, [&, current_head](sycl::handler &cgh) {
+                    sycl::accessor accbuf{buf, cgh, sycl::read_only};
+
+                    cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                        u64 head = current_head + id.get_linear_id() * Helper::szrepr;
+                        Helper::store(&accbufbyte[head], accbuf[id]);
+                    });
                 });
-            });
+
+            storage.complete_event_state(e);
 
             head_device += offset;
         }
@@ -294,15 +292,21 @@ namespace shamalgs {
             u64 offset = align_repr(len * Helper::szrepr);
             check_head_move_device(offset);
 
-            dev_sched->get_queue().q.submit([&, current_head](sycl::handler &cgh) {
-                sycl::accessor accbufbyte{*storage, cgh, sycl::read_only};
-                sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
+            sham::EventList depends_list;
 
-                cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
-                    u64 head   = current_head + id.get_linear_id() * Helper::szrepr;
-                    accbuf[id] = Helper::load(&accbufbyte[head]);
+            auto accbufbyte = storage.get_read_access(depends_list);
+
+            auto e = dev_sched->get_queue().submit(
+                depends_list, [&, current_head](sycl::handler &cgh) {
+                    sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
+
+                    cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
+                        u64 head   = current_head + id.get_linear_id() * Helper::szrepr;
+                        accbuf[id] = Helper::load(&accbufbyte[head]);
+                    });
                 });
-            });
+
+            storage.complete_event_state(e);
 
             head_device += offset;
         }
@@ -319,11 +323,10 @@ namespace shamalgs {
 
             sham::EventList depends_list;
             const T *accbuf = buf.get_read_access(depends_list);
+            auto accbufbyte = storage.get_write_access(depends_list);
 
             auto e = dev_sched->get_queue().submit(
                 depends_list, [&, current_head](sycl::handler &cgh) {
-                    sycl::accessor accbufbyte{*storage, cgh, sycl::write_only};
-
                     cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
                         u64 head = current_head + id.get_linear_id() * Helper::szrepr;
                         Helper::store(&accbufbyte[head], accbuf[id]);
@@ -331,6 +334,7 @@ namespace shamalgs {
                 });
 
             buf.complete_event_state(e);
+            storage.complete_event_state(e);
 
             head_device += offset;
         }
@@ -354,12 +358,11 @@ namespace shamalgs {
             }
 
             sham::EventList depends_list;
-            T *accbuf = buf.get_write_access(depends_list);
+            T *accbuf       = buf.get_write_access(depends_list);
+            auto accbufbyte = storage.get_read_access(depends_list);
 
             auto e = dev_sched->get_queue().submit(
                 depends_list, [&, current_head](sycl::handler &cgh) {
-                    sycl::accessor accbufbyte{*storage, cgh, sycl::read_only};
-
                     cgh.parallel_for(sycl::range<1>{len}, [=](sycl::item<1> id) {
                         u64 head   = current_head + id.get_linear_id() * Helper::szrepr;
                         accbuf[id] = Helper::load(&accbufbyte[head]);
@@ -367,6 +370,7 @@ namespace shamalgs {
                 });
 
             buf.complete_event_state(e);
+            storage.complete_event_state(e);
 
             head_device += offset;
         }

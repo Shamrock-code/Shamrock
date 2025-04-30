@@ -93,7 +93,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     // compute prim variable
     modules::ConsToPrim ctop(context, solver_config, storage);
-    ctop.cons_to_prim();
+
+    ctop.cons_to_prim_gas();
+    if (solver_config.is_dust_on()) {
+        ctop.cons_to_prim_dust();
+    }
 
     // compute & limit gradients
     modules::ComputeGradient grad_compute(context, solver_config, storage);
@@ -208,8 +212,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.dz_v.reset();
     storage.grad_P.reset();
 
-    storage.vel.reset();
-    storage.press.reset();
+    ctop.reset_gas();
 
     if (solver_config.is_dust_on()) {
         storage.dtrho_dust.reset();
@@ -247,7 +250,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         storage.dy_v_dust.reset();
         storage.dz_v_dust.reset();
 
-        storage.vel_dust.reset();
+        ctop.reset_dust();
     }
 
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {

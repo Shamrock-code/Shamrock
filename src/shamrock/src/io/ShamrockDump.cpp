@@ -27,7 +27,7 @@ namespace shamrock {
 
         std::vector<u64> pids;
         std::vector<u64> bytecounts;
-        std::vector<std::unique_ptr<sycl::buffer<u8>>> datas;
+        std::vector<sham::DeviceBuffer<u8>> datas;
 
         // serialize patchdatas and push them into dat
         sched.patch_data.for_each_patchdata([&](u64 pid, PatchData &pdat) {
@@ -37,7 +37,7 @@ namespace shamrock {
             pdat.serialize_buf(ser);
 
             auto tmp         = ser.finalize();
-            size_t bytecount = shambase::get_check_ref(tmp).size();
+            size_t bytecount = tmp.get_size();
 
             pids.push_back(pid);
             bytecounts.push_back(bytecount);
@@ -132,8 +132,7 @@ namespace shamrock {
             size_t off = all_offsets[map[pid]];
             auto &data = datas[i];
 
-            shamcomm::CommunicationBuffer buf(
-                shambase::get_check_ref(data), shamsys::instance::get_compute_scheduler_ptr());
+            shamcomm::CommunicationBuffer buf(data, shamsys::instance::get_compute_scheduler_ptr());
 
             shamalgs::collective::write_at<u8>(mfile, buf.get_ptr(), bytecount, head_ptr + off);
         }
@@ -236,8 +235,7 @@ namespace shamrock {
             shamalgs::collective::read_at<u8>(
                 mfile, buf.get_ptr(), loc_file_info.bytecount, head_ptr + loc_file_info.offset);
 
-            std::unique_ptr<sycl::buffer<u8>> out = std::make_unique<sycl::buffer<u8>>(
-                shamcomm::CommunicationBuffer::convert(std::move(buf)));
+            sham::DeviceBuffer<u8> out = shamcomm::CommunicationBuffer::convert_usm(std::move(buf));
 
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(), std::move(out));

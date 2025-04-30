@@ -33,7 +33,7 @@ namespace shamalgs::reduction {
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
-#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         return details::sum_usm_group(sched, buf1, start_id, end_id, 128);
 #else
         return details::sum_usm_fallback(sched, buf1, start_id, end_id);
@@ -46,7 +46,7 @@ namespace shamalgs::reduction {
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
-#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         return details::min_usm_group(sched, buf1, start_id, end_id, 128);
 #else
         return details::min_usm_fallback(sched, buf1, start_id, end_id);
@@ -59,7 +59,7 @@ namespace shamalgs::reduction {
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
-#ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         return details::max_usm_group(sched, buf1, start_id, end_id, 128);
 #else
         return details::max_usm_fallback(sched, buf1, start_id, end_id);
@@ -68,28 +68,28 @@ namespace shamalgs::reduction {
 
     template<class T>
     T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
-#ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
-        return details::FallbackReduction<T>::sum(q, buf1, start_id, end_id);
-#else
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         return details::GroupReduction<T, 32>::sum(q, buf1, start_id, end_id);
+#else
+        return details::FallbackReduction<T>::sum(q, buf1, start_id, end_id);
 #endif
     }
 
     template<class T>
     T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
-#ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
-        return details::FallbackReduction<T>::max(q, buf1, start_id, end_id);
-#else
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         return details::GroupReduction<T, 32>::max(q, buf1, start_id, end_id);
+#else
+        return details::FallbackReduction<T>::max(q, buf1, start_id, end_id);
 #endif
     }
 
     template<class T>
     T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
-#ifdef __HIPSYCL_ENABLE_LLVM_SSCP_TARGET__
-        return details::FallbackReduction<T>::min(q, buf1, start_id, end_id);
-#else
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         return details::GroupReduction<T, 32>::min(q, buf1, start_id, end_id);
+#else
+        return details::FallbackReduction<T>::min(q, buf1, start_id, end_id);
 #endif
     }
 

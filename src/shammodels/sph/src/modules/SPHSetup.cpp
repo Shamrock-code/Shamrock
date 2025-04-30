@@ -41,7 +41,8 @@ shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_generator_disc_mc(
     std::function<Tscal(Tscal)> H_profile,
     std::function<Tscal(Tscal)> rot_profile,
     std::function<Tscal(Tscal)> cs_profile,
-    std::mt19937 eng) {
+    std::mt19937 eng,
+    Tscal init_h_factor) {
     return std::shared_ptr<ISPHSetupNode>(new GeneratorMCDisc<Tvec, SPHKernel>(
         context,
         solver_config,
@@ -53,7 +54,8 @@ shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_generator_disc_mc(
         H_profile,
         rot_profile,
         cs_profile,
-        eng));
+        eng,
+        init_h_factor));
 }
 
 template<class Tvec, template<class> class SPHKernel>

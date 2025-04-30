@@ -73,4 +73,23 @@ namespace shamtree {
         MortonCodeSortedSet<Tmorton, Tvec, dim> &&morton_codes_set,
         u32 reduction_level);
 
+    /**
+     * @brief Reduces the given Morton code set by grouping together Morton codes
+     * that are close to each other in the tree.
+     *
+     * @param dev_sched The device scheduler to use for the reduction
+     * @param morton_codes_set The set of Morton codes to reduce
+     * @param reduction_level The amount of reduction to apply
+     * @param cache_buf_reduc_index_map A device buffer to be reused for the reduction index map
+     * @param cache_reduced_morton_codes A device buffer to be reused for the reduced Morton codes
+     * @return The reduced set of Morton codes
+     */
+    template<class Tmorton, class Tvec, u32 dim>
+    MortonReducedSet<Tmorton, Tvec, dim> reduce_morton_set(
+        const sham::DeviceScheduler_ptr &dev_sched,
+        MortonCodeSortedSet<Tmorton, Tvec, dim> &&morton_codes_set,
+        u32 reduction_level,
+        sham::DeviceBuffer<u32> &&cache_buf_reduc_index_map,
+        sham::DeviceBuffer<Tmorton> &&cache_reduced_morton_codes);
+
 } // namespace shamtree

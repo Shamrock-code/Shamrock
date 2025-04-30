@@ -79,7 +79,7 @@ nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi /usr/b
 
 Current command on the GDX :
 ```
-nsys profile -t cuda,nvtx,mpi --gpu-metrics-device=1,2,3,4 --cuda-memory-usage=true --mpi-impl=openmpi  mpirun -n 4 ./shamrock --sycl-cfg auto:CUDA --sycl-ls-map --loglevel 1 --rscript ../exemples/spherical_wave.py
+nsys profile -t cuda,nvtx,mpi --gpu-metrics-device=1,2,3,4 --cuda-memory-usage=true --mpi-impl=openmpi  mpirun -n 4 ./shamrock --sycl-cfg auto:CUDA --smi-full --loglevel 1 --rscript ../exemples/spherical_wave.py
 ```
 
 ### NCU

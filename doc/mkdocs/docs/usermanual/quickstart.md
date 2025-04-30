@@ -41,7 +41,7 @@ First start by checking that you have the right packages installed on your syste
     === "MacOS"
 
         ```bash
-        brew install cmake libomp boost open-mpi tdavidcl/adaptivecpp/adaptivecpp
+        brew install cmake libomp boost open-mpi adaptivecpp
         ```
 
     === "Conda"

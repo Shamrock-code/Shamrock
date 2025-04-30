@@ -109,11 +109,11 @@ namespace shamrock::scheduler {
             return ser.finalize();
         };
 
-        auto deserializer = [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
+        auto deserializer = [&](sham::DeviceBuffer<u8> &&buf) {
             // exchange the buffer held by the distrib data and give it to the serializer
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
-                std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+                std::forward<sham::DeviceBuffer<u8>>(buf));
             return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
         };
 
@@ -123,12 +123,11 @@ namespace shamrock::scheduler {
             if (op.rank_owner_old == shamcomm::world_rank()) {
                 auto &patchdata = owned_data.get(op.patch_id);
 
-                std::unique_ptr<sycl::buffer<u8>> tmp = serializer(patchdata);
+                sham::DeviceBuffer<u8> tmp = serializer(patchdata);
 
                 send_payloads.push_back(Message{
                     std::make_unique<shamcomm::CommunicationBuffer>(
-                        shambase::get_check_ref(tmp),
-                        shamsys::instance::get_compute_scheduler_ptr()),
+                        std::move(tmp), shamsys::instance::get_compute_scheduler_ptr()),
                     op.rank_owner_new,
                     op.tag_comm});
             }
@@ -167,10 +166,10 @@ namespace shamrock::scheduler {
 
                 shamcomm::CommunicationBuffer comm_buf = shambase::extract_pointer(msg.buf);
 
-                sycl::buffer<u8> buf = shamcomm::CommunicationBuffer::convert(std::move(comm_buf));
+                sham::DeviceBuffer<u8> buf
+                    = shamcomm::CommunicationBuffer::convert_usm(std::move(comm_buf));
 
-                owned_data.add_obj(
-                    id_patch, deserializer(std::make_unique<sycl::buffer<u8>>(std::move(buf))));
+                owned_data.add_obj(id_patch, deserializer(std::move(buf)));
 
                 idx++;
             }

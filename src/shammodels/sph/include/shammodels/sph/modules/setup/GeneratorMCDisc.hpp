@@ -45,6 +45,7 @@ namespace shammodels::sph::modules {
 
         class DiscIterator;
         DiscIterator generator;
+        Tscal init_h_factor;
 
         static DiscIterator make_generator(
             Tscal part_mass,
@@ -80,7 +81,8 @@ namespace shammodels::sph::modules {
             std::function<Tscal(Tscal)> H_profile,
             std::function<Tscal(Tscal)> rot_profile,
             std::function<Tscal(Tscal)> cs_profile,
-            std::mt19937 eng)
+            std::mt19937 eng,
+            Tscal init_h_factor)
             : context(context), solver_config(solver_config), generator(make_generator(
                                                                   part_mass,
                                                                   disc_mass,
@@ -91,7 +93,7 @@ namespace shammodels::sph::modules {
                                                                   rot_profile,
                                                                   cs_profile,
                                                                   eng)),
-              pmass(part_mass) {}
+              init_h_factor(init_h_factor), pmass(part_mass) {}
 
         bool is_done();
 

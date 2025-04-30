@@ -2,15 +2,14 @@ name: shamrock_dev_environment
 channels:
   - conda-forge
 dependencies:
+  - adaptivecpp=24.10.0=cuda126_llvm19_hfec26a9_9
+  - clangxx=19.1.7=default_ha78316a_2
+  - boost=1.85.0=h9cebb41_4
   - python=3.12
   - cmake
   - ninja
-  - adaptivecpp
   - openmpi
-  - clang
-  - clangxx
   - fmt=11.0.2
-  - boost
   - numpy
   - matplotlib
   - psutil

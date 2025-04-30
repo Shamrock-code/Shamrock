@@ -62,6 +62,18 @@ namespace sham {
         }
     }
 
+    /// The type of a device
+    enum class DeviceType { CPU, GPU, UNKNOWN };
+
+    /// Returns the name of the given device type
+    inline std::string device_type_name(DeviceType t) {
+        switch (t) {
+        case DeviceType::CPU: return "CPU";
+        case DeviceType::GPU: return "GPU";
+        default: return "UNKNOWN";
+        }
+    }
+
     /**
      * \brief Properties of a device
      *
@@ -71,12 +83,14 @@ namespace sham {
     struct DeviceProperties {
         Vendor vendor;                    /**< The vendor of the device */
         Backend backend;                  /**< The backend of the device */
+        DeviceType type;                  /**< The type of the device */
         usize global_mem_size;            /**< The amount of global memory on the device in bytes */
         usize global_mem_cache_line_size; /**< The size of the cache line used by the device in
                                              bytes */
         usize
-            global_mem_cache_size; /**< The amount of global memory cache on the device in bytes */
-        usize local_mem_size;      /**< The amount of shared local memory on the device in bytes */
+            global_mem_cache_size;  /**< The amount of global memory cache on the device in bytes */
+        usize local_mem_size;       /**< The amount of shared local memory on the device in bytes */
+        uint32_t max_compute_units; /**< The number of compute units on the device */
     };
 
     struct DeviceMPIProperties {

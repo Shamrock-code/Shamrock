@@ -1,8 +1,7 @@
-# Exports will be provided by the new env script above this line
-# will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
+# Everything before this line will be provided by the new-env script
 
 # List of required packages
-required_packages=("cmake" "libomp" "boost" "open-mpi" "tdavidcl/adaptivecpp/adaptivecpp")
+required_packages=("cmake" "libomp" "boost" "open-mpi" "adaptivecpp")
 
 echo " ---------- Activating sham environment ---------- "
 # Check if each package is installed
@@ -36,10 +35,4 @@ function shamconfigure {
 
 function shammake {
     (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
-}
-
-export REF_FILES_PATH=$BUILD_DIR/reference-files
-
-function pull_reffiles {
-    git clone https://github.com/Shamrock-code/reference-files.git $REF_FILES_PATH
 }

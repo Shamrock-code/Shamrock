@@ -11,17 +11,12 @@ NAME = "NixOS generic AdaptiveCpp"
 PATH = "machine/nixos/acpp"
 
 
-def setup(arg: SetupArg):
+def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
     buildtype = arg.buildtype
-    pylib = arg.pylib
     lib_mode = arg.lib_mode
-
-    print("------------------------------------------")
-    print("Running env setup for : " + NAME)
-    print("------------------------------------------")
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
@@ -39,56 +34,24 @@ def setup(arg: SetupArg):
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
-    ACPP_GIT_DIR = builddir + "/.env/acpp-git"
-    ACPP_BUILD_DIR = builddir + "/.env/acpp-builddir"
-    ACPP_INSTALL_DIR = builddir + "/.env/acpp-installdir"
-
-    ENV_SCRIPT_PATH = builddir + "/activate"
-
-    ENV_SCRIPT_HEADER = ""
-    ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
-    ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_GIT_DIR=" + ACPP_GIT_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_BUILD_DIR=" + ACPP_BUILD_DIR + "\n"
-    ENV_SCRIPT_HEADER += "export ACPP_INSTALL_DIR=" + ACPP_INSTALL_DIR + "\n"
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC=" + gen + "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=(" + gen_opt + ")\n"
-
-    run_cmd("mkdir -p " + builddir)
-
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-
     cmake_extra_args = ""
-    if pylib:
-        cmake_extra_args += " -DBUILD_PYLIB=True"
-        run_cmd(
-            "cp "
-            + os.path.abspath(os.path.join(cur_file, "../" + "_pysetup.py"))
-            + " "
-            + builddir
-            + "/setup.py"
-        )
 
-    ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
-    ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'
-    ENV_SCRIPT_HEADER += "export SHAMROCK_CXX_FLAGS=\" --acpp-targets='" + acpp_target + "'\"\n"
+    envgen.export_list = {
+        "SHAMROCK_DIR": shamrockdir,
+        "BUILD_DIR": builddir,
+        "CMAKE_GENERATOR": cmake_gen,
+        "MAKE_EXEC": gen,
+        "MAKE_OPT": f"({gen_opt})",
+        "CMAKE_OPT": f"({cmake_extra_args})",
+        "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+        "SHAMROCK_CXX_FLAGS": "\" --acpp-targets='" + acpp_target + "'\"",
+    }
 
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-    source_file = "env_built_acpp.sh"
-    source_nix_file = "shell.nix"
-    source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
-    source_nix_path = os.path.abspath(os.path.join(cur_file, "../" + source_nix_file))
+    envgen.ext_script_list = [
+        shamrockdir + "/env/helpers/clone-acpp.sh",
+        shamrockdir + "/env/helpers/pull_reffiles.sh",
+    ]
 
-    utils.envscript.write_env_file(
-        source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
-    )
-
-    INTEL_LLVM_CLONE_HELPER = builddir + "/shell.nix"
-    utils.envscript.write_env_file(
-        source_path=source_nix_path, header="", path_write=INTEL_LLVM_CLONE_HELPER
-    )
+    envgen.gen_env_file("env_built_acpp.sh")
+    envgen.copy_env_file("shell.nix", "shell.nix")
+    envgen.copy_file(shamrockdir + "/env/helpers/_pysetup.py", "setup.py")

@@ -14,7 +14,8 @@
  *
  */
 
-// weird hack to link the lib, as one should have at least one source in it
-// Ideally every component should be an independant python lib and not be
-// dependant on this single file ... To investigate ... latter
-void main_lib();
+#include "shambindings/pybindings.hpp"
+#include <pybind11/pybind11.h>
+
+/// Call bindings init for the shamrock python module
+PYBIND11_MODULE(shamrock, m) { shambindings::init_lib(m); }

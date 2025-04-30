@@ -15,6 +15,8 @@
  */
 
 #include "shamalgs/serialize.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceQueue.hpp"
 #include "shamcomm/logs.hpp"
 
 // Layout of the SerializeHelper is
@@ -27,9 +29,9 @@
 // The idea is to move pre head and the header to the host
 // to avoid multiplying querries to the device
 
-u64 extract_preahead(std::unique_ptr<sycl::buffer<u8>> &storage) {
+u64 extract_preahead(sham::DeviceQueue &q, sham::DeviceBuffer<u8> &storage) {
 
-    if (!storage) {
+    if (storage.get_size() == 0) {
         throw shambase::make_except_with_loc<std::runtime_error>(
             ("the buffer is not allocated, the head cannot be moved"));
     }
@@ -37,22 +39,39 @@ u64 extract_preahead(std::unique_ptr<sycl::buffer<u8>> &storage) {
     using Helper = shamalgs::details::SerializeHelperMember<u64>;
 
     u64 ret;
-    { // using host_acc rather than anything else since other options causes addition latency
-        sycl::host_accessor accbuf{*storage, sycl::read_only};
-        ret = Helper::load(&accbuf[0]);
+    {
+
+        sham::EventList depends_list;
+        auto accbufstg = storage.get_read_access(depends_list);
+
+        auto dest   = &ret;
+        auto source = accbufstg;
+
+        auto e = q.submit(depends_list, [dest, source](sycl::handler &cgh) {
+            cgh.memcpy(dest, source, sizeof(u64));
+        });
+
+        e.wait_and_throw();
+        storage.complete_event_state(sycl::event{});
     }
 
     return ret;
 }
 
-void write_prehead(sycl::queue &q, u64 prehead, sycl::buffer<u8> &buf) {
-    using Helper = shamalgs::details::SerializeHelperMember<u64>;
-    q.submit([&, prehead](sycl::handler &cgh) {
-        sycl::accessor accbuf{buf, cgh, sycl::write_only, sycl::no_init};
-        cgh.single_task([=]() {
-            Helper::store(&accbuf[0], prehead);
-        });
+void write_prehead(sham::DeviceQueue &q, u64 prehead, sham::DeviceBuffer<u8> &storage) {
+
+    sham::EventList depends_list;
+    auto accbufstg = storage.get_write_access(depends_list);
+
+    auto dest   = accbufstg;
+    auto source = &prehead;
+
+    auto e = q.submit(depends_list, [dest, source](sycl::handler &cgh) {
+        cgh.memcpy(dest, source, sizeof(u64));
     });
+
+    e.wait_and_throw();
+    storage.complete_event_state(sycl::event{});
 }
 
 // this is the real fix this time
@@ -64,26 +83,27 @@ void write_prehead(sycl::queue &q, u64 prehead, sycl::buffer<u8> &buf) {
     #define ACPP_WAIT
 #endif
 
-std::unique_ptr<std::vector<u8>> extract_header(
-    sycl::queue &q,
-    std::unique_ptr<sycl::buffer<u8>> &storage,
-    u64 header_size,
-    u64 pre_head_lenght) {
+std::vector<u8> extract_header(
+    sham::DeviceQueue &q, sham::DeviceBuffer<u8> &storage, u64 header_size, u64 pre_head_lenght) {
 
-    std::unique_ptr<std::vector<u8>> storage_header
-        = std::make_unique<std::vector<u8>>(header_size);
+    std::vector<u8> storage_header = std::vector<u8>(header_size);
 
     if (header_size > 0) {
-        sycl::buffer<u8> attach(storage_header->data(), header_size);
+        sycl::buffer<u8> attach(storage_header.data(), header_size);
 
-        q.submit([&, pre_head_lenght](sycl::handler &cgh) {
-            sycl::accessor accbufstg{*storage, cgh, sycl::read_only};
+        sham::EventList depends_list;
+        auto accbufstg = storage.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&, pre_head_lenght](sycl::handler &cgh) {
             sycl::accessor buf_header{attach, cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range<1>{header_size}, [=](sycl::item<1> id) {
                 buf_header[id] = accbufstg[id + pre_head_lenght];
             });
-        }) ACPP_WAIT;
+        });
+
+        e.wait_and_throw();
+        storage.complete_event_state(sycl::event{});
     }
 
     // std::cout << "extract header" << std::endl;
@@ -92,23 +112,28 @@ std::unique_ptr<std::vector<u8>> extract_header(
 }
 
 void write_header(
-    sycl::queue &q,
-    std::unique_ptr<sycl::buffer<u8>> &storage,
-    std::unique_ptr<std::vector<u8>> &storage_header,
+    sham::DeviceQueue &q,
+    sham::DeviceBuffer<u8> &storage,
+    std::vector<u8> &storage_header,
     u64 header_size,
     u64 pre_head_lenght) {
 
     if (header_size > 0) {
-        sycl::buffer<u8> attach(storage_header->data(), header_size);
+        sycl::buffer<u8> attach(storage_header.data(), header_size);
 
-        q.submit([&, pre_head_lenght](sycl::handler &cgh) {
-            sycl::accessor accbufstg{*storage, cgh, sycl::write_only};
+        sham::EventList depends_list;
+        auto accbufstg = storage.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&, pre_head_lenght](sycl::handler &cgh) {
             sycl::accessor buf_header{attach, cgh, sycl::read_only};
 
             cgh.parallel_for(sycl::range<1>{header_size}, [=](sycl::item<1> id) {
                 accbufstg[id + pre_head_lenght] = buf_header[id];
             });
-        }) ACPP_WAIT;
+        });
+
+        e.wait_and_throw();
+        storage.complete_event_state(sycl::event{});
     }
     // std::cout << "write header" << std::endl;
 }
@@ -122,49 +147,46 @@ void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
     StackEntry stack_loc{false};
     u64 bytelen = szinfo.head_size + szinfo.content_size + pre_head_lenght();
 
-    storage        = std::make_unique<sycl::buffer<u8>>(bytelen);
-    header_size    = szinfo.head_size;
-    storage_header = std::make_unique<std::vector<u8>>(header_size);
+    storage.resize(bytelen);
+    header_size = szinfo.head_size;
+    storage_header.resize(header_size);
 
     logger::debug_sycl_ln("SerializeHelper", "allocate()", bytelen, header_size);
 
-    write_prehead(dev_sched->get_queue().q, szinfo.head_size, *storage);
+    write_prehead(dev_sched->get_queue(), szinfo.head_size, storage);
     // std::cout << "prehead write :" << szinfo.head_size << std::endl;
 
     head_device = pre_head_lenght() + header_size;
 }
 
-std::unique_ptr<sycl::buffer<u8>> shamalgs::SerializeHelper::finalize() {
+sham::DeviceBuffer<u8> shamalgs::SerializeHelper::finalize() {
     StackEntry stack_loc{false};
 
-    logger::debug_sycl_ln("SerializeHelper", "finalize()", storage->size(), header_size);
+    logger::debug_sycl_ln("SerializeHelper", "finalize()", storage.get_size(), header_size);
 
-    write_header(dev_sched->get_queue().q, storage, storage_header, header_size, pre_head_lenght());
+    write_header(dev_sched->get_queue(), storage, storage_header, header_size, pre_head_lenght());
 
-    std::unique_ptr<sycl::buffer<u8>> ret;
-    std::swap(ret, storage);
-    return ret;
+    return std::move(storage);
 }
 
 shamalgs::SerializeHelper::SerializeHelper(std::shared_ptr<sham::DeviceScheduler> _dev_sched)
-    : dev_sched(std::move(_dev_sched)) {}
+    : dev_sched(std::move(_dev_sched)), storage(0, _dev_sched) {}
 
 shamalgs::SerializeHelper::SerializeHelper(
-    std::shared_ptr<sham::DeviceScheduler> _dev_sched, std::unique_ptr<sycl::buffer<u8>> &&input)
-    : dev_sched(std::move(_dev_sched)),
-      storage(std::forward<std::unique_ptr<sycl::buffer<u8>>>(input)) {
+    std::shared_ptr<sham::DeviceScheduler> _dev_sched, sham::DeviceBuffer<u8> &&input)
+    : dev_sched(std::move(_dev_sched)), storage(std::forward<sham::DeviceBuffer<u8>>(input)) {
 
-    header_size = extract_preahead(storage);
+    header_size = extract_preahead(dev_sched->get_queue(), storage);
 
     logger::debug_sycl_ln(
         "SerializeHelper",
         shambase::format(
             "Init SerializeHelper from buffer\n    storage size : {},\n    header_size : {}",
-            storage->size(),
+            storage.get_size(),
             header_size));
 
     storage_header
-        = extract_header(dev_sched->get_queue().q, storage, header_size, pre_head_lenght());
+        = extract_header(dev_sched->get_queue(), storage, header_size, pre_head_lenght());
 
     head_device = pre_head_lenght() + header_size;
 }

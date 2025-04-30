@@ -16,7 +16,7 @@
 #include "shamtest/shamtest.hpp"
 #include <iomanip>
 
-TestStart(Unittest, "shammath/matrix_expo::scaling_and_squaring", test_mat_expo, 1) {
+TestStart(Unittest, "shammath/matrix_exp", test_mat_exp, 1) {
 
     shammath::mat<f64, 3, 3> A{
         // clang-format off
@@ -35,7 +35,7 @@ TestStart(Unittest, "shammath/matrix_expo::scaling_and_squaring", test_mat_expo,
 
     shammath::mat<f64, 3, 3> B, F, I, Id;
     i32 K = 9, size_A = 3;
-    shammath::mat_expo<f64, f64>(
+    shammath::mat_exp<f64, f64>(
         K, A.get_mdspan(), F.get_mdspan(), B.get_mdspan(), I.get_mdspan(), Id.get_mdspan(), size_A);
     REQUIRE_EQUAL(A.equal_at_precision(ex_res, 1e-10), true);
 }

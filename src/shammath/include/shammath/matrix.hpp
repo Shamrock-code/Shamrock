@@ -47,7 +47,7 @@ namespace shammath {
         /// Check if this matrix is equal to another one
         bool operator==(const mat<T, m, n> &other) { return data == other.data; }
 
-        /// check if this matrix is eauql to another one at a given precison
+        /// check if this matrix is equal to another one at a given precison
         bool equal_at_precision(const mat<T, m, n> &other, const T precision) {
             bool res = true;
             for (auto i = 0; i < m; i++) {

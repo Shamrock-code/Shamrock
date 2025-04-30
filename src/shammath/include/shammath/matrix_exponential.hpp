@@ -24,52 +24,20 @@ namespace shammath {
 
     /**
      *
-     * ################################### %%% ALGORITHM GSQT (GENERAL SCALING AND SQUARING TAYLOR
-     * ALGORITHM) %%%
-     *    #
-     *    #               %INPUT: An n x n matrix A, preprocessed if appropriate
-     *    #               %        K, the maximum allowed number of matrix products;
-     *    #               %       {m_k}, k = 1 : K, the orders of the associated polynomials
-     *    #    Step 1. Execute Algorithm Order-scale, which selects the order and scaling parameters
-     * of Taylor polynomial #    Step 2. Execute Algorithm Taylor-eval to evaluate the Taylor
-     * polynomial in the scaled matrix #    Step 3. Execute the appropriate number of squaring steps
-     * of Taylor polynomial.
-     *    #
-     *    ###########################################################################################################
-     *
-     *
-     *    ########################### ------------------ ALGORITHM TAYLOR-EVAL
-     * ######################################
-     *    #
-     *    #                       % Horner-Paterson-Stockmeyer evalution of order-m Taylor
-     * polynomial of exp(A) with m = qr #                       % INPUT:   m; q; r; {A_j = A^(j)},
-     * j=1:q; {b_i}, i = 0 : m #           Execute Algorithm PS-coeff;            % calculate {B_j
-     * barre}, j = 0 : r -1; #           Execute Algorithm HPS-eval;            % calculate T_m(A);
-     *    #
-     *    ############################################################################################################
-     *
-     *
-     *   ######################## ----------- ALGORITHM PS-coeff ------------------
-     * ################################ #                      % Calculation of the r
-     * Paterson-STockmeyer coefficients {B_k barre  } with b_i = 1/i! #                      %
-     * INPUT: q;r; {A_j = A^(j)}, j=1 : q; {b_i}, i=0: qr #            for k = 0 : r-1 # B_k barre =
-     * 0; #                 for j= 1: q #                     B_k barre = B_k barre + b_(qk + j)A_j;
-     *   #                  end for j
-     *   #            end for k
-     *   #
-     *   ############################################################################################################
-     *
-     *    ########################## --------------- ALGORITHM HPS-EVAL
-     * ############################################## # %Horner-Paterson-Stockmeyer evaluation of
-     * the order-m Taylor polynomial of exp(A) with m = qr #                       % INPUT: r; b_0;
-     * A_q = A_q = A^(q); {B_k barre}, k =0: r-1 #               F = B_(r -1) barre; # for  j = r -1
-     * : -1 : 1 #                    F =  B_(j - 1) + A_q x F #               end for j # F = F +
-     * b_0I;
-     *    #
-     *    ##################################################################################################################
+     *  %%% ALGORITHM GSQT (GENERAL SCALING AND SQUARING TAYLOR ALGORITHM) %%%
+     *     %INPUT:  An n x n matrix A, preprocessed if appropriate
+     *     %        K, the maximum allowed number of matrix products;
+     *     %        {m_k}, k = 1 : K, the orders of the associated polynomials
+     *                         Step 1:
+     * Execute Algorithm Order-scale, which selects the order and scaling parameters of Taylor
+     * polynomial Step 2: Execute Algorithm Taylor-eval to evaluate the Taylor polynomial in the
+     * scaled matrix Step 3: Execute the appropriate number of squaring steps of Taylor polynomial.
      */
 
-    inline auto sequence_mk() {
+    /**
+     * @brief precomputed optimal Taylor's polynomial orders
+     */
+    inline constexpr auto sequence_mk() {
         std::array<i32, 9> seq = {0};
         seq[0]                 = 2;
         seq[1]                 = 4;
@@ -84,7 +52,11 @@ namespace shammath {
         return seq;
     }
 
-    inline auto sequence_qk() {
+    /**
+     * @brief precomputed optimal Paterson-Stockmeyer intergers (it's used to compute the matrix
+     * power)
+     */
+    inline constexpr auto sequence_qk() {
         std::array<i32, 9> seq = {0};
         seq[0]                 = 1;
         seq[1]                 = 2;
@@ -98,7 +70,10 @@ namespace shammath {
         return seq;
     }
 
-    inline auto sequence_rk() {
+    /**
+     * @brief precomputed optimal Paterson-Stockmeyer polynomial degrees
+     */
+    inline constexpr auto sequence_rk() {
         std::array<i32, 9> seq = {0};
         seq[0]                 = 2;
         seq[1]                 = 2;
@@ -112,7 +87,10 @@ namespace shammath {
         return seq;
     }
 
-    inline auto sequence_theta_mk() {
+    /**
+     * @brief precomputed optimal sequence based on backward error analysis
+     */
+    inline constexpr auto sequence_theta_mk() {
         std::array<f64, 9> seq = {0};
         seq[0]                 = 2.5810e-8;
         seq[1]                 = 3.3972e-4;
@@ -126,7 +104,10 @@ namespace shammath {
         return seq;
     }
 
-    inline auto sequence_nheta_mk() {
+    /**
+     * @brief precomputed optimal sequence based on backward error analysis
+     */
+    inline constexpr auto sequence_nheta_mk() {
         std::array<f64, 9> seq = {0};
         seq[0]                 = 8.7334e-6;
         seq[1]                 = 1.6778e-3;
@@ -140,44 +121,10 @@ namespace shammath {
         return seq;
     }
 
-    inline auto define_bexp_coef1() {
-        std::array<f64, 30> coefs = {0};
-
-        coefs[0]  = 1.0;
-        coefs[1]  = -1.0;
-        coefs[2]  = 0.5;
-        coefs[3]  = -0.16666666666666666;
-        coefs[4]  = 0.041666666666666664;
-        coefs[5]  = -0.008333333333333333;
-        coefs[6]  = 0.001388888888888889;
-        coefs[7]  = -0.0001984126984126984;
-        coefs[8]  = 2.48015873015873e-05;
-        coefs[9]  = -2.7557319223985893e-06;
-        coefs[10] = 2.755731922398589e-07;
-        coefs[11] = -2.505210838544172e-08;
-        coefs[12] = 2.08767569878681e-09;
-        coefs[13] = -1.6059043836821613e-10;
-        coefs[14] = 1.1470745597729725e-11;
-        coefs[15] = -7.647163731819816e-13;
-        coefs[16] = 4.779477332387385e-14;
-        coefs[17] = -2.8114572543455206e-15;
-        coefs[18] = 1.5619206968586225e-16;
-        coefs[19] = -8.22063524662433e-18;
-        coefs[20] = 4.110317623312165e-19;
-        coefs[21] = -1.9572941063391263e-20;
-        coefs[22] = 8.896791392450574e-22;
-        coefs[23] = -3.868170170630684e-23;
-        coefs[24] = 1.6117375710961184e-24;
-        coefs[25] = -6.446950284384474e-26;
-        coefs[26] = 2.4795962632247976e-27;
-        coefs[27] = -9.183689863795546e-29;
-        coefs[28] = 3.279889237069838e-30;
-        coefs[29] = -1.1309962886447716e-31;
-
-        return coefs;
-    }
-
-    inline auto define_bexp_coef2() {
+    /**
+     * @brief 1/(i!)
+     */
+    inline constexpr auto define_bexp_coef() {
         std::array<f64, 30> coefs = {0};
         coefs[0]                  = 1.0;
         coefs[1]                  = 1.0;
@@ -218,8 +165,8 @@ namespace shammath {
      * the optimal number of matrix product during the taylor evaluation step(k_star)
      * and the optimal scaling factor (s_star)
      * @param K maximum number of matrix product allow
-     * @param seq_mk precompute set of Polynomial order
-     * @param seq_theta_mk precomopute set of precompute parameters
+     * @param seq_mk precomputed set of Polynomial order
+     * @param seq_theta_mk precomputed set of parameters
      * @param A the matrix
      * @param size_A the matrix A size
      * @param k_start the optimal number of matrix product during the taylor evaluation step
@@ -383,7 +330,7 @@ namespace shammath {
         class Accessor3,
         class Accessor4,
         class Accessor5>
-    inline void mat_expo(
+    inline void mat_exp(
         const i32 K,
         const std::mdspan<T, Extents1, Layout1, Accessor1> &A,
         const std::mdspan<T, Extents2, Layout2, Accessor2> &F,
@@ -395,7 +342,7 @@ namespace shammath {
         auto seq_qk        = sequence_qk();
         auto seq_rk        = sequence_rk();
         auto seq_ntheta_mk = sequence_nheta_mk();
-        auto seq_bi        = define_bexp_coef2();
+        auto seq_bi        = define_bexp_coef();
 
         i32 k_star{0}, m_star{0}, s_star{0};
         // computation of k*, s*, m*

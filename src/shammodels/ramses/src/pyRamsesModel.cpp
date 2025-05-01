@@ -167,6 +167,7 @@ namespace shammodels::basegodunov {
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
             .def("dump", &T::dump)
+            .def("load_from_dump", &T::load_from_dump)
             .def("evolve_once_override_time", &T::evolve_once_time_expl)
             .def("evolve_once", &T::evolve_once)
             .def(

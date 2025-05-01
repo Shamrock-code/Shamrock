@@ -133,6 +133,35 @@ namespace shammodels::basegodunov {
             shamrock::write_shamrock_dump(
                 fname, metadata.dump(4), shambase::get_check_ref(ctx.sched));
         }
+
+        /**
+         * @brief Load the state of the Godunov model from a dump file.
+         *
+         * @param fname The name of the dump file.
+         */
+        inline void load_from_dump(std::string fname) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("Godunov", "Loading state from dump", fname);
+            }
+
+            // Load the context state and recover user metadata
+            std::string metadata_user{};
+            shamrock::load_shamrock_dump(fname, metadata_user, ctx);
+
+            nlohmann::json j = nlohmann::json::parse(metadata_user);
+            j.at("solver_config").get_to(solver.solver_config);
+
+            solver.init_ghost_layout();
+
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            logger::debug_ln("Sys", "build local scheduler tables");
+            sched.owned_patch_id = sched.patch_list.build_local();
+            sched.patch_list.build_local_idx_map();
+            sched.patch_list.build_global_idx_map();
+            sched.update_local_load_value([&](shamrock::patch::Patch p) {
+                return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+            });
+        }
     };
 
 } // namespace shammodels::basegodunov

@@ -290,6 +290,17 @@ namespace shammodels::basegodunov {
             {"time_state", p.time_state}};
     }
 
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
+        j = nlohmann::json{{"time", p.time}, {"dt", p.dt}};
+    }
+
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, SolverStatusVar<Tvec> &p) {
+        using Tscal = typename SolverStatusVar<Tvec>::Tscal;
+        j.at("time").get_to<Tscal>(p.time);
+        j.at("dt").get_to<Tscal>(p.dt);
+    }
     namespace shamunits {
 
         /**
@@ -308,18 +319,6 @@ namespace shammodels::basegodunov {
                 {"unit_temperature", p.K_inv},
                 {"unit_qte", p.mol_inv},
                 {"unit_lumint", p.cd_inv}};
-        }
-
-        template<class Tvec>
-        inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
-            j = nlohmann::json{{"time", p.time}, {"dt", p.dt}};
-        }
-
-        template<class Tvec>
-        inline void from_json(const nlohmann::json &j, SolverStatusVar<Tvec> &p) {
-            using Tscal = typename SolverStatusVar<Tvec>::Tscal;
-            j.at("time").get_to<Tscal>(p.time);
-            j.at("dt").get_to<Tscal>(p.dt);
         }
 
     } // namespace shamunits

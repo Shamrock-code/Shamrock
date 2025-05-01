@@ -20,6 +20,6 @@ namespace shamsys {
     /**
      * @brief Print information about all available SYCL devices in the cluster.
      */
-    void shamrock_smi();
+    void shamrock_smi(bool list_all_devices);
 
 } // namespace shamsys

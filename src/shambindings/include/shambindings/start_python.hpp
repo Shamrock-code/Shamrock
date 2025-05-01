@@ -20,18 +20,24 @@
 
 namespace shambindings {
 
-#if defined(DOXYGEN) || defined(SHAMROCK_EXECUTABLE_BUILD)
-
-    /// set the value of sys.path before init
+    /**
+     * @brief set the value of sys.path before init
+     *
+     * This function will throw if bindings were not initialized in embed mode
+     */
     void setpypath(std::string path);
 
-    /// set the value of sys.path before init from the supplied binary
+    /**
+     * @brief set the value of sys.path before init from the supplied binary
+     *
+     * This function will throw if bindings were not initialized in embed mode
+     */
     void setpypath_from_binary(std::string binary_path);
 
     /**
      * @brief Start shamrock embded ipython interpreter
      *
-     * This function is available only if the flag SHAMROCK_EXECUTABLE_BUILD is set
+     * This function will throw if bindings were not initialized in embed mode
      *
      * @warning This function shall not be called if more than one processes are running
      * @param do_print print log at python startup
@@ -41,15 +47,18 @@ namespace shambindings {
     /**
      * @brief run python runscript
      *
-     * This function is available only if the flag SHAMROCK_EXECUTABLE_BUILD is set
+     * This function will throw if bindings were not initialized in embed mode
      *
      * @param do_print print log at python startup
      * @param file_path path to the runscript
      */
     void run_py_file(std::string file_path, bool do_print);
 
-    /// Modify Python sys.path to point to one detected during cmake invocation
+    /**
+     * @brief Modify Python sys.path to point to one detected during cmake invocation
+     *
+     * This function will throw if bindings were not initialized in embed mode
+     */
     void modify_py_sys_path();
-#endif
 
 } // namespace shambindings

@@ -84,6 +84,12 @@ namespace shambase {
             }
         }
 
+        inline void for_each(std::function<void(u64, const T &)> &&f) const {
+            for (auto &[id, obj] : data) {
+                f(id, obj);
+            }
+        }
+
         /**
          * @brief Finds an object in the collection.
          *
@@ -167,7 +173,7 @@ namespace shambase {
          * @param fmt The format string.
          */
         template<typename... Tf>
-        inline void print_data(fmt::format_string<Tf...> fmt) {
+        inline void print_data(fmt::format_string<Tf...> fmt) const {
             for_each([&](u64 id_patch, T &ref) {
                 logger::raw_ln(id_patch, "->", shambase::format(fmt, ref));
             });
@@ -198,6 +204,17 @@ namespace shambase {
          */
         template<class Tmap>
         inline DistributedData<Tmap> map(std::function<Tmap(u64, T &)> map_func) {
+            DistributedData<Tmap> ret;
+
+            for_each([&](u64 id, T &ref) {
+                ret.add_obj(id, map_func(id, ref));
+            });
+
+            return ret;
+        }
+
+        template<class Tmap>
+        inline DistributedData<Tmap> map(std::function<Tmap(u64, const T &)> map_func) const {
             DistributedData<Tmap> ret;
 
             for_each([&](u64 id, T &ref) {

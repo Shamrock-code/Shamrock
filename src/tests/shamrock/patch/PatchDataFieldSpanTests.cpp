@@ -11,13 +11,16 @@
 #include "shambackends/EventList.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
-#include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include <experimental/mdspan>
+#include <memory>
 #include <vector>
 
 TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan, 1) {
+
+    StackEntry stack_loc{};
 
     using T = f64;
 
@@ -107,7 +110,7 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
         PatchDataField<T> field("test", 2, cnt_test / 2);
         field.override(test_vals, cnt_test);
 
-        shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> span(field, 0, cnt_test);
+        shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> span(field, 0, cnt_test / 2);
 
         sham::DeviceBuffer<T> ret(test_vals.size(), shamsys::instance::get_compute_scheduler_ptr());
 
@@ -129,7 +132,7 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
         PatchDataField<T> field("test", 2, cnt_test / 2);
         field.override(test_vals, cnt_test);
 
-        shamrock::PatchDataFieldSpan<T, 2> span(field, 0, cnt_test);
+        shamrock::PatchDataFieldSpan<T, 2> span(field, 0, cnt_test / 2);
 
         sham::DeviceBuffer<T> ret(test_vals.size(), shamsys::instance::get_compute_scheduler_ptr());
 
@@ -195,7 +198,7 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
 
         PatchDataField<T> field("test", 1, cnt_test);
 
-        shamrock::PatchDataFieldSpan<T, 1> span(field, 0, cnt_test);
+        shamrock::PatchDataFieldSpan<T, 1> span(field, 0, cnt_test / 2);
 
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
@@ -217,16 +220,20 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
 
         PatchDataField<T> field("test", 2, cnt_test / 2);
 
-        shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> span(field, 0, cnt_test);
+        shamrock::PatchDataFieldSpan<T, shamrock::dynamic_nvar> span(field, 0, cnt_test / 2);
 
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
             sham::MultiRef{ret},
             sham::MultiRef{span},
             cnt_test / 2,
-            [](u32 i, const T *in_val, auto sp) {
-                sp(i, 0) = in_val[i * 2 + 0];
-                sp(i, 1) = in_val[i * 2 + 1];
+            [=](u32 i, const T *in_val, auto sp) {
+                using nvar_extent = std::extents<u32, std::dynamic_extent, 2>;
+                using nvar_mdspan = std::mdspan<const T, nvar_extent, std::layout_right>;
+                auto span         = nvar_mdspan(in_val, cnt_test / 2);
+
+                sp(i, 0) = span(i, 0);
+                sp(i, 1) = span(i, 1);
             });
 
         REQUIRE_EQUAL_NAMED("dynamic nvar 2| write", test_vals, field.copy_to_stdvec());
@@ -239,18 +246,56 @@ TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan,
 
         PatchDataField<T> field("test", 2, cnt_test / 2);
 
-        shamrock::PatchDataFieldSpan<T, 2> span(field, 0, cnt_test);
+        shamrock::PatchDataFieldSpan<T, 2> span(field, 0, cnt_test / 2);
 
         sham::kernel_call(
             shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
             sham::MultiRef{ret},
             sham::MultiRef{span},
             cnt_test / 2,
-            [](u32 i, const T *in_val, auto sp) {
-                sp(i, 0) = in_val[i * 2 + 0];
-                sp(i, 1) = in_val[i * 2 + 1];
+            [=](u32 i, const T *in_val, auto sp) {
+                using nvar_extent = std::extents<u32, std::dynamic_extent, 2>;
+                using nvar_mdspan = std::mdspan<const T, nvar_extent, std::layout_right>;
+                auto span         = nvar_mdspan(in_val, cnt_test / 2);
+
+                sp(i, 0) = span(i, 0);
+                sp(i, 1) = span(i, 1);
             });
 
         REQUIRE_EQUAL_NAMED("static nvar 2| write", test_vals, field.copy_to_stdvec());
+    }
+
+    {
+        // nvar 2 case with start offset
+        sham::DeviceBuffer<T> ret(test_vals.size(), shamsys::instance::get_compute_scheduler_ptr());
+        ret.copy_from_stdvec(test_vals);
+
+        u32 offset = 5;
+
+        PatchDataField<T> field("test", 2, (cnt_test) / 2 + offset);
+        field.field_raz();
+
+        shamrock::PatchDataFieldSpan<T, 2> span(field, offset, cnt_test / 2);
+
+        sham::kernel_call(
+            shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
+            sham::MultiRef{ret},
+            sham::MultiRef{span},
+            cnt_test / 2,
+            [=](u32 i, const T *in_val, auto sp) {
+                using nvar_extent = std::extents<u32, std::dynamic_extent, 2>;
+                using nvar_mdspan = std::mdspan<const T, nvar_extent, std::layout_right>;
+                auto span         = nvar_mdspan(in_val, cnt_test / 2);
+
+                sp(i, 0) = span(i, 0);
+                sp(i, 1) = span(i, 1);
+            });
+
+        std::vector<T> test_vals_with_offset = std::vector<T>(10, 0);
+        test_vals_with_offset.insert(
+            test_vals_with_offset.end(), test_vals.begin(), test_vals.end());
+
+        REQUIRE_EQUAL_NAMED(
+            "static nvar 2| write + offset", test_vals_with_offset, field.copy_to_stdvec());
     }
 }

@@ -11,23 +11,30 @@ executable : ./shamrock
 Usage :
 --benchmark-mpi                 : micro benchmark for MPI
 --color                         : force colored ouput
+--feenableexcept                 : Enable FPE exceptions
 --force-dgpu-off                 : for direct mpi comm off
 --force-dgpu-on                 : for direct mpi comm on
 --help                          : show this message
 --ipython                       : run shamrock in Ipython mode
 --loglevel      (logvalue)      : specify a log level
 --nocolor                       : disable colored ouput
+--pypath        (sys.path)      : python sys.path to set
+--pypath-from-bin (python binary) : set sys.path from python binary
 --rscript       (filepath)      : run shamrock with python runscirpt
+--smi                           : print information about available SYCL devices in the cluster
+--smi-full                      : print information about EVERY available SYCL devices in the cluster
 --sycl-cfg      (idcomp:idalt)  : specify the compute & alt queue index
---sycl-ls                       : list available devices
---sycl-ls-map                   : list available devices & list of queue bindings
 
 Env variables :
-  SHAMLOGFORMATTER              : Change the log formatter (values :0-3)
+  SHAM_PROF_PREFIX              : Prefix of shamrock profile outputs
+  SHAM_PROF_USE_NVTX            : Enable NVTX profiling
+  SHAM_PROFILING                : Enable Shamrock profiling
+  SHAM_PROF_USE_COMPLETE_EVENT  : Use complete event instead of begin end for chrome tracing
+  SHAM_PROF_EVENT_RECORD_THRES  : Change the event recording threshold
   NO_COLOR                      : Disable colors (if no color cli args are passed)
   CLICOLOR_FORCE                : Enable colors (if no color cli args are passed)
   TERM                          : Terminal emulator identifier
-    = xterm-kitty
+    = xterm-256color
   COLORTERM                     : Terminal color support identifier
     = truecolor
   SHAMTTYCOL                    : Set tty assumed column count
@@ -35,7 +42,7 @@ Env variables :
 Env deduced vars :
   isatty = Yes
   color = enabled
-  tty size = 45x133
+  tty size = 36x106
 ```
 
 Most of those options are just changing the configuration of the code at runtime and will be explained later.

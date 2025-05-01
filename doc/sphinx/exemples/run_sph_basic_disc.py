@@ -5,6 +5,8 @@ Basic disc simulation
 This simple example shows how to run a basic disc simulation in SPH
 """
 
+# sphinx_gallery_multi_image = "single"
+
 import shamrock
 
 # If we use the shamrock executable to run this script instead of the python interpreter,
@@ -34,22 +36,22 @@ G = ucte.G()
 Npart = 1000000
 
 # Sink parameters
-center_mass = 1
+center_mass = 1.0
 center_racc = 0.1
 
 # Disc parameter
 disc_mass = 0.01  # sol mass
-rout = 10  # au
-rin = 1  # au
-H_r_in = 0.05
+rout = 10.0  # au
+rin = 1.0  # au
+H_r_0 = 0.05
 q = 0.5
 p = 3.0 / 2.0
-r0 = 1
+r0 = 1.0
 
 # Viscosity parameter
-alpha_AV = 1e-3 / 0.08
-alpha_u = 1
-beta_AV = 2
+alpha_AV = 1.0e-3 / 0.08
+alpha_u = 1.0
+beta_AV = 2.0
 
 # Integrator parameters
 C_cour = 0.3
@@ -58,8 +60,8 @@ C_force = 0.25
 
 # Disc profiles
 def sigma_profile(r):
-    sigma_0 = 1
-    return sigma_0 * (r / rin) ** (-p)
+    sigma_0 = 1.0  # We do not care as it will be renormalized
+    return sigma_0 * (r / r0) ** (-p)
 
 
 def kep_profile(r):
@@ -71,8 +73,8 @@ def omega_k(r):
 
 
 def cs_profile(r):
-    cs_in = (H_r_in * rin) * omega_k(rin)
-    return ((r / rin) ** (-q)) * cs_in
+    cs_in = (H_r_0 * r0) * omega_k(r0)
+    return ((r / r0) ** (-q)) * cs_in
 
 
 # %%
@@ -83,7 +85,7 @@ pmass = disc_mass / Npart
 bmin = (-rout * 2, -rout * 2, -rout * 2)
 bmax = (rout * 2, rout * 2, rout * 2)
 
-cs0 = cs_profile(rin)
+cs0 = cs_profile(r0)
 
 
 def rot_profile(r):
@@ -93,7 +95,7 @@ def rot_profile(r):
 def H_profile(r):
     H = cs_profile(r) / omega_k(r)
     # fact = (2.**0.5) * 3. # factor taken from phantom, to fasten thermalizing
-    fact = 1
+    fact = 1.0
     return fact * H
 
 
@@ -272,3 +274,82 @@ plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
 plt.xlabel("x")
 plt.ylabel("z")
 plt.show()
+
+
+# %%
+# Plot vertical profiles at r=1
+import numpy as np
+
+dat = ctx.collect_data()
+
+for rcenter in [1.0, 2.0, 3.0]:
+
+    z = []
+    h = []
+    vz = []
+    az = []
+
+    delta_r = 0.01
+
+    for i in range(len(dat["xyz"])):
+        r = (dat["xyz"][i][0] ** 2 + dat["xyz"][i][1] ** 2) ** 0.5
+        if r < rcenter + delta_r and r > rcenter - delta_r:
+            z.append(dat["xyz"][i][2])
+            h.append(dat["hpart"][i])
+            vz.append(dat["vxyz"][i][2])
+            az.append(dat["axyz"][i][2])
+
+    rho = pmass * (model.get_hfact() / np.array(h)) ** 3
+
+    fig, axs = plt.subplots(nrows=3, ncols=1, sharex=True)
+
+    from scipy.optimize import curve_fit
+
+    def func(x, a, c):
+        return a * np.exp(-((x / c) ** 2) / 2)
+
+    rho_0 = 0.001
+    p0 = [rho_0, H_profile(rcenter)]  # a, b, c
+    popt, pcov = curve_fit(func, z, rho, p0=p0)
+
+    z_ana = np.linspace(-5.0 * H_profile(rcenter), 5.0 * H_profile(rcenter), 100)
+    rho_fit = func(z_ana, *popt)
+
+    axs[0].scatter(z, rho, label="rho")
+
+    axs[0].plot(z_ana, rho_fit, c="black", label="gaussian fit")
+    stddev = abs(popt[1])
+    axs[0].annotate(
+        f"Stddev: {stddev:.5f}",
+        xy=(0.05, 0.95),
+        xycoords="axes fraction",
+        fontsize=10,
+        verticalalignment="top",
+        bbox=dict(boxstyle="round", fc="w"),
+    )
+
+    axs[0].set_ylabel("rho")
+    axs[0].legend()
+
+    axs[1].scatter(z, vz, label="vz")
+
+    vz_fit = np.polyfit(z, vz, 1)
+    vz_fit_fn = np.poly1d(vz_fit)
+    axs[1].plot(z_ana, vz_fit_fn(z_ana), c="red", label="linear fit")
+
+    axs[1].set_ylabel("vz")
+    axs[1].legend()
+
+    axs[2].scatter(z, az, label="az")
+
+    az_fit = np.polyfit(z, az, 1)
+    az_fit_fn = np.poly1d(az_fit)
+    print(f"r={rcenter} az_fit={az_fit}")
+    axs[2].plot(z_ana, az_fit_fn(z_ana), c="red", label="linear fit")
+
+    axs[2].set_ylabel("az")
+    axs[2].set_xlabel("z")
+    axs[2].legend()
+
+    plt.tight_layout()
+    plt.show()

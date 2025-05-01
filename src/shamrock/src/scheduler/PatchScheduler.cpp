@@ -942,11 +942,11 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
         return ser.finalize();
     };
 
-    auto deserializer = [&](std::unique_ptr<sycl::buffer<u8>> &&buf) {
+    auto deserializer = [&](sham::DeviceBuffer<u8> &&buf) {
         // exchange the buffer held by the distrib data and give it to the serializer
         shamalgs::SerializeHelper ser(
             shamsys::instance::get_compute_scheduler_ptr(),
-            std::forward<std::unique_ptr<sycl::buffer<u8>>>(buf));
+            std::forward<sham::DeviceBuffer<u8>>(buf));
         return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
     };
 
@@ -957,11 +957,11 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
         if (cpatch.node_owner_id == shamcomm::world_rank()) {
             auto &patchdata = pdata.get(cpatch.id_patch);
 
-            std::unique_ptr<sycl::buffer<u8>> tmp = serializer(patchdata);
+            sham::DeviceBuffer<u8> tmp = serializer(patchdata);
 
             send_payloads.push_back(Message{
                 std::make_unique<shamcomm::CommunicationBuffer>(
-                    shambase::get_check_ref(tmp), shamsys::instance::get_compute_scheduler_ptr()),
+                    std::move(tmp), shamsys::instance::get_compute_scheduler_ptr()),
                 0,
                 i32(i)});
         }
@@ -991,10 +991,10 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     for (auto &recv_msg : recv_payloads) {
         shamcomm::CommunicationBuffer comm_buf = shambase::extract_pointer(recv_msg.buf);
 
-        sycl::buffer<u8> buf = shamcomm::CommunicationBuffer::convert(std::move(comm_buf));
+        sham::DeviceBuffer<u8> buf
+            = shamcomm::CommunicationBuffer::convert_usm(std::move(comm_buf));
 
-        ret.push_back(std::make_unique<PatchData>(
-            deserializer(std::make_unique<sycl::buffer<u8>>(std::move(buf)))));
+        ret.push_back(std::make_unique<PatchData>(deserializer(std::move(buf))));
     }
 
     return ret;

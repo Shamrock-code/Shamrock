@@ -1,28 +1,38 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-## Licensed under CeCILL 2.1 License, see LICENSE for more information
+## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
 ## -------------------------------------------------------
+
+message("   ---- SYCL config section ----")
 
 include(CheckCXXCompilerFlag)
 include(CheckCXXSourceCompiles)
 
+# The LSPs have no clue of what a SYCL header is,
+# but since it is standard C++ simply adding them to the path works.
+option(SHAMROCK_ADD_SYCL_INCLUDES "Add SYCL includes to CXX_FLAGS to make LSP happy" On)
+
 message(STATUS "Shamrock configure SYCL backend")
+###############################################################################
+### Implementation choice
+###############################################################################
 
 # check that the wanted sycl backend is in the list
-set(KNOWN_SYCL_IMPLEMENTATIONS "IntelLLVM;ACPPDirect;ACPPCmake")
+set(KNOWN_SYCL_IMPLEMENTATIONS "IntelLLVM" "ACPPDirect" "ACPPCmake")
 if((NOT ${SYCL_IMPLEMENTATION} IN_LIST KNOWN_SYCL_IMPLEMENTATIONS) OR (NOT (DEFINED SYCL_IMPLEMENTATION)))
   message(FATAL_ERROR
     "The Shamrock SYCL backend requires specifying a SYCL implementation with "
     "-DSYCL_IMPLEMENTATION=[IntelLLVM;ACPPDirect,ACPPCmake]")
 endif()
-
 set(SYCL_IMPLEMENTATION "${SYCL_IMPLEMENTATION}" CACHE STRING "Sycl implementation used")
-
+set_property(CACHE SYCL_IMPLEMENTATION PROPERTY STRINGS ${KNOWN_SYCL_IMPLEMENTATIONS})
 
 message(STATUS "Chosen SYCL implementation : ${SYCL_IMPLEMENTATION}")
+
 
 set(SHAM_CXX_SYCL_FLAGS "")
 
@@ -61,6 +71,11 @@ message( "  SYCL_COMPILER : ${SYCL_COMPILER}")
 message( "  sycl 2020 reduction : ${SYCL2020_FEATURE_REDUCTION}")
 if(SYCL2020_FEATURE_REDUCTION)
   set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_REDUCTION")
+endif()
+
+message( "  sycl 2020 group reduction : ${SYCL2020_FEATURE_GROUP_REDUCTION}")
+if(SYCL2020_FEATURE_GROUP_REDUCTION)
+  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_GROUP_REDUCTION")
 endif()
 
 message( "  sycl 2020 isinf : ${SYCL2020_FEATURE_ISINF}")

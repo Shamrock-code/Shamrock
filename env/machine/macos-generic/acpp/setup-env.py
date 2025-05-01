@@ -11,21 +11,12 @@ NAME = "MacOS generic AdaptiveCpp"
 PATH = "machine/macos-generic/acpp"
 
 
-def is_acpp_already_installed(installfolder):
-    return os.path.isfile(installfolder + "/bin/acpp")
-
-
-def setup(arg: SetupArg):
+def setup(arg: SetupArg, envgen: EnvGen):
     argv = arg.argv
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
     buildtype = arg.buildtype
-    pylib = arg.pylib
     lib_mode = arg.lib_mode
-
-    print("------------------------------------------")
-    print("Running env setup for : " + NAME)
-    print("------------------------------------------")
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
@@ -58,15 +49,8 @@ def setup(arg: SetupArg):
     cur_file = os.path.realpath(os.path.expanduser(__file__))
 
     cmake_extra_args = ""
-    if pylib:
-        cmake_extra_args += " -DBUILD_PYLIB=True"
-        run_cmd(
-            "cp "
-            + os.path.abspath(os.path.join(cur_file, "../" + "_pysetup.py"))
-            + " "
-            + builddir
-            + "/setup.py"
-        )
+
+    envgen.copy_file(shamrockdir + "/env/helpers/_pysetup.py", "setup.py")
 
     ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
     ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'

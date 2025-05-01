@@ -1,37 +1,36 @@
-# Exports will be provided by the new env script above this line
-# will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
+# Everything before this line will be provided by the new-env script
 
-if [ -z ${ACPP_GIT_DIR+x} ]; then echo "ACPP_GIT_DIR is unset"; return; fi
+export ACPP_VERSION=v24.10.0
+export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
+export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
+export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
+export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
 
-if [ ! -f "$ACPP_GIT_DIR/README.md" ]; then
-    echo " ------ Clonning AdaptiveCpp ------ "
-    git clone https://github.com/AdaptiveCpp/AdaptiveCpp.git $ACPP_GIT_DIR
-    echo " ------  AdaptiveCpp Cloned  ------ "
-
-fi
+# For some reasons on nix the CUDA stubs are not linked to shamrock
+# As a result if we start SYCL first no cuda devices are available
+# inversely if we start MPI first, MPI cuda aware loads the correct stubs
+export SHAM_MPI_INIT_STRATEGY=mpifirst
 
 function setupcompiler {
+
+    clone_acpp || return
+
     cmake \
         -S ${ACPP_GIT_DIR} \
         -B ${ACPP_BUILD_DIR} \
         -GNinja \
         -DCMAKE_INSTALL_PREFIX=$out \
         -DCLANG_INCLUDE_PATH=$CMAKE_CLANG_INCLUDE_PATH \
-        -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR}
-    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install)
+        -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} || return
+    (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
 }
 
 if [ ! -f "$ACPP_INSTALL_DIR/bin/acpp" ]; then
     echo " ------ Compiling AdaptiveCpp ------ "
-    setupcompiler
+    setupcompiler || return
     echo " ------  AdaptiveCpp Compiled  ------ "
 
 fi
-
-function updatecompiler {
-    (cd ${ACPP_GIT_DIR} && git pull)
-    setupcompiler
-}
 
 function shamconfigure {
     cmake \
@@ -44,15 +43,9 @@ function shamconfigure {
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes \
-        "${CMAKE_OPT[@]}"
+        "${CMAKE_OPT[@]}" || return
 }
 
 function shammake {
-    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
-}
-
-export REF_FILES_PATH=$BUILD_DIR/reference-files
-
-function pull_reffiles {
-    git clone https://github.com/Shamrock-code/reference-files.git $REF_FILES_PATH
+    (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}") || return
 }

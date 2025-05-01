@@ -1,15 +1,16 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-## Licensed under CeCILL 2.1 License, see LICENSE for more information
+## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
 ## -------------------------------------------------------
 
 ################################
 # Cmake config
 ################################
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.9...3.10)
 
 enable_testing()
 
@@ -28,109 +29,33 @@ if(EXPORT_COMPILE_COMMANDS)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
+include(AreSubmoduleClones)
+
 ################################
 # Shamrock versioning
 ################################
 
-# Based on the versionning in AdaptiveCPP
-# see : https://github.com/AdaptiveCpp/AdaptiveCpp/blob/develop/CMakeLists.txt#L554
-
-set(SHAMROCK_VERSION_MAJOR 2024)
-set(SHAMROCK_VERSION_MINOR 10)
+set(SHAMROCK_VERSION_MAJOR 2025)
+set(SHAMROCK_VERSION_MINOR 05)
 set(SHAMROCK_VERSION_PATCH 0)
 
-execute_process(
-    COMMAND git status
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_STATUS_OUT
-    RESULT_VARIABLE GIT_STATUS
-)
-
-# With a release tarball, "git status" will fail (return non zero)
-if(GIT_STATUS)
-    set(SHAMROCK_VERSION_SUFFIX "")
-else()
-    # Get the latest abbreviated commit hash of the working branch
-    execute_process(
-        COMMAND git log -1 --format=%h
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE SHAMROCK_GIT_COMMIT_HASH
-        RESULT_VARIABLE GIT_HASH_RETURN_CODE
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    # git branch
-    execute_process(
-        COMMAND git rev-parse --abbrev-ref HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE SHAMROCK_GIT_BRANCH
-        RESULT_VARIABLE GIT_BRANCH_RETURN_CODE
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    # check whether there are local changes
-    execute_process(COMMAND git diff-index --name-only HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE SHAMROCK_LOCAL_CHANGES
-        RESULT_VARIABLE GIT_LOCAL_CHANGES_RETURN_CODE
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-
-    if (GIT_HASH_RETURN_CODE EQUAL 0 AND GIT_BRANCH_RETURN_CODE EQUAL 0 AND
-         GIT_LOCAL_CHANGES_RETURN_CODE EQUAL 0)
-
-        if(NOT "${SHAMROCK_LOCAL_CHANGES}" STREQUAL "")
-        set(DIRTY_STR ".dirty")
-        else()
-        set(DIRTY_STR "")
-        endif()
-
-        set(SHAMROCK_VERSION_SUFFIX "+git.${SHAMROCK_GIT_COMMIT_HASH}.${SHAMROCK_GIT_BRANCH}${DIRTY_STR}")
-    endif()
-endif()
-
-set(SHAMROCK_VERSION_STRING ${SHAMROCK_VERSION_MAJOR}.${SHAMROCK_VERSION_MINOR}.${SHAMROCK_VERSION_PATCH}${SHAMROCK_VERSION_SUFFIX})
 project(Shamrock VERSION ${SHAMROCK_VERSION_MAJOR}.${SHAMROCK_VERSION_MINOR}.${SHAMROCK_VERSION_PATCH})
-message(STATUS "Shamrock version : ${SHAMROCK_VERSION_STRING}")
+include(ShamVersioning)
 
-################################
-# Shamrock Configuration
-################################
-
-option(SHAMROCK_WITH_MPI "use MPI libraries" On)
-option(SHAMROCK_USE_SHARED_LIB "use shared libraries" On)
-option(SHAMROCK_USE_PROFILING "use custom profiling tooling" On)
-option(SHAMROCK_USE_PCH "use precompiled headers" Off)
-option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
+######################
+# Platform specfics
+######################
 
 if(APPLE)
-if(SHAMROCK_USE_SHARED_LIB)
-message(STATUS "forcing SHAMROCK_USE_SHARED_LIB=Off on Macos because of known issues")
-endif()
-set(SHAMROCK_USE_SHARED_LIB Off)
+    message(WARNING "forcing SHAMROCK_USE_SHARED_LIB=Off on Macos because of known issues")
+    set(SHAMROCK_FORCE_SHARED_LIB Off)
 endif()
 
 ######################
-#checking compiler flag support
+# CXX specfics
 ######################
+
 include(ShamConfigureCXX)
-
-include(ShamBuildAsan)
-include(ShamBuildUBsan)
-include(ShamBuildCoverage)
-
-set(ValidShamBuildType "Debug" "Release" "ASAN" "UBSAN" "COVERAGE")
-if(NOT CMAKE_BUILD_TYPE)
-    #set default build to release
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Cmake build type" FORCE)
-    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${ValidShamBuildType})
-endif()
-if(NOT "${CMAKE_BUILD_TYPE}" IN_LIST ValidShamBuildType)
-    message(FATAL_ERROR
-        "The required build type in unknown -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}. "
-        "please use a build type in the following list (case-sensitive) "
-        "${ValidShamBuildType}")
-endif()
-message(STATUS "current build type : CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
-
 
 ######################
 # Compiler selection
@@ -146,91 +71,35 @@ else()
 endif()
 set(SHAMROCK_ENABLE_BACKEND "${SHAMROCK_ENABLE_BACKEND}" CACHE STRING "Shamrock backend used")
 
-
-
 enable_language(C)
 enable_language(CXX)
 
-
 ######################
-#shamrock impl control
+# add libs
 ######################
 
+include(ShamConfigureMPI)
+include(ShamConfigurePybind11)
+include(ShamConfigureNVTX)
+include(ShamConfigureFmtlib)
+include(ShamConfigureNlohmannJson)
+include(ShamConfigurePlfNanotimer)
+include(ShamConfigureMDSpan)
 
+####################################################################################################
+# Shamrock Configuration
+####################################################################################################
 
-if(SHAMROCK_USE_PROFILING)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_USE_PROFILING")
-endif()
+include(ShamrockBuildOptions)
 
-if(SHAMROCK_USE_NVTX)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_USE_NVTX")
-endif()
+####################################################################################################
+# target Configuration
+####################################################################################################
 
-######################
-# Add external libraries
-######################
-if(SHAMROCK_WITH_MPI)
-    include(ShamConfigureMPI)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SHAM_CXX_MPI_FLAGS}")
-endif()
-
-if(NOT DEFINED Python_EXECUTABLE)
-  if(DEFINED ENV{VIRTUAL_ENV})
-    find_program(
-      Python_EXECUTABLE python
-      PATHS "$ENV{VIRTUAL_ENV}" "$ENV{VIRTUAL_ENV}/bin"
-      NO_DEFAULT_PATH)
-  elseif(DEFINED ENV{CONDA_PREFIX})
-    find_program(
-      Python_EXECUTABLE python
-      PATHS "$ENV{CONDA_PREFIX}" "$ENV{CONDA_PREFIX}/bin"
-      NO_DEFAULT_PATH)
-  elseif(DEFINED ENV{pythonLocation})
-    find_program(
-      Python_EXECUTABLE python
-      PATHS "$ENV{pythonLocation}" "$ENV{pythonLocation}/bin"
-      NO_DEFAULT_PATH)
-  endif()
-  if(NOT Python_EXECUTABLE)
-    unset(Python_EXECUTABLE)
-  endif()
-endif()
-
-find_package(Python 3.6 REQUIRED COMPONENTS Interpreter Development)
-
-add_subdirectory(external)
-
-
-if(USE_SYSTEM_FMTLIB)
-    message(STATUS "Using system fmtlib")
-    find_package(fmt REQUIRED)
-endif()
-
-
-if("${BUILD_PYLIB}")
-    # We must force fPIC because for unknown reasons cmake doesn't on those shared lib
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_LIB_BUILD -fPIC")
-else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_EXECUTABLE_BUILD")
-endif()
-
-include_directories(external/plf_nanotimer)
-
-message("-- Shamrock config : ")
-message("     SHAMROCK_USE_PROFILING : ${SHAMROCK_USE_PROFILING}")
-message("     SHAMROCK_USE_NVTX : ${SHAMROCK_USE_NVTX}")
-message("     SHAMROCK_USE_PCH : ${SHAMROCK_USE_PCH}")
-message("     SHAMROCK_USE_SHARED_LIB : ${SHAMROCK_USE_SHARED_LIB}")
-message("     CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
-message("     CMAKE_CXX_COMPILER : ${CMAKE_CXX_COMPILER}")
+message("   ---- targets section ----")
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-
-########################################################################################
-# Targets ##############################################################################
-########################################################################################
-
 
 add_subdirectory(src)

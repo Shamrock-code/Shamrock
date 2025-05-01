@@ -21,25 +21,7 @@
  * we can then wrap them conveniently in a single macro call.
  */
 
-#if defined(DOXYGEN)
-    /**
-     * @brief Alias to PYBIND11_EMBEDDED_MODULE in shamrock executable,
-     * or to PYBIND11_MODULE in python library mode
-     * @param name module definition name
-     * @param module py::module object
-     */
-    #define SHAMROCK_PY_MODULE(name, module)
-#endif
-
-#ifdef SHAMROCK_EXECUTABLE_BUILD
-    #include <pybind11/embed.h>
-    #define SHAMROCK_PY_MODULE(name, module) PYBIND11_EMBEDDED_MODULE(name, module)
-#endif
-
-#ifdef SHAMROCK_LIB_BUILD
-    #include <pybind11/pybind11.h>
-    #define SHAMROCK_PY_MODULE(name, module) PYBIND11_MODULE(name, module)
-#endif
+#include <pybind11/pybind11.h>
 
 /// alias to pybind11 namespace
 namespace py = pybind11;

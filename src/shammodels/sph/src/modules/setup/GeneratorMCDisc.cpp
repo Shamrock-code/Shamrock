@@ -127,7 +127,7 @@ shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
         vec_pos.push_back(o.pos);
         vec_vel.push_back(o.velocity);
         // vec_u.push_back(o.cs * o.cs / (/*solver.eos_gamma * */ (eos_gamma - 1)));
-        Tscal h = shamrock::sph::h_rho(pmass, o.rho * 0.1, Kernel::hfactd);
+        Tscal h = shamrock::sph::h_rho(pmass, o.rho, Kernel::hfactd) * init_h_factor;
         vec_h.push_back(h);
         vec_cs.push_back(o.cs);
     }

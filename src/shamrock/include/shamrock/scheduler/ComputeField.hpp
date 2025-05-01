@@ -50,6 +50,22 @@ namespace shamrock {
 
         inline sham::DeviceBuffer<T> &get_buf_check(u64 id) { return get_buf(id); }
 
+        template<u32 nvar>
+        shambase::DistributedData<PatchDataFieldSpan<T, nvar>> get_field_span() {
+            return field_data.template map<PatchDataFieldSpan<T, nvar>>(
+                [&](u64 id, PatchDataField<T> &cfield) {
+                    return cfield.template get_span<nvar>();
+                });
+        }
+
+        shambase::DistributedData<PatchDataFieldSpan<T, shamrock::dynamic_nvar>>
+        get_field_span_nvar_dynamic() {
+            return field_data.template map<PatchDataFieldSpan<T, shamrock::dynamic_nvar>>(
+                [&](u64 id, PatchDataField<T> &cfield) {
+                    return cfield.get_field_span_nvar_dynamic();
+                });
+        }
+
         inline T compute_rank_max() {
             StackEntry stack_loc{};
             T ret = shambase::VectorProperties<T>::get_min();
@@ -80,6 +96,18 @@ namespace shamrock {
             field_data.for_each([&](u64 id, PatchDataField<T> &cfield) {
                 if (!cfield.is_empty()) {
                     ret += cfield.compute_sum();
+                }
+            });
+
+            return ret;
+        }
+
+        inline T compute_rank_dot_sum() {
+            StackEntry stack_loc{};
+            T ret = shambase::VectorProperties<T>::get_zero();
+            field_data.for_each([&](u64 id, PatchDataField<T> &cfield) {
+                if (!cfield.is_empty()) {
+                    ret += cfield.compute_dot_sum();
                 }
             });
 

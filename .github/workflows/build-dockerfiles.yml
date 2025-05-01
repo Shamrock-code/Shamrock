@@ -1,0 +1,29 @@
+name: Build containers
+
+on:
+  workflow_call:
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository_owner }}
+
+jobs:
+
+  build-ubuntu_latest:
+
+    permissions:
+      contents: read
+      packages: write
+      # This is used to complete the identity challenge
+      # with sigstore/fulcio when running outside of PRs.
+      id-token: write
+
+    uses: ./.github/workflows/build-and-push.yml
+    with:
+      imagename: shamrock
+      imagetag: oneapi
+      imagepath: .github/dockerfiles/intel_oneapi
+      runson: ubuntu-latest
+      usetagonlatest: false

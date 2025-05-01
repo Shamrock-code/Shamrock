@@ -11,23 +11,29 @@ jobs:
 
 
   shamrock_acpp:
-    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} (pylib)
+    name: AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}} ${{matrix.label}} (pylib)
     runs-on: ubuntu-latest
 
     container:
       image: ${{ matrix.container }}
 
-
     strategy:
       matrix:
         include:
           - clang: 15
-            cuda: 11.0.2
-            rocm: 5.4.3
             backend: omp
             arch: none
             runtest: yes
-            container: ghcr.io/shamrock-code/ci-ubuntu20:main
+            label: "ubuntu 20"
+            upload_doc: false
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+          - clang: 18
+            backend: omp
+            arch: none
+            runtest: yes
+            label: "ubuntu latest"
+            upload_doc: true
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
 
     timeout-minutes: 60
     steps:
@@ -69,32 +75,55 @@ jobs:
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
 
-
       - name: Setup env
-        run : ./env/new-env --machine debian-generic.acpp --builddir build --pylib -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
-
-      - name: Pip install Shamrock
         run : |
+          ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
+
+      - name: Init py venv
+        run :  |
+          python3 -m venv .pyvenv
+
+      # -e was removed as shamrock executable is not installed otherwise
+      - name: Pip install Shamrock
+        shell: bash # In docker container github action default to sh
+        run : |
+          source .pyvenv/bin/activate
           cd build
-          pip install --verbose -e .
+          pip install --verbose .
 
       - name: Try shamrock startup
+        shell: bash # In docker container github action default to sh
         run: |
+          source .pyvenv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init('0:0')"
 
+      - name: Try shamrock startup (executable)
+        shell: bash # In docker container github action default to sh
+        run: |
+          source .pyvenv/bin/activate
+          ACPP_VISIBILITY_MASK=omp \
+          ACPP_DEBUG_LEVEL=3 \
+          shamrock --smi --sycl-cfg 0:0 --loglevel 125
+
       - name: Pip install package for doc
+        shell: bash # In docker container github action default to sh
         run : |
+          source .pyvenv/bin/activate
           cd build
           pip install matplotlib numpy scipy
 
       - name: Build sphinx documentation
+        shell: bash # In docker container github action default to sh
         run: |
-          cd doc/sphinx
+          source .pyvenv/bin/activate
+          cd build
+          cd ../doc/sphinx
           bash gen_sphinx_doc.sh #generate the doc in doc/sphinx/build/html
 
       - name: Upload doc artifact
+        if: matrix.upload_doc
         uses: actions/upload-artifact@v4
         with:
           name: sphinx_doc

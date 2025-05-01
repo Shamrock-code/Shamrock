@@ -1,8 +1,9 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright(C) 2021-2023 Timothée David--Cléris <timothee.david--cleris@ens-lyon.fr>
-## Licensed under CeCILL 2.1 License, see LICENSE for more information
+## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
 ## -------------------------------------------------------
 
@@ -27,11 +28,16 @@ set(SYCL_COMPILER "INTEL_LLVM")
 set(SYCL2020_FEATURE_REDUCTION ON)
 set(SYCL2020_FEATURE_ISINF ON)
 set(SYCL2020_FEATURE_CLZ ON)
+set(SYCL2020_FEATURE_GROUP_REDUCTION ON)
 
 if(DEFINED INTEL_LLVM_PATH)
     set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL_COMP_INTEL_LLVM -Wno-unknown-cuda-version")
-    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${INTEL_LLVM_PATH}/include")
-    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${INTEL_LLVM_PATH}/include/sycl")
+
+    if(SHAMROCK_ADD_SYCL_INCLUDES)
+        set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${INTEL_LLVM_PATH}/include")
+        set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -isystem ${INTEL_LLVM_PATH}/include/sycl")
+    endif()
+
     list(APPEND CMAKE_SYSTEM_PROGRAM_PATH "${INTEL_LLVM_PATH}/bin")
     list(APPEND CMAKE_SYSTEM_LIBRARY_PATH "${INTEL_LLVM_PATH}/lib")
 else()
@@ -56,15 +62,15 @@ if(INTEL_LLVM_HAS_FAST_MATH)
 endif()
 
 if(INTEL_LLVM_FAST_MATH)
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -ffast-math")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -ffast-math")
 endif()
 
 if(INTEL_LLVM_SYCL_ID_INT32)
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -fsycl-id-queries-fit-in-int")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -fsycl-id-queries-fit-in-int")
 endif()
 
 if(INTEL_LLVM_NO_RDC)
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -fno-sycl-rdc")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -fno-sycl-rdc")
 endif()
 
 

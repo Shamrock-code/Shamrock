@@ -146,7 +146,17 @@ namespace shambase {
      * @return T&
      */
     template<class T>
-    inline T &get_check_ref(const std::optional<T> &ptr, SourceLocation loc = SourceLocation()) {
+    inline const T &
+    get_check_ref(const std::optional<T> &ptr, SourceLocation loc = SourceLocation()) {
+        if (!bool(ptr)) {
+            throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
+        }
+        return *ptr;
+    }
+
+    /// Same overload but for non const case
+    template<class T>
+    inline T &get_check_ref(std::optional<T> &ptr, SourceLocation loc = SourceLocation()) {
         if (!bool(ptr)) {
             throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
         }

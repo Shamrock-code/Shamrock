@@ -31,7 +31,7 @@
 
 namespace shamalgs::collective {
 
-    using SerializedDDataComm = shambase::DistributedDataShared<std::unique_ptr<sycl::buffer<u8>>>;
+    using SerializedDDataComm = shambase::DistributedDataShared<sham::DeviceBuffer<u8>>;
 
     void distributed_data_sparse_comm(
         std::shared_ptr<sham::DeviceScheduler> dev_sched,
@@ -46,8 +46,8 @@ namespace shamalgs::collective {
         shambase::DistributedDataShared<T> &&send_distrib_data,
         shambase::DistributedDataShared<T> &recv_distrib_data,
         std::function<i32(u64)> rank_getter,
-        std::function<std::unique_ptr<sycl::buffer<u8>>(T &)> serialize,
-        std::function<T(std::unique_ptr<sycl::buffer<u8>> &&)> deserialize,
+        std::function<sham::DeviceBuffer<u8>(T &)> serialize,
+        std::function<T(sham::DeviceBuffer<u8> &&)> deserialize,
         std::optional<SparseCommTable> comm_table = {}) {
 
         StackEntry stack_loc{};
@@ -61,20 +61,18 @@ namespace shamalgs::collective {
             same_rank_tmp);
 
         SerializedDDataComm dcomm_send
-            = send_distrib_data.template map<std::unique_ptr<sycl::buffer<u8>>>(
-                [&](u64, u64, T &obj) {
-                    return serialize(obj);
-                });
+            = send_distrib_data.template map<sham::DeviceBuffer<u8>>([&](u64, u64, T &obj) {
+                  return serialize(obj);
+              });
 
         SerializedDDataComm dcomm_recv;
 
         distributed_data_sparse_comm(dev_sched, dcomm_send, dcomm_recv, rank_getter);
 
-        recv_distrib_data
-            = dcomm_recv.map<T>([&](u64, u64, std::unique_ptr<sycl::buffer<u8>> &buf) {
-                  // exchange the buffer held by the distrib data and give it to the deserializer
-                  return deserialize(std::exchange(buf, std::unique_ptr<sycl::buffer<u8>>{}));
-              });
+        recv_distrib_data = dcomm_recv.map<T>([&](u64, u64, sham::DeviceBuffer<u8> &buf) {
+            // exchange the buffer held by the distrib data and give it to the deserializer
+            return deserialize(std::move(buf));
+        });
 
         logger::debug_ln(
             "SparseComm", "skipped", same_rank_tmp.get_native().size(), "communications");

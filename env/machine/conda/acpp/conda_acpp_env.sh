@@ -1,7 +1,7 @@
-# Exports will be provided by the new env script above this line
-# will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
+# Everything before this line will be provided by the new-env script
 
 export CMAKE_GENERATOR="Ninja"
+export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 
 # Check if the activation failed
 if ! conda info --envs | grep -q "shamrock_dev_environment"; then
@@ -38,12 +38,6 @@ function shamconfigure {
 
 function shammake {
     (cd $BUILD_DIR && $MAKE_EXEC "${MAKE_OPT[@]}" "${@}")
-}
-
-export REF_FILES_PATH=$BUILD_DIR/reference-files
-
-function pull_reffiles {
-    git clone https://github.com/Shamrock-code/reference-files.git $REF_FILES_PATH
 }
 
 function update_env {

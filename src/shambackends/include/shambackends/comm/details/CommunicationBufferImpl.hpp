@@ -19,6 +19,7 @@
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shambackends/USMPtrHolder.hpp"
 #include <stdexcept>
 #include <variant>
 
@@ -82,11 +83,17 @@ namespace shamcomm {
                 return ret;
             }
 
-            inline sycl::buffer<u8> copy_back() { return usm_buf.copy_to_sycl_buffer(); }
-
             inline u64 get_bytesize() { return usm_buf.get_bytesize(); }
 
+            inline sycl::buffer<u8> copy_back() { return usm_buf.copy_to_sycl_buffer(); }
             static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
+
+            inline sham::DeviceBuffer<u8> copy_back_usm() {
+                return usm_buf.copy_to<sham::device>();
+            }
+            static sham::DeviceBuffer<u8> convert_usm(CommunicationBuffer &&buf) {
+                return buf.usm_buf.copy_to<sham::device>();
+            }
 
             u8 *get_ptr() {
                 sham::EventList depends_list;
@@ -131,10 +138,16 @@ namespace shamcomm {
             }
 
             inline sycl::buffer<u8> copy_back() { return usm_buf.copy_to_sycl_buffer(); }
+            inline sham::DeviceBuffer<u8> copy_back_usm() {
+                return usm_buf.copy_to<sham::device>();
+            }
 
             inline u64 get_bytesize() { return usm_buf.get_bytesize(); }
 
             static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
+            static sham::DeviceBuffer<u8> convert_usm(CommunicationBuffer &&buf) {
+                return std::move(buf.usm_buf);
+            }
 
             u8 *get_ptr() {
                 sham::EventList depends_list;

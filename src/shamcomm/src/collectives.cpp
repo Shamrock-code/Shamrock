@@ -14,10 +14,12 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include <unordered_map>
 
 void shamcomm::gather_str(const std::string &send_vec, std::string &recv_vec) {
     StackEntry stack_loc{};
@@ -61,4 +63,30 @@ void shamcomm::gather_str(const std::string &send_vec, std::string &recv_vec) {
 
     delete[] table_data_count;
     delete[] node_displacments_data_table;
+}
+
+std::unordered_map<std::string, int>
+shamcomm::string_histogram(const std::vector<std::string> &inputs, std::string delimiter) {
+    std::string accum_loc = "";
+    for (auto &s : inputs) {
+        accum_loc += s + delimiter;
+    }
+
+    std::string recv = "";
+    gather_str(accum_loc, recv);
+
+    if (world_rank() == 0) {
+
+        std::vector<std::string> splitted = shambase::split_str(recv, delimiter);
+
+        std::unordered_map<std::string, int> histogram;
+
+        for (size_t i = 0; i < splitted.size(); i++) {
+            histogram[splitted[i]] += 1;
+        }
+
+        return histogram;
+    }
+
+    return {};
 }

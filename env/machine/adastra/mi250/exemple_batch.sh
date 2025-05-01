@@ -25,5 +25,5 @@ ldd ./shamrock
 #
 chmod +x ./binding_script.sh
 srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpu-bind=closest -- \
-    ./binding_script.sh ./shamrock --sycl-cfg auto:HIP --loglevel 1 --sycl-ls-map \
+    ./binding_script.sh ./shamrock --sycl-cfg auto:HIP --loglevel 1 --smi \
     --rscript $RSCRIPT

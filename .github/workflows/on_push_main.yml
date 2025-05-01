@@ -4,12 +4,46 @@ name: On Push
 on:
   # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - release/*
 
   workflow_dispatch:
 
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository_owner }}
 
 jobs:
+
+  make_code_archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name : Download git-archive-all.sh
+        run: |
+          wget https://raw.githubusercontent.com/fabacab/git-archive-all.sh/refs/heads/master/git-archive-all.sh
+          chmod +x git-archive-all.sh
+
+      - name : Archive Shamrock with submodules
+        run: |
+          ./git-archive-all.sh
+
+      - name: Upload artifcat
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shamrock_Release.tar
+          path: Shamrock.tar
 
   src_check:
     name: Linting
@@ -101,8 +135,10 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-
-
+  build_push_docker:
+    name: Build dockerfiles
+    needs: [src_check]
+    uses: ./.github/workflows/build-dockerfiles.yml
 
   publish_release:
 
@@ -110,7 +146,7 @@ jobs:
     runs-on: [self-hosted,  docker-runner]
 
     container:
-      image: ghcr.io/shamrock-code/ci-ubuntu20:main
+      image: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
 
 
     needs: [shamrock_linux_acpp_cov, make_documentation]

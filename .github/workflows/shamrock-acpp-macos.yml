@@ -18,8 +18,12 @@ jobs:
 
 
   shamrock_acpp:
-    name: AdaptiveCpp macos
-    runs-on: macos-latest
+    name: AdaptiveCpp ${{ matrix.os }}
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-13, macos-14, macos-15]
 
     timeout-minutes: 60
     steps:
@@ -54,7 +58,7 @@ jobs:
         run: |
           set +e
           brew update
-          brew install cmake libomp boost open-mpi tdavidcl/adaptivecpp/adaptivecpp
+          brew install cmake libomp boost open-mpi adaptivecpp
           set -e
 
       - name: Setup env
@@ -65,10 +69,16 @@ jobs:
           cd build
           source ./activate && shamconfigure
 
-      - name: Build
+      - name: Configure sham install
         run: |
           cd build
-          source ./activate && shammake
+          source ./activate &&  \
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test
+
+      - name: Build & install
+        run: |
+          cd build
+          source ./activate && shammake install
 
       - name: Pull reference files
         run: |
@@ -78,19 +88,26 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          mpirun --oversubscribe -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --oversubscribe -n 2 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          mpirun --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --oversubscribe -n 3 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          mpirun --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --oversubscribe -n 4 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+
+      - name: Try starting Shamrock (installed version)
+        run: |
+          cd build/install_test/bin
+          ls ..
+          LD_LIBRARY_PATH=../lib64:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0

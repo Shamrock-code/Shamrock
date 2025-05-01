@@ -218,7 +218,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
             Tscal cs0  = eos_config->cs0;
             Tscal r0sq = eos_config->r0 * eos_config->r0;
-            Tscal mq   = eos_config->q;
+            Tscal mq   = -eos_config->q;
 
             sham::kernel_call(
                 q,
@@ -241,7 +241,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                     Tscal cs_sq  = EOS::soundspeed_sq(cs0 * cs0, Rsq / r0sq, mq);
                     Tscal cs_out = sycl::sqrt(cs_sq);
 
-                    Tscal P_a = EOS::pressure_from_cs(cs_out * cs_out, rho_a);
+                    Tscal P_a = EOS::pressure_from_cs(cs_sq, rho_a);
 
                     P[i]  = P_a;
                     cs[i] = cs_out;

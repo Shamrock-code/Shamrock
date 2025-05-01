@@ -55,8 +55,11 @@ inline void print_title_bar() {
 
     logger::raw_ln(
         "\n" + shambase::term_colors::col8b_cyan() + "Shamrock version "
-        + shambase::term_colors::reset() + ": " + version_string);
-    logger::raw_ln(
-        "\n" + shambase::term_colors::col8b_cyan() + "Git infos " + shambase::term_colors::reset()
-        + ":\n" + shambase::trunc_str(git_info_str, 512));
+        + shambase::term_colors::reset() + ": " + version_string + "\n");
+
+    if (is_git) {
+        logger::raw_ln(
+            shambase::term_colors::col8b_cyan() + "Git infos " + shambase::term_colors::reset()
+            + ":\n" + shambase::trunc_str(git_info_str, 512));
+    }
 }

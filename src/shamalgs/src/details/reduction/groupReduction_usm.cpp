@@ -18,12 +18,14 @@
 #include "shamalgs/details/reduction/groupReduction_usm_impl.hpp"
 #include "shamalgs/details/reduction/group_reduc_utils.hpp"
 #include "shamalgs/memory.hpp"
+#include "shambackends/group_op.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
 
 namespace shamalgs::reduction::details {
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 
     /**
      * @brief Compute the sum of a given range in a buffer using group reduction
@@ -51,7 +53,7 @@ namespace shamalgs::reduction::details {
             end_id,
             work_group_size,
             [](sycl::group<1> g, T v) {
-                return sycl::reduce_over_group(g, v, SYCL_SUM_OP);
+                return sham::sum_over_group(g, v);
             },
             [](T lhs, T rhs) {
                 return lhs + rhs;
@@ -87,7 +89,7 @@ namespace shamalgs::reduction::details {
             end_id,
             work_group_size,
             [](sycl::group<1> g, T v) {
-                return sycl::reduce_over_group(g, v, SYCL_MAX_OP);
+                return sham::max_over_group(g, v);
             },
             [](T lhs, T rhs) {
                 return sham::max(lhs, rhs);
@@ -123,7 +125,7 @@ namespace shamalgs::reduction::details {
             end_id,
             work_group_size,
             [](sycl::group<1> g, T v) {
-                return sycl::reduce_over_group(g, v, SYCL_MIN_OP);
+                return sham::min_over_group(g, v);
             },
             [](T lhs, T rhs) {
                 return sham::min(lhs, rhs);
@@ -132,12 +134,12 @@ namespace shamalgs::reduction::details {
                 return shambase::VectorProperties<T>::get_max();
             });
     }
-
+#endif
 } // namespace shamalgs::reduction::details
 
 #ifndef DOXYGEN
 
-    #ifdef SHAMALGS_GROUP_REDUCTION_SUPPORT
+    #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 
         #define XMAC_TYPES                                                                         \
             X(f32)                                                                                 \

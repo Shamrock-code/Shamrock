@@ -269,6 +269,35 @@ namespace shamrock::patch {
         }
 
         /**
+         * @brief returns a PatchDataFieldSpan of the field at index idx, with the given nvar value
+         *
+         * @param idx the index of the field
+         * @return a PatchDataFieldSpan
+         */
+        template<class T, u32 nvar>
+        PatchDataFieldSpan<T, nvar> get_field_span(u32 idx) {
+            return get_field<T>(idx).template get_span<nvar>();
+        }
+
+        /**
+         * @brief returns a PatchDataFieldSpan of the field at index idx, with a dynamic number of
+         * variables
+         *
+         * @param idx the index of the field
+         * @return a PatchDataFieldSpan
+         */
+        template<class T>
+        PatchDataFieldSpan<T, shamrock::dynamic_nvar> get_field_span_nvar_dynamic(u32 idx) {
+            return get_field<T>(idx).get_span_nvar_dynamic();
+        }
+
+        template<class T>
+        PatchDataFieldSpan<T, shamrock::dynamic_nvar, shamrock::access_t_pointer>
+        get_field_pointer_span(u32 idx) {
+            return get_field<T>(idx).get_pointer_span();
+        }
+
+        /**
          * @brief check that all contained field have the same obj cnt
          *
          */

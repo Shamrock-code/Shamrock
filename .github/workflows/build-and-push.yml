@@ -85,6 +85,7 @@ jobs:
             type=sha,format=long,enable=${{github.event_name == 'pull_request' }}
             # set latest tag for default branch
             type=raw,value=latest,enable={{is_default_branch}}
+            type=ref,event=branch
           flavor: |
             latest=auto
             prefix=

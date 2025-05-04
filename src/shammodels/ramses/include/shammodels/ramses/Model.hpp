@@ -151,7 +151,8 @@ namespace shammodels::basegodunov {
             nlohmann::json j = nlohmann::json::parse(metadata_user);
             j.at("solver_config").get_to(solver.solver_config);
 
-            solver.init_ghost_layout();
+            // modules::GhostZones gz(ctx, solver.solver_config, storage);
+            // gz.build_ghost_cache();
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             logger::debug_ln("Sys", "build local scheduler tables");

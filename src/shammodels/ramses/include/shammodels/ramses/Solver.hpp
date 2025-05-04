@@ -278,16 +278,47 @@ namespace shammodels::basegodunov {
      */
     template<class Tvec, class TgridVec>
     inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, TgridVec> &p) {
-        using T = SolverConfig<Tvec, TgridVec>;
 
-        nlohmann::json junit;
+        // nlohmann::json junit;
 
         j = nlohmann::json{
-            {"RiemmanSolverMode", p.riemman_config},
-            {"SlopeMode", p.slope_config},
-            {"DustRiemannSolverMode", p.Csafe},
-            {"unit_sys", junit},
-            {"time_state", p.time_state}};
+            {"type_id", shambase::get_type_name<Tvec>()}, {"RiemmanSolverMode", p.riemman_config}};
+        //{"SlopeMode", p.slope_config},
+        //{"DustRiemannSolverMode", p.Csafe},
+        //{"unit_sys", junit},
+        //{"time_state", p.time_state}};
+    }
+
+    /**
+     * @brief Deserializes a SolverConfig object from a JSON object.
+     *
+     * @param j The JSON object to deserialize from.
+     * @param p The SolverConfig object to populate.
+     */
+    template<class Tvec, class TgridVec>
+    inline void from_json(const nlohmann::json &j, SolverConfig<Tvec, TgridVec> &p) {
+        using T = SolverConfig<Tvec, TgridVec>;
+
+        std::string type_id = j.at("type_id").get<std::string>();
+
+        if (type_id != shambase::get_type_name<Tvec>()) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                + " but got " + type_id);
+        }
+
+        // actual data stored in the json
+        // j.at("eos_gamma").get_to<Tscal>(p.eos_gamma);
+        // j.at("grid_coord_to_pos_fact").get_to<Tscal>(p.grid_coord_to_pos_fact);
+        // j.at("NsideBlockPow").get_to<Tscal>(p.NsideBlockPow);
+
+        j.at("RiemmanSolverMode").get_to(p.riemman_config);
+        // j.at("SlopeMode").get_to<Tscal>(p.slope_config);
+        // j.at("DustRiemannSolverMode").get_to<Tscal>(p.Csafe);
+        // j.at("eos_gamma").get_to<Tscal>(p.eos_gamma);
+        // j.at("time_state").get_to<Tscal>(p.time_state);
+
+        // from_json_optional(j.at("unit_sys"), p.unit_sys);
     }
 
     template<class Tvec>
@@ -319,6 +350,24 @@ namespace shammodels::basegodunov {
                 {"unit_temperature", p.K_inv},
                 {"unit_qte", p.mol_inv},
                 {"unit_lumint", p.cd_inv}};
+        }
+
+        /**
+         * @brief Deserializes a UnitSystem object from a JSON object.
+         *
+         * @param j The JSON object to deserialize from.
+         * @param p The UnitSystem object to populate.
+         */
+        template<class Tscal>
+        inline void from_json(const nlohmann::json &j, ::shamunits::UnitSystem<Tscal> &p) {
+            p = ::shamunits::UnitSystem<Tscal>(
+                j.at("unit_time").get<Tscal>(),
+                j.at("unit_length").get<Tscal>(),
+                j.at("unit_mass").get<Tscal>(),
+                j.at("unit_current").get<Tscal>(),
+                j.at("unit_temperature").get<Tscal>(),
+                j.at("unit_qte").get<Tscal>(),
+                j.at("unit_lumint").get<Tscal>());
         }
 
     } // namespace shamunits

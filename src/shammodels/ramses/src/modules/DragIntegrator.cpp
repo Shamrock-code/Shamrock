@@ -17,7 +17,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/EventList.hpp"
-#include "shammath/MatrixExponential_mdspan.hpp"
+#include "shammath/matrix_exponential.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <experimental/mdspan>
@@ -247,7 +247,10 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                     tmp_mom_1
                         = tmp_mom_1
                           + dt_alphas * inv_dt_alphas * acc_rhov_d_new_patch[id_a * ndust + i];
-                    tmp_rho = tmp_rho + dt_alphas * inv_dt_alphas * acc_rho_d_old[id_a * ndust + i];
+                    // tmp_rho = tmp_rho + dt_alphas * inv_dt_alphas * acc_rho_d_old[id_a * ndust +
+                    // i];
+                    tmp_rho = tmp_rho
+                              + dt_alphas * inv_dt_alphas * acc_rho_d_new_patch[id_a * ndust + i];
                 }
 
                 f64 tmp_inv_rho = 1.0 / tmp_rho;
@@ -290,7 +293,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                       - friction_control * dissipation;
                 acc_rhov_old[id_a] = tmp_vel * acc_rho_old[id_a];
                 acc_rhoe_old[id_a] = Eg;
-                acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
+                // acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
                 for (u32 i = 0; i < ndust; i++) {
                     const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
                     const f32 dt_alphas     = dt * acc_alphas[i];
@@ -298,7 +301,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                         = inv_dt_alphas
                           * (acc_rhov_d_new_patch[id_a * ndust + i]
                              + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
-                    acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];
+                    // acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];
                 }
             });
         });
@@ -422,6 +425,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                                   f64,
                                   std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                                   &jacobian) {
+                              mat_set_nul<f64>(jacobian);
                               // fill first row
                               for (auto j = 1; j < jacobian.extent(1); j++)
                                   jacobian(0, j) = acc_alphas[j - 1];
@@ -466,20 +470,20 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         mdspan_Id(ptr_loc_Id, mat_size, mat_size);
 
                     // get local Jacobian matrix
-                    mat_set_nul<f64>(mdspan_A);
+
                     get_jacobian(id_a, mdspan_A);
 
                     // pre-processing step
                     shammath::mat_set_identity<f64>(mdspan_Id);
-                    shammath::mat_daxpy<f64, f64>(mdspan_Id, mdspan_A, -mu, dt);
+                    shammath::mat_axpy_beta<f64, f64>(-mu, mdspan_Id, dt, mdspan_A);
 
                     // compute matrix exponential
                     const i32 K_exp = 9;
-                    shammath::mat_expo<f64, f64>(
+                    shammath::mat_exp<f64, f64>(
                         K_exp, mdspan_A, mdspan_F, mdspan_B, mdspan_I, mdspan_Id, ndust + 1);
 
                     // post-processing step
-                    shammath::mat_scal_in_place<f64, f64>(mdspan_A, sycl::exp(mu));
+                    shammath::mat_mul_scalar<f64>(mdspan_A, sycl::exp(mu));
 
                     // use the matrix exponential to for to updates momemtum
                     f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};
@@ -505,6 +509,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
                     // save gas momentum back
                     acc_rhov_old[id_a] = r;
+                    acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
 
                     //
                     for (auto d_id = 1; d_id <= ndust; d_id++) {
@@ -531,11 +536,14 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
                         // save dust momentum back
                         acc_rhov_d_old[id_a * ndust + (d_id - 1)] = r;
+                        acc_rho_d_old[id_a * ndust + (d_id - 1)]
+                            = acc_rho_d_new_patch[id_a * ndust + (d_id - 1)];
                     }
 
                     // updates energy
-                    acc_rhoe_old[id_a]
-                        += (1 - friction_control) * drag_work - friction_control * dissipation;
+                    acc_rhoe_old[id_a] = acc_rhoe_new_patch[id_a]
+                                         + (1 - friction_control) * drag_work
+                                         - friction_control * dissipation;
 
                     /*
                      */

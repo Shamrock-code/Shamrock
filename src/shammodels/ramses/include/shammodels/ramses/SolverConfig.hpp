@@ -18,6 +18,7 @@
 
 #include "shambackends/vec.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shamrock/io/units_json.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
@@ -186,46 +187,6 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 }; // struct SolverConfig
 
-namespace shamunits {
-
-    /**
-     * @brief Converts a UnitSystem object to a JSON object.
-     *
-     * @param j The JSON object to be populated.
-     * @param p The UnitSystem object to be converted.
-     */
-    template<class Tscal>
-    inline void to_json(nlohmann::json &j, const ::shamunits::UnitSystem<Tscal> &p) {
-        j = nlohmann::json{
-            {"unit_time", p.s_inv},
-            {"unit_length", p.m_inv},
-            {"unit_mass", p.kg_inv},
-            {"unit_current", p.A_inv},
-            {"unit_temperature", p.K_inv},
-            {"unit_qte", p.mol_inv},
-            {"unit_lumint", p.cd_inv}};
-    }
-
-    /**
-     * @brief Deserializes a UnitSystem object from a JSON object.
-     *
-     * @param j The JSON object to deserialize from.
-     * @param p The UnitSystem object to populate.
-     */
-    template<class Tscal>
-    inline void from_json(const nlohmann::json &j, ::shamunits::UnitSystem<Tscal> &p) {
-        p = ::shamunits::UnitSystem<Tscal>(
-            j.at("unit_time").get<Tscal>(),
-            j.at("unit_length").get<Tscal>(),
-            j.at("unit_mass").get<Tscal>(),
-            j.at("unit_current").get<Tscal>(),
-            j.at("unit_temperature").get<Tscal>(),
-            j.at("unit_qte").get<Tscal>(),
-            j.at("unit_lumint").get<Tscal>());
-    }
-
-} // namespace shamunits
-
 namespace shammodels::basegodunov {
 
     template<class Tvec>
@@ -238,34 +199,6 @@ namespace shammodels::basegodunov {
         using Tscal = typename SolverStatusVar<Tvec>::Tscal;
         j.at("time").get_to<Tscal>(p.time);
         j.at("dt").get_to<Tscal>(p.dt);
-    }
-
-    template<class T>
-    inline void to_json_optional(nlohmann::json &j, const std::optional<T> &p) {
-        if (p) {
-            j = *p;
-        } else {
-            j = {};
-        }
-    }
-
-    /**
-     * @brief Deserializes an optional value from a JSON object.
-     *
-     * @param j The JSON object to deserialize from.
-     * @param p The optional value to populate.
-     *
-     * @return None
-     *
-     * @throws std::bad_optional_access if j is not a valid JSON object
-     */
-    template<class T>
-    inline void from_json_optional(const nlohmann::json &j, std::optional<T> &p) {
-        if (j.is_null()) {
-            p = std::nullopt;
-        } else {
-            p = j.get<T>();
-        }
     }
 
     /**

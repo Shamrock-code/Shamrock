@@ -81,8 +81,8 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     cfg.set_Csafe(0.5)
     cfg.set_eos_gamma(1.0000001)
     cfg.set_dust_mode_hb(4)
-    # cfg.set_drag_mode_irk1(True)
-    cfg.set_drag_mode_expo(True)
+    cfg.set_drag_mode_irk1(True)
+    # cfg.set_drag_mode_expo(True)
     cfg.set_face_time_interpolation(True)
 
     # =================== set drag coefficients for 2 fluids dust =========

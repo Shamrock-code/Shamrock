@@ -549,7 +549,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                      */
                 });
         });
-
         rho_new_patch.complete_event_state(e);
         rhov_new_patch.complete_event_state(e);
         rhoe_new_patch.complete_event_state(e);

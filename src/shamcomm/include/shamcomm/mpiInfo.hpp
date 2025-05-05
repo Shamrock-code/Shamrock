@@ -48,6 +48,10 @@ namespace shamcomm {
         ForcedNo
     };
 
+    inline bool is_direct_comm_aware(const StateMPI_Aware &v) {
+        return (v == Yes || v == ForcedYes);
+    }
+
     /**
      * @brief Get the MPI CUDA aware capability
      *
@@ -69,6 +73,9 @@ namespace shamcomm {
      * @return The MPI ROCM aware capability
      */
     StateMPI_Aware get_mpi_rocm_aware_status();
+
+    /// Should DGPU should be forced
+    std::optional<StateMPI_Aware> should_force_dgpu_state();
 
     /**
      * @brief Fetch the MPI capabilities

@@ -22,7 +22,7 @@ copyright = "2020 -- Timothee David--Cléris"
 author = "Timothee David--Cléris"
 
 # The full version, including alpha/beta/rc tags
-release = "2025.03.0"
+release = "2025.05.0"
 
 # -- General configuration ---------------------------------------------------
 

@@ -25,6 +25,8 @@ message(STATUS "SHAMROCK_EXTERNAL_FMTLIB : ${SHAMROCK_EXTERNAL_FMTLIB}")
 if(NOT SHAMROCK_EXTERNAL_FMTLIB)
     message(STATUS "Using git submodule fmtlib")
 
+    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/fmt 8303d140)
+
     option(USE_MANUAL_FMTLIB "Bypass fmt cmake integration" Off)
 
     if(USE_MANUAL_FMTLIB)

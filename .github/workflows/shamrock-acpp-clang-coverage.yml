@@ -86,31 +86,31 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd acpp_omp_debug
-          LLVM_PROFILE_FILE="utests_0_0.profraw" ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
+          LLVM_PROFILE_FILE="utests_0_0.profraw" ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0
 
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd acpp_omp_debug
           mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe \
-            -n 1 -x LLVM_PROFILE_FILE=utests_2_0.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_2_1.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
+            -n 1 -x LLVM_PROFILE_FILE=utests_2_0.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_2_1.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0
 
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd acpp_omp_debug
           mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe \
-            -n 1 -x LLVM_PROFILE_FILE=utests_3_0.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_3_1.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_3_2.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
+            -n 1 -x LLVM_PROFILE_FILE=utests_3_0.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_3_1.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_3_2.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0
 
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd acpp_omp_debug
           mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_0.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_1.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_2.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_3.profraw ./shamrock_test --sycl-ls-map --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
+            -n 1 -x LLVM_PROFILE_FILE=utests_4_0.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_4_1.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_4_2.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
+            -n 1 -x LLVM_PROFILE_FILE=utests_4_3.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0
 
       - name: merge coverage reports
         run: |

@@ -3,6 +3,12 @@ name: on PR
 # Controls when the workflow will run
 on: [pull_request]
 
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository_owner }}
+
 jobs:
 
   make_code_archive:
@@ -254,3 +260,8 @@ jobs:
     uses: ./.github/workflows/make_website.yml
     with:
       upload-page-artifact: false
+
+  build_push_docker:
+    name: Build dockerfiles
+    needs: [shamrock_linux_dpcpp]
+    uses: ./.github/workflows/build-dockerfiles.yml

@@ -22,4 +22,4 @@
 	url = https://github.com/Shamrock-code/doc-figures.git
 [submodule "external/mdspan"]
 	path = external/mdspan
-	url = git@github.com:kokkos/mdspan.git
+	url = https://github.com/kokkos/mdspan.git

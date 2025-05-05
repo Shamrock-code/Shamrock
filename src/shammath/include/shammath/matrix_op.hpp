@@ -18,6 +18,7 @@
 
 #include "shambase/assert.hpp"
 #include "shambase/type_traits.hpp"
+#include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include <experimental/mdspan>
 #include <array>
@@ -377,33 +378,57 @@ namespace shammath {
         output(2, 2) = (-a01 * a10 + a00 * a11) / det;
     }
 
-    template<class T, class Extents, class Layout, class Accessor>
-    inline void mat_L1_norm(const std::mdspan<T, Extents, Layout, Accessor> &M, T &res) {
+    /**
+     * @brief compute the L1 norm of a given matrix
+     *
+     * @param input The input matrix
+     * @param res   The result of the L1 norm of input
+     *
+     * @details This function computes the compute the L1 norm of a given matrix and store
+     * the result in res
+     */
+    template<class T, class U, class Extents, class Layout, class Accessor>
+    inline void mat_L1_norm(const std::mdspan<T, Extents, Layout, Accessor> &input, U &res) {
         res = 0;
-        for (auto i = 0; i < M.extent(0); i++) {
+        for (auto i = 0; i < input.extent(0); i++) {
             T sum = 0;
-            for (auto j = 0; j < M.extent(1); j++) {
-                sum += abs(M(i, j));
+            for (auto j = 0; j < input.extent(1); j++) {
+                sum += abs(input(i, j));
             }
-            res = sycl::max(res, sum);
+            res = sham::max(res, sum);
         }
     }
 
+    /**
+     * @brief Set the content of a matrix to zero
+     *
+     * @param input The matrix to set to the nul matrix
+     */
     template<class T, class Extents, class Layout, class Accessor>
     inline void mat_set_nul(const std::mdspan<T, Extents, Layout, Accessor> &input) {
-        for (int i = 0; i < input.extent(0); i++) {
-            for (int j = 0; j < input.extent(1); j++) {
-                input(i, j) = 0;
-            }
+        mat_set_vals(input, [](auto i, auto j) -> T {
+            return 0;
+        });
+    }
+
+    /**
+     * @brief Set the content of a vector to zero
+     *
+     * @param input the vector to set to zero
+     */
+    template<class T, class Extents, class Layout, class Accessor>
+    inline void vec_set_nul(const std::mdspan<T, Extents, Layout, Accessor> &input) {
+        for (auto i = 0; i < input.extent(0); i++) {
+            input(i) = 0;
         }
     }
 
-    template<class T, class Extents, class Layout, class Accessor>
-    inline void vec_set_nul(const std::mdspan<T, Extents, Layout, Accessor> &input) {
-        for (auto i = 0; i < input.extent(0); i++)
-            input(i) = 0;
-    }
-
+    /**
+     * @brief Copy the content of one vector in another
+     *
+     * @param input the source vector
+     * @param output the destination vector
+     */
     template<class T, class Extents, class Layout, class Accessor>
     inline void vec_copy(
         const std::mdspan<T, Extents, Layout, Accessor> &input,
@@ -415,6 +440,14 @@ namespace shammath {
         }
     }
 
+    /**
+     * @brief This function compute y = alpha*x + beta*y with x,y both vectors
+     *
+     * @param alpha a scalar ->
+     * @param input a vector ->x
+     * @param beta  a scalar
+     * @param output a vector ->y
+     */
     template<
         class T,
         class U,
@@ -424,22 +457,83 @@ namespace shammath {
         class Layout2,
         class Accessor1,
         class Accessor2>
-    inline void mat_daxpy(
-        const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
-        const std::mdspan<T, Extents2, Layout2, Accessor2> &output,
+    inline void vec_axpy_beta(
         const U alpha,
-        const U beta) {
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
+        const U beta,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
 
-        SHAM_ASSERT(input1.extent(0) == output.extent(0));
-        SHAM_ASSERT(input1.extent(1) == output.extent(1));
+        SHAM_ASSERT(input.extent(0) == output.extent(0));
 
-        for (int i = 0; i < input1.extent(0); i++) {
-            for (int j = 0; j < input1.extent(1); j++) {
-                output(i, j) = alpha * input1(i, j) + beta * output(i, j);
+        for (int i = 0; i < input.extent(0); i++) {
+            output(i) = alpha * input(i) + beta * output(i);
+        }
+    }
+
+    /**
+     * @brief This function compute y = alpha*x + y with x,y both vectors
+     *
+     * @param alpha a scalar ->
+     * @param input a vector ->x
+     * @param output a vector ->y
+     */
+    template<
+        class T,
+        class U,
+        class Extents1,
+        class Extents2,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void vec_axpy(
+        const U alpha,
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
+
+        vec_axpy_beta(alpha, input, U{1}, output);
+    }
+
+    /**
+     * @brief This function compute M = alpha*N + beta*M with M,N both matrices
+     *
+     * @param alpha a scalar
+     * @param input a matrix -> N
+     * @param beta  a scalar
+     * @param output a matrix -> M
+     */
+    template<
+        class T,
+        class U,
+        class Extents1,
+        class Extents2,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void mat_axpy_beta(
+        const U alpha,
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
+        const U beta,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
+
+        SHAM_ASSERT(input.extent(0) == output.extent(0));
+        SHAM_ASSERT(input.extent(1) == output.extent(1));
+
+        for (int i = 0; i < input.extent(0); i++) {
+            for (int j = 0; j < input.extent(1); j++) {
+                output(i, j) = alpha * input(i, j) + beta * output(i, j);
             }
         }
     }
 
+    /**
+     * @brief This function compute M = alpha*N + beta*M with M,N both matrices
+     *
+     * @param alpha a scalar
+     * @param input a matrix -> N
+     * @param output a matrix -> M
+     */
     template<
         class T,
         class U,
@@ -449,19 +543,23 @@ namespace shammath {
         class Layout2,
         class Accessor1,
         class Accessor2>
-    inline void vec_daxpy(
-        const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
-        const std::mdspan<T, Extents2, Layout2, Accessor2> &output,
+    inline void mat_axpy(
         const U alpha,
-        const U beta) {
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
 
-        SHAM_ASSERT(input1.extent(0) == output.extent(0));
-
-        for (int i = 0; i < input1.extent(0); i++) {
-            output(i) = alpha * input1(i) + beta * output(i);
-        }
+        mat_axpy_beta(alpha, input, U{1}, output);
     }
 
+    /**
+     * @brief This function compute C = alpha*A*B + beta*C with A,B,C are matrices
+     *
+     * @param alpha a scalar
+     * @param input1 a matrix -> A
+     * @param input2 a matrix -> B
+     * @param beta  a scalar
+     * @param output a matrix -> C
+     */
     template<
         class T,
         class U,
@@ -475,12 +573,11 @@ namespace shammath {
         class Accessor2,
         class Accessor3>
     inline void mat_gemm(
+        const U alpha,
         const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
         const std::mdspan<T, Extents2, Layout2, Accessor2> &input2,
-        const std::mdspan<T, Extents3, Layout3, Accessor3> &output,
-        const U alpha,
-        const U beta) {
-
+        const U beta,
+        const std::mdspan<T, Extents3, Layout3, Accessor3> &output) {
         SHAM_ASSERT(input1.extent(0) == output.extent(0));
         SHAM_ASSERT(input1.extent(1) == input2.extent(0));
         SHAM_ASSERT(input2.extent(1) == output.extent(1));
@@ -491,33 +588,36 @@ namespace shammath {
                 for (int k = 0; k < input1.extent(1); k++) {
                     sum += input1(i, k) * input2(k, j);
                 }
-                output(i, j) = alpha * beta * sum;
+                output(i, j) = alpha * sum + beta * output(i, j);
             }
         }
     }
 
-    template<
-        class T,
-        class U,
-        class Extents1,
-        class Extents2,
-        class Layout1,
-        class Layout2,
-        class Accessor1,
-        class Accessor2>
-    inline void mat_add_scal_id(
-        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
-        const std::mdspan<T, Extents2, Layout2, Accessor2> &output,
-        const U beta) {
+    /**
+     * @brief This function compute addition of a matrix
+     * with mutiple of identity matrix  A +=beta * I,
+     *  where I is an Identity matrix. A is a matrix
+     *
+     * @param inout a matrix -> A
+     * @param beta a scalar
+     */
 
-        SHAM_ASSERT(input.extent(0) == output.extent(0));
-        SHAM_ASSERT(input.extent(1) == output.extent(1));
-
-        for (int i = 0; i < input.extent(0); i++) {
-            output(i, i) = input(i, i) + beta;
+    template<class T, class U, class Extents1, class Layout1, class Accessor1>
+    inline void mat_plus_equal_scalar_id(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &inout, const U beta) {
+        for (int i = 0; i < inout.extent(0); i++) {
+            inout(i, i) = inout(i, i) + beta;
         }
     }
 
+    /**
+     * @brief This function performs matrix-vector multiplication as y = a*Mx + b*y
+     * @param alpha a scalar ->a
+     * @param M a matrix
+     * @param x vector
+     * @param beta a scalar ->b
+     * @param y a vector
+     */
     template<
         class T,
         class U,
@@ -531,12 +631,11 @@ namespace shammath {
         class Accessor2,
         class Accessor3>
     inline void mat_gemv(
+        const U alpha,
         const std::mdspan<T, Extents1, Layout1, Accessor1> &M,
         const std::mdspan<T, Extents2, Layout2, Accessor2> &x,
-        const std::mdspan<T, Extents3, Layout3, Accessor3> &y,
-        const U alpha,
-        const U beta) {
-
+        const U beta,
+        const std::mdspan<T, Extents3, Layout3, Accessor3> &y) {
         SHAM_ASSERT(M.extent(1) == x.extent(0));
         SHAM_ASSERT(M.extent(0) == y.extent(0));
 

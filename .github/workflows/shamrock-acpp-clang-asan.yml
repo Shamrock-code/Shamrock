@@ -27,7 +27,7 @@ jobs:
 
     #if: false
 
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
@@ -91,19 +91,19 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
 
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 2 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
 
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 3 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
 
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 4 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0

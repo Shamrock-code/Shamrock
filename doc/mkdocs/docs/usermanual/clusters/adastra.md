@@ -271,7 +271,7 @@ export MPICH_GPU_SUPPORT_ENABLED=1
 export ACPP_DEBUG_LEVEL=2
 
 srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpu-bind=closest -- \
-    ./shamrock --sycl-cfg 0:0 --loglevel 125 --sycl-ls-map \
+    ./shamrock --sycl-cfg 0:0 --loglevel 125 --smi \
     --rscript sedov_scale_test_updated.py
 ```
 
@@ -316,7 +316,7 @@ export LD_LIBRARY_PATH=$LLVM_HOME/lib:$LD_LIBRARY_PATH
 ldd ./shamrock
 
 srun --ntasks-per-node=8 --cpus-per-task=8 --threads-per-core=1 --gpu-bind=closest -- \
-    ./shamrock --sycl-cfg auto:HIP --loglevel 125 --sycl-ls-map \
+    ./shamrock --sycl-cfg auto:HIP --loglevel 125 --smi-full \
     --rscript sedov_scale_test_updated.py
 ```
 

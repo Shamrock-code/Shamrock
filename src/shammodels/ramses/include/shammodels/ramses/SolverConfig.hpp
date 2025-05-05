@@ -75,14 +75,7 @@ namespace shammodels::basegodunov {
     };
 
     template<class Tvec>
-    struct SolverStatusVar {
-
-        /// The type of the scalar used to represent the quantities
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        Tscal time = 0; ///< Current time
-        Tscal dt   = 0; ///< Current time step
-    };
+    struct SolverStatusVar;
 
     template<class Tvec, class TgridVec>
     struct AMRMode {
@@ -106,6 +99,16 @@ namespace shammodels::basegodunov {
     struct SolverConfig;
 
 }; // namespace shammodels::basegodunov
+
+template<class Tvec>
+struct shammodels::basegodunov::SolverStatusVar {
+
+    /// The type of the scalar used to represent the quantities
+    using Tscal = shambase::VecComponent<Tvec>;
+
+    Tscal time = 0; ///< Current time
+    Tscal dt   = 0; ///< Current time step
+};
 
 template<class Tvec, class TgridVec>
 struct shammodels::basegodunov::SolverConfig {
@@ -181,7 +184,47 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
-};
+}; // struct SolverConfig
+
+namespace shamunits {
+
+    /**
+     * @brief Converts a UnitSystem object to a JSON object.
+     *
+     * @param j The JSON object to be populated.
+     * @param p The UnitSystem object to be converted.
+     */
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const ::shamunits::UnitSystem<Tscal> &p) {
+        j = nlohmann::json{
+            {"unit_time", p.s_inv},
+            {"unit_length", p.m_inv},
+            {"unit_mass", p.kg_inv},
+            {"unit_current", p.A_inv},
+            {"unit_temperature", p.K_inv},
+            {"unit_qte", p.mol_inv},
+            {"unit_lumint", p.cd_inv}};
+    }
+
+    /**
+     * @brief Deserializes a UnitSystem object from a JSON object.
+     *
+     * @param j The JSON object to deserialize from.
+     * @param p The UnitSystem object to populate.
+     */
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, ::shamunits::UnitSystem<Tscal> &p) {
+        p = ::shamunits::UnitSystem<Tscal>(
+            j.at("unit_time").get<Tscal>(),
+            j.at("unit_length").get<Tscal>(),
+            j.at("unit_mass").get<Tscal>(),
+            j.at("unit_current").get<Tscal>(),
+            j.at("unit_temperature").get<Tscal>(),
+            j.at("unit_qte").get<Tscal>(),
+            j.at("unit_lumint").get<Tscal>());
+    }
+
+} // namespace shamunits
 
 namespace shammodels::basegodunov {
 
@@ -247,45 +290,6 @@ namespace shammodels::basegodunov {
         j.at("time").get_to<Tscal>(p.time);
         j.at("dt").get_to<Tscal>(p.dt);
     }
-    namespace shamunits {
-
-        /**
-         * @brief Converts a UnitSystem object to a JSON object.
-         *
-         * @param j The JSON object to be populated.
-         * @param p The UnitSystem object to be converted.
-         */
-        template<class Tscal>
-        inline void to_json(nlohmann::json &j, const ::shamunits::UnitSystem<Tscal> &p) {
-            j = nlohmann::json{
-                {"unit_time", p.s_inv},
-                {"unit_length", p.m_inv},
-                {"unit_mass", p.kg_inv},
-                {"unit_current", p.A_inv},
-                {"unit_temperature", p.K_inv},
-                {"unit_qte", p.mol_inv},
-                {"unit_lumint", p.cd_inv}};
-        }
-
-        /**
-         * @brief Deserializes a UnitSystem object from a JSON object.
-         *
-         * @param j The JSON object to deserialize from.
-         * @param p The UnitSystem object to populate.
-         */
-        template<class Tscal>
-        inline void from_json(const nlohmann::json &j, ::shamunits::UnitSystem<Tscal> &p) {
-            p = ::shamunits::UnitSystem<Tscal>(
-                j.at("unit_time").get<Tscal>(),
-                j.at("unit_length").get<Tscal>(),
-                j.at("unit_mass").get<Tscal>(),
-                j.at("unit_current").get<Tscal>(),
-                j.at("unit_temperature").get<Tscal>(),
-                j.at("unit_qte").get<Tscal>(),
-                j.at("unit_lumint").get<Tscal>());
-        }
-
-    } // namespace shamunits
 
     template<class T>
     inline void to_json_optional(nlohmann::json &j, const std::optional<T> &p) {

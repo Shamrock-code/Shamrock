@@ -151,8 +151,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> rho_face_zp;
     shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> rho_face_zm;
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_ghost                                      = ghost_layout.get_field_idx<Tscal>("rho");
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -386,8 +386,8 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     shambase::DistributedData<NeighGraphLinkField<std::array<Tvec, 2>>> vel_face_zp;
     shambase::DistributedData<NeighGraphLinkField<std::array<Tvec, 2>>> vel_face_zm;
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_ghost                                      = ghost_layout.get_field_idx<Tscal>("rho");
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -882,9 +882,9 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
     shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> rho_dust_face_zp;
     shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> rho_dust_face_zm;
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_dust_ghost                            = ghost_layout.get_field_idx<Tscal>("rho_dust");
-    u32 ndust                                      = solver_config.dust_config.ndust;
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_dust_ghost = ghost_layout.get_field_idx<Tscal>("rho_dust");
+    u32 ndust           = solver_config.dust_config.ndust;
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -1129,9 +1129,9 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     shambase::DistributedData<NeighGraphLinkField<std::array<Tvec, 2>>> vel_dust_face_zp;
     shambase::DistributedData<NeighGraphLinkField<std::array<Tvec, 2>>> vel_dust_face_zm;
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_dust_ghost                            = ghost_layout.get_field_idx<Tscal>("rho_dust");
-    u32 ndust                                      = solver_config.dust_config.ndust;
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_dust_ghost = ghost_layout.get_field_idx<Tscal>("rho_dust");
+    u32 ndust           = solver_config.dust_config.ndust;
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);

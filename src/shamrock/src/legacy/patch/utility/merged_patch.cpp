@@ -26,7 +26,7 @@ auto MergedPatchData<flt>::merge_patches(
 
     std::unordered_map<u64, MergedPatchData<flt>> merged_data;
 
-    sched.for_each_patch_data([&](u64 id_patch, Patch &p, PatchData &pdat) {
+    sched.for_each_patch_data([&](u64 id_patch, Patch &p, PatchDataLayer &pdat) {
         merged_data.emplace(id_patch, sched.pdl);
 
         auto pbox            = sched.patch_data.sim_box.get_box<flt>(p);
@@ -40,7 +40,7 @@ auto MergedPatchData<flt>::merge_patches(
             id_patch,
             [&](u64 patch_id,
                 u64 interf_patch_id,
-                PatchData &interfpdat,
+                PatchDataLayer &interfpdat,
                 std::tuple<vec, vec> box) {
                 std::get<0>(pbox) = sycl::min(std::get<0>(box), std::get<0>(pbox));
                 std::get<1>(pbox) = sycl::max(std::get<1>(box), std::get<1>(pbox));

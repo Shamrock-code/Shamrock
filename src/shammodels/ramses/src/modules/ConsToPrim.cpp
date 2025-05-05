@@ -109,10 +109,10 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim_
               return storage.merged_patchdata_ghost.get().get(id).total_elements;
           });
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 irhov_ghost                                = ghost_layout.get_field_idx<Tvec>("rhovel");
-    u32 irhoe_ghost                                = ghost_layout.get_field_idx<Tscal>("rhoetot");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_ghost                                      = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 irhov_ghost = ghost_layout.get_field_idx<Tvec>("rhovel");
+    u32 irhoe_ghost = ghost_layout.get_field_idx<Tscal>("rhoetot");
 
     auto spans_rho = storage.merged_patchdata_ghost.get()
                          .template map<shamrock::PatchDataFieldSpanPointer<Tscal>>(
@@ -163,8 +163,8 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim_
 
     shamrock::SchedulerUtility utility(scheduler());
 
-    u32 ndust                                      = solver_config.dust_config.ndust;
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ndust                                           = solver_config.dust_config.ndust;
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
 
     shamrock::ComputeField<Tvec> v_dust_ghost
         = utility.make_compute_field<Tvec>("vel_dust", ndust * AMRBlock::block_size, [&](u64 id) {

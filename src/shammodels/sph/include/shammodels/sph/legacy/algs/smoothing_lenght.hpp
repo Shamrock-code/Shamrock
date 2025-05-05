@@ -21,7 +21,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_selector.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 // #include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shammodels/sph/legacy/algs/smoothing_length_impl.hpp"
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
@@ -51,7 +51,7 @@ namespace models::sph {
 
             public:
             SmoothinglengthCompute(
-                shamrock::patch::PatchDataLayout &pdl, f32 htol_up_tol, f32 htol_up_iter) {
+                shamrock::patch::PatchDataLayerLayout &pdl, f32 htol_up_tol, f32 htol_up_iter) {
 
                 ixyz   = pdl.get_field_idx<vec>("xyz");
                 ihpart = pdl.get_field_idx<flt>("hpart");

@@ -33,7 +33,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
     ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", AMRBlock::block_size);
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl;
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -41,7 +41,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
     const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
     const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
@@ -136,14 +136,14 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
         = utility.make_compute_field<Tscal>("dust_cfl_dt", ndust * AMRBlock::block_size);
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl;
 
     const u32 icell_min    = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max    = pdl.get_field_idx<TgridVec>("cell_max");
     const u32 irho_dust    = pdl.get_field_idx<Tscal>("rho_dust");
     const u32 irhovel_dust = pdl.get_field_idx<Tvec>("rhovel_dust");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;

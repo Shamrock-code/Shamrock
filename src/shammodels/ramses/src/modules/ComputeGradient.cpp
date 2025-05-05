@@ -22,7 +22,7 @@
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/ComputeGradient.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -199,8 +199,8 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
               return storage.merged_patchdata_ghost.get().get(id).total_elements;
           });
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_ghost                                      = ghost_layout.get_field_idx<Tscal>("rho");
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
@@ -555,8 +555,8 @@ void shammodels::basegodunov::modules::ComputeGradient<Tvec, TgridVec>::
             return storage.merged_patchdata_ghost.get().get(id).total_elements;
         });
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_dust_ghost                            = ghost_layout.get_field_idx<Tscal>("rho_dust");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    u32 irho_dust_ghost = ghost_layout.get_field_idx<Tscal>("rho_dust");
 
     storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);

@@ -12,7 +12,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamalgs/random.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamtest/shamtest.hpp"
 #include "shamtree/RadixTree.hpp"
 #include <vector>
@@ -31,7 +31,7 @@ Test_start("radix_tree",test_new_pfield_compute,1){
 
     constexpr u32 npart = 1000;
 
-    PatchDataLayout pdl;
+    PatchDataLayerLayout pdl;
     pdl.add_field<vec>("xyz", 1);
     pdl.add_field<flt>("h", 1);
 
@@ -227,7 +227,7 @@ Bench_start("tree field old compute performance", "treefieldcomputeperf_new", tr
         std::uniform_real_distribution<flt> distf(-1, 1);
 
 
-        PatchDataLayout pdl;
+        PatchDataLayerLayout pdl;
         pdl.add_field<vec>("xyz", 1);
         pdl.add_field<flt>("h", 1);
 
@@ -345,7 +345,7 @@ void test_tree_comm(TestResults &__test_result_ref){
 
     constexpr u32 npart = 1000;
 
-    PatchDataLayout pdl;
+    PatchDataLayerLayout pdl;
     pdl.add_field<vec>("xyz", 1);
 
     const auto id_xyz = pdl.get_field_idx<vec>("xyz");
@@ -448,7 +448,7 @@ Test_start("radix_tree", tree_cut, 1){
 
     constexpr u32 npart = 1000;
 
-    PatchDataLayout pdl;
+    PatchDataLayerLayout pdl;
     pdl.add_field<vec>("xyz", 1);
 
     const auto id_xyz = pdl.get_field_idx<vec>("xyz");

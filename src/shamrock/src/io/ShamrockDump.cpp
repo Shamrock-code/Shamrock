@@ -30,7 +30,7 @@ namespace shamrock {
         std::vector<sham::DeviceBuffer<u8>> datas;
 
         // serialize patchdatas and push them into dat
-        sched.patch_data.for_each_patchdata([&](u64 pid, PatchData &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 pid, PatchDataLayer &pdat) {
             auto ser_sz = pdat.serialize_buf_byte_size();
             shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(ser_sz);
@@ -184,7 +184,7 @@ namespace shamrock {
         json jpdat_info  = json::parse(patchdata_infos);
 
         ctx.pdata_layout_new();
-        *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayout>();
+        *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayerLayout>();
         ctx.init_sched(
             jmeta_patch.at("crit_patch_split").get<u64>(),
             jmeta_patch.at("crit_patch_merge").get<u64>());
@@ -240,8 +240,8 @@ namespace shamrock {
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(), std::move(out));
 
-            patch::PatchData pdat
-                = patch::PatchData::deserialize_buf(ser, shambase::get_check_ref(ctx.pdl));
+            patch::PatchDataLayer pdat
+                = patch::PatchDataLayer::deserialize_buf(ser, shambase::get_check_ref(ctx.pdl));
 
             sched.patch_data.owned_data.add_obj(pid, std::move(pdat));
         }

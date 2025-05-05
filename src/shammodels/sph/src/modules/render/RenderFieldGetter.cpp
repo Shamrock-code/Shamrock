@@ -30,7 +30,7 @@ namespace shammodels::sph::modules {
                 shamrock::SchedulerUtility utility(scheduler());
                 shamrock::ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
-                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
                     logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
 
                     auto &buf_h
@@ -61,8 +61,8 @@ namespace shammodels::sph::modules {
                 });
 
                 auto field_source_getter
-                    = [&](const shamrock::patch::Patch cur_p,
-                          shamrock::patch::PatchData &pdat) -> const sham::DeviceBuffer<Tfield> & {
+                    = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat)
+                    -> const sham::DeviceBuffer<Tfield> & {
                     return density.get_buf(cur_p.id_patch);
                 };
 
@@ -72,7 +72,7 @@ namespace shammodels::sph::modules {
 
         auto field_source_getter
             = [&](const shamrock::patch::Patch cur_p,
-                  shamrock::patch::PatchData &pdat) -> const sham::DeviceBuffer<Tfield> & {
+                  shamrock::patch::PatchDataLayer &pdat) -> const sham::DeviceBuffer<Tfield> & {
             return pdat.get_field<Tfield>(pdat.pdl.get_field_idx<Tfield>(field_name)).get_buf();
         };
 

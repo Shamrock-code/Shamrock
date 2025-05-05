@@ -28,7 +28,7 @@
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
@@ -682,8 +682,8 @@ struct shammodels::sph::SolverConfig {
 
     inline void check_config() { dust_config.check_config(); }
 
-    void set_layout(shamrock::patch::PatchDataLayout &pdl);
-    void set_ghost_layout(shamrock::patch::PatchDataLayout &ghost_layout);
+    void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);
+    void set_ghost_layout(shamrock::patch::PatchDataLayerLayout &ghost_layout);
 };
 
 namespace shamunits {

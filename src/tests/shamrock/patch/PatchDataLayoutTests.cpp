@@ -7,13 +7,13 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamrock/patch/PatchDataLayout::serialize_json", testpdlserjson, 1) {
+TestStart(Unittest, "shamrock/patch/PatchDataLayerLayout::serialize_json", testpdlserjson, 1) {
     using namespace shamrock::patch;
 
-    PatchDataLayout pdl;
+    PatchDataLayerLayout pdl;
 
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);
@@ -39,7 +39,7 @@ TestStart(Unittest, "shamrock/patch/PatchDataLayout::serialize_json", testpdlser
 
     // logger::raw_ln(j.dump(4));
 
-    PatchDataLayout pdl_out = j.get<PatchDataLayout>();
+    PatchDataLayerLayout pdl_out = j.get<PatchDataLayerLayout>();
 
     REQUIRE(pdl == pdl_out);
 }

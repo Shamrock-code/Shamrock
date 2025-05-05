@@ -21,7 +21,7 @@
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <type_traits>
@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchData &pdat) {
+inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDataLayer &pdat) {
 
     MPI_Status st;
 
@@ -364,7 +364,7 @@ inline void dump_patch_data(std::string prefix, PatchScheduler &sched) {
 
     {
 
-        sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
             std::cout << "[" << shamcomm::world_rank() << "] writing pdat : " << pid << std::endl;
 
             MPI_Status st;

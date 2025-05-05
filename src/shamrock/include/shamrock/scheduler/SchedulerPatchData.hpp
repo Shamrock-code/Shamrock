@@ -19,8 +19,8 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchData.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/patch/SimBox.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/scheduler_patch_list.hpp"
@@ -30,10 +30,10 @@
 
 namespace shamrock::scheduler {
 
-    using Patch             = shamrock::patch::Patch;
-    using PatchData         = shamrock::patch::PatchData;
-    using PatchDataLayout   = shamrock::patch::PatchDataLayout;
-    using SimulationBoxInfo = shamrock::patch::SimulationBoxInfo;
+    using Patch                = shamrock::patch::Patch;
+    using PatchDataLayer       = shamrock::patch::PatchDataLayer;
+    using PatchDataLayerLayout = shamrock::patch::PatchDataLayerLayout;
+    using SimulationBoxInfo    = shamrock::patch::SimulationBoxInfo;
 
     /**
      * @brief Class to handle PatchData owned by the node
@@ -41,20 +41,20 @@ namespace shamrock::scheduler {
      */
     class SchedulerPatchData {
         public:
-        PatchDataLayout &pdl;
+        PatchDataLayerLayout &pdl;
 
         /**
          * @brief map container for patchdata owned by the current node (layout : id_patch,data)
          *
          */
-        shambase::DistributedData<PatchData> owned_data;
+        shambase::DistributedData<PatchDataLayer> owned_data;
 
         inline bool has_patch(u64 id) { return owned_data.has_key(id); }
 
-        inline PatchData &get_pdat(u64 id) { return owned_data.get(id); }
+        inline PatchDataLayer &get_pdat(u64 id) { return owned_data.get(id); }
 
-        inline void for_each_patchdata(std::function<void(u64, PatchData &)> &&f) {
-            owned_data.for_each(std::forward<std::function<void(u64, PatchData &)>>(f));
+        inline void for_each_patchdata(std::function<void(u64, PatchDataLayer &)> &&f) {
+            owned_data.for_each(std::forward<std::function<void(u64, PatchDataLayer &)>>(f));
         }
 
         /**
@@ -90,7 +90,8 @@ namespace shamrock::scheduler {
         void merge_patchdata(u64 new_key, const std::array<u64, 8> old_keys);
 
         inline SchedulerPatchData(
-            shamrock::patch::PatchDataLayout &pdl, shamrock::patch::PatchCoord<3> patch_coord_range)
+            shamrock::patch::PatchDataLayerLayout &pdl,
+            shamrock::patch::PatchCoord<3> patch_coord_range)
             : pdl(pdl), sim_box(pdl, patch_coord_range) {}
     };
 

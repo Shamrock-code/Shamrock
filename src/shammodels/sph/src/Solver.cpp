@@ -51,8 +51,8 @@
 #include "shammodels/sph/modules/io/VTKDump.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchData.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -332,12 +332,12 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 
     StackEntry stack_loc{};
     using namespace shamrock::patch;
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint      = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
+    PatchDataLayerLayout &pdl = scheduler().pdl;
+    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint           = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint          = pdl.get_field_idx<Tscal>("duint");
 
     bool has_B_field       = solver_config.has_field_B_on_rho();
     bool has_psi_field     = solver_config.has_field_psi_on_ch();
@@ -405,8 +405,8 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     shamrock::SchedulerUtility utility(scheduler());
     SPHSolverImpl solver(context);
 
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
+    PatchDataLayerLayout &pdl = scheduler().pdl;
+    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
 
     ComputeField<Tscal> _epsilon_h, _h_old;
 
@@ -438,7 +438,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         for (; iter_h < solver_config.h_iter_per_subcycles; iter_h++) {
             NamedStackEntry stack_loc2{"iterate smoothing length"};
             // iterate smoothing length
-            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
                 logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "h iteration");
 
                 sham::DeviceBuffer<Tscal> &eps_h = _epsilon_h.get_buf(p.id_patch);
@@ -485,14 +485,14 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
             Tscal largest_h = 0;
 
-            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
                 largest_h = sham::max(largest_h, pdat.get_field<Tscal>(ihpart).compute_max());
             });
             Tscal global_largest_h = shamalgs::collective::allreduce_max(largest_h);
 
             std::string add_info = "";
             u64 cnt_unconverged  = 0;
-            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
                 auto res
                     = _epsilon_h.get_field(p.id_patch).get_ids_buf_where([](auto access, u32 id) {
                           return access[id] == -1;
@@ -576,9 +576,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_ghost_layout() {
 
-    storage.ghost_layout.set(shamrock::patch::PatchDataLayout{});
+    storage.ghost_layout.set(shamrock::patch::PatchDataLayerLayout{});
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
 
     solver_config.set_ghost_layout(ghost_layout);
 }
@@ -644,13 +644,13 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint      = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint     = pdl.get_field_idx<Tscal>("duint");
-    const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
+    PatchDataLayerLayout &pdl = scheduler().pdl;
+    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint           = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint          = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
 
     const u32 ialpha_AV   = (has_alphaAV_field) ? pdl.get_field_idx<Tscal>("alpha_AV") : 0;
     const u32 isoundspeed = (has_soundspeed_field) ? pdl.get_field_idx<Tscal>("soundspeed") : 0;
@@ -674,11 +674,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 iaxyz_interf
         = (solver_config.has_axyz_in_ghost()) ? ghost_layout.get_field_idx<Tvec>("axyz") : 0;
@@ -699,17 +699,17 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
     ComputeField<Tscal> &omega                    = storage.omega.get();
 
-    auto pdat_interf = ghost_handle.template build_interface_native<PatchData>(
+    auto pdat_interf = ghost_handle.template build_interface_native<PatchDataLayer>(
         storage.ghost_patch_cache.get(),
         [&](u64 sender, u64, InterfaceBuildInfos binfo, sycl::buffer<u32> &buf_idx, u32 cnt) {
-            PatchData pdat(ghost_layout);
+            PatchDataLayer pdat(ghost_layout);
 
             pdat.reserve(cnt);
 
             return pdat;
         });
 
-    ghost_handle.template modify_interface_native<PatchData>(
+    ghost_handle.template modify_interface_native<PatchDataLayer>(
         storage.ghost_patch_cache.get(),
         pdat_interf,
         [&](u64 sender,
@@ -717,8 +717,8 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             InterfaceBuildInfos binfo,
             sycl::buffer<u32> &buf_idx,
             u32 cnt,
-            PatchData &pdat) {
-            PatchData &sender_patch             = scheduler().patch_data.get_pdat(sender);
+            PatchDataLayer &pdat) {
+            PatchDataLayer &sender_patch        = scheduler().patch_data.get_pdat(sender);
             PatchDataField<Tscal> &sender_omega = omega.get_field(sender);
 
             sender_patch.get_field<Tscal>(ihpart).append_subset_to(
@@ -767,7 +767,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             }
         });
 
-    ghost_handle.template modify_interface_native<PatchData>(
+    ghost_handle.template modify_interface_native<PatchDataLayer>(
         storage.ghost_patch_cache.get(),
         pdat_interf,
         [&](u64 sender,
@@ -775,25 +775,25 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             InterfaceBuildInfos binfo,
             sycl::buffer<u32> &buf_idx,
             u32 cnt,
-            PatchData &pdat) {
+            PatchDataLayer &pdat) {
             if (sycl::length(binfo.offset_speed) > 0) {
                 pdat.get_field<Tvec>(ivxyz_interf).apply_offset(binfo.offset_speed);
             }
         });
 
-    shambase::DistributedDataShared<PatchData> interf_pdat
+    shambase::DistributedDataShared<PatchDataLayer> interf_pdat
         = ghost_handle.communicate_pdat(ghost_layout, std::move(pdat_interf));
 
     std::map<u64, u64> sz_interf_map;
-    interf_pdat.for_each([&](u64 s, u64 r, PatchData &pdat_interf) {
+    interf_pdat.for_each([&](u64 s, u64 r, PatchDataLayer &pdat_interf) {
         sz_interf_map[r] += pdat_interf.get_obj_cnt();
     });
 
     storage.merged_patchdata_ghost.set(
-        ghost_handle.template merge_native<PatchData, MergedPatchData>(
+        ghost_handle.template merge_native<PatchDataLayer, MergedPatchData>(
             std::move(interf_pdat),
-            [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
-                PatchData pdat_new(ghost_layout);
+            [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                PatchDataLayer pdat_new(ghost_layout);
 
                 u32 or_elem = pdat.get_obj_cnt();
                 pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);
@@ -842,7 +842,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
                 return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
             },
-            [](MergedPatchData &mpdat, PatchData &pdat_interf) {
+            [](MergedPatchData &mpdat, PatchDataLayer &pdat_interf) {
                 mpdat.total_elements += pdat_interf.get_obj_cnt();
                 mpdat.pdat.insert_elements(pdat_interf);
             }));
@@ -891,7 +891,7 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     using namespace shamrock;
     using namespace shamrock::patch;
     shamrock::SchedulerUtility utility(scheduler());
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl;
 
     bool has_B_field       = solver_config.has_field_B_on_rho();
     bool has_psi_field     = solver_config.has_field_psi_on_ch();
@@ -974,7 +974,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl;
 
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
@@ -1029,11 +1029,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     shambase::DistributedData<RTree> &trees       = storage.merged_pos_trees.get();
     ComputeField<Tscal> &omega                    = storage.omega.get();
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    u32 ihpart_interf      = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf       = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf       = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf      = ghost_layout.get_field_idx<Tscal>("omega");
     u32 iB_on_rho_interf   = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
     u32 ipsi_on_rho_interf = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
 
@@ -1141,7 +1141,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             shambase::DistributedData<PatchDataField<Tscal>> merged_field
                 = ghost_handle.template merge_native<PatchDataField<Tscal>, PatchDataField<Tscal>>(
                     std::move(interf_pdat),
-                    [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+                    [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                         PatchDataField<Tscal> &receiver_field
                             = comp_field_send.get_field(p.id_patch);
                         return receiver_field.duplicate();
@@ -1167,9 +1167,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 shambase::DistributedData<MergedPatchData> &mpdat
                     = storage.merged_patchdata_ghost.get();
 
-                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                     MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                    PatchData &mpdat              = merged_patch.pdat;
+                    PatchDataLayer &mpdat         = merged_patch.pdat;
 
                     sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
                         merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
@@ -1306,7 +1306,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
                 shamrock::ComputeField<Tscal> &alpha_av_updated = storage.alpha_av_updated.get();
 
-                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                     sham::DeviceBuffer<Tscal> &buf_alpha_av
                         = pdat.get_field<Tscal>(ialpha_AV).get_buf();
                     sham::DeviceBuffer<Tscal> &buf_alpha_av_updated
@@ -1342,9 +1342,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             shambase::DistributedData<MergedPatchData> &mpdat
                 = storage.merged_patchdata_ghost.get();
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                PatchData &mpdat              = merged_patch.pdat;
+                PatchDataLayer &mpdat         = merged_patch.pdat;
 
                 sham::DeviceBuffer<Tvec> &buf_xyz
                     = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
@@ -1509,7 +1509,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", 1);
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
 
                 sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field<Tvec>(iaxyz).get_buf();
@@ -1593,7 +1593,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
 
-                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                     sham::DeviceBuffer<Tscal> &buf_cs = pdat.get_field_buf_ref<Tscal>(isoundspeed);
                     sham::DeviceBuffer<Tscal> &buf_cs_in
                         = storage.soundspeed.get().get_buf_check(cur_p.id_patch);

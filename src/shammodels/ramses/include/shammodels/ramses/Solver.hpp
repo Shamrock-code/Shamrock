@@ -23,8 +23,8 @@
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include <shamunits/Constants.hpp>
-#include <shamunits/UnitSystem.hpp>
+#include "shamunits/Constants.hpp"
+#include "shamunits/UnitSystem.hpp"
 
 namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>

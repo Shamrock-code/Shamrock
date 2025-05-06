@@ -26,7 +26,6 @@
  * @param j The JSON object to be populated.
  * @param p The optional value to be converted.
  *
- * @return None
  *
  * @throws std::bad_optional_access if p is not engaged
  */
@@ -45,7 +44,6 @@ inline void to_json_optional(nlohmann::json &j, const std::optional<T> &p) {
  * @param j The JSON object to deserialize from.
  * @param p The optional value to populate.
  *
- * @return None
  *
  * @throws std::bad_optional_access if j is not a valid JSON object
  */

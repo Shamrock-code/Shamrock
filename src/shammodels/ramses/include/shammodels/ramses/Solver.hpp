@@ -16,10 +16,10 @@
  *
  */
 
-#include "shammodels/ramses/SolverConfig.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"

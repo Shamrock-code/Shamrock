@@ -64,12 +64,17 @@ jobs:
       - name: Setup env
         run : ./env/new-env --machine macos-generic.acpp --builddir build --
 
-      - name: Configure
+      - name: Source env
+        run: |
+          cd build
+          source ./activate
+
+      - name: Configure Shamrock
         run: |
           cd build
           source ./activate && shamconfigure
 
-      - name: Configure sham install
+      - name: Configure sham install target
         run: |
           cd build
           source ./activate &&  \

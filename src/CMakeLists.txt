@@ -11,6 +11,7 @@ set(as_subproject
   shamunits
   shambase
   shamcomm
+  shamdag
   shambackends
   shammath
   shamalgs
@@ -43,6 +44,7 @@ add_subdirectory(shambase)
 add_subdirectory(shambindings)
 add_subdirectory(shamcmdopt)
 add_subdirectory(shamcomm)
+add_subdirectory(shamdag)
 add_subdirectory(shambackends)
 add_subdirectory(shammath)
 add_subdirectory(shamalgs)

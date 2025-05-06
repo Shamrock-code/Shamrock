@@ -47,6 +47,7 @@ target_link_libraries(shamlib PUBLIC shamalgs)
 target_link_libraries(shamlib PUBLIC shamsys)
 target_link_libraries(shamlib PUBLIC shambindings)
 target_link_libraries(shamlib PUBLIC shamtree)
+target_link_libraries(shamlib PUBLIC shamdag)
 target_link_libraries(shamlib PUBLIC nlohmann_json::nlohmann_json)
 
 target_include_directories(shamlib PUBLIC

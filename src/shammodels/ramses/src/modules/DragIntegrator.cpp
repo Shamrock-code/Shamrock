@@ -20,8 +20,6 @@
 #include "shammath/matrix_exponential.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include <experimental/mdspan>
-#include <sys/types.h>
 #include <array>
 
 template<class Tvec, class TgridVec>

@@ -78,8 +78,9 @@ class PatchDataField {
 
     std::string field_name;
 
-    u32 nvar;    // number of variable per object
-    u32 obj_cnt; // number of contained object
+    u32 nvar;          ///< number of variable per object
+    u32 obj_cnt;       ///< number of contained objects
+    u32 ghost_obj_cnt; ///< number of ghosted objects (0 <=> no ghost zones)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
@@ -88,13 +89,15 @@ class PatchDataField {
     public:
     inline PatchDataField(PatchDataField &&other) noexcept
         : buf(std::move(other.buf)), field_name(std::move(other.field_name)),
-          nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)) {} // move constructor
+          nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)),
+          ghost_obj_cnt(std::move(other.ghost_obj_cnt)) {} // move constructor
 
     inline PatchDataField &operator=(PatchDataField &&other) noexcept {
-        buf        = std::move(other.buf);
-        field_name = std::move(other.field_name);
-        nvar       = std::move(other.nvar);
-        obj_cnt    = std::move(other.obj_cnt);
+        buf           = std::move(other.buf);
+        field_name    = std::move(other.field_name);
+        nvar          = std::move(other.nvar);
+        obj_cnt       = std::move(other.obj_cnt);
+        ghost_obj_cnt = std::move(other.ghost_obj_cnt);
 
         return *this;
     } // move assignment
@@ -104,27 +107,27 @@ class PatchDataField {
     using Field_type = T;
 
     inline PatchDataField(std::string name, u32 nvar)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(0),
+        : field_name(std::move(name)), nvar(nvar), obj_cnt(0), ghost_obj_cnt(0),
           buf(0, shamsys::instance::get_compute_scheduler_ptr()) {};
 
     inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt),
+        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt), ghost_obj_cnt(0),
           buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {};
-
-    inline PatchDataField(const PatchDataField &other)
-        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt),
-          buf(other.buf.copy()) {}
 
     inline PatchDataField(
         sham::DeviceBuffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
-        : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
+        : field_name(name), nvar(nvar), obj_cnt(obj_cnt), ghost_obj_cnt(0),
           buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {}
 
     inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
-        : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
+        : field_name(name), nvar(nvar), obj_cnt(obj_cnt), ghost_obj_cnt(0),
           buf(std::forward<sycl::buffer<T>>(moved_buf),
               obj_cnt * nvar,
               shamsys::instance::get_compute_scheduler_ptr()) {}
+
+    inline PatchDataField(const PatchDataField &other)
+        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt),
+          ghost_obj_cnt(other.ghost_obj_cnt), buf(other.buf.copy()) {}
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
@@ -149,15 +152,19 @@ class PatchDataField {
         return std::make_unique<PatchDataField>(current);
     }
 
-    inline sham::DeviceBuffer<T> &get_buf() { return buf; }
+    [[nodiscard]] inline sham::DeviceBuffer<T> &get_buf() { return buf; }
+    [[nodiscard]] inline u64 memsize() const { return buf.get_mem_usage(); }
 
     [[nodiscard]] inline bool is_empty() const { return get_obj_cnt() == 0; }
-
-    [[nodiscard]] inline u64 memsize() const { return buf.get_mem_usage(); }
+    [[nodiscard]] inline bool has_ghost_zone() const { return ghost_obj_cnt > 0; }
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
     [[nodiscard]] inline const u32 &get_obj_cnt() const { return obj_cnt; }
+    [[nodiscard]] inline const u32 &get_obj_cnt_ghost() const { return ghost_obj_cnt; }
+    [[nodiscard]] inline const u32 &get_obj_cnt_with_ghost() const {
+        return ghost_obj_cnt + obj_cnt;
+    }
 
     /**
      * @brief Get the number of values stored in the field.
@@ -169,8 +176,19 @@ class PatchDataField {
      * objects and the number of variables per object.
      */
     [[nodiscard]] inline u32 get_val_cnt() const { return get_obj_cnt() * get_nvar(); }
+    [[nodiscard]] inline u32 get_val_cnt_ghost() const { return get_obj_cnt_ghost() * get_nvar(); }
+    [[nodiscard]] inline u32 get_val_cnt_with_ghost() const {
+        return get_obj_cnt_with_ghost() * get_nvar();
+    }
 
     [[nodiscard]] inline const std::string &get_name() const { return field_name; }
+
+    void resize(u32 new_obj_cnt, u32 new_ghost_obj_cnt);
+    void reserve(u32 new_obj_cnt, u32 new_ghost_obj_cnt);
+
+    inline void set_ghost_zone_count(u32 new_ghost_obj_cnt) { resize(obj_cnt, new_ghost_obj_cnt); }
+
+    inline void erase_ghost_zone() { set_ghost_zone_count(0); }
 
     // TODO add overflow check
     void resize(u32 new_obj_cnt);
@@ -481,23 +499,32 @@ class PatchDataField {
     mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax);
 };
 
-// TODO add overflow check
 template<class T>
-inline void PatchDataField<T>::resize(u32 new_obj_cnt) {
-
-    u32 new_size = new_obj_cnt * nvar;
-    // field_data.resize(new_size);
+inline void PatchDataField<T>::resize(u32 new_obj_cnt, u32 new_ghost_obj_cnt) {
+    u32 new_size = (new_obj_cnt + new_ghost_obj_cnt) * nvar;
 
     buf.resize(new_size);
 
-    obj_cnt = new_obj_cnt;
+    obj_cnt       = new_obj_cnt;
+    ghost_obj_cnt = new_ghost_obj_cnt;
+}
+template<class T>
+inline void PatchDataField<T>::reserve(u32 new_obj_cnt, u32 new_ghost_obj_cnt) {
+
+    u32 new_size = (new_obj_cnt + new_ghost_obj_cnt) * nvar;
+
+    buf.reserve(new_size);
+}
+
+// TODO add overflow check
+template<class T>
+inline void PatchDataField<T>::resize(u32 new_obj_cnt) {
+    resize(new_obj_cnt, 0);
 }
 
 template<class T>
 inline void PatchDataField<T>::reserve(u32 new_obj_cnt) {
-
-    u32 add_cnt = new_obj_cnt * nvar;
-    buf.reserve(add_cnt);
+    reserve(new_obj_cnt, 0);
 }
 
 template<class T>

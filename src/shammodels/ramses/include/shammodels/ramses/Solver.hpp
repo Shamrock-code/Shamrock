@@ -16,7 +16,7 @@
  *
  */
 
-#include "SolverConfig.hpp"
+#include "shammodels/ramses/SolverConfig.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"

@@ -87,7 +87,6 @@ namespace shammath {
         return seq;
     }
 
-
     /**
      * @brief precomputed optimal sequence based on backward error analysis
      */
@@ -104,7 +103,6 @@ namespace shammath {
         seq[8]                 = 3.5397;
         return seq;
     }
-
 
     /**
      * @brief precomputed optimal sequence based on backward error analysis
@@ -241,7 +239,6 @@ namespace shammath {
 
         process_val(val);
     }
-
 
     /**
      * @brief This function compute the Taylor polynomial up to order m_star

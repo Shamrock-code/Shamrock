@@ -97,7 +97,31 @@ namespace shammodels::basegodunov {
                 [](TConfig &self, bool face_time_interpolate) {
                     self.face_half_time_interpolation = face_time_interpolate;
                 })
-
+            .def(
+                "set_time_integrator_mode_muscl",
+                [](TConfig &self) {
+                    self.time_integrator_config = {MUSCL};
+                })
+            .def(
+                "set_time_integrator_mode_rk1",
+                [](TConfig &self) {
+                    self.time_integrator_config = {RK1};
+                })
+            .def(
+                "set_time_integrator_mode_rk2",
+                [](TConfig &self) {
+                    self.time_integrator_config = {RK2};
+                })
+            .def(
+                "set_time_integrator_mode_rk3",
+                [](TConfig &self) {
+                    self.time_integrator_config = {RK3};
+                })
+            .def(
+                "set_time_integrator_mode_vl2",
+                [](TConfig &self) {
+                    self.time_integrator_config = {VL2};
+                })
             .def(
                 "set_dust_mode_dhll",
                 [](TConfig &self, u32 ndust) {

@@ -19,136 +19,14 @@
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamunits/Constants.hpp"
+#include "shamunits/UnitSystem.hpp"
+
 namespace shammodels::basegodunov {
-
-    enum RiemmanSolverMode { Rusanov = 0, HLL = 1, HLLC = 2 };
-
-    enum SlopeMode {
-        None        = 0,
-        VanLeer_f   = 1,
-        VanLeer_std = 2,
-        VanLeer_sym = 3,
-        Minmod      = 4,
-    };
-
-    enum DustRiemannSolverMode {
-        NoDust = 0,
-        DHLL   = 1, // Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
-        HB     = 2 // Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
-    };
-
-    enum DragSolverMode {
-        NoDrag = 0,
-        IRK1   = 1, // Implicit RK1
-        IRK2   = 2, // Implicit RK2
-        EXPO   = 3  // Matrix exponential
-    };
-
-    /**
-     * @brief alphas is the dust collision rate (the inverse of the stopping time)
-     */
-    struct DragConfig {
-        DragSolverMode drag_solver_config = NoDrag;
-        std::vector<f32> alphas;
-        bool enable_frictional_heating
-            = false; // 0 to turn off and 1 when all dissipation is deposited to the gas
-    };
-
-    struct DustConfig {
-        DustRiemannSolverMode dust_riemann_config = NoDust;
-        u32 ndust                                 = 0;
-
-        inline bool is_dust_on() {
-            if (dust_riemann_config != NoDust) {
-
-                if (ndust == 0) {
-                    throw shambase::make_except_with_loc<std::runtime_error>(
-                        "Dust is on with ndust == 0");
-                }
-                return true;
-            }
-            return false;
-        }
-    };
-
-    template<class Tvec>
-    struct SolverStatusVar {
-
-        /// The type of the scalar used to represent the quantities
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        Tscal time = 0; ///< Current time
-        Tscal dt   = 0; ///< Current time step
-    };
-
-    template<class Tvec, class TgridVec>
-    struct AMRMode {
-
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        struct None {};
-        struct DensityBased {
-            Tscal crit_mass;
-        };
-
-        using mode = std::variant<None, DensityBased>;
-
-        mode config = None{};
-
-        void set_refine_none() { config = None{}; }
-        void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
-    };
-
-    template<class Tvec, class TgridVec>
-    struct SolverConfig {
-
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        Tscal eos_gamma = 5. / 3.;
-
-        Tscal grid_coord_to_pos_fact = 1;
-
-        static constexpr u32 NsideBlockPow = 1;
-        using AMRBlock                     = amr::AMRBlock<Tvec, TgridVec, NsideBlockPow>;
-
-        inline void set_eos_gamma(Tscal gamma) { eos_gamma = gamma; }
-
-        RiemmanSolverMode riemman_config  = HLL;
-        SlopeMode slope_config            = VanLeer_sym;
-        bool face_half_time_interpolation = true;
-        DustConfig dust_config{};
-        DragConfig drag_config{};
-
-        inline bool is_dust_on() { return dust_config.is_dust_on(); }
-        // get alpha values from user
-        // alphas is the dust collision rate (the inverse of the stopping time)
-        inline void set_alphas_static(f32 alpha_values) {
-            StackEntry stack_lock{};
-            drag_config.alphas.push_back(alpha_values);
-        }
-
-        Tscal Csafe = 0.9;
-
-        /// AMR refinement mode
-        AMRMode<Tvec, TgridVec> amr_mode = {};
-
-        /// Alias to SolverStatusVar type
-        using SolverStatusVar = SolverStatusVar<Tvec>;
-        /// The time sate of the simulation
-        SolverStatusVar time_state;
-        /// Set the current time
-        inline void set_time(Tscal t) { time_state.time = t; }
-        /// Set the time step for the next iteration
-        inline void set_next_dt(Tscal dt) { time_state.dt = dt; }
-        /// Get the current time
-        inline Tscal get_time() { return time_state.time; }
-        /// Get the time step for the next iteration
-        inline Tscal get_dt() { return time_state.dt; }
-    };
-
     template<class Tvec, class TgridVec>
     class Solver {
         public:

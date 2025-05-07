@@ -129,12 +129,13 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             Tvec dy_v_b = acc_dy_v_cell[id_b];
             Tvec dz_v_b = acc_dz_v_cell[id_b];
 
-            Tscal rho_face_a
-                = rho_a + sycl::dot(grad_rho_a, shift_a)
-                  + get_dt_rho(rho_a, vel_a, grad_rho_a, dx_v_a, dy_v_a, dz_v_a) * dt_interp;
-            Tscal rho_face_b
-                = rho_b + sycl::dot(grad_rho_b, shift_b)
-                  + get_dt_rho(rho_a, vel_a, grad_rho_a, dx_v_a, dy_v_a, dz_v_a) * dt_interp;
+            // Spatial interpolate
+            Tscal rho_face_a = rho_a + sycl::dot(grad_rho_a, shift_a);
+            Tscal rho_face_b = rho_b + sycl::dot(grad_rho_b, shift_b);
+
+            // Interpolate also to half a timestep
+            rho_face_a += get_dt_rho(rho_a, vel_a, grad_rho_a, dx_v_a, dy_v_a, dz_v_a) * dt_interp;
+            rho_face_b += get_dt_rho(rho_b, vel_b, grad_rho_b, dx_v_b, dy_v_b, dz_v_b) * dt_interp;
 
             return {rho_face_a, rho_face_b};
         }
@@ -848,24 +849,25 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             Tvec dy_v_dust_b = acc_dy_v_dust_cell[id_b];
             Tvec dz_v_dust_b = acc_dz_v_dust_cell[id_b];
 
-            Tscal rho_dust_face_a = rho_dust_a + sycl::dot(grad_rho_dust_a, shift_a)
-                                    + get_dt_rho_dust(
-                                          rho_dust_a,
-                                          vel_dust_a,
-                                          grad_rho_dust_a,
-                                          dx_v_dust_a,
-                                          dy_v_dust_a,
-                                          dz_v_dust_a)
-                                          * dt_interp;
-            Tscal rho_dust_face_b = rho_dust_b + sycl::dot(grad_rho_dust_b, shift_b)
-                                    + get_dt_rho_dust(
-                                          rho_dust_a,
-                                          vel_dust_a,
-                                          grad_rho_dust_a,
-                                          dx_v_dust_a,
-                                          dy_v_dust_a,
-                                          dz_v_dust_a)
-                                          * dt_interp;
+            Tscal rho_dust_face_a = rho_dust_a + sycl::dot(grad_rho_dust_a, shift_a);
+            Tscal rho_dust_face_b = rho_dust_b + sycl::dot(grad_rho_dust_b, shift_b);
+
+            rho_dust_face_a += get_dt_rho_dust(
+                                   rho_dust_a,
+                                   vel_dust_a,
+                                   grad_rho_dust_a,
+                                   dx_v_dust_a,
+                                   dy_v_dust_a,
+                                   dz_v_dust_a)
+                               * dt_interp;
+            rho_dust_face_b += get_dt_rho_dust(
+                                   rho_dust_b,
+                                   vel_dust_b,
+                                   grad_rho_dust_b,
+                                   dx_v_dust_b,
+                                   dy_v_dust_b,
+                                   dz_v_dust_b)
+                               * dt_interp;
 
             return {rho_dust_face_a, rho_dust_face_b};
         }

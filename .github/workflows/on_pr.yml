@@ -9,6 +9,10 @@ env:
   # github.repository as <account>/<repo>
   IMAGE_NAME: ${{ github.repository_owner }}
 
+concurrency:
+  group: ci-${{github.ref}}-${{github.event.pull_request.number || github.run_number}}
+  cancel-in-progress: true
+
 jobs:
 
   make_code_archive:

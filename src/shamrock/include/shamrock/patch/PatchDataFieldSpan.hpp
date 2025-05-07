@@ -39,6 +39,7 @@ namespace shamrock {
             /// Access to element at index idx and offset var
             T &operator()(u32 idx, u32 offset) const { return ptr[idx * nvar + offset]; }
 
+            /// Access the underlying pointer
             T &operator[](u32 idx) const { return ptr[idx]; }
         };
 
@@ -51,7 +52,8 @@ namespace shamrock {
             /// Access to element at index idx and offset var
             const T &operator()(u32 idx, u32 offset) const { return ptr[idx * nvar + offset]; }
 
-            T &operator[](u32 idx) const { return ptr[idx]; }
+            /// Access the underlying pointer
+            const T &operator[](u32 idx) const { return ptr[idx]; }
         };
 
         /// Accessor for read-write access to static nvar buffer data

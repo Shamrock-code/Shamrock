@@ -4,7 +4,7 @@ With spack things are pretty easy:
 
 ```bash
 git clone -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git
-source spack/share/spack/setup-env.sh 
+source spack/share/spack/setup-env.sh
 spack spec shamrock
 spack install shamrock
 ```

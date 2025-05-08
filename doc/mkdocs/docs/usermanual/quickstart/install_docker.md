@@ -17,7 +17,7 @@
 
     ```bash
     brew install --cask docker
-    open /Applications/Docker.app 
+    open /Applications/Docker.app
     ```
 
 ## Starting Shamrock docker container

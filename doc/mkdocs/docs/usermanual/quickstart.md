@@ -6,6 +6,7 @@ There are multiple ways to install Shamrock:
 
  - [From source](./quickstart/install_from_source.md)
  - [Spack package](./quickstart/install_spack.md) (Easy but long compile time)
+ - [Homebrew package](./quickstart/install_brew.md) (Easy but need homebrew, and normal compile time)
  - [Docker container](./quickstart/install_docker.md) (Fastest but not the most convenient)
 
 

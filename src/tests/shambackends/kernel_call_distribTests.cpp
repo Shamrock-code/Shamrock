@@ -83,9 +83,12 @@ TestStart(Unittest, "distributed_data_kernel_call_test", testing_func_ddref, 1) 
               return buf.get_size();
           });
 
+    const auto &rho_field_const  = rho_field;
+    const auto &uint_field_const = uint_field;
+
     sham::distributed_data_kernel_call(
         dev_sched,
-        sham::DDMultiRef{rho_field, uint_field},
+        sham::DDMultiRef{rho_field_const, uint_field_const},
         sham::DDMultiRef{P_field, cs_field},
         sizes,
         [](u32 i, const T *rho, const T *U, T *P, T *cs) {

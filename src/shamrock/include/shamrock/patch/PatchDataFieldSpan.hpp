@@ -226,7 +226,7 @@ namespace shamrock {
         template<
             typename Dummy = void,
             typename       = std::enable_if_t<is_nvar_dynamic() && is_span_access(), Dummy>>
-        inline auto get_read_access(sham::EventList &depends_list)
+        inline auto get_read_access(sham::EventList &depends_list) const
             -> details::PatchDataFieldSpan_access_ro_dyn_nvar<T> {
             StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_ro_dyn_nvar<T>{
@@ -268,7 +268,7 @@ namespace shamrock {
         template<
             typename Dummy = void,
             typename       = std::enable_if_t<is_nvar_static() && is_span_access(), Dummy>>
-        inline auto get_read_access(sham::EventList &depends_list)
+        inline auto get_read_access(sham::EventList &depends_list) const
             -> details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar> {
             StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar>{
@@ -296,7 +296,7 @@ namespace shamrock {
         }
 
         template<typename Dummy = void, typename = std::enable_if_t<is_pointer_access(), Dummy>>
-        inline auto get_read_access(sham::EventList &depends_list) -> const T *const {
+        inline auto get_read_access(sham::EventList &depends_list) const -> const T * {
             StackEntry stack_loc{};
             return {get_buf().get_read_access(depends_list) + start * field_ref.get_nvar()};
         }
@@ -312,7 +312,7 @@ namespace shamrock {
          *
          * @param e Event to complete.
          */
-        inline void complete_event_state(sycl::event e) {
+        inline void complete_event_state(sycl::event e) const {
             StackEntry stack_loc{};
             get_buf().complete_event_state(e);
         }
@@ -329,6 +329,9 @@ namespace shamrock {
         private:
         /// Returns the underlying buffer of the PatchDataField.
         inline sham::DeviceBuffer<T> &get_buf() { return field_ref.get_buf(); }
+
+        /// const variant of get_buf
+        inline const sham::DeviceBuffer<T> &get_buf() const { return field_ref.get_buf(); }
     };
 
     template<class T>

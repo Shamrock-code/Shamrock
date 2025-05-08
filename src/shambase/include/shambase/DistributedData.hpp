@@ -141,6 +141,23 @@ namespace shambase {
             }
         }
 
+        /// Const variant of get
+        inline const T &get(u64 id) const {
+            try {
+                return data.at(id);
+            } catch (std::out_of_range &) {
+
+                std::vector<u64> id_list;
+
+                for_each([&](u64 id, const T &) {
+                    id_list.push_back(id);
+                });
+
+                throw make_except_with_loc<std::runtime_error>(format(
+                    "The querried id {} does not exist, current id list is {}", id, id_list));
+            }
+        }
+
         /**
          * @brief Checks if an object exists in the collection.
          *
@@ -228,7 +245,7 @@ namespace shambase {
         inline DistributedData<Tmap> map(std::function<Tmap(u64, const T &)> map_func) const {
             DistributedData<Tmap> ret;
 
-            for_each([&](u64 id, T &ref) {
+            for_each([&](u64 id, const T &ref) {
                 ret.add_obj(id, map_func(id, ref));
             });
 

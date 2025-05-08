@@ -344,7 +344,7 @@ namespace shambase {
      */
     template<class T1, class T2, class FuncMatch, class FuncMissing, class FuncExtra>
     inline void on_distributeddata_diff(
-        shambase::DistributedData<T1> &dd,
+        const shambase::DistributedData<T1> &dd,
         const shambase::DistributedData<T2> &reference,
         FuncMatch &&func_missing,
         FuncMissing &&func_match,
@@ -353,7 +353,7 @@ namespace shambase {
         std::vector<u64> dd_ids;
         std::vector<u64> ref_ids;
 
-        dd.for_each([&](u32 id, T1 &data) {
+        dd.for_each([&](u32 id, const T1 &data) {
             dd_ids.push_back(id);
         });
 

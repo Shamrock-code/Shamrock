@@ -82,7 +82,8 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     )  #  TODO : remember to add possibility of different CFL for fluids(e.g Csafe_gas and Csafe_dust ...)
     cfg.set_eos_gamma(1.4)  # set adiabatic index gamma , here adiabatic EOS
     cfg.set_dust_mode_dhll(2)  # enable dust config
-    cfg.set_drag_mode_irk1(True)  # enable drag config
+    # cfg.set_drag_mode_irk1(True)  # enable drag config
+    cfg.set_drag_mode_expo(True)
     cfg.set_face_time_interpolation(False)
 
     # ======= set drag coefficients for test B ========
@@ -318,5 +319,5 @@ axs[1].set_title("$V_{d,1}$", fontsize=15, fontweight="bold")
 axs[2].set_title("$V_{d,2}$", fontsize=15, fontweight="bold")
 
 plt.legend(prop={"weight": "bold"})
-plt.savefig("dusty_collision_test_B.png")
+plt.savefig("dusty_collision_test_exp_B.png")
 # plt.savefig("dusty_collision_test_C.png")

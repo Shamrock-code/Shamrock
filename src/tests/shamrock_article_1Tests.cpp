@@ -527,7 +527,7 @@ f64 amr_walk_perf(
             sham::EventList &depends_list,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat,
+            shamrock::patch::PatchDataLayer &pdat,
             shammath::CoordRange<u64_3> base_range,
             shammath::CoordRange<f32_3> real_coord_range)
             : transform(base_range, real_coord_range) {
@@ -542,7 +542,7 @@ f64 amr_walk_perf(
             sham::EventList &resulting_events,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat,
+            shamrock::patch::PatchDataLayer &pdat,
             shammath::CoordRange<u64_3> base_range,
             shammath::CoordRange<f32_3> real_coord_range) {
 
@@ -555,9 +555,9 @@ f64 amr_walk_perf(
 
     class RefineCellAccessor {
         public:
-        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchData &pdat) {}
+        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchDataLayer &pdat) {}
 
-        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchData &pdat) {}
+        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {}
     };
 
     sycl::queue &q = shamsys::instance::get_compute_queue();
@@ -623,8 +623,8 @@ f64 amr_walk_perf(
     q.wait();
     t_refine.end();
 
-    PatchData &pdat = sched.patch_data.get_pdat(0);
-    Patch p         = sched.patch_list.global.at(0);
+    PatchDataLayer &pdat = sched.patch_data.get_pdat(0);
+    Patch p              = sched.patch_list.global.at(0);
 
     u32 len_pos = pdat.get_obj_cnt();
 
@@ -635,7 +635,7 @@ f64 amr_walk_perf(
         shammath::CoordRange<u64_3> bounds;
 
         RadixTree<u64, u64_3> &tree;
-        PatchData &pdat;
+        PatchDataLayer &pdat;
 
         sycl::buffer<u64_3> buf_cell_low_bound;
         sycl::buffer<u64_3> buf_cell_high_bound;

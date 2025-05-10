@@ -60,7 +60,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
     const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceBuffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
         sham::DeviceBuffer<Tscal> &buf_cs       = pdat.get_field_buf_ref<Tscal>(isoundspeed);
         sham::DeviceBuffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
@@ -129,7 +129,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
     const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceBuffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
         sham::DeviceBuffer<Tscal> &buf_dtdivv   = pdat.get_field_buf_ref<Tscal>(idtdivv);
         sham::DeviceBuffer<Tvec> &buf_curlv     = pdat.get_field_buf_ref<Tvec>(icurlv);

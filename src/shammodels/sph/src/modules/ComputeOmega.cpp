@@ -36,7 +36,7 @@ auto shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega()
 
     ComputeField<Tscal> omega = utility.make_compute_field<Tscal>("omega", 1);
 
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "compute omega");
 
         sham::DeviceBuffer<Tscal> &omega_h = omega.get_buf(p.id_patch);

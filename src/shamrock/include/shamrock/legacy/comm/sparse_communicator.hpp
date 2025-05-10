@@ -92,15 +92,15 @@ class [[deprecated("Please shamalgs sparse comm instead")]] SparsePatchCommunica
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
 template<>
-struct SparseCommExchanger<shamrock::patch::PatchData> {
+struct SparseCommExchanger<shamrock::patch::PatchDataLayer> {
     [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
-    static SparseCommResult<shamrock::patch::PatchData> sp_xchg(
+    static SparseCommResult<shamrock::patch::PatchDataLayer> sp_xchg(
         SparsePatchCommunicator &communicator,
-        const SparseCommSource<shamrock::patch::PatchData> &send_comm_pdat) {
+        const SparseCommSource<shamrock::patch::PatchDataLayer> &send_comm_pdat) {
         StackEntry stack_loc{};
         using namespace shamrock::patch;
 
-        SparseCommResult<PatchData> recv_obj;
+        SparseCommResult<PatchDataLayer> recv_obj;
 
         if (!send_comm_pdat.empty()) {
 
@@ -146,7 +146,7 @@ struct SparseCommExchanger<shamrock::patch::PatchData> {
 
                         if (psend.node_owner_id != precv.node_owner_id) {
                             recv_obj[precv.id_patch].push_back(
-                                {psend.id_patch, std::make_unique<PatchData>(pdl)});
+                                {psend.id_patch, std::make_unique<PatchDataLayer>(pdl)});
                             patchdata_irecv_probe(
                                 *std::get<1>(
                                     recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),

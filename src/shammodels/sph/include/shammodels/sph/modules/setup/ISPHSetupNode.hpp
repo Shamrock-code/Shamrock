@@ -17,7 +17,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include <string>
 #include <vector>
 
@@ -84,10 +84,12 @@ namespace shammodels::sph::modules {
          * @brief This function generate patchdata with at most nmax per MPI ranks
          * This function is always assumed as called by every ranks simultaneously
          *
+         * // TODO change back to PatchData after layers are merged
+         *
          * @param nmax
          * @return shamrock::patch::PatchData
          */
-        virtual shamrock::patch::PatchData next_n(u32 nmax) = 0;
+        virtual shamrock::patch::PatchDataLayer next_n(u32 nmax) = 0;
 
         /**
          * @brief Get the name of the node

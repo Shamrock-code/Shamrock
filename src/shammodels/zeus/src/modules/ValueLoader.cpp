@@ -893,7 +893,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
     u32 ifield                                     = ghost_layout.get_field_idx<T>(field_name);
     u32 nvar                                       = ghost_layout.get_field<T>(ifield).nvar;
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
@@ -902,7 +902,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
         load_patch_internal_block(offset, mpdat.total_elements, nvar, buf_src, buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -925,7 +925,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -948,7 +948,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -996,7 +996,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
               return storage.merged_patchdata_ghost.get().get(id).total_elements;
           });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
@@ -1010,7 +1010,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -1033,7 +1033,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -1056,7 +1056,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);

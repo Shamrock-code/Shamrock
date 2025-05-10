@@ -8,11 +8,12 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/serialize.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataserialize, 1) {
+TestStart(
+    Unittest, "shamrock/patch/PatchDataLayer::serialize_buf", testpatchdata_layerserialize, 1) {
     using namespace shamrock::patch;
 
     u32 obj = 1000;
@@ -39,7 +40,7 @@ TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataseri
     pdl.add_field<u32>("u32", 1);
     pdl.add_field<u64>("u64", 1);
 
-    PatchData pdat = PatchData::mock_patchdata(0x111, obj, pdl);
+    PatchDataLayer pdat = PatchDataLayer::mock_patchdata(0x111, obj, pdl);
 
     shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(pdat.serialize_buf_byte_size());
@@ -51,7 +52,7 @@ TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataseri
         shamalgs::SerializeHelper ser2(
             shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
-        PatchData pdat2 = PatchData::deserialize_buf(ser2, pdl);
+        PatchDataLayer pdat2 = PatchDataLayer::deserialize_buf(ser2, pdl);
 
         REQUIRE_NAMED("input match out", pdat == pdat2);
     }

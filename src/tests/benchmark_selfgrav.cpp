@@ -65,7 +65,7 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
         setup.add_particules_fcc(sched, dr, box);
         setup.set_total_mass(8.);
 
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             pdat.get_field<f32_3>(id_v).override(f32_3{0, 0, 0});
             pdat.get_field<f32_3>(id_a).override(f32_3{0, 0, 0});
         });

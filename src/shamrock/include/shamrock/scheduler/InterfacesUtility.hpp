@@ -16,7 +16,7 @@
  */
 
 #include "shamalgs/memory.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <vector>
@@ -38,7 +38,7 @@ namespace shamrock {
         public:
         u32 original_elements;
         u32 total_elements;
-        patch::PatchData pdat;
+        patch::PatchDataLayer pdat;
         patch::PatchDataLayout &pdl;
     };
 

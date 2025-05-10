@@ -87,7 +87,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 
     while (!setup->is_done()) {
 
-        shamrock::patch::PatchData pdat = setup->next_n(_insert_step);
+        shamrock::patch::PatchDataLayer pdat = setup->next_n(_insert_step);
 
         inserter.push_patch_data<Tvec>(pdat, "xyz", sched.crit_patch_split * 8, [&]() {
             modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(context, solver_config, storage)

@@ -213,7 +213,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
         }));
 
     using namespace shamrock::patch;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         storage.neighbors_cache.get().preload(cur_p.id_patch);
     });
 
@@ -584,7 +584,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
         }));
 
     using namespace shamrock::patch;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         storage.neighbors_cache.get().preload(cur_p.id_patch);
     });
 

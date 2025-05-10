@@ -111,11 +111,11 @@ namespace patchdata_exchanger {
         inline void patch_data_exchange_object(
             shamrock::patch::PatchDataLayout &pdl,
             std::vector<shamrock::patch::Patch> &global_patch_list,
-            std::vector<std::unique_ptr<shamrock::patch::PatchData>> &send_comm_pdat,
+            std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> &send_comm_pdat,
             std::vector<u64_2> &send_comm_vec,
             std::unordered_map<
                 u64,
-                std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>>
+                std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>>>
                 &recv_obj) {
             StackEntry stack_loc{};
 
@@ -200,7 +200,7 @@ namespace patchdata_exchanger {
                             //                      global_comm_tag[i]);
                             recv_obj[precv.id_patch].push_back(
                                 {psend.id_patch,
-                                 std::make_unique<PatchData>(
+                                 std::make_unique<PatchDataLayer>(
                                      pdl)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
                                              // global_comm_tag[i], MPI_COMM_WORLD)}
                             dtcnt += patchdata_irecv_probe(

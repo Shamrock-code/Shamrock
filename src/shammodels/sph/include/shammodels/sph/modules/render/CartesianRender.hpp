@@ -43,7 +43,7 @@ namespace shammodels::sph::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         using field_getter_t = const sham::DeviceBuffer<Tfield> &(
-            const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat);
+            const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat);
 
         sham::DeviceBuffer<Tfield> compute_slice(
             std::function<field_getter_t> field_getter,

@@ -27,6 +27,11 @@
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldSpan.hpp"
+#include "shamrock/solvergraph/INode.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
@@ -45,6 +50,22 @@ namespace shammodels::basegodunov {
 
         using RTree = RadixTree<Tmorton, TgridVec>;
 
+        std::shared_ptr<shamrock::solvergraph::FieldSpan<TgridVec>> spans_block_min;
+        std::shared_ptr<shamrock::solvergraph::FieldSpan<TgridVec>> spans_block_max;
+
+        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> block_counts_with_ghost;
+        std::shared_ptr<shamrock::solvergraph::FieldSpan<Tscal>> spans_rho;
+        std::shared_ptr<shamrock::solvergraph::FieldSpan<Tvec>> spans_rhov;
+        std::shared_ptr<shamrock::solvergraph::FieldSpan<Tscal>> spans_rhoe;
+        std::shared_ptr<shamrock::solvergraph::FieldSpan<Tscal>> spans_rho_dust;
+        std::shared_ptr<shamrock::solvergraph::FieldSpan<Tvec>> spans_rhov_dust;
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> vel;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> press;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> vel_dust;
+
+        std::shared_ptr<shamrock::solvergraph::OperationSequence> node_cons_to_prim;
+
         Component<SerialPatchTree<TgridVec>> serial_patch_tree;
 
         Component<GhostZonesData<Tvec, TgridVec>> ghost_zone_infos;
@@ -61,9 +82,6 @@ namespace shammodels::basegodunov {
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>>>
             cell_link_graph;
-
-        Component<shamrock::ComputeField<Tvec>> vel;
-        Component<shamrock::ComputeField<Tscal>> press;
 
         Component<shamrock::ComputeField<Tvec>> grad_rho;
         Component<shamrock::ComputeField<Tvec>> dx_v;
@@ -193,10 +211,6 @@ namespace shammodels::basegodunov {
         Component<shamrock::ComputeField<Tvec>> rhov_next_no_drag;
         Component<shamrock::ComputeField<Tscal>> rhoe_next_no_drag;
 
-        /**
-         * @brief Dust velocity : primitives variables get from conservative rhovel_dust variable
-         */
-        Component<shamrock::ComputeField<Tvec>> vel_dust;
         /// dust fields gradients (grad rho_dust)
         Component<shamrock::ComputeField<Tvec>> grad_rho_dust;
         /// dust fields gradients (d vdust / d x)

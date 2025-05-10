@@ -445,6 +445,70 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
     timer_interf.end();
     storage.timings_details.interface += timer_interf.elasped_sec();
+
+    // TODO this should be output nodes from basic ghost ideally
+
+    { // set element counts
+        using MergedPDat = shamrock::MergedPatchData;
+
+        shambase::get_check_ref(storage.block_counts_with_ghost).indexes
+            = storage.merged_patchdata_ghost.get().template map<u32>(
+                [&](u64 id, MergedPDat &mpdat) {
+                    return mpdat.total_elements;
+                });
+    }
+
+    { // attach spans to gas field with ghosts
+        using MergedPDat                               = shamrock::MergedPatchData;
+        shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+        u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
+        u32 irhov_ghost                                = ghost_layout.get_field_idx<Tvec>("rhovel");
+        u32 irhoe_ghost = ghost_layout.get_field_idx<Tscal>("rhoetot");
+
+        storage.spans_rho->spans
+            = storage.merged_patchdata_ghost.get()
+                  .template map<shamrock::PatchDataFieldSpanPointer<Tscal>>(
+                      [&](u64 id, MergedPDat &mpdat) {
+                          return mpdat.pdat.get_field_pointer_span<Tscal>(irho_ghost);
+                      });
+
+        storage.spans_rhov->spans
+            = storage.merged_patchdata_ghost.get()
+                  .template map<shamrock::PatchDataFieldSpanPointer<Tvec>>(
+                      [&](u64 id, MergedPDat &mpdat) {
+                          return mpdat.pdat.get_field_pointer_span<Tvec>(irhov_ghost);
+                      });
+
+        storage.spans_rhoe->spans
+            = storage.merged_patchdata_ghost.get()
+                  .template map<shamrock::PatchDataFieldSpanPointer<Tscal>>(
+                      [&](u64 id, MergedPDat &mpdat) {
+                          return mpdat.pdat.get_field_pointer_span<Tscal>(irhoe_ghost);
+                      });
+    }
+
+    if (solver_config.is_dust_on()) { // attach spans to dust field with ghosts
+        using MergedPDat                               = shamrock::MergedPatchData;
+        u32 ndust                                      = solver_config.dust_config.ndust;
+        shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+
+        u32 irho_dust_ghost  = ghost_layout.get_field_idx<Tscal>("rho_dust");
+        u32 irhov_dust_ghost = ghost_layout.get_field_idx<Tvec>("rhovel_dust");
+
+        storage.spans_rho_dust->spans
+            = storage.merged_patchdata_ghost.get()
+                  .template map<shamrock::PatchDataFieldSpanPointer<Tscal>>(
+                      [&](u64 id, MergedPDat &mpdat) {
+                          return mpdat.pdat.get_field_pointer_span<Tscal>(irho_dust_ghost);
+                      });
+
+        storage.spans_rhov_dust->spans
+            = storage.merged_patchdata_ghost.get()
+                  .template map<shamrock::PatchDataFieldSpanPointer<Tvec>>(
+                      [&](u64 id, MergedPDat &mpdat) {
+                          return mpdat.pdat.get_field_pointer_span<Tvec>(irhov_dust_ghost);
+                      });
+    }
 }
 
 template<class Tvec, class TgridVec>

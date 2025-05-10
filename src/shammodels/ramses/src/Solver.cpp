@@ -32,6 +32,42 @@
 #include "shammodels/ramses/modules/StencilGenerator.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldSpan.hpp"
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
+
+    storage.block_counts_with_ghost = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
+        "block_count_with_ghost", "N_{\\rm block, with ghost}");
+
+    storage.spans_rho = std::make_shared<shamrock::solvergraph::FieldSpan<Tscal>>("rho", "\\rho");
+    storage.spans_rhov
+        = std::make_shared<shamrock::solvergraph::FieldSpan<Tvec>>("rhovel", "(\\rho \\mathbf{v})");
+    storage.spans_rhoe
+        = std::make_shared<shamrock::solvergraph::FieldSpan<Tscal>>("rhoetot", "(\\rho E)");
+
+    if (solver_config.is_dust_on()) {
+        storage.spans_rho_dust = std::make_shared<shamrock::solvergraph::FieldSpan<Tscal>>(
+            "rho_dust", "\\rho_{\\rm dust}");
+        storage.spans_rhov_dust = std::make_shared<shamrock::solvergraph::FieldSpan<Tvec>>(
+            "rhovel_dust", "(\\rho_{\\rm dust} \\mathbf{v})_{\\rm dust}");
+    }
+
+    // will be filled by NodeConsToPrimGas
+    storage.vel = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        AMRBlock::block_size, "vel", "\\mathbf{v}");
+    storage.press
+        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "P", "P");
+
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
+
+        // will be filled by NodeConsToPrimDust
+        storage.vel_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size * ndust, "vel_dust", "{\\mathbf{v}_{\\rm dust}}");
+    }
+}
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {

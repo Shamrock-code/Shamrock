@@ -17,12 +17,15 @@
  */
 
 #include "shamrock/scheduler/ComputeField.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 
 namespace shamrock::solvergraph {
 
     template<class T>
-    class Field : public FieldSpan<T> {
+    class Field : public FieldRefs<T> {
+
+        // TODO In the long run this class should become what was compute field
 
         u32 nvar;
         std::string name;
@@ -30,7 +33,7 @@ namespace shamrock::solvergraph {
 
         public:
         Field(u32 nvar, std::string name, std::string texsymbol)
-            : nvar(nvar), name(name), FieldSpan<T>(name, texsymbol) {}
+            : nvar(nvar), name(name), FieldRefs<T>(name, texsymbol) {}
 
         // overload only the non
         inline virtual void ensure_sizes(const shambase::DistributedData<u32> &sizes) {
@@ -60,14 +63,21 @@ namespace shamrock::solvergraph {
                     field.field_data.erase(id);
                 });
 
-            this->spans = field.field_data.template map<shamrock::PatchDataFieldSpanPointer<T>>(
+            this->set_refs(field.field_data.template map<std::reference_wrapper<PatchDataField<T>>>(
                 [&](u64 id, PatchDataField<T> &pdf) {
-                    return pdf.get_pointer_span();
-                });
+                    return std::ref(pdf);
+                }));
         }
 
-        inline ComputeField<T> extract() { return std::move(field); }
+        inline ComputeField<T> extract() {
+            this->set_refs({});
+            return std::move(field);
+        }
 
-        inline ComputeField<T> &internal_ref() { return field; }
+        inline sham::DeviceBuffer<T> &get_buf(u64 id_patch) {
+            return field.field_data.get(id_patch).get_buf();
+        }
+
+        inline PatchDataField<T> &get_field(u64 id_patch) { return field.field_data.get(id_patch); }
     };
 } // namespace shamrock::solvergraph

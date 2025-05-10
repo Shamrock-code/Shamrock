@@ -14,9 +14,11 @@
  *
  */
 
-#include "shammodels/ramses/Solver.hpp"
+#include "shambase/memory.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/timestep_report.hpp"
+#include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/AMRGraphGen.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/AMRTree.hpp"
@@ -25,13 +27,93 @@
 #include "shammodels/ramses/modules/ComputeFlux.hpp"
 #include "shammodels/ramses/modules/ComputeGradient.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
-#include "shammodels/ramses/modules/ConsToPrim.hpp"
+#include "shammodels/ramses/modules/ConsToPrimDust.hpp"
+#include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
 #include "shammodels/ramses/modules/FaceInterpolate.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
 #include "shammodels/ramses/modules/StencilGenerator.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldSpan.hpp"
+#include "shamrock/solvergraph/OperationSequence.hpp"
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
+
+    using namespace shamrock::solvergraph;
+
+    storage.block_counts_with_ghost
+        = std::make_shared<Indexes<u32>>("block_count_with_ghost", "N_{\\rm block, with ghost}");
+
+    // merged ghost spans
+
+    storage.spans_block_min
+        = std::make_shared<FieldRefs<TgridVec>>("block_min", "\\block_{\\rm min}");
+    storage.spans_block_max
+        = std::make_shared<FieldRefs<TgridVec>>("block_max", "\\block_{\\rm max}");
+
+    { // gas spans
+        storage.spans_rho  = std::make_shared<FieldRefs<Tscal>>("rho", "\\rho");
+        storage.spans_rhov = std::make_shared<FieldRefs<Tvec>>("rhovel", "(\\rho \\mathbf{v})");
+        storage.spans_rhoe = std::make_shared<FieldRefs<Tscal>>("rhoetot", "(\\rho E)");
+    }
+
+    if (solver_config.is_dust_on()) {
+        storage.spans_rho_dust
+            = std::make_shared<FieldRefs<Tscal>>("rho_dust", "\\rho_{\\rm dust}");
+        storage.spans_rhov_dust = std::make_shared<FieldRefs<Tvec>>(
+            "rhovel_dust", "(\\rho_{\\rm dust} \\mathbf{v})_{\\rm dust}");
+    }
+
+    // cons to prim results
+    { // gas spans
+        // will be filled by NodeConsToPrimGas
+        storage.vel   = std::make_shared<Field<Tvec>>(AMRBlock::block_size, "vel", "\\mathbf{v}");
+        storage.press = std::make_shared<Field<Tscal>>(AMRBlock::block_size, "P", "P");
+    }
+
+    if (solver_config.is_dust_on()) {
+        u32 ndust = solver_config.dust_config.ndust;
+
+        // will be filled by NodeConsToPrimDust
+        storage.vel_dust = std::make_shared<Field<Tvec>>(
+            AMRBlock::block_size * ndust, "vel_dust", "{\\mathbf{v}_{\\rm dust}}");
+    }
+
+    { // Build ConsToPrim node
+        std::vector<std::shared_ptr<INode>> const_to_prim_sequence;
+
+        {
+            modules::NodeConsToPrimGas<Tvec> node{AMRBlock::block_size, solver_config.eos_gamma};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.spans_rho,
+                storage.spans_rhov,
+                storage.spans_rhoe,
+                storage.vel,
+                storage.press);
+
+            const_to_prim_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+
+        if (solver_config.is_dust_on()) {
+            u32 ndust = solver_config.dust_config.ndust;
+            modules::NodeConsToPrimDust<Tvec> node{AMRBlock::block_size, ndust};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.spans_rho_dust,
+                storage.spans_rhov_dust,
+                storage.vel_dust);
+
+            const_to_prim_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+
+        OperationSequence seq("Cons to Prim", std::move(const_to_prim_sequence));
+        storage.node_cons_to_prim = std::make_shared<decltype(seq)>(std::move(seq));
+    }
+}
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
@@ -92,11 +174,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     graph_gen.lower_AMR_block_graph_to_cell_common_face_graph(block_oriented_graph);
 
     // compute prim variable
-    modules::ConsToPrim ctop(context, solver_config, storage);
-
-    ctop.cons_to_prim_gas();
-    if (solver_config.is_dust_on()) {
-        ctop.cons_to_prim_dust();
+    {
+        // logger::raw_ln(" -- tex:\n" +
+        // shambase::get_check_ref(storage.node_cons_to_prim).get_tex()); logger::raw_ln(
+        //     " -- dot:\n" + shambase::get_check_ref(storage.node_cons_to_prim).get_dot_graph());
+        shambase::get_check_ref(storage.node_cons_to_prim).evaluate();
     }
 
     // compute & limit gradients
@@ -130,6 +212,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     if (solver_config.is_dust_on()) {
         flux_compute.compute_flux_dust();
     }
+
     // compute dt fields
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
     dt_compute.compute_dt_fields();
@@ -212,8 +295,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.dz_v.reset();
     storage.grad_P.reset();
 
-    ctop.reset_gas();
-
     if (solver_config.is_dust_on()) {
         storage.dtrho_dust.reset();
         storage.dtrhov_dust.reset();
@@ -249,8 +330,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         storage.dx_v_dust.reset();
         storage.dy_v_dust.reset();
         storage.dz_v_dust.reset();
-
-        ctop.reset_dust();
     }
 
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {

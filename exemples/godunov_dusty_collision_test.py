@@ -95,7 +95,7 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     cfg.set_alpha_values(1)            # ts  := 1
     """
 
-    model.set_config(cfg)
+    model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 

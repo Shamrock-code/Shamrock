@@ -179,4 +179,7 @@ class ShamrockCtx {
         }
         sched->scheduler_step(do_split_merge, do_load_balancing);
     }
+
+    /// returns true if the scheduler is initialized
+    inline bool is_scheduler_initialized() { return bool(sched); }
 };

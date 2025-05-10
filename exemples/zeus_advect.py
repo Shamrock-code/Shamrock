@@ -14,15 +14,12 @@ def run_sim(ctp=False, vanleer=False, label="none"):
 
     model = shamrock.get_Model_Zeus(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
-    model.init_scheduler(int(1e7), 1)
-
     multx = 1
     multy = 1
     multz = 1
 
     sz = 1 << 1
     base = 32
-    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -30,7 +27,10 @@ def run_sim(ctp=False, vanleer=False, label="none"):
     cfg.set_eos_gamma(1.0)
     cfg.set_consistent_transport(ctp)
     cfg.set_van_leer(vanleer)
-    model.set_config(cfg)
+    model.set_solver_config(cfg)
+
+    model.init_scheduler(int(1e7), 1)
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     kx, ky, kz = 2 * np.pi, 0, 0
     delta_rho = 0

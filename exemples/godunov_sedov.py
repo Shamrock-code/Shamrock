@@ -96,8 +96,7 @@ if idump_last_dump is not None:
     idump = idump_last_dump + 1  # avoid overwriting your start dump !
 else:
     idump = 0
-    model.init_scheduler(int(1e7), 1)
-    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
+
     cfg = model.gen_default_config()
     cfg.set_scale_factor(scale_fact)
     cfg.set_eos_gamma(gamma)
@@ -105,7 +104,11 @@ else:
     cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(True)
     cfg.set_Csafe(C_cour)
-    model.set_config(cfg)
+    model.set_solver_config(cfg)
+
+    model.init_scheduler(int(1e7), 1)
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
+
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)

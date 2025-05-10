@@ -42,7 +42,14 @@ cfg.set_riemann_solver_hll()
 # cfg.set_slope_lim_vanleer_sym()
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
-model.set_config(cfg)
+model.set_solver_config(cfg)
+
+
+# %%
+# Init scheduler and grid
+
+model.init_scheduler(int(1e7), 1)
+model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
 
 # %%

@@ -10,7 +10,6 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
-model.init_scheduler(int(1e7), 1)
 
 multx = 4
 multy = 1
@@ -18,7 +17,6 @@ multz = 1
 
 sz = 1 << 1
 base = 32
-model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
 cfg = model.gen_default_config()
 scale_fact = 2 / (sz * base * multx)
@@ -34,8 +32,11 @@ cfg.set_riemann_solver_hll()
 # cfg.set_slope_lim_vanleer_std()
 # cfg.set_slope_lim_vanleer_sym()
 cfg.set_slope_lim_minmod()
-model.set_config(cfg)
+model.set_solver_config(cfg)
 
+
+model.init_scheduler(int(1e7), 1)
+model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
 kx, ky, kz = 2 * np.pi, 0, 0
 delta_rho = 1e-2
@@ -81,7 +82,7 @@ dt = 0.0000
 t = 0
 tend = 0.245
 
-for i in range(701):
+for i in range(1):
 
     if i % freq == 0:
         model.dump_vtk("test" + str(i // freq) + ".vtk")

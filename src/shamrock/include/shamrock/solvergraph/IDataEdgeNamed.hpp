@@ -29,7 +29,7 @@ namespace shamrock::solvergraph {
             : name(name), texsymbol(texsymbol) {}
 
         virtual std::string _impl_get_dot_label() const { return name; }
-        virtual std::string _impl_get_tex_symbol() const { return texsymbol; }
+        virtual std::string _impl_get_tex_symbol() const { return "{" + texsymbol + "}"; }
     };
 
 } // namespace shamrock::solvergraph

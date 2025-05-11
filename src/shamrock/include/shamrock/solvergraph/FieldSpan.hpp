@@ -26,6 +26,7 @@ namespace shamrock::solvergraph {
     class FieldSpan : public IDataEdgeNamed {
         public:
         using IDataEdgeNamed::IDataEdgeNamed;
+
         shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> spans;
 
         inline virtual void check_sizes(const shambase::DistributedData<u32> &sizes) const {

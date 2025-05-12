@@ -31,7 +31,10 @@ set(Sources
     src/modules/GhostZones.cpp
     src/modules/AMRSortBlocks.cpp
     src/modules/ComputeCFL.cpp
-    src/modules/ConsToPrim.cpp
+    src/modules/ConsToPrimGas.cpp
+    src/modules/ConsToPrimDust.cpp
+    src/modules/ComputeCellAABB.cpp
+    src/modules/NodeBuildTrees.cpp
     src/modules/StencilGenerator.cpp
 )
 

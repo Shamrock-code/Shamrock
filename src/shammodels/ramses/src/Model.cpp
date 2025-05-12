@@ -42,6 +42,8 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::init_scheduler(
     // sched.patch_list.build_local_idx_map();
     // sched.update_local_dtcnt_value();
     // sched.update_local_load_value();
+
+    solver.init_solver_graph();
 }
 
 template<class Tvec, class TgridVec>

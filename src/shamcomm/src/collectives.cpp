@@ -85,7 +85,6 @@ namespace {
 void shamcomm::gather_str(const std::string &send_vec, std::string &recv_vec) {
     StackEntry stack_loc{};
     _internal_gather_str(send_vec, recv_vec);
-    logger::raw_ln(send_vec, recv_vec);
 }
 
 void shamcomm::gather_basic_str(

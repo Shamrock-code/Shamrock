@@ -465,26 +465,26 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         u32 irhov_ghost                                = ghost_layout.get_field_idx<Tvec>("rhovel");
         u32 irhoe_ghost = ghost_layout.get_field_idx<Tscal>("rhoetot");
 
-        storage.spans_rho->spans
-            = storage.merged_patchdata_ghost.get()
-                  .template map<shamrock::PatchDataFieldSpanPointer<Tscal>>(
-                      [&](u64 id, MergedPDat &mpdat) {
-                          return mpdat.pdat.get_field_pointer_span<Tscal>(irho_ghost);
-                      });
+        storage.refs_rho->set_refs(storage.merged_patchdata_ghost.get()
+                                       .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                                           [&](u64 id, MergedPDat &mpdat) {
+                                               return std::ref(
+                                                   mpdat.pdat.get_field<Tscal>(irho_ghost));
+                                           }));
 
-        storage.spans_rhov->spans
-            = storage.merged_patchdata_ghost.get()
-                  .template map<shamrock::PatchDataFieldSpanPointer<Tvec>>(
-                      [&](u64 id, MergedPDat &mpdat) {
-                          return mpdat.pdat.get_field_pointer_span<Tvec>(irhov_ghost);
-                      });
+        storage.refs_rhov->set_refs(storage.merged_patchdata_ghost.get()
+                                        .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
+                                            [&](u64 id, MergedPDat &mpdat) {
+                                                return std::ref(
+                                                    mpdat.pdat.get_field<Tvec>(irhov_ghost));
+                                            }));
 
-        storage.spans_rhoe->spans
-            = storage.merged_patchdata_ghost.get()
-                  .template map<shamrock::PatchDataFieldSpanPointer<Tscal>>(
-                      [&](u64 id, MergedPDat &mpdat) {
-                          return mpdat.pdat.get_field_pointer_span<Tscal>(irhoe_ghost);
-                      });
+        storage.refs_rhoe->set_refs(
+            storage.merged_patchdata_ghost.get()
+                .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                    [&](u64 id, MergedPDat &mpdat) {
+                        return std::ref(mpdat.pdat.get_field<Tscal>(irhoe_ghost));
+                    }));
     }
 
     if (solver_config.is_dust_on()) { // attach spans to dust field with ghosts
@@ -495,19 +495,19 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         u32 irho_dust_ghost  = ghost_layout.get_field_idx<Tscal>("rho_dust");
         u32 irhov_dust_ghost = ghost_layout.get_field_idx<Tvec>("rhovel_dust");
 
-        storage.spans_rho_dust->spans
-            = storage.merged_patchdata_ghost.get()
-                  .template map<shamrock::PatchDataFieldSpanPointer<Tscal>>(
-                      [&](u64 id, MergedPDat &mpdat) {
-                          return mpdat.pdat.get_field_pointer_span<Tscal>(irho_dust_ghost);
-                      });
+        storage.refs_rho_dust->set_refs(
+            storage.merged_patchdata_ghost.get()
+                .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                    [&](u64 id, MergedPDat &mpdat) {
+                        return std::ref(mpdat.pdat.get_field<Tscal>(irho_dust_ghost));
+                    }));
 
-        storage.spans_rhov_dust->spans
-            = storage.merged_patchdata_ghost.get()
-                  .template map<shamrock::PatchDataFieldSpanPointer<Tvec>>(
-                      [&](u64 id, MergedPDat &mpdat) {
-                          return mpdat.pdat.get_field_pointer_span<Tvec>(irhov_dust_ghost);
-                      });
+        storage.refs_rhov_dust->set_refs(
+            storage.merged_patchdata_ghost.get()
+                .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
+                    [&](u64 id, MergedPDat &mpdat) {
+                        return std::ref(mpdat.pdat.get_field<Tvec>(irhov_dust_ghost));
+                    }));
     }
 }
 

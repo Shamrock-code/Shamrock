@@ -30,14 +30,23 @@ namespace shamrock::solvergraph {
     template<class T>
     using DDPatchDataFieldRef = shambase::DistributedData<PatchDataFieldRef<T>>;
 
+    /**
+     * @brief Interface for a solver graph edge representing a field as references to the underlying
+     * patch fields.
+     *
+     * A field refer to a field that is distributed over several patches.
+     *
+     * @tparam T The primitive type of the field
+     */
     template<class T>
     class IFieldRefs : public IFieldSpan<T> {
-
         public:
         using IFieldSpan<T>::IFieldSpan;
 
+        /// Get the DistributedData of PatchDataFieldRefs
         virtual DDPatchDataFieldRef<T> &get_refs() = 0;
 
+        /// Const variant of get_refs
         virtual const DDPatchDataFieldRef<T> &get_refs() const = 0;
     };
 

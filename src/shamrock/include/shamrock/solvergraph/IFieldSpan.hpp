@@ -28,7 +28,7 @@ namespace shamrock::solvergraph {
         = shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>>;
 
     /**
-     * @brief Interface for a solver graph edge representing a field.
+     * @brief Interface for a solver graph edge representing a field as spans.
      *
      * Here a field refer to a field that is distributed over several patches.
      *

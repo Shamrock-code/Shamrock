@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# If you want shamrock to think of mpi as slurm like srun
+#export LOCAL_RANK=$PALS_LOCAL_RANKID
+
+# Each process see a single device
+export ZE_AFFINITY_MASK=$LOCAL_RANK
+
+# Enable direct GPU comm (do not forget to use --force-dgpu-on)
+export MPIR_CVAR_ENABLE_GPU=1
+
+# See each tile independently instead of the full device (12 tiles per nodes)
+export ZE_FLAT_DEVICE_HIERARCHY=FLAT
+
+exec "$@"

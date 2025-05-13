@@ -45,3 +45,8 @@ def setup(arg: SetupArg, envgen: EnvGen):
     ]
 
     envgen.gen_env_file("env_oneapi.sh")
+
+    envgen.copy_env_file("1device_per_process.sh", "1device_per_process.sh")
+    envgen.copy_env_file("1device_per_process_directgpu.sh", "1device_per_process_directgpu.sh")
+    envgen.copy_env_file("1tile_per_process.sh", "1tile_per_process.sh")
+    envgen.copy_env_file("1tile_per_process_directgpu.sh", "1tile_per_process_directgpu.sh")

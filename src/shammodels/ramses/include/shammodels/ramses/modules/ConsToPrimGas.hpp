@@ -17,7 +17,7 @@
  */
 
 #include "shambackends/vec.hpp"
-#include "shamrock/solvergraph/FieldSpan.hpp"
+#include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 
@@ -33,20 +33,20 @@ namespace shammodels::basegodunov::modules {
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::FieldSpan<Tscal> &spans_rho;
-            const shamrock::solvergraph::FieldSpan<Tvec> &spans_rhov;
-            const shamrock::solvergraph::FieldSpan<Tscal> &spans_rhoe;
-            shamrock::solvergraph::FieldSpan<Tvec> &spans_vel;
-            shamrock::solvergraph::FieldSpan<Tscal> &spans_P;
+            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho;
+            const shamrock::solvergraph::IFieldSpan<Tvec> &spans_rhov;
+            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhoe;
+            shamrock::solvergraph::IFieldSpan<Tvec> &spans_vel;
+            shamrock::solvergraph::IFieldSpan<Tscal> &spans_P;
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::FieldSpan<Tscal>> spans_rho,
-            std::shared_ptr<shamrock::solvergraph::FieldSpan<Tvec>> spans_rhov,
-            std::shared_ptr<shamrock::solvergraph::FieldSpan<Tscal>> spans_rhoe,
-            std::shared_ptr<shamrock::solvergraph::FieldSpan<Tvec>> spans_vel,
-            std::shared_ptr<shamrock::solvergraph::FieldSpan<Tscal>> spans_P) {
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_rhov,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhoe,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_vel,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_P) {
             __internal_set_ro_edges({sizes, spans_rho, spans_rhov, spans_rhoe});
             __internal_set_rw_edges({spans_vel, spans_P});
         }
@@ -54,11 +54,11 @@ namespace shammodels::basegodunov::modules {
         inline Edges get_edges() {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::FieldSpan<Tscal>>(1),
-                get_ro_edge<shamrock::solvergraph::FieldSpan<Tvec>>(2),
-                get_ro_edge<shamrock::solvergraph::FieldSpan<Tscal>>(3),
-                get_rw_edge<shamrock::solvergraph::FieldSpan<Tvec>>(0),
-                get_rw_edge<shamrock::solvergraph::FieldSpan<Tscal>>(1),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
             };
         }
 

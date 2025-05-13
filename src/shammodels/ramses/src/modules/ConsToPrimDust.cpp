@@ -74,9 +74,9 @@ namespace shammodels::basegodunov::modules {
         edges.spans_vel_dust.ensure_sizes(edges.sizes.indexes);
 
         KernelConsToPrimDust<Tvec>::kernel(
-            edges.spans_rho_dust.spans,
-            edges.spans_rhov_dust.spans,
-            edges.spans_vel_dust.spans,
+            edges.spans_rho_dust.get_spans(),
+            edges.spans_rhov_dust.get_spans(),
+            edges.spans_vel_dust.get_spans(),
             edges.sizes.indexes,
             block_size,
             ndust);

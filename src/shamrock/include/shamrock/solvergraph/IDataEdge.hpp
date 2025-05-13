@@ -18,13 +18,14 @@
 
 #include "shambase/WithUUID.hpp"
 #include "shambase/aliases_int.hpp"
+#include "shamrock/solvergraph/IFreeable.hpp"
 #include <string>
 
 namespace shamrock::solvergraph {
 
     class INode;
 
-    class IDataEdge : public shambase::WithUUID<IDataEdge, u64> {
+    class IDataEdge : public shambase::WithUUID<IDataEdge, u64>, public IFreeable {
         public:
         inline std::string get_label() const { return _impl_get_dot_label(); }
         inline std::string get_tex_symbol() const { return _impl_get_tex_symbol(); }

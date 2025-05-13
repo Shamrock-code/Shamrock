@@ -53,3 +53,11 @@ namespace shamcomm {
     bool is_mpi_initialized();
 
 } // namespace shamcomm
+
+/// @brief Macro to execute code only on rank 0
+#define ON_RANK_0(x)                                                                               \
+    do {                                                                                           \
+        if (shamcomm::world_rank() == 0) {                                                         \
+            x;                                                                                     \
+        }                                                                                          \
+    } while (false)

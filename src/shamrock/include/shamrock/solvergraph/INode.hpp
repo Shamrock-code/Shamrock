@@ -72,8 +72,6 @@ namespace shamrock::solvergraph {
 
         inline void evaluate() { _impl_evaluate_internal(); }
 
-        inline void reset() { _impl_reset_internal(); }
-
         inline std::string get_dot_graph() { return get_dot_graph_partial(); };
         inline std::string get_dot_graph_partial() { return _impl_get_dot_graph_partial(); };
         inline std::string get_dot_graph_node_start() { return _impl_get_dot_graph_node_start(); };
@@ -84,8 +82,8 @@ namespace shamrock::solvergraph {
 
         protected:
         virtual void _impl_evaluate_internal() = 0;
-        virtual void _impl_reset_internal()    = 0;
-        virtual std::string _impl_get_label()  = 0;
+
+        virtual std::string _impl_get_label() = 0;
 
         virtual std::string _impl_get_dot_graph_partial();
         virtual std::string _impl_get_dot_graph_node_start();

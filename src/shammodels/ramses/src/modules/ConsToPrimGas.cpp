@@ -31,8 +31,8 @@ namespace {
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_rhov,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rhoe,
 
-            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_vel,
-            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_P,
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> spans_vel,
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> spans_P,
             const shambase::DistributedData<u32> &sizes,
             u32 block_size,
             Tscal gamma) {
@@ -81,11 +81,11 @@ namespace shammodels::basegodunov::modules {
         edges.spans_P.ensure_sizes(edges.sizes.indexes);
 
         KernelConsToPrimGas<Tvec>::kernel(
-            edges.spans_rho.spans,
-            edges.spans_rhov.spans,
-            edges.spans_rhoe.spans,
-            edges.spans_vel.spans,
-            edges.spans_P.spans,
+            edges.spans_rho.get_spans(),
+            edges.spans_rhov.get_spans(),
+            edges.spans_rhoe.get_spans(),
+            edges.spans_vel.get_spans(),
+            edges.spans_P.get_spans(),
             edges.sizes.indexes,
             block_size,
             gamma);

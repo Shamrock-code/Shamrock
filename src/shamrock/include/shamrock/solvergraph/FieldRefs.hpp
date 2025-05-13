@@ -10,26 +10,41 @@
 #pragma once
 
 /**
- * @file FieldSpan.hpp
+ * @file FieldRefs.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
  */
 
 #include "shambase/DistributedData.hpp"
-#include "shamrock/patch/PatchDataFieldSpan.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/IDataEdgeNamed.hpp"
-#include "shamrock/solvergraph/IFieldSpan.hpp"
+#include "shamrock/solvergraph/IFieldRefs.hpp"
+#include <functional>
 
 namespace shamrock::solvergraph {
 
     template<class T>
-    class FieldSpan : public IFieldSpan<T> {
+    class FieldRefs : public IFieldRefs<T> {
+
+        DDPatchDataFieldRef<T> field_refs;
 
         DDPatchDataFieldSpanPointer<T> spans;
 
+        void sync_spans() {
+            this->spans = field_refs.template map<shamrock::PatchDataFieldSpanPointer<T>>(
+                [&](u64 id, std::reference_wrapper<PatchDataField<T>> &pdf) {
+                    return pdf.get().get_pointer_span();
+                });
+        }
+
         public:
-        using IFieldSpan<T>::IFieldSpan;
+        using IFieldRefs<T>::IFieldRefs;
+
+        virtual DDPatchDataFieldRef<T> &get_refs() { return field_refs; }
+
+        virtual const DDPatchDataFieldRef<T> &get_refs() const { return field_refs; }
 
         virtual DDPatchDataFieldSpanPointer<T> &get_spans() { return spans; }
 
@@ -37,16 +52,16 @@ namespace shamrock::solvergraph {
 
         inline virtual void check_sizes(const shambase::DistributedData<u32> &sizes) const {
             on_distributeddata_diff(
-                spans,
+                field_refs,
                 sizes,
                 [](u64 id) {
                     shambase::throw_with_loc<std::runtime_error>(
-                        "Missing field span in distributed data at id " + std::to_string(id));
+                        "Missing field ref in distributed data at id " + std::to_string(id));
                 },
                 [](u64 id) {},
                 [](u64 id) {
                     shambase::throw_with_loc<std::runtime_error>(
-                        "Extra field span in distributed data at id " + std::to_string(id));
+                        "Extra field ref in distributed data at id " + std::to_string(id));
                 });
         }
 
@@ -54,13 +69,21 @@ namespace shamrock::solvergraph {
             check_sizes(sizes);
         }
 
-        void set_spans(DDPatchDataFieldSpanPointer<T> spans) { this->spans = spans; }
-
-        DDPatchDataFieldSpanPointer<T> extract() {
-            DDPatchDataFieldSpanPointer<T> spans = std::exchange(this->spans, {});
-            return spans;
+        void set_refs(DDPatchDataFieldRef<T> refs) {
+            field_refs = refs;
+            sync_spans();
         }
 
-        inline virtual void free_alloc() { spans = {}; }
+        DDPatchDataFieldRef<T> extract() {
+            DDPatchDataFieldRef<T> refs = std::exchange(field_refs, {});
+            sync_spans();
+            return refs;
+        }
+
+        inline virtual PatchDataField<T> &get(u64 id_patch) const {
+            return field_refs.get(id_patch);
+        }
+
+        inline virtual void free_alloc() { set_refs({}); }
     };
 } // namespace shamrock::solvergraph

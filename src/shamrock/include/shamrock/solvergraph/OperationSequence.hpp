@@ -34,8 +34,6 @@ namespace shamrock::solvergraph {
         }
         void _impl_evaluate_internal();
 
-        void _impl_reset_internal();
-
         inline std::string _impl_get_label() { return name; }
 
         std::string _impl_get_dot_graph_partial();

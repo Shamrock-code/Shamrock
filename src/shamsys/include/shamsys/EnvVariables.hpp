@@ -32,6 +32,8 @@ namespace shamsys::env {
     const std::optional<std::string> MPI_LOCALRANKID = shamcmdopt::getenv_str("MPI_LOCALRANKID");
     const std::optional<std::string> SLURM_PROCID    = shamcmdopt::getenv_str("SLURM_PROCID");
     const std::optional<std::string> LOCAL_RANK      = shamcmdopt::getenv_str("LOCAL_RANK");
+    const std::optional<std::string> PALS_LOCAL_RANKID
+        = shamcmdopt::getenv_str("PALS_LOCAL_RANKID");
 
     inline std::optional<u32> get_local_rank() {
 
@@ -53,6 +55,10 @@ namespace shamsys::env {
 
         if (LOCAL_RANK) {
             return std::atoi(LOCAL_RANK->c_str());
+        }
+
+        if (PALS_LOCAL_RANKID) {
+            return std::atoi(PALS_LOCAL_RANKID->c_str());
         }
 
         return {};

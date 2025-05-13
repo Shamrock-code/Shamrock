@@ -10,24 +10,28 @@
 #pragma once
 
 /**
- * @file Indexes.hpp
+ * @file IFreeable.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
  */
 
-#include "shambase/DistributedData.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
-
 namespace shamrock::solvergraph {
 
-    template<class Tint>
-    class Indexes : public IDataEdgeNamed {
+    /**
+     * @brief Interface for data edges that can free their allocated memory.
+     *
+     * Data edges should inherit from this interface if they manage memory
+     * that needs to be freed at some point. This is useful for example when
+     * using a memory pool to store data edge allocations.
+     */
+    class IFreeable {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
-        shambase::DistributedData<Tint> indexes;
+        /// Free allocated memory.
+        virtual void free_alloc() = 0;
 
-        inline virtual void free_alloc() { indexes = {}; }
+        /// Virtual destructor
+        virtual ~IFreeable() {}
     };
 
 } // namespace shamrock::solvergraph

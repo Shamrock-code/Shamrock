@@ -16,6 +16,13 @@ done
 
 echo "All required packages are installed."
 
+if which ccache &> /dev/null; then
+    export CCACHE_CMAKE_ARG="-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    echo " ----- ccache found, using it ----- "
+else
+    export CCACHE_CMAKE_ARG=""
+fi
+
 ACPP_ROOT=`brew list adaptivecpp | grep acpp-info | sed -E "s/\/bin\/.*//"`
 echo " ------------- Environment activated ------------- "
 
@@ -23,6 +30,7 @@ function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
+        ${CCACHE_CMAKE_ARG} \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=ACPPDirect \
         -DCMAKE_CXX_COMPILER="acpp" \

@@ -94,16 +94,26 @@ jobs:
       - name: ls local
         run : ls -la
 
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-${{matrix.container}}-${{matrix.backend}}
+
       - name: Setup env
         run : ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}
 
-      - name: Configure
+      - name: Source env
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate
+
+      - name: Configure Shamrock
         shell: bash # In docker container github action default to sh
         run: |
           cd build
           source ./activate && shamconfigure
 
-      - name: Configure sham install
+      - name: Configure sham install target
         shell: bash # In docker container github action default to sh
         run: |
           cd build

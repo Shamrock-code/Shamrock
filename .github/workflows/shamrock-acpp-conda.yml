@@ -65,12 +65,12 @@ jobs:
           source ./activate
           conda env export
 
-      - name: Configure
+      - name: Configure Shamrock
         run: |
           cd build
           source ./activate && shamconfigure
 
-      - name: Configure sham install
+      - name: Configure sham install target
         run: |
           cd build
           source ./activate &&  \

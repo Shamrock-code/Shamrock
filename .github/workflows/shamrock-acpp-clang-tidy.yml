@@ -68,7 +68,7 @@ jobs:
           fi
 
 
-      - name: configure Shamrock
+      - name: Setup env
         run: |
           ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp
 

@@ -67,11 +67,17 @@ jobs:
           fi
 
 
-      - name: configure Shamrock
+      - name: Setup env
         run: |
           ./env/new-env --machine debian-generic.acpp --builddir build --type ubsan -- --backend omp
 
-      - name: Configure
+      - name: Source env
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate
+
+      - name: Configure Shamrock
         shell: bash # In docker container github action default to sh
         run: |
           cd build

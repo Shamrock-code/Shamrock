@@ -20,17 +20,17 @@
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IFieldRefs.hpp"
 #include <functional>
 
 namespace shamrock::solvergraph {
 
     template<class T>
-    class FieldRefs : public FieldSpan<T> {
+    class FieldRefs : public IFieldRefs<T> {
 
-        public:
-        using FieldSpan<T>::FieldSpan;
+        DDPatchDataFieldRef<T> field_refs;
 
-        shambase::DistributedData<std::reference_wrapper<PatchDataField<T>>> field_refs;
+        DDPatchDataFieldSpanPointer<T> spans;
 
         void sync_spans() {
             this->spans = field_refs.template map<shamrock::PatchDataFieldSpanPointer<T>>(
@@ -38,6 +38,17 @@ namespace shamrock::solvergraph {
                     return pdf.get().get_pointer_span();
                 });
         }
+
+        public:
+        using IFieldRefs<T>::IFieldRefs;
+
+        virtual DDPatchDataFieldRef<T> &get_refs() { return field_refs; }
+
+        virtual const DDPatchDataFieldRef<T> &get_refs() const { return field_refs; }
+
+        virtual DDPatchDataFieldSpanPointer<T> &get_spans() { return spans; }
+
+        virtual const DDPatchDataFieldSpanPointer<T> &get_spans() const { return spans; }
 
         inline virtual void check_sizes(const shambase::DistributedData<u32> &sizes) const {
             on_distributeddata_diff(
@@ -54,14 +65,22 @@ namespace shamrock::solvergraph {
                 });
         }
 
-        void set_ref_sync_spans(
-            const shambase::DistributedData<std::reference_wrapper<PatchDataField<T>>>
-                &field_refs) {
-            this->field_refs = field_refs;
-            this->sync_spans();
+        inline virtual void ensure_sizes(const shambase::DistributedData<u32> &sizes) {
+            check_sizes(sizes);
         }
 
-        inline virtual PatchDataField<T> &get_field(u64 id_patch) const {
+        void set_refs(DDPatchDataFieldRef<T> refs) {
+            field_refs = refs;
+            sync_spans();
+        }
+
+        DDPatchDataFieldRef<T> extract() {
+            DDPatchDataFieldRef<T> refs = std::exchange(field_refs, {});
+            sync_spans();
+            return refs;
+        }
+
+        inline virtual PatchDataField<T> &get(u64 id_patch) const {
             return field_refs.get(id_patch);
         }
     };

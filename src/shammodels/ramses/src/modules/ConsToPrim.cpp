@@ -53,26 +53,26 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim_
           });
 
     auto rho = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("rho", "\\rho");
-    rho->set_ref_sync_spans(storage.merged_patchdata_ghost.get()
-                                .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
-                                    [&](u64 id, MergedPDat &mpdat) {
-                                        return std::ref(mpdat.pdat.get_field<Tscal>(irho_ghost));
-                                    }));
+    rho->set_refs(storage.merged_patchdata_ghost.get()
+                      .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                          [&](u64 id, MergedPDat &mpdat) {
+                              return std::ref(mpdat.pdat.get_field<Tscal>(irho_ghost));
+                          }));
 
     auto rhov
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("rhovel", "(\\rho \\mathbf{v})");
-    rhov->set_ref_sync_spans(storage.merged_patchdata_ghost.get()
-                                 .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
-                                     [&](u64 id, MergedPDat &mpdat) {
-                                         return std::ref(mpdat.pdat.get_field<Tvec>(irhov_ghost));
-                                     }));
+    rhov->set_refs(storage.merged_patchdata_ghost.get()
+                       .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
+                           [&](u64 id, MergedPDat &mpdat) {
+                               return std::ref(mpdat.pdat.get_field<Tvec>(irhov_ghost));
+                           }));
 
     auto rhoe = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("rhoetot", "(\\rho E)");
-    rhoe->set_ref_sync_spans(storage.merged_patchdata_ghost.get()
-                                 .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
-                                     [&](u64 id, MergedPDat &mpdat) {
-                                         return std::ref(mpdat.pdat.get_field<Tscal>(irhoe_ghost));
-                                     }));
+    rhoe->set_refs(storage.merged_patchdata_ghost.get()
+                       .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                           [&](u64 id, MergedPDat &mpdat) {
+                               return std::ref(mpdat.pdat.get_field<Tscal>(irhoe_ghost));
+                           }));
 
     // will be filled by NodeConsToPrimGas
     auto vel = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
@@ -129,21 +129,19 @@ void shammodels::basegodunov::modules::ConsToPrim<Tvec, TgridVec>::cons_to_prim_
 
     auto rho_dust = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
         "rho_dust", "\\rho_{\\rm dust}");
-    rho_dust->set_ref_sync_spans(storage.merged_patchdata_ghost.get()
-                                     .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
-                                         [&](u64 id, MergedPDat &mpdat) {
-                                             return std::ref(
-                                                 mpdat.pdat.get_field<Tscal>(irho_dust_ghost));
-                                         }));
+    rho_dust->set_refs(storage.merged_patchdata_ghost.get()
+                           .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                               [&](u64 id, MergedPDat &mpdat) {
+                                   return std::ref(mpdat.pdat.get_field<Tscal>(irho_dust_ghost));
+                               }));
 
     auto rhov_dust = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
         "rhovel_dust", "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})");
-    rhov_dust->set_ref_sync_spans(storage.merged_patchdata_ghost.get()
-                                      .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
-                                          [&](u64 id, MergedPDat &mpdat) {
-                                              return std::ref(
-                                                  mpdat.pdat.get_field<Tvec>(irhov_dust_ghost));
-                                          }));
+    rhov_dust->set_refs(storage.merged_patchdata_ghost.get()
+                            .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
+                                [&](u64 id, MergedPDat &mpdat) {
+                                    return std::ref(mpdat.pdat.get_field<Tvec>(irhov_dust_ghost));
+                                }));
 
     // will be filled by NodeConsToPrimDust
     auto vel_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(

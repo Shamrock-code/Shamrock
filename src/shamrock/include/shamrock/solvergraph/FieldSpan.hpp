@@ -24,21 +24,16 @@
 namespace shamrock::solvergraph {
 
     template<class T>
-    class FieldSpan : public IDataEdgeNamed, public IFieldSpan<T> {
+    class FieldSpan : public IFieldSpan<T> {
+
+        DDPatchDataFieldSpanPointer<T> spans;
 
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IFieldSpan<T>::IFieldSpan;
 
-        shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> spans;
+        virtual DDPatchDataFieldSpanPointer<T> &get_spans() { return spans; }
 
-        inline virtual shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>>
-        get_spans() {
-            return spans;
-        }
-        inline virtual const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>>
-        get_spans() const {
-            return spans;
-        }
+        virtual const DDPatchDataFieldSpanPointer<T> &get_spans() const { return spans; }
 
         inline virtual void check_sizes(const shambase::DistributedData<u32> &sizes) const {
             on_distributeddata_diff(
@@ -57,6 +52,13 @@ namespace shamrock::solvergraph {
 
         inline virtual void ensure_sizes(const shambase::DistributedData<u32> &sizes) {
             check_sizes(sizes);
+        }
+
+        void set_spans(DDPatchDataFieldSpanPointer<T> spans) { this->spans = spans; }
+
+        DDPatchDataFieldSpanPointer<T> extract() {
+            DDPatchDataFieldSpanPointer<T> spans = std::exchange(this->spans, {});
+            return spans;
         }
     };
 } // namespace shamrock::solvergraph

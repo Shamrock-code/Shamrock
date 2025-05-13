@@ -101,6 +101,8 @@ namespace shamrock::solvergraph {
                 [&](u64 id) {
                     field.field_data.erase(id);
                 });
+
+            sync();
         }
 
         inline virtual void free_alloc() { field.field_data = {}; }

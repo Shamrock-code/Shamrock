@@ -49,12 +49,6 @@ jobs:
           python3 -m venv .pyvenv
           source .pyvenv/bin/activate
 
-      - name: pip install packages (Jupyter book)
-        shell: bash
-        run: |
-          source .pyvenv/bin/activate
-          pip install -U jupyter-book sphinx_proof matplotlib numpy
-
       - name: pip install packages (mkdocs)
         shell: bash
         run: |

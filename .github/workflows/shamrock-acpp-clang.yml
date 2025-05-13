@@ -139,25 +139,25 @@ jobs:
         if: matrix.runtest
         run: |
           cd build
-          ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 2
         if: matrix.runtest
         run: |
           cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 3
         if: matrix.runtest
         run: |
           cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 4
         if: matrix.runtest
         run: |
           cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --color --sycl-ls-map  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: Try starting Shamrock (installed version)
         shell: bash # In docker container github action default to sh

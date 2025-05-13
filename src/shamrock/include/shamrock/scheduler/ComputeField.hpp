@@ -102,6 +102,18 @@ namespace shamrock {
             return ret;
         }
 
+        inline T compute_rank_dot_sum() {
+            StackEntry stack_loc{};
+            T ret = shambase::VectorProperties<T>::get_zero();
+            field_data.for_each([&](u64 id, PatchDataField<T> &cfield) {
+                if (!cfield.is_empty()) {
+                    ret += cfield.compute_dot_sum();
+                }
+            });
+
+            return ret;
+        }
+
         inline u32 get_nvar() {
 
             std::optional<u32> nvar = std::nullopt;

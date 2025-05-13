@@ -64,7 +64,12 @@ namespace shamcomm {
         return mpi_rocm_aware;
     }
 
+    std::optional<StateMPI_Aware> _forced_state;
+
     void fetch_mpi_capabilities(std::optional<StateMPI_Aware> forced_state) {
+
+        _forced_state = forced_state;
+
         logs::debug_ln("Comm", "fetching mpi capabilities...");
 #ifdef FOUND_MPI_EXT
         logs::debug_mpi_ln("Comm", "FOUND_MPI_EXT is defined");
@@ -104,35 +109,32 @@ namespace shamcomm {
         fetched = true;
     }
 
+    std::optional<StateMPI_Aware> should_force_dgpu_state() { return _forced_state; }
+
     void print_mpi_capabilities() {
         using namespace shambase::term_colors;
 
-        switch (mpi_cuda_aware) {
-        case Yes: logs::print_ln(" - MPI CUDA-AWARE :", col8b_green() + "Yes" + reset()); break;
-        case No: logs::print_ln(" - MPI CUDA-AWARE :", col8b_red() + "No" + reset()); break;
-        case Unknown:
-            logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Unknown" + reset());
-            break;
-        case ForcedYes:
-            logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Forced Yes" + reset());
-            break;
-        case ForcedNo:
-            logs::print_ln(" - MPI CUDA-AWARE :", col8b_yellow() + "Forced No" + reset());
-            break;
-        }
+        auto print_state = [](std::string log, StateMPI_Aware state) {
+            switch (mpi_cuda_aware) {
+            case Yes: logs::print_ln(" - " + log + " :", col8b_green() + "Yes" + reset()); break;
+            case No: logs::print_ln(" - " + log + " :", col8b_red() + "No" + reset()); break;
+            case Unknown:
+                logs::print_ln(" - " + log + " :", col8b_yellow() + "Unknown" + reset());
+                break;
+            case ForcedYes:
+                logs::print_ln(" - " + log + " :", col8b_yellow() + "Forced Yes" + reset());
+                break;
+            case ForcedNo:
+                logs::print_ln(" - " + log + " :", col8b_yellow() + "Forced No" + reset());
+                break;
+            }
+        };
 
-        switch (mpi_rocm_aware) {
-        case Yes: logs::print_ln(" - MPI ROCM-AWARE :", col8b_green() + "Yes" + reset()); break;
-        case No: logs::print_ln(" - MPI ROCM-AWARE :", col8b_red() + "No" + reset()); break;
-        case Unknown:
-            logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Unknown" + reset());
-            break;
-        case ForcedYes:
-            logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Forced Yes" + reset());
-            break;
-        case ForcedNo:
-            logs::print_ln(" - MPI ROCM-AWARE :", col8b_yellow() + "Forced No" + reset());
-            break;
+        print_state("MPI CUDA-AWARE", mpi_cuda_aware);
+        print_state("MPI ROCM-AWARE", mpi_rocm_aware);
+
+        if (_forced_state) {
+            print_state("MPI Forced DGPU", *_forced_state);
         }
     }
 

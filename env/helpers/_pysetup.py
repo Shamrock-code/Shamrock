@@ -101,7 +101,7 @@ class ShamEnvBuild(build_ext):
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
     name="shamrock",
-    version="2025.03.1",
+    version="2025.05.0",
     author="Timothée David--Cléris",
     author_email="tim.shamrock@proton.me",
     description="SHAMROCK Code for astrophysics",

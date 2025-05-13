@@ -91,11 +91,13 @@ namespace shambindings {
         runtime_set_pypath = shambase::popen_fetch_output(cmd.c_str());
     }
 
-    void modify_py_sys_path() {
+    void modify_py_sys_path(bool do_print) {
 
-        shambase::println(
-            "Shamrock configured with Python path : \n    "
-            + std::string(configure_time_py_executable()));
+        if (do_print) {
+            shambase::println(
+                "Shamrock configured with Python path : \n    "
+                + std::string(configure_time_py_executable()));
+        }
 
         std::string check_py
             = std::string("current_path = \"") + configure_time_py_executable() + "\"\n";
@@ -110,7 +112,7 @@ namespace shambindings {
     void start_ipython(bool do_print) {
 
         py::scoped_interpreter guard{};
-        modify_py_sys_path();
+        modify_py_sys_path(do_print);
 
         if (do_print) {
             shambase::println("--------------------------------------------");
@@ -127,7 +129,7 @@ namespace shambindings {
 
     void run_py_file(std::string file_path, bool do_print) {
         py::scoped_interpreter guard{};
-        modify_py_sys_path();
+        modify_py_sys_path(do_print);
 
         if (do_print) {
             shambase::println("-----------------------------------");

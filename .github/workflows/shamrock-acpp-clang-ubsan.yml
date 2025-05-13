@@ -26,7 +26,7 @@ jobs:
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
     #if: false
 
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
@@ -91,19 +91,19 @@ jobs:
       - name: run Shamrock Unittests world_size = 1
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" ./shamrock_test --smi-full  --sycl-cfg 0:0 --unittest --loglevel 0
 
       - name: run Shamrock Unittests world_size = 2
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --smi-full  --sycl-cfg 0:0 --unittest --loglevel 0
 
       - name: run Shamrock Unittests world_size = 3
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --smi-full  --sycl-cfg 0:0 --unittest --loglevel 0
 
       - name: run Shamrock Unittests world_size = 4
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --sycl-ls-map  --sycl-cfg 0:0 --unittest --loglevel 0 --benchmark-mpi
+          ACPP_VISIBILITY_MASK=omp UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1" mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --smi-full  --sycl-cfg 0:0 --unittest --loglevel 0

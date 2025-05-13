@@ -34,10 +34,11 @@ PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }
 int main(int argc, char *argv[]) {
 
     opts::register_opt("--sycl-cfg", "(idcomp:idalt) ", "specify the compute & alt queue index");
-    opts::register_opt("--sycl-ls", {}, "list available devices");
-    opts::register_opt("--sycl-ls-map", {}, "list available devices & list of queue bindings");
+
     opts::register_opt(
         "--smi", {}, "print information about all available SYCL devices in the cluster");
+    opts::register_opt(
+        "--smi-full", {}, "print information about EVERY available SYCL devices in the cluster");
 
     opts::register_opt("--loglevel", "(logvalue)", "specify a log level");
     opts::register_opt("--benchmark-mpi", {}, "micro benchmark for MPI");
@@ -94,18 +95,22 @@ int main(int argc, char *argv[]) {
 
         if (i8(a) != a) {
             logger::err_ln("Cmd OPT", "you must select a loglevel in a 8bit integer range");
+            shambase::throw_with_loc<std::invalid_argument>(
+                "you must select a loglevel in a 8bit integer range");
+        } else {
+            logger::set_loglevel(i8(a));
         }
-
-        logger::set_loglevel(a);
     }
 
     if (opts::has_option("--sycl-cfg")) {
         shamsys::instance::init(argc, argv);
     } else {
-        logger::warn_ln(
-            "Init", "No kernel can be run without a sycl configuration (--sycl-cfg x:x)");
         using namespace shamsys::instance;
         start_mpi(MPIInitInfo{opts::get_argc(), opts::get_argv()});
+        if (shamcomm::world_rank() == 0) {
+            logger::warn_ln(
+                "Init", "No kernel can be run without a sycl configuration (--sycl-cfg x:x)");
+        }
     }
 
     if (shamcomm::world_rank() == 0) {
@@ -129,16 +134,6 @@ int main(int argc, char *argv[]) {
         shamcomm::validate_comm(sptr);
     }
 
-    if (opts::has_option("--benchmark-mpi")) {
-        if (shamsys::instance::is_initialized()) {
-            shamsys::run_micro_benchmark();
-        } else {
-            logger::warn_ln(
-                "Init",
-                "--benchmark-mpi can't be run without a sycl configuration (--sycl-cfg x:x)");
-        }
-    }
-
     if (shamcomm::world_rank() == 0) {
         logger::print_faint_row();
         logger::raw_ln("log status : ");
@@ -150,32 +145,26 @@ int main(int argc, char *argv[]) {
         logger::print_active_level();
     }
 
-    if (opts::has_option("--sycl-ls")) {
+    bool is_smi      = opts::has_option("--smi");
+    bool is_smi_full = opts::has_option("--smi-full");
 
+    if (is_smi || is_smi_full) {
         if (shamcomm::world_rank() == 0) {
             logger::print_faint_row();
         }
-        shamsys::instance::print_device_list();
+        shamsys::shamrock_smi(is_smi_full);
     }
 
-    if (opts::has_option("--sycl-ls-map")) {
-
+    if (opts::has_option("--benchmark-mpi")) {
         if (shamcomm::world_rank() == 0) {
             logger::print_faint_row();
         }
-        shamsys::instance::print_device_list();
         if (shamsys::instance::is_initialized()) {
-            shamsys::instance::print_queue_map();
-        }
-    }
-
-    if (opts::has_option("--smi")) {
-        if (shamcomm::world_rank() == 0) {
-            logger::print_faint_row();
-        }
-        shamsys::shamrock_smi();
-        if (shamsys::instance::is_initialized()) {
-            shamsys::instance::print_queue_map();
+            shamsys::run_micro_benchmark();
+        } else {
+            logger::warn_ln(
+                "Init",
+                "--benchmark-mpi can't be run without a sycl configuration (--sycl-cfg x:x)");
         }
     }
 
@@ -230,8 +219,14 @@ int main(int argc, char *argv[]) {
         }
 
         return shamtest::run_all_tests(argc, argv, cfg);
+
     } else {
-        logger::warn_ln("Init", "No sycl configuration (--sycl-cfg x:x) has been set, early exit");
+
+        if (shamcomm::world_rank() == 0) {
+            logger::warn_ln(
+                "Init", "No sycl configuration (--sycl-cfg x:x) has been set, early exit");
+        }
+        shamsys::instance::close_mpi();
         return 0;
     }
 }

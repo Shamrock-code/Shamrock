@@ -15,6 +15,7 @@ set(Sources
         src/details/generic_opts.cpp
         src/cmdopt.cpp
         src/env.cpp
+        src/ci_env.cpp
         src/term_colors.cpp
         src/tty.cpp
     )

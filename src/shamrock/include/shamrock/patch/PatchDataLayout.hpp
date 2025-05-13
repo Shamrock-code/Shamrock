@@ -223,6 +223,8 @@ namespace shamrock::patch {
                 add_field<u32_3>(fname, nvar);
             } else if (type == "u64_3") {
                 add_field<u64_3>(fname, nvar);
+            } else if (type == "i64_3") {
+                add_field<i64_3>(fname, nvar);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>(
                     "the select type is not recognized");

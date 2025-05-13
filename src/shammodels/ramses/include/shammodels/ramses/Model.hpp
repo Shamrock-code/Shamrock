@@ -21,6 +21,8 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
+#include "shamrock/io/ShamrockDump.hpp"
+#include "shamrock/patch/PatchData.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
@@ -114,6 +116,52 @@ namespace shammodels::basegodunov {
 
         inline bool evolve_until(Tscal target_time, i32 niter_max) {
             return solver.evolve_until(target_time, niter_max);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        /////// I/O
+        ////////////////////////////////////////////////////////////////////////////////////////////
+
+        inline void dump(std::string fname) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("Godunov", "Dumping state to", fname);
+            }
+
+            nlohmann::json metadata;
+            metadata["solver_config"] = solver.solver_config;
+
+            shamrock::write_shamrock_dump(
+                fname, metadata.dump(4), shambase::get_check_ref(ctx.sched));
+        }
+
+        /**
+         * @brief Load the state of the Godunov model from a dump file.
+         *
+         * @param fname The name of the dump file.
+         */
+        inline void load_from_dump(std::string fname) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("Godunov", "Loading state from dump", fname);
+            }
+
+            // Load the context state and recover user metadata
+            std::string metadata_user{};
+            shamrock::load_shamrock_dump(fname, metadata_user, ctx);
+
+            nlohmann::json j = nlohmann::json::parse(metadata_user);
+            j.at("solver_config").get_to(solver.solver_config);
+
+            // modules::GhostZones gz(ctx, solver.solver_config, storage);
+            // gz.build_ghost_cache();
+
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            logger::debug_ln("Sys", "build local scheduler tables");
+            sched.owned_patch_id = sched.patch_list.build_local();
+            sched.patch_list.build_local_idx_map();
+            sched.patch_list.build_global_idx_map();
+            sched.update_local_load_value([&](shamrock::patch::Patch p) {
+                return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+            });
         }
     };
 

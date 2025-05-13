@@ -126,3 +126,9 @@ repos:
       entry: python buildbot/check_sycl_include.py
       language: python
       pass_filenames: false
+
+    - id: check_no_ssh_in_submodules
+      name: "No ssh in git submodules remote"
+      entry: python buildbot/check_no_ssh_in_submodules.py
+      language: python
+      pass_filenames: false

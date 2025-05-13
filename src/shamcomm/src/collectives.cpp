@@ -14,51 +14,107 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include <unordered_map>
+#include <vector>
+
+namespace {
+
+    /**
+     * @brief Gather a vector of characters from all MPI ranks into a single string at root rank
+     *
+     * @param send_vec The string to send from each rank
+     * @param recv_vec The resulting string at root rank
+     *
+     * @details This function is only available if `MPI_COMM_WORLD` is defined.
+     * If `MPI_COMM_WORLD` is not defined, the function will not be available.
+     *
+     * @warning This function is not thread-safe.
+     */
+    template<class Tchar>
+    inline void _internal_gather_str(
+        const std::basic_string<Tchar> &send_vec, std::basic_string<Tchar> &recv_vec) {
+        StackEntry stack_loc{};
+
+        if (shamcomm::world_size() == 1) {
+            recv_vec = send_vec;
+            return;
+        }
+
+        u32 wsize = shamcomm::world_size();
+
+        std::vector<int> counts(wsize);
+        std::vector<int> disps(wsize);
+
+        u32 local_count = send_vec.size();
+
+        MPICHECK(MPI_Gather(&local_count, 1, MPI_INT, &counts[0], 1, MPI_INT, 0, MPI_COMM_WORLD));
+
+        for (int i = 0; i < wsize; i++) {
+            disps[i] = (i > 0) ? (disps[i - 1] + counts[i - 1]) : 0;
+        }
+
+        std::string result = "";
+
+        if (shamcomm::world_rank() == 0) {
+            u32 global_len = disps[wsize - 1] + counts[wsize - 1];
+            result.resize(global_len);
+        }
+
+        MPICHECK(MPI_Gatherv(
+            send_vec.data(),
+            send_vec.size(),
+            MPI_CHAR,
+            result.data(),
+            counts.data(),
+            disps.data(),
+            MPI_CHAR,
+            0,
+            MPI_COMM_WORLD));
+
+        recv_vec = result;
+    }
+
+} // namespace
 
 void shamcomm::gather_str(const std::string &send_vec, std::string &recv_vec) {
     StackEntry stack_loc{};
+    _internal_gather_str(send_vec, recv_vec);
+}
 
-    u32 local_count = send_vec.size();
+void shamcomm::gather_basic_str(
+    const std::basic_string<byte> &send_vec, std::basic_string<byte> &recv_vec) {
+    StackEntry stack_loc{};
+    _internal_gather_str(send_vec, recv_vec);
+}
 
-    // querry global size and resize the receiving vector
-    u32 global_len;
-    MPICHECK(MPI_Allreduce(&local_count, &global_len, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD));
-    recv_vec.resize(global_len);
-
-    int *table_data_count = new int[shamcomm::world_size()];
-
-    MPICHECK(
-        MPI_Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, MPI_COMM_WORLD));
-
-    // printf("table_data_count =
-    // [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
-
-    int *node_displacments_data_table = new int[shamcomm::world_size()];
-
-    node_displacments_data_table[0] = 0;
-
-    for (u32 i = 1; i < shamcomm::world_size(); i++) {
-        node_displacments_data_table[i]
-            = node_displacments_data_table[i - 1] + table_data_count[i - 1];
+std::unordered_map<std::string, int>
+shamcomm::string_histogram(const std::vector<std::string> &inputs, std::string delimiter) {
+    std::string accum_loc = "";
+    for (auto &s : inputs) {
+        accum_loc += s + delimiter;
     }
 
-    // printf("node_displacments_data_table =
-    // [%d,%d,%d,%d]\n",node_displacments_data_table[0],node_displacments_data_table[1],node_displacments_data_table[2],node_displacments_data_table[3]);
+    std::string recv = "";
+    gather_str(accum_loc, recv);
 
-    MPICHECK(MPI_Allgatherv(
-        send_vec.data(),
-        send_vec.size(),
-        MPI_CHAR,
-        recv_vec.data(),
-        table_data_count,
-        node_displacments_data_table,
-        MPI_CHAR,
-        MPI_COMM_WORLD));
+    if (world_rank() == 0) {
 
-    delete[] table_data_count;
-    delete[] node_displacments_data_table;
+        std::vector<std::string> splitted = shambase::split_str(recv, delimiter);
+
+        std::unordered_map<std::string, int> histogram;
+
+        for (size_t i = 0; i < splitted.size(); i++) {
+            histogram[splitted[i]] += 1;
+        }
+
+        return histogram;
+    }
+
+    return {};
 }

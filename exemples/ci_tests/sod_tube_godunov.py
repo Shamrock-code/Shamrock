@@ -5,12 +5,8 @@ import numpy as np
 
 import shamrock
 
-ctx = shamrock.Context()
-ctx.pdata_layout_new()
-
-model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
-
-model.init_scheduler(int(1e7), 1)
+# %%
+# Setup params
 
 multx = 4
 multy = 1
@@ -18,13 +14,24 @@ multz = 1
 
 sz = 1 << 1
 base = 32
-model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
+gamma = 1.4
 
+
+# %%
+# Init model
+
+ctx = shamrock.Context()
+ctx.pdata_layout_new()
+
+model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
+
+
+# %%
+# Init config
 cfg = model.gen_default_config()
 scale_fact = 2 / (sz * base * multx)
 cfg.set_scale_factor(scale_fact)
 
-gamma = 1.4
 cfg.set_eos_gamma(gamma)
 # cfg.set_riemann_solver_rusanov()
 cfg.set_riemann_solver_hll()
@@ -35,7 +42,14 @@ cfg.set_riemann_solver_hll()
 # cfg.set_slope_lim_vanleer_sym()
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
-model.set_config(cfg)
+model.set_solver_config(cfg)
+
+
+# %%
+# Init scheduler and grid
+
+model.init_scheduler(int(1e7), 1)
+model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
 
 # without face time interpolation

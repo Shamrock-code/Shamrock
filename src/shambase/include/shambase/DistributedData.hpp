@@ -17,6 +17,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/sets.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shamcomm/logs.hpp"
@@ -78,12 +79,21 @@ namespace shambase {
          */
         inline void erase(u64 id) { data.erase(id); }
 
+        /**
+         * @brief Applies a function to each object in the collection.
+         *
+         * @param f A function taking two arguments: the id of the patch the object belongs to,
+         * and a non-const reference to the object itself.
+         *
+         * @remark The function is applied to each object in the order of insertion.
+         */
         inline void for_each(std::function<void(u64, T &)> &&f) {
             for (auto &[id, obj] : data) {
                 f(id, obj);
             }
         }
 
+        /// Same as for_each but for const objects
         inline void for_each(std::function<void(u64, const T &)> &&f) const {
             for (auto &[id, obj] : data) {
                 f(id, obj);
@@ -123,6 +133,23 @@ namespace shambase {
                 std::vector<u64> id_list;
 
                 for_each([&](u64 id, T &) {
+                    id_list.push_back(id);
+                });
+
+                throw make_except_with_loc<std::runtime_error>(format(
+                    "The querried id {} does not exist, current id list is {}", id, id_list));
+            }
+        }
+
+        /// Const variant of get
+        inline const T &get(u64 id) const {
+            try {
+                return data.at(id);
+            } catch (std::out_of_range &) {
+
+                std::vector<u64> id_list;
+
+                for_each([&](u64 id, const T &) {
                     id_list.push_back(id);
                 });
 
@@ -213,11 +240,12 @@ namespace shambase {
             return ret;
         }
 
+        /// Same as map but for const objects
         template<class Tmap>
         inline DistributedData<Tmap> map(std::function<Tmap(u64, const T &)> map_func) const {
             DistributedData<Tmap> ret;
 
-            for_each([&](u64 id, T &ref) {
+            for_each([&](u64 id, const T &ref) {
                 ret.add_obj(id, map_func(id, ref));
             });
 
@@ -296,4 +324,59 @@ namespace shambase {
 
         inline bool is_empty() { return data.empty(); }
     };
+
+    /**
+     * @brief Compare two distributed data and apply callbacks based on the difference
+     *
+     * This function compares the two given distributed data and applies callbacks
+     * based on the difference.
+     *
+     * The callbacks are:
+     *   - `func_missing`: called for each id present in the reference but not in `dd`
+     *   - `func_match`: called for each id present in both `dd` and the reference
+     *   - `func_extra`: called for each id present in `dd` but not in the reference
+     *
+     * @param dd the distributed data to compare
+     * @param reference the reference distributed data
+     * @param func_missing the callback for missing ids
+     * @param func_match the callback for matching ids
+     * @param func_extra the callback for extra ids
+     */
+    template<class T1, class T2, class FuncMatch, class FuncMissing, class FuncExtra>
+    inline void on_distributeddata_diff(
+        const shambase::DistributedData<T1> &dd,
+        const shambase::DistributedData<T2> &reference,
+        FuncMatch &&func_missing,
+        FuncMissing &&func_match,
+        FuncExtra &&func_extra) {
+
+        std::vector<u64> dd_ids;
+        std::vector<u64> ref_ids;
+
+        dd.for_each([&](u32 id, const T1 &data) {
+            dd_ids.push_back(id);
+        });
+
+        reference.for_each([&](u32 id, const T2 &data) {
+            ref_ids.push_back(id);
+        });
+
+        std::vector<u64> missing;
+        std::vector<u64> matching;
+        std::vector<u64> extra;
+
+        shambase::set_diff(dd_ids, ref_ids, missing, matching, extra);
+
+        for (auto id : missing) {
+            func_missing(id);
+        }
+
+        for (auto id : matching) {
+            func_match(id);
+        }
+
+        for (auto id : extra) {
+            func_extra(id);
+        }
+    }
 } // namespace shambase

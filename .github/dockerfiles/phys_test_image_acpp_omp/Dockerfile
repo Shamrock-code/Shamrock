@@ -16,6 +16,8 @@ RUN ls -la
 
 RUN ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp && \
     cd build && \
+    sed -i "s/-DBUILD_TEST=Yes /-DBUILD_TEST=Yes -DCXX_FLAG_ARCH_NATIVE=off /" activate && \
+    cat activate && \
     pip3 install -v --break-system-packages .
 
 WORKDIR /work

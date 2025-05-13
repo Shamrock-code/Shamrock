@@ -138,19 +138,19 @@ class Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pr
     void comm_trees() { tree_recv_map = communicator->sparse_exchange(tree_send_map.list_rtree); }
 
     [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
-    SparseCommResult<shamrock::patch::PatchData> comm_pdat(PatchScheduler &sched) {
+    SparseCommResult<shamrock::patch::PatchDataLayer> comm_pdat(PatchScheduler &sched) {
 
         using namespace shamrock::patch;
 
-        SparseCommSource<PatchData> src;
+        SparseCommSource<PatchDataLayer> src;
 
         for (u32 i = 0; i < interf_send_map.size(); i++) {
             auto &comm             = interf_send_map[i];
             UnrolledCutTree &ctree = tree_send_map;
 
-            PatchData &pdat_to_cut = sched.patch_data.get_pdat(comm.sender_patch_id);
+            PatchDataLayer &pdat_to_cut = sched.patch_data.get_pdat(comm.sender_patch_id);
 
-            src.push_back(std::make_unique<PatchData>(sched.pdl));
+            src.push_back(std::make_unique<PatchDataLayer>(sched.pdl));
 
             pdat_to_cut.append_subset_to(
                 *ctree.list_pdat_extract_id[i],

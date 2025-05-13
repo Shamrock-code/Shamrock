@@ -139,7 +139,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
     auto has_pdat = [&]() {
         using namespace shamrock::patch;
         bool ret = false;
-        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -178,8 +178,8 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
             bmax.push_back(M);
         }
 
-        // Make a patchdata from pos_data
-        shamrock::patch::PatchData tmp(sched.pdl);
+        // Make a PatchDataLayer from pos_data
+        shamrock::patch::PatchDataLayer tmp(sched.pdl);
         if (!tmp_out.empty()) {
             tmp.resize(tmp_out.size());
             tmp.fields_raz();
@@ -195,7 +195,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
     u32 nmax = scheduler().crit_patch_split;
     while (!cell_gen_iter.is_done()) {
 
-        shamrock::patch::PatchData pdat = next_n_patch();
+        shamrock::patch::PatchDataLayer pdat = next_n_patch();
 
         inserter.push_patch_data<TgridVec>(pdat, "cell_min", sched.crit_patch_split * 8, [&]() {
             scheduler().update_local_load_value([&](shamrock::patch::Patch p) {

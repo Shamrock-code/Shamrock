@@ -9,7 +9,7 @@
 
 #include "shamalgs/random.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/SchedulerPatchData.hpp"
 #include "shamrock/scheduler/scheduler_patch_list.hpp"
@@ -66,10 +66,10 @@ TestStart(
     pdl.add_field<u32>("u32", 1);
     pdl.add_field<u64>("u64", 1);
 
-    std::vector<PatchData> ref_pdat;
+    std::vector<PatchDataLayer> ref_pdat;
 
     for (u32 i = 0; i < npatch; i++) {
-        ref_pdat.push_back(PatchData::mock_patchdata(
+        ref_pdat.push_back(PatchDataLayer::mock_patchdata(
             eng(), shamalgs::random::mock_value(eng, 1_u32, max_ob_ppatch), pdl));
     }
 

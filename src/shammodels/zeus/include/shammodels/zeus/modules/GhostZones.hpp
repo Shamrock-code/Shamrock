@@ -41,9 +41,9 @@ namespace shammodels::zeus::modules {
 
         void build_ghost_cache();
 
-        shambase::DistributedDataShared<shamrock::patch::PatchData> communicate_pdat(
+        shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> communicate_pdat(
             shamrock::patch::PatchDataLayout &pdl,
-            shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf);
+            shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf);
 
         template<class T>
         shambase::DistributedDataShared<PatchDataField<T>>
@@ -52,8 +52,8 @@ namespace shammodels::zeus::modules {
         template<class T, class Tmerged>
         shambase::DistributedData<Tmerged> merge_native(
             shambase::DistributedDataShared<T> &&interfs,
-            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)>
-                init,
+            std::function<
+                Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> init,
             std::function<void(Tmerged &, T &)> appender);
 
         void exchange_ghost();

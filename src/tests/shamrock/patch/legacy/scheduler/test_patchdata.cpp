@@ -45,11 +45,11 @@ TestStart(Unittest, "patchdata::", send_recv_patchdata, 2) {
 
     pdl.add_field<f64_8>("test", 2);
 
-    PatchData d1_check = patchdata_gen_dummy_data(pdl, eng);
-    PatchData d2_check = patchdata_gen_dummy_data(pdl, eng);
+    PatchDataLayer d1_check = patchdata_gen_dummy_data(pdl, eng);
+    PatchDataLayer d2_check = patchdata_gen_dummy_data(pdl, eng);
 
     std::vector<PatchDataMpiRequest> rq_lst;
-    PatchData recv_d(pdl);
+    PatchDataLayer recv_d(pdl);
 
     if (shamcomm::world_rank() == 0) {
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);

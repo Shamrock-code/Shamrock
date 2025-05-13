@@ -3,6 +3,8 @@
 
 module use /soft/modulefiles
 module load cmake
+module load python
+module load ninja
 
 function shamconfigure {
     cmake \

@@ -24,7 +24,7 @@ jobs:
           push: false
           outputs: type=docker,dest=/tmp/ci-phys-test-image.tar
           build-args: |
-            CLANGVERSION=value
+            CLANGVERSION=18
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

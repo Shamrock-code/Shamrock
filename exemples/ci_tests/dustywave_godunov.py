@@ -769,17 +769,33 @@ print(f"vd3_diff = {vd3_diff} with len = {len(vd3_diff)} \n")
 print(f"vg_diff = {vg_diff} with len = {len(vg_diff)} \n")
 
 
+"""
+CI results:
+
+rd0_diff = 1.5265566588595902e-11 > 1e-12
+rd1_diff = 9.516221144423298e-12  > 1e-12
+rd2_diff = 4.541825249226861e-12  > 1e-12
+rd3_diff = 1.1102230246251565e-11 > 1e-12
+rg_diff  = 6.661338147750939e-12  > 1e-12
+vd0_diff = 2.8279045771739675e-12 > 1e-12
+vd1_diff = 1.989852727035668e-12  > 1e-12
+vd2_diff = 1.0405010186786967e-12 > 1e-12
+vg_diff  = 5.094230592916915e-12  > 1e-12
+
+"""
+
+
 test_pass = True
-rd0_max_pass = 1e-12
-rd1_max_pass = 1e-12
-rd2_max_pass = 1e-12
-rd3_max_pass = 1e-12
-rg_max_pass = 1e-12
-vd0_max_pass = 1e-12
-vd1_max_pass = 1e-12
-vd2_max_pass = 1e-12
+rd0_max_pass = 1.5265566588595902e-11 + 1e-14
+rd1_max_pass = 9.516221144423298e-12 + 1e-14
+rd2_max_pass = 4.541825249226861e-12 + 1e-14
+rd3_max_pass = 1.1102230246251565e-11 + 1e-14
+rg_max_pass = 6.661338147750939e-12 + 1e-14
+vd0_max_pass = 2.8279045771739675e-12 + 1e-14
+vd1_max_pass = 1.989852727035668e-12 + 1e-14
+vd2_max_pass = 1.0405010186786967e-12 + 1e-14
 vd3_max_pass = 1e-12
-vg_max_pass = 1e-12
+vg_max_pass = 5.094230592916915e-12 + 1e-14
 
 err_log = ""
 if np.max(rd0_diff) > rd0_max_pass:

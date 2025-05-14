@@ -55,6 +55,10 @@ jobs:
             testfile: sod_tube_zeus.py
           - worldsize: 1
             testfile: reload_old_dump.py
+          - worldsize: 1
+            testfile: dustybox_godunov.py
+          - worldsize: 1
+            testfile: dustywave_godunov.py
 
 
     timeout-minutes: 60

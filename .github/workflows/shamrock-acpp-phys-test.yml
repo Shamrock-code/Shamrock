@@ -139,6 +139,18 @@ jobs:
             worldsize: 1
             testfile: reload_old_dump.py
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+          - clang: 15
+            backend: omp
+            arch: none
+            worldsize: 1
+            testfile: dustybox_godunov.py
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+          - clang: 15
+            backend: omp
+            arch: none
+            worldsize: 1
+            testfile: dustywave_godunov.py
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
 
 
     timeout-minutes: 60

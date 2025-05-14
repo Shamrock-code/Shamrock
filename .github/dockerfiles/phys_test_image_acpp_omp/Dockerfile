@@ -1,5 +1,7 @@
 FROM --platform=amd64 ghcr.io/shamrock-code/shamrock-ci:ubuntu20
 
+ARG CLANGVERSION=18
+
 RUN wget https://apt.llvm.org/llvm.sh && \
     chmod +x llvm.sh && \
     sudo ./llvm.sh ${CLANGVERSION} && \

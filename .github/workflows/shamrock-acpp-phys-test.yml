@@ -77,6 +77,7 @@ jobs:
         with:
           image: ci-phys-test-image
           run: |
+            git clone https://github.com/Shamrock-code/reference-files.git
             mpirun -report-bindings --allow-run-as-root --bind-to socket:overload-allowed \
                 --oversubscribe \
                 -n ${{matrix.worldsize}} \

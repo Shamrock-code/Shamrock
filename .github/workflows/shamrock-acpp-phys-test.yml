@@ -76,7 +76,7 @@ jobs:
             mpirun -report-bindings --allow-run-as-root --bind-to socket:overload-allowed \
                 --oversubscribe \
                 -n ${{matrix.worldsize}} \
-                ./shamrock \
+                shamrock \
                 --sycl-cfg 0:0 \
                 --loglevel 1 \
                 --rscript /opt/Shamrock_src/exemples/ci_tests/${{ matrix.testfile }}

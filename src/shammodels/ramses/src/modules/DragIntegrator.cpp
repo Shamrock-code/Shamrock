@@ -401,7 +401,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
             const size_t group_size       = 32;
             const size_t mat_size         = ndust + 1;
             const size_t mat_size_squared = mat_size * mat_size;
-            const size_t loc_acc_size     = mat_size_squared * shambase::default_gsize_2d;
+            const size_t loc_acc_size     = mat_size_squared * group_size;
             sycl::local_accessor<f64> local_A(loc_acc_size, cgh);
             sycl::local_accessor<f64> local_B(loc_acc_size, cgh);
             sycl::local_accessor<f64> local_F(loc_acc_size, cgh);

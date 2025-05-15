@@ -291,7 +291,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                       - friction_control * dissipation;
                 acc_rhov_old[id_a] = tmp_vel * acc_rho_old[id_a];
                 acc_rhoe_old[id_a] = Eg;
-                // acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
+                acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
                 for (u32 i = 0; i < ndust; i++) {
                     const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
                     const f32 dt_alphas     = dt * acc_alphas[i];
@@ -299,7 +299,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                         = inv_dt_alphas
                           * (acc_rhov_d_new_patch[id_a * ndust + i]
                              + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
-                    // acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];
+                    acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];
                 }
             });
         });

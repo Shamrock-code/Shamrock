@@ -19,6 +19,11 @@ nav:
 
   - 'User Documentation' :
     - 'QuickStart' : 'usermanual/quickstart.md'
+    - 'Install' :
+      - 'Install (From source)' : 'usermanual/quickstart/install_from_source.md'
+      - 'Install (Spack)' : 'usermanual/quickstart/install_spack.md'
+      - 'Install (Homebrew)' : 'usermanual/quickstart/install_brew.md'
+      - 'Install (Docker)' : 'usermanual/quickstart/install_docker.md'
     - 'Environments' : 'usermanual/envs.md'
     - 'Usage' : 'usermanual/usage.md'
     - 'Shamrock as python lib' : 'usermanual/python_lib.md'

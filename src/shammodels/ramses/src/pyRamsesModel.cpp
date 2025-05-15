@@ -211,8 +211,13 @@ namespace shammodels::basegodunov {
                     return TConfig();
                 })
             .def(
-                "set_config",
+                "set_solver_config",
                 [](T &self, TConfig cfg) {
+                    if (self.ctx.is_scheduler_initialized()) {
+                        shambase::throw_with_loc<std::runtime_error>(
+                            "Cannot change solver config after scheduler is initialized");
+                    }
+                    cfg.check_config();
                     self.solver.solver_config = cfg;
                 })
             .def(

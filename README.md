@@ -6,44 +6,25 @@
 
 Shamrock is a general purpose HPC hydrodynamics simulation code focused on astrophysical contexts.
 The whole code is **C++17** by default, and all accelerated parts are done using **SYCL**,
-which can be directly compiled directly to native **CUDA**, **ROCM**, **OpenMP** and much more.
+which can be directly compiled directly to native **CUDA**, **ROCM**, **OpenMP**, **OpenCL** and much more.
 Shamrock also supports multiple GPUs and Heterogeneous clusters using **MPI**.
-This code aims to be:
-- Modern
-- Modular
-- Fast
-- Portable
 
-## Getting in touch
+This code aims to be **Modern**, **Modular**, **Fast**, **Portable**.
 
-Join us on [Discord](https://discord.gg/Q69s5buyr5), or [Slack](https://shamrock-code.slack.com)! Alternatively, open a discussion or issue in this repository.
+## Packaging
 
-## Contributing
+[![Packaging status](https://repology.org/badge/vertical-allrepos/shamrock.svg)](https://repology.org/project/shamrock/versions)
 
-Shamrock accept contributions through github pull request :
-1. Code contributions via [Pull request](https://github.com/Shamrock-code/Shamrock/compare)
-2. Documentation contributions via [Pull request](https://github.com/Shamrock-code/Shamrock/compare)
-3. Issue report & feature requests via [Github issues](https://github.com/Shamrock-code/Shamrock/issues/new/choose)
+### Third-party :
 
-If you want to contribute please fork the code and submit your pull requests from your fork.
+- Shamrock brew tap : `brew install -v tdavidcl/shamrock/shamrock`
+- Shamrock docker : `docker run -it --platform=linux/amd64 ghcr.io/shamrock-code/shamrock:latest-oneapi`
 
 ## Citing the code
 
 [![bibtex](https://img.shields.io/badge/bibtex-file-green.svg)](./CITATION.bib)
-[![Nasa ads](https://img.shields.io/badge/nasa_ADS-2503.09713-blue.svg)](https://ui.adsabs.harvard.edu/abs/arXiv:2503.09713)
+[![Nasa ads](https://img.shields.io/badge/nasa_ADS-2025MNRAS.539....1D-blue.svg)](https://ui.adsabs.harvard.edu/abs/2025MNRAS.539....1D)
 [![arXiv](https://img.shields.io/badge/arXiv-2503.09713-b31b1b.svg)](https://arxiv.org/abs/2503.09713)
-
-## Compiler support
-
-Compiler config | Support
----|---
-DPC++ CUDA | ![badge2](https://badgen.net/static/DPC++%2FCUDA/yes/green)
-DPC++ ROCM | ![badge2](https://badgen.net/static/DPC++%2FHIP:ROCM/yes/green)
-AdaptiveCPP OpenMP | ![badge2](https://badgen.net/static/ACPP%2FOpenMP/yes/green)
-AdaptiveCPP ROCM | ![badge2](https://badgen.net/static/ACPP%2FROCM/yes/green)
-AdaptiveCPP CUDA | ![badge2](https://badgen.net/static/ACPP%2FCUDA/yes/green)
-AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)
-
 
 # Documentation
 
@@ -58,6 +39,30 @@ Note that a convenient way to pull the Shamrock repo is the following command to
 ```bash
 git clone --recurse-submodules https://github.com/Shamrock-code/Shamrock.git
 ```
+
+## Getting in touch
+
+Join us on [Discord](https://discord.gg/Q69s5buyr5), or [Slack](https://shamrock-code.slack.com)! Alternatively, open a discussion or issue in this repository.
+
+## Contributing
+
+Shamrock accept contributions through github pull request :
+1. Code contributions via [Pull request](https://github.com/Shamrock-code/Shamrock/compare)
+2. Documentation contributions via [Pull request](https://github.com/Shamrock-code/Shamrock/compare)
+3. Issue report & feature requests via [Github issues](https://github.com/Shamrock-code/Shamrock/issues/new/choose)
+
+If you want to contribute please fork the code and submit your pull requests from your fork.
+
+## Compiler support
+
+Compiler config | Support
+---|---
+DPC++ CUDA | ![badge2](https://badgen.net/static/DPC++%2FCUDA/yes/green)
+DPC++ ROCM | ![badge2](https://badgen.net/static/DPC++%2FHIP:ROCM/yes/green)
+AdaptiveCPP OpenMP | ![badge2](https://badgen.net/static/ACPP%2FOpenMP/yes/green)
+AdaptiveCPP ROCM | ![badge2](https://badgen.net/static/ACPP%2FROCM/yes/green)
+AdaptiveCPP CUDA | ![badge2](https://badgen.net/static/ACPP%2FCUDA/yes/green)
+AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)
 
 # Licensing
 

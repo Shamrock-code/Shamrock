@@ -17,6 +17,7 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
@@ -185,7 +186,18 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
-}; // struct SolverConfig
+
+    inline void check_config() {
+        if (grid_coord_to_pos_fact <= 0) {
+            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                "grid_coord_to_pos_fact must be > 0, got {}", grid_coord_to_pos_fact));
+        }
+
+        if (is_dust_on()) {
+            logger::warn_ln("Ramses::SolverConfig", "Dust is experimental");
+        }
+    }
+};
 
 namespace shammodels::basegodunov {
 

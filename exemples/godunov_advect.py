@@ -7,6 +7,13 @@ import shamrock
 
 tmax = 1.0
 
+multx = 1
+multy = 1
+multz = 1
+
+sz = 1 << 1
+base = 32
+
 
 def run_sim(vanleer=True, label="none"):
     ctx = shamrock.Context()
@@ -14,21 +21,14 @@ def run_sim(vanleer=True, label="none"):
 
     model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
-    model.init_scheduler(int(1e7), 1)
-
-    multx = 1
-    multy = 1
-    multz = 1
-
-    sz = 1 << 1
-    base = 32
-    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
-
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
     cfg.set_scale_factor(scale_fact)
     cfg.set_eos_gamma(1.0)
-    model.set_config(cfg)
+    model.set_solver_config(cfg)
+
+    model.init_scheduler(int(1e7), 1)
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     kx, ky, kz = 2 * np.pi, 0, 0
     delta_rho = 0

@@ -10,7 +10,6 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
-model.init_scheduler(int(1e7), 1)
 
 multx = 4
 multy = 1
@@ -18,9 +17,6 @@ multz = 1
 
 cell_size = 1 << 2  # refinement is limited to cell_size = 2
 base = 16
-model.make_base_grid(
-    (0, 0, 0), (cell_size, cell_size, cell_size), (base * multx, base * multy, base * multz)
-)
 
 cfg = model.gen_default_config()
 scale_fact = 2 / (cell_size * base * multx)
@@ -39,8 +35,13 @@ cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
 mass_crit = 0.0000001 * 5 * 2 * 2
 cfg.set_amr_mode_density_based(crit_mass=mass_crit)
-model.set_config(cfg)
+model.set_solver_config(cfg)
 
+
+model.init_scheduler(int(1e7), 1)
+model.make_base_grid(
+    (0, 0, 0), (cell_size, cell_size, cell_size), (base * multx, base * multy, base * multz)
+)
 
 # without face time interpolation
 # 0.07979993131348424 (0.17970690984930585, 0.0, 0.0) 0.12628776652228088

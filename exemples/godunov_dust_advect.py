@@ -27,7 +27,7 @@ def run_sim(vanleer=True, label="none"):
     cfg.set_dust_mode_dhll(1)
     # cfg.set_drag_mode_no_drag()
 
-    model.set_config(cfg)
+    model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 

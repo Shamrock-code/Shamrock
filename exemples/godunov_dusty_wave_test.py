@@ -94,7 +94,7 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     cfg.set_alpha_values(float(1.0 / 0.464159))  # ts = 0.464159
     cfg.set_alpha_values(1.0)  # ts = 1.0
 
-    model.set_config(cfg)
+    model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 

@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -35,6 +36,10 @@ namespace shamcomm {
      *                of all the strings gathered from the nodes.
      */
     void gather_str(const std::string &send_vec, std::string &recv_vec);
+
+    /// same as gather_str but with std::basic_string
+    void
+    gather_basic_str(const std::basic_string<byte> &send_vec, std::basic_string<byte> &recv_vec);
 
     /**
      * @brief Constructs a histogram from a vector of strings, counting occurrences

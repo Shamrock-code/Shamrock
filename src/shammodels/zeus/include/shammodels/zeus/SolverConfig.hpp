@@ -16,6 +16,8 @@
  *
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shammodels/zeus/modules/SolverStorage.hpp"
@@ -40,6 +42,13 @@ namespace shammodels::zeus {
 
         bool use_consistent_transport = false;
         bool use_van_leer             = true;
+
+        inline void check_config() {
+            if (grid_coord_to_pos_fact <= 0) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "grid_coord_to_pos_fact must be > 0, got {}", grid_coord_to_pos_fact));
+            }
+        }
     };
 
 } // namespace shammodels::zeus

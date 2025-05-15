@@ -59,6 +59,6 @@ namespace shambindings {
      *
      * This function will throw if bindings were not initialized in embed mode
      */
-    void modify_py_sys_path();
+    void modify_py_sys_path(bool do_print);
 
 } // namespace shambindings

@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shammath/AABB.hpp"
 #include "shammath/crystalLattice.hpp"
@@ -51,6 +52,7 @@ namespace shammodels::sph::modules {
         bool is_done() { return generator.is_done(); }
 
         shamrock::patch::PatchData next_n(u32 nmax) {
+            StackEntry stack_loc{};
 
             using namespace shamrock::patch;
             PatchScheduler &sched = shambase::get_check_ref(context.sched);
@@ -83,6 +85,7 @@ namespace shammodels::sph::modules {
                     skip_end,
                     "total",
                     skip_start + gen_cnt + skip_end);
+
                 generator.skip(skip_start);
                 auto tmp = generator.next_n(gen_cnt);
                 generator.skip(skip_end);

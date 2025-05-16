@@ -210,7 +210,6 @@ namespace shammath {
             size_t max_coord;
 
             bool done = false;
-            u32 idx   = 0;
 
             public:
             Iterator(Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
@@ -251,10 +250,11 @@ namespace shammath {
 
                 Tvec ret = generator(dr, current);
 
-                if (current_idx >= max_coord - 1) {
-                    done = true;
-                } else if (!done) {
+                if (!done) {
                     current_idx++;
+                }
+                if (current_idx >= max_coord) {
+                    done = true;
                 }
 
                 return ret;
@@ -269,17 +269,18 @@ namespace shammath {
 
                     ret.push_back(next());
                 }
-                logger::debug_ln("Discontinuous iterator", "next_n final idx", idx);
+                logger::debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
                 return ret;
             }
 
             inline void skip(u32 n) {
-                if (current_idx >= max_coord - 1) {
-                    done = true;
-                } else if (!done) {
+                if (!done) {
                     current_idx += n;
                 }
-                logger::debug_ln("Discontinuous iterator", "skip final idx", idx);
+                if (current_idx >= max_coord) {
+                    done = true;
+                }
+                logger::debug_ln("Discontinuous iterator", "skip final idx", current_idx);
             }
         };
 
@@ -297,7 +298,6 @@ namespace shammath {
             size_t max_coord;
 
             bool done = false;
-            u32 idx   = 0;
 
             public:
             IteratorDiscontinuous(
@@ -349,10 +349,11 @@ namespace shammath {
 
                 Tvec ret = generator(dr, current);
 
-                if (current_idx >= max_coord - 1) {
-                    done = true;
-                } else if (!done) {
+                if (!done) {
                     current_idx++;
+                }
+                if (current_idx >= max_coord) {
+                    done = true;
                 }
 
                 return ret;
@@ -367,17 +368,18 @@ namespace shammath {
 
                     ret.push_back(next());
                 }
-                logger::debug_ln("Discontinuous iterator", "next_n final idx", idx);
+                logger::debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
                 return ret;
             }
 
             inline void skip(u32 n) {
-                if (current_idx >= max_coord - 1) {
-                    done = true;
-                } else if (!done) {
+                if (!done) {
                     current_idx += n;
                 }
-                logger::debug_ln("Discontinuous iterator", "skip final idx", idx);
+                if (current_idx >= max_coord) {
+                    done = true;
+                }
+                logger::debug_ln("Discontinuous iterator", "skip final idx", current_idx);
             }
         };
     };

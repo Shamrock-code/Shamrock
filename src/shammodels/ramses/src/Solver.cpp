@@ -14,9 +14,11 @@
  *
  */
 
-#include "shammodels/ramses/Solver.hpp"
+#include "shambase/memory.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/timestep_report.hpp"
+#include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/AMRGraphGen.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/AMRTree.hpp"
@@ -25,7 +27,8 @@
 #include "shammodels/ramses/modules/ComputeFlux.hpp"
 #include "shammodels/ramses/modules/ComputeGradient.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
-#include "shammodels/ramses/modules/ConsToPrim.hpp"
+#include "shammodels/ramses/modules/ConsToPrimDust.hpp"
+#include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
 #include "shammodels/ramses/modules/FaceInterpolate.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
@@ -66,6 +69,39 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         // will be filled by NodeConsToPrimDust
         storage.vel_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
             AMRBlock::block_size * ndust, "vel_dust", "{\\mathbf{v}_{\\rm dust}}");
+    }
+
+    { // Build ConsToPrim node
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> const_to_prim_sequence;
+
+        {
+            modules::NodeConsToPrimGas<Tvec> node{AMRBlock::block_size, solver_config.eos_gamma};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.refs_rho,
+                storage.refs_rhov,
+                storage.refs_rhoe,
+                storage.vel,
+                storage.press);
+
+            const_to_prim_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+
+        if (solver_config.is_dust_on()) {
+            u32 ndust = solver_config.dust_config.ndust;
+            modules::NodeConsToPrimDust<Tvec> node{AMRBlock::block_size, ndust};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.refs_rho_dust,
+                storage.refs_rhov_dust,
+                storage.vel_dust);
+
+            const_to_prim_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+
+        shamrock::solvergraph::OperationSequence seq(
+            "Cons to Prim", std::move(const_to_prim_sequence));
+        storage.node_cons_to_prim = std::make_shared<decltype(seq)>(std::move(seq));
     }
 }
 
@@ -128,11 +164,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     graph_gen.lower_AMR_block_graph_to_cell_common_face_graph(block_oriented_graph);
 
     // compute prim variable
-    modules::ConsToPrim ctop(context, solver_config, storage);
-
-    ctop.cons_to_prim_gas();
-    if (solver_config.is_dust_on()) {
-        ctop.cons_to_prim_dust();
+    {
+        // logger::raw_ln(" -- tex:\n" +
+        // shambase::get_check_ref(storage.node_cons_to_prim).get_tex()); logger::raw_ln(
+        //     " -- dot:\n" + shambase::get_check_ref(storage.node_cons_to_prim).get_dot_graph());
+        shambase::get_check_ref(storage.node_cons_to_prim).evaluate();
     }
 
     // compute & limit gradients
@@ -166,6 +202,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     if (solver_config.is_dust_on()) {
         flux_compute.compute_flux_dust();
     }
+
     // compute dt fields
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
     dt_compute.compute_dt_fields();
@@ -248,8 +285,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.dz_v.reset();
     storage.grad_P.reset();
 
-    ctop.reset_gas();
-
     if (solver_config.is_dust_on()) {
         storage.dtrho_dust.reset();
         storage.dtrhov_dust.reset();
@@ -285,8 +320,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         storage.dx_v_dust.reset();
         storage.dy_v_dust.reset();
         storage.dz_v_dust.reset();
-
-        ctop.reset_dust();
     }
 
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {

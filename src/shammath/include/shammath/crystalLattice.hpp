@@ -260,9 +260,9 @@ namespace shammath {
                 return ret;
             }
 
-            inline std::vector<Tvec> next_n(u32 nmax) {
+            inline std::vector<Tvec> next_n(u64 nmax) {
                 std::vector<Tvec> ret{};
-                for (u32 i = 0; i < nmax; i++) {
+                for (u64 i = 0; i < nmax; i++) {
                     if (done) {
                         break;
                     }
@@ -273,7 +273,7 @@ namespace shammath {
                 return ret;
             }
 
-            inline void skip(u32 n) {
+            inline void skip(u64 n) {
                 if (!done) {
                     current_idx += n;
                 }
@@ -294,12 +294,12 @@ namespace shammath {
             std::array<std::vector<size_t>, dim> remapped_indices;
 
             std::array<size_t, dim> coord_delta;
-            size_t current_idx;
             size_t max_coord;
 
             bool done = false;
 
             public:
+            size_t current_idx;
             IteratorDiscontinuous(
                 Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
                 : dr(dr), current_idx(0), coord_delta({
@@ -359,9 +359,9 @@ namespace shammath {
                 return ret;
             }
 
-            inline std::vector<Tvec> next_n(u32 nmax) {
+            inline std::vector<Tvec> next_n(u64 nmax) {
                 std::vector<Tvec> ret{};
-                for (u32 i = 0; i < nmax; i++) {
+                for (u64 i = 0; i < nmax; i++) {
                     if (done) {
                         break;
                     }
@@ -372,7 +372,7 @@ namespace shammath {
                 return ret;
             }
 
-            inline void skip(u32 n) {
+            inline void skip(u64 n) {
                 if (!done) {
                     current_idx += n;
                 }

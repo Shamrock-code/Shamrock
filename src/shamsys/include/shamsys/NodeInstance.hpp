@@ -148,6 +148,8 @@ namespace shamsys::instance {
 
     void print_mpi_capabilities();
 
+    void print_mpi_comm_info();
+
     void check_dgpu_available();
 
 } // namespace shamsys::instance

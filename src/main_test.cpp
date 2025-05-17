@@ -120,6 +120,8 @@ int main(int argc, char *argv[]) {
         if (shamsys::instance::is_initialized()) {
             logger::raw_ln("MPI status : ");
 
+            shamsys::instance::print_mpi_comm_info();
+
             logger::raw_ln(
                 " - MPI & SYCL init :",
                 shambase::term_colors::col8b_green() + "Ok" + shambase::term_colors::reset());

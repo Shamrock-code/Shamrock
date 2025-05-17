@@ -19,6 +19,7 @@
 #include "shamcmdopt/term_colors.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
+#include "shamcomm/worldInfo.hpp"
 
 namespace shamcomm {
 
@@ -136,6 +137,11 @@ namespace shamcomm {
         if (_forced_state) {
             print_state("MPI Forced DGPU", *_forced_state);
         }
+    }
+
+    void print_mpi_comm_info() {
+        logs::print_ln(" - World size  : ", world_size());
+        logs::print_ln(" - MPI max tag : ", mpi_max_tag_value());
     }
 
     std::string get_process_name() {

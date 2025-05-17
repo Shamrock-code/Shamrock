@@ -92,6 +92,11 @@ namespace shamcomm {
     void print_mpi_capabilities();
 
     /**
+     * @brief Print the MPI communicator infos
+     */
+    void print_mpi_comm_info();
+
+    /**
      * @brief Get the process name
      *
      * @return std::string the process name

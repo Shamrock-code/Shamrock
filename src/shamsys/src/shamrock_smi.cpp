@@ -88,7 +88,7 @@ namespace shamsys {
             std::string print = "Available devices :\n";
             for (auto &[node_conf, count] : nodeconfig_histogram) {
                 std::string arr = "";
-                add_array(arr, shambase::format("{} x Nodes: ", count), node_conf);
+                add_array(arr, shambase::format("{} x Shamrock process: ", count), node_conf);
                 print += shambase::format("\n{}\n", arr);
             }
             printf("%s", print.data());

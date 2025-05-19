@@ -166,16 +166,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (shamsys::instance::is_initialized()) {
-        if (shamcomm::world_rank() == 0) {
-            logger::print_faint_row();
-            logger::raw_ln(
-                " - Code init",
-                shambase::term_colors::col8b_green() + "DONE" + shambase::term_colors::reset(),
-                "now it's time to",
-                shambase::term_colors::col8b_cyan() + shambase::term_colors::blink() + "ROCK"
-                    + shambase::term_colors::reset());
-            logger::print_faint_row();
-        }
+        shamcomm::logs::code_init_done_log();
 
         if (opts::has_option("--pypath")) {
             shambindings::setpypath(std::string(opts::get_option("--pypath")));

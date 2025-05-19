@@ -535,35 +535,13 @@ namespace shamcomm::logs {
 
 #undef DECLARE_LOG_LEVEL
 
-    ///////////////////////////////////
-    // log level declared printer
-    ///////////////////////////////////
-
-/// X macro impl for the print_active_level() function
-#define IsActivePrint(_name, StructREF) _name##_ln("xxx", "xxx", "(", "logger::" #_name, ")");
-
     /**
      * @brief Prints the active log levels.
      */
-    inline void print_active_level() {
-        raw_ln("log status : ");
-        if (get_loglevel() == i8_max) {
-            raw_ln("If you've seen spam in your life i can garantee you, this is worst");
-        }
+    void print_active_level();
 
-        raw_ln(shambase::format(" - Loglevel: {}, enabled log types :", u32(get_loglevel())));
-
-// logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
-
-/// Temp definition for the X macro call in print_active_level()
-#define X IsActivePrint
-        LIST_LEVEL
-#undef X
-        // logger::raw_ln(terminal_effects::faint + "----------------------" +
-        // terminal_effects::reset);
-    }
-
-#undef IsActivePrint
+    /// Indicates that the code initialization is complete through various means ;)
+    void code_init_done_log();
 
 } // namespace shamcomm::logs
 

@@ -104,7 +104,7 @@ namespace shamalgs::collective {
     }
 
     /**
-     * @brief Reads a string of lenght len from a file using MPI and updates the file head pointer.
+     * @brief Reads a string of length len from a file using MPI and updates the file head pointer.
      *
      * @param fh MPI file handle
      * @param len length of string to read

@@ -491,7 +491,7 @@ namespace sham {
     }
 
     template<class T>
-    inline shambase::VecComponent<T> lenght2(T a) {
+    inline shambase::VecComponent<T> length2(T a) {
         return dot(a, a);
     }
 

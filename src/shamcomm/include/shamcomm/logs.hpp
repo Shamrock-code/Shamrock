@@ -546,6 +546,12 @@ namespace shamcomm::logs {
      * @brief Prints the active log levels.
      */
     inline void print_active_level() {
+        raw_ln("log status : ");
+        if (get_loglevel() == i8_max) {
+            raw_ln("If you've seen spam in your life i can garantee you, this is worst");
+        }
+
+        raw_ln(shambase::format(" - Loglevel: {}, enabled log types :", u32(get_loglevel())));
 
 // logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
 

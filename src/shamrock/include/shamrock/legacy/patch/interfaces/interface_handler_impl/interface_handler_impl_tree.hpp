@@ -130,7 +130,7 @@ class Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pr
             sched.patch_list.global, std::move(send_vec));
         communicator->fetch_comm_table();
 
-        logger::debug_ln("Interfaces", "fetching comm table"); // TODO Add bandwith check
+        logger::debug_ln("Interfaces", "fetching comm table"); // TODO Add bandwidth check
     }
 
     [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]

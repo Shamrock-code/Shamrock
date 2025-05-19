@@ -114,14 +114,27 @@ namespace shamcomm::logs {
 
     void code_init_done_log() {
 
-        auto lines = std::array<std::string, 6>{
+        auto lines = std::array<std::string, 15>{
+            // Someone that coded too much here
             "Now it's time to " + shambase::term_colors::col8b_cyan()
                 + shambase::term_colors::blink() + "ROCK" + shambase::term_colors::reset() + ".",
             "Shamrock rolls — no time for moss.", // Rolling stone gathers no moss.
             "Shamrock's live — go with the flow.",
             "Shamrock — as solid as a rock.",
             "Shamrock's stable and steady as a rock.",
-            "Shamrock initialized — no cracks in this rock."};
+            "Shamrock initialized — no cracks in this rock.",
+            "Shamrock is ready to eat cheese (melted) and bread.",
+            "Are you sure you want to work today?",
+            "No holidays for the Shamrock ... (yeah, this was a PhD at some point)",
+            "-[--->+<]>--.>+[----->+++<]>+.-------.++++++++++++.+++++.---.------------.++++++++.",
+            "CPU hours to burn? We don't do such thing here.",
+            "Are you burning GPUs or CPUs today?",
+
+            // Someone that started on oumuamua
+            "Shamrock your way to a brighter day!",
+            "Node hours to burn? Leaf it to me.",
+            "Ready for some shamazing simulations?",
+        };
 
         auto get_sentence = [&]() {
             f64 t   = shambase::details::get_wtime();

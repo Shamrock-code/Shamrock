@@ -32,7 +32,7 @@ namespace {
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>>
                 &spans_rhov_dust,
 
-            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> spans_vel_dust,
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_vel_dust,
             const shambase::DistributedData<u32> &sizes,
             u32 block_size,
             u32 ndust) {

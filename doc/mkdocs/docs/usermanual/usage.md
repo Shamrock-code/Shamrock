@@ -72,7 +72,7 @@ Git infos :
 
 -----------------------------------------------------
 MPI status :
- - MPI & SYCL init : Ok
+ - MPI & SYCL init: Ok
  - MPI CUDA-AWARE : Yes
  - MPI ROCM-AWARE : Unknown
  - MPI use Direct Comm : Yes

@@ -131,17 +131,17 @@ namespace shamcomm {
             }
         };
 
-        print_state("MPI CUDA-AWARE", mpi_cuda_aware);
-        print_state("MPI ROCM-AWARE", mpi_rocm_aware);
+        print_state("MPI CUDA-AWARE     ", mpi_cuda_aware);
+        print_state("MPI ROCM-AWARE     ", mpi_rocm_aware);
 
         if (_forced_state) {
-            print_state("MPI Forced DGPU", *_forced_state);
+            print_state("MPI Forced DGPU     ", *_forced_state);
         }
     }
 
     void print_mpi_comm_info() {
-        logs::print_ln(" - World size  : ", world_size());
-        logs::print_ln(" - MPI max tag : ", mpi_max_tag_value());
+        logs::print_ln(" - World size          :", world_size());
+        logs::print_ln(" - MPI max tag         :", mpi_max_tag_value());
     }
 
     std::string get_process_name() {

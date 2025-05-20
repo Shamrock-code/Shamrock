@@ -177,8 +177,8 @@ namespace shamsys {
 
             if (shamcomm::world_rank() == 0) {
 
-                std::string print = "Selected devices : (totals can we wrong if using multiple "
-                                    "rank per devices)\n";
+                std::string print = "Selected devices : (totals can be wrong if using multiple "
+                                    "ranks per device)\n";
 
                 for (auto &[key, value] : devicename_histogram) {
                     print += shambase::format("  - {} x {}", value, key) + "\n";

@@ -59,8 +59,8 @@ model.timestep()
 
 # %%
 # .. note::
-#    Note that shamrock has to update some smoothing lenghts that were in the phantom dump
-#    I think that since smoothing lenght is single precision in phantom they are slightly off
+#    Note that shamrock has to update some smoothing lengths that were in the phantom dump
+#    I think that since smoothing length is single precision in phantom they are slightly off
 #    from the shamrock point of view hence the update
 
 # %%

@@ -307,7 +307,7 @@ std::vector<f64_3> reference_set
 inline bool compare_ref_set(std::vector<f64_3> &a, std::vector<f64_3> &b) {
     bool ret = a.size() == b.size();
     for (u32 i = 0; i < a.size(); i++) {
-        ret = ret && (sham::lenght2(a[i] - b[i]) < 1e-32);
+        ret = ret && (sham::length2(a[i] - b[i]) < 1e-32);
     }
     return ret;
 }
@@ -327,7 +327,7 @@ TestStart(Unittest, "shammath/crystalLattice/LatticeHCP/Iterator", lattice_itera
     gen.skip(100);
 
     auto comp = [](f64_3 a, f64_3 b) {
-        return sham::lenght2(a - b) < 1e-18;
+        return sham::length2(a - b) < 1e-18;
     };
 
     f64_3 ref = {2, 10.392304845413264, 16.32993161855452};
@@ -483,7 +483,7 @@ TestStart(
     gen.skip(100);
 
     auto comp = [](f64_3 a, f64_3 b) {
-        return sham::lenght2(a - b) < 1e-18;
+        return sham::length2(a - b) < 1e-18;
     };
 
     f64_3 ref = {-3, 10.969655114602888, 21.228911104120876};

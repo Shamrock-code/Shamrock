@@ -31,7 +31,7 @@
 
 namespace shamsys::microbench {
     /// MPI point-to-point bandwidth benchmark
-    void p2p_bandwith(u32 wr_sender, u32 wr_receiv);
+    void p2p_bandwidth(u32 wr_sender, u32 wr_receiv);
 
     /// MPI point-to-point latency benchmark
     void p2p_latency(u32 wr1, u32 wr2);
@@ -50,13 +50,13 @@ void shamsys::run_micro_benchmark() {
     StackEntry stack_loc{};
 
     if (shamcomm::world_rank() == 0) {
-        logger::raw_ln("Running micro benchamrks :");
+        logger::raw_ln("Running micro benchmarks:");
     }
 
     u32 wr1 = 0;
     u32 wr2 = shamcomm::world_size() - 1;
 
-    microbench::p2p_bandwith(wr1, wr2);
+    microbench::p2p_bandwidth(wr1, wr2);
     if (shamcomm::world_size() > 1) {
         microbench::p2p_latency(wr1, wr2);
     }
@@ -65,7 +65,7 @@ void shamsys::run_micro_benchmark() {
     microbench::add_mul_rotation_f64();
 }
 
-void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv) {
+void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
     StackEntry stack_loc{};
 
     u32 wr = shamcomm::world_rank();
@@ -113,7 +113,7 @@ void shamsys::microbench::p2p_bandwith(u32 wr_sender, u32 wr_receiv) {
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(shambase::format(
-            " - p2p bandwith    : {:.4e} B.s^-1 (ranks : {} -> {}) (loops : {})",
+            " - p2p bandwidth    : {:.4e} B.s^-1 (ranks : {} -> {}) (loops : {})",
             (f64(length * loops) / t),
             wr_sender,
             wr_receiv,

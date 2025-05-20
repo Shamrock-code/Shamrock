@@ -59,7 +59,7 @@ namespace shammodels {
             Tscal eta;
             Tscal q;
 
-            inline Tscal shear_speed(Tscal box_lenght) { return q * Omega_0 * box_lenght; }
+            inline Tscal shear_speed(Tscal box_length) { return q * Omega_0 * box_length; }
 
             ShearingBoxForce() = default;
             ShearingBoxForce(Tscal Omega_0, Tscal eta, Tscal q)

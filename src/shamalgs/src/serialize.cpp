@@ -22,7 +22,7 @@
 // Layout of the SerializeHelper is
 // aligned on base 64 bits
 
-// pre head (header lenght)
+// pre head (header length)
 // header
 // content
 
@@ -84,7 +84,7 @@ void write_prehead(sham::DeviceQueue &q, u64 prehead, sham::DeviceBuffer<u8> &st
 #endif
 
 std::vector<u8> extract_header(
-    sham::DeviceQueue &q, sham::DeviceBuffer<u8> &storage, u64 header_size, u64 pre_head_lenght) {
+    sham::DeviceQueue &q, sham::DeviceBuffer<u8> &storage, u64 header_size, u64 pre_head_length) {
 
     std::vector<u8> storage_header = std::vector<u8>(header_size);
 
@@ -94,11 +94,11 @@ std::vector<u8> extract_header(
         sham::EventList depends_list;
         auto accbufstg = storage.get_read_access(depends_list);
 
-        auto e = q.submit(depends_list, [&, pre_head_lenght](sycl::handler &cgh) {
+        auto e = q.submit(depends_list, [&, pre_head_length](sycl::handler &cgh) {
             sycl::accessor buf_header{attach, cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range<1>{header_size}, [=](sycl::item<1> id) {
-                buf_header[id] = accbufstg[id + pre_head_lenght];
+                buf_header[id] = accbufstg[id + pre_head_length];
             });
         });
 
@@ -116,7 +116,7 @@ void write_header(
     sham::DeviceBuffer<u8> &storage,
     std::vector<u8> &storage_header,
     u64 header_size,
-    u64 pre_head_lenght) {
+    u64 pre_head_length) {
 
     if (header_size > 0) {
         sycl::buffer<u8> attach(storage_header.data(), header_size);
@@ -124,11 +124,11 @@ void write_header(
         sham::EventList depends_list;
         auto accbufstg = storage.get_write_access(depends_list);
 
-        auto e = q.submit(depends_list, [&, pre_head_lenght](sycl::handler &cgh) {
+        auto e = q.submit(depends_list, [&, pre_head_length](sycl::handler &cgh) {
             sycl::accessor buf_header{attach, cgh, sycl::read_only};
 
             cgh.parallel_for(sycl::range<1>{header_size}, [=](sycl::item<1> id) {
-                accbufstg[id + pre_head_lenght] = buf_header[id];
+                accbufstg[id + pre_head_length] = buf_header[id];
             });
         });
 
@@ -138,14 +138,14 @@ void write_header(
     // std::cout << "write header" << std::endl;
 }
 
-u64 shamalgs::SerializeHelper::pre_head_lenght() {
+u64 shamalgs::SerializeHelper::pre_head_length() {
     return shamalgs::details::serialize_byte_size<shamalgs::SerializeHelper::alignment, u64>()
         .head_size;
 }
 
 void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
     StackEntry stack_loc{false};
-    u64 bytelen = szinfo.head_size + szinfo.content_size + pre_head_lenght();
+    u64 bytelen = szinfo.head_size + szinfo.content_size + pre_head_length();
 
     storage.resize(bytelen);
     header_size = szinfo.head_size;
@@ -156,7 +156,7 @@ void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
     write_prehead(dev_sched->get_queue(), szinfo.head_size, storage);
     // std::cout << "prehead write :" << szinfo.head_size << std::endl;
 
-    head_device = pre_head_lenght() + header_size;
+    head_device = pre_head_length() + header_size;
 }
 
 sham::DeviceBuffer<u8> shamalgs::SerializeHelper::finalize() {
@@ -164,7 +164,7 @@ sham::DeviceBuffer<u8> shamalgs::SerializeHelper::finalize() {
 
     logger::debug_sycl_ln("SerializeHelper", "finalize()", storage.get_size(), header_size);
 
-    write_header(dev_sched->get_queue(), storage, storage_header, header_size, pre_head_lenght());
+    write_header(dev_sched->get_queue(), storage, storage_header, header_size, pre_head_length());
 
     return std::move(storage);
 }
@@ -186,7 +186,7 @@ shamalgs::SerializeHelper::SerializeHelper(
             header_size));
 
     storage_header
-        = extract_header(dev_sched->get_queue(), storage, header_size, pre_head_lenght());
+        = extract_header(dev_sched->get_queue(), storage, header_size, pre_head_length());
 
-    head_device = pre_head_lenght() + header_size;
+    head_device = pre_head_length() + header_size;
 }

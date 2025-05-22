@@ -78,6 +78,7 @@ void SchedulerPatchList::build_local_differantial(
 }
 
 void SchedulerPatchList::build_global_idx_map() {
+    StackEntry stack_loc{};
     id_patch_to_global_idx.clear();
 
     u64 idx = 0;
@@ -88,6 +89,7 @@ void SchedulerPatchList::build_global_idx_map() {
 }
 
 void SchedulerPatchList::build_local_idx_map() {
+    StackEntry stack_loc{};
     id_patch_to_local_idx.clear();
 
     u64 idx = 0;
@@ -98,6 +100,7 @@ void SchedulerPatchList::build_local_idx_map() {
 }
 
 void SchedulerPatchList::reset_local_pack_index() {
+    StackEntry stack_loc{};
     for (shamrock::patch::Patch &p : local) {
         p.pack_node_index = u64_max;
     }

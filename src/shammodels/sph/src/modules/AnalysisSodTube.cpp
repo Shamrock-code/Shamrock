@@ -57,7 +57,7 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
     Tscal N          = 0;
 
     scheduler().for_each_patchdata_nonempty(
-        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             auto &xyz_buf   = pdat.get_field_buf_ref<Tvec>(ixyz);
             auto &hpart_buf = pdat.get_field_buf_ref<Tscal>(ihpart);
             auto &vxyz_buf  = pdat.get_field_buf_ref<Tvec>(ivxyz);

@@ -84,7 +84,7 @@ namespace shammodels::sph {
             const u32 ihpart = sched.pdl.get_field_idx<flt>("hpart");
 
             PatchField<flt> interactR_patch = sched.map_owned_to_patch_field_simple<flt>(
-                [&](const Patch p, PatchData &pdat) -> flt {
+                [&](const Patch p, PatchDataLayer &pdat) -> flt {
                     if (!pdat.is_empty()) {
                         return pdat.get_field<flt>(ihpart).compute_max() * h_evol_max * Rkern;
                     } else {

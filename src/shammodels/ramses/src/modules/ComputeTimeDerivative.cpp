@@ -55,7 +55,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
     shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_zm = storage.flux_rhoe_face_zm.get();
 
     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         logger::debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -334,7 +334,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         = storage.flux_rhov_dust_face_zm.get();
 
     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         logger::debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();

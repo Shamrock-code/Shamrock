@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file PatchData.cpp
+ * @file PatchDataLayer.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  */
@@ -16,15 +16,15 @@
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
 
 namespace shamrock::patch {
 
-    PatchData PatchData::mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl) {
-        PatchData pdat{pdl};
+    PatchDataLayer PatchDataLayer::mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl) {
+        PatchDataLayer pdat{pdl};
 
         pdat.fields.clear();
 
@@ -39,7 +39,7 @@ namespace shamrock::patch {
         return pdat;
     }
 
-    void PatchData::init_fields() {
+    void PatchDataLayer::init_fields() {
 
         pdl.for_each_field_any([&](auto &field) {
             using f_t    = typename std::remove_reference<decltype(field)>::type;
@@ -49,7 +49,7 @@ namespace shamrock::patch {
         });
     }
 
-    void PatchData::extract_element(u32 pidx, PatchData &out_pdat) {
+    void PatchDataLayer::extract_element(u32 pidx, PatchDataLayer &out_pdat) {
         StackEntry stack_loc{};
 
         for (u32 idx = 0; idx < fields.size(); idx++) {
@@ -71,7 +71,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::insert_elements(PatchData &pdat) {
+    void PatchDataLayer::insert_elements(PatchDataLayer &pdat) {
 
         StackEntry stack_loc{};
 
@@ -94,7 +94,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::overwrite(PatchData &pdat, u32 obj_cnt) {
+    void PatchDataLayer::overwrite(PatchDataLayer &pdat, u32 obj_cnt) {
         StackEntry stack_loc{};
 
         for (u32 idx = 0; idx < fields.size(); idx++) {
@@ -116,7 +116,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::resize(u32 new_obj_cnt) {
+    void PatchDataLayer::resize(u32 new_obj_cnt) {
 
         for (auto &field_var : fields) {
             field_var.visit([&](auto &field) {
@@ -125,7 +125,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::reserve(u32 new_obj_cnt) {
+    void PatchDataLayer::reserve(u32 new_obj_cnt) {
 
         for (auto &field_var : fields) {
             field_var.visit([&](auto &field) {
@@ -134,7 +134,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::expand(u32 new_obj_cnt) {
+    void PatchDataLayer::expand(u32 new_obj_cnt) {
 
         for (auto &field_var : fields) {
             field_var.visit([&](auto &field) {
@@ -143,7 +143,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::index_remap(sycl::buffer<u32> &index_map, u32 len) {
+    void PatchDataLayer::index_remap(sycl::buffer<u32> &index_map, u32 len) {
 
         sham::DeviceBuffer<u32> dev_index_map(
             index_map, len, shamsys::instance::get_compute_scheduler_ptr());
@@ -155,7 +155,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::index_remap_resize(sycl::buffer<u32> &index_map, u32 len) {
+    void PatchDataLayer::index_remap_resize(sycl::buffer<u32> &index_map, u32 len) {
         sham::DeviceBuffer<u32> dev_index_map(
             index_map, len, shamsys::instance::get_compute_scheduler_ptr());
 
@@ -166,11 +166,11 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::keep_ids(sycl::buffer<u32> &index_map, u32 len) {
+    void PatchDataLayer::keep_ids(sycl::buffer<u32> &index_map, u32 len) {
         index_remap_resize(index_map, len);
     }
 
-    void PatchData::append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat) {
+    void PatchDataLayer::append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchDataLayer &pdat) {
         StackEntry stack_loc{};
 
         for (u32 idx = 0; idx < fields.size(); idx++) {
@@ -192,7 +192,7 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::append_subset_to(std::vector<u32> &idxs, PatchData &pdat) {
+    void PatchDataLayer::append_subset_to(std::vector<u32> &idxs, PatchDataLayer &pdat) {
         StackEntry stack_loc{};
 
         for (u32 idx = 0; idx < fields.size(); idx++) {
@@ -214,14 +214,14 @@ namespace shamrock::patch {
         }
     }
 
-    void PatchData::serialize_buf(shamalgs::SerializeHelper &serializer) {
+    void PatchDataLayer::serialize_buf(shamalgs::SerializeHelper &serializer) {
         StackEntry stack_loc{};
         for_each_field_any([&](auto &f) {
             f.serialize_buf(serializer);
         });
     }
 
-    shamalgs::SerializeSize PatchData::serialize_buf_byte_size() {
+    shamalgs::SerializeSize PatchDataLayer::serialize_buf_byte_size() {
         shamalgs::SerializeSize sum{};
         for_each_field_any([&](auto &f) {
             sum += f.serialize_buf_byte_size();
@@ -229,31 +229,31 @@ namespace shamrock::patch {
         return sum;
     }
 
-    PatchData
-    PatchData::deserialize_buf(shamalgs::SerializeHelper &serializer, PatchDataLayout &pdl) {
+    PatchDataLayer
+    PatchDataLayer::deserialize_buf(shamalgs::SerializeHelper &serializer, PatchDataLayout &pdl) {
         StackEntry stack_loc{};
 
-        return PatchData{pdl, [&](auto &pdat_fields) {
-                             pdl.for_each_field_any([&](auto &field) {
-                                 using f_t = typename std::remove_reference<decltype(field)>::type;
-                                 using base_t = typename f_t::field_T;
+        return PatchDataLayer{
+            pdl, [&](auto &pdat_fields) {
+                pdl.for_each_field_any([&](auto &field) {
+                    using f_t    = typename std::remove_reference<decltype(field)>::type;
+                    using base_t = typename f_t::field_T;
 
-                                 pdat_fields.push_back(
-                                     var_t{PatchDataField<base_t>::deserialize_buf(
-                                         serializer, field.name, field.nvar)});
-                             });
-                         }};
+                    pdat_fields.push_back(var_t{PatchDataField<base_t>::deserialize_buf(
+                        serializer, field.name, field.nvar)});
+                });
+            }};
     }
 
-    void PatchData::fields_raz() {
+    void PatchDataLayer::fields_raz() {
         for_each_field_any([&](auto &f) {
             f.field_raz();
         });
     }
 
     template<class T>
-    void PatchData::split_patchdata(
-        std::array<std::reference_wrapper<PatchData>, 8> pdats,
+    void PatchDataLayer::split_patchdata(
+        std::array<std::reference_wrapper<PatchDataLayer>, 8> pdats,
         std::array<T, 8> min_box,
         std::array<T, 8> max_box) {
 
@@ -334,24 +334,24 @@ namespace shamrock::patch {
     }
 
 #ifndef DOXYGEN
-    template void PatchData::split_patchdata(
-        std::array<std::reference_wrapper<PatchData>, 8> pdats,
+    template void PatchDataLayer::split_patchdata(
+        std::array<std::reference_wrapper<PatchDataLayer>, 8> pdats,
         std::array<f32_3, 8> min_box,
         std::array<f32_3, 8> max_box);
-    template void PatchData::split_patchdata(
-        std::array<std::reference_wrapper<PatchData>, 8> pdats,
+    template void PatchDataLayer::split_patchdata(
+        std::array<std::reference_wrapper<PatchDataLayer>, 8> pdats,
         std::array<f64_3, 8> min_box,
         std::array<f64_3, 8> max_box);
-    template void PatchData::split_patchdata(
-        std::array<std::reference_wrapper<PatchData>, 8> pdats,
+    template void PatchDataLayer::split_patchdata(
+        std::array<std::reference_wrapper<PatchDataLayer>, 8> pdats,
         std::array<u32_3, 8> min_box,
         std::array<u32_3, 8> max_box);
-    template void PatchData::split_patchdata(
-        std::array<std::reference_wrapper<PatchData>, 8> pdats,
+    template void PatchDataLayer::split_patchdata(
+        std::array<std::reference_wrapper<PatchDataLayer>, 8> pdats,
         std::array<u64_3, 8> min_box,
         std::array<u64_3, 8> max_box);
-    template void PatchData::split_patchdata(
-        std::array<std::reference_wrapper<PatchData>, 8> pdats,
+    template void PatchDataLayer::split_patchdata(
+        std::array<std::reference_wrapper<PatchDataLayer>, 8> pdats,
         std::array<i64_3, 8> min_box,
         std::array<i64_3, 8> max_box);
 #endif

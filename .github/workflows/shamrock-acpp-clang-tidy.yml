@@ -27,7 +27,6 @@ jobs:
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
     #if: false
 
-    timeout-minutes: 60
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default

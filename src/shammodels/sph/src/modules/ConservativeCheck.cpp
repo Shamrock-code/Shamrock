@@ -47,7 +47,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     // momentum check :
     ///////////////////////////////////
     Tvec tmpp{0, 0, 0};
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tvec> &field = pdat.get_field<Tvec>(ivxyz);
         tmpp += field.compute_sum();
     });
@@ -67,7 +67,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     // force sum check :
     ///////////////////////////////////
     Tvec tmpa{0, 0, 0};
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tvec> &field = pdat.get_field<Tvec>(iaxyz);
         tmpa += field.compute_sum();
     });
@@ -87,7 +87,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     // energy check :
     ///////////////////////////////////
     Tscal tmpe{0};
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tscal> &field_u = pdat.get_field<Tscal>(iuint);
         PatchDataField<Tvec> &field_v  = pdat.get_field<Tvec>(ivxyz);
         tmpe += field_u.compute_sum() + 0.5 * field_v.compute_dot_sum();
@@ -100,7 +100,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     Tscal pmass  = gpart_mass;
     Tscal tmp_de = 0;
-    scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tscal> &field_u  = pdat.get_field<Tscal>(iuint);
         PatchDataField<Tvec> &field_v   = pdat.get_field<Tvec>(ivxyz);
         PatchDataField<Tscal> &field_du = pdat.get_field<Tscal>(iduint);

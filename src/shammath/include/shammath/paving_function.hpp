@@ -60,6 +60,38 @@ namespace shammath {
         }
     };
 
+    template<typename Tvec>
+    struct paving_function_general_3d_shear_x {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        Tvec box_size;
+        Tvec box_center;
+
+        bool is_x_periodic;
+        bool is_y_periodic;
+        bool is_z_periodic;
+
+        Tscal shear_x;
+
+        Tvec f(Tvec x, int i, int j, int k) {
+            Tvec off{
+                (is_x_periodic) ? 0 : (x[0] - box_center[0]) * (sham::m1pown<Tscal>(i) - 1),
+                (is_y_periodic) ? 0 : (x[1] - box_center[1]) * (sham::m1pown<Tscal>(j) - 1),
+                (is_z_periodic) ? 0 : (x[2] - box_center[2]) * (sham::m1pown<Tscal>(k) - 1)};
+            return x + box_size * Tvec{i, j, k} + off + shear_x * Tvec{j, 0, 0};
+        }
+
+        Tvec f_inv(Tvec x, int i, int j, int k) {
+            Tvec tmp = x - box_size * Tvec{i, j, k} - shear_x * Tvec{j, 0, 0};
+            Tvec off{
+                (is_x_periodic) ? 0 : (tmp[0] - box_center[0]) * (sham::m1pown<Tscal>(i) - 1),
+                (is_y_periodic) ? 0 : (tmp[1] - box_center[1]) * (sham::m1pown<Tscal>(j) - 1),
+                (is_z_periodic) ? 0 : (tmp[2] - box_center[2]) * (sham::m1pown<Tscal>(k) - 1)};
+            return tmp + off;
+        }
+    };
+
     /*
     def f_pavving_reflection(x, y, i, j):
         center_x = box_size_x * 0.5

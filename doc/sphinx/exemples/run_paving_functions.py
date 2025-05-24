@@ -39,14 +39,17 @@ def add_rect(x, y, w, h):
     )
 
 
-def plot_paving_function(pav_func, pav_func_name):
+def plot_paving_function(pav_func, pav_func_name, shear_x=0.0):
 
     plt.figure()
     for i in range(-2, 3):
         for j in range(-3, 4):
             # j = i
             add_rect(
-                0.05 + i * box_size_x, 0.05 + j * box_size_y, box_size_x - 0.1, box_size_y - 0.1
+                0.05 + i * box_size_x + shear_x * j,
+                0.05 + j * box_size_y,
+                box_size_x - 0.1,
+                box_size_y - 0.1,
             )
 
             for part in parts:
@@ -61,7 +64,10 @@ def plot_paving_function(pav_func, pav_func_name):
     for i in range(-2, 3):
         for j in range(-3, 4):
             add_rect(
-                0.05 + i * box_size_x, 0.05 + j * box_size_y, box_size_x - 0.1, box_size_y - 0.1
+                0.05 + i * box_size_x + shear_x * j,
+                0.05 + j * box_size_y,
+                box_size_x - 0.1,
+                box_size_y - 0.1,
             )
 
             for part in parts:
@@ -80,6 +86,10 @@ def plot_paving_function(pav_func, pav_func_name):
     plt.xlabel("x")
     plt.ylabel("y")
 
+
+# %%
+# Testing the paving functions
+# ------------------------
 
 # %%
 # Periodic paving function
@@ -113,5 +123,21 @@ plot_paving_function(
     "Fully reflective",
 )
 
+
+# %%
+# Periodic & reflective paving function with shear
+
+plot_paving_function(
+    shamrock.math.paving_function_general_3d_shear_x(
+        (box_size_x, box_size_y, 0.0),
+        (box_size_x / 2.0, box_size_y / 2.0, 0.0),
+        False,
+        True,
+        True,
+        0.3,
+    ),
+    "reflective in x periodic in y with shear",
+    shear_x=0.3,
+)
 
 plt.show()

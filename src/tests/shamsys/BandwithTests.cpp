@@ -21,7 +21,7 @@ void bench_memcpy_sycl(
     logger::debug_ln("bench_memcpy_sycl", dset_name);
 
     std::vector<f64> sz;
-    std::vector<f64> bandwith_GBsm1;
+    std::vector<f64> bandwidth_GBsm1;
 
     using namespace shamsys::instance;
 
@@ -45,14 +45,14 @@ void bench_memcpy_sycl(
         sycl::free(ptr2, q2);
 
         sz.push_back(cnt * sizeof(T) / f64(1024 * 1024 * 1024));
-        bandwith_GBsm1.push_back(
+        bandwidth_GBsm1.push_back(
             (f64(cnt * sizeof(T)) / (t.nanosec / 1e9)) / f64(1024 * 1024 * 1024));
     }
 
     auto &dset = shamtest::test_data().new_dataset(dset_name);
 
     dset.add_data("size (GB)", sz);
-    dset.add_data("bandwith (GB.s^-1)", bandwith_GBsm1);
+    dset.add_data("bandwidth (GB.s^-1)", bandwidth_GBsm1);
 }
 
 template<class T>
@@ -61,7 +61,7 @@ void bench_memcpy_sycl_host_dev(std::string dset_name, sycl::queue &q1, u64 max_
     logger::debug_ln("bench_memcpy_sycl_host_dev", dset_name);
 
     std::vector<f64> sz;
-    std::vector<f64> bandwith_GBsm1;
+    std::vector<f64> bandwidth_GBsm1;
 
     using namespace shamsys::instance;
 
@@ -85,17 +85,17 @@ void bench_memcpy_sycl_host_dev(std::string dset_name, sycl::queue &q1, u64 max_
         sycl::free(ptr2, q1);
 
         sz.push_back(cnt * sizeof(T) / f64(1024 * 1024 * 1024));
-        bandwith_GBsm1.push_back(
+        bandwidth_GBsm1.push_back(
             (f64(cnt * sizeof(T)) / (t.nanosec / 1e9)) / f64(1024 * 1024 * 1024));
     }
 
     auto &dset = shamtest::test_data().new_dataset(dset_name);
 
     dset.add_data("size (GB)", sz);
-    dset.add_data("bandwith (GB.s^-1)", bandwith_GBsm1);
+    dset.add_data("bandwidth (GB.s^-1)", bandwidth_GBsm1);
 }
 
-TestStart(Benchmark, "bandwith-tests/memcpy-sycl", compcompbandwithtest, 1) {
+TestStart(Benchmark, "bandwidth-tests/memcpy-sycl", compcompbandwidthtest, 1) {
     using namespace shamsys::instance;
 
     u64 max_sz = get_compute_device().get_info<sycl::info::device::global_mem_size>() / 16;
@@ -150,7 +150,7 @@ TestStart(Benchmark, "bandwith-tests/memcpy-sycl", compcompbandwithtest, 1) {
 // MPI comm
 
 template<class T>
-void make_bandwith_matrix(std::string dset_name, sycl::queue &q1, u32 comm_size) {
+void make_bandwidth_matrix(std::string dset_name, sycl::queue &q1, u32 comm_size) {
 
     using namespace shamsys::instance;
 
@@ -198,7 +198,7 @@ void make_bandwith_matrix(std::string dset_name, sycl::queue &q1, u32 comm_size)
         for (u32 i = 0; i < shamcomm::world_size(); i++) {
             for (u32 j = 0; j < shamcomm::world_size(); j++) {
 
-                logger::debug_ln("make_bandwith_matrix", i, "->", j, dset_name);
+                logger::debug_ln("make_bandwidth_matrix", i, "->", j, dset_name);
 
                 rank_send.push_back(i);
                 rank_recv.push_back(j);
@@ -216,7 +216,7 @@ void make_bandwith_matrix(std::string dset_name, sycl::queue &q1, u32 comm_size)
         auto &dset = shamtest::test_data().new_dataset(dset_name);
         dset.add_data("rank_send", rank_send);
         dset.add_data("rank_recv", rank_recv);
-        dset.add_data("bandwith (GB.s^-1)", bw);
+        dset.add_data("bandwidth (GB.s^-1)", bw);
     };
 
     ptr1 = sycl::malloc_device<T>(comm_size, q1);
@@ -248,8 +248,8 @@ void make_bandwith_matrix(std::string dset_name, sycl::queue &q1, u32 comm_size)
     sycl::free(ptr2, q1);
 }
 
-TestStart(Benchmark, "bandwith-tests/mpi-pair-comm/bw-matrix", mpi_pair_comm_bw_matrix, -1) {
-    make_bandwith_matrix<f32>("(f32)", shamsys::instance::get_compute_queue(), 1024 * 1024 * 16);
-    make_bandwith_matrix<f32_3>(
+TestStart(Benchmark, "bandwidth-tests/mpi-pair-comm/bw-matrix", mpi_pair_comm_bw_matrix, -1) {
+    make_bandwidth_matrix<f32>("(f32)", shamsys::instance::get_compute_queue(), 1024 * 1024 * 16);
+    make_bandwidth_matrix<f32_3>(
         "(f32_3)", shamsys::instance::get_compute_queue(), 1024 * 1024 * 16 / 256);
 }

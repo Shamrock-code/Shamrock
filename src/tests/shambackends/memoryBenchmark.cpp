@@ -13,7 +13,7 @@
 #include "shamtest/shamtest.hpp"
 
 template<class T, int ptrsep>
-inline f64 get_bandwith() {
+inline f64 get_bandwidth() {
 
     constexpr u32 count   = 1e9;
     constexpr u32 buf_len = count + ptrsep;
@@ -59,7 +59,7 @@ inline f64 get_bandwith() {
 template<class T, int ptrsep>
 void bench(std::vector<f64> &sep, std::vector<f64> &measured_bw) {
     sep.push_back(ptrsep * sizeof(T));
-    measured_bw.push_back(get_bandwith<T, ptrsep>());
+    measured_bw.push_back(get_bandwidth<T, ptrsep>());
 
     shamcomm::logs::raw_ln(
         "sep =",

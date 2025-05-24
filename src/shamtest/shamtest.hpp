@@ -205,19 +205,21 @@ namespace shamtest::details {
  * REQUIRE_EQUAL_CUSTOM_COMP_NAMED("assert name",a , b)
  * \endcode
  */
-#define REQUIRE_EQUAL_CUSTOM_COMP_NAMED(name, a, b, comp)                                          \
+#define REQUIRE_EQUAL_CUSTOM_COMP_NAMED(name, _a, _b, comp)                                        \
     do {                                                                                           \
+        auto a = _a;                                                                               \
+        auto b = _b;                                                                               \
         using namespace shamtest::details;                                                         \
         bool eval               = comp(a, b);                                                      \
-        std::string assert_name = format_assert_name(name) + #a " == " #b;                         \
+        std::string assert_name = format_assert_name(name) + #_a " == " #_b;                       \
         if (eval) {                                                                                \
             shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
         } else {                                                                                   \
             shamtest::asserts().assert_bool_with_log(                                              \
                 assert_name,                                                                       \
                 eval,                                                                              \
-                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #a " = {}", a)   \
-                    + "\n" + shambase::format(" -> " #b " = {}", b) + "\n"                         \
+                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #_a " = {}", a)  \
+                    + "\n" + shambase::format(" -> " #_b " = {}", b) + "\n"                        \
                     + " -> location : " + SourceLocation{}.format_one_line());                     \
         }                                                                                          \
     } while (0)
@@ -242,22 +244,25 @@ namespace shamtest::details {
  *
  * Usage :
  * \code{.cpp}
- * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("assert name",a , b, 1e-9, sycl::lenght)
+ * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("assert name",a , b, 1e-9, sycl::length)
  * \endcode
  */
-#define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, a, b, prec, dist)                              \
+#define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, _a, _b, prec, dist)                            \
     do {                                                                                           \
+        auto a = _a;                                                                               \
+        auto b = _b;                                                                               \
         using namespace shamtest::details;                                                         \
-        bool eval               = dist((a) - (b)) < prec;                                          \
-        std::string assert_name = format_assert_name(name) + #dist "(" #a ") - (" #b ") < " #prec; \
+        bool eval = dist((a) - (b)) < prec;                                                        \
+        std::string assert_name                                                                    \
+            = format_assert_name(name) + #dist "(" #_a ") - (" #_b ") < " #prec;                   \
         if (eval) {                                                                                \
             shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
         } else {                                                                                   \
             shamtest::asserts().assert_bool_with_log(                                              \
                 assert_name,                                                                       \
                 eval,                                                                              \
-                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #a " = {}", a)   \
-                    + "\n" + shambase::format(" -> " #b " = {}", b) + "\n"                         \
+                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #_a " = {}", a)  \
+                    + "\n" + shambase::format(" -> " #_b " = {}", b) + "\n"                        \
                     + shambase::format(" -> " #prec " = {}", prec) + "\n"                          \
                     + " -> location : " + SourceLocation{}.format_one_line());                     \
         }                                                                                          \
@@ -311,7 +316,7 @@ namespace shamtest::details {
  *
  * Usage :
  * \code{.cpp}
- * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a , b, 1e-9, sycl::lenght)
+ * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a , b, 1e-9, sycl::length)
  * \endcode
  */
 #define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(name, a, b, prec, dist)                                    \

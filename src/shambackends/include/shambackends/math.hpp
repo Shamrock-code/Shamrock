@@ -491,6 +491,11 @@ namespace sham {
     }
 
     template<class T>
+    inline shambase::VecComponent<T> length2(T a) {
+        return dot(a, a);
+    }
+
+    template<class T>
     inline T max_8points(T v0, T v1, T v2, T v3, T v4, T v5, T v6, T v7) {
         return max(max(max(v0, v1), max(v2, v3)), max(max(v4, v5), max(v6, v7)));
     }

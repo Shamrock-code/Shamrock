@@ -17,7 +17,6 @@ This code aims to be **Modern**, **Modular**, **Fast**, **Portable**.
 
 ### Third-party :
 
-- Shamrock brew tap : `brew install -v tdavidcl/shamrock/shamrock`
 - Shamrock docker : `docker run -it --platform=linux/amd64 ghcr.io/shamrock-code/shamrock:latest-oneapi`
 
 ## Citing the code

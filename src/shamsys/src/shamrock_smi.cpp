@@ -88,7 +88,7 @@ namespace shamsys {
             std::string print = "Available devices :\n";
             for (auto &[node_conf, count] : nodeconfig_histogram) {
                 std::string arr = "";
-                add_array(arr, shambase::format("{} x Nodes: ", count), node_conf);
+                add_array(arr, shambase::format("{} x Shamrock process: ", count), node_conf);
                 print += shambase::format("\n{}\n", arr);
             }
             printf("%s", print.data());
@@ -177,8 +177,8 @@ namespace shamsys {
 
             if (shamcomm::world_rank() == 0) {
 
-                std::string print = "Selected devices : (totals can we wrong if using multiple "
-                                    "rank per devices)\n";
+                std::string print = "Selected devices : (totals can be wrong if using multiple "
+                                    "ranks per device)\n";
 
                 for (auto &[key, value] : devicename_histogram) {
                     print += shambase::format("  - {} x {}", value, key) + "\n";

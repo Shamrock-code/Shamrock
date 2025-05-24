@@ -1,4 +1,5 @@
 import signal
+import sys
 
 # here the signal interup for sigint is None
 # this make ipython freaks out for weird reasons

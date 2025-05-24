@@ -19,6 +19,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammath/DiscontinuousIterator.hpp"
 #include <array>
@@ -203,69 +204,83 @@ namespace shammath {
         class Iterator {
             Tscal dr;
             std::array<i32, dim> coord_min;
-            std::array<i32, dim> coord_max;
-            std::array<i32, dim> current;
+
+            std::array<size_t, dim> coord_delta;
+            size_t current_idx;
+            size_t max_coord;
 
             bool done = false;
-            u32 idx   = 0;
 
             public:
             Iterator(Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
-                : dr(dr), coord_min(coord_min), coord_max(coord_max), current(coord_min) {
+                : dr(dr), coord_min(coord_min), current_idx(0),
+                  coord_delta({
+                      size_t(coord_max[0] - coord_min[0]),
+                      size_t(coord_max[1] - coord_min[1]),
+                      size_t(coord_max[2] - coord_min[2]),
+                  }) {
 
-                if (coord_min == coord_max) {
-                    done = true;
+                // must check for all axis otherwise we loop forever
+                for (int ax = 0; ax < dim; ax++) {
+                    if (coord_min[ax] == coord_max[ax]) {
+                        done = true;
+                    }
                 }
+
+                max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
             }
 
             inline bool is_done() { return done; }
 
             inline Tvec next() {
+
+                // std::array<i32, 3> current = {
+                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
+                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
+                //     coord_min[2] + i32(current_idx % coord_delta[2]),
+                // };
+
+                std::array<i32, 3> current = {
+                    coord_min[0] + i32(current_idx % coord_delta[0]),
+                    coord_min[1] + i32((current_idx / coord_delta[0]) % coord_delta[1]),
+                    coord_min[2] + i32((current_idx / (coord_delta[0] * coord_delta[1]))),
+                };
+
+                // logger::raw_ln(current, current_idx, max_coord);
+
                 Tvec ret = generator(dr, current);
 
                 if (!done) {
-                    current[0]++;
-                    if (current[0] >= coord_max[0]) {
-                        current[0] = coord_min[0];
-
-                        current[1]++;
-                        if (current[1] >= coord_max[1]) {
-                            current[1] = coord_min[1];
-
-                            current[2]++;
-                            if (current[2] >= coord_max[2]) {
-                                done = true;
-                            }
-                        }
-                    }
-
-                    idx++;
+                    current_idx++;
+                }
+                if (current_idx >= max_coord) {
+                    done = true;
                 }
 
                 return ret;
             }
 
-            inline std::vector<Tvec> next_n(u32 nmax) {
+            inline std::vector<Tvec> next_n(u64 nmax) {
                 std::vector<Tvec> ret{};
-                for (u32 i = 0; i < nmax; i++) {
+                for (u64 i = 0; i < nmax; i++) {
                     if (done) {
                         break;
                     }
 
                     ret.push_back(next());
                 }
-                logger::debug_ln("Discontinuous iterator", "next_n final idx", idx);
+                logger::debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
                 return ret;
             }
 
-            inline void skip(u32 n) {
-                for (u32 i = 0; i < n; i++) {
-                    if (done) {
-                        break;
-                    }
-                    next();
+            inline void skip(u64 n) {
+                if (!done) {
+                    current_idx += n;
                 }
-                logger::debug_ln("Discontinuous iterator", "skip final idx", idx);
+                if (current_idx >= max_coord) {
+                    done = true;
+                }
+                logger::debug_ln("Discontinuous iterator", "skip final idx", current_idx);
             }
         };
 
@@ -275,46 +290,38 @@ namespace shammath {
          */
         class IteratorDiscontinuous {
             Tscal dr;
-            std::array<i32, dim> coord_min;
-            std::array<i32, dim> coord_max;
-            std::array<i32, dim> current;
 
-            std::array<DiscontinuousIterator<i32>, dim> it;
+            std::array<std::vector<size_t>, dim> remapped_indices;
+
+            std::array<size_t, dim> coord_delta;
+            size_t max_coord;
 
             bool done = false;
-            u32 idx   = 0;
-
-            void update_next() {
-                if (!done) {
-
-                    it[0].advance_it();
-                    if (it[0].is_done()) {
-                        it[0] = DiscontinuousIterator<i32>(coord_min[0], coord_max[0]);
-
-                        it[1].advance_it();
-                        if (it[1].is_done()) {
-                            it[1] = DiscontinuousIterator<i32>(coord_min[1], coord_max[1]);
-
-                            it[2].advance_it();
-                            if (it[2].is_done()) {
-                                done = true;
-                            }
-                        }
-                    }
-                    idx++;
-                }
-            }
 
             public:
+            size_t current_idx;
             IteratorDiscontinuous(
                 Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max)
-                : dr(dr), coord_min(coord_min), coord_max(coord_max), current(coord_min),
-                  it{DiscontinuousIterator<i32>(coord_min[0], coord_max[0]),
-                     DiscontinuousIterator<i32>(coord_min[1], coord_max[1]),
-                     DiscontinuousIterator<i32>(coord_min[2], coord_max[2])} {
+                : dr(dr), current_idx(0), coord_delta({
+                                              size_t(coord_max[0] - coord_min[0]),
+                                              size_t(coord_max[1] - coord_min[1]),
+                                              size_t(coord_max[2] - coord_min[2]),
+                                          }) {
 
-                if (coord_min == coord_max) {
-                    done = true;
+                // must check for all axis otherwise we loop forever
+                for (int ax = 0; ax < dim; ax++) {
+                    if (coord_min[ax] == coord_max[ax]) {
+                        done = true;
+                    }
+                }
+
+                max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
+
+                for (int ax = 0; ax < dim; ax++) {
+                    DiscontinuousIterator<i32> it(coord_min[ax], coord_max[ax]);
+                    while (!it.is_done()) {
+                        remapped_indices[ax].push_back(it.next());
+                    }
                 }
             }
 
@@ -322,38 +329,57 @@ namespace shammath {
 
             inline Tvec next() {
 
-                current[0] = it[0].get();
-                current[1] = it[1].get();
-                current[2] = it[2].get();
+                // std::array<i32, 3> current = {
+                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
+                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
+                //     coord_min[2] + i32(current_idx % coord_delta[2]),
+                // };
+
+                std::array<i32, 3> current = {
+                    i32(current_idx % coord_delta[0]),
+                    i32((current_idx / coord_delta[0]) % coord_delta[1]),
+                    i32((current_idx / (coord_delta[0] * coord_delta[1]))),
+                };
+
+                current[0] = remapped_indices[0][current[0]];
+                current[1] = remapped_indices[1][current[1]];
+                current[2] = remapped_indices[2][current[2]];
+
+                // logger::raw_ln(current, current_idx, max_coord);
 
                 Tvec ret = generator(dr, current);
 
-                update_next();
+                if (!done) {
+                    current_idx++;
+                }
+                if (current_idx >= max_coord) {
+                    done = true;
+                }
 
                 return ret;
             }
 
-            inline std::vector<Tvec> next_n(u32 nmax) {
+            inline std::vector<Tvec> next_n(u64 nmax) {
                 std::vector<Tvec> ret{};
-                for (u32 i = 0; i < nmax; i++) {
+                for (u64 i = 0; i < nmax; i++) {
                     if (done) {
                         break;
                     }
 
                     ret.push_back(next());
                 }
-                logger::debug_ln("Discontinuous iterator", "next_n final idx", idx);
+                logger::debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
                 return ret;
             }
 
-            inline void skip(u32 n) {
-                for (u32 i = 0; i < n; i++) {
-                    if (done) {
-                        break;
-                    }
-                    next();
+            inline void skip(u64 n) {
+                if (!done) {
+                    current_idx += n;
                 }
-                logger::debug_ln("Discontinuous iterator", "skip final idx", idx);
+                if (current_idx >= max_coord) {
+                    done = true;
+                }
+                logger::debug_ln("Discontinuous iterator", "skip final idx", current_idx);
             }
         };
     };

@@ -131,8 +131,10 @@ int main(int argc, char *argv[]) {
         if (shamsys::instance::is_initialized()) {
             logger::raw_ln("MPI status : ");
 
+            shamsys::instance::print_mpi_comm_info();
+
             logger::raw_ln(
-                " - MPI & SYCL init :",
+                " - MPI & SYCL init     :",
                 shambase::term_colors::col8b_green() + "Ok" + shambase::term_colors::reset());
 
             shamsys::instance::print_mpi_capabilities();
@@ -147,12 +149,6 @@ int main(int argc, char *argv[]) {
 
     if (shamcomm::world_rank() == 0) {
         logger::print_faint_row();
-        logger::raw_ln("log status : ");
-        if (logger::get_loglevel() == i8_max) {
-            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
-        }
-
-        logger::raw_ln(" - Loglevel :", u32(logger::get_loglevel()), ", enabled log types : ");
         logger::print_active_level();
     }
 
@@ -180,16 +176,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (shamsys::instance::is_initialized()) {
-        if (shamcomm::world_rank() == 0) {
-            logger::print_faint_row();
-            logger::raw_ln(
-                " - Code init",
-                shambase::term_colors::col8b_green() + "DONE" + shambase::term_colors::reset(),
-                "now it's time to",
-                shambase::term_colors::col8b_cyan() + shambase::term_colors::blink() + "ROCK"
-                    + shambase::term_colors::reset());
-            logger::print_faint_row();
-        }
+        shamcomm::logs::code_init_done_log();
 
         if (opts::has_option("--pypath")) {
             shambindings::setpypath(std::string(opts::get_option("--pypath")));

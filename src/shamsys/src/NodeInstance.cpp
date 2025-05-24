@@ -384,6 +384,8 @@ namespace shamsys::instance {
 
     void print_mpi_capabilities() { shamcomm::print_mpi_capabilities(); }
 
+    void print_mpi_comm_info() { shamcomm::print_mpi_comm_info(); }
+
     void check_dgpu_available() {
 
         using namespace shambase::term_colors;

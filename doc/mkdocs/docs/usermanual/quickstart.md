@@ -6,7 +6,7 @@ There are multiple ways to install Shamrock:
 
  - [From source](./quickstart/install_from_source.md)
  - [Spack package](./quickstart/install_spack.md) (Easy but long compile time)
- - [Homebrew package](./quickstart/install_brew.md) (Easy but need homebrew, and normal compile time)
+ - [Homebrew package](./quickstart/install_brew.md) (Homebrew package, precompiled as well)
  - [Docker container](./quickstart/install_docker.md) (Fastest but not the most convenient)
 
 
@@ -80,7 +80,7 @@ Available devices :
 |  1 |  AdaptiveCpp OpenMP h ... |    OpenMP (platform 0) |    CPU |     62.18 GB |    24 |
 -------------------------------------------------------------------------------------------
 
-Selected devices : (totals can we wrong if using multiple rank per devices)
+Selected devices : (totals can be wrong if using multiple ranks per device)
   - 1 x NVIDIA GeForce RTX 3070 (id=0)
   Total memory : 7.63 GB
   Total compute units : 46
@@ -105,14 +105,14 @@ Available devices :
 |  1 |  AdaptiveCpp OpenMP h ... |    OpenMP (platform 0) |    CPU |     62.18 GB |    24 |
 -------------------------------------------------------------------------------------------
 
-Selected devices : (totals can we wrong if using multiple rank per devices)
+Selected devices : (totals can be wrong if using multiple ranks per device)
   - 1 x NVIDIA GeForce RTX 3070 (id=0)
   Total memory : 7.63 GB
   Total compute units : 46
 
 -----------------------------------------------------
-Running micro benchamrks :
- - p2p bandwith    : 2.4662e+10 B.s^-1 (ranks : 0 -> 0) (loops : 2969)
+Running micro benchmarks:
+ - p2p bandwidth    : 2.4662e+10 B.s^-1 (ranks : 0 -> 0) (loops : 2969)
  - saxpy (f32_4)   : 4.005e+11 B.s^-1 (min = 4.0e+11, max = 4.0e+11, avg = 4.0e+11) (2.0e+00 ms)
  - add_mul (f32_4) : 1.340e+13 flops (min = 1.3e+13, max = 1.3e+13, avg = 1.3e+13) (1.9e+01 ms)
  - add_mul (f64_4) : 2.265e+11 flops (min = 2.3e+11, max = 2.3e+11, avg = 2.3e+11) (1.1e+03 ms)

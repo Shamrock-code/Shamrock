@@ -43,8 +43,8 @@ struct BenchResult {
     f64 nb_obj;
     f64 fetch_time;
     f64 comm_time;
-    f64 fetch_bandwith;
-    f64 comm_bandwith;
+    f64 fetch_bandwidth;
+    f64 comm_bandwidth;
 };
 
 BenchResult benchmark_comm(std::mt19937 &eng, u32 max_patch_per_node, u32 nb_part) {
@@ -106,12 +106,12 @@ BenchResult benchmark_comm(std::mt19937 &eng, u32 max_patch_per_node, u32 nb_par
 
     BenchResult bench;
 
-    bench.nb_patch       = plist.global.size();
-    bench.nb_obj         = nb_obj;
-    bench.fetch_time     = fetch_timer.nanosec / 1e9;
-    bench.comm_time      = comm_timer.nanosec / 1e9;
-    bench.fetch_bandwith = sum_byte_fetch / bench.fetch_time;
-    bench.comm_bandwith  = sum_byte_comm / bench.comm_time;
+    bench.nb_patch        = plist.global.size();
+    bench.nb_obj          = nb_obj;
+    bench.fetch_time      = fetch_timer.nanosec / 1e9;
+    bench.comm_time       = comm_timer.nanosec / 1e9;
+    bench.fetch_bandwidth = sum_byte_fetch / bench.fetch_time;
+    bench.comm_bandwidth  = sum_byte_comm / bench.comm_time;
 
     return bench;
 }
@@ -122,14 +122,14 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
 
     std::mt19937 eng(0x2525 + shamcomm::world_rank());
 
-    auto &bandwith_dataset = shamtest::test_data().new_dataset("bandwith");
+    auto &bandwidth_dataset = shamtest::test_data().new_dataset("bandwidth");
 
     std::vector<f64> nb_patch;
     std::vector<f64> nb_obj;
     std::vector<f64> fetch_time;
     std::vector<f64> comm_time;
-    std::vector<f64> fetch_bandwith;
-    std::vector<f64> comm_bandwith;
+    std::vector<f64> fetch_bandwidth;
+    std::vector<f64> comm_bandwidth;
 
     u64 max_mem_sz = 2e9;
 
@@ -158,16 +158,16 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
         nb_obj.push_back(res.nb_obj);
         fetch_time.push_back(res.fetch_time);
         comm_time.push_back(res.comm_time);
-        fetch_bandwith.push_back(res.fetch_bandwith);
-        comm_bandwith.push_back(res.comm_bandwith);
+        fetch_bandwidth.push_back(res.fetch_bandwidth);
+        comm_bandwidth.push_back(res.comm_bandwidth);
     }
 
     if (shamcomm::world_rank() == 0) {
-        bandwith_dataset.add_data("nb_patch", nb_patch);
-        bandwith_dataset.add_data("nb_obj", nb_obj);
-        bandwith_dataset.add_data("fetch_time", fetch_time);
-        bandwith_dataset.add_data("comm_time", comm_time);
-        bandwith_dataset.add_data("fetch_bandwith", fetch_bandwith);
-        bandwith_dataset.add_data("comm_bandwith", comm_bandwith);
+        bandwidth_dataset.add_data("nb_patch", nb_patch);
+        bandwidth_dataset.add_data("nb_obj", nb_obj);
+        bandwidth_dataset.add_data("fetch_time", fetch_time);
+        bandwidth_dataset.add_data("comm_time", comm_time);
+        bandwidth_dataset.add_data("fetch_bandwidth", fetch_bandwidth);
+        bandwidth_dataset.add_data("comm_bandwidth", comm_bandwidth);
     }
 }

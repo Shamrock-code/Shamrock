@@ -14,7 +14,9 @@
  *
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include <cmath>
 
 namespace shamcomm::logs {
@@ -77,6 +79,81 @@ namespace shamcomm::logs {
         }
 
         return shamcomm::logs::_reformat_simple({color, name, module_name, content});
+    }
+
+    ///////////////////////////////////
+    // log level declared printer
+    ///////////////////////////////////
+
+    /// X macro impl for the print_active_level() function
+#define IsActivePrint(_name, StructREF) _name##_ln("xxx", "xxx", "(", "logger::" #_name, ")");
+
+    void print_active_level() {
+        raw_ln("log status : ");
+        if (get_loglevel() == i8_max) {
+            raw_ln("If you've seen spam in your life i can garantee you, this is worst");
+        }
+
+        raw_ln(shambase::format(" - Loglevel: {}, enabled log types :", u32(get_loglevel())));
+
+// logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
+
+/// Temp definition for the X macro call in print_active_level()
+#define X IsActivePrint
+        LIST_LEVEL
+#undef X
+        // logger::raw_ln(terminal_effects::faint + "----------------------" +
+        // terminal_effects::reset);
+    }
+
+#undef IsActivePrint
+
+    ///////////////////////////////////
+    // Code init done
+    ///////////////////////////////////
+
+    void code_init_done_log() {
+
+        auto lines = std::array<std::string, 15>{
+            // Someone that coded too much here
+            "Now it's time to " + shambase::term_colors::col8b_cyan()
+                + shambase::term_colors::blink() + "ROCK" + shambase::term_colors::reset() + ".",
+            "Shamrock rolls — no time for moss.", // Rolling stone gathers no moss.
+            "Shamrock's live — go with the flow.",
+            "Shamrock — as solid as a rock.",
+            "Shamrock's stable and steady as a rock.",
+            "Shamrock initialized — no cracks in this rock.",
+            "Shamrock is ready to eat cheese (melted) and bread.",
+            "Are you sure you want to work today?",
+            "No holidays for the Shamrock ... (yeah, this was a PhD at some point)",
+            "-[--->+<]>--.>+[----->+++<]>+.-------.++++++++++++.+++++.---.------------.++++++++.",
+            "CPU hours to burn? We don't do such thing here.",
+            "Are you burning GPUs or CPUs today?",
+
+            // Someone that started on oumuamua
+            "Shamrock your way to a brighter day!",
+            "Node hours to burn? Leaf it to me.",
+            "Ready for some shamazing simulations?",
+        };
+
+        auto get_sentence = [&]() {
+            f64 t   = shambase::details::get_wtime();
+            u64 idx = static_cast<u64>(std::floor(
+                          t * 2503'09713 // you wont guess what this stands for
+                          ))
+                      % lines.size();
+            return lines[idx];
+        };
+
+        if (shamcomm::world_rank() == 0) {
+            logger::print_faint_row();
+            logger::raw_ln(
+                " - Code init:",
+                shambase::term_colors::col8b_green() + "DONE" + shambase::term_colors::reset()
+                    + ".",
+                get_sentence());
+            logger::print_faint_row();
+        }
     }
 
 } // namespace shamcomm::logs

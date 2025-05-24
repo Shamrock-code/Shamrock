@@ -49,6 +49,9 @@ namespace shammodels::basegodunov {
 
         using RTree = RadixTree<Tmorton, TgridVec>;
 
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_min;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_max;
+
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> block_counts_with_ghost;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_rho;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> refs_rhov;

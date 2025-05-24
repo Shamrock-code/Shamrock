@@ -26,14 +26,21 @@ namespace shamcomm {
      *
      * @return the rank of the current process in the MPI communicator
      */
-    const i32 world_rank();
+    i32 world_rank();
 
     /**
      * @brief Gives the size of the MPI communicator
      *
      * @return the size of the MPI communicator
      */
-    const i32 world_size();
+    i32 world_size();
+
+    /**
+     * @brief Gets the maximum value of the MPI tag
+     *
+     * @return the maximum value of the MPI tag
+     */
+    i32 mpi_max_tag_value();
 
     /**
      * @brief Gets the information about the MPI communicator

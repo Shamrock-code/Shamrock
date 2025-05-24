@@ -31,8 +31,8 @@ namespace {
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_rhov,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rhoe,
 
-            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> spans_vel,
-            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> spans_P,
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_vel,
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_P,
             const shambase::DistributedData<u32> &sizes,
             u32 block_size,
             Tscal gamma) {

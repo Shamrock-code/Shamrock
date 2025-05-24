@@ -160,8 +160,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     modules::AMRTree amrtree(context, solver_config, storage);
     amrtree.build_trees();
 
-    amrtree.correct_bounding_box();
-
     // modules::StencilGenerator stencil_gen(context,solver_config,storage);
     // stencil_gen.make_stencil();
 

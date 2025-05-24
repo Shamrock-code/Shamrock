@@ -40,9 +40,10 @@ namespace shammodels::basegodunov {
     template<class T>
     using Component = shambase::StorageComponent<T>;
 
-    template<class Tvec, class TgridVec, class Tmorton>
+    template<class Tvec, class TgridVec, class Tmorton_>
     class SolverStorage {
         public:
+        using Tmorton            = Tmorton_;
         using Tscal              = shambase::VecComponent<Tvec>;
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;

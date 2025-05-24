@@ -35,6 +35,7 @@ set(Sources
     src/modules/ConsToPrimDust.cpp
     src/modules/ComputeCellAABB.cpp
     src/modules/StencilGenerator.cpp
+    src/modules/NodeBuildTrees.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

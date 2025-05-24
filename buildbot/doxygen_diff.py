@@ -82,7 +82,7 @@ print("<details>")
 print("<summary>")
 print("Detailed changes :")
 print("</summary>")
-print(f" ")
+print(" ")
 print("```diff")
 
 lst = []

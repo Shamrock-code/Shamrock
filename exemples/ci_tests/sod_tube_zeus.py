@@ -152,7 +152,7 @@ if False:
     fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), dpi=125)
 
     plt.scatter(X, rho, rasterized=True, label="rho")
-    plt.scatter(X, vx, rasterized=True, label="v")
+    plt.scatter(X, velx, rasterized=True, label="v")
     plt.scatter(X, P, rasterized=True, label="P")
     # plt.scatter(X,rhoetot, rasterized=True,label="rhoetot")
     plt.legend()

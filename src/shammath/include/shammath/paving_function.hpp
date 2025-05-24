@@ -16,28 +16,48 @@
  *
  */
 
+#include "shambackends/math.hpp"
+#include "shambackends/sycl.hpp"
+
 namespace shammath {
 
-    template<typename T>
+    template<typename Tvec>
     struct paving_function_periodic_3d {
 
-        T box_size;
+        Tvec box_size;
 
-        T f(T x, int i, int j, int k) { return x + box_size * T{i, j, k}; }
-        T f_inv(T x, int i, int j, int k) { return x - box_size * T{i, j, k}; }
+        Tvec f(Tvec x, int i, int j, int k) { return x + box_size * Tvec{i, j, k}; }
+        Tvec f_inv(Tvec x, int i, int j, int k) { return x - box_size * Tvec{i, j, k}; }
     };
 
-    template<typename T>
+    template<typename Tvec>
     struct paving_function_general_3d {
 
-        T box_size;
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        Tvec box_size;
+        Tvec box_center;
 
         bool is_x_periodic;
         bool is_y_periodic;
         bool is_z_periodic;
 
-        T f(T x, int i, int j, int k) { return x + box_size * T{i, j, k}; }
-        T f_inv(T x, int i, int j, int k) { return x - box_size * T{i, j, k}; }
+        Tvec f(Tvec x, int i, int j, int k) {
+            Tvec off{
+                (is_x_periodic) ? 0 : (x[0] - box_center[0]) * (sham::m1pown<Tscal>(i) - 1),
+                (is_y_periodic) ? 0 : (x[1] - box_center[1]) * (sham::m1pown<Tscal>(j) - 1),
+                (is_z_periodic) ? 0 : (x[2] - box_center[2]) * (sham::m1pown<Tscal>(k) - 1)};
+            return x + box_size * Tvec{i, j, k} + off;
+        }
+
+        Tvec f_inv(Tvec x, int i, int j, int k) {
+            Tvec tmp = x - box_size * Tvec{i, j, k};
+            Tvec off{
+                (is_x_periodic) ? 0 : (tmp[0] - box_center[0]) * (sham::m1pown<Tscal>(i) - 1),
+                (is_y_periodic) ? 0 : (tmp[1] - box_center[1]) * (sham::m1pown<Tscal>(j) - 1),
+                (is_z_periodic) ? 0 : (tmp[2] - box_center[2]) * (sham::m1pown<Tscal>(k) - 1)};
+            return tmp + off;
+        }
     };
 
     /*

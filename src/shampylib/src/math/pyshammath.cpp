@@ -78,4 +78,18 @@ Register_pymod(pysham_mathinit) {
         }))
         .def("f", &shammath::paving_function_periodic_3d<f64_3>::f)
         .def("f_inv", &shammath::paving_function_periodic_3d<f64_3>::f_inv);
+
+    py::class_<shammath::paving_function_general_3d<f64_3>>(
+        math_module, "paving_function_general_3d")
+        .def(py::init([](f64_3 box_size,
+                         f64_3 box_center,
+                         bool is_x_periodic,
+                         bool is_y_periodic,
+                         bool is_z_periodic) {
+            return std::make_unique<shammath::paving_function_general_3d<f64_3>>(
+                shammath::paving_function_general_3d<f64_3>{
+                    box_size, box_center, is_x_periodic, is_y_periodic, is_z_periodic});
+        }))
+        .def("f", &shammath::paving_function_general_3d<f64_3>::f)
+        .def("f_inv", &shammath::paving_function_general_3d<f64_3>::f_inv);
 }

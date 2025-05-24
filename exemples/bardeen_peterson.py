@@ -1,3 +1,12 @@
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#     "matplotlib",
+#     "numpy",
+#     "shamrock @ git+https://github.com/Shamrock-code/Shamrock.git"
+# ]
+# ///
+
 import matplotlib.pyplot as plt
 import numpy as np
 

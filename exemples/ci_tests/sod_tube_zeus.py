@@ -90,7 +90,6 @@ sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_target, xref, -xrang
 if False:
 
     def convert_to_cell_coords(dic):
-
         cmin = dic["cell_min"]
         cmax = dic["cell_max"]
 
@@ -102,7 +101,6 @@ if False:
         zmax = []
 
         for i in range(len(cmin)):
-
             m, M = cmin[i], cmax[i]
 
             mx, my, mz = m
@@ -138,7 +136,6 @@ if False:
     P = []
 
     for i in range(len(dic["xmin"])):
-
         X.append(dic["xmin"][i] - 0.5)
         rho.append(dic["rho"][i])
         velx.append(dic["vel"][i][0])

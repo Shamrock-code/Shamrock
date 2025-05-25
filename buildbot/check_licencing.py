@@ -70,7 +70,6 @@ for fname in file_list:
     print("checking", fname)
     for selector, licence in checkers:
         if selector(fname):
-
             print(" -", fname)
 
             f = open(fname, "r")

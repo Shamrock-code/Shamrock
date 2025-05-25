@@ -244,7 +244,6 @@ idump_last_dump = get_last_dump()
 
 
 def plot_sim_orbit(sink_list):
-
     sink_cnt = len(sink_list)
 
     X = [[] for i in range(sink_cnt)]
@@ -311,7 +310,6 @@ def plot_sim_orbit(sink_list):
 
 
 def plot_sim_orbit2(sink_list):
-
     import matplotlib.pyplot as plt
     import numpy as np
     from scipy.integrate import odeint
@@ -375,7 +373,7 @@ def plot_sim_orbit2(sink_list):
     # Plot the orbits
     plt.figure(figsize=(8, 8))
     for i in range(N):
-        plt.plot(positions[:, i, 0], positions[:, i, 1], label=f"Body {i+1}")
+        plt.plot(positions[:, i, 0], positions[:, i, 1], label=f"Body {i + 1}")
 
     plt.xlabel("x")
     plt.ylabel("y")
@@ -502,7 +500,6 @@ else:
 
 
 def plot_rho(ext, sinks, arr_rho, iplot):
-
     import matplotlib
 
     # Reset the figure using the same memory as the last one
@@ -545,7 +542,6 @@ def plot_rho(ext, sinks, arr_rho, iplot):
 
 
 def plot_rho_integ(ext, sinks, arr_rho, iplot):
-
     dpi = 200
     import matplotlib
 
@@ -594,7 +590,6 @@ def plot_rho_integ(ext, sinks, arr_rho, iplot):
 
 
 def rot_plot_rho(ext, sinks, arr_rho, iplot, e_r, e_theta):
-
     import matplotlib
 
     # Reset the figure using the same memory as the last one
@@ -647,7 +642,6 @@ def rot_plot_rho(ext, sinks, arr_rho, iplot, e_r, e_theta):
 
 
 def plot_vx(ext, sinks, arr_vx, iplot):
-
     import matplotlib
 
     # Reset the figure using the same memory as the last one
@@ -687,7 +681,6 @@ def plot_vx(ext, sinks, arr_vx, iplot):
 
 
 def plot_vz_z(ext, sinks, arr_vz, iplot):
-
     import matplotlib
 
     # Reset the figure using the same memory as the last one
@@ -727,7 +720,6 @@ def plot_vz_z(ext, sinks, arr_vz, iplot):
 
 
 def rot_plot_vz_z(ext, sinks, arr_vz, iplot, e_r, e_z):
-
     import matplotlib
 
     # Reset the figure using the same memory as the last one
@@ -840,7 +832,6 @@ def plot_state(iplot):
     )
 
     if shamrock.sys.world_rank() == 0:
-
         plot_rho(ext, sinks, arr_rho, iplot)
         plot_rho_integ(ext, sinks, arr_rho2, iplot)
         rot_plot_rho(ext, sinks, rot_arr_rho, iplot, e_r, e_theta)
@@ -866,7 +857,6 @@ idump = 0
 iplot = 0
 istop = 0
 for ttarg in t_stop:
-
     if ttarg >= t_start:
         model.evolve_until(ttarg)
 

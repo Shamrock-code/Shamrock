@@ -118,32 +118,32 @@ err_log = ""
 
 if not float_equal(rho, expect_rho, tol * expect_rho):
     err_log += "error on rho is outside of tolerances:\n"
-    err_log += f"  expected error = {expect_rho} +- {tol*expect_rho}\n"
-    err_log += f"  obtained error = {rho} (relative error = {(rho - expect_rho)/expect_rho})\n"
+    err_log += f"  expected error = {expect_rho} +- {tol * expect_rho}\n"
+    err_log += f"  obtained error = {rho} (relative error = {(rho - expect_rho) / expect_rho})\n"
     test_pass = False
 
 if not float_equal(vx, expect_vx, tol * expect_vx):
     err_log += "error on vx is outside of tolerances:\n"
-    err_log += f"  expected error = {expect_vx} +- {tol*expect_vx}\n"
-    err_log += f"  obtained error = {vx} (relative error = {(vx - expect_vx)/expect_vx})\n"
+    err_log += f"  expected error = {expect_vx} +- {tol * expect_vx}\n"
+    err_log += f"  obtained error = {vx} (relative error = {(vx - expect_vx) / expect_vx})\n"
     test_pass = False
 
 if not float_equal(vy, expect_vy, tol * expect_vy):
     err_log += "error on vy is outside of tolerances:\n"
-    err_log += f"  expected error = {expect_vy} +- {tol*expect_vy}\n"
-    err_log += f"  obtained error = {vy} (relative error = {(vy - expect_vy)/expect_vy})\n"
+    err_log += f"  expected error = {expect_vy} +- {tol * expect_vy}\n"
+    err_log += f"  obtained error = {vy} (relative error = {(vy - expect_vy) / expect_vy})\n"
     test_pass = False
 
 if not float_equal(vz, expect_vz, tol * expect_vz):
     err_log += "error on vz is outside of tolerances:\n"
-    err_log += f"  expected error = {expect_vz} +- {tol*expect_vz}\n"
-    err_log += f"  obtained error = {vz} (relative error = {(vz - expect_vz)/expect_vz})\n"
+    err_log += f"  expected error = {expect_vz} +- {tol * expect_vz}\n"
+    err_log += f"  obtained error = {vz} (relative error = {(vz - expect_vz) / expect_vz})\n"
     test_pass = False
 
 if not float_equal(P, expect_P, tol * expect_P):
     err_log += "error on P is outside of tolerances:\n"
-    err_log += f"  expected error = {expect_P} +- {tol*expect_P}\n"
-    err_log += f"  obtained error = {P} (relative error = {(P - expect_P)/expect_P})\n"
+    err_log += f"  expected error = {expect_P} +- {tol * expect_P}\n"
+    err_log += f"  obtained error = {P} (relative error = {(P - expect_P) / expect_P})\n"
     test_pass = False
 
 if test_pass == False:

@@ -161,9 +161,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
             sham::DeviceBuffer<Tscal> &block_cell_sizes
-                = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
             sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-                = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
             sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
             sham::DeviceBuffer<Tvec> &buf_grad_rho = storage.grad_rho.get().get_buf(id);
@@ -403,9 +411,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
             sham::DeviceBuffer<Tscal> &block_cell_sizes
-                = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
             sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-                = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
             sham::DeviceBuffer<Tvec> &buf_vel    = shambase::get_check_ref(storage.vel).get_buf(id);
             sham::DeviceBuffer<Tvec> &buf_dx_vel = storage.dx_v.get().get_buf(id);
@@ -643,9 +659,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
             sham::DeviceBuffer<Tscal> &block_cell_sizes
-                = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
             sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-                = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
             sham::DeviceBuffer<Tscal> &buf_press
                 = shambase::get_check_ref(storage.press).get_buf(id);
@@ -916,9 +940,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
             MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
             sham::DeviceBuffer<Tscal> &block_cell_sizes
-                = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
             sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-                = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
             sham::DeviceBuffer<Tscal> &buf_rho_dust
                 = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
@@ -1170,9 +1202,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
             sham::DeviceBuffer<Tscal> &block_cell_sizes
-                = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
             sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-                = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
             sham::DeviceBuffer<Tvec> &buf_vel_dust
                 = shambase::get_check_ref(storage.vel_dust).get_buf(id);

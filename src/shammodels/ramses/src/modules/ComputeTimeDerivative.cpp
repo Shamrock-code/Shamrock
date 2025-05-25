@@ -121,9 +121,13 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+            = shambase::get_check_ref(storage.block_cell_sizes).get_refs().get(id).get().get_buf();
         sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-            = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+            = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                  .get_refs()
+                  .get(id)
+                  .get()
+                  .get_buf();
 
         sham::EventList depends_list;
         auto acc_aabb_block_lower = cell0block_aabb_lower.get_read_access(depends_list);
@@ -399,9 +403,13 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
             = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
+            = shambase::get_check_ref(storage.block_cell_sizes).get_refs().get(id).get().get_buf();
         sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-            = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+            = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                  .get_refs()
+                  .get(id)
+                  .get()
+                  .get_buf();
 
         sham::EventList depends_list;
         auto acc_aabb_block_lower   = cell0block_aabb_lower.get_read_access(depends_list);

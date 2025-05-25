@@ -22,7 +22,7 @@
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
-#include "shammodels/ramses/modules/ComputeCellInfos.hpp"
+#include "shammodels/ramses/modules/ComputeCellAABB.hpp"
 #include "shammodels/ramses/modules/ComputeFlux.hpp"
 #include "shammodels/ramses/modules/ComputeGradient.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
@@ -105,6 +105,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         shammodels::basegodunov::solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(
         "cell_graph_edge", "\\text{cell graph edge}");
 
+    // will be filled by NodeComputeCellAABB
+    storage.block_cell_sizes = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        1, "block_cell_sizes", "s_{\\rm cell}");
+    storage.cell0block_aabb_lower = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, "cell0block_aabb_lower", "\\mathbf{s}_{\\rm inf,block}");
+
     ////////////////////////////////////////////////////////////////////////////////
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
@@ -151,6 +157,20 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         shamrock::solvergraph::OperationSequence seq(
             "Compute neigh table", std::move(neigh_table_sequence));
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+    }
+
+    { // Compute cell infos
+
+        modules::NodeComputeCellAABB<Tvec, TgridVec> node{
+            AMRBlock::Nside, solver_config.grid_coord_to_pos_fact};
+
+        node.set_edges(
+            storage.block_counts_with_ghost,
+            storage.refs_block_min,
+            storage.refs_block_max,
+            storage.block_cell_sizes,
+            storage.cell0block_aabb_lower);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
     }
 
     { // Build ConsToPrim node
@@ -228,9 +248,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     gz.build_ghost_cache();
 
     gz.exchange_ghost();
-
-    modules::ComputeCellInfos comp_cell_infos(context, solver_config, storage);
-    comp_cell_infos.compute_aabb();
 
     // compute prim variable
     {
@@ -398,8 +415,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         storage.rho_d_next_no_drag.reset();
         storage.rhov_d_next_no_drag.reset();
     }
-
-    storage.cell_infos.reset();
 
     storage.merge_patch_bounds.reset();
 

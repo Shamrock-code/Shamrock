@@ -24,7 +24,6 @@ set(Sources
     src/modules/ComputeGradient.cpp
     src/modules/FaceInterpolate.cpp
     src/modules/AMRSetup.cpp
-    src/modules/ComputeCellInfos.cpp
     src/modules/ComputeTimeDerivative.cpp
     src/modules/GhostZones.cpp
     src/modules/AMRSortBlocks.cpp

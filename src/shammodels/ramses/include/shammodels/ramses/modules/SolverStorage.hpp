@@ -67,6 +67,9 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> press;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> vel_dust;
 
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> block_cell_sizes;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> cell0block_aabb_lower;
+
         Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
 
         std::shared_ptr<solvergraph::TreeEdge<Tmorton, TgridVec>> trees;
@@ -89,8 +92,6 @@ namespace shammodels::basegodunov {
         Component<shamrock::patch::PatchDataLayout> ghost_layout;
 
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
-
-        Component<shammodels::basegodunov::modules::CellInfos<Tvec, TgridVec>> cell_infos;
 
         Component<shamrock::ComputeField<Tvec>> grad_rho;
         Component<shamrock::ComputeField<Tvec>> dx_v;

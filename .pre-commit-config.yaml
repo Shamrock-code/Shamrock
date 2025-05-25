@@ -92,6 +92,7 @@ repos:
         - --extend-select=BLE,I,NPY,PLE
         - --ignore=E402,E711,E712,E713,E722,E741,F401,F403,F405,F841
         - --fix
+      log_file: log_precommit_ruff
 
 #- repo: https://github.com/johnor/pre-commit-lizard
 #  rev: 'v1.17.10'

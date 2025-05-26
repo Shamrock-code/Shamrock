@@ -21,7 +21,6 @@ set(Sources
     src/modules/TimeIntegrator.cpp
     src/modules/AMRGridRefinementHandler.cpp
     src/modules/AnalysisSodTube.cpp
-    src/modules/ComputeGradient.cpp
     src/modules/FaceInterpolate.cpp
     src/modules/AMRSetup.cpp
     src/modules/ComputeTimeDerivative.cpp
@@ -35,6 +34,7 @@ set(Sources
     src/modules/NodeBuildTrees.cpp
     src/modules/FindBlockNeigh.cpp
     src/modules/BlockNeighToCellNeigh.cpp
+    src/modules/SlopeLimitedGradient.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

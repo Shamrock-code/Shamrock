@@ -47,6 +47,14 @@ namespace shammath {
         /// Check if this matrix is equal to another one
         bool operator==(const mat<T, m, n> &other) { return data == other.data; }
 
+        inline mat &operator+=(const mat other) {
+#pragma unroll
+            for (size_t i = 0; i < m * n; i++) {
+                data[i] += other.data[i];
+            }
+            return *this;
+        }
+
         /// check if this matrix is equal to another one at a given precison
         bool equal_at_precision(const mat<T, m, n> &other, const T precision) {
             bool res = true;
@@ -103,3 +111,32 @@ namespace shammath {
     };
 
 } // namespace shammath
+
+template<class T, int m, int n>
+struct sham::VectorProperties<shammath::mat<T, m, n>> {
+    using component_type           = T;
+    static constexpr u32 dimension = m * n;
+
+    static constexpr bool is_float_based
+        = std::is_same<T, f16>::value || std::is_same<T, f32>::value || std::is_same<T, f64>::value;
+    static constexpr bool is_uint_based = std::is_same<T, u8>::value || std::is_same<T, u16>::value
+                                          || std::is_same<T, u32>::value
+                                          || std::is_same<T, u64>::value;
+    static constexpr bool is_int_based = std::is_same<T, i8>::value || std::is_same<T, i16>::value
+                                         || std::is_same<T, i32>::value
+                                         || std::is_same<T, i64>::value;
+    static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
+
+    static constexpr shammath::mat<T, m, n> get_min() {
+        constexpr T min = shambase::get_min<T>();
+        return {min};
+    }
+    static constexpr shammath::mat<T, m, n> get_max() {
+        constexpr T max = shambase::get_max<T>();
+        return {max};
+    }
+    static constexpr shammath::mat<T, m, n> get_zero() {
+        constexpr T zero = 0;
+        return {zero};
+    }
+};

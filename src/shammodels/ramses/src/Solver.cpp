@@ -24,7 +24,6 @@
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
 #include "shammodels/ramses/modules/ComputeFlux.hpp"
-#include "shammodels/ramses/modules/ComputeGradient.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
@@ -32,6 +31,7 @@
 #include "shammodels/ramses/modules/FaceInterpolate.hpp"
 #include "shammodels/ramses/modules/FindBlockNeigh.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
+#include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/ramses/modules/StencilGenerator.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
@@ -110,6 +110,29 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         1, "block_cell_sizes", "s_{\\rm cell}");
     storage.cell0block_aabb_lower = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         1, "cell0block_aabb_lower", "\\mathbf{s}_{\\rm inf,block}");
+
+    storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        AMRBlock::block_size, "grad_rho", "\\nabla \\rho");
+    storage.dx_v = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        AMRBlock::block_size, "dx_v", "\\nabla_x \\mathbf{v}");
+    storage.dy_v = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        AMRBlock::block_size, "dy_v", "\\nabla_y \\mathbf{v}");
+    storage.dz_v = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        AMRBlock::block_size, "dz_v", "\\nabla_z \\mathbf{v}");
+    storage.grad_P = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        AMRBlock::block_size, "grad_P", "\\nabla P");
+
+    if (solver_config.is_dust_on()) {
+        u32 ndust             = solver_config.dust_config.ndust;
+        storage.grad_rho_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size * ndust, "grad_rho_dust", "\\nabla \\rho_{\\rm dust}");
+        storage.dx_v_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size * ndust, "dx_v_dust", "\\nabla_x \\mathbf{v}_{\\rm dust}");
+        storage.dy_v_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size * ndust, "dy_v_dust", "\\nabla_y \\mathbf{v}_{\\rm dust}");
+        storage.dz_v_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size * ndust, "dz_v_dust", "\\nabla_z \\mathbf{v}_{\\rm dust}");
+    }
 
     ////////////////////////////////////////////////////////////////////////////////
     /// Nodes
@@ -206,6 +229,77 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
+    { // Build slope limited gradients
+
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> grad_sequence;
+
+        {
+            modules::SlopeLimitedScalarGradient<Tvec, TgridVec> node{
+                AMRBlock::block_size, 1, solver_config.slope_config};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.cell_graph_edge,
+                storage.block_cell_sizes,
+                storage.refs_rho,
+                storage.grad_rho);
+            grad_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+
+        {
+            modules::SlopeLimitedVectorGradient<Tvec, TgridVec> node{
+                AMRBlock::block_size, 1, solver_config.slope_config};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.cell_graph_edge,
+                storage.block_cell_sizes,
+                storage.vel,
+                storage.dx_v,
+                storage.dy_v,
+                storage.dz_v);
+            grad_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+        {
+            modules::SlopeLimitedScalarGradient<Tvec, TgridVec> node{
+                AMRBlock::block_size, 1, solver_config.slope_config};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.cell_graph_edge,
+                storage.block_cell_sizes,
+                storage.press,
+                storage.grad_P);
+            grad_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+
+        if (solver_config.is_dust_on()) {
+            u32 ndust = solver_config.dust_config.ndust;
+            modules::SlopeLimitedScalarGradient<Tvec, TgridVec> node{
+                AMRBlock::block_size, ndust, solver_config.slope_config};
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.cell_graph_edge,
+                storage.block_cell_sizes,
+                storage.refs_rho_dust,
+                storage.grad_rho_dust);
+            grad_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+
+            modules::SlopeLimitedVectorGradient<Tvec, TgridVec> node2{
+                AMRBlock::block_size, ndust, solver_config.slope_config};
+            node2.set_edges(
+                storage.block_counts_with_ghost,
+                storage.cell_graph_edge,
+                storage.block_cell_sizes,
+                storage.vel_dust,
+                storage.dx_v_dust,
+                storage.dy_v_dust,
+                storage.dz_v_dust);
+            grad_sequence.push_back(std::make_shared<decltype(node2)>(std::move(node2)));
+        }
+
+        shamrock::solvergraph::OperationSequence seq(
+            "Slope limited gradients", std::move(grad_sequence));
+        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+    }
+
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));
     storage.solver_sequence = std::make_shared<decltype(seq)>(std::move(seq));
 }
@@ -251,12 +345,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     // compute prim variable
     {
-        // logger::raw_ln(" -- tex:\n" +
-        // shambase::get_check_ref(storage.solver_sequence).get_tex()); logger::raw_ln(
-        //     " -- dot:\n" + shambase::get_check_ref(storage.solver_sequence).get_dot_graph());
+        logger::raw_ln(" -- tex:\n" + shambase::get_check_ref(storage.solver_sequence).get_tex());
+        logger::raw_ln(
+            " -- dot:\n" + shambase::get_check_ref(storage.solver_sequence).get_dot_graph());
         shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
 
+    /*
     // compute & limit gradients
     modules::ComputeGradient grad_compute(context, solver_config, storage);
     grad_compute.compute_grad_rho_van_leer();
@@ -266,6 +361,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         grad_compute.compute_grad_rho_dust_van_leer();
         grad_compute.compute_grad_v_dust_van_leer();
     }
+        */
 
     // shift values
     modules::FaceInterpolate face_interpolator(context, solver_config, storage);
@@ -365,12 +461,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.press_face_zp.reset();
     storage.press_face_zm.reset();
 
-    storage.grad_rho.reset();
-    storage.dx_v.reset();
-    storage.dy_v.reset();
-    storage.dz_v.reset();
-    storage.grad_P.reset();
-
     if (solver_config.is_dust_on()) {
         storage.dtrho_dust.reset();
         storage.dtrhov_dust.reset();
@@ -401,11 +491,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         storage.vel_dust_face_ym.reset();
         storage.vel_dust_face_zp.reset();
         storage.vel_dust_face_zm.reset();
-
-        storage.grad_rho_dust.reset();
-        storage.dx_v_dust.reset();
-        storage.dy_v_dust.reset();
-        storage.dz_v_dust.reset();
     }
 
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
@@ -505,7 +590,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     writer.write_voxel_cells(pos_min_cell, pos_max_cell, num_obj * block_size);
 
     writer.add_cell_data_section();
-    writer.add_field_data_section(11);
+    writer.add_field_data_section(6);
 
     std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(2);
     writer.write_field("rho", fields_rho, num_obj * block_size);
@@ -515,24 +600,27 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
 
     std::unique_ptr<sycl::buffer<Tscal>> fields_eint = sched.rankgather_field<Tscal>(4);
     writer.write_field("rhoetot", fields_eint, num_obj * block_size);
+    /*
+        std::unique_ptr<sycl::buffer<Tvec>> grad_rho
+            = storage.grad_rho.get().rankgather_computefield(sched);
+        writer.write_field("grad_rho", grad_rho, num_obj * block_size);
 
-    std::unique_ptr<sycl::buffer<Tvec>> grad_rho
-        = storage.grad_rho.get().rankgather_computefield(sched);
-    writer.write_field("grad_rho", grad_rho, num_obj * block_size);
+        std::unique_ptr<sycl::buffer<Tvec>> dx_v =
+       storage.dx_v.get().rankgather_computefield(sched); writer.write_field("dx_v", dx_v, num_obj *
+       block_size);
 
-    std::unique_ptr<sycl::buffer<Tvec>> dx_v = storage.dx_v.get().rankgather_computefield(sched);
-    writer.write_field("dx_v", dx_v, num_obj * block_size);
+        std::unique_ptr<sycl::buffer<Tvec>> dy_v =
+       storage.dy_v.get().rankgather_computefield(sched); writer.write_field("dy_v", dy_v, num_obj *
+       block_size);
 
-    std::unique_ptr<sycl::buffer<Tvec>> dy_v = storage.dy_v.get().rankgather_computefield(sched);
-    writer.write_field("dy_v", dy_v, num_obj * block_size);
+        std::unique_ptr<sycl::buffer<Tvec>> dz_v =
+       storage.dz_v.get().rankgather_computefield(sched); writer.write_field("dz_v", dz_v, num_obj *
+       block_size);
 
-    std::unique_ptr<sycl::buffer<Tvec>> dz_v = storage.dz_v.get().rankgather_computefield(sched);
-    writer.write_field("dz_v", dz_v, num_obj * block_size);
-
-    std::unique_ptr<sycl::buffer<Tvec>> grad_P
-        = storage.grad_P.get().rankgather_computefield(sched);
-    writer.write_field("grad_P", grad_P, num_obj * block_size);
-
+        std::unique_ptr<sycl::buffer<Tvec>> grad_P
+            = storage.grad_P.get().rankgather_computefield(sched);
+        writer.write_field("grad_P", grad_P, num_obj * block_size);
+    */
     std::unique_ptr<sycl::buffer<Tscal>> dtrho = storage.dtrho.get().rankgather_computefield(sched);
     writer.write_field("dtrho", dtrho, num_obj * block_size);
 

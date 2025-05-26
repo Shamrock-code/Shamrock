@@ -70,6 +70,20 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> block_cell_sizes;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> cell0block_aabb_lower;
 
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_rho;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dx_v;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dy_v;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dz_v;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_P;
+        /// dust fields gradients (grad rho_dust)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_rho_dust;
+        /// dust fields gradients (d vdust / d x)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dx_v_dust;
+        /// dust fields gradients (d vdust / d y)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dy_v_dust;
+        /// dust fields gradients (d vdust / d z)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dz_v_dust;
+
         Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
 
         std::shared_ptr<solvergraph::TreeEdge<Tmorton, TgridVec>> trees;
@@ -92,12 +106,6 @@ namespace shammodels::basegodunov {
         Component<shamrock::patch::PatchDataLayout> ghost_layout;
 
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
-
-        Component<shamrock::ComputeField<Tvec>> grad_rho;
-        Component<shamrock::ComputeField<Tvec>> dx_v;
-        Component<shamrock::ComputeField<Tvec>> dy_v;
-        Component<shamrock::ComputeField<Tvec>> dz_v;
-        Component<shamrock::ComputeField<Tvec>> grad_P;
 
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>
@@ -221,14 +229,6 @@ namespace shammodels::basegodunov {
         Component<shamrock::ComputeField<Tvec>> rhov_next_no_drag;
         Component<shamrock::ComputeField<Tscal>> rhoe_next_no_drag;
 
-        /// dust fields gradients (grad rho_dust)
-        Component<shamrock::ComputeField<Tvec>> grad_rho_dust;
-        /// dust fields gradients (d vdust / d x)
-        Component<shamrock::ComputeField<Tvec>> dx_v_dust;
-        /// dust fields gradients (d vdust / d y)
-        Component<shamrock::ComputeField<Tvec>> dy_v_dust;
-        /// dust fields gradients (d vdust / d z)
-        Component<shamrock::ComputeField<Tvec>> dz_v_dust;
         // next time step dust density before drag
         Component<shamrock::ComputeField<Tscal>> rho_d_next_no_drag;
         // next time step dust momentum before drag

@@ -174,12 +174,16 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                       .get_buf();
 
             sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
-            sham::DeviceBuffer<Tvec> &buf_grad_rho = storage.grad_rho.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_grad_rho
+                = shambase::get_check_ref(storage.grad_rho).get_buf(id);
 
-            sham::DeviceBuffer<Tvec> &buf_vel    = shambase::get_check_ref(storage.vel).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dx_vel = storage.dx_v.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dy_vel = storage.dy_v.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_vel = shambase::get_check_ref(storage.vel).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel
+                = shambase::get_check_ref(storage.dx_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel
+                = shambase::get_check_ref(storage.dy_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel
+                = shambase::get_check_ref(storage.dz_v).get_buf(id);
 
             // TODO : restore asynchroneousness
             sham::EventList depends_list;
@@ -423,13 +427,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                       .get()
                       .get_buf();
 
-            sham::DeviceBuffer<Tvec> &buf_vel    = shambase::get_check_ref(storage.vel).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dx_vel = storage.dx_v.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dy_vel = storage.dy_v.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_vel = shambase::get_check_ref(storage.vel).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel
+                = shambase::get_check_ref(storage.dx_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel
+                = shambase::get_check_ref(storage.dy_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel
+                = shambase::get_check_ref(storage.dz_v).get_buf(id);
 
-            sham::DeviceBuffer<Tscal> &buf_rho   = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
-            sham::DeviceBuffer<Tvec> &buf_grad_P = storage.grad_P.get().get_buf(id);
+            sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
+            sham::DeviceBuffer<Tvec> &buf_grad_P
+                = shambase::get_check_ref(storage.grad_P).get_buf(id);
 
             // TODO : restore asynchroneousness
             sham::EventList depends_list;
@@ -673,12 +681,16 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
             sham::DeviceBuffer<Tscal> &buf_press
                 = shambase::get_check_ref(storage.press).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_grad_P = storage.grad_P.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_grad_P
+                = shambase::get_check_ref(storage.grad_P).get_buf(id);
 
-            sham::DeviceBuffer<Tvec> &buf_vel    = shambase::get_check_ref(storage.vel).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dx_vel = storage.dx_v.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dy_vel = storage.dy_v.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_vel = shambase::get_check_ref(storage.vel).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel
+                = shambase::get_check_ref(storage.dx_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel
+                = shambase::get_check_ref(storage.dy_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel
+                = shambase::get_check_ref(storage.dz_v).get_buf(id);
 
             // TODO : restore asynchroneousness
             sham::EventList depends_list;
@@ -954,13 +966,17 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
 
             sham::DeviceBuffer<Tscal> &buf_rho_dust
                 = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
-            sham::DeviceBuffer<Tvec> &buf_grad_rho_dust = storage.grad_rho_dust.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_grad_rho_dust
+                = shambase::get_check_ref(storage.grad_rho_dust).get_buf(id);
 
             sham::DeviceBuffer<Tvec> &buf_vel_dust
                 = shambase::get_check_ref(storage.vel_dust).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dx_vel_dust = storage.dx_v_dust.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dy_vel_dust = storage.dy_v_dust.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dz_vel_dust = storage.dz_v_dust.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel_dust
+                = shambase::get_check_ref(storage.dx_v_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel_dust
+                = shambase::get_check_ref(storage.dy_v_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel_dust
+                = shambase::get_check_ref(storage.dz_v_dust).get_buf(id);
 
             // TODO : restore asynchroneousness
             sham::EventList depends_list;
@@ -1216,9 +1232,12 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
             sham::DeviceBuffer<Tvec> &buf_vel_dust
                 = shambase::get_check_ref(storage.vel_dust).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dx_vel_dust = storage.dx_v_dust.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dy_vel_dust = storage.dy_v_dust.get().get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dz_vel_dust = storage.dz_v_dust.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel_dust
+                = shambase::get_check_ref(storage.dx_v_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel_dust
+                = shambase::get_check_ref(storage.dy_v_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel_dust
+                = shambase::get_check_ref(storage.dz_v_dust).get_buf(id);
 
             sham::DeviceBuffer<Tscal> &buf_rho_dust
                 = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);

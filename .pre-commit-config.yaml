@@ -84,11 +84,15 @@ repos:
     args: [--line-length=100]
     log_file: log_precommit_black
 
-- repo: https://github.com/pycqa/isort
-  rev: 6.0.1
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.11.11
   hooks:
-    - id: isort
-      log_file: log_precommit_isort
+    - id: ruff-check
+      args:
+        - --extend-select=BLE,I,NPY,PLE
+        - --ignore=E402,E711,E712,E713,E722,E741,F401,F403,F405,F841
+        - --fix
+      log_file: log_precommit_ruff
 
 #- repo: https://github.com/johnor/pre-commit-lizard
 #  rev: 'v1.17.10'

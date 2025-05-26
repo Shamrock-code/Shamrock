@@ -40,7 +40,7 @@ namespace shamrock::tree {
 
         public:
         // clang-format off
-        ObjectIterator(RadixTree< u_morton,  vec> & rtree,sycl::handler & cgh):
+        ObjectIterator(const RadixTree< u_morton,  vec> & rtree,sycl::handler & cgh):
             particle_index_map{shambase::get_check_ref(rtree.tree_morton_codes.buf_particle_index_map), cgh,sycl::read_only},
             cell_index_map{shambase::get_check_ref(rtree.tree_reduced_morton_codes.buf_reduc_index_map), cgh,sycl::read_only},
             rchild_id     {shambase::get_check_ref(rtree.tree_struct.buf_rchild_id)  , cgh,sycl::read_only},

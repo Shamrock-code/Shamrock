@@ -155,144 +155,163 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
 
-    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
+    shambase::get_check_ref(storage.cell_graph_edge)
+        .graph.for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+            MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
-        sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-            = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &block_cell_sizes
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
+            sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
-        sham::DeviceBuffer<Tscal> &buf_rho     = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
-        sham::DeviceBuffer<Tvec> &buf_grad_rho = storage.grad_rho.get().get_buf(id);
+            sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
+            sham::DeviceBuffer<Tvec> &buf_grad_rho
+                = shambase::get_check_ref(storage.grad_rho).get_buf(id);
 
-        sham::DeviceBuffer<Tvec> &buf_vel    = shambase::get_check_ref(storage.vel).get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dx_vel = storage.dx_v.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dy_vel = storage.dy_v.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_vel = shambase::get_check_ref(storage.vel).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel
+                = shambase::get_check_ref(storage.dx_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel
+                = shambase::get_check_ref(storage.dy_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel
+                = shambase::get_check_ref(storage.dz_v).get_buf(id);
 
-        // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
-        auto ptr_buf_rho               = buf_rho.get_read_access(depends_list);
-        auto ptr_buf_grad_rho          = buf_grad_rho.get_read_access(depends_list);
-        auto ptr_buf_vel               = buf_vel.get_read_access(depends_list);
-        auto ptr_buf_dx_vel            = buf_dx_vel.get_read_access(depends_list);
-        auto ptr_buf_dy_vel            = buf_dy_vel.get_read_access(depends_list);
-        auto ptr_buf_dz_vel            = buf_dz_vel.get_read_access(depends_list);
+            // TODO : restore asynchroneousness
+            sham::EventList depends_list;
+            auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+            auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+            auto ptr_buf_rho               = buf_rho.get_read_access(depends_list);
+            auto ptr_buf_grad_rho          = buf_grad_rho.get_read_access(depends_list);
+            auto ptr_buf_vel               = buf_vel.get_read_access(depends_list);
+            auto ptr_buf_dx_vel            = buf_dx_vel.get_read_access(depends_list);
+            auto ptr_buf_dy_vel            = buf_dy_vel.get_read_access(depends_list);
+            auto ptr_buf_dz_vel            = buf_dz_vel.get_read_access(depends_list);
 
-        sham::EventList resulting_event_list;
+            sham::EventList resulting_event_list;
 
-        logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho");
+            logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho");
 
-        rho_face_xp.add_obj(
-            id,
-            compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_rho,
-                ptr_buf_grad_rho,
-                dt_interp,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        rho_face_xm.add_obj(
-            id,
-            compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_rho,
-                ptr_buf_grad_rho,
-                dt_interp,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        rho_face_yp.add_obj(
-            id,
-            compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_rho,
-                ptr_buf_grad_rho,
-                dt_interp,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        rho_face_ym.add_obj(
-            id,
-            compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_rho,
-                ptr_buf_grad_rho,
-                dt_interp,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        rho_face_zp.add_obj(
-            id,
-            compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_rho,
-                ptr_buf_grad_rho,
-                dt_interp,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        rho_face_zm.add_obj(
-            id,
-            compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_rho,
-                ptr_buf_grad_rho,
-                dt_interp,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+            rho_face_xp.add_obj(
+                id,
+                compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_rho,
+                    ptr_buf_grad_rho,
+                    dt_interp,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            rho_face_xm.add_obj(
+                id,
+                compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_rho,
+                    ptr_buf_grad_rho,
+                    dt_interp,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            rho_face_yp.add_obj(
+                id,
+                compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_rho,
+                    ptr_buf_grad_rho,
+                    dt_interp,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            rho_face_ym.add_obj(
+                id,
+                compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_rho,
+                    ptr_buf_grad_rho,
+                    dt_interp,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            rho_face_zp.add_obj(
+                id,
+                compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_rho,
+                    ptr_buf_grad_rho,
+                    dt_interp,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            rho_face_zm.add_obj(
+                id,
+                compute_link_field<RhoInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_rho,
+                    ptr_buf_grad_rho,
+                    dt_interp,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
 
-        block_cell_sizes.complete_event_state(resulting_event_list);
-        cell0block_aabb_lower.complete_event_state(resulting_event_list);
-        buf_rho.complete_event_state(resulting_event_list);
-        buf_grad_rho.complete_event_state(resulting_event_list);
-        buf_vel.complete_event_state(resulting_event_list);
-        buf_dx_vel.complete_event_state(resulting_event_list);
-        buf_dy_vel.complete_event_state(resulting_event_list);
-        buf_dz_vel.complete_event_state(resulting_event_list);
-    });
+            block_cell_sizes.complete_event_state(resulting_event_list);
+            cell0block_aabb_lower.complete_event_state(resulting_event_list);
+            buf_rho.complete_event_state(resulting_event_list);
+            buf_grad_rho.complete_event_state(resulting_event_list);
+            buf_vel.complete_event_state(resulting_event_list);
+            buf_dx_vel.complete_event_state(resulting_event_list);
+            buf_dy_vel.complete_event_state(resulting_event_list);
+            buf_dz_vel.complete_event_state(resulting_event_list);
+        });
 
     storage.rho_face_xp.set(std::move(rho_face_xp));
     storage.rho_face_xm.set(std::move(rho_face_xm));
@@ -390,146 +409,165 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
 
-    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
+    shambase::get_check_ref(storage.cell_graph_edge)
+        .graph.for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+            MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
-        sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-            = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &block_cell_sizes
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
+            sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
-        sham::DeviceBuffer<Tvec> &buf_vel    = shambase::get_check_ref(storage.vel).get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dx_vel = storage.dx_v.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dy_vel = storage.dy_v.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_vel = shambase::get_check_ref(storage.vel).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel
+                = shambase::get_check_ref(storage.dx_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel
+                = shambase::get_check_ref(storage.dy_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel
+                = shambase::get_check_ref(storage.dz_v).get_buf(id);
 
-        sham::DeviceBuffer<Tscal> &buf_rho   = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
-        sham::DeviceBuffer<Tvec> &buf_grad_P = storage.grad_P.get().get_buf(id);
+            sham::DeviceBuffer<Tscal> &buf_rho = mpdat.pdat.get_field_buf_ref<Tscal>(irho_ghost);
+            sham::DeviceBuffer<Tvec> &buf_grad_P
+                = shambase::get_check_ref(storage.grad_P).get_buf(id);
 
-        // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+            // TODO : restore asynchroneousness
+            sham::EventList depends_list;
+            auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+            auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
 
-        auto ptr_vel    = buf_vel.get_read_access(depends_list);
-        auto ptr_dx_vel = buf_dx_vel.get_read_access(depends_list);
-        auto ptr_dy_vel = buf_dy_vel.get_read_access(depends_list);
-        auto ptr_dz_vel = buf_dz_vel.get_read_access(depends_list);
+            auto ptr_vel    = buf_vel.get_read_access(depends_list);
+            auto ptr_dx_vel = buf_dx_vel.get_read_access(depends_list);
+            auto ptr_dy_vel = buf_dy_vel.get_read_access(depends_list);
+            auto ptr_dz_vel = buf_dz_vel.get_read_access(depends_list);
 
-        auto ptr_rho    = buf_rho.get_read_access(depends_list);
-        auto ptr_grad_P = buf_grad_P.get_read_access(depends_list);
+            auto ptr_rho    = buf_rho.get_read_access(depends_list);
+            auto ptr_grad_P = buf_grad_P.get_read_access(depends_list);
 
-        logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
+            logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
 
-        sham::EventList resulting_event_list;
+            sham::EventList resulting_event_list;
 
-        vel_face_xp.add_obj(
-            id,
-            compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_vel,
-                ptr_dx_vel,
-                ptr_dy_vel,
-                ptr_dz_vel,
-                dt_interp,
-                ptr_rho,
-                ptr_grad_P));
-        vel_face_xm.add_obj(
-            id,
-            compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_vel,
-                ptr_dx_vel,
-                ptr_dy_vel,
-                ptr_dz_vel,
-                dt_interp,
-                ptr_rho,
-                ptr_grad_P));
-        vel_face_yp.add_obj(
-            id,
-            compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_vel,
-                ptr_dx_vel,
-                ptr_dy_vel,
-                ptr_dz_vel,
-                dt_interp,
-                ptr_rho,
-                ptr_grad_P));
-        vel_face_ym.add_obj(
-            id,
-            compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_vel,
-                ptr_dx_vel,
-                ptr_dy_vel,
-                ptr_dz_vel,
-                dt_interp,
-                ptr_rho,
-                ptr_grad_P));
-        vel_face_zp.add_obj(
-            id,
-            compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_vel,
-                ptr_dx_vel,
-                ptr_dy_vel,
-                ptr_dz_vel,
-                dt_interp,
-                ptr_rho,
-                ptr_grad_P));
-        vel_face_zm.add_obj(
-            id,
-            compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_vel,
-                ptr_dx_vel,
-                ptr_dy_vel,
-                ptr_dz_vel,
-                dt_interp,
-                ptr_rho,
-                ptr_grad_P));
+            vel_face_xp.add_obj(
+                id,
+                compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_vel,
+                    ptr_dx_vel,
+                    ptr_dy_vel,
+                    ptr_dz_vel,
+                    dt_interp,
+                    ptr_rho,
+                    ptr_grad_P));
+            vel_face_xm.add_obj(
+                id,
+                compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_vel,
+                    ptr_dx_vel,
+                    ptr_dy_vel,
+                    ptr_dz_vel,
+                    dt_interp,
+                    ptr_rho,
+                    ptr_grad_P));
+            vel_face_yp.add_obj(
+                id,
+                compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_vel,
+                    ptr_dx_vel,
+                    ptr_dy_vel,
+                    ptr_dz_vel,
+                    dt_interp,
+                    ptr_rho,
+                    ptr_grad_P));
+            vel_face_ym.add_obj(
+                id,
+                compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_vel,
+                    ptr_dx_vel,
+                    ptr_dy_vel,
+                    ptr_dz_vel,
+                    dt_interp,
+                    ptr_rho,
+                    ptr_grad_P));
+            vel_face_zp.add_obj(
+                id,
+                compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_vel,
+                    ptr_dx_vel,
+                    ptr_dy_vel,
+                    ptr_dz_vel,
+                    dt_interp,
+                    ptr_rho,
+                    ptr_grad_P));
+            vel_face_zm.add_obj(
+                id,
+                compute_link_field<VelInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_vel,
+                    ptr_dx_vel,
+                    ptr_dy_vel,
+                    ptr_dz_vel,
+                    dt_interp,
+                    ptr_rho,
+                    ptr_grad_P));
 
-        block_cell_sizes.complete_event_state(resulting_event_list);
-        cell0block_aabb_lower.complete_event_state(resulting_event_list);
-        buf_vel.complete_event_state(resulting_event_list);
-        buf_dx_vel.complete_event_state(resulting_event_list);
-        buf_dy_vel.complete_event_state(resulting_event_list);
-        buf_dz_vel.complete_event_state(resulting_event_list);
-        buf_rho.complete_event_state(resulting_event_list);
-        buf_grad_P.complete_event_state(resulting_event_list);
-    });
+            block_cell_sizes.complete_event_state(resulting_event_list);
+            cell0block_aabb_lower.complete_event_state(resulting_event_list);
+            buf_vel.complete_event_state(resulting_event_list);
+            buf_dx_vel.complete_event_state(resulting_event_list);
+            buf_dy_vel.complete_event_state(resulting_event_list);
+            buf_dz_vel.complete_event_state(resulting_event_list);
+            buf_rho.complete_event_state(resulting_event_list);
+            buf_grad_P.complete_event_state(resulting_event_list);
+        });
 
     storage.vel_face_xp.set(std::move(vel_face_xp));
     storage.vel_face_xm.set(std::move(vel_face_xm));
@@ -623,152 +661,172 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> press_face_zp;
     shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> press_face_zm;
 
-    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
+    shambase::get_check_ref(storage.cell_graph_edge)
+        .graph.for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+            MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
-        sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-            = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &block_cell_sizes
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
+            sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
-        sham::DeviceBuffer<Tscal> &buf_press = shambase::get_check_ref(storage.press).get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_grad_P = storage.grad_P.get().get_buf(id);
+            sham::DeviceBuffer<Tscal> &buf_press
+                = shambase::get_check_ref(storage.press).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_grad_P
+                = shambase::get_check_ref(storage.grad_P).get_buf(id);
 
-        sham::DeviceBuffer<Tvec> &buf_vel    = shambase::get_check_ref(storage.vel).get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dx_vel = storage.dx_v.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dy_vel = storage.dy_v.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dz_vel = storage.dz_v.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_vel = shambase::get_check_ref(storage.vel).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel
+                = shambase::get_check_ref(storage.dx_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel
+                = shambase::get_check_ref(storage.dy_v).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel
+                = shambase::get_check_ref(storage.dz_v).get_buf(id);
 
-        // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+            // TODO : restore asynchroneousness
+            sham::EventList depends_list;
+            auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+            auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
 
-        auto ptr_buf_press  = buf_press.get_read_access(depends_list);
-        auto ptr_buf_grad_P = buf_grad_P.get_read_access(depends_list);
+            auto ptr_buf_press  = buf_press.get_read_access(depends_list);
+            auto ptr_buf_grad_P = buf_grad_P.get_read_access(depends_list);
 
-        auto ptr_buf_vel    = buf_vel.get_read_access(depends_list);
-        auto ptr_buf_dx_vel = buf_dx_vel.get_read_access(depends_list);
-        auto ptr_buf_dy_vel = buf_dy_vel.get_read_access(depends_list);
-        auto ptr_buf_dz_vel = buf_dz_vel.get_read_access(depends_list);
+            auto ptr_buf_vel    = buf_vel.get_read_access(depends_list);
+            auto ptr_buf_dx_vel = buf_dx_vel.get_read_access(depends_list);
+            auto ptr_buf_dy_vel = buf_dy_vel.get_read_access(depends_list);
+            auto ptr_buf_dz_vel = buf_dz_vel.get_read_access(depends_list);
 
-        sham::EventList resulting_event_list;
+            sham::EventList resulting_event_list;
 
-        logger::debug_ln("Face Interpolate", "patch", id, "intepolate press");
+            logger::debug_ln("Face Interpolate", "patch", id, "intepolate press");
 
-        press_face_xp.add_obj(
-            id,
-            compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        press_face_xm.add_obj(
-            id,
-            compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        press_face_yp.add_obj(
-            id,
-            compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        press_face_ym.add_obj(
-            id,
-            compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        press_face_zp.add_obj(
-            id,
-            compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
-        press_face_zm.add_obj(
-            id,
-            compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel));
+            press_face_xp.add_obj(
+                id,
+                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_press,
+                    ptr_buf_grad_P,
+                    dt_interp,
+                    gamma,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            press_face_xm.add_obj(
+                id,
+                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_press,
+                    ptr_buf_grad_P,
+                    dt_interp,
+                    gamma,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            press_face_yp.add_obj(
+                id,
+                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_press,
+                    ptr_buf_grad_P,
+                    dt_interp,
+                    gamma,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            press_face_ym.add_obj(
+                id,
+                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_press,
+                    ptr_buf_grad_P,
+                    dt_interp,
+                    gamma,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            press_face_zp.add_obj(
+                id,
+                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_press,
+                    ptr_buf_grad_P,
+                    dt_interp,
+                    gamma,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
+            press_face_zm.add_obj(
+                id,
+                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_press,
+                    ptr_buf_grad_P,
+                    dt_interp,
+                    gamma,
+                    ptr_buf_vel,
+                    ptr_buf_dx_vel,
+                    ptr_buf_dy_vel,
+                    ptr_buf_dz_vel));
 
-        block_cell_sizes.complete_event_state(resulting_event_list);
-        cell0block_aabb_lower.complete_event_state(resulting_event_list);
-        buf_press.complete_event_state(resulting_event_list);
-        buf_grad_P.complete_event_state(resulting_event_list);
-        buf_vel.complete_event_state(resulting_event_list);
-        buf_dx_vel.complete_event_state(resulting_event_list);
-        buf_dy_vel.complete_event_state(resulting_event_list);
-        buf_dz_vel.complete_event_state(resulting_event_list);
-    });
+            block_cell_sizes.complete_event_state(resulting_event_list);
+            cell0block_aabb_lower.complete_event_state(resulting_event_list);
+            buf_press.complete_event_state(resulting_event_list);
+            buf_grad_P.complete_event_state(resulting_event_list);
+            buf_vel.complete_event_state(resulting_event_list);
+            buf_dx_vel.complete_event_state(resulting_event_list);
+            buf_dy_vel.complete_event_state(resulting_event_list);
+            buf_dz_vel.complete_event_state(resulting_event_list);
+        });
 
     storage.press_face_xp.set(std::move(press_face_xp));
     storage.press_face_xm.set(std::move(press_face_xm));
@@ -888,154 +946,173 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
     u32 irho_dust_ghost                            = ghost_layout.get_field_idx<Tscal>("rho_dust");
     u32 ndust                                      = solver_config.dust_config.ndust;
 
-    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
+    shambase::get_check_ref(storage.cell_graph_edge)
+        .graph.for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+            MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
-        sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-            = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &block_cell_sizes
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
+            sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
-        sham::DeviceBuffer<Tscal> &buf_rho_dust
-            = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
-        sham::DeviceBuffer<Tvec> &buf_grad_rho_dust = storage.grad_rho_dust.get().get_buf(id);
+            sham::DeviceBuffer<Tscal> &buf_rho_dust
+                = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
+            sham::DeviceBuffer<Tvec> &buf_grad_rho_dust
+                = shambase::get_check_ref(storage.grad_rho_dust).get_buf(id);
 
-        sham::DeviceBuffer<Tvec> &buf_vel_dust
-            = shambase::get_check_ref(storage.vel_dust).get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dx_vel_dust = storage.dx_v_dust.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dy_vel_dust = storage.dy_v_dust.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dz_vel_dust = storage.dz_v_dust.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_vel_dust
+                = shambase::get_check_ref(storage.vel_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel_dust
+                = shambase::get_check_ref(storage.dx_v_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel_dust
+                = shambase::get_check_ref(storage.dy_v_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel_dust
+                = shambase::get_check_ref(storage.dz_v_dust).get_buf(id);
 
-        // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+            // TODO : restore asynchroneousness
+            sham::EventList depends_list;
+            auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+            auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
 
-        auto ptr_rho_dust      = buf_rho_dust.get_read_access(depends_list);
-        auto ptr_grad_rho_dust = buf_grad_rho_dust.get_read_access(depends_list);
+            auto ptr_rho_dust      = buf_rho_dust.get_read_access(depends_list);
+            auto ptr_grad_rho_dust = buf_grad_rho_dust.get_read_access(depends_list);
 
-        auto ptr_vel_dust    = buf_vel_dust.get_read_access(depends_list);
-        auto ptr_dx_vel_dust = buf_dx_vel_dust.get_read_access(depends_list);
-        auto ptr_dy_vel_dust = buf_dy_vel_dust.get_read_access(depends_list);
-        auto ptr_dz_vel_dust = buf_dz_vel_dust.get_read_access(depends_list);
+            auto ptr_vel_dust    = buf_vel_dust.get_read_access(depends_list);
+            auto ptr_dx_vel_dust = buf_dx_vel_dust.get_read_access(depends_list);
+            auto ptr_dy_vel_dust = buf_dy_vel_dust.get_read_access(depends_list);
+            auto ptr_dz_vel_dust = buf_dz_vel_dust.get_read_access(depends_list);
 
-        sham::EventList resulting_event_list;
+            sham::EventList resulting_event_list;
 
-        logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho dust");
+            logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho dust");
 
-        rho_dust_face_xp.add_obj(
-            id,
-            compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_rho_dust,
-                ptr_grad_rho_dust,
-                dt_interp,
-                ptr_vel_dust,
-                ptr_dx_vel_dust,
-                ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
-        rho_dust_face_xm.add_obj(
-            id,
-            compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_rho_dust,
-                ptr_grad_rho_dust,
-                dt_interp,
-                ptr_vel_dust,
-                ptr_dx_vel_dust,
-                ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
-        rho_dust_face_yp.add_obj(
-            id,
-            compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_rho_dust,
-                ptr_grad_rho_dust,
-                dt_interp,
-                ptr_vel_dust,
-                ptr_dx_vel_dust,
-                ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
-        rho_dust_face_ym.add_obj(
-            id,
-            compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_rho_dust,
-                ptr_grad_rho_dust,
-                dt_interp,
-                ptr_vel_dust,
-                ptr_dx_vel_dust,
-                ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
-        rho_dust_face_zp.add_obj(
-            id,
-            compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_rho_dust,
-                ptr_grad_rho_dust,
-                dt_interp,
-                ptr_vel_dust,
-                ptr_dx_vel_dust,
-                ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
-        rho_dust_face_zm.add_obj(
-            id,
-            compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_rho_dust,
-                ptr_grad_rho_dust,
-                dt_interp,
-                ptr_vel_dust,
-                ptr_dx_vel_dust,
-                ptr_dy_vel_dust,
-                ptr_dz_vel_dust));
+            rho_dust_face_xp.add_obj(
+                id,
+                compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_rho_dust,
+                    ptr_grad_rho_dust,
+                    dt_interp,
+                    ptr_vel_dust,
+                    ptr_dx_vel_dust,
+                    ptr_dy_vel_dust,
+                    ptr_dz_vel_dust));
+            rho_dust_face_xm.add_obj(
+                id,
+                compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_rho_dust,
+                    ptr_grad_rho_dust,
+                    dt_interp,
+                    ptr_vel_dust,
+                    ptr_dx_vel_dust,
+                    ptr_dy_vel_dust,
+                    ptr_dz_vel_dust));
+            rho_dust_face_yp.add_obj(
+                id,
+                compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_rho_dust,
+                    ptr_grad_rho_dust,
+                    dt_interp,
+                    ptr_vel_dust,
+                    ptr_dx_vel_dust,
+                    ptr_dy_vel_dust,
+                    ptr_dz_vel_dust));
+            rho_dust_face_ym.add_obj(
+                id,
+                compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_rho_dust,
+                    ptr_grad_rho_dust,
+                    dt_interp,
+                    ptr_vel_dust,
+                    ptr_dx_vel_dust,
+                    ptr_dy_vel_dust,
+                    ptr_dz_vel_dust));
+            rho_dust_face_zp.add_obj(
+                id,
+                compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_rho_dust,
+                    ptr_grad_rho_dust,
+                    dt_interp,
+                    ptr_vel_dust,
+                    ptr_dx_vel_dust,
+                    ptr_dy_vel_dust,
+                    ptr_dz_vel_dust));
+            rho_dust_face_zm.add_obj(
+                id,
+                compute_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_rho_dust,
+                    ptr_grad_rho_dust,
+                    dt_interp,
+                    ptr_vel_dust,
+                    ptr_dx_vel_dust,
+                    ptr_dy_vel_dust,
+                    ptr_dz_vel_dust));
 
-        block_cell_sizes.complete_event_state(resulting_event_list);
-        cell0block_aabb_lower.complete_event_state(resulting_event_list);
-        buf_rho_dust.complete_event_state(resulting_event_list);
-        buf_grad_rho_dust.complete_event_state(resulting_event_list);
-        buf_vel_dust.complete_event_state(resulting_event_list);
-        buf_dx_vel_dust.complete_event_state(resulting_event_list);
-        buf_dy_vel_dust.complete_event_state(resulting_event_list);
-        buf_dz_vel_dust.complete_event_state(resulting_event_list);
-    });
+            block_cell_sizes.complete_event_state(resulting_event_list);
+            cell0block_aabb_lower.complete_event_state(resulting_event_list);
+            buf_rho_dust.complete_event_state(resulting_event_list);
+            buf_grad_rho_dust.complete_event_state(resulting_event_list);
+            buf_vel_dust.complete_event_state(resulting_event_list);
+            buf_dx_vel_dust.complete_event_state(resulting_event_list);
+            buf_dy_vel_dust.complete_event_state(resulting_event_list);
+            buf_dz_vel_dust.complete_event_state(resulting_event_list);
+        });
     storage.rho_dust_face_xp.set(std::move(rho_dust_face_xp));
     storage.rho_dust_face_xm.set(std::move(rho_dust_face_xm));
     storage.rho_dust_face_yp.set(std::move(rho_dust_face_yp));
@@ -1135,143 +1212,161 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_dust_ghost                            = ghost_layout.get_field_idx<Tscal>("rho_dust");
     u32 ndust                                      = solver_config.dust_config.ndust;
-    storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
+    shambase::get_check_ref(storage.cell_graph_edge)
+        .graph.for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+            MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
 
-        sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-            = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &block_cell_sizes
+                = shambase::get_check_ref(storage.block_cell_sizes)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
+            sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
+                = shambase::get_check_ref(storage.cell0block_aabb_lower)
+                      .get_refs()
+                      .get(id)
+                      .get()
+                      .get_buf();
 
-        sham::DeviceBuffer<Tvec> &buf_vel_dust
-            = shambase::get_check_ref(storage.vel_dust).get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dx_vel_dust = storage.dx_v_dust.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dy_vel_dust = storage.dy_v_dust.get().get_buf(id);
-        sham::DeviceBuffer<Tvec> &buf_dz_vel_dust = storage.dz_v_dust.get().get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_vel_dust
+                = shambase::get_check_ref(storage.vel_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dx_vel_dust
+                = shambase::get_check_ref(storage.dx_v_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dy_vel_dust
+                = shambase::get_check_ref(storage.dy_v_dust).get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_dz_vel_dust
+                = shambase::get_check_ref(storage.dz_v_dust).get_buf(id);
 
-        sham::DeviceBuffer<Tscal> &buf_rho_dust
-            = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
+            sham::DeviceBuffer<Tscal> &buf_rho_dust
+                = mpdat.pdat.get_field_buf_ref<Tscal>(irho_dust_ghost);
 
-        // TODO : restore asynchroneousness
-        sham::EventList depends_list;
-        auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-        auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
-        auto ptr_buf_vel_dust          = buf_vel_dust.get_read_access(depends_list);
-        auto ptr_buf_dx_vel_dust       = buf_dx_vel_dust.get_read_access(depends_list);
-        auto ptr_buf_dy_vel_dust       = buf_dy_vel_dust.get_read_access(depends_list);
-        auto ptr_buf_dz_vel_dust       = buf_dz_vel_dust.get_read_access(depends_list);
-        auto ptr_buf_rho_dust          = buf_rho_dust.get_read_access(depends_list);
+            // TODO : restore asynchroneousness
+            sham::EventList depends_list;
+            auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
+            auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
+            auto ptr_buf_vel_dust          = buf_vel_dust.get_read_access(depends_list);
+            auto ptr_buf_dx_vel_dust       = buf_dx_vel_dust.get_read_access(depends_list);
+            auto ptr_buf_dy_vel_dust       = buf_dy_vel_dust.get_read_access(depends_list);
+            auto ptr_buf_dz_vel_dust       = buf_dz_vel_dust.get_read_access(depends_list);
+            auto ptr_buf_rho_dust          = buf_rho_dust.get_read_access(depends_list);
 
-        sham::EventList resulting_event_list;
+            sham::EventList resulting_event_list;
 
-        logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
+            logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
 
-        vel_dust_face_xp.add_obj(
-            id,
-            compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_vel_dust,
-                ptr_buf_dx_vel_dust,
-                ptr_buf_dy_vel_dust,
-                ptr_buf_dz_vel_dust,
-                dt_interp,
-                ptr_buf_rho_dust));
-        vel_dust_face_xm.add_obj(
-            id,
-            compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_vel_dust,
-                ptr_buf_dx_vel_dust,
-                ptr_buf_dy_vel_dust,
-                ptr_buf_dz_vel_dust,
-                dt_interp,
-                ptr_buf_rho_dust));
-        vel_dust_face_yp.add_obj(
-            id,
-            compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_vel_dust,
-                ptr_buf_dx_vel_dust,
-                ptr_buf_dy_vel_dust,
-                ptr_buf_dz_vel_dust,
-                dt_interp,
-                ptr_buf_rho_dust));
-        vel_dust_face_ym.add_obj(
-            id,
-            compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_vel_dust,
-                ptr_buf_dx_vel_dust,
-                ptr_buf_dy_vel_dust,
-                ptr_buf_dz_vel_dust,
-                dt_interp,
-                ptr_buf_rho_dust));
-        vel_dust_face_zp.add_obj(
-            id,
-            compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_vel_dust,
-                ptr_buf_dx_vel_dust,
-                ptr_buf_dy_vel_dust,
-                ptr_buf_dz_vel_dust,
-                dt_interp,
-                ptr_buf_rho_dust));
-        vel_dust_face_zm.add_obj(
-            id,
-            compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
-                ndust,
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_vel_dust,
-                ptr_buf_dx_vel_dust,
-                ptr_buf_dy_vel_dust,
-                ptr_buf_dz_vel_dust,
-                dt_interp,
-                ptr_buf_rho_dust));
+            vel_dust_face_xp.add_obj(
+                id,
+                compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_vel_dust,
+                    ptr_buf_dx_vel_dust,
+                    ptr_buf_dy_vel_dust,
+                    ptr_buf_dz_vel_dust,
+                    dt_interp,
+                    ptr_buf_rho_dust));
+            vel_dust_face_xm.add_obj(
+                id,
+                compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_vel_dust,
+                    ptr_buf_dx_vel_dust,
+                    ptr_buf_dy_vel_dust,
+                    ptr_buf_dz_vel_dust,
+                    dt_interp,
+                    ptr_buf_rho_dust));
+            vel_dust_face_yp.add_obj(
+                id,
+                compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_vel_dust,
+                    ptr_buf_dx_vel_dust,
+                    ptr_buf_dy_vel_dust,
+                    ptr_buf_dz_vel_dust,
+                    dt_interp,
+                    ptr_buf_rho_dust));
+            vel_dust_face_ym.add_obj(
+                id,
+                compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_vel_dust,
+                    ptr_buf_dx_vel_dust,
+                    ptr_buf_dy_vel_dust,
+                    ptr_buf_dz_vel_dust,
+                    dt_interp,
+                    ptr_buf_rho_dust));
+            vel_dust_face_zp.add_obj(
+                id,
+                compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_vel_dust,
+                    ptr_buf_dx_vel_dust,
+                    ptr_buf_dy_vel_dust,
+                    ptr_buf_dz_vel_dust,
+                    dt_interp,
+                    ptr_buf_rho_dust));
+            vel_dust_face_zm.add_obj(
+                id,
+                compute_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
+                    q,
+                    depends_list,
+                    resulting_event_list,
+                    shambase::get_check_ref(
+                        oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
+                    ndust,
+                    ptr_cell0block_aabb_lower,
+                    ptr_block_cell_sizes,
+                    ptr_buf_vel_dust,
+                    ptr_buf_dx_vel_dust,
+                    ptr_buf_dy_vel_dust,
+                    ptr_buf_dz_vel_dust,
+                    dt_interp,
+                    ptr_buf_rho_dust));
 
-        block_cell_sizes.complete_event_state(resulting_event_list);
-        cell0block_aabb_lower.complete_event_state(resulting_event_list);
-        buf_vel_dust.complete_event_state(resulting_event_list);
-        buf_dx_vel_dust.complete_event_state(resulting_event_list);
-        buf_dy_vel_dust.complete_event_state(resulting_event_list);
-        buf_dz_vel_dust.complete_event_state(resulting_event_list);
-        buf_rho_dust.complete_event_state(resulting_event_list);
-    });
+            block_cell_sizes.complete_event_state(resulting_event_list);
+            cell0block_aabb_lower.complete_event_state(resulting_event_list);
+            buf_vel_dust.complete_event_state(resulting_event_list);
+            buf_dx_vel_dust.complete_event_state(resulting_event_list);
+            buf_dy_vel_dust.complete_event_state(resulting_event_list);
+            buf_dz_vel_dust.complete_event_state(resulting_event_list);
+            buf_rho_dust.complete_event_state(resulting_event_list);
+        });
     storage.vel_dust_face_xp.set(std::move(vel_dust_face_xp));
     storage.vel_dust_face_xm.set(std::move(vel_dust_face_xm));
     storage.vel_dust_face_yp.set(std::move(vel_dust_face_yp));

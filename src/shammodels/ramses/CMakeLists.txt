@@ -16,17 +16,13 @@ set(Sources
     src/pyRamsesModel.cpp
     src/Solver.cpp
 
-    src/modules/AMRGraphGen.cpp
-    src/modules/AMRTree.cpp
     src/modules/ComputeFlux.cpp
     src/modules/DragIntegrator.cpp
     src/modules/TimeIntegrator.cpp
     src/modules/AMRGridRefinementHandler.cpp
     src/modules/AnalysisSodTube.cpp
-    src/modules/ComputeGradient.cpp
     src/modules/FaceInterpolate.cpp
     src/modules/AMRSetup.cpp
-    src/modules/ComputeCellInfos.cpp
     src/modules/ComputeTimeDerivative.cpp
     src/modules/GhostZones.cpp
     src/modules/AMRSortBlocks.cpp
@@ -35,6 +31,10 @@ set(Sources
     src/modules/ConsToPrimDust.cpp
     src/modules/ComputeCellAABB.cpp
     src/modules/StencilGenerator.cpp
+    src/modules/NodeBuildTrees.cpp
+    src/modules/FindBlockNeigh.cpp
+    src/modules/BlockNeighToCellNeigh.cpp
+    src/modules/SlopeLimitedGradient.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

@@ -99,7 +99,7 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
     shambase::DistributedData<std::unique_ptr<sycl::buffer<amr::block::StencilElement>>>
         block_stencil_element;
 
-    storage.trees.get().for_each([&](u64 id, RTree &tree) {
+    shambase::get_check_ref(storage.trees).trees.for_each([&](u64 id, RTree &tree) {
         u32 leaf_count          = tree.tree_reduced_morton_codes.tree_leaf_count;
         u32 internal_cell_count = tree.tree_struct.internal_cell_count;
         u32 tot_count           = leaf_count + internal_cell_count;

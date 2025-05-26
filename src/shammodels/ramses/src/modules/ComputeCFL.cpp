@@ -56,7 +56,11 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
         sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.block_cell_sizes)
+                  .get_refs()
+                  .get(cur_p.id_patch)
+                  .get()
+                  .get_buf();
 
         sham::EventList depends_list;
         auto cfl_dt        = cfl_dt_buf.get_write_access(depends_list);
@@ -154,7 +158,11 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
         sham::DeviceBuffer<Tscal> &dust_cfl_dt_buf = dust_cfl_dt.get_buf_check(cur_p.id_patch);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.block_cell_sizes)
+                  .get_refs()
+                  .get(cur_p.id_patch)
+                  .get()
+                  .get_buf();
 
         sham::EventList depends_list;
         auto dust_cfl_dt        = dust_cfl_dt_buf.get_write_access(depends_list);

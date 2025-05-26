@@ -124,7 +124,7 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "SlopeLimitedScalarGradient"; };
+        inline virtual std::string _impl_get_label() { return "SlopeLimitedVectorGradient"; };
 
         virtual std::string _impl_get_tex();
     };

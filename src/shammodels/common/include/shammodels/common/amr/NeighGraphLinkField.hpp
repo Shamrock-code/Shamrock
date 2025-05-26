@@ -52,9 +52,9 @@ namespace shammodels::basegodunov::modules {
         NeighGraphLinkField<T> result{graph};
 
         auto acc_link_field = result.link_graph_field.get_write_access(depends_list);
+        auto link_iter      = graph.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            NeighGraphLinkiterator link_iter{graph, cgh};
             LinkFieldCompute compute(cgh, std::forward<Args>(args)...);
 
             shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
@@ -66,6 +66,7 @@ namespace shammodels::basegodunov::modules {
 
         result_list.add_event(e);
         result.link_graph_field.complete_event_state(e);
+        graph.complete_event_state(e);
 
         return result;
     }
@@ -83,9 +84,9 @@ namespace shammodels::basegodunov::modules {
         NeighGraphLinkField<T> result{graph, nvar};
 
         auto acc_link_field = result.link_graph_field.get_write_access(depends_list);
+        auto link_iter      = graph.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            NeighGraphLinkiterator link_iter{graph, cgh};
             LinkFieldCompute compute(cgh, nvar, std::forward<Args>(args)...);
 
             shambase::parralel_for(
@@ -102,6 +103,7 @@ namespace shammodels::basegodunov::modules {
 
         result_list.add_event(e);
         result.link_graph_field.complete_event_state(e);
+        graph.complete_event_state(e);
 
         return result;
     }

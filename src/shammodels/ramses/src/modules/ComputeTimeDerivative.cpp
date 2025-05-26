@@ -159,14 +159,14 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         auto flux_rhoe_face_zp = buf_flux_rhoe_face_zp.get_read_access(depends_list);
         auto flux_rhoe_face_zm = buf_flux_rhoe_face_zm.get_read_access(depends_list);
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
-            AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
-            AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
-            AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
-            AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
-            AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
+        auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
+        auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
+        auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
+        auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
+        auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
+        auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
 
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             auto get_cell_aabb = [=](u32 id) -> shammath::AABB<Tvec> {
                 const u32 cell_global_id = (u32) id;
 
@@ -292,6 +292,13 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         buf_flux_rhoe_face_ym.complete_event_state(e);
         buf_flux_rhoe_face_zp.complete_event_state(e);
         buf_flux_rhoe_face_zm.complete_event_state(e);
+
+        graph_neigh_xp.complete_event_state(e);
+        graph_neigh_xm.complete_event_state(e);
+        graph_neigh_yp.complete_event_state(e);
+        graph_neigh_ym.complete_event_state(e);
+        graph_neigh_zp.complete_event_state(e);
+        graph_neigh_zm.complete_event_state(e);
     });
 
     storage.dtrho.set(std::move(cfield_dtrho));
@@ -433,14 +440,14 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         auto flux_rhov_dust_face_zp = buf_flux_rhov_dust_face_zp.get_read_access(depends_list);
         auto flux_rhov_dust_face_zm = buf_flux_rhov_dust_face_zm.get_read_access(depends_list);
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
-            AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
-            AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
-            AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
-            AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
-            AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
+        auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
+        auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
+        auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
+        auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
+        auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
+        auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
 
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             u32 ndust          = solver_config.dust_config.ndust;
             auto get_cell_aabb = [=](u32 id) -> shammath::AABB<Tvec> {
                 const u32 cell_global_id = (u32) id;
@@ -564,6 +571,13 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         buf_flux_rhov_dust_face_ym.complete_event_state(e);
         buf_flux_rhov_dust_face_zp.complete_event_state(e);
         buf_flux_rhov_dust_face_zm.complete_event_state(e);
+
+        graph_neigh_xp.complete_event_state(e);
+        graph_neigh_xm.complete_event_state(e);
+        graph_neigh_yp.complete_event_state(e);
+        graph_neigh_ym.complete_event_state(e);
+        graph_neigh_zp.complete_event_state(e);
+        graph_neigh_zm.complete_event_state(e);
     });
 
     storage.dtrho_dust.set(std::move(cfield_dtrho_dust));

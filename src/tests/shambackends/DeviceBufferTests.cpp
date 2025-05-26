@@ -254,3 +254,20 @@ TestStart(Unittest, "shambackends/DeviceBuffer:get_val_at_idx", DeviceBuffer_get
 
     REQUIRE_EXCEPTION_THROW(buffer.get_val_at_idx(10), std::invalid_argument);
 }
+
+TestStart(Unittest, "shambackends/DeviceBuffer:set_val_at_idx", DeviceBuffer_set_val_at_idx, 1) {
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceBuffer<int> buffer(10, dev_sched);
+    std::vector<int> init_values     = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    std::vector<int> expected_values = {0, 5, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    buffer.copy_from_stdvec(init_values);
+
+    buffer.set_val_at_idx(1, 5);
+
+    REQUIRE_EQUAL(buffer.copy_to_stdvec(), expected_values);
+
+    REQUIRE_EXCEPTION_THROW(buffer.set_val_at_idx(10, 5), std::invalid_argument);
+}

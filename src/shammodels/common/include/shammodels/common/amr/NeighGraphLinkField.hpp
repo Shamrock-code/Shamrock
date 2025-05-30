@@ -122,6 +122,43 @@ namespace shammodels::basegodunov::modules {
         result.link_graph_field.complete_event_state(e);
         graph.complete_event_state(e);
     }
+    template<class LinkFieldCompute, class T, class... Args>
+    inline void update_link_field_indep_nvar(
+        sham::DeviceQueue &q,
+        sham::EventList &depends_list,
+        sham::EventList &result_list,
+        NeighGraphLinkField<T> &neigh_graph_field,
+        NeighGraph &graph,
+        u32 nvar,
+        Args &&...args) {
+        StackEntry stack_loc{};
+
+        auto &result = neigh_graph_field;
+
+        result.resize(graph);
+
+        auto acc_link_field = result.link_graph_field.get_write_access(depends_list);
+        auto link_iter      = graph.get_read_access(depends_list);
+
+        LinkFieldCompute compute(nvar, std::forward<Args>(args)...);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            shambase::parralel_for(
+                cgh, graph.obj_cnt * nvar, "compute link field indep nvar", [=](u32 idvar_a) {
+                    const u32 id_cell_a = idvar_a / nvar;
+                    const u32 nvar_loc  = idvar_a % nvar;
+
+                    link_iter.for_each_object_link_id(id_cell_a, [&](u32 id_cell_b, u32 link_id) {
+                        acc_link_field[link_id * nvar + nvar_loc] = compute.get_link_field_val(
+                            id_cell_a * nvar + nvar_loc, id_cell_b * nvar + nvar_loc);
+                    });
+                });
+        });
+
+        result_list.add_event(e);
+        result.link_graph_field.complete_event_state(e);
+        graph.complete_event_state(e);
+    }
 
     template<class LinkFieldCompute, class T, class... Args>
     NeighGraphLinkField<T> compute_link_field(

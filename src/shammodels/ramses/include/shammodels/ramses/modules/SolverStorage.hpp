@@ -115,24 +115,12 @@ namespace shammodels::basegodunov {
         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zp;
         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zm;
 
-        Component<shambase::DistributedData<
-            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
-            vel_face_xp;
-        Component<shambase::DistributedData<
-            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
-            vel_face_xm;
-        Component<shambase::DistributedData<
-            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
-            vel_face_yp;
-        Component<shambase::DistributedData<
-            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
-            vel_face_ym;
-        Component<shambase::DistributedData<
-            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
-            vel_face_zp;
-        Component<shambase::DistributedData<
-            shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>
-            vel_face_zm;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_xp;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_xm;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_yp;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_ym;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_zp;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_zm;
 
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tscal, 2>>>>

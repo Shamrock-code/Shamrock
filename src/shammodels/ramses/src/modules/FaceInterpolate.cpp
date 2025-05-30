@@ -93,7 +93,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         Tscal dt_interp;
 
         RhoInterpolate(
-            sycl::handler &cgh,
             const Tvec *&aabb_block_lower,
             const Tscal *&aabb_cell_size,
             const Tscal *&rho_cell,
@@ -344,7 +343,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         Tscal dt_interp;
 
         VelInterpolate(
-            sycl::handler &cgh,
             const Tvec *aabb_block_lower,
             const Tscal *aabb_cell_size,
             const Tvec *vel_cell,
@@ -602,7 +600,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         Tscal dt_interp;
 
         PressInterpolate(
-            sycl::handler &cgh,
             const Tvec *aabb_block_lower,
             const Tscal *aabb_cell_size,
             const Tscal *P_cell,
@@ -859,7 +856,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
         Tscal dt_interp;
 
         RhoDustInterpolate(
-            sycl::handler &cgh,
             u32 nvar,
             const Tvec *aabb_block_lower,
             const Tscal *aabb_cell_size,
@@ -1145,7 +1141,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         Tscal dt_interp;
 
         VelDustInterpolate(
-            sycl::handler &cgh,
             u32 nvar,
             const Tvec *aabb_block_lower,
             const Tscal *aabb_cell_size,

@@ -69,7 +69,7 @@ namespace shammodels::basegodunov::modules {
         auto link_iter      = graph.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            LinkFieldCompute compute(cgh, std::forward<Args>(args)...);
+            LinkFieldCompute compute(std::forward<Args>(args)...);
 
             shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
                 link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {

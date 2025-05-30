@@ -51,18 +51,17 @@ namespace shammodels::basegodunov::modules {
               link_count(graph.link_count), nvar(nvar) {}
     };
 
-
     template<class LinkFieldCompute, class T, class... Args>
     inline void update_link_field(
         sham::DeviceQueue &q,
         sham::EventList &depends_list,
         sham::EventList &result_list,
-        NeighGraphLinkField<T> & neigh_graph_field,
+        NeighGraphLinkField<T> &neigh_graph_field,
         NeighGraph &graph,
         Args &&...args) {
         StackEntry stack_loc{};
 
-        auto & result = neigh_graph_field;
+        auto &result = neigh_graph_field;
 
         result.resize(graph);
 
@@ -82,9 +81,7 @@ namespace shammodels::basegodunov::modules {
         result_list.add_event(e);
         result.link_graph_field.complete_event_state(e);
         graph.complete_event_state(e);
-
     }
-
 
     template<class LinkFieldCompute, class T, class... Args>
     NeighGraphLinkField<T> compute_link_field(

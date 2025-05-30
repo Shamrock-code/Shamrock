@@ -24,6 +24,7 @@
 #include "shammodels/common/amr/NeighGraphLinkField.hpp"
 #include "shammodels/ramses/GhostZoneData.hpp"
 #include "shammodels/ramses/modules/NodeBuildTrees.hpp"
+#include "shammodels/ramses/solvegraph/NeighGrapkLinkFieldEdge.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shammodels/ramses/solvegraph/TreeEdge.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -37,7 +38,6 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
-#include "shammodels/ramses/solvegraph/NeighGrapkLinkFieldEdge.hpp"
 
 namespace shammodels::basegodunov {
 
@@ -108,13 +108,12 @@ namespace shammodels::basegodunov {
 
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
 
-         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xp;
-         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xm;
-         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_yp;
-         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_ym;
-         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zp;
-         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zm;
-        
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xp;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xm;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_yp;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_ym;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zp;
+        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zm;
 
         Component<shambase::DistributedData<
             shammodels::basegodunov::modules::NeighGraphLinkField<std::array<Tvec, 2>>>>

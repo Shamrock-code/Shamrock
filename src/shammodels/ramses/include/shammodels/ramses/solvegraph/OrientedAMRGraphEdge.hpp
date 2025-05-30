@@ -37,7 +37,8 @@ namespace shammodels::basegodunov::solvergraph {
         inline shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>>
         get_refs_dir(Direction dir) {
             return graph.template map<std::reference_wrapper<modules::AMRGraph>>(
-                [&](u64 id, OrientedAMRGraph &neigh_graph) ->std::reference_wrapper<modules::AMRGraph> {
+                [&](u64 id,
+                    OrientedAMRGraph &neigh_graph) -> std::reference_wrapper<modules::AMRGraph> {
                     return std::ref(shambase::get_check_ref(neigh_graph.graph_links[dir]));
                 });
         }

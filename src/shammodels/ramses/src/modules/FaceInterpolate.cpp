@@ -146,12 +146,18 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
     using MergedPDat = shamrock::MergedPatchData;
 
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_xp = shambase::get_check_ref(storage.rho_face_xp);
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_xm = shambase::get_check_ref(storage.rho_face_xm);
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_yp = shambase::get_check_ref(storage.rho_face_yp);
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_ym = shambase::get_check_ref(storage.rho_face_ym);
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_zp = shambase::get_check_ref(storage.rho_face_zp);
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_zm = shambase::get_check_ref(storage.rho_face_zm);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_xp
+        = shambase::get_check_ref(storage.rho_face_xp);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_xm
+        = shambase::get_check_ref(storage.rho_face_xm);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_yp
+        = shambase::get_check_ref(storage.rho_face_yp);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_ym
+        = shambase::get_check_ref(storage.rho_face_ym);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_zp
+        = shambase::get_check_ref(storage.rho_face_zp);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_zm
+        = shambase::get_check_ref(storage.rho_face_zm);
 
     rho_face_xp.resize_according_to(
         shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::xp));

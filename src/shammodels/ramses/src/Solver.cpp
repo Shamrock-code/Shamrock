@@ -136,13 +136,18 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     {
 
-         storage.rho_face_xp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
-         storage.rho_face_xm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
-         storage.rho_face_yp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
-         storage.rho_face_ym = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
-         storage.rho_face_zp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
-         storage.rho_face_zm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
-        
+        storage.rho_face_xp
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>("", "");
+        storage.rho_face_xm
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>("", "");
+        storage.rho_face_yp
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>("", "");
+        storage.rho_face_ym
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>("", "");
+        storage.rho_face_zp
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>("", "");
+        storage.rho_face_zm
+            = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>("", "");
     }
 
     ////////////////////////////////////////////////////////////////////////////////

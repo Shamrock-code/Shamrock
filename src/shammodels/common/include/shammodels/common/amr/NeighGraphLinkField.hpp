@@ -16,8 +16,12 @@
  *
  */
 
+#include "shambase/DistributedData.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
+#include "shambackends/EventList.hpp"
+#include "shambackends/kernel_call.hpp"
+#include "shambackends/kernel_call_distrib.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -49,7 +53,43 @@ namespace shammodels::basegodunov::modules {
         NeighGraphLinkField(NeighGraph &graph, u32 nvar)
             : link_graph_field(graph.link_count * nvar, shamsys::instance::get_alt_scheduler_ptr()),
               link_count(graph.link_count), nvar(nvar) {}
+
+        inline auto get_read_access(sham::EventList &deps) {
+            return link_graph_field.get_read_access(deps);
+        }
+        inline auto get_write_access(sham::EventList &deps) {
+            return link_graph_field.get_write_access(deps);
+        }
+        inline void complete_event_state(sycl::event e) {
+            return link_graph_field.complete_event_state(e);
+        }
     };
+
+    template<class LinkFieldCompute, class T>
+    inline void ddupdate_link_field(
+        sham::DeviceScheduler_ptr dev_sched,
+        shambase::DistributedData<NeighGraphLinkField<T>> &neigh_graph_field,
+        shambase::DistributedData<NeighGraph> &graph,
+        shambase::DistributedData<LinkFieldCompute> &fcomp) {
+        StackEntry stack_loc{};
+
+        auto &result = neigh_graph_field;
+
+        shambase::DistributedData<u32> counts = graph.map<u32>([&](u64 id, u32 block_count) {
+            return graph.get(id).obj_cnt;
+        });
+
+        sham::distributed_data_kernel_call(
+            dev_sched,
+            sham::DDMultiRef{graph, fcomp},
+            sham::DDMultiRef{neigh_graph_field},
+            counts,
+            [](u32 id_a, auto link_iter, auto compute, auto acc_link_field) {
+                link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                    acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
+                });
+            });
+    }
 
     template<class LinkFieldCompute, class T, class... Args>
     inline void update_link_field(
@@ -68,9 +108,9 @@ namespace shammodels::basegodunov::modules {
         auto acc_link_field = result.link_graph_field.get_write_access(depends_list);
         auto link_iter      = graph.get_read_access(depends_list);
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            LinkFieldCompute compute(std::forward<Args>(args)...);
+        LinkFieldCompute compute(std::forward<Args>(args)...);
 
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
                 link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);

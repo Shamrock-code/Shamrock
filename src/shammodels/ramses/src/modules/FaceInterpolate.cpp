@@ -93,7 +93,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         Tscal dt_interp;
 
         RhoInterpolate(
-            sycl::handler &cgh,
             const Tvec *&aabb_block_lower,
             const Tscal *&aabb_cell_size,
             const Tscal *&rho_cell,
@@ -344,7 +343,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         Tscal dt_interp;
 
         VelInterpolate(
-            sycl::handler &cgh,
             const Tvec *aabb_block_lower,
             const Tscal *aabb_cell_size,
             const Tvec *vel_cell,
@@ -602,7 +600,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         Tscal dt_interp;
 
         PressInterpolate(
-            sycl::handler &cgh,
             const Tvec *aabb_block_lower,
             const Tscal *aabb_cell_size,
             const Tscal *P_cell,
@@ -859,7 +856,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
         Tscal dt_interp;
 
         RhoDustInterpolate(
-            sycl::handler &cgh,
             u32 nvar,
             const Tvec *aabb_block_lower,
             const Tscal *aabb_cell_size,
@@ -1016,7 +1012,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
 
             logger::debug_ln("Face Interpolate", "patch", id, "intepolate rho dust");
 
-            update_link_field<RhoDustInterpolate, std::array<Tscal, 2>>(
+            update_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1032,7 +1028,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
                 ptr_dz_vel_dust);
-            update_link_field<RhoDustInterpolate, std::array<Tscal, 2>>(
+            update_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1048,7 +1044,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
                 ptr_dz_vel_dust);
-            update_link_field<RhoDustInterpolate, std::array<Tscal, 2>>(
+            update_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1064,7 +1060,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
                 ptr_dz_vel_dust);
-            update_link_field<RhoDustInterpolate, std::array<Tscal, 2>>(
+            update_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1080,7 +1076,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
                 ptr_dz_vel_dust);
-            update_link_field<RhoDustInterpolate, std::array<Tscal, 2>>(
+            update_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1096,7 +1092,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::
                 ptr_dx_vel_dust,
                 ptr_dy_vel_dust,
                 ptr_dz_vel_dust);
-            update_link_field<RhoDustInterpolate, std::array<Tscal, 2>>(
+            update_link_field_indep_nvar<RhoDustInterpolate, std::array<Tscal, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1145,7 +1141,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         Tscal dt_interp;
 
         VelDustInterpolate(
-            sycl::handler &cgh,
             u32 nvar,
             const Tvec *aabb_block_lower,
             const Tscal *aabb_cell_size,
@@ -1278,7 +1273,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
             logger::debug_ln("Face Interpolate", "patch", id, "intepolate vel");
 
-            update_link_field<VelDustInterpolate, std::array<Tvec, 2>>(
+            update_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1293,7 +1288,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dz_vel_dust,
                 dt_interp,
                 ptr_buf_rho_dust);
-            update_link_field<VelDustInterpolate, std::array<Tvec, 2>>(
+            update_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1308,7 +1303,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dz_vel_dust,
                 dt_interp,
                 ptr_buf_rho_dust);
-            update_link_field<VelDustInterpolate, std::array<Tvec, 2>>(
+            update_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1323,7 +1318,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dz_vel_dust,
                 dt_interp,
                 ptr_buf_rho_dust);
-            update_link_field<VelDustInterpolate, std::array<Tvec, 2>>(
+            update_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1338,7 +1333,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dz_vel_dust,
                 dt_interp,
                 ptr_buf_rho_dust);
-            update_link_field<VelDustInterpolate, std::array<Tvec, 2>>(
+            update_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,
@@ -1353,7 +1348,7 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
                 ptr_buf_dz_vel_dust,
                 dt_interp,
                 ptr_buf_rho_dust);
-            update_link_field<VelDustInterpolate, std::array<Tvec, 2>>(
+            update_link_field_indep_nvar<VelDustInterpolate, std::array<Tvec, 2>>(
                 q,
                 depends_list,
                 resulting_event_list,

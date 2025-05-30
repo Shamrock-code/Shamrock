@@ -31,7 +31,11 @@ namespace shammodels::basegodunov::solvergraph {
         public:
         using IDataEdgeNamed::IDataEdgeNamed;
 
+        u32 nvar;
         shambase::DistributedData<modules::NeighGraphLinkField<T>> link_fields;
+
+        NeighGrapkLinkFieldEdge(std::string name, std::string texsymbol, u32 nvar)
+            : IDataEdgeNamed(name, texsymbol), nvar(nvar) {}
 
         inline void resize_according_to(
             const shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>> &graph) {
@@ -40,7 +44,8 @@ namespace shammodels::basegodunov::solvergraph {
                 link_fields,
                 graph,
                 [&](u64 id) {
-                    link_fields.add_obj(id, modules::NeighGraphLinkField<T>{graph.get(id).get()});
+                    link_fields.add_obj(
+                        id, modules::NeighGraphLinkField<T>{graph.get(id).get(), nvar});
                 },
                 [&](u64 id) {
                     link_fields.get(id).resize(graph.get(id).get());

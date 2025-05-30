@@ -14,7 +14,7 @@ def run_sim(vanleer=True, label="none"):
     multz = 1
 
     sz = 1 << 1
-    base = 32
+    base = 8
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -23,9 +23,10 @@ def run_sim(vanleer=True, label="none"):
     cfg.set_eos_gamma(1.66667)
 
     cfg.set_slope_lim_vanleer_sym()
-    cfg.set_face_time_interpolation(True)
-    cfg.set_dust_mode_dhll(1)
-    # cfg.set_drag_mode_no_drag()
+    # cfg.set_face_time_interpolation(True)
+    # cfg.set_dust_mode_dhll(1)
+    cfg.set_drag_mode_no_drag()
+    cfg.set_gravity_mode_cg()
 
     model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
@@ -70,8 +71,8 @@ def run_sim(vanleer=True, label="none"):
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
-    model.set_field_value_lambda_f64("rho_dust", rho_d_map, 0)
-    model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map, 0)
+    # model.set_field_value_lambda_f64("rho_dust", rho_d_map, 0)
+    # model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map, 0)
     # model.set_field_value_lambda_f64("rho_dust", rho_d_map_1,1)
     # model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_map_1,1)
 
@@ -80,7 +81,7 @@ def run_sim(vanleer=True, label="none"):
     t = 0
     tend = 0.245
 
-    for i in range(100):
+    for i in range(1):
 
         # if i % freq == 0:
         model.dump_vtk("test" + str(i) + ".vtk")
@@ -137,7 +138,7 @@ def run_sim(vanleer=True, label="none"):
 
     dic = convert_to_cell_coords(ctx.collect_data())
 
-    print(dic)
+    # print(dic)
     X = []
     rho = []
     rho_d = []
@@ -145,10 +146,10 @@ def run_sim(vanleer=True, label="none"):
 
         X.append(dic["xmin"][i])
         rho.append(dic["rho"][i])
-        rho_d.append(dic["rho_dust"][i])
+        # rho_d.append(dic["rho_dust"][i])
 
     plt.plot(X, rho, ".", label="rho")
-    plt.plot(X, rho_d, ".", label="rho_d")
+    # plt.plot(X, rho_d, ".", label="rho_d")
 
 
 run_sim(vanleer=True, label="van leer")

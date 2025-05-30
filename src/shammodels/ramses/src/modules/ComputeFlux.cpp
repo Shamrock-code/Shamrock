@@ -83,12 +83,18 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
             NGLink<std::array<Tvec, 2>> &vel_face_zm
                 = shambase::get_check_ref(storage.vel_face_zm).link_fields.get(id);
 
-            NGLink<std::array<Tscal, 2>> &press_face_xp = storage.press_face_xp.get().get(id);
-            NGLink<std::array<Tscal, 2>> &press_face_xm = storage.press_face_xm.get().get(id);
-            NGLink<std::array<Tscal, 2>> &press_face_yp = storage.press_face_yp.get().get(id);
-            NGLink<std::array<Tscal, 2>> &press_face_ym = storage.press_face_ym.get().get(id);
-            NGLink<std::array<Tscal, 2>> &press_face_zp = storage.press_face_zp.get().get(id);
-            NGLink<std::array<Tscal, 2>> &press_face_zm = storage.press_face_zm.get().get(id);
+            NGLink<std::array<Tscal, 2>> &press_face_xp
+                = shambase::get_check_ref(storage.press_face_xp).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &press_face_xm
+                = shambase::get_check_ref(storage.press_face_xm).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &press_face_yp
+                = shambase::get_check_ref(storage.press_face_yp).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &press_face_ym
+                = shambase::get_check_ref(storage.press_face_ym).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &press_face_zp
+                = shambase::get_check_ref(storage.press_face_zp).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &press_face_zm
+                = shambase::get_check_ref(storage.press_face_zm).link_fields.get(id);
 
             const u32 ixp = oriented_cell_graph.xp;
             const u32 ixm = oriented_cell_graph.xm;

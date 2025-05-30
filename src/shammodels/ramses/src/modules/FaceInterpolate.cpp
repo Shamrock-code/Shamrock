@@ -656,12 +656,31 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
     using MergedPDat = shamrock::MergedPatchData;
 
-    shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> press_face_xp;
-    shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> press_face_xm;
-    shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> press_face_yp;
-    shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> press_face_ym;
-    shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> press_face_zp;
-    shambase::DistributedData<NeighGraphLinkField<std::array<Tscal, 2>>> press_face_zm;
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_xp
+        = shambase::get_check_ref(storage.press_face_xp);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_xm
+        = shambase::get_check_ref(storage.press_face_xm);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_yp
+        = shambase::get_check_ref(storage.press_face_yp);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_ym
+        = shambase::get_check_ref(storage.press_face_ym);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_zp
+        = shambase::get_check_ref(storage.press_face_zp);
+    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_zm
+        = shambase::get_check_ref(storage.press_face_zm);
+
+    press_face_xp.resize_according_to(
+        shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::xp));
+    press_face_xm.resize_according_to(
+        shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::xm));
+    press_face_yp.resize_according_to(
+        shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::yp));
+    press_face_ym.resize_according_to(
+        shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::ym));
+    press_face_zp.resize_according_to(
+        shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::zp));
+    press_face_zm.resize_according_to(
+        shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::zm));
 
     shambase::get_check_ref(storage.cell_graph_edge)
         .graph.for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
@@ -711,114 +730,102 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
             logger::debug_ln("Face Interpolate", "patch", id, "intepolate press");
 
-            press_face_xp.add_obj(
-                id,
-                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                    q,
-                    depends_list,
-                    resulting_event_list,
-                    shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
-                    ptr_cell0block_aabb_lower,
-                    ptr_block_cell_sizes,
-                    ptr_buf_press,
-                    ptr_buf_grad_P,
-                    dt_interp,
-                    gamma,
-                    ptr_buf_vel,
-                    ptr_buf_dx_vel,
-                    ptr_buf_dy_vel,
-                    ptr_buf_dz_vel));
-            press_face_xm.add_obj(
-                id,
-                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                    q,
-                    depends_list,
-                    resulting_event_list,
-                    shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
-                    ptr_cell0block_aabb_lower,
-                    ptr_block_cell_sizes,
-                    ptr_buf_press,
-                    ptr_buf_grad_P,
-                    dt_interp,
-                    gamma,
-                    ptr_buf_vel,
-                    ptr_buf_dx_vel,
-                    ptr_buf_dy_vel,
-                    ptr_buf_dz_vel));
-            press_face_yp.add_obj(
-                id,
-                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                    q,
-                    depends_list,
-                    resulting_event_list,
-                    shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
-                    ptr_cell0block_aabb_lower,
-                    ptr_block_cell_sizes,
-                    ptr_buf_press,
-                    ptr_buf_grad_P,
-                    dt_interp,
-                    gamma,
-                    ptr_buf_vel,
-                    ptr_buf_dx_vel,
-                    ptr_buf_dy_vel,
-                    ptr_buf_dz_vel));
-            press_face_ym.add_obj(
-                id,
-                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                    q,
-                    depends_list,
-                    resulting_event_list,
-                    shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
-                    ptr_cell0block_aabb_lower,
-                    ptr_block_cell_sizes,
-                    ptr_buf_press,
-                    ptr_buf_grad_P,
-                    dt_interp,
-                    gamma,
-                    ptr_buf_vel,
-                    ptr_buf_dx_vel,
-                    ptr_buf_dy_vel,
-                    ptr_buf_dz_vel));
-            press_face_zp.add_obj(
-                id,
-                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                    q,
-                    depends_list,
-                    resulting_event_list,
-                    shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
-                    ptr_cell0block_aabb_lower,
-                    ptr_block_cell_sizes,
-                    ptr_buf_press,
-                    ptr_buf_grad_P,
-                    dt_interp,
-                    gamma,
-                    ptr_buf_vel,
-                    ptr_buf_dx_vel,
-                    ptr_buf_dy_vel,
-                    ptr_buf_dz_vel));
-            press_face_zm.add_obj(
-                id,
-                compute_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                    q,
-                    depends_list,
-                    resulting_event_list,
-                    shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
-                    ptr_cell0block_aabb_lower,
-                    ptr_block_cell_sizes,
-                    ptr_buf_press,
-                    ptr_buf_grad_P,
-                    dt_interp,
-                    gamma,
-                    ptr_buf_vel,
-                    ptr_buf_dx_vel,
-                    ptr_buf_dy_vel,
-                    ptr_buf_dz_vel));
+            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                q,
+                depends_list,
+                resulting_event_list,
+                press_face_xp.link_fields.get(id),
+                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
+                ptr_cell0block_aabb_lower,
+                ptr_block_cell_sizes,
+                ptr_buf_press,
+                ptr_buf_grad_P,
+                dt_interp,
+                gamma,
+                ptr_buf_vel,
+                ptr_buf_dx_vel,
+                ptr_buf_dy_vel,
+                ptr_buf_dz_vel);
+            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                q,
+                depends_list,
+                resulting_event_list,
+                press_face_xm.link_fields.get(id),
+                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
+                ptr_cell0block_aabb_lower,
+                ptr_block_cell_sizes,
+                ptr_buf_press,
+                ptr_buf_grad_P,
+                dt_interp,
+                gamma,
+                ptr_buf_vel,
+                ptr_buf_dx_vel,
+                ptr_buf_dy_vel,
+                ptr_buf_dz_vel);
+            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                q,
+                depends_list,
+                resulting_event_list,
+                press_face_yp.link_fields.get(id),
+                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
+                ptr_cell0block_aabb_lower,
+                ptr_block_cell_sizes,
+                ptr_buf_press,
+                ptr_buf_grad_P,
+                dt_interp,
+                gamma,
+                ptr_buf_vel,
+                ptr_buf_dx_vel,
+                ptr_buf_dy_vel,
+                ptr_buf_dz_vel);
+            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                q,
+                depends_list,
+                resulting_event_list,
+                press_face_ym.link_fields.get(id),
+                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
+                ptr_cell0block_aabb_lower,
+                ptr_block_cell_sizes,
+                ptr_buf_press,
+                ptr_buf_grad_P,
+                dt_interp,
+                gamma,
+                ptr_buf_vel,
+                ptr_buf_dx_vel,
+                ptr_buf_dy_vel,
+                ptr_buf_dz_vel);
+            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                q,
+                depends_list,
+                resulting_event_list,
+                press_face_zp.link_fields.get(id),
+                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
+                ptr_cell0block_aabb_lower,
+                ptr_block_cell_sizes,
+                ptr_buf_press,
+                ptr_buf_grad_P,
+                dt_interp,
+                gamma,
+                ptr_buf_vel,
+                ptr_buf_dx_vel,
+                ptr_buf_dy_vel,
+                ptr_buf_dz_vel);
+            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
+                q,
+                depends_list,
+                resulting_event_list,
+                press_face_zm.link_fields.get(id),
+                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
+                ptr_cell0block_aabb_lower,
+                ptr_block_cell_sizes,
+                ptr_buf_press,
+                ptr_buf_grad_P,
+                dt_interp,
+                gamma,
+                ptr_buf_vel,
+                ptr_buf_dx_vel,
+                ptr_buf_dy_vel,
+                ptr_buf_dz_vel);
 
             block_cell_sizes.complete_event_state(resulting_event_list);
             cell0block_aabb_lower.complete_event_state(resulting_event_list);
@@ -829,13 +836,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
             buf_dy_vel.complete_event_state(resulting_event_list);
             buf_dz_vel.complete_event_state(resulting_event_list);
         });
-
-    storage.press_face_xp.set(std::move(press_face_xp));
-    storage.press_face_xm.set(std::move(press_face_xm));
-    storage.press_face_yp.set(std::move(press_face_yp));
-    storage.press_face_ym.set(std::move(press_face_ym));
-    storage.press_face_zp.set(std::move(press_face_zp));
-    storage.press_face_zm.set(std::move(press_face_zm));
 }
 
 template<class Tvec, class TgridVec>

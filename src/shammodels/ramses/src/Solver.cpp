@@ -134,6 +134,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             AMRBlock::block_size * ndust, "dz_v_dust", "\\nabla_z \\mathbf{v}_{\\rm dust}");
     }
 
+    {
+
+         storage.rho_face_xp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
+         storage.rho_face_xm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
+         storage.rho_face_yp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
+         storage.rho_face_ym = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
+         storage.rho_face_zp = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
+         storage.rho_face_zm = std::make_shared<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> ("","");
+        
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
@@ -446,13 +457,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.flux_rhoe_face_ym.reset();
     storage.flux_rhoe_face_zp.reset();
     storage.flux_rhoe_face_zm.reset();
-
-    storage.rho_face_xp.reset();
-    storage.rho_face_xm.reset();
-    storage.rho_face_yp.reset();
-    storage.rho_face_ym.reset();
-    storage.rho_face_zp.reset();
-    storage.rho_face_zm.reset();
 
     storage.vel_face_xp.reset();
     storage.vel_face_xm.reset();

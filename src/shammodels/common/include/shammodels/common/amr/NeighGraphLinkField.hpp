@@ -31,6 +31,17 @@ namespace shammodels::basegodunov::modules {
         u32 link_count;
         u32 nvar;
 
+        void resize(NeighGraph &graph) {
+            if (link_count != graph.link_count) {
+                link_count = graph.link_count;
+                link_graph_field.resize(link_count * nvar);
+            }
+        }
+
+        NeighGraphLinkField(u32 nvar)
+            : link_graph_field(0, shamsys::instance::get_alt_scheduler_ptr()), nvar(nvar),
+              link_count(0) {}
+
         NeighGraphLinkField(NeighGraph &graph)
             : link_graph_field(graph.link_count, shamsys::instance::get_alt_scheduler_ptr()),
               link_count(graph.link_count), nvar(1) {}
@@ -39,6 +50,41 @@ namespace shammodels::basegodunov::modules {
             : link_graph_field(graph.link_count * nvar, shamsys::instance::get_alt_scheduler_ptr()),
               link_count(graph.link_count), nvar(nvar) {}
     };
+
+
+    template<class LinkFieldCompute, class T, class... Args>
+    inline void update_link_field(
+        sham::DeviceQueue &q,
+        sham::EventList &depends_list,
+        sham::EventList &result_list,
+        NeighGraphLinkField<T> & neigh_graph_field,
+        NeighGraph &graph,
+        Args &&...args) {
+        StackEntry stack_loc{};
+
+        auto & result = neigh_graph_field;
+
+        result.resize(graph);
+
+        auto acc_link_field = result.link_graph_field.get_write_access(depends_list);
+        auto link_iter      = graph.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            LinkFieldCompute compute(cgh, std::forward<Args>(args)...);
+
+            shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
+                link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                    acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
+                });
+            });
+        });
+
+        result_list.add_event(e);
+        result.link_graph_field.complete_event_state(e);
+        graph.complete_event_state(e);
+
+    }
+
 
     template<class LinkFieldCompute, class T, class... Args>
     NeighGraphLinkField<T> compute_link_field(
@@ -70,6 +116,7 @@ namespace shammodels::basegodunov::modules {
 
         return result;
     }
+
     template<class LinkFieldCompute, class T, class... Args>
     NeighGraphLinkField<T> compute_link_field_indep_nvar(
         sham::DeviceQueue &q,

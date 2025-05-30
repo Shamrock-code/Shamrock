@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammodels/ramses/Solver.hpp"
@@ -56,12 +57,12 @@ void shammodels::basegodunov::modules::ComputeFlux<Tvec, TgridVec>::compute_flux
         .graph.for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            NGLink<std::array<Tscal, 2>> &rho_face_xp = storage.rho_face_xp.get().get(id);
-            NGLink<std::array<Tscal, 2>> &rho_face_xm = storage.rho_face_xm.get().get(id);
-            NGLink<std::array<Tscal, 2>> &rho_face_yp = storage.rho_face_yp.get().get(id);
-            NGLink<std::array<Tscal, 2>> &rho_face_ym = storage.rho_face_ym.get().get(id);
-            NGLink<std::array<Tscal, 2>> &rho_face_zp = storage.rho_face_zp.get().get(id);
-            NGLink<std::array<Tscal, 2>> &rho_face_zm = storage.rho_face_zm.get().get(id);
+            NGLink<std::array<Tscal, 2>> &rho_face_xp = shambase::get_check_ref(storage.rho_face_xp).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &rho_face_xm = shambase::get_check_ref(storage.rho_face_xm).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &rho_face_yp = shambase::get_check_ref(storage.rho_face_yp).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &rho_face_ym = shambase::get_check_ref(storage.rho_face_ym).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &rho_face_zp = shambase::get_check_ref(storage.rho_face_zp).link_fields.get(id);
+            NGLink<std::array<Tscal, 2>> &rho_face_zm = shambase::get_check_ref(storage.rho_face_zm).link_fields.get(id);
 
             NGLink<std::array<Tvec, 2>> &vel_face_xp = storage.vel_face_xp.get().get(id);
             NGLink<std::array<Tvec, 2>> &vel_face_xm = storage.vel_face_xm.get().get(id);

@@ -24,6 +24,7 @@
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
 #include "shammodels/ramses/modules/ComputeFlux.hpp"
+#include "shammodels/ramses/modules/ComputeRhoMean.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
@@ -356,6 +357,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         // logger::raw_ln(
         //   " -- dot:\n" + shambase::get_check_ref(storage.solver_sequence).get_dot_graph());
         shambase::get_check_ref(storage.solver_sequence).evaluate();
+    }
+    if (solver_config.should_compute_rho_mean()) {
+        modules::ComputeRhoMean comp_rho_mean(context, solver_config, storage);
+        Tscal rho_mean = comp_rho_mean.compute_rho_mean();
     }
 
     /*

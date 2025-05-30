@@ -65,6 +65,32 @@ namespace shammodels::basegodunov::modules {
         }
     };
 
+    template<class LinkFieldCompute, class T>
+    inline void ddupdate_link_field(
+        sham::DeviceScheduler_ptr dev_sched,
+        shambase::DistributedData<NeighGraphLinkField<T>> &neigh_graph_field,
+        shambase::DistributedData<NeighGraph> &graph,
+        shambase::DistributedData<LinkFieldCompute> &fcomp) {
+        StackEntry stack_loc{};
+
+        auto &result = neigh_graph_field;
+
+        shambase::DistributedData<u32> counts = graph.map<u32>([&](u64 id, u32 block_count) {
+            return graph.get(id).obj_cnt;
+        });
+
+        sham::distributed_data_kernel_call(
+            dev_sched,
+            sham::DDMultiRef{graph, fcomp},
+            sham::DDMultiRef{neigh_graph_field},
+            counts,
+            [](u32 id_a, auto link_iter, auto compute, auto acc_link_field) {
+                link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                    acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
+                });
+            });
+    }
+
     template<class LinkFieldCompute, class T, class... Args>
     inline void update_link_field(
         sham::DeviceQueue &q,

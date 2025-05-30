@@ -36,7 +36,6 @@ abs_src_dir = os.path.join(abs_proj_dir, "src")
 
 
 def print_buildbot_info(utility_name):
-
     col_cnt = 100
 
     try:
@@ -80,7 +79,6 @@ def print_buildbot_info(utility_name):
 
 
 def run_cmd(str):
-
     col_cnt = 64
 
     try:
@@ -141,7 +139,6 @@ class PrecisionMode(Enum):
 
 
 def is_ninja_available() -> bool:
-
     try:
         # pipe output to /dev/null for silence
         null = open("/dev/null", "w")
@@ -168,7 +165,6 @@ def compile_prog(abs_build_dir):
 
 
 def get_current_buildsystem(abs_build_dir) -> BuildSystem:
-
     if os.path.isfile(abs_build_dir + "/build.ninja"):
         return BuildSystem.Ninja
     if os.path.isfile(abs_build_dir + "/Makefile"):
@@ -289,7 +285,6 @@ def configure_dpcpp(
     morton_prec,
     phy_prec,
 ):
-
     print("\033[1;34mConfiguring SHAMROCK with DPC++\033[0;0m")
 
     enabled_targets_str = ""
@@ -380,7 +375,6 @@ def configure_dpcpp(
 
 
 def patch_file(file, header_loc):
-
     incl_loc_head = str(os.path.relpath(header_loc, Path(file).parent))
     str_incl = '#include "' + incl_loc_head + '"\n\n'
 
@@ -440,9 +434,7 @@ def gen_mem_patched_dir(abs_src_dir, abs_patchedsrc_dir):
     ]
 
     for path in lst:
-
         if not (str(path.name) == "mem_track.hpp"):
-
             abs_path_in = str(path.absolute())
 
             obj = os.stat(abs_path_in)
@@ -454,7 +446,6 @@ def gen_mem_patched_dir(abs_src_dir, abs_patchedsrc_dir):
 
 
 def run_test(node_cnt, run_only="", oversubscribe=False, supargs=""):
-
     args = " --run-only " + run_only
 
     if run_only == "":
@@ -467,7 +458,6 @@ def run_test(node_cnt, run_only="", oversubscribe=False, supargs=""):
     if node_cnt == 1:
         run_cmd("../build/shamrock_test" + args)
     else:
-
         str_node = ""
         for i in range(node_cnt - 1):
             str_node += str(i) + ","
@@ -494,7 +484,6 @@ def run_test(node_cnt, run_only="", oversubscribe=False, supargs=""):
 
 
 def run_test_mempatch(node_cnt, run_only="", oversubscribe=False, supargs=""):
-
     args = " --run-only " + run_only
 
     if run_only == "":
@@ -521,7 +510,6 @@ def run_test_mempatch(node_cnt, run_only="", oversubscribe=False, supargs=""):
     if node_cnt == 1:
         run_cmd("../build_patched/shamrock_test" + args)
     else:
-
         str_node = ""
         for i in range(node_cnt - 1):
             str_node += str(i) + ","

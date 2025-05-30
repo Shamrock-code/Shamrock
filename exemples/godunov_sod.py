@@ -43,7 +43,6 @@ delta_rho = 1e-2
 
 
 def rho_map(rmin, rmax):
-
     x, y, z = rmin
     if x < 1:
         return 1
@@ -56,7 +55,6 @@ etot_R = 0.1 / (gamma - 1)
 
 
 def rhoetot_map(rmin, rmax):
-
     rho = rho_map(rmin, rmax)
 
     x, y, z = rmin
@@ -83,7 +81,6 @@ t = 0
 tend = 0.245
 
 for i in range(1):
-
     if i % freq == 0:
         model.dump_vtk("test" + str(i // freq) + ".vtk")
 
@@ -99,7 +96,6 @@ for i in range(1):
 
 
 def convert_to_cell_coords(dic):
-
     cmin = dic["cell_min"]
     cmax = dic["cell_max"]
 
@@ -111,7 +107,6 @@ def convert_to_cell_coords(dic):
     zmax = []
 
     for i in range(len(cmin)):
-
         m, M = cmin[i], cmax[i]
 
         mx, my, mz = m
@@ -149,7 +144,6 @@ rhovelx = []
 rhoetot = []
 
 for i in range(len(dic["xmin"])):
-
     X.append(dic["xmin"][i] - 0.5)
     rho.append(dic["rho"][i])
     rhovelx.append(dic["rhovel"][i][0])

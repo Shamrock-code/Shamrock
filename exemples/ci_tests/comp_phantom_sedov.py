@@ -144,7 +144,10 @@ def compare_datasets(istep, dataset1, dataset2):
 
     if error:
         exit(
-            f"Tolerances are not respected, got \n istep={istep}\n got: [{float(L2r)}, {float(L2rho)}, {float(L2u)}, {float(L2vr)}, {float(L2alpha)}] \n expected : [{expected_L2[istep][0]}, {expected_L2[istep][1]}, {expected_L2[istep][2]}, {expected_L2[istep][3]}, {expected_L2[istep][4]}]"
+            f"Tolerances are not respected, got \n istep={istep}\n"
+            + f" got: [{float(L2r)}, {float(L2rho)}, {float(L2u)}, {float(L2vr)}, {float(L2alpha)}] \n"
+            + f" expected : [{expected_L2[istep][0]}, {expected_L2[istep][1]}, {expected_L2[istep][2]}, {expected_L2[istep][3]}, {expected_L2[istep][4]}]\n"
+            + f" delta : [{abs(L2r - expected_L2[istep][0])}, {abs(L2rho - expected_L2[istep][1])}, {abs(L2u - expected_L2[istep][2])}, {abs(L2vr - expected_L2[istep][3])}, {abs(L2alpha - expected_L2[istep][4])}]"
         )
 
     plt.savefig("sedov_blast_phantom_comp_" + str(istep) + ".png")

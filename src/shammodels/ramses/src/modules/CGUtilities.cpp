@@ -310,6 +310,44 @@ namespace shammodels::basegodunov::modules {
         storage.phi_Ap.set(std::move(Ap));
     }
 
+    template<class Tvec, class TgridVec>
+    auto
+    shammodels::basegodunov::modules::CGUtilities<Tvec, TgridVec>::compute_ddot_pAp() -> Tscal {
+        StackEntry stack_loc{};
+        using namespace shamrock::patch;
+        using namespace shamrock;
+        using namespace shammath;
+        using MergedPDat = shamrock::MergedPatchData;
+        shamrock::SchedulerUtility utility(scheduler());
+        shamrock::ComputeField<Tscal> result
+            = utility.make_compute_field<Tscal>("result", AMRBlock::block_size);
+
+        storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPDat &mpdat) {
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+            sham::DeviceBuffer<Tscal> &buf_phi_p  = storage.phi_p.get().get_buf(id);
+            sham::DeviceBuffer<Tscal> &buf_phi_Ap = storage.phi_Ap.get().get_buf(id);
+
+            sham::EventList depends_list;
+            auto acc_Ap     = buf_phi_Ap.get_read_access(depends_list);
+            auto acc_p      = buf_phi_p.get_read_access(depends_list);
+            auto acc_result = result.get_buf(id).get_write_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
+                shambase::parralel_for(cgh, cell_count, "compute_ddot_pAp", [=](u64 gid) {
+                    acc_result[gid] = acc_p[gid] * acc_Ap[gid];
+                });
+            });
+            buf_phi_Ap.complete_event_state(e);
+            buf_phi_p.complete_event_state(e);
+            result.get_buf(id).complete_event_state(e);
+        });
+        Tscal rank_sum = result.compute_rank_sum();
+        Tscal tot_sum  = shamalgs::collective::allreduce_sum(rank_sum);
+        return tot_sum;
+    }
+
 } // namespace shammodels::basegodunov::modules
 
 template class shammodels::basegodunov::modules::CGUtilities<f64_3, i64_3>;

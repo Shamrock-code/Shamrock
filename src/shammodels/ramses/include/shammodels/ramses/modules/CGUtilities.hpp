@@ -59,6 +59,11 @@ namespace shammodels::basegodunov::modules {
          */
         void compute_Ap();
 
+        /**
+         * @brief this function compute the dot-product <p,Ap>
+         */
+        Tscal compute_ddot_pAp();
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

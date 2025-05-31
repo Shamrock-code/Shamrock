@@ -46,6 +46,8 @@ jobs:
           - worldsize: 1
             testfile: sod_tube_sph.py
           - worldsize: 1
+            testfile: comp_phantom_sedov.py
+          - worldsize: 1
             testfile: sod_tube_godunov.py
           - worldsize: 2
             testfile: sod_tube_godunov.py

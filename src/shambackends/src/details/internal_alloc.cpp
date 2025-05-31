@@ -14,8 +14,10 @@
  */
 
 #include "shambase/profiling/profiling.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/details/internal_alloc.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 
 namespace {
 
@@ -118,6 +120,36 @@ namespace sham::details {
 
     MemPerfInfos get_mem_perf_info() { return mem_perf_infos; }
 
+    std::string log_mem_perf_info(const std::shared_ptr<DeviceScheduler> &dev_sched) {
+
+        std::string fmt = R"log(
+    World infos :
+        World size = {}
+        World rank = {}
+    Device infos :
+        Device name = {}
+    Allocs :
+        max_allocated_byte_host = {}
+        max_allocated_byte_device = {}
+        max_allocated_byte_shared = {}
+        allocated_byte_host = {}
+        allocated_byte_device = {}
+        allocated_byte_shared = {}
+        )log";
+
+        return shambase::format(
+            fmt,
+            shamcomm::world_size(),
+            shamcomm::world_rank(),
+            dev_sched->ctx->device->dev.get_info<sycl::info::device::name>(),
+            shambase::readable_sizeof(mem_perf_infos.max_allocated_byte_host),
+            shambase::readable_sizeof(mem_perf_infos.max_allocated_byte_device),
+            shambase::readable_sizeof(mem_perf_infos.max_allocated_byte_shared),
+            shambase::readable_sizeof(mem_perf_infos.allocated_byte_host),
+            shambase::readable_sizeof(mem_perf_infos.allocated_byte_device),
+            shambase::readable_sizeof(mem_perf_infos.allocated_byte_shared));
+    }
+
     template<USMKindTarget target>
     void internal_free(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched) {
 
@@ -213,7 +245,7 @@ namespace sham::details {
                     get_mode_name<target>(),
                     usm_ptr);
             }
-            shambase::throw_with_loc<std::runtime_error>(err_msg);
+            shambase::throw_with_loc<std::runtime_error>(err_msg + log_mem_perf_info(dev_sched));
         }
 
         if (alignment) {

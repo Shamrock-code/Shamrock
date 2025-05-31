@@ -291,6 +291,114 @@ namespace {
         }
     };
 
+    template<class Tvec, class TgridVec, class AMRBlock>
+    class PressInterpolate {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        public:
+        shamrock::PatchDataFieldSpanPointer<Tvec> aabb_block_lower;
+        shamrock::PatchDataFieldSpanPointer<Tscal> aabb_cell_size;
+        shamrock::PatchDataFieldSpanPointer<Tscal> P_cell;
+        shamrock::PatchDataFieldSpanPointer<Tvec> grad_P_cell;
+        // For time interpolation
+        Tscal dt_interp;
+        Tscal gamma;
+        shamrock::PatchDataFieldSpanPointer<Tvec> vel_cell;
+        shamrock::PatchDataFieldSpanPointer<Tvec> dx_v_cell;
+        shamrock::PatchDataFieldSpanPointer<Tvec> dy_v_cell;
+        shamrock::PatchDataFieldSpanPointer<Tvec> dz_v_cell;
+
+        class acc {
+            public:
+            GetShift<Tvec, TgridVec, AMRBlock> shift_get;
+
+            const Tscal *acc_P_cell;
+            const Tvec *acc_grad_P_cell;
+
+            // For time interpolation
+            const Tvec *acc_vel_cell;
+            const Tvec *acc_dx_v_cell;
+            const Tvec *acc_dy_v_cell;
+            const Tvec *acc_dz_v_cell;
+
+            Tscal gamma;
+            Tscal dt_interp;
+
+            acc(const Tvec *aabb_block_lower,
+                const Tscal *aabb_cell_size,
+                const Tscal *P_cell,
+                const Tvec *grad_P_cell,
+                // For time interpolation
+                Tscal dt_interp,
+                Tscal gamma,
+                const Tvec *vel_cell,
+                const Tvec *dx_v_cell,
+                const Tvec *dy_v_cell,
+                const Tvec *dz_v_cell)
+                : shift_get(aabb_block_lower, aabb_cell_size), acc_P_cell{P_cell},
+                  acc_grad_P_cell{grad_P_cell}, dt_interp(dt_interp), gamma(gamma),
+                  acc_vel_cell{vel_cell}, acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell},
+                  acc_dz_v_cell{dz_v_cell} {}
+
+            Tscal get_dt_P(
+                Tscal P, Tvec grad_P, Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal gamma) const {
+                return -(gamma * P * (dx_v[0] + dy_v[1] + dz_v[2]) + sham::dot(v, grad_P));
+            }
+
+            std::array<Tscal, 2> get_link_field_val(u32 id_a, u32 id_b) const {
+
+                auto [shift_a, shift_b] = shift_get.get_shifts(id_a, id_b);
+
+                Tscal P_a     = acc_P_cell[id_a];
+                Tvec grad_P_a = acc_grad_P_cell[id_a];
+                Tscal P_b     = acc_P_cell[id_b];
+                Tvec grad_P_b = acc_grad_P_cell[id_b];
+
+                Tvec v_a    = acc_vel_cell[id_a];
+                Tvec dx_v_a = acc_dx_v_cell[id_a];
+                Tvec dy_v_a = acc_dy_v_cell[id_a];
+                Tvec dz_v_a = acc_dz_v_cell[id_a];
+                Tvec v_b    = acc_vel_cell[id_b];
+                Tvec dx_v_b = acc_dx_v_cell[id_b];
+                Tvec dy_v_b = acc_dy_v_cell[id_b];
+                Tvec dz_v_b = acc_dz_v_cell[id_b];
+
+                Tscal dtP_cell_a = get_dt_P(P_a, grad_P_a, v_a, dx_v_a, dy_v_a, dz_v_a, gamma);
+                Tscal dtP_cell_b = get_dt_P(P_b, grad_P_b, v_b, dx_v_b, dy_v_b, dz_v_b, gamma);
+
+                Tscal P_face_a = P_a + sycl::dot(grad_P_a, shift_a) + dtP_cell_a * dt_interp;
+                Tscal P_face_b = P_b + sycl::dot(grad_P_b, shift_b) + dtP_cell_b * dt_interp;
+
+                return {P_face_a, P_face_b};
+            }
+        };
+
+        inline acc get_read_access(sham::EventList &deps) {
+            return acc(
+                aabb_block_lower.get_read_access(deps),
+                aabb_cell_size.get_read_access(deps),
+                P_cell.get_read_access(deps),
+                grad_P_cell.get_read_access(deps),
+                dt_interp,
+                gamma,
+                vel_cell.get_read_access(deps),
+                dx_v_cell.get_read_access(deps),
+                dy_v_cell.get_read_access(deps),
+                dz_v_cell.get_read_access(deps));
+        }
+
+        inline void complete_event_state(sycl::event e) {
+            aabb_block_lower.complete_event_state(e);
+            aabb_cell_size.complete_event_state(e);
+            P_cell.complete_event_state(e);
+            grad_P_cell.complete_event_state(e);
+            vel_cell.complete_event_state(e);
+            dx_v_cell.complete_event_state(e);
+            dy_v_cell.complete_event_state(e);
+            dz_v_cell.complete_event_state(e);
+        }
+    };
+
 } // namespace
 
 template<class Tvec, class TgridVec>
@@ -618,72 +726,6 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
 
     Tscal gamma = solver_config.eos_gamma;
 
-    class PressInterpolate {
-        public:
-        GetShift<Tvec, TgridVec, AMRBlock> shift_get;
-
-        const Tscal *acc_P_cell;
-        const Tvec *acc_grad_P_cell;
-
-        // For time interpolation
-        const Tvec *acc_vel_cell;
-        const Tvec *acc_dx_v_cell;
-        const Tvec *acc_dy_v_cell;
-        const Tvec *acc_dz_v_cell;
-
-        Tscal gamma;
-        Tscal dt_interp;
-
-        PressInterpolate(
-            const Tvec *aabb_block_lower,
-            const Tscal *aabb_cell_size,
-            const Tscal *P_cell,
-            const Tvec *grad_P_cell,
-            // For time interpolation
-            Tscal dt_interp,
-            Tscal gamma,
-            const Tvec *vel_cell,
-            const Tvec *dx_v_cell,
-            const Tvec *dy_v_cell,
-            const Tvec *dz_v_cell)
-            : shift_get(aabb_block_lower, aabb_cell_size), acc_P_cell{P_cell},
-              acc_grad_P_cell{grad_P_cell}, dt_interp(dt_interp), gamma(gamma),
-              acc_vel_cell{vel_cell}, acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell},
-              acc_dz_v_cell{dz_v_cell} {}
-
-        Tscal
-        get_dt_P(Tscal P, Tvec grad_P, Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal gamma) const {
-            return -(gamma * P * (dx_v[0] + dy_v[1] + dz_v[2]) + sham::dot(v, grad_P));
-        }
-
-        std::array<Tscal, 2> get_link_field_val(u32 id_a, u32 id_b) const {
-
-            auto [shift_a, shift_b] = shift_get.get_shifts(id_a, id_b);
-
-            Tscal P_a     = acc_P_cell[id_a];
-            Tvec grad_P_a = acc_grad_P_cell[id_a];
-            Tscal P_b     = acc_P_cell[id_b];
-            Tvec grad_P_b = acc_grad_P_cell[id_b];
-
-            Tvec v_a    = acc_vel_cell[id_a];
-            Tvec dx_v_a = acc_dx_v_cell[id_a];
-            Tvec dy_v_a = acc_dy_v_cell[id_a];
-            Tvec dz_v_a = acc_dz_v_cell[id_a];
-            Tvec v_b    = acc_vel_cell[id_b];
-            Tvec dx_v_b = acc_dx_v_cell[id_b];
-            Tvec dy_v_b = acc_dy_v_cell[id_b];
-            Tvec dz_v_b = acc_dz_v_cell[id_b];
-
-            Tscal dtP_cell_a = get_dt_P(P_a, grad_P_a, v_a, dx_v_a, dy_v_a, dz_v_a, gamma);
-            Tscal dtP_cell_b = get_dt_P(P_b, grad_P_b, v_b, dx_v_b, dy_v_b, dz_v_b, gamma);
-
-            Tscal P_face_a = P_a + sycl::dot(grad_P_a, shift_a) + dtP_cell_a * dt_interp;
-            Tscal P_face_b = P_b + sycl::dot(grad_P_b, shift_b) + dtP_cell_b * dt_interp;
-
-            return {P_face_a, P_face_b};
-        }
-    };
-
     StackEntry stack_loc{};
 
     using MergedPDat = shamrock::MergedPatchData;
@@ -713,6 +755,69 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
         shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::zp));
     press_face_zm.resize_according_to(
         shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::zm));
+
+    auto spans_block_cell_sizes = shambase::get_check_ref(storage.block_cell_sizes).get_spans();
+    auto spans_cell0block_aabb_lower
+        = shambase::get_check_ref(storage.cell0block_aabb_lower).get_spans();
+    auto spans_press     = shambase::get_check_ref(storage.press).get_spans();
+    auto spans_grad_P = shambase::get_check_ref(storage.grad_P).get_spans();
+    auto spans_vel      = shambase::get_check_ref(storage.vel).get_spans();
+    auto spans_dx_vel   = shambase::get_check_ref(storage.dx_v).get_spans();
+    auto spans_dy_vel   = shambase::get_check_ref(storage.dy_v).get_spans();
+    auto spans_dz_vel   = shambase::get_check_ref(storage.dz_v).get_spans();
+
+    using Interp = PressInterpolate<Tvec, TgridVec, AMRBlock>;
+    auto interpolators
+        = spans_block_cell_sizes.template map<Interp>([&](u64 id, auto &csize) -> Interp {
+              return {
+                  spans_cell0block_aabb_lower.get(id),
+                  spans_block_cell_sizes.get(id),
+                  spans_rhos.get(id),
+                  spans_grad_rho.get(id),
+                  dt_interp,
+                  spans_vel.get(id),
+                  spans_dx_vel.get(id),
+                  spans_dy_vel.get(id),
+                  spans_dz_vel.get(id)};
+          });
+
+    auto graphs_xp
+        = shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::xp);
+    auto graphs_xm
+        = shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::xm);
+    auto graphs_yp
+        = shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::yp);
+    auto graphs_ym
+        = shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::ym);
+    auto graphs_zp
+        = shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::zp);
+    auto graphs_zm
+        = shambase::get_check_ref(storage.cell_graph_edge).get_refs_dir(OrientedAMRGraph::zm);
+
+    shambase::DistributedData<u32> counts_xp
+        = graphs_xp.template map<u32>([&](u64 id, auto &graph) {
+              return graph.get().obj_cnt;
+          });
+    shambase::DistributedData<u32> counts_xm
+        = graphs_xm.template map<u32>([&](u64 id, auto &graph) {
+              return graph.get().obj_cnt;
+          });
+    shambase::DistributedData<u32> counts_yp
+        = graphs_yp.template map<u32>([&](u64 id, auto &graph) {
+              return graph.get().obj_cnt;
+          });
+    shambase::DistributedData<u32> counts_ym
+        = graphs_ym.template map<u32>([&](u64 id, auto &graph) {
+              return graph.get().obj_cnt;
+          });
+    shambase::DistributedData<u32> counts_zp
+        = graphs_zp.template map<u32>([&](u64 id, auto &graph) {
+              return graph.get().obj_cnt;
+          });
+    shambase::DistributedData<u32> counts_zm
+        = graphs_zm.template map<u32>([&](u64 id, auto &graph) {
+              return graph.get().obj_cnt;
+          });
 
     shambase::get_check_ref(storage.cell_graph_edge)
         .graph.for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {

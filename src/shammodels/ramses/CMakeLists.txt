@@ -35,6 +35,7 @@ set(Sources
     src/modules/FindBlockNeigh.cpp
     src/modules/BlockNeighToCellNeigh.cpp
     src/modules/SlopeLimitedGradient.cpp
+    src/modules/ComputeRhoMean.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

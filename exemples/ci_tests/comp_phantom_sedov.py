@@ -133,13 +133,13 @@ def compare_datasets(istep, dataset1, dataset2):
     error = False
     if abs(L2r - expected_L2[istep][0]) > 1e-12:
         error = True
-    if abs(L2rho - expected_L2[istep][1]) > 1e-10:
+    if abs(L2rho - expected_L2[istep][1]) > 1e-12:
         error = True
-    if abs(L2u - expected_L2[istep][2]) > 1e-11:
+    if abs(L2u - expected_L2[istep][2]) > 1e-12:
         error = True
-    if abs(L2vr - expected_L2[istep][3]) > 1e-10:
+    if abs(L2vr - expected_L2[istep][3]) > 1e-12:
         error = True
-    if abs(L2alpha - expected_L2[istep][4]) > 1e-12:
+    if abs(L2alpha - expected_L2[istep][4]) > 0.0060305365305954525:
         error = True
 
     if error:

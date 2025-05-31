@@ -115,7 +115,7 @@ namespace shamcomm::logs {
 
     void code_init_done_log() {
 
-        auto lines = std::array<std::string, 15>{
+        auto lines = std::array<std::string, 16>{
             // Someone that coded too much here
             "Now it's time to " + shambase::term_colors::col8b_cyan()
                 + shambase::term_colors::blink() + "ROCK" + shambase::term_colors::reset() + ".",
@@ -135,7 +135,13 @@ namespace shamcomm::logs {
             "Shamrock your way to a brighter day!",
             "Node hours to burn? Leaf it to me.",
             "Ready for some shamazing simulations?",
-        };
+            R"=(
+While you wait for this simulation to run, give that cat a hug!
+
+    |\__/,|   (`\
+  _.|o o  |_   ) )
+-(((---(((--------
+            )="};
 
         auto get_sentence = [&]() {
             f64 t   = shambase::details::get_wtime();

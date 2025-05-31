@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamcomm/logs.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamtest/shamtest.hpp"
 #include "tests/ref_files.hpp"

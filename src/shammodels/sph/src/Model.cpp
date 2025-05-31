@@ -15,14 +15,18 @@
  *
  */
 
+#include "shambase/aliases_float.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/setup/generators.hpp"
 #include "shammodels/sph/Model.hpp"
+#include "shammodels/sph/SinkPartStruct.hpp"
+#include "shammodels/sph/io/Phantom2Shamrock.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shamrock/patch/PatchData.hpp"
@@ -1092,18 +1096,15 @@ auto shammodels::sph::Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(
     auto massoftype = phdump.read_header_floats<Tscal>("massoftype");
 
     conf.gpart_mass           = massoftype[0];
-    conf.cfl_config.cfl_cour  = phdump.read_header_float<Tscal>("C_force");
-    conf.cfl_config.cfl_force = phdump.read_header_float<Tscal>("C_cour");
+    conf.cfl_config.cfl_cour  = phdump.read_header_float<Tscal>("C_cour");
+    conf.cfl_config.cfl_force = phdump.read_header_float<Tscal>("C_force");
 
     conf.eos_config      = get_shamrock_eosconfig<Tvec>(phdump, bypass_error);
     conf.artif_viscosity = get_shamrock_avconfig<Tvec>(phdump);
 
     conf.set_units(get_shamrock_units<Tscal>(phdump));
 
-    // xmin, xmax, y... z... are in the header only in periodic mode in phantom
-    if (phdump.has_header_entry("xmin")) {
-        conf.set_boundary_free();
-    }
+    conf.boundary_config = get_shamrock_boundary_config<Tvec>(phdump);
 
     return conf;
 }
@@ -1177,6 +1178,10 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump
             vxyz.push_back({vx[i], vy[i], vz[i]});
         }
     }
+
+    // Load time infos
+    f64 time_phdump = phdump.read_header_float<f64>("time");
+    solver.solver_config.set_time(time_phdump);
 
     using namespace shamrock::patch;
 
@@ -1375,6 +1380,16 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
     PhantomDump dump;
 
+    bool bypass_error_check = false;
+
+    auto get_sink_count = [&]() -> int {
+        if (solver.storage.sinks.is_empty()) {
+            return 0;
+        } else {
+            return int(solver.storage.sinks.get().size());
+        }
+    };
+
     dump.override_magic_number();
     dump.iversion = 1;
     dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writter");
@@ -1403,7 +1418,7 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
     dump.table_header_i64.add("npartoftype", 0);
 
     dump.table_header_fort_int.add("nblocks", 1);
-    dump.table_header_fort_int.add("nptmass", 0);
+    dump.table_header_fort_int.add("nptmass", get_sink_count());
     dump.table_header_fort_int.add("ndustlarge", 0);
     dump.table_header_fort_int.add("ndustsmall", 0);
     dump.table_header_fort_int.add("idust", 7);
@@ -1416,12 +1431,8 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
     dump.table_header_fort_int.add("isink", 0);
 
     dump.table_header_i32.add("iexternalforce", 0);
-    dump.table_header_i32.add("ieos", 2);
-    dump.table_header_fort_real.add("gamma", 1.66667);
-    dump.table_header_fort_real.add("RK2", 0);
-    dump.table_header_fort_real.add("polyk2", 0);
-    dump.table_header_fort_real.add("qfacdisc", 0.75);
-    dump.table_header_fort_real.add("qfacdisc2", 0.75);
+
+    write_shamrock_eos_in_phantom_dump(solver.solver_config.eos_config, dump, bypass_error_check);
 
     dump.table_header_fort_real.add("time", solver.solver_config.get_time());
     dump.table_header_fort_real.add("dtmax", solver.solver_config.get_dt_sph());
@@ -1451,45 +1462,17 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
     PatchScheduler &sched = shambase::get_check_ref(solver.context.sched);
 
-    auto [bmin, bmax] = sched.get_box_volume<Tvec>();
+    auto box_size = sched.get_box_volume<Tvec>();
 
-    dump.table_header_fort_real.add("xmin", bmin.x());
-    dump.table_header_fort_real.add("xmax", bmax.x());
-    dump.table_header_fort_real.add("ymin", bmin.y());
-    dump.table_header_fort_real.add("ymax", bmax.x());
-    dump.table_header_fort_real.add("zmin", bmin.z());
-    dump.table_header_fort_real.add("zmax", bmax.x());
+    write_shamrock_boundaries_in_phantom_dump(
+        solver.solver_config.boundary_config, box_size, dump, bypass_error_check);
 
     dump.table_header_fort_real.add("get_conserv", -1);
     dump.table_header_fort_real.add("etot_in", 0.59762);
     dump.table_header_fort_real.add("angtot_in", 0.0189694);
     dump.table_header_fort_real.add("totmom_in", 0.0306284);
 
-    auto units = solver.solver_config.unit_sys;
-    if (units) {
-        dump.table_header_f64.add("udist", units->m_inv);
-        dump.table_header_f64.add("umass", units->kg_inv);
-        dump.table_header_f64.add("utime", units->s_inv);
-
-        f64 umass = units->template to<shamunits::units::kg>();
-        f64 utime = units->template to<shamunits::units::s>();
-        f64 udist = units->template to<shamunits::units::m>();
-
-        shamunits::Constants<double> ctes{*units};
-        f64 ccst    = ctes.c();
-        f64 ucharge = sqrt(umass * udist / (4. * shambase::constants::pi<f64> /*mu_0 in cgs*/));
-
-        f64 umagfd = umass / (utime * ucharge);
-
-        dump.table_header_f64.add("umagfd", umagfd);
-    } else {
-        logger::warn_ln("SPH", "no units are set, defaulting to SI");
-
-        dump.table_header_f64.add("udist", 1);
-        dump.table_header_f64.add("umass", 1);
-        dump.table_header_f64.add("utime", 1);
-        dump.table_header_f64.add("umagfd", 3.54491);
-    }
+    write_shamrock_units_in_phantom_dump(solver.solver_config.unit_sys, dump, bypass_error_check);
 
     PhantomDumpBlock block_part;
 
@@ -1503,6 +1486,37 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
     }
 
     dump.blocks.push_back(std::move(block_part));
+
+    if (!solver.storage.sinks.is_empty()) {
+
+        auto &sinks = solver.storage.sinks.get();
+        // add sinks to block 1
+        PhantomDumpBlock sink_block;
+
+        u64 xid  = sink_block.get_ref_fort_real("x");
+        u64 yid  = sink_block.get_ref_fort_real("y");
+        u64 zid  = sink_block.get_ref_fort_real("z");
+        u64 mid  = sink_block.get_ref_fort_real("m");
+        u64 hid  = sink_block.get_ref_fort_real("h");
+        u64 vxid = sink_block.get_ref_fort_real("vx");
+        u64 vyid = sink_block.get_ref_fort_real("vy");
+        u64 vzid = sink_block.get_ref_fort_real("vz");
+
+        for (SinkParticle<Tvec> s : sinks) {
+            sink_block.blocks_fort_real[xid].vals.push_back(s.pos.x());
+            sink_block.blocks_fort_real[yid].vals.push_back(s.pos.y());
+            sink_block.blocks_fort_real[zid].vals.push_back(s.pos.z());
+            sink_block.blocks_fort_real[mid].vals.push_back(s.mass);
+            sink_block.blocks_fort_real[hid].vals.push_back(s.accretion_radius);
+            sink_block.blocks_fort_real[vxid].vals.push_back(s.velocity.x());
+            sink_block.blocks_fort_real[vyid].vals.push_back(s.velocity.y());
+            sink_block.blocks_fort_real[vzid].vals.push_back(s.velocity.z());
+        }
+
+        sink_block.tot_count = sinks.size();
+
+        dump.blocks.push_back(std::move(sink_block));
+    }
 
     return dump;
 }

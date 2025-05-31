@@ -16,6 +16,7 @@
 #include "shambase/fortran_io.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shammodels/sph/io/Phantom2Shamrock.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include <memory>
 
@@ -47,4 +48,10 @@ Register_pymod(pyphantomdump) {
         shambase::FortranIOFile phfile = shambase::load_fortran_file(fname);
         return shammodels::sph::PhantomDump::from_file(phfile);
     });
+
+    m.def(
+        "compare_phantom_dumps",
+        [](shammodels::sph::PhantomDump &dump_1, shammodels::sph::PhantomDump &dump_2) {
+            return shammodels::sph::compare_phantom_dumps(dump_1, dump_2);
+        });
 }

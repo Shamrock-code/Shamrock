@@ -290,6 +290,15 @@ std::tuple<f64_3, f64_3> PatchScheduler::get_box_volume() {
     return patch_data.sim_box.get_bounding_box<f64_3>();
 }
 
+template<>
+std::tuple<i64_3, i64_3> PatchScheduler::get_box_volume() {
+    if (!pdl.check_main_field_type<i64_3>())
+        throw shambase::make_except_with_loc<std::runtime_error>(
+            "cannot query single precision box the main field is not of i64_3 type");
+
+    return patch_data.sim_box.get_bounding_box<i64_3>();
+}
+
 // TODO clean the output of this function
 void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing) {
     StackEntry stack_loc{};

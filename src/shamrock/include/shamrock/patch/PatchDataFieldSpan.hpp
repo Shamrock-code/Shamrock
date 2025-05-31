@@ -226,11 +226,13 @@ namespace shamrock {
         template<
             typename Dummy = void,
             typename       = std::enable_if_t<is_nvar_dynamic() && is_span_access(), Dummy>>
-        inline auto get_read_access(sham::EventList &depends_list) const
+        inline auto get_read_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) const
             -> details::PatchDataFieldSpan_access_ro_dyn_nvar<T> {
             StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_ro_dyn_nvar<T>{
-                get_buf().get_read_access(depends_list) + start * field_ref.get_nvar(),
+                get_buf().get_read_access(depends_list, std::move(src_loc))
+                    + start * field_ref.get_nvar(),
                 field_ref.get_nvar()};
         }
 
@@ -247,11 +249,13 @@ namespace shamrock {
         template<
             typename Dummy = void,
             typename       = std::enable_if_t<is_nvar_dynamic() && is_span_access(), Dummy>>
-        inline auto get_write_access(sham::EventList &depends_list)
+        inline auto
+        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{})
             -> details::PatchDataFieldSpan_access_rw_dyn_nvar<T> {
             StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_rw_dyn_nvar<T>{
-                get_buf().get_write_access(depends_list) + start * field_ref.get_nvar(),
+                get_buf().get_write_access(depends_list, std::move(src_loc))
+                    + start * field_ref.get_nvar(),
                 field_ref.get_nvar()};
         }
 
@@ -268,11 +272,13 @@ namespace shamrock {
         template<
             typename Dummy = void,
             typename       = std::enable_if_t<is_nvar_static() && is_span_access(), Dummy>>
-        inline auto get_read_access(sham::EventList &depends_list) const
+        inline auto get_read_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) const
             -> details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar> {
             StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_ro_static_nvar<T, nvar>{
-                get_buf().get_read_access(depends_list) + start * field_ref.get_nvar()};
+                get_buf().get_read_access(depends_list, std::move(src_loc))
+                + start * field_ref.get_nvar()};
         }
 
         /**
@@ -288,23 +294,33 @@ namespace shamrock {
         template<
             typename Dummy = void,
             typename       = std::enable_if_t<is_nvar_static() && is_span_access(), Dummy>>
-        inline auto get_write_access(sham::EventList &depends_list)
+        inline auto
+        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{})
             -> details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar> {
             StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar>{
-                get_buf().get_write_access(depends_list) + start * field_ref.get_nvar()};
+                get_buf().get_write_access(depends_list, std::move(src_loc))
+                + start * field_ref.get_nvar()};
         }
 
         template<typename Dummy = void, typename = std::enable_if_t<is_pointer_access(), Dummy>>
-        inline auto get_read_access(sham::EventList &depends_list) const -> const T * {
+        inline auto get_read_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) const
+            -> const T * {
             StackEntry stack_loc{};
-            return {get_buf().get_read_access(depends_list) + start * field_ref.get_nvar()};
+            return {
+                get_buf().get_read_access(depends_list, std::move(src_loc))
+                + start * field_ref.get_nvar()};
         }
 
         template<typename Dummy = void, typename = std::enable_if_t<is_pointer_access(), Dummy>>
-        inline auto get_write_access(sham::EventList &depends_list) -> T * {
+        inline auto
+        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{})
+            -> T * {
             StackEntry stack_loc{};
-            return {get_buf().get_write_access(depends_list) + start * field_ref.get_nvar()};
+            return {
+                get_buf().get_write_access(depends_list, std::move(src_loc))
+                + start * field_ref.get_nvar()};
         }
 
         /**

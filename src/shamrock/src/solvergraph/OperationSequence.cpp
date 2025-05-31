@@ -47,9 +47,11 @@ namespace shamrock::solvergraph {
 
     std::string OperationSequence::_impl_get_tex() {
         std::stringstream ss;
+        ss << "Start : " << _impl_get_label() << "\n";
         for (auto &node : nodes) {
             ss << node->get_tex_partial() << "\n";
         }
+        ss << "End : " << _impl_get_label() << "\n";
         return ss.str();
     }
 

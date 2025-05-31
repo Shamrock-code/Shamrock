@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/numeric_limits.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"

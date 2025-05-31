@@ -19,7 +19,7 @@
 #include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     /**
      * @brief A node that simply frees the allocation of the connected node
@@ -27,7 +27,7 @@ namespace shammodels::basegodunov::modules {
      * This node is useful to free the memory allocated by a node
      * that is no longer needed.
      */
-    class NodeFreeAlloc : public shamrock::solvergraph::INode {
+    class NodeFreeAlloc : public INode {
 
         public:
         NodeFreeAlloc() {}
@@ -39,7 +39,7 @@ namespace shammodels::basegodunov::modules {
              *
              * The node to free must be an instance of IFreeable
              */
-            shamrock::solvergraph::IFreeable &to_free;
+            IFreeable &to_free;
         };
 
         /**
@@ -49,13 +49,13 @@ namespace shammodels::basegodunov::modules {
          *
          * @param to_free The node to free
          */
-        inline void set_edges(std::shared_ptr<shamrock::solvergraph::IDataEdge> to_free) {
+        inline void set_edges(std::shared_ptr<IDataEdge> to_free) {
             __internal_set_ro_edges({});
             __internal_set_rw_edges({to_free});
         }
 
         /// Get the edges of the node
-        inline Edges get_edges() { return Edges{get_rw_edge<shamrock::solvergraph::IFreeable>(0)}; }
+        inline Edges get_edges() { return Edges{get_rw_edge<IFreeable>(0)}; }
 
         /// Evaluate the node
         inline void _impl_evaluate_internal() { get_edges().to_free.free_alloc(); }
@@ -78,4 +78,4 @@ namespace shammodels::basegodunov::modules {
         }
     };
 
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph

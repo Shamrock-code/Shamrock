@@ -106,8 +106,8 @@ namespace shammodels::basegodunov::modules {
 
                 TgridVec dir_offset = result.offset_check[dir];
 
-                AMRGraph rslt = details::compute_neigh_graph<AMRBlockFinder>(
-                    q.q,
+                AMRGraph rslt = details::compute_neigh_graph_deprecated<AMRBlockFinder>(
+                    shamsys::instance::get_compute_scheduler_ptr(),
                     edges.sizes.indexes.get(id),
                     tree,
                     buf_block_min_sycl,
@@ -142,7 +142,28 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec, class Tmorton>
     std::string FindBlockNeigh<Tvec, TgridVec, Tmorton>::_impl_get_tex() {
-        return "TODO";
+
+        std::string sizes             = get_ro_edge_base(0).get_tex_symbol();
+        std::string block_min         = get_ro_edge_base(1).get_tex_symbol();
+        std::string block_max         = get_ro_edge_base(2).get_tex_symbol();
+        std::string trees             = get_ro_edge_base(3).get_tex_symbol();
+        std::string block_neigh_graph = get_rw_edge_base(0).get_tex_symbol();
+
+        std::string tex = R"tex(
+            Find neighbour blocks
+
+            \begin{align}
+            {block_neigh_graph} = \text{FindBlockNeigh}({sizes}, {block_min}, {block_max}, {trees})
+            \end{align}
+        )tex";
+
+        shambase::replace_all(tex, "{sizes}", sizes);
+        shambase::replace_all(tex, "{block_min}", block_min);
+        shambase::replace_all(tex, "{block_max}", block_max);
+        shambase::replace_all(tex, "{trees}", trees);
+        shambase::replace_all(tex, "{block_neigh_graph}", block_neigh_graph);
+
+        return tex;
     }
 
 } // namespace shammodels::basegodunov::modules

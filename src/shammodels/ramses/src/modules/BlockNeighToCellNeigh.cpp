@@ -16,12 +16,15 @@
 
 #include "shambase/exception.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shambackends/EventList.hpp"
 #include "shammath/AABB.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
 #include "shammodels/ramses/modules/details/compute_neigh_graph.hpp"
 #include "shamrock/amr/AMRCell.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamtree/TreeTraversal.hpp"
 
 namespace shammodels::basegodunov::modules {
@@ -37,213 +40,237 @@ namespace shammodels::basegodunov::modules {
     template<class AMRBlock>
     class BlockNeighToCellNeigh<Tvec, TgridVec, Tmorton>::AMRLowering {
         public:
-        AMRGraphLinkiterator graph_iter;
-
-        sycl::accessor<TgridVec, 1, sycl::access::mode::read, sycl::target::device> acc_block_min;
-        sycl::accessor<TgridVec, 1, sycl::access::mode::read, sycl::target::device> acc_block_max;
-
+        AMRGraph &block_graph;
+        sham::DeviceBuffer<TgridVec> &buf_block_min;
+        sham::DeviceBuffer<TgridVec> &buf_block_max;
         TgridVec dir_offset;
 
         AMRLowering(
-            sycl::handler &cgh,
             AMRGraph &block_graph,
-            sycl::buffer<TgridVec> &buf_block_min,
-            sycl::buffer<TgridVec> &buf_block_max,
+            sham::DeviceBuffer<TgridVec> &buf_block_min,
+            sham::DeviceBuffer<TgridVec> &buf_block_max,
             TgridVec dir_offset)
-            : graph_iter{block_graph, cgh}, acc_block_min{buf_block_min, cgh, sycl::read_only},
-              acc_block_max{buf_block_max, cgh, sycl::read_only},
-              dir_offset(std::move(dir_offset)) {}
+            : block_graph(block_graph), buf_block_min(buf_block_min), buf_block_max(buf_block_max),
+              dir_offset(dir_offset) {}
 
-        template<class IndexFunctor>
-        void for_each_other_index_safe(u32 id_a, IndexFunctor &&fct) const {
+        struct ro_acces;
+        inline ro_acces get_read_access(sham::EventList &e) {
+            return {
+                block_graph.get_read_access(e),
+                buf_block_min.get_read_access(e),
+                buf_block_max.get_read_access(e),
+                dir_offset};
+        }
 
-            const u32 cell_global_id = (u32) id_a;
+        void complete_event_state(sycl::event &e) {
+            block_graph.complete_event_state(e);
+            buf_block_min.complete_event_state(e);
+            buf_block_max.complete_event_state(e);
+        }
 
-            const u32 block_id    = cell_global_id / AMRBlock::block_size;
-            const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+        struct ro_acces {
 
-            // fetch current block info
-            const TgridVec cblock_min = acc_block_min[block_id];
-            const TgridVec cblock_max = acc_block_max[block_id];
-            const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
+            AMRGraph::ro_access graph_iter;
 
-            // Compute wanted neighbourg cell bounds
-            auto get_cell_local_coord = [&]() -> TgridVec {
-                std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
-                return {lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]};
-            };
+            const TgridVec *acc_block_min;
+            const TgridVec *acc_block_max;
 
-            TgridVec lcoord = get_cell_local_coord();
+            TgridVec dir_offset;
 
-            shammath::AABB<TgridVec> current_cell_aabb
-                = {cblock_min + lcoord * delta_cell,
-                   cblock_min + (lcoord + TgridVec{1, 1, 1}) * delta_cell};
+            template<class IndexFunctor>
+            void for_each_other_index_safe(u32 id_a, IndexFunctor &&fct) const {
 
-            const shammath::AABB<TgridVec> current_cell_aabb_shifted
-                = {current_cell_aabb.lower + dir_offset, current_cell_aabb.upper + dir_offset};
+                const u32 cell_global_id = (u32) id_a;
 
-            auto for_each_possible_blocks = [&](auto &&functor) {
-                functor(block_id);
-                graph_iter.for_each_object_link(block_id, [&](u32 block_b) {
-                    functor(block_b);
+                const u32 block_id    = cell_global_id / AMRBlock::block_size;
+                const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+
+                // fetch current block info
+                const TgridVec cblock_min = acc_block_min[block_id];
+                const TgridVec cblock_max = acc_block_max[block_id];
+                const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
+
+                // Compute wanted neighbourg cell bounds
+                auto get_cell_local_coord = [&]() -> TgridVec {
+                    std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
+                    return {lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]};
+                };
+
+                TgridVec lcoord = get_cell_local_coord();
+
+                shammath::AABB<TgridVec> current_cell_aabb
+                    = {cblock_min + lcoord * delta_cell,
+                       cblock_min + (lcoord + TgridVec{1, 1, 1}) * delta_cell};
+
+                const shammath::AABB<TgridVec> current_cell_aabb_shifted
+                    = {current_cell_aabb.lower + dir_offset, current_cell_aabb.upper + dir_offset};
+
+                auto for_each_possible_blocks = [&](auto &&functor) {
+                    functor(block_id);
+                    graph_iter.for_each_object_link(block_id, [&](u32 block_b) {
+                        functor(block_b);
+                    });
+                };
+
+                for_each_possible_blocks([&](u32 block_b) {
+                    TgridVec block_b_min = acc_block_min[block_b];
+                    TgridVec block_b_max = acc_block_max[block_b];
+
+                    const TgridVec delta_cell_b = (block_b_max - block_b_min) / AMRBlock::Nside;
+
+                    for (u32 lx = 0; lx < AMRBlock::Nside; lx++) {
+                        for (u32 ly = 0; ly < AMRBlock::Nside; ly++) {
+                            for (u32 lz = 0; lz < AMRBlock::Nside; lz++) {
+
+                                shammath::AABB<TgridVec> found_cell
+                                    = {TgridVec{block_b_min + TgridVec{lx, ly, lz} * delta_cell_b},
+                                       TgridVec{
+                                           block_b_min
+                                           + TgridVec{lx + 1, ly + 1, lz + 1} * delta_cell_b}};
+
+                                u32 idx = block_b * AMRBlock::block_size
+                                          + AMRBlock::get_index({lx, ly, lz});
+
+                                bool overlap = found_cell.get_intersect(current_cell_aabb_shifted)
+                                                   .is_volume_not_null()
+                                               && id_a != idx;
+
+                                if (overlap) {
+                                    fct(idx);
+                                }
+                            }
+                        }
+                    }
                 });
-            };
+            }
 
-            for_each_possible_blocks([&](u32 block_b) {
-                TgridVec block_b_min = acc_block_min[block_b];
-                TgridVec block_b_max = acc_block_max[block_b];
+            template<class IndexFunctor>
+            void for_each_other_index_full(u32 id_a, IndexFunctor &&fct) const {
 
-                const TgridVec delta_cell_b = (block_b_max - block_b_min) / AMRBlock::Nside;
+                const u32 cell_global_id = (u32) id_a;
 
-                for (u32 lx = 0; lx < AMRBlock::Nside; lx++) {
-                    for (u32 ly = 0; ly < AMRBlock::Nside; ly++) {
-                        for (u32 lz = 0; lz < AMRBlock::Nside; lz++) {
+                const u32 block_id    = cell_global_id / AMRBlock::block_size;
+                const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+
+                // fetch current block info
+                const TgridVec cblock_min = acc_block_min[block_id];
+                const TgridVec cblock_max = acc_block_max[block_id];
+                const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
+
+                // Compute wanted neighbourg cell bounds
+                auto get_cell_local_coord = [&]() -> TgridVec {
+                    std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
+                    return {lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]};
+                };
+
+                const TgridVec lcoord = get_cell_local_coord();
+
+                const shammath::AABB<TgridVec> current_cell_aabb
+                    = {cblock_min + lcoord * delta_cell,
+                       cblock_min + (lcoord + TgridVec{1, 1, 1}) * delta_cell};
+
+                const shammath::AABB<TgridVec> current_cell_aabb_shifted
+                    = {current_cell_aabb.lower + dir_offset * delta_cell,
+                       current_cell_aabb.upper + dir_offset * delta_cell};
+
+                // by default we assume that we are in our block
+                // the next function checks if the wanted block is in another blocks
+                TgridVec wanted_block_min = cblock_min;
+                TgridVec wanted_block_max = cblock_max;
+                u32 wanted_block          = block_id;
+
+                graph_iter.for_each_object_link(block_id, [&](u32 block_b) {
+                    TgridVec int_wanted_block_min = acc_block_min[block_b];
+                    TgridVec int_wanted_block_max = acc_block_max[block_b];
+
+                    bool overlap
+                        = shammath::AABB<TgridVec>{int_wanted_block_min, int_wanted_block_max}
+                              .get_intersect(current_cell_aabb_shifted)
+                              .is_volume_not_null();
+
+                    if (overlap) {
+                        wanted_block_min = int_wanted_block_min;
+                        wanted_block_max = int_wanted_block_max;
+                        wanted_block     = block_b;
+                    }
+                });
+
+                bool overlap = shammath::AABB<TgridVec>{wanted_block_min, wanted_block_max}
+                                   .get_intersect(current_cell_aabb_shifted)
+                                   .is_volume_not_null();
+
+                if (!overlap) {
+                    return;
+                }
+
+                const TgridVec wanted_block_delta_cell
+                    = (wanted_block_max - wanted_block_min) / AMRBlock::Nside;
+
+                // at this point the block having the wanted neighbour is in `wanted_block`
+                // now we need to find the local coordinates within wanted block of
+                // `current_cell_aabb_shifted`, this will give away the indexes
+
+                TgridVec wanted_block_current_cell_shifted
+                    = current_cell_aabb_shifted.lower - wanted_block_min;
+
+                std::array<u32, 3> wanted_block_index_range_min
+                    = {u32(wanted_block_current_cell_shifted.x() / wanted_block_delta_cell.x()),
+                       u32(wanted_block_current_cell_shifted.y() / wanted_block_delta_cell.y()),
+                       u32(wanted_block_current_cell_shifted.z() / wanted_block_delta_cell.z())};
+
+                std::array<u32, 3> wanted_block_index_range_max
+                    = {u32((wanted_block_current_cell_shifted.x() + delta_cell.x())
+                           / wanted_block_delta_cell.x()),
+                       u32((wanted_block_current_cell_shifted.y() + delta_cell.y())
+                           / wanted_block_delta_cell.y()),
+                       u32((wanted_block_current_cell_shifted.z() + delta_cell.z())
+                           / wanted_block_delta_cell.z())};
+
+                // now if range size < 1  expand to 1 (case where wanted block is larger)
+                if (wanted_block_index_range_max[0] - wanted_block_index_range_min[0] < 1)
+                    wanted_block_index_range_max[0] = wanted_block_index_range_min[0] + 1;
+                if (wanted_block_index_range_max[1] - wanted_block_index_range_min[1] < 1)
+                    wanted_block_index_range_max[1] = wanted_block_index_range_min[1] + 1;
+                if (wanted_block_index_range_max[2] - wanted_block_index_range_min[2] < 1)
+                    wanted_block_index_range_max[2] = wanted_block_index_range_min[2] + 1;
+
+                for (u32 x = wanted_block_index_range_min[0]; x < wanted_block_index_range_max[0];
+                     x++) {
+                    for (u32 y = wanted_block_index_range_min[1];
+                         y < wanted_block_index_range_max[1];
+                         y++) {
+                        for (u32 z = wanted_block_index_range_min[2];
+                             z < wanted_block_index_range_max[2];
+                             z++) {
 
                             shammath::AABB<TgridVec> found_cell = {
-                                TgridVec{block_b_min + TgridVec{lx, ly, lz} * delta_cell_b},
+                                TgridVec{wanted_block_min + TgridVec{x, y, z} * delta_cell},
                                 TgridVec{
-                                    block_b_min + TgridVec{lx + 1, ly + 1, lz + 1} * delta_cell_b}};
-
-                            u32 idx = block_b * AMRBlock::block_size
-                                      + AMRBlock::get_index({lx, ly, lz});
+                                    wanted_block_min + TgridVec{x + 1, y + 1, z + 1} * delta_cell}};
 
                             bool overlap = found_cell.get_intersect(current_cell_aabb_shifted)
-                                               .is_volume_not_null()
-                                           && id_a != idx;
+                                               .is_volume_not_null();
 
                             if (overlap) {
+                                u32 idx = wanted_block * AMRBlock::block_size
+                                          + AMRBlock::get_index({x, y, z});
+
                                 fct(idx);
                             }
                         }
                     }
                 }
-            });
-        }
-
-        template<class IndexFunctor>
-        void for_each_other_index_full(u32 id_a, IndexFunctor &&fct) const {
-
-            const u32 cell_global_id = (u32) id_a;
-
-            const u32 block_id    = cell_global_id / AMRBlock::block_size;
-            const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
-
-            // fetch current block info
-            const TgridVec cblock_min = acc_block_min[block_id];
-            const TgridVec cblock_max = acc_block_max[block_id];
-            const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
-
-            // Compute wanted neighbourg cell bounds
-            auto get_cell_local_coord = [&]() -> TgridVec {
-                std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
-                return {lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]};
-            };
-
-            const TgridVec lcoord = get_cell_local_coord();
-
-            const shammath::AABB<TgridVec> current_cell_aabb
-                = {cblock_min + lcoord * delta_cell,
-                   cblock_min + (lcoord + TgridVec{1, 1, 1}) * delta_cell};
-
-            const shammath::AABB<TgridVec> current_cell_aabb_shifted
-                = {current_cell_aabb.lower + dir_offset * delta_cell,
-                   current_cell_aabb.upper + dir_offset * delta_cell};
-
-            // by default we assume that we are in our block
-            // the next function checks if the wanted block is in another blocks
-            TgridVec wanted_block_min = cblock_min;
-            TgridVec wanted_block_max = cblock_max;
-            u32 wanted_block          = block_id;
-
-            graph_iter.for_each_object_link(block_id, [&](u32 block_b) {
-                TgridVec int_wanted_block_min = acc_block_min[block_b];
-                TgridVec int_wanted_block_max = acc_block_max[block_b];
-
-                bool overlap = shammath::AABB<TgridVec>{int_wanted_block_min, int_wanted_block_max}
-                                   .get_intersect(current_cell_aabb_shifted)
-                                   .is_volume_not_null();
-
-                if (overlap) {
-                    wanted_block_min = int_wanted_block_min;
-                    wanted_block_max = int_wanted_block_max;
-                    wanted_block     = block_b;
-                }
-            });
-
-            bool overlap = shammath::AABB<TgridVec>{wanted_block_min, wanted_block_max}
-                               .get_intersect(current_cell_aabb_shifted)
-                               .is_volume_not_null();
-
-            if (!overlap) {
-                return;
             }
 
-            const TgridVec wanted_block_delta_cell
-                = (wanted_block_max - wanted_block_min) / AMRBlock::Nside;
+            template<class IndexFunctor>
+            void for_each_other_index(u32 id_a, IndexFunctor &&fct) const {
+                // Possible performance regression here, ideally i should fix the full mode for AMR
+                // as i expect it to outperform the safe one
 
-            // at this point the block having the wanted neighbour is in `wanted_block`
-            // now we need to find the local coordinates within wanted block of
-            // `current_cell_aabb_shifted`, this will give away the indexes
-
-            TgridVec wanted_block_current_cell_shifted
-                = current_cell_aabb_shifted.lower - wanted_block_min;
-
-            std::array<u32, 3> wanted_block_index_range_min
-                = {u32(wanted_block_current_cell_shifted.x() / wanted_block_delta_cell.x()),
-                   u32(wanted_block_current_cell_shifted.y() / wanted_block_delta_cell.y()),
-                   u32(wanted_block_current_cell_shifted.z() / wanted_block_delta_cell.z())};
-
-            std::array<u32, 3> wanted_block_index_range_max
-                = {u32((wanted_block_current_cell_shifted.x() + delta_cell.x())
-                       / wanted_block_delta_cell.x()),
-                   u32((wanted_block_current_cell_shifted.y() + delta_cell.y())
-                       / wanted_block_delta_cell.y()),
-                   u32((wanted_block_current_cell_shifted.z() + delta_cell.z())
-                       / wanted_block_delta_cell.z())};
-
-            // now if range size < 1  expand to 1 (case where wanted block is larger)
-            if (wanted_block_index_range_max[0] - wanted_block_index_range_min[0] < 1)
-                wanted_block_index_range_max[0] = wanted_block_index_range_min[0] + 1;
-            if (wanted_block_index_range_max[1] - wanted_block_index_range_min[1] < 1)
-                wanted_block_index_range_max[1] = wanted_block_index_range_min[1] + 1;
-            if (wanted_block_index_range_max[2] - wanted_block_index_range_min[2] < 1)
-                wanted_block_index_range_max[2] = wanted_block_index_range_min[2] + 1;
-
-            for (u32 x = wanted_block_index_range_min[0]; x < wanted_block_index_range_max[0];
-                 x++) {
-                for (u32 y = wanted_block_index_range_min[1]; y < wanted_block_index_range_max[1];
-                     y++) {
-                    for (u32 z = wanted_block_index_range_min[2];
-                         z < wanted_block_index_range_max[2];
-                         z++) {
-
-                        shammath::AABB<TgridVec> found_cell
-                            = {TgridVec{wanted_block_min + TgridVec{x, y, z} * delta_cell},
-                               TgridVec{
-                                   wanted_block_min + TgridVec{x + 1, y + 1, z + 1} * delta_cell}};
-
-                        bool overlap = found_cell.get_intersect(current_cell_aabb_shifted)
-                                           .is_volume_not_null();
-
-                        if (overlap) {
-                            u32 idx = wanted_block * AMRBlock::block_size
-                                      + AMRBlock::get_index({x, y, z});
-
-                            fct(idx);
-                        }
-                    }
-                }
+                // for_each_other_index_full(id_a, fct);
+                for_each_other_index_safe(id_a, fct);
             }
-        }
-
-        template<class IndexFunctor>
-        void for_each_other_index(u32 id_a, IndexFunctor &&fct) const {
-            // Possible performance regression here, ideally i should fix the full mode for AMR as i
-            // expect it to outperform the safe one
-
-            // for_each_other_index_full(id_a, fct);
-            for_each_other_index_safe(id_a, fct);
-        }
+        };
     };
 
     template<class Tvec, class TgridVec, class Tmorton>
@@ -266,13 +293,11 @@ namespace shammodels::basegodunov::modules {
                                                    const OrientedAMRGraph &oriented_block_graph) {
             OrientedAMRGraph result;
 
-            sycl::queue &q = shamsys::instance::get_compute_queue();
-
             PatchDataField<TgridVec> &block_min = edges.spans_block_min.get_refs().get(id);
             PatchDataField<TgridVec> &block_max = edges.spans_block_max.get_refs().get(id);
 
-            sycl::buffer<TgridVec> buf_block_min_sycl = block_min.get_buf().copy_to_sycl_buffer();
-            sycl::buffer<TgridVec> buf_block_max_sycl = block_max.get_buf().copy_to_sycl_buffer();
+            sham::DeviceBuffer<TgridVec> &buf_block_min = block_min.get_buf();
+            sham::DeviceBuffer<TgridVec> &buf_block_max = block_max.get_buf();
 
             for (u32 dir = 0; dir < 6; dir++) {
 
@@ -284,7 +309,12 @@ namespace shammodels::basegodunov::modules {
                 u32 cell_count = (edges.sizes.indexes.get(id)) * AMRBlock::block_size;
 
                 AMRGraph rslt = details::compute_neigh_graph<AMRLowering<AMRBlock>>(
-                    q, cell_count, block_graph, buf_block_min_sycl, buf_block_max_sycl, dir_offset);
+                    shamsys::instance::get_compute_scheduler_ptr(),
+                    cell_count,
+                    block_graph,
+                    buf_block_min,
+                    buf_block_max,
+                    dir_offset);
 
                 logger::debug_ln(
                     "AMR Cell Graph", "Patch", id, "direction", dir, "link cnt", rslt.link_count);
@@ -299,10 +329,10 @@ namespace shammodels::basegodunov::modules {
 
         logger::debug_ln("[AMR cell graph]", "compute antecedent map");
         cell_graph_links.for_each([&](u64 id, OrientedAMRGraph &oriented_block_graph) {
-            sycl::queue &q = shamsys::instance::get_compute_queue();
+            auto ptr       = shamsys::instance::get_compute_scheduler_ptr();
             u32 cell_count = (edges.sizes.indexes.get(id)) * AMRBlock::block_size;
             for (u32 dir = 0; dir < 6; dir++) {
-                oriented_block_graph.graph_links[dir]->compute_antecedent(q);
+                oriented_block_graph.graph_links[dir]->compute_antecedent(ptr);
             }
         });
 
@@ -311,7 +341,28 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec, class Tmorton>
     std::string BlockNeighToCellNeigh<Tvec, TgridVec, Tmorton>::_impl_get_tex() {
-        return "TODO";
+
+        std::string sizes             = get_ro_edge_base(0).get_tex_symbol();
+        std::string block_min         = get_ro_edge_base(1).get_tex_symbol();
+        std::string block_max         = get_ro_edge_base(2).get_tex_symbol();
+        std::string block_neigh_graph = get_ro_edge_base(3).get_tex_symbol();
+        std::string cell_neigh_graph  = get_rw_edge_base(0).get_tex_symbol();
+
+        std::string tex = R"tex(
+            Find neighbour blocks
+
+            \begin{align}
+            {cell_neigh_graph} &= \text{BlockNeighToCellNeigh}({block_neigh_graph}, {sizes}, {block_min}, {block_max})
+            \end{align}
+        )tex";
+
+        shambase::replace_all(tex, "{sizes}", sizes);
+        shambase::replace_all(tex, "{block_min}", block_min);
+        shambase::replace_all(tex, "{block_max}", block_max);
+        shambase::replace_all(tex, "{block_neigh_graph}", block_neigh_graph);
+        shambase::replace_all(tex, "{cell_neigh_graph}", cell_neigh_graph);
+
+        return tex;
     }
 
 } // namespace shammodels::basegodunov::modules

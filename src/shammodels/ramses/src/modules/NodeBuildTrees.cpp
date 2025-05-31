@@ -223,7 +223,27 @@ namespace shammodels::basegodunov::modules {
 
     template<class Umorton, class TgridVec>
     std::string NodeBuildTrees<Umorton, TgridVec>::_impl_get_tex() {
-        return "TODO";
+
+        std::string sizes     = get_ro_edge_base(0).get_tex_symbol();
+        std::string block_min = get_ro_edge_base(1).get_tex_symbol();
+        std::string block_max = get_ro_edge_base(2).get_tex_symbol();
+        std::string trees     = get_rw_edge_base(0).get_tex_symbol();
+
+        std::string tex = R"tex(
+            Build radix trees
+
+            \begin{align}
+            {trees}_{\rm patch} &= RadixTree(\{{block_min}_{\rm patch}\}_{\Omega_i}, \{{block_max}_{\rm patch}\}_{\Omega_i}) \\
+            {\Omega_i} &= [0, {sizes}_{\rm patch} )
+            \end{align}
+        )tex";
+
+        shambase::replace_all(tex, "{sizes}", sizes);
+        shambase::replace_all(tex, "{block_min}", block_min);
+        shambase::replace_all(tex, "{block_max}", block_max);
+        shambase::replace_all(tex, "{trees}", trees);
+
+        return tex;
     }
 
 } // namespace shammodels::basegodunov::modules

@@ -530,6 +530,11 @@ namespace sham {
     inline auto unpack32(u64 v) -> sycl::vec<u32, 2> { return {u32(v >> 32U), u32(v)}; };
 
     template<class T>
+    inline T m1pown(u32 n) {
+        return (n % 2 == 0) ? T(1) : -T(1);
+    }
+
+    template<class T>
     inline bool has_nan(T v) {
         auto tmp = !sycl::isnan(v);
         return !(tmp);

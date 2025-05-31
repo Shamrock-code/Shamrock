@@ -76,6 +76,30 @@ namespace shammodels::basegodunov {
         }
     };
 
+    enum GravityMode {
+        NoGravity = 0,
+        CG        = 1, // conjuguate gradient
+        PCG       = 2, // preconditioned conjuguate gradient
+        BIGSTAB   = 3, //
+        MULTIGRID = 4  // multigrid
+    };
+
+    template<class Tvec>
+    struct GravityConfig {
+        using Tscal              = shambase::VecComponent<Tvec>;
+        GravityMode gravity_mode = NoGravity;
+        Tscal G_value            = 1.;
+        Tscal tol                = 1e-6;
+        inline Tscal get_fourPiG() { return 4 * M_PI * G_value; }
+        inline Tscal get_tolerance() { return tol; }
+        inline bool is_gravity_on() {
+            if (gravity_mode != NoGravity) {
+                return true;
+            }
+            return false;
+        }
+    };
+
     template<class Tvec>
     struct SolverStatusVar;
 
@@ -149,6 +173,17 @@ struct shammodels::basegodunov::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gravity config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    GravityConfig<Tvec> gravity_config{};
+    inline Tscal fourPiG() { return gravity_config.get_fourPiG(); }
+    inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
+    inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gravity config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     /// AMR refinement mode

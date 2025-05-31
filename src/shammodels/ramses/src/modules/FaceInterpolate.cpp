@@ -759,12 +759,12 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
     auto spans_block_cell_sizes = shambase::get_check_ref(storage.block_cell_sizes).get_spans();
     auto spans_cell0block_aabb_lower
         = shambase::get_check_ref(storage.cell0block_aabb_lower).get_spans();
-    auto spans_press     = shambase::get_check_ref(storage.press).get_spans();
+    auto spans_press  = shambase::get_check_ref(storage.press).get_spans();
     auto spans_grad_P = shambase::get_check_ref(storage.grad_P).get_spans();
-    auto spans_vel      = shambase::get_check_ref(storage.vel).get_spans();
-    auto spans_dx_vel   = shambase::get_check_ref(storage.dx_v).get_spans();
-    auto spans_dy_vel   = shambase::get_check_ref(storage.dy_v).get_spans();
-    auto spans_dz_vel   = shambase::get_check_ref(storage.dz_v).get_spans();
+    auto spans_vel    = shambase::get_check_ref(storage.vel).get_spans();
+    auto spans_dx_vel = shambase::get_check_ref(storage.dx_v).get_spans();
+    auto spans_dy_vel = shambase::get_check_ref(storage.dy_v).get_spans();
+    auto spans_dz_vel = shambase::get_check_ref(storage.dz_v).get_spans();
 
     using Interp = PressInterpolate<Tvec, TgridVec, AMRBlock>;
     auto interpolators
@@ -772,9 +772,10 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
               return {
                   spans_cell0block_aabb_lower.get(id),
                   spans_block_cell_sizes.get(id),
-                  spans_rhos.get(id),
-                  spans_grad_rho.get(id),
+                  spans_press.get(id),
+                  spans_grad_P.get(id),
                   dt_interp,
+                  gamma,
                   spans_vel.get(id),
                   spans_dx_vel.get(id),
                   spans_dy_vel.get(id),
@@ -819,159 +820,65 @@ void shammodels::basegodunov::modules::FaceInterpolate<Tvec, TgridVec>::interpol
               return graph.get().obj_cnt;
           });
 
-    shambase::get_check_ref(storage.cell_graph_edge)
-        .graph.for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
-            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-            MergedPDat &mpdat    = storage.merged_patchdata_ghost.get().get(id);
-
-            sham::DeviceBuffer<Tscal> &block_cell_sizes
-                = shambase::get_check_ref(storage.block_cell_sizes)
-                      .get_refs()
-                      .get(id)
-                      .get()
-                      .get_buf();
-            sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-                = shambase::get_check_ref(storage.cell0block_aabb_lower)
-                      .get_refs()
-                      .get(id)
-                      .get()
-                      .get_buf();
-
-            sham::DeviceBuffer<Tscal> &buf_press
-                = shambase::get_check_ref(storage.press).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_grad_P
-                = shambase::get_check_ref(storage.grad_P).get_buf(id);
-
-            sham::DeviceBuffer<Tvec> &buf_vel = shambase::get_check_ref(storage.vel).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dx_vel
-                = shambase::get_check_ref(storage.dx_v).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dy_vel
-                = shambase::get_check_ref(storage.dy_v).get_buf(id);
-            sham::DeviceBuffer<Tvec> &buf_dz_vel
-                = shambase::get_check_ref(storage.dz_v).get_buf(id);
-
-            // TODO : restore asynchroneousness
-            sham::EventList depends_list;
-            auto ptr_block_cell_sizes      = block_cell_sizes.get_read_access(depends_list);
-            auto ptr_cell0block_aabb_lower = cell0block_aabb_lower.get_read_access(depends_list);
-
-            auto ptr_buf_press  = buf_press.get_read_access(depends_list);
-            auto ptr_buf_grad_P = buf_grad_P.get_read_access(depends_list);
-
-            auto ptr_buf_vel    = buf_vel.get_read_access(depends_list);
-            auto ptr_buf_dx_vel = buf_dx_vel.get_read_access(depends_list);
-            auto ptr_buf_dy_vel = buf_dy_vel.get_read_access(depends_list);
-            auto ptr_buf_dz_vel = buf_dz_vel.get_read_access(depends_list);
-
-            sham::EventList resulting_event_list;
-
-            logger::debug_ln("Face Interpolate", "patch", id, "intepolate press");
-
-            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                press_face_xp.link_fields.get(id),
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel);
-            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                press_face_xm.link_fields.get(id),
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel);
-            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                press_face_yp.link_fields.get(id),
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel);
-            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                press_face_ym.link_fields.get(id),
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel);
-            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                press_face_zp.link_fields.get(id),
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel);
-            update_link_field<PressInterpolate, std::array<Tscal, 2>>(
-                q,
-                depends_list,
-                resulting_event_list,
-                press_face_zm.link_fields.get(id),
-                shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]),
-                ptr_cell0block_aabb_lower,
-                ptr_block_cell_sizes,
-                ptr_buf_press,
-                ptr_buf_grad_P,
-                dt_interp,
-                gamma,
-                ptr_buf_vel,
-                ptr_buf_dx_vel,
-                ptr_buf_dy_vel,
-                ptr_buf_dz_vel);
-
-            block_cell_sizes.complete_event_state(resulting_event_list);
-            cell0block_aabb_lower.complete_event_state(resulting_event_list);
-            buf_press.complete_event_state(resulting_event_list);
-            buf_grad_P.complete_event_state(resulting_event_list);
-            buf_vel.complete_event_state(resulting_event_list);
-            buf_dx_vel.complete_event_state(resulting_event_list);
-            buf_dy_vel.complete_event_state(resulting_event_list);
-            buf_dz_vel.complete_event_state(resulting_event_list);
+    sham::distributed_data_kernel_call(
+        shamsys::instance::get_compute_scheduler_ptr(),
+        sham::DDMultiRef{graphs_xp, interpolators},
+        sham::DDMultiRef{press_face_xp.link_fields},
+        counts_xp,
+        [](u32 id_a, auto link_iter, auto compute, auto acc_link_field) {
+            link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
+            });
+        });
+    sham::distributed_data_kernel_call(
+        shamsys::instance::get_compute_scheduler_ptr(),
+        sham::DDMultiRef{graphs_xm, interpolators},
+        sham::DDMultiRef{press_face_xm.link_fields},
+        counts_xm,
+        [](u32 id_a, auto link_iter, auto compute, auto acc_link_field) {
+            link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
+            });
+        });
+    sham::distributed_data_kernel_call(
+        shamsys::instance::get_compute_scheduler_ptr(),
+        sham::DDMultiRef{graphs_yp, interpolators},
+        sham::DDMultiRef{press_face_yp.link_fields},
+        counts_yp,
+        [](u32 id_a, auto link_iter, auto compute, auto acc_link_field) {
+            link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
+            });
+        });
+    sham::distributed_data_kernel_call(
+        shamsys::instance::get_compute_scheduler_ptr(),
+        sham::DDMultiRef{graphs_ym, interpolators},
+        sham::DDMultiRef{press_face_ym.link_fields},
+        counts_ym,
+        [](u32 id_a, auto link_iter, auto compute, auto acc_link_field) {
+            link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
+            });
+        });
+    sham::distributed_data_kernel_call(
+        shamsys::instance::get_compute_scheduler_ptr(),
+        sham::DDMultiRef{graphs_zp, interpolators},
+        sham::DDMultiRef{press_face_zp.link_fields},
+        counts_zp,
+        [](u32 id_a, auto link_iter, auto compute, auto acc_link_field) {
+            link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
+            });
+        });
+    sham::distributed_data_kernel_call(
+        shamsys::instance::get_compute_scheduler_ptr(),
+        sham::DDMultiRef{graphs_zm, interpolators},
+        sham::DDMultiRef{press_face_zm.link_fields},
+        counts_zm,
+        [](u32 id_a, auto link_iter, auto compute, auto acc_link_field) {
+            link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
+            });
         });
 }
 

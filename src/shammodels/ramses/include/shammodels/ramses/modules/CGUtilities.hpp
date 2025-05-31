@@ -20,7 +20,6 @@
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
-#include "shamrock/scheduler/ComputeField.hpp"
 
 namespace shammodels::basegodunov::modules {
 
@@ -49,6 +48,11 @@ namespace shammodels::basegodunov::modules {
          * @brief Compute the initial residual (r) and searching direction vector (p)
          */
         void init_step();
+
+        /**
+         * @brief this function compute the square of the L2-norm of the residual vector:  <r,r>
+         */
+        Tscal compute_ddot_res();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

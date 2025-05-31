@@ -54,7 +54,7 @@ namespace {
     template<class T, class Tvec, class ACCField>
     inline T get_gemv_id(
         const u32 cell_global_id,
-        const shambase::VecComponent<Tvec> delta_cell,
+        const Tvec delta_cell,
         const AMRGraphLinkiterator &graph_iter_xp,
         const AMRGraphLinkiterator &graph_iter_xm,
         const AMRGraphLinkiterator &graph_iter_yp,
@@ -138,18 +138,13 @@ namespace shammodels::basegodunov::modules {
             AMRGraph &graph_neigh_zm
                 = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
 
-            sham::DeviceBuffer<Tscal> &block_cell_sizes
-                = storage.cell_infos.get().block_cell_sizes.get_buf_check(id);
-            sham::DeviceBuffer<Tvec> &cell0block_aabb_lower
-                = storage.cell_infos.get().cell0block_aabb_lower.get_buf_check(id);
-
             sham::EventList depends_list;
-            auto acc_aabb_block_lower = cell0block_aabb_lower.get_read_access(depends_list);
-            auto acc_aabb_cell_size   = block_cell_sizes.get_read_access(depends_list);
-            auto acc_rho              = buf_rho.get_read_access(depends_list);
-            auto acc_phi              = buf_phi.get_write_access(depends_list);
-            auto acc_residual         = residual.get_buf(id).get_write_access(depends_list);
-            auto acc_p                = p.get_buf(id).get_write_access(depends_list);
+            auto acc_block_min = buf_block_min.get_read_access(depends_list);
+            auto acc_block_max = buf_block_max.get_read_access(depends_list);
+            auto acc_rho       = buf_rho.get_read_access(depends_list);
+            auto acc_phi       = buf_phi.get_write_access(depends_list);
+            auto acc_residual  = residual.get_buf(id).get_write_access(depends_list);
+            auto acc_p         = p.get_buf(id).get_write_access(depends_list);
 
             auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
             auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
@@ -160,15 +155,22 @@ namespace shammodels::basegodunov::modules {
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
             auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
-                u32 cell_count = (mpdat.total_elements) * AMRBlock::block_size;
+                u32 cell_count       = (mpdat.total_elements) * AMRBlock::block_size;
+                Tscal one_over_Nside = 1. / AMRBlock::Nside;
+                Tscal dxfact         = solver_config.grid_coord_to_pos_fact;
+
                 shambase::parralel_for(cgh, cell_count, "self_gravity::init_step", [=](u64 gid) {
                     const u32 cell_global_id = (u32) gid;
 
                     const u32 block_id    = cell_global_id / AMRBlock::block_size;
                     const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+                    TgridVec lower        = acc_block_min[block_id];
+                    TgridVec upper        = acc_block_max[block_id];
+                    Tvec lower_flt        = lower.template convert<Tscal>() * dxfact;
+                    Tvec upper_flt        = upper.template convert<Tscal>() * dxfact;
+                    Tvec delta_cell       = (upper_flt - lower_flt) * one_over_Nside;
 
-                    Tscal delta_cell = acc_aabb_cell_size[block_id];
-                    auto Aphi_id     = get_gemv_id<Tscal, Tvec>(
+                    auto Aphi_id = get_gemv_id<Tscal, Tvec>(
                         cell_global_id,
                         delta_cell,
                         graph_iter_xp,
@@ -188,8 +190,8 @@ namespace shammodels::basegodunov::modules {
                     acc_p[cell_global_id] = res; // p_0 = r_0
                 });
             });
-            cell0block_aabb_lower.complete_event_state(e);
-            block_cell_sizes.complete_event_state(e);
+            buf_block_min.complete_event_state(e);
+            buf_block_max.complete_event_state(e);
             buf_rho.complete_event_state(e);
             buf_phi.complete_event_state(e);
             residual.get_buf(id).complete_event_state(e);
@@ -206,4 +208,17 @@ namespace shammodels::basegodunov::modules {
         storage.phi_res.set(std::move(residual));
     }
 
+    template<class Tvec, class TgridVec>
+    auto
+    shammodels::basegodunov::modules::CGUtilities<Tvec, TgridVec>::compute_ddot_res() -> Tscal {
+        StackEntry stack_loc{};
+        shamrock::ComputeField<Tscal> &cfield_phi_res = storage.phi_res.get();
+        Tscal rank_ddot = cfield_phi_res.compute_rank_dot_sum(); // dot product per patch
+        Tscal tot_ddot
+            = shamalgs::collective::allreduce_sum(rank_ddot); // total dot procduct over the grid
+        return tot_ddot;
+    }
+
 } // namespace shammodels::basegodunov::modules
+
+template class shammodels::basegodunov::modules::CGUtilities<f64_3, i64_3>;

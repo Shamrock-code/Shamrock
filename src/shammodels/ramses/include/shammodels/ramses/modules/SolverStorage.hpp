@@ -89,6 +89,12 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<solvergraph::TreeEdge<Tmorton, TgridVec>> trees;
 
+        /********* This will be removed in the next few days. ********/
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>>>
+            cell_link_graph;
+        /*************************************************************/
+
         std::shared_ptr<shammodels::basegodunov::solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>
             block_graph_edge;
 

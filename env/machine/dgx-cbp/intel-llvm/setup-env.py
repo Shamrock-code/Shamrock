@@ -74,3 +74,4 @@ def setup(arg: SetupArg, envgen: EnvGen):
         envgen.ext_script_list.append(shamrockdir + "/env/helpers/setup_mpi.sh")
 
     envgen.gen_env_file("env_built_intel-llvm.sh")
+    envgen.copy_env_file("binding_script.sh", "binding_script.sh")

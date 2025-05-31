@@ -21,11 +21,13 @@
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/EventList.hpp"
 #include "shambackends/sycl_utils.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shammodels/ramses/modules/ComputeRhoMean.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include <cmath>
 
 namespace shammodels::basegodunov::modules {
     template<class Tvec, class TgridVec>
@@ -39,7 +41,10 @@ namespace shammodels::basegodunov::modules {
 
         shamrock::SchedulerUtility utility(scheduler());
         ComputeField<Tscal> mass = utility.make_compute_field<Tscal>("mass", AMRBlock::block_size);
-        ComputeField<Tscal> vol  = utility.make_compute_field<Tscal>("vol", AMRBlock::block_size);
+
+        PatchScheduler &sched = shambase::get_check_ref(context.sched);
+
+        auto [bmin, bmax] = sched.get_box_volume<TgridVec>();
 
         // load layout info
         PatchDataLayout &pdl = scheduler().pdl;
@@ -55,7 +60,6 @@ namespace shammodels::basegodunov::modules {
             sham::DeviceBuffer<TgridVec> &buf_block_max = pdat.get_field_buf_ref<TgridVec>(1);
             sham::DeviceBuffer<Tscal> &buf_rho          = pdat.get_field_buf_ref<Tscal>(irho);
             sham::DeviceBuffer<Tscal> &buf_mass         = mass.get_buf_check(cur_p.id_patch);
-            sham::DeviceBuffer<Tscal> &buf_vol          = vol.get_buf_check(cur_p.id_patch);
             sham::DeviceBuffer<Tscal> &block_cell_sizes
                 = shambase::get_check_ref(storage.block_cell_sizes)
                       .get_refs()
@@ -65,7 +69,6 @@ namespace shammodels::basegodunov::modules {
 
             sham::EventList depends_list;
             auto acc_mass      = buf_mass.get_write_access(depends_list);
-            auto acc_vol       = buf_vol.get_write_access(depends_list);
             auto rho           = buf_rho.get_read_access(depends_list);
             auto acc_block_min = buf_block_min.get_read_access(depends_list);
             auto acc_block_max = buf_block_max.get_read_access(depends_list);
@@ -84,9 +87,7 @@ namespace shammodels::basegodunov::modules {
                     Tvec lower_flt       = lower.template convert<Tscal>() * dxfact;
                     Tvec upper_flt       = upper.template convert<Tscal>() * dxfact;
                     Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
-                    Tscal dV = block_cell_size.x() * block_cell_size.y() * block_cell_size.z();
-
-                    acc_vol[gid]  = dV;
+                    Tscal dV      = block_cell_size.x() * block_cell_size.y() * block_cell_size.z();
                     acc_mass[gid] = rho[gid] * dV;
                 });
             });
@@ -94,14 +95,13 @@ namespace shammodels::basegodunov::modules {
             buf_block_max.complete_event_state(e);
             buf_rho.complete_event_state(e);
             buf_mass.complete_event_state(e);
-            buf_vol.complete_event_state(e);
         });
-
-        Tscal rank_vol  = vol.compute_rank_sum();
+        auto dV         = bmax - bmin;
+        Tscal dxfact    = solver_config.grid_coord_to_pos_fact;
+        auto V          = (dV.x() * dV.y() * dV.z()) * sycl::pow(dxfact, 3);
         Tscal rank_mass = mass.compute_rank_sum();
         Tscal rho_tot   = shamalgs::collective::allreduce_sum(rank_mass);
-        Tscal vol_tot   = shamalgs::collective::allreduce_sum(rank_vol);
-        return rho_tot / vol_tot;
+        return rho_tot / V;
     }
 
 } // namespace shammodels::basegodunov::modules

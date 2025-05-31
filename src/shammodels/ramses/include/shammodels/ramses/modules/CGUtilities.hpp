@@ -54,6 +54,11 @@ namespace shammodels::basegodunov::modules {
          */
         Tscal compute_ddot_res();
 
+        /**
+         * @brief this function compute the matrix-vector product A*p and save it in storage
+         */
+        void compute_Ap();
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

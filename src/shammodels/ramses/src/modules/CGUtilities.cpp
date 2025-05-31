@@ -219,6 +219,97 @@ namespace shammodels::basegodunov::modules {
         return tot_ddot;
     }
 
+    template<class Tvec, class TgridVec>
+    auto shammodels::basegodunov::modules::CGUtilities<Tvec, TgridVec>::compute_Ap() -> void {
+        StackEntry stack_loc{};
+        using namespace shamrock::patch;
+        using namespace shamrock;
+        using namespace shammath;
+        using MergedPDat = shamrock::MergedPatchData;
+
+        SchedulerUtility utility(scheduler());
+        ComputeField<Tscal> Ap = utility.make_compute_field<Tscal>("phi_Ap", AMRBlock::block_size);
+
+        storage.cell_link_graph.get().for_each([&](u64 id, OrientedAMRGraph &oriented_cell_graph) {
+            MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(id);
+
+            sham::DeviceBuffer<TgridVec> &buf_block_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
+            sham::DeviceBuffer<TgridVec> &buf_block_max = mpdat.pdat.get_field_buf_ref<TgridVec>(1);
+
+            AMRGraph &graph_neigh_xp
+                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
+            AMRGraph &graph_neigh_xm
+                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]);
+            AMRGraph &graph_neigh_yp
+                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]);
+            AMRGraph &graph_neigh_ym
+                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]);
+            AMRGraph &graph_neigh_zp
+                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
+            AMRGraph &graph_neigh_zm
+                = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
+
+            sham::DeviceBuffer<Tscal> &buf_phi_p = storage.phi_p.get().get_buf(id);
+
+            sham::EventList depends_list;
+            auto acc_block_min = buf_block_min.get_read_access(depends_list);
+            auto acc_block_max = buf_block_max.get_read_access(depends_list);
+            auto acc_Ap        = Ap.get_buf(id).get_write_access(depends_list);
+            auto acc_p         = buf_phi_p.get_read_access(depends_list);
+
+            auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
+            auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
+            auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
+            auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
+            auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
+            auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
+
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+            auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
+                u32 cell_count       = (mpdat.total_elements) * AMRBlock::block_size;
+                Tscal one_over_Nside = 1. / AMRBlock::Nside;
+                Tscal dxfact         = solver_config.grid_coord_to_pos_fact;
+                shambase::parralel_for(cgh, cell_count, "self_gravity::Ap", [=](u64 gid) {
+                    const u32 cell_global_id = (u32) gid;
+
+                    const u32 block_id    = cell_global_id / AMRBlock::block_size;
+                    const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+                    TgridVec lower        = acc_block_min[block_id];
+                    TgridVec upper        = acc_block_max[block_id];
+                    Tvec lower_flt        = lower.template convert<Tscal>() * dxfact;
+                    Tvec upper_flt        = upper.template convert<Tscal>() * dxfact;
+                    Tvec delta_cell       = (upper_flt - lower_flt) * one_over_Nside;
+
+                    auto Ap_id = get_gemv_id<Tscal, Tvec>(
+                        cell_global_id,
+                        delta_cell,
+                        graph_iter_xp,
+                        graph_iter_xm,
+                        graph_iter_yp,
+                        graph_iter_ym,
+                        graph_iter_zp,
+                        graph_iter_zm,
+                        [=](u32 id) {
+                            return acc_p[id];
+                        });
+                    acc_Ap[cell_global_id] = Ap_id;
+                });
+            });
+            buf_block_min.complete_event_state(e);
+            buf_block_max.complete_event_state(e);
+            Ap.get_buf(id).complete_event_state(e);
+            buf_phi_p.complete_event_state(e);
+
+            graph_neigh_xp.complete_event_state(e);
+            graph_neigh_xm.complete_event_state(e);
+            graph_neigh_yp.complete_event_state(e);
+            graph_neigh_ym.complete_event_state(e);
+            graph_neigh_zp.complete_event_state(e);
+            graph_neigh_zm.complete_event_state(e);
+        });
+        storage.phi_Ap.set(std::move(Ap));
+    }
+
 } // namespace shammodels::basegodunov::modules
 
 template class shammodels::basegodunov::modules::CGUtilities<f64_3, i64_3>;

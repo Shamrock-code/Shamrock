@@ -308,6 +308,9 @@ namespace shammodels::basegodunov {
         // residual (for conjuguate gradient)
         Component<shamrock::ComputeField<Tscal>> phi_res;
 
+        // Ap (matrix-vector product for conjuguate gradient)
+        Component<shamrock::ComputeField<Tscal>> phi_Ap;
+
         struct Timings {
             f64 interface = 0;
             f64 neighbors = 0;

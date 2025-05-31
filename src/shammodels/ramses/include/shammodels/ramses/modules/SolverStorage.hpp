@@ -89,6 +89,12 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<solvergraph::TreeEdge<Tmorton, TgridVec>> trees;
 
+        /********* This will be removed in the next few days. ********/
+        Component<shambase::DistributedData<
+            shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>>>
+            cell_link_graph;
+        /*************************************************************/
+
         std::shared_ptr<shammodels::basegodunov::solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>
             block_graph_edge;
 
@@ -295,6 +301,12 @@ namespace shammodels::basegodunov {
         Component<shamrock::ComputeField<Tscal>> dtrho_dust;
         // time derivative dust momemtum
         Component<shamrock::ComputeField<Tvec>> dtrhov_dust;
+
+        // p vector (searching direction for conjuguate gradient)
+        Component<shamrock::ComputeField<Tscal>> phi_p;
+
+        // residual (for conjuguate gradient)
+        Component<shamrock::ComputeField<Tscal>> phi_res;
 
         struct Timings {
             f64 interface = 0;

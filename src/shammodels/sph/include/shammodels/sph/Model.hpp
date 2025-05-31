@@ -90,6 +90,8 @@ namespace shammodels::sph {
             solver.solver_config.gpart_mass = gpart_mass;
         }
 
+        inline Tscal get_particle_mass() { return solver.solver_config.gpart_mass; }
+
         inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
             ctx.set_coord_domain_bound({box.first, box.second});
         }

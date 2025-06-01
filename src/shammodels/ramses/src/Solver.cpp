@@ -460,9 +460,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         //   " -- dot:\n" + shambase::get_check_ref(storage.solver_sequence).get_dot_graph());
         shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
+
     if (solver_config.should_compute_rho_mean()) {
         modules::ComputeRhoMean comp_rho_mean(context, solver_config, storage);
         Tscal rho_mean = comp_rho_mean.compute_rho_mean();
+        logger::raw_ln("Rho mean is", rho_mean);
     }
 
     /*

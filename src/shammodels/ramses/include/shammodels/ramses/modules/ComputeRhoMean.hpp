@@ -52,4 +52,5 @@ namespace shammodels::basegodunov::modules {
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };
+
 } // namespace shammodels::basegodunov::modules

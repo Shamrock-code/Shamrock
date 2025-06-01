@@ -79,15 +79,14 @@ namespace shammodels::basegodunov::modules {
 
                 shambase::parralel_for(cgh, cell_count, "compute_mean_rho", [=](u64 gid) {
                     const u32 cell_global_id = (u32) gid;
-                    const u32 bloc_id        = cell_global_id / AMRBlock::block_size;
+                    const u32 block_id       = cell_global_id / AMRBlock::block_size;
                     const u32 cell_loc_id    = cell_global_id % AMRBlock::block_size;
 
-                    TgridVec lower       = acc_block_min[bloc_id];
-                    TgridVec upper       = acc_block_max[bloc_id];
-                    Tvec lower_flt       = lower.template convert<Tscal>() * dxfact;
-                    Tvec upper_flt       = upper.template convert<Tscal>() * dxfact;
-                    Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
-                    Tscal dV      = block_cell_size.x() * block_cell_size.y() * block_cell_size.z();
+                    TgridVec lower      = acc_block_min[block_id];
+                    TgridVec upper      = acc_block_max[block_id];
+                    TgridVec delt_block = upper - lower;
+                    Tvec delt_block_ftl = delt_block.template convert<Tscal>() * dxfact;
+                    Tscal dV      = delt_block_ftl.x() * delt_block_ftl.y() * delt_block_ftl.z();
                     acc_mass[gid] = rho[gid] * dV;
                 });
             });
@@ -100,8 +99,11 @@ namespace shammodels::basegodunov::modules {
         Tscal dxfact    = solver_config.grid_coord_to_pos_fact;
         auto V          = (dV.x() * dV.y() * dV.z()) * sycl::pow(dxfact, 3);
         Tscal rank_mass = mass.compute_rank_sum();
-        Tscal rho_tot   = shamalgs::collective::allreduce_sum(rank_mass);
-        return rho_tot / V;
+        Tscal mass_tot  = shamalgs::collective::allreduce_sum(rank_mass);
+
+        logger::raw_ln("Rho mean :", dV, dxfact, V, mass_tot, sycl::pow(dxfact, 3));
+
+        return mass_tot / V;
     }
 
 } // namespace shammodels::basegodunov::modules

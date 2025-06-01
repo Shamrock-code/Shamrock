@@ -130,7 +130,7 @@ struct shammodels::basegodunov::SolverConfig {
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
 
-    inline bool should_compute_rho_mean() { return true; }
+    inline bool should_compute_rho_mean() { return false; }
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config
     //////////////////////////////////////////////////////////////////////////////////////////////

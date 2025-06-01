@@ -130,16 +130,24 @@ def compare_datasets(istep, dataset1, dataset2):
         1000: [0.001, 0.001, 0.001, 0.001, 0.001],
     }
 
+    tols = {
+        0: [0.0, 1.0e-17, 0.0, 0.0, 0.0],
+        1: [0.0, 1.0e-17, 1.0e-16, 1.0e-19, 1.0e-19],
+        10: [1.0e-21, 1.0e-19, 1.0e-16, 1.0e-17, 0.0],
+        100: [1.0e-20, 1.0e-18, 1.0e-15, 1.0e-17, 1.0e-19],
+        1000: [1e-19, 1e-19, 1e-19, 1e-19, 1e-19],
+    }
+
     error = False
-    if abs(L2r - expected_L2[istep][0]) > 1e-12:
+    if abs(L2r - expected_L2[istep][0]) > tols[istep][0]:
         error = True
-    if abs(L2rho - expected_L2[istep][1]) > 1e-12:
+    if abs(L2rho - expected_L2[istep][1]) > tols[istep][1]:
         error = True
-    if abs(L2u - expected_L2[istep][2]) > 1e-12:
+    if abs(L2u - expected_L2[istep][2]) > tols[istep][2]:
         error = True
-    if abs(L2vr - expected_L2[istep][3]) > 1e-12:
+    if abs(L2vr - expected_L2[istep][3]) > tols[istep][3]:
         error = True
-    if abs(L2alpha - expected_L2[istep][4]) > 0.0060305365305954525:
+    if abs(L2alpha - expected_L2[istep][4]) > tols[istep][4]:
         error = True
 
     if error:

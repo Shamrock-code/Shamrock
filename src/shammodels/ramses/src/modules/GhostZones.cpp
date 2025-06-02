@@ -451,6 +451,16 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     { // set element counts
         using MergedPDat = shamrock::MergedPatchData;
 
+        shambase::get_check_ref(storage.block_counts).indexes
+            = storage.merged_patchdata_ghost.get().template map<u32>(
+                [&](u64 id, MergedPDat &mpdat) {
+                    return mpdat.original_elements;
+                });
+    }
+
+    { // set element counts
+        using MergedPDat = shamrock::MergedPatchData;
+
         shambase::get_check_ref(storage.block_counts_with_ghost).indexes
             = storage.merged_patchdata_ghost.get().template map<u32>(
                 [&](u64 id, MergedPDat &mpdat) {

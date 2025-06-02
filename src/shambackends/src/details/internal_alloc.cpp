@@ -18,6 +18,7 @@
 #include "shambackends/details/internal_alloc.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include <exception>
 
 namespace {
 
@@ -194,6 +195,18 @@ namespace sham::details {
         sycl::device &dev       = dev_sched->ctx->device->dev;
         void *usm_ptr           = nullptr;
 
+        auto catch_alloc_except = [&](auto alloc_lambda) {
+            try {
+                usm_ptr = alloc_lambda();
+            } catch (std::exception &ex) {
+                std::string log = shambase::format(
+                    "Alloc failed with exception : {}\nShamrock mem infos : {}",
+                    ex.what(),
+                    log_mem_perf_info(dev_sched));
+                shambase::throw_with_loc<std::runtime_error>(log);
+            }
+        };
+
         if (alignment) {
 
             if (sz % *alignment != 0) {
@@ -208,21 +221,33 @@ namespace sham::details {
             // TODO upgrade alignment to 256-bit for CUDA ?
 
             if constexpr (target == device) {
-                usm_ptr = sycl::aligned_alloc_device(*alignment, sz, dev, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::aligned_alloc_device(*alignment, sz, dev, sycl_ctx);
+                });
             } else if constexpr (target == shared) {
-                usm_ptr = sycl::aligned_alloc_shared(*alignment, sz, dev, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::aligned_alloc_shared(*alignment, sz, dev, sycl_ctx);
+                });
             } else if constexpr (target == host) {
-                usm_ptr = sycl::aligned_alloc_host(*alignment, sz, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::aligned_alloc_host(*alignment, sz, sycl_ctx);
+                });
             } else {
                 shambase::throw_unimplemented();
             }
         } else {
             if constexpr (target == device) {
-                usm_ptr = sycl::malloc_device(sz, dev, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::malloc_device(sz, dev, sycl_ctx);
+                });
             } else if constexpr (target == shared) {
-                usm_ptr = sycl::malloc_shared(sz, dev, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::malloc_shared(sz, dev, sycl_ctx);
+                });
             } else if constexpr (target == host) {
-                usm_ptr = sycl::malloc_host(sz, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::malloc_host(sz, sycl_ctx);
+                });
             } else {
                 shambase::throw_unimplemented();
             }

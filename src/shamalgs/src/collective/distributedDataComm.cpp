@@ -125,6 +125,7 @@ namespace shamalgs::collective {
             sparse_comm_c(dev_sched, send_payoad, recv_payload, *comm_table);
         } else {
             base_sparse_comm(dev_sched, send_payoad, recv_payload);
+            // base_sparse_comm(dev_sched, send_payoad, recv_payload);
         }
 
         // make serializers from recv buffs

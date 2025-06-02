@@ -14,7 +14,7 @@ RUN ./env/new-env --machine docker.intel_oneapi --builddir build_intel_docker --
     cd build_intel_docker && \
     pip3 install -v --break-system-packages .
 
-RUN pip3 install -v --break-system-packages jupyter
+RUN pip3 install -v --break-system-packages jupyter matplotlib numpy scipy
 EXPOSE 8888
 
 WORKDIR /work

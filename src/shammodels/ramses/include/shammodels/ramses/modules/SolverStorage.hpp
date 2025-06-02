@@ -35,6 +35,7 @@
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
@@ -57,6 +58,7 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_min;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_max;
 
+        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> block_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> block_counts_with_ghost;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_rho;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> refs_rhov;
@@ -84,6 +86,10 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dy_v_dust;
         /// dust fields gradients (d vdust / d z)
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dz_v_dust;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rho_mean;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> simulation_volume;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> cell_mass;
 
         Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
 

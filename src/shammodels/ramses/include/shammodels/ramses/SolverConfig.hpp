@@ -76,6 +76,30 @@ namespace shammodels::basegodunov {
         }
     };
 
+    enum SelfGravityMode {
+        NoGravity = 0,
+        CG        = 1, // conjuguate gradient
+        PCG       = 2, // preconditioned conjuguate gradient
+        BIGSTAB   = 3, //
+        MULTIGRID = 4  // multigrid
+    };
+
+    template<class Tvec>
+    struct SelfGravityConfig {
+        using Tscal                  = shambase::VecComponent<Tvec>;
+        SelfGravityMode gravity_mode = NoGravity;
+        Tscal G_value                = 1.;
+        Tscal tol                    = 1e-6;
+        inline Tscal get_fourPiG() { return 4 * M_PI * G_value; }
+        inline Tscal get_tolerance() { return tol; }
+        inline bool is_gravity_on() {
+            if (gravity_mode != NoGravity) {
+                return true;
+            }
+            return false;
+        }
+    };
+
     template<class Tvec>
     struct SolverStatusVar;
 
@@ -131,6 +155,7 @@ struct shammodels::basegodunov::SolverConfig {
     bool face_half_time_interpolation = true;
 
     inline bool should_compute_rho_mean() { return false; }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -148,6 +173,17 @@ struct shammodels::basegodunov::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    SelfGravityConfig<Tvec> self_gravity_config{};
+    inline Tscal fourPiG() { return self_gravity_config.get_fourPiG(); }
+    inline Tscal get_grav_tol() { return self_gravity_config.get_tolerance(); }
+    inline bool is_self_gravity_on() { return self_gravity_config.is_gravity_on(); }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     /// AMR refinement mode

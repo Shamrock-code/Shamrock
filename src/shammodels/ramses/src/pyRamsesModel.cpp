@@ -155,22 +155,22 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("crit_mass"))
             .def(
-                "set_gravity_mode_no_gravity",
+                "set_self_gravity_mode_no_gravity",
                 [](TConfig &self) {
-                    self.gravity_config.gravity_mode = NoGravity;
+                    self.self_gravity_config.gravity_mode = NoGravity;
                 })
             .def(
-                "set_gravity_mode_cg",
+                "set_self_gravity_mode_cg",
                 [](TConfig &self) {
-                    self.gravity_config.gravity_mode = CG;
+                    self.self_gravity_config.gravity_mode = CG;
                 })
             .def(
-                "set_gravity_mode_pcg",
+                "set_self_gravity_mode_pcg",
                 [](TConfig &self) {
-                    self.gravity_config.gravity_mode = PCG;
+                    self.self_gravity_config.gravity_mode = PCG;
                 })
-            .def("set_gravity_mode_bigstab", [](TConfig &self) {
-                self.gravity_config.gravity_mode = BIGSTAB;
+            .def("set_self_gravity_mode_bigstab", [](TConfig &self) {
+                self.self_gravity_config.gravity_mode = BIGSTAB;
             });
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";

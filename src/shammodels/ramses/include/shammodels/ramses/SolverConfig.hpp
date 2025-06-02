@@ -76,7 +76,7 @@ namespace shammodels::basegodunov {
         }
     };
 
-    enum GravityMode {
+    enum SelfGravityMode {
         NoGravity = 0,
         CG        = 1, // conjuguate gradient
         PCG       = 2, // preconditioned conjuguate gradient
@@ -85,11 +85,11 @@ namespace shammodels::basegodunov {
     };
 
     template<class Tvec>
-    struct GravityConfig {
-        using Tscal              = shambase::VecComponent<Tvec>;
-        GravityMode gravity_mode = NoGravity;
-        Tscal G_value            = 1.;
-        Tscal tol                = 1e-6;
+    struct SelfGravityConfig {
+        using Tscal                  = shambase::VecComponent<Tvec>;
+        SelfGravityMode gravity_mode = NoGravity;
+        Tscal G_value                = 1.;
+        Tscal tol                    = 1e-6;
         inline Tscal get_fourPiG() { return 4 * M_PI * G_value; }
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() {
@@ -176,14 +176,14 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Gravity config
+    // Self gravity config
     //////////////////////////////////////////////////////////////////////////////////////////////
-    GravityConfig<Tvec> gravity_config{};
-    inline Tscal fourPiG() { return gravity_config.get_fourPiG(); }
-    inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
-    inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
+    SelfGravityConfig<Tvec> self_gravity_config{};
+    inline Tscal fourPiG() { return self_gravity_config.get_fourPiG(); }
+    inline Tscal get_grav_tol() { return self_gravity_config.get_tolerance(); }
+    inline bool is_self_gravity_on() { return self_gravity_config.is_gravity_on(); }
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Gravity config (END)
+    // Self gravity config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     /// AMR refinement mode

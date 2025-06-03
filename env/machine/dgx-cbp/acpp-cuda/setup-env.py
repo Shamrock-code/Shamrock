@@ -46,3 +46,4 @@ def setup(arg: SetupArg, envgen: EnvGen):
     ]
 
     envgen.gen_env_file("env_built_acpp.sh")
+    envgen.copy_env_file("binding_script.sh", "binding_script.sh")

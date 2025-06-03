@@ -24,7 +24,8 @@
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
 #include "shammodels/ramses/modules/ComputeFlux.hpp"
-#include "shammodels/ramses/modules/ComputeRhoMean.hpp"
+#include "shammodels/ramses/modules/ComputeMass.hpp"
+#include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
@@ -58,6 +59,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     ////////////////////////////////////////////////////////////////////////////////
     /// Edges
     ////////////////////////////////////////////////////////////////////////////////
+
+    storage.block_counts
+        = std::make_shared<shamrock::solvergraph::Indexes<u32>>("block_count", "N_{\\rm block}");
 
     storage.block_counts_with_ghost = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
         "block_count_with_ghost", "N_{\\rm block, with ghost}");
@@ -237,6 +241,15 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 "", "", ndust);
     }
 
+    if (solver_config.should_compute_rho_mean()) {
+        storage.cell_mass = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "cell_mass", "m");
+        storage.rho_mean
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("rho_mean", "< \\rho >");
+        storage.simulation_volume = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
+            "simulation_volume", "V_{\\rm sim}");
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
@@ -297,6 +310,18 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.block_cell_sizes,
             storage.cell0block_aabb_lower);
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
+    if (solver_config.should_compute_rho_mean()) {
+        modules::NodeComputeMass<Tvec, TgridVec> node{AMRBlock::block_size};
+        node.set_edges(
+            storage.block_counts, storage.block_cell_sizes, storage.refs_rho, storage.cell_mass);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+
+        modules::NodeComputeSumOverV<Tscal> node2{AMRBlock::block_size};
+        node2.set_edges(
+            storage.block_counts, storage.cell_mass, storage.simulation_volume, storage.rho_mean);
+        solver_sequence.push_back(std::make_shared<decltype(node2)>(std::move(node2)));
     }
 
     { // Build ConsToPrim node
@@ -442,6 +467,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     update_load_val();
     scheduler().scheduler_step(false, false);
 
+    if (solver_config.should_compute_rho_mean()) {
+        auto [bmin, bmax] = scheduler().template get_box_volume<TgridVec>();
+        Tscal dxfact      = solver_config.grid_coord_to_pos_fact;
+        Tvec dV           = (bmax - bmin).template convert<Tscal>() * dxfact;
+        Tscal Vsim        = dV.x() * dV.y() * dV.z();
+        shambase::get_check_ref(storage.simulation_volume).value = Vsim;
+    }
+
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();
     storage.serial_patch_tree.set(std::move(_sptree));
@@ -459,10 +492,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         // logger::raw_ln(
         //   " -- dot:\n" + shambase::get_check_ref(storage.solver_sequence).get_dot_graph());
         shambase::get_check_ref(storage.solver_sequence).evaluate();
-    }
-    if (solver_config.should_compute_rho_mean()) {
-        modules::ComputeRhoMean comp_rho_mean(context, solver_config, storage);
-        Tscal rho_mean = comp_rho_mean.compute_rho_mean();
     }
 
     /*

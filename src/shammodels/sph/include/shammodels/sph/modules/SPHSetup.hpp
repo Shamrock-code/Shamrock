@@ -22,6 +22,7 @@
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <memory>
 
 namespace shammodels::sph::modules {
 
@@ -67,6 +68,9 @@ namespace shammodels::sph::modules {
 
         std::shared_ptr<ISPHSetupNode> make_modifier_warp_disc(
             SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination, Tscal posangle);
+
+        std::shared_ptr<ISPHSetupNode>
+        make_modifier_add_offset(SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

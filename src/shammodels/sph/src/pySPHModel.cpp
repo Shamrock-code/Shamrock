@@ -247,7 +247,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_combiner_add(parent1, parent2);
             })
         .def(
-            "warp_disc",
+            "make_modifier_warp_disc",
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr parent,
                Tscal Rwarp,
@@ -262,6 +262,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Hwarp"),
             py::arg("inclination"),
             py::arg("posangle") = 0.)
+        .def(
+            "make_modifier_offset",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               Tvec offset_postion,
+               Tvec offset_velocity) {
+                return self.make_modifier_add_offset(parent, offset_postion, offset_velocity);
+            },
+            py::kw_only(),
+            py::arg("parent"),
+            py::arg("offset_position"),
+            py::arg("offset_velocity"))
         .def(
             "apply_setup",
             [](TSPHSetup &self,

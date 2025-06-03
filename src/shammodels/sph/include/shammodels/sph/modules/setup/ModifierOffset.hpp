@@ -38,11 +38,7 @@ namespace shammodels::sph::modules {
 
         public:
         ModifierOffset(
-            ShamrockCtx &context,
-            Config &solver_config,
-            SetupNodePtr parent,
-            Tvec positional_offset,
-            Tvec velocity_offset)
+            ShamrockCtx &context, SetupNodePtr parent, Tvec positional_offset, Tvec velocity_offset)
             : context(context), parent(parent), positional_offset(positional_offset),
               velocity_offset(velocity_offset) {}
 

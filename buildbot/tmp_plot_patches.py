@@ -146,11 +146,9 @@ def draw_interface_send(id):
 
 
 def draw_interface_send_list(idlist):
-
     vert_lst = []
 
     for id in idlist:
-
         it = 0
         for interf in interfaces_dic[id]:
             (psend_id, precv_id, xmin, ymin, zmin, xmax, ymax, zmax) = interf

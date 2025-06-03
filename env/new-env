@@ -23,7 +23,6 @@ def get_machine_list():
     import glob
 
     for i in glob.glob(abs_env_dir + "/machine/**/setup-env.py", recursive=True):
-
         path = (
             os.path.relpath(i, abs_env_dir + "/machine")
             .replace("/", ".")
@@ -59,7 +58,6 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 
 
 if __name__ == "__main__":
-
     # https://stackoverflow.com/questions/77809386/how-to-capture-all-arguments-after-double-dash-using-argparse
     # Extract underlying ("--") args before argparse parsing
     for idx, arg in enumerate(sys.argv):

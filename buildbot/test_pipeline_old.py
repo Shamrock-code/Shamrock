@@ -120,7 +120,6 @@ os.system("find " + abs_build_dir_src + ' -iname "*.gcda" -exec rm {} \;')
 
 # running step
 for cid in range(len(config_names)):
-
     abs_build_dir = abs_build_dir_src + "/conf_" + config_names[cid]
 
     runcmd = "mpirun --show-progress "
@@ -150,7 +149,6 @@ for cid in range(len(config_names)):
 # merge profiling data
 
 for cid in range(len(config_names)):
-
     llvm_profdata_cmd = abs_llvm_dir + "/build/bin/llvm-profdata merge "
 
     abs_build_dir = abs_build_dir_src + "/conf_" + config_names[cid]
@@ -167,7 +165,6 @@ for cid in range(len(config_names)):
 
 
 for cid in range(len(config_names)):
-
     llvmcovshow = abs_llvm_dir + "/build/bin/llvm-cov show "
 
     abs_build_dir = abs_build_dir_src + "/conf_" + config_names[cid]
@@ -209,7 +206,6 @@ version_clang_info = ""
 html_tables = []
 
 for cid in range(len(config_names)):
-
     f_in_html = open("coverage_src_" + config_names[cid] + "/index.html", "r")
 
     str_in_html = f_in_html.read()
@@ -293,7 +289,6 @@ for cid in range(len(config_names)):
     jsn = json.load(jsn_file)
 
     for k in jsn.keys():
-
         final_str_html += '<tr class="light-row">'
 
         pref = ""
@@ -356,9 +351,7 @@ for cid in range(len(config_names)):
                 """
 
             for ass in asserts_:
-
                 for jj in range(len(jsn[k]["asserts"][ass])):
-
                     subfile_assert_html += '<tr class="light-row">'
 
                     pref = ""
@@ -428,7 +421,6 @@ for root, dirs, files in os.walk(folder_report):
     for file in files:
         if file.endswith(".html"):
             if not "index.html" in file:
-
                 str_file = open(root + "/" + str(file), "r").read()
 
                 relat_path_stylecss = str(os.path.relpath(folder_report, root + "/" + str(file)))

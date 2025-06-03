@@ -59,6 +59,10 @@ namespace shammodels::basegodunov {
                 context.pdata_layout_add_field<Tscal>("rho_dust", (ndust * AMRBlock::block_size));
                 context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust * AMRBlock::block_size));
             }
+
+            if (solver_config.is_gravity_on()) {
+                context.pdata_layout_add_field<Tscal>("phi", AMRBlock::block_size);
+            }
         }
 
         Solver(ShamrockCtx &context) : context(context) {}

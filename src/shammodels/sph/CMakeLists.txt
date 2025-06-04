@@ -45,6 +45,7 @@ set(Sources
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
     src/modules/setup/ModifierOffset.cpp
+    src/modules/setup/ModifierFilter.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
 

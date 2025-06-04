@@ -166,7 +166,19 @@ namespace shamrock::patch {
         }
     }
 
+    void PatchData::index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len) {
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                field.index_remap_resize(index_map, len);
+            });
+        }
+    }
+
     void PatchData::keep_ids(sycl::buffer<u32> &index_map, u32 len) {
+        index_remap_resize(index_map, len);
+    }
+
+    void PatchData::keep_ids(sham::DeviceBuffer<u32> &index_map, u32 len) {
         index_remap_resize(index_map, len);
     }
 

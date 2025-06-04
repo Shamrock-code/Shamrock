@@ -275,6 +275,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("offset_position"),
             py::arg("offset_velocity"))
         .def(
+            "make_modifier_filter",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               std::function<bool(Tvec)> filter) {
+                return self.make_modifier_filter(parent, filter);
+            },
+            py::kw_only(),
+            py::arg("parent"),
+            py::arg("filter"))
+        .def(
             "apply_setup",
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr setup,

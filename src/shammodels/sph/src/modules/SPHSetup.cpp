@@ -124,6 +124,7 @@ shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_modifier_add_offset(
     return std::shared_ptr<ISPHSetupNode>(
         new ModifierOffset<Tvec, SPHKernel>(context, parent, offset_postion, offset_velocity));
 }
+
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
 shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_modifier_filter(

@@ -9,7 +9,7 @@
 
 /**
  * @file ModifierFilter.cpp
- * Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
  */

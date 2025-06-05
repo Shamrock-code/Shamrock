@@ -76,6 +76,21 @@ namespace shammodels::basegodunov {
         }
     };
 
+    /**
+     * @brief Npscal_gas is the number of gas passive scalars
+     */
+    struct PassiveScalarGasConfig {
+        u32 npscal_gas = 0;
+
+        inline bool is_gas_passive_scalar_on() {
+            if (npscal_gas == 0) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "Gas passive scalar is on with npscal_gas == 0");
+            }
+            return true;
+        }
+    };
+
     template<class Tvec>
     struct SolverStatusVar;
 
@@ -148,6 +163,18 @@ struct shammodels::basegodunov::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gas passive scalars config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    PassiveScalarGasConfig npscal_gas_config{};
+
+    inline bool is_gas_passive_scalar_on() { return npscal_gas_config.is_gas_passive_scalar_on(); }
+   
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gas passive scalars config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     /// AMR refinement mode

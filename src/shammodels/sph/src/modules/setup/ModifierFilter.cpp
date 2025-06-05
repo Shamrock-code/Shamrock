@@ -9,7 +9,7 @@
 
 /**
  * @file ModifierFilter.cpp
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  *
  */

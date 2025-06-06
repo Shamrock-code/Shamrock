@@ -441,10 +441,15 @@ namespace shamrock::tree {
             };
         }
 
-        void complete_event_state(sham::EventList &resulting_events) {
+        inline void complete_event_state(sham::EventList &resulting_events) {
             cnt_neigh.complete_event_state(resulting_events);
             scanned_cnt.complete_event_state(resulting_events);
             index_neigh_map.complete_event_state(resulting_events);
+        }
+
+        inline void complete_event_state(sycl::event e) {
+            auto tmp = sham::EventList{e};
+            complete_event_state(tmp);
         }
     };
 

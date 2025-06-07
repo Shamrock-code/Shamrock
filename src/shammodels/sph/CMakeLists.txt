@@ -40,6 +40,7 @@ set(Sources
     src/modules/NeighbourCache.cpp
     src/modules/ParticleReordering.cpp
     src/modules/AnalysisSodTube.cpp
+    src/modules/ParticleInjection.cpp
     src/modules/SPHSetup.cpp
 
     src/modules/setup/GeneratorMCDisc.cpp

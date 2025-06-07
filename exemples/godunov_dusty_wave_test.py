@@ -81,8 +81,9 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     cfg.set_Csafe(0.5)
     cfg.set_eos_gamma(1.0000001)
     cfg.set_dust_mode_hb(4)
-    cfg.set_drag_mode_irk1(True)
-    cfg.set_face_time_interpolation(False)
+    # cfg.set_drag_mode_irk1(True)
+    cfg.set_drag_mode_expo(True)
+    cfg.set_face_time_interpolation(True)
 
     # =================== set drag coefficients for 2 fluids dust =========
     # cfg.set_alpha_values(2.5)          # ts = 0.4
@@ -102,7 +103,8 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     def pertubation(x, A, Re, Im, L) -> float:
         return A * (Re * cos(2 * x * pi / L) - Im * sin(2 * x * pi / L))
 
-    """   ##  2 fluids test setup
+    """
+    ##  2 fluids test setup
     rhog_0    = 1.00000
     rhod_0    = 2.240000
     L         = 1
@@ -316,11 +318,11 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
 
             dic_i = convert_to_cell_coords(ctx.collect_data())
 
-            vg_i = dic_i["rhovel"][0][0] / dic_i["rho"][0]
-            rg_i = dic_i["rho"][0]
-            rd_i = dic_i["rho_dust"][0]
-            vd_i = dic_i["rhovel_dust"][0][0] / dic_i["rho_dust"][0]
-            x0 = dic_i["xmin"][0]
+            # vg_i = dic_i["rhovel"][0][0] / dic_i["rho"][0]
+            # rg_i = dic_i["rho"][0]
+            # rd_i = dic_i["rho_dust"][0]
+            # vd_i = dic_i["rhovel_dust"][0][0] / dic_i["rho_dust"][0]
+            # x0 = dic_i["xmin"][0]
             # normalized_rg_num.append((rg_i - rhog_0)/A_rho)
             # normalized_rd_num.append((rd_i - rhod_0)/(A_rho * rhod_0))
             # normalized_vg_num.append(vg_i/A_vel)
@@ -455,8 +457,9 @@ norm_rd_4_im = [
 norm_vd_4_re = [analytical_values(t, w, x0, -0.028963 + 0.158693j)[0] for t in times]
 norm_vd_4_im = [analytical_values(t, w, x0, -0.028963 + 0.158693j)[1] for t in times]
 
+"""
 # =============== plots ==================
-"""## 2 fluids
+## 2 fluids
 
 fig, axs = plt.subplots(1,2,figsize=(25,10))
 plt.subplots_adjust(wspace=0.25)

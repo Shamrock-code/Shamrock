@@ -17,6 +17,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/EventList.hpp"
+#include "shammath/matrix_exponential.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -315,4 +316,240 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
     });
 }
 
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_expo_drag_integrator(
+    Tscal dt) {
+    StackEntry stack_lock{};
+
+    using namespace shamrock::patch;
+    using namespace shamrock;
+    using namespace shammath;
+
+    shamrock::ComputeField<Tscal> &cfield_rho_new   = storage.rho_next_no_drag.get();
+    shamrock::ComputeField<Tvec> &cfield_rhov_new   = storage.rhov_next_no_drag.get();
+    shamrock::ComputeField<Tscal> &cfield_rhoe_new  = storage.rhoe_next_no_drag.get();
+    shamrock::ComputeField<Tscal> &cfield_rho_d_new = storage.rho_d_next_no_drag.get();
+    shamrock::ComputeField<Tvec> &cfield_rhov_d_new = storage.rhov_d_next_no_drag.get();
+
+    // load layout info
+    PatchDataLayout &pdl = scheduler().pdl;
+
+    const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
+    const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
+    const u32 irho      = pdl.get_field_idx<Tscal>("rho");
+    const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
+    const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
+    const u32 irho_d    = pdl.get_field_idx<Tscal>("rho_dust");
+    const u32 irhovel_d = pdl.get_field_idx<Tvec>("rhovel_dust");
+
+    const u32 ndust = solver_config.dust_config.ndust;
+
+    // alphas are dust collision rates
+    auto alphas_vector = solver_config.drag_config.alphas;
+    std::vector<f32> inv_dt_alphas(ndust);
+    bool enable_frictional_heating = solver_config.drag_config.enable_frictional_heating;
+    u32 friction_control           = (enable_frictional_heating == false) ? 1 : 0;
+
+    scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
+                                                const shamrock::patch::Patch p,
+                                                shamrock::patch::PatchData &pdat) {
+        logger::debug_ln("[Ramses]", "expo drag on patch", p.id_patch);
+
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        u32 id               = p.id_patch;
+        u32 cell_count       = pdat.get_obj_cnt() * AMRBlock::block_size;
+
+        sham::DeviceBuffer<Tscal> &rho_new_patch   = cfield_rho_new.get_buf_check(id);
+        sham::DeviceBuffer<Tvec> &rhov_new_patch   = cfield_rhov_new.get_buf_check(id);
+        sham::DeviceBuffer<Tscal> &rhoe_new_patch  = cfield_rhoe_new.get_buf_check(id);
+        sham::DeviceBuffer<Tscal> &rho_d_new_patch = cfield_rho_d_new.get_buf_check(id);
+        sham::DeviceBuffer<Tvec> &rhov_d_new_patch = cfield_rhov_d_new.get_buf_check(id);
+
+        sham::DeviceBuffer<Tscal> &rho_old   = pdat.get_field_buf_ref<Tscal>(irho);
+        sham::DeviceBuffer<Tvec> &rhov_old   = pdat.get_field_buf_ref<Tvec>(irhovel);
+        sham::DeviceBuffer<Tscal> &rhoe_old  = pdat.get_field_buf_ref<Tscal>(irhoetot);
+        sham::DeviceBuffer<Tscal> &rho_d_old = pdat.get_field_buf_ref<Tscal>(irho_d);
+        sham::DeviceBuffer<Tvec> &rhov_d_old = pdat.get_field_buf_ref<Tvec>(irhovel_d);
+
+        sham::DeviceBuffer<f32> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
+
+        alphas_buf.copy_from_stdvec(alphas_vector);
+
+        sham::EventList depend_list;
+        auto acc_rho_new_patch    = rho_new_patch.get_read_access(depend_list);
+        auto acc_rhov_new_patch   = rhov_new_patch.get_read_access(depend_list);
+        auto acc_rhoe_new_patch   = rhoe_new_patch.get_read_access(depend_list);
+        auto acc_rho_d_new_patch  = rho_d_new_patch.get_read_access(depend_list);
+        auto acc_rhov_d_new_patch = rhov_d_new_patch.get_read_access(depend_list);
+
+        auto acc_rho_old    = rho_old.get_write_access(depend_list);
+        auto acc_rhov_old   = rhov_old.get_write_access(depend_list);
+        auto acc_rhoe_old   = rhoe_old.get_write_access(depend_list);
+        auto acc_rho_d_old  = rho_d_old.get_write_access(depend_list);
+        auto acc_rhov_d_old = rhov_d_old.get_write_access(depend_list);
+
+        auto acc_alphas = alphas_buf.get_read_access(depend_list);
+
+        auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
+            // local/shared memory alloc for each work-item
+            const size_t group_size       = 32;
+            const size_t mat_size         = ndust + 1;
+            const size_t mat_size_squared = mat_size * mat_size;
+            const size_t loc_acc_size     = mat_size_squared * group_size;
+            sycl::local_accessor<f64> local_A(loc_acc_size, cgh);
+            sycl::local_accessor<f64> local_B(loc_acc_size, cgh);
+            sycl::local_accessor<f64> local_F(loc_acc_size, cgh);
+            sycl::local_accessor<f64> local_I(loc_acc_size, cgh);
+            sycl::local_accessor<f64> local_Id(loc_acc_size, cgh);
+
+            logger::debug_sycl_ln("SYCL", shambase::format("parallel_for add_drag [expo]"));
+            cgh.parallel_for(
+                shambase::make_range(cell_count, group_size), [=](sycl::nd_item<1> id) {
+                    u32 loc_id = id.get_local_id();
+                    u32 id_a   = id.get_global_id();
+                    if (id_a >= cell_count)
+                        return;
+
+                    // sparse jacobian matrix
+                    auto get_jacobian
+                        = [=](u32 id,
+                              std::mdspan<
+                                  f64,
+                                  std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                                  &jacobian) {
+                              mat_set_nul<f64>(jacobian);
+                              // fill first row
+                              for (auto j = 1; j < jacobian.extent(1); j++)
+                                  jacobian(0, j) = acc_alphas[j - 1];
+                              // fil first column
+                              for (auto i = 1; i < jacobian.extent(0); i++) {
+                                  jacobian(i, 0) = acc_alphas[i - 1]
+                                                   * (acc_rho_d_new_patch[id * ndust + (i - 1)]
+                                                      / acc_rho_new_patch[id]);
+                                  jacobian(0, 0) -= jacobian(i, 0);
+                              }
+                              // fill diagonal from (i,j)=(1,1)
+                              for (auto i = 1; i < jacobian.extent(0); i++)
+                                  jacobian(i, i) = -acc_alphas[i - 1];
+                              // the rest of the buffer is set to zero
+                          };
+
+                    f64 mu = 0;
+                    for (auto i = 0; i < ndust; i++) {
+                        mu += (1
+                               + (acc_rho_d_new_patch[id_a * ndust + i] / acc_rho_new_patch[id_a]))
+                              * acc_alphas[i];
+                    }
+                    mu *= (-dt / (ndust + 1));
+
+                    // get ptr to datas
+                    f64 *ptr_loc_A  = local_A.get_pointer() + mat_size_squared * loc_id;
+                    f64 *ptr_loc_B  = local_B.get_pointer() + mat_size_squared * loc_id;
+                    f64 *ptr_loc_F  = local_F.get_pointer() + mat_size_squared * loc_id;
+                    f64 *ptr_loc_I  = local_I.get_pointer() + mat_size_squared * loc_id;
+                    f64 *ptr_loc_Id = local_Id.get_pointer() + mat_size_squared * loc_id;
+
+                    // create mdspan(s)
+                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                        mdspan_A(ptr_loc_A, mat_size, mat_size);
+                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                        mdspan_B(ptr_loc_B, mat_size, mat_size);
+                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                        mdspan_F(ptr_loc_F, mat_size, mat_size);
+                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                        mdspan_I(ptr_loc_I, mat_size, mat_size);
+                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                        mdspan_Id(ptr_loc_Id, mat_size, mat_size);
+
+                    // get local Jacobian matrix
+
+                    get_jacobian(id_a, mdspan_A);
+
+                    // pre-processing step
+                    shammath::mat_set_identity<f64>(mdspan_Id);
+                    shammath::mat_axpy_beta<f64, f64>(-mu, mdspan_Id, dt, mdspan_A);
+
+                    // compute matrix exponential
+                    const i32 K_exp = 9;
+                    shammath::mat_exp<f64, f64>(
+                        K_exp, mdspan_A, mdspan_F, mdspan_B, mdspan_I, mdspan_Id, ndust + 1);
+
+                    // post-processing step
+                    shammath::mat_mul_scalar<f64>(mdspan_A, sycl::exp(mu));
+
+                    // use the matrix exponential to for to updates momemtum
+                    f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};
+                    r += mdspan_A(0, 0) * acc_rhov_new_patch[id_a];
+
+                    for (auto j = 1; j < ndust + 1; j++) {
+                        r += mdspan_A(0, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
+                    }
+
+                    dd = r - acc_rhov_new_patch[id_a];
+
+                    f64 dissipation = 0, drag_work = 0;
+
+                    // compute work of drag terms
+                    f64 inv_rho = 1.0 / (acc_rho_new_patch[id_a]);
+
+                    f64_3 v_bf = inv_rho * acc_rhov_new_patch[id_a];
+                    f64_3 v_af = inv_rho * r;
+
+                    drag_work = 0.5
+                                * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] + v_af[1])
+                                   + dd[2] * (v_bf[2] + v_af[2]));
+
+                    // save gas momentum back
+                    acc_rhov_old[id_a] = r;
+                    acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
+
+                    for (auto d_id = 1; d_id <= ndust; d_id++) {
+                        r *= 0;
+                        r += mdspan_A(d_id, 0) * acc_rhov_new_patch[id_a];
+
+                        for (auto j = 1; j <= ndust; j++) {
+
+                            r += mdspan_A(d_id, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
+                        }
+
+                        dd = r - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
+
+                        inv_rho = 1.0 / (acc_rho_d_new_patch[id_a * ndust + (d_id - 1)]);
+
+                        v_bf = inv_rho * acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
+
+                        v_af = inv_rho * r;
+
+                        // compute dissipaation by id-th dust
+                        dissipation += 0.5
+                                       * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] + v_af[1])
+                                          + dd[2] * (v_bf[2] + v_af[2]));
+
+                        // save dust momentum back
+                        acc_rhov_d_old[id_a * ndust + (d_id - 1)] = r;
+                        acc_rho_d_old[id_a * ndust + (d_id - 1)]
+                            = acc_rho_d_new_patch[id_a * ndust + (d_id - 1)];
+                    }
+
+                    // updates energy
+                    acc_rhoe_old[id_a] = acc_rhoe_new_patch[id_a]
+                                         + (1 - friction_control) * drag_work
+                                         - friction_control * dissipation;
+                });
+        });
+        rho_new_patch.complete_event_state(e);
+        rhov_new_patch.complete_event_state(e);
+        rhoe_new_patch.complete_event_state(e);
+        rho_d_new_patch.complete_event_state(e);
+        rhov_d_new_patch.complete_event_state(e);
+
+        rho_old.complete_event_state(e);
+        rhov_old.complete_event_state(e);
+        rhoe_old.complete_event_state(e);
+        rho_d_old.complete_event_state(e);
+        rhov_d_old.complete_event_state(e);
+
+        alphas_buf.complete_event_state(e);
+    });
+}
 template class shammodels::basegodunov::modules::DragIntegrator<f64_3, i64_3>;

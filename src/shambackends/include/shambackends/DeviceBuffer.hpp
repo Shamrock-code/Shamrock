@@ -832,8 +832,44 @@ namespace sham {
          * @param idx The index of the value to retrieve
          * @return The value at the given index
          */
-        T get_val_at_idx(size_t idx) const { return copy_to_stdvec_idx_range(idx, idx + 1)[0]; }
+        T get_val_at_idx(size_t idx) const {
+            T ret;
 
+            if (idx >= size) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "set_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+            }
+
+            sham::EventList depends_list;
+            const T *ptr = get_read_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr + idx, &ret, 1);
+            });
+
+            e.wait_and_throw();
+            complete_event_state(sycl::event{});
+
+            return ret;
+        }
+
+        void set_val_at_idx(size_t idx, T val) {
+
+            if (idx >= size) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "set_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+            }
+
+            sham::EventList depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(&val, ptr + idx, 1);
+            });
+
+            e.wait_and_throw();
+            complete_event_state(sycl::event{});
+        }
         ///////////////////////////////////////////////////////////////////////
         // Getter fcts (END)
         ///////////////////////////////////////////////////////////////////////

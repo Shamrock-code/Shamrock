@@ -140,3 +140,8 @@ struct sham::VectorProperties<shammath::mat<T, m, n>> {
         return {zero};
     }
 };
+
+using f32_3x3 = shammath::mat<f32, 3, 3>; ///< Alias for 3x3 float matrix
+using f32_4x4 = shammath::mat<f32, 4, 4>; ///< Alias for 4x4 float matrix
+using f64_3x3 = shammath::mat<f64, 3, 3>; ///< Alias for 3x3 double matrix
+using f64_4x4 = shammath::mat<f64, 4, 4>; ///< Alias for 4x4 double matrix

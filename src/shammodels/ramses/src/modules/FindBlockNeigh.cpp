@@ -106,8 +106,8 @@ namespace shammodels::basegodunov::modules {
 
                 TgridVec dir_offset = result.offset_check[dir];
 
-                AMRGraph rslt = details::compute_neigh_graph<AMRBlockFinder>(
-                    q.q,
+                AMRGraph rslt = details::compute_neigh_graph_deprecated<AMRBlockFinder>(
+                    shamsys::instance::get_compute_scheduler_ptr(),
                     edges.sizes.indexes.get(id),
                     tree,
                     buf_block_min_sycl,

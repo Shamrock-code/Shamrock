@@ -16,10 +16,11 @@
 
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammath/slopeLimiter.hpp"
+#include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include <type_traits>
 
-using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraphLinkiterator;
+using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_access;
 
 namespace {
 
@@ -209,15 +210,15 @@ namespace {
                     auto field      = field_span.get_read_access(depends_list);
                     auto field_grad = field_grad_span.get_write_access(depends_list);
 
+                    auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
+                    auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
+                    auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
+                    auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
+                    auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
+                    auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
+
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                     auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
-                        AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
-                        AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
-                        AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
-                        AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
-                        AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
                         u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
                         shambase::parralel_for(
@@ -253,6 +254,13 @@ namespace {
                     cell_sizes_span.complete_event_state(e);
                     field_span.complete_event_state(e);
                     field_grad_span.complete_event_state(e);
+
+                    graph_neigh_xp.complete_event_state(e);
+                    graph_neigh_xm.complete_event_state(e);
+                    graph_neigh_yp.complete_event_state(e);
+                    graph_neigh_ym.complete_event_state(e);
+                    graph_neigh_zp.complete_event_state(e);
+                    graph_neigh_zm.complete_event_state(e);
                 });
         }
     };
@@ -298,15 +306,15 @@ namespace {
                     auto field_dy   = field_dy_span.get_write_access(depends_list);
                     auto field_dz   = field_dz_span.get_write_access(depends_list);
 
+                    auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
+                    auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
+                    auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
+                    auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
+                    auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
+                    auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
+
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                     auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        AMRGraphLinkiterator graph_iter_xp{graph_neigh_xp, cgh};
-                        AMRGraphLinkiterator graph_iter_xm{graph_neigh_xm, cgh};
-                        AMRGraphLinkiterator graph_iter_yp{graph_neigh_yp, cgh};
-                        AMRGraphLinkiterator graph_iter_ym{graph_neigh_ym, cgh};
-                        AMRGraphLinkiterator graph_iter_zp{graph_neigh_zp, cgh};
-                        AMRGraphLinkiterator graph_iter_zm{graph_neigh_zm, cgh};
-
                         u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
                         shambase::parralel_for(
@@ -345,6 +353,13 @@ namespace {
                     field_dx_span.complete_event_state(e);
                     field_dy_span.complete_event_state(e);
                     field_dz_span.complete_event_state(e);
+
+                    graph_neigh_xp.complete_event_state(e);
+                    graph_neigh_xm.complete_event_state(e);
+                    graph_neigh_yp.complete_event_state(e);
+                    graph_neigh_ym.complete_event_state(e);
+                    graph_neigh_zp.complete_event_state(e);
+                    graph_neigh_zm.complete_event_state(e);
                 });
         }
     };

@@ -17,79 +17,92 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
+#include "shambackends/EventList.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
 
 namespace shammodels::basegodunov::modules {
 
+    struct NeighGraphLinkiterator;
+
     struct NeighGraph {
-        sycl::buffer<u32> node_link_offset;
-        sycl::buffer<u32> node_links;
+        sham::DeviceBuffer<u32> node_link_offset;
+        sham::DeviceBuffer<u32> node_links;
         u32 link_count;
         u32 obj_cnt;
 
-        std::optional<sycl::buffer<u32>> antecedent = std::nullopt;
+        std::optional<sham::DeviceBuffer<u32>> antecedent = std::nullopt;
 
-        void compute_antecedent(sycl::queue &q) {
-            sycl::buffer<u32> ret(link_count);
+        void compute_antecedent(sham::DeviceScheduler_ptr &dev_sched) {
+            sham::DeviceBuffer<u32> ret(link_count, dev_sched);
 
-            q.submit([&](sycl::handler &cgh) {
-                sycl::accessor offset{node_link_offset, cgh, sycl::read_only};
-                sycl::accessor ante{ret, cgh, sycl::write_only, sycl::no_init};
+            auto &q = dev_sched->get_queue(0);
+            sham::EventList deps;
 
-                shambase::parralel_for(cgh, obj_cnt, "gen antecedent map", [=](u64 gid) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{node_link_offset},
+                sham::MultiRef{ret},
+                obj_cnt,
+                [](u32 gid, const u32 *__restrict offset, u32 *__restrict ante) {
                     u32 min_ids = offset[gid];
                     u32 max_ids = offset[gid + 1];
                     for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
                         ante[id_s] = gid;
                     }
                 });
-            });
 
             antecedent = std::move(ret);
         }
+
+        struct ro_access {
+
+            const u32 *node_link_offset;
+            const u32 *node_links;
+
+            template<class Functor_iter>
+            inline void for_each_object_link(const u32 &cell_id, Functor_iter &&func_it) const {
+                u32 min_ids = node_link_offset[cell_id];
+                u32 max_ids = node_link_offset[cell_id + 1];
+                for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
+                    func_it(node_links[id_s]);
+                }
+            }
+
+            template<class Functor_iter>
+            inline void for_each_object_link_id(const u32 &cell_id, Functor_iter &&func_it) const {
+                u32 min_ids = node_link_offset[cell_id];
+                u32 max_ids = node_link_offset[cell_id + 1];
+                for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
+                    func_it(node_links[id_s], id_s);
+                }
+            }
+
+            template<class Functor_iter>
+            inline u32 for_each_object_link_cnt(const u32 &cell_id, Functor_iter &&func_it) const {
+                u32 min_ids = node_link_offset[cell_id];
+                u32 max_ids = node_link_offset[cell_id + 1];
+                for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
+                    func_it(node_links[id_s]);
+                }
+                return max_ids - min_ids;
+            }
+        };
+
+        ro_access get_read_access(sham::EventList &e) {
+            return ro_access{node_link_offset.get_read_access(e), node_links.get_read_access(e)};
+        }
+
+        void complete_event_state(sycl::event &e) {
+            node_link_offset.complete_event_state(e);
+            node_links.complete_event_state(e);
+        }
     };
 
-    struct NeighGraphLinkiterator {
-
-        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> node_link_offset;
-        sycl::accessor<u32, 1, sycl::access::mode::read, sycl::target::device> node_links;
-
-        NeighGraphLinkiterator(NeighGraph &graph, sycl::handler &cgh)
-            : node_link_offset{graph.node_link_offset, cgh, sycl::read_only},
-              node_links{graph.node_links, cgh, sycl::read_only} {}
-
-        template<class Functor_iter>
-        inline void for_each_object_link(const u32 &cell_id, Functor_iter &&func_it) const {
-            u32 min_ids = node_link_offset[cell_id];
-            u32 max_ids = node_link_offset[cell_id + 1];
-            for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
-                func_it(node_links[id_s]);
-            }
-        }
-
-        template<class Functor_iter>
-        inline void for_each_object_link_id(const u32 &cell_id, Functor_iter &&func_it) const {
-            u32 min_ids = node_link_offset[cell_id];
-            u32 max_ids = node_link_offset[cell_id + 1];
-            for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
-                func_it(node_links[id_s], id_s);
-            }
-        }
-
-        template<class Functor_iter>
-        inline u32 for_each_object_link_cnt(const u32 &cell_id, Functor_iter &&func_it) const {
-            u32 min_ids = node_link_offset[cell_id];
-            u32 max_ids = node_link_offset[cell_id + 1];
-            for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
-                func_it(node_links[id_s]);
-            }
-            return max_ids - min_ids;
-        }
-    };
-
-    using AMRGraph             = NeighGraph;
-    using AMRGraphLinkiterator = NeighGraphLinkiterator;
+    using AMRGraph = NeighGraph;
 
     template<class Tvec, class TgridVec>
     struct OrientedAMRGraph {

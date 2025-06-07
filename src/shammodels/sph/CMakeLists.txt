@@ -19,6 +19,8 @@ set(Sources
     src/SPHUtilities.cpp
     src/SolverLog.cpp
     src/io/PhantomDump.cpp
+    src/io/Phantom2Shamrock.cpp
+    src/io/PhantomDumpEOSUtils.cpp
     src/SolverConfig.cpp
     src/pySPHModel.cpp
     src/pyPhantomDump.cpp
@@ -42,6 +44,8 @@ set(Sources
 
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
+    src/modules/setup/ModifierOffset.cpp
+    src/modules/setup/ModifierFilter.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
 

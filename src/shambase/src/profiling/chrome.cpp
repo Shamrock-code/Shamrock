@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/numeric_limits.hpp"
 #include "shambase/profiling/chrome.hpp"
 #include "shambase/profiling/profiling.hpp"
 #include "shambase/string.hpp"

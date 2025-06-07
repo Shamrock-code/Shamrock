@@ -14,6 +14,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/numeric_limits.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shampylib/pyNodeInstance.hpp"

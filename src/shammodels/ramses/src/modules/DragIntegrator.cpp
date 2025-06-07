@@ -325,7 +325,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     using namespace shamrock;
     using namespace shammath;
 
-
     shamrock::ComputeField<Tscal> &cfield_rho_new   = storage.rho_next_no_drag.get();
     shamrock::ComputeField<Tvec> &cfield_rhov_new   = storage.rhov_next_no_drag.get();
     shamrock::ComputeField<Tscal> &cfield_rhoe_new  = storage.rhoe_next_no_drag.get();
@@ -536,7 +535,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     acc_rhoe_old[id_a] = acc_rhoe_new_patch[id_a]
                                          + (1 - friction_control) * drag_work
                                          - friction_control * dissipation;
-
                 });
         });
         rho_new_patch.complete_event_state(e);
@@ -553,6 +551,5 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
         alphas_buf.complete_event_state(e);
     });
-
 }
 template class shammodels::basegodunov::modules::DragIntegrator<f64_3, i64_3>;

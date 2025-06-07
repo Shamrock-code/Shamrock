@@ -356,6 +356,7 @@ namespace shammath {
 
         // Taylor polynomial evaluation
         taylor_eval<T, U>(r, q, seq_bi, size_A, A, F, B, I, Id);
+
         // squaring step
         mat_set_identity<T>(Id);
         mat_set_identity<T>(I);

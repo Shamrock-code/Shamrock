@@ -20,7 +20,6 @@
 #include "shammath/matrix_exponential.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include <array>
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_with_no_src(
@@ -246,8 +245,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                         = tmp_mom_1
                           + dt_alphas * inv_dt_alphas * acc_rhov_d_new_patch[id_a * ndust + i];
                     tmp_rho = tmp_rho + dt_alphas * inv_dt_alphas * acc_rho_d_old[id_a * ndust + i];
-                    // tmp_rho = tmp_rho
-                    //   + dt_alphas * inv_dt_alphas * acc_rho_d_new_patch[id_a * ndust + i];
                 }
 
                 f64 tmp_inv_rho = 1.0 / tmp_rho;
@@ -328,7 +325,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     using namespace shamrock;
     using namespace shammath;
 
-    // /*
 
     shamrock::ComputeField<Tscal> &cfield_rho_new   = storage.rho_next_no_drag.get();
     shamrock::ComputeField<Tvec> &cfield_rhov_new   = storage.rhov_next_no_drag.get();
@@ -358,7 +354,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
                                                 shamrock::patch::PatchData &pdat) {
-        logger::debug_ln("[AMR enable drag ]", "expo drag patch", p.id_patch);
+        logger::debug_ln("[Ramses]", "expo drag on patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         u32 id               = p.id_patch;
@@ -508,7 +504,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     acc_rhov_old[id_a] = r;
                     acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
 
-                    //
                     for (auto d_id = 1; d_id <= ndust; d_id++) {
                         r *= 0;
                         r += mdspan_A(d_id, 0) * acc_rhov_new_patch[id_a];
@@ -542,8 +537,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                                          + (1 - friction_control) * drag_work
                                          - friction_control * dissipation;
 
-                    /*
-                     */
                 });
         });
         rho_new_patch.complete_event_state(e);
@@ -561,6 +554,5 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
         alphas_buf.complete_event_state(e);
     });
 
-    // */
 }
 template class shammodels::basegodunov::modules::DragIntegrator<f64_3, i64_3>;

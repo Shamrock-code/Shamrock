@@ -319,5 +319,5 @@ axs[1].set_title("$V_{d,1}$", fontsize=15, fontweight="bold")
 axs[2].set_title("$V_{d,2}$", fontsize=15, fontweight="bold")
 
 plt.legend(prop={"weight": "bold"})
-plt.savefig("dusty_collision_test_exp_B.png")
+plt.savefig("dusty_collision_test_B.png")
 # plt.savefig("dusty_collision_test_C.png")

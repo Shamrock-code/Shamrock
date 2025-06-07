@@ -73,7 +73,7 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     multz = 1
 
     sz = 1 << 1
-    base = 16
+    base = 32
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)

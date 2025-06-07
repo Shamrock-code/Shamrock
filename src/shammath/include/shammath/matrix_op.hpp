@@ -578,6 +578,7 @@ namespace shammath {
         const std::mdspan<T, Extents2, Layout2, Accessor2> &input2,
         const U beta,
         const std::mdspan<T, Extents3, Layout3, Accessor3> &output) {
+
         SHAM_ASSERT(input1.extent(0) == output.extent(0));
         SHAM_ASSERT(input1.extent(1) == input2.extent(0));
         SHAM_ASSERT(input2.extent(1) == output.extent(1));
@@ -636,6 +637,7 @@ namespace shammath {
         const std::mdspan<T, Extents2, Layout2, Accessor2> &x,
         const U beta,
         const std::mdspan<T, Extents3, Layout3, Accessor3> &y) {
+
         SHAM_ASSERT(M.extent(1) == x.extent(0));
         SHAM_ASSERT(M.extent(0) == y.extent(0));
 

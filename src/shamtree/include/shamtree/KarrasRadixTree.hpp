@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 
@@ -28,16 +29,61 @@ namespace shamtree {
      * identifiers and flags, as well as end ranges.
      */
     class KarrasRadixTree;
+
+    struct KarrasTreeTraverser;
 } // namespace shamtree
+
+struct shamtree::KarrasTreeTraverser {
+    const sham::DeviceBuffer<u32> &buf_lchild_id;
+    const sham::DeviceBuffer<u32> &buf_rchild_id;
+    const sham::DeviceBuffer<u8> &buf_lchild_flag;
+    const sham::DeviceBuffer<u8> &buf_rchild_flag;
+    u32 offset_leaf;
+
+    struct acc {
+        const u32 *lchild_id;
+        const u32 *rchild_id;
+        const u8 *lchild_flag;
+        const u8 *rchild_flag;
+        u32 offset_leaf;
+
+        inline u32 get_left_child(u32 id) const {
+            return lchild_id[id] + offset_leaf * u32(lchild_flag[id]);
+        }
+        inline u32 get_right_child(u32 id) const {
+            return rchild_id[id] + offset_leaf * u32(rchild_flag[id]);
+        }
+
+        inline bool is_id_leaf(u32 id) const { return id >= offset_leaf; }
+    };
+
+    inline acc get_read_access(sham::EventList &deps) const {
+        return acc{
+            buf_lchild_id.get_read_access(deps),
+            buf_rchild_id.get_read_access(deps),
+            buf_lchild_flag.get_read_access(deps),
+            buf_rchild_flag.get_read_access(deps),
+            offset_leaf};
+    }
+
+    inline void complete_event_state(sycl::event e) const {
+        buf_lchild_id.complete_event_state(e);
+        buf_rchild_id.complete_event_state(e);
+        buf_lchild_flag.complete_event_state(e);
+        buf_rchild_flag.complete_event_state(e);
+    }
+};
 
 class shamtree::KarrasRadixTree {
 
     public:
     /// Get internal cell count
-    inline u32 get_internal_cell_count() { return buf_lchild_id.get_size(); }
+    inline u32 get_internal_cell_count() const { return buf_lchild_id.get_size(); }
 
     /// Get leaf count
-    inline u32 get_leaf_count() { return get_internal_cell_count() + 1; }
+    inline u32 get_leaf_count() const { return get_internal_cell_count() + 1; }
+
+    inline u32 get_total_cell_count() const { return get_internal_cell_count() + get_leaf_count(); }
 
     sham::DeviceBuffer<u32> buf_lchild_id;  ///< left child id (size = internal_count)
     sham::DeviceBuffer<u32> buf_rchild_id;  ///< right child id (size = internal_count)
@@ -45,16 +91,28 @@ class shamtree::KarrasRadixTree {
     sham::DeviceBuffer<u8> buf_rchild_flag; ///< right child flag (size = internal_count)
     sham::DeviceBuffer<u32> buf_endrange;   ///< endrange (size = internal_count)
 
+    u32 tree_depth;
+
     /// CTOR
     KarrasRadixTree(
         sham::DeviceBuffer<u32> &&buf_lchild_id,
         sham::DeviceBuffer<u32> &&buf_rchild_id,
         sham::DeviceBuffer<u8> &&buf_lchild_flag,
         sham::DeviceBuffer<u8> &&buf_rchild_flag,
-        sham::DeviceBuffer<u32> &&buf_endrange)
+        sham::DeviceBuffer<u32> &&buf_endrange,
+        u32 tree_depth)
         : buf_lchild_id(std::move(buf_lchild_id)), buf_rchild_id(std::move(buf_rchild_id)),
           buf_lchild_flag(std::move(buf_lchild_flag)), buf_rchild_flag(std::move(buf_rchild_flag)),
-          buf_endrange(std::move(buf_endrange)) {}
+          buf_endrange(std::move(buf_endrange)), tree_depth(tree_depth) {}
+
+    inline KarrasTreeTraverser get_structure_traverser() const {
+        return KarrasTreeTraverser{
+            buf_lchild_id,
+            buf_rchild_id,
+            buf_lchild_flag,
+            buf_rchild_flag,
+            get_internal_cell_count()};
+    }
 };
 
 namespace shamtree {

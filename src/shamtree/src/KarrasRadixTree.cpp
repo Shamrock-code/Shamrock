@@ -13,11 +13,13 @@
  * @brief
  */
 
-#include "shamtree/KarrasRadixTree.hpp"
+#include "shambase/type_traits.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shammath/sfc/morton.hpp"
+#include "shamtree/KarrasRadixTree.hpp"
 #include "shamtree/MortonCodeSet.hpp"
 #include <utility>
 
@@ -142,6 +144,11 @@ void __karras_alg(
 namespace shamtree {
 
     template<class Tmorton>
+    inline u32 get_tree_depth() {
+        return shambase::bitsizeof<Tmorton>;
+    }
+
+    template<class Tmorton>
     KarrasRadixTree karras_tree_from_reduced_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
@@ -149,6 +156,8 @@ namespace shamtree {
         KarrasRadixTree &&recycled_tree) {
 
         u32 internal_cell_count = morton_count - 1;
+
+        recycled_tree.tree_depth = get_tree_depth<Tmorton>();
 
         recycled_tree.buf_lchild_id.resize(internal_cell_count);
         recycled_tree.buf_rchild_id.resize(internal_cell_count);
@@ -192,7 +201,8 @@ namespace shamtree {
             std::move(buf_rchild_id),
             std::move(buf_lchild_flag),
             std::move(buf_rchild_flag),
-            std::move(buf_endrange));
+            std::move(buf_endrange),
+            get_tree_depth<Tmorton>());
 
         return karras_tree_from_reduced_morton_set(
             dev_sched, morton_count, morton_codes, std::move(tree));

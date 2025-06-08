@@ -54,7 +54,7 @@ TestStart(Unittest, "shamtree/KarrasRadixTree", test_karras_radix_tree, 1) {
 
     morton_codes.copy_from_stdvec(test_morton_codes);
 
-    auto tree = shamtree::karras_tree_from_reduced_morton_set(
+    auto tree = shamtree::karras_tree_from_morton_set(
         shamsys::instance::get_compute_scheduler_ptr(), test_morton_codes.size(), morton_codes);
 
     REQUIRE_EQUAL(tree.buf_lchild_id.copy_to_stdvec(), expected_lchild_id);
@@ -90,7 +90,7 @@ TestStart(Unittest, "shamtree/KarrasRadixTree(one-cell)", test_karras_radix_tree
 
     morton_codes.copy_from_stdvec(test_morton_codes);
 
-    auto tree = shamtree::karras_tree_from_reduced_morton_set(
+    auto tree = shamtree::karras_tree_from_morton_set(
         shamsys::instance::get_compute_scheduler_ptr(), test_morton_codes.size(), morton_codes);
 
     REQUIRE_EQUAL(tree.buf_lchild_id.copy_to_stdvec(), expected_lchild_id);

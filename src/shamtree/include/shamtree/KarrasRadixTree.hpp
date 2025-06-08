@@ -77,7 +77,7 @@ namespace shamtree {
      *         on the provided Morton codes.
      */
     template<class Tmorton>
-    KarrasRadixTree karras_tree_from_reduced_morton_set(
+    KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes,
@@ -86,7 +86,7 @@ namespace shamtree {
     /**
      * @brief Constructs a KarrasRadixTree from a set of reduced Morton codes without reuse.
      *
-     * Equivalent to karras_tree_from_reduced_morton_set but performs the allocations.
+     * Equivalent to karras_tree_from_morton_set but performs the allocations.
      *
      * @tparam Tmorton The type of the Morton codes.
      * @param[in] dev_sched A pointer to the device scheduler used for managing
@@ -97,7 +97,7 @@ namespace shamtree {
      *         on the provided Morton codes.
      */
     template<class Tmorton>
-    KarrasRadixTree karras_tree_from_reduced_morton_set(
+    KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes);

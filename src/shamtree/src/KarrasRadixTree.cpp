@@ -149,7 +149,7 @@ namespace shamtree {
     }
 
     template<class Tmorton>
-    KarrasRadixTree karras_tree_from_reduced_morton_set(
+    KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes,
@@ -183,7 +183,7 @@ namespace shamtree {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<class Tmorton>
-    KarrasRadixTree karras_tree_from_reduced_morton_set(
+    KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes) {
@@ -204,8 +204,7 @@ namespace shamtree {
             std::move(buf_endrange),
             get_tree_depth<Tmorton>());
 
-        return karras_tree_from_reduced_morton_set(
-            dev_sched, morton_count, morton_codes, std::move(tree));
+        return karras_tree_from_morton_set(dev_sched, morton_count, morton_codes, std::move(tree));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,24 +212,24 @@ namespace shamtree {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef DOXYGEN // To avoid doxygen complaining like always ...
-    template KarrasRadixTree karras_tree_from_reduced_morton_set(
+    template KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<u32> &morton_codes,
         KarrasRadixTree &&recycled_tree);
 
-    template KarrasRadixTree karras_tree_from_reduced_morton_set(
+    template KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<u32> &morton_codes);
 
-    template KarrasRadixTree karras_tree_from_reduced_morton_set(
+    template KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<u64> &morton_codes,
         KarrasRadixTree &&recycled_tree);
 
-    template KarrasRadixTree karras_tree_from_reduced_morton_set(
+    template KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<u64> &morton_codes);

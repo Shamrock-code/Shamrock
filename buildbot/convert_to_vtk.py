@@ -11,7 +11,6 @@ def extract(header, data):
 
 
 def read_header_field(header_f, dic_res):
-
     tmp = header_f
 
     while len(tmp) > 0:
@@ -30,7 +29,6 @@ def read_header_field(header_f, dic_res):
 
 
 def get_plot_patchdata(filename):
-
     f = open(filename, "rb")
 
     data = f.read()
@@ -141,9 +139,7 @@ def get_plot_patchdata(filename):
     }
 
     for field in dic_fields["f32_3"]:
-
         if field["name"] == ("xyz"):
-
             for a in field["field"]:
                 x, y, z = a
                 dic["x"].append(x)
@@ -151,7 +147,6 @@ def get_plot_patchdata(filename):
                 dic["z"].append(z)
 
         if field["name"] == ("vxyz"):
-
             for a in field["field"]:
                 x, y, z = a
                 dic["vx"].append(x)
@@ -159,7 +154,6 @@ def get_plot_patchdata(filename):
                 dic["vz"].append(z)
 
         if field["name"] == ("axyz"):
-
             for a in field["field"]:
                 x, y, z = a
                 dic["ax"].append(x)
@@ -167,7 +161,6 @@ def get_plot_patchdata(filename):
                 dic["az"].append(z)
 
         if field["name"] == ("axyz_old"):
-
             for a in field["field"]:
                 x, y, z = a
                 dic["ax_old"].append(x)
@@ -175,27 +168,22 @@ def get_plot_patchdata(filename):
                 dic["az_old"].append(z)
 
     for field in dic_fields["f32"]:
-
         if field["name"] == ("hpart"):
-
             for a in field["field"]:
                 (x,) = a
                 dic["h"].append(x)
 
         if field["name"] == ("u"):
-
             for a in field["field"]:
                 (x,) = a
                 dic["u"].append(x)
 
         if field["name"] == ("du"):
-
             for a in field["field"]:
                 (x,) = a
                 dic["du"].append(x)
 
         if field["name"] == ("du_old"):
-
             for a in field["field"]:
                 (x,) = a
                 dic["du_old"].append(x)
@@ -204,7 +192,6 @@ def get_plot_patchdata(filename):
 
 
 def write_dic_to_vtk(dic, filename):
-
     points = vtk.vtkPoints()
     points.SetNumberOfPoints(len(dic["x"]))
     for i in range(len(dic["x"])):
@@ -225,7 +212,6 @@ def write_dic_to_vtk(dic, filename):
             ugrid.GetPointData().AddArray(values)
 
     for desc in [["v", "vx", "vy", "vz"]]:
-
         vect = vtk.vtkDoubleArray()
         vect.SetName(desc[0])
         vect.SetNumberOfComponents(3)
@@ -237,7 +223,6 @@ def write_dic_to_vtk(dic, filename):
             ugrid.GetPointData().AddArray(vect)
 
     for desc in [["a", "ax", "ay", "az"]]:
-
         vect = vtk.vtkDoubleArray()
         vect.SetName(desc[0])
         vect.SetNumberOfComponents(3)
@@ -249,7 +234,6 @@ def write_dic_to_vtk(dic, filename):
             ugrid.GetPointData().AddArray(vect)
 
     for desc in [["a_old", "ax_old", "ay_old", "az_old"]]:
-
         vect = vtk.vtkDoubleArray()
         vect.SetName(desc[0])
         vect.SetNumberOfComponents(3)
@@ -271,7 +255,6 @@ def write_dic_to_vtk(dic, filename):
 import glob
 
 for idx in range(170, 1000):
-
     file_list = glob.glob("./step" + str(idx) + "/patchdata*")
 
     print(file_list)
@@ -290,7 +273,6 @@ for idx in range(170, 1000):
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
-
             if not k in dic.keys():
                 dic[k] = []
 
@@ -304,7 +286,6 @@ exit()
 import glob
 
 for idx in range(1, 1000):
-
     file_list = glob.glob("./step" + str(idx) + "/merged0_patchdata*")
 
     print(file_list)
@@ -323,7 +304,6 @@ for idx in range(1, 1000):
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
-
             if not k in dic.keys():
                 dic[k] = []
 
@@ -335,7 +315,6 @@ for idx in range(1, 1000):
 import glob
 
 for idx in range(1, 1000):
-
     file_list = glob.glob("./step_before_reatrib" + str(idx) + "/patchdata*")
 
     print(file_list)
@@ -354,7 +333,6 @@ for idx in range(1, 1000):
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
-
             if not k in dic.keys():
                 dic[k] = []
 
@@ -365,7 +343,6 @@ for idx in range(1, 1000):
 import glob
 
 for idx in range(1, 1000):
-
     file_list = glob.glob("./step_after_reatrib" + str(idx) + "/patchdata*")
 
     print(file_list)
@@ -384,7 +361,6 @@ for idx in range(1, 1000):
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
-
             if not k in dic.keys():
                 dic[k] = []
 

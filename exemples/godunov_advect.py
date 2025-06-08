@@ -35,7 +35,6 @@ def run_sim(vanleer=True, label="none"):
     delta_v = 1e-5
 
     def rho_map(rmin, rmax):
-
         x, y, z = rmin
 
         if x < 0.6 and x > 0.4:
@@ -44,12 +43,10 @@ def run_sim(vanleer=True, label="none"):
         return 1.0
 
     def rhoe_map(rmin, rmax):
-
         rho = rho_map(rmin, rmax)
         return 1.0 * rho
 
     def rhovel_map(rmin, rmax):
-
         x, y, z = rmin
         rho = rho_map(rmin, rmax)
         return (1 * rho, 0 * rho, 0 * rho)
@@ -64,7 +61,6 @@ def run_sim(vanleer=True, label="none"):
 
     dt = 1 / 256
     for i in range(1000):
-
         if i % freq == 0:
             model.dump_vtk("test" + str(i // freq) + ".vtk")
 
@@ -75,7 +71,6 @@ def run_sim(vanleer=True, label="none"):
             break
 
     def convert_to_cell_coords(dic):
-
         cmin = dic["cell_min"]
         cmax = dic["cell_max"]
 
@@ -87,7 +82,6 @@ def run_sim(vanleer=True, label="none"):
         zmax = []
 
         for i in range(len(cmin)):
-
             m, M = cmin[i], cmax[i]
 
             mx, my, mz = m
@@ -125,7 +119,6 @@ def run_sim(vanleer=True, label="none"):
     eint = []
 
     for i in range(len(dic["xmin"])):
-
         X.append(dic["xmin"][i])
         rho.append(dic["rho"][i])
         velx.append(dic["rhovel"][i][0])

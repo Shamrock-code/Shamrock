@@ -82,7 +82,6 @@ excludelist = [
 
 _gbody = []
 for path in Path(".").rglob("*.filt"):
-
     gfile = graphviz.Source.from_file(path.absolute()).source.split("\n")[3:-2]
 
     for i in range(len(gfile)):
@@ -242,7 +241,6 @@ def get_label(l):
 
 for l in _gbody:
     if "label=" in l:
-
         lbl = get_label(l)
 
         if lbl == "main":
@@ -265,7 +263,6 @@ print(inverse_affect_dic.keys())
 
 
 for l in line_to_rm:
-
     nd = l[l.find("Node") : l.find("Node") + 18]
     print(nd, nd in inverse_affect_dic.keys())
 
@@ -273,14 +270,12 @@ for l in line_to_rm:
 
 
 for key in replace_dic.keys():
-
     new_nd = replace_dic[key]
     old_nd = key
 
     print(new_nd, old_nd)
 
     for i in range(len(_gbody)):
-
         _gbody[i] = _gbody[i].replace(old_nd, new_nd)
 
 
@@ -331,7 +326,6 @@ used_links = {}
 
 
 def add_childs(Node_id, depth=0):
-
     if depth > 10:
         return
 
@@ -495,7 +489,6 @@ move_map = {
 for kk in rep_stmap.keys():
     for i in range(len(_gbody)):
         if get_label(_gbody[i]) == kk:
-
             _gbody[i] = _gbody[i].replace("shape=record", rep_stmap[kk])
 
             print(_gbody[i])
@@ -504,7 +497,6 @@ for kk in rep_stmap.keys():
 for kk in move_map.keys():
     for i in range(len(_gbody)):
         if get_label(_gbody[i]) == kk:
-
             _gbody[i] = "{\n    " + move_map[kk] + _gbody[i].replace("{" + kk + "}", kk) + "}\n"
 
             print(_gbody[i])

@@ -23,7 +23,7 @@ rho_g = 1
 Mach = 0.1
 P_g = (Mach**-2) * rho_g / gamma
 
-print(f"Mach number : {1/np.sqrt(gamma*P_g/rho_g)}")
+print(f"Mach number : {1 / np.sqrt(gamma * P_g / rho_g)}")
 
 u_g = P_g / ((gamma - 1) * rho_g)
 
@@ -164,7 +164,6 @@ model.timestep()
 
 dt_stop = 0.001
 for i in range(1):
-
     t_target = i * dt_stop
     # skip if the model is already past the target
     if model.get_time() > t_target:

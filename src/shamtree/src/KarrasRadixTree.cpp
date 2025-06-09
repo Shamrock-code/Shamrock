@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/type_traits.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
@@ -234,5 +235,47 @@ namespace shamtree {
         u32 morton_count,
         sham::DeviceBuffer<u64> &morton_codes);
 #endif
+
+    std::string karras_tree_to_dot_graph(KarrasRadixTree &tree) {
+
+        std::vector<u32> lchild_id  = {};
+        std::vector<u8> lchild_flag = {};
+        std::vector<u32> rchild_id  = {};
+        std::vector<u8> rchild_flag = {};
+        std::vector<u32> endrange   = {};
+
+        lchild_id   = tree.buf_lchild_id.copy_to_stdvec();
+        rchild_id   = tree.buf_rchild_id.copy_to_stdvec();
+        lchild_flag = tree.buf_lchild_flag.copy_to_stdvec();
+        rchild_flag = tree.buf_rchild_flag.copy_to_stdvec();
+        endrange    = tree.buf_endrange.copy_to_stdvec();
+
+        std::string dot_graph = "";
+
+        dot_graph += "digraph G {\n";
+        dot_graph += "rankdir=LR;\n";
+
+        for (u32 i = 0; i < tree.get_internal_cell_count(); ++i) {
+
+            if (lchild_flag[i] == 0) {
+                dot_graph
+                    += "i" + std::to_string(i) + " -> i" + std::to_string(lchild_id[i]) + ";\n";
+            } else {
+                dot_graph
+                    += "i" + std::to_string(i) + " -> l" + std::to_string(lchild_id[i]) + ";\n";
+            }
+
+            if (rchild_flag[i] == 0) {
+                dot_graph
+                    += "i" + std::to_string(i) + " -> i" + std::to_string(rchild_id[i]) + ";\n";
+            } else {
+                dot_graph
+                    += "i" + std::to_string(i) + " -> l" + std::to_string(rchild_id[i]) + ";\n";
+            }
+        }
+
+        dot_graph += "}\n";
+        return dot_graph;
+    }
 
 } // namespace shamtree

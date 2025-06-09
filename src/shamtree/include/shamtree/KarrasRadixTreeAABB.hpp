@@ -44,18 +44,25 @@ class shamtree::KarrasRadixTreeAABB {
 
     public:
     /// Get internal cell count
-    inline u32 get_total_cell_count() { return buf_cell_min.get_size(); }
+    inline u32 get_total_cell_count() { return buf_aabb_min.get_size(); }
 
-    sham::DeviceBuffer<Tvec> buf_cell_min; ///< left child id (size = internal_count)
-    sham::DeviceBuffer<Tvec> buf_cell_max; ///< right child id (size = internal_count)
+    sham::DeviceBuffer<Tvec> buf_aabb_min; ///< left child id (size = internal_count)
+    sham::DeviceBuffer<Tvec> buf_aabb_max; ///< right child id (size = internal_count)
 
     /// CTOR
     KarrasRadixTreeAABB(
         sham::DeviceBuffer<Tvec> &&buf_cell_min, sham::DeviceBuffer<Tvec> &&buf_cell_max)
-        : buf_cell_min(std::move(buf_cell_min)), buf_cell_max(std::move(buf_cell_max)) {}
+        : buf_aabb_min(std::move(buf_cell_min)), buf_aabb_max(std::move(buf_cell_max)) {}
 };
 
 namespace shamtree {
+
+    template<class Tvec>
+    KarrasRadixTreeAABB<Tvec> new_empty_karras_radix_tree_aabb() {
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+        return KarrasRadixTreeAABB<Tvec>(
+            sham::DeviceBuffer<Tvec>(0, dev_sched), sham::DeviceBuffer<Tvec>(0, dev_sched));
+    }
 
     /**
      * @brief Prepare a KarrasRadixTreeAABB from a KarrasRadixTree.

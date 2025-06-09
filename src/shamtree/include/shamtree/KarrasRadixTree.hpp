@@ -120,4 +120,7 @@ namespace shamtree {
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes);
 
+    /// Get tree as dot graph
+    std::string karras_tree_to_dot_graph(KarrasRadixTree &recycled_tree);
+
 } // namespace shamtree

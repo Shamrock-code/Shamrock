@@ -22,8 +22,8 @@ namespace shamtree {
 
         KarrasRadixTreeAABB<Tvec> ret = std::forward<KarrasRadixTreeAABB<Tvec>>(recycled_tree_aabb);
 
-        ret.buf_cell_min.resize(tree.get_total_cell_count());
-        ret.buf_cell_max.resize(tree.get_total_cell_count());
+        ret.buf_aabb_min.resize(tree.get_total_cell_count());
+        ret.buf_aabb_max.resize(tree.get_total_cell_count());
 
         return ret;
     }
@@ -39,7 +39,7 @@ namespace shamtree {
             sham::kernel_call(
                 q,
                 sham::MultiRef{traverser},
-                sham::MultiRef{tree_aabb.buf_cell_min, tree_aabb.buf_cell_max},
+                sham::MultiRef{tree_aabb.buf_aabb_min, tree_aabb.buf_aabb_max},
                 tree.get_internal_cell_count(),
                 [=](u32 gid,
                     auto tree_traverser,
@@ -95,7 +95,7 @@ namespace shamtree {
             sham::kernel_call(
                 q,
                 sham::MultiRef{positions, cell_it},
-                sham::MultiRef{tree_aabb.buf_cell_min, tree_aabb.buf_cell_max},
+                sham::MultiRef{tree_aabb.buf_aabb_min, tree_aabb.buf_aabb_max},
                 tree.get_leaf_count(),
                 [leaf_offset](
                     u32 i, const Tvec *pos, auto cell_iter, Tvec *comp_min, Tvec *comp_max) {

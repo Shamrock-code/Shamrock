@@ -16,6 +16,7 @@
  */
 
 #include "shambackends/DeviceBuffer.hpp"
+#include "shammath/AABB.hpp"
 #include "shammath/sfc/morton.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/KarrasRadixTree.hpp"
@@ -55,13 +56,14 @@ struct shamtree::LCBVHObjectIteratorAccessed {
             std::forward<Functor3>(on_excluded_node));
     }
 
-    template<class Functor1, class Functor2, class Functor3>
+    template<class Functor1, class Functor2>
     inline void
     rtree_for(Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_object) const {
 
         traverse_tree_base(
             [&](u32 node_id) {
-                return traverse_condition_with_aabb(node_id, aabb_min[node_id], aabb_max[node_id]);
+                return traverse_condition_with_aabb(
+                    node_id, shammath::AABB<Tvec>{aabb_min[node_id], aabb_max[node_id]});
             },
             [&](u32 node_id) {
                 u32 leaf_id = node_id - tree_traverser.offset_leaf;

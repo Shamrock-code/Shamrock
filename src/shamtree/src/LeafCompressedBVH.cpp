@@ -14,13 +14,15 @@
  */
 
 #include "shambase/integer.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamtree/LeafCompressedBVH.hpp"
 
 template<class Tmorton, class Tvec, u32 dim>
 shamtree::LeafCompressedBVH<Tmorton, Tvec, dim>
 shamtree::LeafCompressedBVH<Tmorton, Tvec, dim>::make_empty(sham::DeviceScheduler_ptr dev_sched) {
+    StackEntry stack_loc{};
     return {
-        MortonReducedSet<Tmorton, Tvec, dim>::make_empty(),
+        MortonReducedSet<Tmorton, Tvec, dim>::make_empty(dev_sched),
         KarrasRadixTree::make_empty(dev_sched),
         KarrasRadixTreeAABB<Tvec>::make_empty(dev_sched)};
 }
@@ -30,6 +32,7 @@ void shamtree::LeafCompressedBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
     sham::DeviceBuffer<Tvec> &positions,
     shammath::AABB<Tvec> &bounding_box,
     u32 compression_level) {
+    StackEntry stack_loc{};
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -68,3 +71,6 @@ void shamtree::LeafCompressedBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
     this->structure          = std::move(tree);
     this->aabbs              = std::move(tree_aabbs);
 }
+
+template class shamtree::LeafCompressedBVH<u32, f64_3, 3>;
+template class shamtree::LeafCompressedBVH<u64, f64_3, 3>;

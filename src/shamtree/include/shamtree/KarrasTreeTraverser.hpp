@@ -59,7 +59,7 @@ struct shamtree::KarrasTreeTraverserAccessed {
         return rchild_id[id] + offset_leaf * u32(rchild_flag[id]);
     }
 
-    /// is the given id a leaf (Note that if there is not internal cell every node is a leaf)
+    /// is the given id a leaf (Note that if there is no internal cell every node is a leaf)
     inline bool is_id_leaf(u32 id) const { return id >= offset_leaf; }
 
     /// stack based tree traversal

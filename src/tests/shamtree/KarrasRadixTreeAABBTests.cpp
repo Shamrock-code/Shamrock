@@ -237,3 +237,161 @@ TestStart(Unittest, "shamtree/KarrasRadixTreeAABB", test_karras_radix_tree_aabb,
     REQUIRE_EQUAL_CUSTOM_COMP(ret_aabb_min, aabb_min, vec_equals);
     REQUIRE_EQUAL_CUSTOM_COMP(ret_aabb_max, aabb_max, vec_equals);
 }
+
+TestStart(
+    Unittest, "shamtree/KarrasRadixTreeAABB(one-cell)", test_karras_radix_tree_aabb_one_cell, 1) {
+
+    std::vector<Tvec> partpos{
+        Tvec(0.0, 0.0, 0.0),
+        Tvec(0.0, 0.0, 0.1),
+        Tvec(0.1, 0.1, 0.0),
+        Tvec(0.3, 0.3, 0.3),
+        Tvec(0.4, 0.4, 0.4)};
+
+    std::vector<Tmorton> test_mortons
+        = {0_u64,
+           2533893416718345_u64,
+           15203360500310070_u64,
+           1011023473270619655_u64,
+           1135184250689818560_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64};
+
+    std::vector<Tmorton> test_mortons_sorted
+        = {0_u64,
+           2533893416718345_u64,
+           15203360500310070_u64,
+           1011023473270619655_u64,
+           1135184250689818560_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64,
+           18446744073709551615_u64};
+
+    std::vector<u32> index_map_obj_idx = {0, 1, 2, 3, 4, 15, 12, 14, 6, 5, 7, 13, 9, 8, 10, 11};
+
+    std::vector<Tmorton> reduced_morton_codes = {
+        0_u64,
+    };
+
+    std::vector<u32> buf_reduc_index_map = {0, 5, 0};
+
+    std::vector<u32> expected_lchild_id  = {};
+    std::vector<u8> expected_lchild_flag = {};
+    std::vector<u32> expected_rchild_id  = {};
+    std::vector<u8> expected_rchild_flag = {};
+    std::vector<u32> expected_endrange   = {};
+
+    std::vector<Tvec> aabb_min = {
+        {0.0, 0.0, 0.0},
+    };
+    std::vector<Tvec> aabb_max = {
+        {0.4, 0.4, 0.4},
+    };
+
+    /// Run of the test
+
+    shammath::AABB<Tvec> bb = shammath::AABB<Tvec>(Tvec(0, 0, 0), Tvec(1, 1, 1));
+
+    sham::DeviceBuffer<Tvec> partpos_buf(
+        partpos.size(), shamsys::instance::get_compute_scheduler_ptr());
+
+    partpos_buf.copy_from_stdvec(partpos);
+
+    auto set = shamtree::morton_code_set_from_positions<Tmorton, Tvec, 3>(
+        shamsys::instance::get_compute_scheduler_ptr(), bb, partpos_buf, partpos.size(), 16);
+
+    std::vector<Tmorton> mortons = set.morton_codes.copy_to_stdvec();
+
+    REQUIRE_EQUAL(set.cnt_obj, partpos.size());
+    REQUIRE_EQUAL(set.morton_count, 16);
+    REQUIRE_EQUAL(set.morton_codes.get_size(), 16);
+    REQUIRE_EQUAL(set.morton_codes.copy_to_stdvec(), test_mortons);
+
+    auto sorted_set
+        = shamtree::sort_morton_set(shamsys::instance::get_compute_scheduler_ptr(), std::move(set));
+
+    REQUIRE_EQUAL(sorted_set.cnt_obj, partpos.size());
+    REQUIRE_EQUAL(sorted_set.morton_count, 16);
+    REQUIRE_EQUAL(sorted_set.sorted_morton_codes.get_size(), 16);
+    REQUIRE_EQUAL(sorted_set.sorted_morton_codes.copy_to_stdvec(), test_mortons_sorted);
+    REQUIRE_EQUAL(sorted_set.map_morton_id_to_obj_id.get_size(), 16);
+    REQUIRE_EQUAL(sorted_set.map_morton_id_to_obj_id.copy_to_stdvec(), index_map_obj_idx);
+
+    auto reduced_set = shamtree::reduce_morton_set(
+        shamsys::instance::get_compute_scheduler_ptr(), std::move(sorted_set), 5);
+
+    REQUIRE_EQUAL(reduced_set.morton_codes_set.cnt_obj, partpos.size());
+    REQUIRE_EQUAL(reduced_set.morton_codes_set.morton_count, 16);
+    REQUIRE_EQUAL(reduced_set.morton_codes_set.sorted_morton_codes.get_size(), 16);
+    REQUIRE_EQUAL(
+        reduced_set.morton_codes_set.sorted_morton_codes.copy_to_stdvec(), test_mortons_sorted);
+    REQUIRE_EQUAL(reduced_set.morton_codes_set.map_morton_id_to_obj_id.get_size(), 16);
+    REQUIRE_EQUAL(
+        reduced_set.morton_codes_set.map_morton_id_to_obj_id.copy_to_stdvec(), index_map_obj_idx);
+
+    REQUIRE_EQUAL(reduced_set.reduce_code_count, 1);
+    REQUIRE_EQUAL(reduced_set.reduced_morton_codes.get_size(), 1);
+    REQUIRE_EQUAL(reduced_set.reduced_morton_codes.copy_to_stdvec(), reduced_morton_codes);
+    REQUIRE_EQUAL(reduced_set.buf_reduc_index_map.get_size(), 1 + 2);
+    REQUIRE_EQUAL(reduced_set.buf_reduc_index_map.copy_to_stdvec(), buf_reduc_index_map);
+
+    auto tree = shamtree::karras_tree_from_morton_set(
+        shamsys::instance::get_compute_scheduler_ptr(),
+        reduced_set.reduced_morton_codes.get_size(),
+        reduced_set.reduced_morton_codes);
+
+    REQUIRE_EQUAL(tree.buf_lchild_id.copy_to_stdvec(), expected_lchild_id);
+    REQUIRE_EQUAL(tree.buf_rchild_id.copy_to_stdvec(), expected_rchild_id);
+    REQUIRE_EQUAL(tree.buf_lchild_flag.copy_to_stdvec(), expected_lchild_flag);
+    REQUIRE_EQUAL(tree.buf_rchild_flag.copy_to_stdvec(), expected_rchild_flag);
+    REQUIRE_EQUAL(tree.buf_endrange.copy_to_stdvec(), expected_endrange);
+
+    REQUIRE_EQUAL(tree.buf_lchild_id.get_size(), 0);
+    REQUIRE_EQUAL(tree.buf_rchild_id.get_size(), 0);
+    REQUIRE_EQUAL(tree.buf_lchild_flag.get_size(), 0);
+    REQUIRE_EQUAL(tree.buf_rchild_flag.get_size(), 0);
+    REQUIRE_EQUAL(tree.buf_endrange.get_size(), 0);
+
+    auto aabbs = shamtree::compute_tree_aabb_from_positions(
+        tree,
+        reduced_set.get_cell_iterator(),
+        shamtree::new_empty_karras_radix_tree_aabb<Tvec>(),
+        partpos_buf);
+
+    auto ret_aabb_min = aabbs.buf_aabb_min.copy_to_stdvec();
+    auto ret_aabb_max = aabbs.buf_aabb_max.copy_to_stdvec();
+
+    REQUIRE_EQUAL(aabbs.buf_aabb_min.get_size(), 2 * 0 + 1);
+    REQUIRE_EQUAL(aabbs.buf_aabb_max.get_size(), 2 * 0 + 1);
+
+    auto vec_equals = [](std::vector<Tvec> a, std::vector<Tvec> b) {
+        bool same_size = a.size() == b.size();
+        if (!same_size) {
+            return false;
+        }
+        for (size_t i = 0; i < a.size(); i++) {
+            same_size = same_size && sham::equals(a[i], b[i]);
+        }
+        return same_size;
+    };
+
+    REQUIRE_EQUAL_CUSTOM_COMP(ret_aabb_min, aabb_min, vec_equals);
+    REQUIRE_EQUAL_CUSTOM_COMP(ret_aabb_max, aabb_max, vec_equals);
+}

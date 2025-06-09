@@ -33,6 +33,12 @@ namespace shamtree {
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
+        u32 int_cell_count = tree.get_internal_cell_count();
+
+        if (int_cell_count == 0) {
+            return;
+        }
+
         auto step = [&]() {
             auto traverser = tree.get_structure_traverser();
 
@@ -40,7 +46,7 @@ namespace shamtree {
                 q,
                 sham::MultiRef{traverser},
                 sham::MultiRef{tree_aabb.buf_aabb_min, tree_aabb.buf_aabb_max},
-                tree.get_internal_cell_count(),
+                int_cell_count,
                 [=](u32 gid,
                     auto tree_traverser,
                     Tvec *__restrict cell_min,

@@ -18,8 +18,10 @@
 #include "shambase/aliases_int.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shamtree/KarrasTreeTraverser.hpp"
 
 namespace shamtree {
+
     /**
      * @class KarrasRadixTree
      * @brief A data structure representing a Karras Radix Tree.
@@ -30,49 +32,7 @@ namespace shamtree {
      */
     class KarrasRadixTree;
 
-    struct KarrasTreeTraverser;
 } // namespace shamtree
-
-struct shamtree::KarrasTreeTraverser {
-    const sham::DeviceBuffer<u32> &buf_lchild_id;
-    const sham::DeviceBuffer<u32> &buf_rchild_id;
-    const sham::DeviceBuffer<u8> &buf_lchild_flag;
-    const sham::DeviceBuffer<u8> &buf_rchild_flag;
-    u32 offset_leaf;
-
-    struct acc {
-        const u32 *lchild_id;
-        const u32 *rchild_id;
-        const u8 *lchild_flag;
-        const u8 *rchild_flag;
-        u32 offset_leaf;
-
-        inline u32 get_left_child(u32 id) const {
-            return lchild_id[id] + offset_leaf * u32(lchild_flag[id]);
-        }
-        inline u32 get_right_child(u32 id) const {
-            return rchild_id[id] + offset_leaf * u32(rchild_flag[id]);
-        }
-
-        inline bool is_id_leaf(u32 id) const { return id >= offset_leaf; }
-    };
-
-    inline acc get_read_access(sham::EventList &deps) const {
-        return acc{
-            buf_lchild_id.get_read_access(deps),
-            buf_rchild_id.get_read_access(deps),
-            buf_lchild_flag.get_read_access(deps),
-            buf_rchild_flag.get_read_access(deps),
-            offset_leaf};
-    }
-
-    inline void complete_event_state(sycl::event e) const {
-        buf_lchild_id.complete_event_state(e);
-        buf_rchild_id.complete_event_state(e);
-        buf_lchild_flag.complete_event_state(e);
-        buf_rchild_flag.complete_event_state(e);
-    }
-};
 
 class shamtree::KarrasRadixTree {
 
@@ -159,4 +119,5 @@ namespace shamtree {
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes);
+
 } // namespace shamtree

@@ -57,56 +57,38 @@ class shamtree::KarrasRadixTreeAABB {
 
 namespace shamtree {
 
+    /**
+     * @brief Prepare a KarrasRadixTreeAABB from a KarrasRadixTree.
+     *
+     * This function prepares a KarrasRadixTreeAABB from a KarrasRadixTree. It allocates the
+     * necessary buffers to store the AABBs of all cells in the tree and recycles the buffers
+     * from the recycled_tree_aabb argument if possible.
+     *
+     * @param tree The KarrasRadixTree to prepare the AABBs for.
+     * @param recycled_tree_aabb The KarrasRadixTreeAABB to recycle the buffers from.
+     *
+     * @return The prepared KarrasRadixTreeAABB.
+     */
     template<class Tvec>
-    inline KarrasRadixTreeAABB<Tvec> prepare_karras_radix_tree_aabb(
-        const KarrasRadixTree &tree, KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb) {
+    KarrasRadixTreeAABB<Tvec> prepare_karras_radix_tree_aabb(
+        const KarrasRadixTree &tree, KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb);
 
-        KarrasRadixTreeAABB<Tvec> ret = std::forward<KarrasRadixTreeAABB<Tvec>>(recycled_tree_aabb);
-
-        ret.buf_cell_min.resize(tree.get_total_cell_count());
-        ret.buf_cell_max.resize(tree.get_total_cell_count());
-
-        return ret;
-    }
-
+    /**
+     * @brief Propagates the axis-aligned bounding boxes (AABBs) upwards in the tree.
+     *
+     * This function updates the AABBs for internal nodes in a KarrasRadixTree by
+     * combining the AABBs of their child nodes. It iteratively traverses the nodes
+     * of the tree, computing the minimum and maximum bounds for each internal node
+     * by taking the minimum and maximum of the bounds of its left and right children.
+     *
+     * @tparam Tvec The vector type used for the AABB bounds.
+     * @param tree_aabb A reference to the KarrasRadixTreeAABB containing the AABBs
+     *                  of the tree nodes.
+     * @param tree The KarrasRadixTree whose structure is used to determine the
+     *             parent-child relationships.
+     */
     template<class Tvec>
-    inline KarrasRadixTreeAABB<Tvec>
-    propagate_aabb_up(KarrasRadixTreeAABB<Tvec> &tree_aabb, const KarrasRadixTree &tree) {
-
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-
-        auto step = [&]() {
-            auto traverser = tree.get_structure_traverser();
-
-            sham::kernel_call(
-                q,
-                sham::MultiRef{traverser},
-                sham::MultiRef{tree_aabb.buf_cell_min, tree_aabb.buf_cell_max},
-                tree.get_internal_cell_count(),
-                [=](u32 gid,
-                    auto tree_traverser,
-                    Tvec *__restrict cell_min,
-                    Tvec *__restrict cell_max) {
-                    u32 left_child  = tree_traverser.get_left_child(gid);
-                    u32 right_child = tree_traverser.get_right_child(gid);
-
-                    Tvec bminl = cell_min[left_child];
-                    Tvec bminr = cell_min[right_child];
-                    Tvec bmaxl = cell_max[left_child];
-                    Tvec bmaxr = cell_max[right_child];
-
-                    Tvec bmin = sham::min(bminl, bminr);
-                    Tvec bmax = sham::max(bmaxl, bmaxr);
-
-                    cell_min[gid] = bmin;
-                    cell_max[gid] = bmax;
-                });
-        };
-
-        for (u32 i = 0; i < tree.tree_depth; i++) {
-            step();
-        }
-    }
+    void propagate_aabb_up(KarrasRadixTreeAABB<Tvec> &tree_aabb, const KarrasRadixTree &tree);
 
     /**
      * @brief Compute the AABB of all cells in the tree.
@@ -119,53 +101,29 @@ namespace shamtree {
      * @return The tree AABBs.
      */
     template<class Tvec>
-    inline KarrasRadixTreeAABB<Tvec> compute_tree_aabb(
+    KarrasRadixTreeAABB<Tvec> compute_tree_aabb(
         const KarrasRadixTree &tree,
         KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
-        std::function<void(KarrasRadixTreeAABB<Tvec> &, u32)> fct_fill_leaf) {
+        const std::function<void(KarrasRadixTreeAABB<Tvec> &, u32)> &fct_fill_leaf);
 
-        auto aabbs = prepare_karras_radix_tree_aabb(
-            tree, std::forward<KarrasRadixTreeAABB<Tvec>>(recycled_tree_aabb));
-
-        fct_fill_leaf(aabbs, tree.get_internal_cell_count());
-
-        propagate_aabb_up(aabbs, tree);
-    }
-
+    /**
+     * @brief Compute the AABB of all cells in the tree from positions.
+     *
+     * This function computes the AABBs of all cells in the tree by iterating over the
+     * objects in each cell and computing the minimum and maximum bounds.
+     *
+     * @param tree The tree to compute the AABBs for.
+     * @param cell_it The cell iterator to use to access the cells.
+     * @param recycled_tree_aabb The tree AABBs to recycle.
+     * @param positions The buffer of positions to use for computing the AABBs.
+     *
+     * @return The tree AABBs.
+     */
     template<class Tvec>
-    inline KarrasRadixTreeAABB<Tvec> compute_tree_aabb_from_positions(
+    KarrasRadixTreeAABB<Tvec> compute_tree_aabb_from_positions(
         const KarrasRadixTree &tree,
         const CellIterator &cell_it,
         KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
-        sham::DeviceBuffer<Tvec> &positions) {
-
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-
-        auto fill_leafs = [&](KarrasRadixTreeAABB<Tvec> &tree_aabb, u32 leaf_offset) {
-            sham::kernel_call(
-                q,
-                sham::MultiRef{positions, cell_it},
-                sham::MultiRef{tree_aabb.buf_cell_min, tree_aabb.buf_cell_max},
-                tree.get_leaf_count(),
-                [leaf_offset](
-                    u32 i, const Tvec *pos, auto cell_iter, Tvec *comp_min, Tvec *comp_max) {
-                    Tvec min = shambase::VectorProperties<Tvec>::get_max();
-                    Tvec max = -shambase::VectorProperties<Tvec>::get_max();
-
-                    cell_iter.for_each_in_cell(i, [&](u32 obj_id) {
-                        Tvec r = pos[obj_id];
-
-                        min = sham::min(min, r);
-                        max = sham::max(max, r);
-                    });
-
-                    comp_min[leaf_offset + i] = min;
-                    comp_max[leaf_offset + i] = max;
-                });
-        };
-
-        return compute_tree_aabb(
-            tree, std::forward<KarrasRadixTreeAABB<Tvec>>(recycled_tree_aabb), fill_leafs);
-    }
+        sham::DeviceBuffer<Tvec> &positions);
 
 } // namespace shamtree

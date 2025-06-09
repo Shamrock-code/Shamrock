@@ -69,7 +69,7 @@ namespace shamtree {
          * `buf_sort_index_map` and `buf_reduc_index_map` buffers. The
          * access is registered in the `deps` event list.
          */
-        inline acc get_read_access(sham::EventList &deps) {
+        inline acc get_read_access(sham::EventList &deps) const {
             return acc{
                 buf_sort_index_map.get_read_access(deps),
                 buf_reduc_index_map.get_read_access(deps)};
@@ -84,7 +84,7 @@ namespace shamtree {
          * of both `buf_sort_index_map` and `buf_reduc_index_map`, indicating
          * that the event has been completed for these buffers.
          */
-        inline void complete_event_state(sycl::event e) {
+        inline void complete_event_state(sycl::event e) const {
             buf_sort_index_map.complete_event_state(e);
             buf_reduc_index_map.complete_event_state(e);
         }

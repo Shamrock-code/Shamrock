@@ -53,6 +53,11 @@ class shamtree::KarrasRadixTreeAABB {
     KarrasRadixTreeAABB(
         sham::DeviceBuffer<Tvec> &&buf_cell_min, sham::DeviceBuffer<Tvec> &&buf_cell_max)
         : buf_aabb_min(std::move(buf_cell_min)), buf_aabb_max(std::move(buf_cell_max)) {}
+
+    static inline KarrasRadixTreeAABB make_empty(sham::DeviceScheduler_ptr dev_sched) {
+        return KarrasRadixTreeAABB{
+            sham::DeviceBuffer<Tvec>(0, dev_sched), sham::DeviceBuffer<Tvec>(0, dev_sched)};
+    }
 };
 
 namespace shamtree {

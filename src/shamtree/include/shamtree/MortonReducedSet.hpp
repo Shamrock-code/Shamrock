@@ -61,6 +61,14 @@ namespace shamtree {
         inline CellIterator get_cell_iterator() {
             return CellIterator{morton_codes_set.map_morton_id_to_obj_id, buf_reduc_index_map};
         }
+
+        inline static MortonReducedSet make_empty(sham::DeviceScheduler_ptr dev_sched) {
+            return MortonReducedSet{
+                MortonCodeSortedSet<Tmorton, Tvec>::make_empty(dev_sched),
+                0,
+                sham::DeviceBuffer<u32>(0, dev_sched),
+                sham::DeviceBuffer<Tmorton>(0, dev_sched)};
+        }
     };
 
     /**

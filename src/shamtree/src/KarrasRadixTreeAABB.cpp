@@ -126,6 +126,7 @@ namespace shamtree {
 
 } // namespace shamtree
 
+#ifndef DOXYGEN
 template shamtree::KarrasRadixTreeAABB<f64_3> shamtree::prepare_karras_radix_tree_aabb<f64_3>(
     const KarrasRadixTree &tree, shamtree::KarrasRadixTreeAABB<f64_3> &&recycled_tree_aabb);
 
@@ -142,3 +143,4 @@ template shamtree::KarrasRadixTreeAABB<f64_3> shamtree::compute_tree_aabb_from_p
     const CellIterator &cell_it,
     shamtree::KarrasRadixTreeAABB<f64_3> &&recycled_tree_aabb,
     sham::DeviceBuffer<f64_3> &positions);
+#endif

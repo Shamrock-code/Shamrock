@@ -73,6 +73,16 @@ class shamtree::KarrasRadixTree {
             buf_rchild_flag,
             get_internal_cell_count()};
     }
+
+    static inline KarrasRadixTree make_empty(sham::DeviceScheduler_ptr dev_sched) {
+        return KarrasRadixTree{
+            sham::DeviceBuffer<u32>(0, dev_sched),
+            sham::DeviceBuffer<u32>(0, dev_sched),
+            sham::DeviceBuffer<u8>(0, dev_sched),
+            sham::DeviceBuffer<u8>(0, dev_sched),
+            sham::DeviceBuffer<u32>(0, dev_sched),
+            0};
+    }
 };
 
 namespace shamtree {

@@ -61,6 +61,59 @@ struct shamtree::KarrasTreeTraverserAccessed {
 
     /// is the given id a leaf
     inline bool is_id_leaf(u32 id) const { return id >= offset_leaf; }
+
+    /// stack based tree traversal
+    template<u32 tree_depth, class Functor1, class Functor2, class Functor3>
+    inline void stack_based_traversal(
+        Functor1 &&traverse_condition,
+        Functor2 &&on_found_leaf,
+        Functor3 &&on_excluded_node) const {
+
+        static constexpr u32 _nindex = 4294967295;
+
+        // On a Karras tree, the root is always 0
+        u32 root_node = 0;
+
+        // Init the stack state
+        std::array<u32, tree_depth> id_stack;
+
+        u32 stack_cursor       = tree_depth - 1;
+        id_stack[stack_cursor] = root_node;
+
+        // until the stack is empty
+        while (stack_cursor < tree_depth) {
+
+            // Pop the top of the stack
+            u32 current_node_id    = id_stack[stack_cursor];
+            id_stack[stack_cursor] = _nindex;
+            stack_cursor++;
+
+            // check iteraction creteria
+            bool cur_id_valid = traverse_condition(current_node_id);
+
+            if (cur_id_valid) { // leaf or cell satisfies the criteria
+
+                if (is_id_leaf(current_node_id)) { // I found a leaf !!!!!
+
+                    on_found_leaf(current_node_id);
+
+                } else { // it can interact & not leaf => stack
+
+                    u32 lid = get_left_child(current_node_id);
+                    u32 rid = get_right_child(current_node_id);
+
+                    id_stack[stack_cursor - 1] = rid;
+                    stack_cursor--;
+
+                    id_stack[stack_cursor - 1] = lid;
+                    stack_cursor--;
+                }
+            } else {
+                // This does not satisfy the criteria => excluded case (gravity for ex.)
+                on_excluded_node(current_node_id);
+            }
+        }
+    }
 };
 
 struct shamtree::KarrasTreeTraverser {

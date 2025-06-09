@@ -25,6 +25,7 @@ set(Sources
     src/MortonReducedSet.cpp
     src/KarrasRadixTree.cpp
     src/KarrasRadixTreeAABB.cpp
+    src/LeafCompressedBVH.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

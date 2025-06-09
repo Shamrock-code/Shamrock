@@ -44,7 +44,9 @@ class shamtree::LeafCompressedBVH {
         u32 compression_level);
 
     // void rebuild_from_position_range(sham::DeviceBuffer<Tvec> &min, sham::DeviceBuffer<Tvec>
-    // &max);
+    // &max,
+    //  shammath::AABB<Tvec> &bounding_box,
+    //  u32 compression_level);
 
     inline shamtree::LCBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() {
         return {

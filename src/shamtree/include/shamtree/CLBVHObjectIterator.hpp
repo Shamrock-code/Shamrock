@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file LCBVHObjectIterator.hpp
+ * @file CLBVHObjectIterator.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  */
@@ -26,15 +26,15 @@
 namespace shamtree {
 
     template<class Tmorton, class Tvec, u32 dim>
-    struct LCBVHObjectIteratorAccessed;
+    struct CLBVHObjectIteratorAccessed;
 
     template<class Tmorton, class Tvec, u32 dim>
-    struct LCBVHObjectIterator;
+    struct CLBVHObjectIterator;
 
 } // namespace shamtree
 
 template<class Tmorton, class Tvec, u32 dim>
-struct shamtree::LCBVHObjectIteratorAccessed {
+struct shamtree::CLBVHObjectIteratorAccessed {
 
     static constexpr u32 tree_depth_max
         = shamrock::sfc::MortonCodes<Tmorton, 3>::significant_bits + 1;
@@ -74,13 +74,13 @@ struct shamtree::LCBVHObjectIteratorAccessed {
 };
 
 template<class Tmorton, class Tvec, u32 dim>
-struct shamtree::LCBVHObjectIterator {
+struct shamtree::CLBVHObjectIterator {
     CellIterator cell_iterator;
     KarrasTreeTraverser tree_traverser;
     const sham::DeviceBuffer<Tvec> &aabb_min;
     const sham::DeviceBuffer<Tvec> &aabb_max;
 
-    using acc = LCBVHObjectIteratorAccessed<Tmorton, Tvec, dim>;
+    using acc = CLBVHObjectIteratorAccessed<Tmorton, Tvec, dim>;
 
     /// get read only accessor
     inline acc get_read_access(sham::EventList &deps) const {

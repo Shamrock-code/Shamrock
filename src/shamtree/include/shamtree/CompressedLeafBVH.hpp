@@ -10,33 +10,33 @@
 #pragma once
 
 /**
- * @file LeafCompressedBVH.hpp
+ * @file CompressedLeafBVH.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @brief
  */
 
 #include "shammath/sfc/morton.hpp"
+#include "shamtree/CLBVHObjectIterator.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/KarrasRadixTree.hpp"
 #include "shamtree/KarrasRadixTreeAABB.hpp"
-#include "shamtree/LCBVHObjectIterator.hpp"
 #include "shamtree/MortonReducedSet.hpp"
 
 namespace shamtree {
 
     template<class Tmorton, class Tvec, u32 dim>
-    class LeafCompressedBVH;
+    class CompressedLeafBVH;
 
 } // namespace shamtree
 
 template<class Tmorton, class Tvec, u32 dim>
-class shamtree::LeafCompressedBVH {
+class shamtree::CompressedLeafBVH {
     public:
     MortonReducedSet<Tmorton, Tvec, dim> reduced_morton_set;
     KarrasRadixTree structure;
     KarrasRadixTreeAABB<Tvec> aabbs;
 
-    static LeafCompressedBVH make_empty(sham::DeviceScheduler_ptr dev_sched);
+    static CompressedLeafBVH make_empty(sham::DeviceScheduler_ptr dev_sched);
 
     void rebuild_from_positions(
         sham::DeviceBuffer<Tvec> &positions,
@@ -48,7 +48,7 @@ class shamtree::LeafCompressedBVH {
     //  shammath::AABB<Tvec> &bounding_box,
     //  u32 compression_level);
 
-    inline shamtree::LCBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() {
+    inline shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() {
         return {
             reduced_morton_set.get_cell_iterator(),
             structure.get_structure_traverser(),

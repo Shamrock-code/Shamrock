@@ -13,8 +13,8 @@
 #include "shamcomm/logs.hpp"
 #include "shammath/AABB.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shamtree/LCBVHObjectIterator.hpp"
-#include "shamtree/LeafCompressedBVH.hpp"
+#include "shamtree/CLBVHObjectIterator.hpp"
+#include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/TreeTraversal.hpp"
 #include <vector>
 
@@ -49,7 +49,7 @@ TestStart(Unittest, "shamtree/LCBVHObjectIterator", test_lcbvh_object_iterator, 
 
     partpos_buf.copy_from_stdvec(partpos);
 
-    auto bvh = shamtree::LeafCompressedBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
+    auto bvh = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
 
     bvh.rebuild_from_positions(partpos_buf, bb, 1);
 
@@ -258,7 +258,7 @@ TestStart(
 
     partpos_buf.copy_from_stdvec(partpos);
 
-    auto bvh = shamtree::LeafCompressedBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
+    auto bvh = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
 
     bvh.rebuild_from_positions(partpos_buf, bb, 8);
 

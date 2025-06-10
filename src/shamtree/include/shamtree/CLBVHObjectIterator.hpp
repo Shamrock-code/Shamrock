@@ -25,9 +25,20 @@
 
 namespace shamtree {
 
+    /// Accessed version of CLBVHObjectIterator
     template<class Tmorton, class Tvec, u32 dim>
     struct CLBVHObjectIteratorAccessed;
 
+    /**
+     * @class CLBVHObjectIterator
+     * @brief
+     * This class is designed to traverse a BVH tree represented as a
+     * Compressed Leaf BVH (CLBVH) and a Karras Radix Tree.
+     *
+     * @tparam Tmorton type of the morton codes
+     * @tparam Tvec type of the vector (usually a float_3)
+     * @tparam dim dimensionality of the problem
+     */
     template<class Tmorton, class Tvec, u32 dim>
     struct CLBVHObjectIterator;
 
@@ -36,14 +47,30 @@ namespace shamtree {
 template<class Tmorton, class Tvec, u32 dim>
 struct shamtree::CLBVHObjectIteratorAccessed {
 
+    /// maximum depth of the tree according to the morton codes
     static constexpr u32 tree_depth_max
         = shamrock::sfc::MortonCodes<Tmorton, 3>::significant_bits + 1;
 
-    CellIterator::acc cell_iterator;
-    KarrasTreeTraverserAccessed tree_traverser;
-    const Tvec *aabb_min;
-    const Tvec *aabb_max;
+    CellIterator::acc cell_iterator;            ///< Cell iterator
+    KarrasTreeTraverserAccessed tree_traverser; ///< Tree traverser
+    const Tvec *aabb_min;                       ///< Minimum of the AABB
+    const Tvec *aabb_max;                       ///< Maximum of the AABB
 
+    /**
+     * @brief Traverses the tree by calling tree_traverser's stack_based_traversal.
+     *
+     * This function is a convenience wrapper around the stack_based_traversal
+     * function of the tree_traverser.
+     *
+     * This function is a shorthand to supply the tree depth
+     *
+     * @param[in] traverse_condition a function taking a node_id and returning a
+     * boolean indicating whether to traverse the node further or not.
+     * @param[in] on_found_leaf a function taking a node_id and being called when a
+     * leaf node is reached.
+     * @param[in] on_excluded_node a function taking a node_id and being called when
+     * a node is excluded from the traversal.
+     */
     template<class Functor1, class Functor2, class Functor3>
     inline void traverse_tree_base(
         Functor1 &&traverse_condition,
@@ -56,16 +83,24 @@ struct shamtree::CLBVHObjectIteratorAccessed {
             std::forward<Functor3>(on_excluded_node));
     }
 
+    /**
+     * @brief Traverses the tree and executes a function for each found object.
+     *
+     * @param[in] traverse_condition_with_aabb A function taking a node_id and its AABB,
+     * and returning a boolean indicating whether to traverse the node further.
+     * @param[in] on_found_object A function to be called for each object found in a leaf
+     * node that meets the traversal condition.
+     */
     template<class Functor1, class Functor2>
     inline void
     rtree_for(Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_object) const {
 
         traverse_tree_base(
-            [&](u32 node_id) {
+            [&](u32 node_id) { // interaction crit
                 return traverse_condition_with_aabb(
                     node_id, shammath::AABB<Tvec>{aabb_min[node_id], aabb_max[node_id]});
             },
-            [&](u32 node_id) {
+            [&](u32 node_id) { // on object found
                 u32 leaf_id = node_id - tree_traverser.offset_leaf;
                 cell_iterator.for_each_in_cell(leaf_id, on_found_object);
             },
@@ -75,11 +110,12 @@ struct shamtree::CLBVHObjectIteratorAccessed {
 
 template<class Tmorton, class Tvec, u32 dim>
 struct shamtree::CLBVHObjectIterator {
-    CellIterator cell_iterator;
-    KarrasTreeTraverser tree_traverser;
-    const sham::DeviceBuffer<Tvec> &aabb_min;
-    const sham::DeviceBuffer<Tvec> &aabb_max;
+    CellIterator cell_iterator;               ///< Cell iterator
+    KarrasTreeTraverser tree_traverser;       ///< Tree traverser
+    const sham::DeviceBuffer<Tvec> &aabb_min; ///< Minimum of the AABB
+    const sham::DeviceBuffer<Tvec> &aabb_max; ///< Maximum of the AABB
 
+    /// shorthand for CLBVHObjectIteratorAccessed
     using acc = CLBVHObjectIteratorAccessed<Tmorton, Tvec, dim>;
 
     /// get read only accessor

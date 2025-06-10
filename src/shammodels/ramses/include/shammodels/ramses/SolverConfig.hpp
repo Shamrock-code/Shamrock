@@ -16,6 +16,8 @@
  *
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
@@ -23,6 +25,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <stdexcept>
 
 namespace shammodels::basegodunov {
 
@@ -232,6 +235,15 @@ struct shammodels::basegodunov::SolverConfig {
 
         if (is_dust_on()) {
             logger::warn_ln("Ramses::SolverConfig", "Dust is experimental");
+        }
+
+        if (is_gravity_on()) {
+            logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental");
+            u32 _mode = gravity_config.gravity_mode;
+            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 == "
+                "NoGravity mode)",
+                _mode));
         }
     }
 };

@@ -36,6 +36,15 @@ class shamtree::CompressedLeafBVH {
     KarrasRadixTree structure;
     KarrasRadixTreeAABB<Tvec> aabbs;
 
+    CompressedLeafBVH(
+        MortonReducedSet<Tmorton, Tvec, dim> &&reduced_morton_set,
+        KarrasRadixTree &&structure,
+        KarrasRadixTreeAABB<Tvec> &&aabbs)
+        : reduced_morton_set(
+              std::forward<MortonReducedSet<Tmorton, Tvec, dim>>(reduced_morton_set)),
+          structure(std::forward<KarrasRadixTree>(structure)),
+          aabbs(std::forward<KarrasRadixTreeAABB<Tvec>>(aabbs)) {}
+
     static CompressedLeafBVH make_empty(sham::DeviceScheduler_ptr dev_sched);
 
     void rebuild_from_positions(

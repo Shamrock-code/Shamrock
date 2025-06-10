@@ -157,7 +157,7 @@ struct shammodels::basegodunov::SolverConfig {
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
 
-    inline bool should_compute_rho_mean() { return false; }
+    inline bool should_compute_rho_mean() { return is_gravity_on() && is_boundary_periodic(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config
@@ -181,10 +181,24 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config
     //////////////////////////////////////////////////////////////////////////////////////////////
+    inline Tscal get_constant_G() {
+        if (!unit_sys) {
+            logger::warn_ln("amr::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.G();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.G();
+        }
+    }
+    inline bool is_boundary_periodic() { return true; }
     GravityConfig<Tvec> gravity_config{};
-    inline Tscal fourPiG() { return gravity_config.get_fourPiG(); }
+    inline Tscal fourPiG() {
+        gravity_config.G_value = get_constant_G();
+        return gravity_config.get_fourPiG();
+    }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////

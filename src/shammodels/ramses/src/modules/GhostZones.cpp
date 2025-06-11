@@ -328,7 +328,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         ghost_layout.add_field<Tvec>("rhovel_dust", ndust * AMRBlock::block_size);
     }
 
-    if (solver_config.is_self_gravity_on()) {
+    if (solver_config.is_gravity_on()) {
         ghost_layout.add_field<Tscal>("phi", AMRBlock::block_size);
     }
 
@@ -344,7 +344,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         irhovel_d_interf = ghost_layout.get_field_idx<Tvec>("rhovel_dust");
     }
 
-    if (solver_config.is_self_gravity_on()) {
+    if (solver_config.is_gravity_on()) {
         iphi_interf = ghost_layout.get_field_idx<Tscal>("phi");
     }
 
@@ -363,7 +363,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         irhovel_d = pdl.get_field_idx<Tvec>("rhovel_dust");
     }
 
-    if (solver_config.is_self_gravity_on()) {
+    if (solver_config.is_gravity_on()) {
         iphi = pdl.get_field_idx<Tscal>("phi");
     }
 
@@ -400,7 +400,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
                     buf_idx, cnt, pdat.get_field<Tvec>(irhovel_d_interf));
             }
 
-            if (solver_config.is_self_gravity_on()) {
+            if (solver_config.is_gravity_on()) {
                 sender_patch.get_field<Tscal>(iphi).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tscal>(iphi_interf));
             }
@@ -446,7 +446,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
                 pdat_new.get_field<Tvec>(irhovel_d_interf).insert(pdat.get_field<Tvec>(irhovel_d));
             }
 
-            if (solver_config.is_self_gravity_on()) {
+            if (solver_config.is_gravity_on()) {
                 pdat_new.get_field<Tscal>(iphi_interf).insert(pdat.get_field<Tscal>(iphi));
             }
 

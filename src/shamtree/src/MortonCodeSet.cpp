@@ -71,6 +71,8 @@ namespace shamtree {
         sham::DeviceBuffer<Tmorton> morton_codes
             = std::forward<sham::DeviceBuffer<Tmorton>>(cache_buf_morton_codes);
 
+        morton_codes.resize(morton_count);
+
         if (morton_count < cnt_obj) {
             shambase::throw_with_loc<std::invalid_argument>(shambase::format(
                 "MortonCodeSet: morton_count < cnt_obj\n morton_count: {}, cnt_obj: {}",
@@ -147,3 +149,19 @@ template shamtree::MortonCodeSet<u64, f64_3, 3> shamtree::morton_code_set_from_p
     sham::DeviceBuffer<f64_3> &pos_buf,
     u32 cnt_obj,
     u32 morton_count);
+
+template shamtree::MortonCodeSet<u32, f64_3, 3> shamtree::morton_code_set_from_positions(
+    const sham::DeviceScheduler_ptr &dev_sched,
+    shammath::AABB<f64_3> bounding_box,
+    sham::DeviceBuffer<f64_3> &pos_buf,
+    u32 cnt_obj,
+    u32 morton_count,
+    sham::DeviceBuffer<u32> &&cache_buf_morton_codes);
+
+template shamtree::MortonCodeSet<u64, f64_3, 3> shamtree::morton_code_set_from_positions(
+    const sham::DeviceScheduler_ptr &dev_sched,
+    shammath::AABB<f64_3> bounding_box,
+    sham::DeviceBuffer<f64_3> &pos_buf,
+    u32 cnt_obj,
+    u32 morton_count,
+    sham::DeviceBuffer<u64> &&cache_buf_morton_codes);

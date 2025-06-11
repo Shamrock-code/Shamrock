@@ -82,7 +82,8 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     )  #  TODO : remember to add possibility of different CFL for fluids(e.g Csafe_gas and Csafe_dust ...)
     cfg.set_eos_gamma(1.4)  # set adiabatic index gamma , here adiabatic EOS
     cfg.set_dust_mode_dhll(2)  # enable dust config
-    cfg.set_drag_mode_irk1(True)  # enable drag config
+    # cfg.set_drag_mode_irk1(True)  # enable drag config
+    cfg.set_drag_mode_expo(True)
     cfg.set_face_time_interpolation(False)
 
     # ======= set drag coefficients for test B ========

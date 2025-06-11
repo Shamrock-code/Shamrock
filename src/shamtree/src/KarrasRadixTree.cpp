@@ -13,11 +13,14 @@
  * @brief
  */
 
-#include "shamtree/KarrasRadixTree.hpp"
+#include "shambase/aliases_int.hpp"
+#include "shambase/type_traits.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shammath/sfc/morton.hpp"
+#include "shamtree/KarrasRadixTree.hpp"
 #include "shamtree/MortonCodeSet.hpp"
 #include <utility>
 
@@ -142,13 +145,20 @@ void __karras_alg(
 namespace shamtree {
 
     template<class Tmorton>
-    KarrasRadixTree karras_tree_from_reduced_morton_set(
+    inline u32 get_tree_depth() {
+        return shambase::bitsizeof<Tmorton>;
+    }
+
+    template<class Tmorton>
+    KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes,
         KarrasRadixTree &&recycled_tree) {
 
         u32 internal_cell_count = morton_count - 1;
+
+        recycled_tree.tree_depth = get_tree_depth<Tmorton>();
 
         recycled_tree.buf_lchild_id.resize(internal_cell_count);
         recycled_tree.buf_rchild_id.resize(internal_cell_count);
@@ -174,7 +184,7 @@ namespace shamtree {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<class Tmorton>
-    KarrasRadixTree karras_tree_from_reduced_morton_set(
+    KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes) {
@@ -192,10 +202,10 @@ namespace shamtree {
             std::move(buf_rchild_id),
             std::move(buf_lchild_flag),
             std::move(buf_rchild_flag),
-            std::move(buf_endrange));
+            std::move(buf_endrange),
+            get_tree_depth<Tmorton>());
 
-        return karras_tree_from_reduced_morton_set(
-            dev_sched, morton_count, morton_codes, std::move(tree));
+        return karras_tree_from_morton_set(dev_sched, morton_count, morton_codes, std::move(tree));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -203,27 +213,69 @@ namespace shamtree {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef DOXYGEN // To avoid doxygen complaining like always ...
-    template KarrasRadixTree karras_tree_from_reduced_morton_set(
+    template KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<u32> &morton_codes,
         KarrasRadixTree &&recycled_tree);
 
-    template KarrasRadixTree karras_tree_from_reduced_morton_set(
+    template KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<u32> &morton_codes);
 
-    template KarrasRadixTree karras_tree_from_reduced_morton_set(
+    template KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<u64> &morton_codes,
         KarrasRadixTree &&recycled_tree);
 
-    template KarrasRadixTree karras_tree_from_reduced_morton_set(
+    template KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<u64> &morton_codes);
 #endif
+
+    std::string karras_tree_to_dot_graph(KarrasRadixTree &tree) {
+
+        std::vector<u32> lchild_id  = {};
+        std::vector<u8> lchild_flag = {};
+        std::vector<u32> rchild_id  = {};
+        std::vector<u8> rchild_flag = {};
+        std::vector<u32> endrange   = {};
+
+        lchild_id   = tree.buf_lchild_id.copy_to_stdvec();
+        rchild_id   = tree.buf_rchild_id.copy_to_stdvec();
+        lchild_flag = tree.buf_lchild_flag.copy_to_stdvec();
+        rchild_flag = tree.buf_rchild_flag.copy_to_stdvec();
+        endrange    = tree.buf_endrange.copy_to_stdvec();
+
+        std::string dot_graph = "";
+
+        dot_graph += "digraph G {\n";
+        dot_graph += "rankdir=LR;\n";
+
+        for (u32 i = 0; i < tree.get_internal_cell_count(); ++i) {
+
+            if (lchild_flag[i] == 0) {
+                dot_graph
+                    += "i" + std::to_string(i) + " -> i" + std::to_string(lchild_id[i]) + ";\n";
+            } else {
+                dot_graph
+                    += "i" + std::to_string(i) + " -> l" + std::to_string(lchild_id[i]) + ";\n";
+            }
+
+            if (rchild_flag[i] == 0) {
+                dot_graph
+                    += "i" + std::to_string(i) + " -> i" + std::to_string(rchild_id[i]) + ";\n";
+            } else {
+                dot_graph
+                    += "i" + std::to_string(i) + " -> l" + std::to_string(rchild_id[i]) + ";\n";
+            }
+        }
+
+        dot_graph += "}\n";
+        return dot_graph;
+    }
 
 } // namespace shamtree

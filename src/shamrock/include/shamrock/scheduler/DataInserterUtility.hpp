@@ -19,6 +19,7 @@
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
+#include <mpi.h>
 
 namespace shamrock {
 
@@ -65,10 +66,10 @@ namespace shamrock {
             std::function<void(void)> load_balance_update) {
             using namespace shamrock::patch;
 
-            u32 pdat_ob_cnt = pdat_ins.get_obj_cnt();
+            u64 pdat_ob_cnt = pdat_ins.get_obj_cnt();
 
             {
-                u32 sum_push = shamalgs::collective::allreduce_sum(pdat_ob_cnt);
+                u64 sum_push = shamalgs::collective::allreduce_sum(pdat_ob_cnt);
                 if (shamcomm::world_rank() == 0) {
                     logger::info_ln(
                         "DataInserterUtility", "pushing data in scheduler, N =", sum_push);
@@ -106,12 +107,19 @@ namespace shamrock {
                 logger::info_ln(
                     "DataInserterUtility", "reattributing data done in ", treatrib.get_time_str());
             }
+            MPICHECK(MPI_Barrier(MPI_COMM_WORLD));
+
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("DataInserterUtility", "Compute load ...");
+            }
+
+            load_balance_update();
+
+            MPICHECK(MPI_Barrier(MPI_COMM_WORLD));
 
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln("DataInserterUtility", "run scheduler step ...");
             }
-
-            load_balance_update();
 
             sched.scheduler_step(false, false);
             sched.scheduler_step(true, true);

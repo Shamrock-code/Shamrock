@@ -258,12 +258,12 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
             buf_xyz.complete_event_state(e);
             buf_axyz_ext.complete_event_state(e);
 
-            result_acc_sinks.push_back(
-                shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt()));
-            // sph_acc_sink += shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt());
+            // result_acc_sinks.push_back(
+            //     shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt()));
+            sph_acc_sink += shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt());
         });
 
-        // result_acc_sinks.push_back(sph_acc_sink);
+        result_acc_sinks.push_back(sph_acc_sink);
     }
 
     std::vector<Tvec> gathered_result_acc_sinks{};

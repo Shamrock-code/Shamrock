@@ -44,18 +44,7 @@ namespace sham {
          *
          * @return The memory alignment of the type T in bytes
          */
-        static std::optional<size_t> get_alignment() {
-
-            size_t align          = alignof(T);
-            auto upgrade_multiple = [](size_t sz, size_t mult) -> size_t {
-                if (sz % mult)
-                    return sz + (mult - sz % mult);
-                return sz;
-            };
-            align = upgrade_multiple(align, 8); // CUDA require host is align to 8 bytes at least
-
-            return align;
-        }
+        static std::optional<size_t> get_alignment() { return alignof(T); }
 
         /**
          * @brief Convert a size in number of elements to a size in bytes

@@ -140,6 +140,14 @@ namespace shamcomm {
                 _int_type);
         }
 
+        inline u64 get_size() {
+            return std::visit(
+                [=](auto &&arg) {
+                    return arg->get_size();
+                },
+                _int_type);
+        }
+
         inline u64 get_bytesize() {
             return std::visit(
                 [=](auto &&arg) {

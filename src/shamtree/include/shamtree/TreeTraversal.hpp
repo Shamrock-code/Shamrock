@@ -378,7 +378,7 @@ namespace shamrock::tree {
         u32 sum_neigh_cnt;
         sham::DeviceBuffer<u32> index_neigh_map;
 
-        inline u64 get_bytesize() {
+        inline u64 get_memsize() {
             return cnt_neigh.get_bytesize() + scanned_cnt.get_bytesize()
                    + index_neigh_map.get_bytesize() + sizeof(u32);
         }

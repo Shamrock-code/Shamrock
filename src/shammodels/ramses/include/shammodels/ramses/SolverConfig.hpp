@@ -83,7 +83,7 @@ namespace shammodels::basegodunov {
         NoGravity = 0,
         CG        = 1, // conjuguate gradient
         PCG       = 2, // preconditioned conjuguate gradient
-        BIGSTAB   = 3, //
+        BIGSTAB   = 3, // bigstab
         MULTIGRID = 4  // multigrid
     };
 

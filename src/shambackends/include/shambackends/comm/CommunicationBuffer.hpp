@@ -140,18 +140,13 @@ namespace shamcomm {
                 _int_type);
         }
 
+        /**
+         * @brief Gets the size of the buffer (here in bytes)
+         */
         inline u64 get_size() {
             return std::visit(
                 [=](auto &&arg) {
                     return arg->get_size();
-                },
-                _int_type);
-        }
-
-        inline u64 get_bytesize() {
-            return std::visit(
-                [=](auto &&arg) {
-                    return arg->get_bytesize();
                 },
                 _int_type);
         }

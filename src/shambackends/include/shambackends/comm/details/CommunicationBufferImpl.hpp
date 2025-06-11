@@ -84,7 +84,6 @@ namespace shamcomm {
             }
 
             inline u64 get_size() { return usm_buf.get_size(); }
-            inline u64 get_bytesize() { return usm_buf.get_bytesize(); }
 
             inline sycl::buffer<u8> copy_back() { return usm_buf.copy_to_sycl_buffer(); }
             static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
@@ -144,7 +143,6 @@ namespace shamcomm {
             }
 
             inline u64 get_size() { return usm_buf.get_size(); }
-            inline u64 get_bytesize() { return usm_buf.get_bytesize(); }
 
             static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
             static sham::DeviceBuffer<u8> convert_usm(CommunicationBuffer &&buf) {

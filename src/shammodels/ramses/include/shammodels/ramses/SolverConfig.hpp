@@ -91,9 +91,7 @@ namespace shammodels::basegodunov {
     struct GravityConfig {
         using Tscal              = shambase::VecComponent<Tvec>;
         GravityMode gravity_mode = NoGravity;
-        Tscal G_value            = 1.;
         Tscal tol                = 1e-6;
-        inline Tscal get_fourPiG() { return 4 * M_PI * G_value; }
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() {
             if (gravity_mode != NoGravity) {

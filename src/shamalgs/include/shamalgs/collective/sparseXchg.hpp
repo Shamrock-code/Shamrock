@@ -86,7 +86,7 @@ namespace shamalgs::collective {
 
                 MPICHECK(MPI_Isend(
                     payload->get_ptr(),
-                    payload->get_bytesize(),
+                    payload->get_size(),
                     MPI_BYTE,
                     comm_ranks.y(),
                     i,

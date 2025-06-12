@@ -83,7 +83,7 @@ jobs:
       - name: Generate version file
         run: |
           cd build
-          ninja src/shamrock/CMakeFiles/shamlib.dir/version.cpp.o
+          ninja src/shamrock/version.cpp
 
       - name: Copy DB
         run: |

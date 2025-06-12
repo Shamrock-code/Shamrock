@@ -1,5 +1,4 @@
-# Exports will be provided by the new env script above this line
-# will be exported : ACPP_GIT_DIR, ACPP_BUILD_DIR, ACPP_INSTALL_DIR
+# Everything before this line will be provided by the new-env script
 
 # test if python3-dev installed
 # dpkg -l python3-dev

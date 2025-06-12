@@ -84,9 +84,8 @@ namespace shammodels::basegodunov {
     struct PassiveScalarGasConfig {
         u32 npscal_gas = 0;
 
-        inline bool is_gas_passive_scalar_on() {
-            return npscal_gas == 0;
-            
+        inline bool is_gas_passive_scalar_on() { return npscal_gas == 0; }
+    };
     enum GravityMode {
         NoGravity = 0,
         CG        = 1, // conjuguate gradient
@@ -269,7 +268,8 @@ struct shammodels::basegodunov::SolverConfig {
             logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental");
             u32 mode = gravity_config.gravity_mode;
             shambase::throw_with_loc<std::runtime_error>(shambase::format(
-                "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 == "
+                "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 "
+                "== "
                 "NoGravity mode)",
                 mode));
         }

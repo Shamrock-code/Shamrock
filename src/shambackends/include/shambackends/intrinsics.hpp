@@ -126,6 +126,11 @@ namespace sham {
 
 namespace sham {
 
+    // yeah ok what the heck is this
+    // I don't know how to call cuda functions from intel/oneapi device code
+    // so I'm just going to use the ptx intrinsics ...
+    // But assembly is a piece of crap, so i dug some weird intrinsics out clang's
+    // not really documented stuff, like try to google this function you will have fun
     inline u64 get_device_clock() { return __nvvm_read_ptx_sreg_globaltimer(); }
 
 } // namespace sham

@@ -35,6 +35,7 @@ set(Sources
     src/modules/ExternalForces.cpp
     src/modules/ComputeEos.cpp
     src/modules/UpdateDerivs.cpp
+    src/modules/LeapfrogPredict.cpp
     src/modules/ComputeLoadBalanceValue.cpp
     src/modules/ComputeOmega.cpp
     src/modules/NeighbourCache.cpp

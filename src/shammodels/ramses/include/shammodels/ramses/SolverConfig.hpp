@@ -277,6 +277,10 @@ struct shammodels::basegodunov::SolverConfig {
                 "NoGravity mode)",
                 mode));
         }
+
+        if (is_gas_passive_scalar_on()) {
+            logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental");
+        }
     }
 };
 

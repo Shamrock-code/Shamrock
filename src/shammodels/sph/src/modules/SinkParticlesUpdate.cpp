@@ -258,8 +258,12 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
             buf_xyz.complete_event_state(e);
             buf_axyz_ext.complete_event_state(e);
 
+            // Old buggy way of doing it, was causing sink desync, 
+            // but I keep it to try to make a CI test one day
+            //
             // result_acc_sinks.push_back(
             //     shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt()));
+
             sph_acc_sink += shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt());
         });
 

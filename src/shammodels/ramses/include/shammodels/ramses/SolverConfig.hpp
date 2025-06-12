@@ -86,6 +86,7 @@ namespace shammodels::basegodunov {
 
         inline bool is_gas_passive_scalar_on() { return npscal_gas == 0; }
     };
+
     enum GravityMode {
         NoGravity = 0,
         CG        = 1, // conjuguate gradient

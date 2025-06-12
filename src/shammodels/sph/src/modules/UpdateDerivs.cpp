@@ -738,6 +738,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
         tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
+        shamalgs::gpu_core_timeline_profilier profiler(
+            shamsys::instance::get_compute_scheduler_ptr(), 1000000);
+        profiler.setFrameStartClock();
+        logger::raw_ln("base profiler clock value", profiler.get_base_clock_value());
+
         /////////////////////////////////////////////
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -753,6 +758,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         auto pressure   = buf_pressure.get_read_access(depends_list);
         auto cs         = buf_cs.get_read_access(depends_list);
         auto ploop_ptrs = pcache.get_read_access(depends_list);
+
+        auto gpu_core_timer = profiler.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const Tscal pmass    = solver_config.gpart_mass;
@@ -777,7 +784,18 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force disc", [=](u64 gid) {
+            shamalgs::gpu_core_timeline_profilier::local_access_t gpu_core_timer_data(cgh);
+
+            u64 length     = pdat.get_obj_cnt();
+            u64 group_size = 128;
+            cgh.parallel_for(shambase::make_range(length, group_size), [=](sycl::nd_item<1> id) {
+                u64 gid = id.get_global_linear_id();
+                if (gid >= length)
+                    return;
+
+                gpu_core_timer.init_timeline_event(id, gpu_core_timer_data);
+
+                gpu_core_timer.start_timeline_event(gpu_core_timer_data);
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
@@ -873,6 +891,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
                 axyz[id_a] = force_pressure;
                 du[id_a]   = tmpdU_pressure;
+
+                gpu_core_timer.end_timeline_event(gpu_core_timer_data);
             });
         });
 
@@ -885,6 +905,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         buf_uint.complete_event_state(e);
         buf_pressure.complete_event_state(e);
         buf_cs.complete_event_state(e);
+        profiler.complete_event_state(e);
+
+        profiler.dump_to_file("update_derivs.json");
 
         sham::EventList resulting_events;
         resulting_events.add_event(e);

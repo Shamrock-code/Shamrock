@@ -16,35 +16,17 @@
  */
 
 #include "shambase/numeric_limits.hpp"
-#include "nlohmann/json.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/EventList.hpp"
+#include "shambackends/intrinsics.hpp"
 #include "shambackends/kernel_call.hpp"
 #include <shambackends/sycl.hpp>
 #include <vector>
 
-#ifdef __ACPP_ENABLE_CUDA_TARGET__
-    #include <cuda/std/chrono>
-
-ACPP_UNIVERSAL_TARGET
-uint get_sm() {
-    uint32_t ret;
-    __acpp_if_target_cuda(asm("mov.u32 %0, %%smid;" : "=r"(ret)));
-    return ret;
-}
-#else
-uint get_sm() { return 0; }
+#if __has_include(<nlohmann/json.hpp>)
+    #include "nlohmann/json.hpp"
 #endif
-
-ACPP_UNIVERSAL_TARGET inline u64 get_cuda_clock() {
-    u64 out = 0;
-
-    __acpp_if_target_cuda(
-        out = cuda::std::chrono::high_resolution_clock::now().time_since_epoch().count(););
-
-    return out;
-}
 
 namespace shamalgs {
 
@@ -57,6 +39,7 @@ namespace shamalgs {
 } // namespace shamalgs
 
 #if __has_include(<nlohmann/json.hpp>)
+
 NLOHMANN_JSON_NAMESPACE_BEGIN
 template<>
 struct adl_serializer<shamalgs::TimelineEvent> {
@@ -79,7 +62,9 @@ namespace shamalgs {
         public:
         gpu_core_timeline_profilier(sham::DeviceScheduler_ptr dev_sched, u32 max_event_count)
             : dev_sched(dev_sched), frame_start_clock(sham::DeviceBuffer<u64>(1, dev_sched)),
-              events(max_event_count, dev_sched), event_count(1, dev_sched) {}
+              events(max_event_count, dev_sched), event_count(1, dev_sched) {
+            event_count.set_val_at_idx(0, 0);
+        }
 
         // base clock val
 
@@ -90,11 +75,11 @@ namespace shamalgs {
                 sham::MultiRef{frame_start_clock},
                 1,
                 [](u32 i, u64 *clock) {
-                    *clock = get_cuda_clock();
+                    *clock = sham::get_device_clock();
                 });
         }
 
-        u64 get_base_clock_value() { return frame_start_clock.get_val_at_idx(0); }
+        inline u64 get_base_clock_value() { return frame_start_clock.get_val_at_idx(0); }
 
         struct local_access_t {
             sycl::local_accessor<uint> _index;
@@ -111,7 +96,7 @@ namespace shamalgs {
 
             inline void
             init_timeline_event(sycl::nd_item<1> item, const local_access_t &acc) const {
-                if (item.get_local_linear_id() == 0) {
+                if (item.get_local_id(0) == 0) {
                     sycl::atomic_ref<
                         u64,
                         sycl::memory_order_relaxed,
@@ -123,7 +108,7 @@ namespace shamalgs {
                     acc._valid[0] = acc._index[0] < max_event_count;
 
                     if (acc._valid[0]) {
-                        events[acc._index[0]] = {u64_max, 0, get_sm(), 0};
+                        events[acc._index[0]] = {u64_max, 0, sham::get_sm_id(), 0};
                     }
                 }
                 item.barrier(); // equivalent to __syncthreads
@@ -141,7 +126,7 @@ namespace shamalgs {
 
                     using ull = unsigned long long;
 
-                    start_val.fetch_min(ull(get_cuda_clock()));
+                    start_val.fetch_min(ull(sham::get_device_clock()));
                 }
             }
 
@@ -156,24 +141,27 @@ namespace shamalgs {
 
                     using ull = unsigned long long;
 
-                    end_val.fetch_max(ull(get_cuda_clock()));
+                    end_val.fetch_max(ull(sham::get_device_clock()));
                 }
             }
         };
 
-        acc get_write_access(sham::EventList &deps) {
+        inline acc get_write_access(sham::EventList &deps) {
             return {
                 events.get_write_access(deps),
                 event_count.get_write_access(deps),
                 events.get_size()};
         }
 
-        void complete_event_state(sycl::event e) {
+        inline void complete_event_state(sycl::event e) {
             events.complete_event_state(e);
             event_count.complete_event_state(e);
         }
 
-        void dump_to_file(const std::string &filename) {
+#if __has_include(<nlohmann/json.hpp>)
+        inline void dump_to_file(const std::string &filename) {
+
+            std::cout << "dumping to " << filename << std::endl;
 
             std::vector<TimelineEvent> events
                 = this->events.copy_to_stdvec_idx_range(0, event_count.get_val_at_idx(0));
@@ -188,6 +176,7 @@ namespace shamalgs {
             std::ofstream file(filename);
             file << nlohmann::json(events).dump(4) << std::endl;
         }
+#endif
     };
 
 } // namespace shamalgs

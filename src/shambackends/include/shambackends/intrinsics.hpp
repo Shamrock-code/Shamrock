@@ -68,13 +68,8 @@ namespace sham {
     #define INTRISICS_GET_SM_DEFINED
 
 namespace sham {
-
     ACPP_UNIVERSAL_TARGET
-    uint get_sm_id() {
-        int core_id;
-        core_id = sched_getcpu();
-        return core_id;
-    }
+    uint get_sm_id() { return 10; }
 
 } // namespace sham
 #else

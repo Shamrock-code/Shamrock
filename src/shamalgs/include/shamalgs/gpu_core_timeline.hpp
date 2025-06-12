@@ -12,8 +12,7 @@
 /**
  * @file gpu_core_timeline.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @brief main include file for memory algorithms
- *
+ * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2024
  */
 
 #include "shambase/numeric_limits.hpp"
@@ -56,6 +55,7 @@ namespace shamalgs {
         uint color;
     };
 } // namespace shamalgs
+
 #if __has_include(<nlohmann/json.hpp>)
 NLOHMANN_JSON_NAMESPACE_BEGIN
 template<>

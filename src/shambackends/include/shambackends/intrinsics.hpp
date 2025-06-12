@@ -126,7 +126,7 @@ namespace sham {
 
 namespace sham {
 
-    inline u64 get_device_clock() { return __nvvm_read_ptx_sreg_clock64(); }
+    inline u64 get_device_clock() { return __nvvm_read_ptx_sreg_globaltimer(); }
 
 } // namespace sham
 

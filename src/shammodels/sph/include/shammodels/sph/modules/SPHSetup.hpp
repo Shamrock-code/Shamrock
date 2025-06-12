@@ -72,6 +72,9 @@ namespace shammodels::sph::modules {
         std::shared_ptr<ISPHSetupNode>
         make_modifier_add_offset(SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity);
 
+        std::shared_ptr<ISPHSetupNode>
+        make_modifier_filter(SetupNodePtr parent, std::function<bool(Tvec)> filter);
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

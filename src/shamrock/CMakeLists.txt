@@ -18,11 +18,20 @@ project(Shamlib CXX C)
 ######################
 #hack to rerun the version generator if ninja/make all
 #cf https://stackoverflow.com/questions/13920072/how-to-always-run-command-when-building-regardless-of-any-dependency
-add_custom_command(
+if(${CMAKE_VERSION} VERSION_GREATER 3.27)
+  add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
-           ${CMAKE_CURRENT_BINARY_DIR}/version__.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version__.cpp
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../buildbot/make_version_file.py ${CMAKE_CURRENT_BINARY_DIR}/version.cpp "${CMAKE_CXX_FLAGS}" "${SHAMROCK_VERSION_STRING}"
+    DEPENDS_EXPLICIT_ONLY
+  )
+else()
+  add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/version__.cpp
     COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../buildbot/make_version_file.py ${CMAKE_CURRENT_BINARY_DIR}/version.cpp "${CMAKE_CXX_FLAGS}" "${SHAMROCK_VERSION_STRING}"
   )
+endif()
 
 
 # Whenever this glob's value changes, cmake will rerun and update the build with the
@@ -30,11 +39,11 @@ add_custom_command(
 file(GLOB_RECURSE shamlib_srcs CONFIGURE_DEPENDS "*.cpp")
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shamlib target (Shared lib)")
-add_library(shamlib SHARED ${CMAKE_CURRENT_BINARY_DIR}/version.cpp ${shamlib_srcs})
+  message("-- adding shamlib target (Shared lib)")
+  add_library(shamlib SHARED ${CMAKE_CURRENT_BINARY_DIR}/version.cpp ${shamlib_srcs})
 else()
-message("-- adding shamlib target (object lib)")
-add_library(shamlib OBJECT ${CMAKE_CURRENT_BINARY_DIR}/version.cpp ${shamlib_srcs})
+  message("-- adding shamlib target (object lib)")
+  add_library(shamlib OBJECT ${CMAKE_CURRENT_BINARY_DIR}/version.cpp ${shamlib_srcs})
 endif()
 
 add_library(shamlib::shamlib ALIAS shamlib)
@@ -50,5 +59,5 @@ target_link_libraries(shamlib PUBLIC shamtree)
 target_link_libraries(shamlib PUBLIC nlohmann_json::nlohmann_json)
 
 target_include_directories(shamlib PUBLIC
-"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-"$<INSTALL_INTERFACE:include>")
+  "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+  "$<INSTALL_INTERFACE:include>")

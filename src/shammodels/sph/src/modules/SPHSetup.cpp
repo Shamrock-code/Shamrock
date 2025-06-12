@@ -21,6 +21,7 @@
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
+#include "shammodels/sph/modules/setup/ModifierFilter.hpp"
 #include "shammodels/sph/modules/setup/ModifierOffset.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
 
@@ -122,6 +123,15 @@ shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_modifier_add_offset(
 
     return std::shared_ptr<ISPHSetupNode>(
         new ModifierOffset<Tvec, SPHKernel>(context, parent, offset_postion, offset_velocity));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
+shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_modifier_filter(
+    SetupNodePtr parent, std::function<bool(Tvec)> filter) {
+
+    return std::shared_ptr<ISPHSetupNode>(
+        new ModifierFilter<Tvec, SPHKernel>(context, parent, filter));
 }
 
 using namespace shammath;

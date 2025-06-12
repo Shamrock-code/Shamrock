@@ -212,6 +212,8 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
 
     for (Sink &s : sink_parts) {
 
+        Tvec sph_acc_sink = {};
+
         scheduler().for_each_patchdata_nonempty([&, G, epsilon_grav, gpart_mass](
                                                     Patch cur_p, PatchData &pdat) {
             sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(ixyz);
@@ -256,9 +258,12 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
             buf_xyz.complete_event_state(e);
             buf_axyz_ext.complete_event_state(e);
 
-            result_acc_sinks.push_back(
-                shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt()));
+            // result_acc_sinks.push_back(
+            //     shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt()));
+            sph_acc_sink += shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt());
         });
+
+        result_acc_sinks.push_back(sph_acc_sink);
     }
 
     std::vector<Tvec> gathered_result_acc_sinks{};

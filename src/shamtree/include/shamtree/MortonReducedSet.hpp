@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shamtree/CellIterator.hpp"
 #include "shamtree/MortonCodeSortedSet.hpp"
 
 namespace shamtree {
@@ -56,6 +57,18 @@ namespace shamtree {
             : morton_codes_set(std::move(morton_codes_set)), reduce_code_count(reduce_code_count),
               buf_reduc_index_map(std::move(buf_reduc_index_map)),
               reduced_morton_codes(std::move(reduced_morton_codes)) {}
+
+        inline CellIterator get_cell_iterator() {
+            return CellIterator{morton_codes_set.map_morton_id_to_obj_id, buf_reduc_index_map};
+        }
+
+        inline static MortonReducedSet make_empty(sham::DeviceScheduler_ptr dev_sched) {
+            return MortonReducedSet{
+                MortonCodeSortedSet<Tmorton, Tvec>::make_empty(dev_sched),
+                0,
+                sham::DeviceBuffer<u32>(0, dev_sched),
+                sham::DeviceBuffer<Tmorton>(0, dev_sched)};
+        }
     };
 
     /**

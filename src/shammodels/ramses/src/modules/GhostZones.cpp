@@ -328,16 +328,24 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         ghost_layout.add_field<Tvec>("rhovel_dust", ndust * AMRBlock::block_size);
     }
 
+    if (solver_config.is_gravity_on()) {
+        ghost_layout.add_field<Tscal>("phi", AMRBlock::block_size);
+    }
+
     u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
     u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");
     u32 irho_interf      = ghost_layout.get_field_idx<Tscal>("rho");
     u32 irhoetot_interf  = ghost_layout.get_field_idx<Tscal>("rhoetot");
     u32 irhovel_interf   = ghost_layout.get_field_idx<Tvec>("rhovel");
 
-    u32 irho_d_interf, irhovel_d_interf;
+    u32 irho_d_interf, irhovel_d_interf, iphi_interf;
     if (solver_config.is_dust_on()) {
         irho_d_interf    = ghost_layout.get_field_idx<Tscal>("rho_dust");
         irhovel_d_interf = ghost_layout.get_field_idx<Tvec>("rhovel_dust");
+    }
+
+    if (solver_config.is_gravity_on()) {
+        iphi_interf = ghost_layout.get_field_idx<Tscal>("phi");
     }
 
     // load layout info
@@ -349,10 +357,14 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
     const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
 
-    u32 irho_d, irhovel_d;
+    u32 irho_d, irhovel_d, iphi;
     if (solver_config.is_dust_on()) {
         irho_d    = pdl.get_field_idx<Tscal>("rho_dust");
         irhovel_d = pdl.get_field_idx<Tvec>("rhovel_dust");
+    }
+
+    if (solver_config.is_gravity_on()) {
+        iphi = pdl.get_field_idx<Tscal>("phi");
     }
 
     // generate send buffers
@@ -386,6 +398,11 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
                 sender_patch.get_field<Tvec>(irhovel_d).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tvec>(irhovel_d_interf));
+            }
+
+            if (solver_config.is_gravity_on()) {
+                sender_patch.get_field<Tscal>(iphi).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(iphi_interf));
             }
 
             pdat.check_field_obj_cnt_match();
@@ -427,6 +444,10 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
             if (solver_config.is_dust_on()) {
                 pdat_new.get_field<Tscal>(irho_d_interf).insert(pdat.get_field<Tscal>(irho_d));
                 pdat_new.get_field<Tvec>(irhovel_d_interf).insert(pdat.get_field<Tvec>(irhovel_d));
+            }
+
+            if (solver_config.is_gravity_on()) {
+                pdat_new.get_field<Tscal>(iphi_interf).insert(pdat.get_field<Tscal>(iphi));
             }
 
             pdat_new.check_field_obj_cnt_match();

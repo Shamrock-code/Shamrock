@@ -159,6 +159,12 @@ namespace shamrock::patch {
          */
         void index_remap_resize(sycl::buffer<u32> &index_map, u32 len);
 
+        /// Same as index_remap_resize with a shamrock device buffer instead
+        void index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len);
+
+        /// Same as keep_ids with a shamrock device buffer instead
+        void keep_ids(sham::DeviceBuffer<u32> &index_map, u32 len);
+
         // template<class Tvecbox>
         // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &
         // pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,

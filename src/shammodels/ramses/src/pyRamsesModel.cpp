@@ -156,6 +156,23 @@ namespace shammodels::basegodunov {
                 py::arg("crit_mass"))
             .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
                 self.npscal_gas_config.npscal_gas = npscal_gas;
+            .def(
+                "set_gravity_mode_no_gravity",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = NoGravity;
+                })
+            .def(
+                "set_gravity_mode_cg",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = CG;
+                })
+            .def(
+                "set_gravity_mode_pcg",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = PCG;
+                })
+            .def("set_gravity_mode_bigstab", [](TConfig &self) {
+                self.gravity_config.gravity_mode = BIGSTAB;
             });
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";

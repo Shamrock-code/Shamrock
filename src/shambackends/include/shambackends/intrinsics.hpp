@@ -64,6 +64,18 @@ namespace sham {
 
 } // namespace sham
 
+#elif defined(_IS_ONEAPI_SMCP_CUDA)
+
+namespace sham {
+
+    inline uint get_sm_id() {
+        uint32_t ret;
+        asm("mov.u32 %0, %%smid;" : "=r"(ret));
+        return ret;
+    }
+
+} // namespace sham
+
 #elif defined(_IS_ACPP_SMCP_HOST)
     #define INTRISICS_GET_SM_DEFINED
 

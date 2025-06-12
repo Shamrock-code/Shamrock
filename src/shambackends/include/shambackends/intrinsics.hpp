@@ -17,12 +17,34 @@
 
 #include <shambackends/sycl.hpp>
 
-#if defined(__ACPP__) && defined(ACPP_LIBKERNEL_IS_DEVICE_PASS_CUDA) && !defined(DOXYGEN)
+#if defined(__ACPP__) && defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
     #define _IS_ACPP_SMCP_CUDA
+#elif defined(__ACPP__) && defined(__SYCL_DEVICE_ONLY__) && defined(__AMDGCN__)
+    #define _IS_ACPP_SMCP_HIP
+    #if __AMDGCN_WAVEFRONT_SIZE == 64
+        #define _IS_ACPP_SMCP_CUDA_WAVEFRONT64
+    #elif __AMDGCN_WAVEFRONT_SIZE == 32
+        #define _IS_ACPP_SMCP_CUDA_WAVEFRONT32
+    #endif
+#elif defined(__ACPP__) && defined(__SYCL_DEVICE_ONLY__)                                           \
+    && (defined(__SPIR__) || defined(__SPIRV__))
+    #define _IS_ACPP_SMCP_INTEL_SPIRV
+#elif defined(__ACPP__) && defined(ACPP_LIBKERNEL_IS_DEVICE_PASS_HOST) && !defined(DOXYGEN)
+    #define _IS_ACPP_SMCP_HOST
 #endif
 
-#if defined(__ACPP__) && defined(ACPP_LIBKERNEL_IS_DEVICE_PASS_HOST) && !defined(DOXYGEN)
-    #define _IS_ACPP_SMCP_HOST
+#if defined(SYCL_IMPLEMENTATION_ONEAPI) && defined(__SYCL_DEVICE_ONLY__) && defined(__NVPTX__)
+    #define _IS_ONEAPI_SMCP_CUDA
+#elif defined(SYCL_IMPLEMENTATION_ONEAPI) && defined(__SYCL_DEVICE_ONLY__) && defined(__AMDGCN__)
+    #define _IS_ONEAPI_SMCP_HIP
+    #if __AMDGCN_WAVEFRONT_SIZE == 64
+        #define _IS_ONEAPI_SMCP_HIP_WAVEFRONT64
+    #elif __AMDGCN_WAVEFRONT_SIZE == 32
+        #define _IS_ONEAPI_SMCP_HIP_WAVEFRONT32
+    #endif
+#elif defined(SYCL_IMPLEMENTATION_ONEAPI) && defined(__SYCL_DEVICE_ONLY__)                         \
+    && (defined(__SPIR__) || defined(__SPIRV__))
+    #define _IS_ONEAPI_SMCP_INTEL_SPIRV
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,7 +121,6 @@ namespace sham {
     ACPP_UNIVERSAL_TARGET inline u64 get_device_clock() {
 
         u64 val = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-        std::cout << val << std::endl;
         return val;
     }
 

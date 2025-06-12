@@ -83,11 +83,7 @@ namespace shammodels::basegodunov {
         u32 npscal_gas = 0;
 
         inline bool is_gas_passive_scalar_on() {
-            if (npscal_gas == 0) {
-                throw shambase::make_except_with_loc<std::runtime_error>(
-                    "Gas passive scalar is on with npscal_gas == 0");
-            }
-            return true;
+            return npscal_gas == 0;
         }
     };
 

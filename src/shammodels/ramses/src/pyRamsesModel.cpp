@@ -154,6 +154,8 @@ namespace shammodels::basegodunov {
                 },
                 py::kw_only(),
                 py::arg("crit_mass"))
+            .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
+                self.npscal_gas_config.npscal_gas = npscal_gas;
             .def(
                 "set_gravity_mode_no_gravity",
                 [](TConfig &self) {

@@ -78,7 +78,15 @@ namespace shammodels::basegodunov {
             return false;
         }
     };
+    /**
+     * @brief Npscal_gas is the number of gas passive scalars
+     */
+    struct PassiveScalarGasConfig {
+        u32 npscal_gas = 0;
 
+        inline bool is_gas_passive_scalar_on() {
+            return npscal_gas == 0;
+            
     enum GravityMode {
         NoGravity = 0,
         CG        = 1, // conjuguate gradient
@@ -177,6 +185,14 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gas passive scalars config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    PassiveScalarGasConfig npscal_gas_config{};
+
+    inline bool is_gas_passive_scalar_on() { return npscal_gas_config.is_gas_passive_scalar_on(); }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gas passive scalars config (END)
     // Gravity config
     //////////////////////////////////////////////////////////////////////////////////////////////
     inline Tscal get_constant_G() {

@@ -12,6 +12,8 @@
 /**
  * @file gpu_core_timeline.hpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Antoine Richermoz (antoine.richermoz@inria.fr)
+ *
  * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2024
  */
 
@@ -21,6 +23,7 @@
 #include "shambackends/EventList.hpp"
 #include "shambackends/intrinsics.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/logs.hpp"
 #include <shambackends/sycl.hpp>
 #include <vector>
 
@@ -28,29 +31,36 @@
     #include "nlohmann/json.hpp"
 #endif
 
-namespace shamalgs {
+namespace sham {
 
     struct TimelineEvent {
         unsigned long long start;
-        unsigned long long end;
+        unsigned long long first_end;
+        unsigned long long last_end;
         uint lane;
         uint color;
     };
-} // namespace shamalgs
+
+} // namespace sham
 
 #if __has_include(<nlohmann/json.hpp>)
 
 NLOHMANN_JSON_NAMESPACE_BEGIN
 template<>
-struct adl_serializer<shamalgs::TimelineEvent> {
-    static void to_json(json &j, const shamalgs::TimelineEvent &e) {
-        j = {{"start", e.start}, {"end", e.end}, {"color", e.color}, {"lane", e.lane}};
+struct adl_serializer<sham::TimelineEvent> {
+    static void to_json(json &j, const sham::TimelineEvent &e) {
+        j
+            = {{"start", e.start},
+               {"first_end", e.first_end},
+               {"last_end", e.last_end},
+               {"color", e.color},
+               {"lane", e.lane}};
     }
 };
 NLOHMANN_JSON_NAMESPACE_END
 #endif
 
-namespace shamalgs {
+namespace sham {
 
     class gpu_core_timeline_profilier {
         sham::DeviceScheduler_ptr dev_sched;
@@ -108,7 +118,7 @@ namespace shamalgs {
                     acc._valid[0] = acc._index[0] < max_event_count;
 
                     if (acc._valid[0]) {
-                        events[acc._index[0]] = {u64_max, 0, sham::get_sm_id(), 0};
+                        events[acc._index[0]] = {u64_max, u64_max, 0, sham::get_sm_id(), 0};
                     }
                 }
                 item.barrier(); // equivalent to __syncthreads
@@ -137,11 +147,21 @@ namespace shamalgs {
                         sycl::memory_order_relaxed,
                         sycl::memory_scope_device,
                         sycl::access::address_space::global_space>
-                        end_val(events[acc._index[0]].end);
+                        first_end(events[acc._index[0]].first_end);
+
+                    sycl::atomic_ref<
+                        unsigned long long,
+                        sycl::memory_order_relaxed,
+                        sycl::memory_scope_device,
+                        sycl::access::address_space::global_space>
+                        last_end(events[acc._index[0]].last_end);
 
                     using ull = unsigned long long;
 
-                    end_val.fetch_max(ull(sham::get_device_clock()));
+                    ull clock = sham::get_device_clock();
+
+                    first_end.fetch_min(clock);
+                    last_end.fetch_max(clock);
                 }
             }
         };
@@ -170,7 +190,8 @@ namespace shamalgs {
 
             for (auto &t : events) {
                 t.start -= base_clock;
-                t.end -= base_clock;
+                t.first_end -= base_clock;
+                t.last_end -= base_clock;
             }
 
             std::ofstream file(filename);
@@ -179,4 +200,4 @@ namespace shamalgs {
 #endif
     };
 
-} // namespace shamalgs
+} // namespace sham

@@ -17,11 +17,19 @@
 
 #include <shambackends/sycl.hpp>
 
+#if defined(__ACPP__) && defined(ACPP_LIBKERNEL_IS_DEVICE_PASS_CUDA) && !defined(DOXYGEN)
+    #define _IS_ACPP_SMCP_CUDA
+#endif
+
+#if defined(__ACPP__) && defined(ACPP_LIBKERNEL_IS_DEVICE_PASS_HOST) && !defined(DOXYGEN)
+    #define _IS_ACPP_SMCP_HOST
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Get SM function
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(__ACPP__) && defined(__ACPP_ENABLE_CUDA_TARGET__) && !defined(DOXYGEN)
+#if defined(_IS_ACPP_SMCP_CUDA)
 
 namespace sham {
 
@@ -30,6 +38,20 @@ namespace sham {
         uint32_t ret;
         __acpp_if_target_cuda(asm("mov.u32 %0, %%smid;" : "=r"(ret)));
         return ret;
+    }
+
+} // namespace sham
+
+#elif defined(_IS_ACPP_SMCP_HOST)
+    #define INTRISICS_GET_SM_DEFINED
+
+namespace sham {
+
+    ACPP_UNIVERSAL_TARGET
+    uint get_sm_id() {
+        int core_id;
+        core_id = sched_getcpu();
+        return core_id;
     }
 
 } // namespace sham
@@ -54,7 +76,7 @@ namespace sham {
 // Get device internal clock
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(__ACPP__) && defined(__ACPP_ENABLE_CUDA_TARGET__) && !defined(DOXYGEN)
+#if defined(_IS_ACPP_SMCP_CUDA)
 
     #include <cuda/std/chrono>
 
@@ -70,8 +92,19 @@ namespace sham {
     }
 
 } // namespace sham
-#else
+#elif defined(_IS_ACPP_SMCP_HOST)
+    #define INTRISICS_GET_CLOCK_DEFINED
+namespace sham {
 
+    ACPP_UNIVERSAL_TARGET inline u64 get_device_clock() {
+
+        u64 val = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+        std::cout << val << std::endl;
+        return val;
+    }
+
+} // namespace sham
+#else
 namespace sham {
 
     /**
@@ -81,5 +114,4 @@ namespace sham {
     inline u64 get_device_clock() { return 0; }
 
 } // namespace sham
-
 #endif

@@ -16,7 +16,7 @@
  */
 
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
-#include "shamalgs/gpu_core_timeline.hpp"
+#include "shambackends/gpu_core_timeline.hpp"
 #include "shambackends/math.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
@@ -516,7 +516,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
         tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
-        shamalgs::gpu_core_timeline_profilier profiler(
+        sham::gpu_core_timeline_profilier profiler(
             shamsys::instance::get_compute_scheduler_ptr(), 1000000);
         profiler.setFrameStartClock();
         logger::raw_ln("base profiler clock value", profiler.get_base_clock_value());
@@ -561,7 +561,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shamalgs::gpu_core_timeline_profilier::local_access_t gpu_core_timer_data(cgh);
+            sham::gpu_core_timeline_profilier::local_access_t gpu_core_timer_data(cgh);
 
             u64 length     = pdat.get_obj_cnt();
             u64 group_size = 128;
@@ -738,7 +738,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
         tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
 
-        shamalgs::gpu_core_timeline_profilier profiler(
+        sham::gpu_core_timeline_profilier profiler(
             shamsys::instance::get_compute_scheduler_ptr(), 1000000);
         profiler.setFrameStartClock();
         logger::raw_ln("base profiler clock value", profiler.get_base_clock_value());
@@ -784,7 +784,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shamalgs::gpu_core_timeline_profilier::local_access_t gpu_core_timer_data(cgh);
+            sham::gpu_core_timeline_profilier::local_access_t gpu_core_timer_data(cgh);
 
             u64 length     = pdat.get_obj_cnt();
             u64 group_size = 128;

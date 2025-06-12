@@ -121,6 +121,15 @@ namespace sham {
     }
 
 } // namespace sham
+
+#elif defined(_IS_ONEAPI_SMCP_CUDA)
+
+namespace sham {
+
+    inline u64 get_device_clock() { return __nvvm_read_ptx_sreg_clock64(); }
+
+} // namespace sham
+
 #elif defined(_IS_ACPP_SMCP_HOST)
     #define INTRISICS_GET_CLOCK_DEFINED
 namespace sham {

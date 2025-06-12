@@ -24,6 +24,9 @@
 
 namespace shambase::profiling {
 
+    /// @brief Check if profiling is enabled
+    bool is_profiling_enabled();
+
     /**
      * @brief Set wether to enable NVTX profiling
      *

@@ -19,6 +19,7 @@
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamcomm/wrapper.hpp"
 #include <optional>
 
 namespace shamcomm {
@@ -50,7 +51,8 @@ namespace shamcomm {
             }
         }
 
-        MPICHECK(MPI_Barrier(MPI_COMM_WORLD));
+        shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+
         shambase::profiling::chrome::set_time_offset(shambase::details::get_wtime());
 
         shambase::profiling::chrome::set_chrome_pid(world_rank());

@@ -39,15 +39,15 @@ namespace shamalgs::collective {
         auto dtype = get_mpi_type<T>();
 
         i32 sz;
-        MPICHECK(MPI_Type_size(dtype, &sz));
+        shamcomm::mpi::Type_size(dtype, &sz);
 
         ViewInfo view = fetch_view(u64(sz) * data_cnt);
 
         u64 disp = file_head_ptr + view.head_offset;
 
-        MPICHECK(MPI_File_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL));
+        shamcomm::mpi::File_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL);
 
-        MPICHECK(MPI_File_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE));
+        shamcomm::mpi::File_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE);
 
         file_head_ptr = view.total_byte_count + file_head_ptr;
     }
@@ -70,15 +70,15 @@ namespace shamalgs::collective {
         auto dtype = get_mpi_type<T>();
 
         i32 sz;
-        MPICHECK(MPI_Type_size(dtype, &sz));
+        shamcomm::mpi::Type_size(dtype, &sz);
 
         ViewInfo view = fetch_view_known_total(u64(sz) * data_cnt, u64(sz) * total_cnt);
 
         u64 disp = file_head_ptr + view.head_offset;
 
-        MPICHECK(MPI_File_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL));
+        shamcomm::mpi::File_set_view(fh, disp, dtype, dtype, "native", MPI_INFO_NULL);
 
-        MPICHECK(MPI_File_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE));
+        shamcomm::mpi::File_write_all(fh, ptr_data, data_cnt, dtype, MPI_STATUS_IGNORE);
 
         file_head_ptr = view.total_byte_count + file_head_ptr;
     }
@@ -94,10 +94,11 @@ namespace shamalgs::collective {
      */
     inline void write_header_raw(MPI_File fh, std::string s, u64 &file_head_ptr) {
 
-        MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
+        shamcomm::mpi::File_set_view(
+            fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
 
         if (shamcomm::world_rank() == 0) {
-            MPICHECK(MPI_File_write(fh, s.c_str(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE));
+            shamcomm::mpi::File_write(fh, s.c_str(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE);
         }
 
         file_head_ptr = file_head_ptr + s.size();
@@ -113,11 +114,12 @@ namespace shamalgs::collective {
      */
     inline std::string read_header_raw(MPI_File fh, size_t len, u64 &file_head_ptr) {
 
-        MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
+        shamcomm::mpi::File_set_view(
+            fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
         std::string s;
         s.resize(len);
 
-        MPICHECK(MPI_File_read(fh, s.data(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE));
+        shamcomm::mpi::File_read(fh, s.data(), s.size(), MPI_CHAR, MPI_STATUS_IGNORE);
 
         file_head_ptr = file_head_ptr + s.size();
 
@@ -133,10 +135,11 @@ namespace shamalgs::collective {
      */
     inline void write_header_val(MPI_File fh, size_t val, u64 &file_head_ptr) {
 
-        MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
+        shamcomm::mpi::File_set_view(
+            fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
 
         if (shamcomm::world_rank() == 0) {
-            MPICHECK(MPI_File_write(fh, &val, 1, get_mpi_type<size_t>(), MPI_STATUS_IGNORE));
+            shamcomm::mpi::File_write(fh, &val, 1, get_mpi_type<size_t>(), MPI_STATUS_IGNORE);
         }
 
         file_head_ptr = file_head_ptr + sizeof(size_t);
@@ -153,8 +156,8 @@ namespace shamalgs::collective {
     template<class T>
     inline void write_at(MPI_File fh, const void *buf, size_t len, u64 file_head_ptr) {
 
-        MPICHECK(
-            MPI_File_write_at(fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE));
+        shamcomm::mpi::File_write_at(
+            fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE);
     }
 
     /**
@@ -168,8 +171,8 @@ namespace shamalgs::collective {
     template<class T>
     inline void read_at(MPI_File fh, void *buf, size_t len, u64 file_head_ptr) {
 
-        MPICHECK(
-            MPI_File_read_at(fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE));
+        shamcomm::mpi::File_read_at(
+            fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE);
     }
 
     /**
@@ -182,9 +185,10 @@ namespace shamalgs::collective {
     inline size_t read_header_val(MPI_File fh, u64 &file_head_ptr) {
 
         size_t val = 0;
-        MPICHECK(MPI_File_set_view(fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL));
+        shamcomm::mpi::File_set_view(
+            fh, file_head_ptr, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL);
 
-        MPICHECK(MPI_File_read(fh, &val, 1, get_mpi_type<size_t>(), MPI_STATUS_IGNORE));
+        shamcomm::mpi::File_read(fh, &val, 1, get_mpi_type<size_t>(), MPI_STATUS_IGNORE);
 
         file_head_ptr = file_head_ptr + sizeof(size_t);
 

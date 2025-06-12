@@ -444,6 +444,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     StackEntry stack_loc{};
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
+    f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
     Tscal t_current = solver_config.get_time();
     Tscal dt_input  = solver_config.get_dt();
@@ -625,6 +626,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 
+    f64 delta_mpi_timer = shamcomm::mpi::get_timer("total") - mpi_timer_start;
     f64 t_dev_alloc
         = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
           + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);
@@ -636,7 +638,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         rate,
         rank_count,
         tstep.elasped_sec(),
-        storage.timings_details.interface,
+        delta_mpi_timer,
         t_dev_alloc,
         mem_perf_infos_end.max_allocated_byte_device);
 

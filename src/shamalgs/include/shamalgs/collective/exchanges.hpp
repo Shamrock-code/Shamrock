@@ -19,9 +19,12 @@
 #include "shambase/stacktrace.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/typeAliasVec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamcomm/wrapper.hpp"
+#include <vector>
 
 namespace shamalgs::collective {
 
@@ -47,7 +50,7 @@ namespace shamalgs::collective {
         int *table_data_count = new int[shamcomm::world_size()];
 
         // crash
-        MPICHECK(MPI_Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, comm));
+        shamcomm::mpi::Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, comm);
 
         // printf("table_data_count =
         // [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
@@ -64,7 +67,7 @@ namespace shamalgs::collective {
         // printf("node_displacments_data_table =
         // [%d,%d,%d,%d]\n",node_displacments_data_table[0],node_displacments_data_table[1],node_displacments_data_table[2],node_displacments_data_table[3]);
 
-        MPICHECK(MPI_Allgatherv(
+        shamcomm::mpi::Allgatherv(
             &send_vec[0],
             send_vec.size(),
             send_type,
@@ -72,7 +75,7 @@ namespace shamalgs::collective {
             table_data_count,
             node_displacments_data_table,
             recv_type,
-            comm));
+            comm);
 
         delete[] table_data_count;
         delete[] node_displacments_data_table;
@@ -96,21 +99,30 @@ namespace shamalgs::collective {
         const MPI_Comm comm) {
         StackEntry stack_loc{};
 
+        // if (shamcomm::world_rank() == 0) {
+        //     shamcomm::logs::info_ln("vector_allgatherv", "vector_allgatherv");
+        // }
+
         u32 local_count = send_vec.size();
 
         // querry global size and resize the receiving vector
         u32 global_len;
-        MPICHECK(MPI_Allreduce(&local_count, &global_len, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD));
+        shamcomm::mpi::Allreduce(&local_count, &global_len, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         recv_vec.resize(global_len);
 
-        int *table_data_count = new int[shamcomm::world_size()];
+        // if (shamcomm::world_rank() == 0) {
+        //     shamcomm::logs::info_ln(
+        //         "vector_allgatherv", "vector_allgatherv global_len", global_len);
+        // }
 
-        MPICHECK(MPI_Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, comm));
+        std::vector<int> table_data_count(shamcomm::world_size());
+
+        shamcomm::mpi::Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, comm);
 
         // printf("table_data_count =
         // [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
 
-        int *node_displacments_data_table = new int[shamcomm::world_size()];
+        std::vector<int> node_displacments_data_table(shamcomm::world_size());
 
         node_displacments_data_table[0] = 0;
 
@@ -119,21 +131,27 @@ namespace shamalgs::collective {
                 = node_displacments_data_table[i - 1] + table_data_count[i - 1];
         }
 
+        // if (shamcomm::world_rank() == 0) {
+        //     shamcomm::logs::info_ln(
+        //         "vector_allgatherv", "vector_allgatherv table_data_count", table_data_count);
+        //     shamcomm::logs::info_ln(
+        //         "vector_allgatherv",
+        //         "vector_allgatherv node_displacments_data_table",
+        //         node_displacments_data_table);
+        // }
+
         // printf("node_displacments_data_table =
         // [%d,%d,%d,%d]\n",node_displacments_data_table[0],node_displacments_data_table[1],node_displacments_data_table[2],node_displacments_data_table[3]);
 
-        MPICHECK(MPI_Allgatherv(
+        shamcomm::mpi::Allgatherv(
             &send_vec[0],
             send_vec.size(),
             send_type,
             &recv_vec[0],
-            table_data_count,
-            node_displacments_data_table,
+            &table_data_count[0],
+            &node_displacments_data_table[0],
             recv_type,
-            comm));
-
-        delete[] table_data_count;
-        delete[] node_displacments_data_table;
+            comm);
     }
 
     template<class T>

@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamcomm/mpiErrorCheck.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
@@ -16,7 +17,8 @@
 int get_mpi_size(MPI_Datatype md) {
     MPI_Aint lbs;
     MPI_Aint exts;
-    mpi::type_get_extent(md, &lbs, &exts);
+
+    MPICHECK(MPI_Type_get_extent(md, &lbs, &exts));
     return exts;
 }
 

@@ -438,8 +438,8 @@ namespace shamrock {
         }
 
         inline ~LegacyVtkWritter() {
-            logger::debug_mpi_ln("LegacyVtkWritter", "calling : mpi::file_close");
-            mpi::file_close(&mfile);
+            logger::debug_mpi_ln("LegacyVtkWritter", "calling : shamcomm::mpi::File_close");
+            shamcomm::mpi::File_close(&mfile);
             timer.end();
 
             if (shamcomm::world_rank() == 0) {

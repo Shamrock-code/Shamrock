@@ -62,11 +62,12 @@ namespace shammodels::basegodunov {
 
             if (solver_config.is_gravity_on()) {
                 context.pdata_layout_add_field<Tscal>("phi", AMRBlock::block_size);
-          }
+            }
             if (solver_config.is_gas_passive_scalar_on()) {
                 u32 npscal_gas = solver_config.npscal_gas_config.npscal_gas;
                 context.pdata_layout_add_field<Tscal>(
-                    "rho_gas_pscal", (npscal_gas * AMRBlock::block_size)); 
+                    "rho_gas_pscal", (npscal_gas * AMRBlock::block_size));
+            }
         }
 
         Solver(ShamrockCtx &context) : context(context) {}

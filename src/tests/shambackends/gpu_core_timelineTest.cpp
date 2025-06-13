@@ -49,7 +49,7 @@ TestStart(
 
             // force something very unbalanced
             for (u32 i = 0; i < 8 * (id_a % (group_size * 2)); i++) {
-                ptr[gid] = T(sycl::sqrt(f64(ptr[gid])));
+                ptr[gid] = static_cast<T>(sycl::sqrt(f64(ptr[gid])));
             }
 
             gpu_core_timer.end_timeline_event(gpu_core_timer_data);

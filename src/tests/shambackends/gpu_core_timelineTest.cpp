@@ -60,4 +60,5 @@ TestStart(
     profiler.complete_event_state(e);
 
     profiler.dump_to_file("gpu_core_timeline_profilier_test.json");
+    profiler.open_file("gpu_core_timeline_profilier_test.json");
 }

@@ -51,109 +51,72 @@
 // Get SM function
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(_IS_ACPP_SMCP_CUDA)
-
 namespace sham {
 
-    ACPP_UNIVERSAL_TARGET
-    uint get_sm_id() {
-        uint32_t ret;
-        __acpp_if_target_cuda(asm("mov.u32 %0, %%smid;" : "=r"(ret)));
-        return ret;
-    }
+#if defined(__ACPP__) && ACPP_LIBKERNEL_IS_DEVICE_PASS_CUDA
+    #define SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
 
-} // namespace sham
-
-#elif defined(_IS_ONEAPI_SMCP_CUDA)
-
-namespace sham {
-
-    inline uint get_sm_id() {
-        uint32_t ret;
+    __device__ inline u32 get_sm_id() {
+        u32 ret;
         asm("mov.u32 %0, %%smid;" : "=r"(ret));
         return ret;
     }
 
-} // namespace sham
+#elif defined(_IS_ONEAPI_SMCP_CUDA)
+    #define SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
 
-#elif defined(_IS_ACPP_SMCP_HOST)
-    #define INTRISICS_GET_SM_DEFINED
+    inline u32 get_sm_id() {
+        u32 ret;
+        asm("mov.u32 %0, %%smid;" : "=r"(ret));
+        return ret;
+    }
 
-namespace sham {
-    ACPP_UNIVERSAL_TARGET
-    uint get_sm_id() { return 10; }
-
-} // namespace sham
 #else
-
-namespace sham {
-
     /**
-     * @brief Return the SM (Streaming Multiprocessor) ID of the calling thread if on a NVIDIA GPU.
-     * @return The SM ID of the calling thread if on a NVIDIA GPU, 0 otherwise.
-     *
-     * This is a shamrock wrapper for the CUDA intrinsics __acpp_if_target_cuda(asm("mov.u32 %0,
-     * %%smid;" : "=r"(ret)));
+     * @brief Return the SM (Streaming Multiprocessor) ID of the calling thread, or equivalent if
+     * implemented.
      */
-    inline uint get_sm_id() { return 0; }
+    inline u32 get_sm_id();
+#endif
 
 } // namespace sham
-
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Get device internal clock
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(_IS_ACPP_SMCP_CUDA)
+#if defined(__ACPP__) && ACPP_LIBKERNEL_IS_DEVICE_PASS_CUDA
+    #define SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
 
     #include <cuda/std/chrono>
-
 namespace sham {
-
-    ACPP_UNIVERSAL_TARGET inline u64 get_device_clock() {
-        u64 out = 0;
-
-        __acpp_if_target_cuda(
-            out = cuda::std::chrono::high_resolution_clock::now().time_since_epoch().count(););
-
-        return out;
+    __device__ inline u64 get_device_clock() {
+        return cuda::std::chrono::high_resolution_clock::now().time_since_epoch().count();
     }
-
 } // namespace sham
-
 #elif defined(_IS_ONEAPI_SMCP_CUDA)
-
+    #define SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
 namespace sham {
-
     // yeah ok what the heck is this
     // I don't know how to call cuda functions from intel/oneapi device code
     // so I'm just going to use the ptx intrinsics ...
     // But assembly is a piece of crap, so i dug some weird intrinsics out clang's
     // not really documented stuff, like try to google this function you will have fun
     inline u64 get_device_clock() { return __nvvm_read_ptx_sreg_globaltimer(); }
-
 } // namespace sham
-
 #elif defined(_IS_ACPP_SMCP_HOST)
-    #define INTRISICS_GET_CLOCK_DEFINED
+    #define SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
 namespace sham {
-
-    ACPP_UNIVERSAL_TARGET inline u64 get_device_clock() {
-
-        u64 val = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-        return val;
+    inline u64 get_device_clock() {
+        return std::chrono::high_resolution_clock::now().time_since_epoch().count();
     }
-
 } // namespace sham
 #else
 namespace sham {
-
     /**
      * @brief Return the number of clock cycles elapsed since an arbitrary starting point
      *        on the device.
      */
-    inline u64 get_device_clock() { return 0; }
-
+    inline u64 get_device_clock();
 } // namespace sham
 #endif

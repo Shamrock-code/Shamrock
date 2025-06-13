@@ -787,7 +787,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
             sham::gpu_core_timeline_profilier::local_access_t gpu_core_timer_data(cgh);
 
             u64 length     = pdat.get_obj_cnt();
-            u64 group_size = 128;
+            u64 group_size = 8; // must be lowered on macos
             cgh.parallel_for(shambase::make_range(length, group_size), [=](sycl::nd_item<1> id) {
                 u64 gid = id.get_global_linear_id();
                 if (gid >= length)
@@ -908,6 +908,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         profiler.complete_event_state(e);
 
         profiler.dump_to_file("update_derivs.json");
+        profiler.open_file("update_derivs.json");
 
         sham::EventList resulting_events;
         resulting_events.add_event(e);

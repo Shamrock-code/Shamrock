@@ -85,7 +85,11 @@ namespace sham {
                 sham::MultiRef{frame_start_clock},
                 1,
                 [](u32 i, u64 *clock) {
+#ifdef SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
                     *clock = sham::get_device_clock();
+#else
+                    *clock = 0;
+#endif
                 });
         }
 
@@ -118,7 +122,11 @@ namespace sham {
                     acc._valid[0] = acc._index[0] < max_event_count;
 
                     if (acc._valid[0]) {
+#ifdef SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
                         events[acc._index[0]] = {u64_max, u64_max, 0, sham::get_sm_id(), 0};
+#else
+                        events[acc._index[0]] = {u64_max, u64_max, 0, 0, 0};
+#endif
                     }
                 }
                 item.barrier(); // equivalent to __syncthreads
@@ -136,7 +144,13 @@ namespace sham {
 
                     using ull = unsigned long long;
 
-                    start_val.fetch_min(ull(sham::get_device_clock()));
+#ifdef SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
+                    ull clock = sham::get_device_clock();
+#else
+                    ull clock = 0;
+#endif
+
+                    start_val.fetch_min(clock);
                 }
             }
 
@@ -158,7 +172,11 @@ namespace sham {
 
                     using ull = unsigned long long;
 
+#ifdef SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
                     ull clock = sham::get_device_clock();
+#else
+                    ull clock = 0;
+#endif
 
                     first_end.fetch_min(clock);
                     last_end.fetch_max(clock);
@@ -181,10 +199,11 @@ namespace sham {
 #if __has_include(<nlohmann/json.hpp>)
         inline void dump_to_file(const std::string &filename) {
 
-            std::cout << "dumping to " << filename << std::endl;
+            u32 sz = event_count.get_val_at_idx(0);
 
-            std::vector<TimelineEvent> events
-                = this->events.copy_to_stdvec_idx_range(0, event_count.get_val_at_idx(0));
+            std::cout << "dumping to " << filename << " size = " << sz << std::endl;
+
+            std::vector<TimelineEvent> events = this->events.copy_to_stdvec_idx_range(0, sz);
 
             u64 base_clock = get_base_clock_value();
 
@@ -198,6 +217,12 @@ namespace sham {
             file << nlohmann::json(events).dump(4) << std::endl;
         }
 #endif
+
+        inline void open_file(const std::string &filename) {
+            std::string cmd = "python3 ../buildbot/gpu_core_timeline_read.py ";
+            cmd += filename + " -b 4";
+            std::system(cmd.c_str());
+        }
     };
 
 } // namespace sham

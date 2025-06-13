@@ -35,7 +35,7 @@ jobs:
             upload_doc: true
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
 
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default

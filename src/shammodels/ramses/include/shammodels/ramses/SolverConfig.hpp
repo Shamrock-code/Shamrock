@@ -78,6 +78,14 @@ namespace shammodels::basegodunov {
             return false;
         }
     };
+    /**
+     * @brief Npscal_gas is the number of gas passive scalars
+     */
+    struct PassiveScalarGasConfig {
+        u32 npscal_gas = 0;
+
+        inline bool is_gas_passive_scalar_on() { return npscal_gas == 0; }
+    };
 
     enum GravityMode {
         NoGravity = 0,
@@ -177,6 +185,17 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gas passive scalars config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    PassiveScalarGasConfig npscal_gas_config{};
+
+    inline bool is_gas_passive_scalar_on() { return npscal_gas_config.is_gas_passive_scalar_on(); }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gas passive scalars config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config
     //////////////////////////////////////////////////////////////////////////////////////////////
     inline Tscal get_constant_G() {
@@ -252,9 +271,14 @@ struct shammodels::basegodunov::SolverConfig {
             logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental");
             u32 mode = gravity_config.gravity_mode;
             shambase::throw_with_loc<std::runtime_error>(shambase::format(
-                "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 == "
+                "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 "
+                "== "
                 "NoGravity mode)",
                 mode));
+        }
+
+        if (is_gas_passive_scalar_on()) {
+            logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental");
         }
     }
 };

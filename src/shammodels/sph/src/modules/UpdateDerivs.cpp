@@ -15,18 +15,22 @@
  *
  */
 
-#include "shammodels/sph/modules/UpdateDerivs.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/gpu_core_timeline.hpp"
 #include "shambackends/math.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/mhd.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
+#include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shamphys/mhd.hpp"
+#include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <cmath>
+#include <mpi.h>
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
@@ -692,6 +696,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         pcache.complete_event_state(resulting_events);
     });
 }
+
+static u64 counter = 0;
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc_visco(
     ConstantDisc cfg) {
@@ -787,7 +794,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
             sham::gpu_core_timeline_profilier::local_access_t gpu_core_timer_data(cgh);
 
             u64 length     = pdat.get_obj_cnt();
-            u64 group_size = 8; // must be lowered on macos
+            u64 group_size = 128; // must be lowered on macos
             cgh.parallel_for(shambase::make_range(length, group_size), [=](sycl::nd_item<1> id) {
                 u64 gid = id.get_global_linear_id();
                 if (gid >= length)
@@ -907,13 +914,18 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         buf_cs.complete_event_state(e);
         profiler.complete_event_state(e);
 
-        profiler.dump_to_file("update_derivs.json");
-        profiler.open_file("update_derivs.json");
+        profiler.dump_to_file(
+            shambase::format("update_derivs{}_{}.json", shamcomm::world_rank(), counter));
+        counter++;
+        // profiler.open_file("update_derivs.json");
 
         sham::EventList resulting_events;
         resulting_events.add_event(e);
         pcache.complete_event_state(resulting_events);
     });
+
+    mpi::barrier(MPI_COMM_WORLD);
+    MPI_Abort(MPI_COMM_WORLD, 1);
 }
 
 template<class Tvec, template<class> class SPHKernel>

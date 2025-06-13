@@ -92,13 +92,14 @@ namespace sham {
 #if defined(__ACPP__) && ACPP_LIBKERNEL_IS_DEVICE_PASS_CUDA
     #define SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
 
-    #include <cuda/std/chrono>
 namespace sham {
     __device__ inline u64 get_device_clock() {
     #if __has_builtin(__nvvm_read_ptx_sreg_globaltimer)
         return __nvvm_read_ptx_sreg_globaltimer();
     #else
-        return cuda::std::chrono::high_resolution_clock::now().time_since_epoch().count();
+        u64 clock;
+        asm("mov.u64 %0, %%globaltimer;" : "=l"(clock));
+        return clock;
     #endif
     }
 } // namespace sham
@@ -110,7 +111,15 @@ namespace sham {
     // so I'm just going to use the ptx intrinsics ...
     // But assembly is a piece of crap, so i dug some weird intrinsics out clang's
     // not really documented stuff, like try to google this function you will have fun
-    inline u64 get_device_clock() { return __nvvm_read_ptx_sreg_globaltimer(); }
+    inline u64 get_device_clock() {
+    #if __has_builtin(__nvvm_read_ptx_sreg_globaltimer)
+        return __nvvm_read_ptx_sreg_globaltimer();
+    #else
+        u64 clock;
+        asm("mov.u64 %0, %%globaltimer;" : "=l"(clock));
+        return clock;
+    #endif
+    }
 } // namespace sham
 #elif defined(_IS_ACPP_SMCP_HOST)
     #define SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE

@@ -58,7 +58,11 @@ namespace sham {
 
     __device__ inline u32 get_sm_id() {
         u32 ret;
+    #if __has_builtin(__nvvm_read_ptx_sreg_smid)
+        ret = __nvvm_read_ptx_sreg_smid();
+    #else
         asm("mov.u32 %0, %%smid;" : "=r"(ret));
+    #endif
         return ret;
     }
 
@@ -91,7 +95,11 @@ namespace sham {
     #include <cuda/std/chrono>
 namespace sham {
     __device__ inline u64 get_device_clock() {
+    #if __has_builtin(__nvvm_read_ptx_sreg_globaltimer)
+        return __nvvm_read_ptx_sreg_globaltimer();
+    #else
         return cuda::std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    #endif
     }
 } // namespace sham
 #elif defined(_IS_ONEAPI_SMCP_CUDA)

@@ -35,7 +35,8 @@ set(Sources
     src/modules/FindBlockNeigh.cpp
     src/modules/BlockNeighToCellNeigh.cpp
     src/modules/SlopeLimitedGradient.cpp
-    src/modules/ConjuguateGradient.cpp
+    src/modules/ComputeMass.cpp
+    src/modules/ComputeSumOverV.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

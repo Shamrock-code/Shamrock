@@ -18,6 +18,7 @@ set(Sources
     src/collectives.cpp
     src/io.cpp
     src/logs.cpp
+    src/wrapper.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

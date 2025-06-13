@@ -16,6 +16,8 @@
  *
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
@@ -23,6 +25,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <stdexcept>
 
 namespace shammodels::basegodunov {
 
@@ -70,6 +73,36 @@ namespace shammodels::basegodunov {
                     throw shambase::make_except_with_loc<std::runtime_error>(
                         "Dust is on with ndust == 0");
                 }
+                return true;
+            }
+            return false;
+        }
+    };
+    /**
+     * @brief Npscal_gas is the number of gas passive scalars
+     */
+    struct PassiveScalarGasConfig {
+        u32 npscal_gas = 0;
+
+        inline bool is_gas_passive_scalar_on() { return npscal_gas == 0; }
+    };
+
+    enum GravityMode {
+        NoGravity = 0,
+        CG        = 1, // conjuguate gradient
+        PCG       = 2, // preconditioned conjuguate gradient
+        BIGSTAB   = 3, // bigstab
+        MULTIGRID = 4  // multigrid
+    };
+
+    template<class Tvec>
+    struct GravityConfig {
+        using Tscal              = shambase::VecComponent<Tvec>;
+        GravityMode gravity_mode = NoGravity;
+        Tscal tol                = 1e-6;
+        inline Tscal get_tolerance() { return tol; }
+        inline bool is_gravity_on() {
+            if (gravity_mode != NoGravity) {
                 return true;
             }
             return false;
@@ -154,6 +187,8 @@ struct shammodels::basegodunov::SolverConfig {
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
 
+    inline bool should_compute_rho_mean() { return is_gravity_on() && is_boundary_periodic(); }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -171,6 +206,42 @@ struct shammodels::basegodunov::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gas passive scalars config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    PassiveScalarGasConfig npscal_gas_config{};
+
+    inline bool is_gas_passive_scalar_on() { return npscal_gas_config.is_gas_passive_scalar_on(); }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gas passive scalars config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gravity config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    inline Tscal get_constant_G() {
+        if (!unit_sys) {
+            logger::warn_ln("amr::Config", "the unit system is not set");
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.G();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.G();
+        }
+    }
+    inline bool is_boundary_periodic() { return true; }
+    GravityConfig<Tvec> gravity_config{};
+    inline Tscal get_constant_4piG() {
+        gravity_config.G_value = get_constant_G();
+        return gravity_config.get_fourPiG();
+    }
+    inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
+    inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Gravity config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     /// AMR refinement mode
@@ -230,6 +301,20 @@ struct shammodels::basegodunov::SolverConfig {
 
         if (is_dust_on()) {
             logger::warn_ln("Ramses::SolverConfig", "Dust is experimental");
+        }
+
+        if (is_gravity_on()) {
+            logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental");
+            u32 mode = gravity_config.gravity_mode;
+            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 "
+                "== "
+                "NoGravity mode)",
+                mode));
+        }
+
+        if (is_gas_passive_scalar_on()) {
+            logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental");
         }
     }
 };

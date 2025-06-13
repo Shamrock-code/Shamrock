@@ -56,6 +56,15 @@ namespace shamtree {
               morton_count(std::move(morton_count)),
               sorted_morton_codes(std::move(sorted_morton_codes)),
               map_morton_id_to_obj_id(std::move(map_morton_id_to_obj_id)) {}
+
+        inline static MortonCodeSortedSet make_empty(sham::DeviceScheduler_ptr dev_sched) {
+            return MortonCodeSortedSet(
+                shammath::AABB<Tvec>(),
+                0_u32,
+                0_u32,
+                sham::DeviceBuffer<Tmorton>(0, dev_sched),
+                sham::DeviceBuffer<u32>(0, dev_sched));
+        }
     };
 
     /**

@@ -170,8 +170,13 @@ namespace shammodels::basegodunov {
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = PCG;
                 })
-            .def("set_gravity_mode_bigstab", [](TConfig &self) {
-                self.gravity_config.gravity_mode = BIGSTAB;
+            .def(
+                "set_gravity_mode_bigstab",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = BIGSTAB;
+                })
+            .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
+                self.npscal_gas_config.npscal_gas = npscal_gas;
             });
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";

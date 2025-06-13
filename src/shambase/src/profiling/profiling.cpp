@@ -90,6 +90,8 @@ bool use_complete_event = get_complete_event();
 f64 threshold           = get_threshold();
 bool enable_nvtx        = get_nvtx();
 
+bool shambase::profiling::is_profiling_enabled() { return enable_profiling; }
+
 void shambase::profiling::set_enable_nvtx(bool enable) { enable_nvtx = enable; }
 void shambase::profiling::set_enable_profiling(bool enable) { enable_profiling = enable; }
 void shambase::profiling::set_use_complete_event(bool enable) { use_complete_event = enable; }

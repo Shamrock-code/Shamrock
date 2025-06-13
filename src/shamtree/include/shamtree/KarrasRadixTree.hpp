@@ -15,10 +15,13 @@
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shamtree/KarrasTreeTraverser.hpp"
 
 namespace shamtree {
+
     /**
      * @class KarrasRadixTree
      * @brief A data structure representing a Karras Radix Tree.
@@ -28,16 +31,19 @@ namespace shamtree {
      * identifiers and flags, as well as end ranges.
      */
     class KarrasRadixTree;
+
 } // namespace shamtree
 
 class shamtree::KarrasRadixTree {
 
     public:
     /// Get internal cell count
-    inline u32 get_internal_cell_count() { return buf_lchild_id.get_size(); }
+    inline u32 get_internal_cell_count() const { return buf_lchild_id.get_size(); }
 
     /// Get leaf count
-    inline u32 get_leaf_count() { return get_internal_cell_count() + 1; }
+    inline u32 get_leaf_count() const { return get_internal_cell_count() + 1; }
+
+    inline u32 get_total_cell_count() const { return get_internal_cell_count() + get_leaf_count(); }
 
     sham::DeviceBuffer<u32> buf_lchild_id;  ///< left child id (size = internal_count)
     sham::DeviceBuffer<u32> buf_rchild_id;  ///< right child id (size = internal_count)
@@ -45,16 +51,38 @@ class shamtree::KarrasRadixTree {
     sham::DeviceBuffer<u8> buf_rchild_flag; ///< right child flag (size = internal_count)
     sham::DeviceBuffer<u32> buf_endrange;   ///< endrange (size = internal_count)
 
+    u32 tree_depth;
+
     /// CTOR
     KarrasRadixTree(
         sham::DeviceBuffer<u32> &&buf_lchild_id,
         sham::DeviceBuffer<u32> &&buf_rchild_id,
         sham::DeviceBuffer<u8> &&buf_lchild_flag,
         sham::DeviceBuffer<u8> &&buf_rchild_flag,
-        sham::DeviceBuffer<u32> &&buf_endrange)
+        sham::DeviceBuffer<u32> &&buf_endrange,
+        u32 tree_depth)
         : buf_lchild_id(std::move(buf_lchild_id)), buf_rchild_id(std::move(buf_rchild_id)),
           buf_lchild_flag(std::move(buf_lchild_flag)), buf_rchild_flag(std::move(buf_rchild_flag)),
-          buf_endrange(std::move(buf_endrange)) {}
+          buf_endrange(std::move(buf_endrange)), tree_depth(tree_depth) {}
+
+    inline KarrasTreeTraverser get_structure_traverser() const {
+        return KarrasTreeTraverser{
+            buf_lchild_id,
+            buf_rchild_id,
+            buf_lchild_flag,
+            buf_rchild_flag,
+            get_internal_cell_count()};
+    }
+
+    static inline KarrasRadixTree make_empty(sham::DeviceScheduler_ptr dev_sched) {
+        return KarrasRadixTree{
+            sham::DeviceBuffer<u32>(0, dev_sched),
+            sham::DeviceBuffer<u32>(0, dev_sched),
+            sham::DeviceBuffer<u8>(0, dev_sched),
+            sham::DeviceBuffer<u8>(0, dev_sched),
+            sham::DeviceBuffer<u32>(0, dev_sched),
+            0};
+    }
 };
 
 namespace shamtree {
@@ -77,7 +105,7 @@ namespace shamtree {
      *         on the provided Morton codes.
      */
     template<class Tmorton>
-    KarrasRadixTree karras_tree_from_reduced_morton_set(
+    KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes,
@@ -86,7 +114,7 @@ namespace shamtree {
     /**
      * @brief Constructs a KarrasRadixTree from a set of reduced Morton codes without reuse.
      *
-     * Equivalent to karras_tree_from_reduced_morton_set but performs the allocations.
+     * Equivalent to karras_tree_from_morton_set but performs the allocations.
      *
      * @tparam Tmorton The type of the Morton codes.
      * @param[in] dev_sched A pointer to the device scheduler used for managing
@@ -97,8 +125,12 @@ namespace shamtree {
      *         on the provided Morton codes.
      */
     template<class Tmorton>
-    KarrasRadixTree karras_tree_from_reduced_morton_set(
+    KarrasRadixTree karras_tree_from_morton_set(
         sham::DeviceScheduler_ptr dev_sched,
         u32 morton_count,
         sham::DeviceBuffer<Tmorton> &morton_codes);
+
+    /// Get tree as dot graph
+    std::string karras_tree_to_dot_graph(KarrasRadixTree &recycled_tree);
+
 } // namespace shamtree

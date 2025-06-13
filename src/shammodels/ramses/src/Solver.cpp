@@ -27,6 +27,7 @@
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
+#include "shammodels/ramses/modules/ConjuguateGradient.hpp"
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
@@ -485,6 +486,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     gz.exchange_ghost();
 
+    // if(solver_config.is_gravity_on())
+    // {
+    //     modules::ConjuguateGradient conjuguate_gradient (context,solver_config,storage);
+    //    f64 rho_mean =  conjuguate_gradient.compute_mean_rho();
+    //    logger::info_ln("amr::RAMSES::rho_mean::bf", rho_mean);
+    // }
+
     // compute prim variable
     {
         // logger::raw_ln(" -- tex:\n" +
@@ -550,6 +558,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     } else {
         shambase::throw_unimplemented();
     }
+
+    // if(solver_config.is_gravity_on())
+    // {
+    //     modules::ConjuguateGradient conjuguate_gradient (context,solver_config,storage);
+    //    f64 rho_mean =  conjuguate_gradient.compute_mean_rho();
+    //    logger::info_ln("amr::RAMSES::rho_mean::af", rho_mean);
+    // }
 
     modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
     refinement.update_refinement();

@@ -18,6 +18,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
+#include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AnalysisSodTube.hpp"
 #include <pybind11/functional.h>
 #include <memory>

@@ -14,11 +14,81 @@
  *
  */
 
+#include "shambase/StorageComponent.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
+#include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
+#include "shamtree/TreeTraversal.hpp"
+#include <functional>
+
+namespace {
+
+    class NeighCache : public shamrock::solvergraph::IDataEdgeNamed {
+        public:
+        NeighCache(
+            std::string name,
+            std::string texsymbol,
+            shambase::StorageComponent<shamrock::tree::ObjectCacheHandler> &neigh_cache_handle)
+            : IDataEdgeNamed(name, texsymbol), neigh_cache_handle(neigh_cache_handle) {}
+
+        shambase::StorageComponent<shamrock::tree::ObjectCacheHandler> &neigh_cache_handle;
+
+        inline virtual void free_alloc() { neigh_cache_handle.get().reset(); }
+    };
+
+#if false
+    template<class Tvec>
+    struct KernelDivv {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        inline static void kernel(
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &buf_xyz,
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_rhov,
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rhoe,
+
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_vel,
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_P,
+            const shambase::DistributedData<u32> &sizes,
+            u32 block_size,
+            Tscal gamma) {
+
+            shambase::DistributedData<u32> cell_counts
+                = sizes.map<u32>([&](u64 id, u32 block_count) {
+                      u32 cell_count = block_count * block_size;
+                      return cell_count;
+                  });
+
+            sham::distributed_data_kernel_call(
+                shamsys::instance::get_compute_scheduler_ptr(),
+                sham::DDMultiRef{spans_rho, spans_rhov, spans_rhoe},
+                sham::DDMultiRef{spans_vel, spans_P},
+                cell_counts,
+                [gamma](
+                    u32 i,
+                    const Tscal *__restrict rho,
+                    const Tvec *__restrict rhov,
+                    const Tscal *__restrict rhoe,
+                    Tvec *__restrict vel,
+                    Tscal *__restrict P) {
+                    auto conststate = shammath::ConsState<Tvec>{rho[i], rhoe[i], rhov[i]};
+
+                    auto prim_state = shammath::cons_to_prim(conststate, gamma);
+
+                    vel[i] = prim_state.vel;
+                    P[i]   = prim_state.press;
+                });
+        }
+    };
+#endif
+
+} // namespace
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
@@ -44,45 +114,91 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 idivv = pdl.get_field_idx<Tscal>("divv");
+
+    shamrock::solvergraph::Indexes<u32> part_counts("part_count", "N_{\\rm part}");
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        part_counts.indexes.add_obj(cur_p.id_patch, pdat.get_obj_cnt());
+    });
+
+    shamrock::solvergraph::Indexes<u32> part_counts_with_ghosts(
+        "part_count_with_ghost", "N_{\\rm part, with ghost}");
+    part_counts_with_ghosts.indexes
+        = storage.merged_patchdata_ghost.get().template map<u32>([&](u64 id, auto &mpdat) {
+              return mpdat.total_elements;
+          });
+
+    NeighCache ncache("neigh_cache", "neigh cache", storage.neighbors_cache);
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> refs_xyz
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("xyz", "\\mathbf{r}");
+    refs_xyz->set_refs(storage.merged_patchdata_ghost.get()
+                           .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
+                               [&](u64 id, MergedPatchData &mpdat) {
+                                   return std::ref(merged_xyzh.get(id).field_pos);
+                               }));
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> refs_vxyz
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("vxyz", "\\mathbf{v}");
+    refs_vxyz->set_refs(storage.merged_patchdata_ghost.get()
+                            .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
+                                [&](u64 id, MergedPatchData &mpdat) {
+                                    return std::ref(mpdat.pdat.get_field<Tvec>(ivxyz_interf));
+                                }));
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_hpart
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("hpart", "\\mathbf{v}");
+    refs_hpart->set_refs(storage.merged_patchdata_ghost.get()
+                             .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                                 [&](u64 id, MergedPatchData &mpdat) {
+                                     return std::ref(mpdat.pdat.get_field<Tscal>(ihpart_interf));
+                                 }));
+
+    refs_xyz->check_sizes(part_counts.indexes);
+    refs_vxyz->check_sizes(part_counts.indexes);
+
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchData &mpdat              = merged_patch.pdat;
 
-        sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
-        sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-        sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        PatchDataFieldSpanPointer<Tvec> buf_xyz    = refs_xyz->get_spans().get(cur_p.id_patch);
+        PatchDataFieldSpanPointer<Tvec> buf_vxyz   = refs_vxyz->get_spans().get(cur_p.id_patch);
+        PatchDataFieldSpanPointer<Tscal> buf_hpart = refs_hpart->get_spans().get(cur_p.id_patch);
+        // sham::DeviceBuffer<Tvec> &buf_xyz    =
+        // merged_xyzh.get(cur_p.id_patch).field_pos.get_buf(); sham::DeviceBuffer<Tvec> &buf_vxyz
+        // = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+        // sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_divv  = pdat.get_field_buf_ref<Tscal>(idivv);
 
-        sycl::range range_npart{pdat.get_obj_cnt()};
+        tree::ObjectCache &pcache = ncache.neigh_cache_handle.get().get_cache(cur_p.id_patch);
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
-
-        /////////////////////////////////////////////
+        u32 npart = part_counts.indexes.get(cur_p.id_patch);
 
         {
             NamedStackEntry tmppp{"compute divv"};
 
             sham::EventList depends_list;
 
-            auto xyz        = buf_xyz.get_read_access(depends_list);
-            auto vxyz       = buf_vxyz.get_read_access(depends_list);
-            auto hpart      = buf_hpart.get_read_access(depends_list);
-            auto omega      = buf_omega.get_read_access(depends_list);
-            auto divv       = buf_divv.get_write_access(depends_list);
-            auto ploop_ptrs = pcache.get_read_access(depends_list);
-
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                const Tscal pmass = gpart_mass;
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_xyz, buf_vxyz, buf_hpart, buf_omega, pcache},
+                sham::MultiRef{buf_divv},
+                npart,
+                [pmass = gpart_mass](
+                    u32 id_a,
+                    const Tvec *__restrict xyz,
+                    const Tvec *__restrict vxyz,
+                    const Tscal *__restrict hpart,
+                    const Tscal *__restrict omega,
+                    auto ploop_ptrs,
+                    Tscal *__restrict divv) {
+                    tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-                tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+                    constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
-                shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute divv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
                     Tvec sum_axyz  = {0, 0, 0};
@@ -126,17 +242,6 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
                     divv[id_a] = -inv_rho_omega_a * sum_nabla_v;
                 });
-            });
-
-            buf_xyz.complete_event_state(e);
-            buf_vxyz.complete_event_state(e);
-            buf_hpart.complete_event_state(e);
-            buf_omega.complete_event_state(e);
-            buf_divv.complete_event_state(e);
-
-            sham::EventList resulting_events;
-            resulting_events.add_event(e);
-            pcache.complete_event_state(resulting_events);
         }
     });
 }

@@ -8,7 +8,7 @@ import utils.envscript
 import utils.sysinfo
 from utils.setuparg import *
 
-NAME = "Turpan AdaptiveCpp"
+NAME = "CALMIP Turpan AdaptiveCpp"
 PATH = "machine/turpan/acpp"
 
 

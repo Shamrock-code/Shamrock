@@ -47,7 +47,7 @@ namespace shamrock::scheduler {
             u32 rq_index = rqs.size() - 1;
             auto &rq     = rqs[rq_index];
 
-            u64 bsize = msg.buf->get_bytesize();
+            u64 bsize = msg.buf->get_size();
             if (bsize % 8 != 0) {
                 shambase::throw_with_loc<std::runtime_error>(
                     "the following mpi comm assume that we can send longs to pack 8byte");

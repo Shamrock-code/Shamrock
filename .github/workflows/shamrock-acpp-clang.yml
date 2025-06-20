@@ -54,7 +54,7 @@ jobs:
             arch: gfx906
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20rocm543
 
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default

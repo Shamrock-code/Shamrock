@@ -371,7 +371,7 @@ namespace sham {
 
         /**
          * @brief Gets the size of the buffer in bytes
-         *
+         * WARNING: This can include padding byte for alignment requirements
          * @return The size of the buffer in bytes
          */
         [[nodiscard]] inline size_t get_bytesize() const { return to_bytesize(get_size()); }

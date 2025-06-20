@@ -302,12 +302,6 @@ namespace shammodels::basegodunov {
         // time derivative dust momemtum
         Component<shamrock::ComputeField<Tvec>> dtrhov_dust;
 
-        // p vector (searching direction for conjuguate gradient)
-        Component<shamrock::ComputeField<Tscal>> phi_p;
-
-        // residual (for conjuguate gradient)
-        Component<shamrock::ComputeField<Tscal>> phi_res;
-
         struct Timings {
             f64 interface = 0;
             f64 neighbors = 0;

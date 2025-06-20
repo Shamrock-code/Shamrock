@@ -8,8 +8,8 @@ import utils.envscript
 import utils.sysinfo
 from utils.setuparg import *
 
-NAME = "Turpan AdaptiveCpp"
-PATH = "machine/turpan/acpp"
+NAME = "Calmip Turpan AdaptiveCpp"
+PATH = "machine/calmip/turpan/acpp-cuda"
 
 
 def setup(arg: SetupArg, envgen: EnvGen):

@@ -1,3 +1,7 @@
+Example batch script
+There is an additional so that Turpan can find libomp correctly
+
+```bash
 #!/bin/bash
 #SBATCH -N 1
 #SBATCH -n 1
@@ -16,3 +20,4 @@ module load boost/gnu/1.81.0
 module list
 
 mpirun ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/sph_weak_scale_test.py
+```

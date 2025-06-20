@@ -27,10 +27,8 @@ First start by checking that you have the right packages installed on your syste
         ```bash
         wget --progress=bar:force https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 16
-        sudo apt install -y libclang-16-dev clang-tools-16 libomp-16-dev
-        sudo rm -r /usr/lib/clang/16*
-        sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
+        sudo ./llvm.sh 18
+        sudo apt install -y libclang-18-dev clang-tools-18 libomp-18-dev
         ```
 
         for the other requirements :

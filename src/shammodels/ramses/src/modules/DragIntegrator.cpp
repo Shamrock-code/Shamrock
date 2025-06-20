@@ -13,13 +13,16 @@
  * @brief
  *
  */
-#include "shammodels/ramses/modules/DragIntegrator.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/EventList.hpp"
 #include "shammath/matrix_exponential.hpp"
+#include "shammodels/ramses/modules/DragIntegrator.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include <stdexcept>
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_with_no_src(
@@ -390,12 +393,29 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
         auto acc_alphas = alphas_buf.get_read_access(depend_list);
 
+        size_t group_size       = 32;
+        size_t mat_size         = ndust + 1;
+        size_t mat_size_squared = mat_size * mat_size;
+        size_t loc_acc_size     = mat_size_squared * group_size;
+
+        size_t loc_mem_size = 5 * sizeof(f64) * loc_acc_size;
+
+        if (loc_mem_size > q.get_device_prop().local_mem_size) {
+            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                "not enough local memory for expo drag integrator:\n"
+                "loc_mem_size: {} > max_local_mem: {}\n"
+                "loc_acc_size: {}\n"
+                "group_size: {}\n"
+                "ndust: {}\n",
+                loc_mem_size,
+                q.get_device_prop().local_mem_size,
+                loc_acc_size,
+                group_size,
+                ndust));
+        }
+
         auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
             // local/shared memory alloc for each work-item
-            const size_t group_size       = 32;
-            const size_t mat_size         = ndust + 1;
-            const size_t mat_size_squared = mat_size * mat_size;
-            const size_t loc_acc_size     = mat_size_squared * group_size;
             sycl::local_accessor<f64> local_A(loc_acc_size, cgh);
             sycl::local_accessor<f64> local_B(loc_acc_size, cgh);
             sycl::local_accessor<f64> local_F(loc_acc_size, cgh);

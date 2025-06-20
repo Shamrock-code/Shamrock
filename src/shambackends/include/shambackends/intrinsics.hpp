@@ -75,6 +75,28 @@ namespace sham {
         return ret;
     }
 
+#elif defined(_IS_ONEAPI_SMCP_HIP) || defined(_IS_ACPP_SMCP_HIP)
+
+    // from https://github.com/ROCm/ROCm/issues/2059
+    // HW_REG_HW_ID is replaced by HW_REG_HW_ID1 & HW_REG_HW_ID2 on >gfx9
+
+    #ifdef __GFX9__
+        #define SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
+    // from https://github.com/ROCm/ROCm/issues/2059
+    __device__ inline u32 get_sm_id() {
+        uint cu_id;
+        asm volatile("s_getreg_b32 %0, hwreg(HW_REG_HW_ID, 8, 4)" : "=s"(cu_id));
+        return cu_id;
+    }
+    #elif defined(__GFX10__) || defined(__GFX11__)
+        #define SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
+    __device__ inline u32 get_sm_id() {
+        uint cu_id;
+        asm volatile("s_getreg_b32 %0, hwreg(HW_REG_HW_ID1, 10, 4)" : "=s"(cu_id));
+        return cu_id;
+    }
+    #endif
+
 #else
     /**
      * @brief Return the SM (Streaming Multiprocessor) ID of the calling thread, or equivalent if

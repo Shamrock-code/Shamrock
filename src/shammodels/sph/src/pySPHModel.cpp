@@ -346,6 +346,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.push_particle(pos, hpart, upart);
             })
         .def(
+            "push_particle_mhd",
+            [](T &self,
+               std::vector<f64_3> pos,
+               std::vector<f64> hpart,
+               std::vector<f64> upart,
+               std::vector<f64_3> B_on_rho,
+               std::vector<f64> psi_on_ch) {
+                return self.push_particle_mhd(pos, hpart, upart, B_on_rho, psi_on_ch);
+            })
+        .def(
             "add_cube_fcc_3d",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
                 return self.add_cube_fcc_3d(dr, {box_min, box_max});

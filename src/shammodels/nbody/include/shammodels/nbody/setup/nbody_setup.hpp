@@ -63,7 +63,7 @@ namespace models::nbody {
 
         inline void set_total_mass(flt tot_mass) {
             u64 part = 0;
-            mpi::allreduce(&part_cnt, &part, 1, mpi_type_u64, MPI_SUM, MPI_COMM_WORLD);
+            shamcomm::mpi::Allreduce(&part_cnt, &part, 1, mpi_type_u64, MPI_SUM, MPI_COMM_WORLD);
             part_mass = tot_mass / part;
         }
 

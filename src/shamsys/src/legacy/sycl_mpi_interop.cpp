@@ -14,6 +14,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 

@@ -89,13 +89,15 @@ void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
             rqs.push_back(MPI_Request{});
             u32 rq_index = rqs.size() - 1;
             auto &rq     = rqs[rq_index];
-            mpi::isend(buf_send.get_ptr(), length, MPI_BYTE, wr_receiv, 0, MPI_COMM_WORLD, &rq);
+            shamcomm::mpi::Isend(
+                buf_send.get_ptr(), length, MPI_BYTE, wr_receiv, 0, MPI_COMM_WORLD, &rq);
             is_used = true;
         }
 
         if (wr == wr_receiv) {
             MPI_Status s;
-            mpi::recv(buf_recv.get_ptr(), length, MPI_BYTE, wr_sender, 0, MPI_COMM_WORLD, &s);
+            shamcomm::mpi::Recv(
+                buf_recv.get_ptr(), length, MPI_BYTE, wr_sender, 0, MPI_COMM_WORLD, &s);
             is_used = true;
         }
 
@@ -104,7 +106,7 @@ void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
         }
         std::vector<MPI_Status> st_lst(rqs.size());
         if (rqs.size() > 0) {
-            mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
+            shamcomm::mpi::Waitall(rqs.size(), rqs.data(), st_lst.data());
         }
         f64 t_end = MPI_Wtime();
         t += t_end - t_start;
@@ -146,15 +148,15 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
 
         if (wr == wr1) {
             MPI_Status s;
-            mpi::send(buf_send.get_ptr(), length, MPI_BYTE, wr2, 0, MPI_COMM_WORLD);
-            mpi::recv(buf_recv.get_ptr(), length, MPI_BYTE, wr2, 1, MPI_COMM_WORLD, &s);
+            shamcomm::mpi::Send(buf_send.get_ptr(), length, MPI_BYTE, wr2, 0, MPI_COMM_WORLD);
+            shamcomm::mpi::Recv(buf_recv.get_ptr(), length, MPI_BYTE, wr2, 1, MPI_COMM_WORLD, &s);
             is_used = true;
         }
 
         if (wr == wr2) {
             MPI_Status s;
-            mpi::recv(buf_recv.get_ptr(), length, MPI_BYTE, wr1, 0, MPI_COMM_WORLD, &s);
-            mpi::send(buf_send.get_ptr(), length, MPI_BYTE, wr1, 1, MPI_COMM_WORLD);
+            shamcomm::mpi::Recv(buf_recv.get_ptr(), length, MPI_BYTE, wr1, 0, MPI_COMM_WORLD, &s);
+            shamcomm::mpi::Send(buf_send.get_ptr(), length, MPI_BYTE, wr1, 1, MPI_COMM_WORLD);
             is_used = true;
         }
 

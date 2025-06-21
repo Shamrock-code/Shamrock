@@ -219,7 +219,7 @@ PatchScheduler::~PatchScheduler() {}
 bool PatchScheduler::should_resize_box(bool node_in) {
     u16 tmp = node_in;
     u16 out = 0;
-    mpi::allreduce(&tmp, &out, 1, mpi_type_u16, MPI_MAX, MPI_COMM_WORLD);
+    shamcomm::mpi::Allreduce(&tmp, &out, 1, mpi_type_u16, MPI_MAX, MPI_COMM_WORLD);
     return out;
 }
 
@@ -906,7 +906,7 @@ void send_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
             shambase::throw_with_loc<std::runtime_error>("The message is too large for MPI");
         }
 
-        mpi::isend(
+        shamcomm::mpi::Isend(
             msg.buf->get_ptr(),
             lcount,
             get_mpi_type<u64>(),
@@ -926,13 +926,13 @@ void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &r
 
         MPI_Status st;
         i32 cnt;
-        mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
-        mpi::get_count(&st, get_mpi_type<u64>(), &cnt);
+        shamcomm::mpi::Probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
+        shamcomm::mpi::Get_count(&st, get_mpi_type<u64>(), &cnt);
 
         msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(
             cnt * 8, shamsys::instance::get_compute_scheduler_ptr());
 
-        mpi::irecv(
+        shamcomm::mpi::Irecv(
             msg.buf->get_ptr(), cnt, get_mpi_type<u64>(), msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
     }
 }
@@ -994,7 +994,7 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     recv_probe_messages(recv_payloads, rqs);
 
     std::vector<MPI_Status> st_lst(rqs.size());
-    mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
+    shamcomm::mpi::Waitall(rqs.size(), rqs.data(), st_lst.data());
 
     std::vector<std::unique_ptr<PatchData>> ret;
     for (auto &recv_msg : recv_payloads) {

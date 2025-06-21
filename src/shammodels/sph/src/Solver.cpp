@@ -25,6 +25,7 @@
 #include "shambackends/details/memoryHandle.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
@@ -942,6 +943,7 @@ template<class Tvec, template<class> class Kern>
 shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
+    f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
     Tscal t_current = solver_config.get_time();
     Tscal dt        = solver_config.get_dt_sph();
@@ -1642,6 +1644,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 
+    f64 delta_mpi_timer = shamcomm::mpi::get_timer("total") - mpi_timer_start;
     f64 t_dev_alloc
         = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
           + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);
@@ -1655,7 +1658,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         rate,
         rank_count,
         tstep.elasped_sec(),
-        storage.timings_details.interface,
+        delta_mpi_timer,
         t_dev_alloc,
         mem_perf_infos_end.max_allocated_byte_device);
 

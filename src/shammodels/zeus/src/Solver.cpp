@@ -16,6 +16,7 @@
 
 #include "shammodels/zeus/Solver.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/zeus/modules/AMRTree.hpp"
 #include "shammodels/zeus/modules/ComputePressure.hpp"
@@ -35,6 +36,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
     StackEntry stack_loc{};
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
+    f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("amr::Zeus", shambase::format("t = {}, dt = {}", t_current, dt_input));
@@ -553,6 +555,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 
+    f64 delta_mpi_timer = shamcomm::mpi::get_timer("total") - mpi_timer_start;
     f64 t_dev_alloc
         = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
           + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);
@@ -564,7 +567,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
         rate,
         rank_count,
         tstep.elasped_sec(),
-        storage.timings_details.interface,
+        delta_mpi_timer,
         t_dev_alloc,
         mem_perf_infos_end.max_allocated_byte_device);
 

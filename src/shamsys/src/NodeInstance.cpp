@@ -21,6 +21,7 @@
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl_utils.hpp"
@@ -334,6 +335,8 @@ namespace shamsys::instance {
 
     void close_mpi() {
         mpidtypehandler::free_mpidtype();
+
+        free_sycl_mpi_types();
 
         if (shamcomm::world_rank() == 0) {
             logger::print_faint_row();

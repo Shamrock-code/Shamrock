@@ -144,7 +144,7 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> &rq_lst) {
     }
 
     std::vector<MPI_Status> st_lst(rqst.size());
-    mpi::waitall(rqst.size(), rqst.data(), st_lst.data());
+    shamcomm::mpi::Waitall(rqst.size(), rqst.data(), st_lst.data());
 
     for (auto a : rq_lst) {
         a.finalize();

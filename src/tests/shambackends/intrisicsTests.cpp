@@ -13,6 +13,7 @@
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
+#include <set>
 
 TestStart(Unittest, "shambackends/intrisics::get_sm_id", test_get_sm_id, 1) {
 

@@ -25,6 +25,7 @@
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/logs.hpp"
 #include <shambackends/sycl.hpp>
+#include <unordered_map>
 #include <vector>
 
 #if __has_include(<nlohmann/json.hpp>)
@@ -74,6 +75,51 @@ namespace sham {
             : dev_sched(dev_sched), frame_start_clock(sham::DeviceBuffer<u64>(1, dev_sched)),
               events(max_event_count, dev_sched), event_count(1, dev_sched) {
             event_count.set_val_at_idx(0, 0);
+            is_available_on_device();
+        }
+
+        /**
+         * @brief Check if gpu_core_timeline_profilier is available on the device
+         *
+         * This function checks if the current device supports both
+         * sham::intrisics::get_device_clock and sham::intrisics::get_sm_id.
+         * If not, a warning message is logged.
+         *
+         * This function is lazy, it will only check if the function is available on the first call.
+         *
+         * @return true if gpu_core_timeline_profilier is available, false otherwise
+         */
+        inline bool is_available_on_device() {
+
+            static std::unordered_map<DeviceScheduler *, bool> cache;
+            auto it = cache.find(dev_sched.get());
+            if (it == cache.end()) {
+
+                sham::DeviceBuffer<u64> tmp(1, dev_sched);
+
+                sham::kernel_call(
+                    dev_sched->get_queue(),
+                    sham::MultiRef{},
+                    sham::MultiRef{tmp},
+                    1,
+                    [](u32 i, u64 *out) {
+#if defined(SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE)                                         \
+    && defined(SHAMROCK_INTRISICS_GET_SMID_AVAILABLE)
+                        *out = 1;
+#else
+                        *out = 0;
+#endif
+                    });
+
+                cache[dev_sched.get()] = tmp.get_val_at_idx(0);
+
+                if (!cache[dev_sched.get()]) {
+                    logger::warn_ln(
+                        "Backend", "gpu_core_timeline_profilier is not available on the device");
+                }
+            }
+
+            return cache[dev_sched.get()];
         }
 
         // base clock val

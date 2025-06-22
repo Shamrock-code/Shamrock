@@ -17,6 +17,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambackends/sycl.hpp"
+#include <cstdint>
 
 namespace sham {
 
@@ -110,6 +111,12 @@ namespace sham {
 
         /// The maximum alignment of memory that can be allocated on the device in bytes
         uint32_t mem_base_addr_align;
+
+        /// SYCL sub group sizes property
+        std::vector<size_t> sub_group_sizes;
+
+        /// Default work group size
+        uint32_t default_work_group_size;
     };
 
     struct DeviceMPIProperties {

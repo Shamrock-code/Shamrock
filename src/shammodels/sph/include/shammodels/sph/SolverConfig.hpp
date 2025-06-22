@@ -632,8 +632,7 @@ struct shammodels::sph::SolverConfig {
 
     /// @brief Whether the solver has a field for sound speed
     inline bool has_field_soundspeed() {
-        return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal()
-               || mhd_config.has_divB_field();
+        return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
     }
 
     /// @brief Whether the solver has a field for B_on_rho

@@ -38,13 +38,36 @@ namespace sham {
     template<class T, USMKindTarget target = device>
     class DeviceBuffer {
 
+        /**
+         * @brief Upgrade the size to the next multiple of mult
+         *
+         * This function takes a size in bytes and a multiple, and returns the
+         * next multiple of the given multiple.
+         *
+         * @param sz The size in bytes
+         * @param mult The multiple
+         * @return The upgraded size
+         */
+        static size_t upgrade_multiple(size_t sz, size_t mult) {
+            if (sz % mult)
+                return sz + (mult - sz % mult);
+            return sz;
+        };
+
         public:
         /**
          * @brief Get the memory alignment of the type T in bytes
          *
          * @return The memory alignment of the type T in bytes
          */
-        static std::optional<size_t> get_alignment() { return alignof(T); }
+        static std::optional<size_t> get_alignment(DeviceScheduler_ptr dev_sched) {
+            return upgrade_multiple(
+                alignof(T),
+                shambase::get_check_ref(dev_sched)
+                    .get_queue()
+                    .get_device_prop()
+                    .mem_base_addr_align);
+        }
 
         /**
          * @brief Convert a size in number of elements to a size in bytes
@@ -52,16 +75,10 @@ namespace sham {
          * @param sz The size in number of elements
          * @return The size in bytes
          */
-        static size_t to_bytesize(size_t sz) {
+        static size_t alloc_request_size_fct(size_t sz, DeviceScheduler_ptr dev_sched) {
             size_t ret = sz * sizeof(T);
 
-            auto upgrade_multiple = [](size_t sz, size_t mult) -> size_t {
-                if (sz % mult)
-                    return sz + (mult - sz % mult);
-                return sz;
-            };
-
-            auto align = get_alignment();
+            auto align = get_alignment(dev_sched);
             if (align) {
                 ret = upgrade_multiple(ret, *align);
             }
@@ -97,10 +114,12 @@ namespace sham {
          * BufferEventHandler object and stores it in the `events_hndl` member
          * variable.
          */
-        DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
+        DeviceBuffer(size_t sz, DeviceScheduler_ptr dev_sched)
             : DeviceBuffer(
                   sz,
-                  details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())) {}
+                  details::create_usm_ptr<target>(
+                      alloc_request_size_fct(sz, dev_sched), dev_sched, get_alignment(dev_sched))) {
+        }
 
         /**
          * @brief Construct a new Device Buffer object from a SYCL buffer
@@ -368,13 +387,6 @@ namespace sham {
          * @return The number of elements in the buffer
          */
         [[nodiscard]] inline size_t get_size() const { return size; }
-
-        /**
-         * @brief Gets the size of the buffer in bytes
-         * WARNING: This can include padding byte for alignment requirements
-         * @return The size of the buffer in bytes
-         */
-        [[nodiscard]] inline size_t get_bytesize() const { return to_bytesize(get_size()); }
 
         /**
          * @brief Gets the amount of memory used by the buffer
@@ -887,17 +899,19 @@ namespace sham {
          */
         inline void resize(u32 new_size) {
 
+            auto dev_sched = hold.get_dev_scheduler_ptr();
+
             StackEntry __st{};
 
-            if (to_bytesize(new_size) > hold.get_bytesize()) {
+            if (alloc_request_size_fct(new_size, dev_sched) > hold.get_bytesize()) {
                 // expand storage
 
-                size_t new_storage_size = to_bytesize(new_size * 1.5);
+                size_t new_storage_size = alloc_request_size_fct(new_size * 1.5, dev_sched);
 
                 DeviceBuffer new_buf(
                     new_size,
                     details::create_usm_ptr<target>(
-                        new_storage_size, get_dev_scheduler_ptr(), get_alignment()));
+                        new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
                 new_buf.copy_from(*this, get_size());
@@ -905,15 +919,15 @@ namespace sham {
                 // override old buffer
                 std::swap(new_buf, *this);
 
-            } else if (to_bytesize(new_size) < hold.get_bytesize() * 0.5) {
+            } else if (alloc_request_size_fct(new_size, dev_sched) < hold.get_bytesize() * 0.5) {
                 // shrink storage
 
-                size_t new_storage_size = to_bytesize(new_size);
+                size_t new_storage_size = alloc_request_size_fct(new_size, dev_sched);
 
                 DeviceBuffer new_buf(
                     new_size,
                     details::create_usm_ptr<target>(
-                        new_storage_size, get_dev_scheduler_ptr(), get_alignment()));
+                        new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
                 new_buf.copy_from(*this, new_size);

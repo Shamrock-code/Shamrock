@@ -216,7 +216,7 @@ namespace sham {
         }
 #endif
 
-        return {
+        return DeviceProperties{
             Vendor::UNKNOWN,         // We cannot determine the vendor
             get_device_backend(dev), // Query the backend based on the platform name
             get_device_type(dev),
@@ -224,7 +224,10 @@ namespace sham {
             shambase::get_check_ref(global_mem_cache_line_size),
             shambase::get_check_ref(global_mem_cache_size),
             shambase::get_check_ref(local_mem_size),
-            shambase::get_check_ref(max_compute_units)};
+            shambase::get_check_ref(max_compute_units),
+            shambase::get_check_ref(max_mem_alloc_size),
+            shambase::get_check_ref(mem_base_addr_align),
+        };
     }
 
     /**

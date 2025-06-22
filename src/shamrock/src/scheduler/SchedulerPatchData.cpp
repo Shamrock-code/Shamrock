@@ -57,7 +57,7 @@ namespace shamrock::scheduler {
                 shambase::throw_with_loc<std::runtime_error>("The message is too large for MPI");
             }
 
-            mpi::isend(
+            shamcomm::mpi::Isend(
                 msg.buf->get_ptr(),
                 lcount,
                 get_mpi_type<u64>(),
@@ -77,13 +77,13 @@ namespace shamrock::scheduler {
 
             MPI_Status st;
             i32 cnt;
-            mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
-            mpi::get_count(&st, get_mpi_type<u64>(), &cnt);
+            shamcomm::mpi::Probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
+            shamcomm::mpi::Get_count(&st, get_mpi_type<u64>(), &cnt);
 
             msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(
                 cnt * 8, shamsys::instance::get_compute_scheduler_ptr());
 
-            mpi::irecv(
+            shamcomm::mpi::Irecv(
                 msg.buf->get_ptr(),
                 cnt,
                 get_mpi_type<u64>(),
@@ -153,7 +153,7 @@ namespace shamrock::scheduler {
         recv_probe_messages(recv_payloads, rqs);
 
         std::vector<MPI_Status> st_lst(rqs.size());
-        mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
+        shamcomm::mpi::Waitall(rqs.size(), rqs.data(), st_lst.data());
 
         u32 idx = 0;
         // receive

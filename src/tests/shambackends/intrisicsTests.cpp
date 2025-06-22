@@ -9,7 +9,6 @@
 
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/EventList.hpp"
-#include "shambackends/gpu_core_timeline.hpp"
 #include "shambackends/intrinsics.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"

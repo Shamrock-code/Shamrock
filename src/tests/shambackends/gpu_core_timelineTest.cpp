@@ -22,6 +22,7 @@ TestStart(
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
     sham::DeviceBuffer<T> buf{sz, dev_sched};
+    buf.fill(10);
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 

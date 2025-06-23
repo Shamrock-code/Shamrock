@@ -415,149 +415,285 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 ndust));
         }
 
+        sham::DeviceBuffer<Tscal> scratch_expo(
+            5 * mat_size_squared * cell_count, shamsys::instance::get_compute_scheduler_ptr());
+        Tscal *exp_scratch_ptr_base = scratch_expo.get_write_access(depend_list);
         auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
-            // local/shared memory alloc for each work-item
-            sycl::local_accessor<f64> local_A(loc_acc_size, cgh);
-            sycl::local_accessor<f64> local_B(loc_acc_size, cgh);
-            sycl::local_accessor<f64> local_F(loc_acc_size, cgh);
-            sycl::local_accessor<f64> local_I(loc_acc_size, cgh);
-            sycl::local_accessor<f64> local_Id(loc_acc_size, cgh);
+            shambase::parralel_for(cgh, cell_count, "add_drag [expo-global-mem]", [=](u32 id_a) {
+                // sparse jacobian matrix
+                auto get_jacobian
+                    = [=](u32 id,
+                          std::mdspan<
+                              f64,
+                              std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                              &jacobian) {
+                          mat_set_nul<f64>(jacobian);
+                          // fill first row
+                          for (auto j = 1; j < jacobian.extent(1); j++)
+                              jacobian(0, j) = acc_alphas[j - 1];
+                          // fil first column
+                          for (auto i = 1; i < jacobian.extent(0); i++) {
+                              jacobian(i, 0) = acc_alphas[i - 1]
+                                               * (acc_rho_d_new_patch[id * ndust + (i - 1)]
+                                                  / acc_rho_new_patch[id]);
+                              jacobian(0, 0) -= jacobian(i, 0);
+                          }
+                          // fill diagonal from (i,j)=(1,1)
+                          for (auto i = 1; i < jacobian.extent(0); i++)
+                              jacobian(i, i) = -acc_alphas[i - 1];
+                          // the rest of the buffer is set to zero
+                      };
+                f64 mu = 0;
+                for (auto i = 0; i < ndust; i++) {
+                    mu += (1 + (acc_rho_d_new_patch[id_a * ndust + i] / acc_rho_new_patch[id_a]))
+                          * acc_alphas[i];
+                }
+                mu *= (-dt / (ndust + 1));
 
-            logger::debug_sycl_ln("SYCL", shambase::format("parallel_for add_drag [expo]"));
-            cgh.parallel_for(
-                shambase::make_range(cell_count, group_size), [=](sycl::nd_item<1> id) {
-                    u32 loc_id = id.get_local_id();
-                    u32 id_a   = id.get_global_id();
-                    if (id_a >= cell_count)
-                        return;
+                // get ptr to datas
+                Tscal *ptr_A = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared);
+                Tscal *ptr_B
+                    = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared) + mat_size_squared;
+                Tscal *ptr_F
+                    = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared) + 2 * mat_size_squared;
+                Tscal *ptr_I
+                    = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared) + 3 * mat_size_squared;
+                Tscal *ptr_Id
+                    = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared) + 4 * mat_size_squared;
 
-                    // sparse jacobian matrix
-                    auto get_jacobian
-                        = [=](u32 id,
-                              std::mdspan<
-                                  f64,
-                                  std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
-                                  &jacobian) {
-                              mat_set_nul<f64>(jacobian);
-                              // fill first row
-                              for (auto j = 1; j < jacobian.extent(1); j++)
-                                  jacobian(0, j) = acc_alphas[j - 1];
-                              // fil first column
-                              for (auto i = 1; i < jacobian.extent(0); i++) {
-                                  jacobian(i, 0) = acc_alphas[i - 1]
-                                                   * (acc_rho_d_new_patch[id * ndust + (i - 1)]
-                                                      / acc_rho_new_patch[id]);
-                                  jacobian(0, 0) -= jacobian(i, 0);
-                              }
-                              // fill diagonal from (i,j)=(1,1)
-                              for (auto i = 1; i < jacobian.extent(0); i++)
-                                  jacobian(i, i) = -acc_alphas[i - 1];
-                              // the rest of the buffer is set to zero
-                          };
+                // create mdspan(s)
+                std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                    mdspan_A(ptr_A, mat_size, mat_size);
+                std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                    mdspan_B(ptr_B, mat_size, mat_size);
+                std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                    mdspan_F(ptr_F, mat_size, mat_size);
+                std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                    mdspan_I(ptr_I, mat_size, mat_size);
+                std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
+                    mdspan_Id(ptr_Id, mat_size, mat_size);
 
-                    f64 mu = 0;
-                    for (auto i = 0; i < ndust; i++) {
-                        mu += (1
-                               + (acc_rho_d_new_patch[id_a * ndust + i] / acc_rho_new_patch[id_a]))
-                              * acc_alphas[i];
-                    }
-                    mu *= (-dt / (ndust + 1));
+                get_jacobian(id_a, mdspan_A);
 
-                    // get ptr to datas
-                    f64 *ptr_loc_A  = local_A.get_pointer() + mat_size_squared * loc_id;
-                    f64 *ptr_loc_B  = local_B.get_pointer() + mat_size_squared * loc_id;
-                    f64 *ptr_loc_F  = local_F.get_pointer() + mat_size_squared * loc_id;
-                    f64 *ptr_loc_I  = local_I.get_pointer() + mat_size_squared * loc_id;
-                    f64 *ptr_loc_Id = local_Id.get_pointer() + mat_size_squared * loc_id;
+                // pre-processing step
+                shammath::mat_set_identity<f64>(mdspan_Id);
+                shammath::mat_axpy_beta<f64, f64>(-mu, mdspan_Id, dt, mdspan_A);
 
-                    // create mdspan(s)
-                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
-                        mdspan_A(ptr_loc_A, mat_size, mat_size);
-                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
-                        mdspan_B(ptr_loc_B, mat_size, mat_size);
-                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
-                        mdspan_F(ptr_loc_F, mat_size, mat_size);
-                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
-                        mdspan_I(ptr_loc_I, mat_size, mat_size);
-                    std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
-                        mdspan_Id(ptr_loc_Id, mat_size, mat_size);
+                // compute matrix exponential
+                const i32 K_exp = 9;
+                shammath::mat_exp<f64, f64>(
+                    K_exp, mdspan_A, mdspan_F, mdspan_B, mdspan_I, mdspan_Id, ndust + 1);
 
-                    // get local Jacobian matrix
+                // post-processing step
+                shammath::mat_mul_scalar<f64>(mdspan_A, sycl::exp(mu));
 
-                    get_jacobian(id_a, mdspan_A);
+                // use the matrix exponential to for to updates momemtum
+                f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};
+                r += mdspan_A(0, 0) * acc_rhov_new_patch[id_a];
 
-                    // pre-processing step
-                    shammath::mat_set_identity<f64>(mdspan_Id);
-                    shammath::mat_axpy_beta<f64, f64>(-mu, mdspan_Id, dt, mdspan_A);
+                for (auto j = 1; j < ndust + 1; j++) {
+                    r += mdspan_A(0, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
+                }
 
-                    // compute matrix exponential
-                    const i32 K_exp = 9;
-                    shammath::mat_exp<f64, f64>(
-                        K_exp, mdspan_A, mdspan_F, mdspan_B, mdspan_I, mdspan_Id, ndust + 1);
+                dd = r - acc_rhov_new_patch[id_a];
 
-                    // post-processing step
-                    shammath::mat_mul_scalar<f64>(mdspan_A, sycl::exp(mu));
+                f64 dissipation = 0, drag_work = 0;
 
-                    // use the matrix exponential to for to updates momemtum
-                    f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};
-                    r += mdspan_A(0, 0) * acc_rhov_new_patch[id_a];
+                // compute work of drag terms
+                f64 inv_rho = 1.0 / (acc_rho_new_patch[id_a]);
 
-                    for (auto j = 1; j < ndust + 1; j++) {
-                        r += mdspan_A(0, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
-                    }
+                f64_3 v_bf = inv_rho * acc_rhov_new_patch[id_a];
+                f64_3 v_af = inv_rho * r;
 
-                    dd = r - acc_rhov_new_patch[id_a];
+                drag_work = 0.5
+                            * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] + v_af[1])
+                               + dd[2] * (v_bf[2] + v_af[2]));
 
-                    f64 dissipation = 0, drag_work = 0;
+                // save gas momentum back
+                acc_rhov_old[id_a] = r;
+                acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
 
-                    // compute work of drag terms
-                    f64 inv_rho = 1.0 / (acc_rho_new_patch[id_a]);
+                for (auto d_id = 1; d_id <= ndust; d_id++) {
+                    r *= 0;
+                    r += mdspan_A(d_id, 0) * acc_rhov_new_patch[id_a];
 
-                    f64_3 v_bf = inv_rho * acc_rhov_new_patch[id_a];
-                    f64_3 v_af = inv_rho * r;
+                    for (auto j = 1; j <= ndust; j++) {
 
-                    drag_work = 0.5
-                                * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] + v_af[1])
-                                   + dd[2] * (v_bf[2] + v_af[2]));
-
-                    // save gas momentum back
-                    acc_rhov_old[id_a] = r;
-                    acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
-
-                    for (auto d_id = 1; d_id <= ndust; d_id++) {
-                        r *= 0;
-                        r += mdspan_A(d_id, 0) * acc_rhov_new_patch[id_a];
-
-                        for (auto j = 1; j <= ndust; j++) {
-
-                            r += mdspan_A(d_id, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
-                        }
-
-                        dd = r - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
-
-                        inv_rho = 1.0 / (acc_rho_d_new_patch[id_a * ndust + (d_id - 1)]);
-
-                        v_bf = inv_rho * acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
-
-                        v_af = inv_rho * r;
-
-                        // compute dissipaation by id-th dust
-                        dissipation += 0.5
-                                       * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] + v_af[1])
-                                          + dd[2] * (v_bf[2] + v_af[2]));
-
-                        // save dust momentum back
-                        acc_rhov_d_old[id_a * ndust + (d_id - 1)] = r;
-                        acc_rho_d_old[id_a * ndust + (d_id - 1)]
-                            = acc_rho_d_new_patch[id_a * ndust + (d_id - 1)];
+                        r += mdspan_A(d_id, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
                     }
 
-                    // updates energy
-                    acc_rhoe_old[id_a] = acc_rhoe_new_patch[id_a]
-                                         + (1 - friction_control) * drag_work
-                                         - friction_control * dissipation;
-                });
+                    dd = r - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
+
+                    inv_rho = 1.0 / (acc_rho_d_new_patch[id_a * ndust + (d_id - 1)]);
+
+                    v_bf = inv_rho * acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
+
+                    v_af = inv_rho * r;
+
+                    // compute dissipaation by id-th dust
+                    dissipation += 0.5
+                                   * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] + v_af[1])
+                                      + dd[2] * (v_bf[2] + v_af[2]));
+
+                    // save dust momentum back
+                    acc_rhov_d_old[id_a * ndust + (d_id - 1)] = r;
+                    acc_rho_d_old[id_a * ndust + (d_id - 1)]
+                        = acc_rho_d_new_patch[id_a * ndust + (d_id - 1)];
+                }
+
+                // updates energy
+                acc_rhoe_old[id_a] = acc_rhoe_new_patch[id_a] + (1 - friction_control) * drag_work
+                                     - friction_control * dissipation;
+            });
         });
+
+        /*
+                auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh)
+           {
+                    // local/shared memory alloc for each work-item
+                    sycl::local_accessor<f64> local_A(loc_acc_size, cgh);
+                    sycl::local_accessor<f64> local_B(loc_acc_size, cgh);
+                    sycl::local_accessor<f64> local_F(loc_acc_size, cgh);
+                    sycl::local_accessor<f64> local_I(loc_acc_size, cgh);
+                    sycl::local_accessor<f64> local_Id(loc_acc_size, cgh);
+
+                    logger::debug_sycl_ln("SYCL", shambase::format("parallel_for add_drag [expo]"));
+                    cgh.parallel_for(
+                        shambase::make_range(cell_count, group_size), [=](sycl::nd_item<1> id) {
+                            u32 loc_id = id.get_local_id();
+                            u32 id_a   = id.get_global_id();
+                            if (id_a >= cell_count)
+                                return;
+
+                            // sparse jacobian matrix
+                            auto get_jacobian
+                                = [=](u32 id,
+                                      std::mdspan<
+                                          f64,
+                                          std::extents<size_t, std::dynamic_extent,
+           std::dynamic_extent>> &jacobian) { mat_set_nul<f64>(jacobian);
+                                      // fill first row
+                                      for (auto j = 1; j < jacobian.extent(1); j++)
+                                          jacobian(0, j) = acc_alphas[j - 1];
+                                      // fil first column
+                                      for (auto i = 1; i < jacobian.extent(0); i++) {
+                                          jacobian(i, 0) = acc_alphas[i - 1]
+                                                           * (acc_rho_d_new_patch[id * ndust + (i -
+           1)] / acc_rho_new_patch[id]); jacobian(0, 0) -= jacobian(i, 0);
+                                      }
+                                      // fill diagonal from (i,j)=(1,1)
+                                      for (auto i = 1; i < jacobian.extent(0); i++)
+                                          jacobian(i, i) = -acc_alphas[i - 1];
+                                      // the rest of the buffer is set to zero
+                                  };
+
+                            f64 mu = 0;
+                            for (auto i = 0; i < ndust; i++) {
+                                mu += (1
+                                       + (acc_rho_d_new_patch[id_a * ndust + i] /
+           acc_rho_new_patch[id_a]))
+                                      * acc_alphas[i];
+                            }
+                            mu *= (-dt / (ndust + 1));
+
+                            // get ptr to datas
+                            f64 *ptr_loc_A  = local_A.get_pointer() + mat_size_squared * loc_id;
+                            f64 *ptr_loc_B  = local_B.get_pointer() + mat_size_squared * loc_id;
+                            f64 *ptr_loc_F  = local_F.get_pointer() + mat_size_squared * loc_id;
+                            f64 *ptr_loc_I  = local_I.get_pointer() + mat_size_squared * loc_id;
+                            f64 *ptr_loc_Id = local_Id.get_pointer() + mat_size_squared * loc_id;
+
+                            // create mdspan(s)
+                            std::mdspan<f64, std::extents<size_t, std::dynamic_extent,
+           std::dynamic_extent>> mdspan_A(ptr_loc_A, mat_size, mat_size); std::mdspan<f64,
+           std::extents<size_t, std::dynamic_extent, std::dynamic_extent>> mdspan_B(ptr_loc_B,
+           mat_size, mat_size); std::mdspan<f64, std::extents<size_t, std::dynamic_extent,
+           std::dynamic_extent>> mdspan_F(ptr_loc_F, mat_size, mat_size); std::mdspan<f64,
+           std::extents<size_t, std::dynamic_extent, std::dynamic_extent>> mdspan_I(ptr_loc_I,
+           mat_size, mat_size); std::mdspan<f64, std::extents<size_t, std::dynamic_extent,
+           std::dynamic_extent>> mdspan_Id(ptr_loc_Id, mat_size, mat_size);
+
+                            // get local Jacobian matrix
+
+                            get_jacobian(id_a, mdspan_A);
+
+                            // pre-processing step
+                            shammath::mat_set_identity<f64>(mdspan_Id);
+                            shammath::mat_axpy_beta<f64, f64>(-mu, mdspan_Id, dt, mdspan_A);
+
+                            // compute matrix exponential
+                            const i32 K_exp = 9;
+                            shammath::mat_exp<f64, f64>(
+                                K_exp, mdspan_A, mdspan_F, mdspan_B, mdspan_I, mdspan_Id, ndust +
+           1);
+
+                            // post-processing step
+                            shammath::mat_mul_scalar<f64>(mdspan_A, sycl::exp(mu));
+
+                            // use the matrix exponential to for to updates momemtum
+                            f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};
+                            r += mdspan_A(0, 0) * acc_rhov_new_patch[id_a];
+
+                            for (auto j = 1; j < ndust + 1; j++) {
+                                r += mdspan_A(0, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
+                            }
+
+                            dd = r - acc_rhov_new_patch[id_a];
+
+                            f64 dissipation = 0, drag_work = 0;
+
+                            // compute work of drag terms
+                            f64 inv_rho = 1.0 / (acc_rho_new_patch[id_a]);
+
+                            f64_3 v_bf = inv_rho * acc_rhov_new_patch[id_a];
+                            f64_3 v_af = inv_rho * r;
+
+                            drag_work = 0.5
+                                        * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] + v_af[1])
+                                           + dd[2] * (v_bf[2] + v_af[2]));
+
+                            // save gas momentum back
+                            acc_rhov_old[id_a] = r;
+                            acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
+
+                            for (auto d_id = 1; d_id <= ndust; d_id++) {
+                                r *= 0;
+                                r += mdspan_A(d_id, 0) * acc_rhov_new_patch[id_a];
+
+                                for (auto j = 1; j <= ndust; j++) {
+
+                                    r += mdspan_A(d_id, j) * acc_rhov_d_new_patch[id_a * ndust + (j
+           - 1)];
+                                }
+
+                                dd = r - acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
+
+                                inv_rho = 1.0 / (acc_rho_d_new_patch[id_a * ndust + (d_id - 1)]);
+
+                                v_bf = inv_rho * acc_rhov_d_new_patch[id_a * ndust + (d_id - 1)];
+
+                                v_af = inv_rho * r;
+
+                                // compute dissipaation by id-th dust
+                                dissipation += 0.5
+                                               * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] +
+           v_af[1])
+                                                  + dd[2] * (v_bf[2] + v_af[2]));
+
+                                // save dust momentum back
+                                acc_rhov_d_old[id_a * ndust + (d_id - 1)] = r;
+                                acc_rho_d_old[id_a * ndust + (d_id - 1)]
+                                    = acc_rho_d_new_patch[id_a * ndust + (d_id - 1)];
+                            }
+
+                            // updates energy
+                            acc_rhoe_old[id_a] = acc_rhoe_new_patch[id_a]
+                                                 + (1 - friction_control) * drag_work
+                                                 - friction_control * dissipation;
+                        });
+                });
+
+            */
         rho_new_patch.complete_event_state(e);
         rhov_new_patch.complete_event_state(e);
         rhoe_new_patch.complete_event_state(e);
@@ -571,6 +707,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
         rhov_d_old.complete_event_state(e);
 
         alphas_buf.complete_event_state(e);
+        scratch_expo.complete_event_state(e);
     });
 }
 template class shammodels::basegodunov::modules::DragIntegrator<f64_3, i64_3>;

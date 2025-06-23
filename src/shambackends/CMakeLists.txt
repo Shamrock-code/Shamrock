@@ -28,29 +28,6 @@ set(Sources
         src/sysinfo.cpp
     )
 
-
-
-set(VALID_KERNEL_CALL_MODE "Standard" "GPU_CORE_TIMELINE")
-if(NOT SHAMROCK_KERNEL_CALL_MODE)
-    #set default build to release
-    set(SHAMROCK_KERNEL_CALL_MODE "Standard" CACHE STRING "Shamrock mode for sham::kernel_call" FORCE)
-    set_property(CACHE SHAMROCK_KERNEL_CALL_MODE PROPERTY STRINGS ${VALID_KERNEL_CALL_MODE})
-endif()
-if(NOT "${SHAMROCK_KERNEL_CALL_MODE}" IN_LIST VALID_KERNEL_CALL_MODE)
-    message(FATAL_ERROR
-        "The required kernel_call mode is unknown -DSHAMROCK_KERNEL_CALL_MODE=${SHAMROCK_KERNEL_CALL_MODE}. "
-        "please use a kernel_call mode is the following list (case-sensitive) "
-        "${VALID_KERNEL_CALL_MODE}")
-endif()
-message(STATUS "current kernel_call mode : SHAMROCK_KERNEL_CALL_MODE=${SHAMROCK_KERNEL_CALL_MODE}")
-set_property(CACHE SHAMROCK_KERNEL_CALL_MODE PROPERTY STRINGS ${VALID_KERNEL_CALL_MODE})
-
-
-if(SHAMROCK_KERNEL_CALL_MODE STREQUAL "GPU_CORE_TIMELINE")
-    target_compile_definitions(shambackends PUBLIC SHAMROCK_GPU_CORE_TIMELINE)
-endif()
-
-
 if(SHAMROCK_USE_SHARED_LIB)
 message("-- adding shambackends target (Shared lib)")
 add_library(shambackends SHARED ${Sources})

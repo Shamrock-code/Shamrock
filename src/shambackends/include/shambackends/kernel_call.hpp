@@ -18,7 +18,6 @@
 
 #include "shambase/optional.hpp"
 #include "shambackends/DeviceBuffer.hpp"
-#include "shambackends/sycl_utils.hpp"
 #include <functional>
 #include <optional>
 
@@ -277,11 +276,6 @@ namespace sham {
     };
 
     namespace details {
-
-        inline sycl::nd_range<1> get_best_range(sham::DeviceQueue &q, sycl::range<1> rin) {
-            u64 work_group_size = q.get_device_prop().default_work_group_size;
-            return shambase::make_range(rin.size(), work_group_size);
-        }
 
         /// internal implementation of typed_index_kernel_call
         template<class index_t, class RefIn, class RefOut, class... Targs, class Functor>

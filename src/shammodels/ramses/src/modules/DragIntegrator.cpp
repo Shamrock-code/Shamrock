@@ -393,10 +393,11 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
         auto acc_alphas = alphas_buf.get_read_access(depend_list);
 
-        size_t group_size       = 32;
         size_t mat_size         = ndust + 1;
         size_t mat_size_squared = mat_size * mat_size;
-        size_t loc_acc_size     = mat_size_squared * group_size;
+        size_t group_size
+            = (q.get_device_prop().local_mem_size) / (5 * mat_size_squared * sizeof(f64));
+        size_t loc_acc_size = mat_size_squared * group_size;
 
         size_t loc_mem_size = 5 * sizeof(f64) * loc_acc_size;
 

@@ -379,8 +379,8 @@ namespace shamrock::tree {
         sham::DeviceBuffer<u32> index_neigh_map;
 
         inline u64 get_memsize() {
-            return cnt_neigh.get_bytesize() + scanned_cnt.get_bytesize()
-                   + index_neigh_map.get_bytesize() + sizeof(u32);
+            return cnt_neigh.get_mem_usage() + scanned_cnt.get_mem_usage()
+                   + index_neigh_map.get_mem_usage() + sizeof(u32);
         }
 
         inline HostObjectCache copy_to_host() {

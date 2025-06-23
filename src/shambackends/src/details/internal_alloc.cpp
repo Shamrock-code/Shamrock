@@ -13,6 +13,7 @@
  * @brief This file contains the methods to actually allocate memory
  */
 
+#include "shambase/memory.hpp"
 #include "shambase/profiling/profiling.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/details/internal_alloc.hpp"
@@ -191,9 +192,11 @@ namespace sham::details {
         shamcomm::logs::debug_alloc_ln(
             "memoryHandle", "alloc usm pointer size :", sz, " | mode =", get_mode_name<target>());
 
-        sycl::context &sycl_ctx = dev_sched->ctx->ctx;
-        sycl::device &dev       = dev_sched->ctx->device->dev;
-        void *usm_ptr           = nullptr;
+        auto &ds                = shambase::get_check_ref(dev_sched);
+        sycl::context &sycl_ctx = ds.ctx->ctx;
+        sycl::device &dev       = ds.ctx->device->dev;
+
+        void *usm_ptr = nullptr;
 
         auto catch_alloc_except = [&](auto alloc_lambda) {
             try {
@@ -207,7 +210,27 @@ namespace sham::details {
             }
         };
 
+        if (sz > ds.get_queue().get_device_prop().max_mem_alloc_size) {
+            std::string err_log = shambase::format(
+                "You are trying to allocate more than the maximum allocation size allowed by the "
+                "device\n"
+                "  size = {} | max_alloc_size = {}",
+                sz,
+                ds.get_queue().get_device_prop().max_mem_alloc_size);
+            shambase::throw_with_loc<std::runtime_error>(err_log);
+        }
+
         if (alignment) {
+
+            if (*alignment % ds.get_queue().get_device_prop().mem_base_addr_align != 0) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "The alignment of the USM pointer is not aligned with minimum device "
+                    "alignment\n"
+                    "  alignment = {} | device alignment = {} | alignment % device alignment = {}",
+                    *alignment,
+                    ds.get_queue().get_device_prop().mem_base_addr_align,
+                    *alignment % ds.get_queue().get_device_prop().mem_base_addr_align));
+            }
 
             if (sz % *alignment != 0) {
                 shambase::throw_with_loc<std::runtime_error>(shambase::format(

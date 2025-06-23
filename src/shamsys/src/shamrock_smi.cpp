@@ -14,6 +14,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shambase/numeric_limits.hpp"
 #include "shambase/string.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
@@ -164,10 +165,29 @@ namespace shamsys {
 
             std::string DeviceName = dev.dev.get_info<sycl::info::device::name>();
 
-            std::string dev_with_id = shambase::format("{} (id={})", DeviceName, dev.device_id);
+            auto nolimit_if_too_large = [](u64 sz) -> std::string {
+                if (sz < u32_max) {
+                    return std::to_string(sz);
+                } else {
+                    return "No limit !";
+                }
+            };
+
+            std::string dev_with_id = shambase::format(
+                R"({} (id={})
+          - default_work_group_size = {}
+          - global_mem_size = {}
+          - local_mem_size = {}
+          - mem_base_addr_align = {})",
+                DeviceName,
+                dev.device_id,
+                dev.prop.default_work_group_size,
+                shambase::readable_sizeof(dev.prop.global_mem_size),
+                nolimit_if_too_large(dev.prop.local_mem_size),
+                dev.prop.mem_base_addr_align);
 
             std::unordered_map<std::string, int> devicename_histogram
-                = shamcomm::string_histogram({dev_with_id}, "\n");
+                = shamcomm::string_histogram({dev_with_id}, "xxx\nxxx");
 
             f64 mem           = dev.prop.global_mem_size;
             u64 compute_units = dev.prop.max_compute_units;

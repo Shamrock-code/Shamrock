@@ -60,6 +60,9 @@ namespace shammodels::basegodunov {
                 context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust * AMRBlock::block_size));
             }
 
+            if (solver_config.is_gravity_on()) {
+                context.pdata_layout_add_field<Tscal>("phi", AMRBlock::block_size);
+            }
             if (solver_config.is_gas_passive_scalar_on()) {
                 u32 npscal_gas = solver_config.npscal_gas_config.npscal_gas;
                 context.pdata_layout_add_field<Tscal>(

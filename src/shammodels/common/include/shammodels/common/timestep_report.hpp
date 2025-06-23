@@ -28,7 +28,7 @@
 namespace shammodels {
 
     inline std::string report_perf_timestep(
-        f64 rate, u64 nobj, f64 tcompute, f64 interf_time, f64 alloc_time, size_t max_mem) {
+        f64 rate, u64 nobj, f64 tcompute, f64 mpi_timer, f64 alloc_time, size_t max_mem) {
 
         std::string log_rank_rate = shambase::format(
             "\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:>10s} |",
@@ -36,7 +36,7 @@ namespace shammodels {
             rate,
             nobj,
             tcompute,
-            100 * (interf_time / tcompute),
+            100 * (mpi_timer / tcompute),
             100 * (alloc_time / tcompute),
             shambase::readable_sizeof(max_mem));
 
@@ -46,7 +46,7 @@ namespace shammodels {
         u64 obj_total        = shamalgs::collective::allreduce_sum(nobj);
         f64 max_t            = shamalgs::collective::allreduce_max(tcompute);
         f64 sum_t            = shamalgs::collective::allreduce_sum(tcompute);
-        f64 sum_interf       = shamalgs::collective::allreduce_sum(interf_time);
+        f64 sum_mpi          = shamalgs::collective::allreduce_sum(mpi_timer);
         f64 sum_alloc        = shamalgs::collective::allreduce_sum(alloc_time);
         size_t sum_mem_total = shamalgs::collective::allreduce_sum(max_mem);
 
@@ -55,7 +55,7 @@ namespace shammodels {
             f64(obj_total) / max_t,
             obj_total,
             max_t,
-            100 * (sum_interf / sum_t),
+            100 * (sum_mpi / sum_t),
             100 * (sum_alloc / sum_t),
             shambase::readable_sizeof(sum_mem_total));
 
@@ -65,7 +65,7 @@ namespace shammodels {
         if (shamcomm::world_rank() == 0) {
             print = "processing rate infos : \n";
             print += ("---------------------------------------------------------------------------------------\n");
-            print += ("| rank |  rate  (N.s^-1)  |     Nobj    | t compute (s) | interf | alloc |  mem (max) |\n");
+            print += ("| rank |  rate  (N.s^-1)  |     Nobj    | t compute (s) |  MPI   | alloc |  mem (max) |\n");
             if (shamcomm::world_size() > 1) {
                 print += ("------------------------------------- Per ranks ---------------------------------------");
                 print += (gathered) + "\n";

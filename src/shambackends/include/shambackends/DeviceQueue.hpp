@@ -15,6 +15,8 @@
  * @brief
  */
 
+#include "shambase/memory.hpp"
+#include "shambackends/Device.hpp"
 #include "shambackends/DeviceContext.hpp"
 #include "shambackends/EventList.hpp"
 
@@ -155,6 +157,20 @@ namespace sham {
             }
 
             return e;
+        }
+
+        /**
+         * @brief Retrieves the properties of the associated device
+         *
+         * This function returns the properties of the device associated with
+         * the current device context. It fetches the device properties from
+         * the context reference and provides details such as vendor, backend,
+         * memory capacity, and other device-specific characteristics.
+         *
+         * @return DeviceProperties The properties of the associated device
+         */
+        inline DeviceProperties get_device_prop() {
+            return shambase::get_check_ref(ctx).device->prop;
         }
     };
 

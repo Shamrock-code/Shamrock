@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamcomm/wrapper.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
@@ -28,14 +29,14 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:MpiType", patch_mpi_type, 2) {
     check_patch.node_owner_id   = 44444;
 
     if (shamcomm::world_rank() == 0) {
-        mpi::send(&check_patch, 1, get_patch_mpi_type<3>(), 1, 0, MPI_COMM_WORLD);
+        shamcomm::mpi::Send(&check_patch, 1, get_patch_mpi_type<3>(), 1, 0, MPI_COMM_WORLD);
     }
 
     if (shamcomm::world_rank() == 1) {
         Patch rpatch{};
 
         MPI_Status st;
-        mpi::recv(&rpatch, 1, get_patch_mpi_type<3>(), 0, 0, MPI_COMM_WORLD, &st);
+        shamcomm::mpi::Recv(&rpatch, 1, get_patch_mpi_type<3>(), 0, 0, MPI_COMM_WORLD, &st);
 
         REQUIRE_NAMED("patch are equal", rpatch == check_patch);
     }

@@ -20,6 +20,7 @@
 #include "shambackends/sysinfo.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiInfo.hpp"
+#include <fmt/ranges.h>
 
 namespace sham {
 
@@ -216,6 +217,8 @@ namespace sham {
         }
 #endif
 
+        u32 default_work_group_size = shambase::get_check_ref(sub_group_sizes)[0];
+
         return DeviceProperties{
             Vendor::UNKNOWN,         // We cannot determine the vendor
             get_device_backend(dev), // Query the backend based on the platform name
@@ -227,7 +230,8 @@ namespace sham {
             shambase::get_check_ref(max_compute_units),
             shambase::get_check_ref(max_mem_alloc_size),
             shambase::get_check_ref(mem_base_addr_align),
-        };
+            shambase::get_check_ref(sub_group_sizes),
+            default_work_group_size};
     }
 
     /**

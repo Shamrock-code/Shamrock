@@ -1,14 +1,11 @@
 from math import *
 
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
 import shamrock
 
 
-
-####============================ matplot config end ===================
 def run_sim(times, vg_num, vd_num):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
@@ -56,12 +53,6 @@ def run_sim(times, vg_num, vd_num):
     cfg.set_alpha_values(1.0 / 6.30957344e00)  # ts :=6.30957344e+00
     cfg.set_alpha_values(1.0 / 1.00000000e01)  # ts :=1.00000000e+01
 
-    """
-    #======= set drag coefficients for test C ========
-    cfg.set_alpha_values(0.5)          # ts  := 2
-    cfg.set_alpha_values(1)            # ts  := 1
-    """
-
     model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
@@ -89,6 +80,60 @@ def run_sim(times, vg_num, vd_num):
 
     def b_rho_d_2_map(rmin, rmax):
         return 0.003292603845120664
+
+    def b_rho_d_3_map(rmin, rmax):
+        return 0.004145142651593601
+
+    def b_rho_d_4_map(rmin, rmax):
+        return 0.00521842541960303
+
+    def b_rho_d_5_map(rmin, rmax):
+        return 0.006569608370290907
+
+    def b_rho_d_6_map(rmin, rmax):
+        return 0.00827064692289489
+
+    def b_rho_d_7_map(rmin, rmax):
+        return 0.010412127583209595
+
+    def b_rho_d_8_map(rmin, rmax):
+        return 0.013108092005345549
+
+    def b_rho_d_9_map(rmin, rmax):
+        return 0.016502110125665475
+
+    def b_rho_d_10_map(rmin, rmax):
+        return 0.020774925785426113
+
+    def b_rho_d_11_map(rmin, rmax):
+        return 0.026154081999410862
+
+    def b_rho_d_12_map(rmin, rmax):
+        return 0.032926038451206716
+
+    def b_rho_d_13_map(rmin, rmax):
+        return 0.04145142651593591
+
+    def b_rho_d_14_map(rmin, rmax):
+        return 0.05218425419603042
+
+    def b_rho_d_15_map(rmin, rmax):
+        return 0.06569608370290894
+
+    def b_rho_d_16_map(rmin, rmax):
+        return 0.08270646922894889
+
+    def b_rho_d_17_map(rmin, rmax):
+        return 0.10412127583209614
+
+    def b_rho_d_18_map(rmin, rmax):
+        return 0.1310809200534553
+
+    def b_rho_d_19_map(rmin, rmax):
+        return 0.16502110125665503
+
+    def b_rho_d_20_map(rmin, rmax):
+        return 0.20774925785426088
 
     def b_rhovel_d_1_map(rmin, rmax):
         return (0.5 * 0.0026154081999410863, 0, 0)
@@ -149,60 +194,6 @@ def run_sim(times, vg_num, vd_num):
 
     def b_rhovel_d_20_map(rmin, rmax):
         return (0.5 * 0.20774925785426088, 0, 0)
-
-    def b_rho_d_3_map(rmin, rmax):
-        return 0.004145142651593601
-
-    def b_rho_d_4_map(rmin, rmax):
-        return 0.00521842541960303
-
-    def b_rho_d_5_map(rmin, rmax):
-        return 0.006569608370290907
-
-    def b_rho_d_6_map(rmin, rmax):
-        return 0.00827064692289489
-
-    def b_rho_d_7_map(rmin, rmax):
-        return 0.010412127583209595
-
-    def b_rho_d_8_map(rmin, rmax):
-        return 0.013108092005345549
-
-    def b_rho_d_9_map(rmin, rmax):
-        return 0.016502110125665475
-
-    def b_rho_d_10_map(rmin, rmax):
-        return 0.020774925785426113
-
-    def b_rho_d_11_map(rmin, rmax):
-        return 0.026154081999410862
-
-    def b_rho_d_12_map(rmin, rmax):
-        return 0.032926038451206716
-
-    def b_rho_d_13_map(rmin, rmax):
-        return 0.04145142651593591
-
-    def b_rho_d_14_map(rmin, rmax):
-        return 0.05218425419603042
-
-    def b_rho_d_15_map(rmin, rmax):
-        return 0.06569608370290894
-
-    def b_rho_d_16_map(rmin, rmax):
-        return 0.08270646922894889
-
-    def b_rho_d_17_map(rmin, rmax):
-        return 0.10412127583209614
-
-    def b_rho_d_18_map(rmin, rmax):
-        return 0.1310809200534553
-
-    def b_rho_d_19_map(rmin, rmax):
-        return 0.16502110125665503
-
-    def b_rho_d_20_map(rmin, rmax):
-        return 0.20774925785426088
 
     # ============ set init fields values for gas =============
 
@@ -311,10 +302,9 @@ def run_sim(times, vg_num, vd_num):
 
         return dic
 
-    dt = 0.05  # b_dt := 0.005 and c_dt := 0.05
+    dt = 0.05
     t = 0
-    tend = 2.5  # b_tend := 0.05 and c_tend := 0.3
-    freq = 1
+    tend = 2.5
 
     for i in range(10000000):
         dic_i = convert_to_cell_coords(ctx.collect_data())
@@ -348,14 +338,7 @@ def run_sim(times, vg_num, vd_num):
             break
 
 
-# ============== post treatment ===================
-
-
 ## ========= analytical function for velocity =====
-"""def analytical_velocity(t, Vcom, c1, c2, lambda1, lambda2):
-    return Vcom + c1 * exp(lambda1 * t) + c2 * exp(lambda2 * t)"""
-
-
 def analytical_velocity(t, Vcom, C, lambdas):
     res = Vcom
     for i in range(len(C)):
@@ -363,7 +346,7 @@ def analytical_velocity(t, Vcom, C, lambdas):
     return res
 
 
-## set param
+## set params
 Vcom = 0.75
 lambdas = [
     -6.32633296e02,
@@ -480,7 +463,6 @@ cd3 = [
     0.02210019,
 ]
 
-
 cd4 = [
     -4.49633410e-04,
     -1.10583369e-03,
@@ -503,7 +485,6 @@ cd4 = [
     0.01677365,
     0.02210912,
 ]
-
 
 cd5 = [
     -2.52546003e-04,
@@ -875,13 +856,9 @@ cd20 = [
     -0.0301528,
 ]
 
-
 ## ===== get numerical results ==================
 times = []
 vg_num = []
-vd1_num = []
-vd2_num = []
-
 vd_num = [
     [],
     [],
@@ -906,12 +883,9 @@ vd_num = [
 ]
 vd_anal = []
 vg_anal = []
-
-
 run_sim(times, vg_num, vd_num)
 
 ## =========== get analytical results =========
-
 vg_anal = [analytical_velocity(t, Vcom, cg, lambdas) for t in times]
 Cd = [
     cd1,
@@ -938,30 +912,6 @@ Cd = [
 for i in range(20):
     vd_i_ana = [analytical_velocity(t, Vcom, Cd[i], lambdas) for t in times]
     vd_anal.append(vd_i_ana)
-
-"""test_type = "B"
-if test_type == "A":
-    vg_anal = [analytical_velocity(t, Vcom_A, cg1_A, cg2_A, lambda1_A, lambda2_A) for t in times]
-    vd1_anal = [analytical_velocity(t, Vcom_A, cd11_A, cd12_A, lambda1_A, lambda2_A) for t in times]
-    vd2_anal = [analytical_velocity(t, Vcom_A, cd21_A, cd22_A, lambda1_A, lambda2_A) for t in times]
-
-elif test_type == "B":
-    vg_anal = [analytical_velocity(t, Vcom_B, cg1_B, cg2_B, lambda1_B, lambda2_B) for t in times]
-    vd1_anal = [analytical_velocity(t, Vcom_B, cd11_B, cd12_B, lambda1_B, lambda2_B) for t in times]
-    vd2_anal = [analytical_velocity(t, Vcom_B, cd21_B, cd22_B, lambda1_B, lambda2_B) for t in times]
-
-elif test_type == "C":
-    vg_anal = [analytical_velocity(t, Vcom_C, cg1_C, cg2_C, lambda1_C, lambda2_C) for t in times]
-    vd1_anal = [analytical_velocity(t, Vcom_C, cd11_C, cd12_C, lambda1_C, lambda2_C) for t in times]
-    vd2_anal = [analytical_velocity(t, Vcom_C, cd21_C, cd22_C, lambda1_C, lambda2_C) for t in times]
-
-
-print(f"times = {times} with len = {len(times)}\n")
-print(f" vg_num = {vg_num} with len = {len(vg_num)} \n")
-print(f" vd1_num = {vd1_num} with len = {len(vd1_num)}  \n")
-print(f" vd2_num = {vd2_num} with len = {len(vd2_num)} \n")
-"""
-
 
 # ============ plots ======================
 plt.figure(figsize=(25, 15))
@@ -1018,11 +968,10 @@ for i in range(20):
     id = i + 1
     plt.scatter(times, vd_num[i], marker=markers[i], c=colors[i], label="$vd$" + "_" + f"${id}$")
     plt.plot(times, vd_anal[i], "k--", lw=1.5)
-plt.xlabel("Time", fontsize=fontsize)
-plt.ylabel("Velocity", fontsize=fontsize)
+plt.xlabel("Time")
+plt.ylabel("Velocity")
 plt.title("DustyCollision - 20 dust species with EXPO solver/AdaptiveCPP")
+plt.legend(ncol=6)
 
-plt.legend(prop={"weight": "bold"}, framealpha=0.5, ncol=6)
 # plt.savefig("acpp_dusty_collision_test_rk1_20f.png")
-
 plt.savefig("acpp_dusty_collision_test_exp_20f.png")

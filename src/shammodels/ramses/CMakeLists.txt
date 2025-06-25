@@ -38,6 +38,8 @@ set(Sources
     src/modules/ComputeMass.cpp
     src/modules/ComputeSumOverV.cpp
     src/modules/CGInit.cpp
+    src/modules/ComputeCubeCellSizes.cpp
+    src/modules/MultiGridBuilder.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

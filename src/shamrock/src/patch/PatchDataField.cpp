@@ -747,12 +747,25 @@ void PatchDataField<u64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 template<>
 void PatchDataField<i64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_int_distribution<i64> distu64(1, obj_mock_cnt);
+    std::uniform_int_distribution<i64> disti64(1, obj_mock_cnt);
 
     std::vector<i64_3> out(obj_cnt * nvar);
 
     for (u32 i = 0; i < get_val_cnt(); i++) {
-        out[i] = i64_3{distu64(eng), distu64(eng), distu64(eng)};
+        out[i] = i64_3{disti64(eng), disti64(eng), disti64(eng)};
+    }
+    buf.copy_from_stdvec(out);
+}
+
+template<>
+void PatchDataField<i64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
+    resize(obj_cnt);
+    std::uniform_int_distribution<i64> disti64(1, obj_mock_cnt);
+
+    std::vector<i64> out(obj_cnt * nvar);
+
+    for (u32 i = 0; i < get_val_cnt(); i++) {
+        out[i] = i64{disti64(eng)};
     }
     buf.copy_from_stdvec(out);
 }

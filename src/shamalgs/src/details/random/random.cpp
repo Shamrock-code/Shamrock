@@ -229,6 +229,7 @@ namespace shamalgs::random {
     X(u64_8);
     X(u64_16);
     X(i64_3);
+    X(i64);
 #endif
 
 } // namespace shamalgs::random

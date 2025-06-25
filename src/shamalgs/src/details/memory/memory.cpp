@@ -61,7 +61,8 @@ namespace shamalgs::memory {
     X(u64_4)                                                                                       \
     X(u64_8)                                                                                       \
     X(u64_16)                                                                                      \
-    X(i64_3)
+    X(i64_3)                                                                                       \
+    X(i64)
 
 #define X(_arg_)                                                                                   \
     template _arg_ extract_element(sycl::queue &q, sycl::buffer<_arg_> &buf, u32 idx);             \

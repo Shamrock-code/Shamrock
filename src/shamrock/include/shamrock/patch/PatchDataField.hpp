@@ -150,6 +150,7 @@ class PatchDataField {
     }
 
     inline sham::DeviceBuffer<T> &get_buf() { return buf; }
+    inline const sham::DeviceBuffer<T> &get_buf() const { return buf; }
 
     [[nodiscard]] inline bool is_empty() const { return get_obj_cnt() == 0; }
 

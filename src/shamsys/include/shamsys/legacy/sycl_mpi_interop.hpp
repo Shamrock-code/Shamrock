@@ -45,7 +45,8 @@
     X(u16_3)                                                                                       \
     X(u64)                                                                                         \
     X(u64_3)                                                                                       \
-    X(i64_3)
+    X(i64_3)                                                                                       \
+    X(i64)
 
 namespace mpi_sycl_interop {
 

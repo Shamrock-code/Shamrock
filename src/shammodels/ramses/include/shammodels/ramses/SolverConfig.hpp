@@ -282,6 +282,10 @@ struct shammodels::basegodunov::SolverConfig {
             }
         }
 
+        if (!(eos_gamma > 1.0)) {
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format("Gamma must be > 1, currently Gamma = {}", eos_gamma));
+        }
+
         if (is_gas_passive_scalar_on()) {
             logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental");
             if (!shamrock::are_experimental_features_allowed()) {

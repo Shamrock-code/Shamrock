@@ -20,7 +20,9 @@
 #include "shambindings/pybindaliases.hpp"
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
+#include <exception>
 #include <memory>
+#include <stdexcept>
 
 // Before we used to redirect std::cout to python stdout but this creates deadlocks
 // in adaptive cpp, hence the use of python printing functions
@@ -59,6 +61,49 @@ void register_pybind_init_func(fct_sig fct) {
     static_init_shamrock_pybind->push_back(std::move(fct));
 }
 
+void register_py_to_sham_print(py::module &m) {
+
+    struct wrapper_cout {
+        wrapper_cout()                     = default;
+        wrapper_cout(const wrapper_cout &) = default;
+        wrapper_cout(wrapper_cout &&)      = default;
+    };
+
+    struct wrapper_cerr {
+        wrapper_cerr()                     = default;
+        wrapper_cerr(const wrapper_cerr &) = default;
+        wrapper_cerr(wrapper_cerr &&)      = default;
+    };
+
+    m.def("hook_stdout", [&]() {
+        py::class_<wrapper_cout> my_stdout(m, "wrapper_cout");
+        my_stdout.def(py::init<>());
+        my_stdout.def_static("write", [](py::object buffer) {
+            shambase::print(buffer.cast<std::string>());
+        });
+        my_stdout.def_static("flush", []() {
+            shambase::flush();
+        });
+
+        py::class_<wrapper_cerr> my_stderr(m, "wrapper_cerr");
+        my_stderr.def(py::init<>());
+        my_stderr.def_static("write", [](py::object buffer) {
+            shambase::print(buffer.cast<std::string>());
+        });
+        my_stderr.def_static("flush", []() {
+            shambase::flush();
+        });
+
+        try {
+            auto sys           = py::module::import("sys");
+            sys.attr("stdout") = my_stdout();
+            sys.attr("stderr") = my_stderr();
+        } catch (std::exception &e) {
+            shambase::throw_with_loc<std::runtime_error>(e.what());
+        }
+    });
+}
+
 namespace shambindings {
 
     enum { None = 0, Lib = 1, Embed = 2 } init_state = None;
@@ -88,7 +133,11 @@ namespace shambindings {
 
     void init_lib(py::module &m) { shambindings::init<true>(m); }
 
-    void init_embed(py::module &m) { shambindings::init<false>(m); }
+    void init_embed(py::module &m) {
+        shambindings::init<false>(m);
+        register_py_to_sham_print(m);
+        m.attr("hook_stdout")();
+    }
 
     void expect_init_lib(SourceLocation loc) {
         if (init_state != Lib) {

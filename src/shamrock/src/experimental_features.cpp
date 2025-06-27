@@ -14,11 +14,11 @@
  *
  */
 
-#include "shamrock/experimental_features.hpp"
+#include "shambase/term_colors.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamrock/experimental_features.hpp"
 
 namespace {
     bool _env_allow_experimental_features

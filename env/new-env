@@ -119,5 +119,5 @@ if __name__ == "__main__":
             buildtype=args.type,
             lib_mode=args.lib,
         ),
-        EnvGen(machinefolder=machine_folder, builddir=builddir),
+        EnvGen(machinefolder=machine_folder, builddir=builddir, env_setup_cmd=sys.argv),
     )

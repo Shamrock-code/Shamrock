@@ -12,7 +12,6 @@ flist = sys.argv[1:]
 with open("merged_profile.json", "w") as outf:
     outf.write("[\n")
     for f in flist:
-
         print(f)
         str_f = "[\n"
 

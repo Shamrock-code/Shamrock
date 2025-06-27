@@ -18,7 +18,6 @@ def change_branch(folder, branch_name):
 
 
 def get_llvm_configure_arg(args):
-
     configure_args = ""
     if args.cuda:
         configure_args += " --cuda"
@@ -36,7 +35,6 @@ def get_llvm_configure_arg(args):
 
 
 def get_intel_llvm_target_flags(args):
-
     if args.target == None:
         raise Exception('You must chose a target (using the "--target" flag)')
 

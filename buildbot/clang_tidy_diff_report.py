@@ -28,14 +28,12 @@ def filter_double_newline(lines):
 
 
 def filter_non_warnings(lines):
-
     ret = []
     len_lines = len(lines)
 
     enable_skip = -1
 
     for i, l in enumerate(lines):
-
         if (" warnings generated." in l) or (" warning generated." in l):
             warn_cnt = int(l.split()[0])
 

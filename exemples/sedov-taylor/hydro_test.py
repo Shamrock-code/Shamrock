@@ -102,7 +102,6 @@ dic = ctx.collect_data()
 
 
 if shamrock.sys.world_rank() == 0:
-
     r = np.sqrt(dic["xyz"][:, 0] ** 2 + dic["xyz"][:, 1] ** 2 + dic["xyz"][:, 2] ** 2)
     vr = np.sqrt(dic["vxyz"][:, 0] ** 2 + dic["vxyz"][:, 1] ** 2 + dic["vxyz"][:, 2] ** 2)
 
@@ -133,7 +132,6 @@ if shamrock.sys.world_rank() == 0:
 
     plt.style.use("custom_style.mplstyle")
     if True:
-
         fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(9, 6), dpi=125)
 
         axs[0, 0].scatter(r, vr, c="black", s=1, label="v", rasterized=True)
@@ -159,7 +157,6 @@ if shamrock.sys.world_rank() == 0:
         axs[0, 1].set_xlim(0, 0.55)
         axs[1, 1].set_xlim(0, 0.55)
     else:
-
         fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(5, 3), dpi=125)
 
         axs.scatter(r, rho, c="black", s=1, label="rho", rasterized=True)

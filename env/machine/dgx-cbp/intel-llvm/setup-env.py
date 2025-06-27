@@ -52,7 +52,6 @@ def setup(arg: SetupArg, envgen: EnvGen):
     ]
 
     if args.custommpi:
-
         UCX_INSTALL_PATH = builddir + "/.env/ucx-install"
         OMPI_INSTALL_PATH = builddir + "/.env/ompi-install"
         OMPI_SOURCE_DIR = builddir + "/.env/ompi-sources"

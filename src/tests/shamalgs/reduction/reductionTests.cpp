@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/numeric_limits.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/details/random/random.hpp"
@@ -17,12 +18,14 @@
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
 #include <map>
 #include <random>
+#include <vector>
 
 using namespace shamalgs::random;
 
@@ -993,4 +996,26 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
 
         plt.savefig("tests/figures/shamalgsreduc.pdf")
     )");
+}
+
+TestStart(Unittest, "shamalgs/reduction/index_of", reduc_kernel_utestindex_of, 1) {
+
+    sham::DeviceBuffer<int> buf1{10, shamsys::instance::get_compute_scheduler_ptr()};
+    std::vector<int> acc = {6, 8, 9, 0, 3, 4, 6, 7, 2, 1};
+
+    buf1.copy_from_stdvec(acc);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 6), 6);
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 8), 1);
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 9), 2);
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 0), 3);
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 3), 4);
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 4), 5);
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 6), 6);
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 7), 7);
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 2), 8);
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 1), 9);
+
+    REQUIRE_EQUAL(shamalgs::reduction::index_of(dev_sched, buf1, 10), u64_max);
 }

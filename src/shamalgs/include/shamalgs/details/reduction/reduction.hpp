@@ -17,9 +17,11 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/numeric_limits.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
@@ -46,6 +48,45 @@ namespace shamalgs::reduction {
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id);
+
+    /**
+     * @brief Finds the index of the first occurrence of @p value in a buffer from @p start_id to @p
+     * end_id.
+     * @param sched the scheduler that will schedule the kernel
+     * @param buf1 the source buffer
+     * @param start_id the start index of the search range
+     * @param end_id the end index of the search range
+     * @param value the value to search for
+     * @return the index of the first occurrence of @p value in the range @p [start_id, end_id), or
+     * @c u64_max if not found
+     */
+    template<class T>
+    u64 index_of(const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<T> &buf1, T value) {
+
+        sham::DeviceBuffer<u64> tmp(1, sched);
+
+        tmp.set_val_at_idx(0, u64_max);
+
+        sham::kernel_call(
+            sched->get_queue(),
+            sham::MultiRef{buf1},
+            sham::MultiRef{tmp},
+            buf1.get_size(),
+            [value](u32 i, const T *val, u64 *idx) {
+                if (val[i] == value) {
+
+                    using atomic_ref_T = sycl::atomic_ref<
+                        u64,
+                        sycl::memory_order_relaxed,
+                        sycl::memory_scope_work_group,
+                        sycl::access::address_space::global_space>;
+
+                    atomic_ref_T(*idx).store(i);
+                }
+            });
+
+        return tmp.get_val_at_idx(0);
+    }
 
     template<class T>
     T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);

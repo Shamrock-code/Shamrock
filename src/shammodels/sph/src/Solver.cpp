@@ -45,6 +45,7 @@
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
+#include "shammodels/sph/modules/ParticleInjection.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
@@ -967,6 +968,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     // if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
     scheduler().scheduler_step(false, false);
     // if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
+
+    modules::ParticleInjection<Tvec, Kern>(context, solver_config, storage).inject_particles();
 
     using namespace shamrock;
     using namespace shamrock::patch;

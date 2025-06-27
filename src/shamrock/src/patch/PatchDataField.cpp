@@ -15,9 +15,12 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/string.hpp"
 #include "shamalgs/algorithm.hpp"
+#include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/vec.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
@@ -315,6 +318,44 @@ void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len)
     }
 
     index_remap_resize(index_map, len);
+}
+
+template<class T>
+void PatchDataField<T>::remove_ids(sham::DeviceBuffer<u32> &ids_to_rem, u32 len) {
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q        = dev_sched->get_queue();
+
+    if (len > get_obj_cnt()) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "the number of ids to remove is greater than the patchdatafield obj count");
+    }
+
+    auto nobj      = get_obj_cnt();
+    auto remaining = nobj - len;
+
+    sham::DeviceBuffer<u32> keep_flag(get_obj_cnt(), dev_sched);
+    keep_flag.fill(1);
+
+    sham::kernel_call(
+        q,
+        sham::MultiRef{ids_to_rem},
+        sham::MultiRef{keep_flag},
+        len,
+        [](u32 i, const u32 *idx, u32 *idx_map) {
+            idx_map[idx[i]] = 0;
+        });
+
+    auto keep_ids = shamalgs::numeric::stream_compact(dev_sched, keep_flag, nobj);
+
+    if (keep_ids.get_size() != remaining) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "the number of remaining ids {} is different from the expected {}",
+            keep_ids.get_size(),
+            remaining));
+    }
+
+    index_remap_resize(keep_ids, remaining);
 }
 
 template<class T>

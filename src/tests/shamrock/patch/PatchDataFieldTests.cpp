@@ -9,10 +9,12 @@
 
 #include "shambase/StlContainerConversion.hpp"
 #include "shamalgs/serialize.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 #include <set>
+#include <vector>
 
 TestStart(
     Unittest, "shamrock/patch/PatchDataField::serialize_buf", testpatchdatafieldserialize, 1) {
@@ -130,4 +132,62 @@ TestStart(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", testgete
 
         check_pdat_get_ids_where(len, nvar, name, vmin, vmax);
     }
+}
+
+TestStart(Unittest, "shamrock/patch/PatchDataField::remove_ids", testpdatremoveids, 1) {
+
+    std::vector<f64> values = {
+        1,  2,  // obj 0
+        3,  4,  // obj 1
+        5,  6,  // obj 2
+        7,  8,  // obj 3
+        9,  10, // obj 4
+        11, 12, // obj 5
+        13, 14, // obj 6
+        15, 16, // obj 7
+        17, 18, // obj 8
+        19, 20, // obj 9
+        21, 22, // obj 10
+        23, 24, // obj 11
+        25, 26, // obj 12
+        27, 28, // obj 13
+        29, 30, // obj 14
+        31, 32, // obj 15
+        33, 34, // obj 16
+        35, 36, // obj 17
+        37, 38, // obj 18
+        39, 40, // obj 19
+    };
+
+    PatchDataField<f64> field = PatchDataField<f64>("test", 2, values.size() / 2);
+    field.override(values, values.size());
+
+    REQUIRE_EQUAL(field.get_buf().copy_to_stdvec(), values);
+
+    std::vector<u32> to_be_removed = {0, 4, 8, 13, 12, 1};
+
+    std::vector<f64> remaining_values = {
+        5,  6,  // obj 2
+        7,  8,  // obj 3
+        11, 12, // obj 5
+        13, 14, // obj 6
+        15, 16, // obj 7
+        19, 20, // obj 9
+        21, 22, // obj 10
+        23, 24, // obj 11
+        29, 30, // obj 14
+        31, 32, // obj 15
+        33, 34, // obj 16
+        35, 36, // obj 17
+        37, 38, // obj 18
+        39, 40, // obj 19
+    };
+
+    sham::DeviceBuffer<u32> to_be_removed_buf(
+        to_be_removed.size(), shamsys::instance::get_compute_scheduler_ptr());
+    to_be_removed_buf.copy_from_stdvec(to_be_removed);
+
+    field.remove_ids(to_be_removed_buf, to_be_removed_buf.get_size());
+
+    REQUIRE_EQUAL(field.get_buf().copy_to_stdvec(), remaining_values);
 }

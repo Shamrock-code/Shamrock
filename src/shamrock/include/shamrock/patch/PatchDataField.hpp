@@ -416,6 +416,14 @@ class PatchDataField {
     void index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len);
 
     /**
+     * @brief remove the ids from the field
+     *
+     * @param indexes
+     * @param len
+     */
+    void remove_ids(sham::DeviceBuffer<u32> &indexes, u32 len);
+
+    /**
      * @brief minimal serialization
      * assuming the user know the layout of the field
      *

@@ -111,7 +111,7 @@ struct TestSortByKey {
         }
 
         for (const f64 &sz : ret.sizes) {
-            logger::debug_ln("ShamrockTest", "N=", sz);
+            shamlog_debug_ln("ShamrockTest", "N=", sz);
             ret.times.push_back(bench_one_avg(sz));
         }
 

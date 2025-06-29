@@ -114,7 +114,7 @@ namespace shammodels::basegodunov::modules {
                     buf_block_max_sycl,
                     dir_offset);
 
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "AMR Block Graph", "Patch", id, "direction", dir, "link cnt", rslt.link_count);
 
                 std::unique_ptr<AMRGraph> tmp_graph = std::make_unique<AMRGraph>(std::move(rslt));

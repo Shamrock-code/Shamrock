@@ -30,7 +30,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
     StackEntry stack_loc{};
 
-    logger::debug_ln("SPH", "Updating dt divv");
+    shamlog_debug_ln("SPH", "Updating dt divv");
 
     Tscal gpart_mass = solver_config.gpart_mass;
 

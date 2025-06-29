@@ -329,6 +329,9 @@ namespace shambase {
     /**
      * @brief Compare two distributed data and apply callbacks based on the difference
      *
+     * This is the same as on_distributeddata_diff but where one of the distributed data is
+     * represented by a vector of its ids.
+     *
      * This function compares the two given distributed data and applies callbacks
      * based on the difference.
      *
@@ -338,7 +341,7 @@ namespace shambase {
      *   - `func_extra`: called for each id present in `dd` but not in the reference
      *
      * @param dd the distributed data to compare
-     * @param reference the reference distributed data
+     * @param ref_ids the reference ids
      * @param func_missing the callback for missing ids
      * @param func_match the callback for matching ids
      * @param func_extra the callback for extra ids

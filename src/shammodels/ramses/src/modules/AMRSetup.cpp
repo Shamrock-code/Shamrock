@@ -118,7 +118,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
         gcd_cell_count = std::gcd(gcd_cell_count, gcd_pow2);
     }
 
-    logger::debug_ln(
+    shamlog_debug_ln(
         "AMRGrid",
         "patch grid :",
         cell_count[0] / gcd_cell_count,
@@ -158,7 +158,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
         u64 gen_cnt    = loc_gen_count;
         u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "AMRSetup",
             "generate : ",
             skip_start,

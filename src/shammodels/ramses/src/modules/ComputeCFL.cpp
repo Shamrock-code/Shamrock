@@ -114,7 +114,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
     Tscal rank_dt = cfl_dt.compute_rank_min();
 
-    logger::debug_ln("basegodunov", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt);
+    shamlog_debug_ln("basegodunov", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt);
 
     Tscal next_cfl = shamalgs::collective::allreduce_min(rank_dt);
 
@@ -205,7 +205,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
 
     Tscal rank_dust_dt = dust_cfl_dt.compute_rank_min();
 
-    logger::debug_ln(
+    shamlog_debug_ln(
         "basegodunov", "rank", shamcomm::world_rank(), "found dust cfl dt =", rank_dust_dt);
 
     Tscal next_dust_cfl = shamalgs::collective::allreduce_min(rank_dust_dt);

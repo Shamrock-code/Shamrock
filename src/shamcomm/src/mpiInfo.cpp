@@ -14,11 +14,11 @@
  *
  */
 
-#include "shamcomm/mpiInfo.hpp"
+#include "shambase/term_colors.hpp"
 #include "fmt/core.h"
-#include "shamcmdopt/term_colors.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
+#include "shamcomm/mpiInfo.hpp"
 #include "shamcomm/worldInfo.hpp"
 
 namespace shamcomm {

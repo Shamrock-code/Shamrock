@@ -117,7 +117,7 @@ struct TestExclScan {
         }
 
         for (const u32 &sz : sizes) {
-            logger::debug_ln("ShamrockTest", "N=", sz);
+            shamlog_debug_ln("ShamrockTest", "N=", sz);
             times.push_back(bench_one_avg(sz));
         }
 
@@ -242,7 +242,7 @@ struct TestExclScanUSM {
         }
 
         for (const u32 &sz : sizes) {
-            logger::debug_ln("ShamrockTest", "N=", sz);
+            shamlog_debug_ln("ShamrockTest", "N=", sz);
             times.push_back(bench_one_avg(sz));
         }
 
@@ -350,7 +350,7 @@ struct TestExclScanInplace {
         }
 
         for (const f64 &sz : ret.sizes) {
-            logger::debug_ln("ShamrockTest", "N=", sz);
+            shamlog_debug_ln("ShamrockTest", "N=", sz);
             ret.times.push_back(bench_one_avg(sz));
         }
 

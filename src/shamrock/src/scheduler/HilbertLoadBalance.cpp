@@ -119,7 +119,7 @@ namespace shamrock::scheduler {
                 load_per_node[new_owner_table[i]] += global_patch_list[i].load_value;
             }
 
-            // logger::debug_ln("HilbertLoadBalance", "loads after balancing");
+            // shamlog_debug_ln("HilbertLoadBalance", "loads after balancing");
             f64 min = shambase::VectorProperties<f64>::get_inf();
             f64 max = -shambase::VectorProperties<f64>::get_inf();
             f64 avg = 0;
@@ -132,7 +132,7 @@ namespace shamrock::scheduler {
                 avg += val;
 
                 if (shamcomm::world_rank() == 0) {
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "HilbertLoadBalance", "node :", nid, "load :", load_per_node[nid]);
                 }
             }

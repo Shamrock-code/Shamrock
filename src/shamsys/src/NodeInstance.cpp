@@ -212,7 +212,7 @@ namespace shamsys::instance {
                     print_buf += std::to_string(key_global) + " " + devname + " " + platname + "\n";
                 });
 
-            logger::debug_sycl_ln("InitSYCL", print_buf);
+            shamlog_debug_sycl_ln("InitSYCL", print_buf);
         }
 
     } // namespace tmp
@@ -227,7 +227,7 @@ namespace shamsys::instance {
         }
 
         if (shamcomm::world_rank() == 0) {
-            logger::debug_ln("Sys", "start sycl queues ...");
+            shamlog_debug_ln("Sys", "start sycl queues ...");
         }
 
         syclinit::init_queues(search_key);
@@ -260,7 +260,7 @@ namespace shamsys::instance {
             throw ShamsysInstanceException("failed setting the MPI error mode");
         }
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "Sys",
             shambase::format(
                 "[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m",
@@ -272,13 +272,13 @@ namespace shamsys::instance {
         mpi::barrier(MPI_COMM_WORLD);
         // if(world_rank == 0){
         if (shamcomm::world_rank() == 0) {
-            logger::debug_ln("NodeInstance", "------------ MPI init ok ------------");
-            logger::debug_ln("NodeInstance", "creating MPI type for interop");
+            shamlog_debug_ln("NodeInstance", "------------ MPI init ok ------------");
+            shamlog_debug_ln("NodeInstance", "creating MPI type for interop");
         }
         create_sycl_mpi_types();
         if (shamcomm::world_rank() == 0) {
-            logger::debug_ln("NodeInstance", "MPI type for interop created");
-            logger::debug_ln("NodeInstance", "------------ MPI / SYCL init ok ------------");
+            shamlog_debug_ln("NodeInstance", "MPI type for interop created");
+            shamlog_debug_ln("NodeInstance", "------------ MPI / SYCL init ok ------------");
         }
         mpidtypehandler::init_mpidtype();
     }
@@ -320,7 +320,7 @@ namespace shamsys::instance {
 
             std::string sycl_cfg = std::string(opts::get_option("--sycl-cfg"));
 
-            // logger::debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
+            // shamlog_debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
             init_sycl_mpi(sycl_cfg, {argc, argv, forced_state});
 

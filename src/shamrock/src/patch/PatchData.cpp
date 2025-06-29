@@ -182,6 +182,14 @@ namespace shamrock::patch {
         index_remap_resize(index_map, len);
     }
 
+    void PatchData::remove_ids(sham::DeviceBuffer<u32> &indexes, u32 len) {
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                field.remove_ids(indexes, len);
+            });
+        }
+    }
+
     void PatchData::append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat) {
         StackEntry stack_loc{};
 

@@ -39,8 +39,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
-    logger::debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
-    logger::debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
+    shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
+    shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)

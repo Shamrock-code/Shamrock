@@ -258,7 +258,7 @@ void PatchDataField<T>::insert(PatchDataField<T> &f2) {
     u32 f2_len = f2.get_obj_cnt();
 
     if (f2_len > 0) {
-        logger::debug_sycl_ln("PatchDataField", "expand field buf by N =", f2_len);
+        shamlog_debug_sycl_ln("PatchDataField", "expand field buf by N =", f2_len);
 
         const u32 old_val_cnt = get_val_cnt(); // field_data.size();
         expand(f2.obj_cnt);
@@ -270,7 +270,7 @@ void PatchDataField<T>::insert(PatchDataField<T> &f2) {
         T *acc          = get_buf().get_write_access(depends_list);
         const T *acc_f2 = f2.get_buf().get_read_access(depends_list);
 
-        logger::debug_sycl_ln("PatchDataField", "write values");
+        shamlog_debug_sycl_ln("PatchDataField", "write values");
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const u32 idx_st = old_val_cnt;
 
@@ -284,7 +284,7 @@ void PatchDataField<T>::insert(PatchDataField<T> &f2) {
         f2.get_buf().complete_event_state(e);
 
     } else {
-        logger::debug_sycl_ln("PatchDataField", "expand field buf (skip f2 is empty)");
+        shamlog_debug_sycl_ln("PatchDataField", "expand field buf (skip f2 is empty)");
     }
 }
 
@@ -380,7 +380,7 @@ template<class T>
 void PatchDataField<T>::serialize_buf(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{false};
     serializer.write(obj_cnt);
-    logger::debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", obj_cnt);
+    shamlog_debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", obj_cnt);
     if (obj_cnt > 0) {
         serializer.write_buf(buf, obj_cnt * nvar);
     }
@@ -392,7 +392,7 @@ PatchDataField<T> PatchDataField<T>::deserialize_buf(
     StackEntry stack_loc{false};
     u32 cnt;
     serializer.load(cnt);
-    logger::debug_sycl_ln("PatchDataField", "deserialize patchdatafield len=", cnt);
+    shamlog_debug_sycl_ln("PatchDataField", "deserialize patchdatafield len=", cnt);
 
     if (cnt > 0) {
         sham::DeviceBuffer<T> buf(cnt * nvar, serializer.get_device_scheduler());

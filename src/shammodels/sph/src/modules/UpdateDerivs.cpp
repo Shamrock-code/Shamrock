@@ -122,9 +122,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
             const Tscal alpha_AV = cfg.alpha_AV;
             const Tscal beta_AV  = cfg.beta_AV;
 
-            logger::debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
-            logger::debug_sycl_ln("deriv kernel", "alpha_AV :", alpha_AV);
-            logger::debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
+            shamlog_debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
+            shamlog_debug_sycl_ln("deriv kernel", "alpha_AV :", alpha_AV);
+            shamlog_debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
 
             // tree::ObjectIterator particle_looper(tree,cgh);
 
@@ -323,8 +323,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
             const Tscal alpha_u = cfg.alpha_u;
             const Tscal beta_AV = cfg.beta_AV;
 
-            logger::debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
-            logger::debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
+            shamlog_debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
+            shamlog_debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
 
             // tree::ObjectIterator particle_looper(tree,cgh);
 
@@ -534,8 +534,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
             const Tscal alpha_u = cfg.alpha_u;
             const Tscal beta_AV = cfg.beta_AV;
 
-            logger::debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
-            logger::debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
+            shamlog_debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
+            shamlog_debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
 
             // tree::ObjectIterator particle_looper(tree,cgh);
 
@@ -732,9 +732,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
             const Tscal alpha_u  = cfg.alpha_u;
             const Tscal beta_AV  = cfg.beta_AV;
 
-            logger::debug_sycl_ln("deriv kernel", "alpha_AV  :", alpha_AV);
-            logger::debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
-            logger::debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
+            shamlog_debug_sycl_ln("deriv kernel", "alpha_AV  :", alpha_AV);
+            shamlog_debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
+            shamlog_debug_sycl_ln("deriv kernel", "beta_AV  :", beta_AV);
 
             // tree::ObjectIterator particle_looper(tree,cgh);
 
@@ -1001,10 +1001,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
             const Tscal sigma_mhd = cfg.sigma_mhd;
             const Tscal alpha_u   = cfg.alpha_u;
 
-            logger::debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-            logger::debug_sycl_ln("deriv kernel", "sigma_mhd  :", sigma_mhd);
-            logger::debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
-            logger::debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+            shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
+            shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", sigma_mhd);
+            shamlog_debug_sycl_ln("deriv kernel", "alpha_u  :", alpha_u);
+            shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
 
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 

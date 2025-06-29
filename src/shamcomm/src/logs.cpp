@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/logs/reformat_message.hpp"
 #include "shambase/numeric_limits.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamcomm/logs.hpp"
@@ -21,66 +22,6 @@
 #include <cmath>
 
 namespace shamcomm::logs {
-
-    /**
-     * @brief Pointer to the full formatter function.
-     *
-     * If this pointer is equal to nullptr, the default full formatter function
-     * will be used.
-     */
-    reformat_func_ptr _reformat_all = nullptr;
-
-    /**
-     * @brief Pointer to the simple formatter function.
-     *
-     * If this pointer is equal to nullptr, the default simple formatter function
-     * will be used.
-     */
-    reformat_func_ptr _reformat_simple = nullptr;
-
-    void change_formaters(reformat_func_ptr full, reformat_func_ptr simple) {
-        _reformat_simple = simple;
-        _reformat_all    = full;
-    }
-
-    /**
-     * @brief Format a log message with all the information
-     * @param color The color of the log message
-     * @param name The name of the logger
-     * @param module_name The name of the module
-     * @param content The content of the log message
-     * @return A formatted log message
-     */
-    inline std::string reformat_all(
-        std::string color, const char *name, std::string module_name, std::string content) {
-        if (shamcomm::logs::_reformat_all == nullptr) {
-            // old form
-            return "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color)
-                   + (name) + shambase::term_colors::reset() + ": " + content;
-        }
-
-        return shamcomm::logs::_reformat_all({color, name, module_name, content});
-    }
-
-    /**
-     * @brief Format a log message with the minimum information
-     * @param color The color of the log message
-     * @param name The name of the logger
-     * @param module_name The name of the module
-     * @param content The content of the log message
-     * @return A formatted log message
-     */
-    inline std::string reformat_simple(
-        std::string color, const char *name, std::string module_name, std::string content) {
-
-        if (shamcomm::logs::_reformat_simple == nullptr) {
-            // old form
-            return "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color)
-                   + (name) + shambase::term_colors::reset() + ": " + content;
-        }
-
-        return shamcomm::logs::_reformat_simple({color, name, module_name, content});
-    }
 
     ///////////////////////////////////
     // log level declared printer

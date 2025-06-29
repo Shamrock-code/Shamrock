@@ -151,7 +151,7 @@ void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
     header_size = szinfo.head_size;
     storage_header.resize(header_size);
 
-    logger::debug_sycl_ln("SerializeHelper", "allocate()", bytelen, header_size);
+    shamlog_debug_sycl_ln("SerializeHelper", "allocate()", bytelen, header_size);
 
     write_prehead(dev_sched->get_queue(), szinfo.head_size, storage);
     // std::cout << "prehead write :" << szinfo.head_size << std::endl;
@@ -162,7 +162,7 @@ void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
 sham::DeviceBuffer<u8> shamalgs::SerializeHelper::finalize() {
     StackEntry stack_loc{false};
 
-    logger::debug_sycl_ln("SerializeHelper", "finalize()", storage.get_size(), header_size);
+    shamlog_debug_sycl_ln("SerializeHelper", "finalize()", storage.get_size(), header_size);
 
     write_header(dev_sched->get_queue(), storage, storage_header, header_size, pre_head_length());
 
@@ -178,7 +178,7 @@ shamalgs::SerializeHelper::SerializeHelper(
 
     header_size = extract_preahead(dev_sched->get_queue(), storage);
 
-    logger::debug_sycl_ln(
+    shamlog_debug_sycl_ln(
         "SerializeHelper",
         shambase::format(
             "Init SerializeHelper from buffer\n    storage size : {},\n    header_size : {}",

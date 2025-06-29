@@ -486,7 +486,7 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
 
         f64 ratio = f64(pcnt) / f64(src.get_obj_cnt());
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "InterfaceGen",
             "gen interface :",
             sender,

@@ -369,7 +369,7 @@ class PatchDataField {
     bool check_field_match(PatchDataField<T> &f2);
 
     inline void field_raz() {
-        logger::debug_ln("PatchDataField", "raz : ", field_name);
+        shamlog_debug_ln("PatchDataField", "raz : ", field_name);
         override(shambase::VectorProperties<T>::get_zero());
     }
 

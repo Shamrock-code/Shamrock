@@ -53,19 +53,19 @@ TestStart(Unittest, "shammath/flux_symmetry", flux_rotate, 1) {
     Tcons state_zm = {1._f64, 1._f64, f64_3{1, 0, 0}};
     {
         Tcons fx = shammath::rusanov_flux_x(state_i, state_xp, 1.6666);
-        logger::debug_ln("Riemman Solver", fx.rho, fx.rhovel, fx.rhoe);
+        shamlog_debug_ln("Riemman Solver", fx.rho, fx.rhovel, fx.rhoe);
         Tcons fy = shammath::rusanov_flux_y(state_i, state_yp, 1.6666);
-        logger::debug_ln("Riemman Solver", fy.rho, fy.rhovel, fy.rhoe);
+        shamlog_debug_ln("Riemman Solver", fy.rho, fy.rhovel, fy.rhoe);
         Tcons fz = shammath::rusanov_flux_z(state_i, state_zp, 1.6666);
-        logger::debug_ln("Riemman Solver", fz.rho, fz.rhovel, fz.rhoe);
+        shamlog_debug_ln("Riemman Solver", fz.rho, fz.rhovel, fz.rhoe);
         Tcons fmx = shammath::rusanov_flux_mx(state_i, state_xm, 1.6666);
-        logger::debug_ln("Riemman Solver", fmx.rho, fmx.rhovel, fmx.rhoe);
+        shamlog_debug_ln("Riemman Solver", fmx.rho, fmx.rhovel, fmx.rhoe);
         Tcons fmy = shammath::rusanov_flux_my(state_i, state_ym, 1.6666);
-        logger::debug_ln("Riemman Solver", fmy.rho, fmy.rhovel, fmy.rhoe);
+        shamlog_debug_ln("Riemman Solver", fmy.rho, fmy.rhovel, fmy.rhoe);
         Tcons fmz = shammath::rusanov_flux_mz(state_i, state_zm, 1.6666);
-        logger::debug_ln("Riemman Solver", fmz.rho, fmz.rhovel, fmz.rhoe);
+        shamlog_debug_ln("Riemman Solver", fmz.rho, fmz.rhovel, fmz.rhoe);
         Tcons sum = fx + fy + fz + fmx + fmy + fmz;
-        logger::debug_ln("Riemman Solver", "sum=", sum.rho, sum.rhovel, sum.rhoe);
+        shamlog_debug_ln("Riemman Solver", "sum=", sum.rho, sum.rhovel, sum.rhoe);
         REQUIRE(sum.rhovel[1] == 0);
         REQUIRE(sum.rhovel[2] == 0);
     }

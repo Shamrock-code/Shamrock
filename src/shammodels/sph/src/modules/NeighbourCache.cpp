@@ -39,7 +39,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
     // do cache
     storage.neighbors_cache.set(
         shamrock::tree::ObjectCacheHandler(solver_config.max_neigh_cache_size, [&](u64 patch_id) {
-            logger::debug_ln("BasicSPH", "build particle cache id =", patch_id);
+            shamlog_debug_ln("BasicSPH", "build particle cache id =", patch_id);
 
             NamedStackEntry cache_build_stack_loc{"build cache"};
 
@@ -66,7 +66,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
 
             shamsys::instance::get_compute_queue().wait_and_throw();
 
-            logger::debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
+            shamlog_debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
             {
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
@@ -239,7 +239,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
     // do cache
     storage.neighbors_cache.set(
         shamrock::tree::ObjectCacheHandler(solver_config.max_neigh_cache_size, [&](u64 patch_id) {
-            logger::debug_ln("BasicSPH", "build particle cache id =", patch_id);
+            shamlog_debug_ln("BasicSPH", "build particle cache id =", patch_id);
 
             NamedStackEntry cache_build_stack_loc{"build cache"};
 
@@ -271,7 +271,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
             shamsys::instance::get_compute_queue().wait_and_throw();
 
-            logger::debug_sycl_ln("Cache", "generate cache for Nleaf=", leaf_cnt);
+            shamlog_debug_sycl_ln("Cache", "generate cache for Nleaf=", leaf_cnt);
 
             {
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -461,7 +461,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
             shamsys::instance::get_compute_queue().wait_and_throw();
 
-            logger::debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
+            shamlog_debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
 
             {
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();

@@ -20,7 +20,6 @@
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shammodels/ramses/Solver.hpp"
-#include "shammodels/ramses/modules/ComputeFlux.hpp"
 #include <array>
 #include <string>
 

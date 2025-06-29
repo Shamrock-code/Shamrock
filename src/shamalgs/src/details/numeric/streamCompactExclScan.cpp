@@ -46,7 +46,7 @@ namespace shamalgs::numeric::details {
             new_len++;
         }
 
-        logger::debug_sycl_ln("StreamCompact", "number of element : ", new_len);
+        shamlog_debug_sycl_ln("StreamCompact", "number of element : ", new_len);
 
         if (new_len == 0) {
             return {{}, 0};

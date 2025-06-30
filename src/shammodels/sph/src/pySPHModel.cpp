@@ -14,6 +14,7 @@
  * @brief
  */
 
+#include "shambase/logs/loglevels.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammath/sphkernels.hpp"
@@ -46,7 +47,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
-        .def("set_max_neigh_cache_size", &TConfig::set_max_neigh_cache_size)
+        .def(
+            "set_max_neigh_cache_size",
+            [](TConfig &self, u32 max_neigh_cache_size) {
+                shamlog_warn_ln(
+                    "SPH",
+                    "max_neigh_cache_size is deprecated, calling this is a noop, \n"
+                    "you can remove the call to that function");
+            })
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)

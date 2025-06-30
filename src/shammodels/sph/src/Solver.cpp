@@ -1734,7 +1734,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     reset_serial_patch_tree();
     reset_ghost_handler();
+
+    shambase::get_check_ref(storage.part_counts).free_alloc();
+    shambase::get_check_ref(storage.part_counts_with_ghost).free_alloc();
+    shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
+    shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
     storage.merged_xyzh.reset();
+
     storage.omega.reset();
     clear_merged_pos_trees();
     clear_ghost_cache();

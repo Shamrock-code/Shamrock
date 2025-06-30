@@ -499,7 +499,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
                 sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
                 sham::DeviceBuffer<Tvec> &merged_r
-                    = storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf();
+                    = shambase::get_check_ref(storage.positions_with_ghosts)
+                          .get_field(p.id_patch)
+                          .get_buf();
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -592,6 +594,12 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             reset_ghost_handler();
             clear_ghost_cache();
             storage.merged_xyzh.reset();
+
+            shambase::get_check_ref(storage.part_counts).free_alloc();
+            shambase::get_check_ref(storage.part_counts_with_ghost).free_alloc();
+            shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
+            shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
+
             clear_merged_pos_trees();
             reset_presteps_rint();
             reset_neighbors_cache();
@@ -612,6 +620,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
                 logger::info_ln("Smoothinglength", log);
             }
         }
+
+        // The hpart is not valid anymore in ghost zones since we iterated it's value
+        shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
 
         modules::ComputeOmega<Tvec, Kern> omega(context, solver_config, storage);
         storage.omega.set(omega.compute_omega());

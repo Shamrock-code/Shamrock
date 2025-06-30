@@ -23,17 +23,18 @@ namespace shammodels::sph::modules {
     void KillParticles::_impl_evaluate_internal() {
         auto edges = get_edges();
 
-        std::set<u64> ids;
+        std::vector<u64> ids;
         edges.patchdatas.patchdatas.for_each(
             [&ids](u64 id_patch, shamrock::patch::PatchData &patchdata) {
-                ids.insert(id_patch);
+                ids.push_back(id_patch);
             });
 
         edges.part_to_remove.check_allocated(ids);
 
         edges.patchdatas.patchdatas.for_each(
-            [&ids](u64 id_patch, shamrock::patch::PatchData &patchdata) {
-                // patchdata.re
+            [&](u64 id_patch, shamrock::patch::PatchData &patchdata) {
+                auto &buf = edges.part_to_remove.buffers.get(id_patch);
+                patchdata.remove_ids(buf, buf.get_size());
             });
     }
 

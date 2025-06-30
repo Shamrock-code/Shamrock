@@ -421,7 +421,7 @@ class PatchDataField {
      * @param indexes
      * @param len
      */
-    void remove_ids(sham::DeviceBuffer<u32> &indexes, u32 len);
+    void remove_ids(const sham::DeviceBuffer<u32> &indexes, u32 len);
 
     /**
      * @brief minimal serialization

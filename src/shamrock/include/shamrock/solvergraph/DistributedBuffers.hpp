@@ -44,7 +44,7 @@ namespace shamrock::solvergraph {
 
         inline virtual void free_alloc() { buffers = {}; }
 
-        inline virtual void check_allocated(const std::set<u64> &ids) const {
+        inline virtual void check_allocated(const std::vector<u64> &ids) const {
             on_distributeddata_ids_diff(
                 buffers,
                 ids,
@@ -60,7 +60,7 @@ namespace shamrock::solvergraph {
         }
 
         // overload only the non const case
-        inline virtual void ensure_allocated(const std::set<u64> &ids) {
+        inline virtual void ensure_allocated(const std::vector<u64> &ids) {
 
             auto new_buf = [&]() {
                 auto ret = sham::DeviceBuffer<T>(0, shamsys::instance::get_compute_scheduler_ptr());

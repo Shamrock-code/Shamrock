@@ -283,7 +283,6 @@ import numpy as np
 dat = ctx.collect_data()
 
 for rcenter in [1.0, 2.0, 3.0]:
-
     z = []
     h = []
     vz = []

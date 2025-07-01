@@ -43,7 +43,6 @@ def plot_orbits(m1, m2, a, e, roll, pitch, yaw):
         min_nu = -0.75 * np.pi
 
     for nu in np.linspace(min_nu, max_nu, 200, endpoint=False):
-
         # To see the orbit start
         if nu > 1.8 * np.pi:
             break

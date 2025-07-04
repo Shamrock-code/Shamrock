@@ -47,7 +47,8 @@ auto shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega()
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &neigh_cache = storage.neighbors_cache.get().get_cache(p.id_patch);
+        tree::ObjectCache &neigh_cache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(p.id_patch);
 
         sph_utils.compute_omega(
             merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);

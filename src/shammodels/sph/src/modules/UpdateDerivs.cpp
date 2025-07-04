@@ -98,7 +98,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -299,7 +300,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -510,7 +512,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -708,7 +711,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -939,7 +943,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 

@@ -50,6 +50,7 @@
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/modules/io/VTKDump.hpp"
+#include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchData.hpp"
@@ -66,6 +67,12 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
+
+template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
+    storage.neigh_cache
+        = std::make_shared<shammodels::sph::solvergraph::NeighCache>("neigh_cache", "neigh");
+}
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::vtk_do_dump(
@@ -454,7 +461,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
                 RTree &tree = storage.merged_pos_trees.get().get(p.id_patch);
 
                 tree::ObjectCache &neigh_cache
-                    = storage.neighbors_cache.get().get_cache(p.id_patch);
+                    = shambase::get_check_ref(storage.neigh_cache).get_cache(p.id_patch);
 
                 sph_utils.iterate_smoothing_length_cache(
                     merged_r,
@@ -622,7 +629,7 @@ void shammodels::sph::Solver<Tvec, Kern>::start_neighbors_cache() {
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::reset_neighbors_cache() {
-    storage.neighbors_cache.reset();
+    // storage.neighbors_cache.reset();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1363,7 +1370,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
-                tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+                tree::ObjectCache &pcache
+                    = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
                 /////////////////////////////////////////////
 
@@ -1687,6 +1695,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     clear_ghost_cache();
     reset_presteps_rint();
     reset_neighbors_cache();
+
+    shambase::get_check_ref(storage.neigh_cache).free_alloc();
 
     solver_config.set_next_dt(next_cfl);
     solver_config.set_time(t_current + dt);

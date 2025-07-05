@@ -19,6 +19,7 @@
 #include "shambase/time.hpp"
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/reduction.hpp"
+#include "shambackends/Device.hpp"
 #include "shambackends/benchmarks/add_mul.hpp"
 #include "shambackends/benchmarks/saxpy.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
@@ -260,6 +261,13 @@ void shamsys::microbench::add_mul_rotation_f32() {
 
     using vec4 = sycl::vec<float, 4>;
 
+    u32 nrotation = 10000;
+
+    if (shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().type
+        == sham::DeviceType::CPU) {
+        nrotation /= 20;
+    }
+
     auto result = sham::benchmarks::add_mul_bench<vec4>(
         instance::get_compute_scheduler_ptr(),
         N,
@@ -267,7 +275,7 @@ void shamsys::microbench::add_mul_rotation_f32() {
         {2.0f, 2.0f, 2.0f, 2.0f},
         {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
         {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        10000,
+        nrotation,
         4);
 
     f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
@@ -292,6 +300,13 @@ void shamsys::microbench::add_mul_rotation_f64() {
 
     using vec4 = sycl::vec<double, 4>;
 
+    u32 nrotation = 10000;
+
+    if (shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().type
+        == sham::DeviceType::CPU) {
+        nrotation /= 20;
+    }
+
     auto result = sham::benchmarks::add_mul_bench<vec4>(
         instance::get_compute_scheduler_ptr(),
         N,
@@ -299,7 +314,7 @@ void shamsys::microbench::add_mul_rotation_f64() {
         {2.0f, 2.0f, 2.0f, 2.0f},
         {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
         {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        10000,
+        nrotation,
         4);
 
     f64 min_flop = shamalgs::collective::allreduce_min(result.flops);

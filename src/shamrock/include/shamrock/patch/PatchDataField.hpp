@@ -193,7 +193,7 @@ class PatchDataField {
 
     void overwrite(PatchDataField<T> &f2, u32 obj_cnt);
 
-    void overwrite(sham::DeviceBuffer<T> &f2, u32 obj_cnt);
+    void overwrite(sham::DeviceBuffer<T> &f2, u32 len);
 
     void override(sycl::buffer<T> &data, u32 cnt);
 
@@ -584,9 +584,9 @@ inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
 }
 
 template<class T>
-inline void PatchDataField<T>::overwrite(sham::DeviceBuffer<T> &f2, u32 obj_cnt) {
+inline void PatchDataField<T>::overwrite(sham::DeviceBuffer<T> &f2, u32 len) {
     StackEntry stack_loc{};
-    buf.copy_from(f2, obj_cnt);
+    buf.copy_from(f2, len);
 }
 
 template<class T>

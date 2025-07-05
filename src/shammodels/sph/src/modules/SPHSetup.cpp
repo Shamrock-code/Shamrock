@@ -105,11 +105,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
             // but some generator could miss this assumption.
             // If that is the case please report the issue
 
-            u32 loc_inj = pdat.get_obj_cnt();
+            u64 loc_inj = pdat.get_obj_cnt();
 
-            u32 offset_init;
+            u64 offset_init = 0;
             shamcomm::mpi::Exscan(
-                &loc_inj, &offset_init, 1, get_mpi_type<u32>(), MPI_SUM, MPI_COMM_WORLD);
+                &loc_inj, &offset_init, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
 
             // we must add the number of already injected part such that the
             // offset start at the right spot.
@@ -121,19 +121,21 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
             auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
             auto &q        = shambase::get_check_ref(dev_sched).get_queue();
 
-            sham::DeviceBuffer<u64> part_ids(loc_inj, dev_sched);
+            if (loc_inj > 0) {
+                sham::DeviceBuffer<u64> part_ids(loc_inj, dev_sched);
 
-            sham::kernel_call(
-                q,
-                sham::MultiRef{},
-                sham::MultiRef{part_ids},
-                loc_inj,
-                [offset_init](u32 i, u64 __restrict *part_ids) {
-                    part_ids[i] = i + offset_init;
-                });
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{},
+                    sham::MultiRef{part_ids},
+                    loc_inj,
+                    [offset_init](u32 i, u64 __restrict *part_ids) {
+                        part_ids[i] = i + offset_init;
+                    });
 
-            pdat.get_field<u64>(pdat.pdl.get_field_idx<u64>("part_id"))
-                .overwrite(part_ids, loc_inj);
+                pdat.get_field<u64>(pdat.pdl.get_field_idx<u64>("part_id"))
+                    .overwrite(part_ids, loc_inj);
+            }
         }
 
         u64 injected

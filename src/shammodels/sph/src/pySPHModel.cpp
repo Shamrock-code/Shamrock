@@ -46,6 +46,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
+        .def("set_particle_tracking", &TConfig::set_particle_tracking)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
         .def("set_max_neigh_cache_size", &TConfig::set_max_neigh_cache_size)

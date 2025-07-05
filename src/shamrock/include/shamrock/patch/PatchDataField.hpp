@@ -586,7 +586,7 @@ inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
 template<class T>
 inline void PatchDataField<T>::overwrite(sham::DeviceBuffer<T> &f2, u32 obj_cnt) {
     StackEntry stack_loc{};
-    buf.copy_from(f2, obj_cnt * f2.nvar);
+    buf.copy_from(f2, obj_cnt);
 }
 
 template<class T>

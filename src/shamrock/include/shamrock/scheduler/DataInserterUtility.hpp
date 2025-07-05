@@ -49,17 +49,18 @@ namespace shamrock {
          *
          * @warning This function must be called by all MPI ranks
          *
+         * @todo use directly main field at id=0 and deduce type
+         * @todo implement case we more object than the threshold are present
+         *
          * @param pdat_ins The PatchData object containing the data to be inserted.
          * @param main_field_name The name of the main field.
          * @param split_threshold The threshold at which the data will be split.
          * @param load_balance_update A function to call after the insertion of the data.
          *                             This function should call the load balance algorithm.
-         *
-         * @todo use directly main field at id=0 and deduce type
-         * @todo implement case we more object than the threshold are present
+         * @return The number of objects inserted.
          */
         template<class Tvec>
-        void push_patch_data(
+        u64 push_patch_data(
             shamrock::patch::PatchData &pdat_ins,
             std::string main_field_name,
             u32 split_threshold,
@@ -68,12 +69,9 @@ namespace shamrock {
 
             u64 pdat_ob_cnt = pdat_ins.get_obj_cnt();
 
-            {
-                u64 sum_push = shamalgs::collective::allreduce_sum(pdat_ob_cnt);
-                if (shamcomm::world_rank() == 0) {
-                    logger::info_ln(
-                        "DataInserterUtility", "pushing data in scheduler, N =", sum_push);
-                }
+            u64 sum_push = shamalgs::collective::allreduce_sum(pdat_ob_cnt);
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("DataInserterUtility", "pushing data in scheduler, N =", sum_push);
             }
 
             if (pdat_ob_cnt < split_threshold) {
@@ -123,6 +121,8 @@ namespace shamrock {
 
             sched.scheduler_step(false, false);
             sched.scheduler_step(true, true);
+
+            return sum_push;
         }
     };
 

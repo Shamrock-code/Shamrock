@@ -77,6 +77,8 @@ namespace shammodels::sph::modules {
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+
+        u64 injected_parts = 0;
     };
 
 } // namespace shammodels::sph::modules

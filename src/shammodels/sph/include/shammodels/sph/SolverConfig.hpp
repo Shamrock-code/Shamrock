@@ -304,14 +304,11 @@ struct shammodels::sph::SolverConfig {
 
     u32 tree_reduction_level  = 3;    ///< Reduction level to be used in the tree build
     bool use_two_stage_search = true; ///< Use two stage neighbors search (see shamrock paper)
-    u64 max_neigh_cache_size  = 10e9; ///< Maximum size of the neighbors cache
 
     /// Setter for the tree reduction level
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
     /// Setter for the two stage search
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
-    /// Setter for the maximum size of the neighbors cache
-    inline void set_max_neigh_cache_size(u64 val) { max_neigh_cache_size = val; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config (END)
@@ -792,7 +789,6 @@ namespace shammodels::sph {
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
-            {"max_neigh_cache_size", p.max_neigh_cache_size},
             // solver behavior config
             {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
             {"htol_up_tol", p.htol_up_tol},
@@ -859,7 +855,6 @@ namespace shammodels::sph {
 
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
-        j.at("max_neigh_cache_size").get_to(p.max_neigh_cache_size);
 
         j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
         j.at("htol_up_tol").get_to(p.htol_up_tol);

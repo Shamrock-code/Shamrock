@@ -14,6 +14,7 @@
  * @brief
  */
 
+#include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammath/sphkernels.hpp"
@@ -22,6 +23,7 @@
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
 #include <memory>
@@ -753,7 +755,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def("load_from_dump", &T::load_from_dump)
         .def("dump", &T::dump)
-        .def("get_setup", &T::get_setup);
+        .def("get_setup", &T::get_setup)
+        .def("get_patch_transform", [](T &self) {
+            PatchScheduler &sched = shambase::get_check_ref(self.ctx.sched);
+            return sched.get_patch_transform<Tvec>();
+        });
 }
 
 Register_pymod(pysphmodel) {

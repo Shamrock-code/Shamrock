@@ -17,6 +17,7 @@
 
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <map>
@@ -178,6 +179,13 @@ class ShamrockCtx {
             throw ShamAPIException("scheduler is not initialized");
         }
         sched->scheduler_step(do_split_merge, do_load_balancing);
+    }
+
+    inline std::vector<shamrock::patch::Patch> get_patch_list_global() {
+        if (!sched) {
+            throw ShamAPIException("scheduler is not initialized");
+        }
+        return sched->patch_list.global;
     }
 
     /// returns true if the scheduler is initialized

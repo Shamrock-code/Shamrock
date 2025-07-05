@@ -161,6 +161,8 @@ namespace shammodels::sph {
          */
         bool apply_corrector(Tscal dt, u64 Npart_all);
 
+        void update_sync_load_values();
+
         Solver(ShamrockCtx &context) : context(context) {}
 
         void vtk_do_dump(std::string filename, bool add_patch_world_id);

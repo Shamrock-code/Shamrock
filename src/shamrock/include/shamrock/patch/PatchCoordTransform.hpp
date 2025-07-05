@@ -16,6 +16,7 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shammath/AABB.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammath/CoordRangeTransform.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -38,6 +39,11 @@ namespace shamrock::patch {
 
         inline shammath::CoordRange<Tcoord> to_obj_coord(shammath::CoordRange<u64_3> p) const {
             return transform.transform(p);
+        }
+
+        inline shammath::AABB<Tcoord> to_obj_coord(shammath::AABB<u64_3> p) const {
+            auto ret = transform.transform(shammath::CoordRange<u64_3>(p.lower, p.upper));
+            return {ret.lower, ret.upper};
         }
 
         PatchCoord<3> to_patch_coord(shammath::CoordRange<Tcoord> obj) const {

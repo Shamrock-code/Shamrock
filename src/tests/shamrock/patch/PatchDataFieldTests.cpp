@@ -100,6 +100,16 @@ inline void check_pdat_get_ids_where(u32 len, u32 nvar, std::string name, f64 vm
 
     logger::raw_ln("found : ", std::get<1>(idx_cd_sycl));
 
+    auto idx_cd_shambuf = field.get_ids_where(
+        [](auto access, u32 id, f64 vmin, f64 vmax) {
+            f64 tmp = access[id];
+            return tmp > vmin && tmp < vmax;
+        },
+        vmin,
+        vmax);
+
+    logger::raw_ln("found : ", idx_cd_shambuf.get_size());
+
     // compare content
     REQUIRE(bool(std::get<0>(idx_cd_sycl)) == (idx_cd.size() != 0));
 
@@ -109,6 +119,7 @@ inline void check_pdat_get_ids_where(u32 len, u32 nvar, std::string name, f64 vm
             idx_cd
             == shambase::set_from_vector(
                 shamalgs::memory::buf_to_vec(*std::get<0>(idx_cd_sycl), std::get<1>(idx_cd_sycl))));
+        REQUIRE(idx_cd == shambase::set_from_vector(idx_cd_shambuf.copy_to_stdvec()));
     }
 }
 

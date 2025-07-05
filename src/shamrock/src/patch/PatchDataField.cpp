@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/string.hpp"
@@ -176,6 +177,52 @@ void PatchDataField<T>::append_subset_to(
 
     buf.complete_event_state(e);
     buf_other.complete_event_state(e);
+}
+
+template<class T>
+void PatchDataField<T>::append_subset_to(
+    sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
+
+    if (pfield.nvar != nvar)
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "field must be similar for extraction");
+
+    const u32 start_enque = pfield.get_val_cnt();
+
+    const u32 nvar = get_nvar();
+
+    pfield.expand(sz);
+
+    auto &buf_other = pfield.get_buf();
+
+    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q   = sptr->get_queue();
+
+    sham::EventList depends_list;
+
+    const T *acc_curr   = buf.get_read_access(depends_list);
+    T *acc_other        = buf_other.get_write_access(depends_list);
+    const u32 *acc_idxs = idxs_buf.get_read_access(depends_list);
+
+    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+        const u32 nvar_loc        = nvar;
+        const u32 start_enque_loc = start_enque;
+
+        cgh.parallel_for(sycl::range<1>{sz}, [=](sycl::item<1> i) {
+            const u32 gid = i.get_linear_id();
+
+            const u32 idx_extr = acc_idxs[gid] * nvar_loc;
+            const u32 idx_push = start_enque_loc + gid * nvar_loc;
+
+            for (u32 a = 0; a < nvar_loc; a++) {
+                acc_other[idx_push + a] = acc_curr[idx_extr + a];
+            }
+        });
+    });
+
+    buf.complete_event_state(e);
+    buf_other.complete_event_state(e);
+    idxs_buf.complete_event_state(e);
 }
 
 template<class T>

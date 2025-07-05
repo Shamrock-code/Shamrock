@@ -702,7 +702,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     auto pdat_interf = ghost_handle.template build_interface_native<PatchData>(
         storage.ghost_patch_cache.get(),
-        [&](u64 sender, u64, InterfaceBuildInfos binfo, sycl::buffer<u32> &buf_idx, u32 cnt) {
+        [&](u64 sender, u64, InterfaceBuildInfos binfo, sham::DeviceBuffer<u32> &buf_idx, u32 cnt) {
             PatchData pdat(ghost_layout);
 
             pdat.reserve(cnt);
@@ -716,7 +716,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
         [&](u64 sender,
             u64,
             InterfaceBuildInfos binfo,
-            sycl::buffer<u32> &buf_idx,
+            sham::DeviceBuffer<u32> &buf_idx,
             u32 cnt,
             PatchData &pdat) {
             PatchData &sender_patch             = scheduler().patch_data.get_pdat(sender);
@@ -774,7 +774,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
         [&](u64 sender,
             u64,
             InterfaceBuildInfos binfo,
-            sycl::buffer<u32> &buf_idx,
+            sham::DeviceBuffer<u32> &buf_idx,
             u32 cnt,
             PatchData &pdat) {
             if (sycl::length(binfo.offset_speed) > 0) {
@@ -1130,7 +1130,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 [&](u64 sender,
                     u64 /*receiver*/,
                     InterfaceBuildInfos binfo,
-                    sycl::buffer<u32> &buf_idx,
+                    sham::DeviceBuffer<u32> &buf_idx,
                     u32 cnt) -> PatchDataField<Tscal> {
                     PatchDataField<Tscal> &sender_field = comp_field_send.get_field(sender);
 

@@ -44,6 +44,7 @@ cfg = model.gen_default_config()
 cfg.set_artif_viscosity_VaryingCD10(
     alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
 )
+cfg.set_particle_tracking(True)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(1.00001)
 cfg.print_status()
@@ -160,6 +161,18 @@ def plot_state(iplot):
         draw_aabb(ax, ptransf.to_obj_coord(p), "blue", 0.1)
 
     parts = ctx.collect_data()
+
+    ids = parts["part_id"]
+
+    for i in range(len(ids)):
+        if not i in ids:
+            print("missing {} : {}".format(i, ids[i]))
+
+    print("------")
+    for i in range(len(ids)):
+        print("part {} : {}".format(i, ids[i]))
+
+    exit()
 
     pos = parts["xyz"]
     X = pos[:, 0]

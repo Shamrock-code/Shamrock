@@ -24,6 +24,10 @@ nav:
       - 'Install (Spack)' : 'usermanual/quickstart/install_spack.md'
       - 'Install (Homebrew)' : 'usermanual/quickstart/install_brew.md'
       - 'Install (Docker)' : 'usermanual/quickstart/install_docker.md'
+      - 'Recommended Configurations' :
+        - 'Linux' : 'usermanual/quickstart/recommended_config/linux_debian.md'
+        - 'macOS' : 'usermanual/quickstart/recommended_config/macos.md'
+        - 'Conda' : 'usermanual/quickstart/recommended_config/conda.md'
     - 'Environments' : 'usermanual/envs.md'
     - 'Usage' : 'usermanual/usage.md'
     - 'Shamrock as python lib' : 'usermanual/python_lib.md'

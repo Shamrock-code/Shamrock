@@ -45,6 +45,7 @@ nav:
   - 'Develloper Doc' :
     - 'Git guide' : 'devdoc/git_guide.md'
     - 'VSCode setup' : 'devdoc/vscode-setup.md'
+    - 'Documentation' : 'devdoc/building_the_doc.md'
     - 'Release process' : 'devdoc/release_process.md'
     - 'Using the logs' : 'devdoc/log_system.md'
     - 'Local LLVM' : 'devdoc/using_local_llvm.md'

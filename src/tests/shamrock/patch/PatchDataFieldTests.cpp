@@ -202,3 +202,69 @@ TestStart(Unittest, "shamrock/patch/PatchDataField::remove_ids", testpdatremovei
 
     REQUIRE_EQUAL(field.get_buf().copy_to_stdvec(), remaining_values);
 }
+
+TestStart(Unittest, "shamrock/patch/PatchDataField::append_subset_to", testappendsubsetto, 1) {
+
+    using T = f64;
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    { // nvar = 1
+        u32 len          = 10000;
+        u32 nvar         = 1;
+        std::string name = "testfield";
+
+        PatchDataField<f64> field
+            = PatchDataField<f64>::mock_field(0x1234, len, name, nvar, 0.0, 1000.0);
+
+        std::vector<T> field_data = field.get_buf().copy_to_stdvec();
+
+        std::vector<u32> idx_vec;
+        for (u32 i = 0; i < len; i += 2) {
+            idx_vec.push_back(i);
+        }
+
+        std::vector<T> ref;
+        for (auto i : idx_vec) {
+            ref.push_back(field_data[i]);
+        }
+
+        sham::DeviceBuffer<u32> idx_buf(idx_vec.size(), dev_sched);
+        idx_buf.copy_from_stdvec(idx_vec);
+
+        PatchDataField<f64> field_dest = PatchDataField<f64>(name, nvar, 0);
+        field.append_subset_to(idx_buf, idx_buf.get_size(), field_dest);
+
+        REQUIRE_EQUAL(field_dest.get_buf().copy_to_stdvec(), ref);
+    }
+
+    { // nvar = 2
+        u32 len          = 10000;
+        u32 nvar         = 2;
+        std::string name = "testfield";
+
+        PatchDataField<f64> field
+            = PatchDataField<f64>::mock_field(0x1234, len, name, nvar, 0.0, 1000.0);
+
+        std::vector<T> field_data = field.get_buf().copy_to_stdvec();
+
+        std::vector<u32> idx_vec;
+        for (u32 i = 0; i < len; i += 2) {
+            idx_vec.push_back(i);
+        }
+
+        std::vector<T> ref;
+        for (auto i : idx_vec) {
+            ref.push_back(field_data[i * 2 + 0]);
+            ref.push_back(field_data[i * 2 + 1]);
+        }
+
+        sham::DeviceBuffer<u32> idx_buf(idx_vec.size(), dev_sched);
+        idx_buf.copy_from_stdvec(idx_vec);
+
+        PatchDataField<f64> field_dest = PatchDataField<f64>(name, nvar, 0);
+        field.append_subset_to(idx_buf, idx_buf.get_size(), field_dest);
+
+        REQUIRE_EQUAL(field_dest.get_buf().copy_to_stdvec(), ref);
+    }
+}

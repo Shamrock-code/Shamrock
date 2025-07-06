@@ -25,9 +25,9 @@ This page aims at documenting the python layer of shamrock.
       **Runscript Exemples** (`Link <_as_gen/index.html>`_)
       ^^^
 
-      A very nice list of exemples of Shamrock scripts, for those who prefer exemples. :)
+      A very nice list of examples of Shamrock scripts, for those who prefer examples. :)
 
-      If any exemples goes amiss please open an issue
+      If any examples goes amiss please open an issue
       `here <https://github.com/Shamrock-code/Shamrock/issues/new?template=documentation-request.md>`_.
 
 .. grid:: 2
@@ -62,7 +62,7 @@ This page aims at documenting the python layer of shamrock.
 
    Home page <self>
    Python API <api>
-   Exemples <_as_gen/index>
+   Examples <_as_gen/index>
 
 Indices and tables
 ==================

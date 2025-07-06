@@ -1,5 +1,5 @@
 """
-Simple exemple of unit usage
+Simple example of unit usage
 ============================
 
 This simple example shows how to use units in Shamrock
@@ -21,7 +21,7 @@ print("An au in SI units is", sicte.au())
 # %%
 
 # Shamrock unit system is based on the definition of the base units relative to SI ones
-# For exemple to set the time unit one you provide the given time in SI units (seconds).
+# For example to set the time unit one you provide the given time in SI units (seconds).
 
 # Create a unit system with time in years, length in au, mass in solar masses
 codeu = shamrock.UnitSystem(

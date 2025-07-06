@@ -1,6 +1,6 @@
 """
 Paving functions
-============================
+================
 
 This simple example shows how paving functions in Shamrock works
 """
@@ -89,7 +89,7 @@ def plot_paving_function(pav_func, pav_func_name, shear_x=0.0):
 
 # %%
 # Testing the paving functions
-# ------------------------
+# ----------------------------
 
 # %%
 # Periodic paving function

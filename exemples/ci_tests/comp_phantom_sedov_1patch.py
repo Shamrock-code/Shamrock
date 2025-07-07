@@ -40,9 +40,6 @@ def load_dataset(filename):
 
 
 def L2diff_relat(arr1, pos1, arr2, pos2):
-    """
-    For each value in arr1 at pos1 (now full 3D), find the closest value in arr2 at pos2 (3D), and compute the L2 error.
-    """
     from scipy.spatial import cKDTree
 
     pos1 = np.asarray(pos1)
@@ -226,7 +223,7 @@ def get_testing_sets(dataset):
     if shamrock.sys.world_rank() > 0:
         return {}
 
-    print(f"making test dataset, Npart={len(dataset["xyz"])}")
+    print("making test dataset, Npart={}".format(len(dataset["xyz"])))
 
     ret["r"] = np.sqrt(
         dataset["xyz"][:, 0] ** 2 + dataset["xyz"][:, 1] ** 2 + dataset["xyz"][:, 2] ** 2

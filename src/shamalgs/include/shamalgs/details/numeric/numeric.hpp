@@ -16,8 +16,11 @@
  *
  */
 
+#include "shambase/assert.hpp"
+#include "shambase/memory.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/sycl.hpp"
 
 /**
@@ -80,5 +83,64 @@ namespace shamalgs::numeric {
      */
     sham::DeviceBuffer<u32> stream_compact(
         const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf_flags, u32 len);
+
+    template<class T>
+    struct histogram_result {
+        sham::DeviceBuffer<u64> counts;
+        sham::DeviceBuffer<T> bins_center;
+        sham::DeviceBuffer<T> bins_width;
+    };
+
+    /**
+     * @brief Compute the histogram of values between bin_edges
+     *
+     * @param sched the device scheduler to run on
+     * @param bin_edges the edges of the bins (length == nbins + 1)
+     * @param nbins the number of bins
+     * @param values the values to compute the histogram on
+     * @param len the length of the values array
+     * @return sham::DeviceBuffer<u64> the counts in each bin
+     */
+    template<class T>
+    sham::DeviceBuffer<u64> device_histogram(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> bin_edges,
+        u64 nbins,
+        sham::DeviceBuffer<T> values,
+        u32 len);
+
+    template<class T>
+    histogram_result<T> device_histogram_full(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<T> bin_edges,
+        u64 nbins,
+        sham::DeviceBuffer<T> values,
+        u32 len) {
+
+        SHAM_ASSERT(nbins > 1); // at least a sup and a inf
+        SHAM_ASSERT(bin_edges.size() == nbins + 1);
+
+        auto &q = shambase::get_check_ref(sched).get_queue();
+
+        sham::DeviceBuffer<u64> counts = device_histogram(sched, bin_edges, nbins, values, len);
+
+        sham::DeviceBuffer<T> bins_center(nbins, sched);
+        sham::DeviceBuffer<T> bins_width(nbins, sched);
+
+        sham::kernel_call(
+            q,
+            sham::MultiRef{bin_edges},
+            sham::MultiRef{bins_center, bins_width},
+            nbins,
+            [](u32 i,
+               const T *__restrict bin_edges,
+               T *__restrict bins_center,
+               T *__restrict bins_width) {
+                bins_center[i] = (bin_edges[i] + bin_edges[i + 1]) / 2;
+                bins_width[i]  = bin_edges[i + 1] - bin_edges[i];
+            });
+
+        return {std::move(counts), std::move(bins_center), std::move(bins_width)};
+    }
 
 } // namespace shamalgs::numeric

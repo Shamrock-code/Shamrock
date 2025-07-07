@@ -25,3 +25,5 @@ TestStart(Unittest, "shamalgs/numeric/stream_compact(usm)", streamcompactalgusm,
         (TestStreamCompactUSM::vFunctionCall) shamalgs::numeric::stream_compact);
     test.check();
 }
+
+TestStart(Unittest, "shamalgs/numeric/device_histogram", devicehistogram, 1) {}

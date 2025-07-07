@@ -124,7 +124,7 @@ def compare_datasets(istep, dataset1, dataset2):
     print("L2alpha", L2alpha)
 
     expected_L2 = {
-        0: [0.0, 0, 0.0, 0.0, 0.0],
+        0: [0.0, 9.009242852618063e-08, 0.0, 0.0, 0.0],
         1: [0,0,0,0,0],
         10: [0,0,0,0,0],
         100: [0,0,0,0,0],

@@ -24,7 +24,9 @@ def load_dataset(filename):
     # Print the solver config
     model.get_current_config().print_status()
 
-    model.init_scheduler(int(1e8), 1)
+    Npart = 174000
+    split = int(Npart)
+    model.init_scheduler(split, 1)
 
     model.init_from_phantom_dump(dump)
     ret = ctx.collect_data()
@@ -35,8 +37,23 @@ def load_dataset(filename):
     return ret
 
 
-def L2diff_relat(arr1, arr2):
-    return np.sqrt(np.mean((arr1 - arr2) ** 2))
+def L2diff_relat(arr1, pos1, arr2, pos2):
+    """
+    For each value in arr1 at pos1 (now full 3D), find the closest value in arr2 at pos2 (3D), and compute the L2 error.
+    """
+    from scipy.spatial import cKDTree
+
+    pos1 = np.asarray(pos1)
+    pos2 = np.asarray(pos2)
+    arr1 = np.asarray(arr1)
+    arr2 = np.asarray(arr2)
+    tree = cKDTree(pos2)
+    dists, idxs = tree.query(pos1, k=1)
+    matched_arr2 = arr2[idxs]
+    return np.sqrt(np.mean((arr1 - matched_arr2) ** 2))
+
+    # Old way without neigh matching
+    # return np.sqrt(np.mean((arr1 - arr2) ** 2))
 
 
 def compare_datasets(istep, dataset1, dataset2):
@@ -92,11 +109,11 @@ def compare_datasets(istep, dataset1, dataset2):
 
     plt.tight_layout()
 
-    L2r = L2diff_relat(dataset1["r"], dataset2["r"])
-    L2rho = L2diff_relat(dataset1["rho"], dataset2["rho"])
-    L2u = L2diff_relat(dataset1["u"], dataset2["u"])
-    L2vr = L2diff_relat(dataset1["vr"], dataset2["vr"])
-    L2alpha = L2diff_relat(dataset1["alpha"], dataset2["alpha"])
+    L2r = L2diff_relat(dataset1["r"], dataset1["xyz"], dataset2["r"], dataset2["xyz"])
+    L2rho = L2diff_relat(dataset1["rho"], dataset1["xyz"], dataset2["rho"], dataset2["xyz"])
+    L2u = L2diff_relat(dataset1["u"], dataset1["xyz"], dataset2["u"], dataset2["xyz"])
+    L2vr = L2diff_relat(dataset1["vr"], dataset1["xyz"], dataset2["vr"], dataset2["xyz"])
+    L2alpha = L2diff_relat(dataset1["alpha"], dataset1["xyz"], dataset2["alpha"], dataset2["xyz"])
 
     print("L2r", L2r)
     print("L2rho", L2rho)
@@ -107,25 +124,25 @@ def compare_datasets(istep, dataset1, dataset2):
     expected_L2 = {
         0: [0.0, 9.009242857437762e-08, 0.0, 0.0, 0.0],
         1: [
-            1.849032825421309e-15,
-            1.1219057802660629e-07,
-            2.9990409944794113e-05,
-            2.779110446922251e-07,
+            1.849032833754011e-15,
+            1.1219057797680449e-07,
+            2.999040994475271e-05,
+            2.779110446924244e-07,
             1.1107580842674083e-06,
         ],
         10: [
-            2.362796968276232e-10,
-            1.0893822459979459e-07,
-            0.00040101749028480704,
-            5.000025464453985e-06,
-            0.02683282221334945,
+            2.3627969682817764e-10,
+            1.0893822455117551e-07,
+            0.00040101749028504454,
+            5.000025464452259e-06,
+            0.023664326483828345,
         ],
         100: [
-            1.5585397967797566e-08,
-            6.155202709453772e-07,
-            0.00031181137524605987,
-            2.9173459165068845e-05,
-            6.432345363293235e-05,
+            1.558539796779796e-08,
+            6.15520270937594e-07,
+            0.0003118113752456964,
+            2.9173459165066995e-05,
+            6.432345363293233e-05,
         ],
         1000: [0.001, 0.001, 0.001, 0.001, 0.001],
     }
@@ -150,15 +167,15 @@ def compare_datasets(istep, dataset1, dataset2):
     if abs(L2alpha - expected_L2[istep][4]) > tols[istep][4]:
         error = True
 
+    plt.savefig("sedov_blast_phantom_comp_" + str(istep) + ".png")
+
     if error:
         exit(
             f"Tolerances are not respected, got \n istep={istep}\n"
             + f" got: [{float(L2r)}, {float(L2rho)}, {float(L2u)}, {float(L2vr)}, {float(L2alpha)}] \n"
             + f" expected : [{expected_L2[istep][0]}, {expected_L2[istep][1]}, {expected_L2[istep][2]}, {expected_L2[istep][3]}, {expected_L2[istep][4]}]\n"
-            + f" delta : [{abs(L2r - expected_L2[istep][0])}, {abs(L2rho - expected_L2[istep][1])}, {abs(L2u - expected_L2[istep][2])}, {abs(L2vr - expected_L2[istep][3])}, {abs(L2alpha - expected_L2[istep][4])}]"
+            + f" delta : [{(L2r - expected_L2[istep][0])}, {(L2rho - expected_L2[istep][1])}, {(L2u - expected_L2[istep][2])}, {(L2vr - expected_L2[istep][3])}, {(L2alpha - expected_L2[istep][4])}]"
         )
-
-    plt.savefig("sedov_blast_phantom_comp_" + str(istep) + ".png")
 
 
 step0000 = load_dataset("reference-files/sedov_blast_phantom/blast_00000")
@@ -210,6 +227,7 @@ def get_testing_sets(dataset):
         dataset["vxyz"][:, 0] ** 2 + dataset["vxyz"][:, 1] ** 2 + dataset["vxyz"][:, 2] ** 2
     )
     ret["alpha"] = dataset["alpha_AV"]
+    ret["xyz"] = dataset["xyz"]
 
     index = np.argsort(ret["r"])
 
@@ -218,6 +236,7 @@ def get_testing_sets(dataset):
     ret["u"] = ret["u"][index]
     ret["vr"] = ret["vr"][index]
     ret["alpha"] = ret["alpha"][index]
+    ret["xyz"] = ret["xyz"][index]
 
     cutoff = 50000
 
@@ -226,6 +245,7 @@ def get_testing_sets(dataset):
     ret["u"] = ret["u"][:cutoff]
     ret["vr"] = ret["vr"][:cutoff]
     ret["alpha"] = ret["alpha"][:cutoff]
+    ret["xyz"] = ret["xyz"][:cutoff]
 
     return ret
 

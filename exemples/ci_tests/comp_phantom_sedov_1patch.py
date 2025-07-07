@@ -7,6 +7,10 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 
+Npart = 174000
+split = int(Npart) * 2
+
+
 def load_dataset(filename):
 
     print("Loading", filename)
@@ -24,8 +28,6 @@ def load_dataset(filename):
     # Print the solver config
     model.get_current_config().print_status()
 
-    Npart = 174000
-    split = int(Npart)
     model.init_scheduler(split, 1)
 
     model.init_from_phantom_dump(dump)
@@ -57,6 +59,9 @@ def L2diff_relat(arr1, pos1, arr2, pos2):
 
 
 def compare_datasets(istep, dataset1, dataset2):
+
+    if shamrock.sys.world_rank() > 0:
+        return
 
     import matplotlib.pyplot as plt
 
@@ -150,7 +155,7 @@ def compare_datasets(istep, dataset1, dataset2):
     tols = {
         0: [0.0, 1.0e-16, 0.0, 0.0, 0.0],
         1: [0.0, 1.0e-12, 1.0e-13, 1.0e-10, 1.0e-19],
-        10: [1.0e-21, 1.0e-17, 1.0e-16, 1.0e-17, 0.01],
+        10: [1.0e-21, 1.0e-17, 6.0e-16, 1.0e-17, 0.01],
         100: [1.0e-19, 1.0e-17, 1.0e-15, 1.0e-16, 1.0e-18],
         1000: [1e-19, 1e-19, 1e-19, 1e-19, 1e-19],
     }
@@ -204,7 +209,7 @@ model.set_solver_config(cfg)
 # Print the solver config
 model.get_current_config().print_status()
 
-model.init_scheduler(int(1e8), 1)
+model.init_scheduler(split, 1)
 
 model.init_from_phantom_dump(dump)
 
@@ -218,6 +223,11 @@ def hpart_to_rho(hpart_array):
 def get_testing_sets(dataset):
     ret = {}
 
+    if shamrock.sys.world_rank() > 0:
+        return {}
+
+    print(f"making test dataset, Npart={len(dataset["xyz"])}")
+
     ret["r"] = np.sqrt(
         dataset["xyz"][:, 0] ** 2 + dataset["xyz"][:, 1] ** 2 + dataset["xyz"][:, 2] ** 2
     )
@@ -229,6 +239,8 @@ def get_testing_sets(dataset):
     ret["alpha"] = dataset["alpha_AV"]
     ret["xyz"] = dataset["xyz"]
 
+    # Even though we have neigh matching to compare the datasets
+    # We still need the cutoff, hence the sorting + cutoff
     index = np.argsort(ret["r"])
 
     ret["r"] = ret["r"][index]

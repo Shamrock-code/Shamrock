@@ -104,9 +104,9 @@ namespace shamalgs::numeric {
     template<class T>
     sham::DeviceBuffer<u64> device_histogram(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> bin_edges,
+        const sham::DeviceBuffer<T> &bin_edges,
         u64 nbins,
-        sham::DeviceBuffer<T> values,
+        const sham::DeviceBuffer<T> &values,
         u32 len);
 
     template<class T>

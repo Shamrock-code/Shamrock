@@ -89,9 +89,9 @@ namespace shamalgs::numeric {
     template<class T>
     sham::DeviceBuffer<u64> device_histogram(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> bin_edges,
+        const sham::DeviceBuffer<T> &bin_edges,
         u64 nbins,
-        sham::DeviceBuffer<T> values,
+        const sham::DeviceBuffer<T> &values,
         u32 len) {
 
         SHAM_ASSERT(nbins > 1); // at least a sup and a inf
@@ -116,15 +116,16 @@ namespace shamalgs::numeric {
                 const T *__restrict values,
                 const T *__restrict bin_edges,
                 u64 *__restrict counts) {
+                // Only count values within [bin_edges[0], bin_edges[nbins])
+                if (values[i] < bin_edges[0] || values[i] >= bin_edges[nbins]) {
+                    return;
+                }
+
                 u32 start_range = 0;
                 u32 end_range   = nbins + 1;
 
                 while (end_range - start_range > 1) {
                     u32 mid_range = (start_range + end_range) / 2;
-
-                    //   |    |     |    |     |
-                    // start       mid        end
-                    //          v
 
                     if (values[i] < bin_edges[mid_range]) { // mid_range is a sup
                         end_range = mid_range;
@@ -150,15 +151,15 @@ namespace shamalgs::numeric {
 
     template sham::DeviceBuffer<u64> device_histogram<f64>(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<f64> bin_edges,
+        const sham::DeviceBuffer<f64> &bin_edges,
         u64 nbins,
-        sham::DeviceBuffer<f64> values,
+        const sham::DeviceBuffer<f64> &values,
         u32 len);
     template sham::DeviceBuffer<u64> device_histogram<f32>(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<f32> bin_edges,
+        const sham::DeviceBuffer<f32> &bin_edges,
         u64 nbins,
-        sham::DeviceBuffer<f32> values,
+        const sham::DeviceBuffer<f32> &values,
         u32 len);
 
 } // namespace shamalgs::numeric

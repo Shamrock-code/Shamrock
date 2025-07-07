@@ -95,7 +95,7 @@ namespace shamalgs::numeric {
         u32 len) {
 
         SHAM_ASSERT(nbins > 1); // at least a sup and a inf
-        SHAM_ASSERT(bin_edges.size() == nbins + 1);
+        SHAM_ASSERT(bin_edges.get_size() == nbins + 1);
 
         sham::DeviceBuffer<u64> counts = sham::DeviceBuffer<u64>(nbins, sched);
         counts.fill(0);

@@ -2,7 +2,7 @@
 SPH projected kernels
 ========================
 
-This exemple shows the convergence of the projected M4 kernels
+This example shows the convergence of the projected M4 kernels
 """
 
 # sphinx_gallery_multi_image = "single"

@@ -109,7 +109,7 @@ namespace {
 
             std::string to_string() const {
                 return shambase::format(
-                    "{{ \"pid\": {}, \"ph\": \"C\", \"ts\":  {}, \"args\": {{\"{}\": {} }} }},\n",
+                    "{{ \"pid\": {}, \"ph\": \"C\", \"ts\":  {}, \"args\": {{\"{}\": {:e} }} }},\n",
                     pid,
                     to_prof_time(t),
                     name,

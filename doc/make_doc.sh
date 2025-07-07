@@ -1,15 +1,18 @@
+#!/bin/sh
+
 cd doxygen
-for i in {1..3}
+
+i=1
+while [ $i -le 3 ]
 do
     doxygen dox.conf
-    if [ $? -eq 0 ]
-    then
+    if [ $? -eq 0 ]; then
         break
     fi
     echo "Doxygen failed, retrying ($i/3)"
+    i=$((i+1))
 done
-if [ $i -eq 3 ]
-then
+if [ $i -gt 3 ]; then
     echo "Doxygen failed three times, giving up."
     exit 1
 fi

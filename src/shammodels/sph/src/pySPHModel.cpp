@@ -50,11 +50,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
         .def(
             "set_max_neigh_cache_size",
-            [](TConfig &self, u32 max_neigh_cache_size) {
+            [](TConfig &self, py::object max_neigh_cache_size) {
                 ON_RANK_0(shamlog_warn_ln(
                               "SPH",
-                              "max_neigh_cache_size is deprecated, calling this is a noop, \n"
-                              "you can remove the call to that function"););
+                              ".set_max_neigh_cache_size() is deprecated,\n"
+                              "    -> calling this is a no-op,\n"
+                              "    -> you can remove the call to that function"););
             })
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)

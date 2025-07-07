@@ -92,14 +92,38 @@ namespace shamalgs::numeric {
     };
 
     /**
-     * @brief Compute the histogram of values between bin_edges
+     * @brief Compute the histogram of values between bin_edges.
      *
-     * @param sched the device scheduler to run on
-     * @param bin_edges the edges of the bins (length == nbins + 1)
-     * @param nbins the number of bins
-     * @param values the values to compute the histogram on
-     * @param len the length of the values array
-     * @return sham::DeviceBuffer<u64> the counts in each bin
+     * This function computes the histogram of the input values, counting how many values fall into
+     * each bin defined by the bin_edges array. Only values within [bin_edges[0], bin_edges[nbins])
+     * are counted; values outside this range are ignored.
+     *
+     * @tparam T The data type of the values and bin edges (e.g., float, double).
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1). Must be sorted in ascending
+     * order.
+     * @param nbins The number of bins (must be > 0, nbins = bin_edges.size() - 1).
+     * @param values The values to compute the histogram on.
+     * @param len The length of the values array.
+     * @return sham::DeviceBuffer<u64> The counts in each bin (length == nbins).
+     *
+     * Example:
+     *
+     *   ```cpp
+     *   auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+     *
+     *   sham::DeviceBuffer<double> bin_edges = ...;
+     *   u64 nbins = bin_edges.get_size() - 1;
+     *
+     *   sham::DeviceBuffer<double> values = ...;
+     *
+     *   sham::DeviceBuffer<u64> d_counts = shamalgs::numeric::device_histogram(
+     *       dev_sched, d_bin_edges, nbins, values, values.get_size());
+     *   ```
+     *
+     *   bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0} (4 bins: [0,1), [1,2), [2,3), [3,4))
+     *   values = {0.5, 1.5, 2.5, 3.5, 2.1, 1.9, 0.1, 3.9}
+     *   result = {2, 2, 2, 2}
      */
     template<class T>
     sham::DeviceBuffer<u64> device_histogram(
@@ -109,6 +133,21 @@ namespace shamalgs::numeric {
         const sham::DeviceBuffer<T> &values,
         u32 len);
 
+    /**
+     * @brief Compute the histogram and bin properties (center, width) for a set of values and bin
+     * edges.
+     *
+     * This function returns the histogram counts, the center of each bin, and the width of each
+     * bin.
+     *
+     * @tparam T The data type of the values and bin edges.
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1).
+     * @param nbins The number of bins.
+     * @param values The values to compute the histogram on.
+     * @param len The length of the values array.
+     * @return histogram_result<T> Structure containing counts, bin centers, and bin widths.
+     */
     template<class T>
     histogram_result<T> device_histogram_full(
         const sham::DeviceScheduler_ptr &sched,

@@ -208,9 +208,12 @@ void shamsys::microbench::saxpy() {
     };
 
     auto benchmark = [&]() {
-        int N           = (1 << 15);
-        auto &dev       = instance::get_compute_scheduler().ctx->device;
-        double max_size = double(dev->prop.global_mem_size) / (vec4_size * 4);
+        int N = (1 << 15);
+
+        auto &dev_sched = shambase::get_check_ref(instance::get_compute_scheduler().ctx);
+        auto &dev_ptr   = dev_sched.device;
+        auto &dev       = shambase::get_check_ref(dev_ptr);
+        double max_size = double(dev.prop.global_mem_size) / (vec4_size * 4);
 
         auto result = bench_step(N);
 

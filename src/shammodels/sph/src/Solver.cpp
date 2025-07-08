@@ -1469,7 +1469,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         NamedStackEntry tmppp{"compute vclean"};
                         Tscal const mu_0 = solver_config.get_constant_mu_0();
                         sham::DeviceBuffer<Tscal> &vclean_buf
-                            = vclean_dt->get_buf_check(cur_p.id_patch);
+                            = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
 
                         Tvec *B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
                                              .get_write_access(depends_list);
@@ -1556,7 +1556,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 if (has_psi_field) {
                     sham::DeviceBuffer<Tscal> &vclean_buf
-                        = vclean_dt->get_buf_check(cur_p.id_patch);
+                        = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
                     auto vclean = vclean_buf.get_read_access(depends_list);
                     auto e      = q.submit(depends_list, [&](sycl::handler &cgh) {
                         Tscal C_cour = solver_config.cfl_config.cfl_cour

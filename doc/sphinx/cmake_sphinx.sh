@@ -1,3 +1,5 @@
+#!/bin/bash
+
 PYSPHINX="$1"
 echo "Using Python executable: ${PYSPHINX}"
 

@@ -1,3 +1,5 @@
+#!/bin/bash
+
 PYMKDOCS="$1"
 echo "Using Python executable: ${PYMKDOCS}"
 

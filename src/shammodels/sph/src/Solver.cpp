@@ -593,12 +593,13 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
             reset_ghost_handler();
             clear_ghost_cache();
-            storage.merged_xyzh.reset();
 
             shambase::get_check_ref(storage.part_counts).free_alloc();
             shambase::get_check_ref(storage.part_counts_with_ghost).free_alloc();
             shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
             shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
+
+            storage.merged_xyzh.reset();
 
             clear_merged_pos_trees();
             reset_presteps_rint();

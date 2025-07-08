@@ -78,7 +78,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
-    ComputeField<Tscal> &omega                        = storage.omega.get();
+    shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
@@ -278,7 +278,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     u32 ialpha_AV_interf                           = ghost_layout.get_field_idx<Tscal>("alpha_AV");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
-    ComputeField<Tscal> &omega                        = storage.omega.get();
+    shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
@@ -491,7 +491,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
-    ComputeField<Tscal> &omega                        = storage.omega.get();
+    shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
@@ -691,7 +691,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
-    ComputeField<Tscal> &omega                        = storage.omega.get();
+    shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
@@ -912,7 +912,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     // logger::raw_ln("charged the ghost fields.");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
-    ComputeField<Tscal> &omega                        = storage.omega.get();
+    shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {

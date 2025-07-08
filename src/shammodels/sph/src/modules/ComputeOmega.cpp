@@ -33,7 +33,16 @@ void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
 
-    ComputeField<Tscal> omega = utility.make_compute_field<Tscal>("omega", 1);
+    shamrock::solvergraph::Field<Tscal> &omega = shambase::get_check_ref(storage.omega);
+
+    shambase::DistributedData<u32> original_part_count = {};
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+        original_part_count.add_obj(p.id_patch, pdat.get_obj_cnt());
+    });
+
+    omega.ensure_sizes(original_part_count);
+
+    // ComputeField<Tscal> omega = utility.make_compute_field<Tscal>("omega", 1);
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
         shamlog_debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "compute omega");
@@ -53,7 +62,7 @@ void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
             merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);
     });
 
-    storage.omega.set(std::move(omega));
+    // storage.omega.set(std::move(omega));
 }
 
 using namespace shammath;

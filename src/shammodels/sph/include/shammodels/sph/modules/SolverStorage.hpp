@@ -62,8 +62,7 @@ namespace shammodels::sph {
 
         Component<shambase::DistributedData<RadixTreeField<Tscal>>> rtree_rint_field;
 
-        // std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
-        Component<shamrock::ComputeField<Tscal>> omega;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
         Component<shamrock::patch::PatchDataLayout> ghost_layout;
 

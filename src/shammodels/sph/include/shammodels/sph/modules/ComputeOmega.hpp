@@ -41,7 +41,7 @@ namespace shammodels::sph::modules {
         ComputeOmega(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        shamrock::ComputeField<Tscal> compute_omega();
+        void compute_omega();
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

@@ -61,6 +61,7 @@
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
+#include "shamrock/solvergraph/Field.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
@@ -85,6 +86,8 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
     storage.neigh_cache
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>("neigh_cache", "neigh");
+
+    storage.omega = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
 }
 
 template<class Tvec, template<class> class Kern>
@@ -626,7 +629,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
 
         modules::ComputeOmega<Tvec, Kern> omega(context, solver_config, storage);
-        storage.omega.set(omega.compute_omega());
+        omega.compute_omega();
 
         _epsilon_h.reset();
         _h_old.reset();
@@ -762,11 +765,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
-    ComputeField<Tscal> &omega                    = storage.omega.get();
+    shamrock::solvergraph::Field<Tscal> &omega    = shambase::get_check_ref(storage.omega);
 
     auto pdat_interf = ghost_handle.template build_interface_native<PatchData>(
         storage.ghost_patch_cache.get(),
-        [&](u64 sender, u64, InterfaceBuildInfos binfo, sycl::buffer<u32> &buf_idx, u32 cnt) {
+        [&](u64 sender, u64, InterfaceBuildInfos binfo, sham::DeviceBuffer<u32> &buf_idx, u32 cnt) {
             PatchData pdat(ghost_layout);
 
             pdat.reserve(cnt);
@@ -780,7 +783,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
         [&](u64 sender,
             u64,
             InterfaceBuildInfos binfo,
-            sycl::buffer<u32> &buf_idx,
+            sham::DeviceBuffer<u32> &buf_idx,
             u32 cnt,
             PatchData &pdat) {
             PatchData &sender_patch             = scheduler().patch_data.get_pdat(sender);
@@ -838,7 +841,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
         [&](u64 sender,
             u64,
             InterfaceBuildInfos binfo,
-            sycl::buffer<u32> &buf_idx,
+            sham::DeviceBuffer<u32> &buf_idx,
             u32 cnt,
             PatchData &pdat) {
             if (sycl::length(binfo.offset_speed) > 0) {
@@ -1093,7 +1096,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
     auto &merged_xyzh                             = storage.merged_xyzh.get();
     shambase::DistributedData<RTree> &trees       = storage.merged_pos_trees.get();
-    ComputeField<Tscal> &omega                    = storage.omega.get();
+    // ComputeField<Tscal> &omega                    = storage.omega.get();
 
     shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
@@ -1194,7 +1197,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 [&](u64 sender,
                     u64 /*receiver*/,
                     InterfaceBuildInfos binfo,
-                    sycl::buffer<u32> &buf_idx,
+                    sham::DeviceBuffer<u32> &buf_idx,
                     u32 cnt) -> PatchDataField<Tscal> {
                     PatchDataField<Tscal> &sender_field = comp_field_send.get_field(sender);
 
@@ -1526,7 +1529,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         NamedStackEntry tmppp{"compute vclean"};
                         Tscal const mu_0 = solver_config.get_constant_mu_0();
                         sham::DeviceBuffer<Tscal> &vclean_buf
-                            = vclean_dt->get_buf_check(cur_p.id_patch);
+                            = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
 
                         Tvec *B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
                                              .get_write_access(depends_list);
@@ -1613,7 +1616,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 if (has_psi_field) {
                     sham::DeviceBuffer<Tscal> &vclean_buf
-                        = vclean_dt->get_buf_check(cur_p.id_patch);
+                        = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
                     auto vclean = vclean_buf.get_read_access(depends_list);
                     auto e      = q.submit(depends_list, [&](sycl::handler &cgh) {
                         Tscal C_cour = solver_config.cfl_config.cfl_cour
@@ -1752,8 +1755,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
     shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
     storage.merged_xyzh.reset();
-
-    storage.omega.reset();
+    shambase::get_check_ref(storage.omega).free_alloc();
     clear_merged_pos_trees();
     clear_ghost_cache();
     reset_presteps_rint();

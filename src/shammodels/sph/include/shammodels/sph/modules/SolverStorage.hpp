@@ -27,6 +27,7 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/Field.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
@@ -69,9 +70,7 @@ namespace shammodels::sph {
 
         Component<shambase::DistributedData<RadixTreeField<Tscal>>> rtree_rint_field;
 
-        // Component<shamrock::tree::ObjectCacheHandler> neighbors_cache;
-
-        Component<shamrock::ComputeField<Tscal>> omega;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
         Component<shamrock::patch::PatchDataLayout> ghost_layout;
 

@@ -47,7 +47,7 @@ if (DOXYGEN_FOUND)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/doc/sphinx
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/doc/sphinx/build ${CMAKE_BINARY_DIR}/doc/sphinx
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-        DEPENDS shamrock_doc_mkdocs
+        DEPENDS shamrock_doc_mkdocs shamrock_pylib
         COMMENT "Building Sphinx documentation with cmake_sphinx.sh"
     )
 

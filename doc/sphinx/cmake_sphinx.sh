@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PYSPHINX="$1"
 echo "Using Python executable: ${PYSPHINX}"
@@ -22,6 +22,6 @@ fi
         memory-profiler \
         sphinx-copybutton \
         sphinx_design
-)
 
-PYTHONPATH=$(pwd):$PYTHONPATH $SHAMROCK_DIR/doc/sphinx/gen_sphinx_doc.sh
+    PYTHONPATH=$(pwd):$PYTHONPATH $SHAMROCK_DIR/doc/sphinx/gen_sphinx_doc.sh
+)

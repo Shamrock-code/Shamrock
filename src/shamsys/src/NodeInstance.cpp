@@ -168,15 +168,15 @@ namespace shamsys::instance {
                 "| {:>4} | {:>8} | {:>12} | {:>16} |\n",
                 rank,
                 *loc,
-                syclinit::device_alt->device_id,
-                syclinit::device_compute->device_id);
+                shambase::get_check_ref(syclinit::device_alt).device_id,
+                shambase::get_check_ref(syclinit::device_compute).device_id);
         } else {
             print_buf = shambase::format(
                 "| {:>4} | {:>8} | {:>12} | {:>16} |\n",
                 rank,
                 "???",
-                syclinit::device_alt->device_id,
-                syclinit::device_compute->device_id);
+                shambase::get_check_ref(syclinit::device_alt).device_id,
+                shambase::get_check_ref(syclinit::device_compute).device_id);
         }
 
         std::string recv;
@@ -300,8 +300,8 @@ namespace shamsys::instance {
             shambase::throw_unimplemented();
         }
 
-        syclinit::device_compute->update_mpi_prop();
-        syclinit::device_alt->update_mpi_prop();
+        shambase::get_check_ref(syclinit::device_compute).update_mpi_prop();
+        shambase::get_check_ref(syclinit::device_alt).update_mpi_prop();
     }
 
     void init(int argc, char *argv[]) {

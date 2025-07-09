@@ -50,4 +50,6 @@ namespace shamrock {
         return _env_allow_experimental_features;
     }
 
+    void enable_experimental_features() { _env_allow_experimental_features = true; }
+
 } // namespace shamrock

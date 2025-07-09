@@ -15,6 +15,7 @@
  */
 
 #include "shambase/logs/loglevels.hpp"
+#include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -24,6 +25,7 @@
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
 #include <memory>
@@ -46,6 +48,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
+        .def("set_particle_tracking", &TConfig::set_particle_tracking)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
         .def(

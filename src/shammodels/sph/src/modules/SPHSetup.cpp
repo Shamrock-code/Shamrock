@@ -14,9 +14,15 @@
  *
  */
 
-#include "shammodels/sph/modules/SPHSetup.hpp"
+#include "shambase/aliases_int.hpp"
+#include "shambase/memory.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/SyclMpiTypes.hpp"
+#include "shambackends/kernel_call.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
+#include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
@@ -24,6 +30,7 @@
 #include "shammodels/sph/modules/setup/ModifierFilter.hpp"
 #include "shammodels/sph/modules/setup/ModifierOffset.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
+#include "shamsys/NodeInstance.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
@@ -91,10 +98,53 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 
         shamrock::patch::PatchData pdat = setup->next_n(_insert_step);
 
-        inserter.push_patch_data<Tvec>(pdat, "xyz", sched.crit_patch_split * 8, [&]() {
-            modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(context, solver_config, storage)
-                .update_load_balancing();
-        });
+        if (solver_config.track_particles_id) {
+            // This bit set the tracking id of the particles
+            // But be carefull this assume that the particle injection order
+            // is independant from the MPI world size. It should be the case for most setups
+            // but some generator could miss this assumption.
+            // If that is the case please report the issue
+
+            u64 loc_inj = pdat.get_obj_cnt();
+
+            u64 offset_init = 0;
+            shamcomm::mpi::Exscan(
+                &loc_inj, &offset_init, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
+
+            // we must add the number of already injected part such that the
+            // offset start at the right spot.
+            // The only thing that bothers me is that this can not handle the case where multiple
+            // setups of things like that are applied. But in principle no sane person would do such
+            // a thing...
+            offset_init += injected_parts;
+
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+            auto &q        = shambase::get_check_ref(dev_sched).get_queue();
+
+            if (loc_inj > 0) {
+                sham::DeviceBuffer<u64> part_ids(loc_inj, dev_sched);
+
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{},
+                    sham::MultiRef{part_ids},
+                    loc_inj,
+                    [offset_init](u32 i, u64 __restrict *part_ids) {
+                        part_ids[i] = i + offset_init;
+                    });
+
+                pdat.get_field<u64>(pdat.pdl.get_field_idx<u64>("part_id"))
+                    .overwrite(part_ids, loc_inj);
+            }
+        }
+
+        u64 injected
+            = inserter.push_patch_data<Tvec>(pdat, "xyz", sched.crit_patch_split * 8, [&]() {
+                  modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(context, solver_config, storage)
+                      .update_load_balancing();
+              });
+
+        injected_parts += injected;
     }
 
     if (part_reordering) {

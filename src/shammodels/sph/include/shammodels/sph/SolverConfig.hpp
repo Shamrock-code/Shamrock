@@ -28,6 +28,7 @@
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
+#include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -170,6 +171,10 @@ struct shammodels::sph::SolverConfig {
 
     Tscal gpart_mass;            ///< The mass of each gas particle
     CFLConfig<Tscal> cfl_config; ///< The configuration for the CFL condition
+
+    bool track_particles_id = false;
+
+    inline void set_particle_tracking(bool state) { track_particles_id = state; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -677,7 +682,22 @@ struct shammodels::sph::SolverConfig {
         logger::raw_ln("------------------------------------");
     }
 
-    inline void check_config() { dust_config.check_config(); }
+    inline void check_config() {
+        dust_config.check_config();
+
+        if (track_particles_id && false /*particle injection when added*/) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "particle injection is not yet compatible with particle id tracking");
+            }
+        }
+
+        if (track_particles_id) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
+            }
+        }
+    }
 
     void set_layout(shamrock::patch::PatchDataLayout &pdl);
     void set_ghost_layout(shamrock::patch::PatchDataLayout &ghost_layout);

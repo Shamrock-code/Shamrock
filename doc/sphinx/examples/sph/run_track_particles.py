@@ -1,6 +1,6 @@
 """
 Tracking particles by id in SPH
-========================
+===============================
 
 This simple example shows how to track particles by id
 """

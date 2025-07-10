@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 PYMKDOCS="$1"
 echo "Using Python executable: ${PYMKDOCS}"

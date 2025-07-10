@@ -151,9 +151,9 @@ namespace shamalgs::numeric {
     template<class T>
     histogram_result<T> device_histogram_full(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> bin_edges,
+        const sham::DeviceBuffer<T> bin_edges,
         u64 nbins,
-        sham::DeviceBuffer<T> values,
+        const sham::DeviceBuffer<T> values,
         u32 len) {
 
         SHAM_ASSERT(nbins > 1); // at least a sup and a inf
@@ -180,6 +180,84 @@ namespace shamalgs::numeric {
             });
 
         return {std::move(counts), std::move(bins_center), std::move(bins_width)};
+    }
+
+    template<class T>
+    struct BinnedCompute {
+        sham::DeviceBuffer<T> valid_values;
+        sham::DeviceBuffer<u64> offsets_bins;
+    };
+
+    template<class T>
+    BinnedCompute<T> binned_init_compute(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> values, // ie f(r)
+        const sham::DeviceBuffer<T> keys,   // ie r
+        u32 len);
+
+    template<class T, class Tret, class Fct>
+    sham::DeviceBuffer<Tret> binned_compute(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> values, // ie f(r)
+        const sham::DeviceBuffer<T> keys,   // ie r
+        u32 len,
+        Fct &&fct) {
+
+        auto bin_compute_in = binned_init_compute(sched, bin_edges, nbins, values, keys, len);
+        auto &valid_values  = bin_compute_in.valid_values;
+        auto &offsets_bins  = bin_compute_in.offsets_bins;
+
+        auto &q = shambase::get_check_ref(sched).get_queue();
+
+        sham::DeviceBuffer<Tret> bin_compute(nbins, sched);
+
+        sham::kernel_call(
+            q,
+            sham::MultiRef{valid_values, offsets_bins},
+            sham::MultiRef{bin_compute},
+            nbins,
+            [fct](
+                u32 i,
+                const T *__restrict valid_values,
+                const u64 *__restrict offsets_bins,
+                T *__restrict bin_averages) {
+                u32 bin_start = offsets_bins[i];
+                u32 bin_end   = offsets_bins[i + 1];
+                u32 bin_count = bin_end - bin_start;
+
+                auto for_each_values = [&](auto func) {
+                    for (u32 j = bin_start; j < bin_end; j++) {
+                        func(valid_values[j]);
+                    }
+                };
+
+                bin_averages[i] = fct(for_each_values, bin_count);
+            });
+
+        return bin_compute;
+    }
+
+    template<class T>
+    sham::DeviceBuffer<T> binned_sum(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> values, // ie f(r)
+        const sham::DeviceBuffer<T> keys,   // ie r
+        u32 len) {
+
+        return binned_compute<T, T>(
+            sched, bin_edges, nbins, values, keys, len, [](auto for_each_values, u32 bin_count) {
+                T sum = 0;
+                for_each_values([&](T val) {
+                    sum += val;
+                });
+                return sum;
+            });
     }
 
 } // namespace shamalgs::numeric

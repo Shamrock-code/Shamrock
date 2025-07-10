@@ -161,6 +161,8 @@ namespace shammodels::sph {
          */
         bool apply_corrector(Tscal dt, u64 Npart_all);
 
+        void update_sync_load_values();
+
         Solver(ShamrockCtx &context) : context(context) {}
 
         void init_solver_graph();

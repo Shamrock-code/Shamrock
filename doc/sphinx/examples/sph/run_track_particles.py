@@ -7,10 +7,9 @@ This simple example shows how to track particles by id
 
 # sphinx_gallery_multi_image = "single"
 
-# %%
-# Start shamrock with experimental features
 import shamrock
 
+# Particle tracking is an experimental feature
 shamrock.enable_experimental_features()
 
 # If we use the shamrock executable to run this script instead of the python interpreter,

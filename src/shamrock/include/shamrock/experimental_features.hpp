@@ -23,4 +23,7 @@ namespace shamrock {
     /// Allow the use of experimental features
     bool are_experimental_features_allowed();
 
+    /// Allow the use of experimental features
+    void enable_experimental_features();
+
 } // namespace shamrock

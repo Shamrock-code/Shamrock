@@ -26,6 +26,8 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
@@ -47,6 +49,12 @@ namespace shammodels::sph {
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
 
         using RTree = RadixTree<Tmorton, Tvec>;
+
+        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
+        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
+
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> positions_with_ghosts;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_with_ghosts;
 
         std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache;
 

@@ -129,7 +129,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
                     sham::MultiRef{},
                     sham::MultiRef{part_ids},
                     loc_inj,
-                    [offset_init](u32 i, u64 __restrict *part_ids) {
+                    [offset_init](u32 i, u64 *__restrict part_ids) {
                         part_ids[i] = i + offset_init;
                     });
 

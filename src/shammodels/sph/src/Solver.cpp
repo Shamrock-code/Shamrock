@@ -71,6 +71,19 @@
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
+
+    storage.part_counts
+        = std::make_shared<shamrock::solvergraph::Indexes<u32>>("part_counts", "N_{\\rm part}");
+
+    storage.part_counts_with_ghost = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
+        "part_counts_with_ghost", "N_{\\rm part, with ghost}");
+
+    // merged ghost spans
+    storage.positions_with_ghosts
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("part_pos", "\\mathbf{r}");
+    storage.hpart_with_ghosts
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("h_part", "h");
+
     storage.neigh_cache
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>("neigh_cache", "neigh");
 
@@ -325,6 +338,38 @@ void shammodels::sph::Solver<Tvec, Kern>::merge_position_ghost() {
 
     storage.merged_xyzh.set(
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
+
+    using PreStepMergedField = typename GhostHandle::PreStepMergedField;
+
+    { // set element counts
+        shambase::get_check_ref(storage.part_counts).indexes
+            = storage.merged_xyzh.get().template map<u32>([&](u64 id, PreStepMergedField &mpdat) {
+                  return mpdat.original_elements;
+              });
+    }
+
+    { // set element counts
+        shambase::get_check_ref(storage.part_counts_with_ghost).indexes
+            = storage.merged_xyzh.get().template map<u32>([&](u64 id, PreStepMergedField &mpdat) {
+                  return mpdat.total_elements;
+              });
+    }
+
+    { // Attach spans to block coords
+        shambase::get_check_ref(storage.positions_with_ghosts)
+            .set_refs(storage.merged_xyzh.get()
+                          .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
+                              [&](u64 id, PreStepMergedField &mpdat) {
+                                  return std::ref(mpdat.field_pos);
+                              }));
+
+        shambase::get_check_ref(storage.hpart_with_ghosts)
+            .set_refs(storage.merged_xyzh.get()
+                          .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                              [&](u64 id, PreStepMergedField &mpdat) {
+                                  return std::ref(mpdat.field_hpart);
+                              }));
+    }
 }
 
 template<class Tvec, template<class> class Kern>
@@ -457,7 +502,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
                 sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
                 sham::DeviceBuffer<Tvec> &merged_r
-                    = storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf();
+                    = shambase::get_check_ref(storage.positions_with_ghosts)
+                          .get_field(p.id_patch)
+                          .get_buf();
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -549,7 +596,14 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
             reset_ghost_handler();
             clear_ghost_cache();
+
+            shambase::get_check_ref(storage.part_counts).free_alloc();
+            shambase::get_check_ref(storage.part_counts_with_ghost).free_alloc();
+            shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
+            shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
+
             storage.merged_xyzh.reset();
+
             clear_merged_pos_trees();
             reset_presteps_rint();
             reset_neighbors_cache();
@@ -570,6 +624,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
                 logger::info_ln("Smoothinglength", log);
             }
         }
+
+        // The hpart is not valid anymore in ghost zones since we iterated it's value
+        shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
 
         modules::ComputeOmega<Tvec, Kern> omega(context, solver_config, storage);
         omega.compute_omega();
@@ -1699,6 +1756,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     reset_serial_patch_tree();
     reset_ghost_handler();
+
+    shambase::get_check_ref(storage.part_counts).free_alloc();
+    shambase::get_check_ref(storage.part_counts_with_ghost).free_alloc();
+    shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
+    shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
     storage.merged_xyzh.reset();
     shambase::get_check_ref(storage.omega).free_alloc();
     clear_merged_pos_trees();

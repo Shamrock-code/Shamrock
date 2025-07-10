@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if ! (which python &> /dev/null || which python3 &> /dev/null); then
     echo "You need to have the python command available to generate the sphinx doc"

@@ -683,8 +683,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         r += mdspan_A(0, 0) * acc_rhov_new_patch[id_a];
 
                         for (auto j = 1; j < ndust + 1; j++) {
-                            r += mdspan_A(0, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)]
-                 }
+                            r += mdspan_A(0, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
+                        }
 
                         dd = r - acc_rhov_new_patch[id_a];
 

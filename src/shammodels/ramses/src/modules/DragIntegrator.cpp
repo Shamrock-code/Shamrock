@@ -401,20 +401,6 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
         size_t loc_mem_size = 5 * sizeof(f64) * loc_acc_size;
 
-        if (loc_mem_size > q.get_device_prop().local_mem_size) {
-            shambase::throw_with_loc<std::runtime_error>(shambase::format(
-                "not enough local memory for expo drag integrator:\n"
-                "loc_mem_size: {} > max_local_mem: {}\n"
-                "loc_acc_size: {}\n"
-                "group_size: {}\n"
-                "ndust: {}\n",
-                loc_mem_size,
-                q.get_device_prop().local_mem_size,
-                loc_acc_size,
-                group_size,
-                ndust));
-        }
-
         if (group_size < 8) {
             sham::DeviceBuffer<Tscal> scratch_expo(
                 5 * mat_size_squared * cell_count, shamsys::instance::get_compute_scheduler_ptr());
@@ -582,6 +568,20 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
         }
 
         else {
+
+            if (loc_mem_size > q.get_device_prop().local_mem_size) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "not enough local memory for expo drag integrator:\n"
+                    "loc_mem_size: {} > max_local_mem: {}\n"
+                    "loc_acc_size: {}\n"
+                    "group_size: {}\n"
+                    "ndust: {}\n",
+                    loc_mem_size,
+                    q.get_device_prop().local_mem_size,
+                    loc_acc_size,
+                    group_size,
+                    ndust));
+            }
 
             auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
                 // local/shared memory alloc for each work-item

@@ -166,7 +166,7 @@ namespace shammodels::sph {
                 solver.storage.sinks.set({});
             }
 
-            logger::debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
+            shamlog_debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
 
             solver.storage.sinks.get().push_back(
                 {pos, velocity, {}, {}, mass, {}, accretion_radius});
@@ -771,7 +771,7 @@ namespace shammodels::sph {
             solver.init_ghost_layout();
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            logger::debug_ln("Sys", "build local scheduler tables");
+            shamlog_debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();
             sched.patch_list.build_global_idx_map();

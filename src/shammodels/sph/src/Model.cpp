@@ -62,13 +62,15 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32
 
     sched.add_root_patch();
 
-    logger::debug_ln("Sys", "build local scheduler tables");
+    shamlog_debug_ln("Sys", "build local scheduler tables");
     sched.owned_patch_id = sched.patch_list.build_local();
     sched.patch_list.build_local_idx_map();
     sched.update_local_load_value([&](shamrock::patch::Patch p) {
         return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
     });
     solver.init_ghost_layout();
+
+    solver.init_solver_graph();
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -580,7 +582,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
         //     shamcomm::gather_str(log, log_gathered);
         //
         //     if (shamcomm::world_rank() == 0) {
-        //         logger::debug_ln("Model", "Push particles : ", log_gathered);
+        //         shamlog_debug_ln("Model", "Push particles : ", log_gathered);
         //     }
         // }
         log = "";
@@ -671,7 +673,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
         u64 gen_cnt    = loc_gen_count;
         u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "Gen",
             "generate : ",
             skip_start,
@@ -692,7 +694,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
 
         push_current_data(pos_data);
 
-        logger::debug_ln("Gen", "gen.is_done()", gen.is_done());
+        shamlog_debug_ln("Gen", "gen.is_done()", gen.is_done());
     }
 
     time_setup.end();
@@ -1066,7 +1068,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
         //     shamcomm::gather_str(log, log_gathered);
         //
         //     if (shamcomm::world_rank() == 0) {
-        //         logger::debug_ln("Model", "Push particles : ", log_gathered);
+        //         shamlog_debug_ln("Model", "Push particles : ", log_gathered);
         //     }
         // }
         log = "";

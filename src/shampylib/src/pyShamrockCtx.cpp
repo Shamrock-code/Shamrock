@@ -166,7 +166,7 @@ void append_to_map(
     auto appender = [&](auto &field) {
         if (field.get_name() == key) {
 
-            logger::debug_ln("PyShamrockCTX", "appending field", key);
+            shamlog_debug_ln("PyShamrockCTX", "appending field", key);
 
             {
                 auto acc = field.get_buf().copy_to_stdvec();
@@ -207,7 +207,7 @@ void append_to_map(
 
 Register_pymod(pyshamrockctxinit) {
 
-    logger::debug_ln("[Py]", "registering shamrock.Context");
+    shamlog_debug_ln("[Py]", "registering shamrock.Context");
 
     py::class_<ShamrockCtx>(m, "Context")
         .def(py::init<>())

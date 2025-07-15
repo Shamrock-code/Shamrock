@@ -39,7 +39,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
 
     scheduler().for_each_patchdata_nonempty(
         [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
-            logger::debug_ln("[AMR Flux]", "forward euler integration patch", p.id_patch);
+            shamlog_debug_ln("[AMR Flux]", "forward euler integration patch", p.id_patch);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
             u32 id               = p.id_patch;
@@ -93,7 +93,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
         scheduler().for_each_patchdata_nonempty([&, dt](
                                                     const shamrock::patch::Patch p,
                                                     shamrock::patch::PatchData &pdat) {
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "[AMR Flux]", "forward euler integration patch for dust fields", p.id_patch);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();

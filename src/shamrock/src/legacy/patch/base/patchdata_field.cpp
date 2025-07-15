@@ -37,7 +37,7 @@ namespace patchdata_field {
         : comm_mode(comm_mode), comm_op(comm_op), comm_val_cnt(comm_val_cnt),
           pdat_field(pdat_field) {
 
-        logger::debug_mpi_ln(
+        shamlog_debug_mpi_ln(
             "PatchDataField MPI Comm",
             "starting mpi sycl comm ",
             comm_val_cnt,
@@ -76,7 +76,7 @@ namespace patchdata_field {
     template<class T>
     void PatchDataFieldMpiRequest<T>::finalize() {
 
-        logger::debug_mpi_ln(
+        shamlog_debug_mpi_ln(
             "PatchDataField MPI Comm",
             "finalizing mpi sycl comm ",
             comm_val_cnt,

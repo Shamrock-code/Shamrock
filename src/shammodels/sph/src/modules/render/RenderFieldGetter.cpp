@@ -31,7 +31,7 @@ namespace shammodels::sph::modules {
                 shamrock::ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
                 scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-                    logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
+                    shamlog_debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
 
                     auto &buf_h
                         = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf();

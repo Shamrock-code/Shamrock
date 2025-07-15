@@ -14,14 +14,18 @@
  * @brief
  */
 
+#include "shambase/logs/loglevels.hpp"
+#include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
 #include <memory>
@@ -39,14 +43,23 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
-    logger::debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
-    logger::debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
+    shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
+    shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
+        .def("set_particle_tracking", &TConfig::set_particle_tracking)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
-        .def("set_max_neigh_cache_size", &TConfig::set_max_neigh_cache_size)
+        .def(
+            "set_max_neigh_cache_size",
+            [](TConfig &self, py::object max_neigh_cache_size) {
+                ON_RANK_0(shamlog_warn_ln(
+                              "SPH",
+                              ".set_max_neigh_cache_size() is deprecated,\n"
+                              "    -> calling this is a no-op,\n"
+                              "    -> you can remove the call to that function"););
+            })
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)

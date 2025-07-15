@@ -312,7 +312,7 @@ shamrock::tree::ObjectCache shammodels::zeus::modules::FaceFlagger<Tvec, TgridVe
         cache.complete_event_state(resulting_events);
     }
 
-    logger::debug_sycl_ln(
+    shamlog_debug_sycl_ln(
         "AMR::FaceFlagger", "lookup :", lookup_value, "found N =", pcache.sum_neigh_cnt);
 
     return pcache;

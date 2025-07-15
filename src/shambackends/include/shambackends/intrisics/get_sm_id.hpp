@@ -58,13 +58,13 @@ namespace sham {
     }
 
 #elif defined(__ACPP__) && ACPP_LIBKERNEL_IS_DEVICE_PASS_HOST && defined(linux)
-    #define SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
-
-    inline u32 get_sm_id() {
-        u32 ret;
-        ret = 2;
-        return ret;
-    }
+    // #define SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
+    //
+    // inline u32 get_sm_id() {
+    //    u32 ret;
+    //    ret = 2;
+    //    return ret;
+    //}
 
 #else
     /**

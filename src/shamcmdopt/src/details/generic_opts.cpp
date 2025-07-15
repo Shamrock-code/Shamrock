@@ -17,10 +17,10 @@
 #include "shambase/exception.hpp"
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
+#include "shambase/term_colors.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/details/generic_opts.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include "shamcmdopt/tty.hpp"
 #include <string_view>
 #include <vector>

@@ -49,7 +49,7 @@ namespace sham {
          * @returns A MultiRef of the buffers at the given id.
          */
         auto get(u64 id) {
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "kern call",
                 "called DDMultiRef.get, id =",
                 id,
@@ -87,18 +87,18 @@ namespace sham {
 
         auto mrefs_in
             = thread_counts.template map<decltype(in.get(0))>([&](u64 id, const index_t &n) {
-                  logger::debug_ln("kern call", "build multi ref in for patch", id);
+                  shamlog_debug_ln("kern call", "build multi ref in for patch", id);
                   return in.get(id);
               });
 
         auto mrefs_in_out
             = thread_counts.template map<decltype(in_out.get(0))>([&](u64 id, const index_t &n) {
-                  logger::debug_ln("kern call", "build multi ref in_out for patch", id);
+                  shamlog_debug_ln("kern call", "build multi ref in_out for patch", id);
                   return in_out.get(id);
               });
 
         thread_counts.for_each([&](u64 id, const index_t &n) {
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "kern call", "calling sham::kernel_call on patch", id, " thread count", n);
             sham::kernel_call(
                 dev_sched->get_queue(),

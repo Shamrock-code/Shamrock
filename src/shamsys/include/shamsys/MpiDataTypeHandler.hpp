@@ -33,7 +33,7 @@ namespace shamsys::mpidtypehandler {
         for (u32 i = 0; i < static_init_shamrock_mpidtype.size(); i++) {
             auto fct  = static_init_shamrock_mpidtype[i];
             auto name = static_init_shamrock_mpidtype_names[i];
-            logger::debug_mpi_ln("MpiDTypehandler", "initialising type :", name);
+            shamlog_debug_mpi_ln("MpiDTypehandler", "initialising type :", name);
             fct();
         }
     }
@@ -42,7 +42,7 @@ namespace shamsys::mpidtypehandler {
         for (u32 i = 0; i < static_free_shamrock_mpidtype.size(); i++) {
             auto fct  = static_free_shamrock_mpidtype[i];
             auto name = static_free_shamrock_mpidtype_names[i];
-            logger::debug_mpi_ln("MpiDTypehandler", "freeing type :", name);
+            shamlog_debug_mpi_ln("MpiDTypehandler", "freeing type :", name);
             fct();
         }
     }

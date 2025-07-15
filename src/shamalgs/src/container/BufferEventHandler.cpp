@@ -40,7 +40,7 @@ void shamalgs::BufferEventHandler::add_read_dependancies(std::vector<sycl::event
 
     depends_list.push_back(event_last_write);
 
-    logger::debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read dependancy");
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read dependancy");
 }
 
 void shamalgs::BufferEventHandler::add_read_write_dependancies(
@@ -62,12 +62,12 @@ void shamalgs::BufferEventHandler::add_read_write_dependancies(
     for (sycl::event e : event_last_read) {
         depends_list.push_back(e);
     }
-    logger::debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read write dependancy");
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read write dependancy");
 
     event_last_read  = {};
     event_last_write = {};
 
-    logger::debug_sycl_ln("[USMBuffer]", get_hash_log(), "reset event list");
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "reset event list");
 }
 
 void shamalgs::BufferEventHandler::register_read_event(sycl::event e) {
@@ -91,11 +91,11 @@ void shamalgs::BufferEventHandler::register_read_event(sycl::event e) {
     up_to_date_events = true;
     event_last_read.push_back(e);
 
-    logger::debug_sycl_ln("[USMBuffer]", get_hash_log(), "append last read");
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "append last read");
 }
 
 void shamalgs::BufferEventHandler::register_read_write_event(sycl::event e) {
-    logger::debug_sycl_ln("[USMBuffer]", get_hash_log(), "set last write");
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "set last write");
     if (up_to_date_events) {
         std::string err
             = (get_hash_log()
@@ -118,7 +118,7 @@ void shamalgs::BufferEventHandler::register_read_write_event(sycl::event e) {
 
 void shamalgs::BufferEventHandler::synchronize() {
 
-    logger::debug_sycl_ln("[USMBuffer]", get_hash_log(), "synchronize");
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "synchronize");
 
     if (!up_to_date_events) {
         std::string err = (get_hash_log() + "the events are not up to date");

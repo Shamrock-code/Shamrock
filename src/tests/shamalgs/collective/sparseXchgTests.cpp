@@ -75,11 +75,16 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
 
     std::vector<SendPayload> sendop;
 
+    u32 idx = 0;
     for (RefBuff &bufinfo : tests.elements) {
         if (bufinfo.sender_rank == world_rank()) {
             sendop.push_back(SendPayload{
                 bufinfo.receiver_rank,
                 std::make_unique<CommunicationBuffer>(*bufinfo.payload, qdet)});
+
+            REQUIRE_EQUAL(sendop[idx].payload->get_size(), bufinfo.payload->size());
+
+            idx++;
         }
     }
 
@@ -125,6 +130,11 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
                 REQUIRE_EQUAL_NAMED(prefix + "same sender", recv_buf.sender_rank, ref.sender_rank);
                 REQUIRE_EQUAL_NAMED(
                     prefix + "same receiver", recv_buf.receiver_rank, ref.receiver_rank);
+
+                REQUIRE_EQUAL_NAMED(
+                    prefix + "same buf size",
+                    ref.payload->get_size(),
+                    recv_buf.payload->get_size());
                 REQUIRE_NAMED(
                     prefix + "same buffer",
                     shamalgs::reduction::equals_ptr(

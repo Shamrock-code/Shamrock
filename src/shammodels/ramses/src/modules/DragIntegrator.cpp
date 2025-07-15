@@ -68,7 +68,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
     scheduler().for_each_patchdata_nonempty([&, dt, ndust](
                                                 const shamrock::patch::Patch p,
                                                 shamrock::patch::PatchData &pdat) {
-        logger::debug_ln(
+        shamlog_debug_ln(
             "[AMR evolve time step before drag ]", "evolve field with no drag patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -198,7 +198,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
                                                 shamrock::patch::PatchData &pdat) {
-        logger::debug_ln("[AMR enable drag ]", "irk1 drag patch", p.id_patch);
+        shamlog_debug_ln("[AMR enable drag ]", "irk1 drag patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         u32 id               = p.id_patch;
@@ -356,7 +356,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
                                                 shamrock::patch::PatchData &pdat) {
-        logger::debug_ln("[Ramses]", "expo drag on patch", p.id_patch);
+        shamlog_debug_ln("[Ramses]", "expo drag on patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         u32 id               = p.id_patch;
@@ -683,8 +683,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         r += mdspan_A(0, 0) * acc_rhov_new_patch[id_a];
 
                         for (auto j = 1; j < ndust + 1; j++) {
-                            r += mdspan_A(0, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)];
-                        }
+                            r += mdspan_A(0, j) * acc_rhov_d_new_patch[id_a * ndust + (j - 1)]
+                 }
 
                         dd = r - acc_rhov_new_patch[id_a];
 

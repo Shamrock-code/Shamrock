@@ -29,7 +29,7 @@ namespace shammodels::sph {
 
         i64 ieos = phdump.read_header_int<i64>("ieos");
 
-        logger::debug_ln("PhantomDump", "read ieos :", ieos);
+        shamlog_debug_ln("PhantomDump", "read ieos :", ieos);
 
         if (ieos == 1) {
             f64 cs;

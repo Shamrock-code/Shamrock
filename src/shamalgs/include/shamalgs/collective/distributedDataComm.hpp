@@ -74,7 +74,7 @@ namespace shamalgs::collective {
             return deserialize(std::move(buf));
         });
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "SparseComm", "skipped", same_rank_tmp.get_native().size(), "communications");
 
         same_rank_tmp.tranfer_all(

@@ -180,7 +180,7 @@ namespace shammodels::basegodunov::modules {
 
         shambase::DistributedData<RTree> trees
             = indexes_dd.template map<RTree>([&](u64 id, auto &merged) {
-                  logger::debug_ln("AMR", "compute tree for merged patch", id);
+                  shamlog_debug_ln("AMR", "compute tree for merged patch", id);
 
                   auto aabb = bounds.get(id);
 

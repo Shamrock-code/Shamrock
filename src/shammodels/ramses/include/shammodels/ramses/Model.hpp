@@ -155,7 +155,7 @@ namespace shammodels::basegodunov {
             // gz.build_ghost_cache();
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            logger::debug_ln("Sys", "build local scheduler tables");
+            shamlog_debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();
             sched.patch_list.build_global_idx_map();

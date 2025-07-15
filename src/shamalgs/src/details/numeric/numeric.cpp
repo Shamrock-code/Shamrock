@@ -15,11 +15,14 @@
  */
 
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shambase/assert.hpp"
 #include "shamalgs/details/numeric/exclusiveScanAtomic.hpp"
 #include "shamalgs/details/numeric/exclusiveScanGPUGems39.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include "shamalgs/details/numeric/streamCompactExclScan.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/kernel_call.hpp"
 
 namespace shamalgs::numeric {
 
@@ -82,5 +85,81 @@ namespace shamalgs::numeric {
         const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf_flags, u32 len) {
         return details::stream_compact_excl_scan(sched, buf_flags, len);
     }
+
+    template<class T>
+    sham::DeviceBuffer<u64> device_histogram(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values,
+        u32 len) {
+
+        SHAM_ASSERT(nbins > 1); // at least a sup and a inf
+        SHAM_ASSERT(bin_edges.get_size() == nbins + 1);
+
+        sham::DeviceBuffer<u64> counts = sham::DeviceBuffer<u64>(nbins, sched);
+        counts.fill(0);
+
+        if (len == 0) {
+            return counts;
+        }
+
+        auto &q = shambase::get_check_ref(sched).get_queue();
+
+        sham::kernel_call(
+            q,
+            sham::MultiRef{values, bin_edges},
+            sham::MultiRef{counts},
+            len,
+            [nbins](
+                u32 i,
+                const T *__restrict values,
+                const T *__restrict bin_edges,
+                u64 *__restrict counts) {
+                // Only count values within [bin_edges[0], bin_edges[nbins])
+                if (values[i] < bin_edges[0] || values[i] >= bin_edges[nbins]) {
+                    return;
+                }
+
+                u32 start_range = 0;
+                u32 end_range   = nbins + 1;
+
+                while (end_range - start_range > 1) {
+                    u32 mid_range = (start_range + end_range) / 2;
+
+                    if (values[i] < bin_edges[mid_range]) { // mid_range is a sup
+                        end_range = mid_range;
+                    } else { // mid_range is an inf
+                        start_range = mid_range;
+                    }
+                }
+
+                SHAM_ASSERT(end_range == start_range + 1);
+
+                sycl::atomic_ref<
+                    u64,
+                    sycl::memory_order_relaxed,
+                    sycl::memory_scope_device,
+                    sycl::access::address_space::global_space>
+                    cnt(counts[start_range]);
+
+                cnt++;
+            });
+
+        return counts;
+    }
+
+    template sham::DeviceBuffer<u64> device_histogram<f64>(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<f64> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<f64> &values,
+        u32 len);
+    template sham::DeviceBuffer<u64> device_histogram<f32>(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<f32> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<f32> &values,
+        u32 len);
 
 } // namespace shamalgs::numeric

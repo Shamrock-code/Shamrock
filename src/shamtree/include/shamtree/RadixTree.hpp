@@ -265,7 +265,7 @@ RadixTree<u_morton, vec3>::compute_field(
     RadixTreeField<T> ret;
     ret.nvar = nvar;
 
-    logger::debug_sycl_ln("RadixTree", "compute_field");
+    shamlog_debug_sycl_ln("RadixTree", "compute_field");
 
     ret.radix_tree_field_buf = std::make_unique<sycl::buffer<T>>(
         tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);

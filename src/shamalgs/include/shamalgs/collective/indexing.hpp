@@ -44,7 +44,7 @@ namespace shamalgs::collective {
         shamcomm::mpi::Allreduce(
             &byte_count, &sum_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
 
-        logger::debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", sum_val);
+        shamlog_debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", sum_val);
 
         return {sum_val, scan_val};
     }
@@ -59,7 +59,7 @@ namespace shamalgs::collective {
             scan_val = 0;
         }
 
-        logger::debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", total_byte);
+        shamlog_debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", total_byte);
 
         return {total_byte, scan_val};
     }

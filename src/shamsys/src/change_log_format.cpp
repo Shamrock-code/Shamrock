@@ -13,8 +13,8 @@
  * @brief
  */
 
+#include "shambase/term_colors.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include "shamcmdopt/tty.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -210,7 +210,7 @@ namespace shamsys {
 
     void change_log_format() {
 
-        logger::debug_ln("Sys", "changing formatter to MPI form");
+        shamlog_debug_ln("Sys", "changing formatter to MPI form");
 
         if (SHAMLOGFORMATTER == "0") {
             logger::change_formaters(
@@ -230,7 +230,7 @@ namespace shamsys {
         }
 
         if (SHAMLOG_ERR_ON_EXCEPT == "1") {
-            logger::debug_ln("Log", "Enabling exception handler callback");
+            shamlog_debug_ln("Log", "Enabling exception handler callback");
             shambase::set_exception_gen_callback(&logformatter::exception_gen_callback);
         }
     }

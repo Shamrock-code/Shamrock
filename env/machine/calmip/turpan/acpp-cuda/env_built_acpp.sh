@@ -88,7 +88,7 @@ function shamconfigure {
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes \
-        -DPYTHON_EXECUTABLE:FILEPATH=/usr/local/miniconda/22.11.1/envs/python-3.10.9/bin/python3 \
+        -DPYTHON_EXECUTABLE:FILEPATH=/usr/local/miniconda/22.11.1/envs/python-tools-3.10.9/bin/python3 \
         -DCMAKE_CXX_FLAGS="-L/usr/local/arm/gcc-12.2.0_RHEL-8/lib64 -Wl,-rpath,/usr/local/arm/gcc-12.2.0_RHEL-8/lib64" \
         -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath,/usr/local/arm/gcc-12.2.0_RHEL-8/lib64" \
         "${CMAKE_OPT[@]}" || return

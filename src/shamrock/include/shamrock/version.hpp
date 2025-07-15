@@ -19,7 +19,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "shamcmdopt/term_colors.hpp"
+#include "shambase/term_colors.hpp"
 #include "shamcomm/logs.hpp"
 #include <string>
 

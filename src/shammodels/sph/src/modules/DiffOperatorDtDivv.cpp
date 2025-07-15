@@ -30,7 +30,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
     StackEntry stack_loc{};
 
-    logger::debug_ln("SPH", "Updating dt divv");
+    shamlog_debug_ln("SPH", "Updating dt divv");
 
     Tscal gpart_mass = solver_config.gpart_mass;
 
@@ -76,7 +76,8 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 

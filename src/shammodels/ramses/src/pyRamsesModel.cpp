@@ -33,8 +33,8 @@ namespace shammodels::basegodunov {
         using TConfig          = typename T::Solver::Config;
         using TAnalysisSodTube = shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>;
 
-        logger::debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
-        logger::debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
+        shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
+        shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
         py::class_<TConfig>(m, name_config.c_str())
             .def(
@@ -267,7 +267,15 @@ namespace shammodels::basegodunov {
                         x_ref,
                         x_min,
                         x_max);
-                });
+                })
+            .def(
+                "get_solver_tex",
+                [](T &self) {
+                    return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
+                })
+            .def("get_solver_dot_graph", [](T &self) {
+                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_dot_graph();
+            });
     }
 } // namespace shammodels::basegodunov
 

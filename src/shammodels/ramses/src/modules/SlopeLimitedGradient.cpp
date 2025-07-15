@@ -24,6 +24,8 @@ using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_acce
 
 namespace {
 
+    using Direction = shammodels::basegodunov::modules::Direction;
+
     template<class T>
     inline T slope_function_van_leer_f_form(T sL, T sR) {
         T st = sL + sR;
@@ -191,18 +193,18 @@ namespace {
                     auto &field_grad_span = edges.span_grad_field.get_spans().get(id);
                     auto &cell_sizes_span = edges.spans_block_cell_sizes.get_spans().get(id);
 
-                    AMRGraph &graph_neigh_xp = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
-                    AMRGraph &graph_neigh_xm = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.xm]);
-                    AMRGraph &graph_neigh_yp = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.yp]);
-                    AMRGraph &graph_neigh_ym = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.ym]);
-                    AMRGraph &graph_neigh_zp = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
-                    AMRGraph &graph_neigh_zm = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
+                    AMRGraph &graph_neigh_xp
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
+                    AMRGraph &graph_neigh_xm
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xm]);
+                    AMRGraph &graph_neigh_yp
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
+                    AMRGraph &graph_neigh_ym
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
+                    AMRGraph &graph_neigh_zp
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
+                    AMRGraph &graph_neigh_zm
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
 
                     sham::EventList depends_list;
 
@@ -285,18 +287,18 @@ namespace {
                     auto &field_dz_span   = edges.span_dz_field.get_spans().get(id);
                     auto &cell_sizes_span = edges.spans_block_cell_sizes.get_spans().get(id);
 
-                    AMRGraph &graph_neigh_xp = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
-                    AMRGraph &graph_neigh_xm = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.xm]);
-                    AMRGraph &graph_neigh_yp = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.yp]);
-                    AMRGraph &graph_neigh_ym = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.ym]);
-                    AMRGraph &graph_neigh_zp = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
-                    AMRGraph &graph_neigh_zm = shambase::get_check_ref(
-                        oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
+                    AMRGraph &graph_neigh_xp
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
+                    AMRGraph &graph_neigh_xm
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xm]);
+                    AMRGraph &graph_neigh_yp
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
+                    AMRGraph &graph_neigh_ym
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
+                    AMRGraph &graph_neigh_zp
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
+                    AMRGraph &graph_neigh_zm
+                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
 
                     sham::EventList depends_list;
 

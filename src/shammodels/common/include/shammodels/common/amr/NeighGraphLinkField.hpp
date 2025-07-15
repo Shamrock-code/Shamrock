@@ -41,26 +41,37 @@ namespace shammodels::basegodunov::modules {
                 link_graph_field.resize(link_count * nvar);
             }
         }
+        void resize(u32 count) {
+            if (link_count != count) {
+                link_count = count;
+                link_graph_field.resize(link_count * nvar);
+            }
+        }
 
         NeighGraphLinkField(u32 nvar)
-            : link_graph_field(0, shamsys::instance::get_alt_scheduler_ptr()), nvar(nvar),
+            : link_graph_field(0, shamsys::instance::get_compute_scheduler_ptr()), nvar(nvar),
               link_count(0) {}
 
         NeighGraphLinkField(NeighGraph &graph)
-            : link_graph_field(graph.link_count, shamsys::instance::get_alt_scheduler_ptr()),
+            : link_graph_field(graph.link_count, shamsys::instance::get_compute_scheduler_ptr()),
               link_count(graph.link_count), nvar(1) {}
 
         NeighGraphLinkField(NeighGraph &graph, u32 nvar)
-            : link_graph_field(graph.link_count * nvar, shamsys::instance::get_alt_scheduler_ptr()),
+            : link_graph_field(
+                  graph.link_count * nvar, shamsys::instance::get_compute_scheduler_ptr()),
               link_count(graph.link_count), nvar(nvar) {}
 
-        inline auto get_read_access(sham::EventList &deps) {
+        NeighGraphLinkField(u32 link_count, u32 nvar)
+            : link_graph_field(link_count * nvar, shamsys::instance::get_compute_scheduler_ptr()),
+              link_count(link_count), nvar(nvar) {}
+
+        inline auto get_read_access(sham::EventList &deps) const {
             return link_graph_field.get_read_access(deps);
         }
         inline auto get_write_access(sham::EventList &deps) {
             return link_graph_field.get_write_access(deps);
         }
-        inline void complete_event_state(sycl::event e) {
+        inline void complete_event_state(sycl::event e) const {
             return link_graph_field.complete_event_state(e);
         }
     };

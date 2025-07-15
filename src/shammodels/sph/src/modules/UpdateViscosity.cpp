@@ -33,15 +33,15 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     using VaryingCD10  = typename Cfg_AV::VaryingCD10;
     using ConstantDisc = typename Cfg_AV::ConstantDisc;
     if (None *v = std::get_if<None>(&solver_config.artif_viscosity.config)) {
-        logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (No viscosity mode)");
+        shamlog_debug_ln("UpdateViscosity", "skipping artif viscosity update (No viscosity mode)");
     } else if (Constant *v = std::get_if<Constant>(&solver_config.artif_viscosity.config)) {
-        logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (Constant mode)");
+        shamlog_debug_ln("UpdateViscosity", "skipping artif viscosity update (Constant mode)");
     } else if (VaryingMM97 *v = std::get_if<VaryingMM97>(&solver_config.artif_viscosity.config)) {
         update_artificial_viscosity_mm97(dt, *v);
     } else if (VaryingCD10 *v = std::get_if<VaryingCD10>(&solver_config.artif_viscosity.config)) {
         update_artificial_viscosity_cd10(dt, *v);
     } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&solver_config.artif_viscosity.config)) {
-        logger::debug_ln("UpdateViscosity", "skipping artif viscosity update (constant AV)");
+        shamlog_debug_ln("UpdateViscosity", "skipping artif viscosity update (constant AV)");
     } else {
         shambase::throw_unimplemented();
     }
@@ -51,7 +51,7 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artificial_viscosity_mm97(
     Tscal dt, typename Config::AVConfig::VaryingMM97 cfg) {
     StackEntry stack_loc{};
-    logger::debug_ln("UpdateViscosity", "Updating alpha viscosity (Morris & Monaghan 1997)");
+    shamlog_debug_ln("UpdateViscosity", "Updating alpha viscosity (Morris & Monaghan 1997)");
 
     using namespace shamrock::patch;
     PatchDataLayout &pdl  = scheduler().pdl;
@@ -118,7 +118,7 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     Tscal dt, typename Config::AVConfig::VaryingCD10 cfg) {
 
     StackEntry stack_loc{};
-    logger::debug_ln("UpdateViscosity", "Updating alpha viscosity (Cullen & Dehnen 2010)");
+    shamlog_debug_ln("UpdateViscosity", "Updating alpha viscosity (Cullen & Dehnen 2010)");
 
     using namespace shamrock::patch;
     PatchDataLayout &pdl  = scheduler().pdl;

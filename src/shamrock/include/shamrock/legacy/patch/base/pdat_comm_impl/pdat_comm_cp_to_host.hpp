@@ -27,13 +27,13 @@ namespace impl::copy_to_host {
         inline T *init(PatchDataField<T> &pdat_field, u32 comm_sz) {
 
             T *comm_ptr = sycl::malloc_host<T>(comm_sz, shamsys::instance::get_compute_queue());
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "PatchDataField MPI Comm", "sycl::malloc_host", comm_sz, "->", comm_ptr);
 
             auto &buf = pdat_field.get_buf();
 
             if (pdat_field.size() > 0) {
-                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
+                shamlog_debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
 
                 auto ker_copy
                     = shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -48,7 +48,7 @@ namespace impl::copy_to_host {
 
                 ker_copy.wait();
             } else {
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "PatchDataField MPI Comm", "copy buffer -> USM (skipped size=0)");
             }
 
@@ -57,7 +57,7 @@ namespace impl::copy_to_host {
 
         template<class T>
         inline void finalize(T *comm_ptr) {
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+            shamlog_debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
 
             sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
         }
@@ -68,7 +68,7 @@ namespace impl::copy_to_host {
         T *init(u32 comm_sz) {
             T *comm_ptr = sycl::malloc_host<T>(comm_sz, shamsys::instance::get_compute_queue());
 
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz);
+            shamlog_debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz);
 
             return comm_ptr;
         };
@@ -78,7 +78,7 @@ namespace impl::copy_to_host {
             auto &buf = pdat_field.get_buf();
 
             if (pdat_field.size() > 0) {
-                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
+                shamlog_debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
 
                 auto ker_copy
                     = shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -93,11 +93,11 @@ namespace impl::copy_to_host {
 
                 ker_copy.wait();
             } else {
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "PatchDataField MPI Comm", "copy USM -> buffer (skipped size=0)");
             }
 
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+            shamlog_debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
 
             sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
         }

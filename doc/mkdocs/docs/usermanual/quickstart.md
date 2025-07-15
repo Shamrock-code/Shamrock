@@ -9,6 +9,17 @@ There are multiple ways to install Shamrock:
  - [Homebrew package](./quickstart/install_brew.md) (Homebrew package, precompiled as well)
  - [Docker container](./quickstart/install_docker.md) (Fastest but not the most convenient)
 
+### Recommended Configurations by Operating System
+
+For detailed configuration guides for different operating systems and environments, see the [from source](./quickstart/install_from_source.md) guide.
+
+**Platform:**
+- **Linux**: [From source](./quickstart/recommended_config/linux_debian.md)
+- **macOS**: [From source](./quickstart/recommended_config/macos.md)
+- **Conda**: [From source](./quickstart/recommended_config/conda.md)
+
+For detailed setup instructions and configuration-specific notes, please refer to the [individual configuration guides](./recommended_config/).
+
 
 ## Starting Shamrock
 

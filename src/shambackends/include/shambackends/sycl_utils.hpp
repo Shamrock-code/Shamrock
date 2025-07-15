@@ -105,7 +105,7 @@ namespace shambase {
         nvtxRangePush(name);
 #endif
 
-        logger::debug_sycl_ln("SYCL", shambase::format("parralel_for {} N={}", name, length));
+        shamlog_debug_sycl_ln("SYCL", shambase::format("parralel_for {} N={}", name, length));
 
         if constexpr (mode == PARRALEL_FOR) {
 
@@ -155,7 +155,7 @@ namespace shambase {
         nvtxRangePush(name);
 #endif
 
-        logger::debug_sycl_ln(
+        shamlog_debug_sycl_ln(
             "SYCL", shambase::format("parralel_for {} N={} {}", name, length_x, length_y));
 
         if constexpr (mode == PARRALEL_FOR) {
@@ -216,7 +216,7 @@ namespace shambase {
         nvtxRangePush(name);
 #endif
 
-        logger::debug_sycl_ln(
+        shamlog_debug_sycl_ln(
             "SYCL",
             shambase::format("parralel_for {} N={} {} {}", name, length_x, length_y, length_z));
 
@@ -318,9 +318,9 @@ namespace shambase {
     }
 
     inline void check_queue_state(sycl::queue &q, SourceLocation loc = SourceLocation()) {
-        logger::debug_sycl_ln("SYCL", "checking queue state", loc.format_one_line());
+        shamlog_debug_sycl_ln("SYCL", "checking queue state", loc.format_one_line());
         q.wait_and_throw();
-        logger::debug_sycl_ln("SYCL", "checking queue state : OK !");
+        shamlog_debug_sycl_ln("SYCL", "checking queue state : OK !");
     }
 
 } // namespace shambase

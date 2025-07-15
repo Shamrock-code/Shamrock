@@ -80,7 +80,7 @@ inline void test_tree_build_steps(std::string dset_name) {
 
     u32 index = 0;
     for (f64 cnt : Npart) {
-        logger::debug_ln("TestTreePerf", cnt, dset_name);
+        shamlog_debug_ln("TestTreePerf", cnt, dset_name);
         for (u32 rep_count = 0; rep_count < get_repetition_count(cnt); rep_count++) {
 
             shambase::Timer timer;
@@ -346,7 +346,7 @@ void test_sph_iter_overhead(std::string dset_name) {
                 rpart = std::uniform_real_distribution<flt>(0, len_per_obj * 4)(eng);
             }
 
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "TestTreePerf",
                 shambase::format(
                     "dataset : {}, len={:e} seed={:10} len_p_obj={:e} rpart={:e}",
@@ -978,7 +978,7 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta) {
             seed        = mix_seed(seed);
             u32 len_pos = cnt;
 
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "TestTreePerf",
                 shambase::format(
                     "dataset : {}, len={:e} seed={:10}", dset_name, f32(len_pos), seed));

@@ -109,7 +109,7 @@ namespace shamrock::amr {
                 // perform stream compactions on the refinement flags
                 auto [buf, len] = shamalgs::numeric::stream_compact(q, refine_flags, obj_cnt);
 
-                logger::debug_ln("AMRGrid", "patch ", id_patch, "refine cell count = ", len);
+                shamlog_debug_ln("AMRGrid", "patch ", id_patch, "refine cell count = ", len);
 
                 tot_refine += len;
 
@@ -194,7 +194,7 @@ namespace shamrock::amr {
 
                 u32 obj_to_check = pre_merge_obj_cnt - split_count + 1;
 
-                logger::debug_sycl_ln("AMR Grid", "checking mergeable in", obj_to_check, "cells");
+                shamlog_debug_sycl_ln("AMR Grid", "checking mergeable in", obj_to_check, "cells");
 
                 sycl::buffer<u32> mergeable_indexes(obj_to_check);
 
@@ -249,7 +249,7 @@ namespace shamrock::amr {
                 auto [opt_buf, len] = shamalgs::numeric::stream_compact(
                     shamsys::instance::get_compute_queue(), mergeable_indexes, obj_to_check);
 
-                logger::debug_ln("AMRGrid", "patch ", id_patch, "merge cell count = ", len);
+                shamlog_debug_ln("AMRGrid", "patch ", id_patch, "merge cell count = ", len);
 
                 tot_merge += len;
 
@@ -445,7 +445,7 @@ namespace shamrock::amr {
                     auto [opt_buf, len]
                         = shamalgs::numeric::stream_compact(q.q, keep_cell_flag, old_obj_cnt);
 
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "AMR Grid",
                         "patch",
                         id_patch,
@@ -489,7 +489,7 @@ namespace shamrock::amr {
                 gcd_cell_count = std::gcd(gcd_cell_count, gcd_pow2);
             }
 
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "AMRGrid",
                 "patch grid :",
                 cell_count[0] / gcd_cell_count,
@@ -510,7 +510,7 @@ namespace shamrock::amr {
             sycl::buffer<Tcoord> cell_coord_min(cell_tot_count);
             sycl::buffer<Tcoord> cell_coord_max(cell_tot_count);
 
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "AMRGrid", "building bounds ", cell_count[0], cell_count[1], cell_count[2]);
 
             {
@@ -557,7 +557,7 @@ namespace shamrock::amr {
 
             shambase::check_queue_state(shamsys::instance::get_compute_queue());
 
-            logger::debug_sycl_ln("AMRGrid", "grid init done");
+            shamlog_debug_sycl_ln("AMRGrid", "grid init done");
         }
     };
 

@@ -35,10 +35,9 @@ namespace shamcomm::mpi {
         mpi_timers["total"] += time;
 
         if (shambase::profiling::is_profiling_enabled()) {
-            shambase::profiling::register_counter_val(
-                timername, shambase::details::get_wtime(), mpi_timers[timername]);
-            shambase::profiling::register_counter_val(
-                "total MPi time", shambase::details::get_wtime(), mpi_timers["total"]);
+            auto wtime = shambase::details::get_wtime();
+            shambase::profiling::register_counter_val(timername, wtime, mpi_timers[timername]);
+            shambase::profiling::register_counter_val("total MPi time", wtime, mpi_timers["total"]);
         }
     }
 

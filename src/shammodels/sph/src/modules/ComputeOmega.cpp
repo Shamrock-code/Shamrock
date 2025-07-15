@@ -19,8 +19,7 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega()
-    -> shamrock::ComputeField<Tscal> {
+void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
 
     NamedStackEntry stack_loc{"compute omega"};
 
@@ -34,10 +33,19 @@ auto shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega()
     PatchDataLayout &pdl = scheduler().pdl;
     const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
 
-    ComputeField<Tscal> omega = utility.make_compute_field<Tscal>("omega", 1);
+    shamrock::solvergraph::Field<Tscal> &omega = shambase::get_check_ref(storage.omega);
+
+    shambase::DistributedData<u32> original_part_count = {};
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+        original_part_count.add_obj(p.id_patch, pdat.get_obj_cnt());
+    });
+
+    omega.ensure_sizes(original_part_count);
+
+    // ComputeField<Tscal> omega = utility.make_compute_field<Tscal>("omega", 1);
 
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-        logger::debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "compute omega");
+        shamlog_debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "compute omega");
 
         sham::DeviceBuffer<Tscal> &omega_h = omega.get_buf(p.id_patch);
 
@@ -47,13 +55,14 @@ auto shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega()
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &neigh_cache = storage.neighbors_cache.get().get_cache(p.id_patch);
+        tree::ObjectCache &neigh_cache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(p.id_patch);
 
         sph_utils.compute_omega(
             merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);
     });
 
-    return omega;
+    // storage.omega.set(std::move(omega));
 }
 
 using namespace shammath;

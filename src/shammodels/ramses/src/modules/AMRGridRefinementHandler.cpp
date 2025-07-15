@@ -120,7 +120,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         auto [buf_refine, len_refine]
             = shamalgs::numeric::stream_compact(q.q, refine_flags, obj_cnt);
 
-        logger::debug_ln("AMRGrid", "patch ", id_patch, "refine block count = ", len_refine);
+        shamlog_debug_ln("AMRGrid", "patch ", id_patch, "refine block count = ", len_refine);
 
         tot_refine += len_refine;
 
@@ -135,7 +135,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         auto [buf_derefine, len_derefine]
             = shamalgs::numeric::stream_compact(q.q, derefine_flags, obj_cnt);
 
-        logger::debug_ln("AMRGrid", "patch ", id_patch, "merge block count = ", len_derefine);
+        shamlog_debug_ln("AMRGrid", "patch ", id_patch, "merge block count = ", len_derefine);
 
         tot_derefine += len_derefine;
 
@@ -320,7 +320,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             auto [opt_buf, len]
                 = shamalgs::numeric::stream_compact(q.q, keep_block_flag, old_obj_cnt);
 
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "AMR Grid", "patch", id_patch, "derefine block count ", old_obj_cnt, "->", len);
 
             if (!opt_buf) {

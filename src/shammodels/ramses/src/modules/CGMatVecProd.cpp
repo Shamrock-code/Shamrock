@@ -14,7 +14,7 @@
  *
  */
 
-#include "shammodels/ramses/modules/CGMatvecProd.hpp"
+#include "shammodels/ramses/modules/CGMatVecProd.hpp"
 #include "shambackends/EventList.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/typeAliasVec.hpp"

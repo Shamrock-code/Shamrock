@@ -391,7 +391,7 @@ def plot_sim_orbit2(sink_list):
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_ModelSPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
+model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
 
 if idump_last_dump is not None:
     model.load_from_dump(get_dump_name(idump_last_dump))

@@ -8,16 +8,16 @@
 // -------------------------------------------------------//
 
 /**
- * @file AnalysisSPH.cpp
+ * @file AnalysisBarycenter.cpp
  * @author David Fang (fang.david03@gmail.com)
  * @brief
  *
  */
 
-#include "shammodels/sph/modules/AnalysisSPH.hpp"
+#include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 
 using namespace shammath;
 
-template class shammodels::sph::modules::AnalysisSPH<f64_3, M4>;
-template class shammodels::sph::modules::AnalysisSPH<f64_3, M6>;
-template class shammodels::sph::modules::AnalysisSPH<f64_3, M8>;
+template class shammodels::sph::modules::AnalysisBarycenter<f64_3, M4>;
+template class shammodels::sph::modules::AnalysisBarycenter<f64_3, M6>;
+template class shammodels::sph::modules::AnalysisBarycenter<f64_3, M8>;

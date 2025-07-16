@@ -25,8 +25,7 @@ set(Sources
     src/pySPHModel.cpp
     src/pyPhantomDump.cpp
 
-    src/modules/pyAnalyseSPH.cpp
-    src/modules/AnalysisSPH.cpp
+    src/modules/AnalysisBarycenter.cpp
 
     src/modules/SolverStorage.cpp
     src/modules/BuildTrees.cpp

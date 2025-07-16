@@ -10,12 +10,15 @@
 #pragma once
 
 /**
- * @file AnalysisSPH.hpp
+ * @file AnalysisBarycenter.hpp
  * @author David Fang (fang.david03@gmail.com)
- * @brief AnalysisSPH class with one method analysisSPH.get_baycenter()
+ * @brief AnalysisBarycenter class with one method AnalysisBarycenter.get_baycenter()
  *
  */
 
+#include "shambase/memory.hpp"
+#include "shambackends/DeviceQueue.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -23,7 +26,7 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class AnalysisSPH {
+    class AnalysisBarycenter {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
@@ -34,7 +37,7 @@ namespace shammodels::sph::modules {
         Solver &solver;
         ShamrockCtx &ctx;
 
-        AnalysisSPH(Model<Tvec, SPHKernel> &model)
+        AnalysisBarycenter(Model<Tvec, SPHKernel> &model)
             : model(model), ctx(model.ctx), solver(model.solver) {};
 
         struct field_val {
@@ -46,25 +49,43 @@ namespace shammodels::sph::modules {
         ////////////////////////////////////////////////////////////////////////////////////////////
         auto get_barycenter() -> field_val {
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            const u32 ixyz        = sched.pdl.template get_field_idx<Tvec>("xyz");
-            const Tscal pmass     = solver.solver_config.gpart_mass;
+            auto dev_sched_ptr    = shamsys::instance::get_compute_scheduler_ptr();
+            sham::DeviceQueue &q  = shambase::get_check_ref(dev_sched_ptr).get_queue();
+
+            const u32 ixyz    = sched.pdl.template get_field_idx<Tvec>("xyz");
+            const Tscal pmass = solver.solver_config.gpart_mass;
 
             Tvec barycenter = {0, 0, 0}; // Not really barycenter per se but Mdisc * barycenter
             Tscal mass_disc = 0;
 
             sched.for_each_patchdata_nonempty(
                 [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
-                    auto &xyz_buf = pdat.get_field_buf_ref<Tvec>(ixyz);
-                    u32 len       = pdat.get_obj_cnt();
-                    {
-                        auto acc_xyz = xyz_buf.copy_to_stdvec();
-                        for (u32 i = 0; i < len; i++) {
-                            Tvec xyz = acc_xyz[i];
+                    // auto &xyz_buf = pdat.get_field_buf_ref<Tvec>(ixyz);
+                    // u32 len       = pdat.get_obj_cnt();
+                    // {
+                    //     auto acc_xyz = xyz_buf.copy_to_stdvec();
+                    //     for (u32 i = 0; i < len; i++) {
+                    //         Tvec xyz = acc_xyz[i];
 
-                            barycenter += pmass * xyz;
-                            mass_disc += pmass;
-                        }
-                    }
+                    //         barycenter += pmass * xyz;
+                    //         mass_disc += pmass;
+                    //     }
+                    // }
+                    u32 len = pdat.get_obj_cnt();
+                    mass_disc += pmass * len;
+
+                    sham::DeviceBuffer<Tvec> pm(len, dev_sched_ptr);
+                    sham::DeviceBuffer<Tvec> &xyz_buf = pdat.get_field_buf_ref<Tvec>(ixyz);
+
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{xyz_buf},
+                        sham::MultiRef{pm},
+                        len,
+                        [pmass](u32 i, const Tvec *__restrict xyz, Tvec *__restrict pm) {
+                            pm[i] = pmass * xyz[i];
+                        });
+                    barycenter += shamalgs::reduction::sum(dev_sched_ptr, pm, 0, len);
                 });
 
             Tvec tot_barycenter = shamalgs::collective::allreduce_sum(barycenter);

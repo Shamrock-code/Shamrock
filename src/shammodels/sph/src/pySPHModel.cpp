@@ -11,6 +11,7 @@
  * @file pySPHModel.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author David Fang (fang.david03@gmail.com)
  * @brief
  */
 
@@ -22,6 +23,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
@@ -769,6 +771,36 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("get_setup", &T::get_setup);
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisBarycenter_instance(py::module &m, std::string name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+
+    using T = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisBarycenter<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisBarycenter<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_barycenter", [](modules::AnalysisBarycenter<Tvec, SPHKernel> &self) {
+            auto result = self.get_barycenter();
+            auto dim    = self.dim;
+            py::array_t<Tscal> numpy_barycenter({dim});
+            for (u32 i = 0; i < dim; i++) {
+                numpy_barycenter.mutable_at(i) = result.barycenter[i];
+            }
+            return py::make_tuple(numpy_barycenter, result.mass_disc);
+        });
+}
+
+using namespace shammodels::sph;
+template<typename Tvec, template<class> class SPHKernel>
+auto analysisBarycenter_impl(shammodels::sph::Model<Tvec, SPHKernel> &model)
+    -> modules::AnalysisBarycenter<Tvec, SPHKernel> {
+    return modules::AnalysisBarycenter<Tvec, SPHKernel>(model);
+}
+
 Register_pymod(pysphmodel) {
 
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
@@ -822,4 +854,36 @@ Register_pymod(pysphmodel) {
         .def_readwrite("tcompute", &shammodels::sph::TimestepLog::tcompute)
         .def("rate_sum", &shammodels::sph::TimestepLog::rate_sum)
         .def("npart_sum", &shammodels::sph::TimestepLog::npart_sum);
+
+    add_analysisBarycenter_instance<f64_3, shammath::M4>(msph, "AnalysisBarycenter_f64_3_M4");
+    add_analysisBarycenter_instance<f64_3, shammath::M6>(msph, "AnalysisBarycenter_f64_3_M6");
+    add_analysisBarycenter_instance<f64_3, shammath::M8>(msph, "AnalysisBarycenter_f64_3_M8");
+
+    using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
+    using SPHModel_f64_3_M6 = shammodels::sph::Model<f64_3, shammath::M6>;
+    using SPHModel_f64_3_M8 = shammodels::sph::Model<f64_3, shammath::M8>;
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_M4 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::M4>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_M6 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::M6>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_M8 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::M8>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
 }

@@ -769,6 +769,7 @@ namespace shammodels::sph {
             }
 
             solver.init_ghost_layout();
+            solver.init_solver_graph();
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             shamlog_debug_ln("Sys", "build local scheduler tables");

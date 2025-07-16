@@ -38,6 +38,8 @@ set(Sources
     src/modules/ComputeSumOverV.cpp
     src/modules/InterpolateToFace.cpp
     src/modules/CGInit.cpp
+    src/modules/CGHadamardProd.cpp
+    src/modules/CGEnergyNormOfP.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

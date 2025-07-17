@@ -26,9 +26,8 @@
 
 namespace shammodels::basegodunov::modules {
 
-    template<class Tvec, class TgridVec>
+    template<class T>
     class NodeCGHadamardProd : public shamrock::solvergraph::INode {
-        using Tscal = shambase::VecComponent<Tvec>;
         u32 block_size;
 
         public:
@@ -36,16 +35,16 @@ namespace shammodels::basegodunov::modules {
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi_p;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi_Ap;
-            shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi_hadamard_prod;
+            const shamrock::solvergraph::IFieldSpan<T> &spans_phi_p;
+            const shamrock::solvergraph::IFieldSpan<T> &spans_phi_Ap;
+            shamrock::solvergraph::IFieldSpan<T> &spans_phi_hadamard_prod;
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi_p,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi_Ap,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi_hadamard_prod) {
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> spans_phi_p,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> spans_phi_Ap,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> spans_phi_hadamard_prod) {
             __internal_set_ro_edges({sizes, spans_phi_p, spans_phi_Ap});
             __internal_set_rw_edges({spans_phi_hadamard_prod});
         }
@@ -53,9 +52,9 @@ namespace shammodels::basegodunov::modules {
         inline Edges get_edges() {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0)};
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<T>>(1),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<T>>(2),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<T>>(0)};
         }
 
         void _impl_evaluate_internal();

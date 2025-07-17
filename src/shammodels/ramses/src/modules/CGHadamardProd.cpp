@@ -16,21 +16,18 @@
 
 #include "shammodels/ramses/modules/CGHadamardProd.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shammath/riemann.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {
 
-    template<class Tscal>
+    template<class T>
     struct KernelHadamardProd {
 
         inline static void kernel(
-            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
-                &spans_phi_p,
-            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
-                &spans_phi_Ap,
-            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> &spans_phi_p,
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> &spans_phi_Ap,
+            shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>>
                 &spans_phi_hadamard_prod,
             const shambase::DistributedData<u32> &sizes,
             u32 block_size) {
@@ -48,9 +45,9 @@ namespace {
                 cell_counts,
                 [block_size](
                     u32 i,
-                    const Tscal *__restrict phi_p,
-                    const Tscal *__restrict phi_Ap,
-                    Tscal *__restrict hadamard_prod) {
+                    const T *__restrict phi_p,
+                    const T *__restrict phi_Ap,
+                    T *__restrict hadamard_prod) {
                     hadamard_prod[i] = phi_p[i] * phi_Ap[i];
                 });
         }
@@ -60,8 +57,8 @@ namespace {
 
 namespace shammodels::basegodunov::modules {
 
-    template<class Tvec, class TgridVec>
-    void NodeCGHadamardProd<Tvec, TgridVec>::_impl_evaluate_internal() {
+    template<class T>
+    void NodeCGHadamardProd<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
         edges.spans_phi_p.check_sizes(edges.sizes.indexes);
@@ -69,7 +66,7 @@ namespace shammodels::basegodunov::modules {
 
         edges.spans_phi_hadamard_prod.ensure_sizes(edges.sizes.indexes);
 
-        KernelHadamardProd<Tscal>::kernel(
+        KernelHadamardProd<T>::kernel(
             edges.spans_phi_p.get_spans(),
             edges.spans_phi_Ap.get_spans(),
             edges.spans_phi_hadamard_prod.get_spans(),
@@ -77,8 +74,8 @@ namespace shammodels::basegodunov::modules {
             block_size);
     }
 
-    template<class Tvec, class TgridVec>
-    std::string NodeCGHadamardProd<Tvec, TgridVec>::_impl_get_tex() {
+    template<class T>
+    std::string NodeCGHadamardProd<T>::_impl_get_tex() {
 
         auto block_count       = get_ro_edge_base(0).get_tex_symbol();
         auto phi_p             = get_ro_edge_base(1).get_tex_symbol();
@@ -94,4 +91,4 @@ namespace shammodels::basegodunov::modules {
 
 } // namespace shammodels::basegodunov::modules
 
-template class shammodels::basegodunov::modules::NodeCGHadamardProd<f64_3, i64_3>;
+template class shammodels::basegodunov::modules::NodeCGHadamardProd<f64>;

@@ -18,7 +18,6 @@
 
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
-#include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"

@@ -16,7 +16,6 @@
 
 #include "shammodels/ramses/modules/CGEnergyNormOfP.hpp"
 #include "shamalgs/collective/reduction.hpp"
-#include "shamcomm/logs.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 

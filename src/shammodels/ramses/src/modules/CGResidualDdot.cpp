@@ -16,11 +16,7 @@
 
 #include "shammodels/ramses/modules/CGResidualDdot.hpp"
 #include "shamalgs/collective/reduction.hpp"
-#include "shambackends/kernel_call_distrib.hpp"
-#include "shamcomm/logs.hpp"
-#include "shammath/riemann.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
-#include "shamsys/NodeInstance.hpp"
 
 namespace shammodels::basegodunov::modules {
 
@@ -45,7 +41,7 @@ namespace shammodels::basegodunov::modules {
         auto ddot_res      = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
-        Compute L2-norm squred of residual vector
+        Compute L2-norm squared of residual vector
 
         \begin{equation}
         {\mathbf{r}} = \mathbf{4\pi\mathbf{\mathrm{\rho}}} - \mathbf{A}\mathbf{\Phi}

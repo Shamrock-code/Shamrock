@@ -785,12 +785,7 @@ void add_analysisBarycenter_instance(py::module &m, std::string name_model) {
         }))
         .def("get_barycenter", [](modules::AnalysisBarycenter<Tvec, SPHKernel> &self) {
             auto result = self.get_barycenter();
-            auto dim    = self.dim;
-            py::array_t<Tscal> numpy_barycenter({dim});
-            for (u32 i = 0; i < dim; i++) {
-                numpy_barycenter.mutable_at(i) = result.barycenter[i];
-            }
-            return py::make_tuple(numpy_barycenter, result.mass_disc);
+            return py::make_tuple(result.barycenter, result.mass_disc);
         });
 }
 

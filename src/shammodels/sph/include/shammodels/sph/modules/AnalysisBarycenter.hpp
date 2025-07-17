@@ -40,14 +40,14 @@ namespace shammodels::sph::modules {
         AnalysisBarycenter(Model<Tvec, SPHKernel> &model)
             : model(model), ctx(model.ctx), solver(model.solver) {};
 
-        struct field_val {
+        struct result {
             Tvec barycenter;
             Tscal mass_disc;
         };
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// setup function
         ////////////////////////////////////////////////////////////////////////////////////////////
-        auto get_barycenter() -> field_val {
+        auto get_barycenter() -> result {
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             auto dev_sched_ptr    = shamsys::instance::get_compute_scheduler_ptr();
             sham::DeviceQueue &q  = shambase::get_check_ref(dev_sched_ptr).get_queue();
@@ -102,7 +102,7 @@ namespace shammodels::sph::modules {
                 }
             }
             tot_barycenter /= tot_mass;
-            return field_val{tot_barycenter, tot_mass_disc};
+            return result{tot_barycenter, tot_mass_disc};
         }
     };
 } // namespace shammodels::sph::modules

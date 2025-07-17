@@ -86,6 +86,10 @@ namespace shammodels::sph {
         using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
 
+        inline void handle_callbacks(Tscal t, Tscal &dt) {
+            solver_config.step_callback_config.handle_callbacks(t, dt);
+        }
+
         inline void gen_ghost_handler(Tscal time_val) {
 
             using CfgClass = sph::BasicSPHGhostHandlerConfig<Tvec>;

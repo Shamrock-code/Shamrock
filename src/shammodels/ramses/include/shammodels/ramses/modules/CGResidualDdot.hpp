@@ -40,10 +40,9 @@ namespace shammodels::basegodunov::modules {
         };
 
         inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> spans_phi_res,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<T>> res_ddot) {
-            __internal_set_ro_edges({sizes, spans_phi_res});
+            __internal_set_ro_edges({spans_phi_res});
             __internal_set_rw_edges({res_ddot});
         }
 

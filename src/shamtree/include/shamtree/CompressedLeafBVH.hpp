@@ -83,7 +83,21 @@ class shamtree::CompressedLeafBVH {
      */
     void rebuild_from_positions(
         sham::DeviceBuffer<Tvec> &positions,
-        shammath::AABB<Tvec> &bounding_box,
+        const shammath::AABB<Tvec> &bounding_box,
+        u32 compression_level);
+
+    /**
+     * @brief rebuild the BVH from the given positions
+     *
+     * @param[in] positions the positions of the particles
+     * @param[in] obj_cnt the number of particles
+     * @param[in] bounding_box the bounding box of the particles
+     * @param[in] compression_level the compression level of the BVH
+     */
+    void rebuild_from_positions(
+        sham::DeviceBuffer<Tvec> &positions,
+        u32 obj_cnt,
+        const shammath::AABB<Tvec> &bounding_box,
         u32 compression_level);
 
 #if false

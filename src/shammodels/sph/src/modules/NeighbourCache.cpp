@@ -249,6 +249,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
         sham::DeviceBuffer<Tvec> &buf_xyz    = mfield.field_pos.get_buf();
         sham::DeviceBuffer<Tscal> &buf_hpart = mfield.field_hpart.get_buf();
+
         sycl::buffer<Tscal> &tree_field_rint = shambase::get_check_ref(
             storage.rtree_rint_field.get().get(patch_id).radix_tree_field_buf);
 

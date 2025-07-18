@@ -285,7 +285,7 @@ namespace shamalgs::algorithm::details {
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
 
         if (!shambase::is_pow_of_two(len)) {
-            throw std::invalid_argument(
+            shambase::throw_with_loc<std::invalid_argument>(
                 "this algorithm can only be used with length that are powers of two");
         }
 

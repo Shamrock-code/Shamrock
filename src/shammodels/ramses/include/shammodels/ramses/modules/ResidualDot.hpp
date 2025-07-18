@@ -24,7 +24,7 @@ namespace shammodels::basegodunov::modules {
 
     template<class T>
     class ResidualDot : public shamrock::solvergraph::INode {
-
+using Tscal = shambase::VecComponent<T>;
         public:
         ResidualDot() {}
 

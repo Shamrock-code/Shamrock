@@ -34,19 +34,20 @@ namespace shammodels::basegodunov::modules {
         edges.res_ddot.value = shamalgs::collective::allreduce_sum(loc_val);
     }
 
-    template<class T>
+template<class T>
     std::string CGResidualDdot<T>::_impl_get_tex() {
-        auto block_count   = get_ro_edge_base(0).get_tex_symbol();
-        auto phi_res_field = get_ro_edge_base(1).get_tex_symbol();
-        auto ddot_res      = get_rw_edge_base(0).get_tex_symbol();
+        auto field         = get_ro_edge_base(0).get_tex_symbol();
+        auto residual_dot  = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
-        Compute L2-norm squared of residual vector
+            Compute L2-norm squared of residual vector
+            \begin{equation}
+            {residual_dot} &= \sum_{i \in [0,N_{field})} {field}_i \cdot {field}_i
+            \end{equation}
+        )tex";
 
-        \begin{equation}
-        {\mathbf{r}} = \mathbf{4\pi\mathbf{\mathrm{\rho}}} - \mathbf{A}\mathbf{\Phi}
-        \end{equation}
-    )tex";
+        shambase::replace_all(tex, "{field}", field);
+        shambase::replace_all(tex, "{residual_dot}", residual_dot);
 
         return tex;
     }

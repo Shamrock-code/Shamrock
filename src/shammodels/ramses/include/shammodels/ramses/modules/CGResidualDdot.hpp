@@ -34,7 +34,6 @@ namespace shammodels::basegodunov::modules {
         CGResidualDdot(u32 block_size) : block_size(block_size) {}
 
         struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes;
             const shamrock::solvergraph::IFieldRefs<T> &spans_phi_res;
             shamrock::solvergraph::ScalarEdge<T> &res_ddot;
         };

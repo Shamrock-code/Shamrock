@@ -24,17 +24,18 @@ namespace shammodels::basegodunov::modules {
 
     template<class T>
     class ResidualDot : public shamrock::solvergraph::INode {
-using Tscal = shambase::VecComponent<T>;
+        using Tscal = shambase::VecComponent<T>;
+
         public:
         ResidualDot() {}
 
         struct Edges {
-            const shamrock::solvergraph::IFieldRefs<T> &spans_phi_res;
+            const shamrock::solvergraph::IFieldRefs<Tscal> &spans_phi_res;
             shamrock::solvergraph::ScalarEdge<Tscal> &res_ddot;
         };
 
         inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> spans_phi_res,
+            std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tscal>> spans_phi_res,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> res_ddot) {
             __internal_set_ro_edges({spans_phi_res});
             __internal_set_rw_edges({res_ddot});
@@ -42,7 +43,7 @@ using Tscal = shambase::VecComponent<T>;
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<T>>(0),
+                get_ro_edge<shamrock::solvergraph::IFieldRefs<Tscal>>(0),
                 get_rw_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(0),
             };
         }

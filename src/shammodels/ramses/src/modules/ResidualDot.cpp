@@ -24,8 +24,8 @@ namespace shammodels::basegodunov::modules {
     void ResidualDot<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
-        T loc_val = {};
-        edges.spans_phi_res.get_refs().for_each([&](u32 i, PatchDataField<T> &res_field_ref) {
+        Tscal loc_val = {};
+        edges.spans_phi_res.get_refs().for_each([&](u32 i, PatchDataField<Tscal> &res_field_ref) {
             loc_val += res_field_ref.compute_dot_sum();
         });
 
@@ -52,5 +52,4 @@ namespace shammodels::basegodunov::modules {
 
 } // namespace shammodels::basegodunov::modules
 
-template class shammodels::basegodunov::modules::ResidualDot<f64>;
 template class shammodels::basegodunov::modules::ResidualDot<f64_3>;

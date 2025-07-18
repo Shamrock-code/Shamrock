@@ -16,6 +16,7 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/memory.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -232,7 +233,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
     using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
     using GhostHandleCache   = typename GhostHandle::CacheMap;
     using PreStepMergedField = typename GhostHandle::PreStepMergedField;
-    using RTree              = RadixTree<Tmorton, Tvec>;
+    using RTree              = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
     shambase::Timer time_neigh;
     time_neigh.start();
@@ -250,13 +251,13 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
         sham::DeviceBuffer<Tvec> &buf_xyz    = mfield.field_pos.get_buf();
         sham::DeviceBuffer<Tscal> &buf_hpart = mfield.field_hpart.get_buf();
 
-        sycl::buffer<Tscal> &tree_field_rint = shambase::get_check_ref(
-            storage.rtree_rint_field.get().get(patch_id).radix_tree_field_buf);
+        sham::DeviceBuffer<Tscal> &tree_field_rint
+            = storage.rtree_rint_field.get().get(patch_id).buf_field;
 
         RTree &tree = storage.merged_pos_trees.get().get(patch_id);
 
-        u32 leaf_cnt    = tree.tree_reduced_morton_codes.tree_leaf_count;
-        u32 intnode_cnt = tree.tree_struct.internal_cell_count;
+        u32 leaf_cnt    = tree.get_total_cell_count();
+        u32 intnode_cnt = tree.get_internal_cell_count();
         u32 obj_cnt     = mfield.original_elements;
 
         sycl::range range_nleaf{leaf_cnt};

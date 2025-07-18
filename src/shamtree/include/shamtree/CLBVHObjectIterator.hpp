@@ -25,6 +25,23 @@
 
 namespace shamtree {
 
+    /// Accessed version of CLBVHTraverser
+    template<class Tmorton, class Tvec, u32 dim>
+    struct CLBVHTraverserAccessed;
+
+    /**
+     * @class CLBVHTraverser
+     * @brief
+     * This class is designed to traverse a BVH tree represented as a
+     * Compressed Leaf BVH (CLBVH) and a Karras Radix Tree.
+     *
+     * @tparam Tmorton type of the morton codes
+     * @tparam Tvec type of the vector (usually a float_3)
+     * @tparam dim dimensionality of the problem
+     */
+    template<class Tmorton, class Tvec, u32 dim>
+    struct CLBVHTraverser;
+
     /// Accessed version of CLBVHObjectIterator
     template<class Tmorton, class Tvec, u32 dim>
     struct CLBVHObjectIteratorAccessed;
@@ -45,13 +62,12 @@ namespace shamtree {
 } // namespace shamtree
 
 template<class Tmorton, class Tvec, u32 dim>
-struct shamtree::CLBVHObjectIteratorAccessed {
+struct shamtree::CLBVHTraverserAccessed {
 
     /// maximum depth of the tree according to the morton codes
     static constexpr u32 tree_depth_max
         = shamrock::sfc::MortonCodes<Tmorton, 3>::significant_bits + 1;
 
-    CellIterator::acc cell_iterator;            ///< Cell iterator
     KarrasTreeTraverserAccessed tree_traverser; ///< Tree traverser
     const Tvec *aabb_min;                       ///< Minimum of the AABB
     const Tvec *aabb_max;                       ///< Maximum of the AABB
@@ -83,6 +99,31 @@ struct shamtree::CLBVHObjectIteratorAccessed {
             std::forward<Functor3>(on_excluded_node));
     }
 
+    template<class Functor1, class Functor2>
+    inline void rtree_for(Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_leaf) const {
+
+        traverse_tree_base(
+            [&](u32 node_id) { // interaction crit
+                return traverse_condition_with_aabb(
+                    node_id, shammath::AABB<Tvec>{aabb_min[node_id], aabb_max[node_id]});
+            },
+            [&](u32 node_id) { // on leaf found
+                on_found_leaf(node_id);
+            },
+            [&](u32) {});
+    }
+};
+
+template<class Tmorton, class Tvec, u32 dim>
+struct shamtree::CLBVHObjectIteratorAccessed {
+
+    /// maximum depth of the tree according to the morton codes
+    static constexpr u32 tree_depth_max
+        = shamrock::sfc::MortonCodes<Tmorton, 3>::significant_bits + 1;
+
+    CellIterator::acc cell_iterator;                           ///< Cell iterator
+    CLBVHTraverserAccessed<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
+
     /**
      * @brief Traverses the tree and executes a function for each found object.
      *
@@ -95,33 +136,27 @@ struct shamtree::CLBVHObjectIteratorAccessed {
     inline void
     rtree_for(Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_object) const {
 
-        traverse_tree_base(
-            [&](u32 node_id) { // interaction crit
-                return traverse_condition_with_aabb(
-                    node_id, shammath::AABB<Tvec>{aabb_min[node_id], aabb_max[node_id]});
-            },
-            [&](u32 node_id) { // on object found
-                u32 leaf_id = node_id - tree_traverser.offset_leaf;
+        tree_traverser.rtree_for(
+            std::forward<Functor1>(traverse_condition_with_aabb),
+            [&](u32 node_id) { // on leaf found
+                u32 leaf_id = node_id - tree_traverser.tree_traverser.offset_leaf;
                 cell_iterator.for_each_in_cell(leaf_id, on_found_object);
-            },
-            [&](u32) {});
+            });
     }
 };
 
 template<class Tmorton, class Tvec, u32 dim>
-struct shamtree::CLBVHObjectIterator {
-    CellIterator cell_iterator;               ///< Cell iterator
+struct shamtree::CLBVHTraverser {
     KarrasTreeTraverser tree_traverser;       ///< Tree traverser
     const sham::DeviceBuffer<Tvec> &aabb_min; ///< Minimum of the AABB
     const sham::DeviceBuffer<Tvec> &aabb_max; ///< Maximum of the AABB
 
     /// shorthand for CLBVHObjectIteratorAccessed
-    using acc = CLBVHObjectIteratorAccessed<Tmorton, Tvec, dim>;
+    using acc = CLBVHTraverserAccessed<Tmorton, Tvec, dim>;
 
     /// get read only accessor
     inline acc get_read_access(sham::EventList &deps) const {
         return acc{
-            cell_iterator.get_read_access(deps),
             tree_traverser.get_read_access(deps),
             aabb_min.get_read_access(deps),
             aabb_max.get_read_access(deps)};
@@ -129,9 +164,28 @@ struct shamtree::CLBVHObjectIterator {
 
     /// complete the buffer states with the resulting event
     inline void complete_event_state(sycl::event e) const {
-        cell_iterator.complete_event_state(e);
         tree_traverser.complete_event_state(e);
         aabb_min.complete_event_state(e);
         aabb_max.complete_event_state(e);
+    }
+};
+
+template<class Tmorton, class Tvec, u32 dim>
+struct shamtree::CLBVHObjectIterator {
+    CellIterator cell_iterator;                        ///< Cell iterator
+    CLBVHTraverser<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
+
+    /// shorthand for CLBVHObjectIteratorAccessed
+    using acc = CLBVHObjectIteratorAccessed<Tmorton, Tvec, dim>;
+
+    /// get read only accessor
+    inline acc get_read_access(sham::EventList &deps) const {
+        return acc{cell_iterator.get_read_access(deps), tree_traverser.get_read_access(deps)};
+    }
+
+    /// complete the buffer states with the resulting event
+    inline void complete_event_state(sycl::event e) const {
+        cell_iterator.complete_event_state(e);
+        tree_traverser.complete_event_state(e);
     }
 };

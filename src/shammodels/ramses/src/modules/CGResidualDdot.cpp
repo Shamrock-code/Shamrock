@@ -24,7 +24,6 @@ namespace shammodels::basegodunov::modules {
     void CGResidualDdot<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
-        edges.spans_phi_res.check_sizes(edges.sizes.indexes);
 
         T loc_val = {};
         edges.spans_phi_res.get_refs().for_each([&](u32 i, PatchDataField<T> &res_field_ref) {

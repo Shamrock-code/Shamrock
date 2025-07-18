@@ -52,4 +52,5 @@ namespace shammodels::basegodunov::modules {
 
 } // namespace shammodels::basegodunov::modules
 
+template class shammodels::basegodunov::modules::ResidualDot<f64>;
 template class shammodels::basegodunov::modules::ResidualDot<f64_3>;

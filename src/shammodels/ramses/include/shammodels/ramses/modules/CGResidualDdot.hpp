@@ -28,7 +28,6 @@ namespace shammodels::basegodunov::modules {
     template<class T>
     class CGResidualDdot : public shamrock::solvergraph::INode {
 
-        u32 block_size;
 
         public:
         CGResidualDdot(u32 block_size) : block_size(block_size) {}

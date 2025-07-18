@@ -30,7 +30,7 @@ using Tscal = shambase::VecComponent<T>;
 
         struct Edges {
             const shamrock::solvergraph::IFieldRefs<T> &spans_phi_res;
-            shamrock::solvergraph::ScalarEdge<T> &res_ddot;
+            shamrock::solvergraph::ScalarEdge<Tscal> &res_ddot;
         };
 
         inline void set_edges(

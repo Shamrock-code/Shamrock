@@ -10,27 +10,23 @@
 #pragma once
 
 /**
- * @file CGResidualDdot.hpp
+ * @file ResidualDot.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *
  */
-#include "shambackends/vec.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 
 namespace shammodels::basegodunov::modules {
 
     template<class T>
-    class CGResidualDdot : public shamrock::solvergraph::INode {
-
+    class ResidualDot : public shamrock::solvergraph::INode {
 
         public:
-        CGResidualDdot() {}
+        ResidualDot() {}
 
         struct Edges {
             const shamrock::solvergraph::IFieldRefs<T> &spans_phi_res;
@@ -53,7 +49,7 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "CGResidualDdot"; };
+        inline virtual std::string _impl_get_label() { return "ResidualDot"; };
 
         virtual std::string _impl_get_tex();
     };

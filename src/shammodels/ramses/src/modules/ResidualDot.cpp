@@ -8,22 +8,21 @@
 // -------------------------------------------------------//
 
 /**
- * @file CGResidualDdot.cpp
+ * @file ResidualDot.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *
  */
 
-#include "shammodels/ramses/modules/CGResidualDdot.hpp"
+#include "shammodels/ramses/modules/ResidualDot.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 
 namespace shammodels::basegodunov::modules {
 
     template<class T>
-    void CGResidualDdot<T>::_impl_evaluate_internal() {
+    void ResidualDot<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
-
 
         T loc_val = {};
         edges.spans_phi_res.get_refs().for_each([&](u32 i, PatchDataField<T> &res_field_ref) {
@@ -33,10 +32,10 @@ namespace shammodels::basegodunov::modules {
         edges.res_ddot.value = shamalgs::collective::allreduce_sum(loc_val);
     }
 
-template<class T>
-    std::string CGResidualDdot<T>::_impl_get_tex() {
-        auto field         = get_ro_edge_base(0).get_tex_symbol();
-        auto residual_dot  = get_rw_edge_base(0).get_tex_symbol();
+    template<class T>
+    std::string ResidualDot<T>::_impl_get_tex() {
+        auto field        = get_ro_edge_base(0).get_tex_symbol();
+        auto residual_dot = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
             Compute L2-norm squared of residual vector
@@ -53,4 +52,4 @@ template<class T>
 
 } // namespace shammodels::basegodunov::modules
 
-template class shammodels::basegodunov::modules::CGResidualDdot<f64>;
+template class shammodels::basegodunov::modules::ResidualDot<f64>;

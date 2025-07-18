@@ -16,12 +16,31 @@ class SetupArg:
 
 
 class EnvGen:
-    def __init__(self, machinefolder, builddir):
+    def __init__(self, machinefolder, builddir, env_setup_cmd):
         self.ENV_SCRIPT_HEADER = ""
         self.export_list = {}
         self.ext_script_list = []
         self.machinefolder = machinefolder
         self.builddir = builddir
+        self.env_setup_cmd = env_setup_cmd
+
+    def mod_setup_command(self):
+        cmd = self.env_setup_cmd
+
+        for idx, arg in enumerate(cmd):
+            if arg == "--":
+                wrapper_program_args = cmd[1:idx]
+                underlying_tool_args = cmd[idx + 1 :]
+                break
+            else:
+                wrapper_program_args = cmd[1:]
+                underlying_tool_args = []
+
+        builddir = wrapper_program_args.index("--builddir") + 1
+        wrapper_program_args[builddir] = "$BUILD_DIR"
+
+        cmd = ["$SHAMROCK_DIR/env/new-env"] + wrapper_program_args + ["--"] + underlying_tool_args
+        return cmd
 
     def gen_env_file(self, source_file, destname="activate"):
 
@@ -36,6 +55,16 @@ class EnvGen:
             ENV_SCRIPT_HEADER += f"{spacer}\n# Imported script " + f + f"{spacer}\n"
             ENV_SCRIPT_HEADER += utils.envscript.file_to_string(f)
             ENV_SCRIPT_HEADER += f"{spacer}{spacer}{spacer}\n"
+
+        ENV_SCRIPT_HEADER += f"{spacer}\n# Env setup util" + f"{spacer}\n"
+        ENV_SCRIPT_HEADER += "# Command used to setup: " + " ".join(self.env_setup_cmd)
+        ENV_SCRIPT_HEADER += "\n\n"
+        ENV_SCRIPT_HEADER += "function reset_env {\n"
+        ENV_SCRIPT_HEADER += "    rm -rf $BUILD_DIR/.env\n"
+        ENV_SCRIPT_HEADER += "    " + " ".join(self.mod_setup_command()) + "\n"
+        ENV_SCRIPT_HEADER += '    echo "You can rerun source ./activate"\n'
+        ENV_SCRIPT_HEADER += "}\n"
+        ENV_SCRIPT_HEADER += f"{spacer}{spacer}{spacer}\n"
 
         ENV_SCRIPT_PATH = self.builddir + "/" + destname
         source_path = os.path.join(self.machinefolder, source_file)

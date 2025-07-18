@@ -1,4 +1,4 @@
-#### Before this lines are env specific definitions
+# Everything before this line will be provided by the new-env script
 
 export MAKE_OPT=( -j 128)
 export NINJA_STATUS="[%f/%t j=%r] "

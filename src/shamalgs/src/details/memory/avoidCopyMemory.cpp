@@ -75,7 +75,8 @@ namespace shamalgs::memory::details {
     X(u64_4)                                                                                       \
     X(u64_8)                                                                                       \
     X(u64_16)                                                                                      \
-    X(i64_3)
+    X(i64_3)                                                                                       \
+    X(i64)
 
 #define X(_arg_) template struct AvoidCopy<_arg_>;
     XMAC_TYPES

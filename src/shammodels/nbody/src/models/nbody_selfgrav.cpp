@@ -186,7 +186,7 @@ void compute_multipoles(
 
     using namespace shammath;
 
-    logger::debug_sycl_ln(
+    shamlog_debug_sycl_ln(
         "RTreeFMM",
         "computing leaf moments (",
         rtree.tree_reduced_morton_codes.tree_leaf_count,
@@ -479,7 +479,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
         // leapfrog predictor
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            logger::debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "predictor");
+            shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "predictor");
 
             lambda_update_time(
                 shamsys::instance::get_compute_scheduler().get_queue(),
@@ -500,7 +500,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                 sycl::range<1>{pdat.get_obj_cnt()},
                 dt_cur / 2);
 
-            logger::debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "dt fields swap");
+            shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "dt fields swap");
 
             lambda_swap_der(
                 shamsys::instance::get_compute_scheduler().get_queue(),
@@ -517,7 +517,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         });
 
         // move particles between patches
-        logger::debug_ln("SPHLeapfrog", "particle reatribution");
+        shamlog_debug_ln("SPHLeapfrog", "particle reatribution");
         reatribute_particles(sched, sptree, periodic_bc);
 
         constexpr u32 reduc_level = 2;
@@ -528,7 +528,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         std::unordered_map<u64, std::unique_ptr<RadTree>> radix_trees;
 
         sched.for_each_patch_data([&](u64 id_patch, Patch &cur_p, PatchData &pdat) {
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "SPHLeapfrog",
                 "patch : n°",
                 id_patch,
@@ -538,7 +538,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                 ")");
 
             if (pdat.is_empty()) {
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "SPHLeapfrog", "patch : n°", id_patch, "->", "is empty skipping tree build");
             } else {
 
@@ -557,10 +557,10 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         });
 
         sched.for_each_patch_data([&](u64 id_patch, Patch & /*cur_p*/, PatchData &pdat) {
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "SPHLeapfrog", "patch : n°", id_patch, "->", "compute radix tree cell volumes");
             if (pdat.is_empty()) {
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "SPHLeapfrog", "patch : n°", id_patch, "->", "is empty skipping tree build");
             } else {
                 radix_trees[id_patch]->compute_cell_ibounding_box(
@@ -753,7 +753,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         // force
 
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            logger::debug_ln("Selfgrav", "summing self grav to patch :", cur_p.id_patch);
+            shamlog_debug_ln("Selfgrav", "summing self grav to patch :", cur_p.id_patch);
 
             auto &pos_part_f  = pdat.get_field<vec3>(ixyz);
             auto &buf_force_f = pdat.get_field<vec3>(iaxyz);
@@ -919,7 +919,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         });
 
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            logger::debug_ln("Selfgrav", "summing interf self grav to patch :", cur_p.id_patch);
+            shamlog_debug_ln("Selfgrav", "summing interf self grav to patch :", cur_p.id_patch);
 
             auto &pos_part  = pdat.get_field<vec3>(ixyz).get_buf();
             auto &buf_force = pdat.get_field<vec3>(iaxyz).get_buf();
@@ -933,7 +933,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
             auto &cur_cell_centers = c_cen->radix_tree_field_buf;
 
             for (u32 interf_id = 0; interf_id < interf_pdat[id_patch].size(); interf_id++) {
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "SelfGrav",
                     "adding interface",
                     std::get<0>(interf_hndl.tree_recv_map[id_patch][interf_id]));
@@ -1138,7 +1138,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
         // leapfrog predictor
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-            logger::debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "corrector");
+            shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "corrector");
 
             lambda_correct(
                 shamsys::instance::get_compute_scheduler().get_queue(),

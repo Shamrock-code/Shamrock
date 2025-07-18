@@ -20,8 +20,9 @@
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ComputeLoadBalanceValue<Tvec, SPHKernel>::update_load_balancing() {
+    StackEntry stack_loc{};
 
-    logger::debug_ln("ComputeLoadBalanceValue", "update load balancing");
+    shamlog_debug_ln("ComputeLoadBalanceValue", "update load balancing");
     scheduler().update_local_load_value([&](shamrock::patch::Patch p) {
         return scheduler().patch_data.owned_data.get(p.id_patch).get_obj_cnt();
     });

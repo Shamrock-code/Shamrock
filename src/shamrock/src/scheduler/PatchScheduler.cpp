@@ -125,9 +125,9 @@ PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coo
 
         if (shamcomm::world_rank() == node_owner_id) {
             patch_data.owned_data.add_obj(root.id_patch, PatchData(pdl));
-            logger::debug_sycl_ln("Scheduler", "adding patch data");
+            shamlog_debug_sycl_ln("Scheduler", "adding patch data");
         } else {
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "Scheduler",
                 "patch data wasn't added rank =",
                 shamcomm::world_rank(),
@@ -142,7 +142,7 @@ PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coo
         // auto [bmin,bmax] = get_sim_box().patch_coord_to_domain<u64_3>(root);
         //
         //
-        // logger::debug_ln("Scheduler", "adding patch : [ (",
+        // shamlog_debug_ln("Scheduler", "adding patch : [ (",
         // coord.x_min,
         // coord.y_min,
         // coord.z_min,") ] [ (",
@@ -164,7 +164,7 @@ PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coo
 
 void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat) {
 
-    logger::debug_ln("Scheduler", "pushing data obj cnt =", pdat.get_obj_cnt());
+    shamlog_debug_ln("Scheduler", "pushing data obj cnt =", pdat.get_obj_cnt());
 
     for_each_patch_data([&](u64 id_patch,
                             shamrock::patch::Patch cur_p,
@@ -177,7 +177,7 @@ void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat) {
             if constexpr (shambase::VectorProperties<base_t>::dimension == 3) {
                 auto [bmin, bmax] = get_sim_box().patch_coord_to_domain<base_t>(cur_p);
 
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "Scheduler", "pushing data in patch ", id_patch, "search range :", bmin, bmax);
 
                 pdat_sched.insert_elements_in_range(pdat, bmin, bmax);
@@ -219,7 +219,7 @@ PatchScheduler::~PatchScheduler() {}
 bool PatchScheduler::should_resize_box(bool node_in) {
     u16 tmp = node_in;
     u16 out = 0;
-    mpi::allreduce(&tmp, &out, 1, mpi_type_u16, MPI_MAX, MPI_COMM_WORLD);
+    shamcomm::mpi::Allreduce(&tmp, &out, 1, mpi_type_u16, MPI_MAX, MPI_COMM_WORLD);
     return out;
 }
 
@@ -310,7 +310,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
             "sycl mpi interop not initialized");
 
     shambase::Timer timer;
-    logger::debug_ln("Scheduler", "running scheduler step");
+    shamlog_debug_ln("Scheduler", "running scheduler step");
 
     struct SchedulerStepTimers {
         shambase::Timer global_timer;
@@ -906,7 +906,7 @@ void send_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
             shambase::throw_with_loc<std::runtime_error>("The message is too large for MPI");
         }
 
-        mpi::isend(
+        shamcomm::mpi::Isend(
             msg.buf->get_ptr(),
             lcount,
             get_mpi_type<u64>(),
@@ -926,13 +926,13 @@ void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &r
 
         MPI_Status st;
         i32 cnt;
-        mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
-        mpi::get_count(&st, get_mpi_type<u64>(), &cnt);
+        shamcomm::mpi::Probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
+        shamcomm::mpi::Get_count(&st, get_mpi_type<u64>(), &cnt);
 
         msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(
             cnt * 8, shamsys::instance::get_compute_scheduler_ptr());
 
-        mpi::irecv(
+        shamcomm::mpi::Irecv(
             msg.buf->get_ptr(), cnt, get_mpi_type<u64>(), msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
     }
 }
@@ -994,7 +994,7 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     recv_probe_messages(recv_payloads, rqs);
 
     std::vector<MPI_Status> st_lst(rqs.size());
-    mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
+    shamcomm::mpi::Waitall(rqs.size(), rqs.data(), st_lst.data());
 
     std::vector<std::unique_ptr<PatchData>> ret;
     for (auto &recv_msg : recv_payloads) {

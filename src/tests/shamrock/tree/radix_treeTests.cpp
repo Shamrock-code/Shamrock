@@ -106,7 +106,7 @@ Test_start("radix_tree",test_new_pfield_compute,1){
 
 
     auto compute_old = [&]() -> auto {
-        logger::debug_sycl_ln("RadixTree", "compute int boxes");
+        shamlog_debug_sycl_ln("RadixTree", "compute int boxes");
 
         auto buf_cell_interact_rad = std::make_unique<sycl::buffer<flt>>(rtree.tree_internal_count + rtree.tree_leaf_count);
         sycl::range<1> range_leaf_cell{rtree.tree_leaf_count};
@@ -496,7 +496,7 @@ Test_start("radix_tree", tree_cut, 1){
 
 
     {
-        logger::debug_sycl_ln("Radixtree", "valid_node_state");
+        shamlog_debug_sycl_ln("Radixtree", "valid_node_state");
         rtree.print_tree_field(node_id_old);
         logger::raw_ln("");
     }
@@ -511,7 +511,7 @@ Test_start("radix_tree", tree_cut, 1){
     u32 total_count             = rtree.tree_internal_count + rtree.tree_leaf_count;
     sycl::range<1> range_tree{total_count};
 
-    logger::debug_sycl_ln("Radixtree", "computing valid node buf");
+    shamlog_debug_sycl_ln("Radixtree", "computing valid node buf");
 
     auto init_valid_buf = [&]() -> sycl::buffer<u8> {
 
@@ -726,7 +726,7 @@ inline void test_tree(std::string dset_name) {
     std::vector<f64> Npart;
 
     for (f64 cnt = 1000; cnt < Nmax; cnt *= 1.1) {
-        logger::debug_ln("TestTreePerf", cnt);
+        shamlog_debug_ln("TestTreePerf", cnt);
         shamsys::instance::get_compute_queue().wait();
         shambase::Timer timer;
         timer.start();

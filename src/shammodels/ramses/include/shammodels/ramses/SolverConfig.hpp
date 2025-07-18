@@ -21,6 +21,7 @@
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <shamunits/Constants.hpp>
@@ -84,7 +85,7 @@ namespace shammodels::basegodunov {
     struct PassiveScalarGasConfig {
         u32 npscal_gas = 0;
 
-        inline bool is_gas_passive_scalar_on() { return npscal_gas == 0; }
+        inline bool is_gas_passive_scalar_on() { return npscal_gas > 0; }
     };
 
     enum GravityMode {
@@ -271,15 +272,30 @@ struct shammodels::basegodunov::SolverConfig {
         if (is_gravity_on()) {
             logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental");
             u32 mode = gravity_config.gravity_mode;
-            shambase::throw_with_loc<std::runtime_error>(shambase::format(
-                "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 "
-                "== "
-                "NoGravity mode)",
-                mode));
+
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 "
+                    "== "
+                    "NoGravity mode)",
+                    mode));
+            }
+        }
+
+        if (!(eos_gamma > 1.0)) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                shambase::format("Gamma must be > 1, currently Gamma = {}", eos_gamma));
         }
 
         if (is_gas_passive_scalar_on()) {
             logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental");
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "gas passive scalars mode is not enabled but gas passive scalars mode is set "
+                    "to {}"
+                    "> 0",
+                    npscal_gas_config.npscal_gas));
+            }
         }
     }
 };
@@ -313,6 +329,8 @@ namespace shammodels::basegodunov {
             {"type_id", shambase::get_type_name<Tvec>()},
             {"RiemmanSolverMode", p.riemman_config},
             {"SlopeMode", p.slope_config},
+            {"GravityMode", p.gravity_config.gravity_mode},
+            {"PassiveScalarMode", p.npscal_gas_config.npscal_gas},
             {"face_half_time_interpolation", p.face_half_time_interpolation},
             {"eos_gamma", p.eos_gamma},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
@@ -342,6 +360,8 @@ namespace shammodels::basegodunov {
         // actual data stored in the json
         j.at("RiemmanSolverMode").get_to(p.riemman_config);
         j.at("SlopeMode").get_to(p.slope_config);
+        j.at("GravityMode").get_to(p.gravity_config.gravity_mode);
+        j.at("PassiveScalarMode").get_to(p.npscal_gas_config.npscal_gas);
         j.at("face_half_time_interpolation").get_to(p.face_half_time_interpolation);
         j.at("eos_gamma").get_to(p.eos_gamma);
         j.at("grid_coord_to_pos_fact").get_to(p.grid_coord_to_pos_fact);

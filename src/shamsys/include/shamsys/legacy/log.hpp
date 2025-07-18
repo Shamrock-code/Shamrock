@@ -15,8 +15,8 @@
  * @brief
  */
 
+#include "shambase/term_colors.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamsys/Log.hpp"
 #include <chrono>

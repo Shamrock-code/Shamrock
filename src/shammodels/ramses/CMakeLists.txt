@@ -16,12 +16,11 @@ set(Sources
     src/pyRamsesModel.cpp
     src/Solver.cpp
 
-    src/modules/ComputeFlux.cpp
+    src/modules/NodeComputeFlux.cpp
     src/modules/DragIntegrator.cpp
     src/modules/TimeIntegrator.cpp
     src/modules/AMRGridRefinementHandler.cpp
     src/modules/AnalysisSodTube.cpp
-    src/modules/FaceInterpolate.cpp
     src/modules/AMRSetup.cpp
     src/modules/ComputeTimeDerivative.cpp
     src/modules/GhostZones.cpp
@@ -37,6 +36,8 @@ set(Sources
     src/modules/SlopeLimitedGradient.cpp
     src/modules/ComputeMass.cpp
     src/modules/ComputeSumOverV.cpp
+    src/modules/InterpolateToFace.cpp
+    src/modules/CGInit.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

@@ -144,7 +144,7 @@ TestStart(Benchmark, "core/comm/sparse_communicator_patchdata_field:", func_name
             break;
         }
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "Test",
             i,
             "/",

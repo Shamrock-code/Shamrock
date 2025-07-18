@@ -15,10 +15,10 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
+#include "shambase/term_colors.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/details/generic_opts.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include <string_view>
 #include <algorithm>
 #include <iostream>

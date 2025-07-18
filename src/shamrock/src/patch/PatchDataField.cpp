@@ -13,11 +13,15 @@
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/string.hpp"
 #include "shamalgs/algorithm.hpp"
+#include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/vec.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
@@ -176,6 +180,44 @@ void PatchDataField<T>::append_subset_to(
 }
 
 template<class T>
+void PatchDataField<T>::append_subset_to(
+    sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
+
+    if (pfield.nvar != nvar)
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "field must be similar for extraction");
+
+    const u32 start_enque = pfield.get_val_cnt();
+
+    const u32 nvar = get_nvar();
+
+    pfield.expand(sz);
+
+    auto &buf_other = pfield.get_buf();
+
+    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q   = sptr->get_queue();
+
+    sham::kernel_call(
+        q,
+        sham::MultiRef{idxs_buf, buf},
+        sham::MultiRef{buf_other},
+        sz,
+        [nvar_loc = nvar, start_enque_loc = start_enque](
+            u32 gid,
+            const u32 *__restrict acc_idxs,
+            const T *__restrict acc_curr,
+            T *__restrict acc_other) {
+            u32 idx_extr = acc_idxs[gid] * nvar_loc;
+            u32 idx_push = start_enque_loc + gid * nvar_loc;
+
+            for (u32 a = 0; a < nvar_loc; a++) {
+                acc_other[idx_push + a] = acc_curr[idx_extr + a];
+            }
+        });
+}
+
+template<class T>
 void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar) {
@@ -255,7 +297,7 @@ void PatchDataField<T>::insert(PatchDataField<T> &f2) {
     u32 f2_len = f2.get_obj_cnt();
 
     if (f2_len > 0) {
-        logger::debug_sycl_ln("PatchDataField", "expand field buf by N =", f2_len);
+        shamlog_debug_sycl_ln("PatchDataField", "expand field buf by N =", f2_len);
 
         const u32 old_val_cnt = get_val_cnt(); // field_data.size();
         expand(f2.obj_cnt);
@@ -267,7 +309,7 @@ void PatchDataField<T>::insert(PatchDataField<T> &f2) {
         T *acc          = get_buf().get_write_access(depends_list);
         const T *acc_f2 = f2.get_buf().get_read_access(depends_list);
 
-        logger::debug_sycl_ln("PatchDataField", "write values");
+        shamlog_debug_sycl_ln("PatchDataField", "write values");
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const u32 idx_st = old_val_cnt;
 
@@ -281,7 +323,7 @@ void PatchDataField<T>::insert(PatchDataField<T> &f2) {
         f2.get_buf().complete_event_state(e);
 
     } else {
-        logger::debug_sycl_ln("PatchDataField", "expand field buf (skip f2 is empty)");
+        shamlog_debug_sycl_ln("PatchDataField", "expand field buf (skip f2 is empty)");
     }
 }
 
@@ -318,6 +360,44 @@ void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len)
 }
 
 template<class T>
+void PatchDataField<T>::remove_ids(sham::DeviceBuffer<u32> &ids_to_rem, u32 len) {
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q        = dev_sched->get_queue();
+
+    if (len > get_obj_cnt()) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "the number of ids to remove is greater than the patchdatafield obj count");
+    }
+
+    auto nobj      = get_obj_cnt();
+    auto remaining = nobj - len;
+
+    sham::DeviceBuffer<u32> keep_flag(get_obj_cnt(), dev_sched);
+    keep_flag.fill(1);
+
+    sham::kernel_call(
+        q,
+        sham::MultiRef{ids_to_rem},
+        sham::MultiRef{keep_flag},
+        len,
+        [](u32 i, const u32 *idx, u32 *idx_map) {
+            idx_map[idx[i]] = 0;
+        });
+
+    auto keep_ids = shamalgs::numeric::stream_compact(dev_sched, keep_flag, nobj);
+
+    if (keep_ids.get_size() != remaining) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "the number of remaining ids {} is different from the expected {}",
+            keep_ids.get_size(),
+            remaining));
+    }
+
+    index_remap_resize(keep_ids, remaining);
+}
+
+template<class T>
 PatchDataField<T>
 PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax) {
 
@@ -339,7 +419,7 @@ template<class T>
 void PatchDataField<T>::serialize_buf(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{false};
     serializer.write(obj_cnt);
-    logger::debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", obj_cnt);
+    shamlog_debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", obj_cnt);
     if (obj_cnt > 0) {
         serializer.write_buf(buf, obj_cnt * nvar);
     }
@@ -351,7 +431,7 @@ PatchDataField<T> PatchDataField<T>::deserialize_buf(
     StackEntry stack_loc{false};
     u32 cnt;
     serializer.load(cnt);
-    logger::debug_sycl_ln("PatchDataField", "deserialize patchdatafield len=", cnt);
+    shamlog_debug_sycl_ln("PatchDataField", "deserialize patchdatafield len=", cnt);
 
     if (cnt > 0) {
         sham::DeviceBuffer<T> buf(cnt * nvar, serializer.get_device_scheduler());
@@ -747,12 +827,25 @@ void PatchDataField<u64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
 template<>
 void PatchDataField<i64_3>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
     resize(obj_cnt);
-    std::uniform_int_distribution<i64> distu64(1, obj_mock_cnt);
+    std::uniform_int_distribution<i64> disti64(1, obj_mock_cnt);
 
     std::vector<i64_3> out(obj_cnt * nvar);
 
     for (u32 i = 0; i < get_val_cnt(); i++) {
-        out[i] = i64_3{distu64(eng), distu64(eng), distu64(eng)};
+        out[i] = i64_3{disti64(eng), disti64(eng), disti64(eng)};
+    }
+    buf.copy_from_stdvec(out);
+}
+
+template<>
+void PatchDataField<i64>::gen_mock_data(u32 obj_cnt, std::mt19937 &eng) {
+    resize(obj_cnt);
+    std::uniform_int_distribution<i64> disti64(1, obj_mock_cnt);
+
+    std::vector<i64> out(obj_cnt * nvar);
+
+    for (u32 i = 0; i < get_val_cnt(); i++) {
+        out[i] = i64{disti64(eng)};
     }
     buf.copy_from_stdvec(out);
 }

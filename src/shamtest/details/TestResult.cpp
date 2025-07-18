@@ -58,7 +58,7 @@ namespace shamtest::details {
 
     void TestResult::serialize(std::basic_stringstream<byte> &stream) {
 
-        logger::debug_mpi_ln("TEST", "serialize :", name);
+        shamlog_debug_mpi_ln("TEST", "serialize :", name);
 
         shambase::stream_write(stream, type);
 
@@ -81,7 +81,7 @@ namespace shamtest::details {
         shambase::stream_read(reader, type);
 
         shambase::stream_read_string(reader, name);
-        logger::debug_mpi_ln("TEST", "deserialize :", name);
+        shamlog_debug_mpi_ln("TEST", "deserialize :", name);
 
         shambase::stream_read(reader, world_rank);
 

@@ -190,7 +190,7 @@ TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) 
     a.resize(2000);
 
     REQUIRE(a.get_size() == 2000);
-    REQUIRE(a.get_mem_usage() >= a.to_bytesize(2000));
+    REQUIRE(a.get_mem_usage() >= sizeof(int) * 2000);
 
     {
         std::vector<int> b = a.copy_to_stdvec();

@@ -13,13 +13,16 @@
  * @brief
  *
  */
-#include "shammodels/ramses/modules/DragIntegrator.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/EventList.hpp"
 #include "shammath/matrix_exponential.hpp"
+#include "shammodels/ramses/modules/DragIntegrator.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include <stdexcept>
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_with_no_src(
@@ -65,7 +68,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
     scheduler().for_each_patchdata_nonempty([&, dt, ndust](
                                                 const shamrock::patch::Patch p,
                                                 shamrock::patch::PatchData &pdat) {
-        logger::debug_ln(
+        shamlog_debug_ln(
             "[AMR evolve time step before drag ]", "evolve field with no drag patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -195,7 +198,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
                                                 shamrock::patch::PatchData &pdat) {
-        logger::debug_ln("[AMR enable drag ]", "irk1 drag patch", p.id_patch);
+        shamlog_debug_ln("[AMR enable drag ]", "irk1 drag patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         u32 id               = p.id_patch;
@@ -353,7 +356,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
                                                 shamrock::patch::PatchData &pdat) {
-        logger::debug_ln("[Ramses]", "expo drag on patch", p.id_patch);
+        shamlog_debug_ln("[Ramses]", "expo drag on patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         u32 id               = p.id_patch;
@@ -390,19 +393,37 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
         auto acc_alphas = alphas_buf.get_read_access(depend_list);
 
+        size_t mat_size         = ndust + 1;
+        size_t mat_size_squared = mat_size * mat_size;
+        size_t group_size
+            = (q.get_device_prop().local_mem_size) / (5 * mat_size_squared * sizeof(f64));
+        size_t loc_acc_size = mat_size_squared * group_size;
+
+        size_t loc_mem_size = 5 * sizeof(f64) * loc_acc_size;
+
+        if (loc_mem_size > q.get_device_prop().local_mem_size) {
+            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                "not enough local memory for expo drag integrator:\n"
+                "loc_mem_size: {} > max_local_mem: {}\n"
+                "loc_acc_size: {}\n"
+                "group_size: {}\n"
+                "ndust: {}\n",
+                loc_mem_size,
+                q.get_device_prop().local_mem_size,
+                loc_acc_size,
+                group_size,
+                ndust));
+        }
+
         auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
             // local/shared memory alloc for each work-item
-            const size_t group_size       = 32;
-            const size_t mat_size         = ndust + 1;
-            const size_t mat_size_squared = mat_size * mat_size;
-            const size_t loc_acc_size     = mat_size_squared * group_size;
             sycl::local_accessor<f64> local_A(loc_acc_size, cgh);
             sycl::local_accessor<f64> local_B(loc_acc_size, cgh);
             sycl::local_accessor<f64> local_F(loc_acc_size, cgh);
             sycl::local_accessor<f64> local_I(loc_acc_size, cgh);
             sycl::local_accessor<f64> local_Id(loc_acc_size, cgh);
 
-            logger::debug_sycl_ln("SYCL", shambase::format("parallel_for add_drag [expo]"));
+            shamlog_debug_sycl_ln("SYCL", shambase::format("parallel_for add_drag [expo]"));
             cgh.parallel_for(
                 shambase::make_range(cell_count, group_size), [=](sycl::nd_item<1> id) {
                     u32 loc_id = id.get_local_id();

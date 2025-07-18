@@ -379,8 +379,8 @@ namespace shamrock::tree {
         sham::DeviceBuffer<u32> index_neigh_map;
 
         inline u64 get_memsize() {
-            return cnt_neigh.get_bytesize() + scanned_cnt.get_bytesize()
-                   + index_neigh_map.get_bytesize() + sizeof(u32);
+            return cnt_neigh.get_mem_usage() + scanned_cnt.get_mem_usage()
+                   + index_neigh_map.get_mem_usage() + sizeof(u32);
         }
 
         inline HostObjectCache copy_to_host() {
@@ -450,11 +450,11 @@ namespace shamrock::tree {
 
     inline ObjectCache prepare_object_cache(sham::DeviceBuffer<u32> &&counts, u32 obj_cnt) {
 
-        logger::debug_sycl_ln("Cache", " reading last value ...");
+        shamlog_debug_sycl_ln("Cache", " reading last value ...");
         u32 neigh_last_val = shamalgs::memory::extract_element(
             shamsys::instance::get_compute_scheduler().get_queue(), counts, obj_cnt - 1);
 
-        logger::debug_sycl_ln("Cache", " last value =", neigh_last_val);
+        shamlog_debug_sycl_ln("Cache", " last value =", neigh_last_val);
 
         sham::DeviceBuffer<u32> neigh_scanned_vals = shamalgs::numeric::exclusive_sum(
             shamsys::instance::get_compute_scheduler_ptr(), counts, obj_cnt);
@@ -465,7 +465,7 @@ namespace shamrock::tree {
                             neigh_scanned_vals,
                             obj_cnt - 1);
 
-        logger::debug_sycl_ln("Cache", " cache for N=", obj_cnt, "size() =", neigh_sum);
+        shamlog_debug_sycl_ln("Cache", " cache for N=", obj_cnt, "size() =", neigh_sum);
 
         sham::DeviceBuffer<u32> particle_neigh_map(
             neigh_sum, shamsys::instance::get_compute_scheduler_ptr());

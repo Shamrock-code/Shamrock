@@ -51,7 +51,7 @@ namespace shamrock::tree {
             TreeStructure<u_morton> &tree_struct) {
             if (!tree_struct.one_cell_mode) {
 
-                logger::debug_sycl_ln("RadixTree", "compute_cellvolume");
+                shamlog_debug_sycl_ln("RadixTree", "compute_cellvolume");
 
                 buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(
                     tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
@@ -96,8 +96,8 @@ namespace shamrock::tree {
                     pos_min_cell[2] = {0, 0, 0};
                     pos_max_cell[2] = {0, 0, 0};
 
-                    logger::debug_sycl_ln("RadixTree", "compute_cellvolume one cell mode");
-                    logger::debug_sycl_ln(
+                    shamlog_debug_sycl_ln("RadixTree", "compute_cellvolume one cell mode");
+                    shamlog_debug_sycl_ln(
                         "RadixTree",
                         " -> ",
                         pos_min_cell[0],
@@ -118,7 +118,7 @@ namespace shamrock::tree {
             buf_pos_min_cell_flt = std::make_unique<sycl::buffer<pos_t>>(total_count);
             buf_pos_max_cell_flt = std::make_unique<sycl::buffer<pos_t>>(total_count);
 
-            logger::debug_sycl_ln("RadixTree", "sycl_convert_cell_range");
+            shamlog_debug_sycl_ln("RadixTree", "sycl_convert_cell_range");
 
             shamrock::sfc::MortonKernels<u_morton, pos_t, dim>::sycl_irange_to_range(
                 queue,

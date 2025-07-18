@@ -204,7 +204,7 @@ namespace integrators {
 
                 // leapfrog predictor
                 sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                    logger::debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "predictor");
+                    shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "predictor");
 
                     lambda_update_time(
                         shamsys::instance::get_compute_queue(),
@@ -225,7 +225,7 @@ namespace integrators {
                         sycl::range<1>{pdat.get_obj_cnt()},
                         dt_cur / 2);
 
-                    logger::debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "dt fields swap");
+                    shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "dt fields swap");
 
                     lambda_swap_der(
                         shamsys::instance::get_compute_queue(),
@@ -242,10 +242,10 @@ namespace integrators {
                 });
 
                 // move particles between patches
-                logger::debug_ln("SPHLeapfrog", "particle reatribution");
+                shamlog_debug_ln("SPHLeapfrog", "particle reatribution");
                 reatribute_particles(sched, sptree, periodic_mode);
 
-                logger::debug_ln("SPHLeapfrog", "compute hmax of each patches");
+                shamlog_debug_ln("SPHLeapfrog", "compute hmax of each patches");
 
                 // compute hmax
                 legacy::PatchField<flt> h_field;
@@ -264,16 +264,16 @@ namespace integrators {
                                * loc_htol_up_tol * Kernel::Rkern;
                     });
 
-                logger::debug_ln("SPHLeapfrog", "compute interface list");
+                shamlog_debug_ln("SPHLeapfrog", "compute interface list");
                 // make interfaces
                 LegacyInterfacehandler<vec3, flt> interface_hndl;
                 interface_hndl.template compute_interface_list<InterfaceSelector_SPH<vec3, flt>>(
                     sched, sptree, h_field, periodic_mode);
 
-                logger::debug_ln("SPHLeapfrog", "communicate interfaces");
+                shamlog_debug_ln("SPHLeapfrog", "communicate interfaces");
                 interface_hndl.comm_interfaces(sched, periodic_mode);
 
-                logger::debug_ln("SPHLeapfrog", "merging interfaces with data");
+                shamlog_debug_ln("SPHLeapfrog", "merging interfaces with data");
                 // merging strategy
 
                 // old
@@ -292,11 +292,11 @@ namespace integrators {
                 std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt>>> cell_int_rads;
 
                 sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "SPHLeapfrog", "patch : n°", id_patch, "->", "making Radix Tree");
 
                     if (merge_pdat.at(id_patch).or_element_cnt == 0)
-                        logger::debug_ln(
+                        shamlog_debug_ln(
                             "SPHLeapfrog",
                             "patch : n°",
                             id_patch,
@@ -320,14 +320,14 @@ namespace integrators {
                 });
 
                 sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "SPHLeapfrog",
                         "patch : n°",
                         id_patch,
                         "->",
                         "compute radix tree cell volumes");
                     if (merge_pdat.at(id_patch).or_element_cnt == 0)
-                        logger::debug_ln(
+                        shamlog_debug_ln(
                             "SPHLeapfrog",
                             "patch : n°",
                             id_patch,
@@ -341,14 +341,14 @@ namespace integrators {
                 });
 
                 sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "SPHLeapfrog",
                         "patch : n°",
                         id_patch,
                         "->",
                         "compute Radix Tree interaction boxes");
                     if (merge_pdat.at(id_patch).or_element_cnt == 0)
-                        logger::debug_ln(
+                        shamlog_debug_ln(
                             "SPHLeapfrog",
                             "patch : n°",
                             id_patch,
@@ -366,7 +366,7 @@ namespace integrators {
                 shamsys::instance::get_compute_queue().wait();
 
                 // create compute field for new h and omega
-                logger::debug_ln("SPHLeapfrog", "init compute fields : hnew, omega");
+                shamlog_debug_ln("SPHLeapfrog", "init compute fields : hnew, omega");
 
                 PatchComputeField<flt> hnew_field;
                 PatchComputeField<flt> omega_field;
@@ -376,10 +376,10 @@ namespace integrators {
 
                 // iterate smoothing length
                 sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "SPHLeapfrog", "patch : n°", id_patch, "->", "Init h iteration");
                     if (merge_pdat.at(id_patch).or_element_cnt == 0)
-                        logger::debug_ln(
+                        shamlog_debug_ln(
                             "SPHLeapfrog",
                             "patch : n°",
                             id_patch,
@@ -395,7 +395,7 @@ namespace integrators {
 
                     sycl::range range_npart{merge_pdat.at(id_patch).or_element_cnt};
 
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "SPHLeapfrog",
                         "merging -> original size :",
                         merge_pdat.at(id_patch).or_element_cnt,
@@ -432,11 +432,11 @@ namespace integrators {
                     //*/
                 });
 
-                logger::debug_ln("SPHLeapfrog", "exchange interface hnew");
+                shamlog_debug_ln("SPHLeapfrog", "exchange interface hnew");
                 PatchComputeFieldInterfaces<flt> hnew_field_interfaces
                     = interface_hndl.template comm_interfaces_field<flt>(
                         sched, hnew_field, periodic_mode);
-                logger::debug_ln("SPHLeapfrog", "exchange interface omega");
+                shamlog_debug_ln("SPHLeapfrog", "exchange interface omega");
                 PatchComputeFieldInterfaces<flt> omega_field_interfaces
                     = interface_hndl.template comm_interfaces_field<flt>(
                         sched, omega_field, periodic_mode);
@@ -484,7 +484,7 @@ namespace integrators {
 
                     if (do_corrector) {
 
-                        logger::debug_ln("SPHLeapfrog", "leapfrog corrector");
+                        shamlog_debug_ln("SPHLeapfrog", "leapfrog corrector");
 
                         lambda_correct(
                             shamsys::instance::get_compute_queue(),

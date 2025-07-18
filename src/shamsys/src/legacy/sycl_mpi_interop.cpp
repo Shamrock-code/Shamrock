@@ -14,6 +14,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 
@@ -29,7 +30,7 @@ namespace impl::copy_to_host {
 
             T *comm_ptr = sycl::malloc_host<T>(comm_sz, get_compute_queue());
             get_compute_queue().wait();
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "PatchDataField MPI Comm",
                 "sycl::malloc_host",
                 comm_sz,
@@ -37,7 +38,7 @@ namespace impl::copy_to_host {
                 reinterpret_cast<void *>(comm_ptr));
 
             if (comm_sz > 0) {
-                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
+                shamlog_debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
 
                 {
                     sycl::host_accessor acc{shambase::get_check_ref(buf), sycl::read_only};
@@ -49,7 +50,7 @@ namespace impl::copy_to_host {
                 }
 
             } else {
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "PatchDataField MPI Comm", "copy buffer -> USM (skipped size=0)");
             }
 
@@ -65,7 +66,7 @@ namespace impl::copy_to_host {
 
             using namespace shamsys::instance;
 
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "PatchDataField MPI Comm", "sycl::free", reinterpret_cast<void *>(comm_ptr));
 
             sycl::free(comm_ptr, get_compute_queue());
@@ -84,7 +85,7 @@ namespace impl::copy_to_host {
 
             T *comm_ptr = sycl::malloc_host<T>(comm_sz, shamsys::instance::get_compute_queue());
 
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz);
+            shamlog_debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_host", comm_sz);
 
             return comm_ptr;
         };
@@ -96,7 +97,7 @@ namespace impl::copy_to_host {
         void finalize(const std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
 
             if (comm_sz > 0) {
-                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
+                shamlog_debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
 
                 {
                     sycl::host_accessor acc{
@@ -109,11 +110,11 @@ namespace impl::copy_to_host {
                 }
 
             } else {
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "PatchDataField MPI Comm", "copy USM -> buffer (skipped size=0)");
             }
 
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "PatchDataField MPI Comm", "sycl::free", reinterpret_cast<void *>(comm_ptr));
 
             sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
@@ -136,11 +137,11 @@ namespace impl::directgpu {
         T *init(const std::unique_ptr<sycl::buffer<T>> &buf, u32 comm_sz) {
 
             T *comm_ptr = sycl::malloc_device<T>(comm_sz, shamsys::instance::get_compute_queue());
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "PatchDataField MPI Comm", "sycl::malloc_device", comm_sz, "->", comm_ptr);
 
             if (comm_sz > 0) {
-                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
+                shamlog_debug_sycl_ln("PatchDataField MPI Comm", "copy buffer -> USM");
 
                 auto ker_copy
                     = shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -155,7 +156,7 @@ namespace impl::directgpu {
 
                 ker_copy.wait();
             } else {
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "PatchDataField MPI Comm", "copy buffer -> USM (skipped size=0)");
             }
 
@@ -168,7 +169,7 @@ namespace impl::directgpu {
 
         template<class T>
         void finalize(T *comm_ptr) {
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+            shamlog_debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
 
             sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
         }
@@ -183,7 +184,7 @@ namespace impl::directgpu {
         T *init(u32 comm_sz) {
             T *comm_ptr = sycl::malloc_device<T>(comm_sz, shamsys::instance::get_compute_queue());
 
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_device", comm_sz);
+            shamlog_debug_sycl_ln("PatchDataField MPI Comm", "sycl::malloc_device", comm_sz);
 
             return comm_ptr;
         };
@@ -195,7 +196,7 @@ namespace impl::directgpu {
         void finalize(const std::unique_ptr<sycl::buffer<T>> &buf, T *comm_ptr, u32 comm_sz) {
 
             if (comm_sz > 0) {
-                logger::debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
+                shamlog_debug_sycl_ln("PatchDataField MPI Comm", "copy USM -> buffer");
 
                 auto ker_copy
                     = shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
@@ -210,11 +211,11 @@ namespace impl::directgpu {
 
                 ker_copy.wait();
             } else {
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "PatchDataField MPI Comm", "copy USM -> buffer (skipped size=0)");
             }
 
-            logger::debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
+            shamlog_debug_sycl_ln("PatchDataField MPI Comm", "sycl::free", comm_ptr);
 
             sycl::free(comm_ptr, shamsys::instance::get_compute_queue());
         }
@@ -239,7 +240,7 @@ namespace mpi_sycl_interop {
         u32 comm_sz)
         : comm_mode(comm_mode), comm_op(comm_op), comm_sz(comm_sz), sycl_buf(sycl_buf) {
 
-        logger::debug_mpi_ln(
+        shamlog_debug_mpi_ln(
             "PatchDataField MPI Comm",
             "starting mpi sycl comm ",
             comm_sz,
@@ -274,7 +275,7 @@ namespace mpi_sycl_interop {
     template<class T>
     void BufferMpiRequest<T>::finalize() {
 
-        logger::debug_mpi_ln(
+        shamlog_debug_mpi_ln(
             "PatchDataField MPI Comm",
             "finalizing mpi sycl comm ",
             comm_sz,

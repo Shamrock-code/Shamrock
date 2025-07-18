@@ -11,17 +11,23 @@
  * @file pySPHModel.cpp
  * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author David Fang (fang.david03@gmail.com)
  * @brief
  */
 
+#include "shambase/logs/loglevels.hpp"
+#include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
 #include <memory>
@@ -39,14 +45,23 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
-    logger::debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
-    logger::debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
+    shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
+    shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
     py::class_<TConfig>(m, name_config.c_str())
         .def("print_status", &TConfig::print_status)
+        .def("set_particle_tracking", &TConfig::set_particle_tracking)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
-        .def("set_max_neigh_cache_size", &TConfig::set_max_neigh_cache_size)
+        .def(
+            "set_max_neigh_cache_size",
+            [](TConfig &self, py::object max_neigh_cache_size) {
+                ON_RANK_0(shamlog_warn_ln(
+                              "SPH",
+                              ".set_max_neigh_cache_size() is deprecated,\n"
+                              "    -> calling this is a no-op,\n"
+                              "    -> you can remove the call to that function"););
+            })
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
@@ -344,6 +359,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "push_particle",
             [](T &self, std::vector<f64_3> pos, std::vector<f64> hpart, std::vector<f64> upart) {
                 return self.push_particle(pos, hpart, upart);
+            })
+        .def(
+            "push_particle_mhd",
+            [](T &self,
+               std::vector<f64_3> pos,
+               std::vector<f64> hpart,
+               std::vector<f64> upart,
+               std::vector<f64_3> B_on_rho,
+               std::vector<f64> psi_on_ch) {
+                return self.push_particle_mhd(pos, hpart, upart, B_on_rho, psi_on_ch);
             })
         .def(
             "add_cube_fcc_3d",
@@ -746,6 +771,31 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("get_setup", &T::get_setup);
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisBarycenter_instance(py::module &m, std::string name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+
+    using T = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisBarycenter<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisBarycenter<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_barycenter", [](modules::AnalysisBarycenter<Tvec, SPHKernel> &self) {
+            auto result = self.get_barycenter();
+            return py::make_tuple(result.barycenter, result.mass_disc);
+        });
+}
+
+using namespace shammodels::sph;
+template<typename Tvec, template<class> class SPHKernel>
+auto analysisBarycenter_impl(shammodels::sph::Model<Tvec, SPHKernel> &model)
+    -> modules::AnalysisBarycenter<Tvec, SPHKernel> {
+    return modules::AnalysisBarycenter<Tvec, SPHKernel>(model);
+}
+
 Register_pymod(pysphmodel) {
 
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
@@ -799,4 +849,36 @@ Register_pymod(pysphmodel) {
         .def_readwrite("tcompute", &shammodels::sph::TimestepLog::tcompute)
         .def("rate_sum", &shammodels::sph::TimestepLog::rate_sum)
         .def("npart_sum", &shammodels::sph::TimestepLog::npart_sum);
+
+    add_analysisBarycenter_instance<f64_3, shammath::M4>(msph, "AnalysisBarycenter_f64_3_M4");
+    add_analysisBarycenter_instance<f64_3, shammath::M6>(msph, "AnalysisBarycenter_f64_3_M6");
+    add_analysisBarycenter_instance<f64_3, shammath::M8>(msph, "AnalysisBarycenter_f64_3_M8");
+
+    using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
+    using SPHModel_f64_3_M6 = shammodels::sph::Model<f64_3, shammath::M6>;
+    using SPHModel_f64_3_M8 = shammodels::sph::Model<f64_3, shammath::M8>;
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_M4 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::M4>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_M6 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::M6>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_M8 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::M8>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
 }

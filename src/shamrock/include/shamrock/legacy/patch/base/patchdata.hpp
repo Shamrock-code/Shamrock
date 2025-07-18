@@ -48,6 +48,7 @@ struct PatchDataMpiRequest {
     std::vector<patchdata_field::PatchDataFieldMpiRequest<u32_3>> mpi_rq_fields_u32_3;
     std::vector<patchdata_field::PatchDataFieldMpiRequest<u64_3>> mpi_rq_fields_u64_3;
     std::vector<patchdata_field::PatchDataFieldMpiRequest<i64_3>> mpi_rq_fields_i64_3;
+    std::vector<patchdata_field::PatchDataFieldMpiRequest<i64>> mpi_rq_fields_i64;
 
     inline void finalize() {
         for (auto b : mpi_rq_fields_f32) {
@@ -101,6 +102,9 @@ struct PatchDataMpiRequest {
         for (auto b : mpi_rq_fields_i64_3) {
             b.finalize();
         }
+        for (auto b : mpi_rq_fields_i64) {
+            b.finalize();
+        }
     }
 
     template<class T>
@@ -144,7 +148,7 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> &rq_lst) {
     }
 
     std::vector<MPI_Status> st_lst(rqst.size());
-    mpi::waitall(rqst.size(), rqst.data(), st_lst.data());
+    shamcomm::mpi::Waitall(rqst.size(), rqst.data(), st_lst.data());
 
     for (auto a : rq_lst) {
         a.finalize();

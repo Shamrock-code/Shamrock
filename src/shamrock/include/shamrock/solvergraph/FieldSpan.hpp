@@ -43,7 +43,9 @@ namespace shamrock::solvergraph {
                     shambase::throw_with_loc<std::runtime_error>(
                         "Missing field span in distributed data at id " + std::to_string(id));
                 },
-                [](u64 id) {},
+                [](u64 id) {
+                    // TODO
+                },
                 [](u64 id) {
                     shambase::throw_with_loc<std::runtime_error>(
                         "Extra field span in distributed data at id " + std::to_string(id));

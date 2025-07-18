@@ -108,7 +108,7 @@ void wrapper_bench_key_sort(std::string name) {
     std::vector<f64> results;
 
     for (const f64 &sz : test_sz) {
-        logger::debug_ln("ShamrockTest", "N=", sz);
+        shamlog_debug_ln("ShamrockTest", "N=", sz);
         results.push_back(benchmark_key_pair_sort<u_morton, impl>(sz));
     }
 

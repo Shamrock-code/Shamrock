@@ -22,6 +22,7 @@
 
 #include "log.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -44,7 +45,8 @@
     X(u16_3)                                                                                       \
     X(u64)                                                                                         \
     X(u64_3)                                                                                       \
-    X(i64_3)
+    X(i64_3)                                                                                       \
+    X(i64)
 
 namespace mpi_sycl_interop {
 
@@ -104,7 +106,7 @@ namespace mpi_sycl_interop {
 
         auto &rq = rq_lst[rq_index];
 
-        mpi::isend(
+        shamcomm::mpi::Isend(
             rq.get_mpi_ptr(),
             size_comm,
             get_mpi_type<T>(),
@@ -131,7 +133,7 @@ namespace mpi_sycl_interop {
 
         auto &rq = rq_lst[rq_index];
 
-        mpi::irecv(
+        shamcomm::mpi::Irecv(
             rq.get_mpi_ptr(),
             size_comm,
             get_mpi_type<T>(),
@@ -152,8 +154,8 @@ namespace mpi_sycl_interop {
         MPI_Comm comm) {
         MPI_Status st;
         i32 cnt;
-        mpi::probe(rank_source, tag, comm, &st);
-        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+        shamcomm::mpi::Probe(rank_source, tag, comm, &st);
+        shamcomm::mpi::Get_count(&st, get_mpi_type<T>(), &cnt);
 
         u32 len = cnt;
 
@@ -180,7 +182,7 @@ namespace mpi_sycl_interop {
         }
 
         std::vector<MPI_Status> st_lst(addrs.size());
-        mpi::waitall(addrs.size(), addrs.data(), st_lst.data());
+        shamcomm::mpi::Waitall(addrs.size(), addrs.data(), st_lst.data());
 
         for (auto a : rq_lst) {
             a.finalize();
@@ -193,7 +195,7 @@ namespace mpi_sycl_interop {
 
         BufferMpiRequest<T> rq(p, current_mode, Send, size_comm);
 
-        mpi::file_write(fh, rq.get_mpi_ptr(), size_comm, get_mpi_type<T>(), &st);
+        shamcomm::mpi::File_write(fh, rq.get_mpi_ptr(), size_comm, get_mpi_type<T>(), &st);
 
         rq.finalize();
     }

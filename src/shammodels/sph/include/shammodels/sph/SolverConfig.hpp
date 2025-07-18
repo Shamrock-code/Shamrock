@@ -28,6 +28,7 @@
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
+#include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -171,6 +172,10 @@ struct shammodels::sph::SolverConfig {
     Tscal gpart_mass;            ///< The mass of each gas particle
     CFLConfig<Tscal> cfl_config; ///< The configuration for the CFL condition
 
+    bool track_particles_id = false;
+
+    inline void set_particle_tracking(bool state) { track_particles_id = state; }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -299,14 +304,11 @@ struct shammodels::sph::SolverConfig {
 
     u32 tree_reduction_level  = 3;    ///< Reduction level to be used in the tree build
     bool use_two_stage_search = true; ///< Use two stage neighbors search (see shamrock paper)
-    u64 max_neigh_cache_size  = 10e9; ///< Maximum size of the neighbors cache
 
     /// Setter for the tree reduction level
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
     /// Setter for the two stage search
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
-    /// Setter for the maximum size of the neighbors cache
-    inline void set_max_neigh_cache_size(u64 val) { max_neigh_cache_size = val; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config (END)
@@ -632,8 +634,7 @@ struct shammodels::sph::SolverConfig {
 
     /// @brief Whether the solver has a field for sound speed
     inline bool has_field_soundspeed() {
-        return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal()
-               || mhd_config.has_divB_field();
+        return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
     }
 
     /// @brief Whether the solver has a field for B_on_rho
@@ -681,7 +682,22 @@ struct shammodels::sph::SolverConfig {
         logger::raw_ln("------------------------------------");
     }
 
-    inline void check_config() { dust_config.check_config(); }
+    inline void check_config() {
+        dust_config.check_config();
+
+        if (track_particles_id && false /*particle injection when added*/) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "particle injection is not yet compatible with particle id tracking");
+            }
+        }
+
+        if (track_particles_id) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
+            }
+        }
+    }
 
     void set_layout(shamrock::patch::PatchDataLayout &pdl);
     void set_ghost_layout(shamrock::patch::PatchDataLayout &ghost_layout);
@@ -773,7 +789,6 @@ namespace shammodels::sph {
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
-            {"max_neigh_cache_size", p.max_neigh_cache_size},
             // solver behavior config
             {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
             {"htol_up_tol", p.htol_up_tol},
@@ -840,7 +855,6 @@ namespace shammodels::sph {
 
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
-        j.at("max_neigh_cache_size").get_to(p.max_neigh_cache_size);
 
         j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
         j.at("htol_up_tol").get_to(p.htol_up_tol);

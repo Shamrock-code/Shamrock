@@ -166,7 +166,7 @@ namespace shammodels::sph {
                 solver.storage.sinks.set({});
             }
 
-            logger::debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
+            shamlog_debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
 
             solver.storage.sinks.get().push_back(
                 {pos, velocity, {}, {}, mass, {}, accretion_radius});
@@ -586,6 +586,13 @@ namespace shammodels::sph {
             std::vector<Tscal> &part_hpart_insert,
             std::vector<Tscal> &part_u_insert);
 
+        void push_particle_mhd(
+            std::vector<Tvec> &part_pos_insert,
+            std::vector<Tscal> &part_hpart_insert,
+            std::vector<Tscal> &part_u_insert,
+            std::vector<Tvec> &part_B_on_rho_insert,
+            std::vector<Tscal> &part_psi_on_ch_insert);
+
         template<class T>
         inline void
         set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box, u32 ivar) {
@@ -763,8 +770,10 @@ namespace shammodels::sph {
 
             solver.init_ghost_layout();
 
+            solver.init_solver_graph();
+
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            logger::debug_ln("Sys", "build local scheduler tables");
+            shamlog_debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();
             sched.patch_list.build_global_idx_map();

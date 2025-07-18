@@ -286,7 +286,7 @@ class AMRTestModel {
             q.q.wait();
             t.end();
 
-            logger::debug_ln("AMR Test", "walk time", t.get_time_str());
+            shamlog_debug_ln("AMR Test", "walk time", t.get_time_str());
 
             class InteractionCrit {
                 public:

@@ -36,11 +36,11 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
     std::string head = "##header start##\n";
     head.resize(16);
-    mpi::file_write(mfilepatch, head.c_str(), 16, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 16, mpi_type_u8, &st);
 
     head = "#f32";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f32>([&](auto &a) {
         std::string sz = a.get_name();
@@ -53,14 +53,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f32_2";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f32_2>([&](auto &a) {
         std::string sz = a.get_name();
@@ -73,14 +73,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f32_3";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f32_3>([&](auto &a) {
         std::string sz = a.get_name();
@@ -93,14 +93,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f32_4";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f32_4>([&](auto &a) {
         std::string sz = a.get_name();
@@ -113,14 +113,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f32_8";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f32_8>([&](auto &a) {
         std::string sz = a.get_name();
@@ -133,14 +133,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f32_16";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f32_16>([&](auto &a) {
         std::string sz = a.get_name();
@@ -153,14 +153,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f64";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f64>([&](auto &a) {
         std::string sz = a.get_name();
@@ -173,14 +173,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f64_2";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f64_2>([&](auto &a) {
         std::string sz = a.get_name();
@@ -193,14 +193,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f64_3";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f64_3>([&](auto &a) {
         std::string sz = a.get_name();
@@ -213,14 +213,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f64_4";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f64_4>([&](auto &a) {
         std::string sz = a.get_name();
@@ -233,14 +233,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f64_8";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f64_8>([&](auto &a) {
         std::string sz = a.get_name();
@@ -253,14 +253,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#f64_16";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<f64_16>([&](auto &a) {
         std::string sz = a.get_name();
@@ -273,14 +273,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#u32";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<u32>([&](auto &a) {
         std::string sz = a.get_name();
@@ -293,14 +293,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "#u64";
     head.resize(8);
-    mpi::file_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 8, mpi_type_u8, &st);
 
     pdat.for_each_field<u64>([&](auto &a) {
         std::string sz = a.get_name();
@@ -313,14 +313,14 @@ inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDat
 
         sz.resize(64);
 
-        mpi::file_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
-        mpi::file_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
-        mpi::file_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, sz.c_str(), 64, mpi_type_u8, &st);
+        shamcomm::mpi::File_write(mfilepatch, &nvar, 1, mpi_type_u32, &st);
+        shamcomm::mpi::File_write(mfilepatch, &obj_cnt, 1, mpi_type_u32, &st);
     });
 
     head = "##header end##\n";
     head.resize(16);
-    mpi::file_write(mfilepatch, head.c_str(), 16, mpi_type_u8, &st);
+    shamcomm::mpi::File_write(mfilepatch, head.c_str(), 16, mpi_type_u8, &st);
 
 #define X(arg)                                                                                     \
     pdat.for_each_field<arg>([&](auto &a) {                                                        \
@@ -349,17 +349,12 @@ inline void dump_patch_data(std::string prefix, PatchScheduler &sched) {
     for (PatchFile &pf : patch_files) {
 
         std::cout << "opening : " << pf.name << std::endl;
-        int rc = mpi::file_open(
+        shamcomm::mpi::File_open(
             MPI_COMM_WORLD,
             pf.name.c_str(),
             MPI_MODE_CREATE | MPI_MODE_WRONLY,
             MPI_INFO_NULL,
             &pf.mfile);
-
-        if (rc) {
-            printf("Unable to open file \"%s\"\n", pf.name.c_str());
-            fflush(stdout);
-        }
     }
 
     {
@@ -375,7 +370,7 @@ inline void dump_patch_data(std::string prefix, PatchScheduler &sched) {
     }
 
     for (PatchFile &pf : patch_files) {
-        mpi::file_close(&pf.mfile);
+        shamcomm::mpi::File_close(&pf.mfile);
     }
 }
 
@@ -384,17 +379,12 @@ inline void dump_patch_list(std::string prefix, PatchScheduler &sched) {
     MPI_File patch_list_file;
     std::string fname = prefix + "patch_list.bin";
 
-    int rc = mpi::file_open(
+    shamcomm::mpi::File_open(
         MPI_COMM_WORLD,
         fname.c_str(),
         MPI_MODE_CREATE | MPI_MODE_WRONLY,
         MPI_INFO_NULL,
         &patch_list_file);
-
-    if (rc) {
-        printf("Unable to open file \"%s\"\n", fname.c_str());
-        fflush(stdout);
-    }
 
     if (shamcomm::world_rank() == 0) {
 
@@ -404,7 +394,7 @@ inline void dump_patch_list(std::string prefix, PatchScheduler &sched) {
         }
 
         MPI_Status st;
-        mpi::file_write(
+        shamcomm::mpi::File_write(
             patch_list_file,
             sched.patch_list.global.data(),
             sched.patch_list.global.size(),
@@ -412,24 +402,19 @@ inline void dump_patch_list(std::string prefix, PatchScheduler &sched) {
             &st);
     }
 
-    mpi::file_close(&patch_list_file);
+    shamcomm::mpi::File_close(&patch_list_file);
 }
 
 inline void dump_simbox(std::string prefix, PatchScheduler &sched) {
     MPI_File simbox_file;
     std::string fname = prefix + "simbox.bin";
 
-    int rc = mpi::file_open(
+    shamcomm::mpi::File_open(
         MPI_COMM_WORLD,
         fname.c_str(),
         MPI_MODE_CREATE | MPI_MODE_WRONLY,
         MPI_INFO_NULL,
         &simbox_file);
-
-    if (rc) {
-        printf("Unable to open file \"%s\"\n", fname.c_str());
-        fflush(stdout);
-    }
 
     if (shamcomm::world_rank() == 0) {
 
@@ -438,44 +423,39 @@ inline void dump_simbox(std::string prefix, PatchScheduler &sched) {
         if (sched.pdl.check_main_field_type<f32_3>()) {
             u8 f              = 0;
             auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f32_3>();
-            mpi::file_write(simbox_file, &f, 1, mpi_type_u8, &st);
-            mpi::file_write(simbox_file, &bmin, 1, mpi_type_f32_3, &st);
-            mpi::file_write(simbox_file, &bmax, 1, mpi_type_f32_3, &st);
+            shamcomm::mpi::File_write(simbox_file, &f, 1, mpi_type_u8, &st);
+            shamcomm::mpi::File_write(simbox_file, &bmin, 1, mpi_type_f32_3, &st);
+            shamcomm::mpi::File_write(simbox_file, &bmax, 1, mpi_type_f32_3, &st);
         } else if (sched.pdl.check_main_field_type<f64_3>()) {
             u8 f              = 1;
             auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f64_3>();
-            mpi::file_write(simbox_file, &f, 1, mpi_type_u8, &st);
-            mpi::file_write(simbox_file, &bmin, 1, mpi_type_f64_3, &st);
-            mpi::file_write(simbox_file, &bmax, 1, mpi_type_f64_3, &st);
+            shamcomm::mpi::File_write(simbox_file, &f, 1, mpi_type_u8, &st);
+            shamcomm::mpi::File_write(simbox_file, &bmin, 1, mpi_type_f64_3, &st);
+            shamcomm::mpi::File_write(simbox_file, &bmax, 1, mpi_type_f64_3, &st);
         }
     }
 
-    mpi::file_close(&simbox_file);
+    shamcomm::mpi::File_close(&simbox_file);
 }
 
 inline void dump_siminfo(std::string prefix, f64 time) {
     MPI_File timeval_file;
     std::string fname = prefix + "timeval.bin";
 
-    int rc = mpi::file_open(
+    shamcomm::mpi::File_open(
         MPI_COMM_WORLD,
         fname.c_str(),
         MPI_MODE_CREATE | MPI_MODE_WRONLY,
         MPI_INFO_NULL,
         &timeval_file);
 
-    if (rc) {
-        printf("Unable to open file \"%s\"\n", fname.c_str());
-        fflush(stdout);
-    }
-
     if (shamcomm::world_rank() == 0) {
 
         MPI_Status st;
-        mpi::file_write(timeval_file, &time, 1, mpi_type_f64, &st);
+        shamcomm::mpi::File_write(timeval_file, &time, 1, mpi_type_f64, &st);
     }
 
-    mpi::file_close(&timeval_file);
+    shamcomm::mpi::File_close(&timeval_file);
 }
 
 inline void dump_state(std::string prefix, PatchScheduler &sched, f64 time) {

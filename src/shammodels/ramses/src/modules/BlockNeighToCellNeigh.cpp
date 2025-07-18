@@ -316,7 +316,7 @@ namespace shammodels::basegodunov::modules {
                     buf_block_max,
                     dir_offset);
 
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "AMR Cell Graph", "Patch", id, "direction", dir, "link cnt", rslt.link_count);
 
                 std::unique_ptr<AMRGraph> tmp_graph = std::make_unique<AMRGraph>(std::move(rslt));
@@ -327,7 +327,7 @@ namespace shammodels::basegodunov::modules {
             cell_graph_links.add_obj(id, std::move(result));
         });
 
-        logger::debug_ln("[AMR cell graph]", "compute antecedent map");
+        shamlog_debug_ln("[AMR cell graph]", "compute antecedent map");
         cell_graph_links.for_each([&](u64 id, OrientedAMRGraph &oriented_block_graph) {
             auto ptr       = shamsys::instance::get_compute_scheduler_ptr();
             u32 cell_count = (edges.sizes.indexes.get(id)) * AMRBlock::block_size;

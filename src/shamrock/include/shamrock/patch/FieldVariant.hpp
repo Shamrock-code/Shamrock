@@ -48,7 +48,8 @@ namespace shamrock::patch {
             Container<u64>,
             Container<u32_3>,
             Container<u64_3>,
-            Container<i64_3>>;
+            Container<i64_3>,
+            Container<i64>>;
 
         var_t_template value; /*!< The held variant */
 

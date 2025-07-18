@@ -17,17 +17,20 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/reduction.hpp"
+#include "shambackends/Device.hpp"
 #include "shambackends/benchmarks/add_mul.hpp"
 #include "shambackends/benchmarks/saxpy.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/math.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <mpi.h>
 #include <stdexcept>
+#include <vector>
 
 namespace shamsys::microbench {
     /// MPI point-to-point bandwidth benchmark
@@ -44,6 +47,9 @@ namespace shamsys::microbench {
 
     /// same as add_mul_rotation_f32 but for double
     void add_mul_rotation_f64();
+
+    /// Vector allgather benchmark
+    void vector_allgather(u32 el_per_rank);
 } // namespace shamsys::microbench
 
 void shamsys::run_micro_benchmark() {
@@ -63,6 +69,13 @@ void shamsys::run_micro_benchmark() {
     microbench::saxpy();
     microbench::add_mul_rotation_f32();
     microbench::add_mul_rotation_f64();
+
+    microbench::vector_allgather(1);
+    microbench::vector_allgather(8);
+    microbench::vector_allgather(64);
+    microbench::vector_allgather(128);
+    microbench::vector_allgather(150);
+    microbench::vector_allgather(1024);
 }
 
 void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
@@ -89,13 +102,15 @@ void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
             rqs.push_back(MPI_Request{});
             u32 rq_index = rqs.size() - 1;
             auto &rq     = rqs[rq_index];
-            mpi::isend(buf_send.get_ptr(), length, MPI_BYTE, wr_receiv, 0, MPI_COMM_WORLD, &rq);
+            shamcomm::mpi::Isend(
+                buf_send.get_ptr(), length, MPI_BYTE, wr_receiv, 0, MPI_COMM_WORLD, &rq);
             is_used = true;
         }
 
         if (wr == wr_receiv) {
             MPI_Status s;
-            mpi::recv(buf_recv.get_ptr(), length, MPI_BYTE, wr_sender, 0, MPI_COMM_WORLD, &s);
+            shamcomm::mpi::Recv(
+                buf_recv.get_ptr(), length, MPI_BYTE, wr_sender, 0, MPI_COMM_WORLD, &s);
             is_used = true;
         }
 
@@ -104,7 +119,7 @@ void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
         }
         std::vector<MPI_Status> st_lst(rqs.size());
         if (rqs.size() > 0) {
-            mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
+            shamcomm::mpi::Waitall(rqs.size(), rqs.data(), st_lst.data());
         }
         f64 t_end = MPI_Wtime();
         t += t_end - t_start;
@@ -146,15 +161,15 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
 
         if (wr == wr1) {
             MPI_Status s;
-            mpi::send(buf_send.get_ptr(), length, MPI_BYTE, wr2, 0, MPI_COMM_WORLD);
-            mpi::recv(buf_recv.get_ptr(), length, MPI_BYTE, wr2, 1, MPI_COMM_WORLD, &s);
+            shamcomm::mpi::Send(buf_send.get_ptr(), length, MPI_BYTE, wr2, 0, MPI_COMM_WORLD);
+            shamcomm::mpi::Recv(buf_recv.get_ptr(), length, MPI_BYTE, wr2, 1, MPI_COMM_WORLD, &s);
             is_used = true;
         }
 
         if (wr == wr2) {
             MPI_Status s;
-            mpi::recv(buf_recv.get_ptr(), length, MPI_BYTE, wr1, 0, MPI_COMM_WORLD, &s);
-            mpi::send(buf_send.get_ptr(), length, MPI_BYTE, wr1, 1, MPI_COMM_WORLD);
+            shamcomm::mpi::Recv(buf_recv.get_ptr(), length, MPI_BYTE, wr1, 0, MPI_COMM_WORLD, &s);
+            shamcomm::mpi::Send(buf_send.get_ptr(), length, MPI_BYTE, wr1, 1, MPI_COMM_WORLD);
             is_used = true;
         }
 
@@ -193,9 +208,12 @@ void shamsys::microbench::saxpy() {
     };
 
     auto benchmark = [&]() {
-        int N           = (1 << 15);
-        auto &dev       = instance::get_compute_scheduler().ctx->device;
-        double max_size = double(dev->prop.global_mem_size) / (vec4_size * 4);
+        int N = (1 << 15);
+
+        auto &dev_sched = shambase::get_check_ref(instance::get_compute_scheduler().ctx);
+        auto &dev_ptr   = dev_sched.device;
+        auto &dev       = shambase::get_check_ref(dev_ptr);
+        double max_size = double(dev.prop.global_mem_size) / (vec4_size * 4);
 
         auto result = bench_step(N);
 
@@ -246,6 +264,13 @@ void shamsys::microbench::add_mul_rotation_f32() {
 
     using vec4 = sycl::vec<float, 4>;
 
+    u32 nrotation = 10000;
+
+    if (shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().type
+        == sham::DeviceType::CPU) {
+        nrotation /= 20;
+    }
+
     auto result = sham::benchmarks::add_mul_bench<vec4>(
         instance::get_compute_scheduler_ptr(),
         N,
@@ -253,7 +278,7 @@ void shamsys::microbench::add_mul_rotation_f32() {
         {2.0f, 2.0f, 2.0f, 2.0f},
         {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
         {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        10000,
+        nrotation,
         4);
 
     f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
@@ -278,6 +303,13 @@ void shamsys::microbench::add_mul_rotation_f64() {
 
     using vec4 = sycl::vec<double, 4>;
 
+    u32 nrotation = 10000;
+
+    if (shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().type
+        == sham::DeviceType::CPU) {
+        nrotation /= 20;
+    }
+
     auto result = sham::benchmarks::add_mul_bench<vec4>(
         instance::get_compute_scheduler_ptr(),
         N,
@@ -285,7 +317,7 @@ void shamsys::microbench::add_mul_rotation_f64() {
         {2.0f, 2.0f, 2.0f, 2.0f},
         {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
         {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        10000,
+        nrotation,
         4);
 
     f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
@@ -302,5 +334,46 @@ void shamsys::microbench::add_mul_rotation_f64() {
             max_flop,
             avg_flop,
             result.milliseconds));
+    }
+}
+
+void shamsys::microbench::vector_allgather(u32 el_per_rank) {
+
+    using T = u64;
+    std::vector<u64> send_data(el_per_rank);
+
+    std::vector<u64> recv_data;
+
+    f64 t     = 0;
+    u64 loops = 0;
+
+    auto benchmark_step = [&]() {
+        shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+        f64 t_start = MPI_Wtime();
+        shamalgs::collective::vector_allgatherv(send_data, recv_data, MPI_COMM_WORLD);
+        f64 t_end = MPI_Wtime();
+        t += t_end - t_start;
+        loops++;
+    };
+
+    do {
+        benchmark_step();
+    } while (shamalgs::collective::allreduce_min(t) < 0.1);
+
+    t /= loops;
+
+    f64 min_t = shamalgs::collective::allreduce_min(t);
+    f64 max_t = shamalgs::collective::allreduce_max(t);
+    f64 sum_t = shamalgs::collective::allreduce_sum(t);
+    f64 avg_t = sum_t / (f64) shamcomm::world_size();
+
+    if (shamcomm::world_rank() == 0) {
+        logger::raw_ln(shambase::format(
+            " - vector_allgather (u64, n={:4}) : {:.3e} s (min = {:.2e}, max = {:.2e}, loops = {})",
+            el_per_rank,
+            avg_t,
+            min_t,
+            max_t,
+            loops));
     }
 }

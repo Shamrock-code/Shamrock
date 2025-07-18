@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/memory.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
@@ -35,28 +36,46 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
     shamrock::ComputeField<Tscal> cfield_dtrhoe
         = utility.make_compute_field<Tscal>("dt rhoe", AMRBlock::block_size);
 
-    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_xp  = storage.flux_rho_face_xp.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_xm  = storage.flux_rho_face_xm.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_yp  = storage.flux_rho_face_yp.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_ym  = storage.flux_rho_face_ym.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_zp  = storage.flux_rho_face_zp.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_zm  = storage.flux_rho_face_zm.get();
-    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_xp  = storage.flux_rhov_face_xp.get();
-    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_xm  = storage.flux_rhov_face_xm.get();
-    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_yp  = storage.flux_rhov_face_yp.get();
-    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_ym  = storage.flux_rhov_face_ym.get();
-    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_zp  = storage.flux_rhov_face_zp.get();
-    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_zm  = storage.flux_rhov_face_zm.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_xp = storage.flux_rhoe_face_xp.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_xm = storage.flux_rhoe_face_xm.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_yp = storage.flux_rhoe_face_yp.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_ym = storage.flux_rhoe_face_ym.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_zp = storage.flux_rhoe_face_zp.get();
-    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_zm = storage.flux_rhoe_face_zm.get();
+    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_xp
+        = shambase::get_check_ref(storage.flux_rho_face_xp).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_xm
+        = shambase::get_check_ref(storage.flux_rho_face_xm).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_yp
+        = shambase::get_check_ref(storage.flux_rho_face_yp).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_ym
+        = shambase::get_check_ref(storage.flux_rho_face_ym).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_zp
+        = shambase::get_check_ref(storage.flux_rho_face_zp).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_zm
+        = shambase::get_check_ref(storage.flux_rho_face_zm).link_fields;
+    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_xp
+        = shambase::get_check_ref(storage.flux_rhov_face_xp).link_fields;
+    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_xm
+        = shambase::get_check_ref(storage.flux_rhov_face_xm).link_fields;
+    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_yp
+        = shambase::get_check_ref(storage.flux_rhov_face_yp).link_fields;
+    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_ym
+        = shambase::get_check_ref(storage.flux_rhov_face_ym).link_fields;
+    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_zp
+        = shambase::get_check_ref(storage.flux_rhov_face_zp).link_fields;
+    shambase::DistributedData<NGLink<Tvec>> &flux_rhov_face_zm
+        = shambase::get_check_ref(storage.flux_rhov_face_zm).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_xp
+        = shambase::get_check_ref(storage.flux_rhoe_face_xp).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_xm
+        = shambase::get_check_ref(storage.flux_rhoe_face_xm).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_yp
+        = shambase::get_check_ref(storage.flux_rhoe_face_yp).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_ym
+        = shambase::get_check_ref(storage.flux_rhoe_face_ym).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_zp
+        = shambase::get_check_ref(storage.flux_rhoe_face_zp).link_fields;
+    shambase::DistributedData<NGLink<Tscal>> &flux_rhoe_face_zm
+        = shambase::get_check_ref(storage.flux_rhoe_face_zm).link_fields;
 
     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
                                                 shamrock::patch::PatchData &pdat) {
-        logger::debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
+        shamlog_debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         u32 id               = p.id_patch;
@@ -108,17 +127,17 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf_check(id);
 
         AMRGraph &graph_neigh_xp
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
         AMRGraph &graph_neigh_xm
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xm]);
         AMRGraph &graph_neigh_yp
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
         AMRGraph &graph_neigh_ym
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
         AMRGraph &graph_neigh_zp
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
         AMRGraph &graph_neigh_zm
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
             = shambase::get_check_ref(storage.block_cell_sizes).get_refs().get(id).get().get_buf();
@@ -321,33 +340,33 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         = utility.make_compute_field<Tvec>("dt rhovel dust", ndust * AMRBlock::block_size);
 
     shambase::DistributedData<NGLink<Tscal>> &flux_rho_dust_face_xp
-        = storage.flux_rho_dust_face_xp.get();
+        = shambase::get_check_ref(storage.flux_rho_dust_face_xp).link_fields;
     shambase::DistributedData<NGLink<Tscal>> &flux_rho_dust_face_xm
-        = storage.flux_rho_dust_face_xm.get();
+        = shambase::get_check_ref(storage.flux_rho_dust_face_xm).link_fields;
     shambase::DistributedData<NGLink<Tscal>> &flux_rho_dust_face_yp
-        = storage.flux_rho_dust_face_yp.get();
+        = shambase::get_check_ref(storage.flux_rho_dust_face_yp).link_fields;
     shambase::DistributedData<NGLink<Tscal>> &flux_rho_dust_face_ym
-        = storage.flux_rho_dust_face_ym.get();
+        = shambase::get_check_ref(storage.flux_rho_dust_face_ym).link_fields;
     shambase::DistributedData<NGLink<Tscal>> &flux_rho_dust_face_zp
-        = storage.flux_rho_dust_face_zp.get();
+        = shambase::get_check_ref(storage.flux_rho_dust_face_zp).link_fields;
     shambase::DistributedData<NGLink<Tscal>> &flux_rho_dust_face_zm
-        = storage.flux_rho_dust_face_zm.get();
+        = shambase::get_check_ref(storage.flux_rho_dust_face_zm).link_fields;
     shambase::DistributedData<NGLink<Tvec>> &flux_rhov_dust_face_xp
-        = storage.flux_rhov_dust_face_xp.get();
+        = shambase::get_check_ref(storage.flux_rhov_dust_face_xp).link_fields;
     shambase::DistributedData<NGLink<Tvec>> &flux_rhov_dust_face_xm
-        = storage.flux_rhov_dust_face_xm.get();
+        = shambase::get_check_ref(storage.flux_rhov_dust_face_xm).link_fields;
     shambase::DistributedData<NGLink<Tvec>> &flux_rhov_dust_face_yp
-        = storage.flux_rhov_dust_face_yp.get();
+        = shambase::get_check_ref(storage.flux_rhov_dust_face_yp).link_fields;
     shambase::DistributedData<NGLink<Tvec>> &flux_rhov_dust_face_ym
-        = storage.flux_rhov_dust_face_ym.get();
+        = shambase::get_check_ref(storage.flux_rhov_dust_face_ym).link_fields;
     shambase::DistributedData<NGLink<Tvec>> &flux_rhov_dust_face_zp
-        = storage.flux_rhov_dust_face_zp.get();
+        = shambase::get_check_ref(storage.flux_rhov_dust_face_zp).link_fields;
     shambase::DistributedData<NGLink<Tvec>> &flux_rhov_dust_face_zm
-        = storage.flux_rhov_dust_face_zm.get();
+        = shambase::get_check_ref(storage.flux_rhov_dust_face_zm).link_fields;
 
     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
                                                 shamrock::patch::PatchData &pdat) {
-        logger::debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
+        shamlog_debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         u32 id               = p.id_patch;
@@ -397,17 +416,17 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         sham::DeviceBuffer<Tvec> &dt_rhov_dust_patch = cfield_dtrhov_dust.get_buf_check(id);
 
         AMRGraph &graph_neigh_xp
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xp]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
         AMRGraph &graph_neigh_xm
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.xm]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xm]);
         AMRGraph &graph_neigh_yp
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.yp]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
         AMRGraph &graph_neigh_ym
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.ym]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
         AMRGraph &graph_neigh_zp
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zp]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
         AMRGraph &graph_neigh_zm
-            = shambase::get_check_ref(oriented_cell_graph.graph_links[oriented_cell_graph.zm]);
+            = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
             = shambase::get_check_ref(storage.block_cell_sizes).get_refs().get(id).get().get_buf();

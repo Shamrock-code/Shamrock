@@ -128,7 +128,7 @@ class PatchScheduler {
 
         patch_data.sim_box.set_bounding_box<vectype>({bmin, bmax});
 
-        logger::debug_ln("PatchScheduler", "box resized to :", bmin, bmax);
+        shamlog_debug_ln("PatchScheduler", "box resized to :", bmin, bmax);
     }
 
     /**

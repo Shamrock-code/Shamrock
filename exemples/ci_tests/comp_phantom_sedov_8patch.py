@@ -7,6 +7,10 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 
+Npart = 174000
+split = int(Npart / 2)
+
+
 def load_dataset(filename):
 
     print("Loading", filename)
@@ -24,7 +28,7 @@ def load_dataset(filename):
     # Print the solver config
     model.get_current_config().print_status()
 
-    model.init_scheduler(int(1e8), 1)
+    model.init_scheduler(split, 1)
 
     model.init_from_phantom_dump(dump)
     ret = ctx.collect_data()
@@ -35,11 +39,26 @@ def load_dataset(filename):
     return ret
 
 
-def L2diff_relat(arr1, arr2):
-    return np.sqrt(np.mean((arr1 - arr2) ** 2))
+def L2diff_relat(arr1, pos1, arr2, pos2):
+    from scipy.spatial import cKDTree
+
+    pos1 = np.asarray(pos1)
+    pos2 = np.asarray(pos2)
+    arr1 = np.asarray(arr1)
+    arr2 = np.asarray(arr2)
+    tree = cKDTree(pos2)
+    dists, idxs = tree.query(pos1, k=1)
+    matched_arr2 = arr2[idxs]
+    return np.sqrt(np.mean((arr1 - matched_arr2) ** 2))
+
+    # Old way without neigh matching
+    # return np.sqrt(np.mean((arr1 - arr2) ** 2))
 
 
 def compare_datasets(istep, dataset1, dataset2):
+
+    if shamrock.sys.world_rank() > 0:
+        return
 
     import matplotlib.pyplot as plt
 
@@ -92,11 +111,11 @@ def compare_datasets(istep, dataset1, dataset2):
 
     plt.tight_layout()
 
-    L2r = L2diff_relat(dataset1["r"], dataset2["r"])
-    L2rho = L2diff_relat(dataset1["rho"], dataset2["rho"])
-    L2u = L2diff_relat(dataset1["u"], dataset2["u"])
-    L2vr = L2diff_relat(dataset1["vr"], dataset2["vr"])
-    L2alpha = L2diff_relat(dataset1["alpha"], dataset2["alpha"])
+    L2r = L2diff_relat(dataset1["r"], dataset1["xyz"], dataset2["r"], dataset2["xyz"])
+    L2rho = L2diff_relat(dataset1["rho"], dataset1["xyz"], dataset2["rho"], dataset2["xyz"])
+    L2u = L2diff_relat(dataset1["u"], dataset1["xyz"], dataset2["u"], dataset2["xyz"])
+    L2vr = L2diff_relat(dataset1["vr"], dataset1["xyz"], dataset2["vr"], dataset2["xyz"])
+    L2alpha = L2diff_relat(dataset1["alpha"], dataset1["xyz"], dataset2["alpha"], dataset2["xyz"])
 
     print("L2r", L2r)
     print("L2rho", L2rho)
@@ -105,37 +124,25 @@ def compare_datasets(istep, dataset1, dataset2):
     print("L2alpha", L2alpha)
 
     expected_L2 = {
-        0: [0.0, 9.009242857437762e-08, 0.0, 0.0, 0.0],
+        0: [0, 9.00924285345295e-08, 0, 0, 0],
         1: [
-            1.849032825421309e-15,
-            1.1219057802660629e-07,
-            2.9990409944794113e-05,
-            2.779110446922251e-07,
-            1.1107580842674083e-06,
+            1.849032833754011e-15,
+            1.1219057799666405e-07,
+            2.999040994475206e-05,
+            2.779110446924334e-07,
+            1.110758084267404e-06,
         ],
-        10: [
-            2.362796968276232e-10,
-            1.0893822459979459e-07,
-            0.00040101749028480704,
-            5.000025464453985e-06,
-            0.02683282221334945,
-        ],
-        100: [
-            1.5585397967797566e-08,
-            6.155202709453772e-07,
-            0.00031181137524605987,
-            2.9173459165068845e-05,
-            6.432345363293235e-05,
-        ],
-        1000: [0.001, 0.001, 0.001, 0.001, 0.001],
+        10: [2.36279697e-10, 1.08938225e-07, 4.01017490e-04, 5.00002547e-06, 2.36643265e-02],
+        100: [1.55853980e-08, 6.15520271e-07, 3.11811375e-04, 2.91734592e-05, 6.43234536e-05],
+        1000: [0, 0, 0, 0, 0],
     }
 
     tols = {
-        0: [0.0, 1.0e-16, 0.0, 0.0, 0.0],
-        1: [0.0, 1.0e-12, 1.0e-13, 1.0e-10, 1.0e-19],
-        10: [1.0e-21, 1.0e-17, 1.0e-16, 1.0e-17, 0.01],
-        100: [1.0e-19, 1.0e-17, 1.0e-15, 1.0e-16, 1.0e-18],
-        1000: [1e-19, 1e-19, 1e-19, 1e-19, 1e-19],
+        0: [0, 1e-16, 0, 0, 0],
+        1: [0, 1e-16, 1e-16, 1e-18, 1e-19],
+        10: [1e-18, 1e-15, 1e-12, 1e-14, 1e-10],
+        100: [1e-16, 1e-16, 1e-12, 1e-13, 1e-13],
+        1000: [0, 0, 0, 0, 0],
     }
 
     error = False
@@ -150,15 +157,16 @@ def compare_datasets(istep, dataset1, dataset2):
     if abs(L2alpha - expected_L2[istep][4]) > tols[istep][4]:
         error = True
 
+    plt.savefig("sedov_blast_phantom_comp_" + str(istep) + ".png")
+
     if error:
         exit(
             f"Tolerances are not respected, got \n istep={istep}\n"
             + f" got: [{float(L2r)}, {float(L2rho)}, {float(L2u)}, {float(L2vr)}, {float(L2alpha)}] \n"
             + f" expected : [{expected_L2[istep][0]}, {expected_L2[istep][1]}, {expected_L2[istep][2]}, {expected_L2[istep][3]}, {expected_L2[istep][4]}]\n"
-            + f" delta : [{abs(L2r - expected_L2[istep][0])}, {abs(L2rho - expected_L2[istep][1])}, {abs(L2u - expected_L2[istep][2])}, {abs(L2vr - expected_L2[istep][3])}, {abs(L2alpha - expected_L2[istep][4])}]"
+            + f" delta : [{(L2r - expected_L2[istep][0])}, {(L2rho - expected_L2[istep][1])}, {(L2u - expected_L2[istep][2])}, {(L2vr - expected_L2[istep][3])}, {(L2alpha - expected_L2[istep][4])}]\n"
+            + f" tolerance : [{tols[istep][0]}, {tols[istep][1]}, {tols[istep][2]}, {tols[istep][3]}, {tols[istep][4]}]"
         )
-
-    plt.savefig("sedov_blast_phantom_comp_" + str(istep) + ".png")
 
 
 step0000 = load_dataset("reference-files/sedov_blast_phantom/blast_00000")
@@ -187,7 +195,7 @@ model.set_solver_config(cfg)
 # Print the solver config
 model.get_current_config().print_status()
 
-model.init_scheduler(int(1e8), 1)
+model.init_scheduler(split, 1)
 
 model.init_from_phantom_dump(dump)
 
@@ -201,6 +209,11 @@ def hpart_to_rho(hpart_array):
 def get_testing_sets(dataset):
     ret = {}
 
+    if shamrock.sys.world_rank() > 0:
+        return {}
+
+    print("making test dataset, Npart={}".format(len(dataset["xyz"])))
+
     ret["r"] = np.sqrt(
         dataset["xyz"][:, 0] ** 2 + dataset["xyz"][:, 1] ** 2 + dataset["xyz"][:, 2] ** 2
     )
@@ -210,7 +223,10 @@ def get_testing_sets(dataset):
         dataset["vxyz"][:, 0] ** 2 + dataset["vxyz"][:, 1] ** 2 + dataset["vxyz"][:, 2] ** 2
     )
     ret["alpha"] = dataset["alpha_AV"]
+    ret["xyz"] = dataset["xyz"]
 
+    # Even though we have neigh matching to compare the datasets
+    # We still need the cutoff, hence the sorting + cutoff
     index = np.argsort(ret["r"])
 
     ret["r"] = ret["r"][index]
@@ -218,6 +234,7 @@ def get_testing_sets(dataset):
     ret["u"] = ret["u"][index]
     ret["vr"] = ret["vr"][index]
     ret["alpha"] = ret["alpha"][index]
+    ret["xyz"] = ret["xyz"][index]
 
     cutoff = 50000
 
@@ -226,6 +243,7 @@ def get_testing_sets(dataset):
     ret["u"] = ret["u"][:cutoff]
     ret["vr"] = ret["vr"][:cutoff]
     ret["alpha"] = ret["alpha"][:cutoff]
+    ret["xyz"] = ret["xyz"][:cutoff]
 
     return ret
 

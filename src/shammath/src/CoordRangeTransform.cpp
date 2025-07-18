@@ -63,10 +63,10 @@ namespace shammath {
     template<class Tsource, class Tdest>
     void CoordRangeTransform<Tsource, Tdest>::print_transform() const {
         if (mode == multiply) {
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "CoordRangeTransform", "multiply:", fact, source_coord_min, dest_coord_min);
         } else {
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "CoordRangeTransform", "divide  :", fact, source_coord_min, dest_coord_min);
         }
     }

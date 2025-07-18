@@ -60,7 +60,7 @@ namespace shamrock {
             const u32 new_cnt     = len * repr_count<T>;
             const u32 new_cnt_sum = sum_len * repr_count<T>;
 
-            logger::debug_mpi_ln("VTK write", new_cnt, new_cnt_sum);
+            shamlog_debug_mpi_ln("VTK write", new_cnt, new_cnt_sum);
 
             sycl::queue &q = shamsys::instance::get_compute_queue();
 
@@ -91,7 +91,7 @@ namespace shamrock {
                 }
             }
 
-            logger::debug_mpi_ln("VTK write", new_cnt);
+            shamlog_debug_mpi_ln("VTK write", new_cnt);
 
             shamalgs::collective::viewed_write_all_fetch_known_total_size(
                 fh, usm_buf, new_cnt, new_cnt_sum, file_head_ptr);
@@ -106,7 +106,7 @@ namespace shamrock {
 
             const u32 new_cnt_sum = sum_len * repr_count<T>;
 
-            logger::debug_mpi_ln("VTK write", new_cnt_sum);
+            shamlog_debug_mpi_ln("VTK write", new_cnt_sum);
 
             sycl::queue &q = shamsys::instance::get_compute_queue();
 
@@ -180,7 +180,7 @@ namespace shamrock {
 
             timer.start();
 
-            logger::debug_ln("VtkWritter", "opening :", fname);
+            shamlog_debug_ln("VtkWritter", "opening :", fname);
 
             if (fname.find(".vtk") == std::string::npos) {
                 throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -212,7 +212,7 @@ namespace shamrock {
         void write_points(sycl::buffer<sycl::vec<T, 3>> &buf, u32 len) {
             StackEntry stack_loc{};
 
-            logger::debug_mpi_ln("VTK write", "write_points");
+            shamlog_debug_mpi_ln("VTK write", "write_points");
 
             u32 sum_len = shamalgs::collective::allreduce_sum(len);
 
@@ -234,7 +234,7 @@ namespace shamrock {
         void write_points_no_buf() {
             StackEntry stack_loc{};
 
-            logger::debug_mpi_ln("VTK write", "write_points no buf");
+            shamlog_debug_mpi_ln("VTK write", "write_points no buf");
 
             u32 sum_len = shamalgs::collective::allreduce_sum(0);
 
@@ -438,8 +438,8 @@ namespace shamrock {
         }
 
         inline ~LegacyVtkWritter() {
-            logger::debug_mpi_ln("LegacyVtkWritter", "calling : mpi::file_close");
-            mpi::file_close(&mfile);
+            shamlog_debug_mpi_ln("LegacyVtkWritter", "calling : shamcomm::mpi::File_close");
+            shamcomm::mpi::File_close(&mfile);
             timer.end();
 
             if (shamcomm::world_rank() == 0) {

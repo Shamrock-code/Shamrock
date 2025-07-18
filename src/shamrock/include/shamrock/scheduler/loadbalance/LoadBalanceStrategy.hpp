@@ -88,7 +88,7 @@ namespace shamrock::scheduler::details {
 
         if (shamcomm::world_rank() == 0) {
             for (LBTileResult t : res) {
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "HilbertLoadBalance",
                     t.ordering_val,
                     t.accumulated_load_value,
@@ -145,7 +145,7 @@ namespace shamrock::scheduler::details {
 
         if (shamcomm::world_rank() == 0) {
             for (LBTileResult t : res) {
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "HilbertLoadBalance",
                     t.ordering_val,
                     t.accumulated_load_value,
@@ -196,7 +196,7 @@ namespace shamrock::scheduler::details {
             max     = sycl::fmax(max, val);
             avg += val;
 
-            // logger::debug_ln("HilbertLoadBalance", "node :",nid, "load :",load_per_node[nid]);
+            // shamlog_debug_ln("HilbertLoadBalance", "node :",nid, "load :",load_per_node[nid]);
         }
         avg /= world_size;
         for (i32 nid = 0; nid < world_size; nid++) {

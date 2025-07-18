@@ -9,6 +9,7 @@
 
 #include "shambase/time.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -18,7 +19,7 @@ template<class T>
 void bench_memcpy_sycl(
     std::string dset_name, sycl::queue &q1, sycl::queue &q2, u64 max_byte_sz_cnt) {
 
-    logger::debug_ln("bench_memcpy_sycl", dset_name);
+    shamlog_debug_ln("bench_memcpy_sycl", dset_name);
 
     std::vector<f64> sz;
     std::vector<f64> bandwidth_GBsm1;
@@ -58,7 +59,7 @@ void bench_memcpy_sycl(
 template<class T>
 void bench_memcpy_sycl_host_dev(std::string dset_name, sycl::queue &q1, u64 max_byte_sz_cnt) {
 
-    logger::debug_ln("bench_memcpy_sycl_host_dev", dset_name);
+    shamlog_debug_ln("bench_memcpy_sycl_host_dev", dset_name);
 
     std::vector<f64> sz;
     std::vector<f64> bandwidth_GBsm1;
@@ -166,21 +167,23 @@ void make_bandwidth_matrix(std::string dset_name, sycl::queue &q1, u32 comm_size
         MPI_Request rq_send, rq_recv;
 
         if (shamcomm::world_rank() == rank_send) {
-            mpi::isend(ptr1, comm_size, get_mpi_type<T>(), rank_recv, 0, MPI_COMM_WORLD, &rq_send);
+            shamcomm::mpi::Isend(
+                ptr1, comm_size, get_mpi_type<T>(), rank_recv, 0, MPI_COMM_WORLD, &rq_send);
         }
 
         if (shamcomm::world_rank() == rank_recv) {
-            mpi::irecv(ptr2, comm_size, get_mpi_type<T>(), rank_send, 0, MPI_COMM_WORLD, &rq_recv);
+            shamcomm::mpi::Irecv(
+                ptr2, comm_size, get_mpi_type<T>(), rank_send, 0, MPI_COMM_WORLD, &rq_recv);
         }
 
         if (shamcomm::world_rank() == rank_send) {
             MPI_Status st;
-            mpi::wait(&rq_send, &st);
+            shamcomm::mpi::Wait(&rq_send, &st);
         }
 
         if (shamcomm::world_rank() == rank_recv) {
             MPI_Status st;
-            mpi::wait(&rq_recv, &st);
+            shamcomm::mpi::Wait(&rq_recv, &st);
         }
 
         mpi::barrier(MPI_COMM_WORLD);
@@ -198,7 +201,7 @@ void make_bandwidth_matrix(std::string dset_name, sycl::queue &q1, u32 comm_size
         for (u32 i = 0; i < shamcomm::world_size(); i++) {
             for (u32 j = 0; j < shamcomm::world_size(); j++) {
 
-                logger::debug_ln("make_bandwidth_matrix", i, "->", j, dset_name);
+                shamlog_debug_ln("make_bandwidth_matrix", i, "->", j, dset_name);
 
                 rank_send.push_back(i);
                 rank_recv.push_back(j);

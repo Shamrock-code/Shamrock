@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sets.hpp"
 #include "shambase/stacktrace.hpp"
@@ -328,6 +329,59 @@ namespace shambase {
     /**
      * @brief Compare two distributed data and apply callbacks based on the difference
      *
+     * This is the same as on_distributeddata_diff but where one of the distributed data is
+     * represented by a vector of its ids.
+     *
+     * This function compares the two given distributed data and applies callbacks
+     * based on the difference.
+     *
+     * The callbacks are:
+     *   - `func_missing`: called for each id present in the reference but not in `dd`
+     *   - `func_match`: called for each id present in both `dd` and the reference
+     *   - `func_extra`: called for each id present in `dd` but not in the reference
+     *
+     * @param dd the distributed data to compare
+     * @param ref_ids the reference ids
+     * @param func_missing the callback for missing ids
+     * @param func_match the callback for matching ids
+     * @param func_extra the callback for extra ids
+     */
+    template<class T1, class FuncMatch, class FuncMissing, class FuncExtra>
+    inline void on_distributeddata_ids_diff(
+        const shambase::DistributedData<T1> &dd,
+        const std::vector<u64> &ref_ids,
+        FuncMatch &&func_missing,
+        FuncMissing &&func_match,
+        FuncExtra &&func_extra) {
+
+        std::vector<u64> dd_ids;
+
+        dd.for_each([&](u32 id, const T1 &data) {
+            dd_ids.push_back(id);
+        });
+
+        std::vector<u64> missing;
+        std::vector<u64> matching;
+        std::vector<u64> extra;
+
+        shambase::set_diff(dd_ids, ref_ids, missing, matching, extra);
+
+        for (auto id : missing) {
+            func_missing(id);
+        }
+
+        for (auto id : matching) {
+            func_match(id);
+        }
+
+        for (auto id : extra) {
+            func_extra(id);
+        }
+    }
+
+    /**
+     * @brief Compare two distributed data and apply callbacks based on the difference
+     *
      * This function compares the two given distributed data and applies callbacks
      * based on the difference.
      *
@@ -350,33 +404,13 @@ namespace shambase {
         FuncMissing &&func_match,
         FuncExtra &&func_extra) {
 
-        std::vector<u64> dd_ids;
         std::vector<u64> ref_ids;
-
-        dd.for_each([&](u32 id, const T1 &data) {
-            dd_ids.push_back(id);
-        });
 
         reference.for_each([&](u32 id, const T2 &data) {
             ref_ids.push_back(id);
         });
 
-        std::vector<u64> missing;
-        std::vector<u64> matching;
-        std::vector<u64> extra;
-
-        shambase::set_diff(dd_ids, ref_ids, missing, matching, extra);
-
-        for (auto id : missing) {
-            func_missing(id);
-        }
-
-        for (auto id : matching) {
-            func_match(id);
-        }
-
-        for (auto id : extra) {
-            func_extra(id);
-        }
+        shambase::on_distributeddata_ids_diff(dd, ref_ids, func_missing, func_match, func_extra);
     }
+
 } // namespace shambase

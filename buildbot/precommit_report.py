@@ -53,6 +53,8 @@ for f in file_list:
         print(log_f)
     elif f == "log_precommit_doxygen_header":
         print(log_f)
+    elif f == "log_precommit_check-Authorship-update":
+        print(log_f)
     else:
         print("# ❌", logfiles_map[f]["id"])
         print("```")

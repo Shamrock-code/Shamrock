@@ -193,7 +193,7 @@ def run_autocorect():
         if fname.endswith("version.cpp"):
             continue
 
-        if "cmake/feature_tests.cpp" in fname:
+        if "cmake/feature_test" in fname:
             continue
         if "src/tests/" in fname:
             continue

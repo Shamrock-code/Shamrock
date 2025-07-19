@@ -56,9 +56,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
         RTree &tree = storage.merged_pos_trees.get().get(patch_id);
         auto obj_it = tree.get_object_iterator();
 
-        u32 leaf_cnt    = tree.get_total_cell_count();
-        u32 intnode_cnt = tree.get_internal_cell_count();
-        u32 obj_cnt     = mfield.original_elements;
+        u32 obj_cnt = mfield.original_elements;
 
         sycl::range range_npart{mfield.original_elements};
 
@@ -254,7 +252,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
         auto obj_it  = tree.get_object_iterator();
         auto leaf_it = tree.get_traverser();
 
-        u32 leaf_cnt    = tree.get_total_cell_count();
+        u32 leaf_cnt    = tree.get_leaf_cell_count();
         u32 intnode_cnt = tree.get_internal_cell_count();
         u32 obj_cnt     = mfield.original_elements;
 
@@ -442,6 +440,8 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                             found_id_ = leaf_b - offset_leaf;
                         });
 
+                    SHAM_ASSERT(found_id_ < offset_leaf + 1);
+
                     found_id[id_a] = found_id_;
                 });
             });
@@ -559,7 +559,9 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
                     u32 cnt = scanned_neigh_cnt[id_a];
 
-                    neigh_leaf_looper.for_each_object(leaf_owner[id_a], [&](u32 leaf_b) {
+                    u32 leaf_own_a = leaf_owner[id_a];
+
+                    neigh_leaf_looper.for_each_object(leaf_own_a, [&](u32 leaf_b) {
                         SHAM_ASSERT(leaf_b >= offset_leaf);
 
                         particle_looper.for_each_in_cell(leaf_b - offset_leaf, [&](u32 id_b) {

@@ -51,6 +51,9 @@ class shamtree::CompressedLeafBVH {
     /// Get internal cell count
     inline u32 get_internal_cell_count() { return structure.get_internal_cell_count(); }
 
+    /// Get leaf cell count
+    inline u32 get_leaf_cell_count() { return structure.get_leaf_count(); }
+
     /// The reduced set of Morton codes
     MortonReducedSet<Tmorton, Tvec, dim> reduced_morton_set;
 

@@ -7,8 +7,8 @@ from lib.buildbot import *
 print_buildbot_info("Authors check tool")
 
 if len(sys.argv) > 1:
-    print("Updating authors for files: ", sys.argv[1])
-    file_list = [sys.argv[1]]
+    print("Updating authors for files: ", sys.argv[1:])
+    file_list = sys.argv[1:]
 else:
     file_list = glob.glob(str(abs_src_dir) + "/**", recursive=True)
 
@@ -193,7 +193,7 @@ def run_autocorect():
         if fname.endswith("version.cpp"):
             continue
 
-        if "/src/tests/" in fname:
+        if "src/tests/" in fname:
             continue
         if "exemple.cpp" in fname:
             continue
@@ -222,6 +222,7 @@ print("--------------------------------")
 print("Current author list:")
 for a in authorlist:
     print(f"    {a['author']} ({a['email']})")
+
 
 if missing_doxygenfilehead:
     print("--------------------------------")

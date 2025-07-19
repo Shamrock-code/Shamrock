@@ -232,7 +232,8 @@ if missing_doxygenfilehead:
     # Write markdown report
     report = "## ❌ Authorship update required\n\n"
     report += "The following files had their author headers updated by the pre-commit hook. Please stage and commit these changes.\n\n"
-    for fname in missing_doxygenfilehead:
+    report += "**Note:** The list below is only partial. Only the first 10 files are shown.\n\n"
+    for fname in missing_doxygenfilehead[:10]:
         report += f"- `{fname}`\n"
     with open("log_precommit_check-Authorship-update", "w") as f:
         f.write(report)

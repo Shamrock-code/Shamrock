@@ -29,6 +29,8 @@
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/CompressedLeafBVH.hpp"
+#include "shamtree/KarrasRadixTreeField.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
 #include <memory>
@@ -48,7 +50,7 @@ namespace shammodels::sph {
         using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
 
-        using RTree = RadixTree<Tmorton, Tvec>;
+        using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
@@ -68,7 +70,8 @@ namespace shammodels::sph {
 
         Component<shambase::DistributedData<RTree>> merged_pos_trees;
 
-        Component<shambase::DistributedData<RadixTreeField<Tscal>>> rtree_rint_field;
+        Component<shambase::DistributedData<shamtree::KarrasRadixTreeField<Tscal>>>
+            rtree_rint_field;
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 

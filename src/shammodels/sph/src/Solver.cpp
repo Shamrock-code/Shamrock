@@ -64,6 +64,7 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/KarrasRadixTreeField.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
 #include <memory>
 #include <stdexcept>
@@ -454,7 +455,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    using RTree    = RadixTree<u_morton, Tvec>;
+    using RTree    = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
     using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
 
     SPHUtils sph_utils(scheduler());
@@ -658,15 +659,19 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
 
     auto &xyzh_merged = storage.merged_xyzh.get();
 
-    storage.rtree_rint_field.set(storage.merged_pos_trees.get().template map<RadixTreeField<Tscal>>(
-        [&](u64 id, RTree &rtree) {
-            PreStepMergedField &tmp = xyzh_merged.get(id);
+    storage.rtree_rint_field.set(
+        storage.merged_pos_trees.get().template map<shamtree::KarrasRadixTreeField<Tscal>>(
+            [&](u64 id, RTree &rtree) -> shamtree::KarrasRadixTreeField<Tscal> {
+                PreStepMergedField &tmp = xyzh_merged.get(id);
+                auto &buf               = tmp.field_hpart.get_buf();
+                auto buf_int            = shamtree::new_empty_karras_radix_tree_field<Tscal>();
 
-            return rtree.compute_int_boxes(
-                shamsys::instance::get_compute_queue(),
-                tmp.field_hpart.get_buf(),
-                solver_config.htol_up_tol);
-        }));
+                return shamtree::compute_tree_field_max_field<Tscal>(
+                    rtree.structure,
+                    rtree.reduced_morton_set.get_cell_iterator(),
+                    std::move(buf_int),
+                    buf);
+            }));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1089,7 +1094,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     sph_prestep(t_current, dt);
 
-    using RTree = RadixTree<u_morton, Tvec>;
+    using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
 
     SPHSolverImpl solver(context);
 

@@ -35,7 +35,7 @@ def apply_mailmap(authors):
     return ret
 
 
-def get_author_list(path):
+def get_author_list_from_blame(path):
     authors = []
     coauthors = []
     try:
@@ -56,7 +56,7 @@ def get_author_list(path):
                 if not app in coauthors:
                     coauthors.append(app)
 
-        print(authors, coauthors)
+        # print(authors, coauthors)
 
     except subprocess.CalledProcessError as err:
         print(err)
@@ -75,12 +75,47 @@ def get_author_list(path):
     return authors
 
 
-def get_doxstring(path, filename):
+def extract_current_authors_from_header(splt, l_start, l_end):
+    current_authors = []
+    for l in splt[l_start : l_end + 1]:
+        match = re.search(r"^\s*\*?\s*@author\s+(.+?)\s+\((.+?)\)", l)
+        # print(match)
+        if match:
+            current_authors.append({"author": match.group(1), "email": match.group(2)})
+    # Apply mailmap correction before returning
+    current_authors = apply_mailmap(current_authors)
+
+    for a in current_authors:
+        if not a in authorlist:
+            authorlist.append(a)
+
+    return current_authors
+
+
+def merge_author_lists(list_blame, list_other):
+    """
+    Merge two lists of authors (dicts with 'author' and 'email').
+    Deduplicate by email. If duplicate, the entry from list_blame takes precedence.
+    Returns a list of dicts with 'author', 'email', and 'from_blame' (True if from blame, False otherwise).
+    """
+    # Start with blame list
+    merged = {a["email"]: {**a, "from_blame": True} for a in list_blame}
+    # Add others only if not already present
+    for a in list_other:
+        if a["email"] not in merged:
+            merged[a["email"]] = {**a, "from_blame": False}
+    # Sort by author name
+    merged_list = sorted(merged.values(), key=lambda x: x["author"])
+    return merged_list
+
+
+def get_doxstring(path, filename, current_authors=None):
     tmp = " * @file " + filename
     try:
-        lst = get_author_list(path)
+        lst = merge_author_lists(get_author_list_from_blame(path), current_authors)
         for a in lst:
-            tmp += f"\n * @author {a['author']} ({a['email']})"
+            suffix = " --no git blame--" if not a.get("from_blame", False) else ""
+            tmp += f"\n * @author {a['author']} ({a['email']}){suffix}"
         # tmp+= (subprocess.check_output(R'git log --pretty=format:" * @author %aN (%aE)" '+path+' |sort |uniq',shell=True).decode())[:-1]
     except subprocess.CalledProcessError as err:
         print(err)
@@ -120,8 +155,12 @@ def autocorect(source, filename, path):
     if l_end == 0:
         l_end = l_start
 
+    # Extract current authors from header
+    current_authors = extract_current_authors_from_header(splt, l_start, l_end)
+    # print(current_authors)
+
     new_splt = splt[:l_start]
-    new_splt.append(get_doxstring(path, filename))
+    new_splt.append(get_doxstring(path, filename, current_authors))
     new_splt += splt[l_end + 1 :]
 
     new_src = ""
@@ -132,6 +171,7 @@ def autocorect(source, filename, path):
     do_replace = not (new_src == source)
 
     if do_replace:
+        print("autocorect : ", filename)
         print_diff(source, new_src, filename, filename + " (corec)")
 
     return do_replace, new_src
@@ -174,6 +214,7 @@ def run_autocorect():
 
 missing_doxygenfilehead = run_autocorect()
 
+print("--------------------------------")
 print("Current author list:")
 for a in authorlist:
-    print(f"{a['author']} ({a['email']})")
+    print(f"    {a['author']} ({a['email']})")

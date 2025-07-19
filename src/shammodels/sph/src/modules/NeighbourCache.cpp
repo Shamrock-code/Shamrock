@@ -15,6 +15,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shammath/sphkernels.hpp"
@@ -500,7 +501,9 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                     u32 leaf_own_a = leaf_owner[id_a];
 
                     neigh_leaf_looper.for_each_object(leaf_own_a, [&](u32 leaf_b) {
-                        particle_looper.for_each_in_cell(leaf_b, [&](u32 id_b) {
+                        SHAM_ASSERT(leaf_b >= offset_leaf);
+
+                        particle_looper.for_each_in_cell(leaf_b - offset_leaf, [&](u32 id_b) {
                             Tvec dr      = xyz_a - xyz[id_b];
                             Tscal rab2   = sycl::dot(dr, dr);
                             Tscal rint_b = hpart[id_b] * h_tolerance;
@@ -557,7 +560,9 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                     u32 cnt = scanned_neigh_cnt[id_a];
 
                     neigh_leaf_looper.for_each_object(leaf_owner[id_a], [&](u32 leaf_b) {
-                        particle_looper.for_each_in_cell(leaf_b, [&](u32 id_b) {
+                        SHAM_ASSERT(leaf_b >= offset_leaf);
+
+                        particle_looper.for_each_in_cell(leaf_b - offset_leaf, [&](u32 id_b) {
                             Tvec dr      = xyz_a - xyz[id_b];
                             Tscal rab2   = sycl::dot(dr, dr);
                             Tscal rint_b = hpart[id_b] * h_tolerance;

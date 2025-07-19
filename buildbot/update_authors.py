@@ -6,7 +6,11 @@ from lib.buildbot import *
 
 print_buildbot_info("Authors check tool")
 
-file_list = glob.glob(str(abs_src_dir) + "/**", recursive=True)
+if len(sys.argv) > 1:
+    print("Updating authors for files: ", sys.argv[1])
+    file_list = [sys.argv[1]]
+else:
+    file_list = glob.glob(str(abs_src_dir) + "/**", recursive=True)
 
 file_list.sort()
 
@@ -218,3 +222,7 @@ print("--------------------------------")
 print("Current author list:")
 for a in authorlist:
     print(f"    {a['author']} ({a['email']})")
+
+if missing_doxygenfilehead:
+    print("--------------------------------")
+    sys.exit("authors were not up to date -> exiting")

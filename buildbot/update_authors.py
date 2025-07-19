@@ -228,4 +228,13 @@ for a in authorlist:
 
 if missing_doxygenfilehead:
     print("--------------------------------")
+
+    # Write markdown report
+    report = "## ❌ Authorship update required\n\n"
+    report += "The following files had their author headers updated by the pre-commit hook. Please stage and commit these changes.\n\n"
+    for fname in missing_doxygenfilehead:
+        report += f"- `{fname}`\n"
+    with open("log_precommit_check-Authorship-update", "w") as f:
+        f.write(report)
+
     sys.exit("authors were not up to date -> exiting")

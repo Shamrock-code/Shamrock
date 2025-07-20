@@ -223,7 +223,7 @@ missing_doxygenfilehead = run_autocorect()
 print("--------------------------------")
 print("Current author list:")
 for a in authorlist:
-    print(f"    {a['author']} ({a['email']})")
+    print(f"    {a['author']} <{a['email']}>")
 
 
 if missing_doxygenfilehead:

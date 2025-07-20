@@ -11,7 +11,7 @@
 
 /**
  * @file memoryHandle.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This file contains the declaration of the memory handling and its methods.
  *
  * The memoryHandle class is used to allocate SYCL memory. It provides a way to safely allocate,

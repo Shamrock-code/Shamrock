@@ -11,7 +11,7 @@
 
 /**
  * @file NodeInstance.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Header file describing a Node Instance
  *
  * A NodeInstance is a wrapper to perform a combined initialisation of both SYCL & MPI.

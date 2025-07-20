@@ -11,7 +11,7 @@
 
 /**
  * @file shamalgs.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief include file to make doxygen happy with namespaces
  * \todo remove and use a dox file instead
  */

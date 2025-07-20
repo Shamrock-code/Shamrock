@@ -10,6 +10,7 @@
 /**
  * @file AnalysisBarycenter.cpp
  * @author David Fang (fang.david03@gmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */

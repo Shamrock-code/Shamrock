@@ -11,7 +11,7 @@
 
 /**
  * @file TestResult.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief header describing return type of a test, and the type of the test
  *
  */

@@ -11,7 +11,7 @@
 
 /**
  * @file type_convert.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Contains functions for converting between SYCL vector types and
  *        C++ standard library array types.
  */

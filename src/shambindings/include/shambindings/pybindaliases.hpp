@@ -11,7 +11,7 @@
 
 /**
  * @file pybindaliases.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Pybind11 include and definitions
  *
  * If we build shamrock executable we embed python in Shamrock

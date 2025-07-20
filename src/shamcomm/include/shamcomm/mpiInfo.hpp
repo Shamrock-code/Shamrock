@@ -11,7 +11,7 @@
 
 /**
  * @file mpiInfo.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Provide information about MPI capabilities
  *
  * This header provides information about the MPI capabilities of the

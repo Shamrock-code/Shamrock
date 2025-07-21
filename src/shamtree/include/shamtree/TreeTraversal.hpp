@@ -440,6 +440,11 @@ namespace shamrock::tree {
                 index_neigh_map.get_write_access(depends_list),
             };
         }
+        void complete_event_state(sycl::event &e) {
+            cnt_neigh.complete_event_state(e);
+            scanned_cnt.complete_event_state(e);
+            index_neigh_map.complete_event_state(e);
+        }
 
         void complete_event_state(sham::EventList &resulting_events) {
             cnt_neigh.complete_event_state(resulting_events);

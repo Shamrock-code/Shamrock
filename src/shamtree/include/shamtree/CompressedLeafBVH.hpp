@@ -45,6 +45,15 @@ namespace shamtree {
 template<class Tmorton, class Tvec, u32 dim>
 class shamtree::CompressedLeafBVH {
     public:
+    /// Get internal cell count
+    inline u32 get_total_cell_count() { return structure.get_total_cell_count(); }
+
+    /// Get internal cell count
+    inline u32 get_internal_cell_count() { return structure.get_internal_cell_count(); }
+
+    /// Get leaf cell count
+    inline u32 get_leaf_cell_count() { return structure.get_leaf_count(); }
+
     /// The reduced set of Morton codes
     MortonReducedSet<Tmorton, Tvec, dim> reduced_morton_set;
 
@@ -83,7 +92,21 @@ class shamtree::CompressedLeafBVH {
      */
     void rebuild_from_positions(
         sham::DeviceBuffer<Tvec> &positions,
-        shammath::AABB<Tvec> &bounding_box,
+        const shammath::AABB<Tvec> &bounding_box,
+        u32 compression_level);
+
+    /**
+     * @brief rebuild the BVH from the given positions
+     *
+     * @param[in] positions the positions of the particles
+     * @param[in] obj_cnt the number of particles
+     * @param[in] bounding_box the bounding box of the particles
+     * @param[in] compression_level the compression level of the BVH
+     */
+    void rebuild_from_positions(
+        sham::DeviceBuffer<Tvec> &positions,
+        u32 obj_cnt,
+        const shammath::AABB<Tvec> &bounding_box,
         u32 compression_level);
 
 #if false
@@ -93,6 +116,10 @@ class shamtree::CompressedLeafBVH {
         shammath::AABB<Tvec> &bounding_box,
         u32 compression_level);
 #endif
+
+    inline shamtree::CLBVHTraverser<Tmorton, Tvec, dim> get_traverser() {
+        return {structure.get_structure_traverser(), aabbs.buf_aabb_min, aabbs.buf_aabb_max};
+    }
 
     /**
      * @brief Retrieves an iterator for traversing objects in the BVH.
@@ -106,10 +133,6 @@ class shamtree::CompressedLeafBVH {
      * @return A CLBVHObjectIterator for object traversal.
      */
     inline shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() {
-        return {
-            reduced_morton_set.get_cell_iterator(),
-            structure.get_structure_traverser(),
-            aabbs.buf_aabb_min,
-            aabbs.buf_aabb_max};
+        return {reduced_morton_set.get_cell_iterator(), get_traverser()};
     }
 };

@@ -11,7 +11,7 @@
 
 /**
  * @file ScalarsEdge.hpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */

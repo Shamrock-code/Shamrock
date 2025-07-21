@@ -11,7 +11,7 @@
 
 /**
  * @file worldInfo.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Functions related to the MPI communicator
  *
  * This header provides functions to get information about the MPI communicator.

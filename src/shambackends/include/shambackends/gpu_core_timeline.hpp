@@ -11,8 +11,8 @@
 
 /**
  * @file gpu_core_timeline.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
  * @author Antoine Richermoz (antoine.richermoz@inria.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  *
  * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2024
  */

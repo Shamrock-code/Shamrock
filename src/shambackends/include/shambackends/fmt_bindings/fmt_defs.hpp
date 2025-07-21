@@ -11,7 +11,7 @@
 
 /**
  * @file fmt_defs.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Define the fmt formatters for sycl::vec
  *
  */

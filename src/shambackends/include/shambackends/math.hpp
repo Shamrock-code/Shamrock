@@ -700,6 +700,14 @@ namespace sham {
     }
 
     /**
+     * @brief compute the log2 of the number v being a power of 2
+     */
+    template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+    inline constexpr T log2_pow2_num(T v) noexcept {
+        return shambase::bitsizeof<T> - sham::clz(v) - 1;
+    }
+
+    /**
      * @brief round up to the next power of two
      *  0 is rounded up to 1 as it is not a pow of 2
      *  every input above the maximum power of 2 returns 0

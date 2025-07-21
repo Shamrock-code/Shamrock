@@ -24,6 +24,7 @@
 #include "shammodels/common/amr/NeighGraphLinkField.hpp"
 #include "shammodels/ramses/GhostZoneData.hpp"
 #include "shammodels/ramses/modules/NodeBuildTrees.hpp"
+#include "shammodels/ramses/solvegraph/MultiGrid.hpp"
 #include "shammodels/ramses/solvegraph/NeighGrapkLinkFieldEdge.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shammodels/ramses/solvegraph/TreeEdge.hpp"
@@ -49,9 +50,10 @@ namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec, class Tmorton_>
     class SolverStorage {
         public:
-        using Tmorton            = Tmorton_;
-        using Tscal              = shambase::VecComponent<Tvec>;
-        using Tgridscal          = shambase::VecComponent<TgridVec>;
+        using Tmorton   = Tmorton_;
+        using Tscal     = shambase::VecComponent<Tvec>;
+        using Tgridscal = shambase::VecComponent<TgridVec>;
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         using RTree = RadixTree<Tmorton, TgridVec>;
@@ -93,6 +95,9 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rho_mean;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> simulation_volume;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> cell_mass;
+
+        std::shared_ptr<shamrock::solvergraph::Field<TgridUint>> cell_int_size;
+        std::shared_ptr<shammodels::basegodunov::solvergraph::MultiGridsEdge<TgridVec>> multigrids;
 
         Component<shambase::DistributedData<shammath::AABB<TgridVec>>> merge_patch_bounds;
 

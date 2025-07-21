@@ -26,6 +26,7 @@
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
+#include "shammodels/ramses/modules/ComputeCubeCellSizes.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
@@ -34,6 +35,7 @@
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
 #include "shammodels/ramses/modules/FindBlockNeigh.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
+#include "shammodels/ramses/modules/MultiGridBuilder.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
@@ -255,6 +257,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             "simulation_volume", "V_{\\rm sim}");
     }
 
+    if (solver_config.gravity_config.gravity_mode == GravityMode::MULTIGRID) {
+        storage.cell_int_size = std::make_shared<shamrock::solvergraph::Field<TgridUint>>(
+            1, "cell_int_size", "cell_int_size");
+        storage.multigrids
+            = std::make_shared<modules::MultiGridsEdge<TgridVec>>("multigrid", "multigrid");
+
     storage.dt_over2
         = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("dt_half", "dt_{half}");
 
@@ -371,6 +379,25 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> solver_sequence;
+
+    if (solver_config.gravity_config.gravity_mode == GravityMode::MULTIGRID) { // grid to multigrid
+
+        modules::NodeComputeCubeCellSizes<TgridVec> node1{};
+        node1.set_edges(
+            storage.block_counts_with_ghost,
+            storage.refs_block_min,
+            storage.refs_block_max,
+            storage.cell_int_size);
+        solver_sequence.push_back(std::make_shared<decltype(node1)>(std::move(node1)));
+
+        modules::BuildMultigrid<TgridVec> node2{};
+        node2.set_edges(
+            storage.block_counts_with_ghost,
+            storage.refs_block_min,
+            storage.refs_block_max,
+            storage.multigrids);
+        solver_sequence.push_back(std::make_shared<decltype(node2)>(std::move(node2)));
+    }
 
     { // build trees
 

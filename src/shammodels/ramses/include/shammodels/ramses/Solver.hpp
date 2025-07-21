@@ -33,8 +33,9 @@ namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
     class Solver {
         public:
-        using Tscal              = shambase::VecComponent<Tvec>;
-        using Tgridscal          = shambase::VecComponent<TgridVec>;
+        using Tscal     = shambase::VecComponent<Tvec>;
+        using Tgridscal = shambase::VecComponent<TgridVec>;
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         using u_morton = u64;

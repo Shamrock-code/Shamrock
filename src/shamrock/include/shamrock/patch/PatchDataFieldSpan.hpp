@@ -69,6 +69,9 @@ namespace shamrock {
             T &operator()(u32 idx) const {
                 return ptr[idx];
             }
+
+            /// Access the underlying pointer
+            T &operator[](u32 idx) const { return ptr[idx]; }
         };
 
         /// Accessor for read-only access to static nvar buffer data
@@ -84,6 +87,9 @@ namespace shamrock {
             const T &operator()(u32 idx) const {
                 return ptr[idx];
             }
+
+            /// Access the underlying pointer
+            T &operator[](u32 idx) const { return ptr[idx]; }
         };
     } // namespace details
 
@@ -341,6 +347,43 @@ namespace shamrock {
 
         /// Number of elements
         u32 count;
+
+        /**
+         * @brief Copy the current span to a new DeviceBuffer
+         *
+         * @return A new DeviceBuffer containing the data from the current span.
+         */
+        inline sham::DeviceBuffer<T> to_buf() const {
+            auto dev_sched = get_buf().get_dev_scheduler_ptr();
+            auto ncopy     = count * field_ref.get_nvar();
+            sham::DeviceBuffer<T> buf(ncopy, dev_sched);
+
+            // option 1
+            // sham::kernel_call(
+            //    dev_sched->get_queue(),
+            //    sham::MultiRef{*this},
+            //    sham::MultiRef{buf},
+            //    ncopy,
+            //    [](u32 i, auto indata, T *outdata) {
+            //        outdata[i] = indata[i];
+            //    });
+
+            // option 2
+            sham::EventList depends_list;
+            auto ptr_source
+                = get_buf().get_read_access(depends_list) + start * field_ref.get_nvar();
+
+            auto ptr_target = buf.get_write_access(depends_list);
+
+            sycl::event e = dev_sched->get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr_source, ptr_target, ncopy);
+            });
+
+            get_buf().complete_event_state(e);
+            buf.complete_event_state(e);
+
+            return buf;
+        }
 
         private:
         /// Returns the underlying buffer of the PatchDataField.

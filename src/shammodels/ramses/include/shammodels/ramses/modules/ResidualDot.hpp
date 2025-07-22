@@ -43,7 +43,7 @@ namespace shammodels::basegodunov::modules {
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<Tscal>>(0),
+                get_ro_edge<shamrock::solvergraph::IFieldRefs<T>>(0),
                 get_rw_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(0),
             };
         }

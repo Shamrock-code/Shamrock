@@ -10,8 +10,8 @@ on:
 
 jobs:
 
-  pre-commit:
-    name: "Pre-commit CI"
+  base_source_checks:
+    name: "Base source checks"
     runs-on: ubuntu-latest
     steps:
 
@@ -44,6 +44,9 @@ jobs:
 
     - uses: pre-commit/action@v3.0.1
 
+    - name: "Run author update script"
+      run: |
+        python3 buildbot/author_update.py
 
     - name: rerun precommit for logs
       if: success()

@@ -173,9 +173,9 @@ namespace shammodels::basegodunov {
                     self.gravity_config.gravity_mode = PCG;
                 })
             .def(
-                "set_gravity_mode_bigstab",
+                "set_gravity_mode_bicgstab",
                 [](TConfig &self) {
-                    self.gravity_config.gravity_mode = BIGSTAB;
+                    self.gravity_config.gravity_mode = BICGSTAB;
                 })
             .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
                 self.npscal_gas_config.npscal_gas = npscal_gas;

@@ -11,7 +11,7 @@
 
 /**
  * @file AnalysisSodTube.hpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Timothe David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */

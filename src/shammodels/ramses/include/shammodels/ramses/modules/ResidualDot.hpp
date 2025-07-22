@@ -30,7 +30,7 @@ namespace shammodels::basegodunov::modules {
         ResidualDot() {}
 
         struct Edges {
-            const shamrock::solvergraph::IFieldRefs<Tscal> &spans_phi_res;
+            const shamrock::solvergraph::IFieldRefs<T> &spans_phi_res;
             shamrock::solvergraph::ScalarEdge<Tscal> &res_ddot;
         };
 

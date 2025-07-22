@@ -9,7 +9,7 @@
 
 /**
  * @file PhantomDump.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  * \todo clean classes name to make it more readable

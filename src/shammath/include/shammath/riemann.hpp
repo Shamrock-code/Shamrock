@@ -11,9 +11,9 @@
 
 /**
  * @file riemann.hpp
- * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk)
  * @brief
  * From original version by Thomas Guillet (T.A.Guillet@exeter.ac.uk)
  */

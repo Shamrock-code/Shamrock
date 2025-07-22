@@ -11,7 +11,7 @@
 
 /**
  * @file math.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -697,6 +697,14 @@ namespace sham {
     template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
     inline constexpr T clz_xor(T a, T b) noexcept {
         return sham::clz(a ^ b);
+    }
+
+    /**
+     * @brief compute the log2 of the number v being a power of 2
+     */
+    template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+    inline constexpr T log2_pow2_num(T v) noexcept {
+        return shambase::bitsizeof<T> - sham::clz(v) - 1;
     }
 
     /**

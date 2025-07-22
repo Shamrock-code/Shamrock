@@ -11,7 +11,7 @@
 
 /**
  * @file PatchScheduler.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief MPI scheduler
  * @version 0.1
  * @date 2022-03-01

@@ -72,7 +72,7 @@ sphinx_gallery_conf = {
     "filename_pattern": "/run_",  # Run all examples that start with run_
     "write_computation_times": True,  # write sg_execution_times
     "show_memory": True,
-    #
+    # Capture matplotlib anim in examples
     "matplotlib_animations": True,
 }
 

@@ -13,7 +13,7 @@
  * @file SolverConfig.hpp
  * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Léodsace Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -96,7 +96,7 @@ namespace shammodels::basegodunov {
         NoGravity = 0,
         CG        = 1, // conjuguate gradient
         PCG       = 2, // preconditioned conjuguate gradient
-        BIGSTAB   = 3, // bigstab
+        BICGSTAB  = 3, // bicgstab
         MULTIGRID = 4  // multigrid
     };
 

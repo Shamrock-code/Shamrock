@@ -25,7 +25,7 @@ namespace shammodels::basegodunov::modules {
         auto edges = get_edges();
 
         Tscal loc_val = {};
-        edges.spans_phi_res.get_refs().for_each([&](u32 i, PatchDataField<Tscal> &res_field_ref) {
+        edges.spans_phi_res.get_refs().for_each([&](u32 i, PatchDataField<T> &res_field_ref) {
             loc_val += res_field_ref.compute_dot_sum();
         });
 

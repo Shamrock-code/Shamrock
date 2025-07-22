@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/logs/loglevels.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
@@ -281,7 +282,7 @@ Register_pymod(pyshamrockctxinit) {
             [](ShamrockCtx &ctx) {
                 auto data = ctx.allgather_data();
 
-                std::cout << "collected : " << data.size() << " patches" << std::endl;
+                shamlog_info_ln("PatchScheduler", "collected :", data.size(), "patches");
 
                 py::dict dic_out;
 

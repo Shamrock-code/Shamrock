@@ -211,7 +211,6 @@ void PatchDataField<T>::append_subset_to(
             u32 idx_extr = acc_idxs[gid] * nvar_loc;
             u32 idx_push = start_enque_loc + gid * nvar_loc;
 
-
             for (u32 a = 0; a < nvar_loc; a++) {
                 acc_other[idx_push + a] = acc_curr[idx_extr + a];
             }

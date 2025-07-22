@@ -58,7 +58,8 @@ cfg.set_eos_adiabatic(1.00001)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(300), 50)
+model.init_scheduler(int(500), 50)
+# model.init_scheduler(int(300), 50)
 
 bmin = (-bsize, -bsize, -bsize)
 bmax = (bsize, bsize, bsize)
@@ -87,70 +88,19 @@ model.timestep()
 model.change_htolerance(1.1)
 
 ####################################################
-# State save of the sim for plotting
-####################################################
-state_plot = []
-
-
-def save_state(iplot):
-
-    state_plot.append({})
-    state_plot[iplot]["xlim_3d_inf"] = bmin[0]
-    state_plot[iplot]["xlim_3d_sup"] = bmax[0]
-    state_plot[iplot]["ylim_3d_inf"] = bmin[1]
-    state_plot[iplot]["ylim_3d_sup"] = bmax[1]
-    state_plot[iplot]["zlim_3d_inf"] = bmin[2]
-    state_plot[iplot]["zlim_3d_sup"] = bmax[2]
-    state_plot[iplot]["patchlist"] = ctx.get_patch_list_global()
-    state_plot[iplot]["ptransf"] = model.get_patch_transform()
-    state_plot[iplot]["parts_pos"] = ctx.collect_data()["xyz"]
-
-
-####################################################
-# Run the simulation
-####################################################
-nstop = 100  # 100 normally
-dt_stop = 0.1
-
-t_stop = [i * dt_stop for i in range(nstop + 1)]
-
-iplot = 0
-istop = 0
-for ttarg in t_stop:
-
-    model.evolve_until(ttarg)
-
-    if do_plots:
-        save_state(iplot)
-
-    iplot += 1
-    istop += 1
-
-
-####################################################
 # Draw utilities
 ####################################################
+
+dump_folder = "_to_trash"
+import os
+
+os.system("mkdir -p " + dump_folder)
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 
 def draw_aabb(ax, aabb, color, alpha):
-    """
-    Draw a 3D AABB in matplotlib
-
-    Parameters
-    ----------
-    ax : matplotlib.Axes3D
-        The axis to draw the AABB on
-    aabb : shamrock.math.AABB_f64_3
-        The AABB to draw
-    color : str
-        The color of the AABB
-    alpha : float
-        The transparency of the AABB
-    """
-
     from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
 
     xmin, ymin, zmin = aabb.lower()
@@ -199,42 +149,98 @@ def draw_aabb(ax, aabb, color, alpha):
 
 
 def plot_state(iplot):
+    plt.cla()
 
-    patch_list = state_plot[iplot]["patchlist"]
+    patch_list = ctx.get_patch_list_global()
 
-    ax.set_xlim3d(state_plot[iplot]["xlim_3d_inf"], state_plot[iplot]["xlim_3d_sup"])
-    ax.set_ylim3d(state_plot[iplot]["ylim_3d_inf"], state_plot[iplot]["ylim_3d_sup"])
-    ax.set_zlim3d(state_plot[iplot]["zlim_3d_inf"], state_plot[iplot]["zlim_3d_sup"])
+    ax.set_xlim3d(bmin[0], bmax[0])
+    ax.set_ylim3d(bmin[1], bmax[1])
+    ax.set_zlim3d(bmin[2], bmax[2])
 
-    ptransf = state_plot[iplot]["ptransf"]
-
+    ptransf = model.get_patch_transform()
     for p in patch_list:
         draw_aabb(ax, ptransf.to_obj_coord(p), "blue", 0.1)
 
-    pos = state_plot[iplot]["parts_pos"]
+    pos = ctx.collect_data()["xyz"]
     X = pos[:, 0]
     Y = pos[:, 1]
     Z = pos[:, 2]
 
     ax.scatter(X, Y, Z, c="red", s=1)
 
+    plt.savefig(dump_folder + f"/tmp_{iplot:04}.png")
+
 
 ####################################################
-# Animation rendering
+# Run the simulation
 ####################################################
+nstop = 80  # 100 normally
+dt_stop = 0.1
 
-import matplotlib.animation as animation
+t_stop = [i * dt_stop for i in range(nstop + 1)]
 
-fig = plt.figure()
+# Init MPL
+fig = plt.figure(dpi=120)
 ax = fig.add_subplot(111, projection="3d")
 
+iplot = 0
+istop = 0
+for ttarg in t_stop:
 
-def animate(i):
-    plt.cla()
-    plot_state(i)
+    model.evolve_until(ttarg)
+
+    if do_plots:
+        plot_state(iplot)
+
+    iplot += 1
+    istop += 1
+
+plt.close(fig)
+
+####################################################
+# Convert PNG sequence to Image sequence in mpl
+####################################################
+import glob
+
+files = sorted(glob.glob(dump_folder + "/tmp_*.png"))
+
+from PIL import Image
+
+image_array = []
+for my_file in files:
+    image = Image.open(my_file)
+    image_array.append(image)
+
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+
+# Create the figure and axes objects
+fig, ax = plt.subplots()
+
+# Remove axes, ticks, and frame
+ax.axis("off")
+for spine in ax.spines.values():
+    spine.set_visible(False)
+fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+# Set the initial image with correct aspect ratio
+im = ax.imshow(image_array[0], animated=True, aspect="auto")
 
 
-ani = animation.FuncAnimation(fig, animate, repeat=True, frames=len(state_plot) - 1, interval=50)
+def update(i):
+    im.set_array(image_array[i])
+    return (im,)
+
+
+# Create the animation object
+ani = animation.FuncAnimation(
+    fig,
+    update,
+    frames=len(image_array),
+    interval=50,
+    blit=True,
+    repeat_delay=10,
+)
 
 # To save the animation using Pillow as a gif
 # writer = animation.PillowWriter(fps=15,
@@ -242,4 +248,5 @@ ani = animation.FuncAnimation(fig, animate, repeat=True, frames=len(state_plot) 
 #                                 bitrate=1800)
 # ani.save('scatter.gif', writer=writer)
 
+# Show the animation
 plt.show()

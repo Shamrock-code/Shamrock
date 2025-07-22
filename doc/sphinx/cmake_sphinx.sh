@@ -21,7 +21,8 @@ fi
         sphinx-gallery \
         memory-profiler \
         sphinx-copybutton \
-        sphinx_design
+        sphinx_design \
+        imageio
 
     PYTHONPATH=$(pwd):$PYTHONPATH $SHAMROCK_DIR/doc/sphinx/gen_sphinx_doc.sh
 )

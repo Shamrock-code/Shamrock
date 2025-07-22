@@ -15,7 +15,6 @@
  * @brief
  */
 
-#include "shambase/memory.hpp"
 #include "shambase/logs/loglevels.hpp"
 #include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"

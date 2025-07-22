@@ -46,7 +46,7 @@ jobs:
 
     - name: "Run author update script"
       run: |
-        python3 buildbot/author_update.py
+        python3 buildbot/update_authors.py
 
     - name: rerun precommit for logs
       if: success()

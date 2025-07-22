@@ -11,7 +11,7 @@
 
 /**
  * @file TreeTraversal.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -439,6 +439,11 @@ namespace shamrock::tree {
                 scanned_cnt.get_write_access(depends_list),
                 index_neigh_map.get_write_access(depends_list),
             };
+        }
+        void complete_event_state(sycl::event &e) {
+            cnt_neigh.complete_event_state(e);
+            scanned_cnt.complete_event_state(e);
+            index_neigh_map.complete_event_state(e);
         }
 
         void complete_event_state(sham::EventList &resulting_events) {

@@ -9,11 +9,12 @@
 
 /**
  * @file bitonicSort_updated_xor_swap.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
 
@@ -263,7 +264,7 @@ namespace shamalgs::algorithm::details {
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
 
         if (!shambase::is_pow_of_two(len)) {
-            throw std::invalid_argument(
+            shambase::throw_with_loc<std::invalid_argument>(
                 "this algorithm can only be used with length that are powers of two");
         }
 

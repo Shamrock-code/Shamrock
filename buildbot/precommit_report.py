@@ -34,10 +34,13 @@ def trunctate_diff(st):
         return st
 
 
-print("# Pre commit report")
+# There is already a header in source_checks.yml
+# print("# Pre commit report")
 print()
 print(
-    "Some failures were detected in pre-commit checks.\n Check the `On PR / Linting / Pre-commit CI (pull_request)` job in the tests for more detailled output"
+    "Some failures were detected in base source checks checks.\n "
+    "Check the `On PR / Linting / Base source checks (pull_request)` "
+    "job in the tests for more detailled output"
 )
 print()
 for f in file_list:
@@ -52,6 +55,8 @@ for f in file_list:
     elif f == "log_precommit_pragma_once_check":
         print(log_f)
     elif f == "log_precommit_doxygen_header":
+        print(log_f)
+    elif f == "log_precommit_check-Authorship-update":
         print(log_f)
     else:
         print("# ❌", logfiles_map[f]["id"])

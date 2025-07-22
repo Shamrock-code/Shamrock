@@ -25,6 +25,8 @@ set(Sources
     src/pySPHModel.cpp
     src/pyPhantomDump.cpp
 
+    src/modules/AnalysisBarycenter.cpp
+
     src/modules/SolverStorage.cpp
     src/modules/BuildTrees.cpp
     src/modules/UpdateViscosity.cpp

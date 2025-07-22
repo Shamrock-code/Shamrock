@@ -9,7 +9,7 @@
 
 /**
  * @file SedovTaylor.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Sod tube analytical solution adapted from a script of Leodasce Sewanou
  */
 

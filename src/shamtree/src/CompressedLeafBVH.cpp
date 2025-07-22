@@ -9,7 +9,7 @@
 
 /**
  * @file CompressedLeafBVH.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -30,19 +30,20 @@ shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::make_empty(sham::DeviceSchedule
 template<class Tmorton, class Tvec, u32 dim>
 void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
     sham::DeviceBuffer<Tvec> &positions,
-    shammath::AABB<Tvec> &bounding_box,
+    u32 obj_cnt,
+    const shammath::AABB<Tvec> &bounding_box,
     u32 compression_level) {
     StackEntry stack_loc{};
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-    u32 roundup_pow2 = shambase::roundup_pow2(positions.get_size());
+    u32 roundup_pow2 = shambase::roundup_pow2(obj_cnt);
 
     auto set = shamtree::morton_code_set_from_positions<Tmorton, Tvec, dim>(
         dev_sched,
         bounding_box,
         positions,
-        positions.get_size(),
+        obj_cnt,
         roundup_pow2,
         std::move(reduced_morton_set.morton_codes_set.sorted_morton_codes));
 
@@ -70,6 +71,14 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
     this->reduced_morton_set = std::move(reduced_set);
     this->structure          = std::move(tree);
     this->aabbs              = std::move(tree_aabbs);
+}
+
+template<class Tmorton, class Tvec, u32 dim>
+void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
+    sham::DeviceBuffer<Tvec> &positions,
+    const shammath::AABB<Tvec> &bounding_box,
+    u32 compression_level) {
+    this->rebuild_from_positions(positions, positions.get_size(), bounding_box, compression_level);
 }
 
 template class shamtree::CompressedLeafBVH<u32, f64_3, 3>;

@@ -9,7 +9,7 @@
 
 /**
  * @file Model.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
@@ -69,6 +69,8 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32
         return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
     });
     solver.init_ghost_layout();
+
+    solver.init_solver_graph();
 }
 
 template<class Tvec, template<class> class SPHKernel>

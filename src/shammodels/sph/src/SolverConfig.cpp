@@ -9,12 +9,13 @@
 
 /**
  * @file SolverConfig.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 
 namespace shammodels::sph {
@@ -26,6 +27,10 @@ namespace shammodels::sph {
         pdl.add_field<Tvec>("axyz", 1);
         pdl.add_field<Tvec>("axyz_ext", 1);
         pdl.add_field<Tscal>("hpart", 1);
+
+        if (track_particles_id) {
+            pdl.add_field<u64>("part_id", 1);
+        }
 
         if (has_field_uint()) {
             pdl.add_field<Tscal>("uint", 1);

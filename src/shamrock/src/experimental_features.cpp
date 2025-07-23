@@ -9,7 +9,7 @@
 
 /**
  * @file experimental_features.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -49,5 +49,7 @@ namespace shamrock {
 
         return _env_allow_experimental_features;
     }
+
+    void enable_experimental_features() { _env_allow_experimental_features = true; }
 
 } // namespace shamrock

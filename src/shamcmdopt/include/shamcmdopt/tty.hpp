@@ -11,7 +11,7 @@
 
 /**
  * @file tty.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This file contains tty info getters
  *
  */

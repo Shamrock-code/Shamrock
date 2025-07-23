@@ -11,7 +11,7 @@
 
 /**
  * @file mpiErrorCheck.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Utility functions for MPI error checking
  *
  * This file contains a simple function to check the return code of MPI

@@ -9,15 +9,20 @@
 
 /**
  * @file pyShamrockCtx.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
+#include "shambase/logs/loglevels.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammath/AABB.hpp"
+#include "shamrock/patch/Patch.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
 #include <variant>
 
 template<class T>
@@ -205,7 +210,42 @@ void append_to_map(
     }
 }
 
+template<class T>
+inline void register_patch_transform_class(py::module &m, std::string name) {
+
+    shamlog_debug_ln("[Py]", "registering", name);
+
+    using Tclass = shamrock::patch::PatchCoordTransform<T>;
+
+    py::class_<Tclass>(m, name.c_str())
+        .def(
+            "to_obj_coord",
+            [](Tclass &self, shamrock::patch::Patch p) -> shammath::AABB<T> {
+                auto tmp = self.to_obj_coord(p);
+                return shammath::AABB<T>(tmp.lower, tmp.upper);
+            })
+        .def("to_obj_coord", [](Tclass &self, shammath::AABB<u64_3> p) -> shammath::AABB<T> {
+            auto tmp = self.to_obj_coord(p);
+            return shammath::AABB<T>(tmp.lower, tmp.upper);
+        });
+}
+
 Register_pymod(pyshamrockctxinit) {
+
+    shamlog_debug_ln("[Py]", "registering shamrock.Patch");
+
+    py::class_<shamrock::patch::Patch>(m, "Patch")
+        .def(py::init<>())
+        .def_readwrite("id_patch", &shamrock::patch::Patch::id_patch)
+        .def_readwrite("pack_node_index", &shamrock::patch::Patch::pack_node_index)
+        .def_readwrite("load_value", &shamrock::patch::Patch::load_value)
+        .def_readwrite("coord_min", &shamrock::patch::Patch::coord_min)
+        .def_readwrite("coord_max", &shamrock::patch::Patch::coord_max)
+        .def_readwrite("node_owner_id", &shamrock::patch::Patch::node_owner_id);
+
+    register_patch_transform_class<f64_3>(m, "PatchCoordTransform_f64_3");
+    register_patch_transform_class<f32_3>(m, "PatchCoordTransform_f32_3");
+    register_patch_transform_class<i64_3>(m, "PatchCoordTransform_i64_3");
 
     shamlog_debug_ln("[Py]", "registering shamrock.Context");
 
@@ -237,33 +277,36 @@ Register_pymod(pyshamrockctxinit) {
                     {f64_3{min_vals[0], min_vals[1], min_vals[2]},
                      f64_3{max_vals[0], max_vals[1], max_vals[2]}});
             })
-        .def("collect_data", [](ShamrockCtx &ctx) {
-            auto data = ctx.allgather_data();
+        .def(
+            "collect_data",
+            [](ShamrockCtx &ctx) {
+                auto data = ctx.allgather_data();
 
-            std::cout << "collected : " << data.size() << " patches" << std::endl;
+                shamlog_info_ln("PatchScheduler", "collected :", data.size(), "patches");
 
-            py::dict dic_out;
+                py::dict dic_out;
 
-            for (auto fname : ctx.pdl->get_field_names()) {
-                append_to_map<f32>(fname, data, dic_out);
-                append_to_map<f32_2>(fname, data, dic_out);
-                append_to_map<f32_3>(fname, data, dic_out);
-                append_to_map<f32_4>(fname, data, dic_out);
-                append_to_map<f32_8>(fname, data, dic_out);
-                append_to_map<f32_16>(fname, data, dic_out);
-                append_to_map<f64>(fname, data, dic_out);
-                append_to_map<f64_2>(fname, data, dic_out);
-                append_to_map<f64_3>(fname, data, dic_out);
-                append_to_map<f64_4>(fname, data, dic_out);
-                append_to_map<f64_8>(fname, data, dic_out);
-                append_to_map<f64_16>(fname, data, dic_out);
-                append_to_map<u32>(fname, data, dic_out);
-                append_to_map<u64>(fname, data, dic_out);
-                append_to_map<u32_3>(fname, data, dic_out);
-                append_to_map<u64_3>(fname, data, dic_out);
-                append_to_map<i64_3>(fname, data, dic_out);
-            }
+                for (auto fname : ctx.pdl->get_field_names()) {
+                    append_to_map<f32>(fname, data, dic_out);
+                    append_to_map<f32_2>(fname, data, dic_out);
+                    append_to_map<f32_3>(fname, data, dic_out);
+                    append_to_map<f32_4>(fname, data, dic_out);
+                    append_to_map<f32_8>(fname, data, dic_out);
+                    append_to_map<f32_16>(fname, data, dic_out);
+                    append_to_map<f64>(fname, data, dic_out);
+                    append_to_map<f64_2>(fname, data, dic_out);
+                    append_to_map<f64_3>(fname, data, dic_out);
+                    append_to_map<f64_4>(fname, data, dic_out);
+                    append_to_map<f64_8>(fname, data, dic_out);
+                    append_to_map<f64_16>(fname, data, dic_out);
+                    append_to_map<u32>(fname, data, dic_out);
+                    append_to_map<u64>(fname, data, dic_out);
+                    append_to_map<u32_3>(fname, data, dic_out);
+                    append_to_map<u64_3>(fname, data, dic_out);
+                    append_to_map<i64_3>(fname, data, dic_out);
+                }
 
-            return dic_out;
-        });
+                return dic_out;
+            })
+        .def("get_patch_list_global", &ShamrockCtx::get_patch_list_global);
 }

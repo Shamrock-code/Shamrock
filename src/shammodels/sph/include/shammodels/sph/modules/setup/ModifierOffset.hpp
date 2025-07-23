@@ -11,7 +11,7 @@
 
 /**
  * @file ModifierOffset.hpp
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */

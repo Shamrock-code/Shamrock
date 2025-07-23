@@ -11,7 +11,8 @@
 
 /**
  * @file MHDConfig.hpp
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
  *
  */

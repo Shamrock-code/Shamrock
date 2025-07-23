@@ -9,7 +9,8 @@
 
 /**
  * @file PatchScheduler.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -761,7 +762,7 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq) {
 
         PatchTree::Node &to_merge_node = patch_tree.tree[tree_id];
 
-        std::cout << "merging patch tree id : " << tree_id << "\n";
+        // std::cout << "merging patch tree id : " << tree_id << "\n";
 
         u64 patch_id0 = patch_tree.tree[to_merge_node.tree_node.childs_nid[0]].linked_patchid;
         u64 patch_id1 = patch_tree.tree[to_merge_node.tree_node.childs_nid[1]].linked_patchid;

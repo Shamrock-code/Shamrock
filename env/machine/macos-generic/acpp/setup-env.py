@@ -20,8 +20,6 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
-    parser.add_argument("--backend", action="store", help="sycl backend to use")
-    parser.add_argument("--arch", action="store", help="arch to build")
     parser.add_argument("--gen", action="store", help="generator to use (ninja or make)")
 
     args = parser.parse_args(argv)
@@ -34,32 +32,21 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     run_cmd("mkdir -p " + builddir)
 
-    ENV_SCRIPT_PATH = builddir + "/activate"
-
-    ENV_SCRIPT_HEADER = ""
-    ENV_SCRIPT_HEADER += "export SHAMROCK_DIR=" + shamrockdir + "\n"
-    ENV_SCRIPT_HEADER += "export BUILD_DIR=" + builddir + "\n"
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += 'export CMAKE_GENERATOR="' + cmake_gen + '"\n'
-    ENV_SCRIPT_HEADER += "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_EXEC=" + gen + "\n"
-    ENV_SCRIPT_HEADER += "export MAKE_OPT=(" + gen_opt + ")\n"
-
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-
     cmake_extra_args = ""
 
+    envgen.export_list = {
+        "SHAMROCK_DIR": shamrockdir,
+        "BUILD_DIR": builddir,
+        "CMAKE_GENERATOR": cmake_gen,
+        "MAKE_EXEC": gen,
+        "MAKE_OPT": f"({gen_opt})",
+        "CMAKE_OPT": f"({cmake_extra_args})",
+        "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+    }
+
+    envgen.ext_script_list = [
+        shamrockdir + "/env/helpers/pull_reffiles.sh",
+    ]
+
+    envgen.gen_env_file("env_built_acpp.sh")
     envgen.copy_file(shamrockdir + "/env/helpers/_pysetup.py", "setup.py")
-
-    ENV_SCRIPT_HEADER += "export CMAKE_OPT=(" + cmake_extra_args + ")\n"
-    ENV_SCRIPT_HEADER += 'export SHAMROCK_BUILD_TYPE="' + cmake_build_type + '"\n'
-
-    # Get current file path
-    cur_file = os.path.realpath(os.path.expanduser(__file__))
-    source_file = "env_built_acpp.sh"
-    source_path = os.path.abspath(os.path.join(cur_file, "../" + source_file))
-
-    utils.envscript.write_env_file(
-        source_path=source_path, header=ENV_SCRIPT_HEADER, path_write=ENV_SCRIPT_PATH
-    )

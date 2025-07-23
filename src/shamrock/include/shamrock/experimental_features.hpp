@@ -11,7 +11,7 @@
 
 /**
  * @file experimental_features.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -22,5 +22,8 @@ namespace shamrock {
 
     /// Allow the use of experimental features
     bool are_experimental_features_allowed();
+
+    /// Allow the use of experimental features
+    void enable_experimental_features();
 
 } // namespace shamrock

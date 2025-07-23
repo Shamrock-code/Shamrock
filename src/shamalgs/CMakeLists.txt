@@ -33,6 +33,7 @@ set(Sources
         src/details/reduction/fallbackReduction_usm.cpp
         src/serialize.cpp
         src/collective/distributedDataComm.cpp
+        src/collective/sparseXchg.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

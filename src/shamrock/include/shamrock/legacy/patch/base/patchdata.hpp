@@ -11,7 +11,7 @@
 
 /**
  * @file patchdata.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief header for PatchData related function and declaration
  * @version 0.1
  * @date 2022-02-28

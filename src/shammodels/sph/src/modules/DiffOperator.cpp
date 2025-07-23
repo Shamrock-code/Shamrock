@@ -9,7 +9,7 @@
 
 /**
  * @file DiffOperator.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -57,7 +57,8 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -178,7 +179,8 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 

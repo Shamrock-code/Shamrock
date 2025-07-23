@@ -9,10 +9,11 @@
 
 /**
  * @file PatchDataField.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/string.hpp"
@@ -176,6 +177,44 @@ void PatchDataField<T>::append_subset_to(
 
     buf.complete_event_state(e);
     buf_other.complete_event_state(e);
+}
+
+template<class T>
+void PatchDataField<T>::append_subset_to(
+    sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
+
+    if (pfield.nvar != nvar)
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "field must be similar for extraction");
+
+    const u32 start_enque = pfield.get_val_cnt();
+
+    const u32 nvar = get_nvar();
+
+    pfield.expand(sz);
+
+    auto &buf_other = pfield.get_buf();
+
+    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q   = sptr->get_queue();
+
+    sham::kernel_call(
+        q,
+        sham::MultiRef{idxs_buf, buf},
+        sham::MultiRef{buf_other},
+        sz,
+        [nvar_loc = nvar, start_enque_loc = start_enque](
+            u32 gid,
+            const u32 *__restrict acc_idxs,
+            const T *__restrict acc_curr,
+            T *__restrict acc_other) {
+            u32 idx_extr = acc_idxs[gid] * nvar_loc;
+            u32 idx_push = start_enque_loc + gid * nvar_loc;
+
+            for (u32 a = 0; a < nvar_loc; a++) {
+                acc_other[idx_push + a] = acc_curr[idx_extr + a];
+            }
+        });
 }
 
 template<class T>

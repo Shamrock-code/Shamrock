@@ -9,7 +9,7 @@
 
 /**
  * @file bitonicSort_updated_usm.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -125,7 +125,7 @@ namespace shamalgs::algorithm::details {
             for (int k = 0; k < 32; k++)
                 x[k] = m[k * _inc + i];
 
-            uint idx[32];
+            Tval idx[32];
 #pragma unroll
             for (int k = 0; k < 32; k++)
                 idx[k] = id[k * _inc + i];
@@ -289,7 +289,7 @@ namespace shamalgs::algorithm::details {
         u32 len) {
 
         if (!shambase::is_pow_of_two(len)) {
-            throw std::invalid_argument(
+            shambase::throw_with_loc<std::invalid_argument>(
                 "this algorithm can only be used with length that are powers of two");
         }
 
@@ -431,6 +431,30 @@ namespace shamalgs::algorithm::details {
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<u64> &buf_key,
         sham::DeviceBuffer<u32> &buf_values,
+        u32 len);
+
+    template void sort_by_key_bitonic_updated_usm<f32, f32, 32>(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f32> &buf_key,
+        sham::DeviceBuffer<f32> &buf_values,
+        u32 len);
+
+    template void sort_by_key_bitonic_updated_usm<f64, f64, 32>(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f64> &buf_key,
+        sham::DeviceBuffer<f64> &buf_values,
+        u32 len);
+
+    template void sort_by_key_bitonic_updated_usm<f32, f32, 16>(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f32> &buf_key,
+        sham::DeviceBuffer<f32> &buf_values,
+        u32 len);
+
+    template void sort_by_key_bitonic_updated_usm<f64, f64, 16>(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f64> &buf_key,
+        sham::DeviceBuffer<f64> &buf_values,
         u32 len);
 
 } // namespace shamalgs::algorithm::details

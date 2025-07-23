@@ -11,7 +11,7 @@
 
 /**
  * @file generic_opts.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This file handler generic cli & env options
  *
  */

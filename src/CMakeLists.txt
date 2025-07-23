@@ -32,7 +32,7 @@ set(as_subproject
 # This macro originates from Daniel Pfeifer's talk at C++Now 2017:
 # https://www.youtube.com/watch?v=bsXLMQ6WgIk
 macro(find_package)
-  if(NOT "${ARGV0}" IN LISTS as_subproject)
+  if(NOT "${ARGV0}" IN_LIST as_subproject)
     message(STATUS "using native find_package for ${ARGV0}: ${ARGV}")
     _find_package(${ARGV})
   endif()

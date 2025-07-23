@@ -11,7 +11,7 @@
 
 /**
  * @file random.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -22,6 +22,7 @@
 #include "shambackends/sycl.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
+#include <shambackends/sycl.hpp>
 #include <random>
 
 /**
@@ -41,6 +42,32 @@ namespace shamalgs::random {
         T r_3            = shamalgs::random::mock_value<T>(eng, 0, 1);
         T r_4            = shamalgs::random::mock_value<T>(eng, 0, 1);
         return sycl::sqrt(-2 * sycl::log(r_3)) * sycl::cos(_2pi * r_4);
+    }
+
+    template<class T>
+    T mock_gaussian_multidim(std::mt19937 &eng) {
+        T ret;
+        constexpr int n = shambase::VectorProperties<T>::dimension;
+        using Tscal     = shambase::VecComponent<T>;
+#pragma unroll
+        for (int i = 0; i < n; i++) {
+            ret[i] = mock_gaussian<Tscal>(eng);
+        }
+        return ret;
+    }
+
+    template<class T>
+    T mock_unit_vector(std::mt19937 &eng) {
+        T ret    = mock_gaussian_multidim<T>(eng);
+        auto len = sycl::length(ret);
+
+        auto default_unit_vec = []() {
+            T ret  = {};
+            ret[0] = 1;
+            return ret;
+        };
+
+        return (len > 0) ? (ret / len) : default_unit_vec();
     }
 
     template<class T>

@@ -96,6 +96,16 @@ def extract_current_authors_from_header(splt, l_start, l_end):
     return current_authors
 
 
+auth_blacklist = ["gemini-code-assist[bot]"]
+
+
+def is_not_in_blacklist(a):
+    for b in auth_blacklist:
+        if b in a["author"]:
+            return True
+    return False
+
+
 def merge_author_lists(list_blame, list_other):
     """
     Merge two lists of authors (dicts with 'author' and 'email').
@@ -110,6 +120,10 @@ def merge_author_lists(list_blame, list_other):
             merged[a["email"]] = {**a, "from_blame": False}
     # Sort by author name
     merged_list = sorted(merged.values(), key=lambda x: x["author"])
+
+    # Filter out auth_blacklist
+    merged_list = [a for a in merged_list if is_not_in_blacklist(a)]
+
     return merged_list
 
 

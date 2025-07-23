@@ -12,7 +12,8 @@
 /**
  * @file PatchDataLayerRefs.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Defines the PatchDataLayerRefs class for managing distributed references to patch data
+ * layers.
  *
  */
 

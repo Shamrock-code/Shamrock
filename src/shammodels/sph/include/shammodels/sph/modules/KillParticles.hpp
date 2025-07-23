@@ -12,7 +12,7 @@
 /**
  * @file KillParticles.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Declares the KillParticles module for removing particles.
  *
  */
 

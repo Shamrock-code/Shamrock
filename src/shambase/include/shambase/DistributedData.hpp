@@ -106,9 +106,10 @@ namespace shambase {
          *
          * @return A vector of all the ids of the objects in the collection.
          */
-        inline std::vector<u64> get_ids() {
+        inline std::vector<u64> get_ids() const {
             std::vector<u64> ids;
-            for (auto &[id, obj] : data) {
+            ids.reserve(data.size());
+            for (const auto &[id, obj] : data) {
                 ids.push_back(id);
             }
             return ids;

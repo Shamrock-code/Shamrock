@@ -10,7 +10,7 @@
 /**
  * @file KillParticles.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implements the KillParticles module, which removes particles based on provided indices.
  *
  */
 

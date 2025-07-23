@@ -12,7 +12,8 @@
 /**
  * @file DistributedBuffers.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Defines the DistributedBuffers class for managing distributed device buffers in a solver
+ * graph.
  *
  */
 
@@ -79,8 +80,6 @@ namespace shamrock::solvergraph {
                 [&](u64 id) {
                     buffers.erase(id);
                 });
-
-            sync();
         }
     };
 

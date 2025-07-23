@@ -6,7 +6,7 @@ import shamrock
 ####################################################
 # Setup parameters
 ####################################################
-Npart = 1000000
+Npart = 100000
 disc_mass = 0.01  # sol mass
 center_mass = 1
 center_racc = 0.05
@@ -54,6 +54,12 @@ m1_over_centermass = 0.5
 m2_over_centermass = 0.5
 binary_a = 1
 binary_e = 0
+
+freq_stop = 1000.0
+dt_stop = (1.0 / freq_stop) * 2 * np.pi
+norbit = 10
+nstop = norbit * freq_stop
+t_end = nstop * dt_stop
 
 ####################################################
 ####################################################
@@ -393,6 +399,14 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
 
+
+def add_callbacks_to_config(cfg):
+    cfg.register_callback(name="callback_dump", freq_step=10)
+    cfg.register_callback(name="callback_plot", freq_time=dt_stop)
+
+
+run_post_setup = False
+
 if idump_last_dump is not None:
     model.load_from_dump(get_dump_name(idump_last_dump))
 else:
@@ -402,6 +416,7 @@ else:
     cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
     cfg.print_status()
     cfg.set_units(codeu)
+    add_callbacks_to_config(cfg)
     model.set_solver_config(cfg)
 
     model.init_scheduler(int(8e5), 1)
@@ -496,9 +511,7 @@ else:
     model.set_cfl_cour(C_cour)
     model.set_cfl_force(C_force)
 
-    model.change_htolerance(1.3)
-    model.timestep()
-    model.change_htolerance(1.1)
+    run_post_setup = True
 
 
 def plot_rho(ext, sinks, arr_rho, iplot):
@@ -528,7 +541,7 @@ def plot_rho(ext, sinks, arr_rho, iplot):
 
     output_list = []
     for s in sinks:
-        print(s)
+        # print(s)
         x, y, z = s["pos"]
         output_list.append(plt.Circle((x, y), s["accretion_radius"], color="blue", fill=False))
     for circle in output_list:
@@ -572,7 +585,7 @@ def plot_rho_integ(ext, sinks, arr_rho, iplot):
 
     output_list = []
     for s in sinks:
-        print(s)
+        # print(s)
         x, y, z = s["pos"]
         output_list.append(plt.Circle((x, y), s["accretion_radius"], color="blue", fill=False))
     for circle in output_list:
@@ -620,7 +633,7 @@ def rot_plot_rho(ext, sinks, arr_rho, iplot, e_r, e_theta):
 
     output_list = []
     for s in sinks:
-        print(s)
+        # print(s)
         x, y, z = s["pos"]
         e_rx, e_ry, e_rz = e_r
         e_thx, e_thy, e_thz = e_theta
@@ -670,7 +683,7 @@ def plot_vx(ext, sinks, arr_vx, iplot):
 
     output_list = []
     for s in sinks:
-        print(s)
+        # print(s)
         x, y, z = s["pos"]
         output_list.append(plt.Circle((x, y), s["accretion_radius"], color="blue", fill=False))
     for circle in output_list:
@@ -710,7 +723,7 @@ def plot_vz_z(ext, sinks, arr_vz, iplot):
 
     output_list = []
     for s in sinks:
-        print(s)
+        # print(s)
         x, y, z = s["pos"]
         output_list.append(plt.Circle((x, z), s["accretion_radius"], color="blue", fill=False))
     for circle in output_list:
@@ -750,7 +763,7 @@ def rot_plot_vz_z(ext, sinks, arr_vz, iplot, e_r, e_z):
 
     output_list = []
     for s in sinks:
-        print(s)
+        # print(s)
         x, y, z = s["pos"]
         e_rx, e_ry, e_rz = e_r
         e_zx, e_zy, e_zz = e_z
@@ -849,35 +862,26 @@ def plot_state(iplot):
         rot_plot_vz_z(ext, sinks, rot_arr_v_vslice[:, :, 2], iplot, e_r, e_z)
 
 
-sink_history = []
+def callback_dump(icall, istep, t):
+    print(f"callback_dump: icall = {icall} istep = {istep} t = {t}")
+    model.dump(get_dump_name(icall))
 
-t_start = model.get_time()
 
-freq_stop = 1000
-norbit = 5
-dump_freq_stop = 10
+def callback_plot(icall, istep, t):
+    print(f"callback_plot: icall = {icall} istep = {istep} t = {t}")
+    plot_state(icall)
 
-dt_stop = (1.0 / freq_stop) * 2 * np.pi
-nstop = norbit * freq_stop
 
-t_stop = [i * dt_stop for i in range(nstop + 1)]
+def attach_callbacks():
+    model.attach_callback("callback_dump", callback_dump)
+    model.attach_callback("callback_plot", callback_plot)
 
-idump = 0
-iplot = 0
-istop = 0
-for ttarg in t_stop:
 
-    if ttarg >= t_start:
-        model.evolve_until(ttarg)
+attach_callbacks()
 
-        if istop % 10 == 0:
-            # model.do_vtk_dump(get_vtk_dump_name(idump), True)
-            model.dump(get_dump_name(idump))
+if run_post_setup:
+    model.change_htolerance(1.3)
+    model.timestep()
+    model.change_htolerance(1.1)
 
-        plot_state(iplot)
-
-    if istop % 10 == 0:
-        idump += 1
-
-    iplot += 1
-    istop += 1
+model.evolve_until(nstop * dt_stop)

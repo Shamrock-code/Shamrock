@@ -1770,7 +1770,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     shambase::get_check_ref(storage.neigh_cache).free_alloc();
 
-    solver_config.set_next_dt(next_cfl);
+    Tscal next_dt = next_cfl;
+    solver_config.step_callback_config.limit_dt(t_current + dt, next_dt);
+
+    solver_config.time_state.step_count++;
+
+    solver_config.set_next_dt(next_dt);
     solver_config.set_time(t_current + dt);
 
     auto get_next_cfl_mult = [&]() {
@@ -1781,6 +1786,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     };
 
     solver_config.time_state.cfl_multiplier = get_next_cfl_mult();
+
+    solver_config.step_callback_config.handle_callbacks(
+        t_current + dt, solver_config.time_state.step_count);
 
     TimestepLog log;
     log.rank     = shamcomm::world_rank();

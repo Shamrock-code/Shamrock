@@ -27,6 +27,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
+#include "shammodels/common/StepCallbackConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
@@ -36,7 +37,10 @@
 #include "shamtree/RadixTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <unordered_map>
+#include <string>
 #include <variant>
+#include <vector>
 
 namespace shammodels::sph {
 
@@ -146,8 +150,9 @@ struct shammodels::sph::SolverStatusVar {
     /// The type of the scalar used to represent the quantities
     using Tscal = shambase::VecComponent<Tvec>;
 
-    Tscal time   = 0; ///< Current time
-    Tscal dt_sph = 0; ///< Current time step
+    Tscal time     = 0; ///< Current time
+    Tscal dt_sph   = 0; ///< Current time step
+    u64 step_count = 0; ///< Current time step count
 
     Tscal cfl_multiplier = 1e-2; ///< Current cfl multiplier
 };
@@ -261,6 +266,20 @@ struct shammodels::sph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Solver step callbacks
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    StepCallbackConfig<Tscal> step_callback_config;
+
+    inline void register_callback(std::string name, Tscal freq_time, i64 freq_step) {
+        step_callback_config.register_callback(name, freq_time, freq_step);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Solver step callbacks (end)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -697,6 +716,8 @@ struct shammodels::sph::SolverConfig {
                 shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
             }
         }
+
+        step_callback_config.validate_config();
     }
 
     void set_layout(shamrock::patch::PatchDataLayout &pdl);
@@ -741,7 +762,10 @@ namespace shammodels::sph {
     template<class Tvec>
     inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
         j = nlohmann::json{
-            {"time", p.time}, {"dt_sph", p.dt_sph}, {"cfl_multiplier", p.cfl_multiplier}};
+            {"time", p.time},
+            {"dt_sph", p.dt_sph},
+            {"cfl_multiplier", p.cfl_multiplier},
+            {"step_count", p.step_count}};
     }
 
     /**
@@ -756,6 +780,7 @@ namespace shammodels::sph {
         j.at("time").get_to<Tscal>(p.time);
         j.at("dt_sph").get_to<Tscal>(p.dt_sph);
         j.at("cfl_multiplier").get_to<Tscal>(p.cfl_multiplier);
+        j.at("step_count").get_to<u64>(p.step_count);
     }
 
     /**
@@ -784,6 +809,7 @@ namespace shammodels::sph {
             {"cfl_config", p.cfl_config},
             {"unit_sys", junit},
             {"time_state", p.time_state},
+            {"step_callback_config", p.step_callback_config},
             // mhd config
             {"mhd_config", p.mhd_config},
             // tree config
@@ -843,6 +869,14 @@ namespace shammodels::sph {
         from_json_optional(j.at("unit_sys"), p.unit_sys);
 
         j.at("time_state").get_to(p.time_state);
+
+        try {
+            j.at("step_callback_config").get_to(p.step_callback_config);
+        } catch (const nlohmann::json::out_of_range &e) {
+            logger::warn_ln(
+                "SPHConfig", "step_callback_config not found when deserializing, defaulting to {}");
+            p.step_callback_config = {};
+        }
 
         // mhd config
         try {

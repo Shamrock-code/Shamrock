@@ -172,6 +172,10 @@ namespace shammodels::sph {
                 {pos, velocity, {}, {}, mass, {}, accretion_radius});
         }
 
+        inline void attach_callback(std::string name, step_callback_func_t<Tscal> callback) {
+            solver.solver_config.step_callback_config.attach_callback(name, callback);
+        }
+
         template<class T>
         inline void
         set_field_value_lambda(std::string field_name, const std::function<T(Tvec)> pos_to_val) {

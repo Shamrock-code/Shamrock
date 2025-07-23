@@ -21,6 +21,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/StepCallbackConfig.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
@@ -200,9 +201,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
         .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness)
-        .def("set_particle_mass", [](TConfig &self, Tscal gpart_mass) {
-            self.gpart_mass = gpart_mass;
-        });
+        .def(
+            "set_particle_mass",
+            [](TConfig &self, Tscal gpart_mass) {
+                self.gpart_mass = gpart_mass;
+            })
+        .def(
+            "register_callback",
+            [](TConfig &self, std::string name, Tscal freq_time, i64 freq_step) {
+                self.register_callback(name, freq_time, freq_step);
+            },
+            py::kw_only(),
+            py::arg("name"),
+            py::arg("freq_time") = Tscal(-1),
+            py::arg("freq_step") = i64(-1));
 
     std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
     py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())
@@ -544,6 +556,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.solver.solver_config;
             })
         .def("set_solver_config", &T::set_solver_config)
+        .def(
+            "attach_callback",
+            [](T &self, std::string name, shammodels::step_callback_func_t<Tscal> callback) {
+                self.attach_callback(name, callback);
+            },
+            py::arg("name"),
+            py::arg("callback"))
         .def("add_sink", &T::add_sink)
         .def(
             "get_sinks",

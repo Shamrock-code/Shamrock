@@ -102,6 +102,19 @@ namespace shambase {
         }
 
         /**
+         * @brief Returns a vector of all the ids of the objects in the collection.
+         *
+         * @return A vector of all the ids of the objects in the collection.
+         */
+        inline std::vector<u64> get_ids() {
+            std::vector<u64> ids;
+            for (auto &[id, obj] : data) {
+                ids.push_back(id);
+            }
+            return ids;
+        }
+
+        /**
          * @brief Finds an object in the collection.
          *
          * @param id The id of the patch the object belongs to.

@@ -792,6 +792,8 @@ namespace shammodels::sph {
                 logger::info_ln("SPH", "Dumping state to", fname);
             }
 
+            solver.update_sync_load_values();
+
             nlohmann::json metadata;
             metadata["solver_config"] = solver.solver_config;
 

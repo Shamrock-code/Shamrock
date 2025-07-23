@@ -14,9 +14,11 @@
  */
 
 #include "shambase/aliases_float.hpp"
+#include "shamalgs/details/random/random.hpp"
 #include "shamalgs/random.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
 #include <pybind11/complex.h>
 
@@ -32,5 +34,14 @@ Register_pymod(shamalgslibinit) {
 
     shamalgs_module.def("mock_gaussian", [](std::mt19937 &eng) {
         return shamalgs::random::mock_gaussian<f64>(eng);
+    });
+    shamalgs_module.def("mock_gaussian_f64_2", [](std::mt19937 &eng) {
+        return shamalgs::random::mock_gaussian_multidim<f64_2>(eng);
+    });
+    shamalgs_module.def("mock_gaussian_f64_3", [](std::mt19937 &eng) {
+        return shamalgs::random::mock_gaussian_multidim<f64_3>(eng);
+    });
+    shamalgs_module.def("mock_unit_vector_f64_3", [](std::mt19937 &eng) {
+        return shamalgs::random::mock_unit_vector<f64_3>(eng);
     });
 }

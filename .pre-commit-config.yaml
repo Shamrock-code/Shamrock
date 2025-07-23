@@ -137,8 +137,8 @@ repos:
       language: python
       pass_filenames: false
 
-    - id: update_authors
-      name: "Update authors"
-      entry: python buildbot/update_authors.py
-      language: python
-      pass_filenames: true
+    # - id: update_authors
+    #   name: "Update authors"
+    #   entry: python buildbot/update_authors.py
+    #   language: python
+    #   pass_filenames: true

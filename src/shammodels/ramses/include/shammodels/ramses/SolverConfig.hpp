@@ -96,7 +96,7 @@ namespace shammodels::basegodunov {
         NoGravity = 0,
         CG        = 1, // conjuguate gradient
         PCG       = 2, // preconditioned conjuguate gradient
-        BIGSTAB   = 3, // bigstab
+        BICGSTAB  = 3, // bicgstab
         MULTIGRID = 4  // multigrid
     };
 
@@ -215,8 +215,8 @@ struct shammodels::basegodunov::SolverConfig {
     inline bool is_boundary_periodic() { return true; }
     GravityConfig<Tvec> gravity_config{};
     inline Tscal get_constant_4piG() {
-        gravity_config.G_value = get_constant_G();
-        return gravity_config.get_fourPiG();
+        auto scal_G = get_constant_G();
+        return 4 * M_PI * scal_G;
     }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }

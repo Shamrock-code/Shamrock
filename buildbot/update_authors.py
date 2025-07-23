@@ -231,7 +231,10 @@ if missing_doxygenfilehead:
 
     # Write markdown report
     report = "## ❌ Authorship update required\n\n"
-    report += "The following files had their author headers updated by the pre-commit hook. Please stage and commit these changes.\n\n"
+    report += (
+        "The following files had their author headers updated by the author update script.\n\n"
+    )
+    report += "Please run the script again (`python3 buildbot/update_authors.py`) and commit these changes.\n\n"
     report += "**Note:** The list below is only partial. Only the first 10 files are shown.\n\n"
     for fname in missing_doxygenfilehead[:10]:
         report += f"- `{fname}`\n"

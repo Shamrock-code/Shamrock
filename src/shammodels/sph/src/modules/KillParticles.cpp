@@ -30,4 +30,6 @@ namespace shammodels::sph::modules {
             });
     }
 
+    std::string KillParticles::_impl_get_tex() { return "TODO"; }
+
 } // namespace shammodels::sph::modules

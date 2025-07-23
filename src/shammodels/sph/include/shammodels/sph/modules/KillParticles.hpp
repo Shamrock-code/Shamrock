@@ -47,7 +47,7 @@ namespace shammodels::sph::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "ConsToPrimGas"; };
+        inline virtual std::string _impl_get_label() { return "KillParticles"; };
 
         virtual std::string _impl_get_tex();
     };

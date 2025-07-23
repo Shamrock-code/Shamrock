@@ -74,7 +74,7 @@ namespace shamrock::solvergraph {
                 [&](u64 id) {
                     buffers.add_obj(id, new_buf());
                 },
-                [&](u64 id) {
+                [](u64 id) {
                     // Nothing for now
                 },
                 [&](u64 id) {

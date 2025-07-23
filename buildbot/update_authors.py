@@ -19,6 +19,13 @@ missing_doxygenfilehead = []
 authorlist = []
 
 
+AUTH_BLACKLIST = ["gemini-code-assist[bot]"]
+
+
+def is_not_in_blacklist(a):
+    return not any(b in a["author"] for b in AUTH_BLACKLIST)
+
+
 def apply_mailmap(authors):
     ret = []
     for a in authors:
@@ -35,6 +42,9 @@ def apply_mailmap(authors):
 
         except subprocess.CalledProcessError as err:
             print(err)
+
+    # Filter out AUTH_BLACKLIST
+    ret = [a for a in ret if is_not_in_blacklist(a)]
 
     return ret
 
@@ -110,6 +120,7 @@ def merge_author_lists(list_blame, list_other):
             merged[a["email"]] = {**a, "from_blame": False}
     # Sort by author name
     merged_list = sorted(merged.values(), key=lambda x: x["author"])
+
     return merged_list
 
 

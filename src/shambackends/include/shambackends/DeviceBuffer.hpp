@@ -969,6 +969,26 @@ namespace sham {
             resize(get_size() - sub_sz);
         }
 
+        inline void append(const DeviceBuffer &other) {
+
+            sham::EventList depends_list;
+            T *ptr             = get_write_access(depends_list);
+            const T *other_ptr = other.get_read_access(depends_list);
+
+            u32 old_size   = get_size();
+            u32 other_size = other.get_size();
+
+            // allocate space
+            expand(other.get_size());
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(other_ptr, ptr + old_size, other_size);
+            });
+
+            complete_event_state(e);
+            other.complete_event_state(e);
+        }
+
         ///////////////////////////////////////////////////////////////////////
         // Size manipulation (END)
         ///////////////////////////////////////////////////////////////////////

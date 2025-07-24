@@ -77,14 +77,14 @@ namespace shambase {
         return sycl::nd_range<1>{len, group_size};
     }
 
-    enum ParallelForWrapMode { PARRALEL_FOR, PARRALEL_FOR_ROUND, ND_RANGE };
+    enum ParallelForWrapMode { PARALLEL_FOR, PARALLEL_FOR_ROUND, ND_RANGE };
 
-#ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR
-    constexpr ParallelForWrapMode default_loop_mode = PARRALEL_FOR;
+#ifdef SHAMROCK_LOOP_DEFAULT_PARALLEL_FOR
+    constexpr ParallelForWrapMode default_loop_mode = PARALLEL_FOR;
 #endif
 
-#ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND
-    constexpr ParallelForWrapMode default_loop_mode = PARRALEL_FOR_ROUND;
+#ifdef SHAMROCK_LOOP_DEFAULT_PARALLEL_FOR_ROUND
+    constexpr ParallelForWrapMode default_loop_mode = PARALLEL_FOR_ROUND;
 #endif
 
 #ifdef SHAMROCK_LOOP_DEFAULT_ND_RANGE
@@ -107,13 +107,13 @@ namespace shambase {
 
         shamlog_debug_sycl_ln("SYCL", shambase::format("parallel_for {} N={}", name, length));
 
-        if constexpr (mode == PARRALEL_FOR) {
+        if constexpr (mode == PARALLEL_FOR) {
 
             cgh.parallel_for(sycl::range<1>{length}, [=](sycl::item<1> id) {
                 ker(id.get_linear_id());
             });
 
-        } else if constexpr (mode == PARRALEL_FOR_ROUND) {
+        } else if constexpr (mode == PARALLEL_FOR_ROUND) {
 
             u32 len = shambase::group_count(length, group_size) * group_size;
 
@@ -158,13 +158,13 @@ namespace shambase {
         shamlog_debug_sycl_ln(
             "SYCL", shambase::format("parallel_for {} N={} {}", name, length_x, length_y));
 
-        if constexpr (mode == PARRALEL_FOR) {
+        if constexpr (mode == PARALLEL_FOR) {
 
             cgh.parallel_for(sycl::range<2>{length_x, length_y}, [=](sycl::item<2> id) {
                 ker(id.get_id(0), id.get_id(1));
             });
 
-        } else if constexpr (mode == PARRALEL_FOR_ROUND) {
+        } else if constexpr (mode == PARALLEL_FOR_ROUND) {
 
             u32 len_x = shambase::group_count(length_x, group_size) * group_size;
             u32 len_y = shambase::group_count(length_y, group_size) * group_size;
@@ -220,13 +220,13 @@ namespace shambase {
             "SYCL",
             shambase::format("parallel_for {} N={} {} {}", name, length_x, length_y, length_z));
 
-        if constexpr (mode == PARRALEL_FOR) {
+        if constexpr (mode == PARALLEL_FOR) {
 
             cgh.parallel_for(sycl::range<3>{length_x, length_y, length_z}, [=](sycl::item<3> id) {
                 ker(id.get_id(0), id.get_id(1), id.get_id(2));
             });
 
-        } else if constexpr (mode == PARRALEL_FOR_ROUND) {
+        } else if constexpr (mode == PARALLEL_FOR_ROUND) {
 
             u32 len_x = shambase::group_count(length_x, group_size) * group_size;
             u32 len_y = shambase::group_count(length_y, group_size) * group_size;
@@ -280,13 +280,13 @@ namespace shambase {
         nvtxRangePush(name);
 #endif
 
-        if constexpr (mode == PARRALEL_FOR) {
+        if constexpr (mode == PARALLEL_FOR) {
 
             cgh.parallel_for(sycl::range<1>{length}, [=](sycl::item<1> id) {
                 ker(id.get_linear_id());
             });
 
-        } else if constexpr (mode == PARRALEL_FOR_ROUND) {
+        } else if constexpr (mode == PARALLEL_FOR_ROUND) {
 
             u32 len = shambase::group_count(length, group_size) * group_size;
 

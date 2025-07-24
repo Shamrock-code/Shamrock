@@ -306,4 +306,9 @@ TestStart(Unittest, "shambackends/DeviceBuffer:append", DeviceBuffer_append, 1) 
     sham::DeviceBuffer<T> buf_empty4(0, dev_sched);
     buf_empty3.append(buf_empty4);
     REQUIRE(buf_empty3.copy_to_stdvec().empty());
+
+    // Case 5: Append to self
+    sham::DeviceBuffer<T> buf5(v1.size(), dev_sched);
+    buf5.copy_from_stdvec(v1);
+    REQUIRE_EXCEPTION_THROW(buf5.append(buf5), std::invalid_argument);
 }

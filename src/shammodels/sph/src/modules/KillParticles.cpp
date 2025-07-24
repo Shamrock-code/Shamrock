@@ -30,4 +30,21 @@ namespace shammodels::sph::modules {
             });
     }
 
+    std::string KillParticles::_impl_get_tex() {
+
+        auto part_to_remove = get_ro_edge_base(0).get_tex_symbol();
+        auto patchdatas     = get_rw_edge_base(0).get_tex_symbol();
+
+        std::string tex = R"tex(
+            Particle killing:
+
+            Remove particles ${part_to_remove}$ from ${patchdatas}$
+        )tex";
+
+        shambase::replace_all(tex, "{part_to_remove}", part_to_remove);
+        shambase::replace_all(tex, "{patchdatas}", patchdatas);
+
+        return tex;
+    }
+
 } // namespace shammodels::sph::modules

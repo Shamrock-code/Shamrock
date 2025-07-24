@@ -363,7 +363,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             sycl::accessor acc_eint_dest{eint_dest, cgh, sycl::write_only};
             sycl::accessor acc_vel_dest{vel_dest, cgh, sycl::write_only};
 
-            shambase::parralel_for(cgh, mpdat.original_elements*Block::block_size, "tmp copy_ack",
+            shambase::parallel_for(cgh, mpdat.original_elements*Block::block_size, "tmp copy_ack",
     [=](u32 id){
                 //acc_rho_dest[id] = acc_rho_src[id];
                 acc_eint_dest[id] = acc_vel_src_xp[id].x();

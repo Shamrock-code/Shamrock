@@ -77,18 +77,18 @@ namespace shambase {
         return sycl::nd_range<1>{len, group_size};
     }
 
-    enum ParralelForWrapMode { PARRALEL_FOR, PARRALEL_FOR_ROUND, ND_RANGE };
+    enum ParallelForWrapMode { PARALLEL_FOR, PARALLEL_FOR_ROUND, ND_RANGE };
 
-#ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR
-    constexpr ParralelForWrapMode default_loop_mode = PARRALEL_FOR;
+#ifdef SHAMROCK_LOOP_DEFAULT_PARALLEL_FOR
+    constexpr ParallelForWrapMode default_loop_mode = PARALLEL_FOR;
 #endif
 
-#ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND
-    constexpr ParralelForWrapMode default_loop_mode = PARRALEL_FOR_ROUND;
+#ifdef SHAMROCK_LOOP_DEFAULT_PARALLEL_FOR_ROUND
+    constexpr ParallelForWrapMode default_loop_mode = PARALLEL_FOR_ROUND;
 #endif
 
 #ifdef SHAMROCK_LOOP_DEFAULT_ND_RANGE
-    constexpr ParralelForWrapMode default_loop_mode = ND_RANGE;
+    constexpr ParallelForWrapMode default_loop_mode = ND_RANGE;
 #endif
 
     constexpr u32 default_gsize    = SHAMROCK_LOOP_GSIZE;
@@ -97,23 +97,23 @@ namespace shambase {
 
     template<
         u32 group_size           = default_gsize,
-        ParralelForWrapMode mode = default_loop_mode,
+        ParallelForWrapMode mode = default_loop_mode,
         class LambdaKernel>
-    inline void parralel_for(sycl::handler &cgh, u32 length, const char *name, LambdaKernel &&ker) {
+    inline void parallel_for(sycl::handler &cgh, u32 length, const char *name, LambdaKernel &&ker) {
 
 #ifdef SHAMROCK_USE_NVTX
         nvtxRangePush(name);
 #endif
 
-        shamlog_debug_sycl_ln("SYCL", shambase::format("parralel_for {} N={}", name, length));
+        shamlog_debug_sycl_ln("SYCL", shambase::format("parallel_for {} N={}", name, length));
 
-        if constexpr (mode == PARRALEL_FOR) {
+        if constexpr (mode == PARALLEL_FOR) {
 
             cgh.parallel_for(sycl::range<1>{length}, [=](sycl::item<1> id) {
                 ker(id.get_linear_id());
             });
 
-        } else if constexpr (mode == PARRALEL_FOR_ROUND) {
+        } else if constexpr (mode == PARALLEL_FOR_ROUND) {
 
             u32 len = shambase::group_count(length, group_size) * group_size;
 
@@ -146,9 +146,9 @@ namespace shambase {
 
     template<
         u32 group_size           = default_gsize_2d,
-        ParralelForWrapMode mode = default_loop_mode,
+        ParallelForWrapMode mode = default_loop_mode,
         class LambdaKernel>
-    inline void parralel_for_2d(
+    inline void parallel_for_2d(
         sycl::handler &cgh, u32 length_x, u32 length_y, const char *name, LambdaKernel &&ker) {
 
 #ifdef SHAMROCK_USE_NVTX
@@ -156,15 +156,15 @@ namespace shambase {
 #endif
 
         shamlog_debug_sycl_ln(
-            "SYCL", shambase::format("parralel_for {} N={} {}", name, length_x, length_y));
+            "SYCL", shambase::format("parallel_for {} N={} {}", name, length_x, length_y));
 
-        if constexpr (mode == PARRALEL_FOR) {
+        if constexpr (mode == PARALLEL_FOR) {
 
             cgh.parallel_for(sycl::range<2>{length_x, length_y}, [=](sycl::item<2> id) {
                 ker(id.get_id(0), id.get_id(1));
             });
 
-        } else if constexpr (mode == PARRALEL_FOR_ROUND) {
+        } else if constexpr (mode == PARALLEL_FOR_ROUND) {
 
             u32 len_x = shambase::group_count(length_x, group_size) * group_size;
             u32 len_y = shambase::group_count(length_y, group_size) * group_size;
@@ -202,9 +202,9 @@ namespace shambase {
 
     template<
         u32 group_size           = default_gsize_3d,
-        ParralelForWrapMode mode = default_loop_mode,
+        ParallelForWrapMode mode = default_loop_mode,
         class LambdaKernel>
-    inline void parralel_for_3d(
+    inline void parallel_for_3d(
         sycl::handler &cgh,
         u32 length_x,
         u32 length_y,
@@ -218,15 +218,15 @@ namespace shambase {
 
         shamlog_debug_sycl_ln(
             "SYCL",
-            shambase::format("parralel_for {} N={} {} {}", name, length_x, length_y, length_z));
+            shambase::format("parallel_for {} N={} {} {}", name, length_x, length_y, length_z));
 
-        if constexpr (mode == PARRALEL_FOR) {
+        if constexpr (mode == PARALLEL_FOR) {
 
             cgh.parallel_for(sycl::range<3>{length_x, length_y, length_z}, [=](sycl::item<3> id) {
                 ker(id.get_id(0), id.get_id(1), id.get_id(2));
             });
 
-        } else if constexpr (mode == PARRALEL_FOR_ROUND) {
+        } else if constexpr (mode == PARALLEL_FOR_ROUND) {
 
             u32 len_x = shambase::group_count(length_x, group_size) * group_size;
             u32 len_y = shambase::group_count(length_y, group_size) * group_size;
@@ -272,21 +272,21 @@ namespace shambase {
 #endif
     }
 
-    template<ParralelForWrapMode mode = default_loop_mode, class LambdaKernel>
-    inline void parralel_for_gsize(
+    template<ParallelForWrapMode mode = default_loop_mode, class LambdaKernel>
+    inline void parallel_for_gsize(
         sycl::handler &cgh, u32 length, u32 group_size, const char *name, LambdaKernel &&ker) {
 
 #ifdef SHAMROCK_USE_NVTX
         nvtxRangePush(name);
 #endif
 
-        if constexpr (mode == PARRALEL_FOR) {
+        if constexpr (mode == PARALLEL_FOR) {
 
             cgh.parallel_for(sycl::range<1>{length}, [=](sycl::item<1> id) {
                 ker(id.get_linear_id());
             });
 
-        } else if constexpr (mode == PARRALEL_FOR_ROUND) {
+        } else if constexpr (mode == PARALLEL_FOR_ROUND) {
 
             u32 len = shambase::group_count(length, group_size) * group_size;
 

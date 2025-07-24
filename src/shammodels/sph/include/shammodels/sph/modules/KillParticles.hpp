@@ -25,7 +25,7 @@ namespace shammodels::sph::modules {
     class KillParticles : public shamrock::solvergraph::INode {
 
         public:
-        KillParticles() {}
+        KillParticles() = default;
 
         struct Edges {
             const shamrock::solvergraph::DistributedBuffers<u32> &part_to_remove;

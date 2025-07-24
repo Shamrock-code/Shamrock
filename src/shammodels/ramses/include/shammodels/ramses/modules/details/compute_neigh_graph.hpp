@@ -54,7 +54,7 @@ namespace shammodels::basegodunov::modules::details {
 
         // fill buffer with number of link in the block graph
         auto e = q.submit(deps, [&](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, graph_nodes, "count block graph link", [=](u64 gid) {
+            shambase::parallel_for(cgh, graph_nodes, "count block graph link", [=](u64 gid) {
                 u32 id_a              = (u32) gid;
                 u32 block_found_count = 0;
 
@@ -86,7 +86,7 @@ namespace shammodels::basegodunov::modules::details {
 
         // find the neigh ids
         auto e2 = q.submit(deps2, [&](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, graph_nodes, "get ids block graph link", [=](u64 gid) {
+            shambase::parallel_for(cgh, graph_nodes, "get ids block graph link", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 u32 next_link_idx = cnt_offsets[id_a];
@@ -135,7 +135,7 @@ namespace shammodels::basegodunov::modules::details {
         // fill buffer with number of link in the block graph
         auto e = q.submit(deps, [&](sycl::handler &cgh) {
             NeighFindKernel ker(cgh, std::forward<Args>(args)...);
-            shambase::parralel_for(cgh, graph_nodes, "count block graph link", [=](u64 gid) {
+            shambase::parallel_for(cgh, graph_nodes, "count block graph link", [=](u64 gid) {
                 u32 id_a              = (u32) gid;
                 u32 block_found_count = 0;
 
@@ -166,7 +166,7 @@ namespace shammodels::basegodunov::modules::details {
         // find the neigh ids
         auto e2 = q.submit(deps2, [&](sycl::handler &cgh) {
             NeighFindKernel ker(cgh, std::forward<Args>(args)...);
-            shambase::parralel_for(cgh, graph_nodes, "get ids block graph link", [=](u64 gid) {
+            shambase::parallel_for(cgh, graph_nodes, "get ids block graph link", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 u32 next_link_idx = cnt_offsets[id_a];

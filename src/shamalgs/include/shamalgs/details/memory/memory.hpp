@@ -131,7 +131,7 @@ namespace shamalgs::memory {
         StackEntry stack_loc{};
         q.submit([&, value](sycl::handler &cgh) {
             sycl::accessor acc{buf, cgh, sycl::write_only};
-            shambase::parralel_for(cgh, buf.size(), "buf_fill", [=](u64 id_a) {
+            shambase::parallel_for(cgh, buf.size(), "buf_fill", [=](u64 id_a) {
                 acc[id_a] = value;
             });
         });
@@ -151,7 +151,7 @@ namespace shamalgs::memory {
         q.submit([&, value](sycl::handler &cgh) {
             sycl::accessor acc{buf, cgh, sycl::write_only, sycl::no_init};
 
-            shambase::parralel_for(cgh, buf.size(), "buff_fill_discard", [=](u64 id_a) {
+            shambase::parallel_for(cgh, buf.size(), "buff_fill_discard", [=](u64 id_a) {
                 acc[id_a] = value;
             });
         });
@@ -197,7 +197,7 @@ namespace shamalgs::memory {
             sycl::accessor src{source, cgh, sycl::read_only};
             sycl::accessor dst{dest, cgh, sycl::write_only, sycl::no_init};
 
-            shambase::parralel_for(cgh, cnt, "copybuf_discard", [=](u64 i) {
+            shambase::parallel_for(cgh, cnt, "copybuf_discard", [=](u64 i) {
                 dst[i] = src[i];
             });
         });
@@ -209,7 +209,7 @@ namespace shamalgs::memory {
             sycl::accessor src{source, cgh, sycl::read_only};
             sycl::accessor dst{dest, cgh, sycl::write_only};
 
-            shambase::parralel_for(cgh, cnt, "copybuf", [=](u64 i) {
+            shambase::parallel_for(cgh, cnt, "copybuf", [=](u64 i) {
                 dst[i] = src[i];
             });
         });
@@ -224,7 +224,7 @@ namespace shamalgs::memory {
 
             T fac = factor;
 
-            shambase::parralel_for(cgh, cnt, "add_with_factor_to", [=](u64 i) {
+            shambase::parallel_for(cgh, cnt, "add_with_factor_to", [=](u64 i) {
                 acc[i] += fac * dd[i];
             });
         });

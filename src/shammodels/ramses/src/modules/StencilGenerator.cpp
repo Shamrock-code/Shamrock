@@ -128,7 +128,7 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::compute
             sycl::accessor acc_stencil_info{
                 stencil_block_info, cgh, sycl::write_only, sycl::no_init};
 
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, mpdat.total_elements, "compute neigh cache 1", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
@@ -198,7 +198,7 @@ auto shammodels::basegodunov::modules::StencilGenerator<Tvec, TgridVec>::lower_b
         sycl::accessor acc_stencil_block{block_stencil_el, cgh, sycl::read_only};
         sycl::accessor acc_stencil_cell{ret, cgh, sycl::write_only, sycl::no_init};
 
-        shambase::parralel_for(cgh, cell_count, "block stencil to cell lowering", [=](u64 gid) {
+        shambase::parallel_for(cgh, cell_count, "block stencil to cell lowering", [=](u64 gid) {
             u32 cell_global_id = (u32) gid;
 
             u32 block_id    = cell_global_id / AMRBlock::block_size;

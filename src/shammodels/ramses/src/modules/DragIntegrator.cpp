@@ -109,7 +109,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
         auto acc_rhoe = rhoe_patch.get_write_access(depend_list);
 
         auto e1 = q.submit(depend_list, [&, dt](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, cell_count, "evolve field with no drag", [=](u32 id_a) {
+            shambase::parallel_for(cgh, cell_count, "evolve field with no drag", [=](u32 id_a) {
                 acc_rho[id_a]  = rho[id_a] + dt * acc_dt_rho_patch[id_a];
                 acc_rhov[id_a] = rhov[id_a] + dt * acc_dt_rhov_patch[id_a];
                 acc_rhoe[id_a] = rhoe[id_a] + dt * acc_dt_rhoe_patch[id_a];
@@ -139,7 +139,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
         auto acc_rhov_d = rhov_d_patch.get_write_access(depend_list1);
 
         auto e2 = q.submit(depend_list1, [&, dt, ndust](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, ndust * cell_count, "dust  evolve field no drag", [=](u32 id_a) {
                     acc_rho_d[id_a]  = rho_d[id_a] + dt * acc_dt_rho_d_patch[id_a];
                     acc_rhov_d[id_a] = rhov_d[id_a] + dt * acc_dt_rhov_d_patch[id_a];
@@ -237,7 +237,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
         auto acc_alphas = alphas_buf.get_read_access(depend_list);
 
         auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, cell_count, "add_drag [irk1]", [=](u32 id_a) {
+            shambase::parallel_for(cgh, cell_count, "add_drag [irk1]", [=](u32 id_a) {
                 f64_3 tmp_mom_1 = acc_rhov_new_patch[id_a];
                 f64 tmp_rho     = acc_rho_old[id_a];
 

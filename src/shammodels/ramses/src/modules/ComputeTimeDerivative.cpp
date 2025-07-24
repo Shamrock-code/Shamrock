@@ -220,7 +220,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
                 return delta_face.x() * delta_face.y() * delta_face.z();
             };
 
-            shambase::parralel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
+            shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
                 const u32 cell_global_id = (u32) id_a;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
@@ -505,7 +505,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
                 return delta_face.x() * delta_face.y() * delta_face.z();
             };
 
-            shambase::parralel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 ivar_a) {
+            shambase::parallel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 ivar_a) {
                 // cell id in the global space of index
                 const u32 icell_a = ivar_a / ndust;
                 // variable id in the cell of icell_a id

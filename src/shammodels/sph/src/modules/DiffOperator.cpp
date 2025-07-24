@@ -83,7 +83,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute divv", [=](i32 id_a) {
+                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute divv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
                     Tvec sum_axyz  = {0, 0, 0};
@@ -204,7 +204,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute curlv", [=](i32 id_a) {
+                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute curlv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
                     Tvec sum_axyz  = {0, 0, 0};

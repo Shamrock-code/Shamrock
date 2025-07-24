@@ -352,7 +352,7 @@ class PatchDataField {
      * @return std::vector<u32>
      */
     template<class Lambdacd, class... Args>
-    inline sham::DeviceBuffer<u32> get_ids_where(Lambdacd &&cd_true, Args... args) {
+    inline sham::DeviceBuffer<u32> get_ids_where(Lambdacd &&cd_true, Args... args) const {
         StackEntry stack_loc{};
 
         auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();

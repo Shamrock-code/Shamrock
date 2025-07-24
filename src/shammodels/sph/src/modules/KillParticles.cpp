@@ -19,6 +19,7 @@
 namespace shammodels::sph::modules {
 
     void KillParticles::_impl_evaluate_internal() {
+        StackEntry stack_loc{};
         auto edges = get_edges();
 
         edges.part_to_remove.check_allocated(edges.patchdatas.patchdatas.get_ids());
@@ -26,7 +27,10 @@ namespace shammodels::sph::modules {
         edges.patchdatas.patchdatas.for_each(
             [&](u64 id_patch, shamrock::patch::PatchData &patchdata) {
                 auto &buf = edges.part_to_remove.buffers.get(id_patch);
-                patchdata.remove_ids(buf, buf.get_size());
+                u32 bsize = buf.get_size();
+                if (bsize > 0) {
+                    patchdata.remove_ids(buf, bsize);
+                }
             });
     }
 

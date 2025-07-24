@@ -32,6 +32,7 @@
 #include "shammodels/sph/SPHSolverImpl.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/Solver.hpp"
+#include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
@@ -44,6 +45,8 @@
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
+#include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
+#include "shammodels/sph/modules/KillParticles.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
@@ -61,7 +64,12 @@
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
+#include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/IFieldRefs.hpp"
+#include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
@@ -1019,6 +1027,73 @@ void shammodels::sph::Solver<Tvec, Kern>::update_sync_load_values() {
 }
 
 template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::part_killing_step() {
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    if (solver_config.particle_killing.kill_list.size() == 0) {
+        return;
+    }
+
+    PatchDataLayout &pdl = scheduler().pdl;
+    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> pos
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
+
+    {
+        shamrock::solvergraph::DDPatchDataFieldRef<Tvec> refs = {};
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            refs.add_obj(cur_p.id_patch, std::ref(pdat.get_field<Tvec>(ixyz)));
+        });
+        pos->set_refs(refs);
+    }
+
+    std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> patchdatas
+        = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>("", "");
+
+    {
+        patchdatas->free_alloc();
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            patchdatas->patchdatas.add_obj(cur_p.id_patch, std::ref(pdat));
+        });
+    }
+
+    std::shared_ptr<shamrock::solvergraph::DistributedBuffers<u32>> part_to_remove
+        = std::make_shared<shamrock::solvergraph::DistributedBuffers<u32>>("", "");
+
+    std::vector<std::shared_ptr<shamrock::solvergraph::INode>> part_kill_sequence;
+
+    using kill_t      = typename ParticleKillingConfig<Tvec>::kill_t;
+    using kill_sphere = typename ParticleKillingConfig<Tvec>::Sphere;
+
+    // selectors
+    for (kill_t &kill_obj : solver_config.particle_killing.kill_list) {
+        if (kill_sphere *kill_info = std::get_if<kill_sphere>(&kill_obj)) {
+
+            modules::GetParticlesOutsideSphere<Tvec> node_selector(
+                kill_info->center, kill_info->radius);
+            node_selector.set_edges(pos, part_to_remove);
+
+            part_kill_sequence.push_back(
+                std::make_shared<decltype(node_selector)>(std::move(node_selector)));
+        }
+    }
+
+    { // killing
+        modules::KillParticles node_killer{};
+        node_killer.set_edges(part_to_remove, patchdatas);
+
+        part_kill_sequence.push_back(
+            std::make_shared<decltype(node_killer)>(std::move(node_killer)));
+    }
+
+    shamrock::solvergraph::OperationSequence seq("particle killing", std::move(part_kill_sequence));
+    seq.evaluate();
+}
+
+template<class Tvec, template<class> class Kern>
 shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
@@ -1083,6 +1158,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     do_predictor_leapfrog(dt);
 
     sink_update.predictor_step(dt);
+
+    part_killing_step();
 
     sink_update.compute_ext_forces();
 

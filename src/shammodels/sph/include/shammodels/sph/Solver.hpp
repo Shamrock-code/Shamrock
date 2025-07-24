@@ -166,6 +166,7 @@ namespace shammodels::sph {
         Solver(ShamrockCtx &context) : context(context) {}
 
         void init_solver_graph();
+        void part_killing_step();
 
         void vtk_do_dump(std::string filename, bool add_patch_world_id);
 

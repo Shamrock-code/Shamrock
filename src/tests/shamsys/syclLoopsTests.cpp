@@ -113,7 +113,7 @@ TestStart(Benchmark, "sycl/loop_perfs", syclloopperfs, 1) {
                         .submit([&](sycl::handler &cgh) {
                             sycl::accessor acc{buf, cgh, sycl::read_write};
 
-                            shambase::parralel_for(cgh, sz, "test_kernel", [=](u64 gid) {
+                            shambase::parallel_for(cgh, sz, "test_kernel", [=](u64 gid) {
                                 auto tmp = acc[gid];
                                 acc[gid] = tmp * tmp;
                             });

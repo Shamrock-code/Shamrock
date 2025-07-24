@@ -52,7 +52,7 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
     auto acc_vxyz = buf_vxyz.get_write_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        shambase::parralel_for(cgh, tmp.get_obj_cnt(), "Warp", [=](i32 id_a) {
+        shambase::parallel_for(cgh, tmp.get_obj_cnt(), "Warp", [=](i32 id_a) {
             Tvec &xyz_a  = acc_xyz[id_a];
             Tvec &vxyz_a = acc_vxyz[id_a];
 

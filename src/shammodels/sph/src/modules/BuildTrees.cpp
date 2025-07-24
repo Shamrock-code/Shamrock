@@ -96,7 +96,7 @@ namespace shammodels::sph::modules {
                     Tvec imin = shambase::VectorProperties<Tvec>::get_max();
                     Tvec imax = -shambase::VectorProperties<Tvec>::get_max();
 
-                    shambase::parralel_for(cgh, leaf_count, "compute leaf boxes", [=](u64 leaf_id) {
+                    shambase::parallel_for(cgh, leaf_count, "compute leaf boxes", [=](u64 leaf_id) {
                         Tvec min = imin;
                         Tvec max = imax;
 
@@ -149,7 +149,7 @@ namespace shammodels::sph::modules {
                         cgh,
                         sycl::read_only};
 
-                    shambase::parralel_for(cgh, internal_cell_count, "propagate up", [=](u64 gid) {
+                    shambase::parallel_for(cgh, internal_cell_count, "propagate up", [=](u64 gid) {
                         u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
                         u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
 
@@ -186,7 +186,7 @@ namespace shammodels::sph::modules {
                     sycl::accessor tree_buf_min{tree_bmin, cgh, sycl::read_write};
                     sycl::accessor tree_buf_max{tree_bmax, cgh, sycl::read_write};
 
-                    shambase::parralel_for(cgh, tot_count, "write in tree range", [=](u64 nid) {
+                    shambase::parallel_for(cgh, tot_count, "write in tree range", [=](u64 nid) {
                         Tvec load_min = comp_bmin[nid];
                         Tvec load_max = comp_bmax[nid];
 

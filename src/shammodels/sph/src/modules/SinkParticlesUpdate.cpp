@@ -68,7 +68,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
                 Tvec r_sink    = s.pos;
                 Tscal acc_rad2 = s.accretion_radius * s.accretion_radius;
 
-                shambase::parralel_for(cgh, Nobj, "check accretion", [=](i32 id_a) {
+                shambase::parallel_for(cgh, Nobj, "check accretion", [=](i32 id_a) {
                     Tvec r            = xyz[id_a] - r_sink;
                     bool not_accreted = sycl::dot(r, r) > acc_rad2;
                     not_acc[id_a]     = (not_accreted) ? 1 : 0;
@@ -102,7 +102,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
 
                     sycl::accessor accretion_p{pxyz_acc, cgh, sycl::write_only};
 
-                    shambase::parralel_for(
+                    shambase::parallel_for(
                         cgh, Naccrete, "compute sum momentum accretion", [=](i32 id_a) {
                             accretion_p[id_a] = gpart_mass * vxyz[id_acc[id_a]];
                         });
@@ -234,7 +234,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
                 [&, G, epsilon_grav, sink_mass, sink_pos, sink_racc](sycl::handler &cgh) {
                     sycl::accessor axyz_sync{buf_sync_axyz, cgh, sycl::write_only, sycl::no_init};
 
-                    shambase::parralel_for(
+                    shambase::parallel_for(
                         cgh, pdat.get_obj_cnt(), "sink-sph forces", [=](i32 id_a) {
                             Tvec r_a = xyz[id_a];
 

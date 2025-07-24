@@ -103,7 +103,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute dtdivv", [=](i32 id_a) {
+                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute dtdivv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
                     Tvec sum_axyz  = ZVEC;
@@ -228,7 +228,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(
+                shambase::parallel_for(
                     cgh, pdat.get_obj_cnt(), "compute dtdivv + divcurl v", [=](i32 id_a) {
                         using namespace shamrock::sph;
 

@@ -140,7 +140,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force cte AV", [=](u64 gid) {
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute force cte AV", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
@@ -341,7 +341,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force MM97 AV", [=](u64 gid) {
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute force MM97 AV", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
@@ -553,7 +553,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force CD10 AV", [=](u64 gid) {
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute force CD10 AV", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
@@ -753,7 +753,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute force disc", [=](u64 gid) {
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute force disc", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;
@@ -1015,7 +1015,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute MHD", [=](u64 gid) {
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute MHD", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;

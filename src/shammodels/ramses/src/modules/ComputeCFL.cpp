@@ -77,7 +77,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
             Tscal one_over_Nside = 1. / AMRBlock::Nside;
 
             Tscal dxfact = solver_config.grid_coord_to_pos_fact;
-            shambase::parralel_for(cgh, cell_count, "compute_cfl", [=](u64 gid) {
+            shambase::parallel_for(cgh, cell_count, "compute_cfl", [=](u64 gid) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
@@ -173,7 +173,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal C_safe = solver_config.Csafe;
 
-            shambase::parralel_for(cgh, ndust * cell_count, "compute_dust_cfl", [=](u64 gid) {
+            shambase::parallel_for(cgh, ndust * cell_count, "compute_dust_cfl", [=](u64 gid) {
                 const u32 tmp_gid        = (u32) gid;
                 const u32 cell_global_id = tmp_gid / ndust;
                 const u32 ndust_off_loc  = tmp_gid % ndust;

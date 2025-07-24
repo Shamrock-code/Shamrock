@@ -99,13 +99,13 @@ namespace shambase {
         u32 group_size           = default_gsize,
         ParralelForWrapMode mode = default_loop_mode,
         class LambdaKernel>
-    inline void parralel_for(sycl::handler &cgh, u32 length, const char *name, LambdaKernel &&ker) {
+    inline void parallel_for(sycl::handler &cgh, u32 length, const char *name, LambdaKernel &&ker) {
 
 #ifdef SHAMROCK_USE_NVTX
         nvtxRangePush(name);
 #endif
 
-        shamlog_debug_sycl_ln("SYCL", shambase::format("parralel_for {} N={}", name, length));
+        shamlog_debug_sycl_ln("SYCL", shambase::format("parallel_for {} N={}", name, length));
 
         if constexpr (mode == PARRALEL_FOR) {
 
@@ -148,7 +148,7 @@ namespace shambase {
         u32 group_size           = default_gsize_2d,
         ParralelForWrapMode mode = default_loop_mode,
         class LambdaKernel>
-    inline void parralel_for_2d(
+    inline void parallel_for_2d(
         sycl::handler &cgh, u32 length_x, u32 length_y, const char *name, LambdaKernel &&ker) {
 
 #ifdef SHAMROCK_USE_NVTX
@@ -156,7 +156,7 @@ namespace shambase {
 #endif
 
         shamlog_debug_sycl_ln(
-            "SYCL", shambase::format("parralel_for {} N={} {}", name, length_x, length_y));
+            "SYCL", shambase::format("parallel_for {} N={} {}", name, length_x, length_y));
 
         if constexpr (mode == PARRALEL_FOR) {
 
@@ -204,7 +204,7 @@ namespace shambase {
         u32 group_size           = default_gsize_3d,
         ParralelForWrapMode mode = default_loop_mode,
         class LambdaKernel>
-    inline void parralel_for_3d(
+    inline void parallel_for_3d(
         sycl::handler &cgh,
         u32 length_x,
         u32 length_y,
@@ -218,7 +218,7 @@ namespace shambase {
 
         shamlog_debug_sycl_ln(
             "SYCL",
-            shambase::format("parralel_for {} N={} {} {}", name, length_x, length_y, length_z));
+            shambase::format("parallel_for {} N={} {} {}", name, length_x, length_y, length_z));
 
         if constexpr (mode == PARRALEL_FOR) {
 
@@ -273,7 +273,7 @@ namespace shambase {
     }
 
     template<ParralelForWrapMode mode = default_loop_mode, class LambdaKernel>
-    inline void parralel_for_gsize(
+    inline void parallel_for_gsize(
         sycl::handler &cgh, u32 length, u32 group_size, const char *name, LambdaKernel &&ker) {
 
 #ifdef SHAMROCK_USE_NVTX

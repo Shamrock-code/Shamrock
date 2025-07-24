@@ -207,7 +207,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "add_kill_sphere",
-            [](TConfig &self, Tvec center, Tscal radius) {
+            [](TConfig &self, const Tvec &center, Tscal radius) {
                 self.particle_killing.add_kill_sphere(center, radius);
             },
             py::kw_only(),

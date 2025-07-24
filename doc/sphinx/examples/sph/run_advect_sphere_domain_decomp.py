@@ -43,7 +43,7 @@ import os
 
 # Create the dump directory if it does not exist
 if shamrock.sys.world_rank() == 0:
-    os.system("mkdir -p " + dump_folder)
+    os.makedirs(dump_folder, exist_ok=True)
 
 ####################################################
 # Setup the simulation

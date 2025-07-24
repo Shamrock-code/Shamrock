@@ -12,7 +12,7 @@
 /**
  * @file CGMatVecProd.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @brief
+ * @brief Implementation of matrix-vector product [A*p] for the conjugate gradient solver.
  *
  */
 

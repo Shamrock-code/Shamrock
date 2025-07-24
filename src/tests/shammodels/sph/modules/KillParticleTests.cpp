@@ -14,6 +14,7 @@
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamtest/shamtest.hpp"
+#include <memory>
 #include <vector>
 
 TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) {
@@ -43,13 +44,12 @@ TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) 
     REQUIRE_EQUAL(pdat.get_obj_cnt(), 5);
 
     // 3. Create PatchDataLayerRefs referencing this PatchData (patch id 0)
-    auto patchdatas = std::shared_ptr<solvergraph::PatchDataLayerRefs>(
-        new solvergraph::PatchDataLayerRefs("patchdatas", "patchdatas"));
+    auto patchdatas = std::make_shared<solvergraph::PatchDataLayerRefs>("patchdatas", "patchdatas");
     patchdatas->patchdatas.add_obj(0, std::ref(pdat));
 
     // 4. Create DistributedBuffers<u32> with indices {0, 4} (remove first and last)
-    auto part_to_remove = std::shared_ptr<solvergraph::DistributedBuffers<u32>>(
-        new solvergraph::DistributedBuffers<u32>("part_to_remove", "part_to_remove"));
+    auto part_to_remove = std::make_shared<solvergraph::DistributedBuffers<u32>>(
+        "part_to_remove", "part_to_remove");
     sham::DeviceBuffer<u32> idx_buf(2, shamsys::instance::get_compute_scheduler_ptr());
     std::vector<u32> idxs = {0, 4};
     idx_buf.copy_from_stdvec(idxs);
@@ -62,17 +62,17 @@ TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) 
 
     // 6. Assert PatchData now has 3 particles 1,2,3
 
-    std::vector<T> exptected_field_1 = {1, 2, 3};
-    std::vector<T> exptected_field_2 = {1, 1, 2, 2, 3, 3};
+    std::vector<T> expected_field_1 = {1, 2, 3};
+    std::vector<T> expected_field_2 = {1, 1, 2, 2, 3, 3};
     REQUIRE_EQUAL(pdat.get_obj_cnt(), 3);
     {
         auto &field           = pdat.get_field<T>(layout.get_field_idx<T>("single_var"));
         std::vector<T> result = field.copy_to_stdvec();
-        REQUIRE_EQUAL(result, exptected_field_1);
+        REQUIRE_EQUAL(result, expected_field_1);
     }
     {
         auto &field           = pdat.get_field<T>(layout.get_field_idx<T>("multi_var"));
         std::vector<T> result = field.copy_to_stdvec();
-        REQUIRE_EQUAL(result, exptected_field_2);
+        REQUIRE_EQUAL(result, expected_field_2);
     }
 }

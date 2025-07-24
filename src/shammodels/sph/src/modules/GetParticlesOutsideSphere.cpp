@@ -15,6 +15,7 @@
  *
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 
@@ -22,6 +23,7 @@ namespace shammodels::sph::modules {
 
     template<typename Tvec>
     void GetParticlesOutsideSphere<Tvec>::_impl_evaluate_internal() {
+        StackEntry stack_loc{};
         auto edges = get_edges();
 
         const shamrock::solvergraph::DDPatchDataFieldRef<Tvec> &pos_refs = edges.pos.get_refs();

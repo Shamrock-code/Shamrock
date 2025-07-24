@@ -32,6 +32,12 @@ C_force = 0.25
 
 bsize = 4
 
+
+render_gif = True
+
+dump_folder = "_to_trash"
+sim_name = "/kill_particle_sphere_"
+
 # %%
 # Setup
 
@@ -47,10 +53,9 @@ cfg = model.gen_default_config()
 cfg.set_artif_viscosity_VaryingCD10(
     alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
 )
-cfg.set_particle_tracking(True)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(1.00001)
-cfg.add_kill_sphere((0.0, 0.0, 0.0), 4.0)
+cfg.add_kill_sphere(center=(0.0, 0.0, 0.0), radius=4.0)
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -83,73 +88,122 @@ model.timestep()
 model.change_htolerance(1.1)
 
 
-# %%
-# Init history table
-part_history = []
-
-data = ctx.collect_data()
-print(data)
-
-part_history = [{} for i in range(len(data["xyz"]))]
-for i in range(len(data["xyz"])):
-    part_history[data["part_id"][i]] = {
-        "x": [data["xyz"][i][0]],
-        "y": [data["xyz"][i][1]],
-        "z": [data["xyz"][i][2]],
-    }
-
-
-def append_to_history():
-    data = ctx.collect_data()
-
-    for i in range(len(data["xyz"])):
-        part_history[data["part_id"][i]]["x"].append(data["xyz"][i][0])
-        part_history[data["part_id"][i]]["y"].append(data["xyz"][i][1])
-        part_history[data["part_id"][i]]["z"].append(data["xyz"][i][2])
-
-
-# %%
-# Run the sim
-for i in range(5):
-    model.timestep()
-    append_to_history()
-
-# %%
-# Plot particles history
+####################################################
+# Draw utilities
+####################################################
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
 
-fig = plt.figure()
+
+def plot_state(iplot):
+
+    pos = ctx.collect_data()["xyz"]
+
+    if shamrock.sys.world_rank() == 0:
+        X = pos[:, 0]
+        Y = pos[:, 1]
+        Z = pos[:, 2]
+
+        plt.cla()
+
+        ax.set_xlim3d(bmin[0], bmax[0])
+        ax.set_ylim3d(bmin[1], bmax[1])
+        ax.set_zlim3d(bmin[2], bmax[2])
+
+        ax.scatter(X, Y, Z, s=1)
+
+        ax.set_title(f"t = {model.get_time():.2f} ")
+
+        plt.savefig(dump_folder + sim_name + f"_{iplot:04}.png")
+
+
+####################################################
+# Run the simulation
+####################################################
+nstop = 80  # 100 normally
+dt_stop = 0.1
+
+t_stop = [i * dt_stop for i in range(nstop + 1)]
+
+# Init MPL
+fig = plt.figure(dpi=120)
 ax = fig.add_subplot(111, projection="3d")
 
-for i in range(len(part_history)):
-    ax.plot(part_history[i]["x"], part_history[i]["y"], part_history[i]["z"], ".-", lw=0.2)
+iplot = 0
+istop = 0
+for ttarg in t_stop:
 
-ax.set_xlabel("X")
-ax.set_ylabel("Y")
-ax.set_zlabel("Z")
+    model.evolve_until(ttarg)
 
-ax.set_xlim(-4, 4)
-ax.set_ylim(-4, 4)
-ax.set_zlim(-4, 4)
+    # if do_plots:
+    plot_state(iplot)
+
+    iplot += 1
+    istop += 1
+
+plt.close(fig)
+
+####################################################
+# Convert PNG sequence to Image sequence in mpl
+####################################################
+import matplotlib.animation as animation
 
 
-fig = plt.figure()
-ax = fig.add_subplot(111, projection="3d")
+def show_image_sequence(glob_str):
 
-ax.plot(part_history[0]["x"], part_history[0]["y"], part_history[0]["z"], ".-", lw=0.5, label="0")
-ax.plot(part_history[1]["x"], part_history[1]["y"], part_history[1]["z"], ".-", lw=0.5, label="1")
-ax.plot(part_history[2]["x"], part_history[2]["y"], part_history[2]["z"], ".-", lw=0.5, label="2")
+    if render_gif and shamrock.sys.world_rank() == 0:
 
-ax.set_xlabel("X")
-ax.set_ylabel("Y")
-ax.set_zlabel("Z")
+        import glob
 
-ax.set_xlim(-4, 4)
-ax.set_ylim(-4, 4)
-ax.set_zlim(-4, 4)
+        files = sorted(glob.glob(glob_str))
 
-ax.legend()
+        from PIL import Image
 
-plt.show()
+        image_array = []
+        for my_file in files:
+            image = Image.open(my_file)
+            image_array.append(image)
+
+        img = Image.open(files[0])
+        pixel_x, pixel_y = img.size
+
+        # Create the figure and axes objects
+        # Remove axes, ticks, and frame & set aspect ratio
+        dpi = 200
+        fig = plt.figure(dpi=dpi)
+        plt.gca().set_position((0, 0, 1, 1))
+        plt.gcf().set_size_inches(pixel_x / dpi, pixel_y / dpi)
+        plt.axis("off")
+
+        # Set the initial image with correct aspect ratio
+        im = plt.imshow(image_array[0], animated=True, aspect="auto")
+
+        def update(i):
+            im.set_array(image_array[i])
+            return (im,)
+
+        # Create the animation object
+        ani = animation.FuncAnimation(
+            fig,
+            update,
+            frames=len(image_array),
+            interval=50,
+            blit=True,
+            repeat_delay=10,
+        )
+
+        return ani
+
+
+# If the animation is not returned only a static image will be shown in the doc
+ani = show_image_sequence(dump_folder + sim_name + "_*.png")
+
+if render_gif and shamrock.sys.world_rank() == 0:
+    # To save the animation using Pillow as a gif
+    # writer = animation.PillowWriter(fps=15,
+    #                                 metadata=dict(artist='Me'),
+    #                                 bitrate=1800)
+    # ani.save('scatter.gif', writer=writer)
+
+    # Show the animation
+    plt.show()

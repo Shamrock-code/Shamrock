@@ -15,6 +15,7 @@
  *
  */
 
+#include "shambase/string.hpp"
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 
 namespace shammodels::sph::modules {
@@ -41,6 +42,24 @@ namespace shammodels::sph::modules {
 
     template<typename Tvec>
     std::string GetParticlesOutsideSphere<Tvec>::_impl_get_tex() {
+        auto pos                     = get_ro_edge_base(0).get_tex_symbol();
+        auto part_ids_outside_sphere = get_rw_edge_base(0).get_tex_symbol();
+
+        std::string tex = R"tex(
+        Get particles outside of the sphere
+
+        \begin{align}
+        {part_ids_outside_sphere} &= \{i \text{ where } \vert\vert{pos}_i - c\vert\vert < r\}\\
+        c &= {center}\\
+        r &= {radius}
+        \end{align}
+        )tex";
+
+        shambase::replace_all(tex, "{pos}", pos);
+        shambase::replace_all(tex, "{part_ids_outside_sphere}", part_ids_outside_sphere);
+        shambase::replace_all(tex, "{center}", shambase::format("{}", sphere_center));
+        shambase::replace_all(tex, "{radius}", shambase::format("{}", sphere_radius));
+
         return "TODO";
     }
 

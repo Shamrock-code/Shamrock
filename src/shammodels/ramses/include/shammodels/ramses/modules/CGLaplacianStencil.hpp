@@ -29,6 +29,7 @@ namespace shammodels::basegodunov {
      *
      * @tparam T
      * @tparam Tvec
+     * @tparam TUint
      * @tparam ACCField
      * @param cell_global_id
      * @param delta_cell
@@ -121,4 +122,4 @@ namespace shammodels::basegodunov {
 
         return res;
     }
-} // namespace
+} // namespace shammodels::basegodunov

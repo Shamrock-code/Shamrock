@@ -85,7 +85,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
             auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+                shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     Tscal rint_a = hpart[id_a] * h_tolerance;
@@ -152,7 +152,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
             auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
+                shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     Tscal rint_a = hpart[id_a] * h_tolerance;
@@ -286,7 +286,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
             auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                 u32 offset_leaf = intnode_cnt;
 
-                shambase::parralel_for(cgh, leaf_cnt, "compute neigh cache 1", [=](u64 gid) {
+                shambase::parallel_for(cgh, leaf_cnt, "compute neigh cache 1", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     Tscal leaf_a_rint    = rint_tree[offset_leaf + gid] * Kernel::Rkern;
@@ -363,7 +363,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
             auto e = q.submit(depends_list, [&, h_tolerance](sycl::handler &cgh) {
                 u32 offset_leaf = intnode_cnt;
 
-                shambase::parralel_for(cgh, leaf_cnt, "compute neigh cache 2", [=](u64 gid) {
+                shambase::parallel_for(cgh, leaf_cnt, "compute neigh cache 2", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     Tscal leaf_a_rint    = rint_tree[offset_leaf + gid] * Kernel::Rkern;
@@ -416,7 +416,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                 sycl::accessor found_id{leaf_part_id, cgh, sycl::write_only, sycl::no_init};
                 u32 offset_leaf = intnode_cnt;
                 // sycl::stream out {4096,4096,cgh};
-                shambase::parralel_for(cgh, obj_cnt, "search particles parent leaf", [=](u64 gid) {
+                shambase::parallel_for(cgh, obj_cnt, "search particles parent leaf", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     Tvec r_a = xyz[id_a];
@@ -489,7 +489,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+                shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     Tscal rint_a = hpart[id_a] * h_tolerance;
@@ -550,7 +550,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
+                shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     Tscal rint_a = hpart[id_a] * h_tolerance;

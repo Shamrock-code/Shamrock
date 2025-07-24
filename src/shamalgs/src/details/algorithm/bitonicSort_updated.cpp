@@ -309,7 +309,7 @@ namespace shamalgs::algorithm::details {
                             sycl::accessor accm{buf_key, cgh, sycl::read_write};
                             sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nThreads, "bitonic sort pass B32", [=](u64 gid) {
                                     //(__global data_t * data,__global uint * ids,int inc,int dir)
 
@@ -331,7 +331,7 @@ namespace shamalgs::algorithm::details {
                             sycl::accessor accm{buf_key, cgh, sycl::read_write};
                             sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nThreads, "bitonic sort pass B16", [=](u64 gid) {
                                     //(__global data_t * data,__global uint * ids,int inc,int dir)
 
@@ -357,7 +357,7 @@ namespace shamalgs::algorithm::details {
                             sycl::accessor accm{buf_key, cgh, sycl::read_write};
                             sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nThreads, "bitonic sort pass B8", [=](u64 gid) {
                                     //(__global data_t * data,__global uint * ids,int inc,int dir)
 
@@ -385,7 +385,7 @@ namespace shamalgs::algorithm::details {
                             sycl::accessor accm{buf_key, cgh, sycl::read_write};
                             sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nThreads, "bitonic sort pass B4", [=](u64 gid) {
                                     Tkey *m  = accm.get_pointer();
                                     Tval *id = accid.get_pointer();
@@ -407,7 +407,7 @@ namespace shamalgs::algorithm::details {
                         sycl::accessor accm{buf_key, cgh, sycl::read_write};
                         sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                        shambase::parralel_for(cgh, nThreads, "bitonic sort pass B2", [=](u64 gid) {
+                        shambase::parallel_for(cgh, nThreads, "bitonic sort pass B2", [=](u64 gid) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
                             Tkey *m  = accm.get_pointer();

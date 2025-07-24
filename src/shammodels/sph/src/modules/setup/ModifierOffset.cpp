@@ -48,7 +48,7 @@ shammodels::sph::modules::ModifierOffset<Tvec, SPHKernel>::next_n(u32 nmax) {
         Tvec positional_offset = this->positional_offset;
         Tvec velocity_offset   = this->velocity_offset;
 
-        shambase::parralel_for(cgh, tmp.get_obj_cnt(), "Warp", [=](i32 id_a) {
+        shambase::parallel_for(cgh, tmp.get_obj_cnt(), "Warp", [=](i32 id_a) {
             Tvec &xyz_a  = acc_xyz[id_a];
             Tvec &vxyz_a = acc_vxyz[id_a];
 

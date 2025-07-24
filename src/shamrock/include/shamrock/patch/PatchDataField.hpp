@@ -326,7 +326,7 @@ class PatchDataField {
                 sycl::accessor acc_mask{mask, cgh, sycl::write_only, sycl::no_init};
                 u32 nvar_field = nvar;
 
-                shambase::parralel_for(
+                shambase::parallel_for(
                     cgh, get_obj_cnt(), "PatchdataField::get_ids_buf_where", [=](u32 id) {
                         acc_mask[id] = cd_true(acc, id * nvar_field, args...);
                     });
@@ -472,7 +472,7 @@ class PatchDataField {
      * @param indexes
      * @param len
      */
-    void remove_ids(sham::DeviceBuffer<u32> &indexes, u32 len);
+    void remove_ids(const sham::DeviceBuffer<u32> &indexes, u32 len);
 
     /**
      * @brief minimal serialization
@@ -621,7 +621,7 @@ PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) {
         sycl::accessor acc {shambase::get_check_ref(get_buf()), cgh, sycl::read_only};
         sycl::accessor bools {valid, cgh,sycl::write_only,sycl::no_init};
 
-        shambase::parralel_for(cgh,size(),"get_element_with_range",[=](u32 i){
+        shambase::parallel_for(cgh,size(),"get_element_with_range",[=](u32 i){
             bools[i] = (cd_true(acc[i], vmin, vmax)) ? 1 : 0;
         });
 

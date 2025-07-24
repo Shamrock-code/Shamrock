@@ -64,7 +64,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             auto rhoe = buf_rhoe.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
-                shambase::parralel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
+                shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
                     const u32 cell_global_id = (u32) id_a;
 
                     rho[id_a] += dt * acc_dt_rho_patch[id_a];
@@ -116,7 +116,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             auto rhov_dust = buf_rhov_dust.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
-                shambase::parralel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
+                shambase::parallel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
                     rho_dust[id_a] += dt * acc_dt_rho_dust_patch[id_a];
                     rhov_dust[id_a] += dt * acc_dt_rhov_dust_patch[id_a];
                 });

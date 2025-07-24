@@ -140,7 +140,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         auto axyz_ext = buf_axyz_ext.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, pdat.get_obj_cnt(), "add ext force acc to acc", [=](u64 gid) {
                     axyz[gid] += axyz_ext[gid];
                 });
@@ -286,7 +286,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
                 Tvec r_sink    = pos_accretion;
                 Tscal acc_rad2 = Racc * Racc;
 
-                shambase::parralel_for(cgh, Nobj, "check accretion", [=](i32 id_a) {
+                shambase::parallel_for(cgh, Nobj, "check accretion", [=](i32 id_a) {
                     Tvec r            = xyz[id_a] - r_sink;
                     bool not_accreted = sycl::dot(r, r) > acc_rad2;
                     not_acc[id_a]     = (not_accreted) ? 1 : 0;
@@ -321,7 +321,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
 
                     sycl::accessor accretion_p{pxyz_acc, cgh, sycl::write_only};
 
-                    shambase::parralel_for(
+                    shambase::parallel_for(
                         cgh, Naccrete, "compute sum momentum accretion", [=](i32 id_a) {
                             accretion_p[id_a] = gpart_mass * vxyz[id_acc[id_a]];
                         });

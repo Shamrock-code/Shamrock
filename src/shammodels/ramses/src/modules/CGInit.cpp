@@ -134,7 +134,7 @@ namespace {
                     auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
                         u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
-                        shambase::parralel_for(cgh, cell_count, "init step for cg", [=](u64 gid) {
+                        shambase::parallel_for(cgh, cell_count, "init step for cg", [=](u64 gid) {
                             const u32 cell_global_id = (u32) gid;
                             const u32 block_id       = cell_global_id / block_size;
                             const u32 cell_loc_id    = cell_global_id % block_size;

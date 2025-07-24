@@ -650,7 +650,7 @@ namespace sham {
                 sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
                     sycl::accessor acc(buf, cgh, sycl::read_only);
 
-                    shambase::parralel_for(cgh, sz, "copy field", [=](u32 gid) {
+                    shambase::parallel_for(cgh, sz, "copy field", [=](u32 gid) {
                         ptr[gid] = acc[gid];
                     });
                 });
@@ -810,7 +810,7 @@ namespace sham {
 
             sycl::event e1 = get_queue().submit(
                 depends_list, [&, ptr, value, start_index, idx_count](sycl::handler &cgh) {
-                    shambase::parralel_for(cgh, idx_count, "fill field", [=](u32 gid) {
+                    shambase::parallel_for(cgh, idx_count, "fill field", [=](u32 gid) {
                         ptr[start_index + gid] = value;
                     });
                 });

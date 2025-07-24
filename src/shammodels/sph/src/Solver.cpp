@@ -1395,7 +1395,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     auto alpha_av_updated = buf_alpha_av_updated.get_read_access(depends_list);
 
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        shambase::parralel_for(
+                        shambase::parallel_for(
                             cgh, pdat.get_obj_cnt(), "write back alpha_av", [=](i32 id_a) {
                                 alpha_av[id_a] = alpha_av_updated[id_a];
                             });
@@ -1467,7 +1467,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                         constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                        shambase::parralel_for(
+                        shambase::parallel_for(
                             cgh, pdat.get_obj_cnt(), "compute vsig", [=](i32 id_a) {
                                 using namespace shamrock::sph;
 
@@ -1550,7 +1550,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, pdat.get_obj_cnt(), "compute vclean", [=](i32 id_a) {
                                     using namespace shamrock::sph;
 

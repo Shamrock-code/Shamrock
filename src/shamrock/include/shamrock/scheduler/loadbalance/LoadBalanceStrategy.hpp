@@ -54,7 +54,7 @@ namespace shamrock::scheduler::details {
     }
 
     template<class Torder, class Tweight>
-    inline std::vector<i32> lb_startegy_parralel_sweep(
+    inline std::vector<i32> lb_startegy_parallel_sweep(
         const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector, i32 wsize) {
 
         using LBTile       = TileWithLoad<Torder, Tweight>;
@@ -225,7 +225,7 @@ namespace shamrock::scheduler {
         std::vector<TileWithLoad<Torder, Tweight>> &&lb_vector,
         i32 world_size = shamcomm::world_size()) {
 
-        auto tmpres        = details::lb_startegy_parralel_sweep(lb_vector, world_size);
+        auto tmpres        = details::lb_startegy_parallel_sweep(lb_vector, world_size);
         auto metric_psweep = details::compute_LB_metric(lb_vector, tmpres, world_size);
 
         auto tmpres_2      = details::lb_startegy_roundrobin(lb_vector, world_size);

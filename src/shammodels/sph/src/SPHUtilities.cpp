@@ -60,7 +60,7 @@ namespace shammodels::sph {
             const flt h_max_evol_p       = h_evol_iter_max;
             const flt h_max_evol_m       = 1 / h_evol_iter_max;
 
-            shambase::parralel_for(cgh, update_range.size(), "iter h", [=](u32 id_a) {
+            shambase::parallel_for(cgh, update_range.size(), "iter h", [=](u32 id_a) {
                 if (eps[id_a] > 1e-6) {
 
                     vec xyz_a = r[id_a]; // could be recovered from lambda
@@ -154,7 +154,7 @@ namespace shammodels::sph {
                 const flt h_max_evol_p       = h_evol_iter_max;
                 const flt h_max_evol_m       = 1 / h_evol_iter_max;
 
-                shambase::parralel_for(cgh, update_range.size(), "iter h", [=](u32 id_a) {
+                shambase::parallel_for(cgh, update_range.size(), "iter h", [=](u32 id_a) {
                     if (eps[id_a] > 1e-6) {
 
                         vec xyz_a = r[id_a]; // could be recovered from lambda
@@ -239,7 +239,7 @@ namespace shammodels::sph {
 
             const flt part_mass = gpart_mass;
 
-            shambase::parralel_for(cgh, part_range.size(), "compute omega", [=](u32 id_a) {
+            shambase::parallel_for(cgh, part_range.size(), "compute omega", [=](u32 id_a) {
                 vec xyz_a = r[id_a]; // could be recovered from lambda
 
                 flt h_a  = hpart[id_a];

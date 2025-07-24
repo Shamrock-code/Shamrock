@@ -57,7 +57,7 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
             sycl::accessor normals_lookup{
                 face_normals_lookup, cgh, sycl::write_only, sycl::no_init};
 
-            shambase::parralel_for(cgh, mpdat.total_elements, "flag_neigh", [=](u64 id_a) {
+            shambase::parallel_for(cgh, mpdat.total_elements, "flag_neigh", [=](u64 id_a) {
                 TgridVec cell2_a = (cell_min[id_a] + cell_max[id_a]);
 
                 cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u64 id_list) {
@@ -243,7 +243,7 @@ shamrock::tree::ObjectCache shammodels::zeus::modules::FaceFlagger<Tvec, TgridVe
 
             u8 wanted_lookup = lookup_value;
 
-            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+            shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 u32 cnt = 0;
@@ -286,7 +286,7 @@ shamrock::tree::ObjectCache shammodels::zeus::modules::FaceFlagger<Tvec, TgridVe
 
             u8 wanted_lookup = lookup_value;
 
-            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
+            shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
                 u32 id_a = (u32) gid;
                 u32 cnt  = scanned_neigh_cnt[id_a];
 

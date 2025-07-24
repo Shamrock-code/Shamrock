@@ -10,7 +10,7 @@
 /**
  * @file GetParticlesOutsideSphere.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implements the GetParticlesOutsideSphere module, which identifies particles outside a given sphere.
  *
  */
 

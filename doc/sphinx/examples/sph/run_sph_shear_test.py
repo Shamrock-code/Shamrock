@@ -175,7 +175,6 @@ for i in range(20):
     model.do_vtk_dump(os.path.join(dump_folder, f"{sim_name}_{i:04}.vtk"), True)
     plot(i)
 
-
 ####################################################
 # Convert PNG sequence to Image sequence in mpl
 ####################################################
@@ -197,8 +196,10 @@ def show_image_sequence(glob_str):
             image = Image.open(my_file)
             image_array.append(image)
 
-        img = Image.open(files[0])
-        pixel_x, pixel_y = img.size
+        if not image_array:
+            raise RuntimeError(f"Warning: No images found for glob pattern: {glob_str}")
+
+        pixel_x, pixel_y = image_array[0].size
 
         # Create the figure and axes objects
         # Remove axes, ticks, and frame & set aspect ratio

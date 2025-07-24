@@ -32,7 +32,7 @@ namespace shammodels::sph::modules {
         Tscal sphere_radius;
 
         public:
-        GetParticlesOutsideSphere(const Tvec& sphere_center, Tscal sphere_radius)
+        GetParticlesOutsideSphere(const Tvec &sphere_center, Tscal sphere_radius)
             : sphere_center(sphere_center), sphere_radius(sphere_radius) {}
 
         struct Edges {

@@ -94,7 +94,7 @@ namespace shammodels::sph {
 
         std::vector<kill_t> kill_list;
 
-        inline void add_kill_sphere(Tvec center, Tscal radius) {
+        inline void add_kill_sphere(const Tvec& center, Tscal radius) {
             kill_list.push_back(Sphere{center, radius});
         }
     };

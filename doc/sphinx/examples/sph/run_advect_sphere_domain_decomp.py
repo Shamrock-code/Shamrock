@@ -31,7 +31,7 @@ bsize = 4
 render_gif = True
 
 dump_folder = "_to_trash"
-sim_name = "/sphere_domain_decomp_"
+sim_name = "sphere_domain_decomp"
 
 
 def is_in_sphere(pt):
@@ -39,10 +39,10 @@ def is_in_sphere(pt):
     return (x**2 + y**2 + z**2) < 1
 
 
+import os
+
 # Create the dump directory if it does not exist
 if shamrock.sys.world_rank() == 0:
-    import os
-
     os.system("mkdir -p " + dump_folder)
 
 ####################################################
@@ -175,7 +175,7 @@ def plot_state(iplot):
 
         ax.scatter(X, Y, Z, c="red", s=1)
 
-        plt.savefig(dump_folder + sim_name + f"_{iplot:04}.png")
+        plt.savefig(os.path.join(dump_folder, f"{sim_name}_{iplot:04}.png"))
 
 
 ####################################################
@@ -258,7 +258,8 @@ def show_image_sequence(glob_str):
 
 
 # If the animation is not returned only a static image will be shown in the doc
-ani = show_image_sequence(dump_folder + sim_name + "_*.png")
+glob_str = os.path.join(dump_folder, f"{sim_name}_*.png")
+ani = show_image_sequence(glob_str)
 
 if render_gif and shamrock.sys.world_rank() == 0:
     # To save the animation using Pillow as a gif

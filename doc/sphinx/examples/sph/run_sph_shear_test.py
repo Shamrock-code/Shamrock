@@ -49,12 +49,12 @@ shear_speed = -q * Omega_0 * (xM - xm)
 render_gif = True
 
 dump_folder = "_to_trash"
-sim_name = "/sph_shear_test"
+sim_name = "sph_shear_test"
+
+import os
 
 # Create the dump directory if it does not exist
 if shamrock.sys.world_rank() == 0:
-    import os
-
     os.system("mkdir -p " + dump_folder)
 
 # %%
@@ -153,7 +153,7 @@ def plot(iplot):
     axs[1].set_ylim(shear_speed * 0.7, -shear_speed * 0.7)
 
     plt.tight_layout()
-    plt.savefig(dump_folder + sim_name + "_{:04}.png".format(iplot))
+    plt.savefig(os.path.join(dump_folder, f"{sim_name}_{iplot:04}.png"))
     plt.close(fig)
 
 
@@ -172,7 +172,7 @@ for i in range(20):
     model.evolve_until(i * dt_stop)
 
     # Dump name is "dump_xxxx.sham" where xxxx is the timestep
-    model.do_vtk_dump(dump_folder + sim_name + "_{:04}.vtk".format(i), True)
+    model.do_vtk_dump(os.path.join(dump_folder, f"{sim_name}_{i:04}.vtk"), True)
     plot(i)
 
 
@@ -229,7 +229,8 @@ def show_image_sequence(glob_str):
 
 
 # If the animation is not returned only a static image will be shown in the doc
-ani = show_image_sequence(dump_folder + sim_name + "_*.png")
+glob_str = os.path.join(dump_folder, f"{sim_name}_*.png")
+ani = show_image_sequence(glob_str)
 
 if render_gif and shamrock.sys.world_rank() == 0:
     # To save the animation using Pillow as a gif

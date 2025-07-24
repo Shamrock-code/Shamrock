@@ -36,7 +36,13 @@ bsize = 4
 render_gif = True
 
 dump_folder = "_to_trash"
-sim_name = "/kill_particle_sphere_"
+sim_name = "kill_particle_sphere"
+
+import os
+
+# Create the dump directory if it does not exist
+if shamrock.sys.world_rank() == 0:
+    os.system("mkdir -p " + dump_folder)
 
 # %%
 # Setup
@@ -55,7 +61,14 @@ cfg.set_artif_viscosity_VaryingCD10(
 )
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(1.00001)
+
+# %%
+# The important part to enable killing
 cfg.add_kill_sphere(center=(0.0, 0.0, 0.0), radius=4.0)
+
+
+# %%
+# Rest of the setup
 cfg.print_status()
 model.set_solver_config(cfg)
 
@@ -114,7 +127,7 @@ def plot_state(iplot):
 
         ax.set_title(f"t = {model.get_time():.2f} ")
 
-        plt.savefig(dump_folder + sim_name + f"_{iplot:04}.png")
+        plt.savefig(os.path.join(dump_folder, f"{sim_name}_{iplot:04}.png"))
 
 
 ####################################################
@@ -196,7 +209,8 @@ def show_image_sequence(glob_str):
 
 
 # If the animation is not returned only a static image will be shown in the doc
-ani = show_image_sequence(dump_folder + sim_name + "_*.png")
+glob_str = os.path.join(dump_folder, f"{sim_name}_*.png")
+ani = show_image_sequence(glob_str)
 
 if render_gif and shamrock.sys.world_rank() == 0:
     # To save the animation using Pillow as a gif

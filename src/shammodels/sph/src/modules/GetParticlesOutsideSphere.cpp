@@ -51,7 +51,7 @@ namespace shammodels::sph::modules {
         Get particles outside of the sphere
 
         \begin{align}
-        {part_ids_outside_sphere} &= \{i \text{ where } \vert\vert{pos}_i - c\vert\vert < r\}\\
+        {part_ids_outside_sphere} &= \{i \text{ where } \vert\vert{pos}_i - c\vert\vert > r\}\\
         c &= {center}\\
         r &= {radius}
         \end{align}

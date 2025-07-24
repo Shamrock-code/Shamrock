@@ -29,14 +29,19 @@ namespace shammodels::sph::modules {
 
         pos_refs.for_each([&](u64 id_patch, const PatchDataField<Tvec> &pos) {
             auto tmp = pos.get_ids_where(
-                [](Tvec pos, Tvec sphere_center, Tscal sphere_radius) {
-                    return sycl::length(pos - sphere_center) > sphere_radius;
+                [](const Tvec *__restrict pos, u32 i, Tvec sphere_center, Tscal sphere_radius) {
+                    return sycl::length(pos[i] - sphere_center) > sphere_radius;
                 },
                 sphere_center,
                 sphere_radius);
 
             edges.part_ids_outside_sphere.buffers.get(id_patch).append(tmp);
         });
+    }
+
+    template<typename Tvec>
+    std::string GetParticlesOutsideSphere<Tvec>::_impl_get_tex() {
+        return "TODO";
     }
 
 } // namespace shammodels::sph::modules

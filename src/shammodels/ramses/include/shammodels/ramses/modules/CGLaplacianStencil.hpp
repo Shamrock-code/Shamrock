@@ -41,17 +41,26 @@ namespace {
      * @param field_access
      * @return T
      */
-    template<class T, class Tvec, class ACCField>
-    inline T laplacian_stencil_id(
+    template<
+        class T,
+        class Tvec,
+        class TUint,
+        class ACCField1,
+        class ACCField2,
+        class ACCField3,
+        class ACCField4>
+    inline T laplacian_7pt(
         const u32 cell_global_id,
-        const T delta_cell,
         const AMRGraphLinkiterator &graph_iter_xp,
         const AMRGraphLinkiterator &graph_iter_xm,
         const AMRGraphLinkiterator &graph_iter_yp,
         const AMRGraphLinkiterator &graph_iter_ym,
         const AMRGraphLinkiterator &graph_iter_zp,
         const AMRGraphLinkiterator &graph_iter_zm,
-        ACCField &&field_access) {
+        ACCField1 &&field_access,
+        ACCField2 &&block_level_acc,
+        ACCField3 &&block_min_acc,
+        ACCField4 &&block_max_acc) {
 
         auto get_avg_neigh = [&](auto &graph_links) -> T {
             T acc   = shambase::VectorProperties<T>::get_zero();
@@ -61,6 +70,23 @@ namespace {
             return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
         };
 
+        auto get_neigh_AMRlevel = [&](auto &graph_links) {
+            auto lev = (TUint) 0;
+            u32 cnt  = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                lev = block_level_acc(id_b);
+            });
+            return lev;
+        };
+
+        auto bloc_size = block_max_acc(cell_global_id) - block_min_acc(cell_global_id);
+
+        auto lev_diff_xp = block_level_acc(cell_global_id) - get_neigh_AMRlevel(graph_iter_xp);
+        auto lev_diff_xm = block_level_acc(cell_global_id) - get_neigh_AMRlevel(graph_iter_xm);
+        auto lev_diff_yp = block_level_acc(cell_global_id) - get_neigh_AMRlevel(graph_iter_yp);
+        auto lev_diff_ym = block_level_acc(cell_global_id) - get_neigh_AMRlevel(graph_iter_ym);
+        auto lev_diff_zp = block_level_acc(cell_global_id) - get_neigh_AMRlevel(graph_iter_zp);
+        auto lev_diff_zm = block_level_acc(cell_global_id) - get_neigh_AMRlevel(graph_iter_zm);
+
         T W_i  = field_access(cell_global_id);
         T W_xp = get_avg_neigh(graph_iter_xp);
         T W_xm = get_avg_neigh(graph_iter_xm);
@@ -69,12 +95,30 @@ namespace {
         T W_zp = get_avg_neigh(graph_iter_zp);
         T W_zm = get_avg_neigh(graph_iter_zm);
 
-        T inv_delta_cell_sqr = 1.0 / (delta_cell * delta_cell);
+        T dx = bloc_size.x();
+        T dy = bloc_size.y();
+        T dz = bloc_size.z();
 
-        T laplace_x = inv_delta_cell_sqr * (W_xm - 2. * W_i + W_xp);
-        T laplace_y = inv_delta_cell_sqr * (W_ym - 2. * W_i + W_yp);
-        T laplace_z = inv_delta_cell_sqr * (W_zm - 2. * W_i + W_zp);
+        T laplace_x
+            = (W_i - W_xm)
+                  * (1.0 / ((lev_diff_xm > 0) ? dx * 0.75 : ((lev_diff_xm < 0) ? dx * 1.5 : dx)))
+              + (W_xp - W_i)
+                    * (1.0 / ((lev_diff_xp > 0) ? dx * 0.75 : ((lev_diff_xp < 0) ? dx * 1.5 : dx)));
 
-        return (laplace_x + laplace_y + laplace_z);
+        T laplace_y
+            = (W_i - W_ym)
+                  * (1.0 / ((lev_diff_ym > 0) ? dy * 0.75 : ((lev_diff_ym < 0) ? dy * 1.5 : dy)))
+              + (W_yp - W_i)
+                    * (1.0 / ((lev_diff_yp > 0) ? dy * 0.75 : ((lev_diff_yp < 0) ? dy * 1.5 : dy)));
+
+        T laplace_z
+            = (W_i - W_zm)
+                  * (1.0 / ((lev_diff_zm > 0) ? dz * 0.75 : ((lev_diff_zm < 0) ? dz * 1.5 : dz)))
+              + (W_zp - W_i)
+                    * (1.0 / ((lev_diff_zp > 0) ? dz * 0.75 : ((lev_diff_zp < 0) ? dz * 1.5 : dz)));
+
+        T res = -(laplace_x * 1.0 / dx) - (laplace_y * 1.0 / dy) - (laplace_z * 1.0 / dz);
+
+        return res;
     }
 } // namespace

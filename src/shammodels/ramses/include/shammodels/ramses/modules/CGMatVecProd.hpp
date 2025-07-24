@@ -29,7 +29,8 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
     class NodeCGMatVecProd : public shamrock::solvergraph::INode {
-        using Tscal = shambase::VecComponent<Tvec>;
+        using Tscal     = shambase::VecComponent<Tvec>;
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
         u32 block_size;
 
         public:
@@ -38,7 +39,9 @@ namespace shammodels::basegodunov::modules {
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
             const solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &cell_neigh_graph;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_block_cell_sizes;
+            const shamrock::solvergraph::IFieldSpan<TgridVec> &spans_block_min;
+            const shamrock::solvergraph::IFieldSpan<TgridVec> &spans_block_max;
+            const shamrock::solvergraph::IFieldSpan<TgridUint> &spans_block_level;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi_p;
             shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi_Ap;
         };
@@ -46,10 +49,18 @@ namespace shammodels::basegodunov::modules {
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
             std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> cell_neigh_graph,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_block_cell_sizes,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<TgridVec>> spans_block_min,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<TgridVec>> spans_block_max,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<TgridUint>> spans_block_level,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi_p,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi_Ap) {
-            __internal_set_ro_edges({sizes, cell_neigh_graph, spans_block_cell_sizes, spans_phi_p});
+            __internal_set_ro_edges(
+                {sizes,
+                 cell_neigh_graph,
+                 spans_block_min,
+                 spans_block_max,
+                 spans_block_level,
+                 spans_phi_p});
             __internal_set_rw_edges({spans_phi_Ap});
         }
 
@@ -57,8 +68,10 @@ namespace shammodels::basegodunov::modules {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
                 get_ro_edge<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<TgridVec>>(2),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<TgridVec>>(3),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<TgridUint>>(4),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(5),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0)};
         }
 

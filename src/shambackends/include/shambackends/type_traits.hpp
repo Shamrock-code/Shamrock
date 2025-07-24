@@ -11,7 +11,7 @@
 
 /**
  * @file type_traits.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Contains traits and utilities for backend related types
  *
  * This file contains traits and utilities for SYCL types.

@@ -11,7 +11,7 @@
 
 /**
  * @file RadixTreeMortonBuilder.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Utility to build morton codes for the radix tree
  * @date 2023-08-02
  */

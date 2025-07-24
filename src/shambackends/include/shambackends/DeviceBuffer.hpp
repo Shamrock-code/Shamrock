@@ -11,7 +11,7 @@
 
 /**
  * @file DeviceBuffer.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -286,6 +286,11 @@ namespace sham {
          * This function complete the event state of the buffer by registering the
          * event resulting of the last queried access
          *
+         * @note This function is const compatible.
+         *
+         * @warning This function must be called on ALL accessed buffers after a kernel
+         * to ensure that the state of the event handlers are up to date.
+         *
          * @param e The SYCL event resulting of the queried access.
          */
         void complete_event_state(sycl::event e) const {
@@ -298,6 +303,11 @@ namespace sham {
          * This function complete the event state of the buffer by registering the
          * event resulting of the last queried access
          *
+         * @note This function is const compatible.
+         *
+         * @warning This function must be called on ALL accessed buffers after a kernel
+         * to ensure that the state of the event handlers are up to date.
+         *
          * @param e The SYCL event resulting of the queried access.
          */
         void complete_event_state(const std::vector<sycl::event> &e) const {
@@ -309,6 +319,11 @@ namespace sham {
          *
          * This function complete the event state of the buffer by registering the
          * event resulting of the last queried access
+         *
+         * @note This function is const compatible.
+         *
+         * @warning This function must be called on ALL accessed buffers after a kernel
+         * to ensure that the state of the event handlers are up to date.
          *
          * @param e The SYCL event resulting of the queried access.
          */
@@ -967,6 +982,41 @@ namespace sham {
                     get_size()));
             }
             resize(get_size() - sub_sz);
+        }
+
+        /**
+         * @brief Append the content of another buffer to this one.
+         *
+         * This function appends the content of another buffer to this one. The content of the other
+         * buffer is copied into this buffer, and the size of this buffer is increased by the size
+         * of the other buffer.
+         *
+         * @param other The buffer from which to copy the data.
+         */
+        inline void append(const DeviceBuffer &other) {
+            if (this == &other) {
+                shambase::throw_with_loc<std::invalid_argument>("cannot append a buffer to itself");
+            }
+
+            u32 other_size = other.get_size();
+            if (other_size == 0) {
+                return; // early exit if the other buffer is empty
+            }
+            u32 old_size = get_size();
+
+            // allocate space
+            expand(other_size);
+
+            sham::EventList depends_list;
+            T *ptr             = get_write_access(depends_list);
+            const T *other_ptr = other.get_read_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(other_ptr, ptr + old_size, other_size);
+            });
+
+            complete_event_state(e);
+            other.complete_event_state(e);
         }
 
         ///////////////////////////////////////////////////////////////////////

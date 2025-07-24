@@ -9,7 +9,7 @@
 
 /**
  * @file patchdata.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief implementation of PatchData related functions
  * @version 0.1
  * @date 2022-02-28

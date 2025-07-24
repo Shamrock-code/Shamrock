@@ -9,7 +9,7 @@
 
 /**
  * @file KarrasRadixTreeAABB.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -105,6 +105,19 @@ namespace shamtree {
                 tree.get_leaf_count(),
                 [leaf_offset](
                     u32 i, const Tvec *pos, auto cell_iter, Tvec *comp_min, Tvec *comp_max) {
+                    // how to lose a f****ing afternoon :
+                    // 1 - code a nice algorithm that should optimize the code
+                    // 2 - pass all the tests
+                    // 3 - benchmark it and discover big loss in perf for no reasons
+                    // 4 - change a parameter and discover a segfault (on GPU to have more fun ....)
+                    // 5 - find that actually the core algorithm of the code create a bug in the new
+                    // thing 6 - discover that every value in everything is wrong 7 - spent the
+                    // whole night on it 8 - start putting prints everywhere 9 - isolate a bugged id
+                    // 10 - try to understand why a f***ing leaf is as big as the root of the tree
+                    // 11 - **** a few hours latter 12 - the goddam c++ standard define
+                    // std::numeric_limits<float>::min() to be epsilon instead of -max 13 - road
+                    // rage 14
+                    // - open a bier alt f4 the ide
                     Tvec min = shambase::VectorProperties<Tvec>::get_max();
                     Tvec max = -shambase::VectorProperties<Tvec>::get_max();
 

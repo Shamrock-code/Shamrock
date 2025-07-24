@@ -9,7 +9,7 @@
 
 /**
  * @file Solver.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
@@ -1004,6 +1004,13 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
 template<class Tvec, template<class> class Kern>
 bool shammodels::sph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
     return false;
+}
+
+template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::update_sync_load_values() {
+    modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
+        .update_load_balancing();
+    scheduler().scheduler_step(false, false);
 }
 
 template<class Tvec, template<class> class Kern>

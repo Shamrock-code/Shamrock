@@ -11,8 +11,8 @@
 
 /**
  * @file Solver.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
  */
 
@@ -160,6 +160,8 @@ namespace shammodels::sph {
          * @return false corrector is not converged
          */
         bool apply_corrector(Tscal dt, u64 Npart_all);
+
+        void update_sync_load_values();
 
         Solver(ShamrockCtx &context) : context(context) {}
 

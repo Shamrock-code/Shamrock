@@ -103,3 +103,21 @@ TestStart(Unittest, "shambackends/math.hpp:inv_sat_zero", shambackendsmathinv_sa
 
     REQUIRE_EQUAL(sham::inv_sat_zero<f64>(nan_val), 0._f64);
 }
+
+template<typename T>
+T __attribute__((noinline)) bitshift_noinline(T x, T amount) {
+    return x << amount;
+}
+
+TestStart(Unittest, "shambackends/math.hpp:log2_pow2_num", shambackendsmathlog2_pow2_num, 1) {
+
+    // we have to prevent inline otherwise optimisation will optimize clz(1 << i) to bitsize - i-1
+
+    for (u32 i = 0; i < 32; i++) {
+        REQUIRE_EQUAL(sham::log2_pow2_num<u32>(bitshift_noinline(1_u32, i)), i);
+    }
+
+    for (u64 i = 0; i < 64; i++) {
+        REQUIRE_EQUAL(sham::log2_pow2_num<u64>(bitshift_noinline(1_u64, i)), i);
+    }
+}

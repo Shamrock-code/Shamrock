@@ -10,7 +10,7 @@ sycl::queue q {..., sycl::property::queue::in_order}
 
 ## Dealing with sycl accessors in loop macros
 
-### SYCL parralel for
+### SYCL parallel for
 
 ```cpp
 shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){

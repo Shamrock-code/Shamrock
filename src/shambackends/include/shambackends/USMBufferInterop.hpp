@@ -47,7 +47,7 @@ namespace sham {
 
             ev_list.push_back(queue.submit([&, offset](sycl::handler &cgh) {
                 sycl::accessor acc{src, cgh, sycl::read_only};
-                shambase::parralel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
+                shambase::parallel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
                     dest[gid + offset] = acc[gid + offset];
                 });
             }));
@@ -84,7 +84,7 @@ namespace sham {
 
             ev_list.push_back(queue.submit([&, offset](sycl::handler &cgh) {
                 sycl::accessor acc{dest, cgh, sycl::write_only};
-                shambase::parralel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
+                shambase::parallel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
                     acc[gid + offset] = src[gid + offset];
                 });
             }));
@@ -121,7 +121,7 @@ namespace sham {
 
             ev_list.push_back(queue.submit([&, offset](sycl::handler &cgh) {
                 sycl::accessor acc{dest, cgh, sycl::write_only, sycl::no_init};
-                shambase::parralel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
+                shambase::parallel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
                     acc[gid + offset] = src[gid + offset];
                 });
             }));

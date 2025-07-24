@@ -43,6 +43,7 @@ set(Sources
     src/modules/ParticleReordering.cpp
     src/modules/AnalysisSodTube.cpp
     src/modules/SPHSetup.cpp
+    src/modules/KillParticles.cpp
 
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp

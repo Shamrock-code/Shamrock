@@ -302,7 +302,7 @@ f64 benchmark_sph_kernel(u32 N) {
                     sycl::accessor x{dist, cgh, sycl::read_only};
                     sycl::accessor f{result, cgh, sycl::write_only, sycl::no_init};
 
-                    shambase::parralel_for(cgh, N, "test sph kernel", [=](u32 i) {
+                    shambase::parallel_for(cgh, N, "test sph kernel", [=](u32 i) {
                         f[i] = Ker::W_3d(x[i], 1);
                     });
                 })

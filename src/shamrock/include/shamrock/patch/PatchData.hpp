@@ -167,7 +167,7 @@ namespace shamrock::patch {
         void keep_ids(sham::DeviceBuffer<u32> &index_map, u32 len);
 
         /// remove some particles ids
-        void remove_ids(sham::DeviceBuffer<u32> &indexes, u32 len);
+        void remove_ids(const sham::DeviceBuffer<u32> &indexes, u32 len);
 
         // template<class Tvecbox>
         // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &

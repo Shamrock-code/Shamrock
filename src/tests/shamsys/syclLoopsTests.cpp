@@ -113,7 +113,7 @@ TestStart(Benchmark, "sycl/loop_perfs", syclloopperfs, 1) {
                         .submit([&](sycl::handler &cgh) {
                             sycl::accessor acc{buf, cgh, sycl::read_write};
 
-                            shambase::parralel_for(cgh, sz, "test_kernel", [=](u64 gid) {
+                            shambase::parallel_for(cgh, sz, "test_kernel", [=](u64 gid) {
                                 auto tmp = acc[gid];
                                 acc[gid] = tmp * tmp;
                             });
@@ -140,13 +140,13 @@ TestStart(Benchmark, "sycl/loop_perfs", syclloopperfs, 1) {
         X = np.array(x)
 
         Y = np.array(yparforbuf)
-        plt.plot(X,Y/X,label = "parralel for (buffer) ")
+        plt.plot(X,Y/X,label = "parallel for (buffer) ")
 
         Y = np.array(yndrangeforbuf)
         plt.plot(X,Y/X,label = "ndrange for (buffer) ")
 
         Y = np.array(yshamrockpar)
-        plt.plot(X,Y/X,label = "shamrock parralel for (buffer) ")
+        plt.plot(X,Y/X,label = "shamrock parallel for (buffer) ")
 
         plt.xlabel("s")
         plt.ylabel("N/t")

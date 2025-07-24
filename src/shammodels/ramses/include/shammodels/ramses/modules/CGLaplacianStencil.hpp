@@ -21,7 +21,7 @@
 #include <shambackends/sycl.hpp>
 
 using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_access;
-namespace {
+namespace shammodels::basegodunov {
     using Direction = shammodels::basegodunov::modules::Direction;
 
     /**

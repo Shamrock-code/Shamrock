@@ -77,18 +77,18 @@ namespace shambase {
         return sycl::nd_range<1>{len, group_size};
     }
 
-    enum ParralelForWrapMode { PARRALEL_FOR, PARRALEL_FOR_ROUND, ND_RANGE };
+    enum ParallelForWrapMode { PARRALEL_FOR, PARRALEL_FOR_ROUND, ND_RANGE };
 
 #ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR
-    constexpr ParralelForWrapMode default_loop_mode = PARRALEL_FOR;
+    constexpr ParallelForWrapMode default_loop_mode = PARRALEL_FOR;
 #endif
 
 #ifdef SHAMROCK_LOOP_DEFAULT_PARRALEL_FOR_ROUND
-    constexpr ParralelForWrapMode default_loop_mode = PARRALEL_FOR_ROUND;
+    constexpr ParallelForWrapMode default_loop_mode = PARRALEL_FOR_ROUND;
 #endif
 
 #ifdef SHAMROCK_LOOP_DEFAULT_ND_RANGE
-    constexpr ParralelForWrapMode default_loop_mode = ND_RANGE;
+    constexpr ParallelForWrapMode default_loop_mode = ND_RANGE;
 #endif
 
     constexpr u32 default_gsize    = SHAMROCK_LOOP_GSIZE;
@@ -97,7 +97,7 @@ namespace shambase {
 
     template<
         u32 group_size           = default_gsize,
-        ParralelForWrapMode mode = default_loop_mode,
+        ParallelForWrapMode mode = default_loop_mode,
         class LambdaKernel>
     inline void parallel_for(sycl::handler &cgh, u32 length, const char *name, LambdaKernel &&ker) {
 
@@ -146,7 +146,7 @@ namespace shambase {
 
     template<
         u32 group_size           = default_gsize_2d,
-        ParralelForWrapMode mode = default_loop_mode,
+        ParallelForWrapMode mode = default_loop_mode,
         class LambdaKernel>
     inline void parallel_for_2d(
         sycl::handler &cgh, u32 length_x, u32 length_y, const char *name, LambdaKernel &&ker) {
@@ -202,7 +202,7 @@ namespace shambase {
 
     template<
         u32 group_size           = default_gsize_3d,
-        ParralelForWrapMode mode = default_loop_mode,
+        ParallelForWrapMode mode = default_loop_mode,
         class LambdaKernel>
     inline void parallel_for_3d(
         sycl::handler &cgh,
@@ -272,7 +272,7 @@ namespace shambase {
 #endif
     }
 
-    template<ParralelForWrapMode mode = default_loop_mode, class LambdaKernel>
+    template<ParallelForWrapMode mode = default_loop_mode, class LambdaKernel>
     inline void parallel_for_gsize(
         sycl::handler &cgh, u32 length, u32 group_size, const char *name, LambdaKernel &&ker) {
 

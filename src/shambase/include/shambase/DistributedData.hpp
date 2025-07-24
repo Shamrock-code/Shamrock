@@ -109,7 +109,7 @@ namespace shambase {
         inline std::vector<u64> get_ids() const {
             std::vector<u64> ids;
             ids.reserve(data.size());
-            for (const auto &[id, obj] : data) {
+            for (const auto &[id, _] : data) {
                 ids.push_back(id);
             }
             return ids;

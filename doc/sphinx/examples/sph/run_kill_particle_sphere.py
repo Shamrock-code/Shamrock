@@ -120,7 +120,7 @@ def plot_state(iplot):
 ####################################################
 # Run the simulation
 ####################################################
-nstop = 80  # 100 normally
+nstop = 28  # To be increased when epmty simulations will be fixed
 dt_stop = 0.1
 
 t_stop = [i * dt_stop for i in range(nstop + 1)]

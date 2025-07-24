@@ -14,12 +14,13 @@
  *
  */
 
-#include "shammodels/ramses/modules/CGMatVecProd.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/EventList.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
+#include "shammodels/ramses/modules/CGMatVecProd.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <shambackends/sycl.hpp>
 #include <type_traits>
@@ -182,18 +183,19 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
     std::string NodeCGMatVecProd<Tvec, TgridVec>::_impl_get_tex() {
-        std::string sizes                  = get_ro_edge_base(0).get_tex_symbol();
-        std::string cell_neigh_graph       = get_ro_edge_base(1).get_tex_symbol();
-        std::string spans_block_cell_sizes = get_ro_edge_base(2).get_tex_symbol();
-        std::string span_phi_p             = get_ro_edge_base(3).get_tex_symbol();
-        std::string span_phi_Ap            = get_rw_edge_base(0).get_tex_symbol();
+
+        std::string span_phi_p  = get_ro_edge_base(3).get_tex_symbol();
+        std::string span_phi_Ap = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
             Compute Ap matrix-vector product
             \begin{equation}
-            \mathbf{result} = \mathbf{A}\mathbf{p_{k}}
+            \mathbf{result} = \mathbf{A}\mathbf{p}
             \end{equation}
         )tex";
+
+        shambase::replace_all(tex, "{result}", span_phi_Ap);
+        shambase::replace_all(tex, "{p}", span_phi_p);
 
         return tex;
     }

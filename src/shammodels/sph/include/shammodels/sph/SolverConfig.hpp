@@ -37,6 +37,7 @@
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <variant>
+#include <vector>
 
 namespace shammodels::sph {
 
@@ -79,6 +80,23 @@ namespace shammodels::sph {
          * @brief The CFL multiplier stiffness
          */
         Tscal cfl_multiplier_stiffness = 2;
+    };
+
+    template<class Tvec>
+    struct ParticleKillingConfig {
+        using Tscal = shambase::VecComponent<Tvec>;
+        struct Sphere {
+            Tvec center;
+            Tscal radius;
+        };
+
+        using kill_t = std::variant<Sphere>;
+
+        std::vector<kill_t> kill_list;
+
+        inline void add_kill_sphere(Tvec center, Tscal radius) {
+            kill_list.push_back(Sphere{center, radius});
+        }
     };
 
     template<class Tscal>

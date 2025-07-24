@@ -60,7 +60,7 @@ namespace shammodels::sph::modules {
         shambase::replace_all(tex, "{center}", shambase::format("{}", sphere_center));
         shambase::replace_all(tex, "{radius}", shambase::format("{}", sphere_radius));
 
-        return "TODO";
+        return tex;
     }
 
 } // namespace shammodels::sph::modules

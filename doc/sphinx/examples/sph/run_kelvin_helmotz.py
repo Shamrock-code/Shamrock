@@ -80,7 +80,10 @@ cfg.set_eos_adiabatic(gamma)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e9), 1)
+# Set scheduler criteria to effectively disable patch splitting and merging.
+crit_split = int(1e9)
+crit_merge = 1
+model.init_scheduler(crit_split, crit_merge)
 
 # %%
 # Setup the simulation

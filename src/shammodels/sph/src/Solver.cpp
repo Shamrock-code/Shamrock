@@ -23,6 +23,7 @@
 #include "shamalgs/reduction.hpp"
 #include "shambackends/MemPerfInfos.hpp"
 #include "shambackends/details/memoryHandle.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
@@ -666,6 +667,7 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
     StackEntry stack_loc{};
 
     auto &xyzh_merged = storage.merged_xyzh.get();
+    auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
     storage.rtree_rint_field.set(
         storage.merged_pos_trees.get().template map<shamtree::KarrasRadixTreeField<Tscal>>(
@@ -674,11 +676,24 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
                 auto &buf               = tmp.field_hpart.get_buf();
                 auto buf_int            = shamtree::new_empty_karras_radix_tree_field<Tscal>();
 
-                return shamtree::compute_tree_field_max_field<Tscal>(
+                auto ret = shamtree::compute_tree_field_max_field<Tscal>(
                     rtree.structure,
                     rtree.reduced_morton_set.get_cell_iterator(),
                     std::move(buf_int),
                     buf);
+
+                // the old tree used to increase the size of the hmax of the tree nodes by the
+                // tolerance so we do it also with the new tree, maybe we should move that somewhere
+                // else.
+                sham::kernel_call(
+                    dev_sched->get_queue(),
+                    sham::MultiRef{},
+                    sham::MultiRef{ret.buf_field},
+                    ret.buf_field.get_size(),
+                    [htol = solver_config.htol_up_tol](u32 i, Tscal *h_tree) {
+                        h_tree[i] *= htol;
+                    });
+                return std::move(ret);
             }));
 }
 

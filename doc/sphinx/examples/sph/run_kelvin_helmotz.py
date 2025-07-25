@@ -103,10 +103,16 @@ model.add_cube_fcc_3d(dr, (-xs / 2, y_interface, -zs / 2), (xs / 2, ys / 2, zs /
 # rho 2 domain
 model.add_cube_fcc_3d(dr * fact, (-xs / 2, -y_interface, -zs / 2), (xs / 2, y_interface, zs / 2))
 
-model.set_value_in_a_box("uint", "f64", u_1, (-xs / 2, -ys / 2, -zs / 2), (xs / 2, -y_interface, zs / 2))
-model.set_value_in_a_box("uint", "f64", u_1, (-xs / 2, y_interface, -zs / 2), (xs / 2, ys / 2, zs / 2))
+model.set_value_in_a_box(
+    "uint", "f64", u_1, (-xs / 2, -ys / 2, -zs / 2), (xs / 2, -y_interface, zs / 2)
+)
+model.set_value_in_a_box(
+    "uint", "f64", u_1, (-xs / 2, y_interface, -zs / 2), (xs / 2, ys / 2, zs / 2)
+)
 
-model.set_value_in_a_box("uint", "f64", u_2, (-xs / 2, -y_interface, -zs / 2), (xs / 2, y_interface, zs / 2))
+model.set_value_in_a_box(
+    "uint", "f64", u_2, (-xs / 2, -y_interface, -zs / 2), (xs / 2, y_interface, zs / 2)
+)
 
 
 # the velocity function to trigger KH
@@ -118,14 +124,16 @@ def vel_func(r):
     pert = np.sin(2 * np.pi * n * x / (xs))
 
     sigma = 0.05 / (2**0.5)
-    gauss1 = np.exp(-((y - ys / 4) ** 2) / (2 * sigma * sigma))
-    gauss2 = np.exp(-((y + ys / 4) ** 2) / (2 * sigma * sigma))
+    gauss1 = np.exp(-((y - y_interface) ** 2) / (2 * sigma * sigma))
+    gauss2 = np.exp(-((y + y_interface) ** 2) / (2 * sigma * sigma))
     pert *= gauss1 + gauss2
 
+    # Alternative formula (See T. Tricco paper)
     # interf_sz = ys/32
     # vx = np.arctan(y/interf_sz)/np.pi
+
     vx = 0
-    if np.abs(y) > ys / 4:
+    if np.abs(y) > y_interface:
         vx = vslip / 2
     else:
         vx = -vslip / 2
@@ -153,6 +161,9 @@ model.timestep()
 
 # %%
 # Plotting functions
+import copy
+
+import matplotlib
 import matplotlib.pyplot as plt
 
 
@@ -198,10 +209,6 @@ def plot_state(iplot):
     )
 
     vy_range = max(np.abs(np.max(arr_vel[:, :, 1])), np.abs(np.min(arr_vel[:, :, 1])))
-
-    import copy
-
-    import matplotlib
 
     my_cmap = copy.copy(matplotlib.colormaps.get_cmap("gist_heat"))
     my_cmap.set_bad(color="black")

@@ -178,37 +178,23 @@ def plot_state(iplot):
     delta_x = (radius * 2 * aspect, 0.0, 0.0)
     delta_y = (0.0, radius * 2, 0.0)
 
-    arr_rho = model.render_cartesian_slice(
-        "rho",
-        "f64",
-        center=(0.0, 0.0, 0.0),
-        delta_x=delta_x,
-        delta_y=delta_y,
-        nx=pixel_x,
-        ny=pixel_y,
-    )
+    def _render(field, field_type, center):
+        # Helper to reduce code duplication
+        return model.render_cartesian_slice(
+            field,
+            field_type,
+            center=center,
+            delta_x=delta_x,
+            delta_y=delta_y,
+            nx=pixel_x,
+            ny=pixel_y,
+        )
 
-    arr_alpha = model.render_cartesian_slice(
-        "alpha_AV",
-        "f64",
-        center=(0.0, 0.0, 0.0),
-        delta_x=delta_x,
-        delta_y=delta_y,
-        nx=pixel_x,
-        ny=pixel_y,
-    )
+    arr_rho = _render("rho", "f64", center)
+    arr_alpha = _render("alpha_AV", "f64", center)
+    arr_vel = _render("vxyz", "f64_3", center)
 
-    arr_vel = model.render_cartesian_slice(
-        "vxyz",
-        "f64_3",
-        center=(0.0, 0.0, 0.0),
-        delta_x=delta_x,
-        delta_y=delta_y,
-        nx=pixel_x,
-        ny=pixel_y,
-    )
-
-    vy_range = max(np.abs(np.max(arr_vel[:, :, 1])), np.abs(np.min(arr_vel[:, :, 1])))
+    vy_range = np.abs(arr_vel[:, :, 1]).max()
 
     my_cmap = copy.copy(matplotlib.colormaps.get_cmap("gist_heat"))
     my_cmap.set_bad(color="black")

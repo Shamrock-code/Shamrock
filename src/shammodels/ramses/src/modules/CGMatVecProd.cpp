@@ -16,6 +16,7 @@
  */
 #include "shambase/string.hpp"
 #include "shambackends/EventList.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
@@ -59,31 +60,37 @@ namespace {
                     oriented_cell_graph.graph_links[shammodels::basegodunov::Direction::zp]);
                 AMRGraph &graph_neigh_zm = shambase::get_check_ref(
                     oriented_cell_graph.graph_links[shammodels::basegodunov::Direction::zm]);
-
-                sham::EventList depends_list;
-
-                auto block_level = block_level_span.get_read_access(depends_list);
-                auto block_min   = block_min_span.get_read_access(depends_list);
-                auto block_max   = block_max_span.get_read_access(depends_list);
-                auto phi_p       = phi_p_span.get_read_access(depends_list);
-                auto phi_Ap      = phi_Ap_span.get_write_access(depends_list);
-
-                auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
-                auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
-                auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
-                auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
-                auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
-                auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
+                u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-                auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
-                    u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
-                    shambase::parallel_for(cgh, cell_count, "compute Ap mat-vec", [=](u64 gid) {
-                        const u32 cell_global_id = (u32) gid;
-                        const u32 block_id       = cell_global_id / block_size;
-                        const u32 cell_loc_id    = cell_global_id % block_size;
-
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{
+                        block_min_span,
+                        block_max_span,
+                        block_level_span,
+                        phi_p_span,
+                        graph_neigh_xp,
+                        graph_neigh_xm,
+                        graph_neigh_yp,
+                        graph_neigh_ym,
+                        graph_neigh_zp,
+                        graph_neigh_zm},
+                    sham::MultiRef{phi_Ap_span},
+                    cell_count,
+                    [](i32 cell_global_id,
+                       const TgridVec *__restrict block_min,
+                       const TgridVec *__restrict block_max,
+                       const TgridUint *__restrict block_level,
+                       const Tscal *__restrict phi_p,
+                       const auto graph_iter_xp,
+                       const auto graph_iter_xm,
+                       const auto graph_iter_yp,
+                       const auto graph_iter_ym,
+                       const auto graph_iter_zp,
+                       const auto graph_iter_zm,
+                       Tscal *__restrict phi_Ap) {
                         auto Ap_id = shammodels::basegodunov::laplacian_7pt<Tscal, Tvec, TgridUint>(
                             cell_global_id,
                             graph_iter_xp,
@@ -110,20 +117,6 @@ namespace {
 
                         phi_Ap[cell_global_id] = Ap_id;
                     });
-                });
-
-                block_level_span.complete_event_state(e);
-                block_max_span.complete_event_state(e);
-                block_min_span.complete_event_state(e);
-                phi_p_span.complete_event_state(e);
-                phi_Ap_span.complete_event_state(e);
-
-                graph_neigh_xp.complete_event_state(e);
-                graph_neigh_xm.complete_event_state(e);
-                graph_neigh_yp.complete_event_state(e);
-                graph_neigh_ym.complete_event_state(e);
-                graph_neigh_zp.complete_event_state(e);
-                graph_neigh_zm.complete_event_state(e);
             });
         }
     };

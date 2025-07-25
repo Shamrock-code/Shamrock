@@ -21,7 +21,6 @@ if not shamrock.sys.is_initialized():
 
 gamma = 5.0 / 3.0
 rho_g = 1
-target_tot_u = 1
 
 bmin = (-0.6, -0.6, -0.6)
 bmax = (0.6, 0.6, 0.6)
@@ -30,10 +29,9 @@ N_target = 1e4
 scheduler_split_val = int(2e7)
 scheduler_merge_val = int(1)
 
-
 # %%
 # Deduced quantities
-
+import numpy as np
 
 xm, ym, zm = bmin
 xM, yM, zM = bmax
@@ -42,7 +40,8 @@ vol_b = (xM - xm) * (yM - ym) * (zM - zm)
 part_vol = vol_b / N_target
 
 # lattice volume
-part_vol_lattice = 0.74 * part_vol
+HCP_PACKING_DENSITY = 0.74
+part_vol_lattice = HCP_PACKING_DENSITY * part_vol
 
 dr = (part_vol_lattice / ((4.0 / 3.0) * np.pi)) ** (1.0 / 3.0)
 
@@ -87,7 +86,6 @@ if shamrock.sys.world_rank() == 0:
 vol_b = (xM - xm) * (yM - ym) * (zM - zm)
 
 totmass = rho_g * vol_b
-# print("Total mass :", totmass)
 
 pmass = model.total_mass_to_part_mass(totmass)
 
@@ -97,11 +95,7 @@ tot_u = pmass * model.get_sum("uint", "f64")
 if shamrock.sys.world_rank() == 0:
     print("total u :", tot_u)
 
-
 model.set_particle_mass(pmass)
-
-
-tot_u = pmass * model.get_sum("uint", "f64")
 
 model.set_cfl_cour(0.1)
 model.set_cfl_force(0.1)
@@ -124,11 +118,11 @@ mean_hpart = np.mean(dat["hpart"])
 
 print(f"hpart min={min_hpart} max={max_hpart} delta={max_hpart-min_hpart}")
 
-assert np.abs(max_hpart - min_hpart) < 1e-9, "hpart delta is too large"
+assert np.abs(max_hpart - min_hpart) < 1e-15, "hpart delta is too large"
 
-expected_h = 0.06688944619517681
+expected_h = (0.06688949833400996 + 0.06688949833401027) / 2
 
-assert np.abs(min_hpart - expected_h) < 1e-9, "hpart is off the expected value"
+assert np.abs(min_hpart - expected_h) < 1e-15, "hpart is off the expected value"
 
 # %%
 # Plot particle distrib

@@ -124,11 +124,11 @@ mean_hpart = np.mean(dat["hpart"])
 
 print(f"hpart min={min_hpart} max={max_hpart} delta={max_hpart-min_hpart}")
 
-assert np.abs(max_hpart - min_hpart) < 1e15, "hpart delta is too large"
+assert np.abs(max_hpart - min_hpart) < 1e-9, "hpart delta is too large"
 
 expected_h = 0.06688944619517681
 
-assert np.abs(min_hpart - expected_h) < 1e15, "hpart is off the expected value"
+assert np.abs(min_hpart - expected_h) < 1e-9, "hpart is off the expected value"
 
 # %%
 # Plot particle distrib

@@ -96,16 +96,17 @@ dr = 1 / xs
 model.resize_simulation_box((-xs / 2, -ys / 2, -zs / 2), (xs / 2, ys / 2, zs / 2))
 
 # rho1 domain
-model.add_cube_fcc_3d(dr, (-xs / 2, -ys / 2, -zs / 2), (xs / 2, -ys / 4, zs / 2))
-model.add_cube_fcc_3d(dr, (-xs / 2, ys / 4, -zs / 2), (xs / 2, ys / 2, zs / 2))
+y_interface = ys / 4
+model.add_cube_fcc_3d(dr, (-xs / 2, -ys / 2, -zs / 2), (xs / 2, -y_interface, zs / 2))
+model.add_cube_fcc_3d(dr, (-xs / 2, y_interface, -zs / 2), (xs / 2, ys / 2, zs / 2))
 
 # rho 2 domain
-model.add_cube_fcc_3d(dr * fact, (-xs / 2, -ys / 4, -zs / 2), (xs / 2, ys / 4, zs / 2))
+model.add_cube_fcc_3d(dr * fact, (-xs / 2, -y_interface, -zs / 2), (xs / 2, y_interface, zs / 2))
 
-model.set_value_in_a_box("uint", "f64", u_1, (-xs / 2, -ys / 2, -zs / 2), (xs / 2, -ys / 4, zs / 2))
-model.set_value_in_a_box("uint", "f64", u_1, (-xs / 2, ys / 4, -zs / 2), (xs / 2, ys / 2, zs / 2))
+model.set_value_in_a_box("uint", "f64", u_1, (-xs / 2, -ys / 2, -zs / 2), (xs / 2, -y_interface, zs / 2))
+model.set_value_in_a_box("uint", "f64", u_1, (-xs / 2, y_interface, -zs / 2), (xs / 2, ys / 2, zs / 2))
 
-model.set_value_in_a_box("uint", "f64", u_2, (-xs / 2, -ys / 4, -zs / 2), (xs / 2, ys / 4, zs / 2))
+model.set_value_in_a_box("uint", "f64", u_2, (-xs / 2, -y_interface, -zs / 2), (xs / 2, y_interface, zs / 2))
 
 
 # the velocity function to trigger KH

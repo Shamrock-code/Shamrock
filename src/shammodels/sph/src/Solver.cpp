@@ -693,6 +693,7 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
                     [htol = solver_config.htol_up_tol](u32 i, Tscal *h_tree) {
                         h_tree[i] *= htol;
                     });
+
                 return std::move(ret);
             }));
 }

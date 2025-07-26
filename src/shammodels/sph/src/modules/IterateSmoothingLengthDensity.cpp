@@ -14,24 +14,34 @@
  *
  */
 
-#include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 
 namespace shammodels::sph::modules {
 
     template<class Tvec, class SPHKernel>
     void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
+        StackEntry stack_loc{};
+
         auto edges = get_edges();
 
         auto &thread_counts = edges.sizes.indexes;
-        auto &neigh_cache   = edges.neigh_cache.neigh_cache;
-        auto &positions     = edges.positions.get_spans();
-        auto &old_h         = edges.old_h.get_spans();
-        auto &new_h         = edges.new_h.get_spans();
-        auto &eps_h         = edges.eps_h.get_spans();
+
+        edges.neigh_cache.check_sizes(thread_counts);
+        edges.positions.check_sizes(thread_counts);
+        edges.old_h.check_sizes(thread_counts);
+        edges.new_h.check_sizes(thread_counts);
+        edges.eps_h.check_sizes(thread_counts);
+
+        auto &neigh_cache = edges.neigh_cache.neigh_cache;
+        auto &positions   = edges.positions.get_spans();
+        auto &old_h       = edges.old_h.get_spans();
+        auto &new_h       = edges.new_h.get_spans();
+        auto &eps_h       = edges.eps_h.get_spans();
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 

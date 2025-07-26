@@ -35,7 +35,7 @@ TestStart(
     using namespace shammodels::sph::modules;
     using namespace shammodels::sph::solvergraph;
 
-    constexpr u32 N_particles       = 8;
+    constexpr u32 N_particles       = 4 * 4 * 4;
     constexpr Tscal gpart_mass      = 1.0;
     constexpr Tscal h_evol_max      = 1.1;
     constexpr Tscal h_evol_iter_max = 1.1;
@@ -48,9 +48,9 @@ TestStart(
     positions_vec.reserve(N_particles);
 
     // Create particles in a 8x8x8 cube pattern
-    for (u32 i = 0; i < 8; ++i) {
-        for (u32 j = 0; j < 8; ++j) {
-            for (u32 k = 0; k < 8; ++k) {
+    for (u32 i = 0; i < 4; ++i) {
+        for (u32 j = 0; j < 4; ++j) {
+            for (u32 k = 0; k < 4; ++k) {
                 Tvec pos = {(Tscal) i, (Tscal) j, (Tscal) k};
                 positions_vec.push_back(pos);
             }
@@ -72,7 +72,7 @@ TestStart(
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    auto & q = dev_sched->get_queue();
+    auto &q        = dev_sched->get_queue();
 
     // 2. Create initial smoothing lengths (all particles have h = 1.0)
     std::vector<Tscal> old_h_vec(start_h_vec);
@@ -87,11 +87,13 @@ TestStart(
 
     tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), N_particles);
 
-    sham::kernel_call(q,
+    sham::kernel_call(
+        q,
         sham::MultiRef{pcache.scanned_cnt},
-        sham::MultiRef{ pcache.index_neigh_map},
+        sham::MultiRef{pcache.index_neigh_map},
         N_particles,
-        [Npart = N_particles](u32 id_a, const u32 * __restrict scanned_neigh_cnt, u32 * __restrict neigh) {
+        [Npart
+         = N_particles](u32 id_a, const u32 *__restrict scanned_neigh_cnt, u32 *__restrict neigh) {
             u32 cnt = scanned_neigh_cnt[id_a];
 
             for (u32 i = 0; i < Npart; ++i) {
@@ -100,7 +102,8 @@ TestStart(
             }
         });
 
-    shamcomm::logs::raw_ln("pcache.index_neigh_map", pcache.index_neigh_map.copy_to_stdvec());
+    // for debugging
+    // shamcomm::logs::raw_ln("pcache.index_neigh_map", pcache.index_neigh_map.copy_to_stdvec());
 
     // 5. Create PatchDataField for positions and smoothing lengths
     PatchDataField<Tvec> positions_field("positions", 1, N_particles);
@@ -116,39 +119,30 @@ TestStart(
 
     // 6. Create solver graph components
     auto sizes = std::make_shared<solvergraph::Indexes<u32>>("sizes", "sizes");
-    sizes->indexes.add_obj(0, N_particles);
+    sizes->indexes.add_obj(0, u32{N_particles});
 
     auto positions_refs = std::make_shared<solvergraph::FieldRefs<Tvec>>("positions", "positions");
-    positions_refs->set_refs(
-        shambase::DistributedData<std::reference_wrapper<PatchDataField<Tvec>>>{});
-    positions_refs->get_refs().add_obj(0, std::ref(positions_field));
+    auto positions_refs_data = shamrock::solvergraph::DDPatchDataFieldRef<Tvec>{};
+    positions_refs_data.add_obj(0, std::ref(positions_field));
+    positions_refs->set_refs(positions_refs_data);
 
-    auto old_h_refs = std::make_shared<solvergraph::FieldRefs<Tscal>>("old_h", "old_h");
-    old_h_refs->set_refs(
-        shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>>{});
-    old_h_refs->get_refs().add_obj(0, std::ref(old_h_field));
+    auto old_h_refs      = std::make_shared<solvergraph::FieldRefs<Tscal>>("old_h", "old_h");
+    auto old_h_refs_data = shamrock::solvergraph::DDPatchDataFieldRef<Tscal>{};
+    old_h_refs_data.add_obj(0, std::ref(old_h_field));
+    old_h_refs->set_refs(old_h_refs_data);
 
-    auto new_h_refs = std::make_shared<solvergraph::FieldRefs<Tscal>>("new_h", "new_h");
-    new_h_refs->set_refs(
-        shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>>{});
-    new_h_refs->get_refs().add_obj(0, std::ref(new_h_field));
+    auto new_h_refs      = std::make_shared<solvergraph::FieldRefs<Tscal>>("new_h", "new_h");
+    auto new_h_refs_data = shamrock::solvergraph::DDPatchDataFieldRef<Tscal>{};
+    new_h_refs_data.add_obj(0, std::ref(new_h_field));
+    new_h_refs->set_refs(new_h_refs_data);
 
-    auto eps_h_refs = std::make_shared<solvergraph::FieldRefs<Tscal>>("eps_h", "eps_h");
-    eps_h_refs->set_refs(
-        shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>>{});
-    eps_h_refs->get_refs().add_obj(0, std::ref(eps_h_field));
+    auto eps_h_refs      = std::make_shared<solvergraph::FieldRefs<Tscal>>("eps_h", "eps_h");
+    auto eps_h_refs_data = shamrock::solvergraph::DDPatchDataFieldRef<Tscal>{};
+    eps_h_refs_data.add_obj(0, std::ref(eps_h_field));
+    eps_h_refs->set_refs(eps_h_refs_data);
 
-    // 7. Create neighbor cache
     auto neigh_cache = std::make_shared<NeighCache>("neigh_cache", "neigh_cache");
-
-    // Create ObjectCache for the neighbor cache
-    shamrock::tree::ObjectCache obj_cache{
-        std::move(cnt_neigh_buf),
-        std::move(scanned_cnt_buf),
-        total_neighbors,
-        std::move(index_neigh_map_buf)};
-
-    neigh_cache->neigh_cache.add_obj(0, std::move(obj_cache));
+    neigh_cache->neigh_cache.add_obj(0, std::move(pcache));
 
     // 8. Set up IterateSmoothingLengthDensity module
     IterateSmoothingLengthDensity<Tvec, SPHKernel> iterate_module(
@@ -157,44 +151,51 @@ TestStart(
         sizes, neigh_cache, positions_refs, old_h_refs, new_h_refs, eps_h_refs);
 
     // 9. Run the module
-    iterate_module.evaluate();
+    for (u32 outer_iter = 0; outer_iter < 10; ++outer_iter) {
 
-    // 10. Get results back from device
-    std::vector<Tscal> new_h_result = new_h_field.get_buf().copy_to_stdvec();
-    std::vector<Tscal> eps_h_result = eps_h_field.get_buf().copy_to_stdvec();
+        //  Overwrite the old h values with the new h values
+        old_h_field.get_buf().copy_from_stdvec(new_h_field.get_buf().copy_to_stdvec());
 
-    // 11. Verify results
-    // Check that all particles have been processed (epsilon should be updated)
-    for (u32 i = 0; i < N_particles; ++i) {
-        // The epsilon should be updated for particles that were processed
-        REQUIRE_NAMED("epsilon_updated", eps_h_result[i] >= 0.0 || eps_h_result[i] == -1.0);
+        for (u32 inner_iter = 0; inner_iter < 10; ++inner_iter) {
 
-        // New h should be within reasonable bounds
-        REQUIRE_NAMED("h_positive", new_h_result[i] > 0.0);
-        REQUIRE_NAMED("h_reasonable", new_h_result[i] <= 10.0); // Should not explode
+            // Run the module
+            iterate_module.evaluate();
+
+            // Get results back from device
+            std::vector<Tscal> new_h_result = new_h_field.get_buf().copy_to_stdvec();
+            std::vector<Tscal> eps_h_result = eps_h_field.get_buf().copy_to_stdvec();
+
+            // print h_max and h_min
+            shamcomm::logs::raw_ln(
+                "h_max", *std::max_element(new_h_result.begin(), new_h_result.end()));
+            shamcomm::logs::raw_ln(
+                "h_min", *std::min_element(new_h_result.begin(), new_h_result.end()));
+
+            // Verify results
+            u32 eps_expected_range_offenses = 0;
+            for (u32 i = 0; i < N_particles; ++i) {
+                if (!(eps_h_result[i] >= 0.0 || eps_h_result[i] == -1.0)) {
+                    eps_expected_range_offenses += 1;
+                }
+            }
+            REQUIRE_EQUAL(eps_expected_range_offenses, 0);
+
+            u32 new_h_expected_range_offenses = 0;
+            for (u32 i = 0; i < N_particles; ++i) {
+                if (!(new_h_result[i] > 0.0 && new_h_result[i] <= 10.0)) {
+                    new_h_expected_range_offenses += 1;
+                }
+            }
+            REQUIRE_EQUAL(new_h_expected_range_offenses, 0);
+        }
     }
 
-    // 12. Test with different initial conditions
+    // 10. Compare the results with the expected values
     {
-        // Test with larger initial h values
-        std::vector<Tscal> large_h_vec(N_particles, 2.0);
-        PatchDataField<Tscal> large_h_field("large_h", 1, N_particles);
-        large_h_field.get_buf().copy_from_stdvec(large_h_vec);
+        std::vector<Tscal> new_h_result = new_h_field.get_buf().copy_to_stdvec();
+        std::vector<Tscal> eps_h_result = eps_h_field.get_buf().copy_to_stdvec();
 
-        auto large_h_refs = std::make_shared<solvergraph::FieldRefs<Tscal>>("large_h", "large_h");
-        large_h_refs->set_refs(
-            shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>>{});
-        large_h_refs->get_refs().add_obj(0, std::ref(large_h_field));
-
-        IterateSmoothingLengthDensity<Tvec, SPHKernel> iterate_large_h(
-            gpart_mass, h_evol_max, h_evol_iter_max);
-        iterate_large_h.set_edges(
-            sizes, neigh_cache, positions_refs, large_h_refs, new_h_refs, eps_h_refs);
-        iterate_large_h.evaluate();
-
-        std::vector<Tscal> large_h_result = large_h_field.get_buf().copy_to_stdvec();
-        for (u32 i = 0; i < N_particles; ++i) {
-            REQUIRE_NAMED("large_h_processed", large_h_result[i] > 0.0);
-        }
+        REQUIRE_EQUAL(new_h_result, expected_h_vec);
+        REQUIRE_EQUAL(eps_h_result, expected_eps_vec);
     }
 }

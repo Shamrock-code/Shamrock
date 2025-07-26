@@ -16,6 +16,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"

@@ -43,10 +43,10 @@ namespace shammodels::sph {
         sham::EventList depends_list;
 
         auto r          = merged_r.get_read_access(depends_list);
-        auto eps        = eps_h.get_write_access(depends_list);
-        auto h_new      = hnew.get_write_access(depends_list);
         auto h_old      = hold.get_read_access(depends_list);
         auto ploop_ptrs = neigh_cache.get_read_access(depends_list);
+        auto eps        = eps_h.get_write_access(depends_list);
+        auto h_new      = hnew.get_write_access(depends_list);
 
         auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
             // tree::ObjectIterator particle_looper(tree,cgh);

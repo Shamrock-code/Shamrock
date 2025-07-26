@@ -45,7 +45,7 @@ set(Sources
     src/modules/SPHSetup.cpp
     src/modules/KillParticles.cpp
     src/modules/GetParticlesOutsideSphere.cpp
-
+    src/modules/IterateSmoothingLengthDensity.cpp
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
     src/modules/setup/ModifierOffset.cpp

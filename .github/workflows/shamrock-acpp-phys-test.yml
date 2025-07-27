@@ -69,6 +69,10 @@ jobs:
             testfile: dustybox_godunov.py
           - worldsize: 1
             testfile: dustywave_godunov.py
+          - worldsize: 1
+            testfile: regression_sph_disc.py
+          - worldsize: 1
+            testfile: regression_sph_kh.py
 
 
     timeout-minutes: 60

@@ -1,8 +1,8 @@
 """
-Shearing box in SPH
-========================
+Killing sphere for SPH simulation
+=================================
 
-This simple example shows how to run an unstratified shearing box simulaiton
+This simple example shows how to setup a killing sphere for sph simulations
 """
 
 # sphinx_gallery_multi_image = "single"
@@ -16,40 +16,27 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 
-# %%
-# Initialize context & attach a SPH model to it
-ctx = shamrock.Context()
-ctx.pdata_layout_new()
-
-model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
+def is_in_sphere(pt):
+    x, y, z = pt
+    return (x**2 + y**2 + z**2) < 1
 
 
 # %%
 # Setup parameters
-gamma = 5.0 / 3.0
-rho = 1
-uint = 1
 
-dr = 0.02
-bmin = (-0.6, -0.6, -0.1)
-bmax = (0.6, 0.6, 0.1)
-pmass = -1
+dr = 0.1
+pmass = 1
 
-bmin, bmax = model.get_ideal_fcc_box(dr, bmin, bmax)
-xm, ym, zm = bmin
-xM, yM, zM = bmax
+C_cour = 0.3
+C_force = 0.25
 
-Omega_0 = 1
-eta = 0.00
-q = 3.0 / 2.0
-
-shear_speed = -q * Omega_0 * (xM - xm)
+bsize = 4
 
 
 render_gif = True
 
 dump_folder = "_to_trash"
-sim_name = "sph_shear_test"
+sim_name = "kill_particle_sphere"
 
 import os
 
@@ -58,122 +45,116 @@ if shamrock.sys.world_rank() == 0:
     os.makedirs(dump_folder, exist_ok=True)
 
 # %%
-# Generate the config & init the scheduler
+# Setup
+
+ctx = shamrock.Context()
+ctx.pdata_layout_new()
+
+model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
+
 cfg = model.gen_default_config()
-# cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
 # cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
+# cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
+# cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
 cfg.set_artif_viscosity_VaryingCD10(
     alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
 )
-cfg.set_boundary_shearing_periodic((1, 0, 0), (0, 1, 0), shear_speed)
-cfg.set_eos_adiabatic(gamma)
-cfg.add_ext_force_shearing_box(Omega_0=Omega_0, eta=eta, q=q)
-cfg.set_units(shamrock.UnitSystem())
+cfg.set_boundary_periodic()
+cfg.set_eos_adiabatic(1.00001)
+
+# %%
+# The important part to enable killing
+cfg.add_kill_sphere(center=(0.0, 0.0, 0.0), radius=4.0)
+
+
+# %%
+# Rest of the setup
 cfg.print_status()
 model.set_solver_config(cfg)
 
 model.init_scheduler(int(1e7), 1)
 
+bmin = (-bsize, -bsize, -bsize)
+bmax = (bsize, bsize, bsize)
 model.resize_simulation_box(bmin, bmax)
 
-
-# %%
-# Add the particles & set fields values
-# Note that every field that are not mentionned are set to zero
-model.add_cube_fcc_3d(dr, bmin, bmax)
-
-vol_b = (xM - xm) * (yM - ym) * (zM - zm)
-
-totmass = rho * vol_b
-# print("Total mass :", totmass)
-
-pmass = model.total_mass_to_part_mass(totmass)
-
-model.set_value_in_a_box("uint", "f64", 1, bmin, bmax)
-# model.set_value_in_a_box("vxyz","f64_3", (-10,0,0) , bmin,bmax)
-
-pen_sz = 0.1
-
-mm = 1
-MM = 0
-
-
-def vel_func(r):
-    global mm, MM
-    x, y, z = r
-
-    s = (x - (xM + xm) / 2) / (xM - xm)
-    vel = (shear_speed) * s
-
-    mm = min(mm, vel)
-    MM = max(MM, vel)
-
-    return (0, vel, 0.0)
-    # return (1,0,0)
-
-
-model.set_field_value_lambda_f64_3("vxyz", vel_func)
-# print("Current part mass :", pmass)
 model.set_particle_mass(pmass)
 
+setup = model.get_setup()
+lat = setup.make_generator_lattice_hcp(dr, (-bsize, -bsize, -bsize), (bsize, bsize, bsize))
 
-tot_u = pmass * model.get_sum("uint", "f64")
-# print("total u :",tot_u)
+thesphere = setup.make_modifier_filter(parent=lat, filter=is_in_sphere)
 
-print(f"v_shear = {shear_speed} | dv = {MM-mm}")
+offset_sphere = setup.make_modifier_offset(
+    parent=thesphere, offset_position=(0.0, 0.0, 0.0), offset_velocity=(-1.0, -1.0, -1.0)
+)
+
+setup.apply_setup(offset_sphere)
+
+model.set_value_in_a_box("uint", "f64", 1, bmin, bmax)
+
+model.set_cfl_cour(C_cour)
+model.set_cfl_force(C_force)
+
+model.change_htolerance(1.3)
+model.timestep()
+model.change_htolerance(1.1)
 
 
-model.set_cfl_cour(0.3)
-model.set_cfl_force(0.25)
-
-# %%
-# Perform the plot
-
-from math import exp
-
+####################################################
+# Draw utilities
+####################################################
 import matplotlib.pyplot as plt
 import numpy as np
 
 
-def plot(iplot):
-    dic = ctx.collect_data()
-    fig, axs = plt.subplots(2, 1, figsize=(5, 8), sharex=True)
-    fig.suptitle("t = {:.2f}".format(model.get_time()))
-    axs[0].scatter(dic["xyz"][:, 0], dic["xyz"][:, 1], s=1)
-    axs[1].scatter(dic["xyz"][:, 0], dic["vxyz"][:, 1], s=1)
+def plot_state(iplot):
 
-    axs[0].set_ylabel("y")
-    axs[1].set_ylabel("vy")
-    axs[1].set_xlabel("x")
+    pos = ctx.collect_data()["xyz"]
 
-    axs[0].set_xlim(xm - 0.1, xM + 0.1)
-    axs[0].set_ylim(ym - 0.1, yM + 0.1)
+    if shamrock.sys.world_rank() == 0:
+        X = pos[:, 0]
+        Y = pos[:, 1]
+        Z = pos[:, 2]
 
-    axs[1].set_xlim(xm - 0.1, xM + 0.1)
-    axs[1].set_ylim(shear_speed * 0.7, -shear_speed * 0.7)
+        plt.cla()
 
-    plt.tight_layout()
-    plt.savefig(os.path.join(dump_folder, f"{sim_name}_{iplot:04}.png"))
-    plt.close(fig)
+        ax.set_xlim3d(bmin[0], bmax[0])
+        ax.set_ylim3d(bmin[1], bmax[1])
+        ax.set_zlim3d(bmin[2], bmax[2])
+
+        ax.scatter(X, Y, Z, s=1)
+
+        ax.set_title(f"t = {model.get_time():.2f} ")
+
+        plt.savefig(os.path.join(dump_folder, f"{sim_name}_{iplot:04}.png"))
 
 
-# %%
-# Performing the timestep loop
-model.timestep()
+####################################################
+# Run the simulation
+####################################################
+nstop = 28  # To be increased when epmty simulations will be fixed
+dt_stop = 0.1
 
-dt_stop = 0.02
-for i in range(20):
+t_stop = [i * dt_stop for i in range(nstop + 1)]
 
-    t_target = i * dt_stop
-    # skip if the model is already past the target
-    if model.get_time() > t_target:
-        continue
+# Init MPL
+fig = plt.figure(dpi=120)
+ax = fig.add_subplot(111, projection="3d")
 
-    model.evolve_until(i * dt_stop)
+iplot = 0
+istop = 0
+for ttarg in t_stop:
 
-    # Dump name is "dump_xxxx.sham" where xxxx is the timestep
-    model.do_vtk_dump(os.path.join(dump_folder, f"{sim_name}_{i:04}.vtk"), True)
-    plot(i)
+    model.evolve_until(ttarg)
+
+    # if do_plots:
+    plot_state(iplot)
+
+    iplot += 1
+    istop += 1
+
+plt.close(fig)
 
 ####################################################
 # Convert PNG sequence to Image sequence in mpl

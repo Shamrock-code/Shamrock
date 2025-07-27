@@ -200,9 +200,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
         .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness)
-        .def("set_particle_mass", [](TConfig &self, Tscal gpart_mass) {
-            self.gpart_mass = gpart_mass;
-        });
+        .def(
+            "set_particle_mass",
+            [](TConfig &self, Tscal gpart_mass) {
+                self.gpart_mass = gpart_mass;
+            })
+        .def(
+            "add_kill_sphere",
+            [](TConfig &self, const Tvec &center, Tscal radius) {
+                self.particle_killing.add_kill_sphere(center, radius);
+            },
+            py::kw_only(),
+            py::arg("center"),
+            py::arg("radius"));
 
     std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
     py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())

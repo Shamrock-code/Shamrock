@@ -33,10 +33,12 @@
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/RadixTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <variant>
+#include <vector>
 
 namespace shammodels::sph {
 
@@ -79,6 +81,23 @@ namespace shammodels::sph {
          * @brief The CFL multiplier stiffness
          */
         Tscal cfl_multiplier_stiffness = 2;
+    };
+
+    template<class Tvec>
+    struct ParticleKillingConfig {
+        using Tscal = shambase::VecComponent<Tvec>;
+        struct Sphere {
+            Tvec center;
+            Tscal radius;
+        };
+
+        using kill_t = std::variant<Sphere>;
+
+        std::vector<kill_t> kill_list;
+
+        inline void add_kill_sphere(const Tvec &center, Tscal radius) {
+            kill_list.push_back(Sphere{center, radius});
+        }
     };
 
     template<class Tscal>
@@ -164,7 +183,7 @@ struct shammodels::sph::SolverConfig {
     /// The type of the Morton code for the tree
     using u_morton = u32;
 
-    using RTree = RadixTree<u_morton, Tvec>;
+    using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
 
     /// The radius of the sph kernel
     static constexpr Tscal Rkern = Kernel::Rkern;
@@ -221,6 +240,16 @@ struct shammodels::sph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Particle killing config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    ParticleKillingConfig<Tvec> particle_killing;
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Particle killing config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -758,6 +787,35 @@ namespace shammodels::sph {
         j.at("cfl_multiplier").get_to<Tscal>(p.cfl_multiplier);
     }
 
+    // JSON serialization for ParticleKillingConfig
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const ParticleKillingConfig<Tvec> &p) {
+        j = nlohmann::json::array();
+        for (const auto &kill : p.kill_list) {
+            if (std::holds_alternative<typename ParticleKillingConfig<Tvec>::Sphere>(kill)) {
+                const auto &sphere = std::get<typename ParticleKillingConfig<Tvec>::Sphere>(kill);
+                j.push_back(
+                    {{"type", "sphere"}, {"center", sphere.center}, {"radius", sphere.radius}});
+            }
+            // If more types are added to kill_t, handle them here
+        }
+    }
+
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, ParticleKillingConfig<Tvec> &p) {
+        p.kill_list.clear();
+        for (const auto &item : j) {
+            std::string type = item.at("type").get<std::string>();
+            if (type == "sphere") {
+                typename ParticleKillingConfig<Tvec>::Sphere sphere;
+                item.at("center").get_to(sphere.center);
+                item.at("radius").get_to(sphere.radius);
+                p.kill_list.push_back(sphere);
+            }
+            // If more types are added to kill_t, handle them here
+        }
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -805,6 +863,8 @@ namespace shammodels::sph {
 
             {"do_debug_dump", p.do_debug_dump},
             {"debug_dump_filename", p.debug_dump_filename},
+            // particle killing config
+            {"particle_killing", p.particle_killing},
         };
     }
 
@@ -870,6 +930,15 @@ namespace shammodels::sph {
 
         j.at("do_debug_dump").get_to(p.do_debug_dump);
         j.at("debug_dump_filename").get_to(p.debug_dump_filename);
+
+        // particle killing config
+        try {
+            j.at("particle_killing").get_to(p.particle_killing);
+        } catch (const nlohmann::json::out_of_range &e) {
+            logger::warn_ln(
+                "SPHConfig", "particle_killing not found when deserializing, defaulting to None");
+            p.particle_killing.kill_list = {};
+        }
     }
 
 } // namespace shammodels::sph

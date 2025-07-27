@@ -23,6 +23,7 @@
 #include "shamalgs/reduction.hpp"
 #include "shambackends/MemPerfInfos.hpp"
 #include "shambackends/details/memoryHandle.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
@@ -32,6 +33,7 @@
 #include "shammodels/sph/SPHSolverImpl.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/Solver.hpp"
+#include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
@@ -44,6 +46,8 @@
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
+#include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
+#include "shammodels/sph/modules/KillParticles.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
@@ -61,9 +65,15 @@
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
+#include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/IFieldRefs.hpp"
+#include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/KarrasRadixTreeField.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
 #include <memory>
 #include <stdexcept>
@@ -454,7 +464,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    using RTree    = RadixTree<u_morton, Tvec>;
+    using RTree    = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
     using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
 
     SPHUtils sph_utils(scheduler());
@@ -657,16 +667,35 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
     StackEntry stack_loc{};
 
     auto &xyzh_merged = storage.merged_xyzh.get();
+    auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
-    storage.rtree_rint_field.set(storage.merged_pos_trees.get().template map<RadixTreeField<Tscal>>(
-        [&](u64 id, RTree &rtree) {
-            PreStepMergedField &tmp = xyzh_merged.get(id);
+    storage.rtree_rint_field.set(
+        storage.merged_pos_trees.get().template map<shamtree::KarrasRadixTreeField<Tscal>>(
+            [&](u64 id, RTree &rtree) -> shamtree::KarrasRadixTreeField<Tscal> {
+                PreStepMergedField &tmp = xyzh_merged.get(id);
+                auto &buf               = tmp.field_hpart.get_buf();
+                auto buf_int            = shamtree::new_empty_karras_radix_tree_field<Tscal>();
 
-            return rtree.compute_int_boxes(
-                shamsys::instance::get_compute_queue(),
-                tmp.field_hpart.get_buf(),
-                solver_config.htol_up_tol);
-        }));
+                auto ret = shamtree::compute_tree_field_max_field<Tscal>(
+                    rtree.structure,
+                    rtree.reduced_morton_set.get_cell_iterator(),
+                    std::move(buf_int),
+                    buf);
+
+                // the old tree used to increase the size of the hmax of the tree nodes by the
+                // tolerance so we do it also with the new tree, maybe we should move that somewhere
+                // else.
+                sham::kernel_call(
+                    dev_sched->get_queue(),
+                    sham::MultiRef{},
+                    sham::MultiRef{ret.buf_field},
+                    ret.buf_field.get_size(),
+                    [htol = solver_config.htol_up_tol](u32 i, Tscal *h_tree) {
+                        h_tree[i] *= htol;
+                    });
+
+                return std::move(ret);
+            }));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1014,6 +1043,73 @@ void shammodels::sph::Solver<Tvec, Kern>::update_sync_load_values() {
 }
 
 template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::part_killing_step() {
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    if (solver_config.particle_killing.kill_list.size() == 0) {
+        return;
+    }
+
+    PatchDataLayout &pdl = scheduler().pdl;
+    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> pos
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
+
+    {
+        shamrock::solvergraph::DDPatchDataFieldRef<Tvec> refs = {};
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            refs.add_obj(cur_p.id_patch, std::ref(pdat.get_field<Tvec>(ixyz)));
+        });
+        pos->set_refs(refs);
+    }
+
+    std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> patchdatas
+        = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>("", "");
+
+    {
+        patchdatas->free_alloc();
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            patchdatas->patchdatas.add_obj(cur_p.id_patch, std::ref(pdat));
+        });
+    }
+
+    std::shared_ptr<shamrock::solvergraph::DistributedBuffers<u32>> part_to_remove
+        = std::make_shared<shamrock::solvergraph::DistributedBuffers<u32>>("", "");
+
+    std::vector<std::shared_ptr<shamrock::solvergraph::INode>> part_kill_sequence;
+
+    using kill_t      = typename ParticleKillingConfig<Tvec>::kill_t;
+    using kill_sphere = typename ParticleKillingConfig<Tvec>::Sphere;
+
+    // selectors
+    for (kill_t &kill_obj : solver_config.particle_killing.kill_list) {
+        if (kill_sphere *kill_info = std::get_if<kill_sphere>(&kill_obj)) {
+
+            modules::GetParticlesOutsideSphere<Tvec> node_selector(
+                kill_info->center, kill_info->radius);
+            node_selector.set_edges(pos, part_to_remove);
+
+            part_kill_sequence.push_back(
+                std::make_shared<decltype(node_selector)>(std::move(node_selector)));
+        }
+    }
+
+    { // killing
+        modules::KillParticles node_killer{};
+        node_killer.set_edges(part_to_remove, patchdatas);
+
+        part_kill_sequence.push_back(
+            std::make_shared<decltype(node_killer)>(std::move(node_killer)));
+    }
+
+    shamrock::solvergraph::OperationSequence seq("particle killing", std::move(part_kill_sequence));
+    seq.evaluate();
+}
+
+template<class Tvec, template<class> class Kern>
 shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
@@ -1079,6 +1175,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     sink_update.predictor_step(dt);
 
+    part_killing_step();
+
     sink_update.compute_ext_forces();
 
     ext_forces.compute_ext_forces_indep_v();
@@ -1096,7 +1194,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     sph_prestep(t_current, dt);
 
-    using RTree = RadixTree<u_morton, Tvec>;
+    using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
 
     SPHSolverImpl solver(context);
 

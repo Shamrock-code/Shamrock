@@ -47,6 +47,7 @@
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
@@ -69,6 +70,7 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -503,39 +505,56 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         u32 iter_h = 0;
         for (; iter_h < solver_config.h_iter_per_subcycles; iter_h++) {
             NamedStackEntry stack_loc2{"iterate smoothing length"};
-            // iterate smoothing length
+
+            // sizes
+            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes
+                = std::make_shared<shamrock::solvergraph::Indexes<u32>>("", "");
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-                shamlog_debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "h iteration");
-
-                sham::DeviceBuffer<Tscal> &eps_h = _epsilon_h.get_buf(p.id_patch);
-                sham::DeviceBuffer<Tscal> &hold  = _h_old.get_buf(p.id_patch);
-
-                sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
-                sham::DeviceBuffer<Tvec> &merged_r
-                    = shambase::get_check_ref(storage.positions_with_ghosts)
-                          .get_field(p.id_patch)
-                          .get_buf();
-
-                sycl::range range_npart{pdat.get_obj_cnt()};
-
-                RTree &tree = storage.merged_pos_trees.get().get(p.id_patch);
-
-                tree::ObjectCache &neigh_cache
-                    = shambase::get_check_ref(storage.neigh_cache).get_cache(p.id_patch);
-
-                sph_utils.iterate_smoothing_length_cache(
-                    merged_r,
-                    hnew,
-                    hold,
-                    eps_h,
-                    range_npart,
-                    neigh_cache,
-                    solver_config.gpart_mass,
-                    solver_config.htol_up_tol,
-                    solver_config.htol_up_iter);
-                // sph_utils.iterate_smoothing_length_tree(merged_r, hnew, hold, eps_h, range_npart,
-                // tree, gpart_mass, htol_up_tol, htol_up_iter);
+                sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
             });
+
+            // neigh cache
+            auto &neigh_cache = storage.neigh_cache;
+
+            // positions
+            auto &pos_merged = storage.positions_with_ghosts;
+
+            // old smoothing length field
+            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hold
+                = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+            shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hold_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                auto &field = _h_old.get_field(p.id_patch);
+                hold_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            hold->set_refs(hold_refs);
+
+            // new smoothing length field
+            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew
+                = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+            shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                auto &field = pdat.get_field<Tscal>(ihpart);
+                hnew_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            hnew->set_refs(hnew_refs);
+
+            // epsilon field
+            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eps_h
+                = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+            shamrock::solvergraph::DDPatchDataFieldRef<Tscal> eps_h_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                auto &field = _epsilon_h.get_field(p.id_patch);
+                eps_h_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            eps_h->set_refs(eps_h_refs);
+
+            // iterate smoothing length
+            shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel> smth_h_iter(
+                solver_config.gpart_mass, solver_config.htol_up_tol, solver_config.htol_up_iter);
+            smth_h_iter.set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
+            smth_h_iter.evaluate();
+
             max_eps_h = _epsilon_h.compute_rank_max();
 
             shamlog_debug_ln("Smoothinglength", "iteration :", iter_h, "epsmax", max_eps_h);

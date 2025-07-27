@@ -1,3 +1,13 @@
+"""
+Comparing Sedov blast with 1 patch with Phantom
+==============================================
+
+Restart a Sedov blast simulation from a Phantom dump using 1 patch, run it in Shamrock
+and compare the results with the original Phantom dump.
+This test is used to check that the Shamrock solver is able to reproduce the
+same results as Phantom.
+"""
+
 import numpy as np
 
 import shamrock
@@ -8,7 +18,7 @@ if not shamrock.sys.is_initialized():
 
 
 Npart = 174000
-split = int(Npart / 2)
+split = int(Npart) * 2
 
 
 def load_dataset(filename):
@@ -124,24 +134,36 @@ def compare_datasets(istep, dataset1, dataset2):
     print("L2alpha", L2alpha)
 
     expected_L2 = {
-        0: [0, 9.00924285345295e-08, 0, 0, 0],
+        0: [0.0, 9.009242852618063e-08, 0.0, 0.0, 0.0],
         1: [
             1.849032833754011e-15,
-            1.1219057799666405e-07,
-            2.999040994475206e-05,
-            2.779110446924334e-07,
-            1.110758084267404e-06,
+            1.1219057799155968e-07,
+            2.999040994476978e-05,
+            2.77911044692338e-07,
+            1.1107580842674083e-06,
         ],
-        10: [2.36279697e-10, 1.08938225e-07, 4.01017490e-04, 5.00002547e-06, 2.36643265e-02],
-        100: [1.55853980e-08, 6.15520271e-07, 3.11811375e-04, 2.91734592e-05, 6.43234536e-05],
+        10: [
+            2.362796968279928e-10,
+            1.0893822456258663e-07,
+            0.0004010174902848735,
+            5.000025464452176e-06,
+            0.02366432648382834,
+        ],
+        100: [
+            1.5585397967807125e-08,
+            6.155202709399902e-07,
+            0.0003118113752459928,
+            2.9173459165073988e-05,
+            6.432345363293235e-05,
+        ],
         1000: [0, 0, 0, 0, 0],
     }
 
     tols = {
         0: [0, 1e-16, 0, 0, 0],
-        1: [0, 1e-16, 1e-16, 1e-18, 1e-19],
-        10: [1e-18, 1e-15, 1e-12, 1e-14, 1e-10],
-        100: [1e-16, 1e-16, 1e-12, 1e-13, 1e-13],
+        1: [1e-20, 1e-16, 1e-16, 1e-18, 1e-20],
+        10: [1e-20, 1e-16, 1e-15, 1e-17, 1e-17],
+        100: [1e-19, 1e-17, 1e-15, 1e-17, 1e-18],
         1000: [0, 0, 0, 0, 0],
     }
 

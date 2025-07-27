@@ -1,9 +1,19 @@
+"""
+Testing Sod tube with Godunov
+============================
+
+CI test for Sod tube with Godunov
+"""
+
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 import shamrock
+
+# %%
+# Setup params
 
 multx = 4
 multy = 1
@@ -14,26 +24,54 @@ base = 32
 gamma = 1.4
 
 
+# %%
+# Init model
+
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-model = shamrock.get_Model_Zeus(context=ctx, vector_type="f64_3", grid_repr="i64_3")
+model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
 
+# %%
+# Init config
 cfg = model.gen_default_config()
 scale_fact = 2 / (sz * base * multx)
 cfg.set_scale_factor(scale_fact)
 
 cfg.set_eos_gamma(gamma)
-cfg.set_consistent_transport(True)
-cfg.set_van_leer(True)
+# cfg.set_riemann_solver_rusanov()
+cfg.set_riemann_solver_hll()
+
+# cfg.set_slope_lim_none()
+# cfg.set_slope_lim_vanleer_f()
+# cfg.set_slope_lim_vanleer_std()
+# cfg.set_slope_lim_vanleer_sym()
+cfg.set_slope_lim_minmod()
+cfg.set_face_time_interpolation(True)
 model.set_solver_config(cfg)
+
+
+# %%
+# Init scheduler and grid
 
 model.init_scheduler(int(1e7), 1)
 model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
 
+# without face time interpolation
+# 0.07979993131348424 (0.17970690984930585, 0.0, 0.0) 0.12628776652228088
+
+# with face time interpolation
+# 0.07894793711859852 (0.17754462339166546, 0.0, 0.0) 0.12498304725061045
+
+
+kx, ky, kz = 2 * np.pi, 0, 0
+delta_rho = 1e-2
+
+
 def rho_map(rmin, rmax):
+
     x, y, z = rmin
     if x < 1:
         return 1
@@ -41,40 +79,34 @@ def rho_map(rmin, rmax):
         return 0.125
 
 
-eint_L = 1.0 / (gamma - 1)
-eint_R = 0.1 / (gamma - 1)
+etot_L = 1.0 / (gamma - 1)
+etot_R = 0.1 / (gamma - 1)
 
 
-def eint_map(rmin, rmax):
+def rhoetot_map(rmin, rmax):
+
+    rho = rho_map(rmin, rmax)
+
     x, y, z = rmin
     if x < 1:
-        return eint_L
+        return etot_L
     else:
-        return eint_R
+        return etot_R
 
 
-def vel_map(rmin, rmax):
+def rhovel_map(rmin, rmax):
+    rho = rho_map(rmin, rmax)
+
     return (0, 0, 0)
 
 
 model.set_field_value_lambda_f64("rho", rho_map)
-model.set_field_value_lambda_f64("eint", eint_map)
-model.set_field_value_lambda_f64_3("vel", vel_map)
+model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
+model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 t_target = 0.245
 
-
-# model.evolve_once(0,0.1)
-freq = 50
-dt = 0.0010
-t = 0
-for i in range(701):
-    model.evolve_once(i * dt, dt)
-    t = i * dt
-    if i * dt >= t_target:
-        break
-
-# model.evolve_until(t_target)
+model.evolve_until(t_target)
 
 # model.evolve_once()
 xref = 1.0
@@ -134,26 +166,28 @@ if False:
 
     X = []
     rho = []
-    velx = []
-    P = []
+    rhovelx = []
+    rhoetot = []
 
     for i in range(len(dic["xmin"])):
 
-        X.append(dic["xmin"][i] - 0.5)
+        X.append(dic["xmin"][i])
         rho.append(dic["rho"][i])
-        velx.append(dic["vel"][i][0])
-        P.append(dic["eint"][i] * (gamma - 1))
+        rhovelx.append(dic["rhovel"][i][0])
+        rhoetot.append(dic["rhoetot"][i])
 
     X = np.array(X)
     rho = np.array(rho)
-    velx = np.array(velx)
-    P = np.array(P)
+    rhovelx = np.array(rhovelx)
+    rhoetot = np.array(rhoetot)
+
+    vx = rhovelx / rho
 
     fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), dpi=125)
 
     plt.scatter(X, rho, rasterized=True, label="rho")
-    plt.scatter(X, velx, rasterized=True, label="v")
-    plt.scatter(X, P, rasterized=True, label="P")
+    plt.scatter(X, vx, rasterized=True, label="v")
+    plt.scatter(X, (rhoetot - 0.5 * rho * (vx**2)) * (gamma - 1), rasterized=True, label="P")
     # plt.scatter(X,rhoetot, rasterized=True,label="rhoetot")
     plt.legend()
     plt.grid()
@@ -185,17 +219,20 @@ if False:
 ### Test CD
 #################
 rho, v, P = sodanalysis.compute_L2_dist()
+print(rho, v, P)
 vx, vy, vz = v
 
-if shamrock.sys.world_rank() == 0:
-    print("L2 norm : rho = ", rho, " v = ", v, " P = ", P)
+# normally :
+# rho 0.07979993131348424
+# v (0.17970690984930585, 0.0, 0.0)
+# P 0.12628776652228088
 
 test_pass = True
-pass_rho = 0.08027925640209972 + 1e-7
-pass_vx = 0.18526690716374897 + 1e-7
+pass_rho = 0.07979993131348424 + 1e-7
+pass_vx = 0.17970690984930585 + 1e-7
 pass_vy = 1e-09
 pass_vz = 1e-09
-pass_P = 0.1263222182067176 + 1e-7
+pass_P = 0.12628776652228088 + 1e-7
 
 err_log = ""
 

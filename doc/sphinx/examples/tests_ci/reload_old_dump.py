@@ -1,3 +1,10 @@
+"""
+Testing reload of old dump
+==========================
+
+CI test for reload of old dump
+"""
+
 import os
 
 import shamrock

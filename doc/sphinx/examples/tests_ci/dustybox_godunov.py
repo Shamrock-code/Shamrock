@@ -1,3 +1,10 @@
+"""
+Testing dusty box with Godunov
+==============================
+
+CI test for dusty box with Godunov
+"""
+
 from math import *
 
 import matplotlib as mpl

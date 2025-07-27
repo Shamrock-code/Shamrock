@@ -1,3 +1,10 @@
+"""
+Testing Sod tube with Godunov with AMR enabled
+==============================================
+
+CI test for Sod tube with Godunov with AMR enabled
+"""
+
 import os
 
 import matplotlib.pyplot as plt
@@ -5,33 +12,24 @@ import numpy as np
 
 import shamrock
 
-# %%
-# Setup params
-
-multx = 4
-multy = 1
-multz = 1
-
-sz = 1 << 1
-base = 32
-gamma = 1.4
-
-
-# %%
-# Init model
-
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
 model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
 
-# %%
-# Init config
+multx = 4
+multy = 1
+multz = 1
+
+cell_size = 1 << 2  # refinement is limited to cell_size = 2
+base = 16
+
 cfg = model.gen_default_config()
-scale_fact = 2 / (sz * base * multx)
+scale_fact = 2 / (cell_size * base * multx)
 cfg.set_scale_factor(scale_fact)
 
+gamma = 1.4
 cfg.set_eos_gamma(gamma)
 # cfg.set_riemann_solver_rusanov()
 cfg.set_riemann_solver_hll()
@@ -42,15 +40,15 @@ cfg.set_riemann_solver_hll()
 # cfg.set_slope_lim_vanleer_sym()
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
+mass_crit = 0.0000001 * 5 * 2 * 1.2
+cfg.set_amr_mode_density_based(crit_mass=mass_crit)
 model.set_solver_config(cfg)
 
 
-# %%
-# Init scheduler and grid
-
 model.init_scheduler(int(1e7), 1)
-model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
-
+model.make_base_grid(
+    (0, 0, 0), (cell_size, cell_size, cell_size), (base * multx, base * multy, base * multz)
+)
 
 # without face time interpolation
 # 0.07979993131348424 (0.17970690984930585, 0.0, 0.0) 0.12628776652228088
@@ -99,6 +97,10 @@ model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 t_target = 0.245
 
+# for i in range(1000):
+#    model.dump_vtk(f"test{i:04d}.vtk")
+#    model.timestep()
+
 model.evolve_until(t_target)
 
 # model.evolve_once()
@@ -112,7 +114,7 @@ sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_target, xref, -xrang
 ### Plot
 #################
 # do plot or not
-if False:
+if True:
 
     def convert_to_cell_coords(dic):
 
@@ -158,6 +160,7 @@ if False:
     dic = convert_to_cell_coords(ctx.collect_data())
 
     X = []
+    dX = []
     rho = []
     rhovelx = []
     rhoetot = []
@@ -165,11 +168,13 @@ if False:
     for i in range(len(dic["xmin"])):
 
         X.append(dic["xmin"][i])
+        dX.append(dic["xmax"][i] - dic["xmin"][i])
         rho.append(dic["rho"][i])
         rhovelx.append(dic["rhovel"][i][0])
         rhoetot.append(dic["rhoetot"][i])
 
     X = np.array(X)
+    dX = np.array(dX)
     rho = np.array(rho)
     rhovelx = np.array(rhovelx)
     rhoetot = np.array(rhoetot)
@@ -178,12 +183,19 @@ if False:
 
     fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), dpi=125)
 
-    plt.scatter(X, rho, rasterized=True, label="rho")
-    plt.scatter(X, vx, rasterized=True, label="v")
-    plt.scatter(X, (rhoetot - 0.5 * rho * (vx**2)) * (gamma - 1), rasterized=True, label="P")
+    ax1 = plt.gca()
+    ax2 = ax1.twinx()
+
+    l = -np.log2(dX / np.max(dX)) + 1
+
+    ax1.scatter(X, rho, rasterized=True, label="rho")
+    ax1.scatter(X, vx, rasterized=True, label="v")
+    ax1.scatter(X, (rhoetot - 0.5 * rho * (vx**2)) * (gamma - 1), rasterized=True, label="P")
+    ax2.scatter(X, l, rasterized=True, color="purple", label="AMR level")
     # plt.scatter(X,rhoetot, rasterized=True,label="rhoetot")
-    plt.legend()
-    plt.grid()
+    ax1.legend(loc=0)
+    ax2.legend(loc=0)
+    ax1.grid()
 
     #### add analytical soluce
     arr_x = np.linspace(xref - xrange, xref + xrange, 1000)
@@ -200,11 +212,16 @@ if False:
         arr_vx.append(_vx)
         arr_P.append(_P)
 
-    plt.plot(arr_x, arr_rho, color="black", label="analytic")
-    plt.plot(arr_x, arr_vx, color="black")
-    plt.plot(arr_x, arr_P, color="black")
-    plt.ylim(-0.1, 1.1)
-    plt.xlim(0.5, 1.5)
+    ax1.plot(arr_x, arr_rho, color="black", label="analytic")
+    ax1.plot(arr_x, arr_vx, color="black")
+    ax1.plot(arr_x, arr_P, color="black")
+
+    ax1.set_ylim(-0.1, 1.1)
+    ax1.set_xlim(0.5, 1.5)
+    ax2.set_ylabel("AMR level")
+    plt.title(r"$m_{crit}=" + str(mass_crit) + "$")
+    plt.savefig("sod_tube.pdf")
+    plt.savefig("sod_tube.png")
     #######
     plt.show()
 
@@ -221,11 +238,11 @@ vx, vy, vz = v
 # P 0.12628776652228088
 
 test_pass = True
-pass_rho = 0.07979993131348424 + 1e-7
-pass_vx = 0.17970690984930585 + 1e-7
-pass_vy = 1e-09
-pass_vz = 1e-09
-pass_P = 0.12628776652228088 + 1e-7
+pass_rho = 0.07913442601255971 + 1e-7
+pass_vx = 0.17762998971731672 + 1e-7
+pass_vy = 0
+pass_vz = 0
+pass_P = 0.12516172582510562 + 1e-7
 
 err_log = ""
 

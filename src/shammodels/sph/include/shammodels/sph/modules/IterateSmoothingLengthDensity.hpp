@@ -12,8 +12,8 @@
 /**
  * @file IterateSmoothingLengthDensity.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Declares the IterateSmoothingLengthDensity module for removing particles.
- *
+ * @brief Declares the IterateSmoothingLengthDensity module for iterating smoothing length based on
+ * the SPH density sum.
  */
 
 #include "shambackends/vec.hpp"

@@ -158,7 +158,7 @@ model.timestep()
 # adapted from https://gist.github.com/gilliss/7e1d451b42441e77ae33a8b790eeeb73
 
 
-def save_collectec_data(data_dict, fpath):
+def save_collected_data(data_dict, fpath):
 
     print(f"Saving data to {fpath}")
 
@@ -255,7 +255,7 @@ def check_regression(data_dict1, data_dict2, tolerances):
 
 def save_state(iplot):
     data_dict = ctx.collect_data()
-    save_collectec_data(data_dict, os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5"))
+    save_collected_data(data_dict, os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5"))
 
 
 # %%

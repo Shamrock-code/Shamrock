@@ -276,51 +276,6 @@ def save_state(iplot):
     save_collectec_data(data_dict, os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5"))
 
 
-tolerances = [
-    {
-        "xyz": (1e-10, 1e-10),
-        "vxyz": (1e-10, 1e-10),
-        "hpart": (1e-10, 1e-10),
-        "duint": (1e-10, 1e-10),
-        "dtdivv": (1e-10, 1e-10),
-        "curlv": (1e-10, 1e-10),
-        "soundspeed": (1e-10, 1e-10),
-        "uint": (1e-10, 1e-10),
-        "axyz_ext": (1e-10, 1e-10),
-        "alpha_AV": (1e-10, 1e-10),
-        "divv": (1e-10, 1e-10),
-        "axyz": (1e-10, 1e-10),
-    },
-    {
-        "xyz": (1e-10, 1e-10),
-        "vxyz": (1e-10, 1e-10),
-        "hpart": (1e-10, 1e-10),
-        "duint": (1e-10, 1e-10),
-        "dtdivv": (1e-10, 1e-10),
-        "curlv": (1e-10, 1e-10),
-        "soundspeed": (1e-10, 1e-10),
-        "uint": (1e-10, 1e-10),
-        "axyz_ext": (1e-10, 1e-10),
-        "alpha_AV": (1e-10, 1e-10),
-        "divv": (1e-10, 1e-10),
-        "axyz": (1e-10, 1e-10),
-    },
-    {
-        "xyz": (1e-10, 1e-10),
-        "vxyz": (1e-10, 1e-10),
-        "hpart": (1e-10, 1e-10),
-        "duint": (1e-10, 1e-10),
-        "dtdivv": (1e-10, 1e-10),
-        "curlv": (1e-10, 1e-10),
-        "soundspeed": (1e-10, 1e-10),
-        "uint": (1e-10, 1e-10),
-        "axyz_ext": (1e-10, 1e-10),
-        "alpha_AV": (1e-10, 1e-10),
-        "divv": (1e-10, 1e-10),
-        "axyz": (1e-10, 1e-10),
-    },
-]
-
 # %%
 # Running the simulation
 
@@ -347,31 +302,31 @@ reference_folder = "reference-files/regression_sph_disc"
 
 tolerances = [
     {
-        "vxyz": (1e-10, 1e-10),
-        "hpart": (1e-10, 1e-10),
-        "duint": (1e-10, 1e-10),
-        "axyz": (1e-10, 1e-10),
-        "xyz": (1e-10, 1e-10),
-        "axyz_ext": (1e-10, 1e-10),
-        "uint": (1e-10, 1e-10),
+        "vxyz": (1e-15, 1e-15),
+        "hpart": (1e-15, 1e-15),
+        "duint": (1e-14, 1e-14),
+        "axyz": (1e-13, 1e-13),
+        "xyz": (1e-15, 1e-15),
+        "axyz_ext": (1e-14, 1e-14),
+        "uint": (1e-20, 1e-20),
     },
     {
-        "vxyz": (1e-10, 1e-10),
-        "hpart": (1e-10, 1e-10),
-        "duint": (1e-10, 1e-10),
-        "axyz": (1e-10, 1e-10),
-        "xyz": (1e-10, 1e-10),
-        "axyz_ext": (1e-10, 1e-10),
-        "uint": (1e-10, 1e-10),
+        "vxyz": (1e-14, 1e-14),
+        "hpart": (1e-15, 1e-15),
+        "duint": (1e-14, 1e-14),
+        "axyz": (1e-13, 1e-13),
+        "xyz": (1e-15, 1e-15),
+        "axyz_ext": (1e-14, 1e-14),
+        "uint": (1e-15, 1e-15),
     },
     {
-        "vxyz": (1e-10, 1e-10),
-        "hpart": (1e-10, 1e-10),
-        "duint": (1e-10, 1e-10),
-        "axyz": (1e-10, 1e-10),
-        "xyz": (1e-10, 1e-10),
-        "axyz_ext": (1e-10, 1e-10),
-        "uint": (1e-10, 1e-10),
+        "vxyz": (1e-14, 1e-14),
+        "hpart": (1e-14, 1e-14),
+        "duint": (1e-13, 1e-13),
+        "axyz": (1e-13, 1e-13),
+        "xyz": (1e-15, 1e-15),
+        "axyz_ext": (1e-14, 1e-14),
+        "uint": (1e-15, 1e-15),
     },
 ]
 

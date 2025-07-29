@@ -211,7 +211,7 @@ def load_collected_data(fpath):
     return data_dict
 
 
-def check_regression(data_dict1, data_dict2):
+def check_regression(data_dict1, data_dict2, tolerances):
 
     # Compare if keys sets match
     if set(data_dict1.keys()) != set(data_dict2.keys()):
@@ -220,23 +220,97 @@ def check_regression(data_dict1, data_dict2):
             f"Data keys sets do not match: {set(data_dict1.keys())} != {set(data_dict2.keys())}"
         )
 
+    # Compare if tolerances are defined for all keys
+    if set(tolerances.keys()) != set(data_dict1.keys()):
+        print("Tolerances keys sets do not match")
+        raise ValueError(
+            f"Tolerances keys sets do not match: {set(tolerances.keys())} != {set(data_dict1.keys())}"
+        )
+
     # Compare if values are equal
     for dset_name in data_dict1:
-        if not np.allclose(data_dict1[dset_name], data_dict2[dset_name]):
-            print(f"Data {dset_name} is not equal")
+
+        # Compare same size
+        if data_dict1[dset_name].shape != data_dict2[dset_name].shape:
+            print(f"Data {dset_name} has different shape")
+            print(f"shape: {data_dict1[dset_name].shape} != {data_dict2[dset_name].shape}")
+            raise ValueError(f"Data {dset_name} has different shape")
+
+        # Compare values
+        delta = np.isclose(
+            data_dict1[dset_name],
+            data_dict2[dset_name],
+            rtol=tolerances[dset_name][0],
+            atol=tolerances[dset_name][1],
+        )
+
+        for i in range(len(data_dict1[dset_name])):
+            if not np.all(delta[i]):
+                print(
+                    f"Data {dset_name} is not equal at index {i}, rtol={tolerances[dset_name][0]}, atol={tolerances[dset_name][1]}"
+                )
+                print(f"    value 1: {data_dict1[dset_name][i]}")
+                print(f"    value 2: {data_dict2[dset_name][i]}")
+                print(
+                    f"    absolute diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i])}"
+                )
+                print(
+                    f"    relative diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i]) / data_dict1[dset_name][i]}"
+                )
+
+        if not np.all(delta):
             raise ValueError(f"Data {dset_name} is not equal")
 
 
-# %%
-# Plotting functions
-import copy
-
-
 def save_state(iplot):
-
     data_dict = ctx.collect_data()
     save_collectec_data(data_dict, os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5"))
 
+
+tolerances = [
+    {
+        "xyz": (1e-10, 1e-10),
+        "vxyz": (1e-10, 1e-10),
+        "hpart": (1e-10, 1e-10),
+        "duint": (1e-10, 1e-10),
+        "dtdivv": (1e-10, 1e-10),
+        "curlv": (1e-10, 1e-10),
+        "soundspeed": (1e-10, 1e-10),
+        "uint": (1e-10, 1e-10),
+        "axyz_ext": (1e-10, 1e-10),
+        "alpha_AV": (1e-10, 1e-10),
+        "divv": (1e-10, 1e-10),
+        "axyz": (1e-10, 1e-10),
+    },
+    {
+        "xyz": (1e-10, 1e-10),
+        "vxyz": (1e-10, 1e-10),
+        "hpart": (1e-10, 1e-10),
+        "duint": (1e-10, 1e-10),
+        "dtdivv": (1e-10, 1e-10),
+        "curlv": (1e-10, 1e-10),
+        "soundspeed": (1e-10, 1e-10),
+        "uint": (1e-10, 1e-10),
+        "axyz_ext": (1e-10, 1e-10),
+        "alpha_AV": (1e-10, 1e-10),
+        "divv": (1e-10, 1e-10),
+        "axyz": (1e-10, 1e-10),
+    },
+    {
+        "xyz": (1e-10, 1e-10),
+        "vxyz": (1e-10, 1e-10),
+        "hpart": (1e-10, 1e-10),
+        "duint": (1e-10, 1e-10),
+        "dtdivv": (1e-10, 1e-10),
+        "curlv": (1e-10, 1e-10),
+        "soundspeed": (1e-10, 1e-10),
+        "uint": (1e-10, 1e-10),
+        "axyz_ext": (1e-10, 1e-10),
+        "alpha_AV": (1e-10, 1e-10),
+        "divv": (1e-10, 1e-10),
+        "axyz": (1e-10, 1e-10),
+    },
+]
 
 # %%
 # Running the simulation
@@ -262,6 +336,36 @@ while t_sum < t_target:
 
 reference_folder = "reference-files/regression_sph_disc"
 
+tolerances = [
+    {
+        "vxyz": (1e-10, 1e-10),
+        "hpart": (1e-10, 1e-10),
+        "duint": (1e-10, 1e-10),
+        "axyz": (1e-10, 1e-10),
+        "xyz": (1e-10, 1e-10),
+        "axyz_ext": (1e-10, 1e-10),
+        "uint": (1e-10, 1e-10),
+    },
+    {
+        "vxyz": (1e-10, 1e-10),
+        "hpart": (1e-10, 1e-10),
+        "duint": (1e-10, 1e-10),
+        "axyz": (1e-10, 1e-10),
+        "xyz": (1e-10, 1e-10),
+        "axyz_ext": (1e-10, 1e-10),
+        "uint": (1e-10, 1e-10),
+    },
+    {
+        "vxyz": (1e-10, 1e-10),
+        "hpart": (1e-10, 1e-10),
+        "duint": (1e-10, 1e-10),
+        "axyz": (1e-10, 1e-10),
+        "xyz": (1e-10, 1e-10),
+        "axyz_ext": (1e-10, 1e-10),
+        "uint": (1e-10, 1e-10),
+    },
+]
+
 for iplot in range(i_dump):
 
     fpath_cur = os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5")
@@ -270,4 +374,4 @@ for iplot in range(i_dump):
     data_dict_cur = load_collected_data(fpath_cur)
     data_dict_ref = load_collected_data(fpath_ref)
 
-    check_regression(data_dict_ref, data_dict_cur)
+    check_regression(data_dict_ref, data_dict_cur, tolerances[iplot])

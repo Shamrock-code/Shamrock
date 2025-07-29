@@ -244,22 +244,31 @@ def check_regression(data_dict1, data_dict2, tolerances):
             atol=tolerances[dset_name][1],
         )
 
+        offenses = 0
+
         for i in range(len(data_dict1[dset_name])):
             if not np.all(delta[i]):
-                print(
-                    f"Data {dset_name} is not equal at index {i}, rtol={tolerances[dset_name][0]}, atol={tolerances[dset_name][1]}"
-                )
-                print(f"    value 1: {data_dict1[dset_name][i]}")
-                print(f"    value 2: {data_dict2[dset_name][i]}")
-                print(
-                    f"    absolute diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i])}"
-                )
-                print(
-                    f"    relative diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i]) / data_dict1[dset_name][i]}"
-                )
+                if False:
+                    print(
+                        f"Data {dset_name} is not equal at index {i}, rtol={tolerances[dset_name][0]}, atol={tolerances[dset_name][1]}"
+                    )
+                    print(f"    value 1: {data_dict1[dset_name][i]}")
+                    print(f"    value 2: {data_dict2[dset_name][i]}")
+                    print(
+                        f"    absolute diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i])}"
+                    )
+                    print(
+                        f"    relative diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i]) / data_dict1[dset_name][i]}"
+                    )
+                offenses += 1
 
-        if not np.all(delta):
+        if offenses > 0:
+            print(
+                f"Data {dset_name} has {offenses} offenses, absolute diff: {np.abs(data_dict1[dset_name] - data_dict2[dset_name]).max()}"
+            )
             raise ValueError(f"Data {dset_name} is not equal")
+
+    print(" -> Regression test passed successfully")
 
 
 def save_state(iplot):

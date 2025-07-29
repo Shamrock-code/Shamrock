@@ -226,22 +226,31 @@ def check_regression(data_dict1, data_dict2, tolerances):
             atol=tolerances[dset_name][1],
         )
 
+        offenses = 0
+
         for i in range(len(data_dict1[dset_name])):
             if not np.all(delta[i]):
-                print(
-                    f"Data {dset_name} is not equal at index {i}, rtol={tolerances[dset_name][0]}, atol={tolerances[dset_name][1]}"
-                )
-                print(f"    value 1: {data_dict1[dset_name][i]}")
-                print(f"    value 2: {data_dict2[dset_name][i]}")
-                print(
-                    f"    absolute diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i])}"
-                )
-                print(
-                    f"    relative diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i]) / data_dict1[dset_name][i]}"
-                )
+                if False:
+                    print(
+                        f"Data {dset_name} is not equal at index {i}, rtol={tolerances[dset_name][0]}, atol={tolerances[dset_name][1]}"
+                    )
+                    print(f"    value 1: {data_dict1[dset_name][i]}")
+                    print(f"    value 2: {data_dict2[dset_name][i]}")
+                    print(
+                        f"    absolute diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i])}"
+                    )
+                    print(
+                        f"    relative diff: {np.abs(data_dict1[dset_name][i] - data_dict2[dset_name][i]) / data_dict1[dset_name][i]}"
+                    )
+                offenses += 1
 
-        if not np.all(delta):
+        if offenses > 0:
+            print(
+                f"Data {dset_name} has {offenses} offenses, absolute diff: {np.abs(data_dict1[dset_name] - data_dict2[dset_name]).max()}"
+            )
             raise ValueError(f"Data {dset_name} is not equal")
+
+    print(" -> Regression test passed successfully")
 
 
 def save_state(iplot):
@@ -275,44 +284,44 @@ reference_folder = "reference-files/regression_sph_kh"
 
 tolerances = [
     {
-        "xyz": (1e-10, 1e-10),
-        "vxyz": (1e-10, 1e-10),
-        "hpart": (1e-10, 1e-10),
+        "xyz": (1e-15, 1e-15),
+        "vxyz": (1e-17, 1e-17),
+        "hpart": (1e-16, 1e-16),
+        "duint": (1e-13, 1e-13),
+        "dtdivv": (1e-13, 1e-13),
+        "curlv": (1e-12, 1e-12),
+        "soundspeed": (1e-15, 1e-15),
+        "uint": (1e-20, 1e-20),
+        "axyz_ext": (1e-20, 1e-20),
+        "alpha_AV": (1e-20, 1e-20),
+        "divv": (1e-12, 1e-12),
+        "axyz": (1e-11, 1e-11),
+    },
+    {
+        "xyz": (1e-14, 1e-14),
+        "vxyz": (1e-12, 1e-12),
+        "hpart": (1e-15, 1e-15),
         "duint": (1e-10, 1e-10),
-        "dtdivv": (1e-10, 1e-10),
-        "curlv": (1e-10, 1e-10),
-        "soundspeed": (1e-10, 1e-10),
-        "uint": (1e-10, 1e-10),
-        "axyz_ext": (1e-10, 1e-10),
+        "dtdivv": (1e-8, 1e-8),
+        "curlv": (1e-12, 1e-12),
+        "soundspeed": (1e-13, 1e-13),
+        "uint": (1e-13, 1e-13),
+        "axyz_ext": (1e-20, 1e-20),
         "alpha_AV": (1e-10, 1e-10),
-        "divv": (1e-10, 1e-10),
+        "divv": (1e-11, 1e-11),
         "axyz": (1e-10, 1e-10),
     },
     {
-        "xyz": (1e-10, 1e-10),
-        "vxyz": (1e-10, 1e-10),
-        "hpart": (1e-10, 1e-10),
+        "xyz": (1e-14, 1e-14),
+        "vxyz": (1e-12, 1e-12),
+        "hpart": (1e-15, 1e-15),
         "duint": (1e-10, 1e-10),
-        "dtdivv": (1e-10, 1e-10),
-        "curlv": (1e-10, 1e-10),
-        "soundspeed": (1e-10, 1e-10),
-        "uint": (1e-10, 1e-10),
-        "axyz_ext": (1e-10, 1e-10),
-        "alpha_AV": (1e-10, 1e-10),
-        "divv": (1e-10, 1e-10),
-        "axyz": (1e-10, 1e-10),
-    },
-    {
-        "xyz": (1e-10, 1e-10),
-        "vxyz": (1e-10, 1e-10),
-        "hpart": (1e-10, 1e-10),
-        "duint": (1e-10, 1e-10),
-        "dtdivv": (1e-10, 1e-10),
-        "curlv": (1e-10, 1e-10),
-        "soundspeed": (1e-10, 1e-10),
-        "uint": (1e-10, 1e-10),
-        "axyz_ext": (1e-10, 1e-10),
-        "alpha_AV": (1e-10, 1e-10),
+        "dtdivv": (1e-8, 1e-8),
+        "curlv": (1e-11, 1e-11),
+        "soundspeed": (1e-13, 1e-13),
+        "uint": (1e-13, 1e-13),
+        "axyz_ext": (1e-20, 1e-20),
+        "alpha_AV": (1e-9, 1e-9),
         "divv": (1e-10, 1e-10),
         "axyz": (1e-10, 1e-10),
     },

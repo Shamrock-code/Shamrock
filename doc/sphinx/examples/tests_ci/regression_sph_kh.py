@@ -1,16 +1,10 @@
 """
-Kelvin-Helmholtz instability in SPH
-===================================
+Regression test : SPH Kelvin-Helmholtz instability
+==================================================
 
-This simple example shows how to setup a Kelvin-Helmholtz instability in SPH
-
-.. warning::
-    This test is shown at low resolution to avoid smashing our testing time,
-    the instability starts to appear for resol > 64 with M6 kernel
-
+This test is used to check that the SPH Kelvin-Helmholtz instability setup is able to reproduce the
+same results as the reference file.
 """
-
-# sphinx_gallery_multi_image = "single"
 
 import shamrock
 
@@ -160,43 +154,65 @@ model.timestep()
 
 
 # %%
-# Plotting functions
-import copy
-
-import matplotlib
-import matplotlib.pyplot as plt
+# Save state function
+# adapted from https://gist.github.com/gilliss/7e1d451b42441e77ae33a8b790eeeb73
 
 
-def save_plot_state(iplot):
+def save_collectec_data(data_dict, fpath):
 
-    pixel_x = 1080
-    pixel_y = 1080
-    radius = 0.5
-    center = (0.0, 0.0, 0.0)
-    aspect = pixel_x / pixel_y
-    pic_range = [-radius * aspect, radius * aspect, -radius, radius]
-    delta_x = (radius * 2 * aspect, 0.0, 0.0)
-    delta_y = (0.0, radius * 2, 0.0)
+    print(f"Saving data to {fpath}")
 
-    def _render(field, field_type, center):
-        # Helper to reduce code duplication
-        return model.render_cartesian_slice(
-            field,
-            field_type,
-            center=center,
-            delta_x=delta_x,
-            delta_y=delta_y,
-            nx=pixel_x,
-            ny=pixel_y,
+    import h5py
+
+    # Open HDF5 file and write in the data_dict structure and info
+    f = h5py.File(fpath, "w")
+    for dset_name in data_dict:
+        dset = f.create_dataset(dset_name, data=data_dict[dset_name])
+    f.close()
+
+
+def load_collected_data(fpath):
+
+    print(f"Loading data from {fpath}")
+
+    if not os.path.exists(fpath):
+        print(f"File {fpath} does not exist")
+        raise FileNotFoundError(f"File {fpath} does not exist")
+
+    import h5py
+
+    # Re-open HDF5 file and read out the data_dict structure and info
+    f = h5py.File(fpath, "r")
+
+    data_dict = {}
+    for dset_name in f.keys():
+        data_dict[dset_name] = f[dset_name][:]
+
+    f.close()
+
+    return data_dict
+
+
+def check_regression(data_dict1, data_dict2):
+
+    # Compare if keys sets match
+    if set(data_dict1.keys()) != set(data_dict2.keys()):
+        print("Data keys sets do not match")
+        raise ValueError(
+            f"Data keys sets do not match: {set(data_dict1.keys())} != {set(data_dict2.keys())}"
         )
 
-    arr_rho = _render("rho", "f64", center)
-    arr_alpha = _render("alpha_AV", "f64", center)
-    arr_vel = _render("vxyz", "f64_3", center)
+    # Compare if values are equal
+    for dset_name in data_dict1:
+        if not np.allclose(data_dict1[dset_name], data_dict2[dset_name]):
+            print(f"Data {dset_name} is not equal")
+            raise ValueError(f"Data {dset_name} is not equal")
 
-    np.save(os.path.join(dump_folder, f"{sim_name}_rho_{iplot:04}.npy"), arr_rho)
-    np.save(os.path.join(dump_folder, f"{sim_name}_alpha_{iplot:04}.npy"), arr_alpha)
-    np.save(os.path.join(dump_folder, f"{sim_name}_vxyz_{iplot:04}.npy"), arr_vel)
+
+def save_state(iplot):
+
+    data_dict = ctx.collect_data()
+    save_collectec_data(data_dict, os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5"))
 
 
 # %%
@@ -205,7 +221,7 @@ def save_plot_state(iplot):
 t_sum = 0
 t_target = 0.1
 
-save_plot_state(0)
+save_state(0)
 
 i_dump = 1
 dt_dump = 0.05
@@ -213,164 +229,22 @@ dt_dump = 0.05
 while t_sum < t_target:
     model.evolve_until(t_sum + dt_dump)
 
-    save_plot_state(i_dump)
+    save_state(i_dump)
 
     t_sum += dt_dump
     i_dump += 1
 
+# %%
+# Check regression
+
 reference_folder = "reference-files/regression_sph_kh"
 
 for iplot in range(i_dump):
-    rho_ref = np.load(os.path.join(reference_folder, f"kh_sph_rho_{iplot:04}.npy"))
-    alpha_ref = np.load(os.path.join(reference_folder, f"kh_sph_alpha_{iplot:04}.npy"))
-    vxyz_ref = np.load(os.path.join(reference_folder, f"kh_sph_vxyz_{iplot:04}.npy"))
 
-    rho_sham = np.load(os.path.join(dump_folder, f"kh_sph_rho_{iplot:04}.npy"))
-    alpha_sham = np.load(os.path.join(dump_folder, f"kh_sph_alpha_{iplot:04}.npy"))
-    vxyz_sham = np.load(os.path.join(dump_folder, f"kh_sph_vxyz_{iplot:04}.npy"))
+    fpath_cur = os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5")
+    fpath_ref = os.path.join(reference_folder, f"{sim_name}_data_{iplot:04}.h5")
 
-    diff_rho = rho_ref - rho_sham
-    diff_alpha = alpha_ref - alpha_sham
-    diff_vxyz = vxyz_ref - vxyz_sham
+    data_dict_cur = load_collected_data(fpath_cur)
+    data_dict_ref = load_collected_data(fpath_ref)
 
-    vy_range = np.abs(vxyz_sham[:, :, 1]).max()
-
-    #########################################################
-    # Plotting parameters
-    #########################################################
-
-    pixel_x = 1080
-    pixel_y = 1080
-    radius = 0.5
-    center = (0.0, 0.0, 0.0)
-    aspect = pixel_x / pixel_y
-    pic_range = [-radius * aspect, radius * aspect, -radius, radius]
-    delta_x = (radius * 2 * aspect, 0.0, 0.0)
-    delta_y = (0.0, radius * 2, 0.0)
-
-    #########################################################
-    # Colormaps
-    #########################################################
-
-    my_cmap = copy.copy(matplotlib.colormaps.get_cmap("gist_heat"))
-    my_cmap.set_bad(color="black")
-
-    my_cmap2 = copy.copy(matplotlib.colormaps.get_cmap("nipy_spectral"))
-    my_cmap2.set_bad(color="black")
-
-    #########################################################
-    # Plot the current sim results
-    #########################################################
-
-    # rho plot
-    fig = plt.figure(dpi=200)
-    im0 = plt.imshow(rho_sham, cmap=my_cmap, origin="lower", extent=pic_range, vmin=1, vmax=3)
-
-    cbar0 = plt.colorbar(im0, extend="both")
-    cbar0.set_label(r"$\rho$ [code unit]")
-
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.savefig(os.path.join(dump_folder, f"{sim_name}_rho_{iplot:04}.png"))
-
-    plt.close(fig)
-
-    # alpha plot
-    fig = plt.figure(dpi=200)
-    im0 = plt.imshow(
-        alpha_sham, cmap=my_cmap2, origin="lower", norm="log", extent=pic_range, vmin=1e-6, vmax=1
-    )
-
-    cbar0 = plt.colorbar(im0, extend="both")
-    cbar0.set_label(r"$\alpha_{AV}$ [code unit]")
-
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.savefig(os.path.join(dump_folder, f"{sim_name}_alpha_{iplot:04}.png"))
-
-    plt.close(fig)
-
-    # vy plot
-    fig = plt.figure(dpi=200)
-    im1 = plt.imshow(
-        vxyz_sham[:, :, 1],
-        cmap=my_cmap,
-        origin="lower",
-        extent=pic_range,
-        vmin=-vy_range,
-        vmax=vy_range,
-    )
-
-    cbar1 = plt.colorbar(im1, extend="both")
-    cbar1.set_label(r"$v_y$ [code unit]")
-
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.savefig(os.path.join(dump_folder, f"{sim_name}_vy_{iplot:04}.png"))
-
-    plt.close(fig)
-
-    #########################################################
-    # Plot the difference between the current sim results and the reference results
-    #########################################################
-
-    # rho plot
-    fig = plt.figure(dpi=200)
-    im0 = plt.imshow(diff_rho, cmap=my_cmap, origin="lower", extent=pic_range)
-
-    cbar0 = plt.colorbar(im0, extend="both")
-    cbar0.set_label(r"$\rho$ [code unit]")
-
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.savefig(os.path.join(dump_folder, f"{sim_name}_diff_rho_{iplot:04}.png"))
-
-    plt.close(fig)
-
-    # alpha plot
-    fig = plt.figure(dpi=200)
-    im0 = plt.imshow(diff_alpha, cmap=my_cmap2, origin="lower", extent=pic_range)
-
-    cbar0 = plt.colorbar(im0, extend="both")
-    cbar0.set_label(r"$\alpha_{AV}$ [code unit]")
-
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.savefig(os.path.join(dump_folder, f"{sim_name}_diff_alpha_{iplot:04}.png"))
-
-    plt.close(fig)
-
-    # vy plot
-    fig = plt.figure(dpi=200)
-    im1 = plt.imshow(diff_vxyz[:, :, 1], cmap=my_cmap, origin="lower", extent=pic_range)
-
-    cbar1 = plt.colorbar(im1, extend="both")
-    cbar1.set_label(r"$v_y$ [code unit]")
-
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.savefig(os.path.join(dump_folder, f"{sim_name}_diff_vy_{iplot:04}.png"))
-
-    plt.close(fig)
-
-    #########################################################
-    # Compute max error
-    #########################################################
-
-    max_error_rho = np.abs(diff_rho).max()
-    max_error_alpha = np.abs(diff_alpha).max()
-    max_error_vy = np.abs(diff_vxyz[:, :, 1]).max()
-
-    print(f"Max error rho: {max_error_rho}")
-    print(f"Max error alpha: {max_error_alpha}")
-    print(f"Max error vy: {max_error_vy}")
-
-    if max_error_rho > 1e-20 or max_error_alpha > 1e-20 or max_error_vy > 1e-20:
-        print("Error is too high")
-        exit(1)
+    check_regression(data_dict_ref, data_dict_cur)

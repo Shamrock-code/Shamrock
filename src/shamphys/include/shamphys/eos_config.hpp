@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -121,7 +121,7 @@ namespace shamphys {
      * @tparam Tscal Scalar type
      *
      * Note that the notation in the original paper are confusing and a clearer version is to use
-     * the form in The Santa Barbara Binary−disk Code Comparison, Duffel et al. 2024
+     * the form in The Santa Barbara Binary−disk Code Comparison, Duffel et al. 2025
      *
      * The equation of state is given by:
      * \f$ c_s = (H(r)/r) \sqrt(- \phi_{\rm grav}) \f$

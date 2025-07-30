@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -14,7 +14,7 @@
  * @author Antoine Richermoz (antoine.richermoz@inria.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  *
- * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2024
+ * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2025
  */
 
 #include "shambase/numeric_limits.hpp"
@@ -66,7 +66,7 @@ namespace sham {
 
     /**
      * @brief This class implement the GPU core timeline tool from the original algorithm of
-     * A. Richermoz, F. Neyret 2024
+     * A. Richermoz, F. Neyret 2025
      *
      * This is a utility to profile the execution of kernels on a GPU. It
      * provides an interface to extract the execution timeline of each work-groups.

@@ -1,3 +1,10 @@
+"""
+Testing dusty wave with Godunov
+==============================
+
+CI test for dusty wave with Godunov
+"""
+
 from math import *
 
 import matplotlib as mpl

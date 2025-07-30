@@ -1,3 +1,10 @@
+"""
+Testing Sod tube with SPH
+=========================
+
+CI test for Sod tube with SPH
+"""
+
 import matplotlib.pyplot as plt
 
 import shamrock

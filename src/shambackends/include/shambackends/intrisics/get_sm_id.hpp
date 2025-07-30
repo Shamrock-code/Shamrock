@@ -13,7 +13,7 @@
  * @file get_sm_id.hpp
  * @author Antoine Richermoz (antoine.richermoz@inria.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2025
+ * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2024
  */
 
 #include "shambackends/intrinsics.hpp"

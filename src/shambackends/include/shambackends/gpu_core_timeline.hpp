@@ -14,7 +14,7 @@
  * @author Antoine Richermoz (antoine.richermoz@inria.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  *
- * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2025
+ * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2024
  */
 
 #include "shambase/numeric_limits.hpp"
@@ -66,7 +66,7 @@ namespace sham {
 
     /**
      * @brief This class implement the GPU core timeline tool from the original algorithm of
-     * A. Richermoz, F. Neyret 2025
+     * A. Richermoz, F. Neyret 2024
      *
      * This is a utility to profile the execution of kernels on a GPU. It
      * provides an interface to extract the execution timeline of each work-groups.

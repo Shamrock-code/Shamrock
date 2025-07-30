@@ -12,7 +12,7 @@
 /**
  * @file get_device_clock.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2025
+ * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2024
  */
 
 #include "shambackends/intrinsics.hpp"

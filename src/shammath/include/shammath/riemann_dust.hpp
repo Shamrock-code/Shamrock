@@ -174,7 +174,7 @@ namespace shammath {
         return d_cst;
     }
 
-    // Krapp et al. 2025, A Fast second-order solver for stiff multifluid dust and gas hydrodynamics
+    // Krapp et al. 2024, A Fast second-order solver for stiff multifluid dust and gas hydrodynamics
     // Appendice E
     template<class Tcons>
     inline constexpr auto d_hll_flux_x(Tcons cL, Tcons cR) {

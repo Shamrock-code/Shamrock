@@ -121,7 +121,7 @@ namespace shamphys {
      * @tparam Tscal Scalar type
      *
      * Note that the notation in the original paper are confusing and a clearer version is to use
-     * the form in The Santa Barbara Binary−disk Code Comparison, Duffel et al. 2025
+     * the form in The Santa Barbara Binary−disk Code Comparison, Duffel et al. 2024
      *
      * The equation of state is given by:
      * \f$ c_s = (H(r)/r) \sqrt(- \phi_{\rm grav}) \f$

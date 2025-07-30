@@ -36,7 +36,7 @@ jobs:
           path: /tmp/ci-phys-test-image.tar
 
   shamrock_phys_test:
-    name: run ${{ matrix.testfile }} wz=${{ matrix.worldsize }} AdaptiveCpp clang-${{ matrix.clang }} ${{ matrix.backend }}:${{matrix.arch}}
+    name: run ${{ matrix.testfile }} wz=${{ matrix.worldsize }}
     runs-on: ubuntu-latest
     needs: [ build_docker ]
 
@@ -46,9 +46,19 @@ jobs:
           - worldsize: 1
             testfile: sod_tube_sph.py
           - worldsize: 1
+            testfile: comp_phantom_sedov_1patch.py
+          - worldsize: 2
+            testfile: comp_phantom_sedov_1patch.py
+          - worldsize: 1
+            testfile: comp_phantom_sedov_8patch.py
+          - worldsize: 2
+            testfile: comp_phantom_sedov_8patch.py
+          - worldsize: 1
             testfile: sod_tube_godunov.py
           - worldsize: 2
             testfile: sod_tube_godunov.py
+          - worldsize: 1
+            testfile: sod_tube_godunov_amr.py
           - worldsize: 1
             testfile: sod_tube_zeus.py
           - worldsize: 2
@@ -59,6 +69,10 @@ jobs:
             testfile: dustybox_godunov.py
           - worldsize: 1
             testfile: dustywave_godunov.py
+          - worldsize: 1
+            testfile: regression_sph_disc.py
+          - worldsize: 1
+            testfile: regression_sph_kh.py
 
 
     timeout-minutes: 60

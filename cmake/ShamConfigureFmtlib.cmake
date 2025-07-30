@@ -47,6 +47,15 @@ if(NOT SHAMROCK_EXTERNAL_FMTLIB)
     else()
         add_subdirectory(external/fmt)
     endif()
+
+    # I got many clang-tidy warning because of those headers, so now they are system headers
+    # just so that clang-tidy shut up
+
+    # Override include directories property as system includes instead to avoid warnings
+    # From https://stackoverflow.com/questions/64064157/is-there-a-way-to-get-isystem-for-fetchcontent-targets
+    get_target_property(fmtlib_IID fmt-header-only INTERFACE_INCLUDE_DIRECTORIES)
+    set_target_properties(fmt-header-only PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${fmtlib_IID}")
+
 else()
     message(STATUS "Using system fmtlib")
     find_package(fmt REQUIRED)

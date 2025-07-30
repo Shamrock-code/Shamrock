@@ -9,7 +9,7 @@
 
 /**
  * @file VTKDump.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -30,7 +30,7 @@ shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_na
 
     u64 num_obj = sched.get_rank_count();
 
-    logger::debug_mpi_ln("sph::BasicGas", "rank count =", num_obj);
+    shamlog_debug_mpi_ln("sph::BasicGas", "rank count =", num_obj);
 
     std::unique_ptr<sycl::buffer<vec>> pos = sched.rankgather_field<vec>(0);
 
@@ -164,7 +164,7 @@ namespace shammodels::sph::modules {
         ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
         scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-            logger::debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
+            shamlog_debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
 
             auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
 
@@ -281,7 +281,7 @@ namespace shammodels::sph::modules {
                     = utility.make_compute_field<Tscal>("tmp_epsilon", 1);
 
                 scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "sph::vtk",
                         "compute extract epsilon field with idust =",
                         idust,
@@ -316,7 +316,7 @@ namespace shammodels::sph::modules {
                 ComputeField<Tvec> tmp_deltav = utility.make_compute_field<Tvec>("tmp_deltav", 1);
 
                 scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "sph::vtk", "compute extract deltav field with idust =", idust, p.id_patch);
 
                     auto &buf_deltav = pdat.get_field<Tvec>(ideltav);

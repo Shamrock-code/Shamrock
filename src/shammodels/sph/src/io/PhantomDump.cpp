@@ -9,7 +9,7 @@
 
 /**
  * @file PhantomDump.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  * \todo clean classes name to make it more readable
@@ -18,18 +18,24 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/sets.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/typeAliasVec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/sph/config/AVConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/UnitSystem.hpp"
+#include <unordered_map>
 #include <string>
+#include <vector>
 
 template<class T>
 shammodels::sph::PhantomDumpBlockArray<T> shammodels::sph::PhantomDumpBlockArray<T>::from_file(
     shambase::FortranIOFile &phfile, i64 tot_count) {
+    StackEntry stack_loc{};
     PhantomDumpBlockArray tmp;
     phfile.read_fixed_string(tmp.tag, 16);
     phfile.read_val_array(tmp.vals, tot_count);
@@ -39,6 +45,7 @@ shammodels::sph::PhantomDumpBlockArray<T> shammodels::sph::PhantomDumpBlockArray
 template<class T>
 void shammodels::sph::PhantomDumpBlockArray<T>::write(
     shambase::FortranIOFile &phfile, i64 tot_count) {
+    StackEntry stack_loc{};
     phfile.write_fixed_string(tag, 16);
     phfile.write_val_array(vals, tot_count);
 }
@@ -51,6 +58,8 @@ void shammodels::sph::PhantomDumpBlockArray<T>::print_state() {
 template<class T>
 shammodels::sph::PhantomDumpTableHeader<T>
 shammodels::sph::PhantomDumpTableHeader<T>::from_file(shambase::FortranIOFile &phfile) {
+    StackEntry stack_loc{};
+
     shammodels::sph::PhantomDumpTableHeader<T> tmp;
 
     int nvars;
@@ -76,6 +85,8 @@ shammodels::sph::PhantomDumpTableHeader<T>::from_file(shambase::FortranIOFile &p
 
 template<class T>
 void shammodels::sph::PhantomDumpTableHeader<T>::write(shambase::FortranIOFile &phfile) {
+    StackEntry stack_loc{};
+
     int nvars = entries.size();
     phfile.write(nvars);
 
@@ -177,6 +188,7 @@ shammodels::sph::PhantomDumpBlock shammodels::sph::PhantomDumpBlock::from_file(
 
 void shammodels::sph::PhantomDumpBlock::write(
     shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray) {
+    StackEntry stack_loc{};
 
     for (u32 j = 0; j < numarray[0]; j++) {
         blocks_fort_int[j].write(phfile, tot_count);
@@ -254,6 +266,8 @@ u64 shammodels::sph::PhantomDumpBlock::get_ref_f32(std::string s) {
 }
 
 shambase::FortranIOFile shammodels::sph::PhantomDump::gen_file() {
+    StackEntry stack_loc{};
+
     shambase::FortranIOFile phfile;
     phfile.write(i1, r1, i2, iversion, i3);
 
@@ -380,100 +394,74 @@ void shammodels::sph::PhantomDump::print_state() {
     logger::raw_ln("------------------");
 }
 
-// cf phantom
-// This module contains stuff to do with the equation of state
-//  Current options:
-//     1 = isothermal eos
-//     2 = adiabatic/polytropic eos
-//     3 = eos for a locally isothermal disc as in Lodato & Pringle (2007)
-//     4 = GR isothermal
-//     6 = eos for a locally isothermal disc as in Lodato & Pringle (2007),
-//         centered on a sink particle
-//     7 = z-dependent locally isothermal eos
-//     8 = Barotropic eos
-//     9 = Piecewise polytrope
-//    10 = MESA EoS
-//    11 = isothermal eos with zero pressure
-//    12 = ideal gas with radiation pressure
-//    13 = locally isothermal prescription from Farris et al. (2014) generalised for generic
-//         hierarchical systems
-//    14 = locally isothermal prescription from Farris et al. (2014) for
-//         binarysystem
-//    15 = Helmholtz free energy eos 16 = Shen eos 20 = Ideal gas + radiation + various
-//         forms of recombination energy from HORMONE (Hirai et al., 2020)
-//
+bool shammodels::sph::compare_phantom_dumps(PhantomDump &dump_ref, PhantomDump &dump_comp) {
 
-namespace shammodels::sph {
+    u64 offenses = 0;
 
-    template<class Tvec>
-    EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump &phdump, bool bypass_error) {
+    auto load_header = [](PhantomDump &dump) {
+        std::unordered_map<std::string, f64> header;
 
-        EOSConfig<Tvec> cfg{};
+        dump.table_header_fort_int.add_to_map(header);
+        dump.table_header_i8.add_to_map(header);
+        dump.table_header_i16.add_to_map(header);
+        dump.table_header_i32.add_to_map(header);
+        dump.table_header_i64.add_to_map(header);
+        dump.table_header_fort_real.add_to_map(header);
+        dump.table_header_f32.add_to_map(header);
+        dump.table_header_f64.add_to_map(header);
+        return header;
+    };
 
-        i64 ieos = phdump.read_header_int<i64>("ieos");
+    std::unordered_map<std::string, f64> header_ref  = load_header(dump_ref);
+    std::unordered_map<std::string, f64> header_comp = load_header(dump_comp);
 
-        logger::debug_ln("PhantomDump", "read ieos :", ieos);
-
-        if (ieos == 1) {
-            f64 cs = phdump.read_header_float<f64>("cs");
-            cfg.set_isothermal(cs);
-        } else if (ieos == 2) {
-            f64 gamma = phdump.read_header_float<f64>("gamma");
-            cfg.set_adiabatic(gamma);
-        } else {
-            const std::string msg
-                = "phantom ieos=" + std::to_string(ieos) + " is not implemented in shamrock";
-            if (bypass_error) {
-                logger::warn_ln("SPH", msg);
-            } else {
-                shambase::throw_unimplemented(msg);
-            }
+    auto get_keys = [](std::unordered_map<std::string, f64> &map) {
+        std::set<std::string> ret;
+        for (auto [key, val] : map) {
+            ret.insert(key);
         }
+        return ret;
+    };
 
-        return cfg;
+    std::set<std::string> header_key_ref  = get_keys(header_ref);
+    std::set<std::string> header_key_comp = get_keys(header_comp);
+
+    std::vector<std::string> missing  = {};
+    std::vector<std::string> matching = {};
+    std::vector<std::string> extra    = {};
+
+    shambase::set_diff(header_key_comp, header_key_ref, missing, matching, extra);
+
+    for (std::string &missing_key : missing) {
+        logger::warn_ln(
+            "PhantomDump",
+            "The dump we are comparing against is missing the key",
+            missing_key,
+            "in the header");
+        offenses++;
+    }
+    for (std::string &matching_key : matching) {
+        if (header_ref[matching_key] != header_comp[matching_key]) {
+            logger::warn_ln(
+                "PhantomDump",
+                shambase::format(
+                    "Mismatch in the header key {}, ref={}, comp={}",
+                    matching_key,
+                    header_ref[matching_key],
+                    header_comp[matching_key]));
+            offenses++;
+        }
+    }
+    for (std::string &extra_key : extra) {
+        logger::warn_ln(
+            "PhantomDump",
+            "The dump we are comparing against has the extra key",
+            extra_key,
+            "in the header");
+        offenses++;
     }
 
-    /// explicit instanciation for f32_3
-    template EOSConfig<f32_3> get_shamrock_eosconfig<f32_3>(PhantomDump &phdump, bool bypass_error);
-    /// explicit instanciation for f64_3
-    template EOSConfig<f64_3> get_shamrock_eosconfig<f64_3>(PhantomDump &phdump, bool bypass_error);
+    logger::info_ln("PhantomDump", "This comparison reported", offenses, "offenses");
 
-} // namespace shammodels::sph
-
-namespace shammodels::sph {
-    template<class Tvec>
-    AVConfig<Tvec> get_shamrock_avconfig(PhantomDump &phdump) {
-        AVConfig<Tvec> cfg{};
-
-        cfg.set_varying_cd10(0, 1, 0.1, phdump.read_header_float<f64>("alphau"), 2);
-
-        return cfg;
-    }
-
-    /// explicit instanciation for f32_3
-    template AVConfig<f32_3> get_shamrock_avconfig<f32_3>(PhantomDump &phdump);
-    /// explicit instanciation for f64_3
-    template AVConfig<f64_3> get_shamrock_avconfig<f64_3>(PhantomDump &phdump);
-
-    template<class Tscal>
-    shamunits::UnitSystem<Tscal> get_shamrock_units(PhantomDump &phdump) {
-
-        f64 udist  = phdump.read_header_float<f64>("udist");
-        f64 umass  = phdump.read_header_float<f64>("umass");
-        f64 utime  = phdump.read_header_float<f64>("utime");
-        f64 umagfd = phdump.read_header_float<f64>("umagfd");
-
-        return shamunits::UnitSystem<Tscal>(
-            utime, udist, umass
-            // unit_current = 1 ,
-            // unit_temperature = 1 ,
-            // unit_qte = 1 ,
-            // unit_lumint = 1
-        );
-    }
-
-    /// explicit instanciation for f32_3
-    template shamunits::UnitSystem<f32> get_shamrock_units<f32>(PhantomDump &phdump);
-    /// explicit instanciation for f64_3
-    template shamunits::UnitSystem<f64> get_shamrock_units<f64>(PhantomDump &phdump);
-} // namespace shammodels::sph
+    return offenses == 0;
+}

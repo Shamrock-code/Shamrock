@@ -9,7 +9,7 @@
 
 /**
  * @file ResizableBuffer.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -27,14 +27,14 @@ template<class T>
 void shamalgs::ResizableBuffer<T>::alloc() {
     buf = std::make_unique<sycl::buffer<T>>(capacity);
 
-    logger::debug_alloc_ln("PatchDataField", "allocate field :", "len =", capacity);
+    shamlog_debug_alloc_ln("PatchDataField", "allocate field :", "len =", capacity);
 }
 
 template<class T>
 void shamalgs::ResizableBuffer<T>::free() {
 
     if (buf) {
-        logger::debug_alloc_ln("PatchDataField", "free field :", "len =", capacity);
+        shamlog_debug_alloc_ln("PatchDataField", "free field :", "len =", capacity);
 
         buf.reset();
     }
@@ -43,7 +43,7 @@ void shamalgs::ResizableBuffer<T>::free() {
 template<class T>
 void shamalgs::ResizableBuffer<T>::change_capacity(u32 new_capa) {
 
-    logger::debug_alloc_ln(
+    shamlog_debug_alloc_ln(
         "ResizableBuffer", "change capacity from : ", capacity, "to :", new_capa);
 
     if (capacity == 0) {
@@ -69,7 +69,7 @@ void shamalgs::ResizableBuffer<T>::change_capacity(u32 new_capa) {
                         dev_sched->get_queue().q, *old_buf, *buf, std::min(val_cnt, capacity));
                 }
 
-                logger::debug_alloc_ln("PatchDataField", "delete old buf : ");
+                shamlog_debug_alloc_ln("PatchDataField", "delete old buf : ");
                 delete old_buf;
             }
 
@@ -95,7 +95,7 @@ template<class T>
 void shamalgs::ResizableBuffer<T>::resize(u32 new_size) {
     StackEntry stack_loc{false};
 
-    logger::debug_alloc_ln("ResizableBuffer", "resize from : ", val_cnt, "to :", new_size);
+    shamlog_debug_alloc_ln("ResizableBuffer", "resize from : ", val_cnt, "to :", new_size);
 
     if (new_size > capacity) {
         change_capacity(new_size * safe_fact);

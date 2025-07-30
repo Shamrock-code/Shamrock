@@ -12,6 +12,7 @@
 /**
  * @file DragIntegrator.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -48,6 +49,7 @@ namespace shammodels::basegodunov::modules {
 
         void involve_with_no_src(Tscal dt);
         void enable_irk1_drag_integrator(Tscal dt);
+        void enable_expo_drag_integrator(Tscal dt);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

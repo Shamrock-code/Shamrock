@@ -11,7 +11,7 @@
 
 /**
  * @file CommunicationBuffer.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Shamrock communication buffers
  *
  * \todo make a better exemple
@@ -140,10 +140,13 @@ namespace shamcomm {
                 _int_type);
         }
 
-        inline u64 get_bytesize() {
+        /**
+         * @brief Gets the size of the buffer (here in bytes)
+         */
+        inline u64 get_size() {
             return std::visit(
                 [=](auto &&arg) {
-                    return arg->get_bytesize();
+                    return arg->get_size();
                 },
                 _int_type);
         }

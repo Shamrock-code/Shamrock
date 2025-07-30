@@ -9,7 +9,8 @@
 
 /**
  * @file PatchData.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -166,8 +167,28 @@ namespace shamrock::patch {
         }
     }
 
+    void PatchData::index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len) {
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                field.index_remap_resize(index_map, len);
+            });
+        }
+    }
+
     void PatchData::keep_ids(sycl::buffer<u32> &index_map, u32 len) {
         index_remap_resize(index_map, len);
+    }
+
+    void PatchData::keep_ids(sham::DeviceBuffer<u32> &index_map, u32 len) {
+        index_remap_resize(index_map, len);
+    }
+
+    void PatchData::remove_ids(const sham::DeviceBuffer<u32> &indexes, u32 len) {
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                field.remove_ids(indexes, len);
+            });
+        }
     }
 
     void PatchData::append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat) {

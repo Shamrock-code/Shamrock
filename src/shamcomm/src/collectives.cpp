@@ -9,7 +9,7 @@
 
 /**
  * @file collectives.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -20,6 +20,7 @@
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamcomm/wrapper.hpp"
 #include <unordered_map>
 #include <vector>
 
@@ -53,7 +54,7 @@ namespace {
 
         u32 local_count = send_vec.size();
 
-        MPICHECK(MPI_Gather(&local_count, 1, MPI_INT, &counts[0], 1, MPI_INT, 0, MPI_COMM_WORLD));
+        shamcomm::mpi::Gather(&local_count, 1, MPI_INT, &counts[0], 1, MPI_INT, 0, MPI_COMM_WORLD);
 
         for (int i = 0; i < wsize; i++) {
             disps[i] = (i > 0) ? (disps[i - 1] + counts[i - 1]) : 0;
@@ -66,7 +67,7 @@ namespace {
             result.resize(global_len);
         }
 
-        MPICHECK(MPI_Gatherv(
+        shamcomm::mpi::Gatherv(
             send_vec.data(),
             send_vec.size(),
             MPI_CHAR,
@@ -75,7 +76,7 @@ namespace {
             disps.data(),
             MPI_CHAR,
             0,
-            MPI_COMM_WORLD));
+            MPI_COMM_WORLD);
 
         recv_vec = result;
     }

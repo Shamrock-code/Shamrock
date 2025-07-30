@@ -9,7 +9,7 @@
 
 /**
  * @file AMRTree.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -32,7 +32,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_trees() {
 
     storage.merge_patch_bounds.set(
         mpdat.map<shammath::AABB<TgridVec>>([&](u64 id, shamrock::MergedPatchData &merged) {
-            logger::debug_ln("AMR", "compute bound merged patch", id);
+            shamlog_debug_ln("AMR", "compute bound merged patch", id);
 
             TgridVec min_bound = merged.pdat.get_field<TgridVec>(0).compute_min();
             TgridVec max_bound = merged.pdat.get_field<TgridVec>(1).compute_max();
@@ -44,7 +44,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_trees() {
 
     shambase::DistributedData<RTree> trees
         = mpdat.map<RTree>([&](u64 id, shamrock::MergedPatchData &merged) {
-              logger::debug_ln("AMR", "compute tree for merged patch", id);
+              shamlog_debug_ln("AMR", "compute tree for merged patch", id);
 
               auto aabb = bounds.get(id);
 
@@ -114,7 +114,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::correct_bounding_box() 
             TgridVec imin = shambase::VectorProperties<TgridVec>::get_max();
             TgridVec imax = shambase::VectorProperties<TgridVec>::get_min();
 
-            shambase::parralel_for(cgh, leaf_count, "compute leaf boxes", [=](u64 leaf_id) {
+            shambase::parallel_for(cgh, leaf_count, "compute leaf boxes", [=](u64 leaf_id) {
                 TgridVec min = imin;
                 TgridVec max = imax;
 
@@ -149,7 +149,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::correct_bounding_box() 
             sycl::accessor lchild_flag{
                 shambase::get_check_ref(tree.tree_struct.buf_lchild_flag), cgh, sycl::read_only};
 
-            shambase::parralel_for(cgh, internal_cell_count, "propagate up", [=](u64 gid) {
+            shambase::parallel_for(cgh, internal_cell_count, "propagate up", [=](u64 gid) {
                 u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
                 u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
 
@@ -186,7 +186,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::correct_bounding_box() 
             sycl::accessor tree_buf_min{tree_bmin, cgh, sycl::read_write};
             sycl::accessor tree_buf_max{tree_bmax, cgh, sycl::read_write};
 
-            shambase::parralel_for(cgh, tot_count, "write in tree range", [=](u64 nid) {
+            shambase::parallel_for(cgh, tot_count, "write in tree range", [=](u64 nid) {
                 TgridVec load_min = comp_bmin[nid];
                 TgridVec load_max = comp_bmax[nid];
 
@@ -227,7 +227,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
 
     // do cache
     storage.neighbors_cache.set(shamrock::tree::ObjectCacheHandler(u64(10e9), [&](u64 patch_id) {
-        logger::debug_ln("BasicSPH", "build particle cache id =", patch_id);
+        shamlog_debug_ln("BasicSPH", "build particle cache id =", patch_id);
 
         NamedStackEntry cache_build_stack_loc{"build cache"};
 
@@ -249,7 +249,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
 
         shamsys::instance::get_compute_queue().wait_and_throw();
 
-        logger::debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
+        shamlog_debug_sycl_ln("Cache", "generate cache for N=", obj_cnt);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         {
@@ -263,7 +263,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
 
                 // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+                shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     shammath::AABB<TgridVec> cell_aabb{cell_min[id_a], cell_max[id_a]};
@@ -315,7 +315,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
                 tree::ObjectIterator cell_looper(tree, cgh);
 
                 // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
+                shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     shammath::AABB<TgridVec> cell_aabb{cell_min[id_a], cell_max[id_a]};

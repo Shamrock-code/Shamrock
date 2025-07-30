@@ -11,7 +11,7 @@
 
 /**
  * @file AMRBlock.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief utility to manipulate AMR blocks
  */
 
@@ -164,7 +164,7 @@ namespace shammodels::amr {
             // we use one thread per subcell because :
             // double load are avoided because of contiguous L2 cache hit
             // and CF perf opti for GPU, finer threading lead to better latency hidding
-            shambase::parralel_for(cgh, block_cnt * block_size, name, [=](u64 id_cell) {
+            shambase::parallel_for(cgh, block_cnt * block_size, name, [=](u64 id_cell) {
                 u32 block_id = id_cell / block_size;
                 f(block_id, id_cell);
             });
@@ -176,7 +176,7 @@ namespace shammodels::amr {
             // we use one thread per subcell because :
             // double load are avoided because of contiguous L2 cache hit
             // and CF perf opti for GPU, finer threading lead to better latency hidding
-            shambase::parralel_for(cgh, block_cnt * block_size, name, [=](u64 id_cell) {
+            shambase::parallel_for(cgh, block_cnt * block_size, name, [=](u64 id_cell) {
                 u32 block_id = id_cell / block_size;
                 u32 lid      = id_cell % block_size;
                 f(block_id, lid);

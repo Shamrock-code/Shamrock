@@ -199,7 +199,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         std::vector<f64> tser_usz, tdeser_usz;
 
         for (u32 i = 1; i < 10000; i *= 2) {
-            logger::debug_ln("Test", "i =", i);
+            shamlog_debug_ln("Test", "i =", i);
 
             auto [p1, p2] = get_perf_knownsize(i, 100);
             auto [p3, p4] = get_perf_unknownsize(i, 100);
@@ -259,7 +259,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         std::vector<f64> tser_usz, tdeser_usz;
 
         for (u32 i = 8; i < 10000; i *= 2) {
-            logger::debug_ln("Test", "i =", i);
+            shamlog_debug_ln("Test", "i =", i);
 
             auto [p1, p2] = get_perf_knownsize(1000, i);
             auto [p3, p4] = get_perf_unknownsize(1000, i);

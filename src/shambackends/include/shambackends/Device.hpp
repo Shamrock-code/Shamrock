@@ -11,12 +11,13 @@
 
 /**
  * @file Device.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
 #include "shambase/exception.hpp"
 #include "shambackends/sycl.hpp"
+#include <cstdint>
 
 namespace sham {
 
@@ -81,16 +82,41 @@ namespace sham {
      * amount of global memory and local memory, and cache size.
      */
     struct DeviceProperties {
-        Vendor vendor;                    /**< The vendor of the device */
-        Backend backend;                  /**< The backend of the device */
-        DeviceType type;                  /**< The type of the device */
-        usize global_mem_size;            /**< The amount of global memory on the device in bytes */
-        usize global_mem_cache_line_size; /**< The size of the cache line used by the device in
-                                             bytes */
-        usize
-            global_mem_cache_size;  /**< The amount of global memory cache on the device in bytes */
-        usize local_mem_size;       /**< The amount of shared local memory on the device in bytes */
-        uint32_t max_compute_units; /**< The number of compute units on the device */
+        /// The vendor of the device
+        Vendor vendor;
+
+        /// The backend of the device
+        Backend backend;
+
+        /// The type of the device
+        DeviceType type;
+
+        /// The amount of global memory on the device in bytes
+        usize global_mem_size;
+
+        /// The size of the cache line used by the device in bytes
+        usize global_mem_cache_line_size;
+
+        /// The amount of global memory cache on the device in bytes
+        usize global_mem_cache_size;
+
+        /// The amount of shared local memory on the device in bytes
+        usize local_mem_size;
+
+        /// The number of compute units on the device
+        uint32_t max_compute_units;
+
+        /// The maximum size of memory that can be allocated on the device in bytes
+        uint64_t max_mem_alloc_size;
+
+        /// The maximum alignment of memory that can be allocated on the device in bytes
+        uint32_t mem_base_addr_align;
+
+        /// SYCL sub group sizes property
+        std::vector<size_t> sub_group_sizes;
+
+        /// Default work group size
+        uint32_t default_work_group_size;
     };
 
     struct DeviceMPIProperties {

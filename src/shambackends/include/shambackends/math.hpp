@@ -11,7 +11,7 @@
 
 /**
  * @file math.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -491,7 +491,7 @@ namespace sham {
     }
 
     template<class T>
-    inline shambase::VecComponent<T> lenght2(T a) {
+    inline shambase::VecComponent<T> length2(T a) {
         return dot(a, a);
     }
 
@@ -528,6 +528,11 @@ namespace sham {
     inline auto pack32(u32 a, u32 b) -> u64 { return (u64(a) << 32U) + b; };
 
     inline auto unpack32(u64 v) -> sycl::vec<u32, 2> { return {u32(v >> 32U), u32(v)}; };
+
+    template<class T>
+    inline T m1pown(u32 n) {
+        return (n % 2 == 0) ? T(1) : -T(1);
+    }
 
     template<class T>
     inline bool has_nan(T v) {
@@ -692,6 +697,14 @@ namespace sham {
     template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
     inline constexpr T clz_xor(T a, T b) noexcept {
         return sham::clz(a ^ b);
+    }
+
+    /**
+     * @brief compute the log2 of the number v being a power of 2
+     */
+    template<class T, std::enable_if_t<std::is_integral_v<T>, int> = 0>
+    inline constexpr T log2_pow2_num(T v) noexcept {
+        return shambase::bitsizeof<T> - sham::clz(v) - 1;
     }
 
     /**

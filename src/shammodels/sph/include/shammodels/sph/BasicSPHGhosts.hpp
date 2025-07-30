@@ -11,7 +11,7 @@
 
 /**
  * @file BasicSPHGhosts.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -69,7 +69,7 @@ namespace shammodels::sph {
 
         struct InterfaceIdTable {
             InterfaceBuildInfos build_infos;
-            std::unique_ptr<sycl::buffer<u32>> ids_interf;
+            sham::DeviceBuffer<u32> ids_interf;
             f64 part_cnt_ratio;
         };
 
@@ -143,12 +143,12 @@ namespace shammodels::sph {
         template<class T>
         shambase::DistributedDataShared<T> build_interface_native(
             shambase::DistributedDataShared<InterfaceIdTable> &builder,
-            std::function<T(u64, u64, InterfaceBuildInfos, sycl::buffer<u32> &, u32)> fct) {
+            std::function<T(u64, u64, InterfaceBuildInfos, sham::DeviceBuffer<u32> &, u32)> fct) {
             StackEntry stack_loc{};
 
             // clang-format off
             return builder.template map<T>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-                if (!bool(build_table.ids_interf)) {
+                if (build_table.ids_interf.get_size() == 0) {
                     throw shambase::make_except_with_loc<std::runtime_error>(
                         "their is an empty id table in the interface, it should have been removed");
                 }
@@ -157,8 +157,8 @@ namespace shammodels::sph {
                     sender,
                     receiver,
                     build_table.build_infos,
-                    *build_table.ids_interf,
-                    build_table.ids_interf->size());
+                    build_table.ids_interf,
+                    build_table.ids_interf.get_size());
 
             });
             // clang-format on
@@ -168,7 +168,8 @@ namespace shammodels::sph {
         void modify_interface_native(
             shambase::DistributedDataShared<InterfaceIdTable> &builder,
             shambase::DistributedDataShared<T> &mod,
-            std::function<void(u64, u64, InterfaceBuildInfos, sycl::buffer<u32> &, u32, T &)> fct) {
+            std::function<void(u64, u64, InterfaceBuildInfos, sham::DeviceBuffer<u32> &, u32, T &)>
+                fct) {
             StackEntry stack_loc{};
 
             struct Args {
@@ -181,7 +182,7 @@ namespace shammodels::sph {
 
             // clang-format off
             builder.for_each([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-                if (!bool(build_table.ids_interf)) {
+                if (build_table.ids_interf.get_size() == 0) {
                     throw shambase::make_except_with_loc<std::runtime_error>(
                         "their is an empty id table in the interface, it should have been removed");
                 }
@@ -197,8 +198,8 @@ namespace shammodels::sph {
                 fct(sender,
                     receiver,
                     build_table.build_infos,
-                    *build_table.ids_interf,
-                    build_table.ids_interf->size(),
+                    build_table.ids_interf,
+                    build_table.ids_interf.get_size(),
                     ref);
 
                 i++;
@@ -293,7 +294,7 @@ namespace shammodels::sph {
                 [&](u64 sender,
                     u64 /*receiver*/,
                     InterfaceBuildInfos binfo,
-                    sycl::buffer<u32> &buf_idx,
+                    sham::DeviceBuffer<u32> &buf_idx,
                     u32 cnt) {
                     using namespace shamrock::patch;
                     // clang-format off

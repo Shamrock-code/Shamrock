@@ -17,8 +17,10 @@ set(Sources
     src/SourceLocation.cpp
     src/print.cpp
     src/popen.cpp
+    src/term_colors.cpp
     src/profiling/chrome.cpp
     src/profiling/profiling.cpp
+    src/logs/reformat_message.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

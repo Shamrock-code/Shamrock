@@ -9,7 +9,7 @@
 
 /**
  * @file CartesianRender.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -166,7 +166,7 @@ namespace shammodels::sph::modules {
 
                 Tscal partmass = solver_config.gpart_mass;
 
-                shambase::parralel_for(cgh, nx * ny, "compute slice render", [=](u32 gid) {
+                shambase::parallel_for(cgh, nx * ny, "compute slice render", [=](u32 gid) {
                     u32 ix          = gid % nx;
                     u32 iy          = gid / nx;
                     f64 fx          = ((f64(ix) + 0.5) / nx) - 0.5;
@@ -285,7 +285,7 @@ namespace shammodels::sph::modules {
                 Tvec e_z = sycl::cross(delta_x, delta_y);
                 e_z /= sycl::length(e_z);
 
-                shambase::parralel_for(cgh, nx * ny, "compute slice render", [=](u32 gid) {
+                shambase::parallel_for(cgh, nx * ny, "compute slice render", [=](u32 gid) {
                     u32 ix          = gid % nx;
                     u32 iy          = gid / nx;
                     f64 fx          = ((f64(ix) + 0.5) / nx) - 0.5;

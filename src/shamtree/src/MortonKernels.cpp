@@ -9,7 +9,7 @@
 
 /**
  * @file MortonKernels.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -39,10 +39,10 @@ namespace shamrock::sfc {
         u32 fill_count,
         std::unique_ptr<sycl::buffer<T>> &buf_morton) {
 
-        logger::debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
+        shamlog_debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
 
         if (fill_count - morton_count == 0) {
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "MortonKernels", "sycl_fill_trailling_buffer skipping pow len 2 is ok");
             return;
         }
@@ -81,7 +81,7 @@ namespace shamrock::sfc {
         pos_t bounding_box_max,
         std::unique_ptr<sycl::buffer<morton_t>> &out_morton) {
 
-        logger::debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
+        shamlog_debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
 
         sycl::range<1> range_cnt{pos_count};
 
@@ -112,7 +112,7 @@ namespace shamrock::sfc {
         pos_t bounding_box_max,
         std::unique_ptr<sycl::buffer<morton_t>> &out_morton) {
 
-        logger::debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
+        shamlog_debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
 
         sycl::range<1> range_cnt{pos_count};
 
@@ -156,7 +156,7 @@ namespace shamrock::sfc {
         group_cnt                = group_cnt + (group_cnt % 4);
         u32 corrected_len        = group_cnt * group_size;
 
-        logger::debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
+        shamlog_debug_sycl_ln("MortonKernels", "submit : ", __PRETTY_FUNCTION__);
 
         auto ker_convert_cell_ranges = [&, max_len](sycl::handler &cgh) {
             auto transf = get_transform(bounding_box_min, bounding_box_max);

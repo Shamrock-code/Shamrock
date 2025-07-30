@@ -190,7 +190,7 @@ TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) 
     a.resize(2000);
 
     REQUIRE(a.get_size() == 2000);
-    REQUIRE(a.get_mem_usage() >= a.to_bytesize(2000));
+    REQUIRE(a.get_mem_usage() >= sizeof(int) * 2000);
 
     {
         std::vector<int> b = a.copy_to_stdvec();
@@ -253,4 +253,62 @@ TestStart(Unittest, "shambackends/DeviceBuffer:get_val_at_idx", DeviceBuffer_get
     }
 
     REQUIRE_EXCEPTION_THROW(buffer.get_val_at_idx(10), std::invalid_argument);
+}
+
+TestStart(Unittest, "shambackends/DeviceBuffer:set_val_at_idx", DeviceBuffer_set_val_at_idx, 1) {
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceBuffer<int> buffer(10, dev_sched);
+    std::vector<int> init_values     = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    std::vector<int> expected_values = {0, 5, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    buffer.copy_from_stdvec(init_values);
+
+    buffer.set_val_at_idx(1, 5);
+
+    REQUIRE_EQUAL(buffer.copy_to_stdvec(), expected_values);
+
+    REQUIRE_EXCEPTION_THROW(buffer.set_val_at_idx(10, 5), std::invalid_argument);
+}
+
+TestStart(Unittest, "shambackends/DeviceBuffer:append", DeviceBuffer_append, 1) {
+    using T        = int;
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    // Case 1: Append non-empty to non-empty
+    std::vector<T> v1 = {1, 2, 3};
+    std::vector<T> v2 = {4, 5};
+    sham::DeviceBuffer<T> buf1(v1.size(), dev_sched);
+    sham::DeviceBuffer<T> buf2(v2.size(), dev_sched);
+    buf1.copy_from_stdvec(v1);
+    buf2.copy_from_stdvec(v2);
+    buf1.append(buf2);
+    std::vector<T> expected1 = {1, 2, 3, 4, 5};
+    REQUIRE_EQUAL(buf1.copy_to_stdvec(), expected1);
+
+    // Case 2: Append non-empty to empty
+    sham::DeviceBuffer<T> buf_empty(0, dev_sched);
+    sham::DeviceBuffer<T> buf3(v2.size(), dev_sched);
+    buf3.copy_from_stdvec(v2);
+    buf_empty.append(buf3);
+    REQUIRE_EQUAL(buf_empty.copy_to_stdvec(), v2);
+
+    // Case 3: Append empty to non-empty
+    sham::DeviceBuffer<T> buf4(v1.size(), dev_sched);
+    buf4.copy_from_stdvec(v1);
+    sham::DeviceBuffer<T> buf_empty2(0, dev_sched);
+    buf4.append(buf_empty2);
+    REQUIRE_EQUAL(buf4.copy_to_stdvec(), v1);
+
+    // Case 4: Append empty to empty
+    sham::DeviceBuffer<T> buf_empty3(0, dev_sched);
+    sham::DeviceBuffer<T> buf_empty4(0, dev_sched);
+    buf_empty3.append(buf_empty4);
+    REQUIRE(buf_empty3.copy_to_stdvec().empty());
+
+    // Case 5: Append to self
+    sham::DeviceBuffer<T> buf5(v1.size(), dev_sched);
+    buf5.copy_from_stdvec(v1);
+    REQUIRE_EXCEPTION_THROW(buf5.append(buf5), std::invalid_argument);
 }

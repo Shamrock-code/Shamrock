@@ -11,7 +11,7 @@
 
 /**
  * @file serialize.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -158,7 +158,7 @@ namespace shamalgs {
 
         inline static u64 align_repr(u64 offset) { return details::align_repr<alignment>(offset); }
 
-        static u64 pre_head_lenght();
+        static u64 pre_head_length();
 
         std::shared_ptr<sham::DeviceScheduler> dev_sched;
 

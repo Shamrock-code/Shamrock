@@ -9,7 +9,7 @@
 
 /**
  * @file main.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  * @version 0.1
  * @date 2022-05-24
@@ -30,6 +30,7 @@
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamrock/experimental_features.hpp"
 #include "shamrock/version.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -134,7 +135,7 @@ int main(int argc, char *argv[]) {
             shamsys::instance::print_mpi_comm_info();
 
             logger::raw_ln(
-                " - MPI & SYCL init :",
+                " - MPI & SYCL init     :",
                 shambase::term_colors::col8b_green() + "Ok" + shambase::term_colors::reset());
 
             shamsys::instance::print_mpi_capabilities();
@@ -149,12 +150,6 @@ int main(int argc, char *argv[]) {
 
     if (shamcomm::world_rank() == 0) {
         logger::print_faint_row();
-        logger::raw_ln("log status : ");
-        if (logger::get_loglevel() == i8_max) {
-            logger::raw_ln("If you've seen spam in your life i can garantee you, this is worst");
-        }
-
-        logger::raw_ln(" - Loglevel :", u32(logger::get_loglevel()), ", enabled log types : ");
         logger::print_active_level();
     }
 
@@ -182,16 +177,8 @@ int main(int argc, char *argv[]) {
     }
 
     if (shamsys::instance::is_initialized()) {
-        if (shamcomm::world_rank() == 0) {
-            logger::print_faint_row();
-            logger::raw_ln(
-                " - Code init",
-                shambase::term_colors::col8b_green() + "DONE" + shambase::term_colors::reset(),
-                "now it's time to",
-                shambase::term_colors::col8b_cyan() + shambase::term_colors::blink() + "ROCK"
-                    + shambase::term_colors::reset());
-            logger::print_faint_row();
-        }
+        bool _ = shamrock::are_experimental_features_allowed();
+        shamcomm::logs::code_init_done_log();
 
         if (opts::has_option("--pypath")) {
             shambindings::setpypath(std::string(opts::get_option("--pypath")));

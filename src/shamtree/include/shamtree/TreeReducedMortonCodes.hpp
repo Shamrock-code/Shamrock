@@ -11,7 +11,7 @@
 
 /**
  * @file TreeReducedMortonCodes.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -42,7 +42,7 @@ namespace shamrock::tree {
             bool &one_cell_mode) {
 
             // return a sycl buffer from reduc index map instead
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "RadixTree", "reduction algorithm"); // TODO put reduction level in class member
 
             // TODO document that the layout of reduc_index_map is in the end {0 .. ,i .. ,N ,0}
@@ -56,7 +56,7 @@ namespace shamrock::tree {
                 buf_reduc_index_map,
                 tree_leaf_count);
 
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "RadixTree",
                 "reduction results : (before :",
                 obj_cnt,
@@ -67,7 +67,7 @@ namespace shamrock::tree {
 
             if (tree_leaf_count > 1) {
 
-                logger::debug_sycl_ln("RadixTree", "sycl_morton_remap_reduction");
+                shamlog_debug_sycl_ln("RadixTree", "sycl_morton_remap_reduction");
                 buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
 
                 sycl_morton_remap_reduction(

@@ -11,7 +11,7 @@
 
 /**
  * @file distributedDataComm.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -74,7 +74,7 @@ namespace shamalgs::collective {
             return deserialize(std::move(buf));
         });
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "SparseComm", "skipped", same_rank_tmp.get_native().size(), "communications");
 
         same_rank_tmp.tranfer_all(

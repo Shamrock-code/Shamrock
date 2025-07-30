@@ -9,7 +9,7 @@
 
 /**
  * @file algorithm.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -60,6 +60,18 @@ namespace shamalgs::algorithm {
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<u64> &buf_key,
         sham::DeviceBuffer<u32> &buf_values,
+        u32 len);
+
+    template void sort_by_key(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f64> &buf_key,
+        sham::DeviceBuffer<f64> &buf_values,
+        u32 len);
+
+    template void sort_by_key(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f32> &buf_key,
+        sham::DeviceBuffer<f32> &buf_values,
         u32 len);
 
     sycl::buffer<u32> gen_buffer_index(sycl::queue &q, u32 len) {
@@ -210,7 +222,8 @@ namespace shamalgs::algorithm {
     X(u64)                                                                                         \
     X(u32_3)                                                                                       \
     X(u64_3)                                                                                       \
-    X(i64_3)
+    X(i64_3)                                                                                       \
+    X(i64)
 
 #define X(_arg_)                                                                                   \
     template sycl::buffer<_arg_> index_remap(                                                      \

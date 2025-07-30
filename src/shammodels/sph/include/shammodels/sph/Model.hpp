@@ -11,7 +11,7 @@
 
 /**
  * @file Model.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
@@ -90,6 +90,8 @@ namespace shammodels::sph {
             solver.solver_config.gpart_mass = gpart_mass;
         }
 
+        inline Tscal get_particle_mass() { return solver.solver_config.gpart_mass; }
+
         inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
             ctx.set_coord_domain_bound({box.first, box.second});
         }
@@ -164,7 +166,7 @@ namespace shammodels::sph {
                 solver.storage.sinks.set({});
             }
 
-            logger::debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
+            shamlog_debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
 
             solver.storage.sinks.get().push_back(
                 {pos, velocity, {}, {}, mass, {}, accretion_radius});
@@ -584,6 +586,13 @@ namespace shammodels::sph {
             std::vector<Tscal> &part_hpart_insert,
             std::vector<Tscal> &part_u_insert);
 
+        void push_particle_mhd(
+            std::vector<Tvec> &part_pos_insert,
+            std::vector<Tscal> &part_hpart_insert,
+            std::vector<Tscal> &part_u_insert,
+            std::vector<Tvec> &part_B_on_rho_insert,
+            std::vector<Tscal> &part_psi_on_ch_insert);
+
         template<class T>
         inline void
         set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box, u32 ivar) {
@@ -761,8 +770,10 @@ namespace shammodels::sph {
 
             solver.init_ghost_layout();
 
+            solver.init_solver_graph();
+
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            logger::debug_ln("Sys", "build local scheduler tables");
+            shamlog_debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();
             sched.patch_list.build_global_idx_map();
@@ -780,6 +791,8 @@ namespace shammodels::sph {
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln("SPH", "Dumping state to", fname);
             }
+
+            solver.update_sync_load_values();
 
             nlohmann::json metadata;
             metadata["solver_config"] = solver.solver_config;

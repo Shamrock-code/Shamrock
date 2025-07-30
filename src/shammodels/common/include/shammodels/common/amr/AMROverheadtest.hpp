@@ -11,7 +11,7 @@
 
 /**
  * @file AMROverheadtest.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -286,7 +286,7 @@ class AMRTestModel {
             q.q.wait();
             t.end();
 
-            logger::debug_ln("AMR Test", "walk time", t.get_time_str());
+            shamlog_debug_ln("AMR Test", "walk time", t.get_time_str());
 
             class InteractionCrit {
                 public:

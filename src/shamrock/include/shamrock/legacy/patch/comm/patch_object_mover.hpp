@@ -11,7 +11,7 @@
 
 /**
  * @file patch_object_mover.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -151,7 +151,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
         }
     });
 
-    logger::debug_ln("Patch Object Mover", "err_id_in_newid :", err_id_in_newid);
+    shamlog_debug_ln("Patch Object Mover", "err_id_in_newid :", err_id_in_newid);
 
     bool synced_should_res_box = sched.should_resize_box(err_id_in_newid);
 
@@ -190,7 +190,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
         sched.patch_data.sim_box.allreduce_set_bounding_box<f32_3>({bmin, bmax});
         sched.patch_data.sim_box.clean_box<f32>(1.2);
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "Patch Object Mover",
             "resize box to  :",
             sched.patch_data.sim_box.get_bounding_box<f32_3>());
@@ -267,7 +267,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> part_xchg_map;
     for (u32 i = 0; i < comm_pdat.size(); i++) {
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "PatchObjMover",
             comm_vec[i].x(),
             "->",
@@ -389,7 +389,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
         }
     });
 
-    logger::debug_ln("Patch Object Mover", "err_id_in_newid :", err_id_in_newid);
+    shamlog_debug_ln("Patch Object Mover", "err_id_in_newid :", err_id_in_newid);
 
     bool synced_should_res_box = sched.should_resize_box(err_id_in_newid);
 
@@ -429,7 +429,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
         sched.patch_data.sim_box.allreduce_set_bounding_box<f64_3>({bmin, bmax});
         sched.patch_data.sim_box.clean_box<f64>(1.2);
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "Patch Object Mover",
             "resize box to  :",
             sched.patch_data.sim_box.get_bounding_box<f64_3>());
@@ -506,7 +506,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
     std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>> part_xchg_map;
     for (u32 i = 0; i < comm_pdat.size(); i++) {
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "PatchObjMover",
             comm_vec[i].x(),
             "->",

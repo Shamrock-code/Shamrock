@@ -9,7 +9,7 @@
 
 /**
  * @file streamCompactExclScan.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -46,7 +46,7 @@ namespace shamalgs::numeric::details {
             new_len++;
         }
 
-        logger::debug_sycl_ln("StreamCompact", "number of element : ", new_len);
+        shamlog_debug_sycl_ln("StreamCompact", "number of element : ", new_len);
 
         if (new_len == 0) {
             return {{}, 0};

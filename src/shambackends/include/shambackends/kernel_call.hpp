@@ -11,13 +11,14 @@
 
 /**
  * @file kernel_call.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
 #include "shambase/optional.hpp"
 #include "shambackends/DeviceBuffer.hpp"
+#include <functional>
 #include <optional>
 
 namespace sham {
@@ -72,6 +73,35 @@ namespace sham {
             if (buffer.has_value()) {
                 buffer.value().get().complete_event_state(e);
             }
+        }
+
+        template<class Obj>
+        inline auto get_read_access(Obj &o, sham::EventList &depends_list) {
+            return o.get_read_access(depends_list);
+        }
+
+        template<class Obj>
+        inline auto get_write_access(Obj &o, sham::EventList &depends_list) {
+            return o.get_write_access(depends_list);
+        }
+        template<class Obj>
+        inline auto complete_event_state(Obj &o, sycl::event e) {
+            return o.complete_event_state(e);
+        }
+
+        template<class Obj>
+        inline auto get_read_access(std::reference_wrapper<Obj> &o, sham::EventList &depends_list) {
+            return o.get().get_read_access(depends_list);
+        }
+
+        template<class Obj>
+        inline auto
+        get_write_access(std::reference_wrapper<Obj> &o, sham::EventList &depends_list) {
+            return o.get().get_write_access(depends_list);
+        }
+        template<class Obj>
+        inline auto complete_event_state(std::reference_wrapper<Obj> &o, sycl::event e) {
+            return o.get().complete_event_state(e);
         }
 
     } // namespace details
@@ -217,7 +247,7 @@ namespace sham {
             StackEntry stack_loc{};
             return std::apply(
                 [&](auto &...__a) {
-                    return std::tuple(__a.get_read_access(depends_list)...);
+                    return std::tuple(details::get_read_access(__a, depends_list)...);
                 },
                 storage);
         }
@@ -228,7 +258,7 @@ namespace sham {
             StackEntry stack_loc{};
             return std::apply(
                 [&](auto &...__a) {
-                    return std::tuple(__a.get_write_access(depends_list)...);
+                    return std::tuple(details::get_write_access(__a, depends_list)...);
                 },
                 storage);
         }
@@ -239,7 +269,7 @@ namespace sham {
             StackEntry stack_loc{};
             std::apply(
                 [&](auto &...__in) {
-                    ((__in.complete_event_state(e)), ...);
+                    ((details::complete_event_state(__in, e)), ...);
                 },
                 storage);
         }

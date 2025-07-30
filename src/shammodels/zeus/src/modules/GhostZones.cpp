@@ -9,7 +9,7 @@
 
 /**
  * @file GhostZones.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -77,7 +77,7 @@ namespace shammodels::zeus::modules {
 
                         using PtNode = typename SerialPatchTree<TgridVec>::PtNode;
 
-                        logger::debug_sycl_ln(
+                        shamlog_debug_sycl_ln(
                             "AMR:interf",
                             "find_interfaces -",
                             psender.id_patch,
@@ -148,7 +148,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
             build.volume_target.lower,
             build.volume_target.upper);
 
-        logger::debug_ln("AMRZeus", log);
+        shamlog_debug_ln("AMRZeus", log);
     });
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -168,7 +168,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
 
             shammath::AABB<TgridVec> check_volume = build.volume_target;
 
-            shambase::parralel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a) {
+            shambase::parallel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a) {
                 flag[id_a] = shammath::AABB<TgridVec>(cell_min[id_a], cell_max[id_a])
                                  .get_intersect(check_volume)
                                  .is_not_empty();
@@ -190,7 +190,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
             build.volume_target.upper);
         s += shambase::format("\n    found N = {}, ratio = {} %", std::get<1>(resut), ratio);
 
-        logger::debug_ln("AMR interf", s);
+        shamlog_debug_ln("AMR interf", s);
 
         std::unique_ptr<sycl::buffer<u32>> ids
             = std::make_unique<sycl::buffer<u32>>(shambase::extract_value(std::get<0>(resut)));
@@ -382,7 +382,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
     storage.merged_patchdata_ghost.set(merge_native<PatchData, MergedPatchData>(
         std::move(interf_pdat),
         [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
-            logger::debug_ln("Merged patch init", p.id_patch);
+            shamlog_debug_ln("Merged patch init", p.id_patch);
 
             PatchData pdat_new(ghost_layout);
 
@@ -408,7 +408,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
         }));
 
     storage.merged_patchdata_ghost.get().for_each([](u64 id, shamrock::MergedPatchData &mpdat) {
-        logger::debug_ln(
+        shamlog_debug_ln(
             "Merged patch", id, ",", mpdat.original_elements, "->", mpdat.total_elements);
     });
 

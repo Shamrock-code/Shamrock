@@ -9,7 +9,7 @@
 
 /**
  * @file BasicSPHGhosts.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -464,29 +464,23 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
         shamrock::patch::PatchData &src = sched.patch_data.get_pdat(sender);
         PatchDataField<vec> &xyz        = src.get_field<vec>(0);
 
-        std::tuple<std::optional<sycl::buffer<u32>>, u32> idxs_res = xyz.get_ids_buf_where(
+        sham::DeviceBuffer<u32> idxs_res = xyz.get_ids_where(
             [](auto access, u32 id, vec vmin, vec vmax) {
                 return Patch::is_in_patch_converted(access[id], vmin, vmax);
             },
             build.cut_volume.lower,
             build.cut_volume.upper);
 
-        u32 pcnt = 0;
-        if (bool(std::get<0>(idxs_res))) {
-            pcnt = std::get<1>(idxs_res);
-        }
+        u32 pcnt = idxs_res.get_size();
 
         // prevent sending empty patches
         if (pcnt == 0) {
             return;
         }
 
-        std::unique_ptr<sycl::buffer<u32>> idxs
-            = std::make_unique<sycl::buffer<u32>>(shambase::extract_value(std::get<0>(idxs_res)));
-
         f64 ratio = f64(pcnt) / f64(src.get_obj_cnt());
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "InterfaceGen",
             "gen interface :",
             sender,
@@ -497,7 +491,7 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
             "part_ratio:",
             ratio);
 
-        res.add_obj(sender, receiver, InterfaceIdTable{build, std::move(idxs), ratio});
+        res.add_obj(sender, receiver, InterfaceIdTable{build, std::move(idxs_res), ratio});
 
         send_count_stats[sender] += ratio;
     });

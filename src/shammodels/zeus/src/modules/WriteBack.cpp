@@ -9,7 +9,7 @@
 
 /**
  * @file WriteBack.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -56,7 +56,7 @@ void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_dat
         auto acc_vel_dest  = vel_dest.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, mpdat.original_elements * Block::block_size, "copy_back", [=](u32 id) {
                     acc_rho_dest[id]  = acc_rho_src[id];
                     acc_eint_dest[id] = acc_eint_src[id];

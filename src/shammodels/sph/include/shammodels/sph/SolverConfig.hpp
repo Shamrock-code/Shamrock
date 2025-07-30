@@ -11,7 +11,7 @@
 
 /**
  * @file SolverConfig.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
@@ -28,14 +28,17 @@
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
+#include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/RadixTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <variant>
+#include <vector>
 
 namespace shammodels::sph {
 
@@ -78,6 +81,23 @@ namespace shammodels::sph {
          * @brief The CFL multiplier stiffness
          */
         Tscal cfl_multiplier_stiffness = 2;
+    };
+
+    template<class Tvec>
+    struct ParticleKillingConfig {
+        using Tscal = shambase::VecComponent<Tvec>;
+        struct Sphere {
+            Tvec center;
+            Tscal radius;
+        };
+
+        using kill_t = std::variant<Sphere>;
+
+        std::vector<kill_t> kill_list;
+
+        inline void add_kill_sphere(const Tvec &center, Tscal radius) {
+            kill_list.push_back(Sphere{center, radius});
+        }
     };
 
     template<class Tscal>
@@ -163,13 +183,17 @@ struct shammodels::sph::SolverConfig {
     /// The type of the Morton code for the tree
     using u_morton = u32;
 
-    using RTree = RadixTree<u_morton, Tvec>;
+    using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
 
     /// The radius of the sph kernel
     static constexpr Tscal Rkern = Kernel::Rkern;
 
     Tscal gpart_mass;            ///< The mass of each gas particle
     CFLConfig<Tscal> cfl_config; ///< The configuration for the CFL condition
+
+    bool track_particles_id = false;
+
+    inline void set_particle_tracking(bool state) { track_particles_id = state; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -216,6 +240,16 @@ struct shammodels::sph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Particle killing config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    ParticleKillingConfig<Tvec> particle_killing;
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Particle killing config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -299,14 +333,11 @@ struct shammodels::sph::SolverConfig {
 
     u32 tree_reduction_level  = 3;    ///< Reduction level to be used in the tree build
     bool use_two_stage_search = true; ///< Use two stage neighbors search (see shamrock paper)
-    u64 max_neigh_cache_size  = 10e9; ///< Maximum size of the neighbors cache
 
     /// Setter for the tree reduction level
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
     /// Setter for the two stage search
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
-    /// Setter for the maximum size of the neighbors cache
-    inline void set_max_neigh_cache_size(u64 val) { max_neigh_cache_size = val; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config (END)
@@ -317,10 +348,10 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     bool combined_dtdiv_divcurlv_compute = false; ///< Use the combined dtdivv and divcurlv compute
-    /// Factor applied to the smoothing lenght for neighbors search (and ghost zone size)
+    /// Factor applied to the smoothing length for neighbors search (and ghost zone size)
     /// @note This value must be larger or equal to htol_up_iter
     Tscal htol_up_tol = 1.1;
-    /// Maximum factor of the smoothing lenght evolution per subcycles
+    /// Maximum factor of the smoothing length evolution per subcycles
     Tscal htol_up_iter        = 1.1;
     Tscal epsilon_h           = 1e-6; ///< Convergence criteria for the smoothing length
     u32 h_iter_per_subcycles  = 50;   ///< Maximum number of iterations per subcycle
@@ -632,8 +663,7 @@ struct shammodels::sph::SolverConfig {
 
     /// @brief Whether the solver has a field for sound speed
     inline bool has_field_soundspeed() {
-        return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal()
-               || mhd_config.has_divB_field();
+        return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
     }
 
     /// @brief Whether the solver has a field for B_on_rho
@@ -681,7 +711,22 @@ struct shammodels::sph::SolverConfig {
         logger::raw_ln("------------------------------------");
     }
 
-    inline void check_config() { dust_config.check_config(); }
+    inline void check_config() {
+        dust_config.check_config();
+
+        if (track_particles_id && false /*particle injection when added*/) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "particle injection is not yet compatible with particle id tracking");
+            }
+        }
+
+        if (track_particles_id) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
+            }
+        }
+    }
 
     void set_layout(shamrock::patch::PatchDataLayout &pdl);
     void set_ghost_layout(shamrock::patch::PatchDataLayout &ghost_layout);
@@ -742,6 +787,35 @@ namespace shammodels::sph {
         j.at("cfl_multiplier").get_to<Tscal>(p.cfl_multiplier);
     }
 
+    // JSON serialization for ParticleKillingConfig
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const ParticleKillingConfig<Tvec> &p) {
+        j = nlohmann::json::array();
+        for (const auto &kill : p.kill_list) {
+            if (std::holds_alternative<typename ParticleKillingConfig<Tvec>::Sphere>(kill)) {
+                const auto &sphere = std::get<typename ParticleKillingConfig<Tvec>::Sphere>(kill);
+                j.push_back(
+                    {{"type", "sphere"}, {"center", sphere.center}, {"radius", sphere.radius}});
+            }
+            // If more types are added to kill_t, handle them here
+        }
+    }
+
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, ParticleKillingConfig<Tvec> &p) {
+        p.kill_list.clear();
+        for (const auto &item : j) {
+            std::string type = item.at("type").get<std::string>();
+            if (type == "sphere") {
+                typename ParticleKillingConfig<Tvec>::Sphere sphere;
+                item.at("center").get_to(sphere.center);
+                item.at("radius").get_to(sphere.radius);
+                p.kill_list.push_back(sphere);
+            }
+            // If more types are added to kill_t, handle them here
+        }
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -773,7 +847,6 @@ namespace shammodels::sph {
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
-            {"max_neigh_cache_size", p.max_neigh_cache_size},
             // solver behavior config
             {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
             {"htol_up_tol", p.htol_up_tol},
@@ -790,6 +863,8 @@ namespace shammodels::sph {
 
             {"do_debug_dump", p.do_debug_dump},
             {"debug_dump_filename", p.debug_dump_filename},
+            // particle killing config
+            {"particle_killing", p.particle_killing},
         };
     }
 
@@ -840,7 +915,6 @@ namespace shammodels::sph {
 
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
-        j.at("max_neigh_cache_size").get_to(p.max_neigh_cache_size);
 
         j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
         j.at("htol_up_tol").get_to(p.htol_up_tol);
@@ -856,6 +930,15 @@ namespace shammodels::sph {
 
         j.at("do_debug_dump").get_to(p.do_debug_dump);
         j.at("debug_dump_filename").get_to(p.debug_dump_filename);
+
+        // particle killing config
+        try {
+            j.at("particle_killing").get_to(p.particle_killing);
+        } catch (const nlohmann::json::out_of_range &e) {
+            logger::warn_ln(
+                "SPHConfig", "particle_killing not found when deserializing, defaulting to None");
+            p.particle_killing.kill_list = {};
+        }
     }
 
 } // namespace shammodels::sph

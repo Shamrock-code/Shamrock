@@ -9,13 +9,17 @@
 
 /**
  * @file internal_alloc.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This file contains the methods to actually allocate memory
  */
 
+#include "shambase/memory.hpp"
 #include "shambase/profiling/profiling.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/details/internal_alloc.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
+#include <exception>
 
 namespace {
 
@@ -118,6 +122,36 @@ namespace sham::details {
 
     MemPerfInfos get_mem_perf_info() { return mem_perf_infos; }
 
+    std::string log_mem_perf_info(const std::shared_ptr<DeviceScheduler> &dev_sched) {
+
+        std::string fmt = R"log(
+    World infos :
+        World size = {}
+        World rank = {}
+    Device infos :
+        Device name = {}
+    Allocs :
+        max_allocated_byte_host = {}
+        max_allocated_byte_device = {}
+        max_allocated_byte_shared = {}
+        allocated_byte_host = {}
+        allocated_byte_device = {}
+        allocated_byte_shared = {}
+        )log";
+
+        return shambase::format(
+            fmt,
+            shamcomm::world_size(),
+            shamcomm::world_rank(),
+            dev_sched->ctx->device->dev.get_info<sycl::info::device::name>(),
+            shambase::readable_sizeof(mem_perf_infos.max_allocated_byte_host),
+            shambase::readable_sizeof(mem_perf_infos.max_allocated_byte_device),
+            shambase::readable_sizeof(mem_perf_infos.max_allocated_byte_shared),
+            shambase::readable_sizeof(mem_perf_infos.allocated_byte_host),
+            shambase::readable_sizeof(mem_perf_infos.allocated_byte_device),
+            shambase::readable_sizeof(mem_perf_infos.allocated_byte_shared));
+    }
+
     template<USMKindTarget target>
     void internal_free(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched) {
 
@@ -158,11 +192,45 @@ namespace sham::details {
         shamcomm::logs::debug_alloc_ln(
             "memoryHandle", "alloc usm pointer size :", sz, " | mode =", get_mode_name<target>());
 
-        sycl::context &sycl_ctx = dev_sched->ctx->ctx;
-        sycl::device &dev       = dev_sched->ctx->device->dev;
-        void *usm_ptr           = nullptr;
+        auto &ds                = shambase::get_check_ref(dev_sched);
+        sycl::context &sycl_ctx = ds.ctx->ctx;
+        sycl::device &dev       = ds.ctx->device->dev;
+
+        void *usm_ptr = nullptr;
+
+        auto catch_alloc_except = [&](auto alloc_lambda) {
+            try {
+                usm_ptr = alloc_lambda();
+            } catch (std::exception &ex) {
+                std::string log = shambase::format(
+                    "Alloc failed with exception : {}\nShamrock mem infos : {}",
+                    ex.what(),
+                    log_mem_perf_info(dev_sched));
+                shambase::throw_with_loc<std::runtime_error>(log);
+            }
+        };
+
+        if (sz > ds.get_queue().get_device_prop().max_mem_alloc_size) {
+            std::string err_log = shambase::format(
+                "You are trying to allocate more than the maximum allocation size allowed by the "
+                "device\n"
+                "  size = {} | max_alloc_size = {}",
+                sz,
+                ds.get_queue().get_device_prop().max_mem_alloc_size);
+            shambase::throw_with_loc<std::runtime_error>(err_log);
+        }
 
         if (alignment) {
+
+            if (*alignment % ds.get_queue().get_device_prop().mem_base_addr_align != 0) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "The alignment of the USM pointer is not aligned with minimum device "
+                    "alignment\n"
+                    "  alignment = {} | device alignment = {} | alignment % device alignment = {}",
+                    *alignment,
+                    ds.get_queue().get_device_prop().mem_base_addr_align,
+                    *alignment % ds.get_queue().get_device_prop().mem_base_addr_align));
+            }
 
             if (sz % *alignment != 0) {
                 shambase::throw_with_loc<std::runtime_error>(shambase::format(
@@ -176,21 +244,33 @@ namespace sham::details {
             // TODO upgrade alignment to 256-bit for CUDA ?
 
             if constexpr (target == device) {
-                usm_ptr = sycl::aligned_alloc_device(*alignment, sz, dev, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::aligned_alloc_device(*alignment, sz, dev, sycl_ctx);
+                });
             } else if constexpr (target == shared) {
-                usm_ptr = sycl::aligned_alloc_shared(*alignment, sz, dev, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::aligned_alloc_shared(*alignment, sz, dev, sycl_ctx);
+                });
             } else if constexpr (target == host) {
-                usm_ptr = sycl::aligned_alloc_host(*alignment, sz, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::aligned_alloc_host(*alignment, sz, sycl_ctx);
+                });
             } else {
                 shambase::throw_unimplemented();
             }
         } else {
             if constexpr (target == device) {
-                usm_ptr = sycl::malloc_device(sz, dev, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::malloc_device(sz, dev, sycl_ctx);
+                });
             } else if constexpr (target == shared) {
-                usm_ptr = sycl::malloc_shared(sz, dev, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::malloc_shared(sz, dev, sycl_ctx);
+                });
             } else if constexpr (target == host) {
-                usm_ptr = sycl::malloc_host(sz, sycl_ctx);
+                catch_alloc_except([&] {
+                    return sycl::malloc_host(sz, sycl_ctx);
+                });
             } else {
                 shambase::throw_unimplemented();
             }
@@ -213,7 +293,7 @@ namespace sham::details {
                     get_mode_name<target>(),
                     usm_ptr);
             }
-            shambase::throw_with_loc<std::runtime_error>(err_msg);
+            shambase::throw_with_loc<std::runtime_error>(err_msg + log_mem_perf_info(dev_sched));
         }
 
         if (alignment) {

@@ -9,7 +9,7 @@
 
 /**
  * @file device_select.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -51,7 +51,7 @@ shamsys::DeviceSelectRet_t init_queues_auto(std::string search_key) {
             if (shambase::contain_substr(plat.get_info<sycl::info::platform::name>(), search_key)) {
 
                 if ((*local_id) % valid_dev_cnt == valid_dev_id) {
-                    logger::debug_sycl_ln(
+                    shamlog_debug_sycl_ln(
                         "Sys",
                         "create queue :\n",
                         "Local ID :",
@@ -61,7 +61,7 @@ shamsys::DeviceSelectRet_t init_queues_auto(std::string search_key) {
 
                     auto PlatformName = plat.get_info<sycl::info::platform::name>();
                     auto DeviceName   = dev.get_info<sycl::info::device::name>();
-                    logger::debug_sycl_ln(
+                    shamlog_debug_sycl_ln(
                         "NodeInstance",
                         "init alt queue  : ",
                         "|",
@@ -75,7 +75,7 @@ shamsys::DeviceSelectRet_t init_queues_auto(std::string search_key) {
                     ret.device_alt = std::make_shared<sham::Device>(
                         sham::sycl_dev_to_sham_dev(key_global, dev));
 
-                    logger::debug_sycl_ln(
+                    shamlog_debug_sycl_ln(
                         "NodeInstance",
                         "init comp queue : ",
                         "|",
@@ -127,7 +127,7 @@ shamsys::DeviceSelectRet_t init_queues(u32 alt_id, u32 compute_id) {
             auto DeviceName   = dev.get_info<sycl::info::device::name>();
 
             if (key_global == alt_id) {
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "NodeInstance",
                     "init alt queue  : ",
                     "|",
@@ -142,7 +142,7 @@ shamsys::DeviceSelectRet_t init_queues(u32 alt_id, u32 compute_id) {
             }
 
             if (key_global == compute_id) {
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "NodeInstance",
                     "init comp queue : ",
                     "|",

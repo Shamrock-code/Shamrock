@@ -11,7 +11,7 @@
 
 /**
  * @file GeneratorLatticeHCP.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -77,7 +77,7 @@ namespace shammodels::sph::modules {
                 u64 gen_cnt    = loc_gen_count;
                 u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
 
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "GeneratorLatticeHCP",
                     "generate : ",
                     skip_start,

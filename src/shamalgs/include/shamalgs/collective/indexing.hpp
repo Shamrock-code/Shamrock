@@ -11,7 +11,7 @@
 
 /**
  * @file indexing.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -21,6 +21,7 @@
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamcomm/wrapper.hpp"
 
 namespace shamalgs::collective {
 
@@ -32,18 +33,18 @@ namespace shamalgs::collective {
     inline ViewInfo fetch_view(u64 byte_count) {
 
         u64 scan_val;
-        MPICHECK(
-            MPI_Exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD));
+        shamcomm::mpi::Exscan(
+            &byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
 
         if (shamcomm::world_rank() == 0) {
             scan_val = 0;
         }
 
         u64 sum_val;
-        MPICHECK(
-            MPI_Allreduce(&byte_count, &sum_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD));
+        shamcomm::mpi::Allreduce(
+            &byte_count, &sum_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
 
-        logger::debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", sum_val);
+        shamlog_debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", sum_val);
 
         return {sum_val, scan_val};
     }
@@ -51,14 +52,14 @@ namespace shamalgs::collective {
     inline ViewInfo fetch_view_known_total(u64 byte_count, u64 total_byte) {
 
         u64 scan_val;
-        MPICHECK(
-            MPI_Exscan(&byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD));
+        shamcomm::mpi::Exscan(
+            &byte_count, &scan_val, 1, get_mpi_type<u64>(), MPI_SUM, MPI_COMM_WORLD);
 
         if (shamcomm::world_rank() == 0) {
             scan_val = 0;
         }
 
-        logger::debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", total_byte);
+        shamlog_debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", total_byte);
 
         return {total_byte, scan_val};
     }

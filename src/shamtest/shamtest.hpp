@@ -11,7 +11,7 @@
 
 /**
  * @file shamtest.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief main include file for testing
  */
 
@@ -244,7 +244,7 @@ namespace shamtest::details {
  *
  * Usage :
  * \code{.cpp}
- * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("assert name",a , b, 1e-9, sycl::lenght)
+ * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED("assert name",a , b, 1e-9, sycl::length)
  * \endcode
  */
 #define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, _a, _b, prec, dist)                            \
@@ -316,7 +316,7 @@ namespace shamtest::details {
  *
  * Usage :
  * \code{.cpp}
- * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a , b, 1e-9, sycl::lenght)
+ * REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(a , b, 1e-9, sycl::length)
  * \endcode
  */
 #define REQUIRE_FLOAT_EQUAL_CUSTOM_DIST(name, a, b, prec, dist)                                    \

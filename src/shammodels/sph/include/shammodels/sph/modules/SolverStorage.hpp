@@ -11,7 +11,7 @@
 
 /**
  * @file SolverStorage.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -22,11 +22,18 @@
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SinkPartStruct.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
+#include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/CompressedLeafBVH.hpp"
+#include "shamtree/KarrasRadixTreeField.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
+#include <memory>
 
 namespace shammodels::sph {
 
@@ -43,7 +50,15 @@ namespace shammodels::sph {
         using GhostHandleCache   = typename GhostHandle::CacheMap;
         using PreStepMergedField = typename GhostHandle::PreStepMergedField;
 
-        using RTree = RadixTree<Tmorton, Tvec>;
+        using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
+
+        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
+        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
+
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> positions_with_ghosts;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_with_ghosts;
+
+        std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache;
 
         Component<SerialPatchTree<Tvec>> serial_patch_tree;
 
@@ -55,11 +70,10 @@ namespace shammodels::sph {
 
         Component<shambase::DistributedData<RTree>> merged_pos_trees;
 
-        Component<shambase::DistributedData<RadixTreeField<Tscal>>> rtree_rint_field;
+        Component<shambase::DistributedData<shamtree::KarrasRadixTreeField<Tscal>>>
+            rtree_rint_field;
 
-        Component<shamrock::tree::ObjectCacheHandler> neighbors_cache;
-
-        Component<shamrock::ComputeField<Tscal>> omega;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
         Component<shamrock::patch::PatchDataLayout> ghost_layout;
 

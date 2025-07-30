@@ -11,7 +11,7 @@
 
 /**
  * @file SimBox.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -53,7 +53,7 @@ namespace shamrock::patch {
 
         void set_patch_coord_bounding_box(PatchCoord<dim> new_patch_coord_box) {
             patch_coord_bounding_box = new_patch_coord_box;
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "SimBox",
                 "changed patch coord bounds :",
                 std::pair{

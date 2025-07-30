@@ -11,12 +11,12 @@
 
 /**
  * @file log.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
+#include "shambase/term_colors.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamsys/Log.hpp"
 #include <chrono>

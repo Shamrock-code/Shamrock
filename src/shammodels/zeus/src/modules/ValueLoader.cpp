@@ -9,7 +9,7 @@
 
 /**
  * @file ValueLoader.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -35,7 +35,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
     auto src     = buf_src.get_read_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute xm val (1)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute xm val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
 
@@ -67,7 +67,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
     auto src     = buf_src.get_read_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute xp val (1)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute xp val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
 
@@ -99,7 +99,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
     auto src     = buf_src.get_read_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
 
@@ -131,7 +131,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
     auto src     = buf_src.get_read_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute yp val (1)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute yp val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
 
@@ -163,7 +163,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
     auto src     = buf_src.get_read_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
 
@@ -195,7 +195,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_inter
     auto src     = buf_src.get_read_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute ym val (1)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 lid      = id_a % Block::block_size;
 
@@ -295,7 +295,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         tree::ObjectCacheIterator faces_xm(fptr);
 
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 block_id = id_a / Block::block_size;
             const u32 lid      = id_a % Block::block_size;
@@ -364,7 +364,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         tree::ObjectCacheIterator faces_xp(fptr);
 
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute xm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 block_id = id_a / Block::block_size;
             const u32 lid      = id_a % Block::block_size;
@@ -442,7 +442,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         tree::ObjectCacheIterator faces_ym(fptr);
 
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 block_id = id_a / Block::block_size;
             const u32 lid      = id_a % Block::block_size;
@@ -511,7 +511,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         tree::ObjectCacheIterator faces_yp(fptr);
 
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute ym val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 block_id = id_a / Block::block_size;
             const u32 lid      = id_a % Block::block_size;
@@ -580,7 +580,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         tree::ObjectCacheIterator faces_zm(fptr);
 
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute zm val (2)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute zm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 block_id = id_a / Block::block_size;
             const u32 lid      = id_a % Block::block_size;
@@ -649,7 +649,7 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
         tree::ObjectCacheIterator faces_zp(fptr);
 
-        shambase::parralel_for(cgh, nobj * Block::block_size, "compute zm val (2)", [=](u64 id_a) {
+        shambase::parallel_for(cgh, nobj * Block::block_size, "compute zm val (2)", [=](u64 id_a) {
             const u32 base_idx = id_a;
             const u32 block_id = id_a / Block::block_size;
             const u32 lid      = id_a % Block::block_size;

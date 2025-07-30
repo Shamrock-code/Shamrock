@@ -9,7 +9,7 @@
 
 /**
  * @file SourceStep.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -90,7 +90,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
         auto grad_p = forces_buf.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute grad p", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
                     Tvec d_cell
@@ -169,7 +169,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
         auto rho      = buf_rho.get_read_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "add ext force", [=](u64 id_a) {
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "add ext force", [=](u64 id_a) {
                 Tvec block_min    = cell_min[id_a].template convert<Tscal>();
                 Tvec block_max    = cell_max[id_a].template convert<Tscal>();
                 Tvec delta_cell   = (block_max - block_min) / Block::side_size;
@@ -230,7 +230,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_force(Tscal dt
         auto vel    = vel_buf.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, mpdat.total_elements * Block::block_size, "add ext force", [=](u64 id_a) {
                     vel[id_a] += dt * forces[id_a];
                 });
@@ -301,7 +301,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_AV() {
         auto q_AV     = q_AV_buf.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
                     Tvec d_cell
@@ -413,7 +413,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
         auto vel      = buf_vel.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, mpdat.total_elements * Block::block_size, "add vel AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
                     Tvec d_cell
@@ -498,7 +498,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
         auto eint     = buf_eint.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, pdat.get_obj_cnt() * Block::block_size, "add eint AV", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
                     Tvec d_cell
@@ -592,7 +592,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_div_v() {
         auto divv = buf_div_v.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, pdat.get_obj_cnt() * Block::block_size, "compute divv", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
                     Tvec d_cell
@@ -668,7 +668,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::update_eint_eos(Tsca
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal fact = (dt / 2.) * (solver_config.eos_gamma - 1);
 
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, pdat.get_obj_cnt() * Block::block_size, "evolve eint", [=](u64 id_a) {
                     u32 block_id = id_a / Block::block_size;
                     Tvec d_cell

@@ -11,7 +11,7 @@
 
 /**
  * @file ReattributeDataUtility.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -190,7 +190,7 @@ namespace shamrock {
             });
 
             for (auto &[k, v] : histogram_extract) {
-                logger::debug_ln("ReattributeDataUtility", "patch", k, "extract=", v);
+                shamlog_debug_ln("ReattributeDataUtility", "patch", k, "extract=", v);
             }
 
             return part_exchange;
@@ -221,7 +221,7 @@ namespace shamrock {
             DistributedDataShared<patch::PatchData> part_exchange = extract_elements(new_pid);
 
             part_exchange.for_each([](u64 sender, u64 receiver, PatchData &pdat) {
-                logger::debug_ln("ReattributeDataUtility", sender, receiver, pdat.get_obj_cnt());
+                shamlog_debug_ln("ReattributeDataUtility", sender, receiver, pdat.get_obj_cnt());
             });
 
             DistributedDataShared<patch::PatchData> recv_dat;
@@ -248,7 +248,7 @@ namespace shamrock {
                 });
 
             recv_dat.for_each([&](u64 sender, u64 receiver, PatchData &pdat) {
-                logger::debug_ln("Part Exchanges", format("send = {} recv = {}", sender, receiver));
+                shamlog_debug_ln("Part Exchanges", format("send = {} recv = {}", sender, receiver));
                 sched.patch_data.get_pdat(receiver).insert_elements(pdat);
             });
         }

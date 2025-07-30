@@ -9,14 +9,16 @@
 
 /**
  * @file pyShamsys.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/numeric_limits.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shampylib/pyNodeInstance.hpp"
+#include "shamrock/experimental_features.hpp"
 #include "shamrock/version.hpp"
 #include "shamsys/SignalCatch.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -100,6 +102,15 @@ Register_pymod(pysyslibinit) {
         },
         R"pbdoc(
         Return is_git
+    )pbdoc");
+
+    m.def(
+        "enable_experimental_features",
+        []() {
+            shamrock::enable_experimental_features();
+        },
+        R"pbdoc(
+        Enable experimental features
     )pbdoc");
 
     m.def(

@@ -53,7 +53,7 @@ jobs:
         shell: bash
         run: |
           source .pyvenv/bin/activate
-          pip install mkdocs-material mkdocs-git-committers-plugin-2 mkdocs-git-authors-plugin mkdocs-git-revision-date-plugin mkdocs-git-revision-date-localized-plugin
+          pip install matplotlib numpy scipy mkdocs-material mkdocs-git-committers-plugin-2 mkdocs-git-authors-plugin mkdocs-git-revision-date-plugin mkdocs-git-revision-date-localized-plugin
 
       - name : Install pck (doxygen)
         run: |

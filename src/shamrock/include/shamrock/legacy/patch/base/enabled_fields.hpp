@@ -11,7 +11,7 @@
 
 /**
  * @file enabled_fields.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -37,4 +37,5 @@
     X(u64)                                                                                         \
     X(u32_3)                                                                                       \
     X(u64_3)                                                                                       \
-    X(i64_3)
+    X(i64_3)                                                                                       \
+    X(i64)

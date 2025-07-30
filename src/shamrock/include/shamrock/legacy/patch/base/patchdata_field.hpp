@@ -11,11 +11,12 @@
 
 /**
  * @file patchdata_field.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
+#include "shamcomm/wrapper.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
@@ -69,7 +70,7 @@ namespace patchdata_field {
 
         auto &rq = rq_lst[rq_index];
 
-        mpi::isend(
+        shamcomm::mpi::Isend(
             rq.get_mpi_ptr(),
             p.get_val_cnt(),
             get_mpi_type<T>(),
@@ -91,8 +92,8 @@ namespace patchdata_field {
         MPI_Comm comm) {
         MPI_Status st;
         i32 cnt;
-        mpi::probe(rank_source, tag, comm, &st);
-        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+        shamcomm::mpi::Probe(rank_source, tag, comm, &st);
+        shamcomm::mpi::Get_count(&st, get_mpi_type<T>(), &cnt);
 
         u32 val_cnt = cnt;
 
@@ -102,7 +103,7 @@ namespace patchdata_field {
 
         auto &rq = rq_lst[rq_index];
 
-        mpi::irecv(
+        shamcomm::mpi::Irecv(
             rq.get_mpi_ptr(),
             val_cnt,
             get_mpi_type<T>(),
@@ -134,7 +135,7 @@ namespace patchdata_field {
         }
 
         std::vector<MPI_Status> st_lst(addrs.size());
-        mpi::waitall(addrs.size(), addrs.data(), st_lst.data());
+        shamcomm::mpi::Waitall(addrs.size(), addrs.data(), st_lst.data());
 
         for (auto a : rq_lst) {
             a.finalize();
@@ -147,7 +148,7 @@ namespace patchdata_field {
 
         PatchDataFieldMpiRequest<T> rq(p, current_mode, Send, p.get_val_cnt());
 
-        mpi::file_write(fh, rq.get_mpi_ptr(), p.get_val_cnt(), get_mpi_type<T>(), &st);
+        shamcomm::mpi::File_write(fh, rq.get_mpi_ptr(), p.get_val_cnt(), get_mpi_type<T>(), &st);
 
         rq.finalize();
     }

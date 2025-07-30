@@ -9,7 +9,7 @@
 
 /**
  * @file DiffOperator.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -71,7 +71,7 @@ void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             tree::ObjectCacheIterator faces_xm(faces_xm_ptr);
 
-            shambase::parralel_for(cgh, pdat.get_obj_cnt(), "subsetp1", [=](u64 id_a) {
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "subsetp1", [=](u64 id_a) {
                 Tvec cell2_a = (cell_min[id_a] + cell_max[id_a]).template convert<Tscal>()
                                * coord_conv_fact * 0.5f;
 

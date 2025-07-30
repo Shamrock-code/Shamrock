@@ -269,7 +269,7 @@ namespace shammath {
 
                     ret.push_back(next());
                 }
-                logger::debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
+                shamlog_debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
                 return ret;
             }
 
@@ -280,7 +280,7 @@ namespace shammath {
                 if (current_idx >= max_coord) {
                     done = true;
                 }
-                logger::debug_ln("Discontinuous iterator", "skip final idx", current_idx);
+                shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
             }
         };
 
@@ -368,7 +368,7 @@ namespace shammath {
 
                     ret.push_back(next());
                 }
-                logger::debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
+                shamlog_debug_ln("Discontinuous iterator", "next_n final idx", current_idx);
                 return ret;
             }
 
@@ -379,7 +379,7 @@ namespace shammath {
                 if (current_idx >= max_coord) {
                     done = true;
                 }
-                logger::debug_ln("Discontinuous iterator", "skip final idx", current_idx);
+                shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
             }
         };
     };

@@ -11,7 +11,7 @@
 
 /**
  * @file CommunicationBufferImpl.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -83,7 +83,7 @@ namespace shamcomm {
                 return ret;
             }
 
-            inline u64 get_bytesize() { return usm_buf.get_bytesize(); }
+            inline u64 get_size() { return usm_buf.get_size(); }
 
             inline sycl::buffer<u8> copy_back() { return usm_buf.copy_to_sycl_buffer(); }
             static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
@@ -142,7 +142,7 @@ namespace shamcomm {
                 return usm_buf.copy_to<sham::device>();
             }
 
-            inline u64 get_bytesize() { return usm_buf.get_bytesize(); }
+            inline u64 get_size() { return usm_buf.get_size(); }
 
             static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
             static sham::DeviceBuffer<u8> convert_usm(CommunicationBuffer &&buf) {

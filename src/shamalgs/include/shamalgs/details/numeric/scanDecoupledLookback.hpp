@@ -11,7 +11,7 @@
 
 /**
  * @file scanDecoupledLookback.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -579,7 +579,7 @@ namespace shamalgs::numeric::details {
                     // sync group
                     id.barrier(sycl::access::fence_space::local_space);
 
-                    // parralelized lookback
+                    // parallelized lookback
                     static_assert(thread_counts <= group_size, "impossible");
 
                     T local_group_sum = local_scan_buf[0];

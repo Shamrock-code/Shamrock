@@ -11,7 +11,7 @@
 
 /**
  * @file merged_patch.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -48,13 +48,13 @@ inline void write_back_merge_patches(
     PatchScheduler &sched, std::unordered_map<u64, MergedPatchData<flt>> &merge_pdat) {
 
     using namespace shamrock::patch;
-    logger::debug_sycl_ln("Merged Patch", "write back merged buffers");
+    shamlog_debug_sycl_ln("Merged Patch", "write back merged buffers");
 
     sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
         if (merge_pdat.at(id_patch).or_element_cnt == 0)
             std::cout << " empty => skipping" << std::endl;
 
-        logger::debug_sycl_ln("Merged Patch", "patch : n°", id_patch, "-> write back merge buf");
+        shamlog_debug_sycl_ln("Merged Patch", "patch : n°", id_patch, "-> write back merge buf");
 
         merge_pdat.at(id_patch).write_back(pdat);
     });
@@ -106,7 +106,7 @@ inline void make_merge_patches(
 
     std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merge_pdat_buf){
 
-    logger::debug_sycl_ln("Merged Patch","make_merge_patches");
+    shamlog_debug_sycl_ln("Merged Patch","make_merge_patches");
 
     sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer & pdat_buf) {
 
@@ -117,7 +117,7 @@ inline void make_merge_patches(
         f32_3 min_box = std::get<0>(tmp_box);
         f32_3 max_box = std::get<1>(tmp_box);
 
-        logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge buf");
+        shamlog_debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge buf");
 
         u32 len_main = pdat_buf.element_count;
 
@@ -294,7 +294,7 @@ inline void write_back_merge_patches(
     std::unordered_map<u64,MergedPatchDataBuffer<pos_vec>> & merge_pdat_buf){
 
 
-    logger::debug_sycl_ln("Merged Patch","write back merged buffers");
+    shamlog_debug_sycl_ln("Merged Patch","write back merged buffers");
 
 
 
@@ -302,7 +302,7 @@ inline void write_back_merge_patches(
         if(merge_pdat_buf.at(id_patch).or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
 
 
-        logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> write back merge buf");
+        shamlog_debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> write back merge buf");
 
     #define X(arg)                                                                                 \
         for (u32 idx = 0; idx < pdat_buf.pdl.fields_##arg.size(); idx++) {                         \
@@ -334,7 +334,7 @@ inline void make_merge_patches_comp_field(
 
     std::unordered_map<u64,MergedPatchCompFieldBuffer<T>> & merge_pdat_comp_field){
 
-    logger::debug_sycl_ln("Merged Patch","make_merge_patches_comp_field");
+    shamlog_debug_sycl_ln("Merged Patch","make_merge_patches_comp_field");
 
     sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
 
@@ -342,7 +342,7 @@ inline void make_merge_patches_comp_field(
 
         auto compfield_buf = comp_field.get_sub_buf(id_patch);
 
-        logger::debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge comp field");
+        shamlog_debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge comp field");
 
         u32 len_main = compfield_buf->size();// TODO remove ref to size
         merge_pdat_comp_field[id_patch].or_element_cnt = len_main;

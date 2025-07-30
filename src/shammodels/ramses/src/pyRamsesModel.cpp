@@ -9,7 +9,10 @@
 
 /**
  * @file pyRamsesModel.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -33,8 +36,8 @@ namespace shammodels::basegodunov {
         using TConfig          = typename T::Solver::Config;
         using TAnalysisSodTube = shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>;
 
-        logger::debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
-        logger::debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
+        shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
+        shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
         py::class_<TConfig>(m, name_config.c_str())
             .def(
@@ -153,7 +156,30 @@ namespace shammodels::basegodunov {
                     self.amr_mode.set_refine_density_based(crit_mass);
                 },
                 py::kw_only(),
-                py::arg("crit_mass"));
+                py::arg("crit_mass"))
+            .def(
+                "set_gravity_mode_no_gravity",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = NoGravity;
+                })
+            .def(
+                "set_gravity_mode_cg",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = CG;
+                })
+            .def(
+                "set_gravity_mode_pcg",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = PCG;
+                })
+            .def(
+                "set_gravity_mode_bicgstab",
+                [](TConfig &self) {
+                    self.gravity_config.gravity_mode = BICGSTAB;
+                })
+            .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
+                self.npscal_gas_config.npscal_gas = npscal_gas;
+            });
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
         py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())
@@ -244,7 +270,15 @@ namespace shammodels::basegodunov {
                         x_ref,
                         x_min,
                         x_max);
-                });
+                })
+            .def(
+                "get_solver_tex",
+                [](T &self) {
+                    return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
+                })
+            .def("get_solver_dot_graph", [](T &self) {
+                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_dot_graph();
+            });
     }
 } // namespace shammodels::basegodunov
 

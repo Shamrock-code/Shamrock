@@ -11,7 +11,7 @@
 
 /**
  * @file LoadBalanceStrategy.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief implementation of the hilbert curve load balancing
  *
  */
@@ -54,7 +54,7 @@ namespace shamrock::scheduler::details {
     }
 
     template<class Torder, class Tweight>
-    inline std::vector<i32> lb_startegy_parralel_sweep(
+    inline std::vector<i32> lb_startegy_parallel_sweep(
         const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector, i32 wsize) {
 
         using LBTile       = TileWithLoad<Torder, Tweight>;
@@ -88,7 +88,7 @@ namespace shamrock::scheduler::details {
 
         if (shamcomm::world_rank() == 0) {
             for (LBTileResult t : res) {
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "HilbertLoadBalance",
                     t.ordering_val,
                     t.accumulated_load_value,
@@ -145,7 +145,7 @@ namespace shamrock::scheduler::details {
 
         if (shamcomm::world_rank() == 0) {
             for (LBTileResult t : res) {
-                logger::debug_ln(
+                shamlog_debug_ln(
                     "HilbertLoadBalance",
                     t.ordering_val,
                     t.accumulated_load_value,
@@ -196,7 +196,7 @@ namespace shamrock::scheduler::details {
             max     = sycl::fmax(max, val);
             avg += val;
 
-            // logger::debug_ln("HilbertLoadBalance", "node :",nid, "load :",load_per_node[nid]);
+            // shamlog_debug_ln("HilbertLoadBalance", "node :",nid, "load :",load_per_node[nid]);
         }
         avg /= world_size;
         for (i32 nid = 0; nid < world_size; nid++) {
@@ -225,7 +225,7 @@ namespace shamrock::scheduler {
         std::vector<TileWithLoad<Torder, Tweight>> &&lb_vector,
         i32 world_size = shamcomm::world_size()) {
 
-        auto tmpres        = details::lb_startegy_parralel_sweep(lb_vector, world_size);
+        auto tmpres        = details::lb_startegy_parallel_sweep(lb_vector, world_size);
         auto metric_psweep = details::compute_LB_metric(lb_vector, tmpres, world_size);
 
         auto tmpres_2      = details::lb_startegy_roundrobin(lb_vector, world_size);

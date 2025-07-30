@@ -9,7 +9,7 @@
 
 /**
  * @file RadixTree.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -36,7 +36,7 @@ RadixTree<u_morton, vec3>::RadixTree(
             "number of element in patch above i32_max-1");
     }
 
-    logger::debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
+    shamlog_debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
 
     bounding_box = treebox;
 
@@ -81,7 +81,7 @@ RadixTree<u_morton, Tvec>::RadixTree(
             "number of element in patch above i32_max-1");
     }
 
-    logger::debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
+    shamlog_debug_sycl_ln("RadixTree", "box dim :", std::get<0>(treebox), std::get<1>(treebox));
 
     bounding_box = treebox;
 
@@ -160,7 +160,7 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
     sycl::queue &queue, sham::DeviceBuffer<coord_t> &int_rad_buf, coord_t tolerance)
     -> RadixTreeField<coord_t> {
 
-    logger::debug_sycl_ln("RadixTree", "compute int boxes");
+    shamlog_debug_sycl_ln("RadixTree", "compute int boxes");
 
     auto buf_cell_interact_rad = RadixTreeField<coord_t>::make_empty(
         1, tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
@@ -400,7 +400,7 @@ RadixTree<u_morton, vec3>::cut_tree(sycl::queue &queue, sycl::buffer<u8> &valid_
 
             for (u32 it = 0; it < tree_depth; it++) {
 
-                logger::debug_sycl_ln("Radixtree", "cascading zeros step : ", it);
+                shamlog_debug_sycl_ln("Radixtree", "cascading zeros step : ", it);
                 queue.submit([&](sycl::handler &cgh) {
                     sycl::accessor acc_valid_node_old{valid_node, cgh, sycl::read_only};
                     sycl::accessor acc_valid_node_new{
@@ -451,7 +451,7 @@ RadixTree<u_morton, vec3>::cut_tree(sycl::queue &queue, sycl::buffer<u8> &valid_
         }
 
         //{
-        //    logger::debug_sycl_ln("Radixtree", "valid_node_state");
+        //    shamlog_debug_sycl_ln("Radixtree", "valid_node_state");
         //    print_tree_field(valid_node);
         //    logger::raw_ln("");
         //}
@@ -459,7 +459,7 @@ RadixTree<u_morton, vec3>::cut_tree(sycl::queue &queue, sycl::buffer<u8> &valid_
         sycl::buffer<u8> valid_tree_morton(tree_reduced_morton_codes.tree_leaf_count);
 
         auto print_valid_morton = [&] {
-            logger::debug_sycl_ln("Radixtree", "valid_tree_morton");
+            shamlog_debug_sycl_ln("Radixtree", "valid_tree_morton");
 
             sycl::buffer<u32> print_map(total_count);
 
@@ -1040,7 +1040,7 @@ RadixTree<u_morton, vec3>::cut_tree(sycl::queue &queue, sycl::buffer<u8> &valid_
 
         // ret.print_tree_field(*new_node_id_to_old_v2);
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "TreeCutter",
             "tree cut cells:",
             tree_struct.internal_cell_count,

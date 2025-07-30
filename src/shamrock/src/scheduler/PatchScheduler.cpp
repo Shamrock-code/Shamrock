@@ -9,7 +9,8 @@
 
 /**
  * @file PatchScheduler.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -125,9 +126,9 @@ PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coo
 
         if (shamcomm::world_rank() == node_owner_id) {
             patch_data.owned_data.add_obj(root.id_patch, PatchData(pdl));
-            logger::debug_sycl_ln("Scheduler", "adding patch data");
+            shamlog_debug_sycl_ln("Scheduler", "adding patch data");
         } else {
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "Scheduler",
                 "patch data wasn't added rank =",
                 shamcomm::world_rank(),
@@ -142,7 +143,7 @@ PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coo
         // auto [bmin,bmax] = get_sim_box().patch_coord_to_domain<u64_3>(root);
         //
         //
-        // logger::debug_ln("Scheduler", "adding patch : [ (",
+        // shamlog_debug_ln("Scheduler", "adding patch : [ (",
         // coord.x_min,
         // coord.y_min,
         // coord.z_min,") ] [ (",
@@ -164,7 +165,7 @@ PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coo
 
 void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat) {
 
-    logger::debug_ln("Scheduler", "pushing data obj cnt =", pdat.get_obj_cnt());
+    shamlog_debug_ln("Scheduler", "pushing data obj cnt =", pdat.get_obj_cnt());
 
     for_each_patch_data([&](u64 id_patch,
                             shamrock::patch::Patch cur_p,
@@ -177,7 +178,7 @@ void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat) {
             if constexpr (shambase::VectorProperties<base_t>::dimension == 3) {
                 auto [bmin, bmax] = get_sim_box().patch_coord_to_domain<base_t>(cur_p);
 
-                logger::debug_sycl_ln(
+                shamlog_debug_sycl_ln(
                     "Scheduler", "pushing data in patch ", id_patch, "search range :", bmin, bmax);
 
                 pdat_sched.insert_elements_in_range(pdat, bmin, bmax);
@@ -219,7 +220,7 @@ PatchScheduler::~PatchScheduler() {}
 bool PatchScheduler::should_resize_box(bool node_in) {
     u16 tmp = node_in;
     u16 out = 0;
-    mpi::allreduce(&tmp, &out, 1, mpi_type_u16, MPI_MAX, MPI_COMM_WORLD);
+    shamcomm::mpi::Allreduce(&tmp, &out, 1, mpi_type_u16, MPI_MAX, MPI_COMM_WORLD);
     return out;
 }
 
@@ -290,6 +291,15 @@ std::tuple<f64_3, f64_3> PatchScheduler::get_box_volume() {
     return patch_data.sim_box.get_bounding_box<f64_3>();
 }
 
+template<>
+std::tuple<i64_3, i64_3> PatchScheduler::get_box_volume() {
+    if (!pdl.check_main_field_type<i64_3>())
+        throw shambase::make_except_with_loc<std::runtime_error>(
+            "cannot query single precision box the main field is not of i64_3 type");
+
+    return patch_data.sim_box.get_bounding_box<i64_3>();
+}
+
 // TODO clean the output of this function
 void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing) {
     StackEntry stack_loc{};
@@ -301,7 +311,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
             "sycl mpi interop not initialized");
 
     shambase::Timer timer;
-    logger::debug_ln("Scheduler", "running scheduler step");
+    shamlog_debug_ln("Scheduler", "running scheduler step");
 
     struct SchedulerStepTimers {
         shambase::Timer global_timer;
@@ -752,7 +762,7 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq) {
 
         PatchTree::Node &to_merge_node = patch_tree.tree[tree_id];
 
-        std::cout << "merging patch tree id : " << tree_id << "\n";
+        // std::cout << "merging patch tree id : " << tree_id << "\n";
 
         u64 patch_id0 = patch_tree.tree[to_merge_node.tree_node.childs_nid[0]].linked_patchid;
         u64 patch_id1 = patch_tree.tree[to_merge_node.tree_node.childs_nid[1]].linked_patchid;
@@ -887,7 +897,7 @@ void send_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
         u32 rq_index = rqs.size() - 1;
         auto &rq     = rqs[rq_index];
 
-        u64 bsize = msg.buf->get_bytesize();
+        u64 bsize = msg.buf->get_size();
         if (bsize % 8 != 0) {
             shambase::throw_with_loc<std::runtime_error>(
                 "the following mpi comm assume that we can send longs to pack 8byte");
@@ -897,7 +907,7 @@ void send_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
             shambase::throw_with_loc<std::runtime_error>("The message is too large for MPI");
         }
 
-        mpi::isend(
+        shamcomm::mpi::Isend(
             msg.buf->get_ptr(),
             lcount,
             get_mpi_type<u64>(),
@@ -917,13 +927,13 @@ void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &r
 
         MPI_Status st;
         i32 cnt;
-        mpi::probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
-        mpi::get_count(&st, get_mpi_type<u64>(), &cnt);
+        shamcomm::mpi::Probe(msg.rank, msg.tag, MPI_COMM_WORLD, &st);
+        shamcomm::mpi::Get_count(&st, get_mpi_type<u64>(), &cnt);
 
         msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(
             cnt * 8, shamsys::instance::get_compute_scheduler_ptr());
 
-        mpi::irecv(
+        shamcomm::mpi::Irecv(
             msg.buf->get_ptr(), cnt, get_mpi_type<u64>(), msg.rank, msg.tag, MPI_COMM_WORLD, &rq);
     }
 }
@@ -985,7 +995,7 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     recv_probe_messages(recv_payloads, rqs);
 
     std::vector<MPI_Status> st_lst(rqs.size());
-    mpi::waitall(rqs.size(), rqs.data(), st_lst.data());
+    shamcomm::mpi::Waitall(rqs.size(), rqs.data(), st_lst.data());
 
     std::vector<std::unique_ptr<PatchData>> ret;
     for (auto &recv_msg : recv_payloads) {

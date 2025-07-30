@@ -60,7 +60,7 @@ TestStart(
         sycl::event ret = q.submit([&](sycl::handler &cgh) {
             cgh.depends_on(wait_list);
 
-            shambase::parralel_for(cgh, 100, "test1", [=](u32 id) {
+            shambase::parallel_for(cgh, 100, "test1", [=](u32 id) {
                 acc[id] = id;
             });
         });
@@ -82,7 +82,7 @@ TestStart(
         sycl::event ret = q.submit([&](sycl::handler &cgh) {
             cgh.depends_on(wait_list);
 
-            shambase::parralel_for(cgh, 100, "test2", [=](u32 id) {
+            shambase::parallel_for(cgh, 100, "test2", [=](u32 id) {
                 acc_d1[id] = acc_src[id] * 2;
             });
         });
@@ -99,7 +99,7 @@ TestStart(
         sycl::event ret = q.submit([&](sycl::handler &cgh) {
             cgh.depends_on(wait_list);
 
-            shambase::parralel_for(cgh, 100, "test3", [=](u32 id) {
+            shambase::parallel_for(cgh, 100, "test3", [=](u32 id) {
                 acc_d2[id] = acc_src[id] * 3;
             });
         });
@@ -117,7 +117,7 @@ TestStart(
         sycl::event ret = q.submit([&](sycl::handler &cgh) {
             cgh.depends_on(wait_list);
 
-            shambase::parralel_for(cgh, 100, "test4", [=](u32 id) {
+            shambase::parallel_for(cgh, 100, "test4", [=](u32 id) {
                 acc_d[id] = acc_src1[id] + acc_src2[id];
             });
         });

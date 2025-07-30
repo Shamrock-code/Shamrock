@@ -9,7 +9,9 @@
 
 /**
  * @file GhostZones.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -77,7 +79,7 @@ namespace shammodels::basegodunov::modules {
 
                         using PtNode = typename SerialPatchTree<TgridVec>::PtNode;
 
-                        logger::debug_sycl_ln(
+                        shamlog_debug_sycl_ln(
                             "AMR:interf",
                             "find_interfaces -",
                             psender.id_patch,
@@ -148,7 +150,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
             build.volume_target.lower,
             build.volume_target.upper);
 
-        logger::debug_ln("AMRgodunov", log);
+        shamlog_debug_ln("AMRgodunov", log);
     });
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -168,7 +170,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
 
             shammath::AABB<TgridVec> check_volume = build.volume_target;
 
-            shambase::parralel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a) {
+            shambase::parallel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a) {
                 flag[id_a] = shammath::AABB<TgridVec>(cell_min[id_a], cell_max[id_a])
                                  .get_intersect(check_volume)
                                  .is_not_empty();
@@ -190,7 +192,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
             build.volume_target.upper);
         s += shambase::format("\n    found N = {}, ratio = {} %", std::get<1>(resut), ratio);
 
-        logger::debug_ln("AMR interf", s);
+        shamlog_debug_ln("AMR interf", s);
 
         std::unique_ptr<sycl::buffer<u32>> ids
             = std::make_unique<sycl::buffer<u32>>(shambase::extract_value(std::get<0>(resut)));
@@ -328,16 +330,33 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         ghost_layout.add_field<Tvec>("rhovel_dust", ndust * AMRBlock::block_size);
     }
 
+    if (solver_config.is_gravity_on()) {
+        ghost_layout.add_field<Tscal>("phi", AMRBlock::block_size);
+    }
+
+    if (solver_config.is_gas_passive_scalar_on()) {
+        u32 npscal_gas = solver_config.npscal_gas_config.npscal_gas;
+        ghost_layout.add_field<Tscal>("rho_gas_pscal", (npscal_gas * AMRBlock::block_size));
+    }
+
     u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
     u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");
     u32 irho_interf      = ghost_layout.get_field_idx<Tscal>("rho");
     u32 irhoetot_interf  = ghost_layout.get_field_idx<Tscal>("rhoetot");
     u32 irhovel_interf   = ghost_layout.get_field_idx<Tvec>("rhovel");
 
-    u32 irho_d_interf, irhovel_d_interf;
+    u32 irho_d_interf, irhovel_d_interf, iphi_interf, irho_gas_pscal_interf;
     if (solver_config.is_dust_on()) {
         irho_d_interf    = ghost_layout.get_field_idx<Tscal>("rho_dust");
         irhovel_d_interf = ghost_layout.get_field_idx<Tvec>("rhovel_dust");
+    }
+
+    if (solver_config.is_gravity_on()) {
+        iphi_interf = ghost_layout.get_field_idx<Tscal>("phi");
+    }
+
+    if (solver_config.is_gas_passive_scalar_on()) {
+        irho_gas_pscal_interf = ghost_layout.get_field_idx<Tscal>("rho_gas_pscal");
     }
 
     // load layout info
@@ -349,10 +368,18 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
     const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
 
-    u32 irho_d, irhovel_d;
+    u32 irho_d, irhovel_d, iphi, irho_gas_pscal;
     if (solver_config.is_dust_on()) {
         irho_d    = pdl.get_field_idx<Tscal>("rho_dust");
         irhovel_d = pdl.get_field_idx<Tvec>("rhovel_dust");
+    }
+
+    if (solver_config.is_gravity_on()) {
+        iphi = pdl.get_field_idx<Tscal>("phi");
+    }
+
+    if (solver_config.is_gas_passive_scalar_on()) {
+        irho_gas_pscal = pdl.get_field_idx<Tscal>("rho_gas_pscal");
     }
 
     // generate send buffers
@@ -388,6 +415,15 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
                     buf_idx, cnt, pdat.get_field<Tvec>(irhovel_d_interf));
             }
 
+            if (solver_config.is_gravity_on()) {
+                sender_patch.get_field<Tscal>(iphi).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(iphi_interf));
+            }
+
+            if (solver_config.is_gas_passive_scalar_on()) {
+                sender_patch.get_field<Tscal>(irho_gas_pscal)
+                    .append_subset_to(buf_idx, cnt, pdat.get_field<Tscal>(irho_gas_pscal_interf));
+            }
             pdat.check_field_obj_cnt_match();
 
             pdat.get_field<TgridVec>(icell_min_interf).apply_offset(binfo.offset);
@@ -408,7 +444,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     storage.merged_patchdata_ghost.set(merge_native<PatchData, MergedPatchData>(
         std::move(interf_pdat),
         [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
-            logger::debug_ln("Merged patch init", p.id_patch);
+            shamlog_debug_ln("Merged patch init", p.id_patch);
 
             PatchData pdat_new(ghost_layout);
 
@@ -429,6 +465,15 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
                 pdat_new.get_field<Tvec>(irhovel_d_interf).insert(pdat.get_field<Tvec>(irhovel_d));
             }
 
+            if (solver_config.is_gravity_on()) {
+                pdat_new.get_field<Tscal>(iphi_interf).insert(pdat.get_field<Tscal>(iphi));
+            }
+
+            if (solver_config.is_gas_passive_scalar_on()) {
+                pdat_new.get_field<Tscal>(irho_gas_pscal_interf)
+                    .insert(pdat.get_field<Tscal>(irho_gas_pscal));
+            }
+
             pdat_new.check_field_obj_cnt_match();
 
             return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
@@ -439,7 +484,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         }));
 
     storage.merged_patchdata_ghost.get().for_each([](u64 id, shamrock::MergedPatchData &mpdat) {
-        logger::debug_ln(
+        shamlog_debug_ln(
             "Merged patch", id, ",", mpdat.original_elements, "->", mpdat.total_elements);
     });
 
@@ -451,11 +496,38 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     { // set element counts
         using MergedPDat = shamrock::MergedPatchData;
 
+        shambase::get_check_ref(storage.block_counts).indexes
+            = storage.merged_patchdata_ghost.get().template map<u32>(
+                [&](u64 id, MergedPDat &mpdat) {
+                    return mpdat.original_elements;
+                });
+    }
+
+    { // set element counts
+        using MergedPDat = shamrock::MergedPatchData;
+
         shambase::get_check_ref(storage.block_counts_with_ghost).indexes
             = storage.merged_patchdata_ghost.get().template map<u32>(
                 [&](u64 id, MergedPDat &mpdat) {
                     return mpdat.total_elements;
                 });
+    }
+
+    { // Attach spans to block coords
+        using MergedPDat = shamrock::MergedPatchData;
+        storage.refs_block_min->set_refs(
+            storage.merged_patchdata_ghost.get()
+                .template map<std::reference_wrapper<PatchDataField<TgridVec>>>(
+                    [&](u64 id, MergedPDat &mpdat) {
+                        return std::ref(mpdat.pdat.get_field<TgridVec>(0));
+                    }));
+
+        storage.refs_block_max->set_refs(
+            storage.merged_patchdata_ghost.get()
+                .template map<std::reference_wrapper<PatchDataField<TgridVec>>>(
+                    [&](u64 id, MergedPDat &mpdat) {
+                        return std::ref(mpdat.pdat.get_field<TgridVec>(1));
+                    }));
     }
 
     { // attach spans to gas field with ghosts

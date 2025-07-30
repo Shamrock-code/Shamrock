@@ -11,7 +11,8 @@
 
 /**
  * @file PatchData.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -158,6 +159,15 @@ namespace shamrock::patch {
          * @param len the length of the map
          */
         void index_remap_resize(sycl::buffer<u32> &index_map, u32 len);
+
+        /// Same as index_remap_resize with a shamrock device buffer instead
+        void index_remap_resize(sham::DeviceBuffer<u32> &index_map, u32 len);
+
+        /// Same as keep_ids with a shamrock device buffer instead
+        void keep_ids(sham::DeviceBuffer<u32> &index_map, u32 len);
+
+        /// remove some particles ids
+        void remove_ids(const sham::DeviceBuffer<u32> &indexes, u32 len);
 
         // template<class Tvecbox>
         // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &
@@ -445,7 +455,7 @@ namespace shamrock::patch {
             auto appender = [&](auto &field) {
                 if (field.get_name() == key) {
 
-                    logger::debug_ln("PyShamrockCTX", "appending field", key);
+                    shamlog_debug_ln("PyShamrockCTX", "appending field", key);
 
                     if (!field.is_empty()) {
                         auto acc = field.get_buf().copy_to_stdvec();
@@ -495,7 +505,7 @@ namespace shamrock::patch {
 
         std::vector<u32> idx_lst = get_vec_idx(bmin, bmax);
 
-        logger::debug_sycl_ln("PatchData", "inserting element cnt =", idx_lst.size());
+        shamlog_debug_sycl_ln("PatchData", "inserting element cnt =", idx_lst.size());
 
         pdat.append_subset_to(idx_lst, *this);
     }

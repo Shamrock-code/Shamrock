@@ -9,7 +9,7 @@
 
 /**
  * @file ShamrockDump.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -87,7 +87,7 @@ namespace shamrock {
         shamalgs::collective::write_header(mfile, metadata_patch, head_ptr);
         shamalgs::collective::write_header(mfile, sout, head_ptr);
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "ShamrockDump",
             shambase::format(
                 "table sizes {} {} {}", metadata_patch.size(), metadata_user.size(), sout.size()));

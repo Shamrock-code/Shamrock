@@ -9,7 +9,7 @@
 
 /**
  * @file ComputeCFL.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -56,7 +56,11 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
         sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.block_cell_sizes)
+                  .get_refs()
+                  .get(cur_p.id_patch)
+                  .get()
+                  .get_buf();
 
         sham::EventList depends_list;
         auto cfl_dt        = cfl_dt_buf.get_write_access(depends_list);
@@ -73,7 +77,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
             Tscal one_over_Nside = 1. / AMRBlock::Nside;
 
             Tscal dxfact = solver_config.grid_coord_to_pos_fact;
-            shambase::parralel_for(cgh, cell_count, "compute_cfl", [=](u64 gid) {
+            shambase::parallel_for(cgh, cell_count, "compute_cfl", [=](u64 gid) {
                 const u32 cell_global_id = (u32) gid;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
@@ -110,7 +114,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
     Tscal rank_dt = cfl_dt.compute_rank_min();
 
-    logger::debug_ln("basegodunov", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt);
+    shamlog_debug_ln("basegodunov", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt);
 
     Tscal next_cfl = shamalgs::collective::allreduce_min(rank_dt);
 
@@ -154,7 +158,11 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
         sham::DeviceBuffer<Tscal> &dust_cfl_dt_buf = dust_cfl_dt.get_buf_check(cur_p.id_patch);
 
         sham::DeviceBuffer<Tscal> &block_cell_sizes
-            = storage.cell_infos.get().block_cell_sizes.get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.block_cell_sizes)
+                  .get_refs()
+                  .get(cur_p.id_patch)
+                  .get()
+                  .get_buf();
 
         sham::EventList depends_list;
         auto dust_cfl_dt        = dust_cfl_dt_buf.get_write_access(depends_list);
@@ -165,7 +173,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal C_safe = solver_config.Csafe;
 
-            shambase::parralel_for(cgh, ndust * cell_count, "compute_dust_cfl", [=](u64 gid) {
+            shambase::parallel_for(cgh, ndust * cell_count, "compute_dust_cfl", [=](u64 gid) {
                 const u32 tmp_gid        = (u32) gid;
                 const u32 cell_global_id = tmp_gid / ndust;
                 const u32 ndust_off_loc  = tmp_gid % ndust;
@@ -197,7 +205,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
 
     Tscal rank_dust_dt = dust_cfl_dt.compute_rank_min();
 
-    logger::debug_ln(
+    shamlog_debug_ln(
         "basegodunov", "rank", shamcomm::world_rank(), "found dust cfl dt =", rank_dust_dt);
 
     Tscal next_dust_cfl = shamalgs::collective::allreduce_min(rank_dust_dt);

@@ -40,7 +40,7 @@ Also when shamrock (or the tests) starts if MPI is CUDA aware during startup it 
 ```
 -----------------------------------------------------
 MPI status :
- - MPI & SYCL init : Ok
+ - MPI & SYCL init: Ok
  - MPI CUDA-AWARE : Yes
  - MPI ROCM-AWARE : Unknown
  - MPI use Direct Comm : Yes

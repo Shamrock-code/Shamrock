@@ -55,7 +55,7 @@ namespace shambase {
         /**
          * @brief Read the next 4 bytes from the buffer.
          *
-         * In Fortran every write call produce 4 bte specifying the lenght of the write followed by
+         * In Fortran every write call produce 4 bte specifying the length of the write followed by
          * the same 4 bytes. We can check them here to verify that we are reading the file
          * correctly.
          *
@@ -73,7 +73,7 @@ namespace shambase {
         std::basic_stringstream<byte> data;
 
         /// Lenght of the data stream
-        u64 lenght;
+        u64 length;
 
         /**
          * @brief Write a value to the buffer
@@ -136,10 +136,10 @@ namespace shambase {
          * @brief Construct a new FortranIOFile object
          *
          * @param[in] data_in The input buffer to be used for reading and writing
-         * @param[in] lenght The lenght of the input buffer
+         * @param[in] length The length of the input buffer
          */
-        explicit FortranIOFile(std::basic_stringstream<byte> &&data_in, u64 lenght)
-            : data(std::forward<std::basic_stringstream<byte>>(data_in)), lenght(lenght) {
+        explicit FortranIOFile(std::basic_stringstream<byte> &&data_in, u64 length)
+            : data(std::forward<std::basic_stringstream<byte>>(data_in)), length(length) {
 
             // Set the internal buffer to the beginning of the buffer
             data.seekg(0);
@@ -363,7 +363,7 @@ namespace shambase {
          *
          * @return true if the end of the file has been reached
          */
-        inline bool finished_read() { return lenght == data.tellg(); }
+        inline bool finished_read() { return length == data.tellg(); }
 
         /**
          * @brief Write the Fortran formatted file to disk.

@@ -11,7 +11,8 @@
 
 /**
  * @file SPHSetup.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -22,6 +23,7 @@
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <memory>
 
 namespace shammodels::sph::modules {
 
@@ -68,8 +70,16 @@ namespace shammodels::sph::modules {
         std::shared_ptr<ISPHSetupNode> make_modifier_warp_disc(
             SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination, Tscal posangle);
 
+        std::shared_ptr<ISPHSetupNode>
+        make_modifier_add_offset(SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity);
+
+        std::shared_ptr<ISPHSetupNode>
+        make_modifier_filter(SetupNodePtr parent, std::function<bool(Tvec)> filter);
+
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+
+        u64 injected_parts = 0;
     };
 
 } // namespace shammodels::sph::modules

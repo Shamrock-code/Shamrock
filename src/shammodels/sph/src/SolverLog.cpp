@@ -9,7 +9,7 @@
 
 /**
  * @file SolverLog.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -27,11 +27,13 @@ f64 shammodels::sph::SolverLog::get_last_rate() {
 
     u64 last_id = step_logs.size() - 1;
 
-    f64 rate_loc = step_logs[last_id].rate;
+    u64 obj_loc  = step_logs[last_id].rank_count;
+    f64 time_loc = step_logs[last_id].elasped_sec;
 
-    f64 rate_tot = shamalgs::collective::allreduce_sum(rate_loc);
+    u64 obj_total = shamalgs::collective::allreduce_sum(obj_loc);
+    f64 max_t     = shamalgs::collective::allreduce_max(time_loc);
 
-    return rate_tot;
+    return f64(obj_total) / max_t;
 }
 
 u64 shammodels::sph::SolverLog::get_last_obj_count() {

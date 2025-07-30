@@ -11,19 +11,35 @@
 
 /**
  * @file sparseXchg.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
+#include "shambase/assert.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
+#include "shambase/time.hpp"
 #include "shamalgs/collective/exchanges.hpp"
+#include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
+#include "shamcomm/collectives.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
+#include "shamcomm/worldInfo.hpp"
+#include "shamcomm/wrapper.hpp"
+#include <string_view>
+#include <functional>
+#include <mpi.h>
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <vector>
 
 namespace shamalgs::collective {
 
@@ -56,82 +72,33 @@ namespace shamalgs::collective {
         }
     };
 
+    void sparse_comm_debug_infos(
+        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::vector<SendPayload> &message_send,
+        std::vector<RecvPayload> &message_recv,
+        const SparseCommTable &comm_table);
+
+    void sparse_comm_isend_probe_count_irecv(
+        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::vector<SendPayload> &message_send,
+        std::vector<RecvPayload> &message_recv,
+        const SparseCommTable &comm_table);
+
+    void sparse_comm_allgather_isend_irecv(
+        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::vector<SendPayload> &message_send,
+        std::vector<RecvPayload> &message_recv,
+        const SparseCommTable &comm_table);
+
     inline void sparse_comm_c(
         std::shared_ptr<sham::DeviceScheduler> dev_sched,
         const std::vector<SendPayload> &message_send,
         std::vector<RecvPayload> &message_recv,
         const SparseCommTable &comm_table) {
-        StackEntry stack_loc{};
-
-        // share comm list accros nodes
-        const std::vector<u64> &send_vec_comm_ranks = comm_table.local_send_vec_comm_ranks;
-        const std::vector<u64> &global_comm_ranks   = comm_table.global_comm_ranks;
-
-        // note the tag cannot be bigger than max_i32 because of the allgatherv
-
-        std::vector<MPI_Request> rqs;
-
-        // send step
-        u32 send_idx = 0;
-        for (u32 i = 0; i < global_comm_ranks.size(); i++) {
-            u32_2 comm_ranks = sham::unpack32(global_comm_ranks[i]);
-
-            if (comm_ranks.x() == shamcomm::world_rank()) {
-
-                auto &payload = message_send[send_idx].payload;
-
-                rqs.push_back(MPI_Request{});
-                u32 rq_index = rqs.size() - 1;
-                auto &rq     = rqs[rq_index];
-
-                MPICHECK(MPI_Isend(
-                    payload->get_ptr(),
-                    payload->get_bytesize(),
-                    MPI_BYTE,
-                    comm_ranks.y(),
-                    i,
-                    MPI_COMM_WORLD,
-                    &rq));
-
-                send_idx++;
-            }
-        }
-
-        // recv step
-        for (u32 i = 0; i < global_comm_ranks.size(); i++) {
-            u32_2 comm_ranks = sham::unpack32(global_comm_ranks[i]);
-
-            if (comm_ranks.y() == shamcomm::world_rank()) {
-
-                RecvPayload payload;
-                payload.sender_ranks = comm_ranks.x();
-
-                rqs.push_back(MPI_Request{});
-                u32 rq_index = rqs.size() - 1;
-                auto &rq     = rqs[rq_index];
-
-                MPI_Status st;
-                i32 cnt;
-                MPICHECK(MPI_Probe(comm_ranks.x(), i, MPI_COMM_WORLD, &st));
-                MPICHECK(MPI_Get_count(&st, MPI_BYTE, &cnt));
-
-                payload.payload = std::make_unique<shamcomm::CommunicationBuffer>(cnt, dev_sched);
-
-                MPICHECK(MPI_Irecv(
-                    payload.payload->get_ptr(),
-                    cnt,
-                    MPI_BYTE,
-                    comm_ranks.x(),
-                    i,
-                    MPI_COMM_WORLD,
-                    &rq));
-
-                message_recv.push_back(std::move(payload));
-            }
-        }
-
-        std::vector<MPI_Status> st_lst(rqs.size());
-        MPICHECK(MPI_Waitall(rqs.size(), rqs.data(), st_lst.data()));
+        // sparse_comm_debug_infos(dev_sched, message_send, message_recv, comm_table);
+        //    sparse_comm_isend_probe_count_irecv(dev_sched, message_send, message_recv,
+        //    comm_table);
+        sparse_comm_allgather_isend_irecv(dev_sched, message_send, message_recv, comm_table);
     }
 
     inline void base_sparse_comm(
@@ -145,6 +112,46 @@ namespace shamalgs::collective {
         comm_table.build(message_send);
 
         sparse_comm_c(dev_sched, message_send, message_recv, comm_table);
+    }
+
+    inline void base_sparse_comm_max_comm(
+        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        std::vector<SendPayload> &message_send,
+        std::vector<RecvPayload> &message_recv,
+        u32 max_simultaneous_send) {
+
+        int send_loc = message_send.size();
+        int send_max_count;
+        shamcomm::mpi::Allreduce(&send_loc, &send_max_count, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+        // logger::raw_ln(send_loc, send_max_count);
+
+        StackEntry stack_loc{};
+
+        int i = 0;
+        while (i < send_max_count) {
+
+            if (i > 0) {
+                ON_RANK_0(
+                    logger::warn_ln("SparseComm", "Splitted sparse comm", i, "/", send_max_count));
+            }
+
+            std::vector<SendPayload> message_send_tmp;
+            std::vector<RecvPayload> message_recv_tmp;
+
+            for (int j = i; (j < (i + max_simultaneous_send)) && (j < message_send.size()); j++) {
+                // logger::raw_ln("emplace message", j);
+                message_send_tmp.emplace_back(std::move(message_send[j]));
+            }
+
+            base_sparse_comm(dev_sched, message_send_tmp, message_recv_tmp);
+
+            for (int j = 0; j < message_recv_tmp.size(); j++) {
+                message_recv.emplace_back(std::move(message_recv_tmp[j]));
+            }
+
+            i += max_simultaneous_send;
+        }
     }
 
 } // namespace shamalgs::collective

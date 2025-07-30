@@ -9,7 +9,7 @@
 
 /**
  * @file pyAMRZeusModel.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -31,8 +31,8 @@ namespace shammodels::zeus {
         using TConfig          = typename T::Solver::Config;
         using TAnalysisSodTube = shammodels::zeus::modules::AnalysisSodTube<Tvec, TgridVec>;
 
-        logger::debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
-        logger::debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
+        shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
+        shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
         py::class_<TConfig>(m, name_config.c_str())
             .def(

@@ -19,9 +19,13 @@ set(Sources
     src/SPHUtilities.cpp
     src/SolverLog.cpp
     src/io/PhantomDump.cpp
+    src/io/Phantom2Shamrock.cpp
+    src/io/PhantomDumpEOSUtils.cpp
     src/SolverConfig.cpp
     src/pySPHModel.cpp
     src/pyPhantomDump.cpp
+
+    src/modules/AnalysisBarycenter.cpp
 
     src/modules/SolverStorage.cpp
     src/modules/BuildTrees.cpp
@@ -39,9 +43,13 @@ set(Sources
     src/modules/ParticleReordering.cpp
     src/modules/AnalysisSodTube.cpp
     src/modules/SPHSetup.cpp
+    src/modules/KillParticles.cpp
+    src/modules/GetParticlesOutsideSphere.cpp
 
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
+    src/modules/setup/ModifierOffset.cpp
+    src/modules/setup/ModifierFilter.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
 

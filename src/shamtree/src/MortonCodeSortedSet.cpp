@@ -9,7 +9,7 @@
 
 /**
  * @file MortonCodeSortedSet.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -72,3 +72,12 @@ template shamtree::MortonCodeSortedSet<u32, f64_3, 3> shamtree::sort_morton_set<
 template shamtree::MortonCodeSortedSet<u64, f64_3, 3> shamtree::sort_morton_set<u64, f64_3, 3>(
     const sham::DeviceScheduler_ptr &dev_sched,
     shamtree::MortonCodeSet<u64, f64_3, 3> &&morton_codes_set);
+
+template shamtree::MortonCodeSortedSet<u32, f64_3, 3> shamtree::sort_morton_set<u32, f64_3, 3>(
+    const sham::DeviceScheduler_ptr &dev_sched,
+    shamtree::MortonCodeSet<u32, f64_3, 3> &&morton_codes_set,
+    sham::DeviceBuffer<u32> &&cached_map_morton_id_to_obj_id);
+template shamtree::MortonCodeSortedSet<u64, f64_3, 3> shamtree::sort_morton_set<u64, f64_3, 3>(
+    const sham::DeviceScheduler_ptr &dev_sched,
+    shamtree::MortonCodeSet<u64, f64_3, 3> &&morton_codes_set,
+    sham::DeviceBuffer<u32> &&cached_map_morton_id_to_obj_id);

@@ -9,7 +9,7 @@
 
 /**
  * @file DiffOperatorDtDivv.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -30,7 +30,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
     StackEntry stack_loc{};
 
-    logger::debug_ln("SPH", "Updating dt divv");
+    shamlog_debug_ln("SPH", "Updating dt divv");
 
     Tscal gpart_mass = solver_config.gpart_mass;
 
@@ -76,7 +76,8 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -102,7 +103,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute dtdivv", [=](i32 id_a) {
+                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute dtdivv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
                     Tvec sum_axyz  = ZVEC;
@@ -227,7 +228,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(
+                shambase::parallel_for(
                     cgh, pdat.get_obj_cnt(), "compute dtdivv + divcurl v", [=](i32 id_a) {
                         using namespace shamrock::sph;
 

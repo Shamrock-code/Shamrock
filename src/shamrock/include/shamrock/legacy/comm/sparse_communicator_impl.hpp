@@ -11,7 +11,7 @@
 
 /**
  * @file sparse_communicator_impl.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -32,7 +32,7 @@ namespace impl {
         i32 tag,
         MPI_Comm comm) {
         rq_lst.resize(rq_lst.size() + 1);
-        mpi::isend(
+        shamcomm::mpi::Isend(
             p.data(),
             p.size(),
             get_mpi_type<T>(),
@@ -51,11 +51,11 @@ namespace impl {
         MPI_Comm comm) {
         MPI_Status st;
         i32 cnt;
-        int i = mpi::probe(rank_source, tag, comm, &st);
-        mpi::get_count(&st, get_mpi_type<T>(), &cnt);
+        int i = shamcomm::mpi::Probe(rank_source, tag, comm, &st);
+        shamcomm::mpi::Get_count(&st, get_mpi_type<T>(), &cnt);
         rq_lst.resize(rq_lst.size() + 1);
         pdat.resize(cnt);
-        mpi::irecv(
+        shamcomm::mpi::Irecv(
             pdat.data(),
             cnt,
             get_mpi_type<T>(),

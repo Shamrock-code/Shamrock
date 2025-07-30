@@ -11,7 +11,7 @@
 
 /**
  * @file DeviceBuffer.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -38,13 +38,36 @@ namespace sham {
     template<class T, USMKindTarget target = device>
     class DeviceBuffer {
 
+        /**
+         * @brief Upgrade the size to the next multiple of mult
+         *
+         * This function takes a size in bytes and a multiple, and returns the
+         * next multiple of the given multiple.
+         *
+         * @param sz The size in bytes
+         * @param mult The multiple
+         * @return The upgraded size
+         */
+        static size_t upgrade_multiple(size_t sz, size_t mult) {
+            if (sz % mult)
+                return sz + (mult - sz % mult);
+            return sz;
+        };
+
         public:
         /**
          * @brief Get the memory alignment of the type T in bytes
          *
          * @return The memory alignment of the type T in bytes
          */
-        static std::optional<size_t> get_alignment() { return alignof(T); }
+        static std::optional<size_t> get_alignment(DeviceScheduler_ptr dev_sched) {
+            return upgrade_multiple(
+                alignof(T),
+                shambase::get_check_ref(dev_sched)
+                    .get_queue()
+                    .get_device_prop()
+                    .mem_base_addr_align);
+        }
 
         /**
          * @brief Convert a size in number of elements to a size in bytes
@@ -52,16 +75,10 @@ namespace sham {
          * @param sz The size in number of elements
          * @return The size in bytes
          */
-        static size_t to_bytesize(size_t sz) {
+        static size_t alloc_request_size_fct(size_t sz, DeviceScheduler_ptr dev_sched) {
             size_t ret = sz * sizeof(T);
 
-            auto upgrade_multiple = [](size_t sz, size_t mult) -> size_t {
-                if (sz % mult)
-                    return sz + (mult - sz % mult);
-                return sz;
-            };
-
-            auto align = get_alignment();
+            auto align = get_alignment(dev_sched);
             if (align) {
                 ret = upgrade_multiple(ret, *align);
             }
@@ -97,10 +114,12 @@ namespace sham {
          * BufferEventHandler object and stores it in the `events_hndl` member
          * variable.
          */
-        DeviceBuffer(size_t sz, std::shared_ptr<DeviceScheduler> dev_sched)
+        DeviceBuffer(size_t sz, DeviceScheduler_ptr dev_sched)
             : DeviceBuffer(
                   sz,
-                  details::create_usm_ptr<target>(to_bytesize(sz), dev_sched, get_alignment())) {}
+                  details::create_usm_ptr<target>(
+                      alloc_request_size_fct(sz, dev_sched), dev_sched, get_alignment(dev_sched))) {
+        }
 
         /**
          * @brief Construct a new Device Buffer object from a SYCL buffer
@@ -267,6 +286,11 @@ namespace sham {
          * This function complete the event state of the buffer by registering the
          * event resulting of the last queried access
          *
+         * @note This function is const compatible.
+         *
+         * @warning This function must be called on ALL accessed buffers after a kernel
+         * to ensure that the state of the event handlers are up to date.
+         *
          * @param e The SYCL event resulting of the queried access.
          */
         void complete_event_state(sycl::event e) const {
@@ -279,6 +303,11 @@ namespace sham {
          * This function complete the event state of the buffer by registering the
          * event resulting of the last queried access
          *
+         * @note This function is const compatible.
+         *
+         * @warning This function must be called on ALL accessed buffers after a kernel
+         * to ensure that the state of the event handlers are up to date.
+         *
          * @param e The SYCL event resulting of the queried access.
          */
         void complete_event_state(const std::vector<sycl::event> &e) const {
@@ -290,6 +319,11 @@ namespace sham {
          *
          * This function complete the event state of the buffer by registering the
          * event resulting of the last queried access
+         *
+         * @note This function is const compatible.
+         *
+         * @warning This function must be called on ALL accessed buffers after a kernel
+         * to ensure that the state of the event handlers are up to date.
          *
          * @param e The SYCL event resulting of the queried access.
          */
@@ -368,13 +402,6 @@ namespace sham {
          * @return The number of elements in the buffer
          */
         [[nodiscard]] inline size_t get_size() const { return size; }
-
-        /**
-         * @brief Gets the size of the buffer in bytes
-         *
-         * @return The size of the buffer in bytes
-         */
-        [[nodiscard]] inline size_t get_bytesize() const { return to_bytesize(get_size()); }
 
         /**
          * @brief Gets the amount of memory used by the buffer
@@ -623,7 +650,7 @@ namespace sham {
                 sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
                     sycl::accessor acc(buf, cgh, sycl::read_only);
 
-                    shambase::parralel_for(cgh, sz, "copy field", [=](u32 gid) {
+                    shambase::parallel_for(cgh, sz, "copy field", [=](u32 gid) {
                         ptr[gid] = acc[gid];
                     });
                 });
@@ -783,7 +810,7 @@ namespace sham {
 
             sycl::event e1 = get_queue().submit(
                 depends_list, [&, ptr, value, start_index, idx_count](sycl::handler &cgh) {
-                    shambase::parralel_for(cgh, idx_count, "fill field", [=](u32 gid) {
+                    shambase::parallel_for(cgh, idx_count, "fill field", [=](u32 gid) {
                         ptr[start_index + gid] = value;
                     });
                 });
@@ -832,8 +859,44 @@ namespace sham {
          * @param idx The index of the value to retrieve
          * @return The value at the given index
          */
-        T get_val_at_idx(size_t idx) const { return copy_to_stdvec_idx_range(idx, idx + 1)[0]; }
+        T get_val_at_idx(size_t idx) const {
+            T ret;
 
+            if (idx >= size) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "set_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+            }
+
+            sham::EventList depends_list;
+            const T *ptr = get_read_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr + idx, &ret, 1);
+            });
+
+            e.wait_and_throw();
+            complete_event_state(sycl::event{});
+
+            return ret;
+        }
+
+        void set_val_at_idx(size_t idx, T val) {
+
+            if (idx >= size) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "set_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+            }
+
+            sham::EventList depends_list;
+            T *ptr = get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(&val, ptr + idx, 1);
+            });
+
+            e.wait_and_throw();
+            complete_event_state(sycl::event{});
+        }
         ///////////////////////////////////////////////////////////////////////
         // Getter fcts (END)
         ///////////////////////////////////////////////////////////////////////
@@ -851,17 +914,19 @@ namespace sham {
          */
         inline void resize(u32 new_size) {
 
+            auto dev_sched = hold.get_dev_scheduler_ptr();
+
             StackEntry __st{};
 
-            if (to_bytesize(new_size) > hold.get_bytesize()) {
+            if (alloc_request_size_fct(new_size, dev_sched) > hold.get_bytesize()) {
                 // expand storage
 
-                size_t new_storage_size = to_bytesize(new_size * 1.5);
+                size_t new_storage_size = alloc_request_size_fct(new_size * 1.5, dev_sched);
 
                 DeviceBuffer new_buf(
                     new_size,
                     details::create_usm_ptr<target>(
-                        new_storage_size, get_dev_scheduler_ptr(), get_alignment()));
+                        new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
                 new_buf.copy_from(*this, get_size());
@@ -869,15 +934,15 @@ namespace sham {
                 // override old buffer
                 std::swap(new_buf, *this);
 
-            } else if (to_bytesize(new_size) < hold.get_bytesize() * 0.5) {
+            } else if (alloc_request_size_fct(new_size, dev_sched) < hold.get_bytesize() * 0.5) {
                 // shrink storage
 
-                size_t new_storage_size = to_bytesize(new_size);
+                size_t new_storage_size = alloc_request_size_fct(new_size, dev_sched);
 
                 DeviceBuffer new_buf(
                     new_size,
                     details::create_usm_ptr<target>(
-                        new_storage_size, get_dev_scheduler_ptr(), get_alignment()));
+                        new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
                 new_buf.copy_from(*this, new_size);
@@ -917,6 +982,41 @@ namespace sham {
                     get_size()));
             }
             resize(get_size() - sub_sz);
+        }
+
+        /**
+         * @brief Append the content of another buffer to this one.
+         *
+         * This function appends the content of another buffer to this one. The content of the other
+         * buffer is copied into this buffer, and the size of this buffer is increased by the size
+         * of the other buffer.
+         *
+         * @param other The buffer from which to copy the data.
+         */
+        inline void append(const DeviceBuffer &other) {
+            if (this == &other) {
+                shambase::throw_with_loc<std::invalid_argument>("cannot append a buffer to itself");
+            }
+
+            u32 other_size = other.get_size();
+            if (other_size == 0) {
+                return; // early exit if the other buffer is empty
+            }
+            u32 old_size = get_size();
+
+            // allocate space
+            expand(other_size);
+
+            sham::EventList depends_list;
+            T *ptr             = get_write_access(depends_list);
+            const T *other_ptr = other.get_read_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(other_ptr, ptr + old_size, other_size);
+            });
+
+            complete_event_state(e);
+            other.complete_event_state(e);
         }
 
         ///////////////////////////////////////////////////////////////////////

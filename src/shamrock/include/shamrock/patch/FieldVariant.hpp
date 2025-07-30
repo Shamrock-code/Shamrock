@@ -11,7 +11,7 @@
 
 /**
  * @file FieldVariant.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Field variant object to instanciate a variant on the patch types
  * @date 2023-07-31
  */
@@ -48,7 +48,8 @@ namespace shamrock::patch {
             Container<u64>,
             Container<u32_3>,
             Container<u64_3>,
-            Container<i64_3>>;
+            Container<i64_3>,
+            Container<i64>>;
 
         var_t_template value; /*!< The held variant */
 

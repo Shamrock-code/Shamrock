@@ -96,7 +96,7 @@ QueueEvent sub_func(QueueEvent &e, u32 *ptr) {
         }); // End of the kernel function
     });
 
-    logger::debug_ln("TEST", "return sub_func");
+    shamlog_debug_ln("TEST", "return sub_func");
 
     return e2;
 }
@@ -105,23 +105,23 @@ TestStart(ValidationTest, "test-usm-event-arch", usm_event_test, 1) {
 
     sycl::queue &q = shamsys::instance::get_compute_queue();
 
-    logger::debug_ln("TEST", "alloc 1");
+    shamlog_debug_ln("TEST", "alloc 1");
     u32 *ptr1 = sycl::malloc_device<u32>(100, q);
 
-    logger::debug_ln("TEST", "alloc 2");
+    shamlog_debug_ln("TEST", "alloc 2");
     u32 *ptr2 = sycl::malloc_device<u32>(100, q);
 
     QueueEvent e1, e2;
 
-    logger::debug_ln("TEST", "sub_func 1");
+    shamlog_debug_ln("TEST", "sub_func 1");
     QueueEvent e3 = sub_func(e1, ptr1);
-    logger::debug_ln("TEST", "sub_func 2");
+    shamlog_debug_ln("TEST", "sub_func 2");
     QueueEvent e4 = sub_func(e2, ptr2);
 
-    logger::debug_ln("TEST", "alloc 3");
+    shamlog_debug_ln("TEST", "alloc 3");
     u32 *ptr3 = sycl::malloc_device<u32>(100, q);
 
-    logger::debug_ln("TEST", "ker2");
+    shamlog_debug_ln("TEST", "ker2");
     QueueEvent e5 = q.submit([&, ptr1, ptr2, ptr3](sycl::handler &cgh) {
         cgh.depends_on({e3, e4});
 
@@ -130,7 +130,7 @@ TestStart(ValidationTest, "test-usm-event-arch", usm_event_test, 1) {
         });
     });
 
-    logger::debug_ln("TEST", "recover");
+    shamlog_debug_ln("TEST", "recover");
     std::array<u32, 100> recov;
     q.submit([&, ptr3](sycl::handler &cgh) {
          cgh.depends_on(e5);

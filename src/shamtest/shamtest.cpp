@@ -9,7 +9,7 @@
 
 /**
  * @file shamtest.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -17,12 +17,12 @@
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "shambase/term_colors.hpp"
 #include "shambase/time.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/ci_env.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"

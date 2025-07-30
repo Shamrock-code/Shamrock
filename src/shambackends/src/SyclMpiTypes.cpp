@@ -9,7 +9,7 @@
 
 /**
  * @file SyclMpiTypes.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -52,7 +52,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
         MPICHECK(MPI_Type_create_struct(                                                           \
             1, &__len_vec2, &offset_##base_name, &mpi_type_##src_type, &mpi_type_##base_name));    \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
-        logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
+        shamlog_debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
     }
 
 #define __SYCL_TYPE_COMMIT_len3(base_name, src_type)                                               \
@@ -68,7 +68,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
         MPICHECK(MPI_Type_create_resized(                                                          \
             __tmp_mpi_type_##base_name, 0, sizeof(base_name), &mpi_type_##base_name));             \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
-        logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
+        shamlog_debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
     }
 
 #define __SYCL_TYPE_COMMIT_len4(base_name, src_type)                                               \
@@ -78,7 +78,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
         MPICHECK(MPI_Type_create_struct(                                                           \
             1, &__len_vec4, &offset_##base_name, &mpi_type_##src_type, &mpi_type_##base_name));    \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
-        logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
+        shamlog_debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
     }
 
 #define __SYCL_TYPE_COMMIT_len8(base_name, src_type)                                               \
@@ -88,7 +88,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
         MPICHECK(MPI_Type_create_struct(                                                           \
             1, &__len_vec8, &offset_##base_name, &mpi_type_##src_type, &mpi_type_##base_name));    \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
-        logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
+        shamlog_debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
     }
 
 #define __SYCL_TYPE_COMMIT_len16(base_name, src_type)                                              \
@@ -98,7 +98,7 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
         MPICHECK(MPI_Type_create_struct(                                                           \
             1, &__len_vec16, &offset_##base_name, &mpi_type_##src_type, &mpi_type_##base_name));   \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
-        logger::debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
+        shamlog_debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
     }
 
 // TODO check mpi errors

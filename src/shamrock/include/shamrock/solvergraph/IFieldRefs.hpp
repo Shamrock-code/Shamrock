@@ -11,7 +11,7 @@
 
 /**
  * @file IFieldRefs.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -48,6 +48,9 @@ namespace shamrock::solvergraph {
 
         /// Const variant of get_refs
         virtual const DDPatchDataFieldRef<T> &get_refs() const = 0;
+
+        /// Get the underlying PatchDataField at the given id
+        inline PatchDataField<T> &get_field(u64 id) const { return get_refs().get(id).get(); }
     };
 
 } // namespace shamrock::solvergraph

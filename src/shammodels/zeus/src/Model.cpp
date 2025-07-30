@@ -9,7 +9,7 @@
 
 /**
  * @file Model.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -83,7 +83,7 @@ void shammodels::zeus::Model<Tvec, TgridVec>::dump_vtk(std::string filename) {
 
         using Block = typename Solver::AMRBlock;
 
-        shambase::parralel_for(cgh, num_obj, "rescale cells", [=](u64 id_a) {
+        shambase::parallel_for(cgh, num_obj, "rescale cells", [=](u64 id_a) {
             Tvec block_min = acc_p1[id_a].template convert<Tscal>();
             Tvec block_max = acc_p2[id_a].template convert<Tscal>();
 

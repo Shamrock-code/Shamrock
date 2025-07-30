@@ -11,7 +11,8 @@
 
 /**
  * @file PatchDataLayout.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -303,7 +304,7 @@ namespace shamrock::patch {
                 "add_field -> the name already exists");
         }
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "PatchDataLayout", "adding field :", field_name, nvar, "loc :", loc.format_one_line());
 
         fields.push_back(var_t{FieldDescriptor<T>(field_name, nvar)});

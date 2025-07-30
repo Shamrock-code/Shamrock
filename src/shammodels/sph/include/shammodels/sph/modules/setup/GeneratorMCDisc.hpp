@@ -11,7 +11,7 @@
 
 /**
  * @file GeneratorMCDisc.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -143,7 +143,7 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
           r_out(r_out), sigma_profile(sigma_profile), H_profile(H_profile),
           rot_profile(rot_profile), cs_profile(cs_profile), eng(eng), current_index(0) {
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "GeneratorMCDisc",
             "part_mass",
             part_mass,

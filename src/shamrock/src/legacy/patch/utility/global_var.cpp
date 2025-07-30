@@ -9,7 +9,7 @@
 
 /**
  * @file global_var.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -73,21 +73,21 @@ T int_reduce_val_mpi(T val_acc_loc);
 template<>
 f32 int_reduce_val_mpi<f32, GlobalVariableType::min>(f32 val_acc_loc) {
     f32 ret;
-    mpi::allreduce(&val_acc_loc, &ret, 1, mpi_type_f32, MPI_MIN, MPI_COMM_WORLD);
+    shamcomm::mpi::Allreduce(&val_acc_loc, &ret, 1, mpi_type_f32, MPI_MIN, MPI_COMM_WORLD);
     return ret;
 }
 
 template<>
 f32 int_reduce_val_mpi<f32, GlobalVariableType::max>(f32 val_acc_loc) {
     f32 ret;
-    mpi::allreduce(&val_acc_loc, &ret, 1, mpi_type_f32, MPI_MAX, MPI_COMM_WORLD);
+    shamcomm::mpi::Allreduce(&val_acc_loc, &ret, 1, mpi_type_f32, MPI_MAX, MPI_COMM_WORLD);
     return ret;
 }
 
 template<>
 f32 int_reduce_val_mpi<f32, GlobalVariableType::sum>(f32 val_acc_loc) {
     f32 ret;
-    mpi::allreduce(&val_acc_loc, &ret, 1, mpi_type_f32, MPI_SUM, MPI_COMM_WORLD);
+    shamcomm::mpi::Allreduce(&val_acc_loc, &ret, 1, mpi_type_f32, MPI_SUM, MPI_COMM_WORLD);
     return ret;
 }
 

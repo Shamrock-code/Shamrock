@@ -11,24 +11,17 @@
 
 /**
  * @file PhantomDump.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include "shambase/bytestream.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/fortran_io.hpp"
 #include "shambase/string.hpp"
-#include "shammodels/common/EOSConfig.hpp"
-#include "shammodels/sph/config/AVConfig.hpp"
-#include "shamsys/legacy/log.hpp"
-#include "shamunits/UnitSystem.hpp"
-#include <type_traits>
+#include <unordered_map>
 #include <array>
 #include <cstdlib>
-#include <fstream>
-#include <functional>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -84,7 +77,7 @@ namespace shammodels::sph {
          * @param s the name of the entry
          * @return the value of the entry
          */
-        inline std::optional<T> fetch(std::string s) {
+        inline std::optional<T> fetch(std::string s) const {
             std::optional<T> ret = {};
 
             for (auto [key, val] : entries) {
@@ -116,6 +109,13 @@ namespace shammodels::sph {
          * @brief Prints the state of the header.
          */
         void print_state();
+
+        template<class Tconv>
+        inline void add_to_map(std::unordered_map<std::string, Tconv> &map) {
+            for (auto [key, val] : entries) {
+                map[key] = val;
+            }
+        }
     };
 
     /**
@@ -433,7 +433,7 @@ namespace shammodels::sph {
          *
          * @return true if the string is found in any of the table headers, false otherwise
          */
-        inline bool has_header_entry(std::string s) {
+        inline bool has_header_entry(std::string s) const {
 
             s = shambase::format("{:16s}", s);
 
@@ -475,7 +475,7 @@ namespace shammodels::sph {
          * @throws std::runtime_error if the entry cannot be found in the table headers
          */
         template<class T>
-        inline T read_header_float(std::string s) {
+        inline T read_header_float(std::string s) const {
 
             s = shambase::format("{:16s}", s);
 
@@ -525,7 +525,7 @@ namespace shammodels::sph {
          * @throws std::runtime_error if the entry cannot be found in the table headers
          */
         template<class T>
-        inline T read_header_int(std::string s) {
+        inline T read_header_int(std::string s) const {
 
             s = shambase::format("{:16s}", s);
 
@@ -577,37 +577,7 @@ namespace shammodels::sph {
         void print_state();
     };
 
-    /**
-     * @brief Generate a Shamrock EOS configuration from a PhantomDump object.
-     *
-     * @param phdump Reference to the PhantomDump object.
-     * @param bypass_error Flag to bypass error handling.
-     *
-     * @return The EOS configuration corresponding to the given PhantomDump object.
-     *
-     * @throws std::runtime_error If an error occurs during configuration retrieval.
-     */
-    template<class Tvec>
-    EOSConfig<Tvec> get_shamrock_eosconfig(PhantomDump &phdump, bool bypass_error);
-
-    /**
-     * @brief Generate an Shamrock artificial viscosity configuration from a PhantomDump object.
-     *
-     * @param phdump Reference to the PhantomDump object.
-     *
-     * @return The artificial viscosity configuration corresponding to the given PhantomDump object.
-     */
-    template<class Tvec>
-    AVConfig<Tvec> get_shamrock_avconfig(PhantomDump &phdump);
-
-    /**
-     * @brief Get the shamrock units object
-     * \todo load also magfd
-     * @tparam Tscal
-     * @param phdump
-     * @return shamunits::UnitSystem<Tscal>
-     */
-    template<class Tscal>
-    shamunits::UnitSystem<Tscal> get_shamrock_units(PhantomDump &phdump);
+    /// Compare two phantom dumps and report offenses
+    bool compare_phantom_dumps(PhantomDump &dump1, PhantomDump &dump2);
 
 } // namespace shammodels::sph

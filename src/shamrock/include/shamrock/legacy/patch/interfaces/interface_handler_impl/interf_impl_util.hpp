@@ -11,7 +11,7 @@
 
 /**
  * @file interf_impl_util.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -143,7 +143,7 @@ namespace impl {
             const u64 &local_pcount  = gen.local_pcount;
             const u64 &global_pcount = gen.global_pcount;
 
-            logger::debug_sycl_ln(
+            shamlog_debug_sycl_ln(
                 "InterfaceFinder",
                 "searching interfaces offset=",
                 test_patch_offset,

@@ -11,7 +11,7 @@
 
 /**
  * @file TreeTraversalCache.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -108,7 +108,7 @@ namespace shamrock::tree {
                     offload_entry(last_id);
 
                     successfull_pop = true;
-                    logger::debug_ln(
+                    shamlog_debug_ln(
                         "ObjectCacheHandler",
                         "offloaded cache for id =",
                         last_id,
@@ -167,7 +167,7 @@ namespace shamrock::tree {
             }
 
             push_new(id, std::move(new_cache));
-            logger::debug_ln(
+            shamlog_debug_ln(
                 "ObjectCacheHandler",
                 "built cache for id =",
                 id,

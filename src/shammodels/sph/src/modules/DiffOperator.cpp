@@ -9,7 +9,7 @@
 
 /**
  * @file DiffOperator.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -24,7 +24,7 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
     StackEntry stack_loc{};
-    logger::debug_ln("SPH", "Updating divv");
+    shamlog_debug_ln("SPH", "Updating divv");
 
     Tscal gpart_mass = solver_config.gpart_mass;
 
@@ -57,7 +57,8 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -82,7 +83,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute divv", [=](i32 id_a) {
+                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute divv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
                     Tvec sum_axyz  = {0, 0, 0};
@@ -145,7 +146,7 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
     StackEntry stack_loc{};
-    logger::debug_ln("SPH", "Updating curlv");
+    shamlog_debug_ln("SPH", "Updating curlv");
 
     Tscal gpart_mass = solver_config.gpart_mass;
 
@@ -178,7 +179,8 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
-        tree::ObjectCache &pcache = storage.neighbors_cache.get().get_cache(cur_p.id_patch);
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
 
         /////////////////////////////////////////////
 
@@ -202,7 +204,7 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parralel_for(cgh, pdat.get_obj_cnt(), "compute curlv", [=](i32 id_a) {
+                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute curlv", [=](i32 id_a) {
                     using namespace shamrock::sph;
 
                     Tvec sum_axyz  = {0, 0, 0};

@@ -11,7 +11,7 @@
 
 /**
  * @file interface_handler_impl_tree.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -130,7 +130,7 @@ class Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pr
             sched.patch_list.global, std::move(send_vec));
         communicator->fetch_comm_table();
 
-        logger::debug_ln("Interfaces", "fetching comm table"); // TODO Add bandwith check
+        shamlog_debug_ln("Interfaces", "fetching comm table"); // TODO Add bandwidth check
     }
 
     [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
@@ -202,7 +202,7 @@ void Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pre
     const u64 local_pcount  = sched.patch_list.local.size();
     const u64 global_pcount = sched.patch_list.global.size();
 
-    logger::debug_ln("Interfacehandler", "computing interface list");
+    shamlog_debug_ln("Interfacehandler", "computing interface list");
 
     impl::generator::GeneratorBuffer<flt> gen{sched};
 
@@ -249,7 +249,7 @@ void Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pre
 
                     interf_send_map.push_back(std::move(tmp_push));
 
-                    logger::debug_sycl_ln(
+                    shamlog_debug_sycl_ln(
                         "Interfaces", "found : ", tmp.sender_patch_id, "->", tmp.receiver_patch_id);
                 }
             }
@@ -282,7 +282,7 @@ void Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pre
         append_interface({0, 0, 0});
     }
 
-    logger::debug_ln("Interfacehandler", "found", interf_send_map.size(), "interfaces");
+    shamlog_debug_ln("Interfacehandler", "found", interf_send_map.size(), "interfaces");
 
     // then cutted make trees
 
@@ -297,7 +297,7 @@ void Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pre
                           + rtree->tree_reduced_morton_codes.tree_leaf_count;
         sycl::range<1> range_tree{total_count};
 
-        logger::debug_sycl_ln("Radixtree", "computing valid node buf");
+        shamlog_debug_sycl_ln("Radixtree", "computing valid node buf");
 
         auto init_valid_buf_val_unrolled = [&](auto... copied_vals) -> sycl::buffer<u8> {
             sycl::buffer<u8> valid_node = sycl::buffer<u8>(total_count);
@@ -359,7 +359,7 @@ void Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pre
 
         auto buf = init_valid_buf_val_unrolled(get_val(args)...);
 
-        logger::debug_ln(
+        shamlog_debug_ln(
             "InterfaceHandler",
             "gen tree for interf :",
             comm.sender_patch_id,

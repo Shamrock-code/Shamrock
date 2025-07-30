@@ -9,7 +9,7 @@
 
 /**
  * @file ComputePressure.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -63,7 +63,7 @@ void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal gamma = solver_config.eos_gamma;
 
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute pressure", [=](u64 id_a) {
                     pressure[id_a] = (gamma - 1) /** rho[id_a]*/ * eint[id_a];
                 });

@@ -9,16 +9,16 @@
 
 /**
  * @file cmdopt.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
+#include "shambase/term_colors.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/details/generic_opts.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/term_colors.hpp"
 #include <string_view>
 #include <algorithm>
 #include <iostream>

@@ -9,19 +9,21 @@
 
 /**
  * @file pyShamphys.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
 #include "shambase/aliases_float.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamphys/BlackHoles.hpp"
 #include "shamphys/HydroSoundwave.hpp"
 #include "shamphys/Planets.hpp"
 #include "shamphys/SedovTaylor.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamphys/orbits.hpp"
 #include <pybind11/complex.h>
 #include <complex>
 #include <utility>
@@ -109,6 +111,134 @@ Register_pymod(shamphyslibinit) {
         M : Black hole mass
         units : unit system
     )pbdoc");
+
+    shamphys_module.def(
+        "get_binary_pair",
+        [](double m1, double m2, double a, double e, double nu, double G) {
+            return shamphys::get_binary_pair(m1, m2, a, e, nu, G);
+        },
+        py::kw_only(),
+        py::arg("m1"),
+        py::arg("m2"),
+        py::arg("a"),
+        py::arg("e"),
+        py::arg("nu"),
+        py::arg("G"),
+        R"pbdoc(
+        Compute the positions and velocities of two objects in a binary system
+        m1 : Mass of the first object
+        m2 : Mass of the second object
+        a : Semi-major axis of the system
+        e : Eccentricity of the system
+        nu : True anomaly of the system (in radians)
+        G : Gravitational constant
+    )pbdoc");
+
+    shamphys_module.def(
+        "get_binary_pair",
+        [](double m1,
+           double m2,
+           double a,
+           double e,
+           double nu,
+           shamunits::UnitSystem<double> usys) {
+            return shamphys::get_binary_pair(m1, m2, a, e, nu, usys);
+        },
+        py::kw_only(),
+        py::arg("m1"),
+        py::arg("m2"),
+        py::arg("a"),
+        py::arg("e"),
+        py::arg("nu"),
+        py::arg("units"),
+        R"pbdoc(
+        Compute the positions and velocities of two objects in a binary system
+        m1 : Mass of the first object
+        m2 : Mass of the second object
+        a : Semi-major axis of the system
+        e : Eccentricity of the system
+        nu : True anomaly of the system (in radians)
+        units : unit system
+    )pbdoc");
+
+    shamphys_module.def(
+        "rotate_point",
+        [](f64_3 point, double roll, double pitch, double yaw) {
+            return shamphys::rotate_point(point, roll, pitch, yaw);
+        },
+        py::kw_only(),
+        py::arg("point"),
+        py::arg("roll"),
+        py::arg("pitch"),
+        py::arg("yaw"),
+        R"pbdoc(
+        Rotate a 3D point using Euler angles.
+        point : 3D point as a f64_3
+        roll : Rotation about the X-axis (in radians)
+        pitch : Rotation about the Y-axis (in radians)
+        yaw : Rotation about the Z-axis (in radians)
+    )pbdoc");
+
+    shamphys_module.def(
+        "get_binary_rotated",
+        [](double m1,
+           double m2,
+           double a,
+           double e,
+           double nu,
+           double G,
+           double roll,
+           double pitch,
+           double yaw) {
+            return shamphys::get_binary_rotated(m1, m2, a, e, nu, G, roll, pitch, yaw);
+        },
+        py::kw_only(),
+        py::arg("m1"),
+        py::arg("m2"),
+        py::arg("a"),
+        py::arg("e"),
+        py::arg("nu"),
+        py::arg("G"),
+        py::arg("roll"),
+        py::arg("pitch"),
+        py::arg("yaw"),
+        R"pbdoc(
+        Rotate a binary orbit by Euler angles and return the positions and
+        velocities of the two objects.
+        m1 : Mass of the first object
+        m2 : Mass of the second object
+        a : Semi-major axis of the system
+        e : Eccentricity of the system
+        nu : True anomaly of the system (in radians)
+        G : Gravitational constant
+        roll : Rotation about the X-axis (in radians)
+        pitch : Rotation about the Y-axis (in radians)
+        yaw : Rotation about the Z-axis (in radians)
+    )pbdoc");
+
+    shamphys_module.def(
+        "get_binary_rotated",
+        [](double m1,
+           double m2,
+           double a,
+           double e,
+           double nu,
+           const shamunits::UnitSystem<double> usys,
+           double roll,
+           double pitch,
+           double yaw) {
+            return shamphys::get_binary_rotated(m1, m2, a, e, nu, usys, roll, pitch, yaw);
+        },
+        py::kw_only(),
+        py::arg("m1"),
+        py::arg("m2"),
+        py::arg("a"),
+        py::arg("e"),
+        py::arg("nu"),
+        py::arg("units"),
+        py::arg("roll"),
+        py::arg("pitch"),
+        py::arg("yaw"));
 
     shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.HydroSoundwave");
     py::class_<shamphys::HydroSoundwave>(shamphys_module, "HydroSoundwave")

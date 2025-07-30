@@ -9,7 +9,7 @@
 
 /**
  * @file bitonicSort_updated.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -285,7 +285,7 @@ namespace shamalgs::algorithm::details {
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
 
         if (!shambase::is_pow_of_two(len)) {
-            throw std::invalid_argument(
+            shambase::throw_with_loc<std::invalid_argument>(
                 "this algorithm can only be used with length that are powers of two");
         }
 
@@ -309,7 +309,7 @@ namespace shamalgs::algorithm::details {
                             sycl::accessor accm{buf_key, cgh, sycl::read_write};
                             sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nThreads, "bitonic sort pass B32", [=](u64 gid) {
                                     //(__global data_t * data,__global uint * ids,int inc,int dir)
 
@@ -331,7 +331,7 @@ namespace shamalgs::algorithm::details {
                             sycl::accessor accm{buf_key, cgh, sycl::read_write};
                             sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nThreads, "bitonic sort pass B16", [=](u64 gid) {
                                     //(__global data_t * data,__global uint * ids,int inc,int dir)
 
@@ -357,7 +357,7 @@ namespace shamalgs::algorithm::details {
                             sycl::accessor accm{buf_key, cgh, sycl::read_write};
                             sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nThreads, "bitonic sort pass B8", [=](u64 gid) {
                                     //(__global data_t * data,__global uint * ids,int inc,int dir)
 
@@ -385,7 +385,7 @@ namespace shamalgs::algorithm::details {
                             sycl::accessor accm{buf_key, cgh, sycl::read_write};
                             sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nThreads, "bitonic sort pass B4", [=](u64 gid) {
                                     Tkey *m  = accm.get_pointer();
                                     Tval *id = accid.get_pointer();
@@ -407,7 +407,7 @@ namespace shamalgs::algorithm::details {
                         sycl::accessor accm{buf_key, cgh, sycl::read_write};
                         sycl::accessor accid{buf_values, cgh, sycl::read_write};
 
-                        shambase::parralel_for(cgh, nThreads, "bitonic sort pass B2", [=](u64 gid) {
+                        shambase::parallel_for(cgh, nThreads, "bitonic sort pass B2", [=](u64 gid) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
                             Tkey *m  = accm.get_pointer();

@@ -30,7 +30,24 @@ namespace shammodels::sph::solvergraph {
 
         shamrock::tree::ObjectCache &get_cache(u64 id) { return neigh_cache.get(id); }
 
-        inline virtual void free_alloc() { neigh_cache = {}; }
+        inline void check_sizes(const shambase::DistributedData<u32> &sizes) const {
+            on_distributeddata_diff(
+                neigh_cache,
+                sizes,
+                [](u64 id) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "Missing neigh cache in distributed data at id " + std::to_string(id));
+                },
+                [](u64 id) {
+                    // TODO
+                },
+                [](u64 id) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "Extra neigh cache in distributed data at id " + std::to_string(id));
+                });
+        }
+
+        inline void free_alloc() { neigh_cache = {}; }
     };
 
 } // namespace shammodels::sph::solvergraph

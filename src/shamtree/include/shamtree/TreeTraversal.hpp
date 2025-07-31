@@ -425,7 +425,7 @@ namespace shamrock::tree {
             u32 *index_neigh_map;
         };
 
-        ptrs_read get_read_access(sham::EventList &depends_list) {
+        ptrs_read get_read_access(sham::EventList &depends_list) const {
             return ptrs_read{
                 cnt_neigh.get_read_access(depends_list),
                 scanned_cnt.get_read_access(depends_list),
@@ -440,13 +440,13 @@ namespace shamrock::tree {
                 index_neigh_map.get_write_access(depends_list),
             };
         }
-        void complete_event_state(sycl::event &e) {
+        void complete_event_state(sycl::event &e) const {
             cnt_neigh.complete_event_state(e);
             scanned_cnt.complete_event_state(e);
             index_neigh_map.complete_event_state(e);
         }
 
-        void complete_event_state(sham::EventList &resulting_events) {
+        void complete_event_state(sham::EventList &resulting_events) const {
             cnt_neigh.complete_event_state(resulting_events);
             scanned_cnt.complete_event_state(resulting_events);
             index_neigh_map.complete_event_state(resulting_events);

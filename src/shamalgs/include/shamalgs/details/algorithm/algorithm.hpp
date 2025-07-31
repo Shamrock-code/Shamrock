@@ -16,6 +16,7 @@
  *
  */
 
+#include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/sycl.hpp"
@@ -26,6 +27,30 @@
  *
  */
 namespace shamalgs::algorithm {
+
+    /**
+     * @brief Sort the buffer according to the key order
+     *
+     * @tparam T
+     * @param q
+     * @param buf_key
+     * @param buf_values
+     * @param len
+     */
+    template<class Tkey, class Tval>
+    void sort_by_key(
+        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
+        shamalgs::primitives::sort_by_key(q, buf_key, buf_values, len);
+    }
+
+    template<class Tkey, class Tval>
+    void sort_by_key(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<Tkey> &buf_key,
+        sham::DeviceBuffer<Tval> &buf_values,
+        u32 len) {
+        shamalgs::primitives::sort_by_key(sched, buf_key, buf_values, len);
+    }
 
     /**
      * @brief generate a buffer from a lambda expression based on the indexes

@@ -25,7 +25,6 @@
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include "shamalgs/details/numeric/streamCompactExclScan.hpp"
-#include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
 #include <utility>
@@ -288,7 +287,7 @@ namespace shamalgs::numeric {
 
             // how to be a patate? Resize buffers to diligently become powers of 2, and don't update
             // the variable holding their length
-            shamalgs::primitives::sort_by_key(sched, valid_keys, valid_values, pow2_len_key);
+            shamalgs::algorithm::sort_by_key(sched, valid_keys, valid_values, pow2_len_key);
         }
 
         return {std::move(valid_values), std::move(offsets_bins)};

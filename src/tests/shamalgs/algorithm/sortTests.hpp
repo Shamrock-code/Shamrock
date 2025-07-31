@@ -12,7 +12,6 @@
 #include "shambase/time.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/memory.hpp"
-#include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shamalgs/random.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -222,7 +221,7 @@ struct TestIndexRemap {
             shamalgs::random::mock_buffer<u32>(0x111, len, 0, 1U << 7U));
 
         sycl::buffer<u32> buf_index_map = shamalgs::algorithm::gen_buffer_index(q, len);
-        shamalgs::primitives::sort_by_key(q, *buf_key, buf_index_map, len);
+        shamalgs::algorithm::sort_by_key(q, *buf_key, buf_index_map, len);
 
         sycl::buffer<u32> remaped_key = fct(q, *buf_key_dup, buf_index_map, len);
 
@@ -270,7 +269,7 @@ struct TestIndexRemapUSM {
         sham::DeviceBuffer<u32> buf_index_map
             = shamalgs::algorithm::gen_buffer_index_usm(sched, len);
 
-        shamalgs::primitives::sort_by_key(sched, buf_key, buf_index_map, len);
+        shamalgs::algorithm::sort_by_key(sched, buf_key, buf_index_map, len);
 
         sham::DeviceBuffer<u32> remaped_key(len, sched);
         fct(sched, buf_key_dup, remaped_key, buf_index_map, len);

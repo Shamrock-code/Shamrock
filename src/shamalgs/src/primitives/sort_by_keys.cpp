@@ -26,9 +26,9 @@ namespace shamalgs::primitives {
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
 
         if (len < 5e3) {
-            algorithm::details::sort_by_key_bitonic_fallback(q, buf_key, buf_values, len);
+            shamalgs::algorithm::details::sort_by_key_bitonic_fallback(q, buf_key, buf_values, len);
         } else {
-            algorithm::details::sort_by_key_bitonic_updated<Tkey, Tval, 16>(
+            shamalgs::algorithm::details::sort_by_key_bitonic_updated<Tkey, Tval, 16>(
                 q, buf_key, buf_values, len);
         }
     }
@@ -39,7 +39,7 @@ namespace shamalgs::primitives {
         sham::DeviceBuffer<Tkey> &buf_key,
         sham::DeviceBuffer<Tval> &buf_values,
         u32 len) {
-        algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 16>(
+        shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 16>(
             sched, buf_key, buf_values, len);
     }
 

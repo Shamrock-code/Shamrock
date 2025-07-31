@@ -10,6 +10,7 @@
 /**
  * @file ExternalForces.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -343,3 +344,7 @@ using namespace shammath;
 template class shammodels::sph::modules::ExternalForces<f64_3, M4>;
 template class shammodels::sph::modules::ExternalForces<f64_3, M6>;
 template class shammodels::sph::modules::ExternalForces<f64_3, M8>;
+
+template class shammodels::sph::modules::ExternalForces<f64_3, C2>;
+template class shammodels::sph::modules::ExternalForces<f64_3, C4>;
+template class shammodels::sph::modules::ExternalForces<f64_3, C6>;

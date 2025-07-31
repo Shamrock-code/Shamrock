@@ -10,6 +10,7 @@
 /**
  * @file SPHUtilities.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -293,8 +294,16 @@ namespace shammodels::sph {
     template class SPHUtilities<f64_3, shammath::M6<f64>>;
     template class SPHUtilities<f64_3, shammath::M8<f64>>;
 
+    template class SPHUtilities<f64_3, shammath::C2<f64>>;
+    template class SPHUtilities<f64_3, shammath::C4<f64>>;
+    template class SPHUtilities<f64_3, shammath::C6<f64>>;
+
     template class SPHTreeUtilities<f64_3, shammath::M4<f64>, u32>;
     template class SPHTreeUtilities<f64_3, shammath::M6<f64>, u64>;
     template class SPHTreeUtilities<f64_3, shammath::M8<f64>, u64>;
+
+    template class SPHTreeUtilities<f64_3, shammath::C2<f64>, u32>;
+    template class SPHTreeUtilities<f64_3, shammath::C4<f64>, u64>;
+    template class SPHTreeUtilities<f64_3, shammath::C6<f64>, u64>;
 
 } // namespace shammodels::sph

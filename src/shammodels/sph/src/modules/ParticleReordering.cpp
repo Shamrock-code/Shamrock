@@ -10,6 +10,7 @@
 /**
  * @file ParticleReordering.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -50,3 +51,7 @@ using namespace shammath;
 template class shammodels::sph::modules::ParticleReordering<f64_3, u32, M4>;
 template class shammodels::sph::modules::ParticleReordering<f64_3, u32, M6>;
 template class shammodels::sph::modules::ParticleReordering<f64_3, u32, M8>;
+
+template class shammodels::sph::modules::ParticleReordering<f64_3, u32, C2>;
+template class shammodels::sph::modules::ParticleReordering<f64_3, u32, C4>;
+template class shammodels::sph::modules::ParticleReordering<f64_3, u32, C6>;

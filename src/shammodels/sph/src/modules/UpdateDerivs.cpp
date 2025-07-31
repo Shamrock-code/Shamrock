@@ -1194,3 +1194,7 @@ using namespace shammath;
 template class shammodels::sph::modules::UpdateDerivs<f64_3, M4>;
 template class shammodels::sph::modules::UpdateDerivs<f64_3, M6>;
 template class shammodels::sph::modules::UpdateDerivs<f64_3, M8>;
+
+template class shammodels::sph::modules::UpdateDerivs<f64_3, C2>;
+template class shammodels::sph::modules::UpdateDerivs<f64_3, C4>;
+template class shammodels::sph::modules::UpdateDerivs<f64_3, C6>;

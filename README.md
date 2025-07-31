@@ -67,6 +67,6 @@ AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)
 
 Shamrock is licensed under the `CeCILL Free Software License Agreement v2.1`. See [License (french version)](./LICENSE) or [License (english version)](./LICENSE.en) for more details.
 
-Copyright 2021-2024 Timothée David--Cléris
+Copyright 2021-2025 Timothée David--Cléris
 
 SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1

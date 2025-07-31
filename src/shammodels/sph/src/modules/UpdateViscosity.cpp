@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,7 +10,7 @@
 /**
  * @file UpdateViscosity.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -223,3 +223,7 @@ using namespace shammath;
 template class shammodels::sph::modules::UpdateViscosity<f64_3, M4>;
 template class shammodels::sph::modules::UpdateViscosity<f64_3, M6>;
 template class shammodels::sph::modules::UpdateViscosity<f64_3, M8>;
+
+template class shammodels::sph::modules::UpdateViscosity<f64_3, C2>;
+template class shammodels::sph::modules::UpdateViscosity<f64_3, C4>;
+template class shammodels::sph::modules::UpdateViscosity<f64_3, C6>;

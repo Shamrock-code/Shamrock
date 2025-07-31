@@ -44,8 +44,6 @@ namespace shamalgs::primitives {
      * @param buf_values Buffer containing the values to reorder
      * @param len Length of both buffers (must be a power of 2)
      *
-     * @throws std::invalid_argument if len is not a power of 2
-     *
      * @note The function modifies both buffers in-place
      *
      * @code
@@ -75,8 +73,6 @@ namespace shamalgs::primitives {
      * @param buf_key Device buffer containing the keys to sort by
      * @param buf_values Device buffer containing the values to reorder
      * @param len Length of both buffers (must be a power of 2)
-     *
-     * @throws std::invalid_argument if len is not a power of 2
      *
      * @note The function modifies both buffers in-place
      *

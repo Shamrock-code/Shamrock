@@ -15,7 +15,6 @@
  */
 
 #include "shamalgs/primitives/sort_by_keys.hpp"
-#include "shamalgs/details/algorithm/algorithm.hpp"
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
 #include "shamalgs/details/algorithm/bitonicSort_updated_usm.hpp"
 

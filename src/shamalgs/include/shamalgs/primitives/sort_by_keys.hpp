@@ -35,7 +35,6 @@ namespace shamalgs::primitives {
      *
      * Performs an in-place parallel sort of key-value pairs where the values
      * are reordered according to the sorted order of their corresponding keys.
-     * This function is optimized for sycl::buffer lengths that are powers of 2.
      *
      * @tparam Tkey Key type - must be comparable (supports < operator)
      * @tparam Tval Value type - can be any copyable type
@@ -65,7 +64,6 @@ namespace shamalgs::primitives {
      *
      * Performs an in-place parallel sort of key-value pairs where the values
      * are reordered according to the sorted order of their corresponding keys.
-     * This function is optimized for USM buffer lengths that are powers of 2.
      *
      * @tparam Tkey Key type - must be comparable (supports < operator)
      * @tparam Tval Value type - can be any copyable type
@@ -98,7 +96,6 @@ namespace shamalgs::primitives {
      *
      * Performs an in-place parallel sort of key-value pairs where the values
      * are reordered according to the sorted order of their corresponding keys.
-     * This function is the general case (no power-of-2 restrictions).
      *
      * @tparam Tkey Key type - must be comparable (supports < operator)
      * @tparam Tval Value type - can be any copyable type
@@ -135,7 +132,6 @@ namespace shamalgs::primitives {
      *
      * Performs an in-place parallel sort of key-value pairs where the values
      * are reordered according to the sorted order of their corresponding keys.
-     * This function is the general case (no power-of-2 restrictions).
      *
      * @tparam Tkey Key type - must be comparable (supports < operator)
      * @tparam Tval Value type - can be any copyable type

@@ -165,3 +165,7 @@ std::string IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_get_tex() {
 template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, shammath::M4<f64>>;
 template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, shammath::M6<f64>>;
 template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, shammath::M8<f64>>;
+
+template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, shammath::C2<f64>>;
+template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, shammath::C4<f64>>;
+template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, shammath::C6<f64>>;

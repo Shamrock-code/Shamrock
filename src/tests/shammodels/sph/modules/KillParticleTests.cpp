@@ -9,7 +9,7 @@
 
 #include "shambackends/DeviceBuffer.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"

@@ -16,7 +16,7 @@
  */
 
 #include "shamalgs/memory.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <vector>

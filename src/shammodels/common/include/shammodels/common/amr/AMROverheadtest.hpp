@@ -21,7 +21,7 @@
 #include "shambackends/sycl_utils.hpp"
 #include "shammath/intervals.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"

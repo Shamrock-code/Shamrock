@@ -23,7 +23,7 @@
 #include "shammodels/ramses/Solver.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"

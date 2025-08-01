@@ -39,7 +39,7 @@
 // #include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "scheduler_patch_list.hpp"
 #include "shambackends/math.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/patch/PatchField.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
@@ -137,7 +137,7 @@ class PatchScheduler {
      *
      * @param pdat the data to push
      */
-    void allpush_data(shamrock::patch::PatchData &pdat);
+    void allpush_data(shamrock::patch::PatchDataLayer &pdat);
 
     template<u32 dim>
     void make_patch_base_grid(std::array<u32, dim> patch_count);
@@ -161,7 +161,7 @@ class PatchScheduler {
     [[deprecated]]
     void dump_local_patches(std::string filename);
 
-    std::vector<std::unique_ptr<shamrock::patch::PatchData>> gather_data(u32 rank);
+    std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gather_data(u32 rank);
 
     /**
      * @brief add patch to the scheduler
@@ -217,7 +217,7 @@ class PatchScheduler {
     template<class Function>
     inline void for_each_patch_data(Function &&fct) {
 
-        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             shamrock::patch::Patch &cur_p
                 = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
 
@@ -230,7 +230,7 @@ class PatchScheduler {
     template<class Function>
     inline void for_each_patch(Function &&fct) {
 
-        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             shamrock::patch::Patch &cur_p
                 = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
 
@@ -258,7 +258,7 @@ class PatchScheduler {
     }
 
     inline void for_each_local_patchdata(
-        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchData &)> fct) {
+        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &)> fct) {
         for (shamrock::patch::Patch p : patch_list.local) {
             if (!p.is_err_mode()) {
                 fct(p, patch_data.get_pdat(p.id_patch));
@@ -268,7 +268,7 @@ class PatchScheduler {
 
     inline void
     for_each_local_patch_nonempty(std::function<void(const shamrock::patch::Patch &)> fct) {
-        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             shamrock::patch::Patch &cur_p
                 = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
 
@@ -285,8 +285,8 @@ class PatchScheduler {
     }
 
     inline void for_each_patchdata_nonempty(
-        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchData &)> fct) {
-        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &)> fct) {
+        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             shamrock::patch::Patch &cur_p
                 = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
 
@@ -298,11 +298,11 @@ class PatchScheduler {
 
     template<class T>
     inline shambase::DistributedData<T> map_owned_patchdata(
-        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> fct) {
+        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct) {
         shambase::DistributedData<T> ret;
 
         using namespace shamrock::patch;
-        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             ret.add_obj(id_patch, fct(cur_p, pdat));
         });
 
@@ -335,11 +335,11 @@ class PatchScheduler {
 
     template<class T>
     inline shambase::DistributedData<T> map_owned_patchdata_fetch_simple(
-        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> fct) {
+        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct) {
         shambase::DistributedData<T> ret;
 
         using namespace shamrock::patch;
-        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             ret.add_obj(id_patch, fct(cur_p, pdat));
         });
 
@@ -348,11 +348,11 @@ class PatchScheduler {
 
     template<class T>
     inline shambase::DistributedData<T> map_owned_patchdata_fetch_load_store(
-        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> fct) {
+        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct) {
         shambase::DistributedData<T> ret;
 
         using namespace shamrock::patch;
-        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             ret.add_obj(id_patch, fct(cur_p, pdat));
         });
 
@@ -361,13 +361,13 @@ class PatchScheduler {
 
     template<class T>
     inline shamrock::patch::PatchField<T> map_owned_to_patch_field_simple(
-        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> fct) {
+        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct) {
         return shamrock::patch::PatchField<T>(map_owned_patchdata_fetch_simple(fct));
     }
 
     template<class T>
     inline shamrock::patch::PatchField<T> map_owned_to_patch_field_load_store(
-        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> fct) {
+        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct) {
         return shamrock::patch::PatchField<T>(map_owned_patchdata_fetch_load_store(fct));
     }
 
@@ -375,7 +375,7 @@ class PatchScheduler {
         StackEntry stack_loc{};
         using namespace shamrock::patch;
         u64 num_obj = 0; // TODO get_rank_count() in scheduler
-        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             num_obj += pdat.get_obj_cnt();
         });
 
@@ -404,7 +404,7 @@ class PatchScheduler {
             using namespace shamrock::patch;
 
             u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-            for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 using namespace shamalgs::memory;
                 using namespace shambase;
 

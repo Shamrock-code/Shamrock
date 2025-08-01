@@ -18,7 +18,7 @@
 #include "shambase/string.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamsys/NodeInstance.hpp"

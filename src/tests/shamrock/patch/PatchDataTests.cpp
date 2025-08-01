@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/serialize.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 

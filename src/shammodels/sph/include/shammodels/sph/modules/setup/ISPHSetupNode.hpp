@@ -17,7 +17,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include <string>
 #include <vector>
 

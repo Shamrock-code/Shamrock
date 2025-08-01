@@ -18,7 +18,7 @@
  */
 
 #include "shambase/DistributedData.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/IDataEdgeNamed.hpp"

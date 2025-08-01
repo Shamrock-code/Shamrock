@@ -64,3 +64,34 @@ TestStart(
 ```
 
 The `TestStart` macro registers the test. You can find other assertion macros (like `REQUIRE_EQUAL`, `REQUIRE_FLOAT_EQUAL`, etc.) in `src/shamtest/shamtest.hpp`.
+
+### Test Structure
+
+Each test case should be in its own scope using curly braces for clarity and variable isolation:
+
+```c++
+TestStart(Unittest, "filepath:function", test_function_name, mpi_ranks) {
+    { // Test case 1
+        // Test setup
+        std::vector<T> expected = {...};
+        // Test execution
+        REQUIRE_EQUAL(result, expected);
+    }
+
+    { // Test case 2
+        // Another test case
+    }
+}
+```
+
+### Test Assertions
+
+- Keep expected vectors defined as separate variables in unit tests
+- Use descriptive test names that indicate what is being tested (e.g. `filepath:function`)
+- Use `REQUIRE` macros to perform assertions in tests
+
+### Test File Organization
+
+- Test files should mirror the source directory structure
+- Place test files in `src/tests/` directory
+- Use the `TestStart` macro with parameters: test suite, test name, test identifier, and MPI rank requirement

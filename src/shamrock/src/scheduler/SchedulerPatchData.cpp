@@ -102,7 +102,7 @@ namespace shamrock::scheduler {
 
         using ChangeOp = shamrock::scheduler::LoadBalancingChangeList::ChangeOp;
 
-        auto serializer = [](shamrock::patch::PatchData &pdat) {
+        auto serializer = [](shamrock::patch::PatchDataLayer &pdat) {
             shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(pdat.serialize_buf_byte_size());
             pdat.serialize_buf(ser);
@@ -114,7 +114,7 @@ namespace shamrock::scheduler {
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
-            return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
+            return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl);
         };
 
         std::vector<Message> send_payloads;
@@ -242,10 +242,10 @@ namespace shamrock::scheduler {
 
     template<class Vectype>
     void split_patchdata(
-        shamrock::patch::PatchData &original_pd,
+        shamrock::patch::PatchDataLayer &original_pd,
         const shamrock::patch::SimulationBoxInfo &sim_box,
         const std::array<shamrock::patch::Patch, 8> patches,
-        std::array<std::reference_wrapper<shamrock::patch::PatchData>, 8> pdats) {
+        std::array<std::reference_wrapper<shamrock::patch::PatchDataLayer>, 8> pdats) {
 
         using ptype = typename shambase::VectorProperties<Vectype>::component_type;
 
@@ -265,34 +265,34 @@ namespace shamrock::scheduler {
     }
 
     template void split_patchdata<f32_3>(
-        shamrock::patch::PatchData &original_pd,
+        shamrock::patch::PatchDataLayer &original_pd,
         const shamrock::patch::SimulationBoxInfo &sim_box,
         const std::array<shamrock::patch::Patch, 8> patches,
-        std::array<std::reference_wrapper<shamrock::patch::PatchData>, 8> pdats);
+        std::array<std::reference_wrapper<shamrock::patch::PatchDataLayer>, 8> pdats);
 
     template void split_patchdata<f64_3>(
-        shamrock::patch::PatchData &original_pd,
+        shamrock::patch::PatchDataLayer &original_pd,
         const shamrock::patch::SimulationBoxInfo &sim_box,
         const std::array<shamrock::patch::Patch, 8> patches,
-        std::array<std::reference_wrapper<shamrock::patch::PatchData>, 8> pdats);
+        std::array<std::reference_wrapper<shamrock::patch::PatchDataLayer>, 8> pdats);
 
     template void split_patchdata<u32_3>(
-        shamrock::patch::PatchData &original_pd,
+        shamrock::patch::PatchDataLayer &original_pd,
         const shamrock::patch::SimulationBoxInfo &sim_box,
         const std::array<shamrock::patch::Patch, 8> patches,
-        std::array<std::reference_wrapper<shamrock::patch::PatchData>, 8> pdats);
+        std::array<std::reference_wrapper<shamrock::patch::PatchDataLayer>, 8> pdats);
 
     template void split_patchdata<u64_3>(
-        shamrock::patch::PatchData &original_pd,
+        shamrock::patch::PatchDataLayer &original_pd,
         const shamrock::patch::SimulationBoxInfo &sim_box,
         const std::array<shamrock::patch::Patch, 8> patches,
-        std::array<std::reference_wrapper<shamrock::patch::PatchData>, 8> pdats);
+        std::array<std::reference_wrapper<shamrock::patch::PatchDataLayer>, 8> pdats);
 
     template void split_patchdata<i64_3>(
-        shamrock::patch::PatchData &original_pd,
+        shamrock::patch::PatchDataLayer &original_pd,
         const shamrock::patch::SimulationBoxInfo &sim_box,
         const std::array<shamrock::patch::Patch, 8> patches,
-        std::array<std::reference_wrapper<shamrock::patch::PatchData>, 8> pdats);
+        std::array<std::reference_wrapper<shamrock::patch::PatchDataLayer>, 8> pdats);
 
     void SchedulerPatchData::split_patchdata(
         u64 key_orginal, const std::array<shamrock::patch::Patch, 8> patches) {
@@ -301,16 +301,16 @@ namespace shamrock::scheduler {
 
         if (search != owned_data.not_found()) {
 
-            shamrock::patch::PatchData &original_pd = search->second;
+            shamrock::patch::PatchDataLayer &original_pd = search->second;
 
-            shamrock::patch::PatchData pd0(pdl);
-            shamrock::patch::PatchData pd1(pdl);
-            shamrock::patch::PatchData pd2(pdl);
-            shamrock::patch::PatchData pd3(pdl);
-            shamrock::patch::PatchData pd4(pdl);
-            shamrock::patch::PatchData pd5(pdl);
-            shamrock::patch::PatchData pd6(pdl);
-            shamrock::patch::PatchData pd7(pdl);
+            shamrock::patch::PatchDataLayer pd0(pdl);
+            shamrock::patch::PatchDataLayer pd1(pdl);
+            shamrock::patch::PatchDataLayer pd2(pdl);
+            shamrock::patch::PatchDataLayer pd3(pdl);
+            shamrock::patch::PatchDataLayer pd4(pdl);
+            shamrock::patch::PatchDataLayer pd5(pdl);
+            shamrock::patch::PatchDataLayer pd6(pdl);
+            shamrock::patch::PatchDataLayer pd7(pdl);
 
             if (pdl.check_main_field_type<f32_3>()) {
 
@@ -394,7 +394,7 @@ namespace shamrock::scheduler {
                 "patchdata for key=%d was not owned by the node", old_keys[7]));
         }
 
-        shamrock::patch::PatchData new_pdat(pdl);
+        shamrock::patch::PatchDataLayer new_pdat(pdl);
 
         new_pdat.insert_elements(search0->second);
         new_pdat.insert_elements(search1->second);

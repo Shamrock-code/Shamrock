@@ -45,9 +45,9 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 idivv = pdl.get_field_idx<Tscal>("divv");
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-        PatchData &mpdat              = merged_patch.pdat;
+        PatchDataLayer &mpdat              = merged_patch.pdat;
 
         sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
@@ -167,9 +167,9 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
     u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-        PatchData &mpdat              = merged_patch.pdat;
+        PatchDataLayer &mpdat              = merged_patch.pdat;
 
         sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);

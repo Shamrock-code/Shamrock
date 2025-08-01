@@ -179,7 +179,7 @@ namespace shammodels::sph {
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
-                [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+                [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
                         = pdat.template get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
 
@@ -300,7 +300,7 @@ namespace shammodels::sph {
 
             std::string log = "";
 
-            sched.for_each_local_patchdata([&](const Patch ptch, PatchData &pdat) {
+            sched.for_each_local_patchdata([&](const Patch ptch, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(ptch);
@@ -330,7 +330,7 @@ namespace shammodels::sph {
                 log += shambase::format(
                     "\n    patch id={}, add N={} particles", ptch.id_patch, vec_pos.size());
 
-                PatchData tmp(sched.pdl);
+                PatchDataLayer tmp(sched.pdl);
                 tmp.resize(vec_pos.size());
                 tmp.fields_raz();
 
@@ -411,7 +411,7 @@ namespace shammodels::sph {
             sched.scheduler_step(true, true);
 
             log = "";
-            sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
                 log += shambase::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
@@ -463,7 +463,7 @@ namespace shammodels::sph {
 
             std::string log = "";
 
-            sched.for_each_local_patchdata([&](const Patch ptch, PatchData &pdat) {
+            sched.for_each_local_patchdata([&](const Patch ptch, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(ptch);
@@ -496,7 +496,7 @@ namespace shammodels::sph {
                 log += shambase::format(
                     "\n    patch id={}, add N={} particles", ptch.id_patch, vec_acc.size());
 
-                PatchData tmp(sched.pdl);
+                PatchDataLayer tmp(sched.pdl);
                 tmp.resize(vec_acc.size());
                 tmp.fields_raz();
 
@@ -567,7 +567,7 @@ namespace shammodels::sph {
             sched.scheduler_step(true, true);
 
             log = "";
-            sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
                 log += shambase::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
@@ -599,7 +599,7 @@ namespace shammodels::sph {
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
-                [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+                [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
                         = pdat.template get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
 
@@ -637,7 +637,7 @@ namespace shammodels::sph {
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
-                [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+                [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
                         = pdat.template get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
 
@@ -669,7 +669,7 @@ namespace shammodels::sph {
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
-                [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+                [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
                         = pdat.template get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
 
@@ -702,7 +702,7 @@ namespace shammodels::sph {
 
             StackEntry stack_loc{};
             sched.patch_data.for_each_patchdata(
-                [&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+                [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<T> &xyz
                         = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
 
@@ -827,7 +827,7 @@ namespace shammodels::sph {
         }
 
         private:
-        void add_pdat_to_phantom_block(PhantomDumpBlock &block, shamrock::patch::PatchData &pdat);
+        void add_pdat_to_phantom_block(PhantomDumpBlock &block, shamrock::patch::PatchDataLayer &pdat);
 
         template<class Tscal>
         inline void warp_disc(

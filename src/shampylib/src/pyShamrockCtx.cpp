@@ -163,7 +163,7 @@ class VecToNumpy<sycl::vec<T, 16>> {
 template<class T>
 void append_to_map(
     std::string key,
-    std::vector<std::unique_ptr<shamrock::patch::PatchData>> &lst,
+    std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> &lst,
     py::dict &dic_out) {
 
     std::vector<T> vec;

@@ -61,7 +61,7 @@ namespace shamrock {
          */
         template<class Tvec>
         u64 push_patch_data(
-            shamrock::patch::PatchData &pdat_ins,
+            shamrock::patch::PatchDataLayer &pdat_ins,
             std::string main_field_name,
             u32 split_threshold,
             std::function<void(void)> load_balance_update) {
@@ -76,7 +76,7 @@ namespace shamrock {
 
             if (pdat_ob_cnt < split_threshold) {
                 bool should_insert = true;
-                sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
                     if (should_insert) {
                         pdat.insert_elements(pdat_ins);
                         should_insert = false; // We insert only in first patch (no duplicates)

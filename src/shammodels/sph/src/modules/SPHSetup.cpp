@@ -97,7 +97,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 
     while (!setup->is_done()) {
 
-        shamrock::patch::PatchData pdat = setup->next_n(_insert_step);
+        shamrock::patch::PatchDataLayer pdat = setup->next_n(_insert_step);
 
         if (solver_config.track_particles_id) {
             // This bit set the tracking id of the particles

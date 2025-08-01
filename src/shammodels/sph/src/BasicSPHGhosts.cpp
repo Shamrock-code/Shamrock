@@ -461,7 +461,7 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
     std::map<u64, f64> send_count_stats;
 
     gen.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
-        shamrock::patch::PatchData &src = sched.patch_data.get_pdat(sender);
+        shamrock::patch::PatchDataLayer &src = sched.patch_data.get_pdat(sender);
         PatchDataField<vec> &xyz        = src.get_field<vec>(0);
 
         sham::DeviceBuffer<u32> idxs_res = xyz.get_ids_where(
@@ -533,7 +533,7 @@ void BasicSPHGhostHandler<vec>::gen_debug_patch_ghost(
     });
 
     sched.for_each_patch_data(
-        [&](u64 id, shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&](u64 id, shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             if (pdat.get_obj_cnt() > 0) {
                 loc_graph += shambase::format(
                     "    p{} [label= \"id={} N={}\"]\n", id, id, pdat.get_obj_cnt());

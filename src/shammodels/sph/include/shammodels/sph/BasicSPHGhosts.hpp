@@ -298,7 +298,7 @@ namespace shammodels::sph {
                     u32 cnt) {
                     using namespace shamrock::patch;
                     // clang-format off
-                    PatchData & sender_pdat = sched
+                    PatchDataLayer & sender_pdat = sched
                         .patch_data
                         .get_pdat(sender);
 
@@ -371,21 +371,21 @@ namespace shammodels::sph {
             return recv_dat;
         }
 
-        inline shambase::DistributedDataShared<shamrock::patch::PatchData> communicate_pdat(
+        inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> communicate_pdat(
             shamrock::patch::PatchDataLayout &pdl,
-            shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf) {
+            shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf) {
             StackEntry stack_loc{};
 
-            shambase::DistributedDataShared<shamrock::patch::PatchData> recv_dat;
+            shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> recv_dat;
 
-            shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
+            shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchDataLayer>(
                 shamsys::instance::get_compute_scheduler_ptr(),
-                std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
+                std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(interf),
                 recv_dat,
                 [&](u64 id) {
                     return sched.get_patch_rank_owner(id);
                 },
-                [](shamrock::patch::PatchData &pdat) {
+                [](shamrock::patch::PatchDataLayer &pdat) {
                     shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
                     ser.allocate(pdat.serialize_buf_byte_size());
                     pdat.serialize_buf(ser);
@@ -396,7 +396,7 @@ namespace shammodels::sph {
                     shamalgs::SerializeHelper ser(
                         shamsys::instance::get_compute_scheduler_ptr(),
                         std::forward<sham::DeviceBuffer<u8>>(buf));
-                    return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
+                    return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl);
                 });
 
             return recv_dat;
@@ -442,7 +442,7 @@ namespace shammodels::sph {
         template<class T, class Tmerged>
         inline shambase::DistributedData<Tmerged> merge_native(
             shambase::DistributedDataShared<T> &&interfs,
-            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)>
+            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)>
                 init,
             std::function<void(Tmerged &, T &)> appender) {
 
@@ -451,7 +451,7 @@ namespace shammodels::sph {
             shambase::DistributedData<Tmerged> merge_f;
 
             sched.for_each_patchdata_nonempty(
-                [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+                [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                     Tmerged tmp_merge = init(p, pdat);
 
                     interfs.for_each([&](u64 sender, u64 receiver, T &interface) {
@@ -482,7 +482,7 @@ namespace shammodels::sph {
 
             return merge_native<PositionInterface, PreStepMergedField>(
                 std::forward<shambase::DistributedDataShared<PositionInterface>>(positioninterfs),
-                [=](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+                [=](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<vec> &pos      = pdat.get_field<vec>(0);
                     PatchDataField<flt> &hpart    = pdat.get_field<flt>(ihpart);
                     vec bmax                      = pos.compute_max();

@@ -97,7 +97,7 @@ namespace shammodels::sph::modules {
 
         bool is_done();
 
-        shamrock::patch::PatchData next_n(u32 nmax);
+        shamrock::patch::PatchDataLayer next_n(u32 nmax);
 
         std::string get_name() { return "GeneratorMCDisc"; }
         ISPHSetupNode_Dot get_dot_subgraph() { return ISPHSetupNode_Dot{get_name(), 0, {}}; }

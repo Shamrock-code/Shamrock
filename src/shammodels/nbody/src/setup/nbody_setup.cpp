@@ -54,7 +54,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(
 
         std::cout << ">>> adding : " << vec_acc.size() << " objects" << std::endl;
 
-        PatchData tmp(sched.pdl);
+        PatchDataLayer tmp(sched.pdl);
         tmp.resize(vec_acc.size());
 
         part_cnt += vec_acc.size();
@@ -77,13 +77,13 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(
 
     // TODO apply position modulo here
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 
     sched.scheduler_step(false, false);
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 
@@ -99,7 +99,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(
         reatribute_particles(sched, sptree, periodic_mode);
     }
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 
@@ -109,7 +109,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(
 
     // std::cout << sched.dump_status() << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n"<< std::endl;
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 }

@@ -95,7 +95,7 @@ auto shammodels::sph::Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> T
 
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
-    sched.for_each_patchdata_nonempty([&](const Patch, PatchData &pdat) {
+    sched.for_each_patchdata_nonempty([&](const Patch, PatchDataLayer &pdat) {
         auto acc = pdat.get_field<Tvec>(0).get_buf().copy_to_stdvec();
 
         u32 cnt = pdat.get_obj_cnt();
@@ -148,7 +148,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec
     using namespace shamrock::patch;
 
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-    sched.for_each_patchdata_nonempty([&](const Patch, PatchData &pdat) {
+    sched.for_each_patchdata_nonempty([&](const Patch, PatchDataLayer &pdat) {
         auto &xyz = pdat.get_field<Tvec>(0).get_buf();
         auto acc  = xyz.copy_to_stdvec();
 
@@ -236,7 +236,7 @@ inline void post_insert_data(PatchScheduler &sched) {
     u32 smallest_count = u32_max;
     u32 largest_count  = 0;
 
-    sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+    sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
         u32 tmp        = pdat.get_obj_cnt();
         smallest_count = sham::min(tmp, smallest_count);
         largest_count  = sham::max(tmp, largest_count);
@@ -275,7 +275,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
 
     std::string log = "";
 
-    sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+    sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
         PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
         shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -305,7 +305,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
             patch_coord.lower,
             patch_coord.upper);
 
-        PatchData tmp(sched.pdl);
+        PatchDataLayer tmp(sched.pdl);
         tmp.resize(vec_acc.size());
         tmp.fields_raz();
 
@@ -365,7 +365,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
 
     std::string log = "";
 
-    sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+    sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
         PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
         shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -399,7 +399,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
             patch_coord.lower,
             patch_coord.upper);
 
-        PatchData tmp(sched.pdl);
+        PatchDataLayer tmp(sched.pdl);
         tmp.resize(vec_acc.size());
         tmp.fields_raz();
 
@@ -512,7 +512,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
             std::vector<Tvec> to_ins = gen.next_n(sched.crit_patch_split * 2);
             acc_count += to_ins.size();
 
-            sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -542,7 +542,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
                 // reserve space to avoid allocating during copy
                 pdat.reserve(vec_acc.size());
 
-                PatchData tmp(sched.pdl);
+                PatchDataLayer tmp(sched.pdl);
                 tmp.resize(vec_acc.size());
                 tmp.fields_raz();
 
@@ -625,7 +625,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
     shamrock::DataInserterUtility inserter(sched);
 
     auto push_current_data = [&](std::vector<Tvec> pos_data) {
-        PatchData tmp(sched.pdl);
+        PatchDataLayer tmp(sched.pdl);
         tmp.resize(pos_data.size());
         tmp.fields_raz();
 
@@ -656,7 +656,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
 
     auto has_pdat = [&]() {
         bool ret = false;
-        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -956,7 +956,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
             std::vector<Out> to_ins = gen.next_n(sched.crit_patch_split * 2);
             acc_count += to_ins.size();
 
-            sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -1002,7 +1002,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
                 // reserve space to avoid allocating during copy
                 pdat.reserve(vec_pos.size());
 
-                PatchData tmp(sched.pdl);
+                PatchDataLayer tmp(sched.pdl);
                 tmp.resize(vec_pos.size());
                 tmp.fields_raz();
 
@@ -1138,7 +1138,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
 
     for (std::vector<Tvec> to_ins : sliced_buf) {
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
             PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
             shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -1162,7 +1162,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
                 patch_coord.lower,
                 patch_coord.upper);
 
-            PatchData tmp(sched.pdl);
+            PatchDataLayer tmp(sched.pdl);
             tmp.resize(vec_acc.size());
             tmp.fields_raz();
 
@@ -1315,7 +1315,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump
 
         u64 Nloc = end_id - start_id;
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
             PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
             shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -1363,7 +1363,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump
                 }
             }
 
-            PatchData ptmp(sched.pdl);
+            PatchDataLayer ptmp(sched.pdl);
             ptmp.resize(sel_index.size());
             ptmp.fields_raz();
 
@@ -1428,7 +1428,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(
-    PhantomDumpBlock &block, shamrock::patch::PatchData &pdat) {
+    PhantomDumpBlock &block, shamrock::patch::PatchDataLayer &pdat) {
 
     std::vector<Tvec> xyz = pdat.fetch_data<Tvec>("xyz");
 
@@ -1589,7 +1589,7 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
     {
         NamedStackEntry stack_loc{"gather data"};
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered = ctx.allgather_data();
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered = ctx.allgather_data();
 
         for (auto &dat : gathered) {
             add_pdat_to_phantom_block(block_part, shambase::get_check_ref(dat));

@@ -382,7 +382,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
     // PatchComputeField<f32> pressure_field;
 
     auto lambda_update_time
-        = [&](sham::DeviceQueue &queue, PatchData &pdat, sycl::range<1> range_npart, flt hdt) {
+        = [&](sham::DeviceQueue &queue, PatchDataLayer &pdat, sycl::range<1> range_npart, flt hdt) {
               sham::DeviceBuffer<vec3> &vxyz = pdat.get_field<vec3>(ivxyz).get_buf();
               sham::DeviceBuffer<vec3> &axyz = pdat.get_field<vec3>(iaxyz).get_buf();
 
@@ -390,7 +390,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
           };
 
     auto lambda_swap_der
-        = [&](sham::DeviceQueue &queue, PatchData &pdat, sycl::range<1> range_npart) {
+        = [&](sham::DeviceQueue &queue, PatchDataLayer &pdat, sycl::range<1> range_npart) {
               sham::EventList depends_list;
 
               auto acc_axyz = pdat.get_field<vec3>(iaxyz).get_buf().get_write_access(depends_list);
@@ -413,7 +413,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
           };
 
     auto lambda_correct =
-        [&](sham::DeviceQueue &queue, PatchData &buf, sycl::range<1> range_npart, flt hdt) {
+        [&](sham::DeviceQueue &queue, PatchDataLayer &buf, sycl::range<1> range_npart, flt hdt) {
             sham::DeviceBuffer<vec3> &vxyz     = buf.get_field<vec3>(ivxyz).get_buf();
             sham::DeviceBuffer<vec3> &axyz     = buf.get_field<vec3>(iaxyz).get_buf();
             sham::DeviceBuffer<vec3> &axyz_old = buf.get_field<vec3>(iaxyz_old).get_buf();
@@ -478,7 +478,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         step_time += dt_cur;
 
         // leapfrog predictor
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "predictor");
 
             lambda_update_time(
@@ -527,7 +527,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         // make trees
         std::unordered_map<u64, std::unique_ptr<RadTree>> radix_trees;
 
-        sched.for_each_patch_data([&](u64 id_patch, Patch &cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch &cur_p, PatchDataLayer &pdat) {
             shamlog_debug_ln(
                 "SPHLeapfrog",
                 "patch : n°",
@@ -556,7 +556,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
             }
         });
 
-        sched.for_each_patch_data([&](u64 id_patch, Patch & /*cur_p*/, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch & /*cur_p*/, PatchDataLayer &pdat) {
             shamlog_debug_ln(
                 "SPHLeapfrog", "patch : n°", id_patch, "->", "compute radix tree cell volumes");
             if (pdat.is_empty()) {
@@ -579,7 +579,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt>>> cell_lengths;
         std::unordered_map<u64, std::unique_ptr<RadixTreeField<vec3>>> cell_centers;
 
-        sched.for_each_patch_data([&](u64 id_patch, Patch & /*cur_p*/, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch & /*cur_p*/, PatchDataLayer &pdat) {
             auto &rtree = *radix_trees[id_patch];
 
             auto &c_len = cell_lengths[id_patch];
@@ -633,7 +633,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
         std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt>>> multipoles;
 
-        sched.for_each_patch_data([&](u64 id_patch, Patch & /*cur_p*/, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch & /*cur_p*/, PatchDataLayer &pdat) {
             auto &rtree = *radix_trees[id_patch];
 
             u32 num_component_multipoles_fmm
@@ -679,14 +679,14 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         sched.compute_patch_field(
             min_slength_cells,
             get_mpi_type<flt>(),
-            [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
+            [&](sycl::queue & /*queue*/, Patch &p, PatchDataLayer & /*pdat*/) {
                 return min_slength_map[p.id_patch];
             });
 
         sched.compute_patch_field(
             max_slength_cells,
             get_mpi_type<flt>(),
-            [&](sycl::queue & /*queue*/, Patch &p, PatchData & /*pdat*/) {
+            [&](sycl::queue & /*queue*/, Patch &p, PatchDataLayer & /*pdat*/) {
                 return max_slength_map[p.id_patch];
             });
 
@@ -752,7 +752,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
         // force
 
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             shamlog_debug_ln("Selfgrav", "summing self grav to patch :", cur_p.id_patch);
 
             auto &pos_part_f  = pdat.get_field<vec3>(ixyz);
@@ -918,7 +918,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
             buf_force.complete_event_state(e);
         });
 
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             shamlog_debug_ln("Selfgrav", "summing interf self grav to patch :", cur_p.id_patch);
 
             auto &pos_part  = pdat.get_field<vec3>(ixyz).get_buf();
@@ -1137,7 +1137,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         });
 
         // leapfrog predictor
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "corrector");
 
             lambda_correct(

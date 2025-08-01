@@ -29,7 +29,7 @@ class MergedPatchData {
     using vec = sycl::vec<flt, 3>;
 
     u32 or_element_cnt = 0;
-    shamrock::patch::PatchData data;
+    shamrock::patch::PatchDataLayer data;
     std::tuple<vec, vec> box;
 
     MergedPatchData(shamrock::patch::PatchDataLayout &pdl) : data(pdl) {};
@@ -38,7 +38,7 @@ class MergedPatchData {
     static std::unordered_map<u64, MergedPatchData<flt>>
     merge_patches(PatchScheduler &sched, LegacyInterfacehandler<vec, flt> &interface_hndl);
 
-    inline void write_back(shamrock::patch::PatchData &pdat) {
+    inline void write_back(shamrock::patch::PatchDataLayer &pdat) {
         pdat.overwrite(data, or_element_cnt);
     }
 };
@@ -50,7 +50,7 @@ inline void write_back_merge_patches(
     using namespace shamrock::patch;
     shamlog_debug_sycl_ln("Merged Patch", "write back merged buffers");
 
-    sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+    sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
         if (merge_pdat.at(id_patch).or_element_cnt == 0)
             std::cout << " empty => skipping" << std::endl;
 

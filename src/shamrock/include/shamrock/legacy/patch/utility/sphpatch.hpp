@@ -30,7 +30,7 @@ namespace patchdata {
         inline htype get_h_max(
             shamrock::patch::PatchDataLayout &pdl,
             sycl::queue &queue,
-            shamrock::patch::PatchData &pdat) {
+            shamrock::patch::PatchDataLayer &pdat) {
 
             if (pdat.get_obj_cnt() == 0)
                 return 0;

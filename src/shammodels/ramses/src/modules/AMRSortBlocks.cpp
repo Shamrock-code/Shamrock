@@ -22,7 +22,7 @@ void shammodels::basegodunov::modules::AMRSortBlocks<Tvec, TgridVec>::reorder_am
     using MortonBuilder = RadixTreeMortonBuilder<u64, TgridVec, 3>;
     using namespace shamrock::patch;
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         std::unique_ptr<sycl::buffer<u64>> out_buf_morton;
         std::unique_ptr<sycl::buffer<u32>> out_buf_particle_index_map;
 

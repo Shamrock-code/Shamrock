@@ -77,7 +77,7 @@ bool shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::is_done() {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-shamrock::patch::PatchData
+shamrock::patch::PatchDataLayer
 shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
 
     using namespace shamrock::patch;
@@ -85,7 +85,7 @@ shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
 
     auto has_pdat = [&]() {
         bool ret = false;
-        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -134,7 +134,7 @@ shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
     }
 
     // Make a patchdata from pos_data
-    PatchData tmp(sched.pdl);
+    PatchDataLayer tmp(sched.pdl);
     if (!pos_data.empty()) {
         tmp.resize(pos_data.size());
         tmp.fields_raz();

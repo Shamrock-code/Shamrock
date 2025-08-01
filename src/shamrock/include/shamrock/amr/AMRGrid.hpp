@@ -88,7 +88,7 @@ namespace shamrock::amr {
          * @return shambase::DistributedData<SplitList>
          */
         shambase::DistributedData<OptIndexList> gen_refinelists_native(
-            std::function<void(u64, patch::Patch, patch::PatchData &, sycl::buffer<u32> &)> fct) {
+            std::function<void(u64, patch::Patch, patch::PatchDataLayer &, sycl::buffer<u32> &)> fct) {
 
             shambase::DistributedData<OptIndexList> ret;
 
@@ -96,7 +96,7 @@ namespace shamrock::amr {
 
             u64 tot_refine = 0;
 
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 sycl::queue &q = shamsys::instance::get_compute_queue();
 
                 u32 obj_cnt = pdat.get_obj_cnt();
@@ -128,7 +128,7 @@ namespace shamrock::amr {
 
             return gen_refinelists_native([&](u64 id_patch,
                                               Patch p,
-                                              PatchData &pdat,
+                                              PatchDataLayer &pdat,
                                               sycl::buffer<u32> &refine_flags) {
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -169,7 +169,7 @@ namespace shamrock::amr {
             using MortonBuilder = RadixTreeMortonBuilder<u64, Tcoord, 3>;
             using namespace shamrock::patch;
 
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 // return because no cell can be merged since
                 if (pdat.get_obj_cnt() < split_count) {
                     return;
@@ -278,7 +278,7 @@ namespace shamrock::amr {
 
             u64 sum_cell_count = 0;
 
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 sycl::queue &q = shamsys::instance::get_compute_queue();
 
                 u32 old_obj_cnt = pdat.get_obj_cnt();
@@ -361,7 +361,7 @@ namespace shamrock::amr {
 
             using namespace patch;
 
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
                 u32 old_obj_cnt = pdat.get_obj_cnt();
@@ -542,7 +542,7 @@ namespace shamrock::amr {
 
             shambase::check_queue_state(shamsys::instance::get_compute_queue());
 
-            patch::PatchData pdat(sched.pdl);
+            patch::PatchDataLayer pdat(sched.pdl);
             pdat.resize(cell_tot_count);
 
             shambase::check_queue_state(shamsys::instance::get_compute_queue());

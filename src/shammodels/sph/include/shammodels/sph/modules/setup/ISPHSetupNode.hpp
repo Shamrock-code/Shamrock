@@ -87,7 +87,7 @@ namespace shammodels::sph::modules {
          * @param nmax
          * @return shamrock::patch::PatchData
          */
-        virtual shamrock::patch::PatchData next_n(u32 nmax) = 0;
+        virtual shamrock::patch::PatchDataLayer next_n(u32 nmax) = 0;
 
         /**
          * @brief Get the name of the node

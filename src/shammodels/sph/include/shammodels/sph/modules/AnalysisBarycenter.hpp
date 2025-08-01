@@ -60,7 +60,7 @@ namespace shammodels::sph::modules {
             Tscal mass_disc = 0;
 
             sched.for_each_patchdata_nonempty(
-                [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+                [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                     // auto &xyz_buf = pdat.get_field_buf_ref<Tvec>(ixyz);
                     // u32 len       = pdat.get_obj_cnt();
                     // {

@@ -125,7 +125,7 @@ PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coo
         patch_list._next_patch_id++;
 
         if (shamcomm::world_rank() == node_owner_id) {
-            patch_data.owned_data.add_obj(root.id_patch, PatchData(pdl));
+            patch_data.owned_data.add_obj(root.id_patch, PatchDataLayer(pdl));
             shamlog_debug_sycl_ln("Scheduler", "adding patch data");
         } else {
             shamlog_debug_sycl_ln(
@@ -163,13 +163,13 @@ PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coo
     return ret;
 }
 
-void PatchScheduler::allpush_data(shamrock::patch::PatchData &pdat) {
+void PatchScheduler::allpush_data(shamrock::patch::PatchDataLayer &pdat) {
 
     shamlog_debug_ln("Scheduler", "pushing data obj cnt =", pdat.get_obj_cnt());
 
     for_each_patch_data([&](u64 id_patch,
                             shamrock::patch::Patch cur_p,
-                            shamrock::patch::PatchData &pdat_sched) {
+                            shamrock::patch::PatchDataLayer &pdat_sched) {
         auto variant_main = pdl.get_main_field_any();
 
         variant_main.visit([&](auto &arg) {
@@ -601,7 +601,7 @@ std::string PatchScheduler::dump_status() {
     ss << " -> SchedulerPatchData\n";
     ss << "    owned data : \n";
 
-    patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+    patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
         ss << "patch id : " << patch_id << " len = " << pdat.get_obj_cnt() << "\n";
     });
 
@@ -661,7 +661,7 @@ void check_locality_t(PatchScheduler &sched) {
     StackEntry stack_loc{};
 
     using namespace shamrock::patch;
-    sched.for_each_patch_data([&](u64 pid, Patch p, shamrock::patch::PatchData &pdat) {
+    sched.for_each_patch_data([&](u64 pid, Patch p, shamrock::patch::PatchDataLayer &pdat) {
         PatchDataField<vec> &main_field = pdat.get_field<vec>(0);
         auto [bmin_p0, bmax_p0]         = sched.patch_data.sim_box.patch_coord_to_domain<vec>(p);
 
@@ -938,14 +938,14 @@ void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &r
     }
 }
 
-std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_data(u32 rank) {
+std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::gather_data(u32 rank) {
 
     using namespace shamrock::patch;
 
     auto plist = this->patch_list.global;
     auto pdata = this->patch_data.owned_data;
 
-    auto serializer = [](shamrock::patch::PatchData &pdat) {
+    auto serializer = [](shamrock::patch::PatchDataLayer &pdat) {
         shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
         ser.allocate(pdat.serialize_buf_byte_size());
         pdat.serialize_buf(ser);
@@ -957,7 +957,7 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
         shamalgs::SerializeHelper ser(
             shamsys::instance::get_compute_scheduler_ptr(),
             std::forward<sham::DeviceBuffer<u8>>(buf));
-        return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
+        return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl);
     };
 
     std::vector<Message> send_payloads;
@@ -997,14 +997,14 @@ std::vector<std::unique_ptr<shamrock::patch::PatchData>> PatchScheduler::gather_
     std::vector<MPI_Status> st_lst(rqs.size());
     shamcomm::mpi::Waitall(rqs.size(), rqs.data(), st_lst.data());
 
-    std::vector<std::unique_ptr<PatchData>> ret;
+    std::vector<std::unique_ptr<PatchDataLayer>> ret;
     for (auto &recv_msg : recv_payloads) {
         shamcomm::CommunicationBuffer comm_buf = shambase::extract_pointer(recv_msg.buf);
 
         sham::DeviceBuffer<u8> buf
             = shamcomm::CommunicationBuffer::convert_usm(std::move(comm_buf));
 
-        ret.push_back(std::make_unique<PatchData>(deserializer(std::move(buf))));
+        ret.push_back(std::make_unique<PatchDataLayer>(deserializer(std::move(buf))));
     }
 
     return ret;

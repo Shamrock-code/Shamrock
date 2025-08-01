@@ -352,7 +352,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
     }));
 
     using namespace shamrock::patch;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         storage.neighbors_cache.get().preload(cur_p.id_patch);
     });
 

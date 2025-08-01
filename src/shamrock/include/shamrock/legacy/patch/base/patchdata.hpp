@@ -23,7 +23,7 @@
 #include "patchdata_field.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <random>
@@ -166,7 +166,7 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> &rq_lst) {
  */
 [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
 u64 patchdata_isend(
-    shamrock::patch::PatchData &p,
+    shamrock::patch::PatchDataLayer &p,
     std::vector<PatchDataMpiRequest> &rq_lst,
     i32 rank_dest,
     i32 tag,
@@ -183,7 +183,7 @@ u64 patchdata_isend(
  */
 [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
 u64 patchdata_irecv_probe(
-    shamrock::patch::PatchData &pdat,
+    shamrock::patch::PatchDataLayer &pdat,
     std::vector<PatchDataMpiRequest> &rq_lst,
     i32 rank_source,
     i32 tag,
@@ -195,7 +195,7 @@ u64 patchdata_irecv_probe(
  * @param eng the mersen twister
  * @return PatchData the generated PatchData
  */
-shamrock::patch::PatchData
+shamrock::patch::PatchDataLayer
 patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout &pdl, std::mt19937 &eng);
 
 /**
@@ -206,4 +206,4 @@ patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout &pdl, std::mt19937 &en
  * @return true
  * @return false
  */
-bool patch_data_check_match(shamrock::patch::PatchData &p1, shamrock::patch::PatchData &p2);
+bool patch_data_check_match(shamrock::patch::PatchDataLayer &p1, shamrock::patch::PatchDataLayer &p2);

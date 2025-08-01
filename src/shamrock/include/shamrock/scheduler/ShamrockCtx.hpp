@@ -122,16 +122,16 @@ class ShamrockCtx {
         // logfiles::close_log_files();
     }
 
-    inline std::vector<std::unique_ptr<shamrock::patch::PatchData>> gather_data(u32 rank) {
+    inline std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gather_data(u32 rank) {
         return sched->gather_data(rank);
     }
 
-    inline std::vector<std::unique_ptr<shamrock::patch::PatchData>> allgather_data() {
+    inline std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> allgather_data() {
 
         using namespace shamsys::instance;
         using namespace shamrock::patch;
 
-        std::vector<std::unique_ptr<PatchData>> recv_data;
+        std::vector<std::unique_ptr<PatchDataLayer>> recv_data;
 
         for (u32 i = 0; i < shamcomm::world_size(); i++) {
             if (i == shamcomm::world_rank()) {

@@ -57,7 +57,7 @@ class LegacyInterfacehandler {
      */
     std::unordered_map<
         u64,
-        std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>>
+        std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>>>
         interface_map;
 
     public:
@@ -110,7 +110,7 @@ class LegacyInterfacehandler {
      * @param key
      * @return const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>&
      */
-    inline const std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>> &
+    inline const std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>> &
     get_interface_list(u64 key) {
         return interface_map[key];
     }
@@ -155,14 +155,14 @@ class LegacyInterfacehandler {
 
         using namespace shamrock::patch;
 
-        const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> &p_interf_lst
+        const std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>> &p_interf_lst
             = get_interface_list(patch_id);
 
         for (auto &[int_pid, pdat_ptr] : p_interf_lst) {
 
             if (!pdat_ptr->is_empty()) {
 
-                PatchData &pdat = *pdat_ptr;
+                PatchDataLayer &pdat = *pdat_ptr;
 
                 u32 ixyz = pdat.pdl.get_field_idx<vectype>("xyz");
 

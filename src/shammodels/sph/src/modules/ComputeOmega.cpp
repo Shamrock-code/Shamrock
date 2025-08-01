@@ -37,7 +37,7 @@ void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
     shamrock::solvergraph::Field<Tscal> &omega = shambase::get_check_ref(storage.omega);
 
     shambase::DistributedData<u32> original_part_count = {};
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         original_part_count.add_obj(p.id_patch, pdat.get_obj_cnt());
     });
 
@@ -45,7 +45,7 @@ void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
 
     // ComputeField<Tscal> omega = utility.make_compute_field<Tscal>("omega", 1);
 
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         shamlog_debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "compute omega");
 
         sham::DeviceBuffer<Tscal> &omega_h = omega.get_buf(p.id_patch);

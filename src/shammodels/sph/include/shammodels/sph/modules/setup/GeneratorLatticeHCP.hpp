@@ -51,7 +51,7 @@ namespace shammodels::sph::modules {
 
         bool is_done() { return generator.is_done(); }
 
-        shamrock::patch::PatchData next_n(u32 nmax) {
+        shamrock::patch::PatchDataLayer next_n(u32 nmax) {
             StackEntry stack_loc{};
 
             using namespace shamrock::patch;
@@ -59,7 +59,7 @@ namespace shammodels::sph::modules {
 
             auto has_pdat = [&]() {
                 bool ret = false;
-                sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
                     ret = true;
                 });
                 return ret;
@@ -98,7 +98,7 @@ namespace shammodels::sph::modules {
             }
 
             // Make a patchdata from pos_data
-            PatchData tmp(sched.pdl);
+            PatchDataLayer tmp(sched.pdl);
             if (!pos_data.empty()) {
                 tmp.resize(pos_data.size());
                 tmp.fields_raz();

@@ -31,7 +31,7 @@ namespace impl {
         std::vector<InterfaceComm<vectype>> &interface_comm_list,
         std::unordered_map<
             u64,
-            std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>>
+            std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>>>
             &interface_map,
         bool periodic) {
         StackEntry stack_loc{};
@@ -39,10 +39,10 @@ namespace impl {
 
         interface_map.clear();
         for (const Patch &p : sched.patch_list.global) {
-            interface_map[p.id_patch] = std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>();
+            interface_map[p.id_patch] = std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>();
         }
 
-        std::vector<std::unique_ptr<PatchData>> comm_pdat;
+        std::vector<std::unique_ptr<PatchDataLayer>> comm_pdat;
         std::vector<u64_2> comm_vec;
         if (interface_comm_list.size() > 0) {
 
@@ -54,7 +54,7 @@ namespace impl {
                     auto patch_in
                         = sched.patch_data.get_pdat(interface_comm_list[i].sender_patch_id);
 
-                    std::vector<std::unique_ptr<PatchData>> pret
+                    std::vector<std::unique_ptr<PatchDataLayer>> pret
                         = InterfaceVolumeGenerator::append_interface<vectype>(
                             shamsys::instance::get_alt_queue(),
                             patch_in,
@@ -65,7 +65,7 @@ namespace impl {
                         comm_pdat.push_back(std::move(pdat));
                     }
                 } else {
-                    comm_pdat.push_back(std::make_unique<PatchData>(sched.pdl));
+                    comm_pdat.push_back(std::make_unique<PatchDataLayer>(sched.pdl));
                 }
                 comm_vec.push_back(u64_2{
                     interface_comm_list[i].global_patch_idx_send,

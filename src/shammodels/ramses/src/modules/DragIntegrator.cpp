@@ -68,7 +68,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
 
     scheduler().for_each_patchdata_nonempty([&, dt, ndust](
                                                 const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln(
             "[AMR evolve time step before drag ]", "evolve field with no drag patch", p.id_patch);
 
@@ -198,7 +198,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[AMR enable drag ]", "irk1 drag patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -356,7 +356,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[Ramses]", "expo drag on patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();

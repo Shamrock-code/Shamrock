@@ -89,9 +89,9 @@ namespace shammodels::basegodunov::modules {
          * @param interf the set of patch data to communicate and merge
          * @return The patch data of the interfaces
          */
-        shambase::DistributedDataShared<shamrock::patch::PatchData> communicate_pdat(
+        shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> communicate_pdat(
             shamrock::patch::PatchDataLayout &pdl,
-            shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf);
+            shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf);
 
         /**
          * @brief Communicate a single patch data field according to the object ids compute using
@@ -128,7 +128,7 @@ namespace shammodels::basegodunov::modules {
         template<class T, class Tmerged>
         shambase::DistributedData<Tmerged> merge_native(
             shambase::DistributedDataShared<T> &&interfs,
-            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)>
+            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)>
                 init,
             std::function<void(Tmerged &, T &)> appender);
 

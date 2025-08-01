@@ -39,7 +39,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
     const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
     modules::SinkParticlesUpdate<Tvec, SPHKernel> sink_update(context, solver_config, storage);
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tvec> &field = pdat.get_field<Tvec>(iaxyz_ext);
         field.field_raz();
     });
@@ -52,7 +52,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             Tscal cmass = ext_force->central_mass;
             Tscal G     = solver_config.get_constant_G();
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
@@ -74,7 +74,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             Tscal cmass = ext_force->central_mass;
             Tscal G     = solver_config.get_constant_G();
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
@@ -93,7 +93,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
         } else if (
             EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
@@ -132,7 +132,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
     const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceBuffer<Tvec> &buf_axyz     = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
@@ -167,7 +167,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
             logger::raw_ln("S", ext_force->a_spin * GM * GM * ext_force->dir_spin / (c * c * c));
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
                 sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
@@ -202,7 +202,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                               + bsize.y() * ext_force->shear_base.y()
                               + bsize.z() * ext_force->shear_base.z();
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
                 sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
@@ -268,7 +268,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
             continue;
         }
 
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             u32 Nobj = pdat.get_obj_cnt();
 
             sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);

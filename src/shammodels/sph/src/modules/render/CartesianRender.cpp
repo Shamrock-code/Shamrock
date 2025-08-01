@@ -120,7 +120,7 @@ namespace shammodels::sph::modules {
             = scheduler().get_sim_box().template get_patch_transform<Tvec>();
 
         scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch cur_p,
-                                                    shamrock::patch::PatchData &pdat) {
+                                                    shamrock::patch::PatchDataLayer &pdat) {
             shammath::CoordRange<Tvec> box = transf.to_obj_coord(cur_p);
 
             PatchDataField<Tvec> &main_field = pdat.get_field<Tvec>(0);
@@ -236,7 +236,7 @@ namespace shammodels::sph::modules {
             = scheduler().get_sim_box().template get_patch_transform<Tvec>();
 
         scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch cur_p,
-                                                    shamrock::patch::PatchData &pdat) {
+                                                    shamrock::patch::PatchDataLayer &pdat) {
             shammath::CoordRange<Tvec> box = transf.to_obj_coord(cur_p);
 
             PatchDataField<Tvec> &main_field = pdat.get_field<Tvec>(0);

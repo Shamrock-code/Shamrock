@@ -25,7 +25,7 @@ namespace shammodels::sph::modules {
         edges.part_to_remove.check_allocated(edges.patchdatas.patchdatas.get_ids());
 
         edges.patchdatas.patchdatas.for_each(
-            [&](u64 id_patch, shamrock::patch::PatchData &patchdata) {
+            [&](u64 id_patch, shamrock::patch::PatchDataLayer &patchdata) {
                 auto &buf = edges.part_to_remove.buffers.get(id_patch);
                 u32 bsize = buf.get_size();
                 if (bsize > 0) {

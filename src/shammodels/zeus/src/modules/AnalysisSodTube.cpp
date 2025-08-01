@@ -49,7 +49,7 @@ auto shammodels::zeus::modules::AnalysisSodTube<Tvec, TgridVec>::compute_L2_dist
     Tscal dxfact = solver_config.grid_coord_to_pos_fact;
 
     scheduler().for_each_patchdata_nonempty(
-        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
             sham::DeviceBuffer<TgridVec> &buf_block_min = pdat.get_field_buf_ref<TgridVec>(0);

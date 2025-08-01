@@ -28,14 +28,14 @@
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-shamrock::patch::PatchData
+shamrock::patch::PatchDataLayer
 shammodels::sph::modules::ModifierFilter<Tvec, SPHKernel>::next_n(u32 nmax) {
 
     using Config = SolverConfig<Tvec, SPHKernel>;
     Config solver_config;
     ShamrockCtx &ctx               = context;
     PatchScheduler &sched          = shambase::get_check_ref(ctx.sched);
-    shamrock::patch::PatchData tmp = parent->next_n(nmax);
+    shamrock::patch::PatchDataLayer tmp = parent->next_n(nmax);
 
     ////////////////////////// load data //////////////////////////
     sham::DeviceBuffer<Tvec> &buf_xyz

@@ -33,7 +33,7 @@ shammodels::sph::PhantomDump load_dump(std::string file) {
 }
 
 template<class T>
-std::vector<T> fetch_data(std::string key, shamrock::patch::PatchData &pdat) {
+std::vector<T> fetch_data(std::string key, shamrock::patch::PatchDataLayer &pdat) {
 
     std::vector<T> vec;
 
@@ -132,7 +132,7 @@ void multisort(std::vector<T> &ref_vec, Args &...others) {
 
 void compare_results(
     std::string name,
-    shamrock::patch::PatchData &pdat,
+    shamrock::patch::PatchDataLayer &pdat,
     shammodels::sph::PhantomDump &ref_file,
     f64 pmass,
     f64 time) {
@@ -356,9 +356,9 @@ void do_test(bool long_version) {
         t = i * dt;
     }
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered_result
             = ctx.allgather_data();
-        shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
+        shamrock::patch::PatchDataLayer &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_1step.pdf",
             pdat_end,
@@ -372,9 +372,9 @@ void do_test(bool long_version) {
         t = i * dt;
     }
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered_result
             = ctx.allgather_data();
-        shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
+        shamrock::patch::PatchDataLayer &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_10step.pdf",
             pdat_end,
@@ -393,9 +393,9 @@ void do_test(bool long_version) {
     }
 
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered_result
             = ctx.allgather_data();
-        shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
+        shamrock::patch::PatchDataLayer &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_100step.pdf",
             pdat_end,
@@ -409,9 +409,9 @@ void do_test(bool long_version) {
         t = (i + 1) * dt;
     }
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered_result
             = ctx.allgather_data();
-        shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
+        shamrock::patch::PatchDataLayer &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_1000step.pdf",
             pdat_end,

@@ -19,7 +19,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/patch/SimBox.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
@@ -31,7 +31,7 @@
 namespace shamrock::scheduler {
 
     using Patch             = shamrock::patch::Patch;
-    using PatchData         = shamrock::patch::PatchData;
+    using PatchData         = shamrock::patch::PatchDataLayer;
     using PatchDataLayout   = shamrock::patch::PatchDataLayout;
     using SimulationBoxInfo = shamrock::patch::SimulationBoxInfo;
 

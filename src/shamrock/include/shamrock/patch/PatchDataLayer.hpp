@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file PatchData.hpp
+ * @file PatchDataLayer.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -29,9 +29,9 @@
 
 namespace shamrock::patch {
     /**
-     * @brief PatchData container class, the layout is described in patchdata_layout
+     * @brief PatchDataLayer container class, the layout is described in patchdata_layout
      */
-    class PatchData {
+    class PatchDataLayer {
 
         void init_fields();
 
@@ -44,11 +44,11 @@ namespace shamrock::patch {
 
         PatchDataLayout &pdl;
 
-        inline PatchData(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
+        inline PatchDataLayer(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
 
-        inline PatchData(const PatchData &other) : pdl(other.pdl) {
+        inline PatchDataLayer(const PatchDataLayer &other) : pdl(other.pdl) {
 
-            NamedStackEntry stack_loc{"PatchData::copy_constructor", true};
+            NamedStackEntry stack_loc{"PatchDataLayer::copy_constructor", true};
 
             for (auto &field_var : other.fields) {
 
@@ -61,28 +61,28 @@ namespace shamrock::patch {
         }
 
         /**
-         * @brief PatchData move constructor
+         * @brief PatchDataLayer move constructor
          *
          * @param other
          */
-        inline PatchData(PatchData &&other) noexcept
+        inline PatchDataLayer(PatchDataLayer &&other) noexcept
             : fields(std::move(other.fields)), pdl(other.pdl) {}
 
         /**
-         * @brief PatchData move assignment
+         * @brief PatchDataLayer move assignment
          *
          * @param other
          */
-        inline PatchData &operator=(PatchData &&other) noexcept {
+        inline PatchDataLayer &operator=(PatchDataLayer &&other) noexcept {
             fields = std::move(other.fields);
             pdl    = std::move(other.pdl);
 
             return *this;
         }
 
-        PatchData &operator=(const PatchData &other) = delete;
+        PatchDataLayer &operator=(const PatchDataLayer &other) = delete;
 
-        static PatchData mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl);
+        static PatchDataLayer mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl);
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
@@ -94,21 +94,21 @@ namespace shamrock::patch {
         }
 
         template<class Func>
-        inline PatchData(PatchDataLayout &pdl, Func &&fct_init) : pdl(pdl) {
+        inline PatchDataLayer(PatchDataLayout &pdl, Func &&fct_init) : pdl(pdl) {
 
             u32 cnt = 0;
 
             fct_init(fields);
         }
 
-        inline PatchData duplicate() {
-            const PatchData &current = *this;
-            return PatchData(current);
+        inline PatchDataLayer duplicate() {
+            const PatchDataLayer &current = *this;
+            return PatchDataLayer(current);
         }
 
-        inline std::unique_ptr<PatchData> duplicate_to_ptr() {
-            const PatchData &current = *this;
-            return std::make_unique<PatchData>(current);
+        inline std::unique_ptr<PatchDataLayer> duplicate_to_ptr() {
+            const PatchDataLayer &current = *this;
+            return std::make_unique<PatchDataLayer>(current);
         }
 
         /**
@@ -117,11 +117,11 @@ namespace shamrock::patch {
          * @param pidx
          * @param out_pdat
          */
-        void extract_element(u32 pidx, PatchData &out_pdat);
+        void extract_element(u32 pidx, PatchDataLayer &out_pdat);
 
         void keep_ids(sycl::buffer<u32> &index_map, u32 len);
 
-        void insert_elements(PatchData &pdat);
+        void insert_elements(PatchDataLayer &pdat);
 
         /**
          * @brief insert elements of pdat only if they are within the range
@@ -132,7 +132,7 @@ namespace shamrock::patch {
          * @param bmax
          */
         template<class T>
-        void insert_elements_in_range(PatchData &pdat, T bmin, T bmax);
+        void insert_elements_in_range(PatchDataLayer &pdat, T bmin, T bmax);
 
         void resize(u32 new_obj_cnt);
 
@@ -170,8 +170,8 @@ namespace shamrock::patch {
         void remove_ids(const sham::DeviceBuffer<u32> &indexes, u32 len);
 
         // template<class Tvecbox>
-        // void split_patchdata(PatchData & pd0,PatchData & pd1,PatchData & pd2,PatchData &
-        // pd3,PatchData & pd4,PatchData & pd5,PatchData & pd6,PatchData & pd7,
+        // void split_patchdata(PatchDataLayer & pd0,PatchDataLayer & pd1,PatchDataLayer & pd2,PatchDataLayer &
+        // pd3,PatchDataLayer & pd4,PatchDataLayer & pd5,PatchDataLayer & pd6,PatchDataLayer & pd7,
         //     Tvecbox bmin_p0,Tvecbox bmin_p1,Tvecbox bmin_p2,Tvecbox bmin_p3,Tvecbox
         //     bmin_p4,Tvecbox bmin_p5,Tvecbox bmin_p6,Tvecbox bmin_p7, Tvecbox bmax_p0,Tvecbox
         //     bmax_p1,Tvecbox bmax_p2,Tvecbox bmax_p3,Tvecbox bmax_p4,Tvecbox bmax_p5,Tvecbox
@@ -179,12 +179,12 @@ namespace shamrock::patch {
 
         template<class Tvecbox>
         void split_patchdata(
-            std::array<std::reference_wrapper<PatchData>, 8> pdats,
+            std::array<std::reference_wrapper<PatchDataLayer>, 8> pdats,
             std::array<Tvecbox, 8> min_box,
             std::array<Tvecbox, 8> max_box);
 
-        void append_subset_to(std::vector<u32> &idxs, PatchData &pdat);
-        void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchData &pdat);
+        void append_subset_to(std::vector<u32> &idxs, PatchDataLayer &pdat);
+        void append_subset_to(sycl::buffer<u32> &idxs, u32 sz, PatchDataLayer &pdat);
 
         inline u32 get_obj_cnt() {
 
@@ -197,7 +197,7 @@ namespace shamrock::patch {
             }
 
             throw shambase::make_except_with_loc<std::runtime_error>(
-                "this patchdata does not contains any fields");
+                "this patchdatalayer does not contains any fields");
         }
 
         inline u64 memsize() {
@@ -223,7 +223,7 @@ namespace shamrock::patch {
             }
         }
 
-        void overwrite(PatchData &pdat, u32 obj_cnt);
+        void overwrite(PatchDataLayer &pdat, u32 obj_cnt);
 
         template<class T>
         bool check_field_type(u32 idx) {
@@ -340,7 +340,7 @@ namespace shamrock::patch {
             }
         }
 
-        inline friend bool operator==(PatchData &p1, PatchData &p2) {
+        inline friend bool operator==(PatchDataLayer &p1, PatchDataLayer &p2) {
             bool check = true;
 
             if (p1.fields.size() != p2.fields.size()) {
@@ -373,7 +373,7 @@ namespace shamrock::patch {
 
         shamalgs::SerializeSize serialize_buf_byte_size();
 
-        static PatchData
+        static PatchDataLayer
         deserialize_buf(shamalgs::SerializeHelper &serializer, PatchDataLayout &pdl);
 
         void fields_raz();
@@ -477,7 +477,7 @@ namespace shamrock::patch {
     };
 
     template<class T>
-    inline void PatchData::insert_elements_in_range(PatchData &pdat, T bmin, T bmax) {
+    inline void PatchDataLayer::insert_elements_in_range(PatchDataLayer &pdat, T bmin, T bmax) {
 
         StackEntry stack_loc{};
 
@@ -505,7 +505,7 @@ namespace shamrock::patch {
 
         std::vector<u32> idx_lst = get_vec_idx(bmin, bmax);
 
-        shamlog_debug_sycl_ln("PatchData", "inserting element cnt =", idx_lst.size());
+        shamlog_debug_sycl_ln("PatchDataLayer", "inserting element cnt =", idx_lst.size());
 
         pdat.append_subset_to(idx_lst, *this);
     }

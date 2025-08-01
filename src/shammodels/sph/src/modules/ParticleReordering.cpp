@@ -27,7 +27,7 @@ void shammodels::sph::modules::ParticleReordering<Tvec, Tmorton, SPHKernel>::reo
     PatchCoordTransform<Tvec> transf
         = scheduler().get_sim_box().template get_patch_transform<Tvec>();
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         u32 obj_count = pdat.get_obj_cnt();
 
         if (obj_count > 0) {

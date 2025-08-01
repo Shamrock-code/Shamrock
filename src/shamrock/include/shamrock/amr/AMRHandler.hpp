@@ -17,7 +17,7 @@
  */
 
 #include "AMRCell.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 
 namespace shamrock::amr {

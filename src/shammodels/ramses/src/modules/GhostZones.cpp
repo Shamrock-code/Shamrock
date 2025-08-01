@@ -156,7 +156,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
     gen_ghost.ghost_gen_infos.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
-        shamrock::patch::PatchData &src = scheduler().patch_data.get_pdat(sender);
+        shamrock::patch::PatchDataLayer &src = scheduler().patch_data.get_pdat(sender);
 
         sycl::buffer<u32> is_in_interf{src.get_obj_cnt()};
 
@@ -203,22 +203,22 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
 }
 
 template<class Tvec, class TgridVec>
-shambase::DistributedDataShared<shamrock::patch::PatchData>
+shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>
 shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
     shamrock::patch::PatchDataLayout &pdl,
-    shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf) {
+    shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf) {
     StackEntry stack_loc{};
 
-    shambase::DistributedDataShared<shamrock::patch::PatchData> recv_dat;
+    shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> recv_dat;
 
-    shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchData>(
+    shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchDataLayer>(
         shamsys::instance::get_compute_scheduler_ptr(),
-        std::forward<shambase::DistributedDataShared<shamrock::patch::PatchData>>(interf),
+        std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(interf),
         recv_dat,
         [&](u64 id) {
             return scheduler().get_patch_rank_owner(id);
         },
-        [](shamrock::patch::PatchData &pdat) {
+        [](shamrock::patch::PatchDataLayer &pdat) {
             shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(pdat.serialize_buf_byte_size());
             pdat.serialize_buf(ser);
@@ -229,7 +229,7 @@ shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
-            return shamrock::patch::PatchData::deserialize_buf(ser, pdl);
+            return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl);
         });
 
     return recv_dat;
@@ -273,7 +273,7 @@ template<class T, class Tmerged>
 shambase::DistributedData<Tmerged>
 shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::merge_native(
     shambase::DistributedDataShared<T> &&interfs,
-    std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)> init,
+    std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> init,
     std::function<void(Tmerged &, T &)> appender) {
 
     StackEntry stack_loc{};
@@ -281,7 +281,7 @@ shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::merge_native(
     shambase::DistributedData<Tmerged> merge_f;
 
     scheduler().for_each_patchdata_nonempty(
-        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             Tmerged tmp_merge = init(p, pdat);
 
             interfs.for_each([&](u64 sender, u64 receiver, T &interface) {
@@ -384,11 +384,11 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
     // generate send buffers
     GZData &gen_ghost = storage.ghost_zone_infos.get();
-    auto pdat_interf  = gen_ghost.template build_interface_native<PatchData>(
+    auto pdat_interf  = gen_ghost.template build_interface_native<PatchDataLayer>(
         [&](u64 sender, u64, InterfaceBuildInfos binfo, sycl::buffer<u32> &buf_idx, u32 cnt) {
-            PatchData &sender_patch = scheduler().patch_data.get_pdat(sender);
+            PatchDataLayer &sender_patch = scheduler().patch_data.get_pdat(sender);
 
-            PatchData pdat(ghost_layout);
+            PatchDataLayer pdat(ghost_layout);
 
             pdat.reserve(cnt);
 
@@ -433,20 +433,20 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         });
 
     // communicate buffers
-    shambase::DistributedDataShared<PatchData> interf_pdat
+    shambase::DistributedDataShared<PatchDataLayer> interf_pdat
         = communicate_pdat(ghost_layout, std::move(pdat_interf));
 
     std::map<u64, u64> sz_interf_map;
-    interf_pdat.for_each([&](u64 s, u64 r, PatchData &pdat_interf) {
+    interf_pdat.for_each([&](u64 s, u64 r, PatchDataLayer &pdat_interf) {
         sz_interf_map[r] += pdat_interf.get_obj_cnt();
     });
 
-    storage.merged_patchdata_ghost.set(merge_native<PatchData, MergedPatchData>(
+    storage.merged_patchdata_ghost.set(merge_native<PatchDataLayer, MergedPatchData>(
         std::move(interf_pdat),
-        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             shamlog_debug_ln("Merged patch init", p.id_patch);
 
-            PatchData pdat_new(ghost_layout);
+            PatchDataLayer pdat_new(ghost_layout);
 
             u32 or_elem = pdat.get_obj_cnt();
             pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);
@@ -478,7 +478,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
             return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
         },
-        [](MergedPatchData &mpdat, PatchData &pdat_interf) {
+        [](MergedPatchData &mpdat, PatchDataLayer &pdat_interf) {
             mpdat.total_elements += pdat_interf.get_obj_cnt();
             mpdat.pdat.insert_elements(pdat_interf);
         }));
@@ -626,7 +626,7 @@ shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_compute_f
 
     ComputeField<T> out;
     scheduler().for_each_patchdata_nonempty(
-        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             PatchDataField<T> &receiver_patch = in.get_field(p.id_patch);
 
             PatchDataField<T> new_pdat(receiver_patch);

@@ -30,7 +30,7 @@
 #include <vector>
 
 u64 patchdata_isend(
-    shamrock::patch::PatchData &p,
+    shamrock::patch::PatchDataLayer &p,
     std::vector<PatchDataMpiRequest> &rq_lst,
     i32 rank_dest,
     i32 tag,
@@ -51,7 +51,7 @@ u64 patchdata_isend(
 }
 
 u64 patchdata_irecv_probe(
-    shamrock::patch::PatchData &pdat,
+    shamrock::patch::PatchDataLayer &pdat,
     std::vector<PatchDataMpiRequest> &rq_lst,
     i32 rank_source,
     i32 tag,
@@ -71,7 +71,7 @@ u64 patchdata_irecv_probe(
     return total_data_transf;
 }
 
-shamrock::patch::PatchData
+shamrock::patch::PatchDataLayer
 patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout &pdl, std::mt19937 &eng) {
 
     using namespace shamrock::patch;
@@ -80,7 +80,7 @@ patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout &pdl, std::mt19937 &en
 
     u32 num_part = distu64(eng);
 
-    PatchData pdat(pdl);
+    PatchDataLayer pdat(pdl);
 
     pdat.for_each_field_any([&](auto &field) {
         field.gen_mock_data(num_part, eng);
@@ -89,7 +89,7 @@ patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout &pdl, std::mt19937 &en
     return pdat;
 }
 
-bool patch_data_check_match(shamrock::patch::PatchData &p1, shamrock::patch::PatchData &p2) {
+bool patch_data_check_match(shamrock::patch::PatchDataLayer &p1, shamrock::patch::PatchDataLayer &p2) {
 
     return p1 == p2;
 }

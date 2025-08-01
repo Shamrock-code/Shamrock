@@ -50,7 +50,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
         Tscal s_acc_mass = 0;
         Tvec s_acc_pxyz  = {0, 0, 0};
 
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             u32 Nobj = pdat.get_obj_cnt();
 
             sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
@@ -216,7 +216,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
         Tvec sph_acc_sink = {};
 
         scheduler().for_each_patchdata_nonempty([&, G, epsilon_grav, gpart_mass](
-                                                    Patch cur_p, PatchData &pdat) {
+                                                    Patch cur_p, PatchDataLayer &pdat) {
             sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(ixyz);
             sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 

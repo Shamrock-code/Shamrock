@@ -37,7 +37,7 @@ namespace shamrock {
 
             using namespace shamrock::patch;
 
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 field_data.add_obj(id_patch, PatchDataField<T>(name, nvar));
                 field_data.get(id_patch).resize(pdat.get_obj_cnt());
             });
@@ -153,7 +153,7 @@ namespace shamrock {
                 using namespace shamrock::patch;
 
                 u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-                sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                     using namespace shamalgs::memory;
                     using namespace shambase;
 

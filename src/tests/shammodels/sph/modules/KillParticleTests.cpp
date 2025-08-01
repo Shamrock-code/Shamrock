@@ -9,7 +9,7 @@
 
 #include "shambackends/DeviceBuffer.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
@@ -31,7 +31,7 @@ TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) 
     std::vector<T> in_2 = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
 
     // 2. Create PatchData with 5 particles: xyz = (i, i, i)
-    patch::PatchData pdat(layout);
+    patch::PatchDataLayer pdat(layout);
     pdat.resize(5);
     {
         auto &field = pdat.get_field<T>(layout.get_field_idx<T>("single_var"));

@@ -211,7 +211,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
     shambase::get_check_ref(storage.neigh_cache).free_alloc();
 
     using namespace shamrock::patch;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         auto &ncache = shambase::get_check_ref(storage.neigh_cache);
         ncache.neigh_cache.add_obj(cur_p.id_patch, build_neigh_cache(cur_p.id_patch));
     });
@@ -595,7 +595,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
     shambase::get_check_ref(storage.neigh_cache).free_alloc();
 
     using namespace shamrock::patch;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         auto &ncache = shambase::get_check_ref(storage.neigh_cache);
         ncache.neigh_cache.add_obj(cur_p.id_patch, build_neigh_cache(cur_p.id_patch));
     });

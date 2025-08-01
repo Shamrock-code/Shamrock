@@ -23,7 +23,7 @@
 #include "shammodels/ramses/Solver.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
@@ -64,7 +64,7 @@ namespace shammodels::basegodunov {
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata([&](u64 patch_id,
-                                                    shamrock::patch::PatchData &pdat) {
+                                                    shamrock::patch::PatchDataLayer &pdat) {
                 sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
                 sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 

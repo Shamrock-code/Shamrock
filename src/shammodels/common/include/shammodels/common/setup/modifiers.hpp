@@ -31,7 +31,7 @@ namespace generic::setup::modifiers {
     inline void
     set_value_in_box(PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
         StackEntry stack_loc{};
-        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             PatchDataField<vec> &xyz
                 = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
 
@@ -66,7 +66,7 @@ namespace generic::setup::modifiers {
         using flt = shambase::VecComponent<vec>;
 
         StackEntry stack_loc{};
-        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             PatchDataField<vec> &xyz
                 = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
 
@@ -102,7 +102,7 @@ namespace generic::setup::modifiers {
                 "density perturbation not implemented");
         }
 
-        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             PatchDataField<vec> &xyz
                 = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
             PatchDataField<vec> &vxyz
@@ -138,7 +138,7 @@ namespace generic::setup::modifiers {
         T sum = shambase::VectorProperties<T>::get_zero();
 
         StackEntry stack_loc{};
-        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchData &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             PatchDataField<T> &xyz = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
 
             sum += xyz.compute_sum();

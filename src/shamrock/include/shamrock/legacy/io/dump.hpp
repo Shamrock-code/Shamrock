@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchData &pdat) {
+inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDataLayer &pdat) {
 
     MPI_Status st;
 
@@ -359,7 +359,7 @@ inline void dump_patch_data(std::string prefix, PatchScheduler &sched) {
 
     {
 
-        sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
             std::cout << "[" << shamcomm::world_rank() << "] writing pdat : " << pid << std::endl;
 
             MPI_Status st;

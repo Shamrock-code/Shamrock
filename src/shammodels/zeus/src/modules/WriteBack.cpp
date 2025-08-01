@@ -31,7 +31,7 @@ void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_dat
     u32 ieint_interf              = ghost_layout.get_field_idx<Tscal>("eint");
     u32 ivel_interf               = ghost_layout.get_field_idx<Tvec>("vel");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         using MergedPDat  = shamrock::MergedPatchData;
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -39,7 +39,7 @@ void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_dat
         sham::DeviceBuffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
         sham::DeviceBuffer<Tvec> &vel_merged   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
-        PatchData &patch_dest                = scheduler().patch_data.get_pdat(p.id_patch);
+        PatchDataLayer &patch_dest                = scheduler().patch_data.get_pdat(p.id_patch);
         sham::DeviceBuffer<Tscal> &rho_dest  = patch_dest.get_field_buf_ref<Tscal>(irho_interf);
         sham::DeviceBuffer<Tscal> &eint_dest = patch_dest.get_field_buf_ref<Tscal>(ieint_interf);
         sham::DeviceBuffer<Tvec> &vel_dest   = patch_dest.get_field_buf_ref<Tvec>(ivel_interf);

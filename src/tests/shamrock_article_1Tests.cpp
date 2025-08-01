@@ -527,7 +527,7 @@ f64 amr_walk_perf(
             sham::EventList &depends_list,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat,
+            shamrock::patch::PatchDataLayer &pdat,
             shammath::CoordRange<u64_3> base_range,
             shammath::CoordRange<f32_3> real_coord_range)
             : transform(base_range, real_coord_range) {
@@ -542,7 +542,7 @@ f64 amr_walk_perf(
             sham::EventList &resulting_events,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat,
+            shamrock::patch::PatchDataLayer &pdat,
             shammath::CoordRange<u64_3> base_range,
             shammath::CoordRange<f32_3> real_coord_range) {
 
@@ -555,9 +555,9 @@ f64 amr_walk_perf(
 
     class RefineCellAccessor {
         public:
-        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchData &pdat) {}
+        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchDataLayer &pdat) {}
 
-        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchData &pdat) {}
+        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {}
     };
 
     sycl::queue &q = shamsys::instance::get_compute_queue();

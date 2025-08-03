@@ -380,7 +380,8 @@ namespace shammodels::sph {
 
             shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchDataLayer>(
                 shamsys::instance::get_compute_scheduler_ptr(),
-                std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(interf),
+                std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(
+                    interf),
                 recv_dat,
                 [&](u64 id) {
                     return sched.get_patch_rank_owner(id);
@@ -442,8 +443,8 @@ namespace shammodels::sph {
         template<class T, class Tmerged>
         inline shambase::DistributedData<Tmerged> merge_native(
             shambase::DistributedDataShared<T> &&interfs,
-            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)>
-                init,
+            std::function<
+                Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> init,
             std::function<void(Tmerged &, T &)> appender) {
 
             StackEntry stack_loc{};

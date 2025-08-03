@@ -39,7 +39,8 @@ namespace impl {
 
         interface_map.clear();
         for (const Patch &p : sched.patch_list.global) {
-            interface_map[p.id_patch] = std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>();
+            interface_map[p.id_patch]
+                = std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>();
         }
 
         std::vector<std::unique_ptr<PatchDataLayer>> comm_pdat;

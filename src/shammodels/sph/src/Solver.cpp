@@ -834,7 +834,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             sham::DeviceBuffer<u32> &buf_idx,
             u32 cnt,
             PatchDataLayer &pdat) {
-            PatchDataLayer &sender_patch             = scheduler().patch_data.get_pdat(sender);
+            PatchDataLayer &sender_patch        = scheduler().patch_data.get_pdat(sender);
             PatchDataField<Tscal> &sender_omega = omega.get_field(sender);
 
             sender_patch.get_field<Tscal>(ihpart).append_subset_to(
@@ -1362,7 +1362,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                     MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                    PatchDataLayer &mpdat              = merged_patch.pdat;
+                    PatchDataLayer &mpdat         = merged_patch.pdat;
 
                     sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
                         merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
@@ -1537,7 +1537,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                PatchDataLayer &mpdat              = merged_patch.pdat;
+                PatchDataLayer &mpdat         = merged_patch.pdat;
 
                 sham::DeviceBuffer<Tvec> &buf_xyz
                     = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();

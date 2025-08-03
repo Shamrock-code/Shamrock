@@ -89,7 +89,8 @@ patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout &pdl, std::mt19937 &en
     return pdat;
 }
 
-bool patch_data_check_match(shamrock::patch::PatchDataLayer &p1, shamrock::patch::PatchDataLayer &p2) {
+bool patch_data_check_match(
+    shamrock::patch::PatchDataLayer &p1, shamrock::patch::PatchDataLayer &p2) {
 
     return p1 == p2;
 }

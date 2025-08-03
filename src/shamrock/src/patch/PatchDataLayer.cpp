@@ -254,16 +254,16 @@ namespace shamrock::patch {
     PatchDataLayer::deserialize_buf(shamalgs::SerializeHelper &serializer, PatchDataLayout &pdl) {
         StackEntry stack_loc{};
 
-        return PatchDataLayer{pdl, [&](auto &pdat_fields) {
-                             pdl.for_each_field_any([&](auto &field) {
-                                 using f_t = typename std::remove_reference<decltype(field)>::type;
-                                 using base_t = typename f_t::field_T;
+        return PatchDataLayer{
+            pdl, [&](auto &pdat_fields) {
+                pdl.for_each_field_any([&](auto &field) {
+                    using f_t    = typename std::remove_reference<decltype(field)>::type;
+                    using base_t = typename f_t::field_T;
 
-                                 pdat_fields.push_back(
-                                     var_t{PatchDataField<base_t>::deserialize_buf(
-                                         serializer, field.name, field.nvar)});
-                             });
-                         }};
+                    pdat_fields.push_back(var_t{PatchDataField<base_t>::deserialize_buf(
+                        serializer, field.name, field.nvar)});
+                });
+            }};
     }
 
     void PatchDataLayer::fields_raz() {

@@ -128,8 +128,8 @@ namespace shammodels::basegodunov::modules {
         template<class T, class Tmerged>
         shambase::DistributedData<Tmerged> merge_native(
             shambase::DistributedDataShared<T> &&interfs,
-            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)>
-                init,
+            std::function<
+                Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> init,
             std::function<void(Tmerged &, T &)> appender);
 
         /// @brief Exchange the ghost zones of the solver

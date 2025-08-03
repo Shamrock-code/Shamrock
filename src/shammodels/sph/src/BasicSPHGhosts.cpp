@@ -462,7 +462,7 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
 
     gen.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
         shamrock::patch::PatchDataLayer &src = sched.patch_data.get_pdat(sender);
-        PatchDataField<vec> &xyz        = src.get_field<vec>(0);
+        PatchDataField<vec> &xyz             = src.get_field<vec>(0);
 
         sham::DeviceBuffer<u32> idxs_res = xyz.get_ids_where(
             [](auto access, u32 id, vec vmin, vec vmax) {

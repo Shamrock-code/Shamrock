@@ -938,7 +938,8 @@ void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &r
     }
 }
 
-std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::gather_data(u32 rank) {
+std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>>
+PatchScheduler::gather_data(u32 rank) {
 
     using namespace shamrock::patch;
 

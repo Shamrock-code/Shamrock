@@ -264,7 +264,8 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
         }
     });
 
-    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>> part_xchg_map;
+    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>>
+        part_xchg_map;
     for (u32 i = 0; i < comm_pdat.size(); i++) {
 
         shamlog_debug_ln(
@@ -503,7 +504,8 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
         }
     });
 
-    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>> part_xchg_map;
+    std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>>
+        part_xchg_map;
     for (u32 i = 0; i < comm_pdat.size(); i++) {
 
         shamlog_debug_ln(

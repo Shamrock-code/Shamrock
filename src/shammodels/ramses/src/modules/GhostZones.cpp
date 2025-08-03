@@ -273,7 +273,8 @@ template<class T, class Tmerged>
 shambase::DistributedData<Tmerged>
 shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::merge_native(
     shambase::DistributedDataShared<T> &&interfs,
-    std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> init,
+    std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)>
+        init,
     std::function<void(Tmerged &, T &)> appender) {
 
     StackEntry stack_loc{};

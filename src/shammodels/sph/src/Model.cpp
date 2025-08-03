@@ -1589,7 +1589,8 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
     {
         NamedStackEntry stack_loc{"gather data"};
-        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered = ctx.allgather_data();
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered
+            = ctx.allgather_data();
 
         for (auto &dat : gathered) {
             add_pdat_to_phantom_block(block_part, shambase::get_check_ref(dat));

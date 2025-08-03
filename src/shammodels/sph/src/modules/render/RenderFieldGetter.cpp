@@ -62,8 +62,8 @@ namespace shammodels::sph::modules {
                 });
 
                 auto field_source_getter
-                    = [&](const shamrock::patch::Patch cur_p,
-                          shamrock::patch::PatchDataLayer &pdat) -> const sham::DeviceBuffer<Tfield> & {
+                    = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat)
+                    -> const sham::DeviceBuffer<Tfield> & {
                     return density.get_buf(cur_p.id_patch);
                 };
 

@@ -222,12 +222,14 @@ class AMRTestModel {
                 public:
                 u32 *field;
 
-                WalkAccessors(sham::EventList &depends_list, shamrock::patch::PatchDataLayer &pdat) {
+                WalkAccessors(
+                    sham::EventList &depends_list, shamrock::patch::PatchDataLayer &pdat) {
                     auto &buf_field = pdat.get_field<u32>(2).get_buf();
                     field           = buf_field.get_write_access(depends_list);
                 }
 
-                void finalize(sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {
+                void
+                finalize(sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {
                     auto &buf_field = pdat.get_field<u32>(2).get_buf();
                     buf_field.complete_event_state(resulting_events);
                 }

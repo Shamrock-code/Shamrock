@@ -170,8 +170,9 @@ namespace shamrock::patch {
         void remove_ids(const sham::DeviceBuffer<u32> &indexes, u32 len);
 
         // template<class Tvecbox>
-        // void split_patchdata(PatchDataLayer & pd0,PatchDataLayer & pd1,PatchDataLayer & pd2,PatchDataLayer &
-        // pd3,PatchDataLayer & pd4,PatchDataLayer & pd5,PatchDataLayer & pd6,PatchDataLayer & pd7,
+        // void split_patchdata(PatchDataLayer & pd0,PatchDataLayer & pd1,PatchDataLayer &
+        // pd2,PatchDataLayer & pd3,PatchDataLayer & pd4,PatchDataLayer & pd5,PatchDataLayer &
+        // pd6,PatchDataLayer & pd7,
         //     Tvecbox bmin_p0,Tvecbox bmin_p1,Tvecbox bmin_p2,Tvecbox bmin_p3,Tvecbox
         //     bmin_p4,Tvecbox bmin_p5,Tvecbox bmin_p6,Tvecbox bmin_p7, Tvecbox bmax_p0,Tvecbox
         //     bmax_p1,Tvecbox bmax_p2,Tvecbox bmax_p3,Tvecbox bmax_p4,Tvecbox bmax_p5,Tvecbox

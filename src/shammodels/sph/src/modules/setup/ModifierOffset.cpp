@@ -29,8 +29,8 @@ shammodels::sph::modules::ModifierOffset<Tvec, SPHKernel>::next_n(u32 nmax) {
 
     using Config = SolverConfig<Tvec, SPHKernel>;
     Config solver_config;
-    ShamrockCtx &ctx               = context;
-    PatchScheduler &sched          = shambase::get_check_ref(ctx.sched);
+    ShamrockCtx &ctx                    = context;
+    PatchScheduler &sched               = shambase::get_check_ref(ctx.sched);
     shamrock::patch::PatchDataLayer tmp = parent->next_n(nmax);
 
     ////////////////////////// load data //////////////////////////

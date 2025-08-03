@@ -388,7 +388,8 @@ class Interface_Generator {
             Interface_map;
 
         for (const Patch &p : sched.patch_list.global) {
-            Interface_map[p.id_patch] = std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>();
+            Interface_map[p.id_patch]
+                = std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>();
         }
 
         std::vector<std::unique_ptr<PatchDataLayer>> comm_pdat;
@@ -499,9 +500,10 @@ class Interface_Generator {
                             global_comm_tag[i]);
                         Interface_map[precv.id_patch].push_back(
                             {psend.id_patch,
-                             std::make_unique<
-                                PatchDataLayer>()}); // patchdata_irecv(recv_rq, psend.node_owner_id,
-                                                 // global_comm_tag[i], MPI_COMM_WORLD)}
+                             std::make_unique<PatchDataLayer>()}); // patchdata_irecv(recv_rq,
+                                                                   // psend.node_owner_id,
+                                                                   // global_comm_tag[i],
+                                                                   // MPI_COMM_WORLD)}
                         patchdata_irecv_probe(
                             *std::get<1>(Interface_map[precv.id_patch]
                                                       [Interface_map[precv.id_patch].size() - 1]),

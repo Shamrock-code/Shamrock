@@ -52,8 +52,8 @@ namespace shammodels::zeus::modules {
         template<class T, class Tmerged>
         shambase::DistributedData<Tmerged> merge_native(
             shambase::DistributedDataShared<T> &&interfs,
-            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)>
-                init,
+            std::function<
+                Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> init,
             std::function<void(Tmerged &, T &)> appender);
 
         void exchange_ghost();

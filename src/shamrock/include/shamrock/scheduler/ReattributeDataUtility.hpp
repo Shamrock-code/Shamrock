@@ -122,20 +122,54 @@ namespace shamrock {
 
             std::unordered_map<u64, u64> histogram_extract;
 
-            sched.patch_data.for_each_patchdata([&](u64 current_pid,
-                                                    shamrock::patch::PatchDataLayer &pdat) {
-                histogram_extract[current_pid] = 0;
-                if (!pdat.is_empty()) {
+            sched.patch_data.for_each_patchdata(
+                [&](u64 current_pid, shamrock::patch::PatchDataLayer &pdat) {
+                    histogram_extract[current_pid] = 0;
+                    if (!pdat.is_empty()) {
 
-                    sycl::host_accessor nid{new_pid.get(current_pid), sycl::read_only};
+                        sycl::host_accessor nid{new_pid.get(current_pid), sycl::read_only};
 
-                    if (false) {
+                        if (false) {
 
-                        const u32 cnt = pdat.get_obj_cnt();
+                            const u32 cnt = pdat.get_obj_cnt();
 
-                        for (u32 i = cnt - 1; i < cnt; i--) {
-                            u64 new_pid = nid[i];
-                            if (current_pid != new_pid) {
+                            for (u32 i = cnt - 1; i < cnt; i--) {
+                                u64 new_pid = nid[i];
+                                if (current_pid != new_pid) {
+
+                                    if (!part_exchange.has_key(current_pid, new_pid)) {
+                                        part_exchange.add_obj(
+                                            current_pid, new_pid, PatchDataLayer(sched.pdl));
+                                    }
+
+                                    part_exchange.for_each(
+                                        [&](u64 _old_id, u64 _new_id, PatchDataLayer &pdat_int) {
+                                            if (_old_id == current_pid && _new_id == new_pid) {
+                                                pdat.extract_element(i, pdat_int);
+                                                histogram_extract[current_pid]++;
+                                            }
+                                        });
+                                }
+                            }
+                        } else {
+                            std::vector<u32> keep_ids;
+                            std::unordered_map<u64, std::vector<u32>> extract_indexes;
+
+                            const u32 cnt = pdat.get_obj_cnt();
+                            for (u32 i = 0; i < cnt; i++) {
+                                u64 new_pid = nid[i];
+                                if (current_pid != new_pid) {
+                                    extract_indexes[new_pid].push_back(i);
+                                    histogram_extract[current_pid]++;
+                                } else {
+                                    keep_ids.push_back(i);
+                                }
+                            }
+
+                            for (auto &[new_id, vec] : extract_indexes) {
+
+                                u64 new_pid                   = new_id;
+                                std::vector<u32> &idx_extract = vec;
 
                                 if (!part_exchange.has_key(current_pid, new_pid)) {
                                     part_exchange.add_obj(
@@ -145,49 +179,16 @@ namespace shamrock {
                                 part_exchange.for_each(
                                     [&](u64 _old_id, u64 _new_id, PatchDataLayer &pdat_int) {
                                         if (_old_id == current_pid && _new_id == new_pid) {
-                                            pdat.extract_element(i, pdat_int);
-                                            histogram_extract[current_pid]++;
+                                            pdat.append_subset_to(idx_extract, pdat_int);
                                         }
                                     });
                             }
+
+                            sycl::buffer<u32> keep_idx = shamalgs::memory::vec_to_buf(keep_ids);
+                            pdat.keep_ids(keep_idx, keep_ids.size());
                         }
-                    } else {
-                        std::vector<u32> keep_ids;
-                        std::unordered_map<u64, std::vector<u32>> extract_indexes;
-
-                        const u32 cnt = pdat.get_obj_cnt();
-                        for (u32 i = 0; i < cnt; i++) {
-                            u64 new_pid = nid[i];
-                            if (current_pid != new_pid) {
-                                extract_indexes[new_pid].push_back(i);
-                                histogram_extract[current_pid]++;
-                            } else {
-                                keep_ids.push_back(i);
-                            }
-                        }
-
-                        for (auto &[new_id, vec] : extract_indexes) {
-
-                            u64 new_pid                   = new_id;
-                            std::vector<u32> &idx_extract = vec;
-
-                            if (!part_exchange.has_key(current_pid, new_pid)) {
-                                part_exchange.add_obj(current_pid, new_pid, PatchDataLayer(sched.pdl));
-                            }
-
-                            part_exchange.for_each(
-                                [&](u64 _old_id, u64 _new_id, PatchDataLayer &pdat_int) {
-                                    if (_old_id == current_pid && _new_id == new_pid) {
-                                        pdat.append_subset_to(idx_extract, pdat_int);
-                                    }
-                                });
-                        }
-
-                        sycl::buffer<u32> keep_idx = shamalgs::memory::vec_to_buf(keep_ids);
-                        pdat.keep_ids(keep_idx, keep_ids.size());
                     }
-                }
-            });
+                });
 
             for (auto &[k, v] : histogram_extract) {
                 shamlog_debug_ln("ReattributeDataUtility", "patch", k, "extract=", v);

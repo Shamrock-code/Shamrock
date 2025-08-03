@@ -29,7 +29,8 @@ inline void patch_data_exchange_object(
     std::vector<u64_2> &send_comm_vec,
     std::unordered_map<
         u64,
-        std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>>> &interface_map) {
+        std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>>>
+        &interface_map) {
     patchdata_exchanger::impl::patch_data_exchange_object(
         pdl, global_patch_list, send_comm_pdat, send_comm_vec, interface_map);
 }

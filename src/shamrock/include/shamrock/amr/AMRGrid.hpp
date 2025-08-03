@@ -88,7 +88,8 @@ namespace shamrock::amr {
          * @return shambase::DistributedData<SplitList>
          */
         shambase::DistributedData<OptIndexList> gen_refinelists_native(
-            std::function<void(u64, patch::Patch, patch::PatchDataLayer &, sycl::buffer<u32> &)> fct) {
+            std::function<void(u64, patch::Patch, patch::PatchDataLayer &, sycl::buffer<u32> &)>
+                fct) {
 
             shambase::DistributedData<OptIndexList> ret;
 

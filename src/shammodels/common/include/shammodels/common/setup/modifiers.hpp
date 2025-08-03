@@ -31,28 +31,29 @@ namespace generic::setup::modifiers {
     inline void
     set_value_in_box(PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
         StackEntry stack_loc{};
-        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
-            PatchDataField<vec> &xyz
-                = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
+        sched.patch_data.for_each_patchdata(
+            [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+                PatchDataField<vec> &xyz
+                    = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
 
-            PatchDataField<T> &f = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
+                PatchDataField<T> &f = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
 
-            {
-                auto &buf = f.get_buf();
-                sycl::host_accessor acc{*buf};
+                {
+                    auto &buf = f.get_buf();
+                    sycl::host_accessor acc{*buf};
 
-                auto &buf_xyz = xyz.get_buf();
-                sycl::host_accessor acc_xyz{*buf_xyz};
+                    auto &buf_xyz = xyz.get_buf();
+                    sycl::host_accessor acc_xyz{*buf_xyz};
 
-                for (u32 i = 0; i < f.size(); i++) {
-                    vec r = acc_xyz[i];
+                    for (u32 i = 0; i < f.size(); i++) {
+                        vec r = acc_xyz[i];
 
-                    if (BBAA::is_coord_in_range(r, std::get<0>(box), std::get<1>(box))) {
-                        acc[i] = val;
+                        if (BBAA::is_coord_in_range(r, std::get<0>(box), std::get<1>(box))) {
+                            acc[i] = val;
+                        }
                     }
                 }
-            }
-        });
+            });
     }
 
     template<class T, class vec>
@@ -66,29 +67,30 @@ namespace generic::setup::modifiers {
         using flt = shambase::VecComponent<vec>;
 
         StackEntry stack_loc{};
-        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
-            PatchDataField<vec> &xyz
-                = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
+        sched.patch_data.for_each_patchdata(
+            [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+                PatchDataField<vec> &xyz
+                    = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
 
-            PatchDataField<T> &f = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
+                PatchDataField<T> &f = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
 
-            flt r2 = radius * radius;
-            {
-                auto &buf = f.get_buf();
-                sycl::host_accessor acc{*buf};
+                flt r2 = radius * radius;
+                {
+                    auto &buf = f.get_buf();
+                    sycl::host_accessor acc{*buf};
 
-                auto &buf_xyz = xyz.get_buf();
-                sycl::host_accessor acc_xyz{*buf_xyz};
+                    auto &buf_xyz = xyz.get_buf();
+                    sycl::host_accessor acc_xyz{*buf_xyz};
 
-                for (u32 i = 0; i < f.size(); i++) {
-                    vec dr = acc_xyz[i] - center;
+                    for (u32 i = 0; i < f.size(); i++) {
+                        vec dr = acc_xyz[i] - center;
 
-                    if (sycl::dot(dr, dr) < r2) {
-                        acc[i] = val;
+                        if (sycl::dot(dr, dr) < r2) {
+                            acc[i] = val;
+                        }
                     }
                 }
-            }
-        });
+            });
     }
 
     template<class flt>
@@ -102,34 +104,35 @@ namespace generic::setup::modifiers {
                 "density perturbation not implemented");
         }
 
-        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
-            PatchDataField<vec> &xyz
-                = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
-            PatchDataField<vec> &vxyz
-                = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("vxyz"));
+        sched.patch_data.for_each_patchdata(
+            [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+                PatchDataField<vec> &xyz
+                    = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
+                PatchDataField<vec> &vxyz
+                    = pdat.template get_field<vec>(sched.pdl.get_field_idx<vec>("vxyz"));
 
-            flt ampl = std::get<1>(ampls);
+                flt ampl = std::get<1>(ampls);
 
-            {
+                {
 
-                u32 cnt = pdat.get_obj_cnt();
+                    u32 cnt = pdat.get_obj_cnt();
 
-                auto &buf_xyz = xyz.get_buf();
-                auto acc_xyz  = buf_xyz.copy_to_stdvec();
+                    auto &buf_xyz = xyz.get_buf();
+                    auto acc_xyz  = buf_xyz.copy_to_stdvec();
 
-                auto &buf_vxyz = vxyz.get_buf();
-                auto acc_vxyz  = buf_vxyz.copy_to_stdvec();
+                    auto &buf_vxyz = vxyz.get_buf();
+                    auto acc_vxyz  = buf_vxyz.copy_to_stdvec();
 
-                for (u32 i = 0; i < cnt; i++) {
-                    vec r       = acc_xyz[i];
-                    flt rkphi   = sycl::dot(r, k) + phase;
-                    acc_vxyz[i] = ampl * sycl::sin(rkphi);
+                    for (u32 i = 0; i < cnt; i++) {
+                        vec r       = acc_xyz[i];
+                        flt rkphi   = sycl::dot(r, k) + phase;
+                        acc_vxyz[i] = ampl * sycl::sin(rkphi);
+                    }
+
+                    buf_xyz.copy_from_stdvec(acc_xyz);
+                    buf_vxyz.copy_from_stdvec(acc_vxyz);
                 }
-
-                buf_xyz.copy_from_stdvec(acc_xyz);
-                buf_vxyz.copy_from_stdvec(acc_vxyz);
-            }
-        });
+            });
     }
 
     template<class T>
@@ -138,7 +141,8 @@ namespace generic::setup::modifiers {
         T sum = shambase::VectorProperties<T>::get_zero();
 
         StackEntry stack_loc{};
-        sched.patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 patch_id,
+                                                shamrock::patch::PatchDataLayer &pdat) {
             PatchDataField<T> &xyz = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(name));
 
             sum += xyz.compute_sum();

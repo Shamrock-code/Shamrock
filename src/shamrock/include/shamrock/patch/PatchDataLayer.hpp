@@ -197,7 +197,7 @@ namespace shamrock::patch {
             }
 
             throw shambase::make_except_with_loc<std::runtime_error>(
-                "this patchdatalayer does not contains any fields");
+                "this PatchDataLayer does not contain any fields");
         }
 
         inline u64 memsize() {

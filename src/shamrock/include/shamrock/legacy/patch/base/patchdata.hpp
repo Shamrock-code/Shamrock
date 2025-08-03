@@ -156,7 +156,7 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> &rq_lst) {
 }
 
 /**
- * @brief perform a MPI isend with a PatchData object
+ * @brief perform a MPI isend with a PatchDataLayer object
  *
  * @param p the patchdata to send
  * @param rq_lst reference to the vector of MPI_Request corresponding to the send
@@ -173,7 +173,7 @@ u64 patchdata_isend(
     MPI_Comm comm);
 
 /**
- * @brief perform a MPI irecv with a PatchData object
+ * @brief perform a MPI irecv with a PatchDataLayer object
  *
  * @param rq_lst reference to the vector of MPI_Request corresponding to the recv
  * @param rank_source rank to receive from
@@ -190,16 +190,16 @@ u64 patchdata_irecv_probe(
     MPI_Comm comm);
 
 /**
- * @brief generate dummy patchdata from a mersen twister
+ * @brief generate dummy PatchDataLayer from a mersen twister
  *
  * @param eng the mersen twister
- * @return PatchData the generated PatchData
+ * @return PatchDataLayer the generated PatchDataLayer
  */
 shamrock::patch::PatchDataLayer
 patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout &pdl, std::mt19937 &eng);
 
 /**
- * @brief check if two PatchData content match
+ * @brief check if two PatchDataLayer content match
  *
  * @param p1
  * @param p2

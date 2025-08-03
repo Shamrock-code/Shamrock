@@ -12,7 +12,8 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamrock/patch/PatchData::serialize_buf", testpatchdataserialize, 1) {
+TestStart(
+    Unittest, "shamrock/patch/PatchDataLayer::serialize_buf", testpatchdatalayerserialize, 1) {
     using namespace shamrock::patch;
 
     u32 obj = 1000;

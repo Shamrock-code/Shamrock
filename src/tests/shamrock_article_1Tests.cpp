@@ -488,7 +488,7 @@ f64 amr_walk_perf(
     using namespace shamrock::patch;
     using namespace shamrock::scheduler;
 
-    PatchDataLayout layout;
+    PatchDataLayerLayout layout;
     layout.add_field<u64_3>("cell_min", 1);
     layout.add_field<u64_3>("cell_max", 1);
 

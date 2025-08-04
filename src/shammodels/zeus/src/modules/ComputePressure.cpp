@@ -40,7 +40,7 @@ void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
 
     ComputeField<Tscal> &pressure_field = storage.pressure.get();
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
     u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
 

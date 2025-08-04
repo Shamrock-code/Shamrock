@@ -19,7 +19,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 // #include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/utils/syclreduction.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include <type_traits>
 #include <stdexcept>
 
@@ -28,7 +28,7 @@ namespace patchdata {
 
         template<class htype>
         inline htype get_h_max(
-            shamrock::patch::PatchDataLayout &pdl,
+            shamrock::patch::PatchDataLayerLayout &pdl,
             sycl::queue &queue,
             shamrock::patch::PatchDataLayer &pdat) {
 
@@ -60,7 +60,7 @@ namespace patchdata {
 
         template<class htype>
         [[deprecated]]
-        inline htype get_h_max(PatchDataLayout & pdl,sycl::queue & queue, PatchDataBuffer & pdatbuf){
+        inline htype get_h_max(PatchDataLayerLayout & pdl,sycl::queue & queue, PatchDataBuffer & pdatbuf){
 
             if(pdatbuf.element_count == 0) return 0;
 

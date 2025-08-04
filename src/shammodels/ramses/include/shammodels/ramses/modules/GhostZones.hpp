@@ -90,7 +90,7 @@ namespace shammodels::basegodunov::modules {
          * @return The patch data of the interfaces
          */
         shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> communicate_pdat(
-            shamrock::patch::PatchDataLayout &pdl,
+            shamrock::patch::PatchDataLayerLayout &pdl,
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf);
 
         /**

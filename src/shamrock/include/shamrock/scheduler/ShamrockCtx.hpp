@@ -18,7 +18,7 @@
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <map>
 #include <memory>
@@ -41,14 +41,14 @@ class ShamAPIException : public std::exception {
 
 class ShamrockCtx {
     public:
-    std::unique_ptr<shamrock::patch::PatchDataLayout> pdl;
+    std::unique_ptr<shamrock::patch::PatchDataLayerLayout> pdl;
     std::unique_ptr<PatchScheduler> sched;
 
     inline void pdata_layout_new() {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl = std::make_unique<shamrock::patch::PatchDataLayout>();
+        pdl = std::make_unique<shamrock::patch::PatchDataLayerLayout>();
     }
 
     // inline void pdata_layout_do_double_prec_mode(){
@@ -65,7 +65,7 @@ class ShamrockCtx {
     //    pdl->xyz_mode = xyz32;
     //}
 
-    inline shamrock::patch::PatchDataLayout &get_pdl_write() {
+    inline shamrock::patch::PatchDataLayerLayout &get_pdl_write() {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }

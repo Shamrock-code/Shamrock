@@ -18,7 +18,7 @@ TestStart(
 
     u32 obj = 1000;
 
-    PatchDataLayout pdl;
+    PatchDataLayerLayout pdl;
 
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);

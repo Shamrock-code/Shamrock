@@ -72,7 +72,7 @@ u64 patchdata_irecv_probe(
 }
 
 shamrock::patch::PatchDataLayer
-patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout &pdl, std::mt19937 &eng) {
+patchdata_gen_dummy_data(shamrock::patch::PatchDataLayerLayout &pdl, std::mt19937 &eng) {
 
     using namespace shamrock::patch;
 

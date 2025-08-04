@@ -19,7 +19,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 // #include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 
@@ -32,7 +32,7 @@ class MergedPatchData {
     shamrock::patch::PatchDataLayer data;
     std::tuple<vec, vec> box;
 
-    MergedPatchData(shamrock::patch::PatchDataLayout &pdl) : data(pdl) {};
+    MergedPatchData(shamrock::patch::PatchDataLayerLayout &pdl) : data(pdl) {};
 
     [[nodiscard]]
     static std::unordered_map<u64, MergedPatchData<flt>>

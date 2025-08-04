@@ -30,7 +30,7 @@
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
@@ -728,8 +728,8 @@ struct shammodels::sph::SolverConfig {
         }
     }
 
-    void set_layout(shamrock::patch::PatchDataLayout &pdl);
-    void set_ghost_layout(shamrock::patch::PatchDataLayout &ghost_layout);
+    void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);
+    void set_ghost_layout(shamrock::patch::PatchDataLayerLayout &ghost_layout);
 };
 
 namespace shammodels::sph {

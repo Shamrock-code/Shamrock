@@ -104,7 +104,7 @@ struct SparseCommExchanger<shamrock::patch::PatchDataLayer> {
 
         if (!send_comm_pdat.empty()) {
 
-            PatchDataLayout &pdl = send_comm_pdat[0]->pdl;
+            PatchDataLayerLayout &pdl = send_comm_pdat[0]->pdl;
 
             std::vector<PatchDataMpiRequest> rq_lst;
 

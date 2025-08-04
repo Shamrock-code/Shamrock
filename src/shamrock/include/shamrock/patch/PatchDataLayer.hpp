@@ -21,7 +21,7 @@
 #include "shambase/stacktrace.hpp"
 #include "Patch.hpp"
 #include "PatchDataField.hpp"
-#include "PatchDataLayout.hpp"
+#include "PatchDataLayerLayout.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shammath/intervals.hpp"
 #include <variant>
@@ -42,9 +42,9 @@ namespace shamrock::patch {
         public:
         using field_variant_t = var_t;
 
-        PatchDataLayout &pdl;
+        PatchDataLayerLayout &pdl;
 
-        inline PatchDataLayer(PatchDataLayout &pdl) : pdl(pdl) { init_fields(); }
+        inline PatchDataLayer(PatchDataLayerLayout &pdl) : pdl(pdl) { init_fields(); }
 
         inline PatchDataLayer(const PatchDataLayer &other) : pdl(other.pdl) {
 
@@ -82,7 +82,7 @@ namespace shamrock::patch {
 
         PatchDataLayer &operator=(const PatchDataLayer &other) = delete;
 
-        static PatchDataLayer mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayout &pdl);
+        static PatchDataLayer mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayerLayout &pdl);
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
@@ -94,7 +94,7 @@ namespace shamrock::patch {
         }
 
         template<class Func>
-        inline PatchDataLayer(PatchDataLayout &pdl, Func &&fct_init) : pdl(pdl) {
+        inline PatchDataLayer(PatchDataLayerLayout &pdl, Func &&fct_init) : pdl(pdl) {
 
             u32 cnt = 0;
 
@@ -375,7 +375,7 @@ namespace shamrock::patch {
         shamalgs::SerializeSize serialize_buf_byte_size();
 
         static PatchDataLayer
-        deserialize_buf(shamalgs::SerializeHelper &serializer, PatchDataLayout &pdl);
+        deserialize_buf(shamalgs::SerializeHelper &serializer, PatchDataLayerLayout &pdl);
 
         void fields_raz();
 

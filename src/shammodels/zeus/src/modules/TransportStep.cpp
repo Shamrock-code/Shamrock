@@ -31,7 +31,7 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_cell_cent
 
     using Block = typename Config::AMRBlock;
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
     u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
     u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
@@ -392,7 +392,7 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_face_cent
     ComputeField<Tscal8> &Qstar_y = storage.Qstar_y.get();
     ComputeField<Tscal8> &Qstar_z = storage.Qstar_z.get();
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
     u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
     u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
@@ -665,7 +665,7 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_flux() {
     ComputeField<Tscal8> &Flux_y = storage.Flux_y.get();
     ComputeField<Tscal8> &Flux_z = storage.Flux_z.get();
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
     u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
     u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
@@ -982,7 +982,7 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_new_qte()
     ComputeField<Tscal8> &Q_ym = storage.Q_ym.get();
     ComputeField<Tscal8> &Q_zm = storage.Q_zm.get();
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
     u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
     u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
     u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");

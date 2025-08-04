@@ -20,7 +20,7 @@
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 // #include "shamrock/legacy/patch/patchdata_buffer.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/sph/kernels.hpp"
 #include "shamrock/sph/sphpart.hpp"
 #include "shamtree/RadixTree.hpp"

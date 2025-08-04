@@ -39,7 +39,7 @@ namespace shamrock {
         u32 original_elements;
         u32 total_elements;
         patch::PatchDataLayer pdat;
-        patch::PatchDataLayout &pdl;
+        patch::PatchDataLayerLayout &pdl;
     };
 
     class InterfacesUtility {

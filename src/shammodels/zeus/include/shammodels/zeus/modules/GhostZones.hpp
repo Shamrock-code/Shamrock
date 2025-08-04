@@ -42,7 +42,7 @@ namespace shammodels::zeus::modules {
         void build_ghost_cache();
 
         shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> communicate_pdat(
-            shamrock::patch::PatchDataLayout &pdl,
+            shamrock::patch::PatchDataLayerLayout &pdl,
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf);
 
         template<class T>

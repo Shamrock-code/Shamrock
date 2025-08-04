@@ -40,7 +40,7 @@
 #include "scheduler_patch_list.hpp"
 #include "shambackends/math.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/patch/PatchField.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
@@ -62,7 +62,7 @@ class PatchScheduler {
     using PatchTree          = shamrock::scheduler::PatchTree;
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
 
-    shamrock::patch::PatchDataLayout &pdl;
+    shamrock::patch::PatchDataLayerLayout &pdl;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
@@ -87,7 +87,7 @@ class PatchScheduler {
 
     void free_mpi_required_types();
 
-    PatchScheduler(shamrock::patch::PatchDataLayout &pdl, u64 crit_split, u64 crit_merge);
+    PatchScheduler(shamrock::patch::PatchDataLayerLayout &pdl, u64 crit_split, u64 crit_merge);
 
     ~PatchScheduler();
 

@@ -17,7 +17,7 @@
 #include "shambase/time.hpp"
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammodels/nbody/setup/nbody_setup.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtest/shamtest.hpp"
 
@@ -30,7 +30,7 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
 
     u64 Nesti = (2.F / dr) * (2.F / dr) * (2.F / dr);
 
-    shamrock::patch::PatchDataLayout pdl;
+    shamrock::patch::PatchDataLayerLayout pdl;
 
     pdl.add_field<f32_3>("xyz", 1);
     pdl.add_field<f32>("hpart", 1);

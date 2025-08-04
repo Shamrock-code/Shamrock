@@ -8,16 +8,16 @@
 // -------------------------------------------------------//
 
 /**
- * @file PatchDataLayout.cpp
+ * @file PatchDataLayerLayout.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 
 namespace shamrock::patch {
-    std::string PatchDataLayout::get_description_str() {
+    std::string PatchDataLayerLayout::get_description_str() {
         std::stringstream ss;
 
         if (fields.empty()) {
@@ -78,7 +78,7 @@ namespace shamrock::patch {
         return ss.str();
     }
 
-    std::vector<std::string> PatchDataLayout::get_field_names() {
+    std::vector<std::string> PatchDataLayerLayout::get_field_names() {
         std::vector<std::string> ret;
 
         for (var_t &v : fields) {
@@ -90,7 +90,7 @@ namespace shamrock::patch {
         return ret;
     }
 
-    void to_json(nlohmann::json &j, const PatchDataLayout &p) {
+    void to_json(nlohmann::json &j, const PatchDataLayerLayout &p) {
 
         using json = nlohmann::json;
 
@@ -151,20 +151,20 @@ namespace shamrock::patch {
         j = entries;
     }
 
-    void from_json(const nlohmann::json &j, PatchDataLayout &p) {
+    void from_json(const nlohmann::json &j, PatchDataLayerLayout &p) {
         for (auto &entry : j) {
             p.add_field_t(entry["field_name"], entry["nvar"].get<u32>(), entry["type"]);
         }
     }
 
-    bool operator==(const PatchDataLayout &lhs, const PatchDataLayout &rhs) {
+    bool operator==(const PatchDataLayerLayout &lhs, const PatchDataLayerLayout &rhs) {
 
         bool ret = true;
         ret      = ret && (lhs.fields.size() == rhs.fields.size());
 
         for (u32 i = 0; i < lhs.fields.size(); i++) {
-            const PatchDataLayout::var_t &var_lhs = lhs.fields[i];
-            const PatchDataLayout::var_t &var_rhs = rhs.fields[i];
+            const PatchDataLayerLayout::var_t &var_lhs = lhs.fields[i];
+            const PatchDataLayerLayout::var_t &var_rhs = rhs.fields[i];
 
             std::visit(
                 [&](auto &flhs, auto &frhs) {

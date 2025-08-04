@@ -184,7 +184,7 @@ namespace shamrock {
         json jpdat_info  = json::parse(patchdata_infos);
 
         ctx.pdata_layout_new();
-        *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayout>();
+        *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayerLayout>();
         ctx.init_sched(
             jmeta_patch.at("crit_patch_split").get<u64>(),
             jmeta_patch.at("crit_patch_merge").get<u64>());

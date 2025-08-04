@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file PatchDataLayout.hpp
+ * @file PatchDataLayerLayout.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -63,7 +63,7 @@ namespace shamrock::patch {
         inline FieldDescriptor(std::string name, u32 nvar) : nvar(nvar), name(name) {}
     };
 
-    class PatchDataLayout {
+    class PatchDataLayerLayout {
 
         template<class T>
         using FieldDescriptor = shamrock::patch::FieldDescriptor<T>;
@@ -233,62 +233,62 @@ namespace shamrock::patch {
         }
 
         /**
-         * @brief Overloaded equality operator for PatchDataLayout class
+         * @brief Overloaded equality operator for PatchDataLayerLayout class
          *
-         * This operator is used to check if two PatchDataLayout objects are equal.
+         * This operator is used to check if two PatchDataLayerLayout objects are equal.
          * It compares the fields of the objects and returns true if they are equal,
          * and false otherwise.
          *
-         * @param lhs The first PatchDataLayout object to compare
-         * @param rhs The second PatchDataLayout object to compare
+         * @param lhs The first PatchDataLayerLayout object to compare
+         * @param rhs The second PatchDataLayerLayout object to compare
          *
          * @return true if the two objects are equal, false otherwise
          */
-        friend bool operator==(const PatchDataLayout &lhs, const PatchDataLayout &rhs);
+        friend bool operator==(const PatchDataLayerLayout &lhs, const PatchDataLayerLayout &rhs);
     };
 
     /**
-     * @brief Serialize a PatchDataLayout object to a JSON object
+     * @brief Serialize a PatchDataLayerLayout object to a JSON object
      *
-     * This function takes a PatchDataLayout object and serializes it to a JSON object.
-     * It is used to convert the PatchDataLayout object to a JSON string.
+     * This function takes a PatchDataLayerLayout object and serializes it to a JSON object.
+     * It is used to convert the PatchDataLayerLayout object to a JSON string.
      *
-     * @param j The JSON object to serialize the PatchDataLayout object to
-     * @param p The PatchDataLayout object to serialize
+     * @param j The JSON object to serialize the PatchDataLayerLayout object to
+     * @param p The PatchDataLayerLayout object to serialize
      */
-    void to_json(nlohmann::json &j, const PatchDataLayout &p);
+    void to_json(nlohmann::json &j, const PatchDataLayerLayout &p);
 
     /**
-     * @brief Deserialize a PatchDataLayout object from a JSON object
+     * @brief Deserialize a PatchDataLayerLayout object from a JSON object
      *
-     * This function takes a JSON object and deserializes it to a PatchDataLayout object.
-     * It is used to convert a JSON string to a PatchDataLayout object.
+     * This function takes a JSON object and deserializes it to a PatchDataLayerLayout object.
+     * It is used to convert a JSON string to a PatchDataLayerLayout object.
      *
-     * @param j The JSON object to deserialize the PatchDataLayout object from
-     * @param p The PatchDataLayout object to deserialize
+     * @param j The JSON object to deserialize the PatchDataLayerLayout object from
+     * @param p The PatchDataLayerLayout object to deserialize
      */
-    void from_json(const nlohmann::json &j, PatchDataLayout &p);
+    void from_json(const nlohmann::json &j, PatchDataLayerLayout &p);
 
     /**
-     * @brief Overloaded equality operator for PatchDataLayout class
+     * @brief Overloaded equality operator for PatchDataLayerLayout class
      *
-     * This operator is used to check if two PatchDataLayout objects are equal.
+     * This operator is used to check if two PatchDataLayerLayout objects are equal.
      * It compares the fields of the objects and returns true if they are equal,
      * and false otherwise.
      *
-     * @param lhs The first PatchDataLayout object to compare
-     * @param rhs The second PatchDataLayout object to compare
+     * @param lhs The first PatchDataLayerLayout object to compare
+     * @param rhs The second PatchDataLayerLayout object to compare
      *
      * @return true if the two objects are equal, false otherwise
      */
-    bool operator==(const PatchDataLayout &lhs, const PatchDataLayout &rhs);
+    bool operator==(const PatchDataLayerLayout &lhs, const PatchDataLayerLayout &rhs);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // out of line implementation of the PatchDataLayout
+    // out of line implementation of the PatchDataLayerLayout
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<class T>
-    inline void PatchDataLayout::add_field(std::string field_name, u32 nvar, SourceLocation loc) {
+    inline void PatchDataLayerLayout::add_field(std::string field_name, u32 nvar, SourceLocation loc) {
         bool found = false;
 
         for (var_t &fvar : fields) {
@@ -305,13 +305,13 @@ namespace shamrock::patch {
         }
 
         shamlog_debug_ln(
-            "PatchDataLayout", "adding field :", field_name, nvar, "loc :", loc.format_one_line());
+            "PatchDataLayerLayout", "adding field :", field_name, nvar, "loc :", loc.format_one_line());
 
         fields.push_back(var_t{FieldDescriptor<T>(field_name, nvar)});
     }
 
     template<class T>
-    inline PatchDataLayout::FieldDescriptor<T> PatchDataLayout::get_field(std::string field_name) {
+    inline PatchDataLayerLayout::FieldDescriptor<T> PatchDataLayerLayout::get_field(std::string field_name) {
 
         for (var_t &fvar : fields) {
             if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fvar.value)) {
@@ -326,7 +326,7 @@ namespace shamrock::patch {
     }
 
     template<class T>
-    inline PatchDataLayout::FieldDescriptor<T> PatchDataLayout::get_field(u32 idx) {
+    inline PatchDataLayerLayout::FieldDescriptor<T> PatchDataLayerLayout::get_field(u32 idx) {
 
         if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[idx].value)) {
             return *pval;
@@ -338,7 +338,7 @@ namespace shamrock::patch {
     }
 
     template<class T>
-    inline u32 PatchDataLayout::get_field_idx(std::string field_name) {
+    inline u32 PatchDataLayerLayout::get_field_idx(std::string field_name) {
         for (u32 i = 0; i < fields.size(); i++) {
             if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
                 if (pval->name == field_name) {
@@ -356,7 +356,7 @@ namespace shamrock::patch {
     }
 
     template<class T>
-    inline u32 PatchDataLayout::get_field_idx(std::string field_name, u32 nvar) {
+    inline u32 PatchDataLayerLayout::get_field_idx(std::string field_name, u32 nvar) {
         for (u32 i = 0; i < fields.size(); i++) {
             if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
                 if ((pval->name == field_name) && (pval->nvar == nvar)) {
@@ -370,7 +370,7 @@ namespace shamrock::patch {
     }
 
     template<class T>
-    inline bool PatchDataLayout::check_field_type(u32 idx) {
+    inline bool PatchDataLayerLayout::check_field_type(u32 idx) {
         var_t &tmp = fields[idx];
 
         FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&tmp.value);

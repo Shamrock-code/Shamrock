@@ -91,7 +91,7 @@ template<class RhoGetGen>
 void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal(
     RhoGetGen &&rho_getter_gen) {
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
     u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
 
     using namespace shamrock;
@@ -341,7 +341,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 
     using namespace shamrock;
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
     u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
 
     shamrock::SchedulerUtility utility(scheduler());

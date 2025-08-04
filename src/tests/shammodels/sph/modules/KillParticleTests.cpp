@@ -10,7 +10,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamtest/shamtest.hpp"
@@ -22,8 +22,8 @@ TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) 
     using namespace shamrock;
     using namespace shammodels::sph::modules;
 
-    // 1. Create PatchDataLayout
-    patch::PatchDataLayout layout;
+    // 1. Create PatchDataLayerLayout
+    patch::PatchDataLayerLayout layout;
     layout.add_field<T>("single_var", 1);
     layout.add_field<T>("multi_var", 2);
 

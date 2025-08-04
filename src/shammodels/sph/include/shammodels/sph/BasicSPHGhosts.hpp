@@ -372,7 +372,7 @@ namespace shammodels::sph {
         }
 
         inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> communicate_pdat(
-            shamrock::patch::PatchDataLayout &pdl,
+            shamrock::patch::PatchDataLayerLayout &pdl,
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf) {
             StackEntry stack_loc{};
 

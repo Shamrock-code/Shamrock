@@ -21,7 +21,7 @@
 #include "shammath/CoordRange.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoordTransform.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include <type_traits>
 #include <stdexcept>
 #include <tuple>
@@ -38,13 +38,13 @@ namespace shamrock::patch {
 
         using var_t = FieldVariant<shammath::CoordRange>;
 
-        PatchDataLayout &pdl;
+        PatchDataLayerLayout &pdl;
 
         var_t bounding_box;
         PatchCoord<> patch_coord_bounding_box;
 
         public:
-        inline SimulationBoxInfo(PatchDataLayout &pdl, PatchCoord<dim> patch_coord_bounding_box)
+        inline SimulationBoxInfo(PatchDataLayerLayout &pdl, PatchCoord<dim> patch_coord_bounding_box)
             : pdl(pdl), patch_coord_bounding_box(std::move(patch_coord_bounding_box)),
               bounding_box(shammath::CoordRange<f32>{}) {
 
@@ -152,7 +152,7 @@ namespace shamrock::patch {
          * @details
          * This function resets the bounding box of the simulation domain to the
          * maximum extents of the main field. The bounding box is defined by the
-         * PatchDataLayout object used to initialize the SimulationBoxInfo object.
+         * PatchDataLayerLayout object used to initialize the SimulationBoxInfo object.
          * The bounding box is a shammath::CoordRange object that contains the
          * coordinate range of the simulation domain.
          *

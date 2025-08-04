@@ -32,7 +32,7 @@ auto shammodels::zeus::modules::AnalysisSodTube<Tvec, TgridVec>::compute_L2_dist
     using namespace shammath;
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl;
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");

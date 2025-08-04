@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtest/shamtest.hpp"
 #include <random>
@@ -39,7 +39,7 @@ TestStart(Unittest, "patchdata::", send_recv_patchdata, 2) {
 
     std::mt19937 eng(0x1111);
 
-    PatchDataLayout pdl;
+    PatchDataLayerLayout pdl;
 
     pdl.add_field<f32_3>("xyz", 1);
 

@@ -532,10 +532,10 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     }
 
     { // attach spans to gas field with ghosts
-        using MergedPDat                               = shamrock::MergedPatchData;
+        using MergedPDat                                    = shamrock::MergedPatchData;
         shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-        u32 irho_ghost                                 = ghost_layout.get_field_idx<Tscal>("rho");
-        u32 irhov_ghost                                = ghost_layout.get_field_idx<Tvec>("rhovel");
+        u32 irho_ghost  = ghost_layout.get_field_idx<Tscal>("rho");
+        u32 irhov_ghost = ghost_layout.get_field_idx<Tvec>("rhovel");
         u32 irhoe_ghost = ghost_layout.get_field_idx<Tscal>("rhoetot");
 
         storage.refs_rho->set_refs(storage.merged_patchdata_ghost.get()
@@ -561,8 +561,8 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     }
 
     if (solver_config.is_dust_on()) { // attach spans to dust field with ghosts
-        using MergedPDat                               = shamrock::MergedPatchData;
-        u32 ndust                                      = solver_config.dust_config.ndust;
+        using MergedPDat                                    = shamrock::MergedPatchData;
+        u32 ndust                                           = solver_config.dust_config.ndust;
         shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
 
         u32 irho_dust_ghost  = ghost_layout.get_field_idx<Tscal>("rho_dust");

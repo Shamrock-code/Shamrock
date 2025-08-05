@@ -41,8 +41,8 @@ void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
     ComputeField<Tscal> &pressure_field = storage.pressure.get();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 irho_interf                                     = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                                    = ghost_layout.get_field_idx<Tscal>("eint");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);

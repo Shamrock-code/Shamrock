@@ -32,9 +32,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_cell_cent
     using Block = typename Config::AMRBlock;
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    u32 irho_interf                                     = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                                    = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                                     = ghost_layout.get_field_idx<Tvec>("vel");
 
     shamrock::SchedulerUtility utility(scheduler());
     storage.Q.set(
@@ -393,9 +393,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_face_cent
     ComputeField<Tscal8> &Qstar_z = storage.Qstar_z.get();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    u32 irho_interf                                     = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                                    = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                                     = ghost_layout.get_field_idx<Tvec>("vel");
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -666,9 +666,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_flux() {
     ComputeField<Tscal8> &Flux_z = storage.Flux_z.get();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    u32 irho_interf                                     = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                                    = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                                     = ghost_layout.get_field_idx<Tvec>("vel");
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -983,9 +983,9 @@ void shammodels::zeus::modules::TransportStep<Tvec, TgridVec>::compute_new_qte()
     ComputeField<Tscal8> &Q_zm = storage.Q_zm.get();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    u32 irho_interf                                     = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                                    = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                                     = ghost_layout.get_field_idx<Tvec>("vel");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);

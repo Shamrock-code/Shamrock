@@ -54,11 +54,11 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     shamlog_debug_ln("UpdateViscosity", "Updating alpha viscosity (Morris & Monaghan 1997)");
 
     using namespace shamrock::patch;
-    PatchDataLayerLayout &pdl  = scheduler().pdl;
-    const u32 ialpha_AV   = pdl.get_field_idx<Tscal>("alpha_AV");
-    const u32 idivv       = pdl.get_field_idx<Tscal>("divv");
-    const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
-    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    PatchDataLayerLayout &pdl = scheduler().pdl;
+    const u32 ialpha_AV       = pdl.get_field_idx<Tscal>("alpha_AV");
+    const u32 idivv           = pdl.get_field_idx<Tscal>("divv");
+    const u32 isoundspeed     = pdl.get_field_idx<Tscal>("soundspeed");
+    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceBuffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
@@ -121,13 +121,13 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     shamlog_debug_ln("UpdateViscosity", "Updating alpha viscosity (Cullen & Dehnen 2010)");
 
     using namespace shamrock::patch;
-    PatchDataLayerLayout &pdl  = scheduler().pdl;
-    const u32 ialpha_AV   = pdl.get_field_idx<Tscal>("alpha_AV");
-    const u32 idivv       = pdl.get_field_idx<Tscal>("divv");
-    const u32 idtdivv     = pdl.get_field_idx<Tscal>("dtdivv");
-    const u32 icurlv      = pdl.get_field_idx<Tvec>("curlv");
-    const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
-    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    PatchDataLayerLayout &pdl = scheduler().pdl;
+    const u32 ialpha_AV       = pdl.get_field_idx<Tscal>("alpha_AV");
+    const u32 idivv           = pdl.get_field_idx<Tscal>("divv");
+    const u32 idtdivv         = pdl.get_field_idx<Tscal>("dtdivv");
+    const u32 icurlv          = pdl.get_field_idx<Tvec>("curlv");
+    const u32 isoundspeed     = pdl.get_field_idx<Tscal>("soundspeed");
+    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceBuffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);

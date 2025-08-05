@@ -30,10 +30,10 @@
 
 namespace shamrock::scheduler {
 
-    using Patch             = shamrock::patch::Patch;
-    using PatchData         = shamrock::patch::PatchDataLayer;
-    using PatchDataLayerLayout   = shamrock::patch::PatchDataLayerLayout;
-    using SimulationBoxInfo = shamrock::patch::SimulationBoxInfo;
+    using Patch                = shamrock::patch::Patch;
+    using PatchData            = shamrock::patch::PatchDataLayer;
+    using PatchDataLayerLayout = shamrock::patch::PatchDataLayerLayout;
+    using SimulationBoxInfo    = shamrock::patch::SimulationBoxInfo;
 
     /**
      * @brief Class to handle PatchData owned by the node
@@ -90,7 +90,8 @@ namespace shamrock::scheduler {
         void merge_patchdata(u64 new_key, const std::array<u64, 8> old_keys);
 
         inline SchedulerPatchData(
-            shamrock::patch::PatchDataLayerLayout &pdl, shamrock::patch::PatchCoord<3> patch_coord_range)
+            shamrock::patch::PatchDataLayerLayout &pdl,
+            shamrock::patch::PatchCoord<3> patch_coord_range)
             : pdl(pdl), sim_box(pdl, patch_coord_range) {}
     };
 

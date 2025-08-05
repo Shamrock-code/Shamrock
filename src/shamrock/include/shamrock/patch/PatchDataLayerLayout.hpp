@@ -288,7 +288,8 @@ namespace shamrock::patch {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<class T>
-    inline void PatchDataLayerLayout::add_field(std::string field_name, u32 nvar, SourceLocation loc) {
+    inline void
+    PatchDataLayerLayout::add_field(std::string field_name, u32 nvar, SourceLocation loc) {
         bool found = false;
 
         for (var_t &fvar : fields) {
@@ -305,13 +306,19 @@ namespace shamrock::patch {
         }
 
         shamlog_debug_ln(
-            "PatchDataLayerLayout", "adding field :", field_name, nvar, "loc :", loc.format_one_line());
+            "PatchDataLayerLayout",
+            "adding field :",
+            field_name,
+            nvar,
+            "loc :",
+            loc.format_one_line());
 
         fields.push_back(var_t{FieldDescriptor<T>(field_name, nvar)});
     }
 
     template<class T>
-    inline PatchDataLayerLayout::FieldDescriptor<T> PatchDataLayerLayout::get_field(std::string field_name) {
+    inline PatchDataLayerLayout::FieldDescriptor<T>
+    PatchDataLayerLayout::get_field(std::string field_name) {
 
         for (var_t &fvar : fields) {
             if (FieldDescriptor<T> *pval = std::get_if<FieldDescriptor<T>>(&fvar.value)) {

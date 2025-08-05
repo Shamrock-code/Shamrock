@@ -44,7 +44,8 @@ namespace shamrock::patch {
         PatchCoord<> patch_coord_bounding_box;
 
         public:
-        inline SimulationBoxInfo(PatchDataLayerLayout &pdl, PatchCoord<dim> patch_coord_bounding_box)
+        inline SimulationBoxInfo(
+            PatchDataLayerLayout &pdl, PatchCoord<dim> patch_coord_bounding_box)
             : pdl(pdl), patch_coord_bounding_box(std::move(patch_coord_bounding_box)),
               bounding_box(shammath::CoordRange<f32>{}) {
 

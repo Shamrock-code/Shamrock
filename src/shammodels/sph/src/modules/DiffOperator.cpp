@@ -39,10 +39,10 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_divv() {
     auto &merged_xyzh = storage.merged_xyzh.get();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 idivv = pdl.get_field_idx<Tscal>("divv");
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
@@ -161,10 +161,10 @@ void shammodels::sph::modules::DiffOperators<Tvec, SPHKernel>::update_curlv() {
     auto &merged_xyzh = storage.merged_xyzh.get();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {

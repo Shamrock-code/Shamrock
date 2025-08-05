@@ -49,7 +49,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_forces() {
     }));
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 irho_interf                                     = ghost_layout.get_field_idx<Tscal>("rho");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -214,7 +214,7 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_force(Tscal dt
     using Block = typename Config::AMRBlock;
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    u32 ivel_interf                                     = ghost_layout.get_field_idx<Tvec>("vel");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -267,8 +267,8 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::compute_AV() {
     }));
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    u32 irho_interf                                     = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ivel_interf                                     = ghost_layout.get_field_idx<Tvec>("vel");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -368,9 +368,9 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::apply_AV(Tscal dt) {
     ComputeField<Tvec> &vel_n_zp = storage.vel_n_zp.get();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    u32 irho_interf                                     = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                                    = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                                     = ghost_layout.get_field_idx<Tvec>("vel");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
@@ -640,9 +640,9 @@ void shammodels::zeus::modules::SourceStep<Tvec, TgridVec>::update_eint_eos(Tsca
     ComputeField<Tscal> &div_v = storage.div_v_n.get();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    u32 irho_interf                                     = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                                    = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                                     = ghost_layout.get_field_idx<Tvec>("vel");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);

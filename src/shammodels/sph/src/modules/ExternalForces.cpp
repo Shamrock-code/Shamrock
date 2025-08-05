@@ -248,8 +248,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
     using EF_LenseThirring     = typename SolverConfigExtForce::LenseThirring;
 
     PatchDataLayerLayout &pdl = scheduler().pdl;
-    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 

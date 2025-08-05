@@ -72,10 +72,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -271,11 +271,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
-    u32 ialpha_AV_interf                           = ghost_layout.get_field_idx<Tscal>("alpha_AV");
+    u32 ihpart_interf    = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf     = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf     = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf    = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 ialpha_AV_interf = ghost_layout.get_field_idx<Tscal>("alpha_AV");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -485,10 +485,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -685,10 +685,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
@@ -902,12 +902,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     Tscal const mu_0 = solver_config.get_constant_mu_0();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
-    u32 iB_on_rho_interf                           = ghost_layout.get_field_idx<Tvec>("B/rho");
-    u32 ipsi_on_ch_interf                          = ghost_layout.get_field_idx<Tscal>("psi/ch");
+    u32 ihpart_interf     = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf      = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf      = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf     = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 iB_on_rho_interf  = ghost_layout.get_field_idx<Tvec>("B/rho");
+    u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
 
     // logger::raw_ln("charged the ghost fields.");
 

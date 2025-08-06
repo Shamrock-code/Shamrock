@@ -288,6 +288,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("inclination"),
             py::arg("posangle") = 0.)
         .def(
+            "make_modifier_custom_warp",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               std::function<Tscal(Tscal)> inc_profile,
+               std::function<Tscal(Tscal)> psi_profile,
+               std::function<Tvec(Tscal)> k_profile) {
+                return self.make_modifier_custom_warp(parent, inc_profile, psi_profile, k_profile);
+            },
+            py::kw_only(),
+            py::arg("setup2warp"),
+            py::arg("inc_profile"),
+            py::arg("psi_profile"),
+            py::arg("k_profile"))
+        .def(
             "make_modifier_offset",
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr parent,

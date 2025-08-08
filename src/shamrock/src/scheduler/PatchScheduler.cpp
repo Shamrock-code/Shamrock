@@ -206,7 +206,9 @@ void PatchScheduler::add_root_patch() {
 }
 
 PatchScheduler::PatchScheduler(
-    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> & pdl_ptr, u64 crit_split, u64 crit_merge)
+    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
+    u64 crit_split,
+    u64 crit_merge)
     : pdl_ptr(pdl_ptr),
       patch_data(
           pdl_ptr,

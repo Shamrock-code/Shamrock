@@ -94,7 +94,7 @@ class PatchScheduler {
     void free_mpi_required_types();
 
     PatchScheduler(
-        const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> & pdl_ptr,
+        const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
         u64 crit_split,
         u64 crit_merge);
 

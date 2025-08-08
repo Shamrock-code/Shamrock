@@ -25,7 +25,7 @@
 namespace shamrock::patch {
 
     PatchDataLayer PatchDataLayer::mock_patchdata(
-        u64 seed, u32 obj_cnt, const std::shared_ptr<PatchDataLayerLayout>&  pdl) {
+        u64 seed, u32 obj_cnt, const std::shared_ptr<PatchDataLayerLayout> &pdl) {
         PatchDataLayer pdat{pdl};
 
         pdat.fields.clear();
@@ -252,7 +252,7 @@ namespace shamrock::patch {
     }
 
     PatchDataLayer PatchDataLayer::deserialize_buf(
-        shamalgs::SerializeHelper &serializer, std::shared_ptr<PatchDataLayerLayout> pdl) {
+        shamalgs::SerializeHelper &serializer, const std::shared_ptr<PatchDataLayerLayout> &pdl) {
         StackEntry stack_loc{};
 
         return PatchDataLayer{

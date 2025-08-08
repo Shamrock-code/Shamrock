@@ -87,7 +87,7 @@ namespace shamrock::patch {
         PatchDataLayer &operator=(const PatchDataLayer &other) = delete;
 
         static PatchDataLayer
-        mock_patchdata(u64 seed, u32 obj_cnt, std::shared_ptr<PatchDataLayerLayout> pdl);
+        mock_patchdata(u64 seed, u32 obj_cnt, const std::shared_ptr<PatchDataLayerLayout> &pdl);
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
@@ -99,7 +99,7 @@ namespace shamrock::patch {
         }
 
         template<class Func>
-        inline PatchDataLayer(std::shared_ptr<PatchDataLayerLayout> pdl, Func &&fct_init)
+        inline PatchDataLayer(const std::shared_ptr<PatchDataLayerLayout> &pdl, Func &&fct_init)
             : pdl_ptr(pdl) {
 
             u32 cnt = 0;
@@ -381,7 +381,8 @@ namespace shamrock::patch {
         shamalgs::SerializeSize serialize_buf_byte_size();
 
         static PatchDataLayer deserialize_buf(
-            shamalgs::SerializeHelper &serializer, std::shared_ptr<PatchDataLayerLayout> pdl);
+            shamalgs::SerializeHelper &serializer,
+            const std::shared_ptr<PatchDataLayerLayout> &pdl);
 
         void fields_raz();
 

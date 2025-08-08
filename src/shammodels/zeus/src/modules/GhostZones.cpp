@@ -317,7 +317,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
     storage.ghost_layout.set(std::make_shared<shamrock::patch::PatchDataLayerLayout>());
     std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout_ptr
         = storage.ghost_layout.get();
-    shamrock::patch::PatchDataLayerLayout &ghost_layout = *ghost_layout_ptr;
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
 
     ghost_layout.add_field<TgridVec>("cell_min", 1);
     ghost_layout.add_field<TgridVec>("cell_max", 1);

@@ -58,10 +58,10 @@ namespace shamalgs::numeric {
     sycl::buffer<T> scan_inclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
 
     template<class T>
-    void scan_in_place_exclusive(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
+    void scan_exclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
 
     template<class T>
-    void scan_in_place_inclusive(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
+    void scan_inclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
 
     /**
      * @brief Stream compaction algorithm

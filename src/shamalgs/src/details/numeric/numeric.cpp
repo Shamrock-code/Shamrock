@@ -64,12 +64,12 @@ namespace shamalgs::numeric {
     }
 
     template<class T>
-    void scan_in_place_exclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    void scan_exclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
         buf1 = details::exclusive_sum_atomic_decoupled_v5<T, 256>(q, buf1, len);
     }
 
     template<class T>
-    void scan_in_place_inclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    void scan_inclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
         buf1 = details::inclusive_sum_fallback(q, buf1, len);
     }
 

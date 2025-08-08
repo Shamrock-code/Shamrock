@@ -461,7 +461,7 @@ namespace shamrock::tree {
 
         shamlog_debug_sycl_ln("Cache", " last value =", neigh_last_val);
 
-        sham::DeviceBuffer<u32> neigh_scanned_vals = shamalgs::numeric::exclusive_sum(
+        sham::DeviceBuffer<u32> neigh_scanned_vals = shamalgs::numeric::scan_exclusive(
             shamsys::instance::get_compute_scheduler_ptr(), counts, obj_cnt);
 
         u32 neigh_sum = neigh_last_val

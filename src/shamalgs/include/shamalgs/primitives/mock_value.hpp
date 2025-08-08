@@ -42,20 +42,20 @@ namespace shamalgs {
      * ```cpp
      * #include <random>
      * #include "shamalgs/primitives/mock_value.hpp"
-     * 
+     *
      * // Initialize random number generator
      * std::mt19937 rng(42);
-     * 
+     *
      * // Generate random integers
      * i32 random_int = shamalgs::mock_value(rng, i32{0}, i32{100});
-     * 
+     *
      * // Generate random floats
      * f32 random_float = shamalgs::mock_value(rng, f32{0.0f}, f32{1.0f});
-     * 
+     *
      * // Generate random SYCL vectors
      * sycl::vec<f32, 3> random_vec = shamalgs::mock_value(
-     *     rng, 
-     *     sycl::vec<f32, 3>{0.0f, 0.0f, 0.0f}, 
+     *     rng,
+     *     sycl::vec<f32, 3>{0.0f, 0.0f, 0.0f},
      *     sycl::vec<f32, 3>{1.0f, 1.0f, 1.0f}
      * );
      * ```
@@ -78,10 +78,10 @@ namespace shamalgs {
      * ```cpp
      * #include <random>
      * #include "shamalgs/primitives/mock_value.hpp"
-     * 
+     *
      * // Initialize random number generator
      * std::mt19937 rng(42);
-     * 
+     *
      * // Generate random values with default bounds
      * i32 random_int = shamalgs::mock_value<i32>(rng);
      * f64 random_double = shamalgs::mock_value<f64>(rng);

@@ -10,8 +10,7 @@
 /**
  * @file mock_value.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
- *
+ * @brief Implementation of the mock_value function
  */
 
 #include "shamalgs/primitives/mock_value.hpp"

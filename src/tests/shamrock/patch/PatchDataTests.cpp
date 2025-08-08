@@ -18,7 +18,8 @@ TestStart(
 
     u32 obj = 1000;
 
-    PatchDataLayerLayout pdl;
+    std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+    auto &pdl                                     = *pdl_ptr;
 
     pdl.add_field<f32>("f32", 1);
     pdl.add_field<f32_2>("f32_2", 1);
@@ -40,7 +41,7 @@ TestStart(
     pdl.add_field<u32>("u32", 1);
     pdl.add_field<u64>("u64", 1);
 
-    PatchDataLayer pdat = PatchDataLayer::mock_patchdata(0x111, obj, pdl);
+    PatchDataLayer pdat = PatchDataLayer::mock_patchdata(0x111, obj, pdl_ptr);
 
     shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
     ser.allocate(pdat.serialize_buf_byte_size());
@@ -52,7 +53,7 @@ TestStart(
         shamalgs::SerializeHelper ser2(
             shamsys::instance::get_compute_scheduler_ptr(), std::move(recov));
 
-        PatchDataLayer pdat2 = PatchDataLayer::deserialize_buf(ser2, pdl);
+        PatchDataLayer pdat2 = PatchDataLayer::deserialize_buf(ser2, pdl_ptr);
 
         REQUIRE_NAMED("input match out", pdat == pdat2);
     }

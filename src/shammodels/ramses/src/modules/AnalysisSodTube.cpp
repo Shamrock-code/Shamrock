@@ -40,7 +40,7 @@ auto shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>::compute_
     using namespace shammath;
 
     // load layout info
-    PatchDataLayerLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");

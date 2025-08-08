@@ -889,9 +889,10 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
               return storage.merged_patchdata_ghost.get().get(id).total_elements;
           });
 
-    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ifield                                          = ghost_layout.get_field_idx<T>(field_name);
-    u32 nvar                                            = ghost_layout.get_field<T>(ifield).nvar;
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 ifield = ghost_layout.get_field_idx<T>(field_name);
+    u32 nvar   = ghost_layout.get_field<T>(ifield).nvar;
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);

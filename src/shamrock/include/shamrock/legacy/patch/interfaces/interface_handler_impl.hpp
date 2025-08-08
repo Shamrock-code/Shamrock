@@ -66,7 +66,7 @@ namespace impl {
                         comm_pdat.push_back(std::move(pdat));
                     }
                 } else {
-                    comm_pdat.push_back(std::make_unique<PatchDataLayer>(sched.pdl));
+                    comm_pdat.push_back(std::make_unique<PatchDataLayer>(sched.get_layout_ptr()));
                 }
                 comm_vec.push_back(u64_2{
                     interface_comm_list[i].global_patch_idx_send,
@@ -77,7 +77,7 @@ namespace impl {
         }
 
         patch_data_exchange_object(
-            sched.pdl, sched.patch_list.global, comm_pdat, comm_vec, interface_map);
+            sched.get_layout_ptr(), sched.patch_list.global, comm_pdat, comm_vec, interface_map);
     }
 
     template<class T, class vectype>

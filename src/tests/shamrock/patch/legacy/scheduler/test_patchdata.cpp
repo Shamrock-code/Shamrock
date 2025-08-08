@@ -39,17 +39,18 @@ TestStart(Unittest, "patchdata::", send_recv_patchdata, 2) {
 
     std::mt19937 eng(0x1111);
 
-    PatchDataLayerLayout pdl;
+    std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+    auto &pdl                                     = *pdl_ptr;
 
     pdl.add_field<f32_3>("xyz", 1);
 
     pdl.add_field<f64_8>("test", 2);
 
-    PatchDataLayer d1_check = patchdata_gen_dummy_data(pdl, eng);
-    PatchDataLayer d2_check = patchdata_gen_dummy_data(pdl, eng);
+    PatchDataLayer d1_check = patchdata_gen_dummy_data(pdl_ptr, eng);
+    PatchDataLayer d2_check = patchdata_gen_dummy_data(pdl_ptr, eng);
 
     std::vector<PatchDataMpiRequest> rq_lst;
-    PatchDataLayer recv_d(pdl);
+    PatchDataLayer recv_d(pdl_ptr);
 
     if (shamcomm::world_rank() == 0) {
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);

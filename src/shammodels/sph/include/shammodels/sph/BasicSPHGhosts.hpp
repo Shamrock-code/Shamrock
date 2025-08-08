@@ -287,7 +287,7 @@ namespace shammodels::sph {
         build_position_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             StackEntry stack_loc{};
 
-            const u32 ihpart = sched.pdl.get_field_idx<flt>("hpart");
+            const u32 ihpart = sched.pdl().get_field_idx<flt>("hpart");
 
             return build_interface_native<PositionInterface>(
                 builder,
@@ -372,7 +372,7 @@ namespace shammodels::sph {
         }
 
         inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> communicate_pdat(
-            shamrock::patch::PatchDataLayerLayout &pdl,
+            const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf) {
             StackEntry stack_loc{};
 
@@ -397,7 +397,7 @@ namespace shammodels::sph {
                     shamalgs::SerializeHelper ser(
                         shamsys::instance::get_compute_scheduler_ptr(),
                         std::forward<sham::DeviceBuffer<u8>>(buf));
-                    return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl);
+                    return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl_ptr);
                 });
 
             return recv_dat;
@@ -479,7 +479,7 @@ namespace shammodels::sph {
         merge_position_buf(shambase::DistributedDataShared<PositionInterface> &&positioninterfs) {
             StackEntry stack_loc{};
 
-            const u32 ihpart = sched.pdl.get_field_idx<flt>("hpart");
+            const u32 ihpart = sched.pdl().get_field_idx<flt>("hpart");
 
             return merge_native<PositionInterface, PreStepMergedField>(
                 std::forward<shambase::DistributedDataShared<PositionInterface>>(positioninterfs),

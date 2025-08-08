@@ -27,7 +27,7 @@ auto MergedPatchData<flt>::merge_patches(
     std::unordered_map<u64, MergedPatchData<flt>> merged_data;
 
     sched.for_each_patch_data([&](u64 id_patch, Patch &p, PatchDataLayer &pdat) {
-        merged_data.emplace(id_patch, sched.pdl);
+        merged_data.emplace(id_patch, sched.get_layout_ptr());
 
         auto pbox            = sched.patch_data.sim_box.get_box<flt>(p);
         u32 original_element = pdat.get_obj_cnt();

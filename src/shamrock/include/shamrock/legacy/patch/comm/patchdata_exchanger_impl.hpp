@@ -109,7 +109,7 @@ namespace patchdata_exchanger {
 
         [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
         inline void patch_data_exchange_object(
-            shamrock::patch::PatchDataLayerLayout &pdl,
+            std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr,
             std::vector<shamrock::patch::Patch> &global_patch_list,
             std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> &send_comm_pdat,
             std::vector<u64_2> &send_comm_vec,
@@ -201,8 +201,8 @@ namespace patchdata_exchanger {
                             recv_obj[precv.id_patch].push_back(
                                 {psend.id_patch,
                                  std::make_unique<PatchDataLayer>(
-                                     pdl)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
-                                             // global_comm_tag[i], MPI_COMM_WORLD)}
+                                     pdl_ptr)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
+                                                 // global_comm_tag[i], MPI_COMM_WORLD)}
                             dtcnt += patchdata_irecv_probe(
                                 *std::get<1>(
                                     recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),

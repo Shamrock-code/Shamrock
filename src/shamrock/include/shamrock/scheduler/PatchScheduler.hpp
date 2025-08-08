@@ -62,7 +62,7 @@ class PatchScheduler {
     using PatchTree          = shamrock::scheduler::PatchTree;
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
 
-    shamrock::patch::PatchDataLayerLayout &pdl;
+    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
@@ -73,7 +73,13 @@ class PatchScheduler {
 
     // using unordered set is not an issue since we use the find command after
     std::unordered_set<u64> owned_patch_id; ///< list of owned patch ids updated with
-                                            ///< (owned_patch_id = patch_list.build_local())
+    ///< (owned_patch_id = patch_list.build_local())
+
+    inline shamrock::patch::PatchDataLayerLayout &pdl() { return shambase::get_check_ref(pdl_ptr); }
+
+    inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr() const {
+        return pdl_ptr;
+    }
 
     /**
      * @brief scheduler step
@@ -87,7 +93,10 @@ class PatchScheduler {
 
     void free_mpi_required_types();
 
-    PatchScheduler(shamrock::patch::PatchDataLayerLayout &pdl, u64 crit_split, u64 crit_merge);
+    PatchScheduler(
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr,
+        u64 crit_split,
+        u64 crit_merge);
 
     ~PatchScheduler();
 
@@ -119,11 +128,11 @@ class PatchScheduler {
     template<class vectype>
     void set_coord_domain_bound(vectype bmin, vectype bmax) {
 
-        if (!pdl.check_main_field_type<vectype>()) {
+        if (!pdl().check_main_field_type<vectype>()) {
             std::invalid_argument(
                 std::string("the main field is not of the correct type to call this function\n")
                 + "fct called : " + __PRETTY_FUNCTION__
-                + "current patch data layout : " + pdl.get_description_str());
+                + "current patch data layout : " + pdl().get_description_str());
         }
 
         patch_data.sim_box.set_bounding_box<vectype>({bmin, bmax});
@@ -393,7 +402,7 @@ class PatchScheduler {
         StackEntry stack_loc{};
         std::unique_ptr<sycl::buffer<T>> ret;
 
-        auto fd  = pdl.get_field<T>(field_idx);
+        auto fd  = pdl().get_field<T>(field_idx);
         u64 nvar = fd.nvar;
 
         u64 num_obj = get_rank_count();

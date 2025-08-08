@@ -41,7 +41,7 @@ get_new_id_map<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptree) {
     sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
         if (!pdat.is_empty()) {
 
-            u32 ixyz                         = sched.pdl.get_field_idx<f32_3>("xyz");
+            u32 ixyz                         = sched.pdl().get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
             if (xyz_field.get_nvar() != 1) {
@@ -72,7 +72,7 @@ get_new_id_map<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptree) {
     sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
         if (!pdat.is_empty()) {
 
-            u32 ixyz                         = sched.pdl.get_field_idx<f64_3>("xyz");
+            u32 ixyz                         = sched.pdl().get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
             if (xyz_field.get_nvar() != 1) {
@@ -110,7 +110,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
     sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
         if (!pdat.is_empty()) {
 
-            u32 ixyz                         = sched.pdl.get_field_idx<f32_3>("xyz");
+            u32 ixyz                         = sched.pdl().get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
             if (xyz_field.get_nvar() != 1) {
@@ -170,7 +170,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
         f32_3 bmax = bmax_;
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
-            u32 ixyz                         = sched.pdl.get_field_idx<f32_3>("xyz");
+            u32 ixyz                         = sched.pdl().get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
             {
@@ -202,7 +202,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
             if (!pdat.is_empty()) {
-                u32 ixyz                         = sched.pdl.get_field_idx<f32_3>("xyz");
+                u32 ixyz                         = sched.pdl().get_field_idx<f32_3>("xyz");
                 PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
                 if (xyz_field.get_nvar() != 1) {
@@ -243,7 +243,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
                         std::unique_ptr<PatchDataLayer> &pdat_int = send_map[nid[i]];
 
                         if (!pdat_int) {
-                            pdat_int = std::make_unique<PatchDataLayer>(sched.pdl);
+                            pdat_int = std::make_unique<PatchDataLayer>(sched.get_layout_ptr());
                         }
 
                         pdat.extract_element(i, *pdat_int);
@@ -278,7 +278,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
 
         PatchDataLayer &pdat = *comm_pdat[i];
 
-        u32 ixyz = pdat.pdl.get_field_idx<f32_3>("xyz");
+        u32 ixyz = pdat.pdl().get_field_idx<f32_3>("xyz");
 
         /*
         for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
@@ -289,7 +289,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
     }
 
     patch_data_exchange_object(
-        sched.pdl, sched.patch_list.global, comm_pdat, comm_vec, part_xchg_map);
+        sched.get_layout_ptr(), sched.patch_list.global, comm_pdat, comm_vec, part_xchg_map);
 
     for (auto &[recv_id, vec_r] : part_xchg_map) {
         // std::cout << "patch " << recv_id << "\n";
@@ -301,7 +301,7 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
 
             // std::cout << send_id << " -> " << recv_id << " recv data : " << std::endl;
 
-            u32 ixyz = pdat->pdl.get_field_idx<f32_3>("xyz");
+            u32 ixyz = pdat->pdl().get_field_idx<f32_3>("xyz");
 
             /*
             for (u32 i = 0; i < pdat->get_obj_cnt(); i++) {
@@ -349,7 +349,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
     sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
         if (!pdat.is_empty()) {
 
-            u32 ixyz                         = sched.pdl.get_field_idx<f64_3>("xyz");
+            u32 ixyz                         = sched.pdl().get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
             if (xyz_field.get_nvar() != 1) {
@@ -409,7 +409,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
         f64_3 bmax = bmax_;
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
-            u32 ixyz                         = sched.pdl.get_field_idx<f64_3>("xyz");
+            u32 ixyz                         = sched.pdl().get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
             {
@@ -442,7 +442,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
             if (!pdat.is_empty()) {
-                u32 ixyz                         = sched.pdl.get_field_idx<f64_3>("xyz");
+                u32 ixyz                         = sched.pdl().get_field_idx<f64_3>("xyz");
                 PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
                 if (xyz_field.get_nvar() != 1) {
@@ -483,7 +483,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
                         std::unique_ptr<PatchDataLayer> &pdat_int = send_map[nid[i]];
 
                         if (!pdat_int) {
-                            pdat_int = std::make_unique<PatchDataLayer>(sched.pdl);
+                            pdat_int = std::make_unique<PatchDataLayer>(sched.get_layout_ptr());
                         }
 
                         pdat.extract_element(i, *pdat_int);
@@ -518,7 +518,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
 
         PatchDataLayer &pdat = *comm_pdat[i];
 
-        u32 ixyz = pdat.pdl.get_field_idx<f64_3>("xyz");
+        u32 ixyz = pdat.pdl().get_field_idx<f64_3>("xyz");
 
         /*
         for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
@@ -529,7 +529,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
     }
 
     patch_data_exchange_object(
-        sched.pdl, sched.patch_list.global, comm_pdat, comm_vec, part_xchg_map);
+        sched.get_layout_ptr(), sched.patch_list.global, comm_pdat, comm_vec, part_xchg_map);
 
     for (auto &[recv_id, vec_r] : part_xchg_map) {
         // std::cout << "patch " << recv_id << "\n";
@@ -541,7 +541,7 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
 
             // std::cout << send_id << " -> " << recv_id << " recv data : " << std::endl;
 
-            u32 ixyz = pdat->pdl.get_field_idx<f64_3>("xyz");
+            u32 ixyz = pdat->pdl().get_field_idx<f64_3>("xyz");
 
             /*
             for (u32 i = 0; i < pdat->get_obj_cnt(); i++) {

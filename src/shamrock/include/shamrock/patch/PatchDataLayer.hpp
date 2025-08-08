@@ -43,15 +43,11 @@ namespace shamrock::patch {
         public:
         using field_variant_t = var_t;
 
-        inline PatchDataLayerLayout & pdl(){
-            return shambase::get_check_ref(pdl_ptr);
-        }
+        inline PatchDataLayerLayout &pdl() { return shambase::get_check_ref(pdl_ptr); }
 
-        inline std::shared_ptr<PatchDataLayerLayout> get_layout_ptr() const {
-            return pdl_ptr;
-        }
+        inline std::shared_ptr<PatchDataLayerLayout> get_layout_ptr() const { return pdl_ptr; }
 
-        inline PatchDataLayer(std::shared_ptr<PatchDataLayerLayout> pdl) : pdl_ptr(pdl) {
+        inline PatchDataLayer(const std::shared_ptr<PatchDataLayerLayout> &pdl) : pdl_ptr(pdl) {
             init_fields();
         }
 
@@ -75,8 +71,7 @@ namespace shamrock::patch {
          * @param other
          */
         inline PatchDataLayer(PatchDataLayer &&other) noexcept
-            : fields(std::move(other.fields)), pdl_ptr(std::move(other.pdl_ptr)) {
-        }
+            : fields(std::move(other.fields)), pdl_ptr(std::move(other.pdl_ptr)) {}
 
         /**
          * @brief PatchDataLayer move assignment
@@ -84,14 +79,15 @@ namespace shamrock::patch {
          * @param other
          */
         inline PatchDataLayer &operator=(PatchDataLayer &&other) noexcept {
-            fields = std::move(other.fields);
-            pdl_ptr    = std::move(other.pdl_ptr);
+            fields  = std::move(other.fields);
+            pdl_ptr = std::move(other.pdl_ptr);
             return *this;
         }
 
         PatchDataLayer &operator=(const PatchDataLayer &other) = delete;
 
-        static PatchDataLayer mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayerLayout &pdl);
+        static PatchDataLayer
+        mock_patchdata(u64 seed, u32 obj_cnt, std::shared_ptr<PatchDataLayerLayout> pdl);
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
@@ -106,7 +102,6 @@ namespace shamrock::patch {
         inline PatchDataLayer(std::shared_ptr<PatchDataLayerLayout> pdl, Func &&fct_init)
             : pdl_ptr(pdl) {
 
-            
             u32 cnt = 0;
 
             fct_init(fields);
@@ -385,8 +380,8 @@ namespace shamrock::patch {
 
         shamalgs::SerializeSize serialize_buf_byte_size();
 
-        static PatchDataLayer
-        deserialize_buf(shamalgs::SerializeHelper &serializer, PatchDataLayerLayout &pdl);
+        static PatchDataLayer deserialize_buf(
+            shamalgs::SerializeHelper &serializer, std::shared_ptr<PatchDataLayerLayout> pdl);
 
         void fields_raz();
 

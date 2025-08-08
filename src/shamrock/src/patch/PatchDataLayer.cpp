@@ -24,13 +24,13 @@
 
 namespace shamrock::patch {
 
-    PatchDataLayer
-    PatchDataLayer::mock_patchdata(u64 seed, u32 obj_cnt, PatchDataLayerLayout &pdl) {
+    PatchDataLayer PatchDataLayer::mock_patchdata(
+        u64 seed, u32 obj_cnt, std::shared_ptr<PatchDataLayerLayout> pdl) {
         PatchDataLayer pdat{pdl};
 
         pdat.fields.clear();
 
-        pdl.for_each_field_any([&](auto &field) {
+        pdat.pdl().for_each_field_any([&](auto &field) {
             using f_t    = typename std::remove_reference<decltype(field)>::type;
             using base_t = typename f_t::field_T;
 
@@ -43,7 +43,7 @@ namespace shamrock::patch {
 
     void PatchDataLayer::init_fields() {
 
-        pdl.for_each_field_any([&](auto &field) {
+        pdl().for_each_field_any([&](auto &field) {
             using f_t    = typename std::remove_reference<decltype(field)>::type;
             using base_t = typename f_t::field_T;
 
@@ -252,12 +252,12 @@ namespace shamrock::patch {
     }
 
     PatchDataLayer PatchDataLayer::deserialize_buf(
-        shamalgs::SerializeHelper &serializer, PatchDataLayerLayout &pdl) {
+        shamalgs::SerializeHelper &serializer, std::shared_ptr<PatchDataLayerLayout> pdl) {
         StackEntry stack_loc{};
 
         return PatchDataLayer{
             pdl, [&](auto &pdat_fields) {
-                pdl.for_each_field_any([&](auto &field) {
+                pdl->for_each_field_any([&](auto &field) {
                     using f_t    = typename std::remove_reference<decltype(field)>::type;
                     using base_t = typename f_t::field_T;
 

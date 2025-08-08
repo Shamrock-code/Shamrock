@@ -108,7 +108,7 @@ class ShamrockCtx {
             throw ShamAPIException("patch data layout is not initialized");
         }
 
-        sched = std::make_unique<PatchScheduler>(*pdl, crit_split, crit_merge);
+        sched = std::make_unique<PatchScheduler>(pdl, crit_split, crit_merge);
         sched->init_mpi_required_types();
     }
 

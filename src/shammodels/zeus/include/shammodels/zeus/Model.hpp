@@ -73,7 +73,7 @@ namespace shammodels::zeus {
                 sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
                 PatchDataField<T> &f
-                    = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
+                    = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
 
                 {
                     auto &buf = f.get_buf();

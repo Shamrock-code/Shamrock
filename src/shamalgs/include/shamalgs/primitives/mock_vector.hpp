@@ -24,6 +24,7 @@ namespace shamalgs {
     template<class T>
     std::vector<T> mock_vector(u64 seed, u32 len, T min_bound, T max_bound) {
         std::vector<T> vec;
+        vec.reserve(len);
 
         std::mt19937 eng(seed);
 
@@ -31,7 +32,7 @@ namespace shamalgs {
             vec.push_back(mock_value(eng, min_bound, max_bound));
         }
 
-        return std::move(vec);
+        return vec;
     }
 
     template<class T>

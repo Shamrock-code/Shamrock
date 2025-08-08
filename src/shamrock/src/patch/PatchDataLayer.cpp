@@ -25,7 +25,7 @@
 namespace shamrock::patch {
 
     PatchDataLayer PatchDataLayer::mock_patchdata(
-        u64 seed, u32 obj_cnt, std::shared_ptr<PatchDataLayerLayout> pdl) {
+        u64 seed, u32 obj_cnt, const std::shared_ptr<PatchDataLayerLayout>&  pdl) {
         PatchDataLayer pdat{pdl};
 
         pdat.fields.clear();

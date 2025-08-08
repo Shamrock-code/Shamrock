@@ -196,7 +196,7 @@ u64 patchdata_irecv_probe(
  * @return PatchDataLayer the generated PatchDataLayer
  */
 shamrock::patch::PatchDataLayer patchdata_gen_dummy_data(
-    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr, std::mt19937 &eng);
+    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> & pdl_ptr, std::mt19937 &eng);
 
 /**
  * @brief check if two PatchDataLayer content match

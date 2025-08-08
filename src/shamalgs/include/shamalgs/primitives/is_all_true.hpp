@@ -12,8 +12,7 @@
 /**
  * @file is_all_true.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
- *
+ * @brief Provides functions to check if all elements in a buffer are non-zero (true).
  */
 
 #include "shambackends/DeviceBuffer.hpp"

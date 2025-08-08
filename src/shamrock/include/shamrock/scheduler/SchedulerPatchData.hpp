@@ -98,7 +98,7 @@ namespace shamrock::scheduler {
         void merge_patchdata(u64 new_key, const std::array<u64, 8> old_keys);
 
         inline SchedulerPatchData(
-            std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr,
+            const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> & pdl_ptr,
             shamrock::patch::PatchCoord<3> patch_coord_range)
             : pdl_ptr(pdl_ptr), sim_box(pdl(), patch_coord_range) {}
     };

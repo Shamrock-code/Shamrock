@@ -17,6 +17,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shamalgs/primitives/is_all_true.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/DeviceScheduler.hpp"
@@ -60,8 +61,6 @@ namespace shamalgs::reduction {
     template<class T>
     T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
-    bool is_all_true(sycl::buffer<u8> &buf, u32 cnt);
-
     template<class T>
     bool equals(sycl::queue &q, sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt) {
 
@@ -85,7 +84,7 @@ namespace shamalgs::reduction {
             });
         });
 
-        return shamalgs::reduction::is_all_true(res, cnt);
+        return shamalgs::is_all_true(res, cnt);
     }
 
     template<class T>
@@ -122,7 +121,7 @@ namespace shamalgs::reduction {
         if (!is_same)
             buf2.complete_event_state(e);
 
-        return shamalgs::reduction::is_all_true(res, cnt);
+        return shamalgs::is_all_true(res, cnt);
     }
 
     template<class T>

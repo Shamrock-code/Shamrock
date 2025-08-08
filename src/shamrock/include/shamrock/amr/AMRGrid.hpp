@@ -52,12 +52,12 @@ namespace shamrock::amr {
         void check_amr_main_fields() {
 
             bool correct_type = true;
-            correct_type &= sched.pdl().check_field_type<Tcoord>(0);
-            correct_type &= sched.pdl().check_field_type<Tcoord>(1);
+            correct_type &= sched.pdl().template check_field_type<Tcoord>(0);
+            correct_type &= sched.pdl().template check_field_type<Tcoord>(1);
 
             bool correct_names = true;
-            correct_names &= sched.pdl().get_field<Tcoord>(0).name == "cell_min";
-            correct_names &= sched.pdl().get_field<Tcoord>(1).name == "cell_max";
+            correct_names &= sched.pdl().template get_field<Tcoord>(0).name == "cell_min";
+            correct_names &= sched.pdl().template get_field<Tcoord>(1).name == "cell_max";
 
             if (!correct_type || !correct_names) {
                 throw std::runtime_error(

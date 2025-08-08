@@ -81,7 +81,7 @@ namespace shammodels::sph {
 
             using namespace shamrock::patch;
 
-            const u32 ihpart = sched.pdl().get_field_idx<flt>("hpart");
+            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
 
             PatchField<flt> interactR_patch = sched.map_owned_to_patch_field_simple<flt>(
                 [&](const Patch p, PatchDataLayer &pdat) -> flt {

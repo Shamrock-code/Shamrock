@@ -287,7 +287,7 @@ namespace shammodels::sph {
         build_position_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             StackEntry stack_loc{};
 
-            const u32 ihpart = sched.pdl().get_field_idx<flt>("hpart");
+            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
 
             return build_interface_native<PositionInterface>(
                 builder,
@@ -479,7 +479,7 @@ namespace shammodels::sph {
         merge_position_buf(shambase::DistributedDataShared<PositionInterface> &&positioninterfs) {
             StackEntry stack_loc{};
 
-            const u32 ihpart = sched.pdl().get_field_idx<flt>("hpart");
+            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
 
             return merge_native<PositionInterface, PreStepMergedField>(
                 std::forward<shambase::DistributedDataShared<PositionInterface>>(positioninterfs),

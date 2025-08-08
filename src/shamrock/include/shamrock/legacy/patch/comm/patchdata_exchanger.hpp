@@ -23,7 +23,7 @@
 
 [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
 inline void patch_data_exchange_object(
-    shamrock::patch::PatchDataLayerLayout &pdl,
+    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
     std::vector<shamrock::patch::Patch> &global_patch_list,
     std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> &send_comm_pdat,
     std::vector<u64_2> &send_comm_vec,
@@ -32,7 +32,7 @@ inline void patch_data_exchange_object(
         std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>>>
         &interface_map) {
     patchdata_exchanger::impl::patch_data_exchange_object(
-        pdl, global_patch_list, send_comm_pdat, send_comm_vec, interface_map);
+        pdl_ptr, global_patch_list, send_comm_pdat, send_comm_vec, interface_map);
 }
 
 template<class T>

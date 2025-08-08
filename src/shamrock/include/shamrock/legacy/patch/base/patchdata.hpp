@@ -195,8 +195,8 @@ u64 patchdata_irecv_probe(
  * @param eng the mersen twister
  * @return PatchDataLayer the generated PatchDataLayer
  */
-shamrock::patch::PatchDataLayer
-patchdata_gen_dummy_data(shamrock::patch::PatchDataLayerLayout &pdl, std::mt19937 &eng);
+shamrock::patch::PatchDataLayer patchdata_gen_dummy_data(
+    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr, std::mt19937 &eng);
 
 /**
  * @brief check if two PatchDataLayer content match

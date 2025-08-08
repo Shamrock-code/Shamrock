@@ -114,7 +114,7 @@ namespace shamrock::scheduler {
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
-            return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl);
+            return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl_ptr);
         };
 
         std::vector<Message> send_payloads;
@@ -303,14 +303,16 @@ namespace shamrock::scheduler {
 
             shamrock::patch::PatchDataLayer &original_pd = search->second;
 
-            shamrock::patch::PatchDataLayer pd0(pdl);
-            shamrock::patch::PatchDataLayer pd1(pdl);
-            shamrock::patch::PatchDataLayer pd2(pdl);
-            shamrock::patch::PatchDataLayer pd3(pdl);
-            shamrock::patch::PatchDataLayer pd4(pdl);
-            shamrock::patch::PatchDataLayer pd5(pdl);
-            shamrock::patch::PatchDataLayer pd6(pdl);
-            shamrock::patch::PatchDataLayer pd7(pdl);
+            shamrock::patch::PatchDataLayer pd0(pdl_ptr);
+            shamrock::patch::PatchDataLayer pd1(pdl_ptr);
+            shamrock::patch::PatchDataLayer pd2(pdl_ptr);
+            shamrock::patch::PatchDataLayer pd3(pdl_ptr);
+            shamrock::patch::PatchDataLayer pd4(pdl_ptr);
+            shamrock::patch::PatchDataLayer pd5(pdl_ptr);
+            shamrock::patch::PatchDataLayer pd6(pdl_ptr);
+            shamrock::patch::PatchDataLayer pd7(pdl_ptr);
+
+            auto &pdl = shambase::get_check_ref(pdl_ptr);
 
             if (pdl.check_main_field_type<f32_3>()) {
 
@@ -394,7 +396,7 @@ namespace shamrock::scheduler {
                 "patchdata for key=%d was not owned by the node", old_keys[7]));
         }
 
-        shamrock::patch::PatchDataLayer new_pdat(pdl);
+        shamrock::patch::PatchDataLayer new_pdat(pdl_ptr);
 
         new_pdat.insert_elements(search0->second);
         new_pdat.insert_elements(search1->second);

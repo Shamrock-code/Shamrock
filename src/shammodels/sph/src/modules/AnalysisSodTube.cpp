@@ -20,6 +20,7 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shamphys/eos.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -46,10 +47,13 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
 
     auto &sched = scheduler();
 
-    const u32 ixyz   = sched.pdl.template get_field_idx<Tvec>("xyz");
-    const u32 ihpart = sched.pdl.template get_field_idx<Tscal>("hpart");
-    const u32 ivxyz  = sched.pdl.template get_field_idx<Tvec>("vxyz");
-    const u32 iuint  = sched.pdl.template get_field_idx<Tscal>("uint");
+    using namespace shamrock::patch;
+    PatchDataLayerLayout &pdl = sched.pdl();
+
+    const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
+    const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
 
     Tscal sum_L2_rho = 0;
     Tvec sum_L2_v    = {0, 0, 0};

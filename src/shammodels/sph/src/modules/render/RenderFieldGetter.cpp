@@ -35,7 +35,7 @@ namespace shammodels::sph::modules {
                     shamlog_debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
 
                     auto &buf_h
-                        = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf();
+                        = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf();
                     auto &buf_rho = density.get_buf(p.id_patch);
 
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -74,7 +74,7 @@ namespace shammodels::sph::modules {
         auto field_source_getter
             = [&](const shamrock::patch::Patch cur_p,
                   shamrock::patch::PatchDataLayer &pdat) -> const sham::DeviceBuffer<Tfield> & {
-            return pdat.get_field<Tfield>(pdat.pdl.get_field_idx<Tfield>(field_name)).get_buf();
+            return pdat.get_field<Tfield>(pdat.pdl().get_field_idx<Tfield>(field_name)).get_buf();
         };
 
         return lambda(field_source_getter);

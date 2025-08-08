@@ -35,8 +35,9 @@ void shammodels::zeus::modules::DiffOperator<Tvec, TgridVec>::compute_gradu() {
         return storage.merged_patchdata_ghost.get().get(id).total_elements;
     }));
 
-    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ivel_interf                                     = ghost_layout.get_field_idx<Tvec>("vel");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 ivel_interf = ghost_layout.get_field_idx<Tvec>("vel");
 
     scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);

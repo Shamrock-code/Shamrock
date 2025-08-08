@@ -164,7 +164,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
         if (solver.solver_config.is_dust_on()) {
             u32 ndust = solver.solver_config.dust_config.ndust;
 
-            shamrock::patch::PatchDataLayerLayout &pdl = solver.scheduler().pdl;
+            shamrock::patch::PatchDataLayerLayout &pdl = solver.scheduler().pdl();
             const u32 irho_dust                        = pdl.get_field_idx<Tscal>("rho_dust");
             const u32 irhovel_dust                     = pdl.get_field_idx<Tvec>("rhovel_dust");
 

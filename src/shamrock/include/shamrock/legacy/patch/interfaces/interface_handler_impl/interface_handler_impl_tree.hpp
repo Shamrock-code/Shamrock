@@ -150,7 +150,7 @@ class Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pr
 
             PatchDataLayer &pdat_to_cut = sched.patch_data.get_pdat(comm.sender_patch_id);
 
-            src.push_back(std::make_unique<PatchDataLayer>(sched.pdl));
+            src.push_back(std::make_unique<PatchDataLayer>(sched.get_layout_ptr()));
 
             pdat_to_cut.append_subset_to(
                 *ctree.list_pdat_extract_id[i],

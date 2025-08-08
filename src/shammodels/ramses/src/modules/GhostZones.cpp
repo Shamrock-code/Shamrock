@@ -205,7 +205,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
 template<class Tvec, class TgridVec>
 shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>
 shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
-    shamrock::patch::PatchDataLayerLayout &pdl,
+    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &ghost_layout_ptr,
     shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf) {
     StackEntry stack_loc{};
 
@@ -229,7 +229,7 @@ shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
-            return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl);
+            return shamrock::patch::PatchDataLayer::deserialize_buf(ser, ghost_layout_ptr);
         });
 
     return recv_dat;
@@ -316,8 +316,9 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     using AMRBlock = typename Config::AMRBlock;
 
     // setup ghost layout
-    storage.ghost_layout.set(shamrock::patch::PatchDataLayerLayout{});
-    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    storage.ghost_layout.set(std::make_shared<shamrock::patch::PatchDataLayerLayout>());
+    auto ghost_layout_ptr                               = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
 
     ghost_layout.add_field<TgridVec>("cell_min", 1);
     ghost_layout.add_field<TgridVec>("cell_max", 1);
@@ -361,7 +362,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     }
 
     // load layout info
-    PatchDataLayerLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -389,7 +390,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         [&](u64 sender, u64, InterfaceBuildInfos binfo, sycl::buffer<u32> &buf_idx, u32 cnt) {
             PatchDataLayer &sender_patch = scheduler().patch_data.get_pdat(sender);
 
-            PatchDataLayer pdat(ghost_layout);
+            PatchDataLayer pdat(ghost_layout_ptr);
 
             pdat.reserve(cnt);
 
@@ -435,7 +436,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
     // communicate buffers
     shambase::DistributedDataShared<PatchDataLayer> interf_pdat
-        = communicate_pdat(ghost_layout, std::move(pdat_interf));
+        = communicate_pdat(ghost_layout_ptr, std::move(pdat_interf));
 
     std::map<u64, u64> sz_interf_map;
     interf_pdat.for_each([&](u64 s, u64 r, PatchDataLayer &pdat_interf) {
@@ -447,7 +448,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             shamlog_debug_ln("Merged patch init", p.id_patch);
 
-            PatchDataLayer pdat_new(ghost_layout);
+            PatchDataLayer pdat_new(ghost_layout_ptr);
 
             u32 or_elem = pdat.get_obj_cnt();
             pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);
@@ -532,8 +533,9 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     }
 
     { // attach spans to gas field with ghosts
-        using MergedPDat                                    = shamrock::MergedPatchData;
-        shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+        using MergedPDat = shamrock::MergedPatchData;
+        shamrock::patch::PatchDataLayerLayout &ghost_layout
+            = shambase::get_check_ref(storage.ghost_layout.get());
         u32 irho_ghost  = ghost_layout.get_field_idx<Tscal>("rho");
         u32 irhov_ghost = ghost_layout.get_field_idx<Tvec>("rhovel");
         u32 irhoe_ghost = ghost_layout.get_field_idx<Tscal>("rhoetot");
@@ -561,9 +563,10 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     }
 
     if (solver_config.is_dust_on()) { // attach spans to dust field with ghosts
-        using MergedPDat                                    = shamrock::MergedPatchData;
-        u32 ndust                                           = solver_config.dust_config.ndust;
-        shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+        using MergedPDat = shamrock::MergedPatchData;
+        u32 ndust        = solver_config.dust_config.ndust;
+        shamrock::patch::PatchDataLayerLayout &ghost_layout
+            = shambase::get_check_ref(storage.ghost_layout.get());
 
         u32 irho_dust_ghost  = ghost_layout.get_field_idx<Tscal>("rho_dust");
         u32 irhov_dust_ghost = ghost_layout.get_field_idx<Tvec>("rhovel_dust");

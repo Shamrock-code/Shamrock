@@ -134,7 +134,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
                         part_ids[i] = i + offset_init;
                     });
 
-                pdat.get_field<u64>(pdat.pdl.get_field_idx<u64>("part_id"))
+                pdat.get_field<u64>(pdat.pdl().get_field_idx<u64>("part_id"))
                     .overwrite(part_ids, loc_inj);
             }
         }

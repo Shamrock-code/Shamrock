@@ -26,7 +26,7 @@ void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_dat
 
     using Block = typename Config::AMRBlock;
 
-    PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(storage.ghost_layout.get());
     u32 irho_interf                    = ghost_layout.get_field_idx<Tscal>("rho");
     u32 ieint_interf                   = ghost_layout.get_field_idx<Tscal>("eint");
     u32 ivel_interf                    = ghost_layout.get_field_idx<Tvec>("vel");

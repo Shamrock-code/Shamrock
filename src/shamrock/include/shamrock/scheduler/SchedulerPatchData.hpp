@@ -41,7 +41,15 @@ namespace shamrock::scheduler {
      */
     class SchedulerPatchData {
         public:
-        PatchDataLayerLayout &pdl;
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr;
+
+        inline shamrock::patch::PatchDataLayerLayout &pdl() {
+            return shambase::get_check_ref(pdl_ptr);
+        }
+
+        inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr() const {
+            return pdl_ptr;
+        }
 
         /**
          * @brief map container for patchdata owned by the current node (layout : id_patch,data)
@@ -90,9 +98,9 @@ namespace shamrock::scheduler {
         void merge_patchdata(u64 new_key, const std::array<u64, 8> old_keys);
 
         inline SchedulerPatchData(
-            shamrock::patch::PatchDataLayerLayout &pdl,
+            const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
             shamrock::patch::PatchCoord<3> patch_coord_range)
-            : pdl(pdl), sim_box(pdl, patch_coord_range) {}
+            : pdl_ptr(pdl_ptr), sim_box(pdl(), patch_coord_range) {}
     };
 
 } // namespace shamrock::scheduler

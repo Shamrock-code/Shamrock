@@ -134,28 +134,28 @@ shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
     }
 
     // Make a patchdata from pos_data
-    PatchDataLayer tmp(sched.pdl);
+    PatchDataLayer tmp(sched.get_layout_ptr());
     if (!pos_data.empty()) {
         tmp.resize(pos_data.size());
         tmp.fields_raz();
 
         {
             u32 len                 = pos_data.size();
-            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
             sycl::buffer<Tvec> buf(vec_pos.data(), len);
             f.override(buf, len);
         }
 
         {
             u32 len                 = pos_data.size();
-            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("vxyz"));
             sycl::buffer<Tvec> buf(vec_vel.data(), len);
             f.override(buf, len);
         }
         {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
-                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("hpart"));
             sycl::buffer<Tscal> buf(vec_h.data(), len);
             f.override(buf, len);
         }
@@ -163,7 +163,7 @@ shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
         if (solver_config.is_eos_locally_isothermal()) {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
-                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("soundspeed"));
+                = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("soundspeed"));
             sycl::buffer<Tscal> buf(vec_cs.data(), len);
             f.override(buf, len);
         }

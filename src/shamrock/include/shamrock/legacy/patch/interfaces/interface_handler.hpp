@@ -164,7 +164,7 @@ class LegacyInterfacehandler {
 
                 PatchDataLayer &pdat = *pdat_ptr;
 
-                u32 ixyz = pdat.pdl.get_field_idx<vectype>("xyz");
+                u32 ixyz = pdat.pdl().get_field_idx<vectype>("xyz");
 
                 u32 nobj = pdat.get_obj_cnt();
 

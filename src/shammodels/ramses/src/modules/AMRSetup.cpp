@@ -179,7 +179,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
         }
 
         // Make a patchdata from pos_data
-        shamrock::patch::PatchDataLayer tmp(sched.pdl);
+        shamrock::patch::PatchDataLayer tmp(sched.get_layout_ptr());
         if (!tmp_out.empty()) {
             tmp.resize(tmp_out.size());
             tmp.fields_raz();

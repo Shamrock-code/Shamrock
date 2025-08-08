@@ -23,7 +23,9 @@ TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) 
     using namespace shammodels::sph::modules;
 
     // 1. Create PatchDataLayerLayout
-    patch::PatchDataLayerLayout layout;
+    std::shared_ptr<patch::PatchDataLayerLayout> layout_ptr
+        = std::make_shared<patch::PatchDataLayerLayout>();
+    auto &layout = *layout_ptr;
     layout.add_field<T>("single_var", 1);
     layout.add_field<T>("multi_var", 2);
 
@@ -31,7 +33,7 @@ TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) 
     std::vector<T> in_2 = {0, 0, 1, 1, 2, 2, 3, 3, 4, 4};
 
     // 2. Create PatchData with 5 particles: xyz = (i, i, i)
-    patch::PatchDataLayer pdat(layout);
+    patch::PatchDataLayer pdat(layout_ptr);
     pdat.resize(5);
     {
         auto &field = pdat.get_field<T>(layout.get_field_idx<T>("single_var"));

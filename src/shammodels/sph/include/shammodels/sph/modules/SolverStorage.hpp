@@ -75,7 +75,7 @@ namespace shammodels::sph {
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
-        Component<shamrock::patch::PatchDataLayerLayout> ghost_layout;
+        Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
 
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
 

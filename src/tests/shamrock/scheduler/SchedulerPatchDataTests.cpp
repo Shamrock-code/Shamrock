@@ -47,7 +47,8 @@ TestStart(
         plist.global.push_back(p);
     }
 
-    PatchDataLayerLayout pdl;
+    std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+    auto &pdl                                     = *pdl_ptr;
 
     pdl.add_field<f32_3>("f32_3'", 1);
     pdl.add_field<f32>("f32", 1);
@@ -69,13 +70,13 @@ TestStart(
     std::vector<PatchData> ref_pdat;
 
     for (u32 i = 0; i < npatch; i++) {
-        ref_pdat.push_back(
-            PatchData::mock_patchdata(eng(), shamalgs::mock_value(eng, 1_u32, max_ob_ppatch), pdl));
+        ref_pdat.push_back(PatchData::mock_patchdata(
+            eng(), shamalgs::mock_value(eng, 1_u32, max_ob_ppatch), pdl_ptr));
     }
 
     PatchCoord pcoord({0, 0, 0}, {0, 0, 0});
 
-    SchedulerPatchData spdat(pdl, pcoord);
+    SchedulerPatchData spdat(pdl_ptr, pcoord);
     for (u32 i = 0; i < npatch; i++) {
         if (plist.global[i].node_owner_id == wrank) {
             spdat.owned_data.add_obj(u64(i), ref_pdat[i].duplicate());

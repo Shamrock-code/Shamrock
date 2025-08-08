@@ -53,7 +53,7 @@ namespace shammodels::sph::modules {
             auto dev_sched_ptr    = shamsys::instance::get_compute_scheduler_ptr();
             sham::DeviceQueue &q  = shambase::get_check_ref(dev_sched_ptr).get_queue();
 
-            const u32 ixyz    = sched.pdl.template get_field_idx<Tvec>("xyz");
+            const u32 ixyz    = sched.pdl().template get_field_idx<Tvec>("xyz");
             const Tscal pmass = solver.solver_config.gpart_mass;
 
             Tvec barycenter = {0, 0, 0}; // Not really barycenter per se but Mdisc * barycenter

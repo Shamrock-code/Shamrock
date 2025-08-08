@@ -26,7 +26,8 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_trees() {
 
     MergedPDat &mpdat = storage.merged_patchdata_ghost.get();
 
-    shamrock::patch::PatchDataLayerLayout &mpdl = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &mpdl
+        = shambase::get_check_ref(storage.ghost_layout.get());
 
     u32 reduc_level = 0;
 

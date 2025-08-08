@@ -203,7 +203,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
 template<class Tvec, class TgridVec>
 shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>
 shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
-    shamrock::patch::PatchDataLayerLayout &pdl,
+    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
     shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf) {
     StackEntry stack_loc{};
 
@@ -227,7 +227,7 @@ shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
-            return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl);
+            return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl_ptr);
         });
 
     return recv_dat;
@@ -314,8 +314,10 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
     using AMRBlock = typename Config::AMRBlock;
 
     // setup ghost layout
-    storage.ghost_layout.set(shamrock::patch::PatchDataLayerLayout{});
-    shamrock::patch::PatchDataLayerLayout &ghost_layout = storage.ghost_layout.get();
+    storage.ghost_layout.set(std::make_shared<shamrock::patch::PatchDataLayerLayout>());
+    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout_ptr
+        = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
 
     ghost_layout.add_field<TgridVec>("cell_min", 1);
     ghost_layout.add_field<TgridVec>("cell_max", 1);
@@ -330,7 +332,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
     u32 ivel_interf      = ghost_layout.get_field_idx<Tvec>("vel");
 
     // load layout info
-    PatchDataLayerLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -344,7 +346,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
         [&](u64 sender, u64, InterfaceBuildInfos binfo, sycl::buffer<u32> &buf_idx, u32 cnt) {
             PatchDataLayer &sender_patch = scheduler().patch_data.get_pdat(sender);
 
-            PatchDataLayer pdat(ghost_layout);
+            PatchDataLayer pdat(ghost_layout_ptr);
 
             pdat.reserve(cnt);
 
@@ -373,7 +375,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
 
     // communicate buffers
     shambase::DistributedDataShared<PatchDataLayer> interf_pdat
-        = communicate_pdat(ghost_layout, std::move(pdat_interf));
+        = communicate_pdat(ghost_layout_ptr, std::move(pdat_interf));
 
     std::map<u64, u64> sz_interf_map;
     interf_pdat.for_each([&](u64 s, u64 r, PatchDataLayer &pdat_interf) {
@@ -385,7 +387,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
         [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             shamlog_debug_ln("Merged patch init", p.id_patch);
 
-            PatchDataLayer pdat_new(ghost_layout);
+            PatchDataLayer pdat_new(ghost_layout_ptr);
 
             u32 or_elem = pdat.get_obj_cnt();
             pdat_new.reserve(or_elem + sz_interf_map[p.id_patch]);

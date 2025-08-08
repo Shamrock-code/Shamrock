@@ -32,7 +32,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     using namespace shamrock::patch;
     using Sink = SinkParticle<Tvec>;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");

@@ -386,7 +386,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             block_low_bound  = pdat.get_field<TgridVec>(0).get_buf().get_read_access(depends_list);
             block_high_bound = pdat.get_field<TgridVec>(1).get_buf().get_read_access(depends_list);
-            block_density_field = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("rho"))
+            block_density_field = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
                                       .get_buf()
                                       .get_read_access(depends_list);
         }
@@ -404,7 +404,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             buf_cell_low_bound.complete_event_state(resulting_events);
             buf_cell_high_bound.complete_event_state(resulting_events);
-            pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("rho"))
+            pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
                 .get_buf()
                 .complete_event_state(resulting_events);
         }

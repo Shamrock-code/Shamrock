@@ -104,7 +104,7 @@ struct SparseCommExchanger<shamrock::patch::PatchDataLayer> {
 
         if (!send_comm_pdat.empty()) {
 
-            PatchDataLayerLayout &pdl = send_comm_pdat[0]->pdl;
+            auto pdl_ptr = send_comm_pdat[0]->get_layout_ptr();
 
             std::vector<PatchDataMpiRequest> rq_lst;
 
@@ -146,7 +146,7 @@ struct SparseCommExchanger<shamrock::patch::PatchDataLayer> {
 
                         if (psend.node_owner_id != precv.node_owner_id) {
                             recv_obj[precv.id_patch].push_back(
-                                {psend.id_patch, std::make_unique<PatchDataLayer>(pdl)});
+                                {psend.id_patch, std::make_unique<PatchDataLayer>(pdl_ptr)});
                             patchdata_irecv_probe(
                                 *std::get<1>(
                                     recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),

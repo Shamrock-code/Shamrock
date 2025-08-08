@@ -127,7 +127,7 @@ namespace shammodels::sph::modules {
 
             auto &buf_xyz = pdat.get_field<Tvec>(0).get_buf();
             auto &buf_hpart
-                = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf();
+                = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf();
 
             auto &buf_field_to_render = field_getter(cur_p, pdat);
 
@@ -145,7 +145,7 @@ namespace shammodels::sph::modules {
 
             RadixTreeField<Tscal> hmax_tree = tree.compute_int_boxes(
                 shamsys::instance::get_compute_queue(),
-                pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf(),
+                pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf(),
                 1);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -243,7 +243,7 @@ namespace shammodels::sph::modules {
 
             auto &buf_xyz = pdat.get_field<Tvec>(0).get_buf();
             auto &buf_hpart
-                = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf();
+                = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf();
 
             auto &buf_field_to_render = field_getter(cur_p, pdat);
 
@@ -261,7 +261,7 @@ namespace shammodels::sph::modules {
 
             RadixTreeField<Tscal> hmax_tree = tree.compute_int_boxes(
                 shamsys::instance::get_compute_queue(),
-                pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf(),
+                pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf(),
                 1);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();

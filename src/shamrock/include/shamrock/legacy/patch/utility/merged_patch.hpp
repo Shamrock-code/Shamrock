@@ -32,7 +32,8 @@ class MergedPatchData {
     shamrock::patch::PatchDataLayer data;
     std::tuple<vec, vec> box;
 
-    MergedPatchData(shamrock::patch::PatchDataLayerLayout &pdl) : data(pdl) {};
+    MergedPatchData(const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl)
+        : data(pdl) {};
 
     [[nodiscard]]
     static std::unordered_map<u64, MergedPatchData<flt>>

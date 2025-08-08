@@ -42,7 +42,7 @@ InterfaceVolumeGenerator::append_interface<f32_3>(
 
     std::vector<std::unique_ptr<PatchDataLayer>> pdat_vec(boxs_min.size());
     for (auto &p : pdat_vec) {
-        p = std::make_unique<PatchDataLayer>(pdat.pdl);
+        p = std::make_unique<PatchDataLayer>(pdat.get_layout_ptr());
     }
 
     std::vector<std::vector<u32>> idxs(boxs_min.size());
@@ -56,7 +56,7 @@ InterfaceVolumeGenerator::append_interface<f32_3>(
     if (!pdat.is_empty()) {
         for (u32 i = 0; i < idxs.size(); i++) {
             pdat.append_subset_to(idxs[i], *pdat_vec[i]);
-            u32 ixyz = pdat.pdl.get_field_idx<f32_3>("xyz");
+            u32 ixyz = pdat.pdl().get_field_idx<f32_3>("xyz");
             pdat_vec[i]->get_field<f32_3>(ixyz).apply_offset(add_offset);
         }
     }
@@ -78,7 +78,7 @@ InterfaceVolumeGenerator::append_interface<f64_3>(
 
     std::vector<std::unique_ptr<PatchDataLayer>> pdat_vec(boxs_min.size());
     for (auto &p : pdat_vec) {
-        p = std::make_unique<PatchDataLayer>(pdat.pdl);
+        p = std::make_unique<PatchDataLayer>(pdat.get_layout_ptr());
     }
 
     std::vector<std::vector<u32>> idxs(boxs_min.size());
@@ -92,7 +92,7 @@ InterfaceVolumeGenerator::append_interface<f64_3>(
     if (!pdat.is_empty()) {
         for (u32 i = 0; i < idxs.size(); i++) {
             pdat.append_subset_to(idxs[i], *pdat_vec[i]);
-            u32 ixyz = pdat.pdl.get_field_idx<f64_3>("xyz");
+            u32 ixyz = pdat.pdl().get_field_idx<f64_3>("xyz");
             pdat_vec[i]->get_field<f64_3>(ixyz).apply_offset(add_offset);
         }
     }

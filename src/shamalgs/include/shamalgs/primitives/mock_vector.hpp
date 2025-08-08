@@ -21,6 +21,7 @@
 
 #include "shamalgs/details/random/random.hpp"
 #include <random>
+#include <vector>
 
 namespace shamalgs {
 

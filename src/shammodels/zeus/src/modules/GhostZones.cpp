@@ -203,7 +203,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
 template<class Tvec, class TgridVec>
 shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>
 shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::communicate_pdat(
-    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
+    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
     shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf) {
     StackEntry stack_loc{};
 
@@ -375,7 +375,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
 
     // communicate buffers
     shambase::DistributedDataShared<PatchDataLayer> interf_pdat
-        = communicate_pdat(ghost_layout, std::move(pdat_interf));
+        = communicate_pdat(ghost_layout_ptr, std::move(pdat_interf));
 
     std::map<u64, u64> sz_interf_map;
     interf_pdat.for_each([&](u64 s, u64 r, PatchDataLayer &pdat_interf) {

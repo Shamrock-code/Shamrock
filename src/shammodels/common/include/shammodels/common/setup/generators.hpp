@@ -169,8 +169,8 @@ namespace generic::setup::generators {
 
         auto find_r = [&]() {
             while (true) {
-                flt u2 = shamalgs::random::mock_value<flt>(eng, 0, fmax);
-                flt r  = shamalgs::random::mock_value<flt>(eng, r_in, r_out);
+                flt u2 = shamalgs::mock_value<flt>(eng, 0, fmax);
+                flt r  = shamalgs::mock_value<flt>(eng, r_in, r_out);
                 if (u2 < f_func(r)) {
                     return r;
                 }
@@ -181,8 +181,8 @@ namespace generic::setup::generators {
 
         for (u32 i = 0; i < Npart; i++) {
 
-            flt theta = shamalgs::random::mock_value<flt>(eng, 0, _2pi);
-            flt Gauss = shamalgs::random::mock_gaussian<flt>(eng);
+            flt theta = shamalgs::mock_value<flt>(eng, 0, _2pi);
+            flt Gauss = shamalgs::mock_gaussian<flt>(eng);
 
             flt r = find_r();
 
@@ -245,11 +245,11 @@ namespace generic::setup::generators {
 
         for (u32 i = 0; i < Npart; i++) {
 
-            flt r_1 = shamalgs::random::mock_value<flt>(eng, 0, y);
+            flt r_1 = shamalgs::mock_value<flt>(eng, 0, y);
 
             flt r = sycl::pow(sycl::pow(r_in, c) + c * r_1 / K, 1 / c);
 
-            flt theta = shamalgs::random::mock_value<flt>(eng, 0, _2pi);
+            flt theta = shamalgs::mock_value<flt>(eng, 0, _2pi);
 
             flt u = shamalgs::random::mock_gaussian<flt>(eng);
 

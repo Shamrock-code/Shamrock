@@ -35,6 +35,7 @@ set(Sources
         src/collective/distributedDataComm.cpp
         src/collective/sparseXchg.cpp
         src/primitives/sort_by_keys.cpp
+        src/primitives/mock_value.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

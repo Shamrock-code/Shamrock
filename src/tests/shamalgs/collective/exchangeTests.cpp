@@ -25,12 +25,10 @@ TestStart(Unittest, "shamalgs/collective/exchange/vector_allgatherv", test_vecto
     std::vector<u32> ref_vec;
 
     for (auto &vec : test_array) {
-        u32 random_size
-            = shamalgs::random::mock_value<u32>(eng, 1, 10); // Random size between 1 and 10
+        u32 random_size = shamalgs::mock_value<u32>(eng, 1, 10); // Random size between 1 and 10
         vec.resize(random_size);
         for (auto &num : vec) {
-            num = shamalgs::random::mock_value<u32>(
-                eng, 1, 100000); // Random number between 0 and 100
+            num = shamalgs::mock_value<u32>(eng, 1, 100000); // Random number between 0 and 100
             ref_vec.push_back(num);
         }
     }

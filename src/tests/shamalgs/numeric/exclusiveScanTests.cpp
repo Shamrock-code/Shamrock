@@ -15,6 +15,7 @@
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/shamtest.hpp"
@@ -34,7 +35,7 @@ struct TestExclScan {
 
             u32 len_test = 1e5;
 
-            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, len_test, 0, 10);
+            std::vector<u32> data = shamalgs::mock_vector<u32>(0x111, len_test, 0, 10);
 
             std::vector<u32> data_buf(data);
 
@@ -144,7 +145,7 @@ struct TestExclScanUSM {
 
             u32 len_test = 1e5;
 
-            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, len_test, 0, 10);
+            std::vector<u32> data = shamalgs::mock_vector<u32>(0x111, len_test, 0, 10);
 
             std::vector<u32> data_buf(data);
 
@@ -178,7 +179,7 @@ struct TestExclScanUSM {
 
     f64 benchmark_one(u32 len) {
 
-        std::vector<u32> data_buf = shamalgs::random::mock_vector<u32>(0x111, len, 0, 50);
+        std::vector<u32> data_buf = shamalgs::mock_vector<u32>(0x111, len, 0, 50);
 
         auto dev_ptr = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -268,7 +269,7 @@ struct TestExclScanInplace {
 
             u32 len_test = 1e5;
 
-            std::vector<u32> data = shamalgs::random::mock_vector<u32>(0x111, len_test, 0, 10);
+            std::vector<u32> data = shamalgs::mock_vector<u32>(0x111, len_test, 0, 10);
 
             std::vector<u32> data_buf(data);
 

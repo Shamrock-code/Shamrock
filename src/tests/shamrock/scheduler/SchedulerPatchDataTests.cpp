@@ -43,7 +43,7 @@ TestStart(
     for (u32 i = 0; i < npatch; i++) {
         Patch p;
         p.id_patch      = i;
-        p.node_owner_id = shamalgs::random::mock_value(eng, 0, wsize - 1);
+        p.node_owner_id = shamalgs::mock_value(eng, 0, wsize - 1);
         plist.global.push_back(p);
     }
 
@@ -69,8 +69,8 @@ TestStart(
     std::vector<PatchData> ref_pdat;
 
     for (u32 i = 0; i < npatch; i++) {
-        ref_pdat.push_back(PatchData::mock_patchdata(
-            eng(), shamalgs::random::mock_value(eng, 1_u32, max_ob_ppatch), pdl));
+        ref_pdat.push_back(
+            PatchData::mock_patchdata(eng(), shamalgs::mock_value(eng, 1_u32, max_ob_ppatch), pdl));
     }
 
     PatchCoord pcoord({0, 0, 0}, {0, 0, 0});
@@ -86,7 +86,7 @@ TestStart(
 
     LoadBalancingChangeList clist;
     for (u32 i = 0; i < npatch; i++) {
-        i32 new_owner = shamalgs::random::mock_value(eng, 0, wsize - 1);
+        i32 new_owner = shamalgs::mock_value(eng, 0, wsize - 1);
         if (new_owner != plist.global[i].node_owner_id) {
             LoadBalancingChangeList::ChangeOp op;
             op.patch_id       = i;

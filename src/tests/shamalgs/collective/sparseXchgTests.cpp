@@ -52,10 +52,10 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
         void add_element(std::mt19937 &eng, u32 wsize, u64 bytes) {
             u64 rnd = eng();
             elements.push_back(RefBuff{
-                shamalgs::random::mock_value<i32>(eng, 0, wsize - 1),
-                shamalgs::random::mock_value<i32>(eng, 0, wsize - 1),
+                shamalgs::mock_value<i32>(eng, 0, wsize - 1),
+                shamalgs::mock_value<i32>(eng, 0, wsize - 1),
                 std::make_unique<sycl::buffer<u8>>(shamalgs::random::mock_buffer<u8>(
-                    rnd, shamalgs::random::mock_value<i32>(eng, 1, bytes)))});
+                    rnd, shamalgs::mock_value<i32>(eng, 1, bytes)))});
         }
 
         void sort_input() {

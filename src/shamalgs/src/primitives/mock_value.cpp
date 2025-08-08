@@ -7,8 +7,6 @@
 //
 // -------------------------------------------------------//
 
-#pragma once
-
 /**
  * @file mock_value.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)

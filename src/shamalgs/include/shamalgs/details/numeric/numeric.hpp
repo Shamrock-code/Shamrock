@@ -40,7 +40,7 @@ namespace shamalgs::numeric {
      * @return A new SYCL buffer containing the exclusive sum of the input buffer.
      */
     template<class T>
-    sycl::buffer<T> exclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
+    sycl::buffer<T> scan_exclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
 
     /**
      * @brief Compute the exclusive sum of a buffer on the device
@@ -52,16 +52,16 @@ namespace shamalgs::numeric {
      */
     template<class T>
     sham::DeviceBuffer<T>
-    exclusive_sum(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len);
+    scan_exclusive(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len);
 
     template<class T>
-    sycl::buffer<T> inclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
+    sycl::buffer<T> scan_inclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
 
     template<class T>
-    void exclusive_sum_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
+    void scan_in_place_exclusive(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
 
     template<class T>
-    void inclusive_sum_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
+    void scan_in_place_inclusive(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
 
     /**
      * @brief Stream compaction algorithm

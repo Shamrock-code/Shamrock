@@ -73,7 +73,7 @@ namespace shammodels::basegodunov::modules::details {
         link_counts.set_val_at_idx(graph_nodes, 0);
 
         sham::DeviceBuffer<u32> link_cnt_offsets
-            = shamalgs::numeric::exclusive_sum(dev_sched, link_counts, graph_nodes + 1);
+            = shamalgs::numeric::scan_exclusive(dev_sched, link_counts, graph_nodes + 1);
 
         u32 link_cnt = link_cnt_offsets.get_val_at_idx(graph_nodes);
 
@@ -153,7 +153,7 @@ namespace shammodels::basegodunov::modules::details {
         link_counts.set_val_at_idx(graph_nodes, 0);
 
         sham::DeviceBuffer<u32> link_cnt_offsets
-            = shamalgs::numeric::exclusive_sum(dev_sched, link_counts, graph_nodes + 1);
+            = shamalgs::numeric::scan_exclusive(dev_sched, link_counts, graph_nodes + 1);
 
         u32 link_cnt = link_cnt_offsets.get_val_at_idx(graph_nodes);
 

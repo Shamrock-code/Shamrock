@@ -35,7 +35,7 @@ namespace shamalgs::numeric::details {
         }
 
         // perform the exclusive sum of the buf flag
-        sycl::buffer<u32> excl_sum = exclusive_sum(q, buf_flags, len);
+        sycl::buffer<u32> excl_sum = scan_exclusive(q, buf_flags, len);
 
         // recover the end value of the sum to know the new size
         u32 new_len = memory::extract_element(q, excl_sum, len - 1);
@@ -101,7 +101,7 @@ namespace shamalgs::numeric::details {
         }
 
         // perform the exclusive sum of the buf flag
-        sham::DeviceBuffer<u32> excl_sum = exclusive_sum(sched, buf_flags, len);
+        sham::DeviceBuffer<u32> excl_sum = scan_exclusive(sched, buf_flags, len);
 
         // recover the end value of the sum to know the new size
         u32 new_len = excl_sum.get_val_at_idx(len - 1);

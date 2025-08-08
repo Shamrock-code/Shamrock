@@ -182,7 +182,7 @@ namespace generic::setup::generators {
         for (u32 i = 0; i < Npart; i++) {
 
             flt theta = shamalgs::mock_value<flt>(eng, 0, _2pi);
-            flt Gauss = shamalgs::mock_gaussian<flt>(eng);
+            flt Gauss = shamalgs::random::mock_gaussian<flt>(eng);
 
             flt r = find_r();
 

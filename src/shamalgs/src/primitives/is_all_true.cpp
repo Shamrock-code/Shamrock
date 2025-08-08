@@ -10,8 +10,7 @@
 /**
  * @file is_all_true.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
- *
+ * @brief Implements functions to check if all elements in a buffer are non-zero (true).
  */
 
 #include "shamalgs/primitives/is_all_true.hpp"

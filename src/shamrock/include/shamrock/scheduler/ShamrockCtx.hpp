@@ -41,14 +41,14 @@ class ShamAPIException : public std::exception {
 
 class ShamrockCtx {
     public:
-    std::unique_ptr<shamrock::patch::PatchDataLayerLayout> pdl;
+    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl;
     std::unique_ptr<PatchScheduler> sched;
 
     inline void pdata_layout_new() {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl = std::make_unique<shamrock::patch::PatchDataLayerLayout>();
+        pdl = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
     }
 
     // inline void pdata_layout_do_double_prec_mode(){

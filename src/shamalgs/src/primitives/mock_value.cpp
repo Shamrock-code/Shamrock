@@ -16,7 +16,7 @@
 #include "shamalgs/primitives/mock_value.hpp"
 #include <random>
 
-namespace shamalgs {
+namespace shamalgs::primitives {
 
     template<>
     u8 mock_value(std::mt19937 &eng, u8 min_bound, u8 max_bound) {
@@ -161,4 +161,4 @@ namespace shamalgs {
 #undef X8
 #undef X16
 
-} // namespace shamalgs
+} // namespace shamalgs::primitives

@@ -16,7 +16,7 @@
 #include "shamalgs/primitives/is_all_true.hpp"
 
 template<class T>
-bool shamalgs::is_all_true(sycl::buffer<T> &buf, u32 cnt) {
+bool shamalgs::primitives::is_all_true(sycl::buffer<T> &buf, u32 cnt) {
 
     // TODO do it on GPU pleeeaze
 
@@ -33,10 +33,10 @@ bool shamalgs::is_all_true(sycl::buffer<T> &buf, u32 cnt) {
 }
 
 template<class T>
-bool shamalgs::is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt) {
+bool shamalgs::primitives::is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt) {
     auto tmp = buf.copy_to_sycl_buffer();
-    return shamalgs::is_all_true(tmp, cnt);
+    return shamalgs::primitives::is_all_true(tmp, cnt);
 }
 
-template bool shamalgs::is_all_true(sycl::buffer<u8> &buf, u32 cnt);
-template bool shamalgs::is_all_true(sham::DeviceBuffer<u8> &buf, u32 cnt);
+template bool shamalgs::primitives::is_all_true(sycl::buffer<u8> &buf, u32 cnt);
+template bool shamalgs::primitives::is_all_true(sham::DeviceBuffer<u8> &buf, u32 cnt);

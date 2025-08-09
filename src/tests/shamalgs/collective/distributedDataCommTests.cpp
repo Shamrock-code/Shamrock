@@ -39,15 +39,15 @@ void distribdata_sparse_comm_test(std::string prefix) {
 
     std::map<u64, i32> rank_owner;
     for (u64 i = 0; i < npatch; i++) {
-        rank_owner[i] = shamalgs::mock_value(eng, 0, wsize - 1);
+        rank_owner[i] = shamalgs::primitives::mock_value(eng, 0, wsize - 1);
     }
 
     shamalgs::collective::SerializedDDataComm dat_ref;
 
     for (u64 i = 0; i < npatch * nbuf_p_patch; i++) {
-        u64 sender   = shamalgs::mock_value(eng, 0_u64, npatch - 1_u64);
-        u64 receiver = shamalgs::mock_value(eng, 0_u64, npatch - 1_u64);
-        u64 length   = shamalgs::mock_value(eng, 1_u64, max_msg_len);
+        u64 sender   = shamalgs::primitives::mock_value(eng, 0_u64, npatch - 1_u64);
+        u64 receiver = shamalgs::primitives::mock_value(eng, 0_u64, npatch - 1_u64);
+        u64 length   = shamalgs::primitives::mock_value(eng, 1_u64, max_msg_len);
         u64 rnd      = eng();
 
         if (!dat_ref.has_key(sender, receiver)) {
@@ -55,7 +55,9 @@ void distribdata_sparse_comm_test(std::string prefix) {
                 sender,
                 receiver,
                 shamalgs::random::mock_buffer_usm<u8>(
-                    get_compute_scheduler_ptr(), rnd, shamalgs::mock_value<i32>(eng, 1, length)));
+                    get_compute_scheduler_ptr(),
+                    rnd,
+                    shamalgs::primitives::mock_value<i32>(eng, 1, length)));
         }
     }
 

@@ -29,7 +29,7 @@ TestStart(Unittest, "shammodels/ramses/modules/ComputeAMRLevel", ComputeAMRLevel
     TgridUint l0_ref                   = {1 << 20}; // largest block size
 
     std::vector<TgridVec> block_min_vec
-        = shamalgs::mock_vector<TgridVec>(0x111, levels_test.size());
+        = shamalgs::primitives::mock_vector<TgridVec>(0x111, levels_test.size());
     std::vector<TgridVec> block_max_vec = {};
 
     for (size_t i = 0; i < block_min_vec.size(); i++) {

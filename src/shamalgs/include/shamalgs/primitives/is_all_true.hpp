@@ -18,7 +18,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/sycl.hpp"
 
-namespace shamalgs {
+namespace shamalgs::primitives {
 
     template<class T>
     bool is_all_true(sycl::buffer<T> &buf, u32 cnt);
@@ -26,4 +26,4 @@ namespace shamalgs {
     template<class T>
     bool is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt);
 
-} // namespace shamalgs
+} // namespace shamalgs::primitives

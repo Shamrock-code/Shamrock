@@ -171,7 +171,7 @@ bool shamalgs::ResizableUSMBuffer<T>::check_buf_match(ResizableUSMBuffer<T> &f2)
         register_read_event(e);
         f2.register_read_event(e);
 
-        match = match && shamalgs::is_all_true(res_buf, f2.size());
+        match = match && shamalgs::primitives::is_all_true(res_buf, f2.size());
     }
 
     return match;

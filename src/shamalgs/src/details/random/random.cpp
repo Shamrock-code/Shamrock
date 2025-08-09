@@ -22,13 +22,14 @@ namespace shamalgs::random {
 
     template<class T>
     sycl::buffer<T> mock_buffer(u64 seed, u32 len, T min_bound, T max_bound) {
-        return shamalgs::memory::vec_to_buf(shamalgs::mock_vector(seed, len, min_bound, max_bound));
+        return shamalgs::memory::vec_to_buf(
+            shamalgs::primitives::mock_vector(seed, len, min_bound, max_bound));
     }
 
     template<class T>
     sham::DeviceBuffer<T> mock_buffer_usm(
         const sham::DeviceScheduler_ptr &sched, u64 seed, u32 len, T min_bound, T max_bound) {
-        auto vec = shamalgs::mock_vector(seed, len, min_bound, max_bound);
+        auto vec = shamalgs::primitives::mock_vector(seed, len, min_bound, max_bound);
         sham::DeviceBuffer<T> ret(len, sched);
         ret.copy_from_stdvec(vec);
         return ret;

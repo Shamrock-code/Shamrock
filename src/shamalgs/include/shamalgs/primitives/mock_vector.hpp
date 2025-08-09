@@ -23,7 +23,7 @@
 #include <random>
 #include <vector>
 
-namespace shamalgs {
+namespace shamalgs::primitives {
 
     /**
      * @brief Generates a vector of random mock values within specified bounds
@@ -104,4 +104,4 @@ namespace shamalgs {
         return mock_vector(seed, len, Prop::get_min(), Prop::get_max());
     }
 
-} // namespace shamalgs
+} // namespace shamalgs::primitives

@@ -22,7 +22,7 @@
 #include "shambackends/vec.hpp"
 #include <random>
 
-namespace shamalgs {
+namespace shamalgs::primitives {
 
     /**
      * @brief Generates a random mock value within specified bounds
@@ -94,4 +94,4 @@ namespace shamalgs {
         return mock_value<T>(eng, Prop::get_min(), Prop::get_max());
     }
 
-} // namespace shamalgs
+} // namespace shamalgs::primitives

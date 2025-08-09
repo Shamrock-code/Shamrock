@@ -403,7 +403,7 @@ template<class T>
 PatchDataField<T>
 PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax) {
 
-    std::vector<T> buf = shamalgs::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
+    std::vector<T> buf = shamalgs::primitives::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
     PatchDataField<T> ret(name, nvar, obj_cnt);
     ret.get_buf().copy_from_stdvec(buf);
 

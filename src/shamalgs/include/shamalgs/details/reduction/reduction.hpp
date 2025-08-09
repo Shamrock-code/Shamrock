@@ -84,7 +84,7 @@ namespace shamalgs::reduction {
             });
         });
 
-        return shamalgs::is_all_true(res, cnt);
+        return shamalgs::primitives::is_all_true(res, cnt);
     }
 
     template<class T>
@@ -121,7 +121,7 @@ namespace shamalgs::reduction {
         if (!is_same)
             buf2.complete_event_state(e);
 
-        return shamalgs::is_all_true(res, cnt);
+        return shamalgs::primitives::is_all_true(res, cnt);
     }
 
     template<class T>

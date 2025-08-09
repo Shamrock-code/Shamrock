@@ -235,7 +235,7 @@ bool shamalgs::ResizableBuffer<T>::check_buf_match(const ResizableBuffer<T> &f2)
             });
         });
 
-        match = match && shamalgs::is_all_true(res_buf, f2.size());
+        match = match && shamalgs::primitives::is_all_true(res_buf, f2.size());
     }
 
     return match;

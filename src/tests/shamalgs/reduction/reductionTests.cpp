@@ -41,7 +41,7 @@ void unit_test_reduc_sum(std::string name, Fct &&red_fct) {
         min_b = -1e6;
     }
 
-    std::vector<T> vals = shamalgs::mock_vector<T>(0x1111, size_test, min_b, max_b);
+    std::vector<T> vals = shamalgs::primitives::mock_vector<T>(0x1111, size_test, min_b, max_b);
 
     T sycl_ret, check_val;
 
@@ -77,7 +77,7 @@ void unit_test_reduc_min(std::string name, Fct &&red_fct) {
         min_b = -1e6;
     }
 
-    std::vector<T> vals = shamalgs::mock_vector<T>(0x1111, size_test, min_b, max_b);
+    std::vector<T> vals = shamalgs::primitives::mock_vector<T>(0x1111, size_test, min_b, max_b);
 
     T sycl_ret, check_val;
 
@@ -113,7 +113,7 @@ void unit_test_reduc_max(std::string name, Fct &&red_fct) {
         min_b = -1e6;
     }
 
-    std::vector<T> vals = shamalgs::mock_vector<T>(0x1111, size_test, min_b, max_b);
+    std::vector<T> vals = shamalgs::primitives::mock_vector<T>(0x1111, size_test, min_b, max_b);
 
     T sycl_ret, check_val;
 
@@ -148,7 +148,7 @@ void unit_test_reduc_sum_usm(std::string name, Fct &&red_fct) {
         min_b = -1e6;
     }
 
-    std::vector<T> vals = shamalgs::mock_vector<T>(0x1111, size_test, min_b, max_b);
+    std::vector<T> vals = shamalgs::primitives::mock_vector<T>(0x1111, size_test, min_b, max_b);
 
     T sycl_ret, check_val;
 
@@ -184,7 +184,7 @@ void unit_test_reduc_max_usm(std::string name, Fct &&red_fct) {
         min_b = -1e6;
     }
 
-    std::vector<T> vals = shamalgs::mock_vector<T>(0x1111, size_test, min_b, max_b);
+    std::vector<T> vals = shamalgs::primitives::mock_vector<T>(0x1111, size_test, min_b, max_b);
 
     T sycl_ret, check_val;
 
@@ -221,7 +221,7 @@ void unit_test_reduc_min_usm(std::string name, Fct &&red_fct) {
         min_b = -1e6;
     }
 
-    std::vector<T> vals = shamalgs::mock_vector<T>(0x1111, size_test, min_b, max_b);
+    std::vector<T> vals = shamalgs::primitives::mock_vector<T>(0x1111, size_test, min_b, max_b);
 
     T sycl_ret, check_val;
 
@@ -883,7 +883,7 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
         shambase::benchmark_pow_len(
             [&](u32 sz) {
                 logger::raw_ln("benchmark usmgroup128 sum N =", sz);
-                std::vector<T> buf = shamalgs::mock_vector<T>(0x111, sz);
+                std::vector<T> buf = shamalgs::primitives::mock_vector<T>(0x111, sz);
 
                 auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -906,7 +906,7 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
         shambase::benchmark_pow_len(
             [&](u32 sz) {
                 logger::raw_ln("benchmark usmgroup32 sum N =", sz);
-                std::vector<T> buf = shamalgs::mock_vector<T>(0x111, sz);
+                std::vector<T> buf = shamalgs::primitives::mock_vector<T>(0x111, sz);
 
                 auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -930,7 +930,7 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
         shambase::benchmark_pow_len(
             [&](u32 sz) {
                 logger::raw_ln("benchmark usm sum N =", sz);
-                std::vector<T> buf = shamalgs::mock_vector<T>(0x111, sz);
+                std::vector<T> buf = shamalgs::primitives::mock_vector<T>(0x111, sz);
 
                 auto sched = shamsys::instance::get_compute_scheduler_ptr();
 

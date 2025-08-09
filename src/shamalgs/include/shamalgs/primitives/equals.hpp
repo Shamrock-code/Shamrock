@@ -150,13 +150,13 @@ namespace shamalgs::primitives {
         sham::DeviceBuffer<T> &buf2,
         u32 cnt) {
 
-        // if the buffers are the same early return true
-        if (&buf1 == &buf2) {
+        // kernel call does not support 0 elements
+        if (cnt == 0) {
             return true;
         }
 
-        // kernel call does not support 0 elements
-        if (cnt == 0) {
+        // if the buffers are the same early return true
+        if (&buf1 == &buf2) {
             return true;
         }
 

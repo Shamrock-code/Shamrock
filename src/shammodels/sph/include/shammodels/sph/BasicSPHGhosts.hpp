@@ -125,15 +125,13 @@ namespace shammodels::sph {
         /**
          * @brief native handle to generate interfaces
          * generate interfaces of type T (template arg) based on the provided function
-         * ~~~~~{.cpp}
-         *
+         * @code{.cpp}
          * auto split_lists = grid.gen_splitlists(
          *     [&](u64 id_patch, Patch cur_p, PatchData &pdat) -> sycl::buffer<u32> {
          *          generate the buffer saying which cells should split
          *     }
          * );
-         *
-         * ~~~~~
+         * @endcode
          *
          * @tparam T
          * @param builder
@@ -209,11 +207,9 @@ namespace shammodels::sph {
         /**
          * @brief native handle to generate interfaces
          * generate interfaces of type T (template arg) based on the provided function
-         * ~~~~~{.cpp}
-         *
-         *
-         *
-         * ~~~~~
+         * @code{.cpp}
+         * // Example usage
+         * @endcode
          *
          * @tparam T
          * @param builder

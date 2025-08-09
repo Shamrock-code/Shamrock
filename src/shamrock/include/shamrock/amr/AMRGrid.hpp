@@ -73,15 +73,13 @@ namespace shamrock::amr {
 
         /**
          * @brief generate split lists for all patchdata owned by the node
-         * ~~~~~{.cpp}
-         *
+         * @code{.cpp}
          * auto split_lists = grid.gen_splitlists(
          *     [&](u64 id_patch, Patch cur_p, PatchData &pdat) -> sycl::buffer<u32> {
          *          generate the buffer saying which cells should split
          *     }
          * );
-         *
-         * ~~~~~
+         * @endcode
          *
          * @tparam Fct
          * @param f

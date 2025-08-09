@@ -210,15 +210,13 @@ class PatchScheduler {
     /**
      * @brief for each macro for patchadata
      * exemple usage
-     * ~~~~~{.cpp}
-     *
+     * @code{.cpp}
      * sched.for_each_patch_data(
      *     [&](u64 id_patch, Patch cur_p, PatchData &pdat) {
      *          ....
      *     }
      * );
-     *
-     * ~~~~~
+     * @endcode
      *
      * @tparam Function The functor that will be used
      * @param fct

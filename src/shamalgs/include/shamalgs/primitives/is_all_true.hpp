@@ -44,7 +44,7 @@ namespace shamalgs::primitives {
      * @note Currently implemented on CPU but marked for GPU optimization
      * @note The function only checks the first `cnt` elements of the buffer
      *
-     * @code
+     * @code{.cpp}
      * // Example: Check if all elements are non-zero
      * std::vector<i32> data = {1, 2, 3, 4, 5};
      * sycl::buffer<i32> buffer(data);
@@ -78,7 +78,7 @@ namespace shamalgs::primitives {
      * @note Currently implemented by copying to sycl::buffer and using CPU processing
      * @note The function only checks the first `cnt` elements of the buffer
      *
-     * @code
+     * @code{.cpp}
      * // Example: Check device buffer elements
      * std::vector<u8> flags = {1, 1, 1, 1};
      * sham::DeviceBuffer<u8> device_buffer(flags);

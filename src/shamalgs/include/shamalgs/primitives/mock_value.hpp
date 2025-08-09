@@ -38,8 +38,7 @@ namespace shamalgs::primitives {
      * @param max_bound The maximum bound for the generated value
      * @return A random value of type T within the specified bounds
      *
-     * @example
-     * ```cpp
+     * @code{.cpp}
      * #include <random>
      * #include "shamalgs/primitives/mock_value.hpp"
      *
@@ -58,7 +57,7 @@ namespace shamalgs::primitives {
      *     sycl::vec<f32, 3>{0.0f, 0.0f, 0.0f},
      *     sycl::vec<f32, 3>{1.0f, 1.0f, 1.0f}
      * );
-     * ```
+     * @endcode
      */
     template<class T>
     T mock_value(std::mt19937 &eng, T min_bound, T max_bound);
@@ -74,8 +73,7 @@ namespace shamalgs::primitives {
      * @param eng The random number generator engine to use
      * @return A random value of type T within the default bounds for the type
      *
-     * @example
-     * ```cpp
+     * @code{.cpp}
      * #include <random>
      * #include "shamalgs/primitives/mock_value.hpp"
      *
@@ -86,7 +84,7 @@ namespace shamalgs::primitives {
      * i32 random_int = shamalgs::mock_value<i32>(rng);
      * f64 random_double = shamalgs::mock_value<f64>(rng);
      * sycl::vec<f32, 2> random_vec2 = shamalgs::mock_value<sycl::vec<f32, 2>>(rng);
-     * ```
+     * @endcode
      */
     template<class T>
     inline T mock_value(std::mt19937 &eng) {

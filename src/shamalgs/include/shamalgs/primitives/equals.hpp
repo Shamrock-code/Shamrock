@@ -26,6 +26,7 @@
 
 #include "shambase/exception.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 
@@ -154,6 +155,11 @@ namespace shamalgs::primitives {
             return true;
         }
 
+        // kernel call does not support 0 elements
+        if (cnt == 0) {
+            return true;
+        }
+
         if (buf1.get_size() < cnt) {
             throw shambase::make_except_with_loc<std::invalid_argument>("buf 1 is larger than cnt");
         }
@@ -166,20 +172,14 @@ namespace shamalgs::primitives {
 
         auto &q = shambase::get_check_ref(dev_sched).get_queue();
 
-        sham::EventList depends_list;
-        const T *acc1 = buf1.get_read_access(depends_list);
-        const T *acc2 = buf2.get_read_access(depends_list);
-        u8 *out       = res.get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
-                out[item] = sham::equals(acc1[item], acc2[item]);
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf1, buf2},
+            sham::MultiRef{res},
+            cnt,
+            [](u32 i, const T *__restrict acc1, const T *__restrict acc2, u8 *__restrict out) {
+                out[i] = sham::equals(acc1[i], acc2[i]);
             });
-        });
-
-        buf1.complete_event_state(e);
-        buf2.complete_event_state(e);
-        res.complete_event_state(e);
 
         return shamalgs::primitives::is_all_true(res, cnt);
     }

@@ -18,6 +18,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shambackends/vec.hpp"
@@ -135,7 +136,7 @@ namespace shamrock::tree {
 
             cmp = cmp && (t1.obj_cnt == t2.obj_cnt);
 
-            using namespace shamalgs::reduction;
+            using namespace shamalgs::primitives;
 
             cmp = cmp
                   && equals(

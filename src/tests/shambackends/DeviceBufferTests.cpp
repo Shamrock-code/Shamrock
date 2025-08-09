@@ -8,6 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/details/reduction/reduction.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -116,7 +117,7 @@ TestStart(
     REQUIRE_EQUAL(b1.size(), b2.size());
     REQUIRE_EQUAL(b.get_size(), b1.size());
 
-    shamalgs::reduction::equals(q, b1, b2);
+    REQUIRE(shamalgs::primitives::equals(q, b1, b2));
 }
 
 TestStart(Unittest, "shambackends/DeviceBuffer:fill", DeviceBuffer_fill1, 1) {

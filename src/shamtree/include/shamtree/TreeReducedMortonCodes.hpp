@@ -18,6 +18,7 @@
 #include "shambase/string.hpp"
 #include "kernels/reduction_alg.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -136,7 +137,7 @@ namespace shamrock::tree {
 
             cmp = cmp && (t1.tree_leaf_count == t2.tree_leaf_count);
 
-            using namespace shamalgs::reduction;
+            using namespace shamalgs::primitives;
 
             cmp = cmp && (t1.buf_reduc_index_map->size() == t2.buf_reduc_index_map->size());
 

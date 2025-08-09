@@ -44,6 +44,8 @@ namespace shamalgs::primitives {
      * @note Currently implemented on CPU but marked for GPU optimization
      * @note The function only checks the first `cnt` elements of the buffer
      *
+     * @deprecated Use is_all_true(sham::DeviceBuffer<T>&, u32) instead.
+     *
      * @code{.cpp}
      * // Example: Check if all elements are non-zero
      * std::vector<i32> data = {1, 2, 3, 4, 5};
@@ -61,6 +63,7 @@ namespace shamalgs::primitives {
      * @endcode
      */
     template<class T>
+    [[deprecated("Use is_all_true(sham::DeviceBuffer<T>&, u32) instead.")]]
     bool is_all_true(sycl::buffer<T> &buf, u32 cnt);
 
     /**

@@ -19,6 +19,7 @@
 #include "shambase/string.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/primitives/mock_value.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/random.hpp"
@@ -97,7 +98,7 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     match = match && (obj_cnt == f2.obj_cnt);
 
     auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    match     = match && shamalgs::equals(sptr, buf, f2.buf, obj_cnt * nvar);
+    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, obj_cnt * nvar);
 
     return match;
 }

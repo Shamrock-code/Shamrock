@@ -18,6 +18,7 @@
 #include "kernels/compute_ranges.hpp"
 #include "kernels/convert_ranges.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammath/sfc/morton.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -187,7 +188,7 @@ namespace shamrock::tree {
         inline friend bool operator==(const TreeCellRanges &t1, const TreeCellRanges &t2) {
             bool cmp = true;
 
-            using namespace shamalgs::reduction;
+            using namespace shamalgs::primitives;
 
             cmp = cmp
                   && equals_ptr(

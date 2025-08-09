@@ -11,6 +11,7 @@
 #include "shambase/string.hpp"
 #include "shamalgs/collective/sparseXchg.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
@@ -137,7 +138,7 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
                     recv_buf.payload->get_size());
                 REQUIRE_NAMED(
                     prefix + "same buffer",
-                    shamalgs::reduction::equals_ptr(
+                    shamalgs::primitives::equals_ptr(
                         get_compute_queue(), ref.payload, recv_buf.payload));
 
             } else {

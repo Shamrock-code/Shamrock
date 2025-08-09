@@ -10,6 +10,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -93,7 +94,7 @@ void distribdata_sparse_comm_test(std::string prefix) {
 
         REQUIRE_NAMED(
             "correct buffer",
-            shamalgs::reduction::equals(get_compute_scheduler_ptr(), buf, it->second));
+            shamalgs::primitives::equals(get_compute_scheduler_ptr(), buf, it->second));
     });
 }
 

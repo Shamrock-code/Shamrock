@@ -18,6 +18,7 @@
 #include "shambase/exception.hpp"
 #include "kernels/karras_alg.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -122,31 +123,31 @@ namespace shamrock::tree {
             cmp = cmp && (t1.internal_cell_count == t2.internal_cell_count);
 
             cmp = cmp
-                  && shamalgs::reduction::equals(
+                  && shamalgs::primitives::equals(
                       shamsys::instance::get_compute_queue(),
                       *t1.buf_lchild_id,
                       *t2.buf_lchild_id,
                       t1.internal_cell_count);
             cmp = cmp
-                  && shamalgs::reduction::equals(
+                  && shamalgs::primitives::equals(
                       shamsys::instance::get_compute_queue(),
                       *t1.buf_rchild_id,
                       *t2.buf_rchild_id,
                       t1.internal_cell_count);
             cmp = cmp
-                  && shamalgs::reduction::equals(
+                  && shamalgs::primitives::equals(
                       shamsys::instance::get_compute_queue(),
                       *t1.buf_lchild_flag,
                       *t2.buf_lchild_flag,
                       t1.internal_cell_count);
             cmp = cmp
-                  && shamalgs::reduction::equals(
+                  && shamalgs::primitives::equals(
                       shamsys::instance::get_compute_queue(),
                       *t1.buf_rchild_flag,
                       *t2.buf_rchild_flag,
                       t1.internal_cell_count);
             cmp = cmp
-                  && shamalgs::reduction::equals(
+                  && shamalgs::primitives::equals(
                       shamsys::instance::get_compute_queue(),
                       *t1.buf_endrange,
                       *t2.buf_endrange,

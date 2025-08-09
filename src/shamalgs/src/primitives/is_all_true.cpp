@@ -19,33 +19,34 @@ template<class T>
 bool shamalgs::primitives::is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt) {
 
     // TODO do it on GPU pleeeaze
-    bool res = true;
     {
         auto tmp = buf.copy_to_stdvec();
 
         for (u32 i = 0; i < cnt; i++) {
-            res = res && (tmp[i] != 0);
+            if (tmp[i] == 0) {
+                return false;
+            }
         }
     }
 
-    return res;
+    return true;
 }
 
 template<class T>
 bool shamalgs::primitives::is_all_true(sycl::buffer<T> &buf, u32 cnt) {
 
     // TODO do it on GPU pleeeaze
-
-    bool res = true;
     {
         sycl::host_accessor acc{buf, sycl::read_only};
 
         for (u32 i = 0; i < cnt; i++) {
-            res = res && (acc[i] != 0);
+            if (acc[i] == 0) {
+                return false;
+            }
         }
     }
 
-    return res;
+    return true;
 }
 
 template bool shamalgs::primitives::is_all_true(sycl::buffer<u8> &buf, u32 cnt);

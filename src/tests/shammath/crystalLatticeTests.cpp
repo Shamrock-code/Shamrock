@@ -111,12 +111,12 @@ TestStart(
     std::mt19937 eng(0x1111);
 
     for (u32 i = 0; i < 100; i++) {
-        i32 xmin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 ymin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 zmin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 xmax = shamalgs::random::mock_value(eng, 0, 7);
-        i32 ymax = shamalgs::random::mock_value(eng, 0, 7);
-        i32 zmax = shamalgs::random::mock_value(eng, 0, 7);
+        i32 xmin = shamalgs::mock_value(eng, -7, 0);
+        i32 ymin = shamalgs::mock_value(eng, -7, 0);
+        i32 zmin = shamalgs::mock_value(eng, -7, 0);
+        i32 xmax = shamalgs::mock_value(eng, 0, 7);
+        i32 ymax = shamalgs::mock_value(eng, 0, 7);
+        i32 zmax = shamalgs::mock_value(eng, 0, 7);
 
         REQUIRE_NAMED(
             shambase::format(
@@ -144,12 +144,12 @@ TestStart(
     std::mt19937 eng(0x1111);
 
     for (u32 i = 0; i < 100; i++) {
-        i32 xmin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 ymin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 zmin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 xmax = shamalgs::random::mock_value(eng, 0, 7);
-        i32 ymax = shamalgs::random::mock_value(eng, 0, 7);
-        i32 zmax = shamalgs::random::mock_value(eng, 0, 7);
+        i32 xmin = shamalgs::mock_value(eng, -7, 0);
+        i32 ymin = shamalgs::mock_value(eng, -7, 0);
+        i32 zmin = shamalgs::mock_value(eng, -7, 0);
+        i32 xmax = shamalgs::mock_value(eng, 0, 7);
+        i32 ymax = shamalgs::mock_value(eng, 0, 7);
+        i32 zmax = shamalgs::mock_value(eng, 0, 7);
 
         if (xmin == xmax || ymin == ymax || zmin == zmax)
             continue;

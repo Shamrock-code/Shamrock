@@ -19,6 +19,8 @@
 #include "shambase/string.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/primitives/mock_value.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -401,7 +403,7 @@ template<class T>
 PatchDataField<T>
 PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax) {
 
-    std::vector<T> buf = shamalgs::random::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
+    std::vector<T> buf = shamalgs::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
     PatchDataField<T> ret(name, nvar, obj_cnt);
     ret.get_buf().copy_from_stdvec(buf);
 

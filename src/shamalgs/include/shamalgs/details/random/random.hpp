@@ -17,6 +17,7 @@
  */
 
 #include "shambase/constants.hpp"
+#include "shamalgs/primitives/mock_value.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
@@ -32,15 +33,12 @@
 namespace shamalgs::random {
 
     template<class T>
-    T mock_value(std::mt19937 &eng, T min_bound, T max_bound);
-
-    template<class T>
     T mock_gaussian(std::mt19937 &eng) {
         using namespace shambase::constants;
 
         constexpr T _2pi = pi<T> * 2;
-        T r_3            = shamalgs::random::mock_value<T>(eng, 0, 1);
-        T r_4            = shamalgs::random::mock_value<T>(eng, 0, 1);
+        T r_3            = shamalgs::mock_value<T>(eng, 0, 1);
+        T r_4            = shamalgs::mock_value<T>(eng, 0, 1);
         return sycl::sqrt(-2 * sycl::log(r_3)) * sycl::cos(_2pi * r_4);
     }
 
@@ -71,14 +69,6 @@ namespace shamalgs::random {
     }
 
     template<class T>
-    inline T mock_value(std::mt19937 &eng) {
-        using Prop = shambase::VectorProperties<T>;
-        return mock_value<T>(eng, Prop::get_min(), Prop::get_max());
-    }
-
-    template<class T>
-    std::vector<T> mock_vector(u64 seed, u32 len, T min_bound, T max_bound);
-    template<class T>
     sycl::buffer<T> mock_buffer(u64 seed, u32 len, T min_bound, T max_bound);
 
     template<class T>
@@ -92,11 +82,6 @@ namespace shamalgs::random {
         return mock_buffer_usm(sched, seed, len, Prop::get_min(), Prop::get_max());
     }
 
-    template<class T>
-    inline std::vector<T> mock_vector(u64 seed, u32 len) {
-        using Prop = shambase::VectorProperties<T>;
-        return mock_vector(seed, len, Prop::get_min(), Prop::get_max());
-    }
     template<class T>
     inline sycl::buffer<T> mock_buffer(u64 seed, u32 len) {
         using Prop = shambase::VectorProperties<T>;

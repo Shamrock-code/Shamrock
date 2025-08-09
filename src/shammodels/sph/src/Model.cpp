@@ -773,15 +773,15 @@ class BigDiscUtils {
 
             auto find_r = [&]() {
                 while (true) {
-                    Tscal u2 = shamalgs::random::mock_value<Tscal>(eng, 0, fmax);
-                    Tscal r  = shamalgs::random::mock_value<Tscal>(eng, r_in, r_out);
+                    Tscal u2 = shamalgs::mock_value<Tscal>(eng, 0, fmax);
+                    Tscal r  = shamalgs::mock_value<Tscal>(eng, r_in, r_out);
                     if (u2 < f_func(r)) {
                         return r;
                     }
                 }
             };
 
-            auto theta  = shamalgs::random::mock_value<Tscal>(eng, 0, _2pi);
+            auto theta  = shamalgs::mock_value<Tscal>(eng, 0, _2pi);
             auto Gauss  = shamalgs::random::mock_gaussian<Tscal>(eng);
             Tscal aspin = 2.;
 

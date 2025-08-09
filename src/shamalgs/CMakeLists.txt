@@ -36,6 +36,7 @@ set(Sources
         src/collective/sparseXchg.cpp
         src/primitives/sort_by_keys.cpp
         src/primitives/is_all_true.cpp
+        src/primitives/mock_value.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

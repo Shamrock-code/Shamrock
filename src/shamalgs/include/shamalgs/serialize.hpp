@@ -146,7 +146,7 @@ namespace shamalgs {
 
             if (head_device + off > storage.get_size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                    "Serializer device buffer overflow: cannot move devicehead.\n"
+                    "Serializer device buffer overflow: cannot move device head.\n"
                     "    storage size : {}\n"
                     "    current head_device : {}\n"
                     "    requested head_device : {}\n"

@@ -263,7 +263,19 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move_device(offset);
+
+            try {
+                check_head_move_device(offset);
+            } catch (const std::runtime_error &e) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "SerializeHelper::write_buf: (check_head_move_device(offset) failed)\n  "
+                    "offset={}\n  current_head={}\n  len={}\n  Helper::szrepr={}\n buf.size()={}",
+                    offset,
+                    current_head,
+                    len,
+                    Helper::szrepr,
+                    buf.size()));
+            }
 
             sham::EventList depends_list;
 
@@ -292,8 +304,20 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move_device(offset);
 
+            try {
+                check_head_move_device(offset);
+            } catch (const std::runtime_error &e) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "SerializeHelper::write_buf: (check_head_move_device(offset) failed)\n  "
+                    "offset={}\n  current_head={}\n  len={}\n  Helper::szrepr={}\n "
+                    "buf.get_size()={}",
+                    offset,
+                    current_head,
+                    len,
+                    Helper::szrepr,
+                    buf.size()));
+            }
             sham::EventList depends_list;
 
             auto accbufbyte = storage.get_read_access(depends_list);
@@ -321,7 +345,20 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move_device(offset);
+
+            try {
+                check_head_move_device(offset);
+            } catch (const std::runtime_error &e) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "SerializeHelper::write_buf: (check_head_move_device(offset) failed)\n  "
+                    "offset={}\n  current_head={}\n  len={}\n  Helper::szrepr={}\n "
+                    "buf.get_size()={}",
+                    offset,
+                    current_head,
+                    len,
+                    Helper::szrepr,
+                    buf.get_size()));
+            }
 
             sham::EventList depends_list;
             const T *accbuf = buf.get_read_access(depends_list);
@@ -349,7 +386,20 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move_device(offset);
+
+            try {
+                check_head_move_device(offset);
+            } catch (const std::runtime_error &e) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "SerializeHelper::load_buf: (check_head_move_device(offset) failed)\n  "
+                    "offset={}\n  current_head={}\n  len={}\n  Helper::szrepr={}\n "
+                    "buf.get_size()={}",
+                    offset,
+                    current_head,
+                    len,
+                    Helper::szrepr,
+                    buf.get_size()));
+            }
 
             if (buf.get_size() < len) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(

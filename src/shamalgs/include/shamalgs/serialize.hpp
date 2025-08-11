@@ -146,7 +146,7 @@ namespace shamalgs {
 
             if (head_device + off > storage.get_size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                    "the buffer is not allocated, the head_device cannot be moved\n "
+                    "Serializer device buffer overflow: cannot move devicehead.\n"
                     "    storage size : {}\n"
                     "    current head_device : {}\n"
                     "    requested head_device : {}\n"
@@ -170,7 +170,7 @@ namespace shamalgs {
 
             if (head_host + off > storage_header.size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                    "the buffer is not allocated, the head_host cannot be moved\n "
+                    "Serializer host buffer overflow: cannot move host head.\n"
                     "    storage_header size : {}\n"
                     "    current head_host : {}\n"
                     "    requested head_host : {}\n"

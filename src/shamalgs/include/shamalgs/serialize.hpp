@@ -291,7 +291,6 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-
             check_head_move_device<T>(offset, len);
 
             sham::EventList depends_list;
@@ -321,7 +320,6 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-
             check_head_move_device<T>(offset, len);
 
             sham::EventList depends_list;
@@ -351,7 +349,6 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-
             check_head_move_device<T>(offset, len);
 
             sham::EventList depends_list;
@@ -380,7 +377,6 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-
             check_head_move_device<T>(offset, len);
 
             if (buf.get_size() < len) {

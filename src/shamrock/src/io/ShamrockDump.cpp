@@ -35,8 +35,6 @@ namespace shamrock {
 
         // serialize patchdatas and push them into dat
         sched.patch_data.for_each_patchdata([&](u64 pid, PatchDataLayer &pdat) {
-            StackEntry stack_loc{};
-
             auto ser_sz = pdat.serialize_buf_byte_size();
             shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(ser_sz);

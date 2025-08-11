@@ -14,13 +14,17 @@
  *
  */
 
-#include "shamrock/io/ShamrockDump.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamrock/io/ShamrockDump.hpp"
 
 namespace shamrock {
 
     void write_shamrock_dump(std::string fname, std::string metadata_user, PatchScheduler &sched) {
+
+        StackEntry stack_loc{};
+
         std::string metadata_patch = sched.serialize_patch_metadata().dump(4);
 
         using namespace shamrock::patch;
@@ -31,6 +35,8 @@ namespace shamrock {
 
         // serialize patchdatas and push them into dat
         sched.patch_data.for_each_patchdata([&](u64 pid, PatchDataLayer &pdat) {
+            StackEntry stack_loc{};
+
             auto ser_sz = pdat.serialize_buf_byte_size();
             shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(ser_sz);
@@ -156,6 +162,8 @@ namespace shamrock {
     }
 
     void load_shamrock_dump(std::string fname, std::string &metadata_user, ShamrockCtx &ctx) {
+
+        StackEntry stack_loc{};
 
         u64 head_ptr = 0;
         MPI_File mfile{};

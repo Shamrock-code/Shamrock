@@ -141,8 +141,9 @@ namespace shamalgs {
             if (head_device + off > storage.get_size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
                     "the buffer is not allocated, the head_device cannot be moved\n "
-                    "storage size : {}, requested head_device : {}",
+                    "storage size : {}, current head_device : {}, requested head_device : {}",
                     storage.get_size(),
+                    head_device,
                     head_device + off));
             }
         }
@@ -150,8 +151,9 @@ namespace shamalgs {
             if (head_host + off > storage_header.size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
                     "the buffer is not allocated, the head_host cannot be moved\n "
-                    "storage_header size : {}, requested head_host : {}",
+                    "storage_header size : {}, current head_host : {}, requested head_host : {}",
                     storage_header.size(),
+                    head_host,
                     head_host + off));
             }
         }

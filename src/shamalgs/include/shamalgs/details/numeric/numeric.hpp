@@ -182,7 +182,8 @@ namespace shamalgs::numeric {
 
         auto &q = shambase::get_check_ref(sched).get_queue();
 
-        sham::DeviceBuffer<u64> counts = device_histogram(sched, bin_edges, nbins, values, len);
+        sham::DeviceBuffer<u64> counts
+            = device_histogram<u64>(sched, bin_edges, nbins, values, len);
 
         sham::DeviceBuffer<T> bins_center(nbins, sched);
         sham::DeviceBuffer<T> bins_width(nbins, sched);

@@ -268,7 +268,7 @@ namespace shamrock::patch {
         }
 
         template<class T>
-        PatchDataField<T> &get_field(std::string field_name) {
+        PatchDataField<T> &get_field(const std::string &field_name) {
             return get_field<T>(pdl().get_field_idx<T>(field_name));
         }
 

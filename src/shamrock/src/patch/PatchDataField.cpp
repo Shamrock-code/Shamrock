@@ -184,7 +184,7 @@ void PatchDataField<T>::append_subset_to(
 
 template<class T>
 void PatchDataField<T>::append_subset_to(
-    sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
+    const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
 
     if (pfield.nvar != nvar)
         throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -295,7 +295,7 @@ template<class T>
 class PdatField_insert;
 
 template<class T>
-void PatchDataField<T>::insert(PatchDataField<T> &f2) {
+void PatchDataField<T>::insert(const PatchDataField<T> &f2) {
 
     u32 f2_len = f2.get_obj_cnt();
 

@@ -14,7 +14,7 @@ Ghost layer = f(patch) V box
             = f( f_inv(f(patch) V box) )
             = f( patch V f_inv(box) ),
 
-where V denote a ghost layer intersection.
+where V denotes a ghost layer intersection.
 """
 
 # sphinx_gallery_multi_image = "single"

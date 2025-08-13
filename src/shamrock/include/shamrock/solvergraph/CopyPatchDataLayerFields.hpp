@@ -74,8 +74,7 @@ namespace shamrock::solvergraph {
 
                     pdat_new.for_each_field_any([&](auto &field) {
                         using T = typename std::remove_reference<decltype(field)>::type::Field_type;
-                        pdat_new.get_field<T>(field.get_name())
-                            .insert(pdat.get_field<T>(field.get_name()));
+                        field.insert(pdat.get_field<T>(field.get_name()));
                     });
 
                     pdat_new.check_field_obj_cnt_match();

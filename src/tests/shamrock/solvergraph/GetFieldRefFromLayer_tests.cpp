@@ -16,6 +16,37 @@
 #include <random>
 #include <stdexcept>
 
+template<typename T>
+void test_field_extraction(
+    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &layout,
+    const std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> &source_refs,
+    const std::string &field_name,
+    u32 obj_count,
+    int nvar) {
+    using namespace shamrock::solvergraph;
+    using namespace shamrock::patch;
+
+    u32 field_idx = layout->get_field_idx<T>(field_name);
+
+    auto out_field_refs = std::make_shared<FieldRefs<T>>("out_field", "out_field");
+    auto get_field_node = std::make_shared<GetFieldRefFromLayer<T>>(field_idx);
+    get_field_node->set_edges(source_refs, out_field_refs);
+    get_field_node->evaluate();
+
+    REQUIRE_EQUAL(out_field_refs->get_refs().get_element_count(), 1);
+    auto &out_field = out_field_refs->get_refs().get(1).get();
+    REQUIRE_EQUAL(out_field.get_obj_cnt(), obj_count);
+    REQUIRE_EQUAL(out_field.get_name(), field_name);
+    REQUIRE_EQUAL(out_field.get_nvar(), nvar);
+
+    auto &source_pdat  = source_refs->patchdatas.get(1).get();
+    auto &source_field = source_pdat.get_field<T>(field_idx);
+    REQUIRE_EQUAL_CUSTOM_COMP(
+        source_field.get_buf().copy_to_stdvec(),
+        out_field.get_buf().copy_to_stdvec(),
+        sham::equals);
+}
+
 TestStart(Unittest, "shamrock/solvergraph/GetFieldRefFromLayer", testGetFieldRefFromLayer, 1) {
     using namespace shamrock::solvergraph;
     using namespace shamrock::patch;
@@ -36,143 +67,8 @@ TestStart(Unittest, "shamrock/solvergraph/GetFieldRefFromLayer", testGetFieldRef
     auto source_refs = std::make_shared<PatchDataLayerRefs>("source", "source_refs");
     source_refs->patchdatas.add_obj(1, std::ref(source_patchdata));
 
-    // first field
-    {
-        using T                = f32;
-        std::string field_name = "scalar_field";
-        u32 field_idx          = layout->get_field_idx<T>(field_name);
-
-        // Create output field refs edge
-        auto out_field_refs = std::make_shared<FieldRefs<T>>("out_field", "out_field");
-
-        // Create the GetFieldRefFromLayer node for the vector field
-        auto get_field_node = std::make_shared<GetFieldRefFromLayer<T>>(field_idx);
-        get_field_node->set_edges(source_refs, out_field_refs);
-
-        // Execute the field extraction
-        get_field_node->evaluate();
-
-        // Verify output field refs were created correctly
-        REQUIRE_EQUAL(out_field_refs->get_refs().get_element_count(), 1);
-
-        auto &out_field = out_field_refs->get_refs().get(1).get();
-
-        REQUIRE_EQUAL(out_field.get_obj_cnt(), obj_count);
-        REQUIRE_EQUAL(out_field.get_name(), field_name);
-        REQUIRE_EQUAL(out_field.get_nvar(), 1);
-
-        // Verify the extracted field is actually the same as the source field
-        auto &source_pdat  = source_refs->patchdatas.get(1).get();
-        auto &source_field = source_pdat.get_field<T>(field_idx);
-
-        REQUIRE_EQUAL_CUSTOM_COMP(
-            source_field.get_buf().copy_to_stdvec(),
-            out_field.get_buf().copy_to_stdvec(),
-            sham::equals);
-    }
-
-    // second field
-    {
-        using T                = f32_3;
-        std::string field_name = "vector_field";
-        u32 field_idx          = layout->get_field_idx<T>(field_name);
-
-        // Create output field refs edge
-        auto out_field_refs = std::make_shared<FieldRefs<T>>("out_field", "out_field");
-
-        // Create the GetFieldRefFromLayer node for the vector field
-        auto get_field_node = std::make_shared<GetFieldRefFromLayer<T>>(field_idx);
-        get_field_node->set_edges(source_refs, out_field_refs);
-
-        // Execute the field extraction
-        get_field_node->evaluate();
-
-        // Verify output field refs were created correctly
-        REQUIRE_EQUAL(out_field_refs->get_refs().get_element_count(), 1);
-
-        auto &out_field = out_field_refs->get_refs().get(1).get();
-
-        REQUIRE_EQUAL(out_field.get_obj_cnt(), obj_count);
-        REQUIRE_EQUAL(out_field.get_name(), field_name);
-        REQUIRE_EQUAL(out_field.get_nvar(), 2);
-
-        // Verify the extracted field is actually the same as the source field
-        auto &source_pdat  = source_refs->patchdatas.get(1).get();
-        auto &source_field = source_pdat.get_field<T>(field_idx);
-
-        REQUIRE_EQUAL_CUSTOM_COMP(
-            source_field.get_buf().copy_to_stdvec(),
-            out_field.get_buf().copy_to_stdvec(),
-            sham::equals);
-    }
-
-    // third field
-    {
-        using T                = u64;
-        std::string field_name = "index_field";
-        u32 field_idx          = layout->get_field_idx<T>(field_name);
-
-        // Create output field refs edge
-        auto out_field_refs = std::make_shared<FieldRefs<T>>("out_field", "out_field");
-
-        // Create the GetFieldRefFromLayer node for the vector field
-        auto get_field_node = std::make_shared<GetFieldRefFromLayer<T>>(field_idx);
-        get_field_node->set_edges(source_refs, out_field_refs);
-
-        // Execute the field extraction
-        get_field_node->evaluate();
-
-        // Verify output field refs were created correctly
-        REQUIRE_EQUAL(out_field_refs->get_refs().get_element_count(), 1);
-
-        auto &out_field = out_field_refs->get_refs().get(1).get();
-
-        REQUIRE_EQUAL(out_field.get_obj_cnt(), obj_count);
-        REQUIRE_EQUAL(out_field.get_name(), field_name);
-        REQUIRE_EQUAL(out_field.get_nvar(), 1);
-
-        // Verify the extracted field is actually the same as the source field
-        auto &source_pdat  = source_refs->patchdatas.get(1).get();
-        auto &source_field = source_pdat.get_field<T>(field_idx);
-
-        REQUIRE_EQUAL_CUSTOM_COMP(
-            source_field.get_buf().copy_to_stdvec(),
-            out_field.get_buf().copy_to_stdvec(),
-            sham::equals);
-    }
-
-    // fourth field
-    {
-        using T                = f64;
-        std::string field_name = "double_field";
-        u32 field_idx          = layout->get_field_idx<T>(field_name);
-
-        // Create output field refs edge
-        auto out_field_refs = std::make_shared<FieldRefs<T>>("out_field", "out_field");
-
-        // Create the GetFieldRefFromLayer node for the vector field
-        auto get_field_node = std::make_shared<GetFieldRefFromLayer<T>>(field_idx);
-        get_field_node->set_edges(source_refs, out_field_refs);
-
-        // Execute the field extraction
-        get_field_node->evaluate();
-
-        // Verify output field refs were created correctly
-        REQUIRE_EQUAL(out_field_refs->get_refs().get_element_count(), 1);
-
-        auto &out_field = out_field_refs->get_refs().get(1).get();
-
-        REQUIRE_EQUAL(out_field.get_obj_cnt(), obj_count);
-        REQUIRE_EQUAL(out_field.get_name(), field_name);
-        REQUIRE_EQUAL(out_field.get_nvar(), 1);
-
-        // Verify the extracted field is actually the same as the source field
-        auto &source_pdat  = source_refs->patchdatas.get(1).get();
-        auto &source_field = source_pdat.get_field<T>(field_idx);
-
-        REQUIRE_EQUAL_CUSTOM_COMP(
-            source_field.get_buf().copy_to_stdvec(),
-            out_field.get_buf().copy_to_stdvec(),
-            sham::equals);
-    }
+    test_field_extraction<f32>(layout, source_refs, "scalar_field", obj_count, 1);
+    test_field_extraction<f32_3>(layout, source_refs, "vector_field", obj_count, 2);
+    test_field_extraction<u64>(layout, source_refs, "index_field", obj_count, 1);
+    test_field_extraction<f64>(layout, source_refs, "double_field", obj_count, 1);
 }

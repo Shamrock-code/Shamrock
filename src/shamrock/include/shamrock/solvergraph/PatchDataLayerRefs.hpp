@@ -20,9 +20,12 @@
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/IDataEdgeNamed.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
+#include "shamrock/solvergraph/INode.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
 #include <functional>
 
 namespace shamrock::solvergraph {
@@ -40,4 +43,5 @@ namespace shamrock::solvergraph {
 
         inline virtual void free_alloc() { patchdatas = {}; }
     };
+
 } // namespace shamrock::solvergraph

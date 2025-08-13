@@ -33,8 +33,8 @@ namespace shamrock::solvergraph {
         using IDataEdgeNamed::IDataEdgeNamed;
 
         inline PatchDataLayerEdge(
-            std::string name,
-            std::string label,
+            const std::string& name,
+            const std::string& label,
             std::shared_ptr<patch::PatchDataLayerLayout> layout)
             : IDataEdgeNamed(name, label), layout(layout) {}
 

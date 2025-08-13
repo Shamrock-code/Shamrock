@@ -20,6 +20,7 @@
 #include "shambase/type_traits.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
+#include <vector>
 
 namespace sham::syclbackport {
 
@@ -523,6 +524,20 @@ namespace sham {
     template<class T>
     inline bool equals(T a, T b) {
         return details::vec_equals(a, b);
+    }
+
+    /// overload of equals for std::vector
+    template<class T>
+    inline bool equals(const std::vector<T> &a, const std::vector<T> &b) {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        for (u32 i = 0; i < a.size(); i++) {
+            if (!sham::equals(a[i], b[i])) {
+                return false;
+            }
+        }
+        return true;
     }
 
     inline auto pack32(u32 a, u32 b) -> u64 { return (u64(a) << 32U) + b; };

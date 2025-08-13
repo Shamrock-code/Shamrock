@@ -36,14 +36,6 @@ TestStart(Unittest, "shamrock/solvergraph/GetFieldRefFromLayer", testGetFieldRef
     auto source_refs = std::make_shared<PatchDataLayerRefs>("source", "source_refs");
     source_refs->patchdatas.add_obj(1, std::ref(source_patchdata));
 
-    auto compare_data = [](auto &a, auto &b) {
-        bool ret = a.size() == b.size();
-        for (u32 i = 0; i < a.size(); i++) {
-            ret = ret && (sham::equals(a[i], b[i]));
-        }
-        return ret;
-    };
-
     // first field
     {
         using T                = f32;
@@ -76,7 +68,7 @@ TestStart(Unittest, "shamrock/solvergraph/GetFieldRefFromLayer", testGetFieldRef
         REQUIRE_EQUAL_CUSTOM_COMP(
             source_field.get_buf().copy_to_stdvec(),
             out_field.get_buf().copy_to_stdvec(),
-            compare_data);
+            sham::equals);
     }
 
     // second field
@@ -111,7 +103,7 @@ TestStart(Unittest, "shamrock/solvergraph/GetFieldRefFromLayer", testGetFieldRef
         REQUIRE_EQUAL_CUSTOM_COMP(
             source_field.get_buf().copy_to_stdvec(),
             out_field.get_buf().copy_to_stdvec(),
-            compare_data);
+            sham::equals);
     }
 
     // third field
@@ -146,7 +138,7 @@ TestStart(Unittest, "shamrock/solvergraph/GetFieldRefFromLayer", testGetFieldRef
         REQUIRE_EQUAL_CUSTOM_COMP(
             source_field.get_buf().copy_to_stdvec(),
             out_field.get_buf().copy_to_stdvec(),
-            compare_data);
+            sham::equals);
     }
 
     // fourth field
@@ -181,6 +173,6 @@ TestStart(Unittest, "shamrock/solvergraph/GetFieldRefFromLayer", testGetFieldRef
         REQUIRE_EQUAL_CUSTOM_COMP(
             source_field.get_buf().copy_to_stdvec(),
             out_field.get_buf().copy_to_stdvec(),
-            compare_data);
+            sham::equals);
     }
 }

@@ -69,14 +69,6 @@ TestStart(
     auto &source_pdat = source_refs->patchdatas.get(1).get();
     auto &target_pdat = target_edge->patchdatas.get(1);
 
-    auto compare_data = [](auto &a, auto &b) {
-        bool ret = a.size() == b.size();
-        for (u32 i = 0; i < a.size(); i++) {
-            ret = ret && (sham::equals(a[i], b[i]));
-        }
-        return ret;
-    };
-
     source_pdat.for_each_field_any([&](auto &source_field) {
         using T = typename std::remove_reference<decltype(source_field)>::type::Field_type;
 
@@ -94,6 +86,6 @@ TestStart(
         // Verify actual data values match
         auto source_data = source_field.get_buf().copy_to_stdvec();
         auto target_data = target_field.get_buf().copy_to_stdvec();
-        REQUIRE_EQUAL_CUSTOM_COMP(source_data, target_data, compare_data);
+        REQUIRE_EQUAL_CUSTOM_COMP(source_data, target_data, sham::equals);
     });
 }

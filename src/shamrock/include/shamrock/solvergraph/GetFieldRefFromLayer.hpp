@@ -28,8 +28,7 @@ namespace shamrock::solvergraph {
         GetFieldRefFromLayer(u32 field_idx) : field_idx(field_idx) {}
         u32 field_idx;
 
-        GetFieldRefFromLayer(
-            shamrock::patch::PatchDataLayerLayout &layout, std::string field_name)
+        GetFieldRefFromLayer(shamrock::patch::PatchDataLayerLayout &layout, std::string field_name)
             : GetFieldRefFromLayer(layout.get_field_idx<T>(field_name)) {}
 
         struct Edges {

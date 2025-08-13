@@ -16,10 +16,10 @@
  *
  */
 
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
-#include "shambase/DistributedData.hpp"
+#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
 #include <memory>
 
 namespace shamrock::solvergraph {

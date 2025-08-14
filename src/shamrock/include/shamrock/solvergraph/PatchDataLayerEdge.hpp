@@ -10,38 +10,40 @@
 #pragma once
 
 /**
- * @file PatchDataLayerRefs.hpp
+ * @file PatchDataLayerEdge.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Defines the PatchDataLayerRefs class for managing distributed references to patch data
- * layers.
+ * @brief Defines the PatchDataLayerEdge class for managing patch data layer edges.
  *
  */
 
 #include "shambase/DistributedData.hpp"
-#include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/FieldRefs.hpp"
-#include "shamrock/solvergraph/FieldSpan.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/solvergraph/IDataEdgeNamed.hpp"
-#include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/Indexes.hpp"
-#include <functional>
+#include <memory>
 
 namespace shamrock::solvergraph {
 
-    class PatchDataLayerRefs : public IDataEdgeNamed {
+    class PatchDataLayerEdge : public IDataEdgeNamed {
 
         public:
-        shambase::DistributedData<std::reference_wrapper<patch::PatchDataLayer>> patchdatas;
+        std::shared_ptr<patch::PatchDataLayerLayout> layout;
+        shambase::DistributedData<patch::PatchDataLayer> patchdatas;
 
         using IDataEdgeNamed::IDataEdgeNamed;
 
-        inline virtual patch::PatchDataLayer &get(u64 id_patch) const {
+        inline PatchDataLayerEdge(
+            const std::string &name,
+            const std::string &label,
+            std::shared_ptr<patch::PatchDataLayerLayout> layout)
+            : IDataEdgeNamed(name, label), layout(layout) {}
+
+        inline virtual const patch::PatchDataLayer &get(u64 id_patch) const {
             return patchdatas.get(id_patch);
         }
 
+        inline virtual patch::PatchDataLayer &get(u64 id_patch) { return patchdatas.get(id_patch); }
+
         inline virtual void free_alloc() { patchdatas = {}; }
     };
-
 } // namespace shamrock::solvergraph

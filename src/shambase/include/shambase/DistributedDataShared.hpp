@@ -66,6 +66,22 @@ namespace shambase {
          */
         inline std::multimap<std::pair<u64, u64>, T> &get_native() { return data; }
 
+        /// const version
+        inline const std::multimap<std::pair<u64, u64>, T> &get_native() const { return data; }
+
+        /// iterator forwarding
+        inline auto begin() { return data.begin(); }
+        /// iterator forwarding
+        inline auto end() { return data.end(); }
+        /// iterator forwarding
+        inline auto begin() const { return data.begin(); }
+        /// iterator forwarding
+        inline auto end() const { return data.end(); }
+        /// iterator forwarding
+        inline auto cbegin() const { return data.cbegin(); }
+        /// iterator forwarding
+        inline auto cend() const { return data.cend(); }
+
         /**
          * @brief Add an object associated with a patch pair
          *

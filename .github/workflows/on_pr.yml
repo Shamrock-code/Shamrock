@@ -253,7 +253,7 @@ jobs:
     uses: ./.github/workflows/shamrock-dpcpp.yml
 
   shamrock_linux_acpp_phystests:
-    needs: [shamrock_linux_acpp]
+    needs: [src_check]
     name: Tests (Phys)
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-phys-test.yml

@@ -17,6 +17,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shambase/print.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shamalgs/numeric.hpp"
@@ -25,6 +26,7 @@
 #include "shammath/CoordRange.hpp"
 #include "shammodels/ramses/GhostZoneData.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -443,7 +445,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         sz_interf_map[r] += pdat_interf.get_obj_cnt();
     });
 
-    storage.merged_patchdata_ghost.set(merge_native<PatchDataLayer, MergedPatchData>(
+    storage.merged_patchdata_ghost.set(merge_native<PatchDataLayer, PatchDataLayer>(
         std::move(interf_pdat),
         [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             shamlog_debug_ln("Merged patch init", p.id_patch);
@@ -478,17 +480,11 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
             pdat_new.check_field_obj_cnt_match();
 
-            return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
+            return std::move(pdat_new);
         },
-        [](MergedPatchData &mpdat, PatchDataLayer &pdat_interf) {
-            mpdat.total_elements += pdat_interf.get_obj_cnt();
-            mpdat.pdat.insert_elements(pdat_interf);
+        [](PatchDataLayer &mpdat, PatchDataLayer &pdat_interf) {
+            mpdat.insert_elements(pdat_interf);
         }));
-
-    storage.merged_patchdata_ghost.get().for_each([](u64 id, shamrock::MergedPatchData &mpdat) {
-        shamlog_debug_ln(
-            "Merged patch", id, ",", mpdat.original_elements, "->", mpdat.total_elements);
-    });
 
     timer_interf.end();
     storage.timings_details.interface += timer_interf.elasped_sec();
@@ -500,8 +496,9 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
         shambase::get_check_ref(storage.block_counts).indexes
             = storage.merged_patchdata_ghost.get().template map<u32>(
-                [&](u64 id, MergedPDat &mpdat) {
-                    return mpdat.original_elements;
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    u32 cnt = scheduler().patch_data.get_pdat(id).get_obj_cnt();
+                    return cnt;
                 });
     }
 
@@ -510,8 +507,9 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
         shambase::get_check_ref(storage.block_counts_with_ghost).indexes
             = storage.merged_patchdata_ghost.get().template map<u32>(
-                [&](u64 id, MergedPDat &mpdat) {
-                    return mpdat.total_elements;
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    u32 cnt = mpdat.get_obj_cnt();
+                    return cnt;
                 });
     }
 
@@ -520,15 +518,15 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         storage.refs_block_min->set_refs(
             storage.merged_patchdata_ghost.get()
                 .template map<std::reference_wrapper<PatchDataField<TgridVec>>>(
-                    [&](u64 id, MergedPDat &mpdat) {
-                        return std::ref(mpdat.pdat.get_field<TgridVec>(0));
+                    [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return std::ref(mpdat.get_field<TgridVec>(0));
                     }));
 
         storage.refs_block_max->set_refs(
             storage.merged_patchdata_ghost.get()
                 .template map<std::reference_wrapper<PatchDataField<TgridVec>>>(
-                    [&](u64 id, MergedPDat &mpdat) {
-                        return std::ref(mpdat.pdat.get_field<TgridVec>(1));
+                    [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return std::ref(mpdat.get_field<TgridVec>(1));
                     }));
     }
 
@@ -542,23 +540,21 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
         storage.refs_rho->set_refs(storage.merged_patchdata_ghost.get()
                                        .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
-                                           [&](u64 id, MergedPDat &mpdat) {
-                                               return std::ref(
-                                                   mpdat.pdat.get_field<Tscal>(irho_ghost));
+                                           [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                               return std::ref(mpdat.get_field<Tscal>(irho_ghost));
                                            }));
 
         storage.refs_rhov->set_refs(storage.merged_patchdata_ghost.get()
                                         .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
-                                            [&](u64 id, MergedPDat &mpdat) {
-                                                return std::ref(
-                                                    mpdat.pdat.get_field<Tvec>(irhov_ghost));
+                                            [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                                return std::ref(mpdat.get_field<Tvec>(irhov_ghost));
                                             }));
 
         storage.refs_rhoe->set_refs(
             storage.merged_patchdata_ghost.get()
                 .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
-                    [&](u64 id, MergedPDat &mpdat) {
-                        return std::ref(mpdat.pdat.get_field<Tscal>(irhoe_ghost));
+                    [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return std::ref(mpdat.get_field<Tscal>(irhoe_ghost));
                     }));
     }
 
@@ -574,15 +570,15 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         storage.refs_rho_dust->set_refs(
             storage.merged_patchdata_ghost.get()
                 .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
-                    [&](u64 id, MergedPDat &mpdat) {
-                        return std::ref(mpdat.pdat.get_field<Tscal>(irho_dust_ghost));
+                    [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return std::ref(mpdat.get_field<Tscal>(irho_dust_ghost));
                     }));
 
         storage.refs_rhov_dust->set_refs(
             storage.merged_patchdata_ghost.get()
                 .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
-                    [&](u64 id, MergedPDat &mpdat) {
-                        return std::ref(mpdat.pdat.get_field<Tvec>(irhov_dust_ghost));
+                    [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return std::ref(mpdat.get_field<Tvec>(irhov_dust_ghost));
                     }));
     }
 }

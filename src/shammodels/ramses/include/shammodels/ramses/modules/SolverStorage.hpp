@@ -115,7 +115,8 @@ namespace shammodels::basegodunov {
 
         Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
 
-        Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
+        Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
+            merged_patchdata_ghost;
 
         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xp;
         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xm;

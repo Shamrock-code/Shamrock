@@ -16,8 +16,6 @@
 
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shammath/riemann.hpp"
-#include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {

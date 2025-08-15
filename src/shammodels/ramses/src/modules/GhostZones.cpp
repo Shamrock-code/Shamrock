@@ -581,6 +581,18 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
                         return std::ref(mpdat.get_field<Tvec>(irhov_dust_ghost));
                     }));
     }
+
+    if (solver_config.is_gravity_on()) {
+        using MergedPDat = shamrock::MergedPatchData;
+        shamrock::patch::PatchDataLayerLayout &ghost_layout
+            = shambase::get_check_ref(storage.ghost_layout.get());
+        u32 iphi_ghost = ghost_layout.get_field_idx<Tscal>("phi");
+        storage.refs_phi->set_refs(storage.merged_patchdata_ghost.get()
+                                       .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                                           [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                               return std::ref(mpdat.get_field<Tscal>(iphi_ghost));
+                                           }));
+    }
 }
 
 template<class Tvec, class TgridVec>

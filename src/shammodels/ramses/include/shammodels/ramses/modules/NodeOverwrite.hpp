@@ -16,13 +16,11 @@
  *
  */
 
-#include "shambackends/vec.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
 
 namespace shammodels::basegodunov::modules {
 

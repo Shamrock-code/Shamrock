@@ -46,6 +46,10 @@ set(Sources
     src/modules/NodeAXPYThreeVectors.cpp
     src/modules/NodeJacobiPreconditioner.cpp
     src/modules/NodeOverwrite.cpp
+    src/modules/NodeAYPXTwoVectors.cpp
+    src/modules/NodeCGLoop.cpp
+    src/modules/PCGInit.cpp
+    src/modules/NodePCGLoop.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

@@ -108,6 +108,7 @@ namespace shammodels::basegodunov {
         Tscal tol                = 1e-8;
         Tscal G                  = 1.; // for some tests purpose one can want to fix the value of G
         bool set_G               = false;
+        u32 Niter_max            = 100;
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() { return (gravity_mode != NoGravity); }
     };

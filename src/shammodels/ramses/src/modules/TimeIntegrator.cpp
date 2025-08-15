@@ -128,6 +128,41 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             buf_rhov_dust.complete_event_state(e);
         });
     }
+
+    if (solver_config.is_gravity_on()) {
+        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> &phi_new
+            = shambase::get_check_ref(storage.refs_phi).get_refs();
+        const u32 iphi = pdl.get_field_idx<Tscal>("phi");
+
+        scheduler().for_each_patchdata_nonempty(
+            [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                shamlog_debug_ln(
+                    "[Self-gravity]", "Gravitational potential saveback patch", p.id_patch);
+
+                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+                u32 id               = p.id_patch;
+
+                sham::DeviceBuffer<Tscal> &phi_new_patch = phi_new.get(id).get().get_buf();
+
+                u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+
+                sham::DeviceBuffer<Tscal> &phi_old = pdat.get_field_buf_ref<Tscal>(iphi);
+
+                sham::EventList depends_list;
+                auto acc_phi_new = phi_new_patch.get_read_access(depends_list);
+                auto acc_phi_old = phi_old.get_write_access(depends_list);
+
+                // auto inc = 2;
+
+                auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
+                    shambase::parallel_for(cgh, cell_count, "saveback", [=](u32 id_a) {
+                        acc_phi_old[id_a] = acc_phi_new[id_a];
+                    });
+                });
+                phi_new_patch.complete_event_state(e);
+                phi_old.complete_event_state(e);
+            });
+    }
 }
 
 template class shammodels::basegodunov::modules::TimeIntegrator<f64_3, i64_3>;

@@ -39,6 +39,9 @@ set(Sources
     src/modules/CGInit.cpp
     src/modules/ComputeAMRLevel.cpp
     src/modules/ResidualDot.cpp
+    src/modules/NodeSpMVPoisson3D.cpp
+    src/modules/NodeHadamardProd.cpp
+    src/modules/NodeSumReduction.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

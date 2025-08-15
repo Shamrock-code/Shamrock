@@ -267,6 +267,9 @@ namespace shammath {
         inline bool operator==(const AABB<T> &other) const noexcept {
             return sham::equals(lower, other.lower) && sham::equals(upper, other.upper);
         }
+
+        /// not equal operator
+        inline bool operator!=(const AABB<T> &other) const noexcept { return !(*this == other); }
     };
 
     template<class T>

@@ -25,9 +25,12 @@
 #include "shammath/AABB.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammodels/ramses/GhostZoneData.hpp"
+#include "shammodels/ramses/modules/ExchangeGhostLayer.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
+#include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
+#include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -436,9 +439,22 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
             return pdat;
         });
 
-    // communicate buffers
+    // ----------------------------------------------------------------------------------------
+    // temporary wrapper to slowly migrate to the new solvergraph
+    std::shared_ptr<shamrock::solvergraph::PatchDataLayerDDShared> exchange_gz_edge
+        = std::make_shared<shamrock::solvergraph::PatchDataLayerDDShared>("", "");
+
+    exchange_gz_edge->patchdatas = std::move(pdat_interf);
+
+    std::shared_ptr<ExchangeGhostLayer> exchange_gz_node
+        = std::make_shared<ExchangeGhostLayer>(ghost_layout_ptr);
+    exchange_gz_node->set_edges(storage.patch_rank_owner, exchange_gz_edge);
+
+    exchange_gz_node->evaluate();
+
     shambase::DistributedDataShared<PatchDataLayer> interf_pdat
-        = communicate_pdat(ghost_layout_ptr, std::move(pdat_interf));
+        = std::move(exchange_gz_edge->patchdatas);
+    // ----------------------------------------------------------------------------------------
 
     std::map<u64, u64> sz_interf_map;
     interf_pdat.for_each([&](u64 s, u64 r, PatchDataLayer &pdat_interf) {

@@ -42,6 +42,8 @@ set(Sources
     src/modules/NodeSpMVPoisson3D.cpp
     src/modules/NodeHadamardProd.cpp
     src/modules/NodeSumReduction.cpp
+    src/modules/NodeAXPYTwoVectors.cpp
+    src/modules/NodeAXPYThreeVectors.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

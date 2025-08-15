@@ -44,6 +44,8 @@ set(Sources
     src/modules/NodeSumReduction.cpp
     src/modules/NodeAXPYTwoVectors.cpp
     src/modules/NodeAXPYThreeVectors.cpp
+    src/modules/NodeJacobiPreconditioner.cpp
+    src/modules/NodeOverwrite.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

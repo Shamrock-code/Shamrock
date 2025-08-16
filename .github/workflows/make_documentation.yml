@@ -57,6 +57,7 @@ jobs:
 
       - name : Install pck (doxygen)
         run: |
+          echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
           sudo apt-get install -y -qq doxygen graphviz
 
       - name: Gen doc

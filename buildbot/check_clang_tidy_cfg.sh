@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -euo pipefail
 # set CLANG_TIDY_BIN to the argument if provided, otherwise use clang-tidy
 CLANG_TIDY_BIN=${1:-"clang-tidy"}
 

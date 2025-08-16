@@ -10,7 +10,11 @@
 /**
  * @file ExchangeGhostLayer.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implementation of ghost layer data exchange for distributed hydrodynamics simulations
+ *
+ * This file implements the ExchangeGhostLayer class methods, providing the concrete
+ * functionality for exchanging ghost layer data between distributed computational
+ * domains using sparse communication and serialization mechanisms.
  */
 
 #include "shammodels/ramses/modules/ExchangeGhostLayer.hpp"
@@ -50,4 +54,25 @@ void shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_evaluate_intern
     ghost_layer.patchdatas = std::move(recv_dat);
 }
 
-std::string shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_get_tex() { return "TODO"; }
+std::string shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_get_tex() {
+    auto rank_owner  = get_ro_edge_base(0).get_tex_symbol();
+    auto ghost_layer = get_rw_edge_base(0).get_tex_symbol();
+
+    std::string tex = R"tex(
+        Exchange ghost layer data between distributed processes
+
+        \begin{align}
+        {ghost_layer}_{i \rightarrow \underline{j}} = \text{Sparse comm}({ghost_layer}_{\underline{i} \rightarrow j}) \\
+        \text{where } {rank_owner}_{\underline{j}} = \text{MPI world rank} \\
+        \text{and } {rank_owner}_{\underline{i}} = \text{MPI world rank} \\
+        \text{and } i \in [0, N_{\rm patch}] \\
+        \text{and } j \in [0, N_{\rm patch}] \\
+        \end{align},
+        underlined indices denotes one that currently owned by the local process.
+    )tex";
+
+    shambase::replace_all(tex, "{rank_owner}", rank_owner);
+    shambase::replace_all(tex, "{ghost_layer}", ghost_layer);
+
+    return tex;
+}

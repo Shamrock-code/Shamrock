@@ -67,7 +67,7 @@ namespace shammodels::basegodunov::modules {
          */
         ExchangeGhostLayer(
             std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layer_layout)
-            : ghost_layer_layout(ghost_layer_layout) {}
+            : ghost_layer_layout(std::move(ghost_layer_layout)) {}
 
         /**
          * @brief Structure containing references to input and output data edges

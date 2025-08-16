@@ -112,20 +112,17 @@ namespace shamalgs::collective {
                 = node_displacments_data_table[i - 1] + table_data_count[i - 1];
         }
 
-        // use work duplication or MPI reduction
         u32 global_len = 0;
-        {
+        // use work duplication or MPI reduction
 #if false
-            // querry global size and resize the receiving vector
-            shamcomm::mpi::Allreduce(
-                &local_count, &global_len, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        // querry global size and resize the receiving vector
+        shamcomm::mpi::Allreduce(
+            &local_count, &global_len, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #else
-            for (const u32 &v : table_data_count) {
-                global_len += v;
-            }
-#endif
+        for (const u32 &v : table_data_count) {
+            global_len += v;
         }
-
+#endif
         recv_vec.resize(global_len);
 
         if (global_len == 0) {

@@ -8,14 +8,14 @@
 // -------------------------------------------------------//
 
 /**
- * @file CGInit.cpp
+ * @file PCGInit.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
  *
  */
 
-#include "shammodels/ramses/modules/CGInit.hpp"
+#include "shammodels/ramses/modules/PCGInit.hpp"
 #include "shambackends/EventList.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
@@ -30,7 +30,7 @@ namespace {
         using Tscal            = shambase::VecComponent<Tvec>;
         using OrientedAMRGraph = shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>;
         using AMRGraph         = shammodels::basegodunov::modules::AMRGraph;
-        using Edges = typename shammodels::basegodunov::modules::CGInit<Tvec, TgridVec>::Edges;
+        using Edges = typename shammodels::basegodunov::modules::PCGInit<Tvec, TgridVec>::Edges;
 
         public:
         inline static void kernel(Edges &edges, u32 block_size, Tscal fourPiG) {
@@ -41,6 +41,7 @@ namespace {
                     auto &rho_span        = edges.spans_rho.get_spans().get(id);
                     auto &mean_rho        = edges.mean_rho.value;
                     auto &phi_res_span    = edges.spans_phi_res.get_spans().get(id);
+                    auto &phi_pres_span   = edges.spans_phi_pres.get_spans().get(id);
                     auto &phi_p_span      = edges.spans_phi_p.get_spans().get(id);
 
                     AMRGraph &graph_neigh_xp = shambase::get_check_ref(
@@ -71,7 +72,7 @@ namespace {
                             graph_neigh_ym,
                             graph_neigh_zp,
                             graph_neigh_zm},
-                        sham::MultiRef{phi_res_span, phi_p_span},
+                        sham::MultiRef{phi_res_span, phi_pres_span, phi_p_span},
                         cell_count,
                         [block_size, fourPiG, mean_rho](
                             i32 cell_global_id,
@@ -85,6 +86,7 @@ namespace {
                             const auto graph_iter_zp,
                             const auto graph_iter_zm,
                             Tscal *__restrict phi_res,
+                            Tscal *__restrict phi_pres,
                             Tscal *__restrict phi_p) {
                             const u32 block_id    = cell_global_id / block_size;
                             const u32 cell_loc_id = cell_global_id % block_size;
@@ -101,9 +103,11 @@ namespace {
                                 [=](u32 id) {
                                     return phi[id];
                                 });
-                            auto res = fourPiG * (rho[cell_global_id] - mean_rho) - Aphi;
-                            phi_res[cell_global_id] = res;
-                            phi_p[cell_global_id]   = res;
+                            auto res  = fourPiG * (rho[cell_global_id] - mean_rho) - Aphi;
+                            auto pres = (delta_cell * delta_cell) * (res) / (6);
+                            phi_res[cell_global_id]  = res;
+                            phi_pres[cell_global_id] = pres;
+                            phi_p[cell_global_id]    = pres;
                         });
                 });
         }
@@ -112,7 +116,7 @@ namespace {
 
 namespace shammodels::basegodunov::modules {
     template<class Tvec, class TgridVec>
-    void CGInit<Tvec, TgridVec>::_impl_evaluate_internal() {
+    void PCGInit<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         auto edges = get_edges();
 
@@ -120,13 +124,14 @@ namespace shammodels::basegodunov::modules {
         edges.spans_phi.check_sizes(edges.sizes.indexes);
         edges.spans_rho.check_sizes(edges.sizes.indexes);
         edges.spans_phi_res.ensure_sizes(edges.sizes.indexes);
+        edges.spans_phi_pres.ensure_sizes(edges.sizes.indexes);
         edges.spans_phi_p.ensure_sizes(edges.sizes.indexes);
 
         _Kernel<Tvec, TgridVec>::kernel(edges, block_size, fourPiG);
     }
 
     template<class Tvec, class TgridVec>
-    std::string CGInit<Tvec, TgridVec>::_impl_get_tex() {
+    std::string PCGInit<Tvec, TgridVec>::_impl_get_tex() {
         std::string sizes                  = get_ro_edge_base(0).get_tex_symbol();
         std::string cell_neigh_graph       = get_ro_edge_base(1).get_tex_symbol();
         std::string spans_block_cell_sizes = get_ro_edge_base(2).get_tex_symbol();
@@ -134,10 +139,11 @@ namespace shammodels::basegodunov::modules {
         std::string span_rho               = get_ro_edge_base(4).get_tex_symbol();
         std::string mean_rho               = get_ro_edge_base(5).get_tex_symbol();
         std::string span_phi_res           = get_rw_edge_base(0).get_tex_symbol();
-        std::string span_phi_p             = get_rw_edge_base(1).get_tex_symbol();
+        std::string span_phi_pres          = get_rw_edge_base(1).get_tex_symbol();
+        std::string span_phi_p             = get_rw_edge_base(2).get_tex_symbol();
 
         std::string tex = R"tex(
-            Initiation step of CG
+            Initiation step of PCG
         )tex";
 
         shambase::replace_all(tex, "{sizes}", sizes);
@@ -147,6 +153,7 @@ namespace shammodels::basegodunov::modules {
         shambase::replace_all(tex, "{span_rhi}", span_rho);
         shambase::replace_all(tex, "{mean_rho}", mean_rho);
         shambase::replace_all(tex, "{span_phi_res}", span_phi_res);
+        shambase::replace_all(tex, "{span_phi_pres}", span_phi_pres);
         shambase::replace_all(tex, "{span_phi_p}", span_phi_p);
 
         return tex;
@@ -154,4 +161,4 @@ namespace shammodels::basegodunov::modules {
 
 } // namespace shammodels::basegodunov::modules
 
-template class shammodels::basegodunov::modules::CGInit<f64_3, i64_3>;
+template class shammodels::basegodunov::modules::PCGInit<f64_3, i64_3>;

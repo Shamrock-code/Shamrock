@@ -1,8 +1,10 @@
-
+---
 Checks: >
-  -clang-analyzer-optin.mpi*
+  -clang-analyzer-optin.mpi*,
+  -readability-magic-numbers,
 
 # -clang-analyzer-optin.mpi* to avoid crash from llvm 15 to 17
+# -readability-magic-numbers, to avoid false positives
 
 CheckOptions:
 - key:             readability-identifier-naming.ClassCase
@@ -25,3 +27,5 @@ CheckOptions:
   value:           1
 - key:             modernize-use-default-member-init.UseAssignment
   value:           1
+
+UseColor: true

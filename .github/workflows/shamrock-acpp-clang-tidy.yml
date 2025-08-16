@@ -67,6 +67,9 @@ jobs:
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
 
+      - name: Check clang-tidy configuration
+        run: |
+          ./buildbot/check_clang_tidy_cfg.sh clang-tidy-${{matrix.clang}}
 
       - name: configure Shamrock
         run: |

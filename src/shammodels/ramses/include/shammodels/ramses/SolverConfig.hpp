@@ -219,7 +219,7 @@ struct shammodels::basegodunov::SolverConfig {
             return 4. * shambase::constants::pi<Tscal> * gravity_config.G;
         } else {
             auto scal_G = get_constant_G();
-            return 4 * M_PI * scal_G;
+            return 4 * shambase::constants::pi<Tscal> * scal_G;
         }
     }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }

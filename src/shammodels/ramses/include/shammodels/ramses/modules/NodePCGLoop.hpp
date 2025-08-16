@@ -12,7 +12,7 @@
 /**
  * @file NodePCGLoop.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
  *
  */
@@ -221,7 +221,7 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "CGMainLoop"; };
+        inline virtual std::string _impl_get_label() { return "PCGMainLoop"; };
 
         virtual std::string _impl_get_tex();
     };

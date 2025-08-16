@@ -12,6 +12,7 @@
 /**
  * @file NodeAXPYThreeVectors.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
  *
  */
@@ -50,7 +51,7 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<T>> alpha,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<T>> beta,
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> spans_z) {
-            __internal_set_ro_edges({sizes, spans_x, spans_x, alpha, beta});
+            __internal_set_ro_edges({sizes, spans_x, spans_y, alpha, beta});
             __internal_set_rw_edges({spans_z});
         }
 

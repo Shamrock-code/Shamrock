@@ -105,11 +105,13 @@ namespace shammodels::basegodunov {
     struct GravityConfig {
         using Tscal              = shambase::VecComponent<Tvec>;
         GravityMode gravity_mode = NoGravity;
-        Tscal tol                = 1e-8;
+        Tscal tol                = 1e-8; // convergence tolerance
+        Tscal tol_hp_bk          = 1e-6; // tol to check happy breakdown and restart
         Tscal G                  = 1.; // for some tests purpose one can want to fix the value of G
         bool set_G               = false;
         u32 Niter_max            = 100;
         inline Tscal get_tolerance() { return tol; }
+        inline Tscal get_happy_bk_tolerance() { return tol_hp_bk; }
         inline bool is_gravity_on() { return (gravity_mode != NoGravity); }
     };
 
@@ -224,6 +226,7 @@ struct shammodels::basegodunov::SolverConfig {
     }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
+    inline Tscal get_grav_happy_bk_tol() { return gravity_config.get_happy_bk_tolerance(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)

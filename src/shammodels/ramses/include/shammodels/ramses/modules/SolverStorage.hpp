@@ -237,6 +237,12 @@ namespace shammodels::basegodunov {
 
         // for PCG
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_pres;
+
+        // for BICGSTAB
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_res_bis;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_s;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_As;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> wstab_val;
     };
 
 } // namespace shammodels::basegodunov

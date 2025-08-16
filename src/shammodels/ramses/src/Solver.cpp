@@ -35,6 +35,7 @@
 #include "shammodels/ramses/modules/FindBlockNeigh.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
+#include "shammodels/ramses/modules/NodeBICGSTABLoop.hpp"
 #include "shammodels/ramses/modules/NodeCGLoop.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 #include "shammodels/ramses/modules/NodePCGLoop.hpp"
@@ -380,9 +381,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         storage.phi_res = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             AMRBlock::block_size, "Res", "Res");
         storage.phi_p = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-            AMRBlock::block_size, "Phi_P", "Phi_P");
+            AMRBlock::block_size, "Phi_p", "Phi_p");
         storage.phi_Ap = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-            AMRBlock::block_size, "Phi_AP", "Phi_AP");
+            AMRBlock::block_size, "Phi_Ap", "Phi_Ap");
         storage.phi_hadamard_prod = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             AMRBlock::block_size, "Phi_Hadamard_prod", "Phi_Hadamard_prod");
         storage.e_norm
@@ -398,6 +399,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         if (solver_config.gravity_config.gravity_mode == PCG) {
             storage.phi_pres = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
                 AMRBlock::block_size, "Pres", "Pres");
+        }
+
+        if (solver_config.gravity_config.gravity_mode == BICGSTAB) {
+            storage.phi_res_bis = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+                AMRBlock::block_size, "Res_bis", "Res_bis");
+            storage.phi_s = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+                AMRBlock::block_size, "Phi_s", "Phi_s");
+            storage.phi_As = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+                AMRBlock::block_size, "Phi_As", "Phi_As");
+            storage.wstab_val = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                "wstab_val", "wstab_val");
         }
     }
 
@@ -534,6 +546,41 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.beta);
 
             solver_sequence.push_back(std::make_shared<decltype(node_1)>(std::move(node_1)));
+        }
+
+        else if (solver_config.gravity_config.gravity_mode == BICGSTAB) {
+            Tscal tot_hp_break = 1e-6;
+            modules::NodeBICGSTABLoop<Tvec, TgridVec> node_2{
+                context,
+                solver_config,
+                storage,
+                AMRBlock::block_size,
+                solver_config.get_constant_4piG(),
+                solver_config.gravity_config.Niter_max,
+                solver_config.get_grav_tol(),
+                solver_config.get_grav_happy_bk_tol()};
+
+            node_2.set_edges(
+                storage.block_counts_with_ghost,
+                storage.cell_graph_edge,
+                storage.block_cell_sizes,
+                storage.refs_rho,
+                storage.rho_mean,
+                storage.refs_phi,
+                storage.phi_res,
+                storage.phi_res_bis,
+                storage.phi_p,
+                storage.phi_Ap,
+                storage.phi_s,
+                storage.phi_As,
+                storage.phi_hadamard_prod,
+                storage.old_val,
+                storage.new_val,
+                storage.e_norm,
+                storage.alpha,
+                storage.beta,
+                storage.wstab_val);
+            solver_sequence.push_back(std::make_shared<decltype(node_2)>(std::move(node_2)));
         }
     }
 

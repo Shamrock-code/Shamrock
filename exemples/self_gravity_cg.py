@@ -4,7 +4,7 @@ import numpy as np
 import shamrock
 
 
-def run_sim(X, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0=0):
+def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0=0):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
     model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
@@ -24,10 +24,12 @@ def run_sim(X, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0=0):
     cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(False)
     # cfg.set_gravity_mode_cg()
-    cfg.set_gravity_mode_pcg()
+    # cfg.set_gravity_mode_pcg()
+    cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
-    cfg.set_self_gravity_Niter_max(200)
-    cfg.set_self_gravity_tol(1e-8)
+    cfg.set_self_gravity_Niter_max(20)
+    cfg.set_self_gravity_tol(1e-18)
+    cfg.set_self_gravity_happy_breakdown_tol(1e-6)
 
     model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
@@ -123,7 +125,9 @@ def run_sim(X, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0=0):
         tmp = (dic["rho"] - rho0) * cc
 
         for i in range(len(dic["xmin"])):
-            X.append(dic["ymin"][i])
+            X.append(0.5 * (dic["xmin"][i] + dic["xmax"][i]))
+            Y.append(0.5 * (dic["ymin"][i] + dic["ymax"][i]))
+            Z.append(0.5 * (dic["zmin"][i] + dic["zmax"][i]))
             rho.append(dic["rho"][i])
             phi.append(dic["phi"][i])
             phi_ana.append(tmp[i])
@@ -133,19 +137,34 @@ def run_sim(X, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0=0):
 
         # if tend < t + next_dt:
         #     dt = tend - t
+
         if t > tend:
             break
 
 
 X = []
+Y = []
+Z = []
 rho = []
 phi = []
 phi_ana = []
 
 
-run_sim(X, rho, phi, phi_ana)
-# plt.plot(X, rho, ".", label="rho")
-plt.plot(X, phi, ".", label="phi-num")
-plt.plot(X, phi_ana, ".", label="phi-ana")
-plt.legend()
-plt.savefig("with-ghost-64-pcg.png", format="png")
+run_sim(X, Y, Z, rho, phi, phi_ana)
+
+# def analytic_phi(X,Y,Z, Lx,Ly,Lz,G,A,phi_0):
+#     cx=(2*np.pi)/Lx
+#     cy=(2*np.pi)/Ly
+#     cz=(2*np.pi)/Lz
+
+
+#     C = -(4*np.pi*G*A)/(cx*cx + cy*cy + cz*cz)
+#     return phi_0 + C*(np.sin(cx*X) *np.sin(cy*Y) *np.sin(cz*Z))
+
+
+# ana = analytic_phi(np.array(X),np.array(Y),np.array(Z),1,1,1,1,1,0)
+# plt.plot(X,np.array(phi), ".", label="phi-num")
+# plt.plot(X, ana, ".", label="phi-ana-t")
+# plt.plot(X, np.array(phi_ana), ".", label="phi-ana-ap")
+# plt.legend()
+# plt.savefig("with-ghost-64-pcg.png", format="png")

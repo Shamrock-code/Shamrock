@@ -12,8 +12,7 @@
 /**
  * @file FindGhostLayerCandidates.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Field variant object to instanciate a variant on the patch types
- * @date 2023-07-31
+ * @brief 
  */
 
 #include "shambase/exception.hpp"

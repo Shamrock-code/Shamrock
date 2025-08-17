@@ -12,7 +12,8 @@
 /**
  * @file FindGhostLayerCandidates.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Field variant object to instanciate a variant on the patch types
+ * @date 2023-07-31
  */
 
 #include "shambase/exception.hpp"
@@ -54,5 +55,28 @@ namespace shammodels::basegodunov::modules {
             mode.ghost_type_y == GhostType::Periodic,
             mode.ghost_type_z == GhostType::Periodic};
     }
+
+    template<class Func>
+    void for_each_paving_tile(GhostLayerGenMode mode, Func &&func) {
+
+        // if the ghost type is none, we do not need to repeat as there is no ghost layer
+        i32 repetition_x = mode.ghost_type_x != GhostType::None;
+        i32 repetition_y = mode.ghost_type_y != GhostType::None;
+        i32 repetition_z = mode.ghost_type_z != GhostType::None;
+
+        for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
+            for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
+                for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
+                    func(xoff, yoff, zoff);
+                }
+            }
+        }
+    }
+
+    struct GhostLayerCandidateInfos {
+        i32 xoff;
+        i32 yoff;
+        i32 zoff;
+    };
 
 } // namespace shammodels::basegodunov::modules

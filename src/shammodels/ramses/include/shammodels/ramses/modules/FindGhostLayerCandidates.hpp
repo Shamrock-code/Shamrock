@@ -12,21 +12,12 @@
 /**
  * @file FindGhostLayerCandidates.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Field variant object to instanciate a variant on the patch types
- * @date 2023-07-31
+ * @brief 
  */
 
+#include "shambase/exception.hpp"
 #include "shammath/AABB.hpp"
 #include "shammath/paving_function.hpp"
-#include "shamrock/solvergraph/DDSharedScalar.hpp"
-#include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
-#include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
-#include "shamrock/solvergraph/ScalarsEdge.hpp"
-#include "shamrock/solvergraph/SerialPatchTreeEdge.hpp"
 
 namespace shammodels::basegodunov::modules {
 
@@ -64,72 +55,4 @@ namespace shammodels::basegodunov::modules {
             mode.ghost_type_z == GhostType::Periodic};
     }
 
-    template<class Func>
-    void for_each_paving_tile(GhostLayerGenMode mode, Func &&func) {
-
-        // if the ghost type is none, we do not need to repeat as there is no ghost layer
-        i32 repetition_x = mode.ghost_type_x != GhostType::None;
-        i32 repetition_y = mode.ghost_type_y != GhostType::None;
-        i32 repetition_z = mode.ghost_type_z != GhostType::None;
-
-        for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
-            for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
-                for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
-                    func(xoff, yoff, zoff);
-                }
-            }
-        }
-    }
-
-    struct GhostLayerCandidateInfos {
-        i32 xoff;
-        i32 yoff;
-        i32 zoff;
-    };
-
-    template<class Tvec, class TgridVec>
-    class FindGhostLayerCandidates : public shamrock::solvergraph::INode {
-
-        public:
-        FindGhostLayerCandidates(GhostLayerGenMode mode) : mode(mode) {}
-
-        private:
-        GhostLayerGenMode mode;
-
-        struct Edges {
-            // inputs
-            const shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>> &sim_box;
-            const shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec> &patch_tree;
-            const shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>> &patch_boxes;
-            // outputs
-            shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>
-                &ghost_layers_candidates;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>> sim_box,
-            std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>> patch_tree,
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
-                patch_boxes,
-            std::shared_ptr<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>
-                ghost_layers_candidates) {
-            __internal_set_ro_edges({sim_box, patch_tree, patch_boxes});
-            __internal_set_rw_edges({ghost_layers_candidates});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>>(0),
-                get_ro_edge<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>>(1),
-                get_ro_edge<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(2),
-                get_rw_edge<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>(0),
-            };
-        }
-
-        void _impl_evaluate_internal();
-
-        inline virtual std::string _impl_get_label() { return "FindGhostLayerCandidates"; };
-
-        virtual std::string _impl_get_tex();
-    };
 } // namespace shammodels::basegodunov::modules

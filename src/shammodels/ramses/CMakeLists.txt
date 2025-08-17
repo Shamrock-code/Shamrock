@@ -40,11 +40,8 @@ set(Sources
     src/modules/ComputeAMRLevel.cpp
     src/modules/ResidualDot.cpp
     src/modules/FindGhostLayerCandidates.cpp
-    src/modules/FindGhostLayerIndices.cpp
-    src/modules/ExtractGhostLayer.cpp
     src/modules/ExchangeGhostLayer.cpp
     src/modules/TransformGhostLayer.cpp
-    src/modules/FuseGhostLayer.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

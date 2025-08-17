@@ -52,6 +52,17 @@ void shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>::
     auto ghost_layer_it      = ghost_layer.patchdatas.begin();
     auto ghost_layer_info_it = ghost_layers_candidates.values.begin();
 
+    if (ghost_layer.patchdatas.get_element_count()
+        != ghost_layers_candidates.values.get_element_count()) {
+        shambase::throw_with_loc<std::runtime_error>(shambase::format(
+            "ghost_layer.patchdatas.get_element_count() != "
+            "ghost_layers_candidates.values.get_element_count()\n "
+            "ghost_layer.patchdatas.get_element_count(): {}\n"
+            "ghost_layers_candidates.values.get_element_count(): {}",
+            ghost_layer.patchdatas.get_element_count(),
+            ghost_layers_candidates.values.get_element_count()));
+    }
+
     // iterate on both DDShared containers
     for (; ghost_layer_it != ghost_layer.patchdatas.end();
          ++ghost_layer_it, ++ghost_layer_info_it) {

@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/integer.hpp"
 
 namespace shambase {

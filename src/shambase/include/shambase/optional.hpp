@@ -16,6 +16,7 @@
  *
  */
 
+#include <functional>
 #include <optional>
 
 namespace shambase {

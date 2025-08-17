@@ -19,11 +19,12 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/sets.hpp"
-#include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include <functional>
 #include <map>
+#include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace shambase {
 

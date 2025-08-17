@@ -17,11 +17,14 @@
  */
 
 #include "shambase/aliases_float.hpp"
+#include "shambase/aliases_int.hpp"
 #include "shambase/bytestream.hpp"
 #include "shambase/exception.hpp"
 #include <array>
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 

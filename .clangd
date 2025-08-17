@@ -16,7 +16,7 @@ Diagnostics:
   # >= clangd-14
   UnusedIncludes: Strict
   # >= clangd-17
-  MissingIncludes: Strict
+  MissingIncludes: None
 
 Hover:
   # >= clangd-14

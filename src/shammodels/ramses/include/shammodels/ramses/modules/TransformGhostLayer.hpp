@@ -17,8 +17,10 @@
  */
 
 #include "shammodels/ramses/modules/FindGhostLayerCandidates.hpp"
-#include "shamrock/solvergraph/DDSharedBuffers.hpp"
+#include "shamrock/solvergraph/DDSharedScalar.hpp"
+#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 
 namespace shammodels::basegodunov::modules {
 

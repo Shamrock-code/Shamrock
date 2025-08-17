@@ -12,7 +12,7 @@
 /**
  * @file FindGhostLayerCandidates.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
+ * @brief
  */
 
 #include "shambase/exception.hpp"

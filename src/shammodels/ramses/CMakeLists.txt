@@ -39,8 +39,23 @@ set(Sources
     src/modules/CGInit.cpp
     src/modules/ComputeAMRLevel.cpp
     src/modules/ResidualDot.cpp
+    src/modules/NodeSpMVPoisson3D.cpp
+    src/modules/NodeHadamardProd.cpp
+    src/modules/NodeSumReduction.cpp
+    src/modules/NodeAXPYTwoVectors.cpp
+    src/modules/NodeAXPYThreeVectors.cpp
+    src/modules/NodeJacobiPreconditioner.cpp
+    src/modules/NodeOverwrite.cpp
+    src/modules/NodeAYPXTwoVectors.cpp
+    src/modules/NodeCGLoop.cpp
+    src/modules/PCGInit.cpp
+    src/modules/NodePCGLoop.cpp
+    src/modules/NodeLinCombThreeVectors.cpp
+    src/modules/BICGSTABInit.cpp
+    src/modules/NodeBICGSTABLoop.cpp
     src/modules/ExchangeGhostLayer.cpp
     src/modules/TransformGhostLayer.cpp
+
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

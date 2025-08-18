@@ -18,7 +18,7 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/type_traits.hpp"
-#include <climits>
+#include <type_traits>
 
 namespace shambase {
 

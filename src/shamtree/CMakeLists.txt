@@ -26,6 +26,10 @@ set(Sources
     src/KarrasRadixTree.cpp
     src/KarrasRadixTreeAABB.cpp
     src/CompressedLeafBVH.cpp
+    src/TreeStructure.cpp
+    src/TreeCellRanges.cpp
+    src/TreeMortonCodes.cpp
+    src/TreeReducedMortonCodes.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

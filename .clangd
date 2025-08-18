@@ -12,7 +12,20 @@ CompileFlags:
       -Wconversion
     ]
 
+Diagnostics:
+  # >= clangd-14
+  UnusedIncludes: Strict
+  # >= clangd-17
+  MissingIncludes: None
 
-#Diagnostics:
-#  ClangTidy:
-#    Add: 'bugprone-*'
+Hover:
+  # >= clangd-14
+  ShowAKA: true
+
+Completion:
+  # >= clangd-21
+  HeaderInsertion: Never
+
+Documentation:
+  # >= clangd-22
+  CommentFormat: Doxygen

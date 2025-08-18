@@ -204,7 +204,10 @@ def check_regression(data_dict1, data_dict2, tolerances):
 
 def save_state(iplot):
     data_dict = ctx.collect_data()
-    save_collected_data(data_dict, os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5"))
+
+    if shamrock.sys.world_rank() == 0:
+        print(f"Saving data to {os.path.join(dump_folder, f'{sim_name}_data_{iplot:04}.h5')}")
+        save_collected_data(data_dict, os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5"))
 
 
 # %%
@@ -245,11 +248,13 @@ tolerances = [
 ]
 
 for istate in [0, 1]:
+    if shamrock.sys.world_rank() == 0:
+        print(f"Checking regression for state {istate}")
 
-    fpath_cur = os.path.join(dump_folder, f"{sim_name}_data_{istate:04}.h5")
-    fpath_ref = os.path.join(reference_folder, f"{sim_name}_data_{istate:04}.h5")
+        fpath_cur = os.path.join(dump_folder, f"{sim_name}_data_{istate:04}.h5")
+        fpath_ref = os.path.join(reference_folder, f"{sim_name}_data_{istate:04}.h5")
 
-    data_dict_cur = load_collected_data(fpath_cur)
-    data_dict_ref = load_collected_data(fpath_ref)
+        data_dict_cur = load_collected_data(fpath_cur)
+        data_dict_ref = load_collected_data(fpath_ref)
 
-    check_regression(data_dict_ref, data_dict_cur, tolerances[istate])
+        check_regression(data_dict_ref, data_dict_cur, tolerances[istate])

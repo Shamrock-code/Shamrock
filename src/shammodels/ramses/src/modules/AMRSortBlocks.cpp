@@ -15,6 +15,7 @@
  */
 
 #include "shammodels/ramses/modules/AMRSortBlocks.hpp"
+#include "shamtree/RadixTreeMortonBuilder.hpp"
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::AMRSortBlocks<Tvec, TgridVec>::reorder_amr_blocks() {

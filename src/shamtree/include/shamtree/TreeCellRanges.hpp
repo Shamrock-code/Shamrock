@@ -15,14 +15,7 @@
  * @brief
  */
 
-#include "kernels/compute_ranges.hpp"
-#include "kernels/convert_ranges.hpp"
-#include "shamalgs/memory.hpp"
-#include "shamalgs/primitives/equals.hpp"
-#include "shambackends/sycl.hpp"
 #include "shammath/sfc/morton.hpp"
-#include "shamsys/NodeInstance.hpp"
-#include "shamtree/MortonKernels.hpp"
 #include "shamtree/TreeReducedMortonCodes.hpp"
 #include "shamtree/TreeStructure.hpp"
 
@@ -46,93 +39,12 @@ namespace shamrock::tree {
             buf_pos_min_cell_flt; // size = total count //drop the flt part
         std::unique_ptr<sycl::buffer<pos_t>> buf_pos_max_cell_flt; // size = total count
 
-        inline void build1(
+        void build1(
             sycl::queue &queue,
             TreeReducedMortonCodes<u_morton> &tree_reduced_morton_codes,
-            TreeStructure<u_morton> &tree_struct) {
-            if (!tree_struct.one_cell_mode) {
+            TreeStructure<u_morton> &tree_struct);
 
-                shamlog_debug_sycl_ln("RadixTree", "compute_cellvolume");
-
-                buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(
-                    tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-                buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(
-                    tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-
-                sycl_compute_cell_ranges(
-                    queue,
-                    tree_reduced_morton_codes.tree_leaf_count,
-                    tree_struct.internal_cell_count,
-                    tree_reduced_morton_codes.buf_tree_morton,
-                    tree_struct.buf_lchild_id,
-                    tree_struct.buf_rchild_id,
-                    tree_struct.buf_lchild_flag,
-                    tree_struct.buf_rchild_flag,
-                    tree_struct.buf_endrange,
-                    buf_pos_min_cell,
-                    buf_pos_max_cell);
-
-            } else {
-                // throw shamrock_exc("one cell mode is not implemented");
-                // TODO do some extensive test on one cell mode
-
-                buf_pos_min_cell = std::make_unique<sycl::buffer<ipos_t>>(
-                    tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-                buf_pos_max_cell = std::make_unique<sycl::buffer<ipos_t>>(
-                    tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count);
-
-                {
-
-                    sycl::host_accessor pos_min_cell{
-                        *buf_pos_min_cell, sycl::write_only, sycl::no_init};
-                    sycl::host_accessor pos_max_cell{
-                        *buf_pos_max_cell, sycl::write_only, sycl::no_init};
-
-                    pos_min_cell[0] = {0, 0, 0};
-                    pos_max_cell[0] = {Morton::max_val, Morton::max_val, Morton::max_val};
-
-                    pos_min_cell[1] = {0, 0, 0};
-                    pos_max_cell[1] = {Morton::max_val, Morton::max_val, Morton::max_val};
-
-                    pos_min_cell[2] = {0, 0, 0};
-                    pos_max_cell[2] = {0, 0, 0};
-
-                    shamlog_debug_sycl_ln("RadixTree", "compute_cellvolume one cell mode");
-                    shamlog_debug_sycl_ln(
-                        "RadixTree",
-                        " -> ",
-                        pos_min_cell[0],
-                        pos_max_cell[0],
-                        pos_min_cell[1],
-                        pos_max_cell[1],
-                        pos_min_cell[2],
-                        pos_max_cell[2],
-                        "len =",
-                        tree_struct.internal_cell_count
-                            + tree_reduced_morton_codes.tree_leaf_count);
-                }
-            }
-        }
-
-        void build2(sycl::queue &queue, u32 total_count, std::tuple<pos_t, pos_t> bounding_box) {
-
-            buf_pos_min_cell_flt = std::make_unique<sycl::buffer<pos_t>>(total_count);
-            buf_pos_max_cell_flt = std::make_unique<sycl::buffer<pos_t>>(total_count);
-
-            shamlog_debug_sycl_ln("RadixTree", "sycl_convert_cell_range");
-
-            shamrock::sfc::MortonKernels<u_morton, pos_t, dim>::sycl_irange_to_range(
-                queue,
-                total_count,
-                std::get<0>(bounding_box),
-                std::get<1>(bounding_box),
-                buf_pos_min_cell,
-                buf_pos_max_cell,
-                buf_pos_min_cell_flt,
-                buf_pos_max_cell_flt);
-
-            // remove old buf ?
-        }
+        void build2(sycl::queue &queue, u32 total_count, std::tuple<pos_t, pos_t> bounding_box);
 
         inline bool are_range_int_built() {
             return bool(buf_pos_min_cell) && bool(buf_pos_max_cell);
@@ -144,20 +56,7 @@ namespace shamrock::tree {
 
         inline TreeCellRanges() = default;
 
-        inline TreeCellRanges(const TreeCellRanges &other)
-            : buf_pos_min_cell(shamalgs::memory::duplicate(
-                  shamsys::instance::get_compute_queue(),
-                  other.buf_pos_min_cell)), // size = total count
-              buf_pos_max_cell(shamalgs::memory::duplicate(
-                  shamsys::instance::get_compute_queue(),
-                  other.buf_pos_max_cell)), // size = total count
-              buf_pos_min_cell_flt(shamalgs::memory::duplicate(
-                  shamsys::instance::get_compute_queue(),
-                  other.buf_pos_min_cell_flt)), // size = total count
-              buf_pos_max_cell_flt(shamalgs::memory::duplicate(
-                  shamsys::instance::get_compute_queue(),
-                  other.buf_pos_max_cell_flt)) // size = total count
-        {}
+        TreeCellRanges(const TreeCellRanges &other);
 
         inline TreeCellRanges &operator=(TreeCellRanges &&other) noexcept {
             buf_pos_min_cell     = std::move(other.buf_pos_min_cell);
@@ -185,34 +84,7 @@ namespace shamrock::tree {
             return sum;
         }
 
-        inline friend bool operator==(const TreeCellRanges &t1, const TreeCellRanges &t2) {
-            bool cmp = true;
-
-            using namespace shamalgs::primitives;
-
-            cmp = cmp
-                  && equals_ptr(
-                      shamsys::instance::get_compute_queue(),
-                      t1.buf_pos_min_cell,
-                      t2.buf_pos_min_cell);
-            cmp = cmp
-                  && equals_ptr(
-                      shamsys::instance::get_compute_queue(),
-                      t1.buf_pos_max_cell,
-                      t2.buf_pos_max_cell);
-            cmp = cmp
-                  && equals_ptr(
-                      shamsys::instance::get_compute_queue(),
-                      t1.buf_pos_min_cell_flt,
-                      t2.buf_pos_min_cell_flt);
-            cmp = cmp
-                  && equals_ptr(
-                      shamsys::instance::get_compute_queue(),
-                      t1.buf_pos_max_cell_flt,
-                      t2.buf_pos_max_cell_flt);
-
-            return cmp;
-        }
+        bool operator==(const TreeCellRanges &rhs) const;
 
         inline u32 get_total_tree_cell_count() {
             if (buf_pos_min_cell) {

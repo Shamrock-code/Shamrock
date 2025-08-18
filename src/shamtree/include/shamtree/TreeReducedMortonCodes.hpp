@@ -15,14 +15,6 @@
  * @brief
  */
 
-#include "shambase/string.hpp"
-#include "kernels/reduction_alg.hpp"
-#include "shamalgs/memory.hpp"
-#include "shamalgs/primitives/equals.hpp"
-#include "shamalgs/reduction.hpp"
-#include "shammath/CoordRange.hpp"
-#include "shamsys/legacy/log.hpp"
-#include "shamtree/RadixTreeMortonBuilder.hpp"
 #include "shamtree/TreeMortonCodes.hpp"
 
 namespace shamrock::tree {
@@ -34,68 +26,13 @@ namespace shamrock::tree {
         std::unique_ptr<sycl::buffer<u32>> buf_reduc_index_map;
         std::unique_ptr<sycl::buffer<u_morton>> buf_tree_morton; // size = leaf cnt
 
-        inline void build(
+        void build(
             sycl::queue &queue,
             u32 obj_cnt,
             u32 reduc_level,
             TreeMortonCodes<u_morton> &morton_codes,
 
-            bool &one_cell_mode) {
-
-            // return a sycl buffer from reduc index map instead
-            shamlog_debug_sycl_ln(
-                "RadixTree", "reduction algorithm"); // TODO put reduction level in class member
-
-            // TODO document that the layout of reduc_index_map is in the end {0 .. ,i .. ,N ,0}
-            // with the trailling 0 to invert the range for the walk in one cell mode
-
-            reduction_alg(
-                queue,
-                obj_cnt,
-                morton_codes.buf_morton,
-                reduc_level,
-                buf_reduc_index_map,
-                tree_leaf_count);
-
-            shamlog_debug_sycl_ln(
-                "RadixTree",
-                "reduction results : (before :",
-                obj_cnt,
-                " | after :",
-                tree_leaf_count,
-                ") ratio :",
-                shambase::format_printf("%2.2f", f32(obj_cnt) / f32(tree_leaf_count)));
-
-            if (tree_leaf_count > 1) {
-
-                shamlog_debug_sycl_ln("RadixTree", "sycl_morton_remap_reduction");
-                buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(tree_leaf_count);
-
-                sycl_morton_remap_reduction(
-                    queue,
-                    tree_leaf_count,
-                    buf_reduc_index_map,
-                    morton_codes.buf_morton,
-                    buf_tree_morton);
-
-                one_cell_mode = false;
-
-            } else if (tree_leaf_count == 1) {
-
-                tree_leaf_count = 2;
-                one_cell_mode   = true;
-
-                buf_tree_morton = std::make_unique<sycl::buffer<u_morton>>(
-                    shamalgs::memory::vector_to_buf(
-                        shamsys::instance::get_compute_queue(), std::vector<u_morton>{0, 0})
-                    // tree morton = {0,0} is a flag for the one cell mode
-                );
-
-            } else {
-                throw shambase::make_except_with_loc<std::runtime_error>(
-                    "0 leaf tree cannot exists");
-            }
-        }
+            bool &one_cell_mode);
 
         [[nodiscard]] inline u64 memsize() const {
             u64 sum = 0;
@@ -131,31 +68,7 @@ namespace shamrock::tree {
             return *this;
         } // move assignment
 
-        inline friend bool
-        operator==(const TreeReducedMortonCodes &t1, const TreeReducedMortonCodes &t2) {
-            bool cmp = true;
-
-            cmp = cmp && (t1.tree_leaf_count == t2.tree_leaf_count);
-
-            using namespace shamalgs::primitives;
-
-            cmp = cmp && (t1.buf_reduc_index_map->size() == t2.buf_reduc_index_map->size());
-
-            cmp = cmp
-                  && equals(
-                      shamsys::instance::get_compute_queue(),
-                      *t1.buf_reduc_index_map,
-                      *t2.buf_reduc_index_map,
-                      t1.buf_reduc_index_map->size());
-            cmp = cmp
-                  && equals(
-                      shamsys::instance::get_compute_queue(),
-                      *t1.buf_tree_morton,
-                      *t2.buf_tree_morton,
-                      t1.tree_leaf_count);
-
-            return cmp;
-        }
+        bool operator==(const TreeReducedMortonCodes<u_morton> &rhs) const;
 
         /**
          * @brief serialize a TreeMortonCodes object

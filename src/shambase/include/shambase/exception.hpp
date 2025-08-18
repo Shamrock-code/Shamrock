@@ -21,6 +21,7 @@
 
 #include "shambase/SourceLocation.hpp"
 #include <stdexcept>
+#include <string>
 
 namespace shambase {
 

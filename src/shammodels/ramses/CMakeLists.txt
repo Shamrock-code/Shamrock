@@ -53,6 +53,9 @@ set(Sources
     src/modules/NodeLinCombThreeVectors.cpp
     src/modules/BICGSTABInit.cpp
     src/modules/NodeBICGSTABLoop.cpp
+    src/modules/ExchangeGhostLayer.cpp
+    src/modules/TransformGhostLayer.cpp
+
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

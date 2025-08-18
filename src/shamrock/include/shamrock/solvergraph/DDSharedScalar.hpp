@@ -10,18 +10,25 @@
 #pragma once
 
 /**
- * @file optional.hpp
+ * @file DDSharedScalar.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include <functional>
-#include <optional>
+#include "shambase/DistributedDataShared.hpp"
+#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
 
-namespace shambase {
+namespace shamrock::solvergraph {
 
-    /// @brief Optional reference wrapper
-    template<typename T>
-    using opt_ref = std::optional<std::reference_wrapper<T>>;
-} // namespace shambase
+    template<class T>
+    class DDSharedScalar : public IDataEdgeNamed {
+        public:
+        using IDataEdgeNamed::IDataEdgeNamed;
+
+        shambase::DistributedDataShared<T> values;
+
+        inline void free_alloc() { values = {}; };
+    };
+
+} // namespace shamrock::solvergraph

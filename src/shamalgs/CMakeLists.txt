@@ -13,8 +13,6 @@ project(Shamalgs CXX C)
 
 set(Sources
         src/container/BufferEventHandler.cpp
-        src/container/ResizableBuffer.cpp
-        src/container/ResizableUSMBuffer.cpp
         src/details/numeric/streamCompactExclScan.cpp
         src/details/numeric/exclusiveScanGPUGems39.cpp
         src/details/numeric/numeric.cpp

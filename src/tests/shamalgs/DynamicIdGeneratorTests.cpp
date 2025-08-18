@@ -7,9 +7,13 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/aliases_float.hpp"
+#include "shambase/aliases_int.hpp"
+#include "shambase/integer.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/atomic/DynamicIdGenerator.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
 TestStart(Unittest, "shamalgs/atomic/DynamicIdGenerator", test_dynamicidgen, 1) {

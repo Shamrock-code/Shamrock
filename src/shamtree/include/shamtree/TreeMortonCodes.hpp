@@ -17,14 +17,10 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shamalgs/memory.hpp"
-#include "shamalgs/primitives/equals.hpp"
-#include "shamalgs/reduction.hpp"
+#include "shamalgs/details/memory/memory.hpp"
 #include "shamalgs/serialize.hpp"
-#include "shambackends/vec.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamtree/RadixTreeMortonBuilder.hpp"
 #include <stdexcept>
 
 namespace shamrock::tree {
@@ -38,64 +34,25 @@ namespace shamrock::tree {
         std::unique_ptr<sycl::buffer<u32>> buf_particle_index_map;
 
         template<class T>
-        inline void build(
+        void build(
             sycl::queue &queue,
             shammath::CoordRange<T> coord_range,
             u32 obj_cnt,
-            sycl::buffer<T> &pos_buf) {
-            StackEntry stack_loc{};
+            sycl::buffer<T> &pos_buf);
 
-            this->obj_cnt = obj_cnt;
-
-            using TProp = shambase::VectorProperties<T>;
-
-            RadixTreeMortonBuilder<u_morton, T, TProp::dimension>::build(
-                queue,
-                {coord_range.lower, coord_range.upper},
-                pos_buf,
-                obj_cnt,
-                buf_morton,
-                buf_particle_index_map);
-        }
         template<class T>
-        inline void build(
+        void build(
             sham::DeviceScheduler_ptr dev_sched,
             shammath::CoordRange<T> coord_range,
             u32 obj_cnt,
-            sham::DeviceBuffer<T> &pos_buf) {
-            StackEntry stack_loc{};
-
-            this->obj_cnt = obj_cnt;
-
-            using TProp = shambase::VectorProperties<T>;
-
-            RadixTreeMortonBuilder<u_morton, T, TProp::dimension>::build(
-                dev_sched,
-                {coord_range.lower, coord_range.upper},
-                pos_buf,
-                obj_cnt,
-                buf_morton,
-                buf_particle_index_map);
-        }
+            sham::DeviceBuffer<T> &pos_buf);
 
         template<class T>
-        inline static std::unique_ptr<sycl::buffer<u_morton>> build_raw(
+        static std::unique_ptr<sycl::buffer<u_morton>> build_raw(
             sycl::queue &queue,
             shammath::CoordRange<T> coord_range,
             u32 obj_cnt,
-            sycl::buffer<T> &pos_buf) {
-
-            std::unique_ptr<sycl::buffer<u_morton>> buf_morton;
-
-            StackEntry stack_loc{};
-
-            using TProp = shambase::VectorProperties<T>;
-
-            RadixTreeMortonBuilder<u_morton, T, TProp::dimension>::build_raw(
-                queue, {coord_range.lower, coord_range.upper}, pos_buf, obj_cnt, buf_morton);
-
-            return buf_morton;
-        }
+            sycl::buffer<T> &pos_buf);
 
         [[nodiscard]] inline u64 memsize() const {
             u64 sum = 0;
@@ -131,28 +88,7 @@ namespace shamrock::tree {
             return *this;
         } // move assignment
 
-        inline friend bool operator==(const TreeMortonCodes &t1, const TreeMortonCodes &t2) {
-            bool cmp = true;
-
-            cmp = cmp && (t1.obj_cnt == t2.obj_cnt);
-
-            using namespace shamalgs::primitives;
-
-            cmp = cmp
-                  && equals(
-                      shamsys::instance::get_compute_queue(),
-                      *t1.buf_morton,
-                      *t2.buf_morton,
-                      t1.obj_cnt);
-            cmp = cmp
-                  && equals(
-                      shamsys::instance::get_compute_queue(),
-                      *t1.buf_particle_index_map,
-                      *t2.buf_particle_index_map,
-                      t1.obj_cnt);
-
-            return cmp;
-        }
+        bool operator==(const TreeMortonCodes &rhs) const;
 
         /**
          * @brief serialize a TreeMortonCodes object

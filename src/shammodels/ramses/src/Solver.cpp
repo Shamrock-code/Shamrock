@@ -50,6 +50,7 @@
 #include "shamrock/solvergraph/NodeFreeAlloc.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include <memory>
 
 template<class Tvec, class TgridVec>
@@ -68,6 +69,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     ////////////////////////////////////////////////////////////////////////////////
     /// Edges
     ////////////////////////////////////////////////////////////////////////////////
+
+    storage.patch_rank_owner
+        = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("patch_rank_owner", "rank");
 
     storage.block_counts
         = std::make_shared<shamrock::solvergraph::Indexes<u32>>("block_count", "N_{\\rm block}");
@@ -1058,6 +1062,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         Tscal Vsim        = dV.x() * dV.y() * dV.z();
         shambase::get_check_ref(storage.simulation_volume).value = Vsim;
     }
+
+    // give to the solvergraph the patch rank owners
+    storage.patch_rank_owner->values = {};
+    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+        storage.patch_rank_owner->values.add_obj(
+            p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
+    });
 
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();

@@ -18,7 +18,6 @@
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shamalgs/container/ResizableBuffer.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamalgs/numeric.hpp"

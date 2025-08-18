@@ -15,6 +15,7 @@
  */
 
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
+#include "shamalgs/details/algorithm/algorithm.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/ramses/modules/AMRSortBlocks.hpp"
 #include <stdexcept>

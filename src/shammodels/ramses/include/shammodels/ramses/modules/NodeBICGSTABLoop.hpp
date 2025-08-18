@@ -45,15 +45,6 @@ namespace shammodels::basegodunov::modules {
     class NodeBICGSTABLoop : public shamrock::solvergraph::INode {
         using Tscal    = shambase::VecComponent<Tvec>;
         using AMRBlock = typename shammodels::basegodunov::SolverConfig<Tvec, TgridVec>::AMRBlock;
-        using Config   = SolverConfig<Tvec, TgridVec>;
-        /// Alias to the SolverStorage type
-        using Storage = SolverStorage<Tvec, TgridVec, u64>;
-        /// Reference to the Shamrock context
-        ShamrockCtx &context;
-        /// Reference to the configuration of the solver
-        Config &solver_config;
-        /// Reference to the storage of the solver
-        Storage &storage;
 
         u32 block_size;
         Tscal fourPiG;
@@ -63,16 +54,8 @@ namespace shammodels::basegodunov::modules {
 
         public:
         NodeBICGSTABLoop(
-            ShamrockCtx &context,
-            Config &solver_config,
-            Storage &storage,
-            u32 block_size,
-            Tscal fourPiG,
-            u32 Niter_max,
-            Tscal tol_cvg,
-            Tscal tol_happy_bk)
-            : context(context), solver_config(solver_config), storage(storage),
-              block_size(block_size), fourPiG(fourPiG), Niter_max(Niter_max), tol_cvg(tol_cvg),
+            u32 block_size, Tscal fourPiG, u32 Niter_max, Tscal tol_cvg, Tscal tol_happy_bk)
+            : block_size(block_size), fourPiG(fourPiG), Niter_max(Niter_max), tol_cvg(tol_cvg),
               tol_happy_bk(tol_happy_bk) {}
 
         // init node

@@ -490,9 +490,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     if (solver_config.is_gravity_on()) {
         if (solver_config.gravity_config.gravity_mode == CG) {
             modules::NodeCGLoop<Tvec, TgridVec> node{
-                context,
-                solver_config,
-                storage,
                 AMRBlock::block_size,
                 solver_config.get_constant_4piG(),
                 solver_config.gravity_config.Niter_max,
@@ -519,9 +516,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         else if (solver_config.gravity_config.gravity_mode == PCG) {
             modules::NodePCGLoop<Tvec, TgridVec> node_1{
-                context,
-                solver_config,
-                storage,
                 AMRBlock::block_size,
                 solver_config.get_constant_4piG(),
                 solver_config.gravity_config.Niter_max,
@@ -551,9 +545,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         else if (solver_config.gravity_config.gravity_mode == BICGSTAB) {
             Tscal tot_hp_break = 1e-6;
             modules::NodeBICGSTABLoop<Tvec, TgridVec> node_2{
-                context,
-                solver_config,
-                storage,
                 AMRBlock::block_size,
                 solver_config.get_constant_4piG(),
                 solver_config.gravity_config.Niter_max,

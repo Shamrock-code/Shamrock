@@ -84,6 +84,9 @@ namespace shamcmdopt {
         register_env_var_doc("TERM", "Terminal emulator identifier");
         register_env_var_doc("COLORTERM", "Terminal color support identifier");
         register_env_var_doc("SHAMTTYCOL", "Set tty assumed column count");
+        register_env_var_doc("LC_ALL", "Override all locale settings");
+        register_env_var_doc("LC_CTYPE", "Character classification and conversion locale");
+        register_env_var_doc("LANG", "Default locale for all categories");
     }
 
     /**
@@ -159,6 +162,56 @@ namespace shamcmdopt {
         }
     }
 
+    /// Internal function to check if the current terminal supports UTF-8 encoding
+    bool check_utf8_support_internal() {
+        // Only check if we're in a TTY
+        if (!is_a_tty()) {
+            return false;
+        }
+
+        // Check LC_ALL, LC_CTYPE, and LANG environment variables
+        auto lc_all   = getenv_str("LC_ALL");
+        auto lc_ctype = getenv_str("LC_CTYPE");
+        auto lang     = getenv_str("LANG");
+
+        // Check if any of these contain UTF-8
+        auto check_utf8_in_locale = [](const std::optional<std::string> &locale_str) -> bool {
+            if (!locale_str) {
+                return false;
+            }
+            const std::string &str = *locale_str;
+            return str.find("utf8") != std::string::npos || str.find("utf-8") != std::string::npos
+                   || str.find("UTF8") != std::string::npos
+                   || str.find("UTF-8") != std::string::npos;
+        };
+
+        // LC_ALL takes precedence over LC_CTYPE, which takes precedence over LANG
+        if (lc_all && check_utf8_in_locale(lc_all)) {
+            return true;
+        }
+        if (lc_ctype && check_utf8_in_locale(lc_ctype)) {
+            return true;
+        }
+        if (lang && check_utf8_in_locale(lang)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    bool check_utf8_support() {
+        static bool result_cached = false;
+        static bool cached_result = false;
+        
+        if (result_cached) {
+            return cached_result;
+        }
+    
+        cached_result = check_utf8_support_internal();
+        result_cached = true;
+        return cached_result;
+    }
+
     void process_cmdopt_generic_opts() {
 
         process_colors();
@@ -179,6 +232,12 @@ namespace shamcmdopt {
                 shambase::println("  color = enabled");
             } else {
                 shambase::println("  color = disabled");
+            }
+
+            if (check_utf8_support()) {
+                shambase::println("  utf8 = supported");
+            } else {
+                shambase::println("  utf8 = not supported");
             }
 
             shambase::println(

@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace shamalgs {
+namespace shamalgs::primitives {
 
     /**
      * @brief Flatten a buffer of vector type into a buffer of scalar type.

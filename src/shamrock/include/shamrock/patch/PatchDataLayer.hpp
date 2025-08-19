@@ -44,6 +44,7 @@ namespace shamrock::patch {
         using field_variant_t = var_t;
 
         inline PatchDataLayerLayout &pdl() { return shambase::get_check_ref(pdl_ptr); }
+        inline const PatchDataLayerLayout &pdl() const { return shambase::get_check_ref(pdl_ptr); }
 
         inline std::shared_ptr<PatchDataLayerLayout> get_layout_ptr() const { return pdl_ptr; }
 
@@ -192,8 +193,8 @@ namespace shamrock::patch {
 
         void append_subset_to(const std::vector<u32> &idxs, PatchDataLayer &pdat);
         void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat);
-        void
-        append_subset_to(const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat);
+        void append_subset_to(
+            const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat) const;
 
         inline u32 get_obj_cnt() {
 

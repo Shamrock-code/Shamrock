@@ -17,6 +17,7 @@
 #include "shamalgs/details/reduction/sycl2020reduction.hpp"
 #include "shamalgs/primitives/mock_value.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -511,7 +512,7 @@ void unit_test_reduc_sum_usm() {
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
-            return shamalgs::reduction::sum(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::sum(sched, buf1, start_id, end_id);
         });
 
     unit_test_reduc_sum_usm<f32>(
@@ -520,7 +521,7 @@ void unit_test_reduc_sum_usm() {
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
-            return shamalgs::reduction::sum(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::sum(sched, buf1, start_id, end_id);
         });
 
     unit_test_reduc_sum_usm<u32>(
@@ -529,7 +530,7 @@ void unit_test_reduc_sum_usm() {
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
-            return shamalgs::reduction::sum(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::sum(sched, buf1, start_id, end_id);
         });
 
     unit_test_reduc_sum_usm<f64_3>(
@@ -538,7 +539,7 @@ void unit_test_reduc_sum_usm() {
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
-            return shamalgs::reduction::sum(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::sum(sched, buf1, start_id, end_id);
         });
 }
 void unit_test_reduc_min_usm() {
@@ -549,7 +550,7 @@ void unit_test_reduc_min_usm() {
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
-            return shamalgs::reduction::min(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::min(sched, buf1, start_id, end_id);
         });
 
     unit_test_reduc_min_usm<f32>(
@@ -558,7 +559,7 @@ void unit_test_reduc_min_usm() {
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
-            return shamalgs::reduction::min(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::min(sched, buf1, start_id, end_id);
         });
 
     unit_test_reduc_min_usm<u32>(
@@ -567,7 +568,7 @@ void unit_test_reduc_min_usm() {
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
-            return shamalgs::reduction::min(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::min(sched, buf1, start_id, end_id);
         });
 
     unit_test_reduc_min_usm<f64_3>(
@@ -576,7 +577,7 @@ void unit_test_reduc_min_usm() {
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
-            return shamalgs::reduction::min(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::min(sched, buf1, start_id, end_id);
         });
 }
 void unit_test_reduc_max_usm() {
@@ -587,7 +588,7 @@ void unit_test_reduc_max_usm() {
            sham::DeviceBuffer<f64> &buf1,
            u32 start_id,
            u32 end_id) -> f64 {
-            return shamalgs::reduction::max(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::max(sched, buf1, start_id, end_id);
         });
 
     unit_test_reduc_max_usm<f32>(
@@ -596,7 +597,7 @@ void unit_test_reduc_max_usm() {
            sham::DeviceBuffer<f32> &buf1,
            u32 start_id,
            u32 end_id) -> f32 {
-            return shamalgs::reduction::max(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::max(sched, buf1, start_id, end_id);
         });
 
     unit_test_reduc_max_usm<u32>(
@@ -605,7 +606,7 @@ void unit_test_reduc_max_usm() {
            sham::DeviceBuffer<u32> &buf1,
            u32 start_id,
            u32 end_id) -> u32 {
-            return shamalgs::reduction::max(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::max(sched, buf1, start_id, end_id);
         });
 
     unit_test_reduc_max_usm<f64_3>(
@@ -614,7 +615,7 @@ void unit_test_reduc_max_usm() {
            sham::DeviceBuffer<f64_3> &buf1,
            u32 start_id,
            u32 end_id) -> f64_3 {
-            return shamalgs::reduction::max(sched, buf1, start_id, end_id);
+            return shamalgs::primitives::max(sched, buf1, start_id, end_id);
         });
 }
 
@@ -940,7 +941,7 @@ TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
                 buf1.synchronize();
 
                 return shambase::timeit([&]() {
-                    T sum = shamalgs::reduction::sum(sched, buf1, 0, sz);
+                    T sum = shamalgs::primitives::sum(sched, buf1, 0, sz);
                     buf1.synchronize();
                 });
             },

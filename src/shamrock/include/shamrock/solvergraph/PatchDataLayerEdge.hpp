@@ -51,6 +51,12 @@ namespace shamrock::solvergraph {
                 });
         }
 
+        inline shambase::DistributedData<patch::PatchDataLayer> extract_patchdatas() {
+            auto tmp = std::move(patchdatas);
+            set_patchdatas({});
+            return tmp;
+        }
+
         inline const patch::PatchDataLayerLayout &pdl() const {
             return shambase::get_check_ref(layout);
         }

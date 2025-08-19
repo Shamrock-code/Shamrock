@@ -183,4 +183,4 @@ namespace shamalgs::primitives {
         }
     }
 
-} // namespace shamalgs
+} // namespace shamalgs::primitives

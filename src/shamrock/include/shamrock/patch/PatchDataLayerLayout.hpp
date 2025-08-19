@@ -160,7 +160,7 @@ namespace shamrock::patch {
          *
          * @return std::string
          */
-        std::string get_description_str();
+        std::string get_description_str() const;
 
         /**
          * @brief Get the list of field names

@@ -424,7 +424,8 @@ class PatchDataField {
      */
     void append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield);
     void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield);
-    void append_subset_to(const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield);
+    void
+    append_subset_to(const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
 
     inline PatchDataField make_new_from_subset(sycl::buffer<u32> &idxs_buf, u32 sz) {
         PatchDataField pfield(field_name, nvar);

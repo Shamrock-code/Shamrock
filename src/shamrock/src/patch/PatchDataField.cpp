@@ -184,7 +184,7 @@ void PatchDataField<T>::append_subset_to(
 
 template<class T>
 void PatchDataField<T>::append_subset_to(
-    const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
+    const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const {
 
     if (pfield.nvar != nvar)
         throw shambase::make_except_with_loc<std::invalid_argument>(

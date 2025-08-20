@@ -70,6 +70,12 @@ namespace shammodels::sph::modules {
         std::shared_ptr<ISPHSetupNode> make_modifier_warp_disc(
             SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination, Tscal posangle);
 
+        std::shared_ptr<ISPHSetupNode> make_modifier_custom_warp(
+            SetupNodePtr parent,
+            std::function<Tscal(Tscal)> inc_profile,
+            std::function<Tscal(Tscal)> psi_profile,
+            std::function<Tvec(Tscal)> k_profile);
+
         std::shared_ptr<ISPHSetupNode>
         make_modifier_add_offset(SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity);
 

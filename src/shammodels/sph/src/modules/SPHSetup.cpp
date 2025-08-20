@@ -27,6 +27,7 @@
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
+#include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierFilter.hpp"
 #include "shammodels/sph/modules/setup/ModifierOffset.hpp"
@@ -165,6 +166,17 @@ shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_modifier_warp_disc(
     SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination, Tscal posangle) {
     return std::shared_ptr<ISPHSetupNode>(new ModifierApplyDiscWarp<Tvec, SPHKernel>(
         context, solver_config, parent, Rwarp, Hwarp, inclination, posangle));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
+shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_modifier_custom_warp(
+    SetupNodePtr parent,
+    std::function<Tscal(Tscal)> inc_profile,
+    std::function<Tscal(Tscal)> psi_profile,
+    std::function<Tvec(Tscal)> k_profile) {
+    return std::shared_ptr<ISPHSetupNode>(new ModifierApplyCustomWarp<Tvec, SPHKernel>(
+        context, solver_config, parent, inc_profile, psi_profile, k_profile));
 }
 
 template<class Tvec, template<class> class SPHKernel>

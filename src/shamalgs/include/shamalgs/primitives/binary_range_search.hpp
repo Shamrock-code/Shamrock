@@ -12,7 +12,7 @@
 /**
  * @file binary_range_search.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Binary range search algorithm
  */
 
 #include "shambase/aliases_int.hpp"

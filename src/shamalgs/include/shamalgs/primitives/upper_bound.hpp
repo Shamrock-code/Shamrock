@@ -12,7 +12,7 @@
 /**
  * @file upper_bound.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief GPU compatible implementation of std::upper_bound
  */
 
 #include "shambase/aliases_int.hpp"

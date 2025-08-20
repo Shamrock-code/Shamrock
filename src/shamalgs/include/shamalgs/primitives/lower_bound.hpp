@@ -12,7 +12,7 @@
 /**
  * @file lower_bound.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief GPU compatible implementation of std::lower_bound
  */
 
 #include "shambase/aliases_int.hpp"

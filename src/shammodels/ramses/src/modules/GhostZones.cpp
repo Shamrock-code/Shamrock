@@ -328,32 +328,9 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
     using AMRBlock = typename Config::AMRBlock;
 
-    // setup ghost layout
-    storage.ghost_layout.set(std::make_shared<shamrock::patch::PatchDataLayerLayout>());
-    auto ghost_layout_ptr                               = storage.ghost_layout.get();
-    shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
-
-    ghost_layout.add_field<TgridVec>("cell_min", 1);
-    ghost_layout.add_field<TgridVec>("cell_max", 1);
-    ghost_layout.add_field<Tscal>("rho", AMRBlock::block_size);
-    ghost_layout.add_field<Tscal>("rhoetot", AMRBlock::block_size);
-    ghost_layout.add_field<Tvec>("rhovel", AMRBlock::block_size);
-
-    if (solver_config.is_dust_on()) {
-        auto ndust = solver_config.dust_config.ndust;
-        ghost_layout.add_field<Tscal>("rho_dust", ndust * AMRBlock::block_size);
-        ghost_layout.add_field<Tvec>("rhovel_dust", ndust * AMRBlock::block_size);
-    }
-
-    if (solver_config.is_gravity_on()) {
-        ghost_layout.add_field<Tscal>("phi", AMRBlock::block_size);
-    }
-
-    if (solver_config.is_gas_passive_scalar_on()) {
-        u32 npscal_gas = solver_config.npscal_gas_config.npscal_gas;
-        ghost_layout.add_field<Tscal>("rho_gas_pscal", (npscal_gas * AMRBlock::block_size));
-    }
-
+    auto &ghost_layout_ptr = storage.ghost_layout;
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout);
     u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
     u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");
     u32 irho_interf      = ghost_layout.get_field_idx<Tscal>("rho");
@@ -679,7 +656,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     { // attach spans to gas field with ghosts
         using MergedPDat = shamrock::MergedPatchData;
         shamrock::patch::PatchDataLayerLayout &ghost_layout
-            = shambase::get_check_ref(storage.ghost_layout.get());
+            = shambase::get_check_ref(storage.ghost_layout);
         u32 irho_ghost  = ghost_layout.get_field_idx<Tscal>("rho");
         u32 irhov_ghost = ghost_layout.get_field_idx<Tvec>("rhovel");
         u32 irhoe_ghost = ghost_layout.get_field_idx<Tscal>("rhoetot");
@@ -708,7 +685,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         using MergedPDat = shamrock::MergedPatchData;
         u32 ndust        = solver_config.dust_config.ndust;
         shamrock::patch::PatchDataLayerLayout &ghost_layout
-            = shambase::get_check_ref(storage.ghost_layout.get());
+            = shambase::get_check_ref(storage.ghost_layout);
 
         u32 irho_dust_ghost  = ghost_layout.get_field_idx<Tscal>("rho_dust");
         u32 irhov_dust_ghost = ghost_layout.get_field_idx<Tvec>("rhovel_dust");

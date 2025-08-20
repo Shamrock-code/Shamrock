@@ -85,7 +85,6 @@ namespace sham {
                 SHAM_ASSERT(ret % *align == 0);
             }
 
-            SHAM_ASSERT(ret % sizeof(T) == 0);
             SHAM_ASSERT((sz == 0) ? (ret == 0) : (ret >= sz * sizeof(T)));
 
             return ret;

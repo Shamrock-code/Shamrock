@@ -12,7 +12,7 @@
 /**
  * @file FuseGhostLayer.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief A solver graph node to fuse a ghost layer into a set of patch data layers.
  */
 
 #include "shamrock/solvergraph/INode.hpp"

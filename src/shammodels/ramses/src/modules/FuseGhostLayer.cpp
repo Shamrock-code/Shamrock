@@ -22,7 +22,9 @@ void shammodels::basegodunov::modules::FuseGhostLayer::_impl_evaluate_internal()
     auto &patch_data_layers = edges.patch_data_layers;
 
     ghost_layer.patchdatas.for_each(
-        [&]([[maybe_unused]] u64 sender, u64 receiver, const shamrock::patch::PatchDataLayer &ghost_layer_element) {
+        [&]([[maybe_unused]] u64 sender,
+            u64 receiver,
+            const shamrock::patch::PatchDataLayer &ghost_layer_element) {
             patch_data_layers.get(receiver).insert_elements(ghost_layer_element);
         });
 }

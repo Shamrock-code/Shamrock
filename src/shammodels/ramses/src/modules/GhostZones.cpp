@@ -328,9 +328,8 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
 
     using AMRBlock = typename Config::AMRBlock;
 
-    auto &ghost_layout_ptr = storage.ghost_layout;
-    shamrock::patch::PatchDataLayerLayout &ghost_layout
-        = shambase::get_check_ref(storage.ghost_layout);
+    auto &ghost_layout_ptr                              = storage.ghost_layout;
+    shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
     u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
     u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");
     u32 irho_interf      = ghost_layout.get_field_idx<Tscal>("rho");

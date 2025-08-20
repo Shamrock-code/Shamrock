@@ -20,6 +20,7 @@
 
 namespace shamalgs::primitives {
 
+    /// GPU compatible implementation of std::lower_bound
     template<class Tkey>
     constexpr u32 binary_search_lower_bound(
         const Tkey *__restrict__ key, u32 first, u32 last, const Tkey &value) {

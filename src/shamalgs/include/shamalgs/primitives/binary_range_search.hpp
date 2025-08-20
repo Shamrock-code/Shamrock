@@ -22,7 +22,39 @@
 
 namespace shamalgs::primitives {
 
-    /// return the smallest index range for which keys[inf] <= value_min <= value_max <= keys[sup]
+    /**
+     * @brief Find the range of indices for which key[inf] <= value_min <= value_max <= key[sup]
+     *
+     * @pre key is sorted in ascending order
+     * @pre value_min <= value_max
+     * @pre first < last
+     * @pre key[first] <= value_min
+     * @pre key[last - 1] >= value_max
+
+     * @tparam Tkey Type of the key
+     * @param key Array of keys
+     * @param first First index of the range
+     * @param last Last index of the range
+     * @param value_min Lower bound of the range
+     * @param value_max Upper bound of the range
+     * @param inf Index of the first element of the range
+     * @param sup Index of the last element of the range
+     *
+     * @code{.cpp}
+     * // Example usage with a sorted array
+     * std::vector<int> keys = {1, 3, 5, 7, 9, 11, 13, 15};
+     * u32 inf, sup;
+     *
+     * // Find range of elements between 5 and 11 (inclusive)
+     * binary_range_search(keys.data(), 0, keys.size(), 5, 11, inf, sup);
+     * // inf = 2, sup = 5 (elements 5, 7, 9, 11 at indices 2, 3, 4, 5)
+     *
+     * // Find range with duplicates
+     * std::vector<int> keys2 = {1, 2, 2, 2, 3, 4, 4, 5};
+     * binary_range_search(keys2.data(), 0, keys2.size(), 2, 4, inf, sup);
+     * // inf = 1, sup = 6 (elements 2, 2, 2, 3, 4, 4 at indices 1-6)
+     * @endcode
+     */
     template<class Tkey>
     constexpr void binary_range_search(
         const Tkey *__restrict__ key,

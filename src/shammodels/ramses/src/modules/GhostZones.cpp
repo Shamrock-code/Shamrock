@@ -29,6 +29,7 @@
 #include "shammodels/ramses/modules/ExchangeGhostLayer.hpp"
 #include "shammodels/ramses/modules/ExtractGhostLayer.hpp"
 #include "shammodels/ramses/modules/FindGhostLayerCandidates.hpp"
+#include "shammodels/ramses/modules/FuseGhostLayer.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -570,8 +571,15 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
     exchange_gz_node->set_edges(storage.patch_rank_owner, exchange_gz_edge);
 
     exchange_gz_node->evaluate();
+
+    std::shared_ptr<shammodels::basegodunov::modules::FuseGhostLayer> fuse_gz_node
+        = std::make_shared<shammodels::basegodunov::modules::FuseGhostLayer>();
+    fuse_gz_node->set_edges(exchange_gz_edge, merged_patches);
+    fuse_gz_node->evaluate();
+
     // ----------------------------------------------------------------------------------------
 
+#if false
     shambase::DistributedDataShared<PatchDataLayer> interf_pdat
         = std::move(exchange_gz_edge->patchdatas);
 
@@ -620,6 +628,9 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghos
         [](PatchDataLayer &mpdat, PatchDataLayer &pdat_interf) {
             mpdat.insert_elements(pdat_interf);
         }));
+#else
+    storage.merged_patchdata_ghost.set(merged_patches->extract_patchdatas());
+#endif
 
     timer_interf.end();
     storage.timings_details.interface += timer_interf.elasped_sec();

@@ -84,7 +84,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         if (solver_config.is_gas_passive_scalar_on()) {
             u32 npscal_gas = solver_config.npscal_gas_config.npscal_gas;
-            ghost_layout.add_field<Tscal>("rho_gas_pscal", (npscal_gas * AMRBlock::block_size));
+            ghost_layout.add_field<Tscal>("rho_gas_pscal", npscal_gas * AMRBlock::block_size);
         }
     }
 

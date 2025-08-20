@@ -52,18 +52,18 @@ void test_binary_range_search(const std::vector<Tkey> &data, Tkey value_min, Tke
         }
     }
 
-    shamcomm::logs::raw_ln(shambase::format(
-        "--------\ndata = {}\nvalue_min = {}\nvalue_max = {}\ninf = {}\nsup = {}\nexpected_inf = "
-        "{}\nexpected_sup = {}\nvalid_inf = {}\nvalid_sup = {}",
-        data,
-        value_min,
-        value_max,
-        inf,
-        sup,
-        expected_inf,
-        expected_sup,
-        inf == expected_inf,
-        sup == expected_sup));
+    // shamcomm::logs::raw_ln(shambase::format(
+    //    "--------\ndata = {}\nvalue_min = {}\nvalue_max = {}\ninf = {}\nsup = {}\nexpected_inf = "
+    //    "{}\nexpected_sup = {}\nvalid_inf = {}\nvalid_sup = {}",
+    //    data,
+    //    value_min,
+    //    value_max,
+    //    inf,
+    //    sup,
+    //    expected_inf,
+    //    expected_sup,
+    //    inf == expected_inf,
+    //    sup == expected_sup));
 
     REQUIRE_EQUAL(expected_inf, inf);
     REQUIRE_EQUAL(expected_sup, sup);

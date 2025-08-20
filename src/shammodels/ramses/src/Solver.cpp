@@ -61,6 +61,33 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         }
     };
 
+    {
+        storage.ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
+        shamrock::patch::PatchDataLayerLayout &ghost_layout
+            = shambase::get_check_ref(storage.ghost_layout);
+
+        ghost_layout.add_field<TgridVec>("cell_min", 1);
+        ghost_layout.add_field<TgridVec>("cell_max", 1);
+        ghost_layout.add_field<Tscal>("rho", AMRBlock::block_size);
+        ghost_layout.add_field<Tscal>("rhoetot", AMRBlock::block_size);
+        ghost_layout.add_field<Tvec>("rhovel", AMRBlock::block_size);
+
+        if (solver_config.is_dust_on()) {
+            auto ndust = solver_config.dust_config.ndust;
+            ghost_layout.add_field<Tscal>("rho_dust", ndust * AMRBlock::block_size);
+            ghost_layout.add_field<Tvec>("rhovel_dust", ndust * AMRBlock::block_size);
+        }
+
+        if (solver_config.is_gravity_on()) {
+            ghost_layout.add_field<Tscal>("phi", AMRBlock::block_size);
+        }
+
+        if (solver_config.is_gas_passive_scalar_on()) {
+            u32 npscal_gas = solver_config.npscal_gas_config.npscal_gas;
+            ghost_layout.add_field<Tscal>("rho_gas_pscal", npscal_gas * AMRBlock::block_size);
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
     /// Edges
     ////////////////////////////////////////////////////////////////////////////////
@@ -1017,7 +1044,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.merge_patch_bounds.reset();
 
     storage.merged_patchdata_ghost.reset();
-    storage.ghost_layout.reset();
     storage.ghost_zone_infos.reset();
 
     storage.serial_patch_tree.reset();

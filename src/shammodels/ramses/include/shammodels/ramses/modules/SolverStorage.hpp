@@ -116,7 +116,7 @@ namespace shammodels::basegodunov {
 
         Component<GhostZonesData<Tvec, TgridVec>> ghost_zone_infos;
 
-        Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
 
         Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
             merged_patchdata_ghost;

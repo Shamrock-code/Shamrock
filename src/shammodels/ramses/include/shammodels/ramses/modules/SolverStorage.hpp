@@ -35,6 +35,7 @@
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -118,8 +119,7 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
 
-        Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
-            merged_patchdata_ghost;
+        std::shared_ptr<shamrock::solvergraph::PatchDataLayerEdge> merged_patchdata_ghost;
 
         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xp;
         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xm;

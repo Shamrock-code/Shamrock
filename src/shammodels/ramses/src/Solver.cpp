@@ -44,6 +44,7 @@
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/NodeFreeAlloc.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include <memory>
@@ -94,6 +95,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     storage.patch_rank_owner
         = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("patch_rank_owner", "rank");
+
+    storage.merged_patchdata_ghost = std::make_shared<shamrock::solvergraph::PatchDataLayerEdge>(
+        "merged_patchdata_ghost", "patchdata_{\\rm ghost}", storage.ghost_layout);
 
     storage.block_counts
         = std::make_shared<shamrock::solvergraph::Indexes<u32>>("block_count", "N_{\\rm block}");
@@ -1043,7 +1047,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     storage.merge_patch_bounds.reset();
 
-    storage.merged_patchdata_ghost.reset();
     storage.ghost_zone_infos.reset();
 
     storage.serial_patch_tree.reset();

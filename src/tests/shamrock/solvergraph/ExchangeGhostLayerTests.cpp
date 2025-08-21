@@ -12,9 +12,9 @@
 #include "shamalgs/details/random/random.hpp"
 #include "shamalgs/primitives/mock_value.hpp"
 #include "shamcomm/worldInfo.hpp"
-#include "shammodels/ramses/modules/ExchangeGhostLayer.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamtest/shamtest.hpp"
@@ -22,13 +22,12 @@
 #include <random>
 #include <vector>
 
-using namespace shammodels::basegodunov::modules;
 using namespace shamrock::solvergraph;
 using namespace shamrock::patch;
 
-TestStart(Unittest, "shammodels/ramses/modules/ExchangeGhostLayer", testExchangeGhostLayer, -1) {
+TestStart(Unittest, "shamrock/solvergraph/ExchangeGhostLayer", testExchangeGhostLayer, -1) {
 
-    std::string test_name = "shammodels/ramses/modules/ExchangeGhostLayer";
+    std::string test_name = "shamrock/solvergraph/ExchangeGhostLayer";
 
     // Create a simple layout with a few fields
     auto layout = std::make_shared<PatchDataLayerLayout>();

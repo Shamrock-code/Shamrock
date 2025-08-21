@@ -23,7 +23,7 @@
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
-namespace shammodels::basegodunov::modules {
+namespace shamrock::solvergraph {
 
     /**
      * @brief Solver graph node for distributed ghost layer data exchange
@@ -137,4 +137,4 @@ namespace shammodels::basegodunov::modules {
          */
         virtual std::string _impl_get_tex();
     };
-} // namespace shammodels::basegodunov::modules
+} // namespace shamrock::solvergraph

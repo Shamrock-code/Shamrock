@@ -17,11 +17,11 @@
  * domains using sparse communication and serialization mechanisms.
  */
 
-#include "shammodels/ramses/modules/ExchangeGhostLayer.hpp"
+#include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
-void shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_evaluate_internal() {
+void shamrock::solvergraph::ExchangeGhostLayer::_impl_evaluate_internal() {
     auto edges = get_edges();
 
     // outputs
@@ -54,7 +54,7 @@ void shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_evaluate_intern
     ghost_layer.patchdatas = std::move(recv_dat);
 }
 
-std::string shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_get_tex() {
+std::string shamrock::solvergraph::ExchangeGhostLayer::_impl_get_tex() {
     auto rank_owner  = get_ro_edge_base(0).get_tex_symbol();
     auto ghost_layer = get_rw_edge_base(0).get_tex_symbol();
 

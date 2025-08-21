@@ -32,7 +32,6 @@
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
-#include "shammodels/ramses/modules/ExchangeGhostLayer.hpp"
 #include "shammodels/ramses/modules/ExtractGhostLayer.hpp"
 #include "shammodels/ramses/modules/FindBlockNeigh.hpp"
 #include "shammodels/ramses/modules/FuseGhostLayer.hpp"
@@ -45,6 +44,7 @@
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
+#include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
@@ -470,7 +470,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         }
 
         {
-            auto exchange_gz_node = std::make_shared<modules::ExchangeGhostLayer>(ghost_layout_ptr);
+            auto exchange_gz_node
+                = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(ghost_layout_ptr);
             exchange_gz_node->set_edges(storage.patch_rank_owner, storage.exchange_gz_edge);
             gz_xchg_sequence.push_back(std::move(exchange_gz_node));
         }

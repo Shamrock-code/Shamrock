@@ -23,6 +23,8 @@ namespace shamrock::solvergraph {
 
         auto edges = get_edges();
 
+        edges.target.set_patchdatas({});
+
         // Ensures that the layout are all matching sources and targets
         edges.original.get_const_refs().for_each(
             [&](u64 id_patch, const patch::PatchDataLayer &pdat) {

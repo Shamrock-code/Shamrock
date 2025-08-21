@@ -40,8 +40,10 @@
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/solvergraph/ExtractCounts.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
+#include "shamrock/solvergraph/GetFieldRefFromLayer.hpp"
 #include "shamrock/solvergraph/NodeFreeAlloc.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
@@ -95,6 +97,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     storage.patch_rank_owner
         = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("patch_rank_owner", "rank");
+
+    storage.source_patches = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
+        "source_patches", "P_{\\rm source}");
 
     storage.merged_patchdata_ghost = std::make_shared<shamrock::solvergraph::PatchDataLayerEdge>(
         "merged_patchdata_ghost", "patchdata_{\\rm ghost}", storage.ghost_layout);
@@ -405,6 +410,77 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> solver_sequence;
+
+    { // attach fields with ghosts
+
+        { // set element counts
+            shamrock::solvergraph::ExtractCounts extract_counts_node
+                = shamrock::solvergraph::ExtractCounts();
+            extract_counts_node.set_edges(storage.source_patches, storage.block_counts);
+            solver_sequence.push_back(
+                std::make_shared<decltype(extract_counts_node)>(std::move(extract_counts_node)));
+        }
+
+        { // set element counts
+            shamrock::solvergraph::ExtractCounts extract_counts_node
+                = shamrock::solvergraph::ExtractCounts();
+            extract_counts_node.set_edges(
+                storage.merged_patchdata_ghost, storage.block_counts_with_ghost);
+            solver_sequence.push_back(
+                std::make_shared<decltype(extract_counts_node)>(std::move(extract_counts_node)));
+        }
+
+        { // Attach spans to block coords
+            shamrock::solvergraph::GetFieldRefFromLayer<TgridVec> attach_block_min
+                = shamrock::solvergraph::GetFieldRefFromLayer<TgridVec>(0);
+            attach_block_min.set_edges(storage.merged_patchdata_ghost, storage.refs_block_min);
+            solver_sequence.push_back(
+                std::make_shared<decltype(attach_block_min)>(std::move(attach_block_min)));
+
+            shamrock::solvergraph::GetFieldRefFromLayer<TgridVec> attach_block_max
+                = shamrock::solvergraph::GetFieldRefFromLayer<TgridVec>(1);
+            attach_block_max.set_edges(storage.merged_patchdata_ghost, storage.refs_block_max);
+            solver_sequence.push_back(
+                std::make_shared<decltype(attach_block_max)>(std::move(attach_block_max)));
+        }
+
+        { // attach spans to gas field with ghosts
+            shamrock::solvergraph::GetFieldRefFromLayer<Tscal> attach_rho
+                = shamrock::solvergraph::GetFieldRefFromLayer<Tscal>(storage.ghost_layout, "rho");
+            attach_rho.set_edges(storage.merged_patchdata_ghost, storage.refs_rho);
+            solver_sequence.push_back(
+                std::make_shared<decltype(attach_rho)>(std::move(attach_rho)));
+
+            shamrock::solvergraph::GetFieldRefFromLayer<Tvec> attach_rhov
+                = shamrock::solvergraph::GetFieldRefFromLayer<Tvec>(storage.ghost_layout, "rhovel");
+            attach_rhov.set_edges(storage.merged_patchdata_ghost, storage.refs_rhov);
+            solver_sequence.push_back(
+                std::make_shared<decltype(attach_rhov)>(std::move(attach_rhov)));
+
+            shamrock::solvergraph::GetFieldRefFromLayer<Tscal> attach_rhoe
+                = shamrock::solvergraph::GetFieldRefFromLayer<Tscal>(
+                    storage.ghost_layout, "rhoetot");
+            attach_rhoe.set_edges(storage.merged_patchdata_ghost, storage.refs_rhoe);
+            solver_sequence.push_back(
+                std::make_shared<decltype(attach_rhoe)>(std::move(attach_rhoe)));
+        }
+
+        if (solver_config.is_dust_on()) { // attach spans to dust field with ghosts
+            shamrock::solvergraph::GetFieldRefFromLayer<Tscal> attach_rho_dust
+                = shamrock::solvergraph::GetFieldRefFromLayer<Tscal>(
+                    storage.ghost_layout, "rho_dust");
+            attach_rho_dust.set_edges(storage.merged_patchdata_ghost, storage.refs_rho_dust);
+            solver_sequence.push_back(
+                std::make_shared<decltype(attach_rho_dust)>(std::move(attach_rho_dust)));
+
+            shamrock::solvergraph::GetFieldRefFromLayer<Tvec> attach_rhov_dust
+                = shamrock::solvergraph::GetFieldRefFromLayer<Tvec>(
+                    storage.ghost_layout, "rhovel_dust");
+            attach_rhov_dust.set_edges(storage.merged_patchdata_ghost, storage.refs_rhov_dust);
+            solver_sequence.push_back(
+                std::make_shared<decltype(attach_rhov_dust)>(std::move(attach_rhov_dust)));
+        }
+    }
 
     { // build trees
 
@@ -966,6 +1042,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
             p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
     });
 
+    scheduler().for_each_patchdata_nonempty(
+        [&](const shamrock::patch::Patch &p, shamrock::patch::PatchDataLayer &pdat) {
+            storage.source_patches->patchdatas.add_obj(p.id_patch, std::ref(pdat));
+        });
+
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();
     storage.serial_patch_tree.set(std::move(_sptree));
@@ -1050,6 +1131,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     storage.ghost_zone_infos.reset();
 
     storage.serial_patch_tree.reset();
+
+    storage.source_patches->free_alloc();
 
     tstep.end();
 

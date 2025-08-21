@@ -18,11 +18,13 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/print.hpp"
 #include "shambase/sets.hpp"
 #include "shambase/string.hpp"
 #include <functional>
 #include <map>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -216,8 +218,8 @@ namespace shambase {
          */
         template<typename... Tf>
         inline void print_data(fmt::format_string<Tf...> fmt) const {
-            for_each([&](u64 id_patch, T &ref) {
-                print_ln(id_patch, "->", shambase::format(fmt, ref));
+            for_each([&](u64 id_patch, const T &ref) {
+                shambase::println(std::to_string(id_patch) + " -> " + shambase::format(fmt, ref));
             });
         }
 

@@ -219,7 +219,8 @@ namespace shambase {
         template<typename... Tf>
         inline void print_data(fmt::format_string<Tf...> fmt) const {
             for_each([&](u64 id_patch, const T &ref) {
-                shambase::println(shambase::format("{} -> {}", id_patch, shambase::format(fmt, ref)));
+                shambase::println(
+                    shambase::format("{} -> {}", id_patch, shambase::format(fmt, ref)));
             });
         }
 

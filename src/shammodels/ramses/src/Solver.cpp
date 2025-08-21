@@ -1125,9 +1125,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     {
         shamrock::patch::SimulationBoxInfo &sim_box = scheduler().get_sim_box();
-        shamrock::patch::PatchCoordTransform<TgridVec> patch_coord_transf
-            = sim_box.get_patch_transform<TgridVec>();
-        auto [bmin, bmax] = sim_box.get_bounding_box<TgridVec>();
+        auto [bmin, bmax]                           = sim_box.get_bounding_box<TgridVec>();
 
         shambase::get_check_ref(storage.sim_box_edge).value = shammath::AABB<TgridVec>(bmin, bmax);
     }

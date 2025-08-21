@@ -32,20 +32,26 @@
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
+#include "shammodels/ramses/modules/ExchangeGhostLayer.hpp"
+#include "shammodels/ramses/modules/ExtractGhostLayer.hpp"
 #include "shammodels/ramses/modules/FindBlockNeigh.hpp"
+#include "shammodels/ramses/modules/FuseGhostLayer.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
+#include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/GetFieldRefFromLayer.hpp"
 #include "shamrock/solvergraph/NodeFreeAlloc.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
@@ -94,6 +100,20 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     ////////////////////////////////////////////////////////////////////////////////
     /// Edges
     ////////////////////////////////////////////////////////////////////////////////
+
+    storage.sim_box_edge
+        = std::make_shared<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>>(
+            "sim_box", "sim_box");
+
+    storage.exchange_gz_edge = std::make_shared<shamrock::solvergraph::PatchDataLayerDDShared>(
+        "exchange_gz_edge", "exchange_gz_edge");
+
+    storage.idx_in_ghost = std::make_shared<shamrock::solvergraph::DDSharedBuffers<u32>>(
+        "idx_in_ghost", "idx_in_ghost");
+
+    storage.ghost_layers_candidates_edge = std::make_shared<
+        shamrock::solvergraph::DDSharedScalar<modules::GhostLayerCandidateInfos>>(
+        "ghost_layers_candidates", "ghost_layers_candidates");
 
     storage.patch_rank_owner
         = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("patch_rank_owner", "rank");
@@ -410,6 +430,62 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> solver_sequence;
+
+    { // Ghost zone exchange
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> gz_xchg_sequence;
+
+        auto &ghost_layout_ptr = storage.ghost_layout;
+        {
+            auto copy_fields = std::make_shared<shamrock::solvergraph::CopyPatchDataLayerFields>(
+                scheduler().get_layout_ptr(), ghost_layout_ptr);
+
+            copy_fields->set_edges(storage.source_patches, storage.merged_patchdata_ghost);
+            gz_xchg_sequence.push_back(std::move(copy_fields));
+        }
+
+        {
+            auto extract_gz_node
+                = std::make_shared<shammodels::basegodunov::modules::ExtractGhostLayer>(
+                    ghost_layout_ptr);
+
+            extract_gz_node->set_edges(
+                storage.merged_patchdata_ghost, storage.idx_in_ghost, storage.exchange_gz_edge);
+            gz_xchg_sequence.push_back(std::move(extract_gz_node));
+        }
+
+        {
+            auto transform_gz_node = std::make_shared<
+                shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>>(
+                modules::GhostLayerGenMode{
+                    modules::GhostType::Periodic,
+                    modules::GhostType::Periodic,
+                    modules::GhostType::Periodic},
+                ghost_layout_ptr);
+
+            transform_gz_node->set_edges(
+                storage.sim_box_edge,
+                storage.ghost_layers_candidates_edge,
+                storage.exchange_gz_edge);
+            gz_xchg_sequence.push_back(std::move(transform_gz_node));
+        }
+
+        {
+            auto exchange_gz_node = std::make_shared<modules::ExchangeGhostLayer>(ghost_layout_ptr);
+            exchange_gz_node->set_edges(storage.patch_rank_owner, storage.exchange_gz_edge);
+            gz_xchg_sequence.push_back(std::move(exchange_gz_node));
+        }
+
+        {
+            auto fuse_gz_node
+                = std::make_shared<shammodels::basegodunov::modules::FuseGhostLayer>();
+            fuse_gz_node->set_edges(storage.exchange_gz_edge, storage.merged_patchdata_ghost);
+            gz_xchg_sequence.push_back(std::move(fuse_gz_node));
+        }
+
+        shamrock::solvergraph::OperationSequence seq(
+            "Ghost zone exchange", std::move(gz_xchg_sequence));
+        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+    }
 
     { // attach fields with ghosts
 
@@ -1047,6 +1123,15 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
             storage.source_patches->patchdatas.add_obj(p.id_patch, std::ref(pdat));
         });
 
+    {
+        shamrock::patch::SimulationBoxInfo &sim_box = scheduler().get_sim_box();
+        shamrock::patch::PatchCoordTransform<TgridVec> patch_coord_transf
+            = sim_box.get_patch_transform<TgridVec>();
+        auto [bmin, bmax] = sim_box.get_bounding_box<TgridVec>();
+
+        shambase::get_check_ref(storage.sim_box_edge).value = shammath::AABB<TgridVec>(bmin, bmax);
+    }
+
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();
     storage.serial_patch_tree.set(std::move(_sptree));
@@ -1132,7 +1217,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     storage.serial_patch_tree.reset();
 
-    storage.source_patches->free_alloc();
+    shambase::get_check_ref(storage.source_patches).free_alloc();
+
+    shambase::get_check_ref(storage.exchange_gz_edge).free_alloc();
+    shambase::get_check_ref(storage.idx_in_ghost).free_alloc();
+
+    shambase::get_check_ref(storage.ghost_layers_candidates_edge).free_alloc();
 
     tstep.end();
 

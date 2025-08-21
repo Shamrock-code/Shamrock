@@ -217,6 +217,26 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
         gen_ghost.ghost_id_build_map.add_obj(
             sender, receiver, InterfaceIdTable{build, std::move(ids), ratio});
     });
+
+    gen_ghost.ghost_id_build_map.for_each([&](u64 sender, u64 receiver, InterfaceIdTable &build) {
+        storage.ghost_layers_candidates_edge->values.add_obj(
+            sender,
+            receiver,
+            GhostLayerCandidateInfos{
+                i32(build.build_infos.periodicity_index[0]),
+                i32(build.build_infos.periodicity_index[1]),
+                i32(build.build_infos.periodicity_index[2]),
+            });
+    });
+
+    auto sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    gen_ghost.ghost_id_build_map.for_each(
+        [&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
+            auto buf = sham::DeviceBuffer<u32>(build_table.ids_interf->size(), sched);
+            buf.copy_from_sycl_buffer(shambase::get_check_ref(build_table.ids_interf));
+            storage.idx_in_ghost->buffers.add_obj(sender, receiver, std::move(buf));
+        });
 }
 
 template<class Tvec, class TgridVec>
@@ -315,195 +335,7 @@ shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::merge_native(
 }
 
 template<class Tvec, class TgridVec>
-void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
-
-    StackEntry stack_loc{};
-
-    shambase::Timer timer_interf;
-    timer_interf.start();
-
-    using namespace shamrock::patch;
-    using namespace shamrock;
-    using namespace shammath;
-
-    using GZData              = GhostZonesData<Tvec, TgridVec>;
-    using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
-    using InterfaceIdTable    = typename GZData::InterfaceIdTable;
-
-    using AMRBlock = typename Config::AMRBlock;
-
-    auto &ghost_layout_ptr                              = storage.ghost_layout;
-    shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
-
-    u32 icell_min_interf = ghost_layout.get_field_idx<TgridVec>("cell_min");
-    u32 icell_max_interf = ghost_layout.get_field_idx<TgridVec>("cell_max");
-    u32 irho_interf      = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 irhoetot_interf  = ghost_layout.get_field_idx<Tscal>("rhoetot");
-    u32 irhovel_interf   = ghost_layout.get_field_idx<Tvec>("rhovel");
-
-    u32 irho_d_interf, irhovel_d_interf, iphi_interf, irho_gas_pscal_interf;
-    if (solver_config.is_dust_on()) {
-        irho_d_interf    = ghost_layout.get_field_idx<Tscal>("rho_dust");
-        irhovel_d_interf = ghost_layout.get_field_idx<Tvec>("rhovel_dust");
-    }
-
-    if (solver_config.is_gravity_on()) {
-        iphi_interf = ghost_layout.get_field_idx<Tscal>("phi");
-    }
-
-    if (solver_config.is_gas_passive_scalar_on()) {
-        irho_gas_pscal_interf = ghost_layout.get_field_idx<Tscal>("rho_gas_pscal");
-    }
-
-    // load layout info
-    PatchDataLayerLayout &pdl = scheduler().pdl();
-
-    const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
-    const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
-    const u32 irho      = pdl.get_field_idx<Tscal>("rho");
-    const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
-    const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
-
-    u32 irho_d, irhovel_d, iphi, irho_gas_pscal;
-    if (solver_config.is_dust_on()) {
-        irho_d    = pdl.get_field_idx<Tscal>("rho_dust");
-        irhovel_d = pdl.get_field_idx<Tvec>("rhovel_dust");
-    }
-
-    if (solver_config.is_gravity_on()) {
-        iphi = pdl.get_field_idx<Tscal>("phi");
-    }
-
-    if (solver_config.is_gas_passive_scalar_on()) {
-        irho_gas_pscal = pdl.get_field_idx<Tscal>("rho_gas_pscal");
-    }
-
-    GZData &gen_ghost = storage.ghost_zone_infos.get();
-
-    // ----------------------------------------------------------------------------------------
-    // load the sim box into an edge
-    shamrock::patch::SimulationBoxInfo &sim_box      = scheduler().get_sim_box();
-    PatchCoordTransform<TgridVec> patch_coord_transf = sim_box.get_patch_transform<TgridVec>();
-    auto [bmin, bmax]                                = sim_box.get_bounding_box<TgridVec>();
-
-    std::shared_ptr<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>> sim_box_edge
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>>(
-            "sim_box", "sim_box");
-    sim_box_edge->value = shammath::AABB<TgridVec>(bmin, bmax);
-    // ----------------------------------------------------------------------------------------
-
-    // ----------------------------------------------------------------------------------------
-    std::shared_ptr<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>
-        ghost_layers_candidates_edge
-        = std::make_shared<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>(
-            "ghost_layers_candidates", "ghost_layers_candidates");
-    gen_ghost.ghost_id_build_map.for_each([&](u64 sender, u64 receiver, InterfaceIdTable &build) {
-        ghost_layers_candidates_edge->values.add_obj(
-            sender,
-            receiver,
-            GhostLayerCandidateInfos{
-                i32(build.build_infos.periodicity_index[0]),
-                i32(build.build_infos.periodicity_index[1]),
-                i32(build.build_infos.periodicity_index[2]),
-            });
-    });
-    // ----------------------------------------------------------------------------------------
-
-    auto compare_paving = [&](shambase::DistributedDataShared<InterfaceIdTable> &build_table) {
-        auto paving_function = get_paving(
-            GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic},
-            sim_box_edge->value);
-
-        build_table.for_each([&](u64 sender, u64 receiver, InterfaceIdTable &build) {
-            i32 xoff = build.build_infos.periodicity_index[0];
-            i32 yoff = build.build_infos.periodicity_index[1];
-            i32 zoff = build.build_infos.periodicity_index[2];
-
-            TgridVec ref_vec = {};
-            TgridVec offset  = paving_function.f(ref_vec, xoff, yoff, zoff) - ref_vec;
-
-            shamlog_debug_ln("Offset", offset, build.build_infos.offset);
-        });
-    };
-
-    // compare_paving(gen_ghost.ghost_id_build_map);
-
-    auto print_debug = [](shambase::DistributedDataShared<PatchDataLayer> &gz) {
-        gz.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {
-            shamlog_debug_ln(
-                "Ghost zone",
-                sender,
-                receiver,
-                pdat.get_field_buf_ref<TgridVec>(0).copy_to_stdvec(),
-                pdat.get_field_buf_ref<TgridVec>(1).copy_to_stdvec());
-        });
-        throw std::runtime_error("debug");
-    };
-
-    // ----------------------------------------------------------------------------------------
-    // temporary wrapper to slowly migrate to the new solvergraph
-
-    std::shared_ptr<shamrock::solvergraph::CopyPatchDataLayerFields> copy_fields
-        = std::make_shared<shamrock::solvergraph::CopyPatchDataLayerFields>(
-            scheduler().get_layout_ptr(), ghost_layout_ptr);
-
-    copy_fields->set_edges(storage.source_patches, storage.merged_patchdata_ghost);
-    copy_fields->evaluate();
-
-    std::shared_ptr<shamrock::solvergraph::PatchDataLayerDDShared> exchange_gz_edge
-        = std::make_shared<shamrock::solvergraph::PatchDataLayerDDShared>("", "");
-
-    auto sched = shamsys::instance::get_compute_scheduler_ptr();
-    std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghost
-        = std::make_shared<shamrock::solvergraph::DDSharedBuffers<u32>>(
-            "idx_in_ghost", "idx_in_ghost");
-
-    gen_ghost.ghost_id_build_map.for_each(
-        [&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-            auto buf = sham::DeviceBuffer<u32>(build_table.ids_interf->size(), sched);
-            buf.copy_from_sycl_buffer(shambase::get_check_ref(build_table.ids_interf));
-            idx_in_ghost->buffers.add_obj(sender, receiver, std::move(buf));
-        });
-
-    std::shared_ptr<shammodels::basegodunov::modules::ExtractGhostLayer> extract_gz_node
-        = std::make_shared<shammodels::basegodunov::modules::ExtractGhostLayer>(ghost_layout_ptr);
-
-    extract_gz_node->set_edges(storage.merged_patchdata_ghost, idx_in_ghost, exchange_gz_edge);
-    extract_gz_node->evaluate();
-
-    // to see the values of the ghost zones
-    // print_debug(exchange_gz_edge->patchdatas);
-
-    std::shared_ptr<shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>>
-        transform_gz_node
-        = std::make_shared<shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>>(
-            GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic},
-            ghost_layout_ptr);
-
-    transform_gz_node->set_edges(sim_box_edge, ghost_layers_candidates_edge, exchange_gz_edge);
-    transform_gz_node->evaluate();
-
-    // to see the values of the ghost zones
-    // print_debug(exchange_gz_edge->patchdatas);
-
-    std::shared_ptr<ExchangeGhostLayer> exchange_gz_node
-        = std::make_shared<ExchangeGhostLayer>(ghost_layout_ptr);
-    exchange_gz_node->set_edges(storage.patch_rank_owner, exchange_gz_edge);
-
-    exchange_gz_node->evaluate();
-
-    std::shared_ptr<shammodels::basegodunov::modules::FuseGhostLayer> fuse_gz_node
-        = std::make_shared<shammodels::basegodunov::modules::FuseGhostLayer>();
-    fuse_gz_node->set_edges(exchange_gz_edge, storage.merged_patchdata_ghost);
-    fuse_gz_node->evaluate();
-
-    timer_interf.end();
-    storage.timings_details.interface += timer_interf.elasped_sec();
-
-    // TODO this should be output nodes from basic ghost ideally
-
-    auto &merged_patches_refs = shambase::get_check_ref(storage.merged_patchdata_ghost).get_refs();
-}
+void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {}
 
 template<class Tvec, class TgridVec>
 template<class T>

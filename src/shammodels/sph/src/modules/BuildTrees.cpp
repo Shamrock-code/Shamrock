@@ -15,9 +15,11 @@
  *
  */
 
+#include "shambase/logs/loglevels.hpp"
 #include "shambase/numeric_limits.hpp"
 #include "shammath/AABB.hpp"
 #include "shammodels/sph/modules/BuildTrees.hpp"
+#include <cmath>
 
 namespace shammodels::sph::modules {
 
@@ -42,8 +44,20 @@ namespace shammodels::sph::modules {
 
                   shammath::AABB<Tvec> aabb(bmin, bmax);
 
-                  Tscal eps = shambase::get_epsilon<Tscal>();
-                  aabb      = aabb.expand_all(eps);
+                  Tscal infty   = std::numeric_limits<Tscal>::infinity();
+
+                  // ensure that no particle is on the boundary of the AABB
+                  // TODO: make this a aabb function at some point
+                  aabb.lower[0] = std::nextafter(aabb.lower[0], -infty);
+                  aabb.lower[1] = std::nextafter(aabb.lower[1], -infty);
+                  aabb.lower[2] = std::nextafter(aabb.lower[2], -infty);
+                  aabb.upper[0] = std::nextafter(aabb.upper[0], infty);
+                  aabb.upper[1] = std::nextafter(aabb.upper[1], infty);
+                  aabb.upper[2] = std::nextafter(aabb.upper[2], infty);
+
+                  shamlog_normal_ln("TMP", "AABB", aabb.lower, aabb.upper);
+                  shamlog_normal_ln("TMP", "prestep field", merged.bounds.lower, merged.bounds.upper);
+                  shamlog_normal_ln("TMP", "delta", aabb.lower - merged.bounds.lower, aabb.upper - merged.bounds.upper);
 
                   auto bvh = RTree::make_empty(dev_sched);
                   bvh.rebuild_from_positions(

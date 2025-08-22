@@ -15,9 +15,9 @@
  *
  */
 
-#include "shammodels/sph/modules/BuildTrees.hpp"
+#include "shambase/numeric_limits.hpp"
 #include "shammath/AABB.hpp"
-#include "shammodels/sph/SPHSolverImpl.hpp"
+#include "shammodels/sph/modules/BuildTrees.hpp"
 
 namespace shammodels::sph::modules {
 
@@ -31,21 +31,25 @@ namespace shammodels::sph::modules {
 
         StackEntry stack_loc{};
 
-        SPHSolverImpl solver(context);
-
         auto &merged_xyzh = storage.merged_xyzh.get();
         auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
         shambase::DistributedData<RTree> trees
             = merged_xyzh.template map<RTree>([&](u64 id, PreStepMergedField &merged) {
-                  Tvec bmin = merged.bounds.lower;
-                  Tvec bmax = merged.bounds.upper;
+                  PatchDataField<Tvec> &pos = merged.field_pos;
+                  Tvec bmax                 = pos.compute_max();
+                  Tvec bmin                 = pos.compute_min();
+
+                  shammath::AABB<Tvec> aabb(bmin, bmax);
+
+                  Tscal eps = shambase::get_epsilon<Tscal>();
+                  aabb      = aabb.expand_all(eps);
 
                   auto bvh = RTree::make_empty(dev_sched);
                   bvh.rebuild_from_positions(
                       merged.field_pos.get_buf(),
                       merged.field_pos.get_obj_cnt(),
-                      shammath::AABB<Tvec>(bmin, bmax),
+                      aabb,
                       solver_config.tree_reduction_level);
 
                   return bvh;

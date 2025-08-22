@@ -31,7 +31,6 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SPHSolverImpl.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
@@ -359,8 +358,6 @@ void shammodels::sph::Solver<Tvec, Kern>::merge_position_ghost() {
     { // set element counts
         shambase::get_check_ref(storage.part_counts).indexes
             = storage.merged_xyzh.get().template map<u32>([&](u64 id, PreStepMergedField &mpdat) {
-                  SHAM_ASSERT(
-                      mpdat.original_elements == scheduler().patch_data.get_pdat(id).get_obj_cnt());
                   return scheduler().patch_data.get_pdat(id).get_obj_cnt();
               });
     }
@@ -368,7 +365,6 @@ void shammodels::sph::Solver<Tvec, Kern>::merge_position_ghost() {
     { // set element counts
         shambase::get_check_ref(storage.part_counts_with_ghost).indexes
             = storage.merged_xyzh.get().template map<u32>([&](u64 id, PreStepMergedField &mpdat) {
-                  SHAM_ASSERT(mpdat.total_elements == mpdat.field_pos.get_obj_cnt());
                   return mpdat.field_pos.get_obj_cnt();
               });
     }
@@ -477,7 +473,6 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
     SPHUtils sph_utils(scheduler());
     shamrock::SchedulerUtility utility(scheduler());
-    SPHSolverImpl solver(context);
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
     const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
@@ -1222,8 +1217,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sph_prestep(t_current, dt);
 
     using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
-
-    SPHSolverImpl solver(context);
 
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
     auto &merged_xyzh                             = storage.merged_xyzh.get();

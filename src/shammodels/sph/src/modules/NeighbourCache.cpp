@@ -58,7 +58,6 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
         auto obj_it = tree.get_object_iterator();
 
         u32 obj_cnt = shambase::get_check_ref(storage.part_counts).indexes.get(patch_id);
-        SHAM_ASSERT(obj_cnt == mfield.original_elements);
 
         sycl::range range_npart{obj_cnt};
 
@@ -258,7 +257,6 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
         u32 intnode_cnt = tree.get_internal_cell_count();
 
         u32 obj_cnt = shambase::get_check_ref(storage.part_counts).indexes.get(patch_id);
-        SHAM_ASSERT(obj_cnt == mfield.original_elements);
 
         sycl::range range_nleaf{leaf_cnt};
         sycl::range range_nobj{obj_cnt};

@@ -13,7 +13,6 @@ project(Shammodels_sph CXX C)
 
 set(Sources
     src/BasicSPHGhosts.cpp
-    src/SPHSolverImpl.cpp
     src/Model.cpp
     src/Solver.cpp
     src/SPHUtilities.cpp

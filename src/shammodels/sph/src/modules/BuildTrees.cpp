@@ -36,38 +36,42 @@ namespace shammodels::sph::modules {
         auto &merged_xyzh = storage.merged_xyzh.get();
         auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
-        shambase::DistributedData<RTree> trees
-            = merged_xyzh.template map<RTree>([&](u64 id, PreStepMergedField &merged) {
-                  PatchDataField<Tvec> &pos = merged.field_pos;
-                  Tvec bmax                 = pos.compute_max();
-                  Tvec bmin                 = pos.compute_min();
+        shambase::DistributedData<RTree> trees = merged_xyzh.template map<RTree>(
+            [&](u64 id, PreStepMergedField &merged) {
+                PatchDataField<Tvec> &pos = merged.field_pos;
+                Tvec bmax                 = pos.compute_max();
+                Tvec bmin                 = pos.compute_min();
 
-                  shammath::AABB<Tvec> aabb(bmin, bmax);
+                shammath::AABB<Tvec> aabb(bmin, bmax);
 
-                  Tscal infty   = std::numeric_limits<Tscal>::infinity();
+                Tscal infty = std::numeric_limits<Tscal>::infinity();
 
-                  // ensure that no particle is on the boundary of the AABB
-                  // TODO: make this a aabb function at some point
-                  aabb.lower[0] = std::nextafter(aabb.lower[0], -infty);
-                  aabb.lower[1] = std::nextafter(aabb.lower[1], -infty);
-                  aabb.lower[2] = std::nextafter(aabb.lower[2], -infty);
-                  aabb.upper[0] = std::nextafter(aabb.upper[0], infty);
-                  aabb.upper[1] = std::nextafter(aabb.upper[1], infty);
-                  aabb.upper[2] = std::nextafter(aabb.upper[2], infty);
+                // ensure that no particle is on the boundary of the AABB
+                // TODO: make this a aabb function at some point
+                aabb.lower[0] = std::nextafter(aabb.lower[0], -infty);
+                aabb.lower[1] = std::nextafter(aabb.lower[1], -infty);
+                aabb.lower[2] = std::nextafter(aabb.lower[2], -infty);
+                aabb.upper[0] = std::nextafter(aabb.upper[0], infty);
+                aabb.upper[1] = std::nextafter(aabb.upper[1], infty);
+                aabb.upper[2] = std::nextafter(aabb.upper[2], infty);
 
-                  shamlog_normal_ln("TMP", "AABB", aabb.lower, aabb.upper);
-                  shamlog_normal_ln("TMP", "prestep field", merged.bounds.lower, merged.bounds.upper);
-                  shamlog_normal_ln("TMP", "delta", aabb.lower - merged.bounds.lower, aabb.upper - merged.bounds.upper);
+                shamlog_normal_ln("TMP", "AABB", aabb.lower, aabb.upper);
+                shamlog_normal_ln("TMP", "prestep field", merged.bounds.lower, merged.bounds.upper);
+                shamlog_normal_ln(
+                    "TMP",
+                    "delta",
+                    aabb.lower - merged.bounds.lower,
+                    aabb.upper - merged.bounds.upper);
 
-                  auto bvh = RTree::make_empty(dev_sched);
-                  bvh.rebuild_from_positions(
-                      merged.field_pos.get_buf(),
-                      merged.field_pos.get_obj_cnt(),
-                      aabb,
-                      solver_config.tree_reduction_level);
+                auto bvh = RTree::make_empty(dev_sched);
+                bvh.rebuild_from_positions(
+                    merged.field_pos.get_buf(),
+                    merged.field_pos.get_obj_cnt(),
+                    aabb,
+                    solver_config.tree_reduction_level);
 
-                  return bvh;
-              });
+                return bvh;
+            });
 
         storage.merged_pos_trees.set(std::move(trees));
     };

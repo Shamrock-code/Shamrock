@@ -64,7 +64,8 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchDataLayer &mpdat         = merged_patch.pdat;
 
-        sham::DeviceBuffer<Tvec> &buf_xyz  = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz
+            = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
         sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
         sham::DeviceBuffer<Tvec> &buf_axyz = mpdat.get_field_buf_ref<Tvec>(iaxyz_interf);
 

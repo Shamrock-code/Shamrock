@@ -86,7 +86,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchDataLayer &mpdat         = merged_patch.pdat;
 
-        sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz
+            = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
         sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sham::DeviceBuffer<Tscal> &buf_duint = pdat.get_field_buf_ref<Tscal>(iduint);
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
@@ -287,7 +288,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchDataLayer &mpdat         = merged_patch.pdat;
 
-        sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz
+            = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
         sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sham::DeviceBuffer<Tscal> &buf_duint = pdat.get_field_buf_ref<Tscal>(iduint);
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
@@ -498,9 +500,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-        MergedPatchData &merged_patch        = mpdat.get(cur_p.id_patch);
-        PatchDataLayer &mpdat                = merged_patch.pdat;
-        sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+        PatchDataLayer &mpdat         = merged_patch.pdat;
+        sham::DeviceBuffer<Tvec> &buf_xyz
+            = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
         sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sham::DeviceBuffer<Tscal> &buf_duint = pdat.get_field_buf_ref<Tscal>(iduint);
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
@@ -702,7 +705,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchDataLayer &mpdat         = merged_patch.pdat;
 
-        sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz
+            = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
         sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sham::DeviceBuffer<Tscal> &buf_duint = pdat.get_field_buf_ref<Tscal>(iduint);
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
@@ -924,7 +928,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
         PatchDataLayer &mpdat         = merged_patch.pdat;
 
-        sham::DeviceBuffer<Tvec> &buf_xyz    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz
+            = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
         sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field_buf_ref<Tvec>(iaxyz);
         sham::DeviceBuffer<Tscal> &buf_duint = pdat.get_field_buf_ref<Tscal>(iduint);
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);

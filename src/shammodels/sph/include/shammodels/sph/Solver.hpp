@@ -82,9 +82,8 @@ namespace shammodels::sph {
         inline void reset_serial_patch_tree() { storage.serial_patch_tree.reset(); }
 
         // interface_control
-        using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
-        using GhostHandleCache   = typename GhostHandle::CacheMap;
-        using PreStepMergedField = typename GhostHandle::PreStepMergedField;
+        using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+        using GhostHandleCache = typename GhostHandle::CacheMap;
 
         inline void gen_ghost_handler(Tscal time_val) {
 

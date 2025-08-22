@@ -46,9 +46,8 @@ namespace shammodels::sph {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using GhostHandle        = BasicSPHGhostHandler<Tvec>;
-        using GhostHandleCache   = typename GhostHandle::CacheMap;
-        using PreStepMergedField = typename GhostHandle::PreStepMergedField;
+        using GhostHandle      = BasicSPHGhostHandler<Tvec>;
+        using GhostHandleCache = typename GhostHandle::CacheMap;
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
@@ -66,7 +65,7 @@ namespace shammodels::sph {
 
         Component<GhostHandleCache> ghost_patch_cache;
 
-        Component<shambase::DistributedData<PreStepMergedField>> merged_xyzh;
+        Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>> merged_xyzh;
 
         Component<shambase::DistributedData<RTree>> merged_pos_trees;
 

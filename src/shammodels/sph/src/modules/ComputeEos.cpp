@@ -15,12 +15,14 @@
  *
  */
 
+#include "shambase/DistributedData.hpp"
 #include "shambase/exception.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shamphys/eos.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -222,7 +224,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
             auto &mfield = storage.merged_xyzh.get().get(id);
 
-            sham::DeviceBuffer<Tvec> &buf_xyz = mfield.field_pos.get_buf();
+            sham::DeviceBuffer<Tvec> &buf_xyz = mfield.template get_field_buf_ref<Tvec>(0);
 
             sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
             sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
@@ -290,7 +292,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, MergedPatchData &mpdat) {
             auto &mfield = storage.merged_xyzh.get().get(id);
 
-            sham::DeviceBuffer<Tvec> &buf_xyz = mfield.field_pos.get_buf();
+            sham::DeviceBuffer<Tvec> &buf_xyz = mfield.template get_field_buf_ref<Tvec>(0);
 
             sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
             sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);

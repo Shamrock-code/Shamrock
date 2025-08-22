@@ -353,35 +353,35 @@ void shammodels::sph::Solver<Tvec, Kern>::merge_position_ghost() {
     storage.merged_xyzh.set(
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
 
-    using PreStepMergedField = typename GhostHandle::PreStepMergedField;
-
     { // set element counts
         shambase::get_check_ref(storage.part_counts).indexes
-            = storage.merged_xyzh.get().template map<u32>([&](u64 id, PreStepMergedField &mpdat) {
-                  return scheduler().patch_data.get_pdat(id).get_obj_cnt();
-              });
+            = storage.merged_xyzh.get().template map<u32>(
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return scheduler().patch_data.get_pdat(id).get_obj_cnt();
+                });
     }
 
     { // set element counts
         shambase::get_check_ref(storage.part_counts_with_ghost).indexes
-            = storage.merged_xyzh.get().template map<u32>([&](u64 id, PreStepMergedField &mpdat) {
-                  return mpdat.field_pos.get_obj_cnt();
-              });
+            = storage.merged_xyzh.get().template map<u32>(
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return mpdat.get_obj_cnt();
+                });
     }
 
     { // Attach spans to block coords
         shambase::get_check_ref(storage.positions_with_ghosts)
             .set_refs(storage.merged_xyzh.get()
                           .template map<std::reference_wrapper<PatchDataField<Tvec>>>(
-                              [&](u64 id, PreStepMergedField &mpdat) {
-                                  return std::ref(mpdat.field_pos);
+                              [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                  return std::ref(mpdat.get_field<Tvec>(0));
                               }));
 
         shambase::get_check_ref(storage.hpart_with_ghosts)
             .set_refs(storage.merged_xyzh.get()
                           .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
-                              [&](u64 id, PreStepMergedField &mpdat) {
-                                  return std::ref(mpdat.field_hpart);
+                              [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                  return std::ref(mpdat.get_field<Tscal>(1));
                               }));
     }
 }
@@ -693,9 +693,9 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
     storage.rtree_rint_field.set(
         storage.merged_pos_trees.get().template map<shamtree::KarrasRadixTreeField<Tscal>>(
             [&](u64 id, RTree &rtree) -> shamtree::KarrasRadixTreeField<Tscal> {
-                PreStepMergedField &tmp = xyzh_merged.get(id);
-                auto &buf               = tmp.field_hpart.get_buf();
-                auto buf_int            = shamtree::new_empty_karras_radix_tree_field<Tscal>();
+                shamrock::patch::PatchDataLayer &tmp = xyzh_merged.get(id);
+                auto &buf                            = tmp.get_field_buf_ref<Tscal>(1);
+                auto buf_int = shamtree::new_empty_karras_radix_tree_field<Tscal>();
 
                 auto ret = shamtree::compute_tree_field_max_field<Tscal>(
                     rtree.structure,
@@ -1546,7 +1546,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 PatchDataLayer &mpdat         = merged_patch.pdat;
 
                 sham::DeviceBuffer<Tvec> &buf_xyz
-                    = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+                    = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
                 sham::DeviceBuffer<Tscal> &buf_hpart
                     = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);

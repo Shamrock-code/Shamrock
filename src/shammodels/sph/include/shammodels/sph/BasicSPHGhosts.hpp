@@ -20,6 +20,8 @@
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -75,8 +77,14 @@ namespace shammodels::sph {
 
         using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
 
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
+
         BasicSPHGhostHandler(PatchScheduler &sched, Config ghost_config)
-            : sched(sched), ghost_config(ghost_config) {}
+            : sched(sched), ghost_config(ghost_config) {
+            xyzh_ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
+            xyzh_ghost_layout->add_field<vec>("xyz", 1);
+            xyzh_ghost_layout->add_field<flt>("hpart", 1);
+        }
 
         /**
          * @brief Find interfaces and their metadata
@@ -463,37 +471,35 @@ namespace shammodels::sph {
             return merge_f;
         }
 
-        struct PreStepMergedField {
-            PatchDataField<vec> field_pos;
-            PatchDataField<flt> field_hpart;
-        };
-
-        inline shambase::DistributedData<PreStepMergedField>
+        inline shambase::DistributedData<shamrock::patch::PatchDataLayer>
         merge_position_buf(shambase::DistributedDataShared<PositionInterface> &&positioninterfs) {
             StackEntry stack_loc{};
 
             const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
 
-            return merge_native<PositionInterface, PreStepMergedField>(
+            return merge_native<PositionInterface, shamrock::patch::PatchDataLayer>(
                 std::forward<shambase::DistributedDataShared<PositionInterface>>(positioninterfs),
                 [=](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
-                    PatchDataField<vec> &pos      = pdat.get_field<vec>(0);
-                    PatchDataField<flt> &hpart    = pdat.get_field<flt>(ihpart);
-                    u32 or_elem                   = pos.get_obj_cnt();
-                    PatchDataField<vec> new_pos   = pos.duplicate();
-                    PatchDataField<flt> new_hpart = hpart.duplicate();
+                    PatchDataField<vec> &pos   = pdat.get_field<vec>(0);
+                    PatchDataField<flt> &hpart = pdat.get_field<flt>(ihpart);
 
-                    u32 total_elements = or_elem;
+                    shamrock::patch::PatchDataLayer ret(xyzh_ghost_layout);
 
-                    return PreStepMergedField{std::move(new_pos), std::move(new_hpart)};
+                    ret.get_field<vec>(0).insert(pos);
+                    ret.get_field<flt>(1).insert(hpart);
+                    ret.check_field_obj_cnt_match();
+
+                    return ret;
                 },
-                [](PreStepMergedField &merged, PositionInterface &pint) {
-                    merged.field_pos.insert(pint.position_field);
-                    merged.field_hpart.insert(pint.hpart_field);
+                [](shamrock::patch::PatchDataLayer &merged, PositionInterface &pint) {
+                    merged.get_field<vec>(0).insert(pint.position_field);
+                    merged.get_field<flt>(1).insert(pint.hpart_field);
+
+                    merged.check_field_obj_cnt_match();
                 });
         }
 
-        inline shambase::DistributedData<PreStepMergedField>
+        inline shambase::DistributedData<shamrock::patch::PatchDataLayer>
         build_comm_merge_positions(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             auto pos_interf = build_position_interf_field(builder);
             return merge_position_buf(communicate_positions(std::move(pos_interf)));

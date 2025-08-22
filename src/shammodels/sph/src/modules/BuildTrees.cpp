@@ -27,9 +27,8 @@ namespace shammodels::sph::modules {
     void BuildTrees<Tvec, SPHKernel>::build_merged_pos_trees() {
 
         // interface_control
-        using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
-        using GhostHandleCache   = typename GhostHandle::CacheMap;
-        using PreStepMergedField = typename GhostHandle::PreStepMergedField;
+        using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+        using GhostHandleCache = typename GhostHandle::CacheMap;
 
         StackEntry stack_loc{};
 
@@ -37,8 +36,8 @@ namespace shammodels::sph::modules {
         auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
         shambase::DistributedData<RTree> trees
-            = merged_xyzh.template map<RTree>([&](u64 id, PreStepMergedField &merged) {
-                  PatchDataField<Tvec> &pos = merged.field_pos;
+            = merged_xyzh.template map<RTree>([&](u64 id, shamrock::patch::PatchDataLayer &merged) {
+                  PatchDataField<Tvec> &pos = merged.template get_field<Tvec>(0);
                   Tvec bmax                 = pos.compute_max();
                   Tvec bmin                 = pos.compute_min();
 
@@ -57,10 +56,7 @@ namespace shammodels::sph::modules {
 
                   auto bvh = RTree::make_empty(dev_sched);
                   bvh.rebuild_from_positions(
-                      merged.field_pos.get_buf(),
-                      merged.field_pos.get_obj_cnt(),
-                      aabb,
-                      solver_config.tree_reduction_level);
+                      pos.get_buf(), pos.get_obj_cnt(), aabb, solver_config.tree_reduction_level);
 
                   return bvh;
               });

@@ -464,7 +464,6 @@ namespace shammodels::sph {
         }
 
         struct PreStepMergedField {
-            shammath::CoordRange<vec> bounds;
             PatchDataField<vec> field_pos;
             PatchDataField<flt> field_hpart;
         };
@@ -480,24 +479,17 @@ namespace shammodels::sph {
                 [=](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<vec> &pos      = pdat.get_field<vec>(0);
                     PatchDataField<flt> &hpart    = pdat.get_field<flt>(ihpart);
-                    vec bmax                      = pos.compute_max();
-                    vec bmin                      = pos.compute_min();
                     u32 or_elem                   = pos.get_obj_cnt();
                     PatchDataField<vec> new_pos   = pos.duplicate();
                     PatchDataField<flt> new_hpart = hpart.duplicate();
 
                     u32 total_elements = or_elem;
 
-                    return PreStepMergedField{
-                        shammath::CoordRange<vec>{bmin, bmax},
-                        std::move(new_pos),
-                        std::move(new_hpart)};
+                    return PreStepMergedField{std::move(new_pos), std::move(new_hpart)};
                 },
                 [](PreStepMergedField &merged, PositionInterface &pint) {
                     merged.field_pos.insert(pint.position_field);
                     merged.field_hpart.insert(pint.hpart_field);
-                    merged.bounds.upper = sham::max(merged.bounds.upper, pint.bmax);
-                    merged.bounds.lower = sham::min(merged.bounds.lower, pint.bmin);
                 });
         }
 

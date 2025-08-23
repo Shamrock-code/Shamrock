@@ -46,8 +46,9 @@ namespace shamrock::solvergraph {
      *
      * // Set up edges with rank ownership and ghost field data
      * auto rankEdge = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>();
-     * auto ghostEdge = std::make_shared<shamrock::solvergraph::PatchDataFieldDDShared<double>>("ghost",
-     * "G"); exchangeNode->set_edges(rankEdge, ghostEdge);
+     * auto ghostEdge =
+     * std::make_shared<shamrock::solvergraph::PatchDataFieldDDShared<double>>("ghost", "G");
+     * exchangeNode->set_edges(rankEdge, ghostEdge);
      *
      * // Evaluate to perform the ghost field exchange
      * exchangeNode->evaluate();

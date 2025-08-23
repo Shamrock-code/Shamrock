@@ -10,7 +10,11 @@
 /**
  * @file ExchangeGhostField.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implementation of ghost field data exchange for distributed hydrodynamics simulations
+ *
+ * This file implements the ExchangeGhostField template class methods, providing the concrete
+ * functionality for exchanging ghost field data between distributed computational
+ * domains using sparse communication and serialization mechanisms.
  */
 
 #include "shamrock/solvergraph/ExchangeGhostField.hpp"
@@ -57,7 +61,7 @@ std::string shamrock::solvergraph::ExchangeGhostField<T>::_impl_get_tex() {
     auto ghost_layer = get_rw_edge_base(0).get_tex_symbol();
 
     std::string tex = R"tex(
-        Exchange ghost layer data between distributed processes
+        Exchange ghost field data between distributed processes
 
         \begin{align}
         {ghost_layer}_{i \rightarrow \underline{j}} = \text{Sparse comm}({ghost_layer}_{\underline{i} \rightarrow j}) \\

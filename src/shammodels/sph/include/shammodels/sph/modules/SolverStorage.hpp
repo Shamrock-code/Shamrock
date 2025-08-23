@@ -28,6 +28,7 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
@@ -58,6 +59,8 @@ namespace shammodels::sph {
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_with_ghosts;
 
         std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
         Component<SerialPatchTree<Tvec>> serial_patch_tree;
 

@@ -25,6 +25,8 @@
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
+#include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <variant>
 
@@ -79,8 +81,13 @@ namespace shammodels::sph {
 
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
 
-        BasicSPHGhostHandler(PatchScheduler &sched, Config ghost_config)
-            : sched(sched), ghost_config(ghost_config) {
+        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
+
+        BasicSPHGhostHandler(
+            PatchScheduler &sched,
+            Config ghost_config,
+            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner)
+            : sched(sched), ghost_config(ghost_config), patch_rank_owner(patch_rank_owner) {
             xyzh_ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
             xyzh_ghost_layout->add_field<vec>("xyz", 1);
             xyzh_ghost_layout->add_field<flt>("hpart", 1);
@@ -315,8 +322,26 @@ namespace shammodels::sph {
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf) {
             StackEntry stack_loc{};
 
+            // ----------------------------------------------------------------------------------------
+            // temporary wrapper to slowly migrate to the new solvergraph
+            std::shared_ptr<shamrock::solvergraph::PatchDataLayerDDShared> exchange_gz_edge
+                = std::make_shared<shamrock::solvergraph::PatchDataLayerDDShared>("", "");
+
+            exchange_gz_edge->patchdatas
+                = std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(
+                    interf);
+
+            std::shared_ptr<shamrock::solvergraph::ExchangeGhostLayer> exchange_gz_node
+                = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(pdl_ptr);
+            exchange_gz_node->set_edges(this->patch_rank_owner, exchange_gz_edge);
+
+            exchange_gz_node->evaluate();
+
+            // ----------------------------------------------------------------------------------------
+
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> recv_dat;
 
+#if false
             shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchDataLayer>(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(
@@ -338,6 +363,9 @@ namespace shammodels::sph {
                         std::forward<sham::DeviceBuffer<u8>>(buf));
                     return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl_ptr);
                 });
+#else
+            recv_dat = std::move(exchange_gz_edge->patchdatas);
+#endif
 
             return recv_dat;
         }

@@ -25,6 +25,7 @@
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamrock/solvergraph/ExchangeGhostField.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -375,8 +376,25 @@ namespace shammodels::sph {
             shambase::DistributedDataShared<PatchDataField<T>> &&interf, u32 nvar) {
             StackEntry stack_loc{};
 
+            // ----------------------------------------------------------------------------------------
+            // temporary wrapper to slowly migrate to the new solvergraph
+            std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<T>> exchange_gz_edge
+                = std::make_shared<shamrock::solvergraph::PatchDataFieldDDShared<T>>("", "");
+
+            exchange_gz_edge->patchdata_fields
+                = std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf);
+
+            std::shared_ptr<shamrock::solvergraph::ExchangeGhostField<T>> exchange_gz_node
+                = std::make_shared<shamrock::solvergraph::ExchangeGhostField<T>>();
+            exchange_gz_node->set_edges(this->patch_rank_owner, exchange_gz_edge);
+
+            exchange_gz_node->evaluate();
+
+            // ----------------------------------------------------------------------------------------
+
             shambase::DistributedDataShared<PatchDataField<T>> recv_dat;
 
+#if false
             shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf),
@@ -397,6 +415,9 @@ namespace shammodels::sph {
                         std::forward<sham::DeviceBuffer<u8>>(buf));
                     return PatchDataField<T>::deserialize_full(ser);
                 });
+#else
+            recv_dat = std::move(exchange_gz_edge->patchdata_fields);
+#endif
 
             return recv_dat;
         }

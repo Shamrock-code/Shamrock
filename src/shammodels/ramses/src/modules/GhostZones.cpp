@@ -18,6 +18,7 @@
 
 #include "shambase/DistributedDataShared.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/logs/loglevels.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/print.hpp"
 #include "shambase/stacktrace.hpp"
@@ -29,6 +30,7 @@
 #include "shammodels/ramses/GhostZoneData.hpp"
 #include "shammodels/ramses/modules/ExtractGhostLayer.hpp"
 #include "shammodels/ramses/modules/FindGhostLayerCandidates.hpp"
+#include "shammodels/ramses/modules/FindGhostLayerIndices.hpp"
 #include "shammodels/ramses/modules/FuseGhostLayer.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
@@ -44,7 +46,9 @@
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <functional>
 #include <stdexcept>
+#include <vector>
 
 namespace shammodels::basegodunov::modules {
     /**
@@ -145,98 +149,50 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
     storage.ghost_zone_infos.set(GZData{});
     GZData &gen_ghost = storage.ghost_zone_infos.get();
 
-    // get ids of cells that will be on the surface of another patch.
-    // for cells corresponding to fixed boundary they will be generated after the exhange
-    // and appended to the interface list a posteriori
-
-    gen_ghost.ghost_gen_infos
-        = find_interfaces<Tvec, TgridVec>(scheduler(), storage.serial_patch_tree.get());
-
     using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
     using InterfaceIdTable    = typename GZData::InterfaceIdTable;
 
-    // if(logger::log_debug);
-    gen_ghost.ghost_gen_infos.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
-        std::string log;
+    std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>> sptree_edge
+        = std::make_shared<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>>("", "");
+    sptree_edge->patch_tree = std::ref(storage.serial_patch_tree.get());
 
-        log = shambase::format(
-            "{} -> {} : off = {}, {} -> {}",
-            sender,
-            receiver,
-            build.offset,
-            build.volume_target.lower,
-            build.volume_target.upper);
+    std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>> patch_boxes_edge
+        = std::make_shared<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(
+            "patch_boxes", "patch_boxes");
+    {
+        auto &sim_box = scheduler().get_sim_box();
+        auto transf   = sim_box.template get_patch_transform<TgridVec>();
 
-        shamlog_debug_ln("AMRgodunov", log);
-    });
-
-    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-
-    gen_ghost.ghost_gen_infos.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
-        shamrock::patch::PatchDataLayer &src = scheduler().patch_data.get_pdat(sender);
-
-        sycl::buffer<u32> is_in_interf{src.get_obj_cnt()};
-
-        sham::EventList depends_list;
-
-        auto cell_min = src.get_field_buf_ref<TgridVec>(0).get_read_access(depends_list);
-        auto cell_max = src.get_field_buf_ref<TgridVec>(1).get_read_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            sycl::accessor flag{is_in_interf, cgh, sycl::write_only, sycl::no_init};
-
-            shammath::AABB<TgridVec> check_volume = build.volume_target;
-
-            shambase::parallel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a) {
-                flag[id_a] = shammath::AABB<TgridVec>(cell_min[id_a], cell_max[id_a])
-                                 .get_intersect(check_volume)
-                                 .is_not_empty();
+        scheduler().for_each_patchdata_nonempty(
+            [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                auto pbounds = transf.to_obj_coord(p);
+                patch_boxes_edge->values.add_obj(
+                    p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
             });
-        });
+    }
 
-        src.get_field_buf_ref<TgridVec>(0).complete_event_state(e);
-        src.get_field_buf_ref<TgridVec>(1).complete_event_state(e);
+    std::shared_ptr<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>
+        ghost_layers_candidates_edge2
+        = std::make_shared<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>(
+            "ghost_layers_candidates", "ghost_layers_candidates");
 
-        auto resut = shamalgs::numeric::stream_compact(q.q, is_in_interf, src.get_obj_cnt());
-        f64 ratio  = f64(std::get<1>(resut)) / f64(src.get_obj_cnt());
+    FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
+        GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic});
+    find_ghost_layer_candidates.set_edges(
+        storage.sim_box_edge, sptree_edge, patch_boxes_edge, storage.ghost_layers_candidates_edge);
+    find_ghost_layer_candidates.evaluate();
 
-        std::string s = shambase::format(
-            "{} -> {} : off = {}, test volume = {} -> {}",
-            sender,
-            receiver,
-            build.offset,
-            build.volume_target.lower,
-            build.volume_target.upper);
-        s += shambase::format("\n    found N = {}, ratio = {} %", std::get<1>(resut), ratio);
+    auto idx_in_ghost2 = std::make_shared<shamrock::solvergraph::DDSharedBuffers<u32>>("", "");
 
-        shamlog_debug_ln("AMR interf", s);
-
-        std::unique_ptr<sycl::buffer<u32>> ids
-            = std::make_unique<sycl::buffer<u32>>(shambase::extract_value(std::get<0>(resut)));
-
-        gen_ghost.ghost_id_build_map.add_obj(
-            sender, receiver, InterfaceIdTable{build, std::move(ids), ratio});
-    });
-
-    gen_ghost.ghost_id_build_map.for_each([&](u64 sender, u64 receiver, InterfaceIdTable &build) {
-        storage.ghost_layers_candidates_edge->values.add_obj(
-            sender,
-            receiver,
-            GhostLayerCandidateInfos{
-                i32(build.build_infos.periodicity_index[0]),
-                i32(build.build_infos.periodicity_index[1]),
-                i32(build.build_infos.periodicity_index[2]),
-            });
-    });
-
-    auto sched = shamsys::instance::get_compute_scheduler_ptr();
-
-    gen_ghost.ghost_id_build_map.for_each(
-        [&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-            auto buf = sham::DeviceBuffer<u32>(build_table.ids_interf->size(), sched);
-            buf.copy_from_sycl_buffer(shambase::get_check_ref(build_table.ids_interf));
-            storage.idx_in_ghost->buffers.add_obj(sender, receiver, std::move(buf));
-        });
+    FindGhostLayerIndices<TgridVec> find_ghost_layer_indices(
+        GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic});
+    find_ghost_layer_indices.set_edges(
+        storage.sim_box_edge,
+        storage.source_patches,
+        storage.ghost_layers_candidates_edge,
+        patch_boxes_edge,
+        storage.idx_in_ghost);
+    find_ghost_layer_indices.evaluate();
 }
 
 template<class Tvec, class TgridVec>

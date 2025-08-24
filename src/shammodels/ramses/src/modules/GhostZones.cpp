@@ -153,9 +153,8 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
     using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
     using InterfaceIdTable    = typename GZData::InterfaceIdTable;
 
-    std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>> sptree_edge
-        = std::make_shared<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>>("", "");
-    sptree_edge->patch_tree = std::ref(storage.serial_patch_tree.get());
+    shambase::get_check_ref(storage.sptree_edge).patch_tree
+        = std::ref(storage.serial_patch_tree.get());
 
     std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
         global_patch_boxes_edge
@@ -188,7 +187,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
     find_ghost_layer_candidates.set_edges(
         local_patch_ids,
         storage.sim_box_edge,
-        sptree_edge,
+        storage.sptree_edge,
         global_patch_boxes_edge,
         storage.ghost_layers_candidates_edge);
     find_ghost_layer_candidates.evaluate();

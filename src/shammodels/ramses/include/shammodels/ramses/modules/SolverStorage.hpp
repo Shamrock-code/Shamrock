@@ -62,6 +62,8 @@ namespace shammodels::basegodunov {
 
         using RTree = RadixTree<Tmorton, TgridVec>;
 
+        std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>> sptree_edge;
+
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt_over2;

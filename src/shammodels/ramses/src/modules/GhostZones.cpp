@@ -41,6 +41,7 @@
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
 #include "shamrock/solvergraph/GetFieldRefFromLayer.hpp"
+#include "shamrock/solvergraph/ITDataEdge.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
@@ -156,24 +157,40 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
         = std::make_shared<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>>("", "");
     sptree_edge->patch_tree = std::ref(storage.serial_patch_tree.get());
 
-    std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>> patch_boxes_edge
+    std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
+        global_patch_boxes_edge
         = std::make_shared<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(
-            "patch_boxes", "patch_boxes");
+            "global_patch_boxes", "global_patch_boxes");
     {
         auto &sim_box = scheduler().get_sim_box();
         auto transf   = sim_box.template get_patch_transform<TgridVec>();
 
         scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
             auto pbounds = transf.to_obj_coord(p);
-            patch_boxes_edge->values.add_obj(
+            global_patch_boxes_edge->values.add_obj(
                 p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
+        });
+    }
+
+    std::shared_ptr<shamrock::solvergraph::ITDataEdge<std::vector<u64>>> local_patch_ids
+        = std::make_shared<shamrock::solvergraph::ITDataEdge<std::vector<u64>>>("", "");
+    {
+        auto &sim_box = scheduler().get_sim_box();
+        auto transf   = sim_box.template get_patch_transform<TgridVec>();
+
+        scheduler().for_each_local_patch([&](const shamrock::patch::Patch p) {
+            local_patch_ids->data.push_back(p.id_patch);
         });
     }
 
     FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
         GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic});
     find_ghost_layer_candidates.set_edges(
-        storage.sim_box_edge, sptree_edge, patch_boxes_edge, storage.ghost_layers_candidates_edge);
+        local_patch_ids,
+        storage.sim_box_edge,
+        sptree_edge,
+        global_patch_boxes_edge,
+        storage.ghost_layers_candidates_edge);
     find_ghost_layer_candidates.evaluate();
 
     FindGhostLayerIndices<TgridVec> find_ghost_layer_indices(
@@ -182,7 +199,7 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
         storage.sim_box_edge,
         storage.source_patches,
         storage.ghost_layers_candidates_edge,
-        patch_boxes_edge,
+        global_patch_boxes_edge,
         storage.idx_in_ghost);
     find_ghost_layer_indices.evaluate();
 }

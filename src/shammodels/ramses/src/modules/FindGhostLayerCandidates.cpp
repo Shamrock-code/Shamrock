@@ -26,9 +26,10 @@ void shammodels::basegodunov::modules::FindGhostLayerCandidates<
     auto edges = get_edges();
 
     // inputs
-    auto &sim_box     = edges.sim_box.value;
-    auto &patch_tree  = edges.patch_tree.get_patch_tree();
-    auto &patch_boxes = edges.patch_boxes;
+    auto &ids_to_check = edges.ids_to_check.data;
+    auto &sim_box      = edges.sim_box.value;
+    auto &patch_tree   = edges.patch_tree.get_patch_tree();
+    auto &patch_boxes  = edges.patch_boxes;
 
     using PtNode = typename SerialPatchTree<TgridVec>::PtNode;
 
@@ -42,7 +43,9 @@ void shammodels::basegodunov::modules::FindGhostLayerCandidates<
     // for each repetitions
     for_each_paving_tile(mode, [&](i32 xoff, i32 yoff, i32 zoff) {
         // for all local patches
-        patch_boxes.values.for_each([&](u64 id, const shammath::AABB<TgridVec> &patch_box) {
+        for (auto id : ids_to_check) {
+            auto patch_box = patch_boxes.values.get(id);
+
             // f(patch)
             auto patch_box_mapped = paving.f_aabb(patch_box, xoff, yoff, zoff);
 
@@ -66,7 +69,7 @@ void shammodels::basegodunov::modules::FindGhostLayerCandidates<
                     ghost_layers_candidates.add_obj(
                         id, id_found, GhostLayerCandidateInfos{xoff, yoff, zoff});
                 });
-        });
+        }
     });
 }
 

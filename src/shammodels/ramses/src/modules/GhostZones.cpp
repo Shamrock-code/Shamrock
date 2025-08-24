@@ -145,14 +145,6 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
 
     StackEntry stack_loc{};
 
-    using GZData = GhostZonesData<Tvec, TgridVec>;
-
-    storage.ghost_zone_infos.set(GZData{});
-    GZData &gen_ghost = storage.ghost_zone_infos.get();
-
-    using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
-    using InterfaceIdTable    = typename GZData::InterfaceIdTable;
-
     FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
         GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic});
     find_ghost_layer_candidates.set_edges(

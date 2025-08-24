@@ -171,18 +171,11 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
             });
     }
 
-    std::shared_ptr<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>
-        ghost_layers_candidates_edge2
-        = std::make_shared<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>(
-            "ghost_layers_candidates", "ghost_layers_candidates");
-
     FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
         GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic});
     find_ghost_layer_candidates.set_edges(
         storage.sim_box_edge, sptree_edge, patch_boxes_edge, storage.ghost_layers_candidates_edge);
     find_ghost_layer_candidates.evaluate();
-
-    auto idx_in_ghost2 = std::make_shared<shamrock::solvergraph::DDSharedBuffers<u32>>("", "");
 
     FindGhostLayerIndices<TgridVec> find_ghost_layer_indices(
         GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic});

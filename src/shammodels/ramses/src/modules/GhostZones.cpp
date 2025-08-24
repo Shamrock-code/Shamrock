@@ -163,12 +163,11 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
         auto &sim_box = scheduler().get_sim_box();
         auto transf   = sim_box.template get_patch_transform<TgridVec>();
 
-        scheduler().for_each_patchdata_nonempty(
-            [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
-                auto pbounds = transf.to_obj_coord(p);
-                patch_boxes_edge->values.add_obj(
-                    p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
-            });
+        scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+            auto pbounds = transf.to_obj_coord(p);
+            patch_boxes_edge->values.add_obj(
+                p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
+        });
     }
 
     FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(

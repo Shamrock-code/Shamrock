@@ -150,98 +150,12 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
     storage.ghost_zone_infos.set(GZData{});
     GZData &gen_ghost = storage.ghost_zone_infos.get();
 
-    // get ids of cells that will be on the surface of another patch.
-    // for cells corresponding to fixed boundary they will be generated after the exhange
-    // and appended to the interface list a posteriori
-
-    gen_ghost.ghost_gen_infos
-        = find_interfaces<Tvec, TgridVec>(scheduler(), storage.serial_patch_tree.get());
-
     using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
     using InterfaceIdTable    = typename GZData::InterfaceIdTable;
-
-    // if(logger::log_debug);
-    gen_ghost.ghost_gen_infos.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
-        std::string log;
-
-        log = shambase::format(
-            "{} -> {} : off = {}, {} -> {}",
-            sender,
-            receiver,
-            build.offset,
-            build.volume_target.lower,
-            build.volume_target.upper);
-
-        shamlog_debug_ln("AMRgodunov", log);
-    });
-
-    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-
-    gen_ghost.ghost_gen_infos.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
-        shamrock::patch::PatchDataLayer &src = scheduler().patch_data.get_pdat(sender);
-
-        sycl::buffer<u32> is_in_interf{src.get_obj_cnt()};
-
-        sham::EventList depends_list;
-
-        auto cell_min = src.get_field_buf_ref<TgridVec>(0).get_read_access(depends_list);
-        auto cell_max = src.get_field_buf_ref<TgridVec>(1).get_read_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            sycl::accessor flag{is_in_interf, cgh, sycl::write_only, sycl::no_init};
-
-            shammath::AABB<TgridVec> check_volume = build.volume_target;
-
-            shambase::parallel_for(cgh, src.get_obj_cnt(), "check if in interf", [=](u32 id_a) {
-                flag[id_a] = shammath::AABB<TgridVec>(cell_min[id_a], cell_max[id_a])
-                                 .get_intersect(check_volume)
-                                 .is_not_empty();
-            });
-        });
-
-        src.get_field_buf_ref<TgridVec>(0).complete_event_state(e);
-        src.get_field_buf_ref<TgridVec>(1).complete_event_state(e);
-
-        auto resut = shamalgs::numeric::stream_compact(q.q, is_in_interf, src.get_obj_cnt());
-        f64 ratio  = f64(std::get<1>(resut)) / f64(src.get_obj_cnt());
-
-        std::string s = shambase::format(
-            "{} -> {} : off = {}, test volume = {} -> {}",
-            sender,
-            receiver,
-            build.offset,
-            build.volume_target.lower,
-            build.volume_target.upper);
-        s += shambase::format("\n    found N = {}, ratio = {} %", std::get<1>(resut), ratio);
-
-        shamlog_debug_ln("AMR interf", s);
-
-        std::unique_ptr<sycl::buffer<u32>> ids
-            = std::make_unique<sycl::buffer<u32>>(shambase::extract_value(std::get<0>(resut)));
-
-        gen_ghost.ghost_id_build_map.add_obj(
-            sender, receiver, InterfaceIdTable{build, std::move(ids), ratio});
-    });
-
-    gen_ghost.ghost_id_build_map.for_each([&](u64 sender, u64 receiver, InterfaceIdTable &build) {
-        storage.ghost_layers_candidates_edge->values.add_obj(
-            sender,
-            receiver,
-            GhostLayerCandidateInfos{
-                i32(build.build_infos.periodicity_index[0]),
-                i32(build.build_infos.periodicity_index[1]),
-                i32(build.build_infos.periodicity_index[2]),
-            });
-    });
-
-#if true
-    // Compare the new one with the old one
 
     std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>> sptree_edge
         = std::make_shared<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>>("", "");
     sptree_edge->patch_tree = std::ref(storage.serial_patch_tree.get());
-
-    auto &sim_box_edge = storage.sim_box_edge;
 
     std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
         global_patch_boxes_edge
@@ -269,180 +183,25 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
         });
     }
 
-    std::shared_ptr<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>
-        ghost_layers_candidates_edge2
-        = std::make_shared<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>(
-            "ghost_layers_candidates", "ghost_layers_candidates");
-
     FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
         GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic});
     find_ghost_layer_candidates.set_edges(
         local_patch_ids,
-        sim_box_edge,
+        storage.sim_box_edge,
         sptree_edge,
         global_patch_boxes_edge,
-        ghost_layers_candidates_edge2);
+        storage.ghost_layers_candidates_edge);
     find_ghost_layer_candidates.evaluate();
-
-    {
-        auto &ghost_layers_candidates2 = ghost_layers_candidates_edge2->values;
-        auto &ghost_layers_candidates  = storage.ghost_layers_candidates_edge->values;
-
-        std::vector<std::tuple<u64, u64, GhostLayerCandidateInfos>> ghost_layers_candidates_vec1;
-        std::vector<std::tuple<u64, u64, GhostLayerCandidateInfos>> ghost_layers_candidates_vec2;
-
-        ghost_layers_candidates.for_each(
-            [&](u64 sender, u64 receiver, GhostLayerCandidateInfos &info) {
-                ghost_layers_candidates_vec1.push_back(std::make_tuple(sender, receiver, info));
-            });
-
-        ghost_layers_candidates2.for_each(
-            [&](u64 sender, u64 receiver, GhostLayerCandidateInfos &info) {
-                ghost_layers_candidates_vec2.push_back(std::make_tuple(sender, receiver, info));
-            });
-
-        if (ghost_layers_candidates_vec1.size() != ghost_layers_candidates_vec2.size()) {
-            shambase::throw_with_loc<std::runtime_error>(shambase::format(
-                "ghost_layers_candidates sizes are different, {} != {}",
-                ghost_layers_candidates_vec1.size(),
-                ghost_layers_candidates_vec2.size()));
-        }
-
-        for (u32 i = 0; i < ghost_layers_candidates_vec1.size(); i++) {
-            auto &[sender, receiver, info]    = ghost_layers_candidates_vec1[i];
-            auto &[sender2, receiver2, info2] = ghost_layers_candidates_vec2[i];
-
-            shamlog_normal_ln(
-                "tmp",
-                "case 1 sender = {}, receiver = {}, info = {} {} {}",
-                sender,
-                receiver,
-                info.xoff,
-                info.yoff,
-                info.zoff);
-            shamlog_normal_ln(
-                "tmp",
-                "case 2 sender = {}, receiver = {}, info = {} {} {}",
-                sender2,
-                receiver2,
-                info2.xoff,
-                info2.yoff,
-                info2.zoff);
-
-            if (sender != sender2) {
-                shambase::throw_with_loc<std::runtime_error>("sender are different");
-            }
-
-            if (receiver != receiver2) {
-                shambase::throw_with_loc<std::runtime_error>("receiver are different");
-            }
-
-            if (info.xoff != info2.xoff) {
-                shambase::throw_with_loc<std::runtime_error>("xoff are different");
-            }
-
-            if (info.yoff != info2.yoff) {
-                shambase::throw_with_loc<std::runtime_error>("yoff are different");
-            }
-
-            if (info.zoff != info2.zoff) {
-                shambase::throw_with_loc<std::runtime_error>("zoff are different");
-            }
-        }
-    }
-
-#endif
-
-    auto sched = shamsys::instance::get_compute_scheduler_ptr();
-
-    gen_ghost.ghost_id_build_map.for_each(
-        [&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-            auto buf = sham::DeviceBuffer<u32>(build_table.ids_interf->size(), sched);
-            buf.copy_from_sycl_buffer(shambase::get_check_ref(build_table.ids_interf));
-            storage.idx_in_ghost->buffers.add_obj(sender, receiver, std::move(buf));
-        });
-
-#if true
-
-    auto idx_in_ghost2 = std::make_shared<shamrock::solvergraph::DDSharedBuffers<u32>>("", "");
 
     FindGhostLayerIndices<TgridVec> find_ghost_layer_indices(
         GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic});
     find_ghost_layer_indices.set_edges(
-        sim_box_edge,
+        storage.sim_box_edge,
         storage.source_patches,
         storage.ghost_layers_candidates_edge,
         global_patch_boxes_edge,
-        idx_in_ghost2);
+        storage.idx_in_ghost);
     find_ghost_layer_indices.evaluate();
-
-    {
-        auto &_idx_in_ghost2 = idx_in_ghost2->buffers;
-        auto &_idx_in_ghost  = storage.idx_in_ghost->buffers;
-
-        using vec_t
-            = std::vector<std::tuple<u64, u64, std::reference_wrapper<sham::DeviceBuffer<u32>>>>;
-
-        vec_t ghost_layers_candidates_vec1;
-        vec_t ghost_layers_candidates_vec2;
-
-        _idx_in_ghost.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u32> &idx) {
-            ghost_layers_candidates_vec1.push_back(
-                std::make_tuple(sender, receiver, std::ref(idx)));
-        });
-
-        _idx_in_ghost2.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u32> &idx) {
-            ghost_layers_candidates_vec2.push_back(
-                std::make_tuple(sender, receiver, std::ref(idx)));
-        });
-
-        if (ghost_layers_candidates_vec1.size() != ghost_layers_candidates_vec2.size()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "ghost_layers_candidates sizes are different");
-        }
-
-        for (u32 i = 0; i < ghost_layers_candidates_vec1.size(); i++) {
-            auto &[sender, receiver, idx]    = ghost_layers_candidates_vec1[i];
-            auto &[sender2, receiver2, idx2] = ghost_layers_candidates_vec2[i];
-
-            shamlog_normal_ln(
-                "tmp",
-                shambase::format(
-                    "case 1 sender = {}, receiver = {}, idx = {}",
-                    sender,
-                    receiver,
-                    idx.get().get_size()));
-            shamlog_normal_ln(
-                "tmp",
-                shambase::format(
-                    "case 2 sender = {}, receiver = {}, idx = {}, idx1==idx2 = {}",
-                    sender2,
-                    receiver2,
-                    idx2.get().get_size(),
-                    idx.get().copy_to_stdvec() == idx2.get().copy_to_stdvec()));
-
-            if (sender != sender2) {
-                shambase::throw_with_loc<std::runtime_error>("sender are different");
-            }
-
-            if (receiver != receiver2) {
-                shambase::throw_with_loc<std::runtime_error>("receiver are different");
-            }
-
-            if (idx.get().get_size() != idx2.get().get_size()) {
-                shambase::throw_with_loc<std::runtime_error>("idx sizes are different");
-            }
-
-            std::vector<u32> idx_vec1 = idx.get().copy_to_stdvec();
-            std::vector<u32> idx_vec2 = idx2.get().copy_to_stdvec();
-
-            if (idx_vec1 != idx_vec2) {
-                shambase::throw_with_loc<std::runtime_error>("idx are different");
-            }
-        }
-    }
-
-#endif
 }
 
 template<class Tvec, class TgridVec>

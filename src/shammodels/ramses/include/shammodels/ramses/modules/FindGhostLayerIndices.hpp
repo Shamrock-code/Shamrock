@@ -17,6 +17,7 @@
 
 #include "shammodels/ramses/modules/FindGhostLayerCandidates.hpp"
 #include "shamrock/solvergraph/DDSharedBuffers.hpp"
+#include "shamrock/solvergraph/IPatchDataLayerRefs.hpp"
 
 namespace shammodels::basegodunov::modules {
 

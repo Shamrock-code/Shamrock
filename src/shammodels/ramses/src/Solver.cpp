@@ -34,6 +34,7 @@
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
 #include "shammodels/ramses/modules/ExtractGhostLayer.hpp"
 #include "shammodels/ramses/modules/FindBlockNeigh.hpp"
+#include "shammodels/ramses/modules/FindGhostLayerIndices.hpp"
 #include "shammodels/ramses/modules/FuseGhostLayer.hpp"
 #include "shammodels/ramses/modules/GhostZones.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
@@ -430,6 +431,45 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> solver_sequence;
+
+    { // ghost zone index finder
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> gz_index_finder_sequence;
+        modules::FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
+            modules::GhostLayerGenMode{
+                modules::GhostType::Periodic,
+                modules::GhostType::Periodic,
+                modules::GhostType::Periodic});
+
+        find_ghost_layer_candidates.set_edges(
+            storage.local_patch_ids,
+            storage.sim_box_edge,
+            storage.sptree_edge,
+            storage.global_patch_boxes_edge,
+            storage.ghost_layers_candidates_edge);
+
+        gz_index_finder_sequence.push_back(std::make_shared<decltype(find_ghost_layer_candidates)>(
+            std::move(find_ghost_layer_candidates)));
+
+        modules::FindGhostLayerIndices<TgridVec> find_ghost_layer_indices(
+            modules::GhostLayerGenMode{
+                modules::GhostType::Periodic,
+                modules::GhostType::Periodic,
+                modules::GhostType::Periodic});
+
+        find_ghost_layer_indices.set_edges(
+            storage.sim_box_edge,
+            storage.source_patches,
+            storage.ghost_layers_candidates_edge,
+            storage.global_patch_boxes_edge,
+            storage.idx_in_ghost);
+
+        gz_index_finder_sequence.push_back(std::make_shared<decltype(find_ghost_layer_indices)>(
+            std::move(find_ghost_layer_indices)));
+
+        shamrock::solvergraph::OperationSequence seq(
+            "Ghost zone index finder", std::move(gz_index_finder_sequence));
+        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+    }
 
     { // Ghost zone exchange
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> gz_xchg_sequence;
@@ -1131,9 +1171,32 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::get_check_ref(storage.sim_box_edge).value = shammath::AABB<TgridVec>(bmin, bmax);
     }
 
+    {
+        auto &sim_box = scheduler().get_sim_box();
+        auto transf   = sim_box.template get_patch_transform<TgridVec>();
+
+        storage.global_patch_boxes_edge->values = {};
+        scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+            auto pbounds = transf.to_obj_coord(p);
+            storage.global_patch_boxes_edge->values.add_obj(
+                p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
+        });
+    }
+
+    {
+        auto &sim_box = scheduler().get_sim_box();
+        auto transf   = sim_box.template get_patch_transform<TgridVec>();
+
+        storage.local_patch_ids->data = {};
+        scheduler().for_each_local_patch([&](const shamrock::patch::Patch p) {
+            storage.local_patch_ids->data.push_back(p.id_patch);
+        });
+    }
+
     SerialPatchTree<TgridVec> _sptree = SerialPatchTree<TgridVec>::build(scheduler());
     _sptree.attach_buf();
     storage.serial_patch_tree.set(std::move(_sptree));
+    storage.sptree_edge->patch_tree = std::ref(storage.serial_patch_tree.get());
 
     // ghost zone exchange
     modules::GhostZones gz(context, solver_config, storage);

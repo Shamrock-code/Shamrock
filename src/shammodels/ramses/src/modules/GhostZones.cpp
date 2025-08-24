@@ -153,37 +153,6 @@ void shammodels::basegodunov::modules::GhostZones<Tvec, TgridVec>::build_ghost_c
     using InterfaceBuildInfos = typename GZData::InterfaceBuildInfos;
     using InterfaceIdTable    = typename GZData::InterfaceIdTable;
 
-    shambase::get_check_ref(storage.sptree_edge).patch_tree
-        = std::ref(storage.serial_patch_tree.get());
-
-    {
-        auto &sim_box = scheduler().get_sim_box();
-        auto transf   = sim_box.template get_patch_transform<TgridVec>();
-
-        auto &global_patch_boxes_edge = shambase::get_check_ref(storage.global_patch_boxes_edge);
-
-        global_patch_boxes_edge.values = {};
-
-        scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
-            auto pbounds = transf.to_obj_coord(p);
-            global_patch_boxes_edge.values.add_obj(
-                p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
-        });
-    }
-
-    {
-        auto &sim_box = scheduler().get_sim_box();
-        auto transf   = sim_box.template get_patch_transform<TgridVec>();
-
-        auto &local_patch_ids = shambase::get_check_ref(storage.local_patch_ids);
-
-        local_patch_ids.data = {};
-
-        scheduler().for_each_local_patch([&](const shamrock::patch::Patch p) {
-            local_patch_ids.data.push_back(p.id_patch);
-        });
-    }
-
     FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
         GhostLayerGenMode{GhostType::Periodic, GhostType::Periodic, GhostType::Periodic});
     find_ghost_layer_candidates.set_edges(

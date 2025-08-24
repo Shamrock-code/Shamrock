@@ -1145,6 +1145,45 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     _sptree.attach_buf();
     storage.serial_patch_tree.set(std::move(_sptree));
 
+    ////////////////////////////////////////////////////////////////////////////////
+    /// Edges init for ghost zones
+    ////////////////////////////////////////////////////////////////////////////////
+
+    shambase::get_check_ref(storage.sptree_edge).patch_tree
+        = std::ref(storage.serial_patch_tree.get());
+
+    {
+        auto &sim_box = scheduler().get_sim_box();
+        auto transf   = sim_box.template get_patch_transform<TgridVec>();
+
+        auto &global_patch_boxes_edge = shambase::get_check_ref(storage.global_patch_boxes_edge);
+
+        global_patch_boxes_edge.values = {};
+
+        scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+            auto pbounds = transf.to_obj_coord(p);
+            global_patch_boxes_edge.values.add_obj(
+                p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
+        });
+    }
+
+    {
+        auto &sim_box = scheduler().get_sim_box();
+        auto transf   = sim_box.template get_patch_transform<TgridVec>();
+
+        auto &local_patch_ids = shambase::get_check_ref(storage.local_patch_ids);
+
+        local_patch_ids.data = {};
+
+        scheduler().for_each_local_patch([&](const shamrock::patch::Patch p) {
+            local_patch_ids.data.push_back(p.id_patch);
+        });
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
+
     // ghost zone exchange
     modules::GhostZones gz(context, solver_config, storage);
     gz.build_ghost_cache();

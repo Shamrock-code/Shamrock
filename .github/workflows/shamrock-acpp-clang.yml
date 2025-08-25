@@ -163,4 +163,5 @@ jobs:
 
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
+          PYTHONPATH=../pyinstall_test:$PYTHONPATH \
           python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init('0:0')"

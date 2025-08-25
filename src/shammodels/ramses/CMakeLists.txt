@@ -23,7 +23,6 @@ set(Sources
     src/modules/AnalysisSodTube.cpp
     src/modules/AMRSetup.cpp
     src/modules/ComputeTimeDerivative.cpp
-    src/modules/GhostZones.cpp
     src/modules/AMRSortBlocks.cpp
     src/modules/ComputeCFL.cpp
     src/modules/ConsToPrimGas.cpp

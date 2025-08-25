@@ -43,7 +43,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
 
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
 
-    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
+    shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
 
     auto &merged_xyzh = storage.merged_xyzh.get();
 
@@ -61,8 +61,7 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
     const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-        MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-        PatchDataLayer &mpdat         = merged_patch.pdat;
+        PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
         sham::DeviceBuffer<Tvec> &buf_xyz
             = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);

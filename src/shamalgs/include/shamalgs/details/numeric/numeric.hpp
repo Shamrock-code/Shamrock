@@ -19,6 +19,7 @@
 
 #include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
+#include "shamalgs/collective/reduction.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -433,6 +434,98 @@ namespace shamalgs::numeric {
                     return sum / bin_count;
                 }
             });
+    }
+
+    template<class Tret, class T>
+    sham::DeviceBuffer<Tret> device_histogram_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values,
+        u32 len) {
+
+        auto local_counts = device_histogram<Tret, T>(sched, bin_edges, nbins, values, len);
+
+        // local counts are now the global counts
+        shamalgs::collective::reduce_buffer_in_place_sum(local_counts, MPI_COMM_WORLD);
+
+        return local_counts;
+    }
+
+    template<class T>
+    inline sham::DeviceBuffer<u64> device_histogram_u64_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values,
+        u32 len) {
+        return device_histogram_mpi<u64, T>(sched, bin_edges, nbins, values, len);
+    }
+
+    template<class T>
+    inline sham::DeviceBuffer<u32> device_histogram_u32_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values,
+        u32 len) {
+        return device_histogram_mpi<u32, T>(sched, bin_edges, nbins, values, len);
+    }
+
+    template<class T>
+    sham::DeviceBuffer<T> binned_sum_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges, // r bins
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values, // ie f(r)
+        const sham::DeviceBuffer<T> &keys,   // ie r
+        u32 len) {
+
+        auto local_result = binned_sum(sched, bin_edges, nbins, values, keys, len);
+
+        // local result is now the global result
+        shamalgs::collective::reduce_buffer_in_place_sum(local_result, MPI_COMM_WORLD);
+
+        return local_result;
+    }
+
+    template<class T>
+    sham::DeviceBuffer<T> binned_average_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges, // r bins
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values, // ie f(r)
+        const sham::DeviceBuffer<T> &keys,   // ie r
+        u32 len,
+        const sham::DeviceBuffer<u32> &bin_counts_global) {
+
+        auto bin_sums = binned_sum_mpi(sched, bin_edges, nbins, values, keys, len);
+
+        sham::kernel_call(
+            shambase::get_check_ref(sched).get_queue(),
+            sham::MultiRef{bin_counts_global},
+            sham::MultiRef{bin_sums},
+            nbins,
+            [](u32 i, const u32 *__restrict bin_counts, T *__restrict bin_sums) {
+                bin_sums[i] /= bin_counts[i];
+            });
+
+        return bin_sums;
+    }
+
+    template<class T>
+    sham::DeviceBuffer<T> binned_average_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges, // r bins
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values, // ie f(r)
+        const sham::DeviceBuffer<T> &keys,   // ie r
+        u32 len) {
+
+        auto bin_counts = device_histogram_u32_mpi(sched, bin_edges, nbins, keys, len);
+
+        // call the version with global bin counts pre-computed
+        return binned_average_mpi(sched, bin_edges, nbins, values, keys, len, bin_counts);
     }
 
 } // namespace shamalgs::numeric

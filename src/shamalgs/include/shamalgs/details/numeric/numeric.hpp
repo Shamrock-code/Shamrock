@@ -507,7 +507,12 @@ namespace shamalgs::numeric {
             sham::MultiRef{bin_sums},
             nbins,
             [](u32 i, const u32 *__restrict bin_counts, T *__restrict bin_sums) {
-                bin_sums[i] /= bin_counts[i];
+                u32 bin_count = bin_counts[i];
+                if (bin_count == 0) {
+                    bin_sums[i] = T{};
+                } else {
+                    bin_sums[i] /= bin_count;
+                }
             });
 
         return bin_sums;

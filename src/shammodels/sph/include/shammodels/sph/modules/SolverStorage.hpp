@@ -79,7 +79,8 @@ namespace shammodels::sph {
 
         Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
 
-        Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
+        Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
+            merged_patchdata_ghost;
 
         Component<shamrock::ComputeField<Tscal>> alpha_av_updated;
         Component<shambase::DistributedData<PatchDataField<Tscal>>> alpha_av_ghost;

@@ -913,7 +913,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     });
 
     storage.merged_patchdata_ghost.set(
-        ghost_handle.template merge_native<PatchDataLayer, MergedPatchData>(
+        ghost_handle.template merge_native<PatchDataLayer, PatchDataLayer>(
             std::move(interf_pdat),
             [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                 PatchDataLayer pdat_new(ghost_layout_ptr);
@@ -963,11 +963,10 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
                 pdat_new.check_field_obj_cnt_match();
 
-                return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
+                return pdat_new;
             },
-            [](MergedPatchData &mpdat, PatchDataLayer &pdat_interf) {
-                mpdat.total_elements += pdat_interf.get_obj_cnt();
-                mpdat.pdat.insert_elements(pdat_interf);
+            [](PatchDataLayer &pdat, PatchDataLayer &pdat_interf) {
+                pdat.insert_elements(pdat_interf);
             }));
 
     timer_interf.end();
@@ -1556,12 +1555,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     utility.make_compute_field<Tscal>("vclean_a", 1));
             }
 
-            shambase::DistributedData<MergedPatchData> &mpdat
+            shambase::DistributedData<PatchDataLayer> &mpdats
                 = storage.merged_patchdata_ghost.get();
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-                PatchDataLayer &mpdat         = merged_patch.pdat;
+                PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
                 sham::DeviceBuffer<Tvec> &buf_xyz
                     = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
@@ -1728,11 +1726,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", 1);
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+                PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
                 sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field<Tvec>(iaxyz).get_buf();
                 sham::DeviceBuffer<Tscal> &buf_hpart
-                    = merged_patch.pdat.get_field<Tscal>(ihpart_interf).get_buf();
+                    = mpdat.get_field<Tscal>(ihpart_interf).get_buf();
                 sham::DeviceBuffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
                 sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
 

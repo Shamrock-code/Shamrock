@@ -97,7 +97,7 @@ jobs:
         run: |
           cd build
           source ./activate &&  \
-            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test -DCMAKE_INSTALL_PYTHONDIR=$(pwd)/pyinstall_test
 
       - name: Build & install
         shell: bash # In docker container github action default to sh
@@ -153,5 +153,14 @@ jobs:
         if: matrix.runtest
         run: |
           cd build/install_test/bin
-          ls ..
           LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0
+
+      - name: Try starting Shamrock (installed python libs)
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtest
+        run: |
+          cd build/install_test
+
+          ACPP_VISIBILITY_MASK=omp \
+          ACPP_DEBUG_LEVEL=3 \
+          python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init('0:0')"

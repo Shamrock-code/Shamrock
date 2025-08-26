@@ -14,11 +14,13 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
+#include <stdexcept>
 
 namespace shamalgs::reduction::details {
 
@@ -30,8 +32,9 @@ namespace shamalgs::reduction::details {
         u32 end_id,
         BinaryOp &&bop) {
 
-        if (!(end_id > start_id)) {
-            shambase::throw_unimplemented("whaaaat are you doing");
+        if (start_id >= end_id) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "Empty range not supported for min/max operations");
         }
 
         auto acc = buf1.copy_to_stdvec();
@@ -48,6 +51,11 @@ namespace shamalgs::reduction::details {
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
+
+        // Empty range for sum should return 0
+        if (start_id >= end_id) {
+            return T{};
+        }
 
         return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
             return lhs + rhs;

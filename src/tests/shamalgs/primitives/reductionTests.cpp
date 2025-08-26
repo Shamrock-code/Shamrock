@@ -492,9 +492,17 @@ TestStart(Unittest, "shamalgs/primitives/reduction/edge_cases", test_reduction_e
         for (u32 start = 0; start <= 5; ++start) {
             for (u32 end = start; end <= data.size(); ++end) {
                 if (start == end) {
-                    // Empty range
+                    // Empty range - only test sum (min/max are undefined for empty ranges)
                     i32 sum_result = shamalgs::primitives::sum(sched, buf, start, end);
                     REQUIRE_EQUAL(sum_result, 0);
+
+                    // min should throw exception for empty ranges
+                    REQUIRE_EXCEPTION_THROW(
+                        shamalgs::primitives::min(sched, buf, start, end), std::invalid_argument);
+
+                    // max should throw exception for empty ranges
+                    REQUIRE_EXCEPTION_THROW(
+                        shamalgs::primitives::max(sched, buf, start, end), std::invalid_argument);
                 } else {
                     // Non-empty range
                     i32 sum_result   = shamalgs::primitives::sum(sched, buf, start, end);
@@ -537,5 +545,40 @@ TestStart(Unittest, "shamalgs/primitives/reduction/edge_cases", test_reduction_e
 
         u64 max_result = shamalgs::primitives::max(sched, buf, 0, static_cast<u32>(data.size()));
         REQUIRE_EQUAL(max_result, 18446744073709551615ULL);
+    }
+
+    {
+        // Test empty range exception for min function
+        std::vector<i32> data = {1, 2, 3, 4, 5};
+        sham::DeviceBuffer<i32> buf(data.size(), sched);
+        buf.copy_from_stdvec(data);
+
+        REQUIRE_EXCEPTION_THROW(shamalgs::primitives::min(sched, buf, 2, 2), std::invalid_argument);
+    }
+
+    {
+        // Test empty range exception for max function
+        std::vector<i32> data = {1, 2, 3, 4, 5};
+        sham::DeviceBuffer<i32> buf(data.size(), sched);
+        buf.copy_from_stdvec(data);
+
+        REQUIRE_EXCEPTION_THROW(shamalgs::primitives::max(sched, buf, 3, 3), std::invalid_argument);
+    }
+
+    {
+        // Test invalid range where start_id > end_id for all functions
+        std::vector<i32> data = {1, 2, 3, 4, 5};
+        sham::DeviceBuffer<i32> buf(data.size(), sched);
+        buf.copy_from_stdvec(data);
+
+        // sum should return 0 for invalid ranges (start > end)
+        i32 sum_result = shamalgs::primitives::sum(sched, buf, 4, 2);
+        REQUIRE_EQUAL(sum_result, 0);
+
+        // min should throw exception for invalid ranges
+        REQUIRE_EXCEPTION_THROW(shamalgs::primitives::min(sched, buf, 4, 2), std::invalid_argument);
+
+        // max should throw exception for invalid ranges
+        REQUIRE_EXCEPTION_THROW(shamalgs::primitives::max(sched, buf, 4, 2), std::invalid_argument);
     }
 }

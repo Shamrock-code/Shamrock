@@ -23,6 +23,7 @@
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
+#include <stdexcept>
 
 namespace shamalgs::reduction::details {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
@@ -45,6 +46,11 @@ namespace shamalgs::reduction::details {
         u32 start_id,
         u32 end_id,
         u32 work_group_size) {
+
+        // Empty range for sum should return 0
+        if (start_id >= end_id) {
+            return shambase::VectorProperties<T>::get_zero();
+        }
 
         return reduc_internal<T>(
             sched,
@@ -82,6 +88,10 @@ namespace shamalgs::reduction::details {
         u32 end_id,
         u32 work_group_size) {
 
+        if (start_id >= end_id) {
+            throw std::invalid_argument("Empty range not supported for max operation");
+        }
+
         return reduc_internal<T>(
             sched,
             buf1,
@@ -117,6 +127,10 @@ namespace shamalgs::reduction::details {
         u32 start_id,
         u32 end_id,
         u32 work_group_size) {
+
+        if (start_id >= end_id) {
+            throw std::invalid_argument("Empty range not supported for min operation");
+        }
 
         return reduc_internal<T>(
             sched,

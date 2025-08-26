@@ -42,6 +42,10 @@ namespace shamtree {
     template<class Tmorton, class Tvec, u32 dim>
     struct CLBVHTraverser;
 
+    /// host version of the traverser
+    template<class Tmorton, class Tvec, u32 dim>
+    struct CLBVHTraverserHost;
+
     /// Accessed version of CLBVHObjectIterator
     template<class Tmorton, class Tvec, u32 dim>
     struct CLBVHObjectIteratorAccessed;
@@ -58,6 +62,10 @@ namespace shamtree {
      */
     template<class Tmorton, class Tvec, u32 dim>
     struct CLBVHObjectIterator;
+
+    /// host version of the object iterator
+    template<class Tmorton, class Tvec, u32 dim>
+    struct CLBVHObjectIteratorHost;
 
 } // namespace shamtree
 
@@ -171,6 +179,21 @@ struct shamtree::CLBVHTraverser {
 };
 
 template<class Tmorton, class Tvec, u32 dim>
+struct shamtree::CLBVHTraverserHost {
+    KarrasTreeTraverserHost tree_traverser; ///< Tree traverser
+    std::vector<Tvec> aabb_min;             ///< Minimum of the AABB
+    std::vector<Tvec> aabb_max;             ///< Maximum of the AABB
+
+    /// shorthand for CLBVHObjectIteratorAccessed
+    using acc = CLBVHTraverserAccessed<Tmorton, Tvec, dim>;
+
+    /// get read only accessor
+    inline acc get_read_access() const {
+        return acc{tree_traverser.get_read_access(), aabb_min.data(), aabb_max.data()};
+    }
+};
+
+template<class Tmorton, class Tvec, u32 dim>
 struct shamtree::CLBVHObjectIterator {
     CellIterator cell_iterator;                        ///< Cell iterator
     CLBVHTraverser<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
@@ -187,5 +210,19 @@ struct shamtree::CLBVHObjectIterator {
     inline void complete_event_state(sycl::event e) const {
         cell_iterator.complete_event_state(e);
         tree_traverser.complete_event_state(e);
+    }
+};
+
+template<class Tmorton, class Tvec, u32 dim>
+struct shamtree::CLBVHObjectIteratorHost {
+    CellIteratorHost cell_iterator;                        ///< Cell iterator
+    CLBVHTraverserHost<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
+
+    /// shorthand for CLBVHObjectIteratorAccessed
+    using acc = CLBVHObjectIteratorAccessed<Tmorton, Tvec, dim>;
+
+    /// get read only accessor
+    inline acc get_read_access() const {
+        return acc{cell_iterator.get_read_access(), tree_traverser.get_read_access()};
     }
 };

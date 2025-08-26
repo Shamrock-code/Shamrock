@@ -121,6 +121,13 @@ class shamtree::CompressedLeafBVH {
         return {structure.get_structure_traverser(), aabbs.buf_aabb_min, aabbs.buf_aabb_max};
     }
 
+    inline shamtree::CLBVHTraverserHost<Tmorton, Tvec, dim> get_traverser_host() const {
+        return {
+            structure.get_structure_traverser_host(),
+            aabbs.buf_aabb_min.copy_to_stdvec(),
+            aabbs.buf_aabb_max.copy_to_stdvec()};
+    }
+
     /**
      * @brief Retrieves an iterator for traversing objects in the BVH.
      *
@@ -134,5 +141,9 @@ class shamtree::CompressedLeafBVH {
      */
     inline shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() {
         return {reduced_morton_set.get_cell_iterator(), get_traverser()};
+    }
+
+    inline shamtree::CLBVHObjectIteratorHost<Tmorton, Tvec, dim> get_object_iterator_host() const {
+        return {reduced_morton_set.get_cell_iterator_host(), get_traverser_host()};
     }
 };

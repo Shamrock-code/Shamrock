@@ -18,6 +18,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include <vector>
 
 namespace shamtree {
 
@@ -26,6 +27,9 @@ namespace shamtree {
      * @brief Utility struct to traverse a Karras Radix Tree
      */
     struct KarrasTreeTraverser;
+
+    /// host version of the traverser
+    struct KarrasTreeTraverserHost;
 
     /// read only accessor to buffer data
     struct KarrasTreeTraverserAccessed;
@@ -140,5 +144,24 @@ struct shamtree::KarrasTreeTraverser {
         buf_rchild_id.complete_event_state(e);
         buf_lchild_flag.complete_event_state(e);
         buf_rchild_flag.complete_event_state(e);
+    }
+};
+
+struct shamtree::KarrasTreeTraverserHost {
+
+    std::vector<u32> buf_lchild_id;  ///< ref to left child id buffer
+    std::vector<u32> buf_rchild_id;  ///< ref to right child id buffer
+    std::vector<u8> buf_lchild_flag; ///< ref to left child flag buffer
+    std::vector<u8> buf_rchild_flag; ///< ref to right child flag buffer
+    u32 offset_leaf;                 ///< how many internal nodes before the first leaf ?
+
+    /// get read only accessor
+    inline KarrasTreeTraverserAccessed get_read_access() const {
+        return KarrasTreeTraverserAccessed{
+            buf_lchild_id.data(),
+            buf_rchild_id.data(),
+            buf_lchild_flag.data(),
+            buf_rchild_flag.data(),
+            offset_leaf};
     }
 };

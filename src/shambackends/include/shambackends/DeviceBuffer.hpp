@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/USMPtrHolder.hpp"
@@ -81,7 +82,10 @@ namespace sham {
             auto align = get_alignment(dev_sched);
             if (align) {
                 ret = upgrade_multiple(ret, *align);
+                SHAM_ASSERT(ret % *align == 0);
             }
+
+            SHAM_ASSERT((sz == 0) ? (ret == 0) : (ret >= sz * sizeof(T)));
 
             return ret;
         }
@@ -949,12 +953,17 @@ namespace sham {
 
                 // override old buffer
                 std::swap(new_buf, *this);
-                // *this = std::move(new_buf);
+
             } else {
                 size = new_size;
                 // no need to resize
             }
         }
+
+        /**
+         * @brief Alias for resize(0).
+         */
+        inline void free_alloc() { resize(0); }
 
         /**
          * @brief Expand the buffer by `add_sz` elements.

@@ -23,6 +23,7 @@
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/common/amr/NeighGraphLinkField.hpp"
 #include "shammodels/ramses/GhostZoneData.hpp"
+#include "shammodels/ramses/modules/FindGhostLayerCandidates.hpp"
 #include "shammodels/ramses/modules/NodeBuildTrees.hpp"
 #include "shammodels/ramses/solvegraph/NeighGrapkLinkFieldEdge.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
@@ -31,10 +32,14 @@
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/DDSharedBuffers.hpp"
+#include "shamrock/solvergraph/DDSharedScalar.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
+#include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -56,6 +61,11 @@ namespace shammodels::basegodunov {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         using RTree = RadixTree<Tmorton, TgridVec>;
+
+        std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>> sptree_edge;
+        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
+            global_patch_boxes_edge;
+        std::shared_ptr<shamrock::solvergraph::ITDataEdge<std::vector<u64>>> local_patch_ids;
 
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
@@ -116,10 +126,20 @@ namespace shammodels::basegodunov {
 
         Component<GhostZonesData<Tvec, TgridVec>> ghost_zone_infos;
 
-        Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
 
-        Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
-            merged_patchdata_ghost;
+        std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> source_patches;
+
+        std::shared_ptr<shamrock::solvergraph::PatchDataLayerEdge> merged_patchdata_ghost;
+
+        std::shared_ptr<shamrock::solvergraph::PatchDataLayerDDShared> exchange_gz_edge;
+
+        std::shared_ptr<shamrock::solvergraph::DDSharedScalar<modules::GhostLayerCandidateInfos>>
+            ghost_layers_candidates_edge;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>> sim_box_edge;
+
+        std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghost;
 
         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xp;
         std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xm;

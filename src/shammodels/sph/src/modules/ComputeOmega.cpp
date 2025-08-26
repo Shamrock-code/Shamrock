@@ -52,7 +52,7 @@ void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
 
         sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
         sham::DeviceBuffer<Tvec> &merged_r
-            = storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf();
+            = storage.merged_xyzh.get().get(p.id_patch).template get_field_buf_ref<Tvec>(0);
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 

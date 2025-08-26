@@ -201,6 +201,18 @@ TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) 
             REQUIRE(b[i] == 77);
         }
     }
+
+    a.resize(0);
+    REQUIRE(a.get_size() == 0);
+    REQUIRE(a.get_mem_usage() == 0);
+
+    a.resize(1);
+    REQUIRE(a.get_size() == 1);
+    REQUIRE(a.get_mem_usage() >= sizeof(int));
+
+    a.resize(0);
+    REQUIRE(a.get_size() == 0);
+    REQUIRE(a.get_mem_usage() == 0);
 }
 
 TestStart(

@@ -196,12 +196,12 @@ namespace shamrock::patch {
         void append_subset_to(
             const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat) const;
 
-        inline u32 get_obj_cnt() {
+        inline u32 get_obj_cnt() const {
 
             bool is_empty = fields.empty();
 
             if (!is_empty) {
-                return fields[0].visit_return([](auto &field) {
+                return fields[0].visit_return([](const auto &field) {
                     return field.get_obj_cnt();
                 });
             }

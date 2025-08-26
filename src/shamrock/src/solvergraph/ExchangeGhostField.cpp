@@ -8,39 +8,40 @@
 // -------------------------------------------------------//
 
 /**
- * @file ExchangeGhostLayer.cpp
+ * @file ExchangeGhostField.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Implementation of ghost layer data exchange for distributed hydrodynamics simulations
+ * @brief Implementation of ghost field data exchange for distributed hydrodynamics simulations
  *
- * This file implements the ExchangeGhostLayer class methods, providing the concrete
- * functionality for exchanging ghost layer data between distributed computational
+ * This file implements the ExchangeGhostField template class methods, providing the concrete
+ * functionality for exchanging ghost field data between distributed computational
  * domains using sparse communication and serialization mechanisms.
  */
 
-#include "shammodels/ramses/modules/ExchangeGhostLayer.hpp"
+#include "shamrock/solvergraph/ExchangeGhostField.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
-void shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_evaluate_internal() {
+template<class T>
+void shamrock::solvergraph::ExchangeGhostField<T>::_impl_evaluate_internal() {
     auto edges = get_edges();
 
     // outputs
     auto &ghost_layer                                         = edges.ghost_layer;
     const shamrock::solvergraph::ScalarsEdge<u32> &rank_owner = edges.rank_owner;
 
-    shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> recv_dat;
+    shambase::DistributedDataShared<PatchDataField<T>> recv_dat;
 
-    shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchDataLayer>(
+    shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
         shamsys::instance::get_compute_scheduler_ptr(),
-        std::move(ghost_layer.patchdatas),
+        std::move(ghost_layer.patchdata_fields),
         recv_dat,
         [&](u64 id) {
             return rank_owner.values.get(id);
         },
-        [](shamrock::patch::PatchDataLayer &pdat) {
+        [](PatchDataField<T> &pdat) {
             shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
-            ser.allocate(pdat.serialize_buf_byte_size());
-            pdat.serialize_buf(ser);
+            ser.allocate(pdat.serialize_full_byte_size());
+            pdat.serialize_full(ser);
             return ser.finalize();
         },
         [&](sham::DeviceBuffer<u8> &&buf) {
@@ -48,18 +49,19 @@ void shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_evaluate_intern
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
-            return shamrock::patch::PatchDataLayer::deserialize_buf(ser, ghost_layer_layout);
+            return PatchDataField<T>::deserialize_full(ser);
         });
 
-    ghost_layer.patchdatas = std::move(recv_dat);
+    ghost_layer.patchdata_fields = std::move(recv_dat);
 }
 
-std::string shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_get_tex() {
+template<class T>
+std::string shamrock::solvergraph::ExchangeGhostField<T>::_impl_get_tex() {
     auto rank_owner  = get_ro_edge_base(0).get_tex_symbol();
     auto ghost_layer = get_rw_edge_base(0).get_tex_symbol();
 
     std::string tex = R"tex(
-        Exchange ghost layer data between distributed processes
+        Exchange ghost field data between distributed processes
 
         \begin{align}
         {ghost_layer}_{i \rightarrow \underline{j}} = \text{Sparse comm}({ghost_layer}_{\underline{i} \rightarrow j}) \\
@@ -76,3 +78,17 @@ std::string shammodels::basegodunov::modules::ExchangeGhostLayer::_impl_get_tex(
 
     return tex;
 }
+
+//////////////////////////////////////////////////////////////////////////
+// Explicitly instantiate all classes in XMAC_LIST_ENABLED_FIELD
+//////////////////////////////////////////////////////////////////////////
+
+#ifndef DOXYGEN
+    #define X(a) template class shamrock::solvergraph::ExchangeGhostField<a>;
+XMAC_LIST_ENABLED_FIELD
+    #undef X
+#endif
+
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////

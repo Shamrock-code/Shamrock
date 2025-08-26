@@ -92,6 +92,15 @@ namespace shamrock::patch {
                 value);
         }
 
+        template<class Func>
+        auto visit_return(Func &&f) const {
+            return std::visit(
+                [&](auto &arg) {
+                    return f(arg);
+                },
+                value);
+        }
+
         template<template<class> class Container2, class Func>
         FieldVariant<Container2> convert(Func &&f) {
             return std::visit(

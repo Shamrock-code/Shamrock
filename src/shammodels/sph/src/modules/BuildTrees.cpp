@@ -15,9 +15,11 @@
  *
  */
 
-#include "shammodels/sph/modules/BuildTrees.hpp"
+#include "shambase/logs/loglevels.hpp"
+#include "shambase/numeric_limits.hpp"
 #include "shammath/AABB.hpp"
-#include "shammodels/sph/SPHSolverImpl.hpp"
+#include "shammodels/sph/modules/BuildTrees.hpp"
+#include <cmath>
 
 namespace shammodels::sph::modules {
 
@@ -25,28 +27,36 @@ namespace shammodels::sph::modules {
     void BuildTrees<Tvec, SPHKernel>::build_merged_pos_trees() {
 
         // interface_control
-        using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
-        using GhostHandleCache   = typename GhostHandle::CacheMap;
-        using PreStepMergedField = typename GhostHandle::PreStepMergedField;
+        using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+        using GhostHandleCache = typename GhostHandle::CacheMap;
 
         StackEntry stack_loc{};
-
-        SPHSolverImpl solver(context);
 
         auto &merged_xyzh = storage.merged_xyzh.get();
         auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
         shambase::DistributedData<RTree> trees
-            = merged_xyzh.template map<RTree>([&](u64 id, PreStepMergedField &merged) {
-                  Tvec bmin = merged.bounds.lower;
-                  Tvec bmax = merged.bounds.upper;
+            = merged_xyzh.template map<RTree>([&](u64 id, shamrock::patch::PatchDataLayer &merged) {
+                  PatchDataField<Tvec> &pos = merged.template get_field<Tvec>(0);
+                  Tvec bmax                 = pos.compute_max();
+                  Tvec bmin                 = pos.compute_min();
+
+                  shammath::AABB<Tvec> aabb(bmin, bmax);
+
+                  Tscal infty = std::numeric_limits<Tscal>::infinity();
+
+                  // ensure that no particle is on the boundary of the AABB
+                  // TODO: make this a aabb function at some point
+                  aabb.lower[0] = std::nextafter(aabb.lower[0], -infty);
+                  aabb.lower[1] = std::nextafter(aabb.lower[1], -infty);
+                  aabb.lower[2] = std::nextafter(aabb.lower[2], -infty);
+                  aabb.upper[0] = std::nextafter(aabb.upper[0], infty);
+                  aabb.upper[1] = std::nextafter(aabb.upper[1], infty);
+                  aabb.upper[2] = std::nextafter(aabb.upper[2], infty);
 
                   auto bvh = RTree::make_empty(dev_sched);
                   bvh.rebuild_from_positions(
-                      merged.field_pos.get_buf(),
-                      merged.field_pos.get_obj_cnt(),
-                      shammath::AABB<Tvec>(bmin, bmax),
-                      solver_config.tree_reduction_level);
+                      pos.get_buf(), pos.get_obj_cnt(), aabb, solver_config.tree_reduction_level);
 
                   return bvh;
               });

@@ -150,7 +150,7 @@ namespace shamtree {
                     // Init with the min value of the type
                     T field_val = shambase::VectorProperties<T>::get_min();
 
-                    cell_iter.for_each_in_cell(i, [&](u32 obj_id) {
+                    cell_iter.for_each_in_leaf_cell(i, [&](u32 obj_id) {
                         field_val = sham::max(field_val, field[obj_id]);
                     });
 

@@ -9,6 +9,7 @@
 
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
@@ -16,7 +17,6 @@
 #include "shamtest/shamtest.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include <vector>
-#include "shambackends/fmt_bindings/fmt_defs.hpp"
 
 using Tmorton = u64;
 using Tvec    = f64_3;
@@ -135,7 +135,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
     auto bvh = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
 
     bvh.rebuild_from_positions(partpos_buf, bb, reduction_level);
-    
+
     auto obj_it_host = bvh.get_object_iterator_host();
 
     {
@@ -143,8 +143,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         std::vector<std::pair<u32, u32>> unrolled_interac{};
         dtt_recursive_ref(
             partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interac);
-        logger::raw_ln("node/node :",internal_node_interactions.size());
-        logger::raw_ln("P2P       :",unrolled_interac.size());
+        logger::raw_ln("node/node :", internal_node_interactions.size());
+        logger::raw_ln("P2P       :", unrolled_interac.size());
     }
-
 }

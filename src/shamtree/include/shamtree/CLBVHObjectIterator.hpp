@@ -148,7 +148,7 @@ struct shamtree::CLBVHObjectIteratorAccessed {
             std::forward<Functor1>(traverse_condition_with_aabb),
             [&](u32 node_id) { // on leaf found
                 u32 leaf_id = node_id - tree_traverser.tree_traverser.offset_leaf;
-                cell_iterator.for_each_in_cell(leaf_id, on_found_object);
+                cell_iterator.for_each_in_leaf_cell(leaf_id, on_found_object);
             });
     }
 };

@@ -121,7 +121,7 @@ namespace shamtree {
                     Tvec min = shambase::VectorProperties<Tvec>::get_max();
                     Tvec max = -shambase::VectorProperties<Tvec>::get_max();
 
-                    cell_iter.for_each_in_cell(i, [&](u32 obj_id) {
+                    cell_iter.for_each_in_leaf_cell(i, [&](u32 obj_id) {
                         Tvec r = pos[obj_id];
 
                         min = sham::min(min, r);

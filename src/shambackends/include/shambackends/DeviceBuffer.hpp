@@ -517,9 +517,21 @@ namespace sham {
         inline void
         copy_range(size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
 
-            if (begin >= end) {
+            if (begin > end) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "copy_range: begin >= end\n  begin = {},\n  end = {}", begin, end));
+                    "copy_range: begin > end\n  begin = {},\n  end = {}", begin, end));
+            }
+
+            if (end - begin > dest.get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range: end - begin > dest.get_size()\n  end - begin = {},\n  "
+                    "dest.get_size() = {}",
+                    end - begin,
+                    dest.get_size()));
+            }
+
+            if (begin == end) {
+                return;
             }
 
             size_t len = end - begin;

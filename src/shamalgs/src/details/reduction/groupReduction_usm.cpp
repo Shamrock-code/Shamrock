@@ -89,7 +89,11 @@ namespace shamalgs::reduction::details {
         u32 work_group_size) {
 
         if (start_id >= end_id) {
-            throw std::invalid_argument("Empty range not supported for max operation");
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "Empty range (or invalid range) not supported for max operation\n  start_id = {}, "
+                "end_id = {}",
+                start_id,
+                end_id));
         }
 
         return reduc_internal<T>(
@@ -129,7 +133,11 @@ namespace shamalgs::reduction::details {
         u32 work_group_size) {
 
         if (start_id >= end_id) {
-            throw std::invalid_argument("Empty range not supported for min operation");
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "Empty range (or invalid range) not supported for min operation\n  start_id = {}, "
+                "end_id = {}",
+                start_id,
+                end_id));
         }
 
         return reduc_internal<T>(

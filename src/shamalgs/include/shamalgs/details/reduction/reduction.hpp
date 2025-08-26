@@ -30,15 +30,15 @@
 namespace shamalgs::reduction {
 
     template<class T>
-    [[deprecated("Use USM reduction instead")]]
-    T sum(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
+    [[deprecated("Use primitives::sum instead")]]
+    T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
     template<class T>
-    [[deprecated("Use USM reduction instead")]]
+    [[deprecated("Use primitives::max instead")]]
     T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
     template<class T>
-    [[deprecated("Use USM reduction instead")]]
+    [[deprecated("Use primitives::min instead")]]
     T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
     template<class T>

@@ -15,9 +15,10 @@
  *
  */
 
-#include "shammodels/sph/modules/ExternalForces.hpp"
+#include "shambase/memory.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/Constants.hpp"
@@ -251,7 +252,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
 
-    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
 
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
 
@@ -311,16 +314,15 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
 
                 Tscal acc_mass = gpart_mass * Naccrete;
 
-                sycl::buffer<Tvec> pxyz_acc(Naccrete);
+                sham::DeviceBuffer<Tvec> pxyz_acc(Naccrete, dev_sched);
 
                 sham::EventList depends_list;
 
-                auto vxyz = buf_vxyz.get_read_access(depends_list);
+                auto vxyz        = buf_vxyz.get_read_access(depends_list);
+                auto accretion_p = pxyz_acc.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&, gpart_mass](sycl::handler &cgh) {
                     sycl::accessor id_acc{*std::get<0>(id_list_accrete), cgh, sycl::read_only};
-
-                    sycl::accessor accretion_p{pxyz_acc, cgh, sycl::write_only};
 
                     shambase::parallel_for(
                         cgh, Naccrete, "compute sum momentum accretion", [=](i32 id_a) {
@@ -329,8 +331,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
                 });
 
                 buf_vxyz.complete_event_state(e);
+                pxyz_acc.complete_event_state(e);
 
-                Tvec acc_pxyz = shamalgs::reduction::sum(q.q, pxyz_acc, 0, Naccrete);
+                Tvec acc_pxyz = shamalgs::primitives::sum(dev_sched, pxyz_acc, 0, Naccrete);
 
                 logger::raw_ln("central potential accretion : += ", acc_mass);
 

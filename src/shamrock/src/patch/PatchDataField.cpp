@@ -22,6 +22,7 @@
 #include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/primitives/mock_value.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -485,9 +486,8 @@ T PatchDataField<T>::compute_max() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::max(shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    return shamalgs::primitives::max(dev_sched, buf, 0, obj_cnt * nvar);
 }
 
 template<class T>
@@ -497,9 +497,8 @@ T PatchDataField<T>::compute_min() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::min(shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    return shamalgs::primitives::min(dev_sched, buf, 0, obj_cnt * nvar);
 }
 
 template<class T>
@@ -509,9 +508,8 @@ T PatchDataField<T>::compute_sum() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::sum(shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    return shamalgs::primitives::sum(dev_sched, buf, 0, obj_cnt * nvar);
 }
 
 template<class T>

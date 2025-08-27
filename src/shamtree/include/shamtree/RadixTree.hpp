@@ -16,8 +16,10 @@
  */
 
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shammath/sfc/morton.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtree/RadixTreeField.hpp"
@@ -537,8 +539,16 @@ RadixTree<u_morton, vec3>::get_min_max_cell_side_length() -> std::tuple<coord_t,
         });
     });
 
-    coord_t min = shamalgs::reduction::min(q, min_side_length, 0, len);
-    coord_t max = shamalgs::reduction::max(q, max_side_length, 0, len);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceBuffer<coord_t> tmp_min_side_length(len, dev_sched);
+    sham::DeviceBuffer<coord_t> tmp_max_side_length(len, dev_sched);
+
+    tmp_min_side_length.copy_from_sycl_buffer(min_side_length);
+    tmp_max_side_length.copy_from_sycl_buffer(max_side_length);
+
+    coord_t min = shamalgs::primitives::min(dev_sched, tmp_min_side_length, 0, len);
+    coord_t max = shamalgs::primitives::max(dev_sched, tmp_max_side_length, 0, len);
 
     return {min, max};
 }

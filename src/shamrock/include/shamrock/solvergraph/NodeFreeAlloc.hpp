@@ -16,7 +16,7 @@
  * @date 2023-07-31
  */
 
-#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/IEdge.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 
 namespace shamrock::solvergraph {
@@ -49,7 +49,7 @@ namespace shamrock::solvergraph {
          *
          * @param to_free The node to free
          */
-        inline void set_edges(std::shared_ptr<IDataEdge> to_free) {
+        inline void set_edges(std::shared_ptr<IEdge> to_free) {
             __internal_set_ro_edges({});
             __internal_set_rw_edges({to_free});
         }

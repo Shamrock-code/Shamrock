@@ -129,7 +129,7 @@ struct shamtree::CLBVHObjectIteratorAccessed {
     static constexpr u32 tree_depth_max
         = shamrock::sfc::MortonCodes<Tmorton, 3>::significant_bits + 1;
 
-    CellIterator::acc cell_iterator;                           ///< Cell iterator
+    LeafCellIterator::acc cell_iterator;                           ///< Cell iterator
     CLBVHTraverserAccessed<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
 
     /**
@@ -195,7 +195,7 @@ struct shamtree::CLBVHTraverserHost {
 
 template<class Tmorton, class Tvec, u32 dim>
 struct shamtree::CLBVHObjectIterator {
-    CellIterator cell_iterator;                        ///< Cell iterator
+    LeafCellIterator cell_iterator;                        ///< Cell iterator
     CLBVHTraverser<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
 
     /// shorthand for CLBVHObjectIteratorAccessed
@@ -215,7 +215,7 @@ struct shamtree::CLBVHObjectIterator {
 
 template<class Tmorton, class Tvec, u32 dim>
 struct shamtree::CLBVHObjectIteratorHost {
-    CellIteratorHost cell_iterator;                        ///< Cell iterator
+    LeafCellIteratorHost cell_iterator;                        ///< Cell iterator
     CLBVHTraverserHost<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
 
     /// shorthand for CLBVHObjectIteratorAccessed

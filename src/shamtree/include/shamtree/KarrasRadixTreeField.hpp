@@ -134,7 +134,7 @@ namespace shamtree {
     template<class T>
     KarrasRadixTreeField<T> compute_tree_field_max_field(
         const KarrasRadixTree &tree,
-        const CellIterator &cell_it,
+        const LeafCellIterator &cell_it,
         KarrasRadixTreeField<T> &&recycled_tree_field,
         sham::DeviceBuffer<T> &field) {
 

@@ -58,12 +58,12 @@ namespace shamtree {
               buf_reduc_index_map(std::move(buf_reduc_index_map)),
               reduced_morton_codes(std::move(reduced_morton_codes)) {}
 
-        inline CellIterator get_cell_iterator() {
-            return CellIterator{morton_codes_set.map_morton_id_to_obj_id, buf_reduc_index_map};
+        inline LeafCellIterator get_cell_iterator() {
+            return LeafCellIterator{morton_codes_set.map_morton_id_to_obj_id, buf_reduc_index_map};
         }
 
-        inline CellIteratorHost get_cell_iterator_host() const {
-            return CellIteratorHost{
+        inline LeafCellIteratorHost get_cell_iterator_host() const {
+            return LeafCellIteratorHost{
                 morton_codes_set.map_morton_id_to_obj_id.copy_to_stdvec(),
                 buf_reduc_index_map.copy_to_stdvec()};
         }

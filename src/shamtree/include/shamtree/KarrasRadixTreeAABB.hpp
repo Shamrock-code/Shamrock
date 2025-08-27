@@ -134,7 +134,7 @@ namespace shamtree {
     template<class Tvec>
     KarrasRadixTreeAABB<Tvec> compute_tree_aabb_from_positions(
         const KarrasRadixTree &tree,
-        const CellIterator &cell_it,
+        const LeafCellIterator &cell_it,
         KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
         sham::DeviceBuffer<Tvec> &positions);
 

@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file NeighGrapkLinkFieldEdge.hpp
+ * @file NeighGraphLinkFieldEdge.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -28,14 +28,14 @@
 namespace shammodels::basegodunov::solvergraph {
 
     template<class T>
-    class NeighGrapkLinkFieldEdge : public shamrock::solvergraph::IEdgeNamed {
+    class NeighGraphLinkFieldEdge : public shamrock::solvergraph::IEdgeNamed {
         public:
         using IEdgeNamed::IEdgeNamed;
 
         u32 nvar;
         shambase::DistributedData<modules::NeighGraphLinkField<T>> link_fields;
 
-        NeighGrapkLinkFieldEdge(std::string name, std::string texsymbol, u32 nvar)
+        NeighGraphLinkFieldEdge(std::string name, std::string texsymbol, u32 nvar)
             : IEdgeNamed(name, texsymbol), nvar(nvar) {}
 
         inline void

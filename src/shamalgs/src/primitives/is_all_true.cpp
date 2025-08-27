@@ -14,22 +14,29 @@
  */
 
 #include "shamalgs/primitives/is_all_true.hpp"
+#include "shambase/memory.hpp"
+#include "shamalgs/primitives/reduction.hpp"
+#include "shambackends/kernel_call.hpp"
 
 template<class T>
 bool shamalgs::primitives::is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt) {
 
-    // TODO do it on GPU pleeeaze
-    {
-        auto tmp = buf.copy_to_stdvec();
+    auto dev_sched = buf.get_dev_scheduler_ptr();
 
-        for (u32 i = 0; i < cnt; i++) {
-            if (tmp[i] == 0) {
-                return false;
-            }
-        }
-    }
+    sham::DeviceBuffer<u32> tmp(cnt, dev_sched);
 
-    return true;
+    sham::kernel_call(
+        shambase::get_check_ref(dev_sched).get_queue(),
+        sham::MultiRef{buf},
+        sham::MultiRef{tmp},
+        cnt,
+        [](u32 i, const T *in, u32 *out) {
+            out[i] = in[i] != 0;
+        });
+
+    auto count_true = sum(dev_sched, tmp, 0, cnt);
+
+    return count_true == cnt;
 }
 
 template<class T>

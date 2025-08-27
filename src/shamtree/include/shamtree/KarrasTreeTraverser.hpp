@@ -69,14 +69,12 @@ struct shamtree::KarrasTreeTraverserAccessed {
     /// stack based tree traversal
     template<u32 tree_depth, class Functor1, class Functor2, class Functor3>
     inline void stack_based_traversal(
+        u32 root_node,
         Functor1 &&traverse_condition,
         Functor2 &&on_found_leaf,
         Functor3 &&on_excluded_node) const {
 
         static constexpr u32 _nindex = 4294967295;
-
-        // On a Karras tree, the root is always 0
-        u32 root_node = 0;
 
         // Init the stack state
         std::array<u32, tree_depth> id_stack;
@@ -117,6 +115,23 @@ struct shamtree::KarrasTreeTraverserAccessed {
                 on_excluded_node(current_node_id);
             }
         }
+    }
+
+    /// stack based tree traversal
+    template<u32 tree_depth, class Functor1, class Functor2, class Functor3>
+    inline void stack_based_traversal(
+        Functor1 &&traverse_condition,
+        Functor2 &&on_found_leaf,
+        Functor3 &&on_excluded_node) const {
+
+        // On a Karras tree, the root is always 0
+        u32 root_node = 0;
+
+        stack_based_traversal<tree_depth>(
+            root_node,
+            std::forward<Functor1>(traverse_condition),
+            std::forward<Functor2>(on_found_leaf),
+            std::forward<Functor3>(on_excluded_node));
     }
 };
 

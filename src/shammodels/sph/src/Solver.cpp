@@ -703,7 +703,7 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
 
                 auto ret = shamtree::compute_tree_field_max_field<Tscal>(
                     rtree.structure,
-                    rtree.reduced_morton_set.get_cell_iterator(),
+                    rtree.reduced_morton_set.get_leaf_cell_iterator(),
                     std::move(buf_int),
                     buf);
 

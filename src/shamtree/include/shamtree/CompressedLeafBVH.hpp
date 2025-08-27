@@ -140,10 +140,18 @@ class shamtree::CompressedLeafBVH {
      * @return A CLBVHObjectIterator for object traversal.
      */
     inline shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() {
-        return {reduced_morton_set.get_cell_iterator(), get_traverser()};
+        return {reduced_morton_set.get_leaf_cell_iterator(), get_traverser()};
     }
 
     inline shamtree::CLBVHObjectIteratorHost<Tmorton, Tvec, dim> get_object_iterator_host() const {
-        return {reduced_morton_set.get_cell_iterator_host(), get_traverser_host()};
+        return {reduced_morton_set.get_leaf_cell_iterator_host(), get_traverser_host()};
+    }
+
+    inline CellIterator get_cell_iterator() {
+        return {reduced_morton_set.get_cell_iterator(structure.buf_endrange)};
+    }
+
+    inline CellIteratorHost get_cell_iterator_host() const {
+        return {reduced_morton_set.get_cell_iterator_host(structure.buf_endrange)};
     }
 };

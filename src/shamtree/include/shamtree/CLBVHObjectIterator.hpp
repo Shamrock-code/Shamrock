@@ -107,6 +107,21 @@ struct shamtree::CLBVHTraverserAccessed {
             std::forward<Functor3>(on_excluded_node));
     }
 
+    /// version with root node
+    template<class Functor1, class Functor2, class Functor3>
+    inline void traverse_tree_base(
+        u32 root_node,
+        Functor1 &&traverse_condition,
+        Functor2 &&on_found_leaf,
+        Functor3 &&on_excluded_node) const {
+
+        tree_traverser.template stack_based_traversal<tree_depth_max>(
+            root_node,
+            std::forward<Functor1>(traverse_condition),
+            std::forward<Functor2>(on_found_leaf),
+            std::forward<Functor3>(on_excluded_node));
+    }
+
     template<class Functor1, class Functor2>
     inline void rtree_for(Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_leaf) const {
 
@@ -129,7 +144,7 @@ struct shamtree::CLBVHObjectIteratorAccessed {
     static constexpr u32 tree_depth_max
         = shamrock::sfc::MortonCodes<Tmorton, 3>::significant_bits + 1;
 
-    LeafCellIterator::acc cell_iterator;                           ///< Cell iterator
+    LeafCellIterator::acc cell_iterator;                       ///< Cell iterator
     CLBVHTraverserAccessed<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
 
     /**
@@ -195,7 +210,7 @@ struct shamtree::CLBVHTraverserHost {
 
 template<class Tmorton, class Tvec, u32 dim>
 struct shamtree::CLBVHObjectIterator {
-    LeafCellIterator cell_iterator;                        ///< Cell iterator
+    LeafCellIterator cell_iterator;                    ///< Cell iterator
     CLBVHTraverser<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
 
     /// shorthand for CLBVHObjectIteratorAccessed
@@ -215,7 +230,7 @@ struct shamtree::CLBVHObjectIterator {
 
 template<class Tmorton, class Tvec, u32 dim>
 struct shamtree::CLBVHObjectIteratorHost {
-    LeafCellIteratorHost cell_iterator;                        ///< Cell iterator
+    LeafCellIteratorHost cell_iterator;                    ///< Cell iterator
     CLBVHTraverserHost<Tmorton, Tvec, dim> tree_traverser; ///< Tree traverser
 
     /// shorthand for CLBVHObjectIteratorAccessed

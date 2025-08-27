@@ -18,25 +18,54 @@
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
 
+namespace {
+
+    template<class T>
+    bool is_all_true_host(sham::DeviceBuffer<T> &buf, u32 cnt) {
+
+        {
+            auto tmp = buf.copy_to_stdvec();
+
+            for (u32 i = 0; i < cnt; i++) {
+                if (tmp[i] == 0) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    template<class T>
+    bool is_all_true_device(sham::DeviceBuffer<T> &buf, u32 cnt) {
+
+        if (cnt == 0) {
+            return true;
+        }
+
+        auto dev_sched = buf.get_dev_scheduler_ptr();
+
+        sham::DeviceBuffer<u32> tmp(cnt, dev_sched);
+
+        sham::kernel_call(
+            shambase::get_check_ref(dev_sched).get_queue(),
+            sham::MultiRef{buf},
+            sham::MultiRef{tmp},
+            cnt,
+            [](u32 i, const T *in, u32 *out) {
+                out[i] = in[i] != 0;
+            });
+
+        auto count_true = shamalgs::primitives::sum(dev_sched, tmp, 0, cnt);
+
+        return count_true == cnt;
+    }
+
+} // namespace
+
 template<class T>
 bool shamalgs::primitives::is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt) {
-
-    auto dev_sched = buf.get_dev_scheduler_ptr();
-
-    sham::DeviceBuffer<u32> tmp(cnt, dev_sched);
-
-    sham::kernel_call(
-        shambase::get_check_ref(dev_sched).get_queue(),
-        sham::MultiRef{buf},
-        sham::MultiRef{tmp},
-        cnt,
-        [](u32 i, const T *in, u32 *out) {
-            out[i] = in[i] != 0;
-        });
-
-    auto count_true = sum(dev_sched, tmp, 0, cnt);
-
-    return count_true == cnt;
+    return is_all_true_device(buf, cnt);
 }
 
 template<class T>

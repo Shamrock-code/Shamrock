@@ -17,14 +17,14 @@
  */
 
 #include "shambase/DistributedData.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 
 namespace shamrock::solvergraph {
 
     template<class Tint>
-    class Indexes : public IDataEdgeNamed {
+    class Indexes : public IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
         shambase::DistributedData<Tint> indexes;
 
         inline virtual void free_alloc() { indexes = {}; }

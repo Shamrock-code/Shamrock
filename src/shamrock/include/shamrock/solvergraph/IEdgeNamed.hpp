@@ -10,30 +10,25 @@
 #pragma once
 
 /**
- * @file IDataEdge.hpp
+ * @file IEdgeNamed.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include "shambase/WithUUID.hpp"
-#include "shambase/aliases_int.hpp"
-#include "shamrock/solvergraph/IFreeable.hpp"
-#include <string>
+#include "shamrock/solvergraph/IEdge.hpp"
 
 namespace shamrock::solvergraph {
 
-    class INode;
+    class IEdgeNamed : public IEdge {
+        std::string name;
+        std::string texsymbol;
 
-    class IDataEdge : public shambase::WithUUID<IDataEdge, u64>, public IFreeable {
         public:
-        inline std::string get_label() const { return _impl_get_dot_label(); }
-        inline std::string get_tex_symbol() const { return _impl_get_tex_symbol(); }
+        IEdgeNamed(std::string name, std::string texsymbol) : name(name), texsymbol(texsymbol) {}
 
-        virtual std::string _impl_get_dot_label() const  = 0;
-        virtual std::string _impl_get_tex_symbol() const = 0;
-
-        virtual ~IDataEdge() {}
+        virtual std::string _impl_get_dot_label() const { return name; }
+        virtual std::string _impl_get_tex_symbol() const { return "{" + texsymbol + "}"; }
     };
 
 } // namespace shamrock::solvergraph

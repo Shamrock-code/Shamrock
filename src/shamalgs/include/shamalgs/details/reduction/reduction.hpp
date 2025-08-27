@@ -30,18 +30,6 @@
 namespace shamalgs::reduction {
 
     template<class T>
-    [[deprecated("Use primitives::sum instead")]]
-    T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
-
-    template<class T>
-    [[deprecated("Use primitives::max instead")]]
-    T max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
-
-    template<class T>
-    [[deprecated("Use primitives::min instead")]]
-    T min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
-
-    template<class T>
     shambase::VecComponent<T>
     dot_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 

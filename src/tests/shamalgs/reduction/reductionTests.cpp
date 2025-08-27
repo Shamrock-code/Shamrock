@@ -246,33 +246,6 @@ void unit_test_reduc_min_usm(std::string name, Fct &&red_fct) {
     REQUIRE_FLOAT_EQUAL_CUSTOM_DIST_NAMED(name, dot, 0, 1e-9, sham::abs);
 }
 
-void unit_test_reduc_sum() {
-
-    unit_test_reduc_sum<f64>(
-        "reduction : main (f64)",
-        [](sycl::queue &q, sycl::buffer<f64> &buf1, u32 start_id, u32 end_id) -> f64 {
-            return shamalgs::reduction::sum(q, buf1, start_id, end_id);
-        });
-
-    unit_test_reduc_sum<f32>(
-        "reduction : main (f32)",
-        [](sycl::queue &q, sycl::buffer<f32> &buf1, u32 start_id, u32 end_id) -> f32 {
-            return shamalgs::reduction::sum(q, buf1, start_id, end_id);
-        });
-
-    unit_test_reduc_sum<u32>(
-        "reduction : main (u32)",
-        [](sycl::queue &q, sycl::buffer<u32> &buf1, u32 start_id, u32 end_id) -> u32 {
-            return shamalgs::reduction::sum(q, buf1, start_id, end_id);
-        });
-
-    unit_test_reduc_sum<f64_3>(
-        "reduction : main (f64_3)",
-        [](sycl::queue &q, sycl::buffer<f64_3> &buf1, u32 start_id, u32 end_id) -> f64_3 {
-            return shamalgs::reduction::sum(q, buf1, start_id, end_id);
-        });
-}
-
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 void unit_test_reduc_sum_usm_group_impl() {
 
@@ -619,8 +592,6 @@ void unit_test_reduc_max_usm() {
         });
 }
 
-TestStart(Unittest, "shamalgs/reduction/sum", reduc_kernel_utestsum, 1) { unit_test_reduc_sum(); }
-
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 TestStart(
     Unittest, "shamalgs/reduction/sum(usm:group_impl)", reduc_kernel_utestsum_usm_group_impl, 1) {
@@ -666,64 +637,6 @@ TestStart(Unittest, "shamalgs/reduction/min(usm)", reduc_kernel_utestmin_usm, 1)
 TestStart(Unittest, "shamalgs/reduction/max(usm)", reduc_kernel_utestmax_usm, 1) {
     unit_test_reduc_max_usm();
 }
-
-void unit_test_reduc_min() {
-
-    unit_test_reduc_min<f64>(
-        "reduction : main (f64)",
-        [](sycl::queue &q, sycl::buffer<f64> &buf1, u32 start_id, u32 end_id) -> f64 {
-            return shamalgs::reduction::min(q, buf1, start_id, end_id);
-        });
-
-    unit_test_reduc_min<f32>(
-        "reduction : main (f32)",
-        [](sycl::queue &q, sycl::buffer<f32> &buf1, u32 start_id, u32 end_id) -> f32 {
-            return shamalgs::reduction::min(q, buf1, start_id, end_id);
-        });
-
-    unit_test_reduc_min<u32>(
-        "reduction : main (u32)",
-        [](sycl::queue &q, sycl::buffer<u32> &buf1, u32 start_id, u32 end_id) -> u32 {
-            return shamalgs::reduction::min(q, buf1, start_id, end_id);
-        });
-
-    unit_test_reduc_min<f64_3>(
-        "reduction : main (f64_3)",
-        [](sycl::queue &q, sycl::buffer<f64_3> &buf1, u32 start_id, u32 end_id) -> f64_3 {
-            return shamalgs::reduction::min(q, buf1, start_id, end_id);
-        });
-}
-
-TestStart(Unittest, "shamalgs/reduction/min", reduc_kernel_utestmin, 1) { unit_test_reduc_min(); }
-
-void unit_test_reduc_max() {
-
-    unit_test_reduc_max<f64>(
-        "reduction : main (f64)",
-        [](sycl::queue &q, sycl::buffer<f64> &buf1, u32 start_id, u32 end_id) -> f64 {
-            return shamalgs::reduction::max(q, buf1, start_id, end_id);
-        });
-
-    unit_test_reduc_max<f32>(
-        "reduction : main (f32)",
-        [](sycl::queue &q, sycl::buffer<f32> &buf1, u32 start_id, u32 end_id) -> f32 {
-            return shamalgs::reduction::max(q, buf1, start_id, end_id);
-        });
-
-    unit_test_reduc_max<u32>(
-        "reduction : main (u32)",
-        [](sycl::queue &q, sycl::buffer<u32> &buf1, u32 start_id, u32 end_id) -> u32 {
-            return shamalgs::reduction::max(q, buf1, start_id, end_id);
-        });
-
-    unit_test_reduc_max<f64_3>(
-        "reduction : main (f64_3)",
-        [](sycl::queue &q, sycl::buffer<f64_3> &buf1, u32 start_id, u32 end_id) -> f64_3 {
-            return shamalgs::reduction::max(q, buf1, start_id, end_id);
-        });
-}
-
-TestStart(Unittest, "shamalgs/reduction/max", reduc_kernel_utestmax, 1) { unit_test_reduc_max(); }
 
 //////////////////////////////////////:
 // benchmarks

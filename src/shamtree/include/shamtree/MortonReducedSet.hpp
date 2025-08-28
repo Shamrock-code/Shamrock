@@ -16,6 +16,7 @@
  */
 
 #include "shamtree/CellIterator.hpp"
+#include "shamtree/LeafCellIterator.hpp"
 #include "shamtree/MortonCodeSortedSet.hpp"
 
 namespace shamtree {

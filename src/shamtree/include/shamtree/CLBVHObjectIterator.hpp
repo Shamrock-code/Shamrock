@@ -21,6 +21,7 @@
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/KarrasRadixTree.hpp"
 #include "shamtree/KarrasRadixTreeAABB.hpp"
+#include "shamtree/LeafCellIterator.hpp"
 #include "shamtree/MortonReducedSet.hpp"
 
 namespace shamtree {

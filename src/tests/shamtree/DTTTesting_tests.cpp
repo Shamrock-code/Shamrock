@@ -20,6 +20,7 @@
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include <vector>
+#include <set>
 
 using Tmorton = u64;
 using Tvec    = f64_3;

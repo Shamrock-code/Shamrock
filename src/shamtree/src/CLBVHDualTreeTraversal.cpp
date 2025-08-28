@@ -7,8 +7,6 @@
 //
 // -------------------------------------------------------//
 
-#pragma once
-
 /**
  * @file CLBVHDualTreeTraversal.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)

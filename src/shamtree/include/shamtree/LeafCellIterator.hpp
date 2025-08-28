@@ -59,8 +59,8 @@ namespace shamtree {
      * @brief Iterator over cells of a BinaryTree.
      */
     struct LeafCellIterator {
-        sham::DeviceBuffer<u32> &buf_sort_index_map;  ///< Sort index map buffer
-        sham::DeviceBuffer<u32> &buf_reduc_index_map; ///< Reduction index map buffer
+        const sham::DeviceBuffer<u32> &buf_sort_index_map;  ///< Sort index map buffer
+        const sham::DeviceBuffer<u32> &buf_reduc_index_map; ///< Reduction index map buffer
 
         using acc = LeafCellIteratorAccessed;
 

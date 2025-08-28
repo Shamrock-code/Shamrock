@@ -117,7 +117,7 @@ class shamtree::CompressedLeafBVH {
         u32 compression_level);
 #endif
 
-    inline shamtree::CLBVHTraverser<Tmorton, Tvec, dim> get_traverser() {
+    inline shamtree::CLBVHTraverser<Tmorton, Tvec, dim> get_traverser() const {
         return {structure.get_structure_traverser(), aabbs.buf_aabb_min, aabbs.buf_aabb_max};
     }
 
@@ -139,7 +139,7 @@ class shamtree::CompressedLeafBVH {
      *
      * @return A CLBVHObjectIterator for object traversal.
      */
-    inline shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() {
+    inline shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() const {
         return {reduced_morton_set.get_leaf_cell_iterator(), get_traverser()};
     }
 
@@ -147,7 +147,7 @@ class shamtree::CompressedLeafBVH {
         return {reduced_morton_set.get_leaf_cell_iterator_host(), get_traverser_host()};
     }
 
-    inline CellIterator get_cell_iterator() {
+    inline CellIterator get_cell_iterator() const {
         return {reduced_morton_set.get_cell_iterator(
             structure.buf_endrange, structure.get_internal_cell_count())};
     }

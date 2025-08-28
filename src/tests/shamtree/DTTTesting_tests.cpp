@@ -15,6 +15,7 @@
 #include "shamcomm/logs.hpp"
 #include "shammath/AABB.hpp"
 #include "shamtest/shamtest.hpp"
+#include "shamtree/CellIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include <vector>
 
@@ -114,12 +115,100 @@ inline void dtt_recursive_ref(
     dtt_recursive_internal(0, 0, acc, theta_crit, internal_node_interactions, unrolled_interact);
 }
 
+inline void validate_dtt_results(
+    const sham::DeviceBuffer<Tvec> &positions,
+    const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
+    Tscal theta_crit,
+    std::vector<std::pair<u32, u32>> &internal_node_interactions,
+    std::vector<std::pair<u32, u32>> &unrolled_interact) {
+
+    u32 Npart    = positions.get_size();
+    u32 Npart_sq = Npart * Npart;
+
+    logger::raw_ln(
+        "node/node               :",
+        internal_node_interactions.size(),
+        " ratio :",
+        (double) internal_node_interactions.size() / Npart_sq);
+    logger::raw_ln(
+        "P2P                     :",
+        unrolled_interact.size(),
+        " ratio :",
+        (double) unrolled_interact.size() / Npart_sq);
+
+    shamtree::CellIteratorHost cell_it_bind = bvh.get_cell_iterator_host();
+    auto cell_it                            = cell_it_bind.get_read_access();
+
+    std::vector<std::tuple<u32, u32>> part_interact_node_node{};
+    std::vector<std::tuple<u32, u32>> part_interact_leaf_leaf{};
+
+    for (auto [cell_a, cell_b] : internal_node_interactions) {
+
+        u32 node_a = cell_a;
+        u32 node_b = cell_b;
+
+        cell_it.for_each_in_cell(node_a, [&](u32 id_a) {
+            cell_it.for_each_in_cell(node_b, [&](u32 id_b) {
+                part_interact_node_node.push_back({id_a, id_b});
+            });
+        });
+    }
+
+    for (auto [cell_a, cell_b] : unrolled_interact) {
+
+        u32 leaf_a = cell_a;
+        u32 leaf_b = cell_b;
+
+        cell_it.for_each_in_cell(leaf_a, [&](u32 id_a) {
+            cell_it.for_each_in_cell(leaf_b, [&](u32 id_b) {
+                part_interact_leaf_leaf.push_back({id_a, id_b});
+            });
+        });
+    }
+
+    logger::raw_ln(
+        "part interact node/node :",
+        part_interact_node_node.size(),
+        " ratio :",
+        (double) part_interact_node_node.size() / Npart_sq);
+    logger::raw_ln(
+        "part interact leaf/leaf :",
+        part_interact_leaf_leaf.size(),
+        " ratio :",
+        (double) part_interact_leaf_leaf.size() / Npart_sq);
+
+    logger::raw_ln("sum :", part_interact_node_node.size() + part_interact_leaf_leaf.size());
+
+    std::set<std::pair<u32, u32>> part_interact{};
+    // insert both sets
+    for (auto [id_a, id_b] : part_interact_node_node) {
+        part_interact.insert({id_a, id_b});
+    }
+    for (auto [id_a, id_b] : part_interact_leaf_leaf) {
+        part_interact.insert({id_a, id_b});
+    }
+
+    u32 missing_pairs = 0;
+    // now check that all pairs exist in that list
+    for (u32 i = 0; i < Npart; i++) {
+        for (u32 j = 0; j < Npart; j++) {
+            if (part_interact.find({i, j}) == part_interact.end()) {
+                logger::raw_ln("pair not found :", i, j);
+                missing_pairs++;
+            }
+        }
+    }
+
+    REQUIRE_EQUAL(missing_pairs, 0);
+}
+
 TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();
 
     u32 Npart           = 1000;
+    u32 Npart_sq        = Npart * Npart;
     u32 reduction_level = 0;
     Tscal theta_crit    = 0.5;
 
@@ -140,10 +229,11 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
 
     {
         std::vector<std::pair<u32, u32>> internal_node_interactions{};
-        std::vector<std::pair<u32, u32>> unrolled_interac{};
+        std::vector<std::pair<u32, u32>> unrolled_interact{};
         dtt_recursive_ref(
-            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interac);
-        logger::raw_ln("node/node :", internal_node_interactions.size());
-        logger::raw_ln("P2P       :", unrolled_interac.size());
+            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
+
+        validate_dtt_results(
+            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
     }
 }

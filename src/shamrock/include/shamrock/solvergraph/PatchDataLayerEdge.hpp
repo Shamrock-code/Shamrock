@@ -20,7 +20,7 @@
 #include "shambase/memory.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include <memory>
 

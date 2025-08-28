@@ -25,7 +25,7 @@
 #include "shammodels/ramses/GhostZoneData.hpp"
 #include "shammodels/ramses/modules/FindGhostLayerCandidates.hpp"
 #include "shammodels/ramses/modules/NodeBuildTrees.hpp"
-#include "shammodels/ramses/solvegraph/NeighGrapkLinkFieldEdge.hpp"
+#include "shammodels/ramses/solvegraph/NeighGraphLinkFieldEdge.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shammodels/ramses/solvegraph/TreeEdge.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -141,61 +141,61 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghost;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_yp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_ym;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_zm;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_face_zm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_face_xp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_face_xm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_face_yp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_face_ym;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_face_zp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_face_zm;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> press_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> press_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> press_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> press_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> press_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>> press_face_zm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> press_face_xp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> press_face_xm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> press_face_yp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> press_face_ym;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> press_face_zp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> press_face_zm;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_face_zm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_xp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_xm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_yp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_ym;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zm;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_face_zm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_face_xp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_face_xm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_face_yp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_face_ym;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_face_zp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_face_zm;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rhoe_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rhoe_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rhoe_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rhoe_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rhoe_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rhoe_face_zm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rhoe_face_xp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rhoe_face_xm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rhoe_face_yp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rhoe_face_ym;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rhoe_face_zp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rhoe_face_zm;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_dust_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_dust_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_dust_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_dust_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_dust_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tscal>> flux_rho_dust_face_zm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_dust_face_xp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_dust_face_xm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_dust_face_yp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_dust_face_ym;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_dust_face_zp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_dust_face_zm;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_dust_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_dust_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_dust_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_dust_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_dust_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<Tvec>> flux_rhov_dust_face_zm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_dust_face_xp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_dust_face_xm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_dust_face_yp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_dust_face_ym;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_dust_face_zp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_dust_face_zm;
 
         Component<shamrock::ComputeField<Tscal>> dtrho;
         Component<shamrock::ComputeField<Tvec>> dtrhov;
@@ -210,25 +210,25 @@ namespace shammodels::basegodunov {
         // next time step dust momentum before drag
         Component<shamrock::ComputeField<Tvec>> rhov_d_next_no_drag;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>>
             rho_dust_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>>
             rho_dust_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>>
             rho_dust_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>>
             rho_dust_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>>
             rho_dust_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>>>
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>>
             rho_dust_face_zm;
 
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_xp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_xm;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_yp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_ym;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_zp;
-        std::shared_ptr<solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_zm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_xp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_xm;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_yp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_ym;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_zp;
+        std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_zm;
 
         // time derivative dust density
         Component<shamrock::ComputeField<Tscal>> dtrho_dust;

@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file NeighGrapkLinkFieldEdge.hpp
+ * @file NeighGraphLinkFieldEdge.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -20,7 +20,7 @@
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/common/amr/NeighGraphLinkField.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamtree/RadixTree.hpp"
 #include <functional>
@@ -28,15 +28,15 @@
 namespace shammodels::basegodunov::solvergraph {
 
     template<class T>
-    class NeighGrapkLinkFieldEdge : public shamrock::solvergraph::IDataEdgeNamed {
+    class NeighGraphLinkFieldEdge : public shamrock::solvergraph::IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
 
         u32 nvar;
         shambase::DistributedData<modules::NeighGraphLinkField<T>> link_fields;
 
-        NeighGrapkLinkFieldEdge(std::string name, std::string texsymbol, u32 nvar)
-            : IDataEdgeNamed(name, texsymbol), nvar(nvar) {}
+        NeighGraphLinkFieldEdge(std::string name, std::string texsymbol, u32 nvar)
+            : IEdgeNamed(name, texsymbol), nvar(nvar) {}
 
         inline void
         check_size(const shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>>

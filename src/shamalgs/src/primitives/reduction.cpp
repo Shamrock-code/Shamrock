@@ -8,85 +8,60 @@
 // -------------------------------------------------------//
 
 /**
- * @file fallbackReduction_usm.cpp
+ * @file reduction.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include "shambase/exception.hpp"
-#include "shamalgs/memory.hpp"
-#include "shambackends/math.hpp"
-#include "shambackends/sycl.hpp"
-#include "shambackends/sycl_utils.hpp"
-#include "shambackends/vec.hpp"
-#include <stdexcept>
+#include "shamalgs/primitives/reduction.hpp"
+#include "shamalgs/details/reduction/fallbackReduction.hpp"
+#include "shamalgs/details/reduction/fallbackReduction_usm.hpp"
+#include "shamalgs/details/reduction/groupReduction.hpp"
+#include "shamalgs/details/reduction/groupReduction_usm.hpp"
+#include "shamalgs/details/reduction/reduction.hpp"
+#include "shamalgs/details/reduction/sycl2020reduction.hpp"
 
-namespace shamalgs::reduction::details {
-
-    template<class T, class BinaryOp>
-    T reduc_internal(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
-        u32 start_id,
-        u32 end_id,
-        BinaryOp &&bop) {
-
-        if (start_id >= end_id) {
-            shambase::throw_with_loc<std::invalid_argument>(
-                "Empty range not supported for min/max operations");
-        }
-
-        auto acc = buf1.copy_to_stdvec();
-        T ret    = acc[start_id];
-        for (u32 i = start_id + 1; i < end_id; i++) {
-            ret = bop(ret, acc[i]);
-        }
-        return ret;
-    }
+namespace shamalgs::primitives {
 
     template<class T>
-    T sum_usm_fallback(
+    T sum(
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
-
-        // Empty range for sum should return 0
-        if (start_id >= end_id) {
-            return T{};
-        }
-
-        return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
-            return lhs + rhs;
-        });
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+        return shamalgs::reduction::details::sum_usm_group(sched, buf1, start_id, end_id, 128);
+#else
+        return shamalgs::reduction::details::sum_usm_fallback(sched, buf1, start_id, end_id);
+#endif
     }
 
     template<class T>
-    T max_usm_fallback(
+    T min(
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
-
-        return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
-            return sham::max(lhs, rhs);
-        });
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+        return shamalgs::reduction::details::min_usm_group(sched, buf1, start_id, end_id, 128);
+#else
+        return shamalgs::reduction::details::min_usm_fallback(sched, buf1, start_id, end_id);
+#endif
     }
 
     template<class T>
-    T min_usm_fallback(
+    T max(
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
-
-        return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
-            return sham::min(lhs, rhs);
-        });
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+        return shamalgs::reduction::details::max_usm_group(sched, buf1, start_id, end_id, 128);
+#else
+        return shamalgs::reduction::details::max_usm_fallback(sched, buf1, start_id, end_id);
+#endif
     }
-
-} // namespace shamalgs::reduction::details
 
 #ifndef DOXYGEN
     #define XMAC_TYPES                                                                             \
@@ -112,22 +87,24 @@ namespace shamalgs::reduction::details {
         X(i32_3)
 
     #define X(_arg_)                                                                               \
-        template _arg_ shamalgs::reduction::details::sum_usm_fallback<_arg_>(                      \
+        template _arg_ sum<_arg_>(                                                                 \
             const sham::DeviceScheduler_ptr &sched,                                                \
             sham::DeviceBuffer<_arg_> &buf1,                                                       \
             u32 start_id,                                                                          \
             u32 end_id);                                                                           \
-        template _arg_ shamalgs::reduction::details::max_usm_fallback<_arg_>(                      \
+        template _arg_ min<_arg_>(                                                                 \
             const sham::DeviceScheduler_ptr &sched,                                                \
             sham::DeviceBuffer<_arg_> &buf1,                                                       \
             u32 start_id,                                                                          \
             u32 end_id);                                                                           \
-        template _arg_ shamalgs::reduction::details::min_usm_fallback<_arg_>(                      \
+        template _arg_ max<_arg_>(                                                                 \
             const sham::DeviceScheduler_ptr &sched,                                                \
             sham::DeviceBuffer<_arg_> &buf1,                                                       \
             u32 start_id,                                                                          \
             u32 end_id);
 
-XMAC_TYPES
+    XMAC_TYPES
     #undef X
 #endif
+
+} // namespace shamalgs::primitives

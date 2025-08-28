@@ -17,14 +17,14 @@
  */
 
 #include "shambase/DistributedDataShared.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 
 namespace shamrock::solvergraph {
 
     template<class T>
-    class DDSharedScalar : public IDataEdgeNamed {
+    class DDSharedScalar : public IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
 
         shambase::DistributedDataShared<T> values;
 

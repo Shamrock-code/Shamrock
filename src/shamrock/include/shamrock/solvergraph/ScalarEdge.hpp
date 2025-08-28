@@ -16,14 +16,14 @@
  *
  */
 
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 
 namespace shamrock::solvergraph {
 
     template<class T>
-    class ScalarEdge : public IDataEdgeNamed {
+    class ScalarEdge : public IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
 
         T value;
 

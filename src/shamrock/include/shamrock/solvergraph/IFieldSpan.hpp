@@ -18,7 +18,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataFieldSpan.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 
 namespace shamrock::solvergraph {
 
@@ -35,9 +35,9 @@ namespace shamrock::solvergraph {
      * @tparam T The primitive type of the field
      */
     template<class T>
-    class IFieldSpan : public IDataEdgeNamed {
+    class IFieldSpan : public IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
 
         /// Get the DistributedData of spans attached to the underlying field
         virtual DDPatchDataFieldSpanPointer<T> &get_spans() = 0;

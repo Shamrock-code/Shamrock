@@ -16,6 +16,8 @@
  *
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/memory.hpp"
 #include "shamalgs/details/reduction/group_reduc_utils.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/fmt_bindings/fmt_defs.hpp"
@@ -81,13 +83,18 @@ namespace shamalgs::reduction::details {
         BinaryOp &&binary_op,
         IdentityGetter &&identity_getter) {
 
-        sham::DeviceQueue &q = sched->get_queue();
+        sham::DeviceQueue &q = shambase::get_check_ref(sched).get_queue();
+
+        if (start_id >= end_id) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "Empty (or invalid) range not supported for reduction operation");
+        }
 
         u32 len = end_id - start_id;
 
         sham::DeviceBuffer<T> buf_int(len, sched);
 
-        shamalgs::memory::write_with_offset_into(sched->get_queue(), buf_int, buf1, start_id, len);
+        buf1.copy_range(start_id, end_id, buf_int);
 
         sham::EventList depends_list;
         T *compute_buf = buf_int.get_write_access(depends_list);

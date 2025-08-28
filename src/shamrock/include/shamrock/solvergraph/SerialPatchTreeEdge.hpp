@@ -19,16 +19,16 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/exception.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include <optional>
 #include <stdexcept>
 
 namespace shamrock::solvergraph {
 
     template<class Tvec>
-    class SerialPatchTreeRefEdge : public IDataEdgeNamed {
+    class SerialPatchTreeRefEdge : public IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
 
         /**
          * @brief The patch tree.

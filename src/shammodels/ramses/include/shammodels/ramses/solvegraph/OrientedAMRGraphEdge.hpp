@@ -19,14 +19,14 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 
 namespace shammodels::basegodunov::solvergraph {
 
     template<class Tvec, class TgridVec>
-    class OrientedAMRGraphEdge : public shamrock::solvergraph::IDataEdgeNamed {
+    class OrientedAMRGraphEdge : public shamrock::solvergraph::IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
         using OrientedAMRGraph = modules::OrientedAMRGraph<Tvec, TgridVec>;
 
         shambase::DistributedData<OrientedAMRGraph> graph;

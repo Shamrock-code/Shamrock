@@ -66,7 +66,7 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
         std::move(structure));
 
     auto tree_aabbs = shamtree::compute_tree_aabb_from_positions(
-        tree, reduced_set.get_cell_iterator(), std::move(aabbs), positions);
+        tree, reduced_set.get_leaf_cell_iterator(), std::move(aabbs), positions);
 
     this->reduced_morton_set = std::move(reduced_set);
     this->structure          = std::move(tree);

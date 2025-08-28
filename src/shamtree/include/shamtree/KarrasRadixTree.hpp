@@ -74,6 +74,15 @@ class shamtree::KarrasRadixTree {
             get_internal_cell_count()};
     }
 
+    inline KarrasTreeTraverserHost get_structure_traverser_host() const {
+        return KarrasTreeTraverserHost{
+            buf_lchild_id.copy_to_stdvec(),
+            buf_rchild_id.copy_to_stdvec(),
+            buf_lchild_flag.copy_to_stdvec(),
+            buf_rchild_flag.copy_to_stdvec(),
+            get_internal_cell_count()};
+    }
+
     static inline KarrasRadixTree make_empty(sham::DeviceScheduler_ptr dev_sched) {
         return KarrasRadixTree{
             sham::DeviceBuffer<u32>(0, dev_sched),

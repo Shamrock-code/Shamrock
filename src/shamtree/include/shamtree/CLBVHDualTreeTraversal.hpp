@@ -26,9 +26,9 @@ namespace shamtree {
     };
 
     template<class Tmorton, class Tvec, u32 dim>
-     DTTResult clbvh_dual_tree_traversal(
+    DTTResult clbvh_dual_tree_traversal(
         sham::DeviceScheduler_ptr dev_sched,
         const CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
-        shambase::VecComponent<Tvec> theta_crit) ;
+        shambase::VecComponent<Tvec> theta_crit);
 
 } // namespace shamtree

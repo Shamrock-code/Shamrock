@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file dtt_scan_multipass.hpp
+ * @file dtt_reference.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -108,13 +108,13 @@ namespace shamtree::details {
                 resize_max(has_pushed_p2p, has_pushed_p2p_sz);
                 resize_max(pushed_p2p, pushed_p2p_sz);
 
-                has_pushed_task.fill(0);
-                has_pushed_m2m.fill(0);
-                has_pushed_p2p.fill(0);
+                has_pushed_task.fill(0, has_pushed_task_sz);
+                has_pushed_m2m.fill(0, has_pushed_m2m_sz);
+                has_pushed_p2p.fill(0, has_pushed_p2p_sz);
 
-                task_next.fill({u32_max, u32_max});
-                pushed_m2m.fill({u32_max, u32_max});
-                pushed_p2p.fill({u32_max, u32_max});
+                //task_next.fill({u32_max, u32_max});
+                //pushed_m2m.fill({u32_max, u32_max});
+                //pushed_p2p.fill({u32_max, u32_max});
 
                 using ObjectIterator  = shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim>;
                 ObjectIterator obj_it = bvh.get_object_iterator();
@@ -187,11 +187,11 @@ namespace shamtree::details {
 
                 // exclusive scans
                 sham::DeviceBuffer<u32> scan_task = shamalgs::numeric::scan_exclusive(
-                    dev_sched, has_pushed_task, has_pushed_task.get_size());
+                    dev_sched, has_pushed_task, has_pushed_task_sz);
                 sham::DeviceBuffer<u32> scan_m2m = shamalgs::numeric::scan_exclusive(
-                    dev_sched, has_pushed_m2m, has_pushed_m2m.get_size());
+                    dev_sched, has_pushed_m2m, has_pushed_m2m_sz);
                 sham::DeviceBuffer<u32> scan_p2p = shamalgs::numeric::scan_exclusive(
-                    dev_sched, has_pushed_p2p, has_pushed_p2p.get_size());
+                    dev_sched, has_pushed_p2p, has_pushed_p2p_sz);
 
                 // get the sizes of the result buffers before resizing
                 u32 res_sz_node_node = result.node_node_interactions.get_size();

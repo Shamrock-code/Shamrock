@@ -63,16 +63,16 @@ TestStart(Unittest, "shamtree/CellIterator", test_cell_iterator, 1) {
         // from cell iterator
         std::vector<u32> result{};
 
-        bool is_leaf = bvh_it.tree_traverser.tree_traverser.is_id_leaf(cell_id);
-
-        u32 internal_cell_count = bvh_it.tree_traverser.tree_traverser.offset_leaf;
-
-        cell_it.for_each_in_cell(cell_id, internal_cell_count, is_leaf, [&](u32 obj_id) {
+        cell_it.for_each_in_cell(cell_id, [&](u32 obj_id) {
             result.push_back(obj_id);
         });
 
         // from traverser
         std::vector<u32> result2{};
+
+        bool is_leaf = bvh_it.tree_traverser.tree_traverser.is_id_leaf(cell_id);
+
+        u32 internal_cell_count = bvh_it.tree_traverser.tree_traverser.offset_leaf;
 
         if (is_leaf) {
             u32 leaf_id = cell_id - bvh_it.tree_traverser.tree_traverser.offset_leaf;

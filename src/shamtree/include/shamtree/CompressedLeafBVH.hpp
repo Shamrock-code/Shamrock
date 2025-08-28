@@ -148,10 +148,12 @@ class shamtree::CompressedLeafBVH {
     }
 
     inline CellIterator get_cell_iterator() {
-        return {reduced_morton_set.get_cell_iterator(structure.buf_endrange)};
+        return {reduced_morton_set.get_cell_iterator(
+            structure.buf_endrange, structure.get_internal_cell_count())};
     }
 
     inline CellIteratorHost get_cell_iterator_host() const {
-        return {reduced_morton_set.get_cell_iterator_host(structure.buf_endrange)};
+        return {reduced_morton_set.get_cell_iterator_host(
+            structure.buf_endrange, structure.get_internal_cell_count())};
     }
 };

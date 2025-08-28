@@ -58,6 +58,10 @@ namespace shamtree {
         const u32 *sort_index_map;  ///< Pointer to the sort index map
         const u32 *reduc_index_map; ///< Pointer to the reduction index map
         const u32 *endrange; ///< Id of the other end of the index range corresponding to the cell
+        u32 offset_leaf;     ///< number of internal cells & offset to retrieve the first leaf
+
+        /// is the given id a leaf (Note that if there is no internal cell every node is a leaf)
+        inline bool is_id_leaf(u32 id) const { return id >= offset_leaf; }
 
         /**
          * @brief Iterate over all particles in a given cell.
@@ -70,14 +74,12 @@ namespace shamtree {
          * with each particle's index as argument.
          */
         template<class Functor_iter>
-        inline void for_each_in_cell(
-            const u32 &cell_id,
-            u32 internal_cell_count,
-            bool is_leaf,
-            Functor_iter &&func_it) const {
+        inline void for_each_in_cell(const u32 &cell_id, Functor_iter &&func_it) const {
+
+            bool is_leaf = is_id_leaf(cell_id);
 
             // internal cell id or leaf id (hence the sub internal_cell_count if leaf)
-            u32 cbeg = (is_leaf) ? cell_id - internal_cell_count : cell_id;
+            u32 cbeg = (is_leaf) ? cell_id - offset_leaf : cell_id;
 
             // other end of the cell range (either ourself if leaf, or the endrange if internal)
             // this exclude the upper bound as the +1 must be made after the reordering
@@ -163,6 +165,7 @@ namespace shamtree {
         const sham::DeviceBuffer<u32> &buf_sort_index_map;  ///< Sort index map buffer
         const sham::DeviceBuffer<u32> &buf_reduc_index_map; ///< Reduction index map buffer
         const sham::DeviceBuffer<u32> &buf_endrange;        ///< End range buffer
+        u32 offset_leaf; ///< number of internal cells & offset to retrieve the first leaf
 
         using acc = CellIteratorAccessed;
 
@@ -180,7 +183,8 @@ namespace shamtree {
             return acc{
                 buf_sort_index_map.get_read_access(deps),
                 buf_reduc_index_map.get_read_access(deps),
-                buf_endrange.get_read_access(deps)};
+                buf_endrange.get_read_access(deps),
+                offset_leaf};
         }
 
         /**
@@ -204,12 +208,13 @@ namespace shamtree {
         std::vector<u32> sort_index_map;  ///< Sort index map
         std::vector<u32> reduc_index_map; ///< Reduction index map
         std::vector<u32> endrange;        ///< End range
+        u32 offset_leaf; ///< number of internal cells & offset to retrieve the first leaf
 
         using acc = CellIteratorAccessed;
 
         /// get read only accessor
         inline acc get_read_access() const {
-            return acc{sort_index_map.data(), reduc_index_map.data(), endrange.data()};
+            return acc{sort_index_map.data(), reduc_index_map.data(), endrange.data(), offset_leaf};
         }
     };
 

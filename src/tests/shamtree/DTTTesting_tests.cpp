@@ -200,6 +200,7 @@ inline void validate_dtt_results(
     }
 
     REQUIRE_EQUAL(missing_pairs, 0);
+    REQUIRE_EQUAL(part_interact.size(), Npart_sq);
 }
 
 TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {

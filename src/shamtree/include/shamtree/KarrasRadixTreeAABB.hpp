@@ -23,6 +23,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/KarrasRadixTree.hpp"
+#include "shamtree/LeafCellIterator.hpp"
 #include <functional>
 #include <utility>
 

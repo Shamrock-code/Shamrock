@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file CellIterator.hpp
+ * @file LeafCellIterator.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -23,14 +23,9 @@
 
 namespace shamtree {
 
-    struct CellIteratorAccessed {
+    struct LeafCellIteratorAccessed {
         const u32 *sort_index_map;  ///< Pointer to the sort index map
         const u32 *reduc_index_map; ///< Pointer to the reduction index map
-        const u32 *endrange; ///< Id of the other end of the index range corresponding to the cell
-        u32 offset_leaf;     ///< number of internal cells & offset to retrieve the first leaf
-
-        /// is the given id a leaf (Note that if there is no internal cell every node is a leaf)
-        inline bool is_id_leaf(u32 id) const { return id >= offset_leaf; }
 
         /**
          * @brief Iterate over all particles in a given cell.
@@ -43,25 +38,12 @@ namespace shamtree {
          * with each particle's index as argument.
          */
         template<class Functor_iter>
-        inline void for_each_in_cell(const u32 &cell_id, Functor_iter &&func_it) const {
+        inline void for_each_in_leaf_cell(const u32 &cell_id, Functor_iter &&func_it) const {
+            // loop on particle indexes
+            uint min_ids = reduc_index_map[cell_id];
+            uint max_ids = reduc_index_map[cell_id + 1];
 
-            bool is_leaf = is_id_leaf(cell_id);
-
-            // internal cell id or leaf id (hence the sub internal_cell_count if leaf)
-            u32 cbeg = (is_leaf) ? cell_id - offset_leaf : cell_id;
-
-            // other end of the cell range (either ourself if leaf, or the endrange if internal)
-            // this exclude the upper bound as the +1 must be made after the reordering
-            u32 cend = ((is_leaf) ? cbeg : endrange[cbeg]);
-
-            // tree cell index range
-            uint c1 = sham::min(cbeg, cend);
-            uint c2 = sham::max(cbeg, cend);
-
-            u32 _startrange = reduc_index_map[c1];
-            u32 _endrange   = reduc_index_map[c2 + 1]; // <--- this +1
-
-            for (unsigned int id_s = _startrange; id_s < _endrange; id_s++) {
+            for (unsigned int id_s = min_ids; id_s < max_ids; id_s++) {
 
                 // recover old index before morton sort
                 uint id_b = sort_index_map[id_s];
@@ -76,13 +58,11 @@ namespace shamtree {
      * @class CellIterator
      * @brief Iterator over cells of a BinaryTree.
      */
-    struct CellIterator {
-        const sham::DeviceBuffer<u32> &buf_sort_index_map;  ///< Sort index map buffer
-        const sham::DeviceBuffer<u32> &buf_reduc_index_map; ///< Reduction index map buffer
-        const sham::DeviceBuffer<u32> &buf_endrange;        ///< End range buffer
-        u32 offset_leaf; ///< number of internal cells & offset to retrieve the first leaf
+    struct LeafCellIterator {
+        sham::DeviceBuffer<u32> &buf_sort_index_map;  ///< Sort index map buffer
+        sham::DeviceBuffer<u32> &buf_reduc_index_map; ///< Reduction index map buffer
 
-        using acc = CellIteratorAccessed;
+        using acc = LeafCellIteratorAccessed;
 
         /**
          * @brief Get a read-only access to the buffers.
@@ -97,9 +77,7 @@ namespace shamtree {
         inline acc get_read_access(sham::EventList &deps) const {
             return acc{
                 buf_sort_index_map.get_read_access(deps),
-                buf_reduc_index_map.get_read_access(deps),
-                buf_endrange.get_read_access(deps),
-                offset_leaf};
+                buf_reduc_index_map.get_read_access(deps)};
         }
 
         /**
@@ -114,22 +92,19 @@ namespace shamtree {
         inline void complete_event_state(sycl::event e) const {
             buf_sort_index_map.complete_event_state(e);
             buf_reduc_index_map.complete_event_state(e);
-            buf_endrange.complete_event_state(e);
         }
     };
 
     /// host version of the cell iterator
-    struct CellIteratorHost {
+    struct LeafCellIteratorHost {
         std::vector<u32> sort_index_map;  ///< Sort index map
         std::vector<u32> reduc_index_map; ///< Reduction index map
-        std::vector<u32> endrange;        ///< End range
-        u32 offset_leaf; ///< number of internal cells & offset to retrieve the first leaf
 
-        using acc = CellIteratorAccessed;
+        using acc = LeafCellIteratorAccessed;
 
         /// get read only accessor
         inline acc get_read_access() const {
-            return acc{sort_index_map.data(), reduc_index_map.data(), endrange.data(), offset_leaf};
+            return acc{sort_index_map.data(), reduc_index_map.data()};
         }
     };
 

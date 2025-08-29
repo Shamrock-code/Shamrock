@@ -59,7 +59,7 @@ namespace shamtree {
               buf_reduc_index_map(std::move(buf_reduc_index_map)),
               reduced_morton_codes(std::move(reduced_morton_codes)) {}
 
-        inline LeafCellIterator get_leaf_cell_iterator() {
+        inline LeafCellIterator get_leaf_cell_iterator() const {
             return LeafCellIterator{morton_codes_set.map_morton_id_to_obj_id, buf_reduc_index_map};
         }
 
@@ -70,7 +70,7 @@ namespace shamtree {
         }
 
         inline CellIterator
-        get_cell_iterator(const sham::DeviceBuffer<u32> &buf_endrange, u32 offset_leaf) {
+        get_cell_iterator(const sham::DeviceBuffer<u32> &buf_endrange, u32 offset_leaf) const {
             return CellIterator{
                 morton_codes_set.map_morton_id_to_obj_id,
                 buf_reduc_index_map,

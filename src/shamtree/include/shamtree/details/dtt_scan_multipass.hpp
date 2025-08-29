@@ -90,7 +90,7 @@ namespace shamtree::details {
             while (task_current.get_size() > 0) {
                 u32 task_count = task_current.get_size();
                 logger::raw_ln("task_current.get_size() :", task_count);
-                //logger::raw_ln("task_current :", task_current.copy_to_stdvec());
+                // logger::raw_ln("task_current :", task_current.copy_to_stdvec());
 
                 // resizing BS
                 u32 has_pushed_task_sz = task_count + 1;
@@ -111,9 +111,9 @@ namespace shamtree::details {
                 has_pushed_m2m.fill(0, has_pushed_m2m_sz);
                 has_pushed_p2p.fill(0, has_pushed_p2p_sz);
 
-               // task_next.fill({u32_max, u32_max});
-               // pushed_m2m.fill({u32_max, u32_max});
-               // pushed_p2p.fill({u32_max, u32_max});
+                // task_next.fill({u32_max, u32_max});
+                // pushed_m2m.fill({u32_max, u32_max});
+                // pushed_p2p.fill({u32_max, u32_max});
 
                 using ObjectIterator  = shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim>;
                 ObjectIterator obj_it = bvh.get_object_iterator();
@@ -184,23 +184,26 @@ namespace shamtree::details {
                         }
                     });
 
-                  //logger::raw_ln("has_pushed_task :", has_pushed_task.copy_to_stdvec());
-                  //logger::raw_ln("has_pushed_m2m :", has_pushed_m2m.copy_to_stdvec());
-                  //logger::raw_ln("has_pushed_p2p :", has_pushed_p2p.copy_to_stdvec());
+                // logger::raw_ln("has_pushed_task :", has_pushed_task.copy_to_stdvec());
+                // logger::raw_ln("has_pushed_m2m :", has_pushed_m2m.copy_to_stdvec());
+                // logger::raw_ln("has_pushed_p2p :", has_pushed_p2p.copy_to_stdvec());
 
 // exclusive scans
 #if true
-                shamalgs::primitives::scan_exclusive_sum_in_place(has_pushed_task, has_pushed_task_sz);
-                shamalgs::primitives::scan_exclusive_sum_in_place(has_pushed_m2m, has_pushed_m2m_sz);
-                shamalgs::primitives::scan_exclusive_sum_in_place(has_pushed_p2p, has_pushed_p2p_sz);
+                shamalgs::primitives::scan_exclusive_sum_in_place(
+                    has_pushed_task, has_pushed_task_sz);
+                shamalgs::primitives::scan_exclusive_sum_in_place(
+                    has_pushed_m2m, has_pushed_m2m_sz);
+                shamalgs::primitives::scan_exclusive_sum_in_place(
+                    has_pushed_p2p, has_pushed_p2p_sz);
 
-                //has_pushed_task.resize(has_pushed_task_sz);
-                //has_pushed_m2m.resize(has_pushed_m2m_sz);
-                //has_pushed_p2p.resize(has_pushed_p2p_sz);
+                // has_pushed_task.resize(has_pushed_task_sz);
+                // has_pushed_m2m.resize(has_pushed_m2m_sz);
+                // has_pushed_p2p.resize(has_pushed_p2p_sz);
 
-                //has_pushed_task.synchronize();
-                //has_pushed_m2m.synchronize();
-                //has_pushed_p2p.synchronize();
+                // has_pushed_task.synchronize();
+                // has_pushed_m2m.synchronize();
+                // has_pushed_p2p.synchronize();
 #else
                 has_pushed_task = shamalgs::numeric::scan_exclusive(
                     dev_sched, has_pushed_task, has_pushed_task_sz);
@@ -226,10 +229,10 @@ namespace shamtree::details {
                 u32 count_m2m  = scan_m2m.get_val_at_idx(has_pushed_m2m_sz - 1);
                 u32 count_p2p  = scan_p2p.get_val_at_idx(has_pushed_p2p_sz - 1);
 
-                //logger::raw_ln("count_task :", count_task);
-                //logger::raw_ln("task_count + 1 :", task_count + 1);
-                //logger::raw_ln("count_m2m :", count_m2m);
-                //logger::raw_ln("count_p2p :", count_p2p);
+                // logger::raw_ln("count_task :", count_task);
+                // logger::raw_ln("task_count + 1 :", task_count + 1);
+                // logger::raw_ln("count_m2m :", count_m2m);
+                // logger::raw_ln("count_p2p :", count_p2p);
 
                 // expand the result buffers
                 result.node_node_interactions.expand(count_m2m);
@@ -238,10 +241,8 @@ namespace shamtree::details {
                 // allocate space for the next pass
                 task_current.resize(count_task * 4);
 
-                //logger::raw_ln("task_current :", task_current.copy_to_stdvec());
-                //logger::raw_ln("task_next :", task_next.copy_to_stdvec());
-
-
+                // logger::raw_ln("task_current :", task_current.copy_to_stdvec());
+                // logger::raw_ln("task_next :", task_next.copy_to_stdvec());
 
                 // 4 wide stream compaction
                 sham::kernel_call(
@@ -270,7 +271,7 @@ namespace shamtree::details {
                     q,
                     sham::MultiRef{pushed_m2m, scan_m2m},
                     sham::MultiRef{result.node_node_interactions},
-                    task_count ,
+                    task_count,
                     [res_sz_node_node](
                         u32 i,
                         const u32_2 *__restrict__ pushed_m2m,
@@ -288,7 +289,7 @@ namespace shamtree::details {
                     q,
                     sham::MultiRef{pushed_p2p, scan_p2p},
                     sham::MultiRef{result.leaf_leaf_interactions},
-                    task_count ,
+                    task_count,
                     [res_sz_leaf_leaf](
                         u32 i,
                         const u32_2 *__restrict__ pushed_p2p,
@@ -307,7 +308,7 @@ namespace shamtree::details {
                 // result.node_node_interactions.copy_to_stdvec());
                 // logger::raw_ln("result.leaf_leaf_interactions :",
                 // result.leaf_leaf_interactions.copy_to_stdvec());
-//
+                //
                 // logger::raw_ln("---------------------------------------");
             }
 

@@ -189,9 +189,9 @@ namespace shammath {
         }
 
         inline bool contains(AABB other) const noexcept {
-            //return lower <= other.lower && upper >= other.upper;
+            // return lower <= other.lower && upper >= other.upper;
             return sham::vec_compare_leq(lower, other.lower)
-                && sham::vec_compare_geq(upper, other.upper);
+                   && sham::vec_compare_geq(upper, other.upper);
         }
 
         /**

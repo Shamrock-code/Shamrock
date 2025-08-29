@@ -60,7 +60,7 @@ namespace shamtree::details {
         dtt(sham::DeviceScheduler_ptr dev_sched,
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
             shambase::VecComponent<Tvec> theta_crit) {
-                StackEntry stack_loc{};
+            StackEntry stack_loc{};
 
             auto q = shambase::get_check_ref(dev_sched).get_queue();
 
@@ -88,14 +88,13 @@ namespace shamtree::details {
                     ObjItAcc obj_it,
                     u32 *__restrict__ count_m2m,
                     u32 *__restrict__ count_p2p) {
-
-                    shammath::AABB<Tvec> aabb_i = {
-                        obj_it.tree_traverser.aabb_min[i], obj_it.tree_traverser.aabb_max[i]};
+                    shammath::AABB<Tvec> aabb_i
+                        = {obj_it.tree_traverser.aabb_min[i], obj_it.tree_traverser.aabb_max[i]};
 
                     auto is_kdnode_within_node = [&](u32 node_id) -> bool {
-                        shammath::AABB<Tvec> aabb_node = {
-                            obj_it.tree_traverser.aabb_min[node_id],
-                            obj_it.tree_traverser.aabb_max[node_id]};
+                        shammath::AABB<Tvec> aabb_node
+                            = {obj_it.tree_traverser.aabb_min[node_id],
+                               obj_it.tree_traverser.aabb_max[node_id]};
 
                         return aabb_node.contains(aabb_i);
                     };
@@ -136,16 +135,16 @@ namespace shamtree::details {
                             bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
 
                             if ((child_a_1_leaf || child_a_2_leaf || child_b_1_leaf
-                                 || child_b_2_leaf)
-                                ) {
+                                 || child_b_2_leaf)) {
                                 if (is_a_i_same) {
-                                    count_p2p_i++; // found leaf-leaf interaction so skip child enqueue
+                                    count_p2p_i++; // found leaf-leaf interaction so skip child
+                                                   // enqueue
                                 }
                                 continue;
                             }
 
-                            bool is_node_i_in_left_a  = is_kdnode_within_node( child_a_1);
-                            bool is_node_i_in_right_a = is_kdnode_within_node( child_a_2);
+                            bool is_node_i_in_left_a  = is_kdnode_within_node(child_a_1);
+                            bool is_node_i_in_right_a = is_kdnode_within_node(child_a_2);
 
                             if (is_a_i_same) {
                                 continue;
@@ -175,9 +174,9 @@ namespace shamtree::details {
 
             // scans the counts
             sham::DeviceBuffer<u32> scan_m2m
-                = shamalgs::numeric::scan_exclusive(dev_sched, count_m2m, total_cell_count+1);
+                = shamalgs::numeric::scan_exclusive(dev_sched, count_m2m, total_cell_count + 1);
             sham::DeviceBuffer<u32> scan_p2p
-                = shamalgs::numeric::scan_exclusive(dev_sched, count_p2p, total_cell_count+1);
+                = shamalgs::numeric::scan_exclusive(dev_sched, count_p2p, total_cell_count + 1);
 
             // alloc results buffers
             u32 total_count_m2m = scan_m2m.get_val_at_idx(total_cell_count);
@@ -190,7 +189,7 @@ namespace shamtree::details {
 
             sham::kernel_call(
                 q,
-                sham::MultiRef{obj_it,scan_m2m,scan_p2p},
+                sham::MultiRef{obj_it, scan_m2m, scan_p2p},
                 sham::MultiRef{idx_m2m, idx_p2p},
                 total_cell_count,
                 [theta_crit](
@@ -200,18 +199,16 @@ namespace shamtree::details {
                     const u32 *__restrict__ scan_p2p,
                     u32_2 *__restrict__ idx_m2m,
                     u32_2 *__restrict__ idx_p2p) {
-
                     u32 offset_m2m = scan_m2m[i];
                     u32 offset_p2p = scan_p2p[i];
 
-                    
-                    shammath::AABB<Tvec> aabb_i = {
-                        obj_it.tree_traverser.aabb_min[i], obj_it.tree_traverser.aabb_max[i]};
+                    shammath::AABB<Tvec> aabb_i
+                        = {obj_it.tree_traverser.aabb_min[i], obj_it.tree_traverser.aabb_max[i]};
 
                     auto is_kdnode_within_node = [&](u32 node_id) -> bool {
-                        shammath::AABB<Tvec> aabb_node = {
-                            obj_it.tree_traverser.aabb_min[node_id],
-                            obj_it.tree_traverser.aabb_max[node_id]};
+                        shammath::AABB<Tvec> aabb_node
+                            = {obj_it.tree_traverser.aabb_min[node_id],
+                               obj_it.tree_traverser.aabb_max[node_id]};
 
                         return aabb_node.contains(aabb_i);
                     };
@@ -249,8 +246,7 @@ namespace shamtree::details {
                             bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
 
                             if ((child_a_1_leaf || child_a_2_leaf || child_b_1_leaf
-                                 || child_b_2_leaf)
-                                ) {
+                                 || child_b_2_leaf)) {
                                 if (is_a_i_same) {
                                     idx_p2p[offset_p2p] = {a, b};
                                     offset_p2p++;
@@ -258,8 +254,8 @@ namespace shamtree::details {
                                 continue;
                             }
 
-                            bool is_node_i_in_left_a  = is_kdnode_within_node( child_a_1);
-                            bool is_node_i_in_right_a = is_kdnode_within_node( child_a_2);
+                            bool is_node_i_in_left_a  = is_kdnode_within_node(child_a_1);
+                            bool is_node_i_in_right_a = is_kdnode_within_node(child_a_2);
 
                             if (is_a_i_same) {
                                 continue;

@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/StlContainerConversion.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -50,8 +51,6 @@ inline void validate_dtt_results(
         unrolled_interact.size(),
         " ratio :",
         (double) unrolled_interact.size() / Npart_sq);
-
-    return;
 
     shamtree::CellIteratorHost cell_it_bind = bvh.get_cell_iterator_host();
     auto cell_it                            = cell_it_bind.get_read_access();
@@ -125,9 +124,9 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();
 
-    u32 Npart           = 1000000;
+    u32 Npart           = 1000;
     u32 Npart_sq        = Npart * Npart;
-    u32 reduction_level = 3;
+    u32 reduction_level = 1;
     Tscal theta_crit    = 0.5;
 
     shammath::AABB<Tvec> bb = shammath::AABB<Tvec>({-1, -1, -1}, {1, 1, 1});
@@ -145,6 +144,28 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
 
     std::vector<u32_2> m2m_ref{};
     std::vector<u32_2> p2p_ref{};
+
+    auto equals_unordered = [](const std::vector<u32_2> &a, const std::vector<u32_2> &b) -> bool {
+        if (a.size() != b.size()) {
+            return false;
+        }
+
+        for (u32 i = 0; i < a.size(); i++) {
+            u32_2 a_i  = a[i];
+            bool found = false;
+            for (u32 j = 0; j < b.size(); j++) {
+                if (sham::equals(a_i, b[j])) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+
+        return true;
+    };
 
     {
         shambase::Timer timer;
@@ -180,10 +201,9 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         validate_dtt_results(
             partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
 
-        // REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, sham::equals);
-        // REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, sham::equals);
+        REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
+        REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
     }
-
 
     {
         shambase::Timer timer;
@@ -200,10 +220,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         validate_dtt_results(
             partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
 
-        // REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, sham::equals);
-        // REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, sham::equals);
+        REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
+        REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
     }
-
 }
-
-

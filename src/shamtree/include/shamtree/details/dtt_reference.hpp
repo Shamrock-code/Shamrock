@@ -123,7 +123,7 @@ namespace shamtree::details {
         dtt(sham::DeviceScheduler_ptr dev_sched,
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
             shambase::VecComponent<Tvec> theta_crit) {
-                StackEntry stack_loc{};
+            StackEntry stack_loc{};
 
             std::vector<u32_2> part_interact_node_node{};
             std::vector<u32_2> part_interact_leaf_leaf{};

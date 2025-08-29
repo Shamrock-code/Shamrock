@@ -36,6 +36,7 @@ set(Sources
         src/primitives/is_all_true.cpp
         src/primitives/mock_value.cpp
         src/primitives/reduction.cpp
+        src/primitives/scan_exclusive_sum_in_place.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

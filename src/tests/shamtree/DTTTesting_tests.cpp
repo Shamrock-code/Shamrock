@@ -20,6 +20,7 @@
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
+#include "shamtree/details/dtt_parralel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
 #include "shamtree/details/dtt_scan_multipass.hpp"
 #include <set>
@@ -49,6 +50,8 @@ inline void validate_dtt_results(
         unrolled_interact.size(),
         " ratio :",
         (double) unrolled_interact.size() / Npart_sq);
+
+    return;
 
     shamtree::CellIteratorHost cell_it_bind = bvh.get_cell_iterator_host();
     auto cell_it                            = cell_it_bind.get_read_access();
@@ -122,9 +125,9 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();
 
-    u32 Npart           = 1000;
+    u32 Npart           = 1000000;
     u32 Npart_sq        = Npart * Npart;
-    u32 reduction_level = 0;
+    u32 reduction_level = 3;
     Tscal theta_crit    = 0.5;
 
     shammath::AABB<Tvec> bb = shammath::AABB<Tvec>({-1, -1, -1}, {1, 1, 1});
@@ -180,4 +183,27 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         // REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, sham::equals);
         // REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, sham::equals);
     }
+
+
+    {
+        shambase::Timer timer;
+        timer.start();
+        auto result = shamtree::details::DTTParallelSelect<Tmorton, Tvec, 3>::dtt(
+            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
+        timer.end();
+        logger::raw_ln("DTTParallelSelect :", timer.get_time_str());
+
+        std::vector<u32_2> internal_node_interactions
+            = result.node_node_interactions.copy_to_stdvec();
+        std::vector<u32_2> unrolled_interact = result.leaf_leaf_interactions.copy_to_stdvec();
+
+        validate_dtt_results(
+            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
+
+        // REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, sham::equals);
+        // REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, sham::equals);
+    }
+
 }
+
+

@@ -188,6 +188,12 @@ namespace shammath {
             return {sham::max(lower, other.lower), sham::min(upper, other.upper)};
         }
 
+        inline bool contains(AABB other) const noexcept {
+            //return lower <= other.lower && upper >= other.upper;
+            return sham::vec_compare_leq(lower, other.lower)
+                && sham::vec_compare_geq(upper, other.upper);
+        }
+
         /**
          * @brief Checks if the AABB is non-empty.
          *

@@ -512,17 +512,13 @@ namespace shamalgs::numeric::details {
         return ret_buf;
     }
 
-
-
-
-
     template<class T, u32 group_size>
     class KernelExclusiveSumAtomicSyncDecoupled_v5_USM_IN_PLACE;
 
     template<class T, u32 group_size>
     void exclusive_sum_atomic_decoupled_v5_usm_in_place(
-         sham::DeviceBuffer<T, sham::device> &buf1, u32 len) {
-            StackEntry stack_loc{};
+        sham::DeviceBuffer<T, sham::device> &buf1, u32 len) {
+        StackEntry stack_loc{};
 
         u32 group_cnt = shambase::group_count(len, group_size);
 
@@ -532,28 +528,28 @@ namespace shamalgs::numeric::details {
         auto dev_sched = buf1.get_dev_scheduler_ptr();
 
         // group aggregates
-        sham::DeviceBuffer<typename ScanTile<T>::PackStorage>tile_state(group_cnt, dev_sched);
+        sham::DeviceBuffer<typename ScanTile<T>::PackStorage> tile_state(group_cnt, dev_sched);
         // sycl::buffer<typename ScanTile<T>::PackStorage> tile_state(group_cnt);
 
         constexpr T STATE_X = 0;
         constexpr T STATE_A = 1;
         constexpr T STATE_P = 2;
 
-        //shamalgs::memory::buf_fill_discard(
-        //    dev_sched->get_queue().q, tile_state, sham::pack32(STATE_X, T(0)));
-            tile_state.fill(sham::pack32(STATE_X, T(0)));
+        // shamalgs::memory::buf_fill_discard(
+        //     dev_sched->get_queue().q, tile_state, sham::pack32(STATE_X, T(0)));
+        tile_state.fill(sham::pack32(STATE_X, T(0)));
 
         atomic::DynamicIdGenerator<i32, group_size> id_gen(dev_sched->get_queue().q);
 
         sham::EventList depends_list;
-         T *in_out_ptr = buf1.get_write_access(depends_list);
-         auto acc_tile_state = tile_state.get_write_access(depends_list);
+        T *in_out_ptr       = buf1.get_write_access(depends_list);
+        auto acc_tile_state = tile_state.get_write_access(depends_list);
 
         sycl::event e = dev_sched->get_queue().submit(
             depends_list, [&, group_cnt, len, in_out_ptr](sycl::handler &cgh) {
                 auto dyn_id = id_gen.get_access(cgh);
 
-                //sycl::accessor acc_tile_state{tile_state, cgh, sycl::read_write};
+                // sycl::accessor acc_tile_state{tile_state, cgh, sycl::read_write};
 
                 sycl::local_accessor<T, 1> local_scan_buf{1, cgh};
                 sycl::local_accessor<T, 1> local_sum{1, cgh};
@@ -564,7 +560,8 @@ namespace shamalgs::numeric::details {
                     sycl::memory_scope_device,
                     sycl::access::address_space::global_space>;
 
-                cgh.parallel_for<KernelExclusiveSumAtomicSyncDecoupled_v5_USM_IN_PLACE<T, group_size>>(
+                cgh.parallel_for<
+                    KernelExclusiveSumAtomicSyncDecoupled_v5_USM_IN_PLACE<T, group_size>>(
                     sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
                         u32 local_id = id.get_local_id(0);
 
@@ -576,8 +573,7 @@ namespace shamalgs::numeric::details {
                         // u32 global_id = group_tile_id * group_size + local_id;
 
                         // load from global buffer
-                        T local_val
-                            = ( global_id < len) ? in_out_ptr[global_id] : 0;
+                        T local_val = (global_id < len) ? in_out_ptr[global_id] : 0;
 
                         // local scan in the group
                         // the local sum will be in local id `group_size - 1`
@@ -586,7 +582,7 @@ namespace shamalgs::numeric::details {
 
                         // can be removed if i change the index in the look back ?
                         if (local_id == group_size - 1) {
-                            local_scan_buf[0] = local_scan+ local_val;
+                            local_scan_buf[0] = local_scan + local_val;
                         }
 
                         // sync group
@@ -640,8 +636,6 @@ namespace shamalgs::numeric::details {
         buf1.complete_event_state(e);
         tile_state.complete_event_state(e);
     }
-
-
 
     template<class T, u32 group_size, u32 thread_counts>
     class KernelExclusiveSumAtomicSyncDecoupled_v6;

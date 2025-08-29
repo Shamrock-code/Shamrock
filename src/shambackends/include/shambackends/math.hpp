@@ -186,47 +186,6 @@ namespace sham {
                && (v.sD() >= w.sD()) && (v.sE() >= w.sE()) && (v.sF() >= w.sF());
     }
 
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // vec_compare_leq
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    template<class T>
-    inline constexpr bool vec_compare_leq(T a, T b) {
-        return a <= b;
-    }
-
-    template<class T, int n, std::enable_if_t<n == 2, int> = 0>
-    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
-        return (v.x() <= w.x()) && (v.y() <= w.y());
-    }
-
-    template<class T, int n, std::enable_if_t<n == 3, int> = 0>
-    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
-        return (v.x() <= w.x()) && (v.y() <= w.y()) && (v.z() <= w.z());
-    }
-
-    template<class T, int n, std::enable_if_t<n == 4, int> = 0>
-    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
-        return (v.x() <= w.x()) && (v.y() <= w.y()) && (v.z() <= w.z()) && (v.w() <= w.w());
-    }
-
-    template<class T, int n, std::enable_if_t<n == 8, int> = 0>
-    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
-        return (v.s0() <= w.s0()) && (v.s1() <= w.s1()) && (v.s2() <= w.s2()) && (v.s3() <= w.s3())
-               && (v.s4() <= w.s4()) && (v.s5() <= w.s5()) && (v.s6() <= w.s6())
-               && (v.s7() <= w.s7());
-    }
-
-    template<class T, int n, std::enable_if_t<n == 16, int> = 0>
-    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
-        return (v.s0() <= w.s0()) && (v.s1() <= w.s1()) && (v.s2() <= w.s2()) && (v.s3() <= w.s3())
-               && (v.s4() <= w.s4()) && (v.s5() <= w.s5()) && (v.s6() <= w.s6())
-               && (v.s7() <= w.s7()) && (v.s8() <= w.s8()) && (v.s9() <= w.s9())
-               && (v.sA() <= w.sA()) && (v.sB() <= w.sB()) && (v.sC() <= w.sC())
-               && (v.sD() <= w.sD()) && (v.sE() <= w.sE()) && (v.sF() <= w.sF());
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // vec_compare_g
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -386,52 +345,6 @@ namespace sham {
     }
 
 } // namespace sham
-
-template<class T, int n>
-inline constexpr bool operator>=(const sycl::vec<T, n> &lhs, const sycl::vec<T, n> &rhs) {
-    if constexpr (n == 2) {
-        return (lhs.x() >= rhs.x()) && (lhs.y() >= rhs.y());
-    } else if constexpr (n == 3) {
-        return (lhs.x() >= rhs.x()) && (lhs.y() >= rhs.y()) && (lhs.z() >= rhs.z());
-    } else if constexpr (n == 4) {
-        return (lhs.x() >= rhs.x()) && (lhs.y() >= rhs.y()) && (lhs.z() >= rhs.z())
-               && (lhs.w() >= rhs.w());
-    } else if constexpr (n == 8) {
-        return (lhs.s0() >= rhs.s0()) && (lhs.s1() >= rhs.s1()) && (lhs.s2() >= rhs.s2())
-               && (lhs.s3() >= rhs.s3()) && (lhs.s4() >= rhs.s4()) && (lhs.s5() >= rhs.s5())
-               && (lhs.s6() >= rhs.s6()) && (lhs.s7() >= rhs.s7());
-    } else if constexpr (n == 16) {
-        return (lhs.s0() >= rhs.s0()) && (lhs.s1() >= rhs.s1()) && (lhs.s2() >= rhs.s2())
-               && (lhs.s3() >= rhs.s3()) && (lhs.s4() >= rhs.s4()) && (lhs.s5() >= rhs.s5())
-               && (lhs.s6() >= rhs.s6()) && (lhs.s7() >= rhs.s7()) && (lhs.s8() >= rhs.s8())
-               && (lhs.s9() >= rhs.s9()) && (lhs.sA() >= rhs.sA()) && (lhs.sB() >= rhs.sB())
-               && (lhs.sC() >= rhs.sC()) && (lhs.sD() >= rhs.sD()) && (lhs.sE() >= rhs.sE())
-               && (lhs.sF() >= rhs.sF());
-    }
-}
-
-template<class T, int n>
-inline constexpr bool operator<=(const sycl::vec<T, n> &lhs, const sycl::vec<T, n> &rhs) {
-    if constexpr (n == 2) {
-        return (lhs.x() <= rhs.x()) && (lhs.y() <= rhs.y());
-    } else if constexpr (n == 3) {
-        return (lhs.x() <= rhs.x()) && (lhs.y() <= rhs.y()) && (lhs.z() <= rhs.z());
-    } else if constexpr (n == 4) {
-        return (lhs.x() <= rhs.x()) && (lhs.y() <= rhs.y()) && (lhs.z() <= rhs.z())
-               && (lhs.w() <= rhs.w());
-    } else if constexpr (n == 8) {
-        return (lhs.s0() <= rhs.s0()) && (lhs.s1() <= rhs.s1()) && (lhs.s2() <= rhs.s2())
-               && (lhs.s3() <= rhs.s3()) && (lhs.s4() <= rhs.s4()) && (lhs.s5() <= rhs.s5())
-               && (lhs.s6() <= rhs.s6()) && (lhs.s7() <= rhs.s7());
-    } else if constexpr (n == 16) {
-        return (lhs.s0() <= rhs.s0()) && (lhs.s1() <= rhs.s1()) && (lhs.s2() <= rhs.s2())
-               && (lhs.s3() <= rhs.s3()) && (lhs.s4() <= rhs.s4()) && (lhs.s5() <= rhs.s5())
-               && (lhs.s6() <= rhs.s6()) && (lhs.s7() <= rhs.s7()) && (lhs.s8() <= rhs.s8())
-               && (lhs.s9() <= rhs.s9()) && (lhs.sA() <= rhs.sA()) && (lhs.sB() <= rhs.sB())
-               && (lhs.sC() <= rhs.sC()) && (lhs.sD() <= rhs.sD()) && (lhs.sE() <= rhs.sE())
-               && (lhs.sF() <= rhs.sF());
-    }
-}
 
 namespace sham::details {
     template<class T>

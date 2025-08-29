@@ -913,7 +913,7 @@ namespace sham {
 
             if (idx >= size) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "get_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+                    "get_val_at_idx: idx >= size\n  idx = {},\n  size = {}", idx, size));
             }
 
             sham::EventList depends_list;
@@ -933,7 +933,7 @@ namespace sham {
 
             if (idx >= size) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "set_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+                    "set_val_at_idx: idx >= size\n  idx = {},\n  size = {}", idx, size));
             }
 
             sham::EventList depends_list;

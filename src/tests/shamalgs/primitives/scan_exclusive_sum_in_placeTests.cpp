@@ -43,9 +43,9 @@ TestStart(
         REQUIRE_EQUAL(buf.copy_to_stdvec(), ref.copy_to_stdvec());
     }
 
-    {// partial scan
-        u32 len = 10'000'000;
-        u32 len_scan = len /2;
+    { // partial scan
+        u32 len               = 10'000'000;
+        u32 len_scan          = len / 2;
         std::vector<u32> data = shamalgs::primitives::mock_vector<u32>(0x111, len, 0, 10);
         sham::DeviceBuffer<u32> buf(data.size(), sched);
         buf.copy_from_stdvec(data);
@@ -55,11 +55,10 @@ TestStart(
 
         std::vector<u32> expected = ref.copy_to_stdvec();
 
-        for(auto it = len_scan; it < len; ++it){
-            expected.push_back(data[it ]);
+        for (auto it = len_scan; it < len; ++it) {
+            expected.push_back(data[it]);
         }
 
         REQUIRE_EQUAL(buf.copy_to_stdvec(), expected);
-
     }
 }

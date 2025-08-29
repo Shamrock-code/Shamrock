@@ -8,9 +8,9 @@
 // -------------------------------------------------------//
 
 /**
- * @file sort_by_keys.hpp
+ * @file scan_exclusive_sum_in_place.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implementation of the in-place exclusive scan primitive.
  */
 
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"

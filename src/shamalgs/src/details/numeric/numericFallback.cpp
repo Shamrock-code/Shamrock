@@ -51,7 +51,7 @@ namespace shamalgs::numeric::details {
 
         std::exclusive_scan(acc_src.begin(), acc_src.end(), acc_src.begin(), 0);
 
-        ret_buf.copy_from_stdvec(acc_src);
+        ret_buf.copy_from_stdvec(acc_src, len);
 
         return ret_buf;
     }

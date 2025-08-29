@@ -122,9 +122,9 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();
 
-    u32 Npart           = 1000000;
+    u32 Npart           = 1000;
     u32 Npart_sq        = Npart * Npart;
-    u32 reduction_level = 3;
+    u32 reduction_level = 0;
     Tscal theta_crit    = 0.5;
 
     shammath::AABB<Tvec> bb = shammath::AABB<Tvec>({-1, -1, -1}, {1, 1, 1});
@@ -155,8 +155,8 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
             = result.node_node_interactions.copy_to_stdvec();
         std::vector<u32_2> unrolled_interact = result.leaf_leaf_interactions.copy_to_stdvec();
 
-        // validate_dtt_results(
-        //     partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
+        validate_dtt_results(
+            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
 
         m2m_ref = internal_node_interactions;
         p2p_ref = unrolled_interact;
@@ -174,12 +174,10 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
             = result.node_node_interactions.copy_to_stdvec();
         std::vector<u32_2> unrolled_interact = result.leaf_leaf_interactions.copy_to_stdvec();
 
-        // validate_dtt_results(
-        //     partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
+        validate_dtt_results(
+            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
 
         // REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, sham::equals);
         // REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, sham::equals);
     }
 }
-
-

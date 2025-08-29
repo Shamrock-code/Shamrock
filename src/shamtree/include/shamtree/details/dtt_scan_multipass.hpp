@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file dtt_reference.hpp
+ * @file dtt_scan_multipass.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -112,9 +112,9 @@ namespace shamtree::details {
                 has_pushed_m2m.fill(0, has_pushed_m2m_sz);
                 has_pushed_p2p.fill(0, has_pushed_p2p_sz);
 
-                //task_next.fill({u32_max, u32_max});
-                //pushed_m2m.fill({u32_max, u32_max});
-                //pushed_p2p.fill({u32_max, u32_max});
+                // task_next.fill({u32_max, u32_max});
+                // pushed_m2m.fill({u32_max, u32_max});
+                // pushed_p2p.fill({u32_max, u32_max});
 
                 using ObjectIterator  = shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim>;
                 ObjectIterator obj_it = bvh.get_object_iterator();

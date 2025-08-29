@@ -36,6 +36,7 @@ set(Sources
         src/primitives/is_all_true.cpp
         src/primitives/mock_value.cpp
         src/primitives/reduction.cpp
+        src/primitives/dot_sum.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

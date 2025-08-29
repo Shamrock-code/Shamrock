@@ -12,7 +12,7 @@
 /**
  * @file scan_exclusive_sum_in_place.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Provides an in-place exclusive scan (prefix sum) operation on a device buffer.
  */
 
 #include "shambase/aliases_int.hpp"

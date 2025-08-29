@@ -7,32 +7,39 @@
 //
 // -------------------------------------------------------//
 
-
 /**
  * @file sort_by_keys.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief 
+ * @brief
  */
 
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
+#include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 
 namespace shamalgs::primitives {
 
     template<class T>
-    void scan_exclusive_sum_in_place(sham::DeviceBuffer<T> &buf1, u32 len){
+    void scan_exclusive_sum_in_place_fallback(sham::DeviceBuffer<T> &buf1, u32 len) {
+        auto acc_src = buf1.copy_to_stdvec_idx_range(0, len);
+        std::exclusive_scan(acc_src.begin(), acc_src.end(), acc_src.begin(), 0);
+        buf1.copy_from_stdvec(acc_src, len);
+    }
+
+    template<class T>
+    void scan_exclusive_sum_in_place(sham::DeviceBuffer<T> &buf1, u32 len) {
         auto sched = buf1.get_dev_scheduler_ptr();
-        #ifdef __MACH__ // decoupled lookback perf on mac os is awfull
-        buf1 =  details::exclusive_sum_fallback_usm(sched, buf1, len);
+#ifdef __MACH__ // decoupled lookback perf on mac os is awfull
+        scan_exclusive_sum_in_place_fallback<T>(buf1, len);
 #else
     #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-         numeric::details::exclusive_sum_atomic_decoupled_v5_usm_in_place<T, 512>( buf1, len);
+        numeric::details::exclusive_sum_atomic_decoupled_v5_usm_in_place<T, 512>(buf1, len);
     #else
-    buf1 =  details::exclusive_sum_fallback_usm(sched, buf1, len);
+        scan_exclusive_sum_in_place_fallback<T>(buf1, len);
     #endif
 #endif
     }
 
     template void scan_exclusive_sum_in_place<u32>(sham::DeviceBuffer<u32> &buf1, u32 len);
 
-}
+} // namespace shamalgs::primitives

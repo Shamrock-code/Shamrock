@@ -24,6 +24,7 @@
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
+#include "shammodels/sph/modules/AnalysisDisc.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
@@ -42,6 +43,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using T = Model<Tvec, SPHKernel>;
 
     using TAnalysisSodTube = shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>;
+    using TAnalysisDisc    = shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>;
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
@@ -220,6 +222,39 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             auto ret = self.compute_L2_dist();
             return {ret.rho, ret.v, ret.P};
         });
+
+    std::string disc_analysis_name = name_model + "_AnalysisDisc";
+    py::class_<TAnalysisDisc>(m, disc_analysis_name.c_str())
+        .def(
+            "collect_data",
+            [](TAnalysisDisc &self, Tscal Rmin, Tscal Rmax, u32 Nbin, ShamrockCtx &ctx) {
+                auto anal = self.compute_analysis(Rmin, Rmax, Nbin, ctx);
+                py::dict dic_out;
+
+                auto radius  = anal.radius.copy_to_stdvec();
+                auto counter = anal.counter.copy_to_stdvec();
+                auto Sigma   = anal.Sigma.copy_to_stdvec();
+                auto lx      = anal.lx.copy_to_stdvec();
+                auto ly      = anal.ly.copy_to_stdvec();
+                auto lz      = anal.lz.copy_to_stdvec();
+                auto tilt    = anal.tilt.copy_to_stdvec();
+                auto twist   = anal.twist.copy_to_stdvec();
+                auto psi     = anal.psi.copy_to_stdvec();
+                auto Hsq     = anal.Hsq.copy_to_stdvec();
+
+                dic_out["radius"]  = radius;
+                dic_out["counter"] = counter;
+                dic_out["Sigma"]   = Sigma;
+                dic_out["lx"]      = lx;
+                dic_out["ly"]      = ly;
+                dic_out["lz"]      = lz;
+                dic_out["tilt"]    = tilt;
+                dic_out["twist"]   = twist;
+                dic_out["psi"]     = psi;
+                dic_out["Hsq"]     = Hsq;
+
+                return dic_out;
+            });
 
     std::string setup_name = name_model + "_SPHSetup";
     py::class_<TSPHSetup>(m, setup_name.c_str())
@@ -789,6 +824,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     x_ref,
                     x_min,
                     x_max);
+            })
+        .def(
+            "make_analysis_disc",
+            [](T &self) {
+                return std::make_unique<TAnalysisDisc>(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
             })
         .def("load_from_dump", &T::load_from_dump)
         .def("dump", &T::dump)

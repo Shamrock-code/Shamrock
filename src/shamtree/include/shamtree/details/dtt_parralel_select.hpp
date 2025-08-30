@@ -108,7 +108,7 @@ namespace shamtree::details {
                     u32 count_p2p_i = 0;
 
                     while (stack.is_not_empty()) {
-                        u32_2 t = stack.pop();
+                        u32_2 t = stack.pop_ret();
                         u32 a   = t.x();
                         u32 b   = t.y();
 
@@ -219,7 +219,7 @@ namespace shamtree::details {
                     stack.push({0, 0});
 
                     while (stack.is_not_empty()) {
-                        u32_2 t = stack.pop();
+                        u32_2 t = stack.pop_ret();
                         u32 a   = t.x();
                         u32 b   = t.y();
 

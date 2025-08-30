@@ -187,6 +187,46 @@ namespace sham {
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    // vec_compare_leq
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    template<class T>
+    inline constexpr bool vec_compare_leq(T a, T b) {
+        return a <= b;
+    }
+
+    template<class T, int n, std::enable_if_t<n == 2, int> = 0>
+    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
+        return (v.x() <= w.x()) && (v.y() <= w.y());
+    }
+
+    template<class T, int n, std::enable_if_t<n == 3, int> = 0>
+    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
+        return (v.x() <= w.x()) && (v.y() <= w.y()) && (v.z() <= w.z());
+    }
+
+    template<class T, int n, std::enable_if_t<n == 4, int> = 0>
+    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
+        return (v.x() <= w.x()) && (v.y() <= w.y()) && (v.z() <= w.z()) && (v.w() <= w.w());
+    }
+
+    template<class T, int n, std::enable_if_t<n == 8, int> = 0>
+    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
+        return (v.s0() <= w.s0()) && (v.s1() <= w.s1()) && (v.s2() <= w.s2()) && (v.s3() <= w.s3())
+               && (v.s4() <= w.s4()) && (v.s5() <= w.s5()) && (v.s6() <= w.s6())
+               && (v.s7() <= w.s7());
+    }
+
+    template<class T, int n, std::enable_if_t<n == 16, int> = 0>
+    inline constexpr T vec_compare_leq(sycl::vec<T, n> v, sycl::vec<T, n> w) noexcept {
+        return (v.s0() <= w.s0()) && (v.s1() <= w.s1()) && (v.s2() <= w.s2()) && (v.s3() <= w.s3())
+               && (v.s4() <= w.s4()) && (v.s5() <= w.s5()) && (v.s6() <= w.s6())
+               && (v.s7() <= w.s7()) && (v.s8() <= w.s8()) && (v.s9() <= w.s9())
+               && (v.sA() <= w.sA()) && (v.sB() <= w.sB()) && (v.sC() <= w.sC())
+               && (v.sD() <= w.sD()) && (v.sE() <= w.sE()) && (v.sF() <= w.sF());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // vec_compare_g
     ////////////////////////////////////////////////////////////////////////////////////////////////
 

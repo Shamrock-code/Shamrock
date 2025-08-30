@@ -9,6 +9,7 @@ Python API documentation
 
    shamrock
    shamrock.algs
+   shamrock.backends
    shamrock.math
    shamrock.math.sfc
    shamrock.math.sphkernel

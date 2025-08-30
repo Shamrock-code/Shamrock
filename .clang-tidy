@@ -28,4 +28,4 @@ CheckOptions:
 - key:             modernize-use-default-member-init.UseAssignment
   value:           1
 
-UseColor: true
+#UseColor: true

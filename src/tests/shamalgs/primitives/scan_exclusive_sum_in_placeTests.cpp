@@ -21,6 +21,20 @@ TestStart(
 
     auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
+    { // empty dataset
+        sham::DeviceBuffer<u32> buf(0, sched);
+
+        shamalgs::primitives::scan_exclusive_sum_in_place(buf, 0);
+
+        REQUIRE_EQUAL(buf.copy_to_stdvec(), std::vector<u32>{});
+    }
+
+    { // Larger scan than buffer
+        sham::DeviceBuffer<u32> buf(2, sched);
+        REQUIRE_EXCEPTION_THROW(
+            shamalgs::primitives::scan_exclusive_sum_in_place(buf, 10), std::invalid_argument);
+    }
+
     { // small dataset
         std::vector<u32> data = {1, 2, 3, 4, 5};
         sham::DeviceBuffer<u32> buf(data.size(), sched);

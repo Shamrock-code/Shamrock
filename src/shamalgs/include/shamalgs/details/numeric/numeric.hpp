@@ -52,8 +52,8 @@ namespace shamalgs::numeric {
      * @return A new buffer which is the output of the sum
      */
     template<class T>
-    sham::DeviceBuffer<T>
-    scan_exclusive(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len);
+    sham::DeviceBuffer<T> scan_exclusive(
+        sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len);
 
     template<class T>
     sycl::buffer<T> scan_inclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
@@ -72,8 +72,8 @@ namespace shamalgs::numeric {
      * @param len the length of the buffer considered
      * @return std::tuple<sycl::buffer<u32>, u32> table of the index to extract and its size
      */
-    std::tuple<std::optional<sycl::buffer<u32>>, u32>
-    stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact(
+        sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
 
     /**
      * @brief Stream compaction algorithm

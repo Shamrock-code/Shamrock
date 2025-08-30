@@ -98,8 +98,8 @@ void PatchScheduler::make_patch_base_grid(std::array<u32, dim> patch_count) {
 
 template void PatchScheduler::make_patch_base_grid<3>(std::array<u32, 3> patch_count);
 
-std::vector<u64>
-PatchScheduler::add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coords) {
+std::vector<u64> PatchScheduler::add_root_patches(
+    std::vector<shamrock::patch::PatchCoord<3>> coords) {
 
     using namespace shamrock::patch;
 
@@ -941,8 +941,8 @@ void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &r
     }
 }
 
-std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>>
-PatchScheduler::gather_data(u32 rank) {
+std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::gather_data(
+    u32 rank) {
 
     using namespace shamrock::patch;
 
@@ -973,11 +973,12 @@ PatchScheduler::gather_data(u32 rank) {
 
             sham::DeviceBuffer<u8> tmp = serializer(patchdata);
 
-            send_payloads.push_back(Message{
-                std::make_unique<shamcomm::CommunicationBuffer>(
-                    std::move(tmp), shamsys::instance::get_compute_scheduler_ptr()),
-                0,
-                i32(i)});
+            send_payloads.push_back(
+                Message{
+                    std::make_unique<shamcomm::CommunicationBuffer>(
+                        std::move(tmp), shamsys::instance::get_compute_scheduler_ptr()),
+                    0,
+                    i32(i)});
         }
     }
 
@@ -988,10 +989,11 @@ PatchScheduler::gather_data(u32 rank) {
 
     if (shamcomm::world_rank() == 0) {
         for (u32 i = 0; i < plist.size(); i++) {
-            recv_payloads.push_back(Message{
-                std::unique_ptr<shamcomm::CommunicationBuffer>{},
-                i32(plist[i].node_owner_id),
-                i32(i)});
+            recv_payloads.push_back(
+                Message{
+                    std::unique_ptr<shamcomm::CommunicationBuffer>{},
+                    i32(plist[i].node_owner_id),
+                    i32(i)});
         }
     }
 

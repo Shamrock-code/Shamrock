@@ -33,8 +33,8 @@ namespace sham {
     }
 
     template<USMKindTarget target>
-    USMPtrHolder<target>
-    USMPtrHolder<target>::create_nullptr(std::shared_ptr<DeviceScheduler> dev_sched) {
+    USMPtrHolder<target> USMPtrHolder<target>::create_nullptr(
+        std::shared_ptr<DeviceScheduler> dev_sched) {
 
         sycl::context &sycl_ctx = dev_sched->ctx->ctx;
         sycl::device &dev       = dev_sched->ctx->device->dev;

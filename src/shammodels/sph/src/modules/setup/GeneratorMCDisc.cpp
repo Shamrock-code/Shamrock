@@ -77,8 +77,8 @@ bool shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::is_done() {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-shamrock::patch::PatchDataLayer
-shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
+shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(
+    u32 nmax) {
 
     using namespace shamrock::patch;
     PatchScheduler &sched = shambase::get_check_ref(context.sched);

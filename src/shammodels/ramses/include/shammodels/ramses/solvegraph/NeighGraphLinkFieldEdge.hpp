@@ -38,9 +38,9 @@ namespace shammodels::basegodunov::solvergraph {
         NeighGraphLinkFieldEdge(std::string name, std::string texsymbol, u32 nvar)
             : IEdgeNamed(name, texsymbol), nvar(nvar) {}
 
-        inline void
-        check_size(const shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>>
-                       &graph) const {
+        inline void check_size(
+            const shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>> &graph)
+            const {
 
             on_distributeddata_diff(
                 link_fields,

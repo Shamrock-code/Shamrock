@@ -278,8 +278,8 @@ namespace sham {
          *        accessing the buffer.
          * @return A pointer to the buffer's data.
          */
-        [[nodiscard]] inline T *
-        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) {
+        [[nodiscard]] inline T *get_write_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) {
             shambase::get_check_ref(events_hndl).write_access(depends_list, src_loc);
             return hold.template ptr_cast<T>();
         }
@@ -470,8 +470,8 @@ namespace sham {
          * @throws std::invalid_argument if the end index is greater than the buffer size
          *         or if the begin index is greater than or equal to the end index.
          */
-        [[nodiscard]] inline std::vector<T>
-        copy_to_stdvec_idx_range(size_t begin, size_t end) const {
+        [[nodiscard]] inline std::vector<T> copy_to_stdvec_idx_range(
+            size_t begin, size_t end) const {
 
             if (end > size) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
@@ -514,8 +514,8 @@ namespace sham {
          * @param dest The destination buffer to copy to.
          */
         template<USMKindTarget dest_target>
-        inline void
-        copy_range(size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
+        inline void copy_range(
+            size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
 
             if (begin > end) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(

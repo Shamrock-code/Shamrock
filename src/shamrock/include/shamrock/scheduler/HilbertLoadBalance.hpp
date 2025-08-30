@@ -59,8 +59,8 @@ namespace shamrock::scheduler {
          *    format = (index of the patch in global list,old owner rank,new owner rank,mpi
          * communication tag)
          */
-        static LoadBalancingChangeList
-        make_change_list(std::vector<shamrock::patch::Patch> &global_patch_list);
+        static LoadBalancingChangeList make_change_list(
+            std::vector<shamrock::patch::Patch> &global_patch_list);
     };
 
     using HilbertLB     = HilbertLoadBalance<u64>;

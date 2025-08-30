@@ -24,8 +24,8 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-shamrock::patch::PatchDataLayer
-shammodels::sph::modules::ModifierApplyCustomWarp<Tvec, SPHKernel>::next_n(u32 nmax) {
+shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyCustomWarp<Tvec, SPHKernel>::
+    next_n(u32 nmax) {
 
     ShamrockCtx &ctx                    = context;
     PatchScheduler &sched               = shambase::get_check_ref(ctx.sched);

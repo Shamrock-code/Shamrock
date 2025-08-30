@@ -58,12 +58,11 @@ namespace shamtree::details {
             u32 cell_b,
             const ObjItHostAcc &acc,
             Tscal theta_crit,
-            std::vector<u32_2> &internal_node_interactions,
-            std::vector<u32_2> &unrolled_interact) {
+            std::vector<u32_2> &interact_p2p,
+            std::vector<u32_2> &interact_m2m) {
 
             auto dtt_child_call = [&](u32 cell_a, u32 cell_b) {
-                dtt_recursive_internal(
-                    cell_a, cell_b, acc, theta_crit, internal_node_interactions, unrolled_interact);
+                dtt_recursive_internal(cell_a, cell_b, acc, theta_crit, interact_p2p, interact_m2m);
             };
 
             auto &ttrav = acc.tree_traverser.tree_traverser;
@@ -92,7 +91,7 @@ namespace shamtree::details {
                 bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
 
                 if (child_a_1_leaf || child_a_2_leaf || child_b_1_leaf || child_b_2_leaf) {
-                    unrolled_interact.push_back({cell_a, cell_b});
+                    interact_m2m.push_back({cell_a, cell_b});
                     return;
                 }
 
@@ -102,21 +101,20 @@ namespace shamtree::details {
                 dtt_child_call(child_a_2, child_b_2);
 
             } else {
-                internal_node_interactions.push_back({cell_a, cell_b});
+                interact_p2p.push_back({cell_a, cell_b});
             }
         }
 
         inline static void dtt_recursive_ref(
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
             Tscal theta_crit,
-            std::vector<u32_2> &internal_node_interactions,
-            std::vector<u32_2> &unrolled_interact) {
+            std::vector<u32_2> &interact_p2p,
+            std::vector<u32_2> &interact_m2m) {
 
             auto obj_it_host = bvh.get_object_iterator_host();
             auto acc         = obj_it_host.get_read_access();
 
-            dtt_recursive_internal(
-                0, 0, acc, theta_crit, internal_node_interactions, unrolled_interact);
+            dtt_recursive_internal(0, 0, acc, theta_crit, interact_p2p, interact_m2m);
         }
 
         inline static shamtree::DTTResult
@@ -125,17 +123,17 @@ namespace shamtree::details {
             shambase::VecComponent<Tvec> theta_crit) {
             StackEntry stack_loc{};
 
-            std::vector<u32_2> part_interact_node_node{};
-            std::vector<u32_2> part_interact_leaf_leaf{};
+            std::vector<u32_2> interact_m2m{};
+            std::vector<u32_2> interact_p2p{};
 
-            dtt_recursive_ref(bvh, theta_crit, part_interact_node_node, part_interact_leaf_leaf);
+            dtt_recursive_ref(bvh, theta_crit, interact_m2m, interact_p2p);
 
             shamtree::DTTResult result{
-                sham::DeviceBuffer<u32_2>(part_interact_node_node.size(), dev_sched),
-                sham::DeviceBuffer<u32_2>(part_interact_leaf_leaf.size(), dev_sched)};
+                sham::DeviceBuffer<u32_2>(interact_m2m.size(), dev_sched),
+                sham::DeviceBuffer<u32_2>(interact_p2p.size(), dev_sched)};
 
-            result.node_node_interactions.copy_from_stdvec(part_interact_node_node);
-            result.leaf_leaf_interactions.copy_from_stdvec(part_interact_leaf_leaf);
+            result.node_interactions_m2m.copy_from_stdvec(interact_m2m);
+            result.node_interactions_p2p.copy_from_stdvec(interact_p2p);
 
             return result;
         }

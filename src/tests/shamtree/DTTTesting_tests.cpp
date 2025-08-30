@@ -176,8 +176,8 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         logger::raw_ln("DTTCpuReference :", timer.get_time_str());
 
         std::vector<u32_2> internal_node_interactions
-            = result.node_node_interactions.copy_to_stdvec();
-        std::vector<u32_2> unrolled_interact = result.leaf_leaf_interactions.copy_to_stdvec();
+            = result.node_interactions_m2m.copy_to_stdvec();
+        std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
 
         validate_dtt_results(
             partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
@@ -195,8 +195,8 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         logger::raw_ln("DTTScanMultipass :", timer.get_time_str());
 
         std::vector<u32_2> internal_node_interactions
-            = result.node_node_interactions.copy_to_stdvec();
-        std::vector<u32_2> unrolled_interact = result.leaf_leaf_interactions.copy_to_stdvec();
+            = result.node_interactions_m2m.copy_to_stdvec();
+        std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
 
         validate_dtt_results(
             partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
@@ -214,8 +214,8 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         logger::raw_ln("DTTParallelSelect :", timer.get_time_str());
 
         std::vector<u32_2> internal_node_interactions
-            = result.node_node_interactions.copy_to_stdvec();
-        std::vector<u32_2> unrolled_interact = result.leaf_leaf_interactions.copy_to_stdvec();
+            = result.node_interactions_m2m.copy_to_stdvec();
+        std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
 
         validate_dtt_results(
             partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
@@ -234,8 +234,8 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         logger::raw_ln("clbvh_dual_tree_traversal :", timer.get_time_str());
 
         std::vector<u32_2> internal_node_interactions
-            = result.node_node_interactions.copy_to_stdvec();
-        std::vector<u32_2> unrolled_interact = result.leaf_leaf_interactions.copy_to_stdvec();
+            = result.node_interactions_m2m.copy_to_stdvec();
+        std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
 
         validate_dtt_results(
             partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);

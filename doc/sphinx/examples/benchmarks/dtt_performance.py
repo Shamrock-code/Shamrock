@@ -70,10 +70,10 @@ def run_performance_sweep(compression_level, threshold_run):
             current_run += 1
 
             # Check if we should skip this benchmark based on the criterion
-            criterion_value = N / (theta_crit**2)
+            criterion_value = N / (theta_crit**3)
             if criterion_value > threshold_run:
                 print(
-                    f"[{current_run:2d}/{total_runs}] Skipping N={N:5d}, theta_crit={theta_crit:.1f} (N/theta²={criterion_value:.0f} > 100000)"
+                    f"[{current_run:2d}/{total_runs}] Skipping N={N:5d}, theta_crit={theta_crit:.1f} (N/theta³={criterion_value:.0f} > 100000)"
                 )
                 results_mean[i, j] = np.nan
                 results_min[i, j] = np.nan
@@ -81,7 +81,7 @@ def run_performance_sweep(compression_level, threshold_run):
                 continue
 
             print(
-                f"[{current_run:2d}/{total_runs}] Running N={N:5d}, theta_crit={theta_crit:.1f} (N/theta²={criterion_value:.0f})...",
+                f"[{current_run:2d}/{total_runs}] Running N={N:5d}, theta_crit={theta_crit:.1f} (N/theta³={criterion_value:.0f})...",
                 end=" ",
             )
 
@@ -197,6 +197,8 @@ results = {}
 for algname in all_algs:
     shamrock.tree.set_impl_clbvh_dual_tree_traversal(algname, "")
 
+    print(f"Running DTT performance benchmarks for {algname}...")
+
     compression_level = 4
 
     threshold_run = 100000
@@ -212,6 +214,14 @@ for algname in all_algs:
         "results_min": results_min,
         "results_max": results_max,
     }
+
+dump_folder = "_to_trash"
+
+import os
+
+# Create the dump directory if it does not exist
+if shamrock.sys.world_rank() == 0:
+    os.makedirs(dump_folder, exist_ok=True)
 
 largest_refalg_value = np.nanmax(results["reference"]["results_min"])
 
@@ -234,5 +244,7 @@ for algname in all_algs:
         largest_refalg_value,
         reference_min,
     )
+
+    plt.savefig(f"{dump_folder}/benchmark-dtt-performance-{algname}.pdf")
 
 plt.show()

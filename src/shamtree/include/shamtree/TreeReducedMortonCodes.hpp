@@ -55,10 +55,12 @@ namespace shamrock::tree {
 
         inline TreeReducedMortonCodes(const TreeReducedMortonCodes &other)
             : tree_leaf_count(other.tree_leaf_count),
-              buf_reduc_index_map(shamalgs::memory::duplicate(
-                  shamsys::instance::get_compute_queue(), other.buf_reduc_index_map)),
-              buf_tree_morton(shamalgs::memory::duplicate(
-                  shamsys::instance::get_compute_queue(), other.buf_tree_morton)) {}
+              buf_reduc_index_map(
+                  shamalgs::memory::duplicate(
+                      shamsys::instance::get_compute_queue(), other.buf_reduc_index_map)),
+              buf_tree_morton(
+                  shamalgs::memory::duplicate(
+                      shamsys::instance::get_compute_queue(), other.buf_tree_morton)) {}
 
         inline TreeReducedMortonCodes &operator=(TreeReducedMortonCodes &&other) noexcept {
             tree_leaf_count     = std::move(other.tree_leaf_count);

@@ -65,8 +65,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<u32 group_size, class Tkey>
-        inline static sycl::buffer<u32>
-        make_digit_histogram(sycl::queue &q, sycl::buffer<Tkey> &buf_key, u32 len) {
+        inline static sycl::buffer<u32> make_digit_histogram(
+            sycl::queue &q, sycl::buffer<Tkey> &buf_key, u32 len) {
 
             u32 group_cnt = shambase::group_count(len, group_size);
 

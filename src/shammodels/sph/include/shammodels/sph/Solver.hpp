@@ -112,11 +112,12 @@ namespace shammodels::sph {
             } else if (
                 SolverBCShearingPeriodic *c
                 = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(GhostHandle{
-                    scheduler(),
-                    BCShearingPeriodic{
-                        c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                    storage.patch_rank_owner});
+                storage.ghost_handler.set(
+                    GhostHandle{
+                        scheduler(),
+                        BCShearingPeriodic{
+                            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
+                        storage.patch_rank_owner});
             }
         }
         inline void reset_ghost_handler() { storage.ghost_handler.reset(); }

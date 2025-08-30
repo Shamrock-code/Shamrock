@@ -173,8 +173,8 @@ namespace shammodels::sph {
         }
 
         template<class T>
-        inline void
-        set_field_value_lambda(std::string field_name, const std::function<T(Tvec)> pos_to_val) {
+        inline void set_field_value_lambda(
+            std::string field_name, const std::function<T(Tvec)> pos_to_val) {
 
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
@@ -594,8 +594,8 @@ namespace shammodels::sph {
             std::vector<Tscal> &part_psi_on_ch_insert);
 
         template<class T>
-        inline void
-        set_value_in_a_box(std::string field_name, T val, std::pair<Tvec, Tvec> box, u32 ivar) {
+        inline void set_value_in_a_box(
+            std::string field_name, T val, std::pair<Tvec, Tvec> box, u32 ivar) {
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
@@ -827,8 +827,8 @@ namespace shammodels::sph {
         }
 
         private:
-        void
-        add_pdat_to_phantom_block(PhantomDumpBlock &block, shamrock::patch::PatchDataLayer &pdat);
+        void add_pdat_to_phantom_block(
+            PhantomDumpBlock &block, shamrock::patch::PatchDataLayer &pdat);
 
         template<class Tscal>
         inline void warp_disc(

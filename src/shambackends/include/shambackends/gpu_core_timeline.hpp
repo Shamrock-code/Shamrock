@@ -185,8 +185,8 @@ namespace sham {
              * @param[in] item The sycl::nd_item representing the current work-group.
              * @param[in] acc The local accessor for the current work-group.
              */
-            inline void
-            init_timeline_event(sycl::nd_item<1> item, const local_access_t &acc) const {
+            inline void init_timeline_event(
+                sycl::nd_item<1> item, const local_access_t &acc) const {
                 if (item.get_local_id(0) == 0) {
                     sycl::atomic_ref<
                         u64,

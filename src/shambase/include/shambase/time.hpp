@@ -251,8 +251,8 @@ namespace shambase {
      * @param pow_exp The power of the exponent to increase the input value.
      * @return BenchmarkResult A structure containing the counts and times of the benchmark.
      */
-    inline BenchmarkResult
-    benchmark_pow_len(std::function<f64(u32)> func, u32 start, u32 end, f64 pow_exp) {
+    inline BenchmarkResult benchmark_pow_len(
+        std::function<f64(u32)> func, u32 start, u32 end, f64 pow_exp) {
         BenchmarkResult res;
         for (f64 i = start; i < end; i *= pow_exp) {
             res.counts.push_back(i);

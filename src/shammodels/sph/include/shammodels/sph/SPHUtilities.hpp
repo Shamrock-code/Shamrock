@@ -76,8 +76,8 @@ namespace shammodels::sph {
 
         SPHUtilities(PatchScheduler &sched) : sched(sched) {}
 
-        inline InterfBuildCache
-        build_interf_cache(GhostHndl &interf_handle, SerialPatchTree<vec> &sptree, flt h_evol_max) {
+        inline InterfBuildCache build_interf_cache(
+            GhostHndl &interf_handle, SerialPatchTree<vec> &sptree, flt h_evol_max) {
 
             using namespace shamrock::patch;
 

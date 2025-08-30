@@ -89,22 +89,22 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T>
-    inline T
-    FallbackReduction<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+    inline T FallbackReduction<T>::sum(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
 
         return _int_sum(q, buf1, start_id, end_id);
     }
 
     template<class T>
-    inline T
-    FallbackReduction<T>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+    inline T FallbackReduction<T>::min(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
 
         return _int_min(q, buf1, start_id, end_id);
     }
 
     template<class T>
-    inline T
-    FallbackReduction<T>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+    inline T FallbackReduction<T>::max(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
 
         return _int_max(q, buf1, start_id, end_id);
     }

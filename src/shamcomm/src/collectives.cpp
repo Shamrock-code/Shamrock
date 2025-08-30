@@ -94,8 +94,8 @@ void shamcomm::gather_basic_str(
     _internal_gather_str(send_vec, recv_vec);
 }
 
-std::unordered_map<std::string, int>
-shamcomm::string_histogram(const std::vector<std::string> &inputs, std::string delimiter) {
+std::unordered_map<std::string, int> shamcomm::string_histogram(
+    const std::vector<std::string> &inputs, std::string delimiter) {
     std::string accum_loc = "";
     for (auto &s : inputs) {
         accum_loc += s + delimiter;

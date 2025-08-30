@@ -310,29 +310,33 @@ namespace shammodels::sph {
         if (av_type == "none") {
             p.set(None{});
         } else if (av_type == "constant") {
-            p.set(Constant{
-                j.at("alpha_u").get<Tscal>(),
-                j.at("alpha_AV").get<Tscal>(),
-                j.at("beta_AV").get<Tscal>()});
+            p.set(
+                Constant{
+                    j.at("alpha_u").get<Tscal>(),
+                    j.at("alpha_AV").get<Tscal>(),
+                    j.at("beta_AV").get<Tscal>()});
         } else if (av_type == "varying_mm97") {
-            p.set(VaryingMM97{
-                j.at("alpha_min").get<Tscal>(),
-                j.at("alpha_max").get<Tscal>(),
-                j.at("sigma_decay").get<Tscal>(),
-                j.at("alpha_u").get<Tscal>(),
-                j.at("beta_AV").get<Tscal>()});
+            p.set(
+                VaryingMM97{
+                    j.at("alpha_min").get<Tscal>(),
+                    j.at("alpha_max").get<Tscal>(),
+                    j.at("sigma_decay").get<Tscal>(),
+                    j.at("alpha_u").get<Tscal>(),
+                    j.at("beta_AV").get<Tscal>()});
         } else if (av_type == "varying_cd10") {
-            p.set(VaryingCD10{
-                j.at("alpha_min").get<Tscal>(),
-                j.at("alpha_max").get<Tscal>(),
-                j.at("sigma_decay").get<Tscal>(),
-                j.at("alpha_u").get<Tscal>(),
-                j.at("beta_AV").get<Tscal>()});
+            p.set(
+                VaryingCD10{
+                    j.at("alpha_min").get<Tscal>(),
+                    j.at("alpha_max").get<Tscal>(),
+                    j.at("sigma_decay").get<Tscal>(),
+                    j.at("alpha_u").get<Tscal>(),
+                    j.at("beta_AV").get<Tscal>()});
         } else if (av_type == "constant_disc") {
-            p.set(ConstantDisc{
-                j.at("alpha_AV").get<Tscal>(),
-                j.at("alpha_u").get<Tscal>(),
-                j.at("beta_AV").get<Tscal>()});
+            p.set(
+                ConstantDisc{
+                    j.at("alpha_AV").get<Tscal>(),
+                    j.at("alpha_u").get<Tscal>(),
+                    j.at("beta_AV").get<Tscal>()});
         } else {
             shambase::throw_unimplemented("wtf !");
         }

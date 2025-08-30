@@ -27,8 +27,8 @@ class StreamCompactionAlg;
 
 namespace shamalgs::numeric::details {
 
-    std::tuple<std::optional<sycl::buffer<u32>>, u32>
-    stream_compact_excl_scan(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact_excl_scan(
+        sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {
 
         if (len < 2) {
             return stream_compact_fallback(q, buf_flags, len);

@@ -65,8 +65,8 @@ namespace shammath {
      * element of the matrix.
      */
     template<class T, class Extents, class Layout, class Accessor, class Func>
-    inline void
-    mat_update_vals(const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
+    inline void mat_update_vals(
+        const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
 
         shambase::check_functor_signature<void, T &, int, int>(func);
 
@@ -108,8 +108,8 @@ namespace shammath {
      * value, and stores the result back in the matrix.
      */
     template<class T, class Extents, class Layout, class Accessor>
-    inline void
-    mat_mul_scalar(const std::mdspan<T, Extents, Layout, Accessor> &input, const T &scalar) {
+    inline void mat_mul_scalar(
+        const std::mdspan<T, Extents, Layout, Accessor> &input, const T &scalar) {
         mat_update_vals(input, [&](T &v, auto i, auto j) {
             v *= scalar;
         });

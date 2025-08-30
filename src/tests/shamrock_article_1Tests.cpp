@@ -281,8 +281,8 @@ class SPHTestInteractionCrit {
         };
     };
 
-    inline static bool
-    criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
+    inline static bool criterion(
+        u32 node_index, Access acc, typename Access::ObjectValues current_values) {
         vec cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
         vec cur_pos_max_cell_b = acc.tree_cell_coordrange_max[node_index];
 
@@ -664,8 +664,8 @@ f64 amr_walk_perf(
             };
         };
 
-        static bool
-        criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
+        static bool criterion(
+            u32 node_index, Access acc, typename Access::ObjectValues current_values) {
 
             shammath::AABB<u64_3> tree_cell_bound{
                 acc.tree_cell_coordrange_min[node_index], acc.tree_cell_coordrange_max[node_index]};
@@ -922,8 +922,8 @@ class FmmTestInteractCrit {
         };
     };
 
-    inline static bool
-    criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
+    inline static bool criterion(
+        u32 node_index, Access acc, typename Access::ObjectValues current_values) {
         vec cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
         vec cur_pos_max_cell_b = acc.tree_cell_coordrange_max[node_index];
 

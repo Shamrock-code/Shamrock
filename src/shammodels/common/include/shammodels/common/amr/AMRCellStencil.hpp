@@ -92,10 +92,10 @@ namespace shammodels::amr::cell {
         template<class Visitor1, class Visitor2, class Visitor3, class Visitor4>
         inline void visitor(Visitor1 &&f1, Visitor2 &&f2, Visitor3 &&f3, Visitor4 &&f4) {
             switch (tag) {
-            case SAME: f1(level_d0); break;
+            case SAME   : f1(level_d0); break;
             case LEVELM1: f2(level_dm1); break;
             case LEVELP1: f3(level_dp1); break;
-            case NONE: f4(none); break;
+            case NONE   : f4(none); break;
             }
         }
     };

@@ -57,8 +57,8 @@ namespace shamalgs::memory {
     }
 
     template<class T>
-    void
-    set_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx, T val, bool discard_write = false) {
+    void set_element(
+        sycl::queue &q, sycl::buffer<T> &buf, u32 idx, T val, bool discard_write = false) {
 
         if (discard_write) {
             q.submit([&, idx, val](sycl::handler &cgh) {
@@ -168,8 +168,8 @@ namespace shamalgs::memory {
      * @param fmt
      */
     template<class T, typename... Tformat>
-    inline void
-    print_buf(sycl::buffer<T> &buf, u32 len, u32 column_count, fmt::format_string<Tformat...> fmt) {
+    inline void print_buf(
+        sycl::buffer<T> &buf, u32 len, u32 column_count, fmt::format_string<Tformat...> fmt) {
 
         sycl::host_accessor acc{buf, sycl::read_only};
 
@@ -305,8 +305,8 @@ namespace shamalgs::memory {
     }
 
     template<class T>
-    std::unique_ptr<sycl::buffer<T>>
-    duplicate(sycl::queue &q, const std::unique_ptr<sycl::buffer<T>> &buf_in) {
+    std::unique_ptr<sycl::buffer<T>> duplicate(
+        sycl::queue &q, const std::unique_ptr<sycl::buffer<T>> &buf_in) {
         if (buf_in) {
             auto buf = std::make_unique<sycl::buffer<T>>(buf_in->size());
             copybuf_discard(q, *buf_in, *buf, buf_in->size());

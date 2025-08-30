@@ -69,8 +69,8 @@ namespace shamtree {
                 buf_reduc_index_map.copy_to_stdvec()};
         }
 
-        inline CellIterator
-        get_cell_iterator(const sham::DeviceBuffer<u32> &buf_endrange, u32 offset_leaf) const {
+        inline CellIterator get_cell_iterator(
+            const sham::DeviceBuffer<u32> &buf_endrange, u32 offset_leaf) const {
             return CellIterator{
                 morton_codes_set.map_morton_id_to_obj_id,
                 buf_reduc_index_map,
@@ -78,8 +78,8 @@ namespace shamtree {
                 offset_leaf};
         }
 
-        inline CellIteratorHost
-        get_cell_iterator_host(const sham::DeviceBuffer<u32> &buf_endrange, u32 offset_leaf) const {
+        inline CellIteratorHost get_cell_iterator_host(
+            const sham::DeviceBuffer<u32> &buf_endrange, u32 offset_leaf) const {
             return CellIteratorHost{
                 morton_codes_set.map_morton_id_to_obj_id.copy_to_stdvec(),
                 buf_reduc_index_map.copy_to_stdvec(),

@@ -52,11 +52,12 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
 
         void add_element(std::mt19937 &eng, u32 wsize, u64 bytes) {
             u64 rnd = eng();
-            elements.push_back(RefBuff{
-                shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
-                shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
-                std::make_unique<sycl::buffer<u8>>(shamalgs::random::mock_buffer<u8>(
-                    rnd, shamalgs::primitives::mock_value<i32>(eng, 1, bytes)))});
+            elements.push_back(
+                RefBuff{
+                    shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
+                    shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
+                    std::make_unique<sycl::buffer<u8>>(shamalgs::random::mock_buffer<u8>(
+                        rnd, shamalgs::primitives::mock_value<i32>(eng, 1, bytes)))});
         }
 
         void sort_input() {
@@ -79,9 +80,10 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
     u32 idx = 0;
     for (RefBuff &bufinfo : tests.elements) {
         if (bufinfo.sender_rank == world_rank()) {
-            sendop.push_back(SendPayload{
-                bufinfo.receiver_rank,
-                std::make_unique<CommunicationBuffer>(*bufinfo.payload, qdet)});
+            sendop.push_back(
+                SendPayload{
+                    bufinfo.receiver_rank,
+                    std::make_unique<CommunicationBuffer>(*bufinfo.payload, qdet)});
 
             REQUIRE_EQUAL(sendop[idx].payload->get_size(), bufinfo.payload->size());
 
@@ -94,30 +96,33 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
 
     std::vector<RefBuff> recv_data;
     for (RecvPayload &load : recvop) {
-        recv_data.push_back(RefBuff{
-            load.sender_ranks,
-            wrank,
-            std::make_unique<sycl::buffer<u8>>(load.payload->copy_back())});
+        recv_data.push_back(
+            RefBuff{
+                load.sender_ranks,
+                wrank,
+                std::make_unique<sycl::buffer<u8>>(load.payload->copy_back())});
     }
 
     logger::raw_ln("ref data : ");
     for (RefBuff &ref : tests.elements) {
-        logger::raw_ln(shambase::format(
-            "[{:2}] {} -> {} ({})",
-            wrank,
-            ref.sender_rank,
-            ref.receiver_rank,
-            ref.payload->size()));
+        logger::raw_ln(
+            shambase::format(
+                "[{:2}] {} -> {} ({})",
+                wrank,
+                ref.sender_rank,
+                ref.receiver_rank,
+                ref.payload->size()));
     }
 
     logger::raw_ln("recv data : ");
     for (RefBuff &ref : recv_data) {
-        logger::raw_ln(shambase::format(
-            "[{:2}] {} -> {} ({})",
-            wrank,
-            ref.sender_rank,
-            ref.receiver_rank,
-            ref.payload->size()));
+        logger::raw_ln(
+            shambase::format(
+                "[{:2}] {} -> {} ({})",
+                wrank,
+                ref.sender_rank,
+                ref.receiver_rank,
+                ref.payload->size()));
     }
 
     u32 ref_idx = 0;

@@ -33,8 +33,8 @@ namespace shamrock::patch {
         PatchCoord(std::array<u64, dim> coord_min, std::array<u64, dim> coord_max)
             : coord_min(coord_min), coord_max(coord_max) {}
 
-        [[nodiscard]] inline static auto
-        get_split_coord(std::array<u64, dim> coord_min, std::array<u64, dim> coord_max)
+        [[nodiscard]] inline static auto get_split_coord(
+            std::array<u64, dim> coord_min, std::array<u64, dim> coord_max)
             -> std::array<u64, dim> {
             return {
                 (((coord_max[0] - coord_min[0]) + 1) / 2) - 1 + coord_min[0],

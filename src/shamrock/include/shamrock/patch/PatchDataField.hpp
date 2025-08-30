@@ -307,8 +307,8 @@ class PatchDataField {
      * @return std::vector<u32>
      */
     template<class Lambdacd, class... Args>
-    inline std::tuple<std::optional<sycl::buffer<u32>>, u32>
-    get_ids_buf_where(Lambdacd &&cd_true, Args... args) {
+    inline std::tuple<std::optional<sycl::buffer<u32>>, u32> get_ids_buf_where(
+        Lambdacd &&cd_true, Args... args) {
         StackEntry stack_loc{};
 
         if (get_obj_cnt() > 0) {
@@ -397,8 +397,8 @@ class PatchDataField {
 
     template<class Lambdacd>
     [[deprecated("please use one of the PatchDataField::get_ids_..._where functions instead")]]
-    std::unique_ptr<sycl::buffer<u32>>
-    get_elements_with_range_buf(Lambdacd &&cd_true, T vmin, T vmax);
+    std::unique_ptr<sycl::buffer<u32>> get_elements_with_range_buf(
+        Lambdacd &&cd_true, T vmin, T vmax);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     //
@@ -424,8 +424,8 @@ class PatchDataField {
      */
     void append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield);
     void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield);
-    void
-    append_subset_to(const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
+    void append_subset_to(
+        const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const;
 
     inline PatchDataField make_new_from_subset(sycl::buffer<u32> &idxs_buf, u32 sz) {
         PatchDataField pfield(field_name, nvar);
@@ -490,8 +490,8 @@ class PatchDataField {
      * @param nvar
      * @return PatchDataField
      */
-    static PatchDataField
-    deserialize_buf(shamalgs::SerializeHelper &serializer, std::string field_name, u32 nvar);
+    static PatchDataField deserialize_buf(
+        shamalgs::SerializeHelper &serializer, std::string field_name, u32 nvar);
 
     /**
      * @brief record the size usage of the serialization using serialize_buf
@@ -537,8 +537,8 @@ class PatchDataField {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     static PatchDataField<T> mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar);
-    static PatchDataField<T>
-    mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax);
+    static PatchDataField<T> mock_field(
+        u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax);
 };
 
 // TODO add overflow check
@@ -609,8 +609,8 @@ inline void PatchDataField<T>::override(const T val) {
 
 template<class T>
 template<class Lambdacd>
-inline std::vector<u32>
-PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) {
+inline std::vector<u32> PatchDataField<T>::get_elements_with_range(
+    Lambdacd &&cd_true, T vmin, T vmax) {
     StackEntry stack_loc{};
     std::vector<u32> idxs;
 
@@ -658,8 +658,8 @@ PatchDataField<T>::get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax) {
 
 template<class T>
 template<class Lambdacd>
-inline std::unique_ptr<sycl::buffer<u32>>
-PatchDataField<T>::get_elements_with_range_buf(Lambdacd &&cd_true, T vmin, T vmax) {
+inline std::unique_ptr<sycl::buffer<u32>> PatchDataField<T>::get_elements_with_range_buf(
+    Lambdacd &&cd_true, T vmin, T vmax) {
     std::vector<u32> idxs = get_elements_with_range(std::forward<Lambdacd>(cd_true), vmin, vmax);
     if (idxs.empty()) {
         return {};
@@ -684,8 +684,8 @@ class PatchDataRangeCheckError : public std::exception {
 
 template<class T>
 template<class Lambdacd>
-inline void
-PatchDataField<T>::check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log) {
+inline void PatchDataField<T>::check_err_range(
+    Lambdacd &&cd_true, T vmin, T vmax, std::string add_log) {
     StackEntry stack_loc{};
 
     if (is_empty()) {

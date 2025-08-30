@@ -260,18 +260,19 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt, u64 di
 
     using namespace shamrock::scheduler;
 
-    plist.push_back(Patch{
-        0,
-        u64_max,
-        total_dtcnt,
-        0,
-        0,
-        0,
-        HilbertLoadBalance<u64>::max_box_sz,
-        HilbertLoadBalance<u64>::max_box_sz,
-        HilbertLoadBalance<u64>::max_box_sz,
-        0,
-    });
+    plist.push_back(
+        Patch{
+            0,
+            u64_max,
+            total_dtcnt,
+            0,
+            0,
+            0,
+            HilbertLoadBalance<u64>::max_box_sz,
+            HilbertLoadBalance<u64>::max_box_sz,
+            HilbertLoadBalance<u64>::max_box_sz,
+            0,
+        });
 
     bool listchanged = true;
 

@@ -49,13 +49,13 @@ namespace models::nbody {
         }
 
         template<class T>
-        inline void
-        set_value_in_box(PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
+        inline void set_value_in_box(
+            PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
             generic::setup::modifiers::set_value_in_box(sched, val, name, box);
         }
 
-        inline void
-        pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> ampls, vec k, flt phase) {
+        inline void pertub_eigenmode_wave(
+            PatchScheduler &sched, std::tuple<flt, flt> ampls, vec k, flt phase) {
             generic::setup::modifiers::pertub_eigenmode_wave(sched, ampls, k, phase);
         }
 

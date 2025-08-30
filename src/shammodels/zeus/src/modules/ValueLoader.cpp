@@ -870,9 +870,9 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, class TgridVec, class T>
-shamrock::ComputeField<T>
-shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
-    std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name) {
+shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::
+    load_value_with_gz(
+        std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name) {
 
     StackEntry stack_loc{};
 
@@ -976,11 +976,11 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
 }
 
 template<class Tvec, class TgridVec, class T>
-shamrock::ComputeField<T>
-shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
-    shamrock::ComputeField<T> &compute_field,
-    std::array<Tgridscal, dim> offset,
-    std::string result_name) {
+shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::
+    load_value_with_gz(
+        shamrock::ComputeField<T> &compute_field,
+        std::array<Tgridscal, dim> offset,
+        std::string result_name) {
 
     StackEntry stack_loc{};
 

@@ -85,8 +85,8 @@ namespace shamcmdopt {
      * @param desc the description of the environment variable
      * @return std::string the value of the env variable if it exist, the default value otherwise
      */
-    inline std::string
-    getenv_str_default_register(const char *env_var, std::string default_val, std::string desc) {
+    inline std::string getenv_str_default_register(
+        const char *env_var, std::string default_val, std::string desc) {
         register_env_var_doc(env_var, desc);
         return getenv_str_default(env_var, default_val);
     }

@@ -38,8 +38,8 @@ namespace shamcomm {
     void gather_str(const std::string &send_vec, std::string &recv_vec);
 
     /// same as gather_str but with std::basic_string
-    void
-    gather_basic_str(const std::basic_string<byte> &send_vec, std::basic_string<byte> &recv_vec);
+    void gather_basic_str(
+        const std::basic_string<byte> &send_vec, std::basic_string<byte> &recv_vec);
 
     /**
      * @brief Constructs a histogram from a vector of strings, counting occurrences
@@ -57,7 +57,7 @@ namespace shamcomm {
      *         values are the counts of their occurrences. (valid only on rank 0)
      */
 
-    std::unordered_map<std::string, int>
-    string_histogram(const std::vector<std::string> &inputs, std::string delimiter = "\n");
+    std::unordered_map<std::string, int> string_histogram(
+        const std::vector<std::string> &inputs, std::string delimiter = "\n");
 
 } // namespace shamcomm

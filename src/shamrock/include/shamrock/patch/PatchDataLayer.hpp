@@ -87,8 +87,8 @@ namespace shamrock::patch {
 
         PatchDataLayer &operator=(const PatchDataLayer &other) = delete;
 
-        static PatchDataLayer
-        mock_patchdata(u64 seed, u32 obj_cnt, const std::shared_ptr<PatchDataLayerLayout> &pdl);
+        static PatchDataLayer mock_patchdata(
+            u64 seed, u32 obj_cnt, const std::shared_ptr<PatchDataLayerLayout> &pdl);
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {

@@ -218,8 +218,8 @@ namespace shamalgs::numeric::details {
             sycl::memory_scope_device,
             sycl::access::address_space::global_space>;
 
-        inline ScanDecoupledLoockBackAccessed<T, group_size, policy, Tile>
-        get_access(sycl::handler &cgh) {
+        inline ScanDecoupledLoockBackAccessed<T, group_size, policy, Tile> get_access(
+            sycl::handler &cgh) {
             return ScanDecoupledLoockBackAccessed<T, group_size, policy, Tile>{
                 cgh, *this, group_count};
         }
@@ -229,8 +229,8 @@ namespace shamalgs::numeric::details {
     class InplaceExclusiveScanDecoupledLookBack;
 
     template<class T, u32 group_size>
-    void
-    exclusive_sum_in_place_atomic_decoupled_v5(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    void exclusive_sum_in_place_atomic_decoupled_v5(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
         u32 group_cnt = shambase::group_count(len, group_size);
 
         group_cnt         = group_cnt + (group_cnt % 4);
@@ -267,8 +267,8 @@ namespace shamalgs::numeric::details {
     class KernelExclusiveSumAtomicSyncDecoupled_v5;
 
     template<class T, u32 group_size>
-    sycl::buffer<T>
-    exclusive_sum_atomic_decoupled_v5(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    sycl::buffer<T> exclusive_sum_atomic_decoupled_v5(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
 
         u32 group_cnt = shambase::group_count(len, group_size);
 
@@ -641,8 +641,8 @@ namespace shamalgs::numeric::details {
     class KernelExclusiveSumAtomicSyncDecoupled_v6;
 
     template<class T, u32 group_size, u32 thread_counts>
-    sycl::buffer<T>
-    exclusive_sum_atomic_decoupled_v6(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    sycl::buffer<T> exclusive_sum_atomic_decoupled_v6(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
 
         u32 group_cnt = shambase::group_count(len, group_size);
 

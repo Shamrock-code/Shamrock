@@ -44,8 +44,8 @@ namespace shamrock::details {
     }
 
     template<class RT, class T, int n>
-    inline sycl::buffer<RT>
-    to_vtk_buf_type(sycl::queue &q, sycl::buffer<sycl::vec<T, n>> &buf_in, u64 len) {
+    inline sycl::buffer<RT> to_vtk_buf_type(
+        sycl::queue &q, sycl::buffer<sycl::vec<T, n>> &buf_in, u64 len) {
         sycl::buffer<RT> ret(len * n);
 
         q.submit([=, &buf_in, &ret](sycl::handler &cgh) {

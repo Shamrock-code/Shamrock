@@ -133,8 +133,8 @@ namespace shamcomm::mpi {
         MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status);
 
     /// MPI wrapper for MPI_File_write
-    void
-    File_write(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status);
+    void File_write(
+        MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status);
 
     /// MPI wrapper for MPI_File_read
     void File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status);

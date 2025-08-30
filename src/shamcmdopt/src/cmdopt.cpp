@@ -219,8 +219,9 @@ namespace shamcmdopt {
 
             std::string arg_print = arg.value_or("");
 
-            fmt::println(shambase::format_printf(
-                "%-15s %-15s : %s", n.c_str(), arg_print.c_str(), desc.c_str()));
+            fmt::println(
+                shambase::format_printf(
+                    "%-15s %-15s : %s", n.c_str(), arg_print.c_str(), desc.c_str()));
         }
         print_help_env_var();
     }

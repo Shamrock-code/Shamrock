@@ -31,8 +31,8 @@ namespace shamalgs::reduction::details {
     };
 
     template<class T, class Op>
-    inline T
-    reduce_sycl_2020(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id, Op op) {
+    inline T reduce_sycl_2020(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id, Op op) {
 
         u32 len = end_id - start_id;
 

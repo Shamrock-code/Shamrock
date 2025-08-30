@@ -71,8 +71,9 @@ namespace shamalgs::primitives {
      * @endcode
      */
     template<class T>
-    [[deprecated("Use equals(const sham::DeviceScheduler_ptr &, sham::DeviceBuffer<T> &, "
-                 "sham::DeviceBuffer<T> &, u32 ) instead.")]]
+    [[deprecated(
+        "Use equals(const sham::DeviceScheduler_ptr &, sham::DeviceBuffer<T> &, "
+        "sham::DeviceBuffer<T> &, u32 ) instead.")]]
     bool equals(sycl::queue &q, sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt) {
 
         if (buf1.size() < cnt) {

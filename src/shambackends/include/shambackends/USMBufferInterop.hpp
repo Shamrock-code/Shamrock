@@ -33,8 +33,8 @@ namespace sham {
      * @return std::vector<sycl::event>
      */
     template<class T>
-    inline std::vector<sycl::event>
-    usmbuffer_memcpy(sycl::queue &queue, sycl::buffer<T> &src, T *dest, u64 count) {
+    inline std::vector<sycl::event> usmbuffer_memcpy(
+        sycl::queue &queue, sycl::buffer<T> &src, T *dest, u64 count) {
 
         u64 offset                  = 0;
         u64 remains                 = count;
@@ -70,8 +70,8 @@ namespace sham {
      * @return std::vector<sycl::event>
      */
     template<class T>
-    inline std::vector<sycl::event>
-    usmbuffer_memcpy(sycl::queue &queue, const T *src, sycl::buffer<T> &dest, u64 count) {
+    inline std::vector<sycl::event> usmbuffer_memcpy(
+        sycl::queue &queue, const T *src, sycl::buffer<T> &dest, u64 count) {
 
         u64 offset                  = 0;
         u64 remains                 = count;
@@ -108,8 +108,8 @@ namespace sham {
      * @return std::vector<sycl::event>
      */
     template<class T>
-    inline std::vector<sycl::event>
-    usmbuffer_memcpy_discard(sycl::queue &queue, const T *src, sycl::buffer<T> &dest, u64 count) {
+    inline std::vector<sycl::event> usmbuffer_memcpy_discard(
+        sycl::queue &queue, const T *src, sycl::buffer<T> &dest, u64 count) {
         u64 offset                  = 0;
         u64 remains                 = count;
         constexpr u64 max_step_size = i32_max / 2;

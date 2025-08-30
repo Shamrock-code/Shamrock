@@ -80,21 +80,26 @@ namespace shamrock::tree {
     template<class u_morton>
     TreeStructure<u_morton>::TreeStructure(const TreeStructure<u_morton> &other)
         : internal_cell_count(other.internal_cell_count), one_cell_mode(other.one_cell_mode),
-          buf_lchild_id(shamalgs::memory::duplicate(
-              shamsys::instance::get_compute_queue(),
-              other.buf_lchild_id)), // size = internal
-          buf_rchild_id(shamalgs::memory::duplicate(
-              shamsys::instance::get_compute_queue(),
-              other.buf_rchild_id)), // size = internal
-          buf_lchild_flag(shamalgs::memory::duplicate(
-              shamsys::instance::get_compute_queue(),
-              other.buf_lchild_flag)), // size = internal
-          buf_rchild_flag(shamalgs::memory::duplicate(
-              shamsys::instance::get_compute_queue(),
-              other.buf_rchild_flag)), // size = internal
-          buf_endrange(shamalgs::memory::duplicate(
-              shamsys::instance::get_compute_queue(),
-              other.buf_endrange)) // size = internal
+          buf_lchild_id(
+              shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_lchild_id)), // size = internal
+          buf_rchild_id(
+              shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_rchild_id)), // size = internal
+          buf_lchild_flag(
+              shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_lchild_flag)), // size = internal
+          buf_rchild_flag(
+              shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_rchild_flag)), // size = internal
+          buf_endrange(
+              shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_endrange)) // size = internal
     {}
 
     template<class u_morton>

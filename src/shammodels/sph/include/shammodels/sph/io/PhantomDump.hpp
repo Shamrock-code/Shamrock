@@ -285,8 +285,8 @@ namespace shammodels::sph {
          * @param numarray the number of values of each type
          * @return the block that was read
          */
-        static PhantomDumpBlock
-        from_file(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
+        static PhantomDumpBlock from_file(
+            shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
 
         /**
          * @brief Writes a block to a file

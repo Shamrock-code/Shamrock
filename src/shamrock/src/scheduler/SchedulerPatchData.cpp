@@ -125,11 +125,12 @@ namespace shamrock::scheduler {
 
                 sham::DeviceBuffer<u8> tmp = serializer(patchdata);
 
-                send_payloads.push_back(Message{
-                    std::make_unique<shamcomm::CommunicationBuffer>(
-                        std::move(tmp), shamsys::instance::get_compute_scheduler_ptr()),
-                    op.rank_owner_new,
-                    op.tag_comm});
+                send_payloads.push_back(
+                    Message{
+                        std::make_unique<shamcomm::CommunicationBuffer>(
+                            std::move(tmp), shamsys::instance::get_compute_scheduler_ptr()),
+                        op.rank_owner_new,
+                        op.tag_comm});
             }
         }
 
@@ -142,10 +143,11 @@ namespace shamrock::scheduler {
 
             // if i'm receiver
             if (op.rank_owner_new == shamcomm::world_rank()) {
-                recv_payloads.push_back(Message{
-                    std::unique_ptr<shamcomm::CommunicationBuffer>{},
-                    op.rank_owner_old,
-                    op.tag_comm});
+                recv_payloads.push_back(
+                    Message{
+                        std::unique_ptr<shamcomm::CommunicationBuffer>{},
+                        op.rank_owner_old,
+                        op.tag_comm});
             }
         }
 

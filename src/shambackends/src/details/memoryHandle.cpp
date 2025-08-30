@@ -44,8 +44,8 @@ namespace sham::details {
     }
 
     template<USMKindTarget target>
-    void
-    release_usm_ptr(USMPtrHolder<target> &&usm_ptr_hold, details::BufferEventHandler &&events) {
+    void release_usm_ptr(
+        USMPtrHolder<target> &&usm_ptr_hold, details::BufferEventHandler &&events) {
 
         StackEntry __st{};
 
@@ -67,8 +67,8 @@ namespace sham::details {
         USMPtrHolder<device> &&usm_ptr_hold, details::BufferEventHandler &&events);
     template void release_usm_ptr<shared>(
         USMPtrHolder<shared> &&usm_ptr_hold, details::BufferEventHandler &&events);
-    template void
-    release_usm_ptr<host>(USMPtrHolder<host> &&usm_ptr_hold, details::BufferEventHandler &&events);
+    template void release_usm_ptr<host>(
+        USMPtrHolder<host> &&usm_ptr_hold, details::BufferEventHandler &&events);
 
 #endif
 

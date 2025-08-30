@@ -143,8 +143,8 @@ namespace shambase {
     }
 
     template<class T>
-    inline void
-    stream_write_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
+    inline void stream_write_vector_trivial(
+        std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
 
         u32 flag = details::VALIDATION_FLAGS::VECTOR;
         stream_write(stream, flag);
@@ -164,8 +164,8 @@ namespace shambase {
      * @param vec
      */
     template<class T>
-    inline void
-    stream_read_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
+    inline void stream_read_vector_trivial(
+        std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
 
         u32 flag;
         stream_read(stream, flag);

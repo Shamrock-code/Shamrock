@@ -95,8 +95,8 @@ namespace sham {
         }
 
         template<class Obj>
-        inline auto
-        get_write_access(std::reference_wrapper<Obj> &o, sham::EventList &depends_list) {
+        inline auto get_write_access(
+            std::reference_wrapper<Obj> &o, sham::EventList &depends_list) {
             return o.get().get_write_access(depends_list);
         }
         template<class Obj>

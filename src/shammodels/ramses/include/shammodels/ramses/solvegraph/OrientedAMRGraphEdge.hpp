@@ -33,16 +33,16 @@ namespace shammodels::basegodunov::solvergraph {
 
         inline virtual void free_alloc() { graph = {}; }
 
-        inline shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>>
-        get_refs_dir(modules::Direction dir) {
+        inline shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>> get_refs_dir(
+            modules::Direction dir) {
             return graph.template map<std::reference_wrapper<modules::AMRGraph>>(
                 [&](u64 id,
                     OrientedAMRGraph &neigh_graph) -> std::reference_wrapper<modules::AMRGraph> {
                     return std::ref(shambase::get_check_ref(neigh_graph.graph_links[dir]));
                 });
         }
-        inline shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>>
-        get_refs_dir(modules::Direction dir) const {
+        inline shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>> get_refs_dir(
+            modules::Direction dir) const {
             return graph.template map<std::reference_wrapper<modules::AMRGraph>>(
                 [&](u64 id, const OrientedAMRGraph &neigh_graph)
                     -> std::reference_wrapper<modules::AMRGraph> {

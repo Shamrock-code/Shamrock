@@ -93,8 +93,8 @@ class LegacyInterfacehandler {
     void comm_interfaces(PatchScheduler &sched, bool periodic);
 
     template<class T>
-    PatchComputeFieldInterfaces<T>
-    comm_interfaces_field(PatchScheduler &sched, PatchComputeField<T> &pcomp_field, bool periodic) {
+    PatchComputeFieldInterfaces<T> comm_interfaces_field(
+        PatchScheduler &sched, PatchComputeField<T> &pcomp_field, bool periodic) {
         StackEntry stack_loc{};
         PatchComputeFieldInterfaces<T> interface_field_map;
 

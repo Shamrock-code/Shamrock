@@ -108,10 +108,11 @@ TestStart(TestType::ValidationTest, "shamrock/scheduler/loadbalance", testloadba
         std::mt19937 eng{0x111};
 
         for (u32 i = 0; i < count; i++) {
-            res.push_back(LBTile{
-                shamalgs::primitives::mock_value(eng, 0_u64, u64_max),
-                shamalgs::primitives::mock_value(eng, min_load, max_load),
-            });
+            res.push_back(
+                LBTile{
+                    shamalgs::primitives::mock_value(eng, 0_u64, u64_max),
+                    shamalgs::primitives::mock_value(eng, min_load, max_load),
+                });
         }
 
         return res;

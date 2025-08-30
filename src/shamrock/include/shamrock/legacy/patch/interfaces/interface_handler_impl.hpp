@@ -68,9 +68,10 @@ namespace impl {
                 } else {
                     comm_pdat.push_back(std::make_unique<PatchDataLayer>(sched.get_layout_ptr()));
                 }
-                comm_vec.push_back(u64_2{
-                    interface_comm_list[i].global_patch_idx_send,
-                    interface_comm_list[i].global_patch_idx_recv});
+                comm_vec.push_back(
+                    u64_2{
+                        interface_comm_list[i].global_patch_idx_send,
+                        interface_comm_list[i].global_patch_idx_recv});
             }
 
             // std::cout << "\n split \n";
@@ -123,9 +124,10 @@ namespace impl {
                 } else {
                     comm_pdat.push_back(std::make_unique<PCField>("comp_field", 1));
                 }
-                comm_vec.push_back(u64_2{
-                    interface_comm_list[i].global_patch_idx_send,
-                    interface_comm_list[i].global_patch_idx_recv});
+                comm_vec.push_back(
+                    u64_2{
+                        interface_comm_list[i].global_patch_idx_send,
+                        interface_comm_list[i].global_patch_idx_recv});
             }
 
             // std::cout << "\n split \n";

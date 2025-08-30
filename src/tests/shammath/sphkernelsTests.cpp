@@ -22,8 +22,8 @@
 #include <vector>
 
 template<class Ker>
-inline void
-validate_kernel_3d(typename Ker::Tscal tol, typename Ker::Tscal dx, typename Ker::Tscal dx_int) {
+inline void validate_kernel_3d(
+    typename Ker::Tscal tol, typename Ker::Tscal dx, typename Ker::Tscal dx_int) {
 
     using namespace shambase::constants;
 

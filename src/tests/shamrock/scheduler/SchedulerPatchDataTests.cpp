@@ -70,8 +70,9 @@ TestStart(
     std::vector<PatchData> ref_pdat;
 
     for (u32 i = 0; i < npatch; i++) {
-        ref_pdat.push_back(PatchData::mock_patchdata(
-            eng(), shamalgs::primitives::mock_value(eng, 1_u32, max_ob_ppatch), pdl_ptr));
+        ref_pdat.push_back(
+            PatchData::mock_patchdata(
+                eng(), shamalgs::primitives::mock_value(eng, 1_u32, max_ob_ppatch), pdl_ptr));
     }
 
     PatchCoord pcoord({0, 0, 0}, {0, 0, 0});

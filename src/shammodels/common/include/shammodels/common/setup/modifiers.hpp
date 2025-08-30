@@ -28,8 +28,8 @@
 namespace generic::setup::modifiers {
 
     template<class T, class vec>
-    inline void
-    set_value_in_box(PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
+    inline void set_value_in_box(
+        PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
         StackEntry stack_loc{};
         sched.patch_data.for_each_patchdata([&](u64 patch_id,
                                                 shamrock::patch::PatchDataLayer &pdat) {

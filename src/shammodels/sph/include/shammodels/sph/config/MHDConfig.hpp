@@ -174,15 +174,17 @@ namespace shammodels::sph {
         if (mhd_type == "none") {
             p.set(None{});
         } else if (mhd_type == "ideal_mhd_constrained_hyper_para") {
-            p.set(IMHD{
-                j.at("sigma_mhd").get<Tscal>(),
-                j.at("alpha_u").get<Tscal>(),
-            });
+            p.set(
+                IMHD{
+                    j.at("sigma_mhd").get<Tscal>(),
+                    j.at("alpha_u").get<Tscal>(),
+                });
         } else if (mhd_type == "non_ideal_mhd") {
-            p.set(NonIdealMHD{
-                j.at("sigma_mhd").get<Tscal>(),
-                j.at("alpha_u").get<Tscal>(),
-            });
+            p.set(
+                NonIdealMHD{
+                    j.at("sigma_mhd").get<Tscal>(),
+                    j.at("alpha_u").get<Tscal>(),
+                });
         } else {
             shambase::throw_unimplemented("wtf !");
         }

@@ -161,8 +161,8 @@ namespace syclalg {
 
     template<class T>
     [[deprecated("please use the shamalgs library instead")]]
-    inline std::tuple<T, T>
-    get_min_max(sycl::queue &queue, const std::unique_ptr<sycl::buffer<T>> &buf, u32 len) {
+    inline std::tuple<T, T> get_min_max(
+        sycl::queue &queue, const std::unique_ptr<sycl::buffer<T>> &buf, u32 len) {
 
         T accum_min, accum_max;
 

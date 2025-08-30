@@ -28,13 +28,13 @@
 // TODO can merge those 2 func
 
 template<>
-std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>>
-InterfaceVolumeGenerator::append_interface<f32_3>(
-    sycl::queue &queue,
-    shamrock::patch::PatchDataLayer &pdat,
-    std::vector<f32_3> boxs_min,
-    std::vector<f32_3> boxs_max,
-    f32_3 add_offset) {
+std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> InterfaceVolumeGenerator::
+    append_interface<f32_3>(
+        sycl::queue &queue,
+        shamrock::patch::PatchDataLayer &pdat,
+        std::vector<f32_3> boxs_min,
+        std::vector<f32_3> boxs_max,
+        f32_3 add_offset) {
 
     using namespace shamrock::patch;
 
@@ -65,13 +65,13 @@ InterfaceVolumeGenerator::append_interface<f32_3>(
 }
 
 template<>
-std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>>
-InterfaceVolumeGenerator::append_interface<f64_3>(
-    sycl::queue &queue,
-    shamrock::patch::PatchDataLayer &pdat,
-    std::vector<f64_3> boxs_min,
-    std::vector<f64_3> boxs_max,
-    f64_3 add_offset) {
+std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> InterfaceVolumeGenerator::
+    append_interface<f64_3>(
+        sycl::queue &queue,
+        shamrock::patch::PatchDataLayer &pdat,
+        std::vector<f64_3> boxs_min,
+        std::vector<f64_3> boxs_max,
+        f64_3 add_offset) {
     using namespace shamrock::patch;
 
     std::vector<u8> flag_choice = impl::get_flag_choice(queue, pdat, boxs_min, boxs_max);

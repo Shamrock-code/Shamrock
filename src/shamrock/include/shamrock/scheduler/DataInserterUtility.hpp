@@ -83,8 +83,9 @@ namespace shamrock {
                     }
                 });
             } else {
-                shambase::throw_unimplemented("Not implemented yet please keep the obj count to be "
-                                              "inserted below the split_threshold, sorrrrrry ...");
+                shambase::throw_unimplemented(
+                    "Not implemented yet please keep the obj count to be "
+                    "inserted below the split_threshold, sorrrrrry ...");
             }
 
             if (shamcomm::world_rank() == 0) {

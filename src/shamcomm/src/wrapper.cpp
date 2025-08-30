@@ -245,8 +245,8 @@ namespace shamcomm::mpi {
         });
     }
 
-    void
-    File_write(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
+    void File_write(
+        MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
         StackEntry stack_loc{};
         wrap_profiling("MPI_File_write", [&]() {
             MPICHECK(MPI_File_write(fh, buf, count, datatype, status));

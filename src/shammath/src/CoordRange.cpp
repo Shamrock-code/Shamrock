@@ -22,8 +22,8 @@
 namespace shammath {
 
     template<class T>
-    void
-    throw_ill_formed(T lower, T upper, SourceLocation call, SourceLocation loc = SourceLocation{}) {
+    void throw_ill_formed(
+        T lower, T upper, SourceLocation call, SourceLocation loc = SourceLocation{}) {
         throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
             "this range is ill formed normally upper > lower\n     lower = {}, upper = {}\n     "
             "call to check_throw = {}",

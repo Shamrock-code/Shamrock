@@ -171,8 +171,8 @@ namespace std {
         public:
         // The defaulted __ptr argument is necessary so that the builtin is evaluated
         // in the context of the caller. An explicit value should never be provided.
-        static constexpr source_location
-        current(__bsl_ty __ptr = __builtin_source_location()) noexcept {
+        static constexpr source_location current(
+            __bsl_ty __ptr = __builtin_source_location()) noexcept {
             source_location __sl;
             __sl.__ptr_ = static_cast<const __impl *>(__ptr);
             return __sl;

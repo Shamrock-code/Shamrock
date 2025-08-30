@@ -35,8 +35,8 @@ namespace shamalgs::memory {
     }
 
     template<class T, int n>
-    inline sycl::buffer<T>
-    flatten_buffer(sycl::queue &q, sycl::buffer<sycl::vec<T, n>> &buf_in, u64 len) {
+    inline sycl::buffer<T> flatten_buffer(
+        sycl::queue &q, sycl::buffer<sycl::vec<T, n>> &buf_in, u64 len) {
         sycl::buffer<T> ret(len * n);
 
         q.submit([=, &buf_in, &ret](sycl::handler &cgh) {

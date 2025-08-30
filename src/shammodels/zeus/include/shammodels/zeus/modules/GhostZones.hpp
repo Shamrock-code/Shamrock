@@ -46,8 +46,8 @@ namespace shammodels::zeus::modules {
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf);
 
         template<class T>
-        shambase::DistributedDataShared<PatchDataField<T>>
-        communicate_pdat_field(shambase::DistributedDataShared<PatchDataField<T>> &&interf);
+        shambase::DistributedDataShared<PatchDataField<T>> communicate_pdat_field(
+            shambase::DistributedDataShared<PatchDataField<T>> &&interf);
 
         template<class T, class Tmerged>
         shambase::DistributedData<Tmerged> merge_native(

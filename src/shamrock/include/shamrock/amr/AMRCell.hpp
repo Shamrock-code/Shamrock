@@ -33,8 +33,8 @@ namespace shamrock::amr {
             return (bmax - bmin) / 2 + bmin;
         }
 
-        inline static auto
-        get_split(Tcoord bmin, Tcoord bmax) -> std::array<AMRBlockCoord, splts_count> {
+        inline static auto get_split(Tcoord bmin, Tcoord bmax)
+            -> std::array<AMRBlockCoord, splts_count> {
 
             std::array<AMRBlockCoord, splts_count> ret;
 

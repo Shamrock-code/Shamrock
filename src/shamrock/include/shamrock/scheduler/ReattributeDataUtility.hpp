@@ -58,8 +58,8 @@ namespace shamrock {
          * bound).
          */
         template<class T>
-        shambase::DistributedData<sycl::buffer<u64>>
-        compute_new_pid(SerialPatchTree<T> &sptree, u32 ipos) {
+        shambase::DistributedData<sycl::buffer<u64>> compute_new_pid(
+            SerialPatchTree<T> &sptree, u32 ipos) {
 
             StackEntry stack_loc{};
 
@@ -112,8 +112,8 @@ namespace shamrock {
          *
          * @return A shared distributed data object containing the extracted patch data.
          */
-        inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>
-        extract_elements(shambase::DistributedData<sycl::buffer<u64>> new_pid) {
+        inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> extract_elements(
+            shambase::DistributedData<sycl::buffer<u64>> new_pid) {
             shambase::DistributedDataShared<patch::PatchDataLayer> part_exchange;
 
             StackEntry stack_loc{};
@@ -210,8 +210,8 @@ namespace shamrock {
          * @param position_field the name of the main field used to determine the new patch IDs
          */
         template<class T>
-        inline void
-        reatribute_patch_objects(SerialPatchTree<T> &sptree, std::string position_field) {
+        inline void reatribute_patch_objects(
+            SerialPatchTree<T> &sptree, std::string position_field) {
             StackEntry stack_loc{};
 
             using namespace shambase;

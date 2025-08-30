@@ -28,8 +28,8 @@
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-shamrock::patch::PatchDataLayer
-shammodels::sph::modules::ModifierFilter<Tvec, SPHKernel>::next_n(u32 nmax) {
+shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierFilter<Tvec, SPHKernel>::next_n(
+    u32 nmax) {
 
     using Config = SolverConfig<Tvec, SPHKernel>;
     Config solver_config;

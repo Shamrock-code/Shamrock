@@ -46,8 +46,8 @@ namespace shamrock {
         }
 
         template<class T, class flt>
-        inline void
-        fields_leapfrog_corrector(u32 field_idx, u32 derfield_idx, u32 derfield_old_idx, flt hdt) {
+        inline void fields_leapfrog_corrector(
+            u32 field_idx, u32 derfield_idx, u32 derfield_old_idx, flt hdt) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
             sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
@@ -250,8 +250,8 @@ namespace shamrock {
          * @return ComputeField<T>
          */
         template<class T>
-        inline ComputeField<T>
-        make_compute_field(std::string new_name, u32 nvar, std::function<u32(u64)> size_getter) {
+        inline ComputeField<T> make_compute_field(
+            std::string new_name, u32 nvar, std::function<u32(u64)> size_getter) {
             StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;

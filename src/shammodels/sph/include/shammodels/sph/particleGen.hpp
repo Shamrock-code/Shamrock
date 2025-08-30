@@ -47,8 +47,8 @@ namespace shamrock::sph {
     }
 
     template<class flt>
-    inline std::tuple<sycl::vec<flt, 3>, sycl::vec<flt, 3>>
-    get_ideal_fcc_box(flt r_particle, std::tuple<sycl::vec<flt, 3>, sycl::vec<flt, 3>> box) {
+    inline std::tuple<sycl::vec<flt, 3>, sycl::vec<flt, 3>> get_ideal_fcc_box(
+        flt r_particle, std::tuple<sycl::vec<flt, 3>, sycl::vec<flt, 3>> box) {
 
         using vec3 = sycl::vec<flt, 3>;
 

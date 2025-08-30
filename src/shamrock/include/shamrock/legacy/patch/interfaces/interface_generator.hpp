@@ -307,14 +307,15 @@ class Interface_Generator {
 
                             InterfaceComInternal tmp = interface_list[{i, j}];
 
-                            comm_vec.push_back(InterfaceComm<vectype>{
-                                sched.patch_list.id_patch_to_global_idx[tmp.sender_patch_id],
-                                tmp.global_patch_idx_recv,
-                                tmp.sender_patch_id,
-                                tmp.receiver_patch_id,
-                                tmp.interf_box_min,
-                                tmp.interf_box_max,
-                                tmp.interf_offset});
+                            comm_vec.push_back(
+                                InterfaceComm<vectype>{
+                                    sched.patch_list.id_patch_to_global_idx[tmp.sender_patch_id],
+                                    tmp.global_patch_idx_recv,
+                                    tmp.sender_patch_id,
+                                    tmp.receiver_patch_id,
+                                    tmp.interf_box_min,
+                                    tmp.interf_box_max,
+                                    tmp.interf_offset});
 
                             write_out << interface_list[{i, j}].local_patch_idx_send << "|"
                                       << interface_list[{i, j}].global_patch_idx_recv << "|"
@@ -412,9 +413,10 @@ class Interface_Generator {
                 } else {
                     comm_pdat.push_back(std::make_unique<PatchDataLayer>());
                 }
-                comm_vec.push_back(u64_2{
-                    interface_comm_list[i].global_patch_idx_send,
-                    interface_comm_list[i].global_patch_idx_recv});
+                comm_vec.push_back(
+                    u64_2{
+                        interface_comm_list[i].global_patch_idx_send,
+                        interface_comm_list[i].global_patch_idx_recv});
             }
 
             std::cout << "\n split \n";

@@ -13,9 +13,31 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
+#include "shamtree/details/dtt_parralel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
+#include "shamtree/details/dtt_scan_multipass.hpp"
 
 namespace shamtree {
+
+    enum class DTTImpl { REFERENCE, PARALLEL_SELECT, SCAN_MULTIPASS };
+    DTTImpl dtt_impl = DTTImpl::SCAN_MULTIPASS;
+
+    std::vector<std::string> get_impl_list_clbvh_dual_tree_traversal() {
+        return {"reference", "parallel_select", "scan_multipass"};
+    }
+
+    void set_impl_clbvh_dual_tree_traversal(const std::string &impl, const std::string &param) {
+        if (impl == "reference") {
+            dtt_impl = DTTImpl::REFERENCE;
+        } else if (impl == "parallel_select") {
+            dtt_impl = DTTImpl::PARALLEL_SELECT;
+        } else if (impl == "scan_multipass") {
+            dtt_impl = DTTImpl::SCAN_MULTIPASS;
+        } else {
+            throw std::invalid_argument("invalid implementation");
+        }
+    }
 
     template<class Tmorton, class Tvec, u32 dim>
     inline DTTResult clbvh_dual_tree_traversal(
@@ -23,7 +45,16 @@ namespace shamtree {
         const CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
         shambase::VecComponent<Tvec> theta_crit) {
 
-        return details::DTTCpuReference<Tmorton, Tvec, dim>::dtt(dev_sched, bvh, theta_crit);
+        using ImplRef = details::DTTCpuReference<Tmorton, Tvec, dim>;
+        using ImplPar = details::DTTParallelSelect<Tmorton, Tvec, dim>;
+        using ImplSca = details::DTTScanMultipass<Tmorton, Tvec, dim>;
+
+        switch (dtt_impl) {
+        case DTTImpl::REFERENCE: return ImplRef::dtt(dev_sched, bvh, theta_crit);
+        case DTTImpl::PARALLEL_SELECT: return ImplPar::dtt(dev_sched, bvh, theta_crit);
+        case DTTImpl::SCAN_MULTIPASS: return ImplSca::dtt(dev_sched, bvh, theta_crit);
+        default: shambase::throw_unimplemented();
+        }
     }
 
     template DTTResult clbvh_dual_tree_traversal<u64, f64_3, 3>(

@@ -31,4 +31,12 @@ namespace shamtree {
         const CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
         shambase::VecComponent<Tvec> theta_crit);
 
+    namespace impl {
+
+        std::vector<std::string> get_impl_list_clbvh_dual_tree_traversal();
+
+        void
+        set_impl_clbvh_dual_tree_traversal(const std::string &impl, const std::string &param = "");
+
+    } // namespace impl
 } // namespace shamtree

@@ -223,4 +223,24 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
         REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
     }
+
+    // the main one
+    {
+        shambase::Timer timer;
+        timer.start();
+        auto result = shamtree::clbvh_dual_tree_traversal(
+            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
+        timer.end();
+        logger::raw_ln("clbvh_dual_tree_traversal :", timer.get_time_str());
+
+        std::vector<u32_2> internal_node_interactions
+            = result.node_node_interactions.copy_to_stdvec();
+        std::vector<u32_2> unrolled_interact = result.leaf_leaf_interactions.copy_to_stdvec();
+
+        validate_dtt_results(
+            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
+
+        REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
+        REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
+    }
 }

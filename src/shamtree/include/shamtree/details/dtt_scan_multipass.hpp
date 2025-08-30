@@ -110,7 +110,6 @@ namespace shamtree::details {
                 has_pushed_m2m.fill(0, has_pushed_m2m_sz);
                 has_pushed_p2p.fill(0, has_pushed_p2p_sz);
 
-
                 using ObjectIterator  = shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim>;
                 ObjectIterator obj_it = bvh.get_object_iterator();
 
@@ -179,7 +178,6 @@ namespace shamtree::details {
                             has_pushed_m2m[i] = 1;
                         }
                     });
-
 
 // set to false to use standard scans instead of in place ones
 #if true
@@ -275,7 +273,6 @@ namespace shamtree::details {
                             interact_p2p[res_sz_leaf_leaf + scan_p2p_i] = pushed_p2p[i];
                         }
                     });
-
             }
 
             return result;

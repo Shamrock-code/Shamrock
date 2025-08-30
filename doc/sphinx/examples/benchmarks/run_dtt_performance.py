@@ -1,3 +1,12 @@
+"""
+DTT performance benchmarks
+=================================
+
+This example benchmarks the DTT performance for the different algorithms available in Shamrock
+"""
+
+# sphinx_gallery_multi_image = "single"
+
 import random
 import time
 
@@ -9,6 +18,7 @@ import shamrock
 
 # If we use the shamrock executable to run this script instead of the python interpreter,
 # we should not initialize the system as the shamrock executable needs to handle specific MPI logic
+# %%
 if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
@@ -22,14 +32,17 @@ def get_pseudo_random_int():
     return random.randint(0, 1000000)
 
 
+# %%
 bounding_box = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (1.0, 1.0, 1.0))
 
 
+# %%
 def get_uniform_positions(N):
     position_seed = get_pseudo_random_int()
     return shamrock.algs.mock_buffer_f64_3(position_seed, N, bounding_box.lower, bounding_box.upper)
 
 
+# %%
 def benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat=10):
     times = []
     for i in range(nb_repeat):
@@ -40,11 +53,13 @@ def benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat=10):
     return times
 
 
+# %%
 def benchmark_dtt(N, theta_crit, compression_level, nb_repeat=10):
     times = benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat)
     return min(times), max(times), sum(times) / nb_repeat
 
 
+# %%
 def run_performance_sweep(compression_level, threshold_run):
 
     # Define parameter ranges
@@ -57,7 +72,6 @@ def run_performance_sweep(compression_level, threshold_run):
     results_min = np.zeros((len(theta_crits), len(particle_counts)))
     results_max = np.zeros((len(theta_crits), len(particle_counts)))
 
-    print("Running DTT performance benchmarks...")
     print(f"Particle counts: {particle_counts}")
     print(f"Theta_crit values: {theta_crits}")
     print(f"Compression level: {compression_level}")
@@ -98,6 +112,7 @@ def run_performance_sweep(compression_level, threshold_run):
     return particle_counts, theta_crits, results_mean, results_min, results_max
 
 
+# %%
 def create_checkerboard_plot(
     particle_counts,
     theta_crits,

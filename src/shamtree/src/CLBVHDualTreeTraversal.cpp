@@ -23,11 +23,12 @@ namespace shamtree {
     enum class DTTImpl { REFERENCE, PARALLEL_SELECT, SCAN_MULTIPASS };
     DTTImpl dtt_impl = DTTImpl::SCAN_MULTIPASS;
 
-    std::vector<std::string> get_impl_list_clbvh_dual_tree_traversal() {
+    std::vector<std::string> impl::get_impl_list_clbvh_dual_tree_traversal() {
         return {"reference", "parallel_select", "scan_multipass"};
     }
 
-    void set_impl_clbvh_dual_tree_traversal(const std::string &impl, const std::string &param) {
+    void
+    impl::set_impl_clbvh_dual_tree_traversal(const std::string &impl, const std::string &param) {
         if (impl == "reference") {
             dtt_impl = DTTImpl::REFERENCE;
         } else if (impl == "parallel_select") {

@@ -20,6 +20,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include <pybind11/complex.h>
 
 Register_pymod(shamalgslibinit) {
@@ -44,4 +45,19 @@ Register_pymod(shamalgslibinit) {
     shamalgs_module.def("mock_unit_vector_f64_3", [](std::mt19937 &eng) {
         return shamalgs::random::mock_unit_vector<f64_3>(eng);
     });
+
+    shamalgs_module.def("mock_buffer_f64", [](u64 seed, u32 len, f64 min_bound, f64 max_bound) {
+        return shamalgs::random::mock_buffer_usm<f64>(
+            shamsys::instance::get_compute_scheduler_ptr(), seed, len, min_bound, max_bound);
+    });
+    shamalgs_module.def(
+        "mock_buffer_f64_2", [](u64 seed, u32 len, f64_2 min_bound, f64_2 max_bound) {
+            return shamalgs::random::mock_buffer_usm<f64_2>(
+                shamsys::instance::get_compute_scheduler_ptr(), seed, len, min_bound, max_bound);
+        });
+    shamalgs_module.def(
+        "mock_buffer_f64_3", [](u64 seed, u32 len, f64_3 min_bound, f64_3 max_bound) {
+            return shamalgs::random::mock_buffer_usm<f64_3>(
+                shamsys::instance::get_compute_scheduler_ptr(), seed, len, min_bound, max_bound);
+        });
 }

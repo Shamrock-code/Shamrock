@@ -32,8 +32,8 @@ template<class T>
 struct SparseCommExchanger {
 
     [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
-    static SparseCommResult<T>
-    sp_xchg(SparsePatchCommunicator &communicator, const SparseCommSource<T> &send_comm_pdat);
+    static SparseCommResult<T> sp_xchg(
+        SparsePatchCommunicator &communicator, const SparseCommSource<T> &send_comm_pdat);
 };
 
 class [[deprecated("Please shamalgs sparse comm instead")]] SparsePatchCommunicator {

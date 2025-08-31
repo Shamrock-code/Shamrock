@@ -54,8 +54,8 @@ namespace shammath {
     }
 
     template<class Tvec>
-    const DustConsState<Tvec>
-    operator+(const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
+    const DustConsState<Tvec> operator+(
+        const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
         return DustConsState<Tvec>(lhs) += rhs;
     }
 
@@ -67,28 +67,28 @@ namespace shammath {
     }
 
     template<class Tvec>
-    const DustConsState<Tvec>
-    operator-(const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
+    const DustConsState<Tvec> operator-(
+        const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
         return DustConsState<Tvec>(lhs) -= rhs;
     }
 
     template<class Tvec>
-    const DustConsState<Tvec> &
-    DustConsState<Tvec>::operator*=(const typename DustConsState<Tvec>::Tscal factor) {
+    const DustConsState<Tvec> &DustConsState<Tvec>::operator*=(
+        const typename DustConsState<Tvec>::Tscal factor) {
         rho *= factor;
         rhovel *= factor;
         return *this;
     }
 
     template<class Tvec>
-    const DustConsState<Tvec>
-    operator*(const DustConsState<Tvec> &lhs, const typename DustConsState<Tvec>::Tscal factor) {
+    const DustConsState<Tvec> operator*(
+        const DustConsState<Tvec> &lhs, const typename DustConsState<Tvec>::Tscal factor) {
         return DustConsState<Tvec>(lhs) *= factor;
     }
 
     template<class Tvec>
-    const DustConsState<Tvec>
-    operator*(const typename DustConsState<Tvec>::Tscal factor, const DustConsState<Tvec> &rhs) {
+    const DustConsState<Tvec> operator*(
+        const typename DustConsState<Tvec>::Tscal factor, const DustConsState<Tvec> &rhs) {
         return DustConsState<Tvec>(rhs) *= factor;
     }
 

@@ -123,8 +123,8 @@ shamalgs::SerializeSize RadixTree<u_morton, pos_t>::serialize_byte_size() {
 }
 
 template<class u_morton, class pos_t>
-RadixTree<u_morton, pos_t>
-RadixTree<u_morton, pos_t>::deserialize(shamalgs::SerializeHelper &serializer) {
+RadixTree<u_morton, pos_t> RadixTree<u_morton, pos_t>::deserialize(
+    shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{};
 
     RadixTree ret;
@@ -381,8 +381,8 @@ template void RadixTree<u64, u64_3>::print_tree_field(sycl::buffer<u32> &buf_fie
 template void RadixTree<u64, i64_3>::print_tree_field(sycl::buffer<u32> &buf_field);
 
 template<class u_morton, class vec3>
-typename RadixTree<u_morton, vec3>::CuttedTree
-RadixTree<u_morton, vec3>::cut_tree(sycl::queue &queue, sycl::buffer<u8> &valid_node) {
+typename RadixTree<u_morton, vec3>::CuttedTree RadixTree<u_morton, vec3>::cut_tree(
+    sycl::queue &queue, sycl::buffer<u8> &valid_node) {
 
     u32 total_count = tree_struct.internal_cell_count + tree_reduced_morton_codes.tree_leaf_count;
     sycl::range<1> range_tree{total_count};

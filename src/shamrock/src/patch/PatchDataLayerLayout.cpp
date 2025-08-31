@@ -143,11 +143,12 @@ namespace shamrock::patch {
                 }
             };
 
-            entries.push_back(json{
-                {"type", get_tname()},
-                {"nvar", field.nvar},
-                {"field_name", field.name},
-            });
+            entries.push_back(
+                json{
+                    {"type", get_tname()},
+                    {"nvar", field.nvar},
+                    {"field_name", field.name},
+                });
         });
 
         j = entries;

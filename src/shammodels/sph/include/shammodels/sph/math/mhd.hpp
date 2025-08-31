@@ -262,8 +262,8 @@ namespace shamrock::sph::mhd {
 
     // sigma_mhd = psidecayfactor
     template<class Tscal, MHDType MHD_mode = Ideal>
-    inline Tscal
-    dpsi_on_ch_conservation(Tscal h_a, Tscal psi_a, Tscal ch_a, Tscal sigma_mhd, Tscal vclean) {
+    inline Tscal dpsi_on_ch_conservation(
+        Tscal h_a, Tscal psi_a, Tscal ch_a, Tscal sigma_mhd, Tscal vclean) {
         Tscal dtau = vclean / (h_a * ch_a);
         return psi_a * dtau;
         // return psi_a * 1.0 / h_a;

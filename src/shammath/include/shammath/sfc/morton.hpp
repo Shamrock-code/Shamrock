@@ -269,8 +269,8 @@ namespace morton_3d {
     [[deprecated]] morton_prec coord_to_morton(fp_prec x, fp_prec y, fp_prec z);
 
     template<class morton_prec>
-    [[deprecated]] typename morton_types<morton_prec>::int_vec_repr
-    morton_to_ipos(morton_prec morton);
+    [[deprecated]] typename morton_types<morton_prec>::int_vec_repr morton_to_ipos(
+        morton_prec morton);
 
     template<class morton_prec>
     [[deprecated]] typename morton_types<morton_prec>::int_vec_repr get_offset(u32 clz_);

@@ -42,18 +42,21 @@ namespace shamtest::details {
 
         /// Test if the supplied boolean is true
         [[deprecated("Please use the supplied testing macros instead")]]
-        inline void
-        assert_bool(std::string assert_name, bool v, SourceLocation loc = SourceLocation{}) {
+        inline void assert_bool(
+            std::string assert_name, bool v, SourceLocation loc = SourceLocation{}) {
 
-            asserts.push_back(TestAssert{
-                v, std::move(assert_name), "failed assert location : " + loc.format_one_line()});
+            asserts.push_back(
+                TestAssert{
+                    v,
+                    std::move(assert_name),
+                    "failed assert location : " + loc.format_one_line()});
         }
 
         /// Test for an equality
         template<class T1, class T2>
         [[deprecated("Please use the supplied testing macros instead")]]
-        inline void
-        assert_equal(std::string assert_name, T1 a, T2 b, SourceLocation loc = SourceLocation{}) {
+        inline void assert_equal(
+            std::string assert_name, T1 a, T2 b, SourceLocation loc = SourceLocation{}) {
 
             bool t              = a == b;
             std::string comment = "";

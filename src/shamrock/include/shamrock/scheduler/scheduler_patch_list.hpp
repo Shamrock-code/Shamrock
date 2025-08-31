@@ -153,8 +153,8 @@ class SchedulerPatchList {
      *
      * parameters idx... are the 8 patches index in the global patch metadata vector.
      */
-    void
-    merge_patch(u64 idx0, u64 idx1, u64 idx2, u64 idx3, u64 idx4, u64 idx5, u64 idx6, u64 idx7);
+    void merge_patch(
+        u64 idx0, u64 idx1, u64 idx2, u64 idx3, u64 idx4, u64 idx5, u64 idx6, u64 idx7);
 };
 
 /**

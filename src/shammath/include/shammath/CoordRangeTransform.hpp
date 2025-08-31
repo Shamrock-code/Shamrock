@@ -65,8 +65,8 @@ namespace shammath {
     //////////////////////////////////
 
     template<class Tsource, class Tdest>
-    inline CoordRange<Tdest>
-    CoordRangeTransform<Tsource, Tdest>::transform(CoordRange<Tsource> rnge) const {
+    inline CoordRange<Tdest> CoordRangeTransform<Tsource, Tdest>::transform(
+        CoordRange<Tsource> rnge) const {
 
         Tsource pmin = rnge.lower;
         Tsource pmax = rnge.upper;
@@ -87,8 +87,8 @@ namespace shammath {
     }
 
     template<class Tsource, class Tdest>
-    inline CoordRange<Tsource>
-    CoordRangeTransform<Tsource, Tdest>::reverse_transform(CoordRange<Tdest> rnge) const {
+    inline CoordRange<Tsource> CoordRangeTransform<Tsource, Tdest>::reverse_transform(
+        CoordRange<Tdest> rnge) const {
 
         Tsource pmin;
         Tsource pmax;

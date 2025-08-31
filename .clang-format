@@ -2,16 +2,29 @@
 BasedOnStyle: LLVM
 IndentWidth: 4
 ColumnLimit: 100
----
-Language: Cpp
-
-Standard: c++17
-
-UseTab: Never
 AccessModifierOffset: 0
 
+Language: Cpp
+Standard: c++17
+UseTab: Never
+
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: false
+  AlignFunctionPointers: false
+  PadOperators: true
+
+AlignConsecutiveShortCaseStatements:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCaseArrows: false
+  AlignCaseColons: true
+
+
 AlignAfterOpenBracket: AlwaysBreak
-AlignConsecutiveAssignments: true
 AlignEscapedNewlines: Right
 AlignOperands:   true
 AlignTrailingComments: true
@@ -20,7 +33,6 @@ AllowShortCaseLabelsOnASingleLine : true
 AllowShortLambdasOnASingleLine: Empty
 
 AlwaysBreakTemplateDeclarations: Yes
-#AlwaysBreakTemplateDeclarations: true
 
 BinPackArguments: false
 BinPackParameters: false
@@ -40,7 +52,8 @@ IndentPPDirectives: BeforeHash
 SpaceAfterTemplateKeyword: false
 SpaceAfterCStyleCast: true
 InsertNewlineAtEOF: true
-PenaltyReturnTypeOnItsOwnLine: 1
+
+PenaltyReturnTypeOnItsOwnLine: 1000
 
 
 IncludeCategories:

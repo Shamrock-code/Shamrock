@@ -91,8 +91,8 @@ namespace shambase::logs {
      * @param content The content of the log message
      * @return A formatted log message
      */
-    std::string
-    reformat_all(std::string color, const char *name, std::string module_name, std::string content);
+    std::string reformat_all(
+        std::string color, const char *name, std::string module_name, std::string content);
 
     /**
      * @brief Format a log message with the minimum information

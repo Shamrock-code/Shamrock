@@ -39,8 +39,8 @@ namespace shammodels::basegodunov::modules {
     };
 
     template<class TgridVec>
-    shammath::paving_function_general_3d<TgridVec>
-    get_paving(GhostLayerGenMode mode, shammath::AABB<TgridVec> sim_box) {
+    shammath::paving_function_general_3d<TgridVec> get_paving(
+        GhostLayerGenMode mode, shammath::AABB<TgridVec> sim_box) {
 
         TgridVec box_size   = sim_box.upper - sim_box.lower;
         TgridVec box_center = (sim_box.upper + sim_box.lower) / 2;

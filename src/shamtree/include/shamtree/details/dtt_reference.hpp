@@ -131,6 +131,10 @@ namespace shamtree::details {
             interact_m2m_buf.copy_from_stdvec(interact_m2m);
             interact_p2p_buf.copy_from_stdvec(interact_p2p);
 
+            // while we could have built the return object directly here, we instead build it
+            // afterward to avoid an issue with clang-tidy complaining when initializing under the
+            // hood multiple unique_ptr in a structured binding initialization
+            // see : https://github.com/llvm/llvm-project/issues/153300
             return shamtree::DTTResult{std::move(interact_m2m_buf), std::move(interact_p2p_buf)};
         }
     };

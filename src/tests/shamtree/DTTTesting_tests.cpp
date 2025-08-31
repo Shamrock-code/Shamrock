@@ -125,7 +125,6 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
     auto &q        = dev_sched->get_queue();
 
     u32 Npart           = 1000;
-    u32 Npart_sq        = Npart * Npart;
     u32 reduction_level = 1;
     Tscal theta_crit    = 0.5;
 

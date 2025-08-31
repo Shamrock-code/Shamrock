@@ -125,14 +125,13 @@ namespace shamtree::details {
 
             dtt_recursive_ref(bvh, theta_crit, interact_m2m, interact_p2p);
 
-            shamtree::DTTResult result{
-                sham::DeviceBuffer<u32_2>(interact_m2m.size(), dev_sched),
-                sham::DeviceBuffer<u32_2>(interact_p2p.size(), dev_sched)};
+            sham::DeviceBuffer<u32_2> interact_m2m_buf(interact_m2m.size(), dev_sched);
+            sham::DeviceBuffer<u32_2> interact_p2p_buf(interact_p2p.size(), dev_sched);
 
-            result.node_interactions_m2m.copy_from_stdvec(interact_m2m);
-            result.node_interactions_p2p.copy_from_stdvec(interact_p2p);
+            interact_m2m_buf.copy_from_stdvec(interact_m2m);
+            interact_p2p_buf.copy_from_stdvec(interact_p2p);
 
-            return result;
+            return shamtree::DTTResult{std::move(interact_m2m_buf), std::move(interact_p2p_buf)};
         }
     };
 } // namespace shamtree::details

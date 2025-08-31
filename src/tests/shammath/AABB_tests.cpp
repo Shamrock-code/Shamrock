@@ -18,7 +18,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
     {
         shammath::AABB<f32_3> outer{{0.0f, 0.0f, 0.0f}, {10.0f, 10.0f, 10.0f}};
         shammath::AABB<f32_3> inner{{2.0f, 3.0f, 4.0f}, {5.0f, 6.0f, 7.0f}};
-        
+
         REQUIRE(outer.contains(inner));
         REQUIRE(!inner.contains(outer));
     }
@@ -27,7 +27,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
     {
         shammath::AABB<f32_3> box1{{1.0f, 2.0f, 3.0f}, {4.0f, 5.0f, 6.0f}};
         shammath::AABB<f32_3> box2{{1.0f, 2.0f, 3.0f}, {4.0f, 5.0f, 6.0f}};
-        
+
         REQUIRE(box1.contains(box2));
         REQUIRE(box2.contains(box1));
     }
@@ -36,7 +36,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
     {
         shammath::AABB<f32_3> outer{{0.0f, 0.0f, 0.0f}, {10.0f, 10.0f, 10.0f}};
         shammath::AABB<f32_3> boundary{{0.0f, 0.0f, 0.0f}, {5.0f, 5.0f, 5.0f}};
-        
+
         REQUIRE(outer.contains(boundary));
     }
 
@@ -45,7 +45,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
         shammath::AABB<f32_3> box1{{0.0f, 0.0f, 0.0f}, {5.0f, 5.0f, 5.0f}};
         shammath::AABB<f32_3> box2{{-1.0f, 0.0f, 0.0f}, {4.0f, 5.0f, 5.0f}};
         shammath::AABB<f32_3> box3{{0.0f, 0.0f, 0.0f}, {6.0f, 5.0f, 5.0f}};
-        
+
         REQUIRE(!box1.contains(box2)); // lower bound exceeds
         REQUIRE(!box1.contains(box3)); // upper bound exceeds
     }
@@ -54,7 +54,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
     {
         shammath::AABB<f32_3> box1{{0.0f, 0.0f, 0.0f}, {5.0f, 5.0f, 5.0f}};
         shammath::AABB<f32_3> box2{{3.0f, 3.0f, 3.0f}, {8.0f, 8.0f, 8.0f}};
-        
+
         REQUIRE(!box1.contains(box2));
         REQUIRE(!box2.contains(box1));
     }
@@ -63,7 +63,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
     {
         shammath::AABB<f32_3> box{{0.0f, 0.0f, 0.0f}, {5.0f, 5.0f, 5.0f}};
         shammath::AABB<f32_3> point{{2.0f, 2.0f, 2.0f}, {2.0f, 2.0f, 2.0f}};
-        
+
         REQUIRE(box.contains(point));
         REQUIRE(!point.contains(box));
     }
@@ -73,7 +73,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
         shammath::AABB<f32_2> outer{{-5.0f, -5.0f}, {5.0f, 5.0f}};
         shammath::AABB<f32_2> inner{{-2.0f, -2.0f}, {2.0f, 2.0f}};
         shammath::AABB<f32_2> outside{{-6.0f, -6.0f}, {6.0f, 6.0f}};
-        
+
         REQUIRE(outer.contains(inner));
         REQUIRE(!outer.contains(outside));
         REQUIRE(outside.contains(outer));
@@ -83,7 +83,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
     {
         shammath::AABB<f32_4> outer{{0.0f, 0.0f, 0.0f, 0.0f}, {10.0f, 10.0f, 10.0f, 10.0f}};
         shammath::AABB<f32_4> inner{{1.0f, 2.0f, 3.0f, 4.0f}, {5.0f, 6.0f, 7.0f, 8.0f}};
-        
+
         REQUIRE(outer.contains(inner));
         REQUIRE(!inner.contains(outer));
     }
@@ -92,7 +92,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
     {
         shammath::AABB<f64_3> outer{{0.0, 0.0, 0.0}, {1.0, 1.0, 1.0}};
         shammath::AABB<f64_3> inner{{0.25, 0.25, 0.25}, {0.75, 0.75, 0.75}};
-        
+
         REQUIRE(outer.contains(inner));
         REQUIRE(!inner.contains(outer));
     }
@@ -101,7 +101,7 @@ TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
     {
         shammath::AABB<f32_3> box1{{0.0f, 0.0f, 0.0f}, {10.0f, 10.0f, 10.0f}};
         shammath::AABB<f32_3> box2{{5.0f, 0.0f, 0.0f}, {7.0f, 10.0f, 10.0f}};
-        
+
         REQUIRE(box1.contains(box2));
         REQUIRE(!box2.contains(box1));
     }

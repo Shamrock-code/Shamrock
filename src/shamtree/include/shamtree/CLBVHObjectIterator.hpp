@@ -157,8 +157,8 @@ struct shamtree::CLBVHObjectIteratorAccessed {
      * node that meets the traversal condition.
      */
     template<class Functor1, class Functor2>
-    inline void
-    rtree_for(Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_object) const {
+    inline void rtree_for(
+        Functor1 &&traverse_condition_with_aabb, Functor2 &&on_found_object) const {
 
         tree_traverser.rtree_for(
             std::forward<Functor1>(traverse_condition_with_aabb),

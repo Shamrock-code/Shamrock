@@ -45,8 +45,8 @@ namespace shamrock::tree {
     };
 
     template<WalkPolicy policy, class u_morton, class InteractCrit>
-    static TreeStructureWalker<policy, u_morton, InteractCrit>
-    generate_walk(TreeStructure<u_morton> &str, u32 walker_count, InteractCrit &&crit) {
+    static TreeStructureWalker<policy, u_morton, InteractCrit> generate_walk(
+        TreeStructure<u_morton> &str, u32 walker_count, InteractCrit &&crit) {
         TreeStructureWalker<policy, u_morton, InteractCrit> walk(
             str, walker_count, std::forward<InteractCrit>(crit));
         walk.generate();

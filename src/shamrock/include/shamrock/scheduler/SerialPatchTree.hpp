@@ -165,8 +165,8 @@ class SerialPatchTree {
     }
 
     template<class type, class reduc_func>
-    inline PatchFieldReduction<type>
-    reduce_field(sycl::queue &queue, PatchScheduler &sched, legacy::PatchField<type> &pfield) {
+    inline PatchFieldReduction<type> reduce_field(
+        sycl::queue &queue, PatchScheduler &sched, legacy::PatchField<type> &pfield) {
 
         PatchFieldReduction<type> predfield;
 
@@ -431,13 +431,14 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
             if constexpr (false) {
                 PtNode cur_node = tnode[current_node];
                 if (xyz[0] == 0 && xyz[1] == 0 && xyz[2] == 0) {
-                    logger::raw(shambase::format(
-                        "{:5} ({}) -> {} [{} {}]\n",
-                        i,
-                        Patch::is_in_patch_converted(xyz, cur_node.box_min, cur_node.box_max),
-                        xyz,
-                        cur_node.box_min,
-                        cur_node.box_max));
+                    logger::raw(
+                        shambase::format(
+                            "{:5} ({}) -> {} [{} {}]\n",
+                            i,
+                            Patch::is_in_patch_converted(xyz, cur_node.box_min, cur_node.box_max),
+                            xyz,
+                            cur_node.box_min,
+                            cur_node.box_max));
                 }
             }
 

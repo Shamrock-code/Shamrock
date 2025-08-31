@@ -18,8 +18,8 @@
 #include "shamtree/CompressedLeafBVH.hpp"
 
 template<class Tmorton, class Tvec, u32 dim>
-shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>
-shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::make_empty(sham::DeviceScheduler_ptr dev_sched) {
+shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::
+    make_empty(sham::DeviceScheduler_ptr dev_sched) {
     StackEntry stack_loc{};
     return {
         MortonReducedSet<Tmorton, Tvec, dim>::make_empty(dev_sched),

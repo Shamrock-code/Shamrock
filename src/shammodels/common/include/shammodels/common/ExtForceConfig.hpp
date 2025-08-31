@@ -90,8 +90,8 @@ namespace shammodels {
             ext_forces.push_back(ExtForceVariant<Tvec>{PointMass{central_mass, Racc}});
         }
 
-        inline void
-        add_lense_thirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
+        inline void add_lense_thirring(
+            Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
             if (sham::abs(sycl::length(dir_spin) - 1) > 1e-8) {
                 shambase::throw_with_loc<std::invalid_argument>(
                     "the sping direction should be a unit vector");

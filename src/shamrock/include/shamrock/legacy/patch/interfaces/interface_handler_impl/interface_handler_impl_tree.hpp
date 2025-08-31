@@ -175,8 +175,9 @@ class Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pr
 
             std::unique_ptr<RadixTreeField<T>> &rtree_field_src = tree_fields[comm.sender_patch_id];
 
-            src.push_back(std::make_unique<RadixTreeField<T>>(
-                *rtree_field_src, *ctree.list_new_node_id_to_old[i]));
+            src.push_back(
+                std::make_unique<RadixTreeField<T>>(
+                    *rtree_field_src, *ctree.list_new_node_id_to_old[i]));
         }
 
         return communicator->sparse_exchange(src);
@@ -342,10 +343,11 @@ void Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pre
                     });
                 };
 
-                with_accessor(sycl::accessor{
-                    *args.patch_tree_fields[comm.sender_patch_id]->radix_tree_field_buf,
-                    cgh,
-                    sycl::read_only}...);
+                with_accessor(
+                    sycl::accessor{
+                        *args.patch_tree_fields[comm.sender_patch_id]->radix_tree_field_buf,
+                        cgh,
+                        sycl::read_only}...);
             });
 
             return std::move(valid_node);

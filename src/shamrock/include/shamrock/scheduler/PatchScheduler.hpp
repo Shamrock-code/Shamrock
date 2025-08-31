@@ -273,8 +273,8 @@ class PatchScheduler {
         }
     }
 
-    inline void
-    for_each_local_patch_nonempty(std::function<void(const shamrock::patch::Patch &)> fct) {
+    inline void for_each_local_patch_nonempty(
+        std::function<void(const shamrock::patch::Patch &)> fct) {
         patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             shamrock::patch::Patch &cur_p
                 = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
@@ -317,8 +317,8 @@ class PatchScheduler {
     }
 
     template<class T>
-    inline shambase::DistributedData<T>
-    distrib_data_local_to_all_simple(shambase::DistributedData<T> &src) {
+    inline shambase::DistributedData<T> distrib_data_local_to_all_simple(
+        shambase::DistributedData<T> &src) {
         using namespace shamrock::patch;
 
         // TODO : after a split the scheduler patch list state does not match global =
@@ -330,8 +330,8 @@ class PatchScheduler {
     }
 
     template<class T>
-    inline shambase::DistributedData<T>
-    distrib_data_local_to_all_load_store(shambase::DistributedData<T> &src) {
+    inline shambase::DistributedData<T> distrib_data_local_to_all_load_store(
+        shambase::DistributedData<T> &src) {
         using namespace shamrock::patch;
 
         return shamalgs::collective::fetch_all_storeload<T, Patch>(

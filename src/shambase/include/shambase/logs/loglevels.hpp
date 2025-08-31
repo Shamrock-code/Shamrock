@@ -42,14 +42,16 @@ struct LogLevel_DebugAlloc {
 
 #define shamlog_debug_alloc(module_name, ...)                                                      \
     if (shambase::logs::details::loglevel >= LogLevel_DebugAlloc::logval) {                        \
-        shambase::logs::print(LogLevel_DebugAlloc::reformat(                                       \
-            shambase::logs::format_message(__VA_ARGS__), module_name));                            \
+        shambase::logs::print(                                                                     \
+            LogLevel_DebugAlloc::reformat(                                                         \
+                shambase::logs::format_message(__VA_ARGS__), module_name));                        \
     }
 
 #define shamlog_debug_alloc_ln(module_name, ...)                                                   \
     if (shambase::logs::details::loglevel >= LogLevel_DebugAlloc::logval) {                        \
-        shambase::logs::print_ln(LogLevel_DebugAlloc::reformat(                                    \
-            shambase::logs::format_message(__VA_ARGS__), module_name));                            \
+        shambase::logs::print_ln(                                                                  \
+            LogLevel_DebugAlloc::reformat(                                                         \
+                shambase::logs::format_message(__VA_ARGS__), module_name));                        \
     }
 
 #define when_shamlog_debug_alloc                                                                   \
@@ -78,14 +80,16 @@ struct LogLevel_DebugMPI {
 
 #define shamlog_debug_mpi(module_name, ...)                                                        \
     if (shambase::logs::details::loglevel >= LogLevel_DebugMPI::logval) {                          \
-        shambase::logs::print(LogLevel_DebugMPI::reformat(                                         \
-            shambase::logs::format_message(__VA_ARGS__), module_name));                            \
+        shambase::logs::print(                                                                     \
+            LogLevel_DebugMPI::reformat(                                                           \
+                shambase::logs::format_message(__VA_ARGS__), module_name));                        \
     }
 
 #define shamlog_debug_mpi_ln(module_name, ...)                                                     \
     if (shambase::logs::details::loglevel >= LogLevel_DebugMPI::logval) {                          \
-        shambase::logs::print_ln(LogLevel_DebugMPI::reformat(                                      \
-            shambase::logs::format_message(__VA_ARGS__), module_name));                            \
+        shambase::logs::print_ln(                                                                  \
+            LogLevel_DebugMPI::reformat(                                                           \
+                shambase::logs::format_message(__VA_ARGS__), module_name));                        \
     }
 
 #define when_shamlog_debug_mpi if (shambase::logs::details::loglevel >= LogLevel_DebugMPI::logval)
@@ -113,14 +117,16 @@ struct LogLevel_DebugSYCL {
 
 #define shamlog_debug_sycl(module_name, ...)                                                       \
     if (shambase::logs::details::loglevel >= LogLevel_DebugSYCL::logval) {                         \
-        shambase::logs::print(LogLevel_DebugSYCL::reformat(                                        \
-            shambase::logs::format_message(__VA_ARGS__), module_name));                            \
+        shambase::logs::print(                                                                     \
+            LogLevel_DebugSYCL::reformat(                                                          \
+                shambase::logs::format_message(__VA_ARGS__), module_name));                        \
     }
 
 #define shamlog_debug_sycl_ln(module_name, ...)                                                    \
     if (shambase::logs::details::loglevel >= LogLevel_DebugSYCL::logval) {                         \
-        shambase::logs::print_ln(LogLevel_DebugSYCL::reformat(                                     \
-            shambase::logs::format_message(__VA_ARGS__), module_name));                            \
+        shambase::logs::print_ln(                                                                  \
+            LogLevel_DebugSYCL::reformat(                                                          \
+                shambase::logs::format_message(__VA_ARGS__), module_name));                        \
     }
 
 #define when_shamlog_debug_sycl if (shambase::logs::details::loglevel >= LogLevel_DebugSYCL::logval)

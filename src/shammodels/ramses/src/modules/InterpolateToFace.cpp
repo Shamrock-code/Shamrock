@@ -113,8 +113,8 @@ namespace {
                   acc_grad_rho_cell{grad_rho_cell}, dt_interp(dt_interp), acc_vel_cell{vel_cell},
                   acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell} {}
 
-            Tscal
-            get_dt_rho(Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
+            Tscal get_dt_rho(
+                Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
                 return -(sham::dot(v, grad_rho) + rho * (dx_v[0] + dy_v[1] + dz_v[2]));
             }
 
@@ -791,8 +791,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 
@@ -947,8 +947,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 
@@ -1104,8 +1104,8 @@ void shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 
@@ -1286,8 +1286,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>:
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 
@@ -1466,8 +1466,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>:
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 

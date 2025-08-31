@@ -41,8 +41,8 @@ namespace shammodels::sph {
 
     /// Write the eos config to th phantom dump header
     template<class Tvec>
-    void
-    write_shamrock_eos_in_phantom_dump(EOSConfig<Tvec> &cfg, PhantomDump &dump, bool bypass_error);
+    void write_shamrock_eos_in_phantom_dump(
+        EOSConfig<Tvec> &cfg, PhantomDump &dump, bool bypass_error);
 
     /**
      * @brief Generate an Shamrock artificial viscosity configuration from a PhantomDump object.

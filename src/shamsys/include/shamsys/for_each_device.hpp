@@ -47,8 +47,8 @@ namespace shamsys {
      * shamsys::for_each_device(fct);
      * @endcode
      */
-    inline u32
-    for_each_device(std::function<void(u32, const sycl::platform &, const sycl::device &)> fct) {
+    inline u32 for_each_device(
+        std::function<void(u32, const sycl::platform &, const sycl::device &)> fct) {
 
         u32 key_global        = 0;
         const auto &Platforms = sycl::platform::get_platforms();

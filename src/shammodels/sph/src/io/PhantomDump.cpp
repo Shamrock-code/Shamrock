@@ -56,8 +56,8 @@ void shammodels::sph::PhantomDumpBlockArray<T>::print_state() {
 }
 
 template<class T>
-shammodels::sph::PhantomDumpTableHeader<T>
-shammodels::sph::PhantomDumpTableHeader<T>::from_file(shambase::FortranIOFile &phfile) {
+shammodels::sph::PhantomDumpTableHeader<T> shammodels::sph::PhantomDumpTableHeader<T>::from_file(
+    shambase::FortranIOFile &phfile) {
     StackEntry stack_loc{};
 
     shammodels::sph::PhantomDumpTableHeader<T> tmp;
@@ -312,8 +312,8 @@ shambase::FortranIOFile shammodels::sph::PhantomDump::gen_file() {
     return phfile;
 }
 
-shammodels::sph::PhantomDump
-shammodels::sph::PhantomDump::from_file(shambase::FortranIOFile &phfile) {
+shammodels::sph::PhantomDump shammodels::sph::PhantomDump::from_file(
+    shambase::FortranIOFile &phfile) {
     PhantomDump phdump;
 
     // first line

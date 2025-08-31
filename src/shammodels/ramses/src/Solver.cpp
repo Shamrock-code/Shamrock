@@ -454,8 +454,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.sptree_edge,
             storage.global_patch_boxes_edge,
             storage.ghost_layers_candidates_edge);
-        solver_sequence.push_back(std::make_shared<decltype(find_ghost_layer_candidates)>(
-            std::move(find_ghost_layer_candidates)));
+        solver_sequence.push_back(
+            std::make_shared<decltype(find_ghost_layer_candidates)>(
+                std::move(find_ghost_layer_candidates)));
 
         modules::FindGhostLayerIndices<TgridVec> find_ghost_layer_indices(
             modules::GhostLayerGenMode{
@@ -468,8 +469,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.ghost_layers_candidates_edge,
             storage.global_patch_boxes_edge,
             storage.idx_in_ghost);
-        solver_sequence.push_back(std::make_shared<decltype(find_ghost_layer_indices)>(
-            std::move(find_ghost_layer_indices)));
+        solver_sequence.push_back(
+            std::make_shared<decltype(find_ghost_layer_indices)>(
+                std::move(find_ghost_layer_indices)));
     }
 
     { // Ghost zone exchange

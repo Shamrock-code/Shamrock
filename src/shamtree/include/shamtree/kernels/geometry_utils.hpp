@@ -63,8 +63,8 @@ namespace BBAA {
     bool is_coord_in_range_incl_max(VecType part_pos, VecType pos_min_patch, VecType pos_max_patch);
 
     template<>
-    inline bool
-    is_coord_in_range_incl_max<f32_3>(f32_3 part_pos, f32_3 pos_min_patch, f32_3 pos_max_patch) {
+    inline bool is_coord_in_range_incl_max<f32_3>(
+        f32_3 part_pos, f32_3 pos_min_patch, f32_3 pos_max_patch) {
         return (
             (pos_min_patch.x() <= part_pos.x()) && (part_pos.x() <= pos_max_patch.x())
             && (pos_min_patch.y() <= part_pos.y()) && (part_pos.y() <= pos_max_patch.y())
@@ -72,8 +72,8 @@ namespace BBAA {
     }
 
     template<>
-    inline bool
-    is_coord_in_range_incl_max<f64_3>(f64_3 part_pos, f64_3 pos_min_patch, f64_3 pos_max_patch) {
+    inline bool is_coord_in_range_incl_max<f64_3>(
+        f64_3 part_pos, f64_3 pos_min_patch, f64_3 pos_max_patch) {
         return (
             (pos_min_patch.x() <= part_pos.x()) && (part_pos.x() <= pos_max_patch.x())
             && (pos_min_patch.y() <= part_pos.y()) && (part_pos.y() <= pos_max_patch.y())
@@ -204,12 +204,12 @@ namespace BBAA {
     }
 
     template<class VecType>
-    typename VecType::element_type
-    get_sq_distance_to_BBAAsurface(VecType pos, VecType pos_min_cell, VecType pos_max_cell);
+    typename VecType::element_type get_sq_distance_to_BBAAsurface(
+        VecType pos, VecType pos_min_cell, VecType pos_max_cell);
 
     template<>
-    inline f32
-    get_sq_distance_to_BBAAsurface<f32_3>(f32_3 pos, f32_3 pos_min_cell, f32_3 pos_max_cell) {
+    inline f32 get_sq_distance_to_BBAAsurface<f32_3>(
+        f32_3 pos, f32_3 pos_min_cell, f32_3 pos_max_cell) {
         f32_3 clamped;
 
         clamped.x() = sycl::clamp(pos.x(), pos_min_cell.x(), pos_max_cell.x());
@@ -222,8 +222,8 @@ namespace BBAA {
     }
 
     template<>
-    inline f64
-    get_sq_distance_to_BBAAsurface<f64_3>(f64_3 pos, f64_3 pos_min_cell, f64_3 pos_max_cell) {
+    inline f64 get_sq_distance_to_BBAAsurface<f64_3>(
+        f64_3 pos, f64_3 pos_min_cell, f64_3 pos_max_cell) {
         f64_3 clamped;
 
         clamped.x() = sycl::clamp(pos.x(), pos_min_cell.x(), pos_max_cell.x());

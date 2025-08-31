@@ -38,9 +38,9 @@ namespace shamalgs {
         u64 head_size    = 0;
         u64 content_size = 0;
 
-        SerializeSize &
-        operator+=(const SerializeSize &rhs) // compound assignment (does not need to be a member,
-        {                                    // but often is, to modify the private members)
+        SerializeSize &operator+=(
+            const SerializeSize &rhs) // compound assignment (does not need to be a member,
+        {                             // but often is, to modify the private members)
             /* addition of rhs to *this takes place here */
             head_size += rhs.head_size;
             content_size += rhs.content_size;
@@ -55,9 +55,9 @@ namespace shamalgs {
             lhs += rhs; // reuse compound assignment
             return lhs; // return the result by value (uses move constructor)
         }
-        SerializeSize &
-        operator*=(const SerializeSize &rhs) // compound assignment (does not need to be a member,
-        {                                    // but often is, to modify the private members)
+        SerializeSize &operator*=(
+            const SerializeSize &rhs) // compound assignment (does not need to be a member,
+        {                             // but often is, to modify the private members)
             /* addition of rhs to *this takes place here */
             head_size *= rhs.head_size;
             content_size *= rhs.content_size;
@@ -73,9 +73,9 @@ namespace shamalgs {
             return lhs; // return the result by value (uses move constructor)
         }
 
-        SerializeSize &
-        operator*=(const int &rhs) // compound assignment (does not need to be a member,
-        {                          // but often is, to modify the private members)
+        SerializeSize &operator*=(
+            const int &rhs) // compound assignment (does not need to be a member,
+        {                   // but often is, to modify the private members)
             /* addition of rhs to *this takes place here */
             head_size *= rhs;
             content_size *= rhs;

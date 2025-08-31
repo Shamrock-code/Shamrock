@@ -145,26 +145,21 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
     std::vector<u32_2> m2m_ref{};
     std::vector<u32_2> p2p_ref{};
 
-    auto equals_unordered = [](const std::vector<u32_2> &a, const std::vector<u32_2> &b) -> bool {
+    auto equals_unordered = [](std::vector<u32_2> a, std::vector<u32_2> b) -> bool {
         if (a.size() != b.size()) {
             return false;
         }
 
-        for (u32 i = 0; i < a.size(); i++) {
-            u32_2 a_i  = a[i];
-            bool found = false;
-            for (u32 j = 0; j < b.size(); j++) {
-                if (sham::equals(a_i, b[j])) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
+        auto comp = [](const u32_2 &v1, const u32_2 &v2) {
+            if (v1.x() != v2.x())
+                return v1.x() < v2.x();
+            return v1.y() < v2.y();
+        };
 
-        return true;
+        std::sort(a.begin(), a.end(), comp);
+        std::sort(b.begin(), b.end(), comp);
+
+        return a == b;
     };
 
     {

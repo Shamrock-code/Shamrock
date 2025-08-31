@@ -14,6 +14,7 @@
  */
 
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
+#include "shambase/exception.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 
@@ -28,6 +29,19 @@ namespace shamalgs::primitives {
 
     template<class T>
     void scan_exclusive_sum_in_place(sham::DeviceBuffer<T> &buf1, u32 len) {
+
+        if (len == 0) {
+            return;
+        }
+
+        if (len > buf1.get_size()) {
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "The buffer is smaller than the length of the scan\n"
+                "len > buf1.get_size(), len = {}, buf1.get_size() = {}",
+                len,
+                buf1.get_size()));
+        }
+
         auto sched = buf1.get_dev_scheduler_ptr();
 #ifdef __MACH__ // decoupled lookback perf on mac os is awfull
         scan_exclusive_sum_in_place_fallback<T>(buf1, len);

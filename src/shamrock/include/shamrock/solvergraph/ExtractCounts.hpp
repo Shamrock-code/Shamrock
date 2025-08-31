@@ -33,8 +33,8 @@ namespace shamrock::solvergraph {
             Indexes<u32> &counts;
         };
 
-        void
-        set_edges(std::shared_ptr<IPatchDataLayerRefs> refs, std::shared_ptr<Indexes<u32>> counts) {
+        void set_edges(
+            std::shared_ptr<IPatchDataLayerRefs> refs, std::shared_ptr<Indexes<u32>> counts) {
             __internal_set_ro_edges({refs});
             __internal_set_rw_edges({counts});
         }

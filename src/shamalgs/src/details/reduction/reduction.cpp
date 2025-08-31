@@ -55,8 +55,8 @@ namespace shamalgs::reduction {
     }
 
     template<class T>
-    shambase::VecComponent<T>
-    dot_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+    shambase::VecComponent<T> dot_sum(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
         sycl::buffer<shambase::VecComponent<T>> ret_data_base(end_id - start_id);
 
         q.submit([&](sycl::handler &cgh) {

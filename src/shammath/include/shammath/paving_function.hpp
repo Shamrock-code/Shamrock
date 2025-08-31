@@ -23,8 +23,8 @@
 namespace shammath {
 
     template<typename Tvec, class paving_func>
-    inline AABB<Tvec>
-    f_aabb(const paving_func &paving, const AABB<Tvec> &aabb, int i, int j, int k) {
+    inline AABB<Tvec> f_aabb(
+        const paving_func &paving, const AABB<Tvec> &aabb, int i, int j, int k) {
 
         Tvec min = paving.f(aabb.lower, i, j, k);
         Tvec max = paving.f(aabb.upper, i, j, k);
@@ -40,8 +40,8 @@ namespace shammath {
     }
 
     template<typename Tvec, class paving_func>
-    inline AABB<Tvec>
-    f_aabb_inv(const paving_func &paving, const AABB<Tvec> &aabb, int i, int j, int k) {
+    inline AABB<Tvec> f_aabb_inv(
+        const paving_func &paving, const AABB<Tvec> &aabb, int i, int j, int k) {
 
         Tvec min = paving.f_inv(aabb.lower, i, j, k);
         Tvec max = paving.f_inv(aabb.upper, i, j, k);

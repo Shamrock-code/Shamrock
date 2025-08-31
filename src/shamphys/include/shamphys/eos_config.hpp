@@ -70,8 +70,8 @@ namespace shamphys {
      * @return true if the two structs have the same gamma value, false otherwise
      */
     template<class Tscal>
-    inline bool
-    operator==(const EOS_Config_Adiabatic<Tscal> &lhs, const EOS_Config_Adiabatic<Tscal> &rhs) {
+    inline bool operator==(
+        const EOS_Config_Adiabatic<Tscal> &lhs, const EOS_Config_Adiabatic<Tscal> &rhs) {
         return lhs.gamma == rhs.gamma;
     }
 

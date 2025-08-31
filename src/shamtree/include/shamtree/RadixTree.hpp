@@ -109,8 +109,8 @@ class RadixTree {
     void compute_cell_ibounding_box(sycl::queue &queue);
     void convert_bounding_box(sycl::queue &queue);
 
-    inline std::unique_ptr<sycl::buffer<Umorton>>
-    build_new_morton_buf(sycl::buffer<Tvec> &pos_buf, u32 obj_cnt) {
+    inline std::unique_ptr<sycl::buffer<Umorton>> build_new_morton_buf(
+        sycl::buffer<Tvec> &pos_buf, u32 obj_cnt) {
 
         return tree_morton_codes.build_raw(
             shamsys::instance::get_compute_queue(),
@@ -256,13 +256,13 @@ class RadixTree {
 
 template<class u_morton, class vec3>
 template<class T, class LambdaComputeLeaf, class LambdaCombinator>
-inline typename RadixTree<u_morton, vec3>::template RadixTreeField<T>
-RadixTree<u_morton, vec3>::compute_field(
-    sycl::queue &queue,
-    u32 nvar,
+inline typename RadixTree<u_morton, vec3>::template RadixTreeField<T> RadixTree<u_morton, vec3>::
+    compute_field(
+        sycl::queue &queue,
+        u32 nvar,
 
-    LambdaComputeLeaf &&compute_leaf,
-    LambdaCombinator &&combine) const {
+        LambdaComputeLeaf &&compute_leaf,
+        LambdaCombinator &&combine) const {
 
     RadixTreeField<T> ret;
     ret.nvar = nvar;
@@ -346,8 +346,8 @@ RadixTree<u_morton, vec3>::compute_field(
 
 template<class u_morton, class vec3>
 template<class LambdaForEachCell>
-inline std::pair<std::set<u32>, std::set<u32>>
-RadixTree<u_morton, vec3>::get_walk_res_set(LambdaForEachCell &&interact_cd) const {
+inline std::pair<std::set<u32>, std::set<u32>> RadixTree<u_morton, vec3>::get_walk_res_set(
+    LambdaForEachCell &&interact_cd) const {
 
     std::set<u32> leaf_list;
     std::set<u32> rejected_list;
@@ -498,8 +498,8 @@ inline void RadixTree<u_morton, vec3>::for_each_leaf(
 }
 
 template<class u_morton, class vec3>
-inline auto
-RadixTree<u_morton, vec3>::get_min_max_cell_side_length() -> std::tuple<coord_t, coord_t> {
+inline auto RadixTree<u_morton, vec3>::get_min_max_cell_side_length()
+    -> std::tuple<coord_t, coord_t> {
 
     u32 len = tree_reduced_morton_codes.tree_leaf_count;
 

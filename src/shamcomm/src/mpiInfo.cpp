@@ -118,7 +118,7 @@ namespace shamcomm {
         auto print_state = [](std::string log, StateMPI_Aware state) {
             switch (mpi_cuda_aware) {
             case Yes: logs::print_ln(" - " + log + " :", col8b_green() + "Yes" + reset()); break;
-            case No: logs::print_ln(" - " + log + " :", col8b_red() + "No" + reset()); break;
+            case No : logs::print_ln(" - " + log + " :", col8b_red() + "No" + reset()); break;
             case Unknown:
                 logs::print_ln(" - " + log + " :", col8b_yellow() + "Unknown" + reset());
                 break;

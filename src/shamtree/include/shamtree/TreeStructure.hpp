@@ -37,8 +37,8 @@ namespace shamrock::tree {
                    && bool(buf_rchild_flag) && bool(buf_endrange);
         }
 
-        void
-        build(sycl::queue &queue, u32 _internal_cell_count, sycl::buffer<u_morton> &morton_buf);
+        void build(
+            sycl::queue &queue, u32 _internal_cell_count, sycl::buffer<u_morton> &morton_buf);
 
         void build_one_cell_mode();
 

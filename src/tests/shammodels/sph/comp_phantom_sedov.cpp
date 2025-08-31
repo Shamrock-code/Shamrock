@@ -299,15 +299,17 @@ void compare_results(
     logger::raw_ln("normalized L2 distance vr : ", l2_vr);
     logger::raw_ln("normalized L2 distance u : ", l2_u);
 
-    TEX_REPORT(R"==(\begin{itemize})=="
-               "\n")
+    TEX_REPORT(
+        R"==(\begin{itemize})=="
+        "\n")
     TEX_REPORT("\\item t = $" + std::to_string(time) + "$\n")
     TEX_REPORT("\\item normalized L2 distance r : $" + std::to_string(l2_r) + "$\n");
     TEX_REPORT("\\item normalized L2 distance h : $" + std::to_string(l2_h) + "$\n");
     TEX_REPORT("\\item normalized L2 distance vr : $" + std::to_string(l2_vr) + "$\n");
     TEX_REPORT("\\item normalized L2 distance u : $" + std::to_string(l2_u) + "$\n");
-    TEX_REPORT(R"==(\end{itemize})=="
-               "\n")
+    TEX_REPORT(
+        R"==(\end{itemize})=="
+        "\n")
 
     REQUIRE(l2_r < 1e-9);
     REQUIRE(l2_vr < 28e-06);

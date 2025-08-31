@@ -228,8 +228,8 @@ class AMRTestModel {
                     field           = buf_field.get_write_access(depends_list);
                 }
 
-                void
-                finalize(sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {
+                void finalize(
+                    sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {
                     auto &buf_field = pdat.get_field<u32>(2).get_buf();
                     buf_field.complete_event_state(resulting_events);
                 }
@@ -330,8 +330,8 @@ class AMRTestModel {
                     };
                 };
 
-                static bool
-                criterion(u32 node_index, Access acc, Access::ObjectValues current_values) {
+                static bool criterion(
+                    u32 node_index, Access acc, Access::ObjectValues current_values) {
                     u64_3 cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
                     u64_3 cur_pos_max_cell_b = acc.tree_cell_coordrange_max[node_index];
 

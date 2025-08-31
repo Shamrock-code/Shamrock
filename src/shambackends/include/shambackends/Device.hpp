@@ -32,10 +32,10 @@ namespace sham {
     inline std::string vendor_name(Vendor v) {
         switch (v) {
         case Vendor::UNKNOWN: return "Unknown";
-        case Vendor::NVIDIA: return "Nvidia";
-        case Vendor::AMD: return "AMD";
-        case Vendor::INTEL: return "Intel";
-        case Vendor::APPLE: return "Apple";
+        case Vendor::NVIDIA : return "Nvidia";
+        case Vendor::AMD    : return "AMD";
+        case Vendor::INTEL  : return "Intel";
+        case Vendor::APPLE  : return "Apple";
         default:
             shambase::throw_unimplemented(
                 "Unknown vendor"); // Throw an exception if the vendor is not recognized
@@ -54,9 +54,9 @@ namespace sham {
     inline std::string backend_name(Backend b) {
         switch (b) {
         case Backend::UNKNOWN: return "Unknown";
-        case Backend::CUDA: return "CUDA";
-        case Backend::ROCM: return "ROCm";
-        case Backend::OPENMP: return "OpenMP";
+        case Backend::CUDA   : return "CUDA";
+        case Backend::ROCM   : return "ROCm";
+        case Backend::OPENMP : return "OpenMP";
         default:
             shambase::throw_unimplemented(
                 "Unknown backend"); // Throw an exception if the backend is not recognized
@@ -71,7 +71,7 @@ namespace sham {
         switch (t) {
         case DeviceType::CPU: return "CPU";
         case DeviceType::GPU: return "GPU";
-        default: return "UNKNOWN";
+        default             : return "UNKNOWN";
         }
     }
 

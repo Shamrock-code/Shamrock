@@ -21,7 +21,7 @@
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
-#include "shamtree/details/dtt_parralel_select.hpp"
+#include "shamtree/details/dtt_parallel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
 #include "shamtree/details/dtt_scan_multipass.hpp"
 #include <set>
@@ -159,7 +159,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         std::sort(a.begin(), a.end(), comp);
         std::sort(b.begin(), b.end(), comp);
 
-        return a == b;
+        return sham::equals(a, b);
     };
 
     {

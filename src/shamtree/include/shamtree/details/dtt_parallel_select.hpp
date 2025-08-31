@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file dtt_parralel_select.hpp
+ * @file dtt_parallel_select.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */

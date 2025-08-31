@@ -14,7 +14,7 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shamtree/details/dtt_parralel_select.hpp"
+#include "shamtree/details/dtt_parallel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
 #include "shamtree/details/dtt_scan_multipass.hpp"
 
@@ -41,7 +41,7 @@ namespace shamtree {
     }
 
     template<class Tmorton, class Tvec, u32 dim>
-    inline DTTResult clbvh_dual_tree_traversal(
+    DTTResult clbvh_dual_tree_traversal(
         sham::DeviceScheduler_ptr dev_sched,
         const CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
         shambase::VecComponent<Tvec> theta_crit) {

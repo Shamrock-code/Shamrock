@@ -26,7 +26,7 @@ namespace shamtree::details {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
-        using ObjItHost    = shamtree::CLBVHObjectIteratorHost<Tmorton, Tvec, 3>;
+        using ObjItHost    = shamtree::CLBVHObjectIteratorHost<Tmorton, Tvec, dim>;
         using ObjItHostAcc = typename ObjItHost::acc;
 
         inline static bool mac(shammath::AABB<Tvec> a, shammath::AABB<Tvec> b, Tscal theta_crit) {
@@ -55,11 +55,11 @@ namespace shamtree::details {
             u32 cell_b,
             const ObjItHostAcc &acc,
             Tscal theta_crit,
-            std::vector<u32_2> &interact_p2p,
-            std::vector<u32_2> &interact_m2m) {
+            std::vector<u32_2> &interact_m2m,
+            std::vector<u32_2> &interact_p2p) {
 
             auto dtt_child_call = [&](u32 cell_a, u32 cell_b) {
-                dtt_recursive_internal(cell_a, cell_b, acc, theta_crit, interact_p2p, interact_m2m);
+                dtt_recursive_internal(cell_a, cell_b, acc, theta_crit, interact_m2m, interact_p2p);
             };
 
             auto &ttrav = acc.tree_traverser.tree_traverser;
@@ -88,7 +88,7 @@ namespace shamtree::details {
                 bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
 
                 if (child_a_1_leaf || child_a_2_leaf || child_b_1_leaf || child_b_2_leaf) {
-                    interact_m2m.push_back({cell_a, cell_b});
+                    interact_p2p.push_back({cell_a, cell_b});
                     return;
                 }
 
@@ -98,20 +98,20 @@ namespace shamtree::details {
                 dtt_child_call(child_a_2, child_b_2);
 
             } else {
-                interact_p2p.push_back({cell_a, cell_b});
+                interact_m2m.push_back({cell_a, cell_b});
             }
         }
 
         inline static void dtt_recursive_ref(
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
             Tscal theta_crit,
-            std::vector<u32_2> &interact_p2p,
-            std::vector<u32_2> &interact_m2m) {
+            std::vector<u32_2> &interact_m2m,
+            std::vector<u32_2> &interact_p2p) {
 
             auto obj_it_host = bvh.get_object_iterator_host();
             auto acc         = obj_it_host.get_read_access();
 
-            dtt_recursive_internal(0, 0, acc, theta_crit, interact_p2p, interact_m2m);
+            dtt_recursive_internal(0, 0, acc, theta_crit, interact_m2m, interact_p2p);
         }
 
         inline static shamtree::DTTResult dtt(

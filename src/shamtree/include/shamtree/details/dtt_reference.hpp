@@ -103,7 +103,7 @@ namespace shamtree::details {
         }
 
         inline static void dtt_recursive_ref(
-            const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
+            const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
             Tscal theta_crit,
             std::vector<u32_2> &interact_m2m,
             std::vector<u32_2> &interact_p2p) {

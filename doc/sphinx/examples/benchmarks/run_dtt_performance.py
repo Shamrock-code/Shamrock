@@ -25,25 +25,16 @@ if not shamrock.sys.is_initialized():
 
 # %%
 # Main benchmark functions
-random.seed(111)
-
-
-def get_pseudo_random_int():
-    return random.randint(0, 1000000)
-
-
 bounding_box = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (1.0, 1.0, 1.0))
-
-
-def get_uniform_positions(N):
-    position_seed = get_pseudo_random_int()
-    return shamrock.algs.mock_buffer_f64_3(position_seed, N, bounding_box.lower, bounding_box.upper)
 
 
 def benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat=10):
     times = []
+    random.seed(111)
     for i in range(nb_repeat):
-        positions = get_uniform_positions(N)
+        positions = shamrock.algs.mock_buffer_f64_3(
+            random.randint(0, 1000000), N, bounding_box.lower, bounding_box.upper
+        )
         tree = shamrock.tree.CLBVH_u64_f64_3()
         tree.rebuild_from_positions(positions, bounding_box, compression_level)
         times.append(shamrock.tree.benchmark_clbvh_dual_tree_traversal(tree, theta_crit) * 1000)

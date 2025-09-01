@@ -18,31 +18,28 @@ import shamrock
 
 # If we use the shamrock executable to run this script instead of the python interpreter,
 # we should not initialize the system as the shamrock executable needs to handle specific MPI logic
-# %%
 if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
-seed = 111
 
-random.seed(seed)
+# %%
+# Main benchmark functions
+random.seed(111)
 
 
 def get_pseudo_random_int():
     return random.randint(0, 1000000)
 
 
-# %%
 bounding_box = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (1.0, 1.0, 1.0))
 
 
-# %%
 def get_uniform_positions(N):
     position_seed = get_pseudo_random_int()
     return shamrock.algs.mock_buffer_f64_3(position_seed, N, bounding_box.lower, bounding_box.upper)
 
 
-# %%
 def benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat=10):
     times = []
     for i in range(nb_repeat):
@@ -53,13 +50,13 @@ def benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat=10):
     return times
 
 
-# %%
 def benchmark_dtt(N, theta_crit, compression_level, nb_repeat=10):
     times = benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat)
     return min(times), max(times), sum(times) / nb_repeat
 
 
 # %%
+# Run the performance test for all parameters
 def run_performance_sweep(compression_level, threshold_run):
 
     # Define parameter ranges
@@ -113,6 +110,7 @@ def run_performance_sweep(compression_level, threshold_run):
 
 
 # %%
+# Create checkerboard plot with execution times and relative performance to reference algorithm
 def create_checkerboard_plot(
     particle_counts,
     theta_crits,
@@ -205,8 +203,14 @@ def create_checkerboard_plot(
     return fig, ax
 
 
+# %%
+# List all implementations available
 all_algs = shamrock.tree.get_impl_list_clbvh_dual_tree_traversal()
 
+print(all_algs)
+
+# %%
+# Run the performance benchmarks for all implementations
 results = {}
 
 for algname in all_algs:
@@ -230,6 +234,8 @@ for algname in all_algs:
         "results_max": results_max,
     }
 
+# %%
+# Plot the performance benchmarks for all implementations
 dump_folder = "_to_trash"
 
 import os

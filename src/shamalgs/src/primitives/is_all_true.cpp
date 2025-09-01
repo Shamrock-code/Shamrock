@@ -37,7 +37,7 @@ namespace {
     }
 
     template<class T>
-    bool is_all_true_device(sham::DeviceBuffer<T> &buf, u32 cnt) {
+    bool is_all_true_sum_reduction(sham::DeviceBuffer<T> &buf, u32 cnt) {
 
         if (cnt == 0) {
             return true;
@@ -84,7 +84,7 @@ namespace shamalgs::primitives {
     bool is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt) {
         switch (is_all_true_impl) {
         case IS_ALL_TRUE_IMPL::HOST         : return is_all_true_host(buf, cnt);
-        case IS_ALL_TRUE_IMPL::SUM_REDUCTION: return is_all_true_device(buf, cnt);
+        case IS_ALL_TRUE_IMPL::SUM_REDUCTION: return is_all_true_sum_reduction(buf, cnt);
         default                             : throw std::invalid_argument("invalid implementation");
         }
     }

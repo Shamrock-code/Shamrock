@@ -14,7 +14,9 @@
  */
 
 #include "shambase/aliases_float.hpp"
+#include "shambase/time.hpp"
 #include "shamalgs/details/random/random.hpp"
+#include "shamalgs/primitives/is_all_true.hpp"
 #include "shamalgs/random.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
@@ -50,6 +52,10 @@ Register_pymod(shamalgslibinit) {
         return shamalgs::random::mock_buffer_usm<f64>(
             shamsys::instance::get_compute_scheduler_ptr(), seed, len, min_bound, max_bound);
     });
+    shamalgs_module.def("mock_buffer_u8", [](u64 seed, u32 len, u8 min_bound, u8 max_bound) {
+        return shamalgs::random::mock_buffer_usm<u8>(
+            shamsys::instance::get_compute_scheduler_ptr(), seed, len, min_bound, max_bound);
+    });
     shamalgs_module.def(
         "mock_buffer_f64_2", [](u64 seed, u32 len, f64_2 min_bound, f64_2 max_bound) {
             return shamalgs::random::mock_buffer_usm<f64_2>(
@@ -60,4 +66,27 @@ Register_pymod(shamalgslibinit) {
             return shamalgs::random::mock_buffer_usm<f64_3>(
                 shamsys::instance::get_compute_scheduler_ptr(), seed, len, min_bound, max_bound);
         });
+
+    shamalgs_module.def("is_all_true", [](sham::DeviceBuffer<u8> &buf, u32 len) {
+        return shamalgs::primitives::is_all_true(buf, len);
+    });
+
+    shamalgs_module.def("benchmark_is_all_true", [](sham::DeviceBuffer<u8> &buf, u32 len) {
+        buf.synchronize();
+        shambase::Timer timer;
+        timer.start();
+        bool result = shamalgs::primitives::is_all_true(buf, len);
+        buf.synchronize();
+        timer.end();
+        return timer.elasped_sec();
+    });
+
+    shamalgs_module.def(
+        "set_impl_is_all_true", [](const std::string &impl, const std::string &param = "") {
+            shamalgs::primitives::impl::set_impl_is_all_true(impl, param);
+        });
+
+    shamalgs_module.def("get_impl_list_is_all_true", []() {
+        return shamalgs::primitives::impl::get_impl_list_is_all_true();
+    });
 }

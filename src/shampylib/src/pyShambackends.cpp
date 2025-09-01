@@ -51,6 +51,11 @@ inline void register_DeviceBuffer(py::module &m, const char *class_name) {
                 self.set_val_at_idx(idx, val);
             })
         .def(
+            "fill",
+            [](sham::DeviceBuffer<T> &self, T val) {
+                self.fill(val);
+            })
+        .def(
             "copy_from_stdvec",
             [](sham::DeviceBuffer<T> &self, const std::vector<T> &v) {
                 self.copy_from_stdvec(v);
@@ -64,6 +69,8 @@ Register_pymod(shambackendslibinit) {
 
     py::module shambackends_module = m.def_submodule("backends", "backend library");
 
+    register_DeviceBuffer<u8>(shambackends_module, "DeviceBuffer_u8");
+    register_DeviceBuffer<u32>(shambackends_module, "DeviceBuffer_u32");
     register_DeviceBuffer<f64>(shambackends_module, "DeviceBuffer_f64");
     register_DeviceBuffer<f64_2>(shambackends_module, "DeviceBuffer_f64_2");
     register_DeviceBuffer<f64_3>(shambackends_module, "DeviceBuffer_f64_3");

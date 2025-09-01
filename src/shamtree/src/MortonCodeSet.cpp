@@ -44,8 +44,8 @@ namespace shamtree {
             using CoordTransform
                 = shammath::CoordRangeTransform<typename Morton::int_vec_repr, Tvec>;
 
-            inline static CoordTransform
-            get_transform(pos_t bounding_box_min, pos_t bounding_box_max) {
+            inline static CoordTransform get_transform(
+                pos_t bounding_box_min, pos_t bounding_box_max) {
                 return MortonConvert::get_transform(bounding_box_min, bounding_box_max);
             }
             inline static ipos_t to_morton_grid(pos_t pos, CoordTransform transform) {

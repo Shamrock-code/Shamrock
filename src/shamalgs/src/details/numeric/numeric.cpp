@@ -45,8 +45,8 @@ namespace shamalgs::numeric {
     }
 
     template<class T>
-    sham::DeviceBuffer<T>
-    scan_exclusive(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len) {
+    sham::DeviceBuffer<T> scan_exclusive(
+        sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len) {
 #ifdef __MACH__ // decoupled lookback perf on mac os is awfull
         return details::exclusive_sum_fallback_usm(sched, buf1, len);
 #else
@@ -74,15 +74,15 @@ namespace shamalgs::numeric {
     }
 
     template sycl::buffer<u32> scan_exclusive(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
-    template sham::DeviceBuffer<u32>
-    scan_exclusive(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<u32> &buf1, u32 len);
+    template sham::DeviceBuffer<u32> scan_exclusive(
+        sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<u32> &buf1, u32 len);
     template sycl::buffer<u32> scan_inclusive(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     template void scan_exclusive_in_place(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
     template void scan_inclusive_in_place(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
-    std::tuple<std::optional<sycl::buffer<u32>>, u32>
-    stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact(
+        sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {
         return details::stream_compact_excl_scan(q, buf_flags, len);
     };
 

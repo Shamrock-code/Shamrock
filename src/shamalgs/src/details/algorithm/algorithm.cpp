@@ -28,8 +28,8 @@ namespace shamalgs::algorithm {
         });
     }
 
-    void
-    fill_buffer_index_usm(sham::DeviceScheduler_ptr sched, u32 len, sham::DeviceBuffer<u32> &buf) {
+    void fill_buffer_index_usm(
+        sham::DeviceScheduler_ptr sched, u32 len, sham::DeviceBuffer<u32> &buf) {
         buf.resize(len);
 
         sham::kernel_call(
@@ -47,8 +47,8 @@ namespace shamalgs::algorithm {
     }
 
     template<class T>
-    sycl::buffer<T>
-    index_remap(sycl::queue &q, sycl::buffer<T> &buf, sycl::buffer<u32> &index_map, u32 len) {
+    sycl::buffer<T> index_remap(
+        sycl::queue &q, sycl::buffer<T> &buf, sycl::buffer<u32> &index_map, u32 len) {
 
         sycl::buffer<T> ret(len);
 

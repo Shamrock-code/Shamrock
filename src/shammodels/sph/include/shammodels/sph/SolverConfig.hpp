@@ -589,8 +589,8 @@ struct shammodels::sph::SolverConfig {
      * @param[in] a_spin The spin of the central object
      * @param[in] dir_spin The direction of the spin of the central object
      */
-    inline void
-    add_ext_force_lense_thirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
+    inline void add_ext_force_lense_thirring(
+        Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
         ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
     }
 

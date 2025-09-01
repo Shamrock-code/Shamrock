@@ -110,8 +110,8 @@ namespace shamrock::scheduler::details {
     }
 
     template<class Torder, class Tweight>
-    inline std::vector<i32>
-    lb_startegy_roundrobin(const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector, i32 wsize) {
+    inline std::vector<i32> lb_startegy_roundrobin(
+        const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector, i32 wsize) {
 
         using LBTile       = TileWithLoad<Torder, Tweight>;
         using LBTileResult = details::LoadBalancedTile<Torder, Tweight>;

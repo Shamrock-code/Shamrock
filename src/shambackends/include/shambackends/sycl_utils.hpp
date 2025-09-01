@@ -56,11 +56,11 @@ namespace shambase {
     inline std::string getDevice_type(const sycl::device &Device) {
         auto DeviceType = Device.get_info<sycl::info::device::device_type>();
         switch (DeviceType) {
-        case sycl::info::device_type::cpu: return "CPU";
-        case sycl::info::device_type::gpu: return "GPU";
-        case sycl::info::device_type::host: return "HOST";
+        case sycl::info::device_type::cpu        : return "CPU";
+        case sycl::info::device_type::gpu        : return "GPU";
+        case sycl::info::device_type::host       : return "HOST";
         case sycl::info::device_type::accelerator: return "ACCELERATOR";
-        default: return "UNKNOWN";
+        default                                  : return "UNKNOWN";
         }
     }
 

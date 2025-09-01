@@ -75,10 +75,12 @@ namespace shamrock::tree {
 
         inline TreeMortonCodes(const TreeMortonCodes &other)
             : obj_cnt(other.obj_cnt),
-              buf_morton(shamalgs::memory::duplicate(
-                  shamsys::instance::get_compute_queue(), other.buf_morton)),
-              buf_particle_index_map(shamalgs::memory::duplicate(
-                  shamsys::instance::get_compute_queue(), other.buf_particle_index_map)) {}
+              buf_morton(
+                  shamalgs::memory::duplicate(
+                      shamsys::instance::get_compute_queue(), other.buf_morton)),
+              buf_particle_index_map(
+                  shamalgs::memory::duplicate(
+                      shamsys::instance::get_compute_queue(), other.buf_particle_index_map)) {}
 
         inline TreeMortonCodes &operator=(TreeMortonCodes &&other) noexcept {
             obj_cnt                = std::move(other.obj_cnt);

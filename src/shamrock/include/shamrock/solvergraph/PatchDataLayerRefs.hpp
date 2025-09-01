@@ -42,8 +42,8 @@ namespace shamrock::solvergraph {
             return patchdatas;
         }
 
-        inline virtual const shambase::DistributedData<PatchDataLayerRef> &
-        get_const_refs() const override {
+        inline virtual const shambase::DistributedData<PatchDataLayerRef> &get_const_refs()
+            const override {
             return patchdatas;
         }
 

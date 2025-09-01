@@ -72,8 +72,8 @@ namespace shambase {
      * the source location.
      */
     template<class ExcptTypes>
-    inline ExcptTypes
-    make_except_with_loc(std::string message, SourceLocation loc = SourceLocation{}) {
+    inline ExcptTypes make_except_with_loc(
+        std::string message, SourceLocation loc = SourceLocation{}) {
         std::string msg = message + exception_format(loc);
         exception_gen_callback(msg);
         return ExcptTypes(msg);

@@ -400,14 +400,16 @@ namespace shamsys::instance {
 
         if (shamcomm::world_rank() == 0) {
             if (num_dgpu_use == shamcomm::world_size()) {
-                logger::raw_ln(shambase::format(
-                    " - MPI use Direct Comm : {}", col8b_green() + "Yes" + reset()));
+                logger::raw_ln(
+                    shambase::format(
+                        " - MPI use Direct Comm : {}", col8b_green() + "Yes" + reset()));
             } else if (num_dgpu_use > 0) {
-                logger::raw_ln(shambase::format(
-                    " - MPI use Direct Comm : {} ({} of {})",
-                    col8b_yellow() + "Partial" + reset(),
-                    num_dgpu_use,
-                    shamcomm::world_size()));
+                logger::raw_ln(
+                    shambase::format(
+                        " - MPI use Direct Comm : {} ({} of {})",
+                        col8b_yellow() + "Partial" + reset(),
+                        num_dgpu_use,
+                        shamcomm::world_size()));
             } else {
                 logger::raw_ln(
                     shambase::format(" - MPI use Direct Comm : {}", col8b_red() + "No" + reset()));

@@ -18,3 +18,4 @@ Python API documentation
    shamrock.model_zeus
    shamrock.phys
    shamrock.sys
+   shamrock.tree

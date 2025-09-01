@@ -48,16 +48,13 @@ namespace shamtree::details {
             Tscal s_a_sq = sham::dot(s_a, s_a);
             Tscal s_b_sq = sham::dot(s_b, s_b);
 
-            Tscal r_a_sq = sham::dot(r_a, r_a);
-            Tscal r_b_sq = sham::dot(r_b, r_b);
-
             Tscal theta_sq = (s_a_sq + s_b_sq) / delta_ab_sq;
 
             return theta_sq < theta_crit * theta_crit;
         }
 
-        inline static shamtree::DTTResult
-        dtt(sham::DeviceScheduler_ptr dev_sched,
+        inline static shamtree::DTTResult dtt(
+            sham::DeviceScheduler_ptr dev_sched,
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
             shambase::VecComponent<Tvec> theta_crit) {
             StackEntry stack_loc{};

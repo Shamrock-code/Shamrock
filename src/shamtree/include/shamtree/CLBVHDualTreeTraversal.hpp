@@ -70,8 +70,8 @@ namespace shamtree {
          *
          * @note The default implementation is "scan_multipass"
          */
-        void
-        set_impl_clbvh_dual_tree_traversal(const std::string &impl, const std::string &param = "");
+        void set_impl_clbvh_dual_tree_traversal(
+            const std::string &impl, const std::string &param = "");
 
     } // namespace impl
 

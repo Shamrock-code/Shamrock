@@ -21,7 +21,7 @@
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
-#include "shamtree/details/dtt_parralel_select.hpp"
+#include "shamtree/details/dtt_parallel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
 #include "shamtree/details/dtt_scan_multipass.hpp"
 #include <set>
@@ -125,7 +125,6 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
     auto &q        = dev_sched->get_queue();
 
     u32 Npart           = 1000;
-    u32 Npart_sq        = Npart * Npart;
     u32 reduction_level = 1;
     Tscal theta_crit    = 0.5;
 
@@ -145,26 +144,21 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
     std::vector<u32_2> m2m_ref{};
     std::vector<u32_2> p2p_ref{};
 
-    auto equals_unordered = [](const std::vector<u32_2> &a, const std::vector<u32_2> &b) -> bool {
+    auto equals_unordered = [](std::vector<u32_2> a, std::vector<u32_2> b) -> bool {
         if (a.size() != b.size()) {
             return false;
         }
 
-        for (u32 i = 0; i < a.size(); i++) {
-            u32_2 a_i  = a[i];
-            bool found = false;
-            for (u32 j = 0; j < b.size(); j++) {
-                if (sham::equals(a_i, b[j])) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
+        auto comp = [](const u32_2 &v1, const u32_2 &v2) {
+            if (v1.x() != v2.x())
+                return v1.x() < v2.x();
+            return v1.y() < v2.y();
+        };
 
-        return true;
+        std::sort(a.begin(), a.end(), comp);
+        std::sort(b.begin(), b.end(), comp);
+
+        return sham::equals(a, b);
     };
 
     {

@@ -100,4 +100,12 @@ namespace shamalgs::primitives {
     template<class T>
     bool is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt);
 
+    namespace impl {
+
+        std::vector<std::string> get_impl_list_is_all_true();
+
+        void set_impl_is_all_true(const std::string &impl, const std::string &param = "");
+
+    } // namespace impl
+
 } // namespace shamalgs::primitives

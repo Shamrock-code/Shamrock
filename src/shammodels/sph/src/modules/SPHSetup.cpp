@@ -183,7 +183,7 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity) {
 
     return std::shared_ptr<ISPHSetupNode>(
-        new ModifierOffset<Tvec, SPHKernel>(context, parent, offset_postion, offset_velocity));
+        new ModifierOffset<Tvec>(context, parent, offset_postion, offset_velocity));
 }
 
 template<class Tvec, template<class> class SPHKernel>

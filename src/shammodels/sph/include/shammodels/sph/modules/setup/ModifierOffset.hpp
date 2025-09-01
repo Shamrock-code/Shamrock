@@ -22,12 +22,11 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 namespace shammodels::sph::modules {
-    template<class Tvec, template<class> class SPHKernel>
+
+    template<class Tvec>
     class ModifierOffset : public ISPHSetupNode {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
-
-        using Config = SolverConfig<Tvec, SPHKernel>;
 
         ShamrockCtx &context;
 

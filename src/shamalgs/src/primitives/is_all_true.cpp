@@ -14,6 +14,7 @@
  */
 
 #include "shamalgs/primitives/is_all_true.hpp"
+#include "shambase/StlContainerConversion.hpp"
 #include "shambase/memory.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -72,11 +73,7 @@ namespace shamalgs::primitives {
         = {{"host", IS_ALL_TRUE_IMPL::HOST}, {"sum_reduction", IS_ALL_TRUE_IMPL::SUM_REDUCTION}};
 
     std::vector<std::string> impl::get_impl_list_is_all_true() {
-        std::vector<std::string> keys;
-        for (auto &[key, value] : is_all_true_impl_map) {
-            keys.push_back(key);
-        }
-        return keys;
+        return shambase::keys_from_map(is_all_true_impl_map);
     }
 
     void impl::set_impl_is_all_true(const std::string &impl, const std::string &param) {

@@ -15,6 +15,7 @@
  */
 
 #include "shamalgs/primitives/reduction.hpp"
+#include "shambase/StlContainerConversion.hpp"
 #include "shambase/exception.hpp"
 #include "fmt/std.h"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
@@ -43,11 +44,7 @@ namespace shamalgs::primitives {
     };
 
     std::vector<std::string> impl::get_impl_list_reduction() {
-        std::vector<std::string> keys;
-        for (auto &[key, value] : reduction_impl_map) {
-            keys.push_back(key);
-        }
-        return keys;
+        return shambase::keys_from_map(reduction_impl_map);
     }
 
     void impl::set_impl_reduction(const std::string &impl, const std::string &param) {

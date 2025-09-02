@@ -102,6 +102,8 @@ Register_pymod(shamalgslibinit) {
         timer.start();
         f64 result = shamalgs::primitives::sum(
             shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
+        timer.end();
+        return timer.elasped_sec();
     });
 
     shamalgs_module.def(

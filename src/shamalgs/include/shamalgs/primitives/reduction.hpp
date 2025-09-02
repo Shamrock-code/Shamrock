@@ -137,6 +137,7 @@ namespace shamalgs::primitives {
     namespace impl {
 
         void set_impl_reduction(const std::string &impl, const std::string &param = "");
+        void set_impl_reduction_default();
         std::vector<std::string> get_impl_list_reduction();
     } // namespace impl
 

@@ -17,6 +17,7 @@
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambase/StlContainerConversion.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/logs/loglevels.hpp"
 #include "fmt/std.h"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shamalgs/details/reduction/fallbackReduction_usm.hpp"
@@ -28,13 +29,18 @@
 namespace shamalgs::primitives {
 
     enum class REDUCTION_IMPL : u32 { FALLBACK, GROUP_REDUCTION };
-    REDUCTION_IMPL reduction_impl =
+
+    REDUCTION_IMPL get_default_reduction_impl() {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        REDUCTION_IMPL::GROUP_REDUCTION;
+        return REDUCTION_IMPL::GROUP_REDUCTION;
 #else
-        REDUCTION_IMPL::FALLBACK;
+        return REDUCTION_IMPL::FALLBACK;
 #endif
-    ;
+    }
+
+    REDUCTION_IMPL reduction_impl = get_default_reduction_impl();
+
+    void impl::set_impl_reduction_default() { reduction_impl = get_default_reduction_impl(); }
 
     std::unordered_map<std::string, REDUCTION_IMPL> reduction_impl_map
         = {{"fallback", REDUCTION_IMPL::FALLBACK},
@@ -48,6 +54,7 @@ namespace shamalgs::primitives {
     }
 
     void impl::set_impl_reduction(const std::string &impl, const std::string &param) {
+        shamlog_info_ln("Algs", "Setting reduction implementation to :", impl);
         try {
             reduction_impl = reduction_impl_map.at(impl);
         } catch (const std::out_of_range &e) {

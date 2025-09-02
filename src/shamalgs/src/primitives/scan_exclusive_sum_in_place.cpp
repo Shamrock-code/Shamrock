@@ -14,9 +14,29 @@
  */
 
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
+#include "shambase/StlContainerConversion.hpp"
 #include "shambase/exception.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
+
+namespace {
+
+    template<class T>
+    void scan_exclusive_sum_in_place_fallback(sham::DeviceBuffer<T> &buf1, u32 len) {
+        auto acc_src = buf1.copy_to_stdvec_idx_range(0, len);
+        std::exclusive_scan(acc_src.begin(), acc_src.end(), acc_src.begin(), 0);
+        buf1.copy_from_stdvec(acc_src, len);
+    }
+
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+    template<class T>
+    void scan_exclusive_sum_in_place_decoupled_lookback_512(sham::DeviceBuffer<T> &buf1, u32 len) {
+        shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v5_usm_in_place<T, 512>(
+            buf1, len);
+    }
+#endif
+
+} // namespace
 
 namespace shamalgs::primitives {
 
@@ -53,11 +73,17 @@ namespace shamalgs::primitives {
         return shambase::keys_from_map(scan_exclusive_sum_in_place_impl_map);
     }
 
-    template<class T>
-    void scan_exclusive_sum_in_place_fallback(sham::DeviceBuffer<T> &buf1, u32 len) {
-        auto acc_src = buf1.copy_to_stdvec_idx_range(0, len);
-        std::exclusive_scan(acc_src.begin(), acc_src.end(), acc_src.begin(), 0);
-        buf1.copy_from_stdvec(acc_src, len);
+    void impl::set_impl_scan_exclusive_sum_in_place(
+        const std::string &impl, const std::string &param) {
+        shamlog_info_ln("Algs", "Setting scan exclusive sum in place implementation to :", impl);
+        try {
+            scan_exclusive_sum_in_place_impl = scan_exclusive_sum_in_place_impl_map.at(impl);
+        } catch (const std::out_of_range &e) {
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "invalid implementation : {}, possible implementations : {}",
+                impl,
+                get_impl_list_scan_exclusive_sum_in_place()));
+        }
     }
 
     template<class T>
@@ -81,7 +107,7 @@ namespace shamalgs::primitives {
             break;
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         case SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512:
-            numeric::details::exclusive_sum_atomic_decoupled_v5_usm_in_place<T, 512>(buf1, len);
+            scan_exclusive_sum_in_place_decoupled_lookback_512(buf1, len);
             break;
 #endif
         default:

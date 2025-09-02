@@ -18,6 +18,7 @@
 #include "shamalgs/details/random/random.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
 #include "shamalgs/primitives/reduction.hpp"
+#include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
 #include "shamalgs/random.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
@@ -123,5 +124,39 @@ Register_pymod(shamalgslibinit) {
 
     shamalgs_module.def("get_impl_list_reduction", []() {
         return shamalgs::primitives::impl::get_impl_list_reduction();
+    });
+
+    shamalgs_module.def("scan_exclusive_sum_in_place", [](sham::DeviceBuffer<u32> &buf, u32 len) {
+        shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
+    });
+
+    shamalgs_module.def(
+        "benchmark_scan_exclusive_sum_in_place", [](sham::DeviceBuffer<u32> &buf, u32 len) {
+            buf.synchronize();
+            shambase::Timer timer;
+            timer.start();
+            shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
+            timer.end();
+            return timer.elasped_sec();
+        });
+
+    shamalgs_module.def(
+        "benchmark_scan_exclusive_sum_in_place", [](sham::DeviceBuffer<u32> &buf, u32 len) {
+            buf.synchronize();
+            shambase::Timer timer;
+            timer.start();
+            shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
+            timer.end();
+            return timer.elasped_sec();
+        });
+
+    shamalgs_module.def(
+        "set_impl_scan_exclusive_sum_in_place",
+        [](const std::string &impl, const std::string &param = "") {
+            shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl, param);
+        });
+
+    shamalgs_module.def("get_impl_list_scan_exclusive_sum_in_place", []() {
+        return shamalgs::primitives::impl::get_impl_list_scan_exclusive_sum_in_place();
     });
 }

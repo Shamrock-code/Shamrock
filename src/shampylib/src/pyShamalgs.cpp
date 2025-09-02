@@ -17,6 +17,7 @@
 #include "shambase/time.hpp"
 #include "shamalgs/details/random/random.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shamalgs/random.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
@@ -88,5 +89,39 @@ Register_pymod(shamalgslibinit) {
 
     shamalgs_module.def("get_impl_list_is_all_true", []() {
         return shamalgs::primitives::impl::get_impl_list_is_all_true();
+    });
+
+    shamalgs_module.def("sum", [](sham::DeviceBuffer<f64> &buf, u32 start_id, u32 end_id) {
+        return shamalgs::primitives::sum(
+            shamsys::instance::get_compute_scheduler_ptr(), buf, start_id, end_id);
+    });
+
+    shamalgs_module.def("benchmark_reduction_sum", [](sham::DeviceBuffer<f64> &buf, u32 len) {
+        buf.synchronize();
+        shambase::Timer timer;
+        timer.start();
+        f64 result = shamalgs::primitives::sum(
+            shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
+        timer.end();
+        return timer.elasped_sec();
+    });
+
+    shamalgs_module.def("benchmark_reduction_sum", [](sham::DeviceBuffer<f32> &buf, u32 len) {
+        buf.synchronize();
+        shambase::Timer timer;
+        timer.start();
+        f32 result = shamalgs::primitives::sum(
+            shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
+        timer.end();
+        return timer.elasped_sec();
+    });
+
+    shamalgs_module.def(
+        "set_impl_reduction", [](const std::string &impl, const std::string &param = "") {
+            shamalgs::primitives::impl::set_impl_reduction(impl, param);
+        });
+
+    shamalgs_module.def("get_impl_list_reduction", []() {
+        return shamalgs::primitives::impl::get_impl_list_reduction();
     });
 }

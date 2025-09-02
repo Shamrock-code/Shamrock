@@ -15,6 +15,10 @@
  */
 
 #include "shamalgs/primitives/reduction.hpp"
+#include "shambase/StlContainerConversion.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/logs/loglevels.hpp"
+#include "fmt/std.h"
 #include "shamalgs/details/reduction/fallbackReduction.hpp"
 #include "shamalgs/details/reduction/fallbackReduction_usm.hpp"
 #include "shamalgs/details/reduction/groupReduction.hpp"
@@ -24,17 +28,73 @@
 
 namespace shamalgs::primitives {
 
+    enum class REDUCTION_IMPL : u32 {
+        FALLBACK,
+        GROUP_REDUCTION16,
+        GROUP_REDUCTION128,
+        GROUP_REDUCTION256
+    };
+
+    REDUCTION_IMPL get_default_reduction_impl() {
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+        return REDUCTION_IMPL::GROUP_REDUCTION128;
+#else
+        return REDUCTION_IMPL::FALLBACK;
+#endif
+    }
+
+    REDUCTION_IMPL reduction_impl = get_default_reduction_impl();
+
+    void impl::set_impl_reduction_default() { reduction_impl = get_default_reduction_impl(); }
+
+    std::unordered_map<std::string, REDUCTION_IMPL> reduction_impl_map
+        = {{"fallback", REDUCTION_IMPL::FALLBACK},
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+           {"group_reduction16", REDUCTION_IMPL::GROUP_REDUCTION16},
+           {"group_reduction128", REDUCTION_IMPL::GROUP_REDUCTION128},
+           {"group_reduction256", REDUCTION_IMPL::GROUP_REDUCTION256}
+#endif
+    };
+
+    std::vector<std::string> impl::get_impl_list_reduction() {
+        return shambase::keys_from_map(reduction_impl_map);
+    }
+
+    void impl::set_impl_reduction(const std::string &impl, const std::string &param) {
+        shamlog_info_ln("Algs", "Setting reduction implementation to :", impl);
+        try {
+            reduction_impl = reduction_impl_map.at(impl);
+        } catch (const std::out_of_range &e) {
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "invalid implementation : {}, possible implementations : {}",
+                impl,
+                get_impl_list_reduction()));
+        }
+    }
+
     template<class T>
     T sum(
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
+
+        using namespace shamalgs::reduction::details;
+
+        switch (reduction_impl) {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        return shamalgs::reduction::details::sum_usm_group(sched, buf1, start_id, end_id, 128);
-#else
-        return shamalgs::reduction::details::sum_usm_fallback(sched, buf1, start_id, end_id);
+        case REDUCTION_IMPL::GROUP_REDUCTION16:
+            return sum_usm_group(sched, buf1, start_id, end_id, 16);
+        case REDUCTION_IMPL::GROUP_REDUCTION128:
+            return sum_usm_group(sched, buf1, start_id, end_id, 128);
+        case REDUCTION_IMPL::GROUP_REDUCTION256:
+            return sum_usm_group(sched, buf1, start_id, end_id, 256);
 #endif
+        case REDUCTION_IMPL::FALLBACK: return sum_usm_fallback(sched, buf1, start_id, end_id);
+        default:
+            shambase::throw_with_loc<std::invalid_argument>(
+                shambase::format("unimplemented case : {}", u32(reduction_impl)));
+        }
     }
 
     template<class T>
@@ -43,11 +103,23 @@ namespace shamalgs::primitives {
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
+
+        using namespace shamalgs::reduction::details;
+
+        switch (reduction_impl) {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        return shamalgs::reduction::details::min_usm_group(sched, buf1, start_id, end_id, 128);
-#else
-        return shamalgs::reduction::details::min_usm_fallback(sched, buf1, start_id, end_id);
+        case REDUCTION_IMPL::GROUP_REDUCTION16:
+            return min_usm_group(sched, buf1, start_id, end_id, 16);
+        case REDUCTION_IMPL::GROUP_REDUCTION128:
+            return min_usm_group(sched, buf1, start_id, end_id, 128);
+        case REDUCTION_IMPL::GROUP_REDUCTION256:
+            return min_usm_group(sched, buf1, start_id, end_id, 256);
 #endif
+        case REDUCTION_IMPL::FALLBACK: return min_usm_fallback(sched, buf1, start_id, end_id);
+        default:
+            shambase::throw_with_loc<std::invalid_argument>(
+                shambase::format("unimplemented case : {}", u32(reduction_impl)));
+        }
     }
 
     template<class T>
@@ -56,11 +128,23 @@ namespace shamalgs::primitives {
         sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
+
+        using namespace shamalgs::reduction::details;
+
+        switch (reduction_impl) {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        return shamalgs::reduction::details::max_usm_group(sched, buf1, start_id, end_id, 128);
-#else
-        return shamalgs::reduction::details::max_usm_fallback(sched, buf1, start_id, end_id);
+        case REDUCTION_IMPL::GROUP_REDUCTION16:
+            return max_usm_group(sched, buf1, start_id, end_id, 16);
+        case REDUCTION_IMPL::GROUP_REDUCTION128:
+            return max_usm_group(sched, buf1, start_id, end_id, 128);
+        case REDUCTION_IMPL::GROUP_REDUCTION256:
+            return max_usm_group(sched, buf1, start_id, end_id, 256);
 #endif
+        case REDUCTION_IMPL::FALLBACK: return max_usm_fallback(sched, buf1, start_id, end_id);
+        default:
+            shambase::throw_with_loc<std::invalid_argument>(
+                shambase::format("unimplemented case : {}", u32(reduction_impl)));
+        }
     }
 
 #ifndef DOXYGEN

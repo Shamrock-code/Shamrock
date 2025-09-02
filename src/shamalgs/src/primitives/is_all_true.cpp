@@ -14,6 +14,7 @@
  */
 
 #include "shamalgs/primitives/is_all_true.hpp"
+#include "shambase/StlContainerConversion.hpp"
 #include "shambase/memory.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -65,18 +66,24 @@ namespace {
 
 namespace shamalgs::primitives {
 
-    enum class IS_ALL_TRUE_IMPL { HOST, SUM_REDUCTION };
+    enum class IS_ALL_TRUE_IMPL : u32 { HOST, SUM_REDUCTION };
     IS_ALL_TRUE_IMPL is_all_true_impl = IS_ALL_TRUE_IMPL::HOST;
 
-    std::vector<std::string> impl::get_impl_list_is_all_true() { return {"host", "sum_reduction"}; }
+    std::unordered_map<std::string, IS_ALL_TRUE_IMPL> is_all_true_impl_map
+        = {{"host", IS_ALL_TRUE_IMPL::HOST}, {"sum_reduction", IS_ALL_TRUE_IMPL::SUM_REDUCTION}};
+
+    std::vector<std::string> impl::get_impl_list_is_all_true() {
+        return shambase::keys_from_map(is_all_true_impl_map);
+    }
 
     void impl::set_impl_is_all_true(const std::string &impl, const std::string &param) {
-        if (impl == "host") {
-            is_all_true_impl = IS_ALL_TRUE_IMPL::HOST;
-        } else if (impl == "sum_reduction") {
-            is_all_true_impl = IS_ALL_TRUE_IMPL::SUM_REDUCTION;
-        } else {
-            throw std::invalid_argument("invalid implementation");
+        try {
+            is_all_true_impl = is_all_true_impl_map.at(impl);
+        } catch (const std::out_of_range &e) {
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "invalid implementation : {}, possible implementations : {}",
+                impl,
+                get_impl_list_is_all_true()));
         }
     }
 
@@ -85,7 +92,9 @@ namespace shamalgs::primitives {
         switch (is_all_true_impl) {
         case IS_ALL_TRUE_IMPL::HOST         : return is_all_true_host(buf, cnt);
         case IS_ALL_TRUE_IMPL::SUM_REDUCTION: return is_all_true_sum_reduction(buf, cnt);
-        default                             : throw std::invalid_argument("invalid implementation");
+        default:
+            shambase::throw_with_loc<std::invalid_argument>(
+                shambase::format("unimplemented case : {}", u32(is_all_true_impl)));
         }
     }
 

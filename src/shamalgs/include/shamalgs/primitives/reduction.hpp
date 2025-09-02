@@ -134,4 +134,64 @@ namespace shamalgs::primitives {
         u32 start_id,
         u32 end_id);
 
+    namespace impl {
+
+        /**
+         * @brief Set the implementation for reduction algorithms
+         *
+         * Configures the specific implementation to use for reduction operations
+         * (sum, min, max) across the shamalgs primitives. This allows fine-tuning
+         * the performance characteristics of reduction algorithms based on the
+         * target hardware or specific requirements.
+         *
+         * @param impl The name of the implementation to use
+         * @param param Optional parameter string for implementation-specific configuration
+         *
+         * @note The available implementations can be queried using get_impl_list_reduction()
+         * @note Invalid implementation names will be ignored
+         *
+         * @code{.cpp}
+         * // Example: Set a specific reduction implementation
+         * shamalgs::primitives::impl::set_impl_reduction("optimized_gpu");
+         *
+         * // Example: Set implementation with parameters
+         * shamalgs::primitives::impl::set_impl_reduction("tiled", "tile_size=256");
+         * @endcode
+         */
+        void set_impl_reduction(const std::string &impl, const std::string &param = "");
+
+        /**
+         * @brief Reset reduction implementation to default
+         *
+         * Restores the default implementation for reduction algorithms. This is
+         * useful when custom implementations need to be reverted to the system
+         * default behavior.
+         *
+         * @code{.cpp}
+         * // Example: Reset to default implementation
+         * shamalgs::primitives::impl::set_impl_reduction_default();
+         * @endcode
+         */
+        void set_impl_reduction_default();
+
+        /**
+         * @brief Get list of available reduction implementations
+         *
+         * Returns a vector of strings containing the names of all available
+         * reduction algorithm implementations that can be used with
+         * set_impl_reduction().
+         *
+         * @return std::vector<std::string> List of available implementation names
+         *
+         * @code{.cpp}
+         * // Example: Query available implementations
+         * auto impls = shamalgs::primitives::impl::get_impl_list_reduction();
+         * for (const auto& impl : impls) {
+         *     std::cout << "Available: " << impl << std::endl;
+         * }
+         * @endcode
+         */
+        std::vector<std::string> get_impl_list_reduction();
+    } // namespace impl
+
 } // namespace shamalgs::primitives

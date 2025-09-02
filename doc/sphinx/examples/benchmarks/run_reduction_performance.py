@@ -1,8 +1,8 @@
 """
-is_all_true performance benchmarks
-=================================
+reduction performance benchmarks
+================================
 
-This example benchmarks the is_all_true performance for the different algorithms available in Shamrock
+This example benchmarks the reduction performance for the different algorithms available in Shamrock
 """
 
 # sphinx_gallery_multi_image = "single"

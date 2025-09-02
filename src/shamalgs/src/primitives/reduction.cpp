@@ -28,11 +28,16 @@
 
 namespace shamalgs::primitives {
 
-    enum class REDUCTION_IMPL : u32 { FALLBACK, GROUP_REDUCTION };
+    enum class REDUCTION_IMPL : u32 {
+        FALLBACK,
+        GROUP_REDUCTION16,
+        GROUP_REDUCTION128,
+        GROUP_REDUCTION256
+    };
 
     REDUCTION_IMPL get_default_reduction_impl() {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        return REDUCTION_IMPL::GROUP_REDUCTION;
+        return REDUCTION_IMPL::GROUP_REDUCTION128;
 #else
         return REDUCTION_IMPL::FALLBACK;
 #endif
@@ -45,7 +50,9 @@ namespace shamalgs::primitives {
     std::unordered_map<std::string, REDUCTION_IMPL> reduction_impl_map
         = {{"fallback", REDUCTION_IMPL::FALLBACK},
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-           {"group_reduction", REDUCTION_IMPL::GROUP_REDUCTION}
+           {"group_reduction16", REDUCTION_IMPL::GROUP_REDUCTION16},
+           {"group_reduction128", REDUCTION_IMPL::GROUP_REDUCTION128},
+           {"group_reduction256", REDUCTION_IMPL::GROUP_REDUCTION256}
 #endif
     };
 
@@ -76,8 +83,12 @@ namespace shamalgs::primitives {
 
         switch (reduction_impl) {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        case REDUCTION_IMPL::GROUP_REDUCTION:
+        case REDUCTION_IMPL::GROUP_REDUCTION16:
+            return sum_usm_group(sched, buf1, start_id, end_id, 16);
+        case REDUCTION_IMPL::GROUP_REDUCTION128:
             return sum_usm_group(sched, buf1, start_id, end_id, 128);
+        case REDUCTION_IMPL::GROUP_REDUCTION256:
+            return sum_usm_group(sched, buf1, start_id, end_id, 256);
 #endif
         case REDUCTION_IMPL::FALLBACK: return sum_usm_fallback(sched, buf1, start_id, end_id);
         default:
@@ -97,8 +108,12 @@ namespace shamalgs::primitives {
 
         switch (reduction_impl) {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        case REDUCTION_IMPL::GROUP_REDUCTION:
+        case REDUCTION_IMPL::GROUP_REDUCTION16:
+            return min_usm_group(sched, buf1, start_id, end_id, 16);
+        case REDUCTION_IMPL::GROUP_REDUCTION128:
             return min_usm_group(sched, buf1, start_id, end_id, 128);
+        case REDUCTION_IMPL::GROUP_REDUCTION256:
+            return min_usm_group(sched, buf1, start_id, end_id, 256);
 #endif
         case REDUCTION_IMPL::FALLBACK: return min_usm_fallback(sched, buf1, start_id, end_id);
         default:
@@ -118,8 +133,12 @@ namespace shamalgs::primitives {
 
         switch (reduction_impl) {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        case REDUCTION_IMPL::GROUP_REDUCTION:
+        case REDUCTION_IMPL::GROUP_REDUCTION16:
+            return max_usm_group(sched, buf1, start_id, end_id, 16);
+        case REDUCTION_IMPL::GROUP_REDUCTION128:
             return max_usm_group(sched, buf1, start_id, end_id, 128);
+        case REDUCTION_IMPL::GROUP_REDUCTION256:
+            return max_usm_group(sched, buf1, start_id, end_id, 256);
 #endif
         case REDUCTION_IMPL::FALLBACK: return max_usm_fallback(sched, buf1, start_id, end_id);
         default:

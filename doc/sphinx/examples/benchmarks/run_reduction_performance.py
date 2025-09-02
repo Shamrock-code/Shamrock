@@ -25,8 +25,6 @@ if not shamrock.sys.is_initialized():
 
 # %%
 # Main benchmark functions
-
-
 def benchmark(N, nb_repeat=10):
     times = []
     for i in range(nb_repeat):
@@ -84,7 +82,7 @@ results = {}
 for algname in all_algs:
     shamrock.algs.set_impl_reduction(algname, "")
 
-    print(f"Running is_all_true performance benchmarks for {algname}...")
+    print(f"Running reduction performance benchmarks for {algname}...")
 
     # Run the performance sweep
     particle_counts, results = run_performance_sweep()
@@ -99,7 +97,7 @@ plt.plot(particle_counts, Time100M, color="grey", linestyle="-", alpha=0.7, labe
 
 plt.xlabel("Number of elements")
 plt.ylabel("Time (s)")
-plt.title("is_all_true performance benchmarks")
+plt.title("reduction performance benchmarks")
 
 plt.xscale("log")
 plt.yscale("log")

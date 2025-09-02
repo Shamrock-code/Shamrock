@@ -141,16 +141,6 @@ Register_pymod(shamalgslibinit) {
         });
 
     shamalgs_module.def(
-        "benchmark_scan_exclusive_sum_in_place", [](sham::DeviceBuffer<u32> &buf, u32 len) {
-            buf.synchronize();
-            shambase::Timer timer;
-            timer.start();
-            shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
-            timer.end();
-            return timer.elasped_sec();
-        });
-
-    shamalgs_module.def(
         "set_impl_scan_exclusive_sum_in_place",
         [](const std::string &impl, const std::string &param = "") {
             shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl, param);

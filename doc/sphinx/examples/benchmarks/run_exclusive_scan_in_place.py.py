@@ -1,16 +1,14 @@
 """
-is_all_true performance benchmarks
-=================================
+in place ex-scan performance benchmarks
+=======================================
 
-This example benchmarks the is_all_true performance for the different algorithms available in Shamrock
+This example benchmarks the scan exclusive sum in place performance for the different algorithms available in Shamrock
 """
 
 # sphinx_gallery_multi_image = "single"
 
-import random
 import time
 
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -27,7 +25,7 @@ if not shamrock.sys.is_initialized():
 # Main benchmark functions
 def benchmark_u32(N, nb_repeat=10):
     times = []
-    for i in range(nb_repeat):
+    for _ in range(nb_repeat):
         buf = shamrock.backends.DeviceBuffer_u32()
         buf.resize(N)
         buf.fill(0)
@@ -51,7 +49,7 @@ def run_performance_sweep():
     total_runs = len(particle_counts)
     current_run = 0
 
-    for i, N in enumerate(particle_counts):
+    for _, N in enumerate(particle_counts):
         current_run += 1
 
         print(
@@ -77,17 +75,16 @@ print(all_algs)
 
 # %%
 # Run the performance benchmarks for all implementations
-results = {}
 
 for algname in all_algs:
     shamrock.algs.set_impl_scan_exclusive_sum_in_place(algname, "")
 
-    print(f"Running reduction performance benchmarks for {algname}...")
+    print(f"Running ex-scan performance benchmarks for {algname}...")
 
     # Run the performance sweep
     particle_counts, results_u32 = run_performance_sweep()
 
-    (line,) = plt.plot(particle_counts, results_u32, "--.", label=algname + " (u32)")
+    plt.plot(particle_counts, results_u32, "--.", label=algname + " (u32)")
 
 
 Nobj = np.array(particle_counts)
@@ -97,7 +94,7 @@ plt.plot(particle_counts, Time100M, color="grey", linestyle="-", alpha=0.7, labe
 
 plt.xlabel("Number of elements")
 plt.ylabel("Time (s)")
-plt.title("scan exclusive sum in place performance benchmarks")
+plt.title("ex-scan in place performance benchmarks")
 
 plt.xscale("log")
 plt.yscale("log")

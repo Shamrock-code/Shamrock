@@ -40,50 +40,74 @@ namespace {
 
 namespace shamalgs::primitives {
 
-    enum class SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL : u32 { STD_SCAN, DECOUPLED_LOOKBACK_512 };
+    enum class EXSCAN_IN_PLACE_IMPL : u32 {
+        STD_SCAN,
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+        DECOUPLED_LOOKBACK_512
+#endif
+    };
 
-    SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL get_default_scan_exclusive_sum_in_place_impl() {
+    EXSCAN_IN_PLACE_IMPL get_default_scan_exclusive_sum_in_place_impl() {
 #ifdef __MACH__ // decoupled lookback perf on mac os is awfull
-        return SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL::STD_SCAN;
+        return EXSCAN_IN_PLACE_IMPL::STD_SCAN;
 #else
     #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        return SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512;
+        return EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512;
     #else
-        return SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL::STD_SCAN;
+        return EXSCAN_IN_PLACE_IMPL::STD_SCAN;
     #endif
 #endif
     }
 
-    SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL scan_exclusive_sum_in_place_impl
+    EXSCAN_IN_PLACE_IMPL scan_exclusive_sum_in_place_impl
         = get_default_scan_exclusive_sum_in_place_impl();
 
-    void impl::set_impl_scan_exclusive_sum_in_place_default() {
-        scan_exclusive_sum_in_place_impl = get_default_scan_exclusive_sum_in_place_impl();
+    inline EXSCAN_IN_PLACE_IMPL scan_exclusive_sum_in_place_impl_from_params(
+        const std::string &impl) {
+        if (impl == "std_scan") {
+            return EXSCAN_IN_PLACE_IMPL::STD_SCAN;
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+        } else if (impl == "decoupled_lookback_512") {
+            return EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512;
+        }
+#endif
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "invalid implementation : {}, possible implementations : {}",
+            impl,
+            impl::get_default_impl_list_scan_exclusive_sum_in_place()));
     }
 
-    std::unordered_map<std::string, SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL>
-        scan_exclusive_sum_in_place_impl_map
-        = {{"std_scan", SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL::STD_SCAN},
+    inline shamalgs::impl_param scan_exclusive_sum_in_place_impl_to_params(
+        const EXSCAN_IN_PLACE_IMPL &impl) {
+        if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN) {
+            return {"std_scan", ""};
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-           {"decoupled_lookback_512", SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512}
+        } else if (impl == EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512) {
+            return {"decoupled_lookback_512", ""};
+        }
 #endif
-    };
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            shambase::format("unknow scan_exclusive_sum_in_place implementation : {}", u32(impl)));
+    }
 
-    std::vector<std::string> impl::get_impl_list_scan_exclusive_sum_in_place() {
-        return shambase::keys_from_map(scan_exclusive_sum_in_place_impl_map);
+    std::vector<shamalgs::impl_param> impl::get_default_impl_list_scan_exclusive_sum_in_place() {
+        return {
+            {"std_scan", ""},
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+            {"decoupled_lookback_512", ""}
+#endif
+        };
+    }
+
+    shamalgs::impl_param impl::get_current_impl_scan_exclusive_sum_in_place() {
+        return scan_exclusive_sum_in_place_impl_to_params(scan_exclusive_sum_in_place_impl);
     }
 
     void impl::set_impl_scan_exclusive_sum_in_place(
         const std::string &impl, const std::string &param) {
-        shamlog_info_ln("Algs", "Setting scan exclusive sum in place implementation to :", impl);
-        try {
-            scan_exclusive_sum_in_place_impl = scan_exclusive_sum_in_place_impl_map.at(impl);
-        } catch (const std::out_of_range &e) {
-            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                "invalid implementation : {}, possible implementations : {}",
-                impl,
-                get_impl_list_scan_exclusive_sum_in_place()));
-        }
+        shamlog_info_ln(
+            "tree", "setting scan_exclusive_sum_in_place implementation to impl :", impl);
+        scan_exclusive_sum_in_place_impl = scan_exclusive_sum_in_place_impl_from_params(impl);
     }
 
     template<class T>
@@ -102,11 +126,9 @@ namespace shamalgs::primitives {
         }
 
         switch (scan_exclusive_sum_in_place_impl) {
-        case SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL::STD_SCAN:
-            scan_exclusive_sum_in_place_fallback<T>(buf1, len);
-            break;
+        case EXSCAN_IN_PLACE_IMPL::STD_SCAN: scan_exclusive_sum_in_place_fallback(buf1, len); break;
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        case SCAN_EXCLUSIVE_SUM_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512:
+        case EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512:
             scan_exclusive_sum_in_place_decoupled_lookback_512(buf1, len);
             break;
 #endif

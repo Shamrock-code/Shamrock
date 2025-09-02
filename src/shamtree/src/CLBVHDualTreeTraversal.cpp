@@ -20,24 +20,49 @@
 
 namespace shamtree {
 
-    enum class DTTImpl { REFERENCE, PARALLEL_SELECT, SCAN_MULTIPASS };
+    enum class DTTImpl : u32 { REFERENCE, PARALLEL_SELECT, SCAN_MULTIPASS };
     DTTImpl dtt_impl = DTTImpl::SCAN_MULTIPASS;
 
-    std::vector<std::string> impl::get_impl_list_clbvh_dual_tree_traversal() {
-        return {"reference", "parallel_select", "scan_multipass"};
+    inline DTTImpl dtt_impl_from_params(const std::string &impl) {
+        if (impl == "reference") {
+            return DTTImpl::REFERENCE;
+        } else if (impl == "parallel_select") {
+            return DTTImpl::PARALLEL_SELECT;
+        } else if (impl == "scan_multipass") {
+            return DTTImpl::SCAN_MULTIPASS;
+        }
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "invalid implementation : {}, possible implementations : {}",
+            impl,
+            impl::get_default_impl_list_clbvh_dual_tree_traversal()));
+    }
+
+    inline shamalgs::impl_param dtt_impl_to_params(const DTTImpl &impl) {
+        if (impl == DTTImpl::REFERENCE) {
+            return {"reference", ""};
+        } else if (impl == DTTImpl::PARALLEL_SELECT) {
+            return {"parallel_select", ""};
+        } else if (impl == DTTImpl::SCAN_MULTIPASS) {
+            return {"scan_multipass", ""};
+        }
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            shambase::format("unknow dtt implementation : {}", u32(impl)));
+    }
+
+    std::vector<shamalgs::impl_param> impl::get_default_impl_list_clbvh_dual_tree_traversal() {
+        std::vector<shamalgs::impl_param> impl_list{
+            {"reference", ""}, {"parallel_select", ""}, {"scan_multipass", ""}};
+        return impl_list;
     }
 
     void impl::set_impl_clbvh_dual_tree_traversal(
         const std::string &impl, const std::string &param) {
-        if (impl == "reference") {
-            dtt_impl = DTTImpl::REFERENCE;
-        } else if (impl == "parallel_select") {
-            dtt_impl = DTTImpl::PARALLEL_SELECT;
-        } else if (impl == "scan_multipass") {
-            dtt_impl = DTTImpl::SCAN_MULTIPASS;
-        } else {
-            throw std::invalid_argument("invalid implementation");
-        }
+        shamlog_info_ln("tree", "setting dtt implementation to impl :", impl);
+        dtt_impl = dtt_impl_from_params(impl);
+    }
+
+    shamalgs::impl_param impl::get_current_impl_clbvh_dual_tree_traversal_impl() {
+        return dtt_impl_to_params(dtt_impl);
     }
 
     template<class Tmorton, class Tvec, u32 dim>

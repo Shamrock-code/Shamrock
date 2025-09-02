@@ -180,46 +180,11 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         p2p_ref = unrolled_interact;
     }
 
-    {
-        shambase::Timer timer;
-        timer.start();
-        auto result = shamtree::details::DTTScanMultipass<Tmorton, Tvec, 3>::dtt(
-            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
-        timer.end();
-        logger::raw_ln("DTTScanMultipass :", timer.get_time_str());
+    auto current_impl = shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
 
-        std::vector<u32_2> internal_node_interactions
-            = result.node_interactions_m2m.copy_to_stdvec();
-        std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
+    for (auto impl : shamtree::impl::get_default_impl_list_clbvh_dual_tree_traversal()) {
+        shamtree::impl::set_impl_clbvh_dual_tree_traversal(impl.impl_name, impl.params);
 
-        validate_dtt_results(
-            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
-
-        REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
-        REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
-    }
-
-    {
-        shambase::Timer timer;
-        timer.start();
-        auto result = shamtree::details::DTTParallelSelect<Tmorton, Tvec, 3>::dtt(
-            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
-        timer.end();
-        logger::raw_ln("DTTParallelSelect :", timer.get_time_str());
-
-        std::vector<u32_2> internal_node_interactions
-            = result.node_interactions_m2m.copy_to_stdvec();
-        std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
-
-        validate_dtt_results(
-            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
-
-        REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
-        REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
-    }
-
-    // the main one
-    {
         shambase::Timer timer;
         timer.start();
         auto result = shamtree::clbvh_dual_tree_traversal(
@@ -237,4 +202,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
         REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
     }
+
+    // reset to current impl
+    shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
 }

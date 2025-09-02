@@ -195,19 +195,25 @@ def create_checkerboard_plot(
 
 
 # %%
-# List all implementations available
-all_algs = shamrock.tree.get_impl_list_clbvh_dual_tree_traversal()
+# List current implementation
+current_impl = shamrock.tree.get_current_impl_clbvh_dual_tree_traversal_impl()
 
-print(all_algs)
+print(current_impl)
+
+# %%
+# List all implementations available
+all_default_impls = shamrock.tree.get_default_impl_list_clbvh_dual_tree_traversal()
+
+print(all_default_impls)
 
 # %%
 # Run the performance benchmarks for all implementations
 results = {}
 
-for algname in all_algs:
-    shamrock.tree.set_impl_clbvh_dual_tree_traversal(algname, "")
+for default_impl in all_default_impls:
+    shamrock.tree.set_impl_clbvh_dual_tree_traversal(default_impl.impl_name, default_impl.params)
 
-    print(f"Running DTT performance benchmarks for {algname}...")
+    print(f"Running DTT performance benchmarks for {default_impl.impl_name}...")
 
     compression_level = 4
 
@@ -217,12 +223,13 @@ for algname in all_algs:
         compression_level, threshold_run
     )
 
-    results[algname] = {
+    results[default_impl.impl_name + " " + default_impl.params] = {
         "particle_counts": particle_counts,
         "theta_crits": theta_crits,
         "results_mean": results_mean,
         "results_min": results_min,
         "results_max": results_max,
+        "name": default_impl.impl_name + " " + default_impl.params,
     }
 
 # %%
@@ -235,16 +242,20 @@ import os
 if shamrock.sys.world_rank() == 0:
     os.makedirs(dump_folder, exist_ok=True)
 
-largest_refalg_value = np.nanmax(results["reference"]["results_min"])
+ref_key = "reference "
+largest_refalg_value = np.nanmax(results[ref_key]["results_min"])
 
-for algname in all_algs:
+i = 0
+# iterate over the results
+for k, v in results.items():
+
     # Get the results for this algorithm
-    particle_counts = results[algname]["particle_counts"]
-    theta_crits = results[algname]["theta_crits"]
-    results_min = results[algname]["results_min"]
+    particle_counts = v["particle_counts"]
+    theta_crits = v["theta_crits"]
+    results_min = v["results_min"]
 
     # Get reference algorithm results for comparison
-    reference_min = results["reference"]["results_min"]
+    reference_min = results[ref_key]["results_min"]
 
     # Create and display the plot
     fig, ax = create_checkerboard_plot(
@@ -252,11 +263,12 @@ for algname in all_algs:
         theta_crits,
         results_min,
         compression_level,
-        algname,
+        v["name"],
         largest_refalg_value,
         reference_min,
     )
 
-    plt.savefig(f"{dump_folder}/benchmark-dtt-performance-{algname}.pdf")
+    plt.savefig(f"{dump_folder}/benchmark-dtt-performance-{i}.pdf")
+    i += 1
 
 plt.show()

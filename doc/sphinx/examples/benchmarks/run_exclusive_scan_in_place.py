@@ -68,23 +68,29 @@ def run_performance_sweep():
 
 
 # %%
-# List all implementations available
-all_algs = shamrock.algs.get_impl_list_scan_exclusive_sum_in_place()
+# List current implementation
+current_impl = shamrock.algs.get_current_impl_scan_exclusive_sum_in_place()
 
-print(all_algs)
+print(current_impl)
+
+# %%
+# List all implementations available
+all_default_impls = shamrock.algs.get_default_impl_list_scan_exclusive_sum_in_place()
+
+print(all_default_impls)
 
 # %%
 # Run the performance benchmarks for all implementations
 
-for algname in all_algs:
-    shamrock.algs.set_impl_scan_exclusive_sum_in_place(algname, "")
+for impl in all_default_impls:
+    shamrock.algs.set_impl_scan_exclusive_sum_in_place(impl.impl_name, impl.params)
 
-    print(f"Running ex-scan performance benchmarks for {algname}...")
+    print(f"Running ex-scan in place performance benchmarks for {impl}...")
 
     # Run the performance sweep
     particle_counts, results_u32 = run_performance_sweep()
 
-    plt.plot(particle_counts, results_u32, "--.", label=algname + " (u32)")
+    plt.plot(particle_counts, results_u32, "--.", label=impl.impl_name + " (u32)")
 
 
 Nobj = np.array(particle_counts)

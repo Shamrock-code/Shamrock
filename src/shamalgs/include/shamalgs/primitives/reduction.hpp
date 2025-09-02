@@ -134,4 +134,10 @@ namespace shamalgs::primitives {
         u32 start_id,
         u32 end_id);
 
+    namespace impl {
+
+        void set_impl_reduction(const std::string &impl, const std::string &param = "");
+        std::vector<std::string> get_impl_list_reduction();
+    } // namespace impl
+
 } // namespace shamalgs::primitives

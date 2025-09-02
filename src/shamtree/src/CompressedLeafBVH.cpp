@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,8 +18,8 @@
 #include "shamtree/CompressedLeafBVH.hpp"
 
 template<class Tmorton, class Tvec, u32 dim>
-shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>
-shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::make_empty(sham::DeviceScheduler_ptr dev_sched) {
+shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::
+    make_empty(sham::DeviceScheduler_ptr dev_sched) {
     StackEntry stack_loc{};
     return {
         MortonReducedSet<Tmorton, Tvec, dim>::make_empty(dev_sched),
@@ -66,7 +66,7 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
         std::move(structure));
 
     auto tree_aabbs = shamtree::compute_tree_aabb_from_positions(
-        tree, reduced_set.get_cell_iterator(), std::move(aabbs), positions);
+        tree, reduced_set.get_leaf_cell_iterator(), std::move(aabbs), positions);
 
     this->reduced_morton_set = std::move(reduced_set);
     this->structure          = std::move(tree);

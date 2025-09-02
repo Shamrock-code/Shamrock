@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -94,8 +94,8 @@ namespace shamrock::scheduler {
          * @return SerialPatchNode<vec> Converted patch node
          */
         template<class vec>
-        inline SerialPatchNode<vec>
-        convert(const shamrock::patch::PatchCoordTransform<vec> box_transform) {
+        inline SerialPatchNode<vec> convert(
+            const shamrock::patch::PatchCoordTransform<vec> box_transform) {
             SerialPatchNode<vec> n;
 
             // Convert patch range to object coordinates using given coordinate transform
@@ -121,8 +121,8 @@ namespace shamrock::scheduler {
                && (lhs.linked_patchid == rhs.linked_patchid) && (lhs.load_value == rhs.load_value);
     }
 
-    inline auto
-    PatchTreeNode::get_split_nodes(u32 cur_id) -> std::array<PatchTreeNode, split_count> {
+    inline auto PatchTreeNode::get_split_nodes(u32 cur_id)
+        -> std::array<PatchTreeNode, split_count> {
         std::array<PatchCoord, split_count> splt_coord = patch_coord.split();
 
         std::array<PatchTreeNode, split_count> ret;

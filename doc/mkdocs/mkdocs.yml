@@ -3,7 +3,7 @@ site_name: Shamrock
 repo_url: https://github.com/Shamrock-code/Shamrock
 repo_name: Shamrock
 
-copyright: Copyright (c) 2021-2024 Timothée David--Cléris
+copyright: Copyright (c) 2021-2025 Timothée David--Cléris
 
 nav:
   - 'Mkdocs documentation': 'index.md'
@@ -35,9 +35,6 @@ nav:
     - 'Configuration' : 'usermanual/configuration.md'
     - 'Utilities' : 'usermanual/utilities.md'
     - 'Running on clusters' : 'usermanual/cluster.md'
-    - 'Specific clusters' :
-      - 'PSMN' : 'usermanual/clusters/psmn.md'
-      - 'Adastra' : 'usermanual/clusters/adastra.md'
     - 'CUDA aware openMPI' : 'usermanual/openmpi_setup.md'
     - 'Plotting' : 'usermanual/plotting.md'
 

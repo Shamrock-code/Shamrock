@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -12,6 +12,7 @@
 /**
  * @file matrix_exponential.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -190,8 +191,10 @@ namespace shammath {
         T norm_A = 0;
         mat_L1_norm<T>(A, norm_A);
 
-        i32 s_tilde = static_cast<i32>(sycl::ceil(sham::max(
-            static_cast<f64>(0.0), static_cast<f64>(sycl::log2(norm_A / seq_theta_mk[K - 1])))));
+        i32 s_tilde = static_cast<i32>(sycl::ceil(
+            sham::max(
+                static_cast<f64>(0.0),
+                static_cast<f64>(sycl::log2(norm_A / seq_theta_mk[K - 1])))));
         s_star      = s_tilde;
         i32 k       = 2;
         bool cond   = false;

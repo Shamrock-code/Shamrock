@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -404,8 +404,8 @@ namespace shamalgs::numeric::details {
     class KernelExclusiveSumAtomicSyncDecoupled_v2;
 
     template<class T, u32 group_size>
-    sycl::buffer<T>
-    exclusive_sum_atomic_decoupled_v2(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    sycl::buffer<T> exclusive_sum_atomic_decoupled_v2(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
 
         u32 group_cnt     = shambase::group_count(len, group_size);
         u32 corrected_len = group_cnt * group_size;
@@ -542,8 +542,8 @@ namespace shamalgs::numeric::details {
     class KernelExclusiveSumAtomicSyncDecoupled_v3;
 
     template<class T, u32 group_size>
-    sycl::buffer<T>
-    exclusive_sum_atomic_decoupled_v3(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    sycl::buffer<T> exclusive_sum_atomic_decoupled_v3(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
 
         u32 group_cnt     = shambase::group_count(len, group_size);
         u32 corrected_len = group_cnt * group_size;
@@ -680,8 +680,8 @@ namespace shamalgs::numeric::details {
     class KernelExclusiveSumAtomicSyncDecoupled_v4;
 
     template<class T, u32 group_size>
-    sycl::buffer<T>
-    exclusive_sum_atomic_decoupled_v4(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    sycl::buffer<T> exclusive_sum_atomic_decoupled_v4(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
 
         u32 group_cnt = shambase::group_count(len, group_size);
 

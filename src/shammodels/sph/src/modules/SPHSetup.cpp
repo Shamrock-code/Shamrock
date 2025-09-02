@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -27,6 +27,7 @@
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
+#include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierFilter.hpp"
 #include "shammodels/sph/modules/setup/ModifierOffset.hpp"
@@ -34,25 +35,24 @@
 #include "shamsys/NodeInstance.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
-shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp(
-    Tscal dr, std::pair<Tvec, Tvec> box) {
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp(Tscal dr, std::pair<Tvec, Tvec> box) {
     return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP<Tvec>(context, dr, box));
 }
 
 template<class Tvec, template<class> class SPHKernel>
-inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
-shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_generator_disc_mc(
-    Tscal part_mass,
-    Tscal disc_mass,
-    Tscal r_in,
-    Tscal r_out,
-    std::function<Tscal(Tscal)> sigma_profile,
-    std::function<Tscal(Tscal)> H_profile,
-    std::function<Tscal(Tscal)> rot_profile,
-    std::function<Tscal(Tscal)> cs_profile,
-    std::mt19937 eng,
-    Tscal init_h_factor) {
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_generator_disc_mc(
+        Tscal part_mass,
+        Tscal disc_mass,
+        Tscal r_in,
+        Tscal r_out,
+        std::function<Tscal(Tscal)> sigma_profile,
+        std::function<Tscal(Tscal)> H_profile,
+        std::function<Tscal(Tscal)> rot_profile,
+        std::function<Tscal(Tscal)> cs_profile,
+        std::mt19937 eng,
+        Tscal init_h_factor) {
     return std::shared_ptr<ISPHSetupNode>(new GeneratorMCDisc<Tvec, SPHKernel>(
         context,
         solver_config,
@@ -69,9 +69,8 @@ shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_generator_disc_mc(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
-shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_combiner_add(
-    SetupNodePtr parent1, SetupNodePtr parent2) {
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_combiner_add(SetupNodePtr parent1, SetupNodePtr parent2) {
     return std::shared_ptr<ISPHSetupNode>(new CombinerAdd<Tvec>(context, parent1, parent2));
 }
 
@@ -97,7 +96,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 
     while (!setup->is_done()) {
 
-        shamrock::patch::PatchData pdat = setup->next_n(_insert_step);
+        shamrock::patch::PatchDataLayer pdat = setup->next_n(_insert_step);
 
         if (solver_config.track_particles_id) {
             // This bit set the tracking id of the particles
@@ -134,7 +133,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
                         part_ids[i] = i + offset_init;
                     });
 
-                pdat.get_field<u64>(pdat.pdl.get_field_idx<u64>("part_id"))
+                pdat.get_field<u64>(pdat.pdl().get_field_idx<u64>("part_id"))
                     .overwrite(part_ids, loc_inj);
             }
         }
@@ -160,26 +159,37 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
-shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_modifier_warp_disc(
-    SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination, Tscal posangle) {
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_modifier_warp_disc(
+        SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination, Tscal posangle) {
     return std::shared_ptr<ISPHSetupNode>(new ModifierApplyDiscWarp<Tvec, SPHKernel>(
         context, solver_config, parent, Rwarp, Hwarp, inclination, posangle));
 }
 
 template<class Tvec, template<class> class SPHKernel>
-inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
-shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_modifier_add_offset(
-    SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity) {
-
-    return std::shared_ptr<ISPHSetupNode>(
-        new ModifierOffset<Tvec, SPHKernel>(context, parent, offset_postion, offset_velocity));
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_modifier_custom_warp(
+        SetupNodePtr parent,
+        std::function<Tscal(Tscal)> inc_profile,
+        std::function<Tscal(Tscal)> psi_profile,
+        std::function<Tvec(Tscal)> k_profile) {
+    return std::shared_ptr<ISPHSetupNode>(new ModifierApplyCustomWarp<Tvec, SPHKernel>(
+        context, solver_config, parent, inc_profile, psi_profile, k_profile));
 }
 
 template<class Tvec, template<class> class SPHKernel>
-inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode>
-shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::make_modifier_filter(
-    SetupNodePtr parent, std::function<bool(Tvec)> filter) {
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_modifier_add_offset(
+        SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity) {
+
+    return std::shared_ptr<ISPHSetupNode>(
+        new ModifierOffset<Tvec>(context, parent, offset_postion, offset_velocity));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::SPHSetup<
+    Tvec,
+    SPHKernel>::make_modifier_filter(SetupNodePtr parent, std::function<bool(Tvec)> filter) {
 
     return std::shared_ptr<ISPHSetupNode>(
         new ModifierFilter<Tvec, SPHKernel>(context, parent, filter));
@@ -189,3 +199,7 @@ using namespace shammath;
 template class shammodels::sph::modules::SPHSetup<f64_3, M4>;
 template class shammodels::sph::modules::SPHSetup<f64_3, M6>;
 template class shammodels::sph::modules::SPHSetup<f64_3, M8>;
+
+template class shammodels::sph::modules::SPHSetup<f64_3, C2>;
+template class shammodels::sph::modules::SPHSetup<f64_3, C4>;
+template class shammodels::sph::modules::SPHSetup<f64_3, C6>;

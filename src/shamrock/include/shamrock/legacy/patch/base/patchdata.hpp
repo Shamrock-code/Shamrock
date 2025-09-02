@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,8 +23,8 @@
 #include "patchdata_field.hpp"
 #include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/legacy/utils/sycl_vector_utils.hpp"
-#include "shamrock/patch/PatchData.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <random>
 #include <variant>
@@ -156,7 +156,7 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> &rq_lst) {
 }
 
 /**
- * @brief perform a MPI isend with a PatchData object
+ * @brief perform a MPI isend with a PatchDataLayer object
  *
  * @param p the patchdata to send
  * @param rq_lst reference to the vector of MPI_Request corresponding to the send
@@ -166,14 +166,14 @@ inline void waitall_pdat_mpi_rq(std::vector<PatchDataMpiRequest> &rq_lst) {
  */
 [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
 u64 patchdata_isend(
-    shamrock::patch::PatchData &p,
+    shamrock::patch::PatchDataLayer &p,
     std::vector<PatchDataMpiRequest> &rq_lst,
     i32 rank_dest,
     i32 tag,
     MPI_Comm comm);
 
 /**
- * @brief perform a MPI irecv with a PatchData object
+ * @brief perform a MPI irecv with a PatchDataLayer object
  *
  * @param rq_lst reference to the vector of MPI_Request corresponding to the recv
  * @param rank_source rank to receive from
@@ -183,27 +183,28 @@ u64 patchdata_isend(
  */
 [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
 u64 patchdata_irecv_probe(
-    shamrock::patch::PatchData &pdat,
+    shamrock::patch::PatchDataLayer &pdat,
     std::vector<PatchDataMpiRequest> &rq_lst,
     i32 rank_source,
     i32 tag,
     MPI_Comm comm);
 
 /**
- * @brief generate dummy patchdata from a mersen twister
+ * @brief generate dummy PatchDataLayer from a mersen twister
  *
  * @param eng the mersen twister
- * @return PatchData the generated PatchData
+ * @return PatchDataLayer the generated PatchDataLayer
  */
-shamrock::patch::PatchData
-patchdata_gen_dummy_data(shamrock::patch::PatchDataLayout &pdl, std::mt19937 &eng);
+shamrock::patch::PatchDataLayer patchdata_gen_dummy_data(
+    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr, std::mt19937 &eng);
 
 /**
- * @brief check if two PatchData content match
+ * @brief check if two PatchDataLayer content match
  *
  * @param p1
  * @param p2
  * @return true
  * @return false
  */
-bool patch_data_check_match(shamrock::patch::PatchData &p1, shamrock::patch::PatchData &p2);
+bool patch_data_check_match(
+    shamrock::patch::PatchDataLayer &p1, shamrock::patch::PatchDataLayer &p2);

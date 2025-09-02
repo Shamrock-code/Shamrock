@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -37,7 +37,7 @@ class PatchComputeField {
         //     field_data.at(id_patch).resize(pdat_buf.element_count);
         // });
 
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             field_data.insert({id_patch, PatchDataField<T>("comp_field", 1)});
             field_data.at(id_patch).resize(pdat.get_obj_cnt());
         });

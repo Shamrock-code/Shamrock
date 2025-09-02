@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 /**
  * @file DiffOperatorDtDivv.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -37,32 +38,33 @@ void shammodels::sph::modules::DiffOperatorDtDivv<Tvec, SPHKernel>::update_dtdiv
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
 
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
 
-    shambase::DistributedData<MergedPatchData> &mpdat = storage.merged_patchdata_ghost.get();
+    shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
 
     auto &merged_xyzh = storage.merged_xyzh.get();
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ihpart_interf                              = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 iuint_interf                               = ghost_layout.get_field_idx<Tscal>("uint");
-    u32 ivxyz_interf                               = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iaxyz_interf                               = ghost_layout.get_field_idx<Tvec>("axyz");
-    u32 iomega_interf                              = ghost_layout.get_field_idx<Tscal>("omega");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iaxyz_interf  = ghost_layout.get_field_idx<Tvec>("axyz");
+    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
 
     const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
 
     const u32 idivv  = pdl.get_field_idx<Tscal>("divv");
     const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
-        MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
-        PatchData &mpdat              = merged_patch.pdat;
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
-        sham::DeviceBuffer<Tvec> &buf_xyz  = merged_xyzh.get(cur_p.id_patch).field_pos.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz
+            = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
         sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
         sham::DeviceBuffer<Tvec> &buf_axyz = mpdat.get_field_buf_ref<Tvec>(iaxyz_interf);
 
@@ -345,3 +347,7 @@ using namespace shammath;
 template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, M4>;
 template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, M6>;
 template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, M8>;
+
+template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, C2>;
+template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, C4>;
+template class shammodels::sph::modules::DiffOperatorDtDivv<f64_3, C6>;

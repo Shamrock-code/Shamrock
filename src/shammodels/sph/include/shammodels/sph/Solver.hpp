@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,7 +23,7 @@
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/SolverLog.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
@@ -82,9 +82,8 @@ namespace shammodels::sph {
         inline void reset_serial_patch_tree() { storage.serial_patch_tree.reset(); }
 
         // interface_control
-        using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
-        using GhostHandleCache   = typename GhostHandle::CacheMap;
-        using PreStepMergedField = typename GhostHandle::PreStepMergedField;
+        using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+        using GhostHandleCache = typename GhostHandle::CacheMap;
 
         inline void gen_ghost_handler(Tscal time_val) {
 
@@ -103,18 +102,22 @@ namespace shammodels::sph {
             // boundary condition selections
             if (SolverBCFree *c
                 = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(GhostHandle{scheduler(), BCFree{}});
+                storage.ghost_handler.set(
+                    GhostHandle{scheduler(), BCFree{}, storage.patch_rank_owner});
             } else if (
                 SolverBCPeriodic *c
                 = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(GhostHandle{scheduler(), BCPeriodic{}});
+                storage.ghost_handler.set(
+                    GhostHandle{scheduler(), BCPeriodic{}, storage.patch_rank_owner});
             } else if (
                 SolverBCShearingPeriodic *c
                 = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
-                storage.ghost_handler.set(GhostHandle{
-                    scheduler(),
-                    BCShearingPeriodic{
-                        c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed}});
+                storage.ghost_handler.set(
+                    GhostHandle{
+                        scheduler(),
+                        BCShearingPeriodic{
+                            c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
+                        storage.patch_rank_owner});
             }
         }
         inline void reset_ghost_handler() { storage.ghost_handler.reset(); }

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -22,6 +22,9 @@
 #ifdef SHAM_ASSERT_IS
     #if SHAM_ASSERT_IS == ASSERT_MODE_RUNTIME_ERROR
         #include "shambase/exception.hpp"
+    #endif
+    #if SHAM_ASSERT_IS == ASSERT_MODE_CASSERT
+        #include <cassert>
     #endif
 #endif
 

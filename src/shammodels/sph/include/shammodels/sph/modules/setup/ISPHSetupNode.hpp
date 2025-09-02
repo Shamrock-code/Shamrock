@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -17,7 +17,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include <string>
 #include <vector>
 
@@ -87,7 +87,7 @@ namespace shammodels::sph::modules {
          * @param nmax
          * @return shamrock::patch::PatchData
          */
-        virtual shamrock::patch::PatchData next_n(u32 nmax) = 0;
+        virtual shamrock::patch::PatchDataLayer next_n(u32 nmax) = 0;
 
         /**
          * @brief Get the name of the node

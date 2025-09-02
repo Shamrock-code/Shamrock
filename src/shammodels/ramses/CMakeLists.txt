@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -23,13 +23,11 @@ set(Sources
     src/modules/AnalysisSodTube.cpp
     src/modules/AMRSetup.cpp
     src/modules/ComputeTimeDerivative.cpp
-    src/modules/GhostZones.cpp
     src/modules/AMRSortBlocks.cpp
     src/modules/ComputeCFL.cpp
     src/modules/ConsToPrimGas.cpp
     src/modules/ConsToPrimDust.cpp
     src/modules/ComputeCellAABB.cpp
-    src/modules/StencilGenerator.cpp
     src/modules/NodeBuildTrees.cpp
     src/modules/FindBlockNeigh.cpp
     src/modules/BlockNeighToCellNeigh.cpp
@@ -40,6 +38,11 @@ set(Sources
     src/modules/CGInit.cpp
     src/modules/ComputeAMRLevel.cpp
     src/modules/ResidualDot.cpp
+    src/modules/FindGhostLayerCandidates.cpp
+    src/modules/FindGhostLayerIndices.cpp
+    src/modules/ExtractGhostLayer.cpp
+    src/modules/TransformGhostLayer.cpp
+    src/modules/FuseGhostLayer.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

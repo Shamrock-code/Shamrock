@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,6 +23,7 @@
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
+#include <stdexcept>
 
 namespace shamalgs::reduction::details {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
@@ -45,6 +46,11 @@ namespace shamalgs::reduction::details {
         u32 start_id,
         u32 end_id,
         u32 work_group_size) {
+
+        // Empty range for sum should return 0
+        if (start_id >= end_id) {
+            return shambase::VectorProperties<T>::get_zero();
+        }
 
         return reduc_internal<T>(
             sched,
@@ -82,6 +88,14 @@ namespace shamalgs::reduction::details {
         u32 end_id,
         u32 work_group_size) {
 
+        if (start_id >= end_id) {
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "Empty range (or invalid range) not supported for max operation\n  start_id = {}, "
+                "end_id = {}",
+                start_id,
+                end_id));
+        }
+
         return reduc_internal<T>(
             sched,
             buf1,
@@ -117,6 +131,14 @@ namespace shamalgs::reduction::details {
         u32 start_id,
         u32 end_id,
         u32 work_group_size) {
+
+        if (start_id >= end_id) {
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "Empty range (or invalid range) not supported for min operation\n  start_id = {}, "
+                "end_id = {}",
+                start_id,
+                end_id));
+        }
 
         return reduc_internal<T>(
             sched,

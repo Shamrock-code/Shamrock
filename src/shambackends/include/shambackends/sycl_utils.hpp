@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -56,11 +56,11 @@ namespace shambase {
     inline std::string getDevice_type(const sycl::device &Device) {
         auto DeviceType = Device.get_info<sycl::info::device::device_type>();
         switch (DeviceType) {
-        case sycl::info::device_type::cpu: return "CPU";
-        case sycl::info::device_type::gpu: return "GPU";
-        case sycl::info::device_type::host: return "HOST";
+        case sycl::info::device_type::cpu        : return "CPU";
+        case sycl::info::device_type::gpu        : return "GPU";
+        case sycl::info::device_type::host       : return "HOST";
         case sycl::info::device_type::accelerator: return "ACCELERATOR";
-        default: return "UNKNOWN";
+        default                                  : return "UNKNOWN";
         }
     }
 

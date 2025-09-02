@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -21,7 +21,7 @@
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/legacy/patch/utility/merged_patch.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <type_traits>
@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchData &pdat) {
+inline void file_write_patchdata(MPI_File &mfilepatch, shamrock::patch::PatchDataLayer &pdat) {
 
     MPI_Status st;
 
@@ -359,7 +359,7 @@ inline void dump_patch_data(std::string prefix, PatchScheduler &sched) {
 
     {
 
-        sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
             std::cout << "[" << shamcomm::world_rank() << "] writing pdat : " << pid << std::endl;
 
             MPI_Status st;
@@ -420,13 +420,13 @@ inline void dump_simbox(std::string prefix, PatchScheduler &sched) {
 
         MPI_Status st;
 
-        if (sched.pdl.check_main_field_type<f32_3>()) {
+        if (sched.pdl().check_main_field_type<f32_3>()) {
             u8 f              = 0;
             auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f32_3>();
             shamcomm::mpi::File_write(simbox_file, &f, 1, mpi_type_u8, &st);
             shamcomm::mpi::File_write(simbox_file, &bmin, 1, mpi_type_f32_3, &st);
             shamcomm::mpi::File_write(simbox_file, &bmax, 1, mpi_type_f32_3, &st);
-        } else if (sched.pdl.check_main_field_type<f64_3>()) {
+        } else if (sched.pdl().check_main_field_type<f64_3>()) {
             u8 f              = 1;
             auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f64_3>();
             shamcomm::mpi::File_write(simbox_file, &f, 1, mpi_type_u8, &st);

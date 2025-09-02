@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -65,8 +65,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<u32 group_size, class Tkey>
-        inline static sycl::buffer<u32>
-        make_digit_histogram(sycl::queue &q, sycl::buffer<Tkey> &buf_key, u32 len) {
+        inline static sycl::buffer<u32> make_digit_histogram(
+            sycl::queue &q, sycl::buffer<Tkey> &buf_key, u32 len) {
 
             u32 group_cnt = shambase::group_count(len, group_size);
 

@@ -1,13 +1,14 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
 #include "shamalgs/details/reduction/reduction.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -116,7 +117,7 @@ TestStart(
     REQUIRE_EQUAL(b1.size(), b2.size());
     REQUIRE_EQUAL(b.get_size(), b1.size());
 
-    shamalgs::reduction::equals(q, b1, b2);
+    REQUIRE(shamalgs::primitives::equals(q, b1, b2));
 }
 
 TestStart(Unittest, "shambackends/DeviceBuffer:fill", DeviceBuffer_fill1, 1) {
@@ -200,6 +201,18 @@ TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) 
             REQUIRE(b[i] == 77);
         }
     }
+
+    a.resize(0);
+    REQUIRE(a.get_size() == 0);
+    REQUIRE(a.get_mem_usage() == 0);
+
+    a.resize(1);
+    REQUIRE(a.get_size() == 1);
+    REQUIRE(a.get_mem_usage() >= sizeof(int));
+
+    a.resize(0);
+    REQUIRE(a.get_size() == 0);
+    REQUIRE(a.get_mem_usage() == 0);
 }
 
 TestStart(
@@ -311,4 +324,101 @@ TestStart(Unittest, "shambackends/DeviceBuffer:append", DeviceBuffer_append, 1) 
     sham::DeviceBuffer<T> buf5(v1.size(), dev_sched);
     buf5.copy_from_stdvec(v1);
     REQUIRE_EXCEPTION_THROW(buf5.append(buf5), std::invalid_argument);
+}
+
+TestStart(Unittest, "shambackends/DeviceBuffer:copy_range", DeviceBuffer_copy_range, 1) {
+    using T        = int;
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    {
+        // Test basic range copy functionality
+        std::vector<T> source_data = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+        sham::DeviceBuffer<T> source_buffer(source_data.size(), dev_sched);
+        source_buffer.copy_from_stdvec(source_data);
+
+        sham::DeviceBuffer<T> dest_buffer(5, dev_sched);
+        source_buffer.copy_range(2, 7, dest_buffer);
+
+        std::vector<T> expected = {2, 3, 4, 5, 6};
+        std::vector<T> result   = dest_buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(result, expected);
+    }
+
+    {
+        // Test copy from beginning of buffer
+        std::vector<T> source_data = {10, 20, 30, 40, 50};
+        sham::DeviceBuffer<T> source_buffer(source_data.size(), dev_sched);
+        source_buffer.copy_from_stdvec(source_data);
+
+        sham::DeviceBuffer<T> dest_buffer(3, dev_sched);
+        source_buffer.copy_range(0, 3, dest_buffer);
+
+        std::vector<T> expected = {10, 20, 30};
+        std::vector<T> result   = dest_buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(result, expected);
+    }
+
+    {
+        // Test copy to end of buffer
+        std::vector<T> source_data = {100, 200, 300, 400, 500};
+        sham::DeviceBuffer<T> source_buffer(source_data.size(), dev_sched);
+        source_buffer.copy_from_stdvec(source_data);
+
+        sham::DeviceBuffer<T> dest_buffer(3, dev_sched);
+        source_buffer.copy_range(2, 5, dest_buffer);
+
+        std::vector<T> expected = {300, 400, 500};
+        std::vector<T> result   = dest_buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(result, expected);
+    }
+
+    {
+        // Test copy single element
+        std::vector<T> source_data = {42, 99, 123};
+        sham::DeviceBuffer<T> source_buffer(source_data.size(), dev_sched);
+        source_buffer.copy_from_stdvec(source_data);
+
+        sham::DeviceBuffer<T> dest_buffer(1, dev_sched);
+        source_buffer.copy_range(1, 2, dest_buffer);
+
+        std::vector<T> expected = {99};
+        std::vector<T> result   = dest_buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(result, expected);
+    }
+
+    {
+        // Test copy empty range (begin == end)
+        std::vector<T> source_data = {1, 2, 3, 4, 5};
+        sham::DeviceBuffer<T> source_buffer(source_data.size(), dev_sched);
+        source_buffer.copy_from_stdvec(source_data);
+
+        sham::DeviceBuffer<T> dest_buffer(3, dev_sched);
+        dest_buffer.fill(999); // Fill with sentinel value
+
+        source_buffer.copy_range(2, 2, dest_buffer); // Should not modify dest_buffer
+
+        std::vector<T> expected = {999, 999, 999};
+        std::vector<T> result   = dest_buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(result, expected);
+    }
+
+    {
+        // Test exception for invalid range (begin > end)
+        std::vector<T> source_data = {1, 2, 3};
+        sham::DeviceBuffer<T> source_buffer(source_data.size(), dev_sched);
+        source_buffer.copy_from_stdvec(source_data);
+
+        sham::DeviceBuffer<T> dest_buffer(2, dev_sched);
+        REQUIRE_EXCEPTION_THROW(source_buffer.copy_range(3, 1, dest_buffer), std::invalid_argument);
+    }
+
+    {
+        // Test exception for destination buffer too small
+        std::vector<T> source_data = {1, 2, 3, 4, 5};
+        sham::DeviceBuffer<T> source_buffer(source_data.size(), dev_sched);
+        source_buffer.copy_from_stdvec(source_data);
+
+        sham::DeviceBuffer<T> dest_buffer(2, dev_sched);
+        REQUIRE_EXCEPTION_THROW(source_buffer.copy_range(0, 5, dest_buffer), std::invalid_argument);
+    }
 }

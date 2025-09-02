@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -44,8 +44,8 @@ namespace shamtree {
             using CoordTransform
                 = shammath::CoordRangeTransform<typename Morton::int_vec_repr, Tvec>;
 
-            inline static CoordTransform
-            get_transform(pos_t bounding_box_min, pos_t bounding_box_max) {
+            inline static CoordTransform get_transform(
+                pos_t bounding_box_min, pos_t bounding_box_max) {
                 return MortonConvert::get_transform(bounding_box_min, bounding_box_max);
             }
             inline static ipos_t to_morton_grid(pos_t pos, CoordTransform transform) {

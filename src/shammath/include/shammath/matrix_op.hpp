@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -65,8 +65,8 @@ namespace shammath {
      * element of the matrix.
      */
     template<class T, class Extents, class Layout, class Accessor, class Func>
-    inline void
-    mat_update_vals(const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
+    inline void mat_update_vals(
+        const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
 
         shambase::check_functor_signature<void, T &, int, int>(func);
 
@@ -108,8 +108,8 @@ namespace shammath {
      * value, and stores the result back in the matrix.
      */
     template<class T, class Extents, class Layout, class Accessor>
-    inline void
-    mat_mul_scalar(const std::mdspan<T, Extents, Layout, Accessor> &input, const T &scalar) {
+    inline void mat_mul_scalar(
+        const std::mdspan<T, Extents, Layout, Accessor> &input, const T &scalar) {
         mat_update_vals(input, [&](T &v, auto i, auto j) {
             v *= scalar;
         });

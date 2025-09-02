@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -138,19 +138,19 @@ class Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pr
     void comm_trees() { tree_recv_map = communicator->sparse_exchange(tree_send_map.list_rtree); }
 
     [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
-    SparseCommResult<shamrock::patch::PatchData> comm_pdat(PatchScheduler &sched) {
+    SparseCommResult<shamrock::patch::PatchDataLayer> comm_pdat(PatchScheduler &sched) {
 
         using namespace shamrock::patch;
 
-        SparseCommSource<PatchData> src;
+        SparseCommSource<PatchDataLayer> src;
 
         for (u32 i = 0; i < interf_send_map.size(); i++) {
             auto &comm             = interf_send_map[i];
             UnrolledCutTree &ctree = tree_send_map;
 
-            PatchData &pdat_to_cut = sched.patch_data.get_pdat(comm.sender_patch_id);
+            PatchDataLayer &pdat_to_cut = sched.patch_data.get_pdat(comm.sender_patch_id);
 
-            src.push_back(std::make_unique<PatchData>(sched.pdl));
+            src.push_back(std::make_unique<PatchDataLayer>(sched.get_layout_ptr()));
 
             pdat_to_cut.append_subset_to(
                 *ctree.list_pdat_extract_id[i],
@@ -175,8 +175,9 @@ class Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pr
 
             std::unique_ptr<RadixTreeField<T>> &rtree_field_src = tree_fields[comm.sender_patch_id];
 
-            src.push_back(std::make_unique<RadixTreeField<T>>(
-                *rtree_field_src, *ctree.list_new_node_id_to_old[i]));
+            src.push_back(
+                std::make_unique<RadixTreeField<T>>(
+                    *rtree_field_src, *ctree.list_new_node_id_to_old[i]));
         }
 
         return communicator->sparse_exchange(src);
@@ -342,10 +343,11 @@ void Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pre
                     });
                 };
 
-                with_accessor(sycl::accessor{
-                    *args.patch_tree_fields[comm.sender_patch_id]->radix_tree_field_buf,
-                    cgh,
-                    sycl::read_only}...);
+                with_accessor(
+                    sycl::accessor{
+                        *args.patch_tree_fields[comm.sender_patch_id]->radix_tree_field_buf,
+                        cgh,
+                        sycl::read_only}...);
             });
 
             return std::move(valid_node);

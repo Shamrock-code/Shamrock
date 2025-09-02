@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -168,8 +168,8 @@ using ShearPeriodicInfo =
     typename shammodels::sph::BasicSPHGhostHandlerConfig<sycl::vec<T, 3>>::ShearingPeriodic;
 
 template<class T>
-inline ShiftInfo<T>
-compute_shift_infos(i32_3 ioff, ShearPeriodicInfo<T> shear, sycl::vec<T, 3> bsize) {
+inline ShiftInfo<T> compute_shift_infos(
+    i32_3 ioff, ShearPeriodicInfo<T> shear, sycl::vec<T, 3> bsize) {
 
     i32 dx = ioff.x() * shear.shear_base.x();
     i32 dy = ioff.y() * shear.shear_base.y();
@@ -461,8 +461,8 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
     std::map<u64, f64> send_count_stats;
 
     gen.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
-        shamrock::patch::PatchData &src = sched.patch_data.get_pdat(sender);
-        PatchDataField<vec> &xyz        = src.get_field<vec>(0);
+        shamrock::patch::PatchDataLayer &src = sched.patch_data.get_pdat(sender);
+        PatchDataField<vec> &xyz             = src.get_field<vec>(0);
 
         sham::DeviceBuffer<u32> idxs_res = xyz.get_ids_where(
             [](auto access, u32 id, vec vmin, vec vmax) {
@@ -533,7 +533,7 @@ void BasicSPHGhostHandler<vec>::gen_debug_patch_ghost(
     });
 
     sched.for_each_patch_data(
-        [&](u64 id, shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&](u64 id, shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             if (pdat.get_obj_cnt() > 0) {
                 loc_graph += shambase::format(
                     "    p{} [label= \"id={} N={}\"]\n", id, id, pdat.get_obj_cnt());

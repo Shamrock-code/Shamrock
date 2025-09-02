@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -54,14 +54,14 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(
 
         std::cout << ">>> adding : " << vec_acc.size() << " objects" << std::endl;
 
-        PatchData tmp(sched.pdl);
+        PatchDataLayer tmp(sched.get_layout_ptr());
         tmp.resize(vec_acc.size());
 
         part_cnt += vec_acc.size();
 
         {
             u32 len                = vec_acc.size();
-            PatchDataField<vec> &f = tmp.get_field<vec>(sched.pdl.get_field_idx<vec>("xyz"));
+            PatchDataField<vec> &f = tmp.get_field<vec>(sched.pdl().get_field_idx<vec>("xyz"));
             sycl::buffer<vec> buf(vec_acc.data(), len);
             f.override(buf, len);
         }
@@ -77,13 +77,13 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(
 
     // TODO apply position modulo here
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 
     sched.scheduler_step(false, false);
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 
@@ -99,7 +99,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(
         reatribute_particles(sched, sptree, periodic_mode);
     }
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 
@@ -109,7 +109,7 @@ void models::nbody::NBodySetup<flt>::add_particules_fcc(
 
     // std::cout << sched.dump_status() << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n"<< std::endl;
 
-    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchData &pdat) {
+    sched.patch_data.for_each_patchdata([&](u64 pid, shamrock::patch::PatchDataLayer &pdat) {
         std::cout << "patch id : " << pid << " len = " << pdat.get_obj_cnt() << std::endl;
     });
 }

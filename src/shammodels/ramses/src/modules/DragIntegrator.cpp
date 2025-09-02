@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -56,7 +56,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
     shamrock::ComputeField<Tvec> &cfield_dtrhov_d = storage.dtrhov_dust.get();
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -68,7 +68,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
 
     scheduler().for_each_patchdata_nonempty([&, dt, ndust](
                                                 const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln(
             "[AMR evolve time step before drag ]", "evolve field with no drag patch", p.id_patch);
 
@@ -179,7 +179,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
     shamrock::ComputeField<Tvec> &cfield_rhov_d_new = storage.rhov_d_next_no_drag.get();
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -198,7 +198,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[AMR enable drag ]", "irk1 drag patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -336,7 +336,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     shamrock::ComputeField<Tvec> &cfield_rhov_d_new = storage.rhov_d_next_no_drag.get();
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -356,7 +356,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[Ramses]", "expo drag on patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();

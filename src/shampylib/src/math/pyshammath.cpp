@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -78,34 +78,47 @@ Register_pymod(pysham_mathinit) {
                 shammath::paving_function_periodic_3d<f64_3>{box_size});
         }))
         .def("f", &shammath::paving_function_periodic_3d<f64_3>::f)
-        .def("f_inv", &shammath::paving_function_periodic_3d<f64_3>::f_inv);
+        .def("f_inv", &shammath::paving_function_periodic_3d<f64_3>::f_inv)
+        .def("f_aabb", &shammath::paving_function_periodic_3d<f64_3>::f_aabb)
+        .def("f_aabb_inv", &shammath::paving_function_periodic_3d<f64_3>::f_aabb_inv);
 
     py::class_<shammath::paving_function_general_3d<f64_3>>(
         math_module, "paving_function_general_3d")
-        .def(py::init([](f64_3 box_size,
-                         f64_3 box_center,
-                         bool is_x_periodic,
-                         bool is_y_periodic,
-                         bool is_z_periodic) {
-            return std::make_unique<shammath::paving_function_general_3d<f64_3>>(
-                shammath::paving_function_general_3d<f64_3>{
-                    box_size, box_center, is_x_periodic, is_y_periodic, is_z_periodic});
-        }))
+        .def(
+            py::init([](f64_3 box_size,
+                        f64_3 box_center,
+                        bool is_x_periodic,
+                        bool is_y_periodic,
+                        bool is_z_periodic) {
+                return std::make_unique<shammath::paving_function_general_3d<f64_3>>(
+                    shammath::paving_function_general_3d<f64_3>{
+                        box_size, box_center, is_x_periodic, is_y_periodic, is_z_periodic});
+            }))
         .def("f", &shammath::paving_function_general_3d<f64_3>::f)
-        .def("f_inv", &shammath::paving_function_general_3d<f64_3>::f_inv);
+        .def("f_inv", &shammath::paving_function_general_3d<f64_3>::f_inv)
+        .def("f_aabb", &shammath::paving_function_general_3d<f64_3>::f_aabb)
+        .def("f_aabb_inv", &shammath::paving_function_general_3d<f64_3>::f_aabb_inv);
 
     py::class_<shammath::paving_function_general_3d_shear_x<f64_3>>(
         math_module, "paving_function_general_3d_shear_x")
-        .def(py::init([](f64_3 box_size,
-                         f64_3 box_center,
-                         bool is_x_periodic,
-                         bool is_y_periodic,
-                         bool is_z_periodic,
-                         f64 shear_x) {
-            return std::make_unique<shammath::paving_function_general_3d_shear_x<f64_3>>(
-                shammath::paving_function_general_3d_shear_x<f64_3>{
-                    box_size, box_center, is_x_periodic, is_y_periodic, is_z_periodic, shear_x});
-        }))
+        .def(
+            py::init([](f64_3 box_size,
+                        f64_3 box_center,
+                        bool is_x_periodic,
+                        bool is_y_periodic,
+                        bool is_z_periodic,
+                        f64 shear_x) {
+                return std::make_unique<shammath::paving_function_general_3d_shear_x<f64_3>>(
+                    shammath::paving_function_general_3d_shear_x<f64_3>{
+                        box_size,
+                        box_center,
+                        is_x_periodic,
+                        is_y_periodic,
+                        is_z_periodic,
+                        shear_x});
+            }))
         .def("f", &shammath::paving_function_general_3d_shear_x<f64_3>::f)
-        .def("f_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_inv);
+        .def("f_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_inv)
+        .def("f_aabb", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb)
+        .def("f_aabb_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb_inv);
 }

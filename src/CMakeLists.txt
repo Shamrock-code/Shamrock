@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -96,8 +96,13 @@ target_link_lib_and_install(shamrock_pylib)
 set_property(TARGET shamrock_exe PROPERTY OUTPUT_NAME shamrock)
 set_property(TARGET shamrock_pylib PROPERTY OUTPUT_NAME shamrock)
 
-# Installing the library
-install(TARGETS shamrock_exe shamrock_pylib ${as_subproject}
+
+########################################################################################
+# Shamrock install target
+########################################################################################
+
+# Installing the Shamrock and its libraries
+install(TARGETS shamrock_exe ${as_subproject}
         EXPORT "shamrock-config"
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
@@ -107,9 +112,36 @@ install(TARGETS shamrock_exe shamrock_pylib ${as_subproject}
         INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 
-######################
+if(CMAKE_INSTALL_PYTHONDIR)
+
+  # For python, we only install the bindings and the __init__.py file
+  # running `̀import shamrock` in python will load the __init__.py file
+  # which in turn will load shamrock_pylib
+  # Two options there
+  # 1 - The shamrock libraries `${as_subproject}` are not in path and you get
+  # ImportError: libshampylib.so: cannot open shared object file: No such file or directory
+  # 2 - The shamrock libraries `${as_subproject}` are in path and it works,
+  #     you can check that by running, on linux, `ldd shamrock/shamrock.cpython-313-x86_64-linux-gnu.so`
+  #     in ${CMAKE_INSTALL_PYTHONDIR}
+
+  message(STATUS "Installing python bindings in ${CMAKE_INSTALL_PYTHONDIR}")
+
+  # Set the install dir for the shamrock package
+  set(SHAMROCK_PYTHON_INSTALL_DIR "${CMAKE_INSTALL_PYTHONDIR}/shamrock")
+
+  # Create and install __init__.py file for Python package
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" "from .shamrock import *\n")
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"
+          DESTINATION "${SHAMROCK_PYTHON_INSTALL_DIR}")
+
+  # Install the Python module shared library
+  install(TARGETS shamrock_pylib
+          LIBRARY DESTINATION "${SHAMROCK_PYTHON_INSTALL_DIR}")
+endif()
+
+########################################################################################
 # Shamrock test target
-######################
+########################################################################################
 
 if("${BUILD_TEST}")
 

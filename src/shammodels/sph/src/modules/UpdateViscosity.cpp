@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,7 +10,7 @@
 /**
  * @file UpdateViscosity.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -54,13 +54,13 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     shamlog_debug_ln("UpdateViscosity", "Updating alpha viscosity (Morris & Monaghan 1997)");
 
     using namespace shamrock::patch;
-    PatchDataLayout &pdl  = scheduler().pdl;
-    const u32 ialpha_AV   = pdl.get_field_idx<Tscal>("alpha_AV");
-    const u32 idivv       = pdl.get_field_idx<Tscal>("divv");
-    const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
-    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ialpha_AV       = pdl.get_field_idx<Tscal>("alpha_AV");
+    const u32 idivv           = pdl.get_field_idx<Tscal>("divv");
+    const u32 isoundspeed     = pdl.get_field_idx<Tscal>("soundspeed");
+    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceBuffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
         sham::DeviceBuffer<Tscal> &buf_cs       = pdat.get_field_buf_ref<Tscal>(isoundspeed);
         sham::DeviceBuffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
@@ -121,15 +121,15 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
     shamlog_debug_ln("UpdateViscosity", "Updating alpha viscosity (Cullen & Dehnen 2010)");
 
     using namespace shamrock::patch;
-    PatchDataLayout &pdl  = scheduler().pdl;
-    const u32 ialpha_AV   = pdl.get_field_idx<Tscal>("alpha_AV");
-    const u32 idivv       = pdl.get_field_idx<Tscal>("divv");
-    const u32 idtdivv     = pdl.get_field_idx<Tscal>("dtdivv");
-    const u32 icurlv      = pdl.get_field_idx<Tvec>("curlv");
-    const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
-    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ialpha_AV       = pdl.get_field_idx<Tscal>("alpha_AV");
+    const u32 idivv           = pdl.get_field_idx<Tscal>("divv");
+    const u32 idtdivv         = pdl.get_field_idx<Tscal>("dtdivv");
+    const u32 icurlv          = pdl.get_field_idx<Tvec>("curlv");
+    const u32 isoundspeed     = pdl.get_field_idx<Tscal>("soundspeed");
+    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceBuffer<Tscal> &buf_divv     = pdat.get_field_buf_ref<Tscal>(idivv);
         sham::DeviceBuffer<Tscal> &buf_dtdivv   = pdat.get_field_buf_ref<Tscal>(idtdivv);
         sham::DeviceBuffer<Tvec> &buf_curlv     = pdat.get_field_buf_ref<Tvec>(icurlv);
@@ -223,3 +223,7 @@ using namespace shammath;
 template class shammodels::sph::modules::UpdateViscosity<f64_3, M4>;
 template class shammodels::sph::modules::UpdateViscosity<f64_3, M6>;
 template class shammodels::sph::modules::UpdateViscosity<f64_3, M8>;
+
+template class shammodels::sph::modules::UpdateViscosity<f64_3, C2>;
+template class shammodels::sph::modules::UpdateViscosity<f64_3, C4>;
+template class shammodels::sph::modules::UpdateViscosity<f64_3, C6>;

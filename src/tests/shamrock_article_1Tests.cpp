@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -281,8 +281,8 @@ class SPHTestInteractionCrit {
         };
     };
 
-    inline static bool
-    criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
+    inline static bool criterion(
+        u32 node_index, Access acc, typename Access::ObjectValues current_values) {
         vec cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
         vec cur_pos_max_cell_b = acc.tree_cell_coordrange_max[node_index];
 
@@ -488,11 +488,11 @@ f64 amr_walk_perf(
     using namespace shamrock::patch;
     using namespace shamrock::scheduler;
 
-    PatchDataLayout layout;
+    std::shared_ptr<PatchDataLayerLayout> layout_ptr = std::make_shared<PatchDataLayerLayout>();
+    auto &layout                                     = *layout_ptr;
     layout.add_field<u64_3>("cell_min", 1);
     layout.add_field<u64_3>("cell_max", 1);
-
-    PatchScheduler sched(layout, 1e9, 1);
+    PatchScheduler sched(layout_ptr, 1e9, 1);
 
     using Grid = shamrock::amr::AMRGrid<u64_3, 3>;
 
@@ -527,7 +527,7 @@ f64 amr_walk_perf(
             sham::EventList &depends_list,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat,
+            shamrock::patch::PatchDataLayer &pdat,
             shammath::CoordRange<u64_3> base_range,
             shammath::CoordRange<f32_3> real_coord_range)
             : transform(base_range, real_coord_range) {
@@ -542,7 +542,7 @@ f64 amr_walk_perf(
             sham::EventList &resulting_events,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat,
+            shamrock::patch::PatchDataLayer &pdat,
             shammath::CoordRange<u64_3> base_range,
             shammath::CoordRange<f32_3> real_coord_range) {
 
@@ -555,9 +555,9 @@ f64 amr_walk_perf(
 
     class RefineCellAccessor {
         public:
-        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchData &pdat) {}
+        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchDataLayer &pdat) {}
 
-        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchData &pdat) {}
+        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {}
     };
 
     sycl::queue &q = shamsys::instance::get_compute_queue();
@@ -664,8 +664,8 @@ f64 amr_walk_perf(
             };
         };
 
-        static bool
-        criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
+        static bool criterion(
+            u32 node_index, Access acc, typename Access::ObjectValues current_values) {
 
             shammath::AABB<u64_3> tree_cell_bound{
                 acc.tree_cell_coordrange_min[node_index], acc.tree_cell_coordrange_max[node_index]};
@@ -922,8 +922,8 @@ class FmmTestInteractCrit {
         };
     };
 
-    inline static bool
-    criterion(u32 node_index, Access acc, typename Access::ObjectValues current_values) {
+    inline static bool criterion(
+        u32 node_index, Access acc, typename Access::ObjectValues current_values) {
         vec cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
         vec cur_pos_max_cell_b = acc.tree_cell_coordrange_max[node_index];
 

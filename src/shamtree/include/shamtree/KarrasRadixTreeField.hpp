@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -134,7 +134,7 @@ namespace shamtree {
     template<class T>
     KarrasRadixTreeField<T> compute_tree_field_max_field(
         const KarrasRadixTree &tree,
-        const CellIterator &cell_it,
+        const LeafCellIterator &cell_it,
         KarrasRadixTreeField<T> &&recycled_tree_field,
         sham::DeviceBuffer<T> &field) {
 
@@ -150,7 +150,7 @@ namespace shamtree {
                     // Init with the min value of the type
                     T field_val = shambase::VectorProperties<T>::get_min();
 
-                    cell_iter.for_each_in_cell(i, [&](u32 obj_id) {
+                    cell_iter.for_each_in_leaf_cell(i, [&](u32 obj_id) {
                         field_val = sham::max(field_val, field[obj_id]);
                     });
 

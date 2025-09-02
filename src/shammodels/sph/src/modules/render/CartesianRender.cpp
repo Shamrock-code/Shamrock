@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 /**
  * @file CartesianRender.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -119,14 +120,14 @@ namespace shammodels::sph::modules {
             = scheduler().get_sim_box().template get_patch_transform<Tvec>();
 
         scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch cur_p,
-                                                    shamrock::patch::PatchData &pdat) {
+                                                    shamrock::patch::PatchDataLayer &pdat) {
             shammath::CoordRange<Tvec> box = transf.to_obj_coord(cur_p);
 
             PatchDataField<Tvec> &main_field = pdat.get_field<Tvec>(0);
 
             auto &buf_xyz = pdat.get_field<Tvec>(0).get_buf();
             auto &buf_hpart
-                = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf();
+                = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf();
 
             auto &buf_field_to_render = field_getter(cur_p, pdat);
 
@@ -144,7 +145,7 @@ namespace shammodels::sph::modules {
 
             RadixTreeField<Tscal> hmax_tree = tree.compute_int_boxes(
                 shamsys::instance::get_compute_queue(),
-                pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf(),
+                pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf(),
                 1);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -235,14 +236,14 @@ namespace shammodels::sph::modules {
             = scheduler().get_sim_box().template get_patch_transform<Tvec>();
 
         scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch cur_p,
-                                                    shamrock::patch::PatchData &pdat) {
+                                                    shamrock::patch::PatchDataLayer &pdat) {
             shammath::CoordRange<Tvec> box = transf.to_obj_coord(cur_p);
 
             PatchDataField<Tvec> &main_field = pdat.get_field<Tvec>(0);
 
             auto &buf_xyz = pdat.get_field<Tvec>(0).get_buf();
             auto &buf_hpart
-                = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf();
+                = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf();
 
             auto &buf_field_to_render = field_getter(cur_p, pdat);
 
@@ -260,7 +261,7 @@ namespace shammodels::sph::modules {
 
             RadixTreeField<Tscal> hmax_tree = tree.compute_int_boxes(
                 shamsys::instance::get_compute_queue(),
-                pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf(),
+                pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf(),
                 1);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -347,6 +348,14 @@ template class shammodels::sph::modules::CartesianRender<f64_3, f64, M4>;
 template class shammodels::sph::modules::CartesianRender<f64_3, f64, M6>;
 template class shammodels::sph::modules::CartesianRender<f64_3, f64, M8>;
 
+template class shammodels::sph::modules::CartesianRender<f64_3, f64, C2>;
+template class shammodels::sph::modules::CartesianRender<f64_3, f64, C4>;
+template class shammodels::sph::modules::CartesianRender<f64_3, f64, C6>;
+
 template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, M4>;
 template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, M6>;
 template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, M8>;
+
+template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, C2>;
+template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, C4>;
+template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, C6>;

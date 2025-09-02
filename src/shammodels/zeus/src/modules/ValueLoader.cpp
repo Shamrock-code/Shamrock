@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -870,9 +870,9 @@ void shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_patch_neigh
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<class Tvec, class TgridVec, class T>
-shamrock::ComputeField<T>
-shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
-    std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name) {
+shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::
+    load_value_with_gz(
+        std::string field_name, std::array<Tgridscal, dim> offset, std::string result_name) {
 
     StackEntry stack_loc{};
 
@@ -889,11 +889,12 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
               return storage.merged_patchdata_ghost.get().get(id).total_elements;
           });
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 ifield                                     = ghost_layout.get_field_idx<T>(field_name);
-    u32 nvar                                       = ghost_layout.get_field<T>(ifield).nvar;
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 ifield = ghost_layout.get_field_idx<T>(field_name);
+    u32 nvar   = ghost_layout.get_field<T>(ifield).nvar;
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<T> &buf_src  = mpdat.pdat.get_field_buf_ref<T>(ifield);
@@ -902,7 +903,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
         load_patch_internal_block(offset, mpdat.total_elements, nvar, buf_src, buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -925,7 +926,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -948,7 +949,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -975,11 +976,11 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
 }
 
 template<class Tvec, class TgridVec, class T>
-shamrock::ComputeField<T>
-shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
-    shamrock::ComputeField<T> &compute_field,
-    std::array<Tgridscal, dim> offset,
-    std::string result_name) {
+shamrock::ComputeField<T> shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::
+    load_value_with_gz(
+        shamrock::ComputeField<T> &compute_field,
+        std::array<Tgridscal, dim> offset,
+        std::string result_name) {
 
     StackEntry stack_loc{};
 
@@ -996,7 +997,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
               return storage.merged_patchdata_ghost.get().get(id).total_elements;
           });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<T> &buf_src  = compute_field.get_buf_check(p.id_patch);
@@ -1010,7 +1011,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -1033,7 +1034,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -1056,7 +1057,7 @@ shammodels::zeus::modules::ValueLoader<Tvec, TgridVec, T>::load_value_with_gz(
             buf_dest);
     });
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);

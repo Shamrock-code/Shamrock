@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -39,15 +40,15 @@ void distribdata_sparse_comm_test(std::string prefix) {
 
     std::map<u64, i32> rank_owner;
     for (u64 i = 0; i < npatch; i++) {
-        rank_owner[i] = shamalgs::random::mock_value(eng, 0, wsize - 1);
+        rank_owner[i] = shamalgs::primitives::mock_value(eng, 0, wsize - 1);
     }
 
     shamalgs::collective::SerializedDDataComm dat_ref;
 
     for (u64 i = 0; i < npatch * nbuf_p_patch; i++) {
-        u64 sender   = shamalgs::random::mock_value(eng, 0_u64, npatch - 1_u64);
-        u64 receiver = shamalgs::random::mock_value(eng, 0_u64, npatch - 1_u64);
-        u64 length   = shamalgs::random::mock_value(eng, 1_u64, max_msg_len);
+        u64 sender   = shamalgs::primitives::mock_value(eng, 0_u64, npatch - 1_u64);
+        u64 receiver = shamalgs::primitives::mock_value(eng, 0_u64, npatch - 1_u64);
+        u64 length   = shamalgs::primitives::mock_value(eng, 1_u64, max_msg_len);
         u64 rnd      = eng();
 
         if (!dat_ref.has_key(sender, receiver)) {
@@ -57,7 +58,7 @@ void distribdata_sparse_comm_test(std::string prefix) {
                 shamalgs::random::mock_buffer_usm<u8>(
                     get_compute_scheduler_ptr(),
                     rnd,
-                    shamalgs::random::mock_value<i32>(eng, 1, length)));
+                    shamalgs::primitives::mock_value<i32>(eng, 1, length)));
         }
     }
 
@@ -93,7 +94,7 @@ void distribdata_sparse_comm_test(std::string prefix) {
 
         REQUIRE_NAMED(
             "correct buffer",
-            shamalgs::reduction::equals(get_compute_scheduler_ptr(), buf, it->second));
+            shamalgs::primitives::equals(get_compute_scheduler_ptr(), buf, it->second));
     });
 }
 

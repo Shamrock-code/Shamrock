@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -26,7 +26,8 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_trees() {
 
     MergedPDat &mpdat = storage.merged_patchdata_ghost.get();
 
-    shamrock::patch::PatchDataLayout &mpdl = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &mpdl
+        = shambase::get_check_ref(storage.ghost_layout.get());
 
     u32 reduc_level = 0;
 
@@ -352,7 +353,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
     }));
 
     using namespace shamrock::patch;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         storage.neighbors_cache.get().preload(cur_p.id_patch);
     });
 

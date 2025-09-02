@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 /**
  * @file ParticleReordering.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -26,7 +27,7 @@ void shammodels::sph::modules::ParticleReordering<Tvec, Tmorton, SPHKernel>::reo
     PatchCoordTransform<Tvec> transf
         = scheduler().get_sim_box().template get_patch_transform<Tvec>();
 
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         u32 obj_count = pdat.get_obj_cnt();
 
         if (obj_count > 0) {
@@ -50,3 +51,7 @@ using namespace shammath;
 template class shammodels::sph::modules::ParticleReordering<f64_3, u32, M4>;
 template class shammodels::sph::modules::ParticleReordering<f64_3, u32, M6>;
 template class shammodels::sph::modules::ParticleReordering<f64_3, u32, M8>;
+
+template class shammodels::sph::modules::ParticleReordering<f64_3, u32, C2>;
+template class shammodels::sph::modules::ParticleReordering<f64_3, u32, C4>;
+template class shammodels::sph::modules::ParticleReordering<f64_3, u32, C6>;

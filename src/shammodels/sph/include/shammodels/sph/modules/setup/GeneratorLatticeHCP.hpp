@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -51,7 +51,7 @@ namespace shammodels::sph::modules {
 
         bool is_done() { return generator.is_done(); }
 
-        shamrock::patch::PatchData next_n(u32 nmax) {
+        shamrock::patch::PatchDataLayer next_n(u32 nmax) {
             StackEntry stack_loc{};
 
             using namespace shamrock::patch;
@@ -59,7 +59,7 @@ namespace shammodels::sph::modules {
 
             auto has_pdat = [&]() {
                 bool ret = false;
-                sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
                     ret = true;
                 });
                 return ret;
@@ -98,7 +98,7 @@ namespace shammodels::sph::modules {
             }
 
             // Make a patchdata from pos_data
-            PatchData tmp(sched.pdl);
+            PatchDataLayer tmp(sched.get_layout_ptr());
             if (!pos_data.empty()) {
                 tmp.resize(pos_data.size());
                 tmp.fields_raz();
@@ -106,14 +106,14 @@ namespace shammodels::sph::modules {
                 {
                     u32 len = pos_data.size();
                     PatchDataField<Tvec> &f
-                        = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+                        = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
                     // sycl::buffer<Tvec> buf(pos_data.data(), len);
                     f.override(pos_data, len);
                 }
 
                 {
                     PatchDataField<Tscal> &f
-                        = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                        = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("hpart"));
                     f.override(dr);
                 }
             }

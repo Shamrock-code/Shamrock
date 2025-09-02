@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -30,7 +30,7 @@
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
@@ -589,8 +589,8 @@ struct shammodels::sph::SolverConfig {
      * @param[in] a_spin The spin of the central object
      * @param[in] dir_spin The direction of the spin of the central object
      */
-    inline void
-    add_ext_force_lense_thirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
+    inline void add_ext_force_lense_thirring(
+        Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
         ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
     }
 
@@ -728,8 +728,8 @@ struct shammodels::sph::SolverConfig {
         }
     }
 
-    void set_layout(shamrock::patch::PatchDataLayout &pdl);
-    void set_ghost_layout(shamrock::patch::PatchDataLayout &ghost_layout);
+    void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);
+    void set_ghost_layout(shamrock::patch::PatchDataLayerLayout &ghost_layout);
 };
 
 namespace shammodels::sph {

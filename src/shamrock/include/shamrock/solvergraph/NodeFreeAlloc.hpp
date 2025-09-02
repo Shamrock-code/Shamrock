@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -16,7 +16,7 @@
  * @date 2023-07-31
  */
 
-#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/IEdge.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 
 namespace shamrock::solvergraph {
@@ -49,7 +49,7 @@ namespace shamrock::solvergraph {
          *
          * @param to_free The node to free
          */
-        inline void set_edges(std::shared_ptr<IDataEdge> to_free) {
+        inline void set_edges(std::shared_ptr<IEdge> to_free) {
             __internal_set_ro_edges({});
             __internal_set_rw_edges({to_free});
         }

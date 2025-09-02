@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -22,8 +22,8 @@
 namespace shammath {
 
     template<class T>
-    inline auto
-    compute_inv_33(std::array<sycl::vec<T, 3>, 3> mat) -> std::array<sycl::vec<T, 3>, 3> {
+    inline auto compute_inv_33(std::array<sycl::vec<T, 3>, 3> mat)
+        -> std::array<sycl::vec<T, 3>, 3> {
 
         using vec = sycl::vec<T, 3>;
 
@@ -50,8 +50,8 @@ namespace shammath {
     }
 
     template<class T>
-    inline auto
-    mat_prod_33(std::array<sycl::vec<T, 3>, 3> mat_a, std::array<sycl::vec<T, 3>, 3> mat_b)
+    inline auto mat_prod_33(
+        std::array<sycl::vec<T, 3>, 3> mat_a, std::array<sycl::vec<T, 3>, 3> mat_b)
         -> std::array<sycl::vec<T, 3>, 3> {
 
         using vec = sycl::vec<T, 3>;

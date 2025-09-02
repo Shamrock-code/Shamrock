@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -89,22 +89,22 @@ namespace shamalgs::reduction::details {
     }
 
     template<class T>
-    inline T
-    FallbackReduction<T>::sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+    inline T FallbackReduction<T>::sum(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
 
         return _int_sum(q, buf1, start_id, end_id);
     }
 
     template<class T>
-    inline T
-    FallbackReduction<T>::min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+    inline T FallbackReduction<T>::min(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
 
         return _int_min(q, buf1, start_id, end_id);
     }
 
     template<class T>
-    inline T
-    FallbackReduction<T>::max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+    inline T FallbackReduction<T>::max(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
 
         return _int_max(q, buf1, start_id, end_id);
     }

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -74,7 +74,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         = shambase::get_check_ref(storage.flux_rhoe_face_zm).link_fields;
 
     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -365,7 +365,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         = shambase::get_check_ref(storage.flux_rhov_dust_face_zm).link_fields;
 
     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();

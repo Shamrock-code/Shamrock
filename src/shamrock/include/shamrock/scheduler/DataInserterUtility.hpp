@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -15,7 +15,7 @@
  * @brief
  */
 
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
@@ -61,7 +61,7 @@ namespace shamrock {
          */
         template<class Tvec>
         u64 push_patch_data(
-            shamrock::patch::PatchData &pdat_ins,
+            shamrock::patch::PatchDataLayer &pdat_ins,
             std::string main_field_name,
             u32 split_threshold,
             std::function<void(void)> load_balance_update) {
@@ -76,15 +76,16 @@ namespace shamrock {
 
             if (pdat_ob_cnt < split_threshold) {
                 bool should_insert = true;
-                sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
                     if (should_insert) {
                         pdat.insert_elements(pdat_ins);
                         should_insert = false; // We insert only in first patch (no duplicates)
                     }
                 });
             } else {
-                shambase::throw_unimplemented("Not implemented yet please keep the obj count to be "
-                                              "inserted below the split_threshold, sorrrrrry ...");
+                shambase::throw_unimplemented(
+                    "Not implemented yet please keep the obj count to be "
+                    "inserted below the split_threshold, sorrrrrry ...");
             }
 
             if (shamcomm::world_rank() == 0) {

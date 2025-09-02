@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,6 +18,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shammodels/sph/Model.hpp"
@@ -53,14 +54,14 @@ namespace shammodels::sph::modules {
             auto dev_sched_ptr    = shamsys::instance::get_compute_scheduler_ptr();
             sham::DeviceQueue &q  = shambase::get_check_ref(dev_sched_ptr).get_queue();
 
-            const u32 ixyz    = sched.pdl.template get_field_idx<Tvec>("xyz");
+            const u32 ixyz    = sched.pdl().template get_field_idx<Tvec>("xyz");
             const Tscal pmass = solver.solver_config.gpart_mass;
 
             Tvec barycenter = {0, 0, 0}; // Not really barycenter per se but Mdisc * barycenter
             Tscal mass_disc = 0;
 
             sched.for_each_patchdata_nonempty(
-                [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+                [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                     // auto &xyz_buf = pdat.get_field_buf_ref<Tvec>(ixyz);
                     // u32 len       = pdat.get_obj_cnt();
                     // {
@@ -86,7 +87,7 @@ namespace shammodels::sph::modules {
                         [pmass](u32 i, const Tvec *__restrict xyz, Tvec *__restrict pm) {
                             pm[i] = pmass * xyz[i];
                         });
-                    barycenter += shamalgs::reduction::sum(dev_sched_ptr, pm, 0, len);
+                    barycenter += shamalgs::primitives::sum(dev_sched_ptr, pm, 0, len);
                 });
 
             Tvec tot_barycenter = shamalgs::collective::allreduce_sum(barycenter);

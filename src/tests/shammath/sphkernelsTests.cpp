@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -22,8 +22,8 @@
 #include <vector>
 
 template<class Ker>
-inline void
-validate_kernel_3d(typename Ker::Tscal tol, typename Ker::Tscal dx, typename Ker::Tscal dx_int) {
+inline void validate_kernel_3d(
+    typename Ker::Tscal tol, typename Ker::Tscal dx, typename Ker::Tscal dx_int) {
 
     using namespace shambase::constants;
 

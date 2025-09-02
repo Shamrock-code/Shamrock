@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -35,8 +35,8 @@ namespace shamalgs::memory {
     }
 
     template<class T, int n>
-    inline sycl::buffer<T>
-    flatten_buffer(sycl::queue &q, sycl::buffer<sycl::vec<T, n>> &buf_in, u64 len) {
+    inline sycl::buffer<T> flatten_buffer(
+        sycl::queue &q, sycl::buffer<sycl::vec<T, n>> &buf_in, u64 len) {
         sycl::buffer<T> ret(len * n);
 
         q.submit([=, &buf_in, &ret](sycl::handler &cgh) {

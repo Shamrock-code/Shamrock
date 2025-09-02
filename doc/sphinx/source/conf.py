@@ -1,3 +1,7 @@
+import datetime
+
+import shamrock
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -18,11 +22,10 @@
 # -- Project information -----------------------------------------------------
 
 project = "python bindings"
-copyright = "2020 -- Timothee David--Cléris"
+copyright = f"2020 -- {datetime.datetime.now().year} Timothee David--Cléris"
 author = "Timothee David--Cléris"
 
-# The full version, including alpha/beta/rc tags
-release = "2025.05.0"
+release = shamrock.version_string()
 
 # -- General configuration ---------------------------------------------------
 

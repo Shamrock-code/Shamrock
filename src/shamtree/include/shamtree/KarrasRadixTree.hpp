@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -71,6 +71,15 @@ class shamtree::KarrasRadixTree {
             buf_rchild_id,
             buf_lchild_flag,
             buf_rchild_flag,
+            get_internal_cell_count()};
+    }
+
+    inline KarrasTreeTraverserHost get_structure_traverser_host() const {
+        return KarrasTreeTraverserHost{
+            buf_lchild_id.copy_to_stdvec(),
+            buf_rchild_id.copy_to_stdvec(),
+            buf_lchild_flag.copy_to_stdvec(),
+            buf_rchild_flag.copy_to_stdvec(),
             get_internal_cell_count()};
     }
 

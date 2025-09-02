@@ -1,14 +1,14 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtest/shamtest.hpp"
 #include <random>
@@ -39,17 +39,18 @@ TestStart(Unittest, "patchdata::", send_recv_patchdata, 2) {
 
     std::mt19937 eng(0x1111);
 
-    PatchDataLayout pdl;
+    std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+    auto &pdl                                     = *pdl_ptr;
 
     pdl.add_field<f32_3>("xyz", 1);
 
     pdl.add_field<f64_8>("test", 2);
 
-    PatchData d1_check = patchdata_gen_dummy_data(pdl, eng);
-    PatchData d2_check = patchdata_gen_dummy_data(pdl, eng);
+    PatchDataLayer d1_check = patchdata_gen_dummy_data(pdl_ptr, eng);
+    PatchDataLayer d2_check = patchdata_gen_dummy_data(pdl_ptr, eng);
 
     std::vector<PatchDataMpiRequest> rq_lst;
-    PatchData recv_d(pdl);
+    PatchDataLayer recv_d(pdl_ptr);
 
     if (shamcomm::world_rank() == 0) {
         patchdata_isend(d1_check, rq_lst, 1, 0, MPI_COMM_WORLD);

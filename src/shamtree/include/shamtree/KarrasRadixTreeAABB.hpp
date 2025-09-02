@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,6 +23,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/KarrasRadixTree.hpp"
+#include "shamtree/LeafCellIterator.hpp"
 #include <functional>
 #include <utility>
 
@@ -134,7 +135,7 @@ namespace shamtree {
     template<class Tvec>
     KarrasRadixTreeAABB<Tvec> compute_tree_aabb_from_positions(
         const KarrasRadixTree &tree,
-        const CellIterator &cell_it,
+        const LeafCellIterator &cell_it,
         KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
         sham::DeviceBuffer<Tvec> &positions);
 

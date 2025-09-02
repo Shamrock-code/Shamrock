@@ -107,18 +107,18 @@ import numpy as np
 def draw_aabb(ax, aabb, color, alpha):
     from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
 
-    xmin, ymin, zmin = aabb.lower()
-    xmax, ymax, zmax = aabb.upper()
+    xmin, ymin, zmin = aabb.lower
+    xmax, ymax, zmax = aabb.upper
 
     points = [
-        aabb.lower(),
-        (aabb.lower()[0], aabb.lower()[1], aabb.upper()[2]),
-        (aabb.lower()[0], aabb.upper()[1], aabb.lower()[2]),
-        (aabb.lower()[0], aabb.upper()[1], aabb.upper()[2]),
-        (aabb.upper()[0], aabb.lower()[1], aabb.lower()[2]),
-        (aabb.upper()[0], aabb.lower()[1], aabb.upper()[2]),
-        (aabb.upper()[0], aabb.upper()[1], aabb.lower()[2]),
-        aabb.upper(),
+        aabb.lower,
+        (aabb.lower[0], aabb.lower[1], aabb.upper[2]),
+        (aabb.lower[0], aabb.upper[1], aabb.lower[2]),
+        (aabb.lower[0], aabb.upper[1], aabb.upper[2]),
+        (aabb.upper[0], aabb.lower[1], aabb.lower[2]),
+        (aabb.upper[0], aabb.lower[1], aabb.upper[2]),
+        (aabb.upper[0], aabb.upper[1], aabb.lower[2]),
+        aabb.upper,
     ]
 
     faces = [

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -174,15 +174,17 @@ namespace shammodels::sph {
         if (mhd_type == "none") {
             p.set(None{});
         } else if (mhd_type == "ideal_mhd_constrained_hyper_para") {
-            p.set(IMHD{
-                j.at("sigma_mhd").get<Tscal>(),
-                j.at("alpha_u").get<Tscal>(),
-            });
+            p.set(
+                IMHD{
+                    j.at("sigma_mhd").get<Tscal>(),
+                    j.at("alpha_u").get<Tscal>(),
+                });
         } else if (mhd_type == "non_ideal_mhd") {
-            p.set(NonIdealMHD{
-                j.at("sigma_mhd").get<Tscal>(),
-                j.at("alpha_u").get<Tscal>(),
-            });
+            p.set(
+                NonIdealMHD{
+                    j.at("sigma_mhd").get<Tscal>(),
+                    j.at("alpha_u").get<Tscal>(),
+                });
         } else {
             shambase::throw_unimplemented("wtf !");
         }

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -185,8 +185,8 @@ namespace sham {
              * @param[in] item The sycl::nd_item representing the current work-group.
              * @param[in] acc The local accessor for the current work-group.
              */
-            inline void
-            init_timeline_event(sycl::nd_item<1> item, const local_access_t &acc) const {
+            inline void init_timeline_event(
+                sycl::nd_item<1> item, const local_access_t &acc) const {
                 if (item.get_local_id(0) == 0) {
                     sycl::atomic_ref<
                         u64,

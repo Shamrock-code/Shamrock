@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,7 +18,7 @@
 #include "shambase/exception.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <map>
 #include <memory>
@@ -41,14 +41,14 @@ class ShamAPIException : public std::exception {
 
 class ShamrockCtx {
     public:
-    std::unique_ptr<shamrock::patch::PatchDataLayout> pdl;
+    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl;
     std::unique_ptr<PatchScheduler> sched;
 
     inline void pdata_layout_new() {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl = std::make_unique<shamrock::patch::PatchDataLayout>();
+        pdl = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
     }
 
     // inline void pdata_layout_do_double_prec_mode(){
@@ -65,7 +65,7 @@ class ShamrockCtx {
     //    pdl->xyz_mode = xyz32;
     //}
 
-    inline shamrock::patch::PatchDataLayout &get_pdl_write() {
+    inline shamrock::patch::PatchDataLayerLayout &get_pdl_write() {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
@@ -108,7 +108,7 @@ class ShamrockCtx {
             throw ShamAPIException("patch data layout is not initialized");
         }
 
-        sched = std::make_unique<PatchScheduler>(*pdl, crit_split, crit_merge);
+        sched = std::make_unique<PatchScheduler>(pdl, crit_split, crit_merge);
         sched->init_mpi_required_types();
     }
 
@@ -122,16 +122,16 @@ class ShamrockCtx {
         // logfiles::close_log_files();
     }
 
-    inline std::vector<std::unique_ptr<shamrock::patch::PatchData>> gather_data(u32 rank) {
+    inline std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gather_data(u32 rank) {
         return sched->gather_data(rank);
     }
 
-    inline std::vector<std::unique_ptr<shamrock::patch::PatchData>> allgather_data() {
+    inline std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> allgather_data() {
 
         using namespace shamsys::instance;
         using namespace shamrock::patch;
 
-        std::vector<std::unique_ptr<PatchData>> recv_data;
+        std::vector<std::unique_ptr<PatchDataLayer>> recv_data;
 
         for (u32 i = 0; i < shamcomm::world_size(); i++) {
             if (i == shamcomm::world_rank()) {

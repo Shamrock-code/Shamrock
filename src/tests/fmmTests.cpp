@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -238,19 +238,20 @@ TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
 
         f64 angle = 2 * (dist_func(x_i, s_a) + dist_func(x_j, s_b)) / dist_func(s_a, s_b);
 
-        vec_result.push_back(Entry{
-            angle,
-            FMM_prec_eval<f64, 5>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 4>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 3>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 2>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 1>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 0>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 5>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 4>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 3>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 2>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
-            FMM_prec_eval<f64, 1>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)});
+        vec_result.push_back(
+            Entry{
+                angle,
+                FMM_prec_eval<f64, 5>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 4>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 3>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 2>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 1>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 0>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 5>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 4>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 3>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 2>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+                FMM_prec_eval<f64, 1>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)});
 
         if (i % 10000 == 0) {
             shamlog_debug_ln("Tests", "i =", i, "\\", 100000);

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 /**
  * @file ConservativeCheck.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -23,7 +24,8 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     StackEntry stack_loc{};
 
-    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+    sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
 
     Tscal gpart_mass = solver_config.gpart_mass;
 
@@ -31,7 +33,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     using namespace shamrock::patch;
     using Sink = SinkParticle<Tvec>;
 
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
@@ -47,7 +49,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     // momentum check :
     ///////////////////////////////////
     Tvec tmpp{0, 0, 0};
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tvec> &field = pdat.get_field<Tvec>(ivxyz);
         tmpp += field.compute_sum();
     });
@@ -67,7 +69,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     // force sum check :
     ///////////////////////////////////
     Tvec tmpa{0, 0, 0};
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tvec> &field = pdat.get_field<Tvec>(iaxyz);
         tmpa += field.compute_sum();
     });
@@ -87,7 +89,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     // energy check :
     ///////////////////////////////////
     Tscal tmpe{0};
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tscal> &field_u = pdat.get_field<Tscal>(iuint);
         PatchDataField<Tvec> &field_v  = pdat.get_field<Tvec>(ivxyz);
         tmpe += field_u.compute_sum() + 0.5 * field_v.compute_dot_sum();
@@ -100,23 +102,22 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     Tscal pmass  = gpart_mass;
     Tscal tmp_de = 0;
-    scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&, pmass](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataField<Tscal> &field_u  = pdat.get_field<Tscal>(iuint);
         PatchDataField<Tvec> &field_v   = pdat.get_field<Tvec>(ivxyz);
         PatchDataField<Tscal> &field_du = pdat.get_field<Tscal>(iduint);
         PatchDataField<Tvec> &field_a   = pdat.get_field<Tvec>(iaxyz);
 
-        sycl::buffer<Tscal> temp_de(pdat.get_obj_cnt());
+        sham::DeviceBuffer<Tscal> temp_de(pdat.get_obj_cnt(), dev_sched);
 
         sham::EventList depends_list;
         auto u  = field_u.get_buf().get_read_access(depends_list);
         auto du = field_du.get_buf().get_read_access(depends_list);
         auto v  = field_v.get_buf().get_read_access(depends_list);
         auto a  = field_a.get_buf().get_read_access(depends_list);
+        auto de = temp_de.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
-            sycl::accessor de{temp_de, cgh, sycl::write_only, sycl::no_init};
-
             cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                 de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item]);
             });
@@ -126,9 +127,9 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         field_du.get_buf().complete_event_state(e);
         field_v.get_buf().complete_event_state(e);
         field_a.get_buf().complete_event_state(e);
+        temp_de.complete_event_state(e);
 
-        Tscal de_p = shamalgs::reduction::sum(
-            shamsys::instance::get_compute_queue(), temp_de, 0, pdat.get_obj_cnt());
+        Tscal de_p = shamalgs::primitives::sum(dev_sched, temp_de, 0, pdat.get_obj_cnt());
         tmp_de += de_p;
     });
 
@@ -147,3 +148,7 @@ using namespace shammath;
 template class shammodels::sph::modules::ConservativeCheck<f64_3, M4>;
 template class shammodels::sph::modules::ConservativeCheck<f64_3, M6>;
 template class shammodels::sph::modules::ConservativeCheck<f64_3, M8>;
+
+template class shammodels::sph::modules::ConservativeCheck<f64_3, C2>;
+template class shammodels::sph::modules::ConservativeCheck<f64_3, C4>;
+template class shammodels::sph::modules::ConservativeCheck<f64_3, C6>;

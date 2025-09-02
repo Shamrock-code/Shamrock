@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -13,7 +13,6 @@ project(Shammodels_sph CXX C)
 
 set(Sources
     src/BasicSPHGhosts.cpp
-    src/SPHSolverImpl.cpp
     src/Model.cpp
     src/Solver.cpp
     src/SPHUtilities.cpp
@@ -45,9 +44,10 @@ set(Sources
     src/modules/SPHSetup.cpp
     src/modules/KillParticles.cpp
     src/modules/GetParticlesOutsideSphere.cpp
-
+    src/modules/IterateSmoothingLengthDensity.cpp
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
+    src/modules/setup/ModifierApplyCustomWarp.cpp
     src/modules/setup/ModifierOffset.cpp
     src/modules/setup/ModifierFilter.cpp
     src/modules/render/CartesianRender.cpp

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -236,8 +236,8 @@ namespace shamtest {
     }
 
     /// Gather test results from all MPI ranks
-    std::vector<details::TestResult>
-    gather_tests(std::vector<details::TestResult> rank_result, usize &gather_bytecount) {
+    std::vector<details::TestResult> gather_tests(
+        std::vector<details::TestResult> rank_result, usize &gather_bytecount) {
         if (shamcomm::world_size() == 1) {
             return rank_result;
         }
@@ -586,21 +586,21 @@ namespace shamtest {
 
         auto get_pref_type = [](TestType t) -> std::string {
             switch (t) {
-            case Benchmark: return "Benchmark";
-            case LongBenchmark: return "LongBenchmark";
-            case ValidationTest: return "ValidationTest";
+            case Benchmark         : return "Benchmark";
+            case LongBenchmark     : return "LongBenchmark";
+            case ValidationTest    : return "ValidationTest";
             case LongValidationTest: return "LongValidationTest";
-            case Unittest: return "Unittest";
+            case Unittest          : return "Unittest";
             }
         };
 
         auto get_arg = [](TestType t) -> std::string {
             switch (t) {
-            case Benchmark: return "--benchmark";
-            case LongBenchmark: return "--long-test --benchmark";
-            case ValidationTest: return "--validation";
+            case Benchmark         : return "--benchmark";
+            case LongBenchmark     : return "--long-test --benchmark";
+            case ValidationTest    : return "--validation";
             case LongValidationTest: return "--long-test --validation";
-            case Unittest: return "--unittest";
+            case Unittest          : return "--unittest";
             }
         };
 

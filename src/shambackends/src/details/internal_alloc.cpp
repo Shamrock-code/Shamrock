@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -326,16 +326,16 @@ namespace sham::details {
     }
 
 #ifndef DOXYGEN
-    template void
-    internal_free<host>(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+    template void internal_free<host>(
+        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
     template void *internal_alloc<host>(
         size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
-    template void
-    internal_free<device>(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+    template void internal_free<device>(
+        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
     template void *internal_alloc<device>(
         size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
-    template void
-    internal_free<shared>(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+    template void internal_free<shared>(
+        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
     template void *internal_alloc<shared>(
         size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
 #endif

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -46,8 +46,8 @@ namespace shammodels::zeus {
 
         Component<GhostZonesData<Tvec, TgridVec>> ghost_zone_infos;
 
-        Component<shamrock::patch::PatchDataLayout> ghost_layout;
-        Component<shamrock::patch::PatchDataLayout> ghost_layout_Q;
+        Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
+        Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout_Q;
 
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost;
         Component<shambase::DistributedData<shamrock::MergedPatchData>> merged_patchdata_ghost_Q;

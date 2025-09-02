@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -19,7 +19,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 // #include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/legacy/utils/syclreduction.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include <type_traits>
 #include <stdexcept>
 
@@ -28,9 +28,9 @@ namespace patchdata {
 
         template<class htype>
         inline htype get_h_max(
-            shamrock::patch::PatchDataLayout &pdl,
+            shamrock::patch::PatchDataLayerLayout &pdl,
             sycl::queue &queue,
-            shamrock::patch::PatchData &pdat) {
+            shamrock::patch::PatchDataLayer &pdat) {
 
             if (pdat.get_obj_cnt() == 0)
                 return 0;
@@ -60,7 +60,7 @@ namespace patchdata {
 
         template<class htype>
         [[deprecated]]
-        inline htype get_h_max(PatchDataLayout & pdl,sycl::queue & queue, PatchDataBuffer & pdatbuf){
+        inline htype get_h_max(PatchDataLayerLayout & pdl,sycl::queue & queue, PatchDataBuffer & pdatbuf){
 
             if(pdatbuf.element_count == 0) return 0;
 

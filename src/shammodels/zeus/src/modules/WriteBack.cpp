@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -26,12 +26,12 @@ void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_dat
 
     using Block = typename Config::AMRBlock;
 
-    PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf               = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf              = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf               = ghost_layout.get_field_idx<Tvec>("vel");
+    PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 irho_interf                    = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf                   = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf                    = ghost_layout.get_field_idx<Tvec>("vel");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         using MergedPDat  = shamrock::MergedPatchData;
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -39,7 +39,7 @@ void shammodels::zeus::modules::WriteBack<Tvec, TgridVec>::write_back_merged_dat
         sham::DeviceBuffer<Tscal> &eint_merged = mpdat.pdat.get_field_buf_ref<Tscal>(ieint_interf);
         sham::DeviceBuffer<Tvec> &vel_merged   = mpdat.pdat.get_field_buf_ref<Tvec>(ivel_interf);
 
-        PatchData &patch_dest                = scheduler().patch_data.get_pdat(p.id_patch);
+        PatchDataLayer &patch_dest           = scheduler().patch_data.get_pdat(p.id_patch);
         sham::DeviceBuffer<Tscal> &rho_dest  = patch_dest.get_field_buf_ref<Tscal>(irho_interf);
         sham::DeviceBuffer<Tscal> &eint_dest = patch_dest.get_field_buf_ref<Tscal>(ieint_interf);
         sham::DeviceBuffer<Tvec> &vel_dest   = patch_dest.get_field_buf_ref<Tvec>(ivel_interf);

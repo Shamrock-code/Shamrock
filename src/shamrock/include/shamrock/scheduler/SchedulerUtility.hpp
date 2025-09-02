@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -35,7 +35,7 @@ namespace shamrock {
         inline void fields_forward_euler(u32 field_idx, u32 derfield_idx, flt dt) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 integrators::forward_euler(
                     shamsys::instance::get_compute_scheduler().get_queue(),
                     pdat.get_field<T>(field_idx).get_buf(),
@@ -46,11 +46,11 @@ namespace shamrock {
         }
 
         template<class T, class flt>
-        inline void
-        fields_leapfrog_corrector(u32 field_idx, u32 derfield_idx, u32 derfield_old_idx, flt hdt) {
+        inline void fields_leapfrog_corrector(
+            u32 field_idx, u32 derfield_idx, u32 derfield_old_idx, flt hdt) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 integrators::leapfrog_corrector(
                     shamsys::instance::get_compute_scheduler().get_queue(),
                     pdat.get_field<T>(field_idx).get_buf(),
@@ -70,7 +70,7 @@ namespace shamrock {
             flt hdt) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 integrators::leapfrog_corrector(
                     shamsys::instance::get_compute_scheduler().get_queue(),
                     pdat.get_field<T>(field_idx).get_buf(),
@@ -86,7 +86,7 @@ namespace shamrock {
         inline void fields_apply_periodicity(u32 field_idx, std::pair<T, T> box) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 utilities::sycl_position_modulo(
                     shamsys::instance::get_compute_scheduler().get_queue(),
                     pdat.get_field<T>(field_idx).get_buf(),
@@ -107,7 +107,7 @@ namespace shamrock {
 
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 utilities::sycl_position_sheared_modulo(
                     shamsys::instance::get_compute_scheduler().get_queue(),
                     pdat.get_field<T>(field_idx).get_buf(),
@@ -125,7 +125,7 @@ namespace shamrock {
         inline void fields_swap(u32 field_idx1, u32 field_idx2) {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 utilities::swap_fields(
                     shamsys::instance::get_compute_scheduler().get_queue(),
                     pdat.get_field<T>(field_idx1).get_buf(),
@@ -139,7 +139,7 @@ namespace shamrock {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_min();
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 ret = sham::max(ret, pdat.get_field<T>(field_idx).compute_max());
             });
 
@@ -151,7 +151,7 @@ namespace shamrock {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_max();
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 ret = sham::min(ret, pdat.get_field<T>(field_idx).compute_min());
             });
 
@@ -163,7 +163,7 @@ namespace shamrock {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
             T ret = shambase::VectorProperties<T>::get_zero();
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 ret += pdat.get_field<T>(field_idx).compute_sum();
             });
 
@@ -175,7 +175,7 @@ namespace shamrock {
             StackEntry stack_loc{};
             using namespace shamrock::patch;
             shambase::VecComponent<T> ret = 0;
-            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 ret += pdat.get_field<T>(field_idx).compute_dot_sum();
             });
 
@@ -195,7 +195,7 @@ namespace shamrock {
             StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 PatchDataField<T> &pdat_field = pdat.get_field<T>(field_idx);
                 cfield.field_data.add_obj(id_patch, pdat_field.duplicate(new_name));
             });
@@ -208,7 +208,7 @@ namespace shamrock {
             StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 PatchDataField<T> &pdat_field = field_getter(id_patch);
                 cfield.field_data.add_obj(id_patch, pdat_field.duplicate(new_name));
             });
@@ -228,7 +228,7 @@ namespace shamrock {
             StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 if (pdat.get_obj_cnt() == 0) {
                     return;
                 }
@@ -250,12 +250,12 @@ namespace shamrock {
          * @return ComputeField<T>
          */
         template<class T>
-        inline ComputeField<T>
-        make_compute_field(std::string new_name, u32 nvar, std::function<u32(u64)> size_getter) {
+        inline ComputeField<T> make_compute_field(
+            std::string new_name, u32 nvar, std::function<u32(u64)> size_getter) {
             StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 if (pdat.get_obj_cnt() == 0) {
                     return;
                 }
@@ -282,7 +282,7 @@ namespace shamrock {
             StackEntry stack_loc{};
             ComputeField<T> cfield;
             using namespace shamrock::patch;
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 auto it = cfield.field_data.add_obj(
                     id_patch, PatchDataField<T>(new_name, nvar, pdat.get_obj_cnt()));
 

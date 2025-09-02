@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,7 +18,7 @@
 
 #include "shambase/WithUUID.hpp"
 #include "shambase/memory.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/IEdge.hpp"
 #include <memory>
 #include <vector>
 
@@ -28,18 +28,18 @@ namespace shamrock::solvergraph {
     class INode : public std::enable_shared_from_this<INode>,
                   public shambase::WithUUID<INode, u64> {
 
-        std::vector<std::shared_ptr<IDataEdge>> ro_edges;
-        std::vector<std::shared_ptr<IDataEdge>> rw_edges;
+        std::vector<std::shared_ptr<IEdge>> ro_edges;
+        std::vector<std::shared_ptr<IEdge>> rw_edges;
 
         public:
         inline std::shared_ptr<INode> getptr_shared() { return shared_from_this(); }
         inline std::weak_ptr<INode> getptr_weak() { return weak_from_this(); }
 
-        inline std::vector<std::shared_ptr<IDataEdge>> &get_ro_edges() { return ro_edges; }
-        inline std::vector<std::shared_ptr<IDataEdge>> &get_rw_edges() { return rw_edges; }
+        inline std::vector<std::shared_ptr<IEdge>> &get_ro_edges() { return ro_edges; }
+        inline std::vector<std::shared_ptr<IEdge>> &get_rw_edges() { return rw_edges; }
 
-        inline void __internal_set_ro_edges(std::vector<std::shared_ptr<IDataEdge>> new_ro_edges);
-        inline void __internal_set_rw_edges(std::vector<std::shared_ptr<IDataEdge>> new_rw_edges);
+        inline void __internal_set_ro_edges(std::vector<std::shared_ptr<IEdge>> new_ro_edges);
+        inline void __internal_set_rw_edges(std::vector<std::shared_ptr<IEdge>> new_rw_edges);
 
         template<class Func>
         void on_edge_ro_edges(Func &&f);
@@ -62,11 +62,11 @@ namespace shamrock::solvergraph {
             return shambase::get_check_ref(std::dynamic_pointer_cast<T>(rw_edges.at(slot)));
         }
 
-        inline const IDataEdge &get_ro_edge_base(int slot) {
+        inline const IEdge &get_ro_edge_base(int slot) {
             return shambase::get_check_ref(ro_edges.at(slot));
         }
 
-        inline IDataEdge &get_rw_edge_base(int slot) {
+        inline IEdge &get_rw_edge_base(int slot) {
             return shambase::get_check_ref(rw_edges.at(slot));
         }
 
@@ -92,8 +92,7 @@ namespace shamrock::solvergraph {
         virtual std::string _impl_get_tex() = 0;
     };
 
-    inline void
-    INode::__internal_set_ro_edges(std::vector<std::shared_ptr<IDataEdge>> new_ro_edges) {
+    inline void INode::__internal_set_ro_edges(std::vector<std::shared_ptr<IEdge>> new_ro_edges) {
         for (auto e : ro_edges) {
             // shambase::get_check_ref(e).parent = {};
         }
@@ -103,8 +102,7 @@ namespace shamrock::solvergraph {
         }
     }
 
-    inline void
-    INode::__internal_set_rw_edges(std::vector<std::shared_ptr<IDataEdge>> new_rw_edges) {
+    inline void INode::__internal_set_rw_edges(std::vector<std::shared_ptr<IEdge>> new_rw_edges) {
         for (auto e : rw_edges) {
             // shambase::get_check_ref(e).child = {};
         }

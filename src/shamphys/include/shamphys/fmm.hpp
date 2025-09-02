@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -25,8 +25,8 @@
 template<class T, u32 low_order, u32 high_order>
 class GreenFuncGravCartesian {
     public:
-    inline static shammath::SymTensorCollection<T, low_order, high_order>
-    get_der_tensors(sycl::vec<T, 3> r);
+    inline static shammath::SymTensorCollection<T, low_order, high_order> get_der_tensors(
+        sycl::vec<T, 3> r);
 };
 
 template<class T>
@@ -701,8 +701,8 @@ inline shammath::SymTensorCollection<T, low_order, high_order> get_M_mat(
     shammath::SymTensorCollection<T, low_order, high_order> &Q);
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 5>
-get_M_mat(shammath::SymTensorCollection<T, 0, 5> &D, shammath::SymTensorCollection<T, 0, 5> &Q) {
+inline shammath::SymTensorCollection<T, 0, 5> get_M_mat(
+    shammath::SymTensorCollection<T, 0, 5> &D, shammath::SymTensorCollection<T, 0, 5> &Q) {
 
     using namespace shammath;
 
@@ -734,8 +734,8 @@ get_M_mat(shammath::SymTensorCollection<T, 0, 5> &D, shammath::SymTensorCollecti
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 4>
-get_M_mat(shammath::SymTensorCollection<T, 0, 4> &D, shammath::SymTensorCollection<T, 0, 4> &Q) {
+inline shammath::SymTensorCollection<T, 0, 4> get_M_mat(
+    shammath::SymTensorCollection<T, 0, 4> &D, shammath::SymTensorCollection<T, 0, 4> &Q) {
 
     using namespace shammath;
 
@@ -763,8 +763,8 @@ get_M_mat(shammath::SymTensorCollection<T, 0, 4> &D, shammath::SymTensorCollecti
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 3>
-get_M_mat(shammath::SymTensorCollection<T, 0, 3> &D, shammath::SymTensorCollection<T, 0, 3> &Q) {
+inline shammath::SymTensorCollection<T, 0, 3> get_M_mat(
+    shammath::SymTensorCollection<T, 0, 3> &D, shammath::SymTensorCollection<T, 0, 3> &Q) {
 
     using namespace shammath;
 
@@ -787,8 +787,8 @@ get_M_mat(shammath::SymTensorCollection<T, 0, 3> &D, shammath::SymTensorCollecti
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 2>
-get_M_mat(shammath::SymTensorCollection<T, 0, 2> &D, shammath::SymTensorCollection<T, 0, 2> &Q) {
+inline shammath::SymTensorCollection<T, 0, 2> get_M_mat(
+    shammath::SymTensorCollection<T, 0, 2> &D, shammath::SymTensorCollection<T, 0, 2> &Q) {
 
     using namespace shammath;
 
@@ -808,8 +808,8 @@ get_M_mat(shammath::SymTensorCollection<T, 0, 2> &D, shammath::SymTensorCollecti
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 1>
-get_M_mat(shammath::SymTensorCollection<T, 0, 1> &D, shammath::SymTensorCollection<T, 0, 1> &Q) {
+inline shammath::SymTensorCollection<T, 0, 1> get_M_mat(
+    shammath::SymTensorCollection<T, 0, 1> &D, shammath::SymTensorCollection<T, 0, 1> &Q) {
 
     using namespace shammath;
 
@@ -826,8 +826,8 @@ get_M_mat(shammath::SymTensorCollection<T, 0, 1> &D, shammath::SymTensorCollecti
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 0>
-get_M_mat(shammath::SymTensorCollection<T, 0, 0> &D, shammath::SymTensorCollection<T, 0, 0> &Q) {
+inline shammath::SymTensorCollection<T, 0, 0> get_M_mat(
+    shammath::SymTensorCollection<T, 0, 0> &D, shammath::SymTensorCollection<T, 0, 0> &Q) {
 
     using namespace shammath;
 
@@ -846,8 +846,8 @@ inline shammath::SymTensorCollection<T, 1, high_order + 1> get_dM_mat(
     shammath::SymTensorCollection<T, 0, high_order> &Q);
 
 template<class T>
-inline shammath::SymTensorCollection<T, 1, 5>
-get_dM_mat(shammath::SymTensorCollection<T, 1, 5> &D, shammath::SymTensorCollection<T, 0, 4> &Q) {
+inline shammath::SymTensorCollection<T, 1, 5> get_dM_mat(
+    shammath::SymTensorCollection<T, 1, 5> &D, shammath::SymTensorCollection<T, 0, 4> &Q) {
 
     using namespace shammath;
     // T & TD0 = D.t0;
@@ -879,8 +879,8 @@ get_dM_mat(shammath::SymTensorCollection<T, 1, 5> &D, shammath::SymTensorCollect
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 1, 4>
-get_dM_mat(shammath::SymTensorCollection<T, 1, 4> &D, shammath::SymTensorCollection<T, 0, 3> &Q) {
+inline shammath::SymTensorCollection<T, 1, 4> get_dM_mat(
+    shammath::SymTensorCollection<T, 1, 4> &D, shammath::SymTensorCollection<T, 0, 3> &Q) {
 
     using namespace shammath;
 
@@ -904,8 +904,8 @@ get_dM_mat(shammath::SymTensorCollection<T, 1, 4> &D, shammath::SymTensorCollect
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 1, 3>
-get_dM_mat(shammath::SymTensorCollection<T, 1, 3> &D, shammath::SymTensorCollection<T, 0, 2> &Q) {
+inline shammath::SymTensorCollection<T, 1, 3> get_dM_mat(
+    shammath::SymTensorCollection<T, 1, 3> &D, shammath::SymTensorCollection<T, 0, 2> &Q) {
 
     using namespace shammath;
 
@@ -926,8 +926,8 @@ get_dM_mat(shammath::SymTensorCollection<T, 1, 3> &D, shammath::SymTensorCollect
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 1, 2>
-get_dM_mat(shammath::SymTensorCollection<T, 1, 2> &D, shammath::SymTensorCollection<T, 0, 1> &Q) {
+inline shammath::SymTensorCollection<T, 1, 2> get_dM_mat(
+    shammath::SymTensorCollection<T, 1, 2> &D, shammath::SymTensorCollection<T, 0, 1> &Q) {
 
     using namespace shammath;
 
@@ -945,8 +945,8 @@ get_dM_mat(shammath::SymTensorCollection<T, 1, 2> &D, shammath::SymTensorCollect
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 1, 1>
-get_dM_mat(shammath::SymTensorCollection<T, 1, 1> &D, shammath::SymTensorCollection<T, 0, 0> &Q) {
+inline shammath::SymTensorCollection<T, 1, 1> get_dM_mat(
+    shammath::SymTensorCollection<T, 1, 1> &D, shammath::SymTensorCollection<T, 0, 0> &Q) {
 
     using namespace shammath;
 
@@ -966,8 +966,8 @@ inline shammath::SymTensorCollection<T, low_order, high_order> offset_multipole(
     const sycl::vec<T, 3> &offset);
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 5>
-offset_multipole(const shammath::SymTensorCollection<T, 0, 5> &Q, const sycl::vec<T, 3> &offset) {
+inline shammath::SymTensorCollection<T, 0, 5> offset_multipole(
+    const shammath::SymTensorCollection<T, 0, 5> &Q, const sycl::vec<T, 3> &offset) {
     using namespace shammath;
     SymTensorCollection<T, 0, 5> d = SymTensorCollection<T, 0, 5>::from_vec(offset);
 
@@ -1283,8 +1283,8 @@ offset_multipole(const shammath::SymTensorCollection<T, 0, 5> &Q, const sycl::ve
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 4>
-offset_multipole(const shammath::SymTensorCollection<T, 0, 4> &Q, const sycl::vec<T, 3> &offset) {
+inline shammath::SymTensorCollection<T, 0, 4> offset_multipole(
+    const shammath::SymTensorCollection<T, 0, 4> &Q, const sycl::vec<T, 3> &offset) {
     using namespace shammath;
     SymTensorCollection<T, 0, 5> d = SymTensorCollection<T, 0, 5>::from_vec(offset);
 
@@ -1428,8 +1428,8 @@ offset_multipole(const shammath::SymTensorCollection<T, 0, 4> &Q, const sycl::ve
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 3>
-offset_multipole(const shammath::SymTensorCollection<T, 0, 3> &Q, const sycl::vec<T, 3> &offset) {
+inline shammath::SymTensorCollection<T, 0, 3> offset_multipole(
+    const shammath::SymTensorCollection<T, 0, 3> &Q, const sycl::vec<T, 3> &offset) {
 
     using namespace shammath;
 
@@ -1539,8 +1539,8 @@ offset_multipole(const shammath::SymTensorCollection<T, 0, 3> &Q, const sycl::ve
 }
 
 template<class T>
-inline shammath::SymTensorCollection<T, 0, 2>
-offset_multipole(const shammath::SymTensorCollection<T, 0, 2> &Q, const sycl::vec<T, 3> &offset) {
+inline shammath::SymTensorCollection<T, 0, 2> offset_multipole(
+    const shammath::SymTensorCollection<T, 0, 2> &Q, const sycl::vec<T, 3> &offset) {
 
     using namespace shammath;
 

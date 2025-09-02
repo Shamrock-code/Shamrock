@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -61,8 +61,8 @@ namespace shamalgs::numeric::details {
      * @return std::tuple<std::optional<sycl::buffer<u32>>, u32> table of the index to extract and
      * the length of it
      */
-    std::tuple<std::optional<sycl::buffer<u32>>, u32>
-    stream_compact_fallback(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact_fallback(
+        sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
 
     /**
      * @brief Stream compaction algorithm

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -16,7 +16,7 @@
  */
 
 #include "shamalgs/memory.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <vector>
@@ -38,8 +38,8 @@ namespace shamrock {
         public:
         u32 original_elements;
         u32 total_elements;
-        patch::PatchData pdat;
-        patch::PatchDataLayout &pdl;
+        patch::PatchDataLayer pdat;
+        patch::PatchDataLayerLayout &pdl;
     };
 
     class InterfacesUtility {

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -21,7 +21,7 @@
 #include "shambackends/sycl_utils.hpp"
 #include "shammath/intervals.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
@@ -44,7 +44,7 @@ class AMRTestModel {
             sham::EventList &depends_list,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat) {
+            shamrock::patch::PatchDataLayer &pdat) {
 
             sham::DeviceBuffer<u64_3> &buf_cell_low_bound  = pdat.get_field<u64_3>(0).get_buf();
             sham::DeviceBuffer<u64_3> &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
@@ -56,7 +56,7 @@ class AMRTestModel {
             sham::EventList &resulting_events,
             u64 id_patch,
             shamrock::patch::Patch p,
-            shamrock::patch::PatchData &pdat) {
+            shamrock::patch::PatchDataLayer &pdat) {
 
             sham::DeviceBuffer<u64_3> &buf_cell_low_bound  = pdat.get_field<u64_3>(0).get_buf();
             sham::DeviceBuffer<u64_3> &buf_cell_high_bound = pdat.get_field<u64_3>(1).get_buf();
@@ -76,13 +76,13 @@ class AMRTestModel {
         public:
         u32 *field;
 
-        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchData &pdat) {
+        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchDataLayer &pdat) {
 
             auto &buf_field = pdat.get_field<u32>(2).get_buf();
             field           = buf_field.get_write_access(depends_list);
         }
 
-        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchData &pdat) {
+        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {
             auto &buf_field = pdat.get_field<u32>(2).get_buf();
             buf_field.complete_event_state(resulting_events);
         }
@@ -93,7 +93,7 @@ class AMRTestModel {
         using namespace shamrock::patch;
         using namespace shamalgs::memory;
 
-        PatchData &pdat = grid.sched.patch_data.get_pdat(id);
+        PatchDataLayer &pdat = grid.sched.patch_data.get_pdat(id);
 
         std::vector<u64_3> mins = pdat.get_field<u64_3>(0).get_buf().copy_to_stdvec();
         std::vector<u64_3> maxs = pdat.get_field<u64_3>(1).get_buf().copy_to_stdvec();
@@ -206,7 +206,7 @@ class AMRTestModel {
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        grid.sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        grid.sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             RadixTree<u64, u64_3> tree(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 grid.sched.get_sim_box().patch_coord_to_domain<u64_3>(cur_p),
@@ -222,12 +222,14 @@ class AMRTestModel {
                 public:
                 u32 *field;
 
-                WalkAccessors(sham::EventList &depends_list, shamrock::patch::PatchData &pdat) {
+                WalkAccessors(
+                    sham::EventList &depends_list, shamrock::patch::PatchDataLayer &pdat) {
                     auto &buf_field = pdat.get_field<u32>(2).get_buf();
                     field           = buf_field.get_write_access(depends_list);
                 }
 
-                void finalize(sham::EventList &resulting_events, shamrock::patch::PatchData &pdat) {
+                void finalize(
+                    sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {
                     auto &buf_field = pdat.get_field<u32>(2).get_buf();
                     buf_field.complete_event_state(resulting_events);
                 }
@@ -293,7 +295,7 @@ class AMRTestModel {
                 shammath::CoordRange<u64_3> bounds;
 
                 RadixTree<u64, u64_3> &tree;
-                PatchData &pdat;
+                PatchDataLayer &pdat;
 
                 sycl::buffer<u64_3> buf_cell_low_bound;
                 sycl::buffer<u64_3> buf_cell_high_bound;
@@ -328,8 +330,8 @@ class AMRTestModel {
                     };
                 };
 
-                static bool
-                criterion(u32 node_index, Access acc, Access::ObjectValues current_values) {
+                static bool criterion(
+                    u32 node_index, Access acc, Access::ObjectValues current_values) {
                     u64_3 cur_pos_min_cell_b = acc.tree_cell_coordrange_min[node_index];
                     u64_3 cur_pos_max_cell_b = acc.tree_cell_coordrange_max[node_index];
 

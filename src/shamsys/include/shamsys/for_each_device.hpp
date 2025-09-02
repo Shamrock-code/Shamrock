@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -47,8 +47,8 @@ namespace shamsys {
      * shamsys::for_each_device(fct);
      * @endcode
      */
-    inline u32
-    for_each_device(std::function<void(u32, const sycl::platform &, const sycl::device &)> fct) {
+    inline u32 for_each_device(
+        std::function<void(u32, const sycl::platform &, const sycl::device &)> fct) {
 
         u32 key_global        = 0;
         const auto &Platforms = sycl::platform::get_platforms();

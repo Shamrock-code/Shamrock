@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -142,8 +142,8 @@ inline sycl::vec<f32, 8> next_obj(std::mt19937 &eng, std::uniform_real_distribut
 }
 
 template<>
-inline sycl::vec<f32, 16>
-next_obj(std::mt19937 &eng, std::uniform_real_distribution<f64> &distval) {
+inline sycl::vec<f32, 16> next_obj(
+    std::mt19937 &eng, std::uniform_real_distribution<f64> &distval) {
     return sycl::vec<f32, 16>{
         next_obj<f32>(eng, distval),
         next_obj<f32>(eng, distval),
@@ -195,8 +195,8 @@ inline sycl::vec<f64, 8> next_obj(std::mt19937 &eng, std::uniform_real_distribut
 }
 
 template<>
-inline sycl::vec<f64, 16>
-next_obj(std::mt19937 &eng, std::uniform_real_distribution<f64> &distval) {
+inline sycl::vec<f64, 16> next_obj(
+    std::mt19937 &eng, std::uniform_real_distribution<f64> &distval) {
     return sycl::vec<f64, 16>{
         next_obj<f64>(eng, distval),
         next_obj<f64>(eng, distval),

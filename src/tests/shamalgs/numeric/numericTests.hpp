@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,6 +11,7 @@
 
 #include "shamalgs/details/random/random.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/random.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -130,7 +131,7 @@ struct TestStreamCompactUSM {
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-        std::vector<u32> data = shamalgs::random::mock_vector<u32>(u32(0x111), 10000, 0, 1);
+        std::vector<u32> data = shamalgs::primitives::mock_vector<u32>(u32(0x111), 10000, 0, 1);
 
         u32 len = data.size();
         sham::DeviceBuffer<u32> buf(len, dev_sched);

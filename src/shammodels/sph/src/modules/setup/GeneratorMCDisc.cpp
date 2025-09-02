@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 /**
  * @file GeneratorMCDisc.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -28,15 +29,15 @@ auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::n
 
     auto find_r = [&]() {
         while (true) {
-            Tscal u2 = shamalgs::random::mock_value<Tscal>(eng, 0, fmax);
-            Tscal r  = shamalgs::random::mock_value<Tscal>(eng, r_in, r_out);
+            Tscal u2 = shamalgs::primitives::mock_value<Tscal>(eng, 0, fmax);
+            Tscal r  = shamalgs::primitives::mock_value<Tscal>(eng, r_in, r_out);
             if (u2 < f_func(r)) {
                 return r;
             }
         }
     };
 
-    auto theta = shamalgs::random::mock_value<Tscal>(eng, 0, _2pi);
+    auto theta = shamalgs::primitives::mock_value<Tscal>(eng, 0, _2pi);
     auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng);
 
     Tscal r = find_r();
@@ -76,15 +77,15 @@ bool shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::is_done() {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-shamrock::patch::PatchData
-shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
+shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(
+    u32 nmax) {
 
     using namespace shamrock::patch;
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
 
     auto has_pdat = [&]() {
         bool ret = false;
-        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -133,28 +134,28 @@ shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
     }
 
     // Make a patchdata from pos_data
-    PatchData tmp(sched.pdl);
+    PatchDataLayer tmp(sched.get_layout_ptr());
     if (!pos_data.empty()) {
         tmp.resize(pos_data.size());
         tmp.fields_raz();
 
         {
             u32 len                 = pos_data.size();
-            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
             sycl::buffer<Tvec> buf(vec_pos.data(), len);
             f.override(buf, len);
         }
 
         {
             u32 len                 = pos_data.size();
-            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("vxyz"));
             sycl::buffer<Tvec> buf(vec_vel.data(), len);
             f.override(buf, len);
         }
         {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
-                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("hpart"));
+                = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("hpart"));
             sycl::buffer<Tscal> buf(vec_h.data(), len);
             f.override(buf, len);
         }
@@ -162,7 +163,7 @@ shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::next_n(u32 nmax) {
         if (solver_config.is_eos_locally_isothermal()) {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
-                = tmp.get_field<Tscal>(sched.pdl.get_field_idx<Tscal>("soundspeed"));
+                = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("soundspeed"));
             sycl::buffer<Tscal> buf(vec_cs.data(), len);
             f.override(buf, len);
         }
@@ -175,3 +176,7 @@ using namespace shammath;
 template class shammodels::sph::modules::GeneratorMCDisc<f64_3, M4>;
 template class shammodels::sph::modules::GeneratorMCDisc<f64_3, M6>;
 template class shammodels::sph::modules::GeneratorMCDisc<f64_3, M8>;
+
+template class shammodels::sph::modules::GeneratorMCDisc<f64_3, C2>;
+template class shammodels::sph::modules::GeneratorMCDisc<f64_3, C4>;
+template class shammodels::sph::modules::GeneratorMCDisc<f64_3, C6>;

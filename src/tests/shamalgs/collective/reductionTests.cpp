@@ -1,13 +1,14 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
 // -------------------------------------------------------//
 
 #include "shamalgs/collective/reduction.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/random.hpp"
 #include "shambackends/fmt_bindings/fmt_defs.hpp"
 #include "shambackends/math.hpp"
@@ -20,7 +21,7 @@ template<class T>
 inline void test() {
     u32 wsize              = shamcomm::world_size();
     u32 wrank              = shamcomm::world_rank();
-    std::vector<T> vectest = shamalgs::random::mock_vector<T>(0x1111, wsize);
+    std::vector<T> vectest = shamalgs::primitives::mock_vector<T>(0x1111, wsize);
 
     T sum = shamalgs::collective::allreduce_sum(vectest[wrank]);
 

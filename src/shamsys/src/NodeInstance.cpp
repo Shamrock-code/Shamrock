@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -400,14 +400,16 @@ namespace shamsys::instance {
 
         if (shamcomm::world_rank() == 0) {
             if (num_dgpu_use == shamcomm::world_size()) {
-                logger::raw_ln(shambase::format(
-                    " - MPI use Direct Comm : {}", col8b_green() + "Yes" + reset()));
+                logger::raw_ln(
+                    shambase::format(
+                        " - MPI use Direct Comm : {}", col8b_green() + "Yes" + reset()));
             } else if (num_dgpu_use > 0) {
-                logger::raw_ln(shambase::format(
-                    " - MPI use Direct Comm : {} ({} of {})",
-                    col8b_yellow() + "Partial" + reset(),
-                    num_dgpu_use,
-                    shamcomm::world_size()));
+                logger::raw_ln(
+                    shambase::format(
+                        " - MPI use Direct Comm : {} ({} of {})",
+                        col8b_yellow() + "Partial" + reset(),
+                        num_dgpu_use,
+                        shamcomm::world_size()));
             } else {
                 logger::raw_ln(
                     shambase::format(" - MPI use Direct Comm : {}", col8b_red() + "No" + reset()));

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -33,7 +33,7 @@ shammodels::sph::PhantomDump load_dump(std::string file) {
 }
 
 template<class T>
-std::vector<T> fetch_data(std::string key, shamrock::patch::PatchData &pdat) {
+std::vector<T> fetch_data(std::string key, shamrock::patch::PatchDataLayer &pdat) {
 
     std::vector<T> vec;
 
@@ -132,7 +132,7 @@ void multisort(std::vector<T> &ref_vec, Args &...others) {
 
 void compare_results(
     std::string name,
-    shamrock::patch::PatchData &pdat,
+    shamrock::patch::PatchDataLayer &pdat,
     shammodels::sph::PhantomDump &ref_file,
     f64 pmass,
     f64 time) {
@@ -299,15 +299,17 @@ void compare_results(
     logger::raw_ln("normalized L2 distance vr : ", l2_vr);
     logger::raw_ln("normalized L2 distance u : ", l2_u);
 
-    TEX_REPORT(R"==(\begin{itemize})=="
-               "\n")
+    TEX_REPORT(
+        R"==(\begin{itemize})=="
+        "\n")
     TEX_REPORT("\\item t = $" + std::to_string(time) + "$\n")
     TEX_REPORT("\\item normalized L2 distance r : $" + std::to_string(l2_r) + "$\n");
     TEX_REPORT("\\item normalized L2 distance h : $" + std::to_string(l2_h) + "$\n");
     TEX_REPORT("\\item normalized L2 distance vr : $" + std::to_string(l2_vr) + "$\n");
     TEX_REPORT("\\item normalized L2 distance u : $" + std::to_string(l2_u) + "$\n");
-    TEX_REPORT(R"==(\end{itemize})=="
-               "\n")
+    TEX_REPORT(
+        R"==(\end{itemize})=="
+        "\n")
 
     REQUIRE(l2_r < 1e-9);
     REQUIRE(l2_vr < 28e-06);
@@ -356,9 +358,9 @@ void do_test(bool long_version) {
         t = i * dt;
     }
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered_result
             = ctx.allgather_data();
-        shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
+        shamrock::patch::PatchDataLayer &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_1step.pdf",
             pdat_end,
@@ -372,9 +374,9 @@ void do_test(bool long_version) {
         t = i * dt;
     }
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered_result
             = ctx.allgather_data();
-        shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
+        shamrock::patch::PatchDataLayer &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_10step.pdf",
             pdat_end,
@@ -393,9 +395,9 @@ void do_test(bool long_version) {
     }
 
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered_result
             = ctx.allgather_data();
-        shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
+        shamrock::patch::PatchDataLayer &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_100step.pdf",
             pdat_end,
@@ -409,9 +411,9 @@ void do_test(bool long_version) {
         t = (i + 1) * dt;
     }
     {
-        std::vector<std::unique_ptr<shamrock::patch::PatchData>> gathered_result
+        std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gathered_result
             = ctx.allgather_data();
-        shamrock::patch::PatchData &pdat_end = shambase::get_check_ref(gathered_result[0]);
+        shamrock::patch::PatchDataLayer &pdat_end = shambase::get_check_ref(gathered_result[0]);
         compare_results(
             "shamrock_phantom_sedov_fix_dt_1000step.pdf",
             pdat_end,

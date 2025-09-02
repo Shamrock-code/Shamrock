@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -48,7 +48,7 @@ TestStart(Unittest, "shamtree/KarrasRadixTreeField", test_karras_radix_tree_fiel
     auto bvh                = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
     bvh.rebuild_from_positions(partpos_buf, bb, 1);
     auto &tree   = bvh.structure;
-    auto cell_it = bvh.reduced_morton_set.get_cell_iterator();
+    auto cell_it = bvh.reduced_morton_set.get_leaf_cell_iterator();
 
     // Prepare output buffer
     auto tree_field = shamtree::new_empty_karras_radix_tree_field<Tval>();

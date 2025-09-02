@@ -9,6 +9,7 @@ Python API documentation
 
    shamrock
    shamrock.algs
+   shamrock.backends
    shamrock.math
    shamrock.math.sfc
    shamrock.math.sphkernel
@@ -17,3 +18,4 @@ Python API documentation
    shamrock.model_zeus
    shamrock.phys
    shamrock.sys
+   shamrock.tree

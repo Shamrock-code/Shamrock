@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -42,13 +42,13 @@ namespace shammodels::sph::modules {
 
         bool is_done() { return parent1->is_done() && parent2->is_done(); }
 
-        shamrock::patch::PatchData next_n(u32 nmax) {
+        shamrock::patch::PatchDataLayer next_n(u32 nmax) {
 
             u32 cnt1 = (parent1->is_done()) ? 0 : (nmax / 2);
             u32 cnt2 = nmax - cnt1;
 
-            shamrock::patch::PatchData tmp1 = parent1->next_n(cnt1);
-            shamrock::patch::PatchData tmp2 = parent2->next_n(cnt2);
+            shamrock::patch::PatchDataLayer tmp1 = parent1->next_n(cnt1);
+            shamrock::patch::PatchDataLayer tmp2 = parent2->next_n(cnt2);
 
             tmp1.insert_elements(tmp2);
             return tmp1;

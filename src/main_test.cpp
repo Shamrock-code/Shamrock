@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -13,22 +13,29 @@
  * @brief
  */
 
-#include "shambase/string.hpp"
+#include "shambase/aliases_int.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/logs/loglevel.hpp"
+#include "shambase/term_colors.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/fpe_except.hpp"
 #include "shambindings/pybindings.hpp"
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/version.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include "shamsys/legacy/log.hpp"
 #include "shamsys/shamrock_smi.hpp"
 #include "shamtest/shamtest.hpp"
 #include <pybind11/embed.h>
+#include <string_view>
+#include <cstdlib>
+#include <stdexcept>
+#include <string>
 
 /// Call bindings init for the shamrock python module
 PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }

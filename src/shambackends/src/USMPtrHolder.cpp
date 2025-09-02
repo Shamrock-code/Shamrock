@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -33,8 +33,8 @@ namespace sham {
     }
 
     template<USMKindTarget target>
-    USMPtrHolder<target>
-    USMPtrHolder<target>::create_nullptr(std::shared_ptr<DeviceScheduler> dev_sched) {
+    USMPtrHolder<target> USMPtrHolder<target>::create_nullptr(
+        std::shared_ptr<DeviceScheduler> dev_sched) {
 
         sycl::context &sycl_ctx = dev_sched->ctx->ctx;
         sycl::device &dev       = dev_sched->ctx->device->dev;

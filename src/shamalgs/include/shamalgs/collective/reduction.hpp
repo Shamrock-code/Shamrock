@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -17,7 +17,7 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shamalgs/flatten.hpp"
+#include "shamalgs/primitives/flatten.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/typeAliasVec.hpp"
@@ -77,9 +77,9 @@ namespace shamalgs::collective {
     inline void reduce_buffer_in_place_sum(sham::DeviceBuffer<T, target> &field, MPI_Comm comm) {
 
         if constexpr (shambase::VectorProperties<T>::dimension > 1) {
-            auto flat = shamalgs::flatten_buffer(field);
+            auto flat = shamalgs::primitives::flatten_buffer(field);
             reduce_buffer_in_place_sum(flat, comm);
-            field = shamalgs::unflatten_buffer<T, target>(flat);
+            field = shamalgs::primitives::unflatten_buffer<T, target>(flat);
         } else {
 
             if (field.get_size() > size_t(i32_max)) {

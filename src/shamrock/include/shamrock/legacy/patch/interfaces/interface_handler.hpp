@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -57,7 +57,7 @@ class LegacyInterfacehandler {
      */
     std::unordered_map<
         u64,
-        std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>>
+        std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>>>
         interface_map;
 
     public:
@@ -93,8 +93,8 @@ class LegacyInterfacehandler {
     void comm_interfaces(PatchScheduler &sched, bool periodic);
 
     template<class T>
-    PatchComputeFieldInterfaces<T>
-    comm_interfaces_field(PatchScheduler &sched, PatchComputeField<T> &pcomp_field, bool periodic) {
+    PatchComputeFieldInterfaces<T> comm_interfaces_field(
+        PatchScheduler &sched, PatchComputeField<T> &pcomp_field, bool periodic) {
         StackEntry stack_loc{};
         PatchComputeFieldInterfaces<T> interface_field_map;
 
@@ -110,7 +110,7 @@ class LegacyInterfacehandler {
      * @param key
      * @return const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>&
      */
-    inline const std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>> &
+    inline const std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>> &
     get_interface_list(u64 key) {
         return interface_map[key];
     }
@@ -155,16 +155,16 @@ class LegacyInterfacehandler {
 
         using namespace shamrock::patch;
 
-        const std::vector<std::tuple<u64, std::unique_ptr<PatchData>>> &p_interf_lst
+        const std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>> &p_interf_lst
             = get_interface_list(patch_id);
 
         for (auto &[int_pid, pdat_ptr] : p_interf_lst) {
 
             if (!pdat_ptr->is_empty()) {
 
-                PatchData &pdat = *pdat_ptr;
+                PatchDataLayer &pdat = *pdat_ptr;
 
-                u32 ixyz = pdat.pdl.get_field_idx<vectype>("xyz");
+                u32 ixyz = pdat.pdl().get_field_idx<vectype>("xyz");
 
                 u32 nobj = pdat.get_obj_cnt();
 

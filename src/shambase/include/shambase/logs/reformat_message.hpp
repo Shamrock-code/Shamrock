@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -91,8 +91,8 @@ namespace shambase::logs {
      * @param content The content of the log message
      * @return A formatted log message
      */
-    std::string
-    reformat_all(std::string color, const char *name, std::string module_name, std::string content);
+    std::string reformat_all(
+        std::string color, const char *name, std::string module_name, std::string content);
 
     /**
      * @brief Format a log message with the minimum information

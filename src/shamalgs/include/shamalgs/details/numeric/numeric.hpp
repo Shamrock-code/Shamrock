@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -12,12 +12,14 @@
 /**
  * @file numeric.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
 
 #include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
+#include "shamalgs/collective/reduction.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -39,7 +41,7 @@ namespace shamalgs::numeric {
      * @return A new SYCL buffer containing the exclusive sum of the input buffer.
      */
     template<class T>
-    sycl::buffer<T> exclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
+    sycl::buffer<T> scan_exclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
 
     /**
      * @brief Compute the exclusive sum of a buffer on the device
@@ -50,17 +52,17 @@ namespace shamalgs::numeric {
      * @return A new buffer which is the output of the sum
      */
     template<class T>
-    sham::DeviceBuffer<T>
-    exclusive_sum(sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len);
+    sham::DeviceBuffer<T> scan_exclusive(
+        sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len);
 
     template<class T>
-    sycl::buffer<T> inclusive_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
+    sycl::buffer<T> scan_inclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
 
     template<class T>
-    void exclusive_sum_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
+    void scan_exclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
 
     template<class T>
-    void inclusive_sum_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
+    void scan_inclusive_in_place(sycl::queue &q, sycl::buffer<T> &buf, u32 len);
 
     /**
      * @brief Stream compaction algorithm
@@ -70,8 +72,8 @@ namespace shamalgs::numeric {
      * @param len the length of the buffer considered
      * @return std::tuple<sycl::buffer<u32>, u32> table of the index to extract and its size
      */
-    std::tuple<std::optional<sycl::buffer<u32>>, u32>
-    stream_compact(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact(
+        sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
 
     /**
      * @brief Stream compaction algorithm
@@ -290,7 +292,7 @@ namespace shamalgs::numeric {
      *       });
      *   ```
      */
-    template<class T, class Tret, class Fct>
+    template<class Tret, class T, class Fct>
     sham::DeviceBuffer<Tret> binned_compute(
         const sham::DeviceScheduler_ptr &sched,
         const sham::DeviceBuffer<T> &bin_edges,
@@ -377,6 +379,359 @@ namespace shamalgs::numeric {
                 });
                 return sum;
             });
+    }
+
+    /**
+     * @brief Compute the average of values in each bin.
+     *
+     * This function calculates the average of all values in each bin, using the keys to assign
+     * values to bins. It returns a buffer containing the average for each bin.
+     *
+     * @tparam T The data type of the values and keys.
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1).
+     * @param nbins The number of bins.
+     * @param values The values to be averaged (e.g., f(r)).
+     * @param keys The keys used for binning (e.g., r).
+     * @param len The number of elements in values/keys.
+     * @return sham::DeviceBuffer<T> Buffer of averages, one per bin.
+     *
+     * Example:
+     *   ```cpp
+     *   auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+     *   sham::DeviceBuffer<double> bin_edges = ...;
+     *   sham::DeviceBuffer<double> values = ...;
+     *   sham::DeviceBuffer<double> keys = ...;
+     *   u64 nbins = bin_edges.get_size() - 1;
+     *   auto averages = shamalgs::numeric::binned_average(dev_sched, bin_edges, nbins, values,
+     * keys, values.get_size());
+     *   ```
+     */
+    template<class T>
+    sham::DeviceBuffer<T> binned_average(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges, // r bins
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values, // ie f(r)
+        const sham::DeviceBuffer<T> &keys,   // ie r
+        u32 len) {
+
+        return binned_compute<T, T>(
+            sched,
+            bin_edges,
+            nbins,
+            values,
+            keys,
+            len,
+            [](auto for_each_values, u32 bin_count) -> T {
+                T sum = T{};
+                for_each_values([&](T val) {
+                    sum += val;
+                });
+                if (bin_count == 0) {
+                    return T{};
+                } else {
+                    return sum / bin_count;
+                }
+            });
+    }
+
+    /**
+     * @brief Compute the histogram of values between bin_edges across all MPI ranks.
+     *
+     * This function computes the local histogram on each MPI rank and then performs an MPI
+     * reduction to sum the counts across all ranks, producing the global histogram. Each rank
+     * processes its own subset of data, and the final result contains the combined counts from
+     * all processes.
+     *
+     * @tparam Tret The data type for the return counts (e.g., u32, u64).
+     * @tparam T The data type of the values and bin edges (e.g., float, double).
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1). Must be sorted in ascending
+     * order and identical across all ranks.
+     * @param nbins The number of bins (must be > 0, nbins = bin_edges.size() - 1).
+     * @param values The local values for this rank to compute the histogram on.
+     * @param len The length of the local values array.
+     * @return sham::DeviceBuffer<Tret> The global counts in each bin (length == nbins).
+     *
+     * Example:
+     *
+     *   ```cpp
+     *   auto dev_sched = shamsys::get_compute_scheduler_ptr();
+     *
+     *   sham::DeviceBuffer<double> bin_edges = ...;
+     *   u64 nbins = bin_edges.get_size() - 1;
+     *
+     *   sham::DeviceBuffer<double> local_values = ...; // Different on each rank
+     *
+     *   sham::DeviceBuffer<u64> global_counts = shamalgs::numeric::device_histogram_mpi<u64>(
+     *       dev_sched, bin_edges, nbins, local_values, local_values.get_size());
+     *   ```
+     *
+     *   If rank 0 has values = {0.5, 1.5} and rank 1 has values = {2.5, 3.5}
+     *   with bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0}, the result = {1, 1, 1, 1}
+     */
+    template<class Tret, class T>
+    sham::DeviceBuffer<Tret> device_histogram_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values,
+        u32 len) {
+
+        auto local_counts = device_histogram<Tret, T>(sched, bin_edges, nbins, values, len);
+
+        // local counts are now the global counts
+        shamalgs::collective::reduce_buffer_in_place_sum(local_counts, MPI_COMM_WORLD);
+
+        return local_counts;
+    }
+
+    /**
+     * @brief Compute the u64 histogram of values between bin_edges across all MPI ranks.
+     *
+     * Convenience wrapper for device_histogram_mpi with u64 return type. This function computes
+     * the local histogram on each MPI rank and then performs an MPI reduction to sum the counts
+     * across all ranks, producing the global histogram with 64-bit unsigned integer counts.
+     *
+     * @tparam T The data type of the values and bin edges (e.g., float, double).
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1). Must be sorted in ascending
+     * order and identical across all ranks.
+     * @param nbins The number of bins (must be > 0, nbins = bin_edges.size() - 1).
+     * @param values The local values for this rank to compute the histogram on.
+     * @param len The length of the local values array.
+     * @return sham::DeviceBuffer<u64> The global counts in each bin (length == nbins).
+     *
+     * Example:
+     *
+     *   ```cpp
+     *   auto dev_sched = shamsys::get_compute_scheduler_ptr();
+     *
+     *   sham::DeviceBuffer<double> bin_edges = ...;
+     *   u64 nbins = bin_edges.get_size() - 1;
+     *
+     *   sham::DeviceBuffer<double> local_values = ...; // Different on each rank
+     *
+     *   sham::DeviceBuffer<u64> global_counts = shamalgs::numeric::device_histogram_u64_mpi(
+     *       dev_sched, bin_edges, nbins, local_values, local_values.get_size());
+     *   ```
+     */
+    template<class T>
+    inline sham::DeviceBuffer<u64> device_histogram_u64_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values,
+        u32 len) {
+        return device_histogram_mpi<u64, T>(sched, bin_edges, nbins, values, len);
+    }
+
+    /**
+     * @brief Compute the u32 histogram of values between bin_edges across all MPI ranks.
+     *
+     * Convenience wrapper for device_histogram_mpi with u32 return type. This function computes
+     * the local histogram on each MPI rank and then performs an MPI reduction to sum the counts
+     * across all ranks, producing the global histogram with 32-bit unsigned integer counts.
+     *
+     * @tparam T The data type of the values and bin edges (e.g., float, double).
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1). Must be sorted in ascending
+     * order and identical across all ranks.
+     * @param nbins The number of bins (must be > 0, nbins = bin_edges.size() - 1).
+     * @param values The local values for this rank to compute the histogram on.
+     * @param len The length of the local values array.
+     * @return sham::DeviceBuffer<u32> The global counts in each bin (length == nbins).
+     *
+     * Example:
+     *
+     *   ```cpp
+     *   auto dev_sched = shamsys::get_compute_scheduler_ptr();
+     *
+     *   sham::DeviceBuffer<double> bin_edges = ...;
+     *   u64 nbins = bin_edges.get_size() - 1;
+     *
+     *   sham::DeviceBuffer<double> local_values = ...; // Different on each rank
+     *
+     *   sham::DeviceBuffer<u32> global_counts = shamalgs::numeric::device_histogram_u32_mpi(
+     *       dev_sched, bin_edges, nbins, local_values, local_values.get_size());
+     *   ```
+     */
+    template<class T>
+    inline sham::DeviceBuffer<u32> device_histogram_u32_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values,
+        u32 len) {
+        return device_histogram_mpi<u32, T>(sched, bin_edges, nbins, values, len);
+    }
+
+    /**
+     * @brief Compute the sum of values in each bin across all MPI ranks.
+     *
+     * This function computes the local binned sum on each MPI rank and then performs an MPI
+     * reduction to sum the results across all ranks, producing the global binned sum. Each rank
+     * processes its own subset of keys and values, and the final result contains the combined
+     * sums from all processes.
+     *
+     * @tparam T The data type of the values, keys, and bin edges.
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1). Must be sorted in ascending
+     * order and identical across all ranks.
+     * @param nbins The number of bins.
+     * @param values The local values for this rank to be summed (e.g., f(r)).
+     * @param keys The local keys for this rank used for binning (e.g., r).
+     * @param len The number of elements in local values/keys arrays.
+     * @return sham::DeviceBuffer<T> Buffer of global sums, one per bin.
+     *
+     * Example:
+     *
+     *   ```cpp
+     *   auto dev_sched = shamsys::get_compute_scheduler_ptr();
+     *   sham::DeviceBuffer<double> bin_edges = ...;
+     *   u64 nbins = bin_edges.get_size() - 1;
+     *
+     *   sham::DeviceBuffer<double> local_values = ...; // Different on each rank
+     *   sham::DeviceBuffer<double> local_keys = ...;   // Different on each rank
+     *
+     *   auto global_sums = shamalgs::numeric::binned_sum_mpi(
+     *       dev_sched, bin_edges, nbins, local_values, local_keys, local_values.get_size());
+     *   ```
+     *
+     *   If rank 0 has keys={0.5,1.5}, values={10,20} and rank 1 has keys={0.3,1.7}, values={5,15}
+     *   with bin_edges={0.0,1.0,2.0}, the result={15,35} (10+5 in bin 0, 20+15 in bin 1)
+     */
+    template<class T>
+    sham::DeviceBuffer<T> binned_sum_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges, // r bins
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values, // ie f(r)
+        const sham::DeviceBuffer<T> &keys,   // ie r
+        u32 len) {
+
+        auto local_result = binned_sum(sched, bin_edges, nbins, values, keys, len);
+
+        // local result is now the global result
+        shamalgs::collective::reduce_buffer_in_place_sum(local_result, MPI_COMM_WORLD);
+
+        return local_result;
+    }
+
+    /**
+     * @brief Compute the average of values in each bin across all MPI ranks (with pre-computed
+     * global counts).
+     *
+     * This function computes the global binned average using pre-computed global bin counts. It
+     * first computes the global binned sum across all MPI ranks and then divides by the provided
+     * global counts to obtain the average. This variant is useful when the global bin counts are
+     * already known or computed separately.
+     *
+     * @tparam T The data type of the values, keys, and bin edges.
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1). Must be sorted in ascending
+     * order and identical across all ranks.
+     * @param nbins The number of bins.
+     * @param values The local values for this rank to be averaged (e.g., f(r)).
+     * @param keys The local keys for this rank used for binning (e.g., r).
+     * @param len The number of elements in local values/keys arrays.
+     * @param bin_counts_global The global counts for each bin across all ranks.
+     * @return sham::DeviceBuffer<T> Buffer of global averages, one per bin.
+     *
+     * Example:
+     *
+     *   ```cpp
+     *   auto dev_sched = shamsys::get_compute_scheduler_ptr();
+     *   sham::DeviceBuffer<double> bin_edges = ...;
+     *   u64 nbins = bin_edges.get_size() - 1;
+     *
+     *   sham::DeviceBuffer<double> local_values = ...; // Different on each rank
+     *   sham::DeviceBuffer<double> local_keys = ...;   // Different on each rank
+     *   sham::DeviceBuffer<u32> global_counts = ...;   // Pre-computed global counts
+     *
+     *   auto global_averages = shamalgs::numeric::binned_average_mpi(
+     *       dev_sched, bin_edges, nbins, local_values, local_keys,
+     *       local_values.get_size(), global_counts);
+     *   ```
+     */
+    template<class T>
+    sham::DeviceBuffer<T> binned_average_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges, // r bins
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values, // ie f(r)
+        const sham::DeviceBuffer<T> &keys,   // ie r
+        u32 len,
+        const sham::DeviceBuffer<u32> &bin_counts_global) {
+
+        auto bin_sums = binned_sum_mpi(sched, bin_edges, nbins, values, keys, len);
+
+        sham::kernel_call(
+            shambase::get_check_ref(sched).get_queue(),
+            sham::MultiRef{bin_counts_global},
+            sham::MultiRef{bin_sums},
+            nbins,
+            [](u32 i, const u32 *__restrict bin_counts, T *__restrict bin_sums) {
+                u32 bin_count = bin_counts[i];
+                if (bin_count == 0) {
+                    bin_sums[i] = T{};
+                } else {
+                    bin_sums[i] /= bin_count;
+                }
+            });
+
+        return bin_sums;
+    }
+
+    /**
+     * @brief Compute the average of values in each bin across all MPI ranks.
+     *
+     * This function computes the global binned average across all MPI ranks. It first computes
+     * the global histogram counts using the keys, then computes the global binned sum, and finally
+     * divides the sums by the counts to obtain the averages. This is a convenience function that
+     * automatically computes the global bin counts.
+     *
+     * @tparam T The data type of the values, keys, and bin edges.
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1). Must be sorted in ascending
+     * order and identical across all ranks.
+     * @param nbins The number of bins.
+     * @param values The local values for this rank to be averaged (e.g., f(r)).
+     * @param keys The local keys for this rank used for binning (e.g., r).
+     * @param len The number of elements in local values/keys arrays.
+     * @return sham::DeviceBuffer<T> Buffer of global averages, one per bin.
+     *
+     * Example:
+     *
+     *   ```cpp
+     *   auto dev_sched = shamsys::get_compute_scheduler_ptr();
+     *   sham::DeviceBuffer<double> bin_edges = ...;
+     *   u64 nbins = bin_edges.get_size() - 1;
+     *
+     *   sham::DeviceBuffer<double> local_values = ...; // Different on each rank
+     *   sham::DeviceBuffer<double> local_keys = ...;   // Different on each rank
+     *
+     *   auto global_averages = shamalgs::numeric::binned_average_mpi(
+     *       dev_sched, bin_edges, nbins, local_values, local_keys, local_values.get_size());
+     *   ```
+     *
+     *   If rank 0 has keys={0.5,1.5}, values={10,30} and rank 1 has keys={0.3,1.7}, values={20,10}
+     *   with bin_edges={0.0,1.0,2.0}, the result={15,20} ((10+20)/2 in bin 0, (30+10)/2 in bin 1)
+     */
+    template<class T>
+    sham::DeviceBuffer<T> binned_average_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges, // r bins
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values, // ie f(r)
+        const sham::DeviceBuffer<T> &keys,   // ie r
+        u32 len) {
+
+        auto bin_counts = device_histogram_u32_mpi(sched, bin_edges, nbins, keys, len);
+
+        // call the version with global bin counts pre-computed
+        return binned_average_mpi(sched, bin_edges, nbins, values, keys, len, bin_counts);
     }
 
 } // namespace shamalgs::numeric

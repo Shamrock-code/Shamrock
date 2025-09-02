@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -282,11 +282,25 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_modifier_warp_disc(parent, Rwarp, Hwarp, inclination, posangle);
             },
             py::kw_only(),
-            py::arg("setup2warp"),
+            py::arg("parent"),
             py::arg("Rwarp"),
             py::arg("Hwarp"),
             py::arg("inclination"),
             py::arg("posangle") = 0.)
+        .def(
+            "make_modifier_custom_warp",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               std::function<Tscal(Tscal)> inc_profile,
+               std::function<Tscal(Tscal)> psi_profile,
+               std::function<Tvec(Tscal)> k_profile) {
+                return self.make_modifier_custom_warp(parent, inc_profile, psi_profile, k_profile);
+            },
+            py::kw_only(),
+            py::arg("parent"),
+            py::arg("inc_profile"),
+            py::arg("psi_profile"),
+            py::arg("k_profile"))
         .def(
             "make_modifier_offset",
             [](TSPHSetup &self,
@@ -820,10 +834,17 @@ Register_pymod(pysphmodel) {
     add_instance<f64_3, shammath::M6>(msph, "SPHModel_f64_3_M6_SolverConfig", "SPHModel_f64_3_M6");
     add_instance<f64_3, shammath::M8>(msph, "SPHModel_f64_3_M8_SolverConfig", "SPHModel_f64_3_M8");
 
+    add_instance<f64_3, shammath::C2>(msph, "SPHModel_f64_3_C2_SolverConfig", "SPHModel_f64_3_C2");
+    add_instance<f64_3, shammath::C4>(msph, "SPHModel_f64_3_C4_SolverConfig", "SPHModel_f64_3_C4");
+    add_instance<f64_3, shammath::C6>(msph, "SPHModel_f64_3_C6_SolverConfig", "SPHModel_f64_3_C6");
+
     using VariantSPHModelBind = std::variant<
         std::unique_ptr<Model<f64_3, shammath::M4>>,
         std::unique_ptr<Model<f64_3, shammath::M6>>,
-        std::unique_ptr<Model<f64_3, shammath::M8>>>;
+        std::unique_ptr<Model<f64_3, shammath::M8>>,
+        std::unique_ptr<Model<f64_3, shammath::C2>>,
+        std::unique_ptr<Model<f64_3, shammath::C4>>,
+        std::unique_ptr<Model<f64_3, shammath::C6>>>;
 
     m.def(
         "get_Model_SPH",
@@ -836,6 +857,12 @@ Register_pymod(pysphmodel) {
                 ret = std::make_unique<Model<f64_3, shammath::M6>>(ctx);
             } else if (vector_type == "f64_3" && kernel == "M8") {
                 ret = std::make_unique<Model<f64_3, shammath::M8>>(ctx);
+            } else if (vector_type == "f64_3" && kernel == "C2") {
+                ret = std::make_unique<Model<f64_3, shammath::C2>>(ctx);
+            } else if (vector_type == "f64_3" && kernel == "C4") {
+                ret = std::make_unique<Model<f64_3, shammath::C4>>(ctx);
+            } else if (vector_type == "f64_3" && kernel == "C6") {
+                ret = std::make_unique<Model<f64_3, shammath::C6>>(ctx);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>(
                     "unknown combination of representation and kernel");
@@ -868,9 +895,17 @@ Register_pymod(pysphmodel) {
     add_analysisBarycenter_instance<f64_3, shammath::M6>(msph, "AnalysisBarycenter_f64_3_M6");
     add_analysisBarycenter_instance<f64_3, shammath::M8>(msph, "AnalysisBarycenter_f64_3_M8");
 
+    add_analysisBarycenter_instance<f64_3, shammath::C2>(msph, "AnalysisBarycenter_f64_3_C2");
+    add_analysisBarycenter_instance<f64_3, shammath::C4>(msph, "AnalysisBarycenter_f64_3_C4");
+    add_analysisBarycenter_instance<f64_3, shammath::C6>(msph, "AnalysisBarycenter_f64_3_C6");
+
     using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
     using SPHModel_f64_3_M6 = shammodels::sph::Model<f64_3, shammath::M6>;
     using SPHModel_f64_3_M8 = shammodels::sph::Model<f64_3, shammath::M8>;
+
+    using SPHModel_f64_3_C2 = shammodels::sph::Model<f64_3, shammath::C2>;
+    using SPHModel_f64_3_C4 = shammodels::sph::Model<f64_3, shammath::C4>;
+    using SPHModel_f64_3_C6 = shammodels::sph::Model<f64_3, shammath::C6>;
 
     msph.def(
         "analysisBarycenter",
@@ -892,6 +927,30 @@ Register_pymod(pysphmodel) {
         "analysisBarycenter",
         [](SPHModel_f64_3_M8 &model) {
             return analysisBarycenter_impl<f64_3, shammath::M8>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_C2 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::C2>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_C4 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::C4>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisBarycenter",
+        [](SPHModel_f64_3_C6 &model) {
+            return analysisBarycenter_impl<f64_3, shammath::C6>(model);
         },
         py::kw_only(),
         py::arg("model"));

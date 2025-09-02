@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -51,7 +51,7 @@ namespace shamalgs::numeric::details {
 
         std::exclusive_scan(acc_src.begin(), acc_src.end(), acc_src.begin(), 0);
 
-        ret_buf.copy_from_stdvec(acc_src);
+        ret_buf.copy_from_stdvec(acc_src, len);
 
         return ret_buf;
     }
@@ -112,21 +112,21 @@ namespace shamalgs::numeric::details {
         }
     }
 
-    template sycl::buffer<u32>
-    inclusive_sum_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sycl::buffer<u32> inclusive_sum_fallback(
+        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     template sham::DeviceBuffer<u32> exclusive_sum_fallback_usm(
         const sham::DeviceScheduler_ptr &sched, sham::DeviceBuffer<u32> &buf1, u32 len);
 
-    template sycl::buffer<u32>
-    exclusive_sum_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sycl::buffer<u32> exclusive_sum_fallback(
+        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     template void exclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
     template void inclusive_sum_in_place_fallback(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
-    std::tuple<std::optional<sycl::buffer<u32>>, u32>
-    stream_compact_fallback(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact_fallback(
+        sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {
 
         std::vector<u32> idxs;
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -34,7 +34,7 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
 
     shambase::DistributedData<sycl::buffer<u8>> face_normals_dat_lookup;
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -143,7 +143,7 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::split_face_list() {
 
     shambase::DistributedData<NeighFaceList<Tvec>> neigh_lst;
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         shamrock::tree::ObjectCache &cache = storage.neighbors_cache.get().get_cache(p.id_patch);
 
         sycl::buffer<u8> &face_normals_lookup = storage.face_normals_lookup.get().get(p.id_patch);

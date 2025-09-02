@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 /**
  * @file SPHUtilities.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -43,10 +44,10 @@ namespace shammodels::sph {
         sham::EventList depends_list;
 
         auto r          = merged_r.get_read_access(depends_list);
-        auto eps        = eps_h.get_write_access(depends_list);
-        auto h_new      = hnew.get_write_access(depends_list);
         auto h_old      = hold.get_read_access(depends_list);
         auto ploop_ptrs = neigh_cache.get_read_access(depends_list);
+        auto eps        = eps_h.get_write_access(depends_list);
+        auto h_new      = hnew.get_write_access(depends_list);
 
         auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
             // tree::ObjectIterator particle_looper(tree,cgh);
@@ -293,8 +294,16 @@ namespace shammodels::sph {
     template class SPHUtilities<f64_3, shammath::M6<f64>>;
     template class SPHUtilities<f64_3, shammath::M8<f64>>;
 
+    template class SPHUtilities<f64_3, shammath::C2<f64>>;
+    template class SPHUtilities<f64_3, shammath::C4<f64>>;
+    template class SPHUtilities<f64_3, shammath::C6<f64>>;
+
     template class SPHTreeUtilities<f64_3, shammath::M4<f64>, u32>;
     template class SPHTreeUtilities<f64_3, shammath::M6<f64>, u64>;
     template class SPHTreeUtilities<f64_3, shammath::M8<f64>, u64>;
+
+    template class SPHTreeUtilities<f64_3, shammath::C2<f64>, u32>;
+    template class SPHTreeUtilities<f64_3, shammath::C4<f64>, u64>;
+    template class SPHTreeUtilities<f64_3, shammath::C6<f64>, u64>;
 
 } // namespace shammodels::sph

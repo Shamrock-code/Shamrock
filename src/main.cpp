@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,12 +18,13 @@
  *
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/logs/loglevel.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/time.hpp"
+#include "shambase/term_colors.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/fpe_except.hpp"
-#include "shambindings/pybindaliases.hpp"
 #include "shambindings/pybindings.hpp"
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/cmdopt.hpp"
@@ -35,22 +36,11 @@
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SignalCatch.hpp"
-#include "shamsys/legacy/log.hpp"
-#include "shamsys/legacy/sycl_handler.hpp"
-#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamsys/shamrock_smi.hpp"
 #include <pybind11/embed.h>
-#include <type_traits>
-#include <unordered_map>
-#include <array>
 #include <cstdlib>
-#include <filesystem>
-#include <iterator>
-#include <memory>
-#include <ostream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 //%Impl status : Should rewrite
 

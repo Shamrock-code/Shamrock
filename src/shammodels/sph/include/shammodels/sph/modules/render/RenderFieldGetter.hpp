@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -43,7 +43,7 @@ namespace shammodels::sph::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         using field_getter_t = const sham::DeviceBuffer<Tfield> &(
-            const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat);
+            const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat);
 
         using lamda_runner
             = std::function<sham::DeviceBuffer<Tfield>(std::function<field_getter_t>)>;

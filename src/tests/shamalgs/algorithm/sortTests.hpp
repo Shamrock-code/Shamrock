@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -12,6 +12,7 @@
 #include "shambase/time.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/random.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -256,9 +257,10 @@ struct TestIndexRemapUSM {
 
         u32 len = 1U << 5U;
 
-        std::vector<u32> vec_key = shamalgs::random::mock_vector<u32>(0x111, len, 0, 1U << 7U);
+        std::vector<u32> vec_key = shamalgs::primitives::mock_vector<u32>(0x111, len, 0, 1U << 7U);
 
-        std::vector<u32> vec_key_dup = shamalgs::random::mock_vector<u32>(0x111, len, 0, 1U << 7U);
+        std::vector<u32> vec_key_dup
+            = shamalgs::primitives::mock_vector<u32>(0x111, len, 0, 1U << 7U);
 
         sham::DeviceBuffer<u32> buf_key(len, sched);
         buf_key.copy_from_stdvec(vec_key);

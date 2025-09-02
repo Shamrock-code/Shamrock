@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -37,7 +37,7 @@ namespace shamrock {
 
             using namespace shamrock::patch;
 
-            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+            sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 field_data.add_obj(id_patch, PatchDataField<T>(name, nvar));
                 field_data.get(id_patch).resize(pdat.get_obj_cnt());
             });
@@ -153,7 +153,7 @@ namespace shamrock {
                 using namespace shamrock::patch;
 
                 u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-                sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+                sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                     using namespace shamalgs::memory;
                     using namespace shambase;
 

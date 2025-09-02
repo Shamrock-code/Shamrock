@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -249,8 +249,8 @@ namespace shamrock {
         template<
             typename Dummy = void,
             typename       = std::enable_if_t<is_nvar_dynamic() && is_span_access(), Dummy>>
-        inline auto
-        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{})
+        inline auto get_write_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{})
             -> details::PatchDataFieldSpan_access_rw_dyn_nvar<T> {
             StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_rw_dyn_nvar<T>{
@@ -294,8 +294,8 @@ namespace shamrock {
         template<
             typename Dummy = void,
             typename       = std::enable_if_t<is_nvar_static() && is_span_access(), Dummy>>
-        inline auto
-        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{})
+        inline auto get_write_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{})
             -> details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar> {
             StackEntry stack_loc{};
             return details::PatchDataFieldSpan_access_rw_static_nvar<T, nvar>{
@@ -314,9 +314,8 @@ namespace shamrock {
         }
 
         template<typename Dummy = void, typename = std::enable_if_t<is_pointer_access(), Dummy>>
-        inline auto
-        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{})
-            -> T * {
+        inline auto get_write_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) -> T * {
             StackEntry stack_loc{};
             return {
                 get_buf().get_write_access(depends_list, std::move(src_loc))

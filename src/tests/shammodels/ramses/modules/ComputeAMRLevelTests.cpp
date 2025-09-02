@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/logs/loglevels.hpp"
 #include "shamalgs/details/random/random.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
 #include "shammodels/ramses/modules/ComputeAMRLevel.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/Field.hpp"
@@ -28,7 +29,7 @@ TestStart(Unittest, "shammodels/ramses/modules/ComputeAMRLevel", ComputeAMRLevel
     TgridUint l0_ref                   = {1 << 20}; // largest block size
 
     std::vector<TgridVec> block_min_vec
-        = shamalgs::random::mock_vector<TgridVec>(0x111, levels_test.size());
+        = shamalgs::primitives::mock_vector<TgridVec>(0x111, levels_test.size());
     std::vector<TgridVec> block_max_vec = {};
 
     for (size_t i = 0; i < block_min_vec.size(); i++) {

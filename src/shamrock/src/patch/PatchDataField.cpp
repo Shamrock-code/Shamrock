@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -19,6 +19,10 @@
 #include "shambase/string.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/primitives/equals.hpp"
+#include "shamalgs/primitives/mock_value.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -95,7 +99,7 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     match = match && (obj_cnt == f2.obj_cnt);
 
     auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    match     = match && shamalgs::equals(sptr, buf, f2.buf, obj_cnt * nvar);
+    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, obj_cnt * nvar);
 
     return match;
 }
@@ -181,7 +185,7 @@ void PatchDataField<T>::append_subset_to(
 
 template<class T>
 void PatchDataField<T>::append_subset_to(
-    sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
+    const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const {
 
     if (pfield.nvar != nvar)
         throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -292,7 +296,7 @@ template<class T>
 class PdatField_insert;
 
 template<class T>
-void PatchDataField<T>::insert(PatchDataField<T> &f2) {
+void PatchDataField<T>::insert(const PatchDataField<T> &f2) {
 
     u32 f2_len = f2.get_obj_cnt();
 
@@ -398,10 +402,10 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
 }
 
 template<class T>
-PatchDataField<T>
-PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax) {
+PatchDataField<T> PatchDataField<T>::mock_field(
+    u64 seed, u32 obj_cnt, std::string name, u32 nvar, T vmin, T vmax) {
 
-    std::vector<T> buf = shamalgs::random::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
+    std::vector<T> buf = shamalgs::primitives::mock_vector<T>(seed, obj_cnt * nvar, vmin, vmax);
     PatchDataField<T> ret(name, nvar, obj_cnt);
     ret.get_buf().copy_from_stdvec(buf);
 
@@ -482,9 +486,8 @@ T PatchDataField<T>::compute_max() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::max(shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    return shamalgs::primitives::max(dev_sched, buf, 0, obj_cnt * nvar);
 }
 
 template<class T>
@@ -494,9 +497,8 @@ T PatchDataField<T>::compute_min() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::min(shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    return shamalgs::primitives::min(dev_sched, buf, 0, obj_cnt * nvar);
 }
 
 template<class T>
@@ -506,9 +508,8 @@ T PatchDataField<T>::compute_sum() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::sum(shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    return shamalgs::primitives::sum(dev_sched, buf, 0, obj_cnt * nvar);
 }
 
 template<class T>

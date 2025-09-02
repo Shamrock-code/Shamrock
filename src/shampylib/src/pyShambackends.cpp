@@ -71,6 +71,7 @@ Register_pymod(shambackendslibinit) {
 
     register_DeviceBuffer<u8>(shambackends_module, "DeviceBuffer_u8");
     register_DeviceBuffer<u32>(shambackends_module, "DeviceBuffer_u32");
+    register_DeviceBuffer<f32>(shambackends_module, "DeviceBuffer_f32");
     register_DeviceBuffer<f64>(shambackends_module, "DeviceBuffer_f64");
     register_DeviceBuffer<f64_2>(shambackends_module, "DeviceBuffer_f64_2");
     register_DeviceBuffer<f64_3>(shambackends_module, "DeviceBuffer_f64_3");

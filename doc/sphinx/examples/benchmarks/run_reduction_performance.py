@@ -25,7 +25,17 @@ if not shamrock.sys.is_initialized():
 
 # %%
 # Main benchmark functions
-def benchmark(N, nb_repeat=10):
+def benchmark_f32(N, nb_repeat=10):
+    times = []
+    for i in range(nb_repeat):
+        buf = shamrock.backends.DeviceBuffer_f32()
+        buf.resize(N)
+        buf.fill(0)
+        times.append(shamrock.algs.benchmark_reduction_sum(buf, N))
+    return min(times), max(times), sum(times) / nb_repeat
+
+
+def benchmark_f64(N, nb_repeat=10):
     times = []
     for i in range(nb_repeat):
         buf = shamrock.backends.DeviceBuffer_f64()
@@ -41,10 +51,11 @@ def run_performance_sweep():
 
     # Define parameter ranges
     # logspace as array
-    particle_counts = np.logspace(2, 7, 20).astype(int).tolist()
+    particle_counts = np.logspace(2, 6, 20).astype(int).tolist()
 
     # Initialize results matrix
-    results = []
+    results_f32 = []
+    results_f64 = []
 
     print(f"Particle counts: {particle_counts}")
 
@@ -60,13 +71,15 @@ def run_performance_sweep():
         )
 
         start_time = time.time()
-        min_time, max_time, mean_time = benchmark(N)
-        results.append(min_time)
+        min_time, max_time, mean_time = benchmark_f32(N)
+        results_f32.append(min_time)
+        min_time, max_time, mean_time = benchmark_f64(N)
+        results_f64.append(min_time)
         elapsed = time.time() - start_time
 
         print(f"mean={mean_time:.3f}s (took {elapsed:.1f}s)")
 
-    return particle_counts, results
+    return particle_counts, results_f32, results_f64
 
 
 # %%
@@ -85,9 +98,10 @@ for algname in all_algs:
     print(f"Running reduction performance benchmarks for {algname}...")
 
     # Run the performance sweep
-    particle_counts, results = run_performance_sweep()
+    particle_counts, results_f32, results_f64 = run_performance_sweep()
 
-    plt.plot(particle_counts, results, "--o", label=algname)
+    (line,) = plt.plot(particle_counts, results_f64, "--.", label=algname + " (f64)")
+    plt.plot(particle_counts, results_f32, ":", color=line.get_color(), label=algname + " (f32)")
 
 
 Nobj = np.array(particle_counts)

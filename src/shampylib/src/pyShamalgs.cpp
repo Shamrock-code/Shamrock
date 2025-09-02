@@ -106,6 +106,16 @@ Register_pymod(shamalgslibinit) {
         return timer.elasped_sec();
     });
 
+    shamalgs_module.def("benchmark_reduction_sum", [](sham::DeviceBuffer<f32> &buf, u32 len) {
+        buf.synchronize();
+        shambase::Timer timer;
+        timer.start();
+        f32 result = shamalgs::primitives::sum(
+            shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
+        timer.end();
+        return timer.elasped_sec();
+    });
+
     shamalgs_module.def(
         "set_impl_reduction", [](const std::string &impl, const std::string &param = "") {
             shamalgs::primitives::impl::set_impl_reduction(impl, param);

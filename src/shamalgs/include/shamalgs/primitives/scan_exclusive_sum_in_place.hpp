@@ -71,4 +71,38 @@ namespace shamalgs::primitives {
     template<class T>
     void scan_exclusive_sum_in_place(sham::DeviceBuffer<T> &buf1, u32 len);
 
+    namespace impl {
+
+        /**
+         * @brief Get list of available implementations for exclusive scan
+         *
+         * Returns a vector of strings containing the names of all available
+         * implementations for the scan_exclusive_sum_in_place algorithm.
+         *
+         * @return Vector of implementation names
+         */
+        std::vector<std::string> get_impl_list_scan_exclusive_sum_in_place();
+
+        /**
+         * @brief Set the implementation to use for exclusive scan
+         *
+         * Configures which implementation should be used for subsequent calls
+         * to scan_exclusive_sum_in_place. Available implementations can be
+         * retrieved using get_impl_list_scan_exclusive_sum_in_place().
+         *
+         * @param impl Name of the implementation to use
+         * @param param Optional parameter string for implementation configuration
+         */
+        void set_impl_scan_exclusive_sum_in_place(
+            const std::string &impl, const std::string &param = "");
+
+        /**
+         * @brief Reset exclusive scan implementation to default
+         *
+         * Resets the scan_exclusive_sum_in_place implementation to the default
+         * system-determined choice, clearing any previously set implementation.
+         */
+        void set_impl_scan_exclusive_sum_in_place_default();
+
+    } // namespace impl
 } // namespace shamalgs::primitives

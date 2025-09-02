@@ -82,14 +82,14 @@ Register_pymod(shamalgslibinit) {
         return timer.elasped_sec();
     });
 
-    shamalgs_module.def("get_impl_list_is_all_true", []() {
-        return shamalgs::primitives::impl::get_impl_list_is_all_true();
-    });
-
     shamalgs_module.def(
         "set_impl_is_all_true", [](const std::string &impl, const std::string &param = "") {
             shamalgs::primitives::impl::set_impl_is_all_true(impl, param);
         });
+
+    shamalgs_module.def("get_impl_list_is_all_true", []() {
+        return shamalgs::primitives::impl::get_impl_list_is_all_true();
+    });
 
     shamalgs_module.def("sum", [](sham::DeviceBuffer<f64> &buf, u32 start_id, u32 end_id) {
         return shamalgs::primitives::sum(

@@ -75,7 +75,7 @@ def run_performance_sweep(compression_level, threshold_run):
             criterion_value = N / (theta_crit**3)
             if criterion_value > threshold_run:
                 print(
-                    f"[{current_run:2d}/{total_runs}] Skipping N={N:5d}, theta_crit={theta_crit:.1f} (N/theta³={criterion_value:.0f} > 100000)"
+                    f"[{current_run:2d}/{total_runs}] Skipping N={N:5d}, theta_crit={theta_crit:.1f} (N/theta³={criterion_value:.0f} > {threshold_run})"
                 )
                 results_mean[i, j] = np.nan
                 results_min[i, j] = np.nan

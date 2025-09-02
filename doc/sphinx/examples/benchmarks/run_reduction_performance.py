@@ -51,7 +51,7 @@ def run_performance_sweep():
 
     # Define parameter ranges
     # logspace as array
-    particle_counts = np.logspace(2, 6, 20).astype(int).tolist()
+    particle_counts = np.logspace(2, 7, 20).astype(int).tolist()
 
     # Initialize results matrix
     results_f32 = []

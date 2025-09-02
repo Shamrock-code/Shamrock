@@ -75,7 +75,8 @@ namespace shamalgs::primitives {
 
         std::vector<std::string> get_impl_list_scan_exclusive_sum_in_place();
 
-        void set_impl_scan_exclusive_sum_in_place(const std::string &impl, const std::string &param = "");
+        void set_impl_scan_exclusive_sum_in_place(
+            const std::string &impl, const std::string &param = "");
 
         void set_impl_scan_exclusive_sum_in_place_default();
 

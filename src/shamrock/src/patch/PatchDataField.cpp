@@ -480,7 +480,7 @@ PatchDataField<T> PatchDataField<T>::deserialize_full(shamalgs::SerializeHelper 
 }
 
 template<class T>
-T PatchDataField<T>::compute_max() {
+T PatchDataField<T>::compute_max() const {
     StackEntry stack_loc{};
     if (is_empty()) {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
@@ -491,7 +491,7 @@ T PatchDataField<T>::compute_max() {
 }
 
 template<class T>
-T PatchDataField<T>::compute_min() {
+T PatchDataField<T>::compute_min() const {
     StackEntry stack_loc{};
     if (is_empty()) {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
@@ -502,7 +502,7 @@ T PatchDataField<T>::compute_min() {
 }
 
 template<class T>
-T PatchDataField<T>::compute_sum() {
+T PatchDataField<T>::compute_sum() const {
     StackEntry stack_loc{};
     if (is_empty()) {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");

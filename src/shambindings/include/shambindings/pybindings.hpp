@@ -32,6 +32,7 @@ namespace shambindings {
      * @brief Init python bindings and register them to Python API
      *
      * @param m the python module to bind definitions on
+     * @param hook_stdout if true, sys.stdout and sys.stderr will be hooked
      */
     void init_embed(py::module &m, bool hook_stdout = true);
 

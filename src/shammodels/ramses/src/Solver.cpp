@@ -109,7 +109,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             "global_patch_boxes", "global_patch_boxes");
 
     storage.local_patch_ids
-        = std::make_shared<shamrock::solvergraph::ITDataEdge<std::vector<u64>>>("", "");
+        = std::make_shared<shamrock::solvergraph::IDataEdge<std::vector<u64>>>("", "");
 
     storage.sim_box_edge
         = std::make_shared<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>>(

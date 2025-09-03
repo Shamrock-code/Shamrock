@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file ITDataEdge.hpp
+ * @file IDataEdge.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -23,7 +23,7 @@
 namespace shamrock::solvergraph {
 
     template<class T>
-    class ITDataEdge : public IEdgeNamed {
+    class IDataEdge : public IEdgeNamed {
 
         public:
         T data;
@@ -32,7 +32,7 @@ namespace shamrock::solvergraph {
 
         inline virtual void free_alloc() { data = {}; }
 
-        virtual ~ITDataEdge() {}
+        virtual ~IDataEdge() {}
     };
 
 } // namespace shamrock::solvergraph

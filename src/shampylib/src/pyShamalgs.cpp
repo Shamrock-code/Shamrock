@@ -33,6 +33,31 @@ Register_pymod(shamalgslibinit) {
 
     py::class_<std::mt19937>(shamalgs_module, "rng");
 
+    py::class_<shamalgs::impl_param>(shamalgs_module, "impl_param")
+        .def(py::init([]() {
+            return shamalgs::impl_param{"", ""};
+        }))
+        .def_readwrite(
+            "impl_name",
+            &shamalgs::impl_param::impl_name,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "params", &shamalgs::impl_param::params, py::return_value_policy::reference_internal)
+        .def(
+            "__str__",
+            [](const shamalgs::impl_param &impl_param) {
+                return shambase::format(
+                    "impl_param(impl_name=\"{}\", params=\"{}\")",
+                    impl_param.impl_name,
+                    impl_param.params);
+            })
+        .def("__repr__", [](const shamalgs::impl_param &impl_param) {
+            return shambase::format(
+                "impl_param(impl_name=\"{}\", params=\"{}\")",
+                impl_param.impl_name,
+                impl_param.params);
+        });
+
     shamalgs_module.def("gen_seed", [](u64 seed) {
         return std::mt19937(seed);
     });
@@ -69,84 +94,105 @@ Register_pymod(shamalgslibinit) {
                 shamsys::instance::get_compute_scheduler_ptr(), seed, len, min_bound, max_bound);
         });
 
-    shamalgs_module.def("is_all_true", [](sham::DeviceBuffer<u8> &buf, u32 len) {
-        return shamalgs::primitives::is_all_true(buf, len);
-    });
+    { // is_all_true
 
-    shamalgs_module.def("benchmark_is_all_true", [](sham::DeviceBuffer<u8> &buf, u32 len) {
-        buf.synchronize();
-        shambase::Timer timer;
-        timer.start();
-        bool result = shamalgs::primitives::is_all_true(buf, len);
-        buf.synchronize();
-        timer.end();
-        return timer.elasped_sec();
-    });
-
-    shamalgs_module.def(
-        "set_impl_is_all_true", [](const std::string &impl, const std::string &param = "") {
-            shamalgs::primitives::impl::set_impl_is_all_true(impl, param);
+        shamalgs_module.def("is_all_true", [](sham::DeviceBuffer<u8> &buf, u32 len) {
+            return shamalgs::primitives::is_all_true(buf, len);
         });
 
-    shamalgs_module.def("get_impl_list_is_all_true", []() {
-        return shamalgs::primitives::impl::get_impl_list_is_all_true();
-    });
-
-    shamalgs_module.def("sum", [](sham::DeviceBuffer<f64> &buf, u32 start_id, u32 end_id) {
-        return shamalgs::primitives::sum(
-            shamsys::instance::get_compute_scheduler_ptr(), buf, start_id, end_id);
-    });
-
-    shamalgs_module.def("benchmark_reduction_sum", [](sham::DeviceBuffer<f64> &buf, u32 len) {
-        buf.synchronize();
-        shambase::Timer timer;
-        timer.start();
-        f64 result = shamalgs::primitives::sum(
-            shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
-        timer.end();
-        return timer.elasped_sec();
-    });
-
-    shamalgs_module.def("benchmark_reduction_sum", [](sham::DeviceBuffer<f32> &buf, u32 len) {
-        buf.synchronize();
-        shambase::Timer timer;
-        timer.start();
-        f32 result = shamalgs::primitives::sum(
-            shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
-        timer.end();
-        return timer.elasped_sec();
-    });
-
-    shamalgs_module.def(
-        "set_impl_reduction", [](const std::string &impl, const std::string &param = "") {
-            shamalgs::primitives::impl::set_impl_reduction(impl, param);
-        });
-
-    shamalgs_module.def("get_impl_list_reduction", []() {
-        return shamalgs::primitives::impl::get_impl_list_reduction();
-    });
-
-    shamalgs_module.def("scan_exclusive_sum_in_place", [](sham::DeviceBuffer<u32> &buf, u32 len) {
-        shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
-    });
-
-    shamalgs_module.def(
-        "benchmark_scan_exclusive_sum_in_place", [](sham::DeviceBuffer<u32> &buf, u32 len) {
+        shamalgs_module.def("benchmark_is_all_true", [](sham::DeviceBuffer<u8> &buf, u32 len) {
             buf.synchronize();
             shambase::Timer timer;
             timer.start();
-            shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
+            bool result = shamalgs::primitives::is_all_true(buf, len);
+            buf.synchronize();
             timer.end();
             return timer.elasped_sec();
         });
 
-    shamalgs_module.def(
-        "set_impl_scan_exclusive_sum_in_place",
-        [](const std::string &impl, const std::string &param = "") {
-            shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl, param);
+        shamalgs_module.def(
+            "set_impl_is_all_true", [](const std::string &impl, const std::string &param = "") {
+                shamalgs::primitives::impl::set_impl_is_all_true(impl, param);
+            });
+
+        shamalgs_module.def("get_current_impl_is_all_true", []() {
+            return shamalgs::primitives::impl::get_current_impl_is_all_true();
         });
 
-    shamalgs_module.def("get_impl_list_scan_exclusive_sum_in_place", []() {
-        return shamalgs::primitives::impl::get_impl_list_scan_exclusive_sum_in_place();
-    });
+        shamalgs_module.def("get_default_impl_list_is_all_true", []() {
+            return shamalgs::primitives::impl::get_default_impl_list_is_all_true();
+        });
+    }
+
+    { // reductions
+        shamalgs_module.def("sum", [](sham::DeviceBuffer<f64> &buf, u32 start_id, u32 end_id) {
+            return shamalgs::primitives::sum(
+                shamsys::instance::get_compute_scheduler_ptr(), buf, start_id, end_id);
+        });
+
+        shamalgs_module.def("benchmark_reduction_sum", [](sham::DeviceBuffer<f64> &buf, u32 len) {
+            buf.synchronize();
+            shambase::Timer timer;
+            timer.start();
+            f64 result = shamalgs::primitives::sum(
+                shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
+            timer.end();
+            return timer.elasped_sec();
+        });
+
+        shamalgs_module.def("benchmark_reduction_sum", [](sham::DeviceBuffer<f32> &buf, u32 len) {
+            buf.synchronize();
+            shambase::Timer timer;
+            timer.start();
+            f32 result = shamalgs::primitives::sum(
+                shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
+            timer.end();
+            return timer.elasped_sec();
+        });
+
+        shamalgs_module.def(
+            "set_impl_reduction", [](const std::string &impl, const std::string &param = "") {
+                shamalgs::primitives::impl::set_impl_reduction(impl, param);
+            });
+
+        shamalgs_module.def("get_current_impl_reduction", []() {
+            return shamalgs::primitives::impl::get_current_impl_reduction();
+        });
+
+        shamalgs_module.def("get_default_impl_list_reduction", []() {
+            return shamalgs::primitives::impl::get_default_impl_list_reduction();
+        });
+    }
+
+    { // scan_exclusive_sum_in_place
+
+        shamalgs_module.def(
+            "scan_exclusive_sum_in_place", [](sham::DeviceBuffer<u32> &buf, u32 len) {
+                shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
+            });
+
+        shamalgs_module.def(
+            "benchmark_scan_exclusive_sum_in_place", [](sham::DeviceBuffer<u32> &buf, u32 len) {
+                buf.synchronize();
+                shambase::Timer timer;
+                timer.start();
+                shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
+                timer.end();
+                return timer.elasped_sec();
+            });
+
+        shamalgs_module.def(
+            "set_impl_scan_exclusive_sum_in_place",
+            [](const std::string &impl, const std::string &param = "") {
+                shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl, param);
+            });
+
+        shamalgs_module.def("get_current_impl_scan_exclusive_sum_in_place", []() {
+            return shamalgs::primitives::impl::get_current_impl_scan_exclusive_sum_in_place();
+        });
+
+        shamalgs_module.def("get_default_impl_list_scan_exclusive_sum_in_place", []() {
+            return shamalgs::primitives::impl::get_default_impl_list_scan_exclusive_sum_in_place();
+        });
+    }
 }

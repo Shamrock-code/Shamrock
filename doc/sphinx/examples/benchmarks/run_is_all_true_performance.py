@@ -97,26 +97,31 @@ def run_performance_sweep():
 
 
 # %%
-# List all implementations available
-all_algs = shamrock.algs.get_impl_list_is_all_true()
+# List current implementation
+current_impl = shamrock.algs.get_current_impl_is_all_true()
 
-print(all_algs)
+print(current_impl)
+
+# %%
+# List all implementations available
+all_default_impls = shamrock.algs.get_default_impl_list_is_all_true()
+
+print(all_default_impls)
 
 # %%
 # Run the performance benchmarks for all implementations
-results = {}
 
-for algname in all_algs:
-    shamrock.algs.set_impl_is_all_true(algname, "")
+for impl in all_default_impls:
+    shamrock.algs.set_impl_is_all_true(impl.impl_name, impl.params)
 
-    print(f"Running is_all_true performance benchmarks for {algname}...")
+    print(f"Running is_all_true performance benchmarks for {impl}...")
 
     # Run the performance sweep
     particle_counts, results_random, results_ones, results_zeros = run_performance_sweep()
 
-    plt.plot(particle_counts, results_random, "--", label=algname + " (random set)")
-    plt.plot(particle_counts, results_ones, "--+", label=algname + " (all ones)")
-    plt.plot(particle_counts, results_zeros, "--o", label=algname + " (all zeros)")
+    plt.plot(particle_counts, results_random, "--", label=impl.impl_name + " (random set)")
+    plt.plot(particle_counts, results_ones, "--+", label=impl.impl_name + " (all ones)")
+    plt.plot(particle_counts, results_zeros, "--o", label=impl.impl_name + " (all zeros)")
 
 
 Nobj = np.array(particle_counts)

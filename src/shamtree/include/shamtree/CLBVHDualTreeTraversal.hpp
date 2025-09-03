@@ -18,6 +18,7 @@
  * Bounding Volume Hierarchies (CLBVH).
  */
 
+#include "shamalgs/impl_utils.hpp"
 #include "shambackends/vec.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 
@@ -37,39 +38,16 @@ namespace shamtree {
         const CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
         shambase::VecComponent<Tvec> theta_crit);
 
+    /// namespace to control implementation behavior
     namespace impl {
 
-        /**
-         * @brief Get list of available dual tree traversal implementations
-         *
-         * Returns a list of all available algorithm implementations that can be
-         * used with the dual tree traversal function. Each implementation has
-         * different performance characteristics and is suitable for different
-         * use cases.
-         *
-         * @return Vector of implementation names as strings
-         *
-         * Available implementations:
-         * - "reference": CPU-based reference implementation (slow but accurate)
-         * - "parallel_select": GPU parallel selection algorithm
-         * - "scan_multipass": GPU scan-based multipass algorithm (default)
-         */
-        std::vector<std::string> get_impl_list_clbvh_dual_tree_traversal();
+        /// Get list of available dual tree traversal implementations
+        std::vector<shamalgs::impl_param> get_default_impl_list_clbvh_dual_tree_traversal();
 
-        /**
-         * @brief Set the implementation for dual tree traversal
-         *
-         * Selects which algorithm implementation to use for subsequent calls
-         * to clbvh_dual_tree_traversal(). This setting affects global state
-         * and applies to all future traversals until changed.
-         *
-         * @param impl Implementation name (must be from get_impl_list_clbvh_dual_tree_traversal())
-         * @param param Optional implementation-specific parameter (currently unused)
-         *
-         * @throws std::invalid_argument if impl is not a valid implementation name
-         *
-         * @note The default implementation is "scan_multipass"
-         */
+        /// Get the current implementation for dual tree traversal
+        shamalgs::impl_param get_current_impl_clbvh_dual_tree_traversal_impl();
+
+        /// Set the implementation for dual tree traversal
         void set_impl_clbvh_dual_tree_traversal(
             const std::string &impl, const std::string &param = "");
 

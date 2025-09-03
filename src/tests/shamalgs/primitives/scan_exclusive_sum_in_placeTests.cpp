@@ -78,12 +78,17 @@ TestStart(
         }
     };
 
-    for (std::string impl :
-         shamalgs::primitives::impl::get_impl_list_scan_exclusive_sum_in_place()) {
-        shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl);
+    auto current_impl = shamalgs::primitives::impl::get_current_impl_scan_exclusive_sum_in_place();
+
+    for (shamalgs::impl_param impl :
+         shamalgs::primitives::impl::get_default_impl_list_scan_exclusive_sum_in_place()) {
+        shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(
+            impl.impl_name, impl.params);
+        shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place_default();
+    shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(
+        current_impl.impl_name, current_impl.params);
 }

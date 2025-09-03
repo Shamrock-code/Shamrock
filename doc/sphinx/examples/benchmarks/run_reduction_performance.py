@@ -1,8 +1,8 @@
 """
-is_all_true performance benchmarks
-=================================
+reduction performance benchmarks
+================================
 
-This example benchmarks the is_all_true performance for the different algorithms available in Shamrock
+This example benchmarks the reduction performance for the different algorithms available in Shamrock
 """
 
 # sphinx_gallery_multi_image = "single"
@@ -83,25 +83,32 @@ def run_performance_sweep():
 
 
 # %%
-# List all implementations available
-all_algs = shamrock.algs.get_impl_list_reduction()
+# List current implementation
+current_impl = shamrock.algs.get_current_impl_reduction()
 
-print(all_algs)
+print(current_impl)
+
+# %%
+# List all implementations available
+all_default_impls = shamrock.algs.get_default_impl_list_reduction()
+
+print(all_default_impls)
 
 # %%
 # Run the performance benchmarks for all implementations
-results = {}
 
-for algname in all_algs:
-    shamrock.algs.set_impl_reduction(algname, "")
+for impl in all_default_impls:
+    shamrock.algs.set_impl_reduction(impl.impl_name, impl.params)
 
-    print(f"Running reduction performance benchmarks for {algname}...")
+    print(f"Running reduction performance benchmarks for {impl}...")
 
     # Run the performance sweep
     particle_counts, results_f32, results_f64 = run_performance_sweep()
 
-    (line,) = plt.plot(particle_counts, results_f64, "--.", label=algname + " (f64)")
-    plt.plot(particle_counts, results_f32, ":", color=line.get_color(), label=algname + " (f32)")
+    (line,) = plt.plot(particle_counts, results_f64, "--.", label=impl.impl_name + " (f64)")
+    plt.plot(
+        particle_counts, results_f32, ":", color=line.get_color(), label=impl.impl_name + " (f32)"
+    )
 
 
 Nobj = np.array(particle_counts)

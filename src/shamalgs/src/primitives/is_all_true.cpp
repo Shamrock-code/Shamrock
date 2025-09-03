@@ -69,22 +69,40 @@ namespace shamalgs::primitives {
     enum class IS_ALL_TRUE_IMPL : u32 { HOST, SUM_REDUCTION };
     IS_ALL_TRUE_IMPL is_all_true_impl = IS_ALL_TRUE_IMPL::HOST;
 
-    std::unordered_map<std::string, IS_ALL_TRUE_IMPL> is_all_true_impl_map
-        = {{"host", IS_ALL_TRUE_IMPL::HOST}, {"sum_reduction", IS_ALL_TRUE_IMPL::SUM_REDUCTION}};
+    inline IS_ALL_TRUE_IMPL is_all_true_impl_from_params(const std::string &impl) {
+        if (impl == "host") {
+            return IS_ALL_TRUE_IMPL::HOST;
+        } else if (impl == "sum_reduction") {
+            return IS_ALL_TRUE_IMPL::SUM_REDUCTION;
+        }
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "invalid implementation : {}, possible implementations : {}",
+            impl,
+            impl::get_default_impl_list_is_all_true()));
+    }
 
-    std::vector<std::string> impl::get_impl_list_is_all_true() {
-        return shambase::keys_from_map(is_all_true_impl_map);
+    inline shamalgs::impl_param is_all_true_impl_to_params(const IS_ALL_TRUE_IMPL &impl) {
+        if (impl == IS_ALL_TRUE_IMPL::HOST) {
+            return {"host", ""};
+        } else if (impl == IS_ALL_TRUE_IMPL::SUM_REDUCTION) {
+            return {"sum_reduction", ""};
+        }
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            shambase::format("unknow is_all_true implementation : {}", u32(impl)));
+    }
+
+    std::vector<shamalgs::impl_param> impl::get_default_impl_list_is_all_true() {
+        std::vector<shamalgs::impl_param> impl_list{{"host", ""}, {"sum_reduction", ""}};
+        return impl_list;
     }
 
     void impl::set_impl_is_all_true(const std::string &impl, const std::string &param) {
-        try {
-            is_all_true_impl = is_all_true_impl_map.at(impl);
-        } catch (const std::out_of_range &e) {
-            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                "invalid implementation : {}, possible implementations : {}",
-                impl,
-                get_impl_list_is_all_true()));
-        }
+        shamlog_info_ln("tree", "setting is_all_true implementation to impl :", impl);
+        is_all_true_impl = is_all_true_impl_from_params(impl);
+    }
+
+    shamalgs::impl_param impl::get_current_impl_is_all_true() {
+        return is_all_true_impl_to_params(is_all_true_impl);
     }
 
     template<class T>

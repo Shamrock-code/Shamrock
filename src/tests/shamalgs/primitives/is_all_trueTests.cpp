@@ -138,10 +138,15 @@ TestStart(Unittest, "shamalgs/primitives/is_all_true:USM", test_is_all_true_devi
         }
     };
 
-    std::vector<std::string> impls = shamalgs::primitives::impl::get_impl_list_is_all_true();
-    for (auto &impl : impls) {
-        shamalgs::primitives::impl::set_impl_is_all_true(impl);
+    auto current_impl = shamalgs::primitives::impl::get_current_impl_is_all_true();
+
+    for (shamalgs::impl_param impl :
+         shamalgs::primitives::impl::get_default_impl_list_is_all_true()) {
+        shamalgs::primitives::impl::set_impl_is_all_true(impl.impl_name, impl.params);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_impl();
     }
+
+    // reset to current impl
+    shamalgs::primitives::impl::set_impl_is_all_true(current_impl.impl_name, current_impl.params);
 }

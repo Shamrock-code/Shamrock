@@ -33,7 +33,7 @@ namespace shambindings {
      *
      * @param m the python module to bind definitions on
      */
-    void init_embed(py::module &m);
+    void init_embed(py::module &m, bool hook_stdout = true);
 
     /**
      * @brief Expect python bindings to be initialized as lib mode, throws if not

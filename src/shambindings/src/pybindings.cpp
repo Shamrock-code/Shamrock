@@ -66,14 +66,16 @@ void register_pybind_init_func(fct_sig fct) {
 void register_py_to_sham_print(py::module &m) {
 
     struct wrapper_io {
+        int _fileno;
+        wrapper_io(int fileno) : _fileno(fileno) {}
         void write(py::object &buffer) { shambase::print(buffer.cast<std::string>()); }
         void flush() { shambase::flush(); }
         bool isatty() { return shamcmdopt::is_a_tty(); }
-        int fileno() { return 0; }
+        int fileno() { return _fileno; }
     };
 
     py::class_<wrapper_io>(m, "wrapper_io")
-        .def(py::init<>())
+        .def(py::init<int>())
         .def("write", &wrapper_io::write)
         .def("flush", &wrapper_io::flush)
         .def("isatty", &wrapper_io::isatty)
@@ -99,9 +101,10 @@ void register_py_to_sham_print(py::module &m) {
 
             py::object py_wrapper_class = py::globals()["PyStdWrapper"];
 
-            py::object backend        = py::cast(wrapper_io());
-            py::object stdout_wrapper = py_wrapper_class(backend);
-            py::object stderr_wrapper = py_wrapper_class(backend);
+            py::object backend_out    = py::cast(wrapper_io(1));
+            py::object backend_err    = py::cast(wrapper_io(2));
+            py::object stdout_wrapper = py_wrapper_class(backend_out);
+            py::object stderr_wrapper = py_wrapper_class(backend_err);
 
             sys.attr("stdout") = stdout_wrapper;
             sys.attr("stderr") = stderr_wrapper;

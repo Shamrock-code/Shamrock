@@ -42,7 +42,7 @@ namespace shambase {
         if (_flush == nullptr) {
             std::cout << std::flush;
         } else {
-            flush();
+            _flush();
         }
     }
 

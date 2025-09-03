@@ -18,6 +18,8 @@
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shamcmdopt/tty.hpp"
+#include <pybind11/eval.h>
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
 #include <exception>
@@ -63,41 +65,50 @@ void register_pybind_init_func(fct_sig fct) {
 
 void register_py_to_sham_print(py::module &m) {
 
-    struct wrapper_cout {
-        wrapper_cout()                     = default;
-        wrapper_cout(const wrapper_cout &) = default;
-        wrapper_cout(wrapper_cout &&)      = default;
+    struct wrapper_io {
+        int _fileno;
+        wrapper_io(int fileno) : _fileno(fileno) {}
+        void write(py::object &buffer) { shambase::print(buffer.cast<std::string>()); }
+        void flush() { shambase::flush(); }
+        bool isatty() { return shamcmdopt::is_a_tty(); }
+        int fileno() { return _fileno; }
     };
 
-    struct wrapper_cerr {
-        wrapper_cerr()                     = default;
-        wrapper_cerr(const wrapper_cerr &) = default;
-        wrapper_cerr(wrapper_cerr &&)      = default;
-    };
+    py::class_<wrapper_io>(m, "wrapper_io")
+        .def(py::init<int>())
+        .def("write", &wrapper_io::write)
+        .def("flush", &wrapper_io::flush)
+        .def("isatty", &wrapper_io::isatty)
+        .def("fileno", &wrapper_io::fileno);
 
     m.def("hook_stdout", [&]() {
-        py::class_<wrapper_cout> my_stdout(m, "wrapper_cout");
-        my_stdout.def(py::init<>());
-        my_stdout.def_static("write", [](py::object buffer) {
-            shambase::print(buffer.cast<std::string>());
-        });
-        my_stdout.def_static("flush", []() {
-            shambase::flush();
-        });
-
-        py::class_<wrapper_cerr> my_stderr(m, "wrapper_cerr");
-        my_stderr.def(py::init<>());
-        my_stderr.def_static("write", [](py::object buffer) {
-            shambase::print(buffer.cast<std::string>());
-        });
-        my_stderr.def_static("flush", []() {
-            shambase::flush();
-        });
-
         try {
-            auto sys           = py::module::import("sys");
-            sys.attr("stdout") = my_stdout();
-            sys.attr("stderr") = my_stderr();
+            auto sys = py::module::import("sys");
+
+            py::exec(R"(
+                 class PyStdWrapper:
+                     def __init__(self, backend):
+                         self.backend = backend
+                     def write(self, text):
+                         self.backend.write(text)
+                     def flush(self):
+                         self.backend.flush()
+                     def isatty(self):
+                         return self.backend.isatty()
+                     def fileno(self):
+                         return self.backend.fileno()
+                 )");
+
+            py::object py_wrapper_class = py::globals()["PyStdWrapper"];
+
+            py::object backend_out    = py::cast(wrapper_io(1));
+            py::object backend_err    = py::cast(wrapper_io(2));
+            py::object stdout_wrapper = py_wrapper_class(backend_out);
+            py::object stderr_wrapper = py_wrapper_class(backend_err);
+
+            sys.attr("stdout") = stdout_wrapper;
+            sys.attr("stderr") = stderr_wrapper;
+
         } catch (std::exception &e) {
             shambase::throw_with_loc<std::runtime_error>(e.what());
         }
@@ -133,10 +144,12 @@ namespace shambindings {
 
     void init_lib(py::module &m) { shambindings::init<true>(m); }
 
-    void init_embed(py::module &m) {
+    void init_embed(py::module &m, bool hook_stdout) {
         shambindings::init<false>(m);
-        register_py_to_sham_print(m);
-        m.attr("hook_stdout")();
+        if (hook_stdout) {
+            register_py_to_sham_print(m);
+            m.attr("hook_stdout")();
+        }
     }
 
     void expect_init_lib(SourceLocation loc) {

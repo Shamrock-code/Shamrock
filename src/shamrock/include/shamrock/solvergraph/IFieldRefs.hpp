@@ -17,6 +17,7 @@
  */
 
 #include "shambase/DistributedData.hpp"
+#include "shambackends/math.hpp"
 #include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 
@@ -52,5 +53,23 @@ namespace shamrock::solvergraph {
         /// Get the underlying PatchDataField at the given id
         inline PatchDataField<T> &get_field(u64 id) const { return get_refs().get(id).get(); }
     };
+
+    template<class T>
+    T get_rank_max(const IFieldRefs<T> &field_refs) {
+        T ret = shambase::VectorProperties<T>::get_min();
+        field_refs.get_refs().for_each([&](u64 id, const PatchDataFieldRef<T> &field_ref) {
+            ret = sham::max(ret, field_ref.get().compute_max());
+        });
+        return ret;
+    }
+
+    template<class T>
+    T get_rank_min(const IFieldRefs<T> &field_refs) {
+        T ret = shambase::VectorProperties<T>::get_max();
+        field_refs.get_refs().for_each([&](u64 id, const PatchDataFieldRef<T> &field_ref) {
+            ret = sham::min(ret, field_ref.get().compute_min());
+        });
+        return ret;
+    }
 
 } // namespace shamrock::solvergraph

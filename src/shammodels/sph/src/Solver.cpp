@@ -26,6 +26,7 @@
 #include "shambackends/details/memoryHandle.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammath/sphkernels.hpp"
@@ -49,6 +50,7 @@
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
+#include "shammodels/sph/modules/LoopSmoothingLenghtIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
@@ -551,17 +553,29 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         eps_h->set_refs(eps_h_refs);
 
         // iterate smoothing length
-        shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel> smth_h_iter(
-            solver_config.gpart_mass, solver_config.htol_up_tol, solver_config.htol_up_iter);
-        smth_h_iter.set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
+        std::shared_ptr<shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>
+            smth_h_iter = std::make_shared<
+                shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>(
+                solver_config.gpart_mass, solver_config.htol_up_tol, solver_config.htol_up_iter);
+        smth_h_iter->set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
 
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>("", "");
+
+        shammodels::sph::modules::LoopSmoothingLenghtIter<Tvec> loop_smth_h_iter(
+            smth_h_iter, solver_config.epsilon_h, solver_config.h_iter_per_subcycles);
+        loop_smth_h_iter.set_edges(eps_h, is_converged);
+
+#if false
         u32 iter_h = 0;
         for (; iter_h < solver_config.h_iter_per_subcycles; iter_h++) {
             NamedStackEntry stack_loc2{"iterate smoothing length"};
 
-            smth_h_iter.evaluate();
+            smth_h_iter->evaluate();
 
             max_eps_h = _epsilon_h.compute_rank_max();
+
+            shamcomm::logs::raw_ln(_epsilon_h.compute_rank_min(), _epsilon_h.compute_rank_max());
 
             shamlog_debug_ln("Smoothinglength", "iteration :", iter_h, "epsmax", max_eps_h);
 
@@ -575,6 +589,13 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
         Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
         if (min_eps_h == -1) {
+#else
+        loop_smth_h_iter.evaluate();
+        Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
+        u32 iter_h      = 0;
+
+        if (!is_converged->value) {
+#endif
 
             Tscal largest_h = 0;
 

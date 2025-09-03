@@ -14,6 +14,7 @@
  */
 
 #include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/MemPerfInfos.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
@@ -75,4 +76,123 @@ Register_pymod(shambackendslibinit) {
     register_DeviceBuffer<f64>(shambackends_module, "DeviceBuffer_f64");
     register_DeviceBuffer<f64_2>(shambackends_module, "DeviceBuffer_f64_2");
     register_DeviceBuffer<f64_3>(shambackends_module, "DeviceBuffer_f64_3");
+
+    shambackends_module.def("reset_mem_info_max", []() {
+        sham::details::reset_mem_info_max();
+    });
+
+    py::class_<sham::MemPerfInfos>(shambackends_module, "MemPerfInfos")
+        .def(py::init([]() {
+            return sham::MemPerfInfos{};
+        }))
+        .def_readwrite(
+            "time_alloc_host",
+            &sham::MemPerfInfos::time_alloc_host,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "time_alloc_device",
+            &sham::MemPerfInfos::time_alloc_device,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "time_alloc_shared",
+            &sham::MemPerfInfos::time_alloc_shared,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "time_free_host",
+            &sham::MemPerfInfos::time_free_host,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "time_free_device",
+            &sham::MemPerfInfos::time_free_device,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "time_free_shared",
+            &sham::MemPerfInfos::time_free_shared,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "allocated_byte_host",
+            &sham::MemPerfInfos::allocated_byte_host,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "allocated_byte_device",
+            &sham::MemPerfInfos::allocated_byte_device,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "allocated_byte_shared",
+            &sham::MemPerfInfos::allocated_byte_shared,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "max_allocated_byte_host",
+            &sham::MemPerfInfos::max_allocated_byte_host,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "max_allocated_byte_device",
+            &sham::MemPerfInfos::max_allocated_byte_device,
+            py::return_value_policy::reference_internal)
+        .def_readwrite(
+            "max_allocated_byte_shared",
+            &sham::MemPerfInfos::max_allocated_byte_shared,
+            py::return_value_policy::reference_internal)
+        .def(
+            "__str__",
+            [](const sham::MemPerfInfos &mem_perf_infos) {
+                return shambase::format(
+                    "MemPerfInfos(\n"
+                    "    time_alloc_host=\"{0:}\",\n"
+                    "    time_alloc_device=\"{1:}\",\n"
+                    "    time_alloc_shared=\"{2:}\",\n"
+                    "    time_free_host=\"{3:}\",\n"
+                    "    time_free_device=\"{4:}\",\n"
+                    "    time_free_shared=\"{5:}\",\n"
+                    "    allocated_byte_host=\"{6:}\",\n"
+                    "    allocated_byte_device=\"{7:}\",\n"
+                    "    allocated_byte_shared=\"{8:}\",\n"
+                    "    max_allocated_byte_host=\"{9:}\",\n"
+                    "    max_allocated_byte_device=\"{10:}\",\n"
+                    "    max_allocated_byte_shared=\"{11:}\")",
+                    mem_perf_infos.time_alloc_host,
+                    mem_perf_infos.time_alloc_device,
+                    mem_perf_infos.time_alloc_shared,
+                    mem_perf_infos.time_free_host,
+                    mem_perf_infos.time_free_device,
+                    mem_perf_infos.time_free_shared,
+                    mem_perf_infos.allocated_byte_host,
+                    mem_perf_infos.allocated_byte_device,
+                    mem_perf_infos.allocated_byte_shared,
+                    mem_perf_infos.max_allocated_byte_host,
+                    mem_perf_infos.max_allocated_byte_device,
+                    mem_perf_infos.max_allocated_byte_shared);
+            })
+        .def("__repr__", [](const sham::MemPerfInfos &mem_perf_infos) {
+            return shambase::format(
+                "MemPerfInfos(\n"
+                "    time_alloc_host=\"{0:}\",\n"
+                "    time_alloc_device=\"{1:}\",\n"
+                "    time_alloc_shared=\"{2:}\",\n"
+                "    time_free_host=\"{3:}\",\n"
+                "    time_free_device=\"{4:}\",\n"
+                "    time_free_shared=\"{5:}\",\n"
+                "    allocated_byte_host=\"{6:}\",\n"
+                "    allocated_byte_device=\"{7:}\",\n"
+                "    allocated_byte_shared=\"{8:}\",\n"
+                "    max_allocated_byte_host=\"{9:}\",\n"
+                "    max_allocated_byte_device=\"{10:}\",\n"
+                "    max_allocated_byte_shared=\"{11:}\")",
+                mem_perf_infos.time_alloc_host,
+                mem_perf_infos.time_alloc_device,
+                mem_perf_infos.time_alloc_shared,
+                mem_perf_infos.time_free_host,
+                mem_perf_infos.time_free_device,
+                mem_perf_infos.time_free_shared,
+                mem_perf_infos.allocated_byte_host,
+                mem_perf_infos.allocated_byte_device,
+                mem_perf_infos.allocated_byte_shared,
+                mem_perf_infos.max_allocated_byte_host,
+                mem_perf_infos.max_allocated_byte_device,
+                mem_perf_infos.max_allocated_byte_shared);
+        });
+
+    shambackends_module.def("get_mem_perf_info", []() {
+        return sham::details::get_mem_perf_info();
+    });
 }

@@ -122,6 +122,12 @@ namespace sham::details {
 
     MemPerfInfos get_mem_perf_info() { return mem_perf_infos; }
 
+    void reset_mem_info_max() {
+        mem_perf_infos.max_allocated_byte_host   = mem_perf_infos.allocated_byte_host;
+        mem_perf_infos.max_allocated_byte_device = mem_perf_infos.allocated_byte_device;
+        mem_perf_infos.max_allocated_byte_shared = mem_perf_infos.allocated_byte_shared;
+    }
+
     std::string log_mem_perf_info(const std::shared_ptr<DeviceScheduler> &dev_sched) {
 
         std::string fmt = R"log(

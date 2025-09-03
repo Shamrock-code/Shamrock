@@ -104,7 +104,7 @@ namespace shamalgs::primitives {
     template<class T>
     T sum(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
 
@@ -129,7 +129,7 @@ namespace shamalgs::primitives {
     template<class T>
     T min(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
 
@@ -154,7 +154,7 @@ namespace shamalgs::primitives {
     template<class T>
     T max(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
 
@@ -202,17 +202,17 @@ namespace shamalgs::primitives {
     #define X(_arg_)                                                                               \
         template _arg_ sum<_arg_>(                                                                 \
             const sham::DeviceScheduler_ptr &sched,                                                \
-            sham::DeviceBuffer<_arg_> &buf1,                                                       \
+            const sham::DeviceBuffer<_arg_> &buf1,                                                 \
             u32 start_id,                                                                          \
             u32 end_id);                                                                           \
         template _arg_ min<_arg_>(                                                                 \
             const sham::DeviceScheduler_ptr &sched,                                                \
-            sham::DeviceBuffer<_arg_> &buf1,                                                       \
+            const sham::DeviceBuffer<_arg_> &buf1,                                                 \
             u32 start_id,                                                                          \
             u32 end_id);                                                                           \
         template _arg_ max<_arg_>(                                                                 \
             const sham::DeviceScheduler_ptr &sched,                                                \
-            sham::DeviceBuffer<_arg_> &buf1,                                                       \
+            const sham::DeviceBuffer<_arg_> &buf1,                                                 \
             u32 start_id,                                                                          \
             u32 end_id);
 

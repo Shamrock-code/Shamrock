@@ -522,9 +522,9 @@ class PatchDataField {
      */
     shamalgs::SerializeSize serialize_full_byte_size();
 
-    T compute_max();
-    T compute_min();
-    T compute_sum();
+    T compute_max() const;
+    T compute_min() const;
+    T compute_sum() const;
 
     shambase::VecComponent<T> compute_dot_sum();
 

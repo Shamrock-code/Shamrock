@@ -55,7 +55,7 @@ namespace shamalgs::primitives {
     template<class T>
     T sum(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id);
 
@@ -93,7 +93,7 @@ namespace shamalgs::primitives {
     template<class T>
     T min(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id);
 
@@ -131,7 +131,7 @@ namespace shamalgs::primitives {
     template<class T>
     T max(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id);
 

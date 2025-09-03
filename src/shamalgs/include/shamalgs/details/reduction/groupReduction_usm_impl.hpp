@@ -75,7 +75,7 @@ namespace shamalgs::reduction::details {
     template<class T, class GroupCombiner, class BinaryOp, class IdentityGetter>
     inline T reduc_internal(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id,
         u32 work_group_size,

@@ -58,5 +58,4 @@ TestStart(Unittest, "shamalgs/collective/are_all_rank_true", test_are_all_rank_t
     run_test([world_size](u32 i) {
         return (i != world_size - 1);
     });
-  
 }

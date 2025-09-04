@@ -18,9 +18,9 @@
 #include "shammath/AABB.hpp"
 #include "shammath/paving_function.hpp"
 #include "shamrock/solvergraph/DDSharedScalar.hpp"
+#include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/ITDataEdge.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
@@ -97,7 +97,7 @@ namespace shammodels::basegodunov::modules {
 
         struct Edges {
             // inputs
-            const shamrock::solvergraph::ITDataEdge<std::vector<u64>> &ids_to_check;
+            const shamrock::solvergraph::IDataEdge<std::vector<u64>> &ids_to_check;
             const shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>> &sim_box;
             const shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec> &patch_tree;
             const shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>> &patch_boxes;
@@ -107,7 +107,7 @@ namespace shammodels::basegodunov::modules {
         };
 
         inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::ITDataEdge<std::vector<u64>>> ids_to_check,
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<std::vector<u64>>> ids_to_check,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>> sim_box,
             std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>> patch_tree,
             std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
@@ -120,7 +120,7 @@ namespace shammodels::basegodunov::modules {
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::ITDataEdge<std::vector<u64>>>(0),
+                get_ro_edge<shamrock::solvergraph::IDataEdge<std::vector<u64>>>(0),
                 get_ro_edge<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>>(1),
                 get_ro_edge<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>>(2),
                 get_ro_edge<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(3),

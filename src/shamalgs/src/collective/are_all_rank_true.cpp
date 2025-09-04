@@ -10,13 +10,12 @@
 /**
  * @file are_all_rank_true.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implementation of the are_all_rank_true function
  *
  */
 
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
-#include "shambackends/SyclMpiTypes.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include <shamcomm/mpi.hpp>

@@ -24,53 +24,38 @@ TestStart(Unittest, "shamalgs/collective/are_all_rank_true", test_are_all_rank_t
         return out;
     };
 
-    {
-        // Test case 1: All ranks return true
-
-        std::vector<bool> input = std::vector<bool>(world_size, true);
-        bool result   = shamalgs::collective::are_all_rank_true(input[world_rank], MPI_COMM_WORLD);
-        bool expected = reference_are_all_rank_true(input);
-        REQUIRE_EQUAL_NAMED("all_true", result, expected);
-    }
-
-    {
-        // Test case 2: All ranks return false
-        std::vector<bool> input = std::vector<bool>(world_size, false);
-        bool result   = shamalgs::collective::are_all_rank_true(input[world_rank], MPI_COMM_WORLD);
-        bool expected = reference_are_all_rank_true(input);
-        REQUIRE_EQUAL_NAMED("all_false", result, expected);
-    }
-
-    {
-        // Test case 3: Mixed - some ranks true, some false (alternating pattern)
-        std::vector<bool> input = std::vector<bool>(world_size);
-        for (u32 i = 0; i < shamcomm::world_size(); i++) {
-            input[i] = (i % 2 == 0);
+    auto run_test = [&](const auto &input_generator) {
+        std::vector<bool> input(world_size);
+        for (u32 i = 0; i < world_size; ++i) {
+            input[i] = input_generator(i);
         }
         bool result   = shamalgs::collective::are_all_rank_true(input[world_rank], MPI_COMM_WORLD);
         bool expected = reference_are_all_rank_true(input);
-        REQUIRE_EQUAL_NAMED("mixed_alternating", result, expected);
-    }
+        REQUIRE_EQUAL(result, expected);
+    };
 
-    {
-        // Test case 4: Only rank 0 returns false, others true
-        std::vector<bool> input = std::vector<bool>(world_size);
-        for (u32 i = 0; i < shamcomm::world_size(); i++) {
-            input[i] = (i != 0);
-        }
-        bool result   = shamalgs::collective::are_all_rank_true(input[world_rank], MPI_COMM_WORLD);
-        bool expected = reference_are_all_rank_true(input);
-        REQUIRE_EQUAL_NAMED("rank0_false", result, expected);
-    }
+    // Test case 1: All ranks return true
+    run_test([](u32) {
+        return true;
+    });
 
-    {
-        // Test case 5: Only last rank returns false, others true
-        std::vector<bool> input = std::vector<bool>(world_size);
-        for (u32 i = 0; i < shamcomm::world_size(); i++) {
-            input[i] = (i != shamcomm::world_size() - 1);
-        }
-        bool result   = shamalgs::collective::are_all_rank_true(input[world_rank], MPI_COMM_WORLD);
-        bool expected = reference_are_all_rank_true(input);
-        REQUIRE_EQUAL_NAMED("last_rank_false", result, expected);
-    }
+    // Test case 2: All ranks return false
+    run_test([](u32) {
+        return false;
+    });
+
+    // Test case 3: Mixed - some ranks true, some false (alternating pattern)
+    run_test([](u32 i) {
+        return (i % 2 == 0);
+    });
+
+    // Test case 4: Only rank 0 returns false, others true
+    run_test([](u32 i) {
+        return (i != 0);
+    });
+
+    // Test case 5: Only last rank returns false, others true
+    run_test([world_size](u32 i) {
+        return (i != world_size - 1);
+    });
 }

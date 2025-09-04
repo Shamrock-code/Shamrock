@@ -16,7 +16,6 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
-#include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include <shamcomm/mpi.hpp>
 
@@ -27,7 +26,7 @@ namespace shamalgs::collective {
         // Shamrock profiling / stack tracing entry
         [[maybe_unused]] StackEntry stack_loc{};
 
-        bool out = 0;
+        bool out = false;
         shamcomm::mpi::Allreduce(&input, &out, 1, MPI_C_BOOL, MPI_LAND, comm);
 
         return out;

@@ -65,11 +65,8 @@ namespace shammodels::sph::modules {
 
         if (is_converged.value && print_info) {
 
-            Tscal min_eps_h = shamrock::solvergraph::get_rank_min(eps_h);
-            Tscal max_eps_h = shamrock::solvergraph::get_rank_max(eps_h);
-
-            min_eps_h = shamalgs::collective::allreduce_min(min_eps_h);
-            max_eps_h = shamalgs::collective::allreduce_max(max_eps_h);
+            Tscal min_eps_h = shamalgs::collective::allreduce_min(local_min_eps_h);
+            Tscal max_eps_h = shamalgs::collective::allreduce_max(local_max_eps_h);
 
             if (shamcomm::world_rank() == 0) {
                 std::string log = "";

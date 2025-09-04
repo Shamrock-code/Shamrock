@@ -2,7 +2,22 @@
 Production run: Circular disc & central potential
 =================================================
 
-This simple example shows how to run a circular disc simulation in SPH with a central potential
+This example demonstrates how to run a smoothed particle hydrodynamics (SPH)
+simulation of a circular disc orbiting around a central point mass potential.
+
+The simulation models:
+- A central star with a given mass and accretion radius
+- A gaseous disc with specified mass, inner/outer radii, and vertical structure
+- Artificial viscosity for angular momentum transport
+- Locally isothermal equation of state
+
+Summary:
+- Simulation parameters
+- Init context & attach a SPH model to it
+- Reload from last dump if available or setup from scratch
+- Main simulation loop with on-the-fly analysis (dumped to numpy arrays and json files)
+- Generate plots (from numpy arrays & json files) -> pngs
+- Generate animation (from png files) -> gif
 """
 
 # sphinx_gallery_multi_image = "single"

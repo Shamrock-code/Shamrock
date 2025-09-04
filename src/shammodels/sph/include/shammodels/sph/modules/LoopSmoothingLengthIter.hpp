@@ -12,8 +12,8 @@
 /**
  * @file LoopSmoothingLengthIter.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Declares the IterateSmoothingLengthDensity module for iterating smoothing length based on
- * the SPH density sum.
+ * @brief Declares the LoopSmoothingLengthIter module for looping over the smoothing length
+ * iteration until convergence.
  */
 
 #include "shambackends/vec.hpp"
@@ -27,7 +27,7 @@ namespace shammodels::sph::modules {
     template<class Tvec>
     class LoopSmoothingLengthIter : public shamrock::solvergraph::INode {
 
-        std::shared_ptr<INode> iterate_smth_lenght_once_ptr;
+        std::shared_ptr<INode> iterate_smth_length_once_ptr;
 
         using Tscal = shambase::VecComponent<Tvec>;
 
@@ -37,11 +37,11 @@ namespace shammodels::sph::modules {
 
         public:
         LoopSmoothingLengthIter(
-            std::shared_ptr<INode> iterate_smth_lenght_once_ptr,
+            std::shared_ptr<INode> iterate_smth_length_once_ptr,
             Tscal epsilon_h,
             u32 h_iter_per_subcycles,
             bool print_info)
-            : iterate_smth_lenght_once_ptr(iterate_smth_lenght_once_ptr), epsilon_h(epsilon_h),
+            : iterate_smth_length_once_ptr(iterate_smth_length_once_ptr), epsilon_h(epsilon_h),
               h_iter_per_subcycles(h_iter_per_subcycles), print_info(print_info) {}
 
         struct Edges {

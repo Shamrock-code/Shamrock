@@ -10,8 +10,8 @@
 /**
  * @file LoopSmoothingLengthIter.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Declares the IterateSmoothingLengthDensity module for iterating smoothing length based on
- * the SPH density sum.
+ * @brief Implements the LoopSmoothingLengthIter module, which iterates smoothing length
+ * based on the SPH density sum until convergence.
  */
 
 #include "shambase/memory.hpp"
@@ -40,7 +40,7 @@ namespace shammodels::sph::modules {
         u32 iter_h = 0;
         for (; iter_h < h_iter_per_subcycles; iter_h++) {
 
-            shambase::get_check_ref(iterate_smth_lenght_once_ptr).evaluate();
+            shambase::get_check_ref(iterate_smth_length_once_ptr).evaluate();
 
             local_max_eps_h = shamrock::solvergraph::get_rank_max(eps_h);
 

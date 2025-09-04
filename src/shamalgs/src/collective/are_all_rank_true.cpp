@@ -27,14 +27,8 @@ namespace shamalgs::collective {
         // Shamrock profiling / stack tracing entry
         [[maybe_unused]] StackEntry stack_loc{};
 
-        if (shamcomm::world_size() == 1) {
-            return input;
-        }
-
-        bool tmp = input;
         bool out = 0;
-
-        shamcomm::mpi::Allreduce(&tmp, &out, 1, MPI_C_BOOL, MPI_LAND, comm);
+        shamcomm::mpi::Allreduce(&input, &out, 1, MPI_C_BOOL, MPI_LAND, comm);
 
         return out;
     }

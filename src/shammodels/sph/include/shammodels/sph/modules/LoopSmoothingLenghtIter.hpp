@@ -19,6 +19,7 @@
 #include "shambase/memory.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
@@ -84,6 +85,7 @@ namespace shammodels::sph::modules {
                 local_max_eps_h = shamrock::solvergraph::get_rank_max(eps_h);
 
                 shamcomm::logs::raw_ln(
+                    shamcomm::world_rank(),
                     shamrock::solvergraph::get_rank_min(eps_h),
                     shamrock::solvergraph::get_rank_max(eps_h));
 
@@ -106,6 +108,8 @@ namespace shammodels::sph::modules {
 
             is_converged.value
                 = shamalgs::collective::are_all_rank_true(local_is_converged, MPI_COMM_WORLD);
+
+            shamcomm::logs::raw_ln(shamcomm::world_rank(), local_is_converged, is_converged.value);
         }
 
         inline virtual std::string _impl_get_label() { return "LoopSmoothingLenghtIter"; };

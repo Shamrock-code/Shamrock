@@ -20,6 +20,7 @@
 
 namespace shamalgs::collective {
 
+    /// return true only if all ranks have true as input
     bool are_all_rank_true(bool input, MPI_Comm comm);
 
 } // namespace shamalgs::collective

@@ -17,6 +17,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include <shamcomm/mpi.hpp>
 
@@ -26,12 +27,14 @@ namespace shamalgs::collective {
 
         StackEntry stack_loc{};
 
-        using repr_t = u32;
+        if (shamcomm::world_size() == 1) {
+            return input;
+        }
 
-        repr_t tmp = input;
-        repr_t out = 0;
+        int tmp = input;
+        int out = 0;
 
-        shamcomm::mpi::Allreduce(&tmp, &out, 1, get_mpi_type<repr_t>(), MPI_MAX, comm);
+        shamcomm::mpi::Allreduce(&tmp, &out, 1, MPI_INT, MPI_LAND, comm);
 
         return out;
     }

@@ -25,7 +25,8 @@ namespace shamalgs::collective {
 
     bool are_all_rank_true(bool input, MPI_Comm comm) {
 
-        StackEntry stack_loc{};
+        // Shamrock profiling / stack tracing entry
+        [[maybe_unused]] StackEntry stack_loc{};
 
         if (shamcomm::world_size() == 1) {
             return input;

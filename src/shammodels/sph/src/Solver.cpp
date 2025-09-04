@@ -50,7 +50,7 @@
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
-#include "shammodels/sph/modules/LoopSmoothingLenghtIter.hpp"
+#include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
@@ -562,7 +562,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged
             = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>("", "");
 
-        shammodels::sph::modules::LoopSmoothingLenghtIter<Tvec> loop_smth_h_iter(
+        shammodels::sph::modules::LoopSmoothingLengthIter<Tvec> loop_smth_h_iter(
             smth_h_iter, solver_config.epsilon_h, solver_config.h_iter_per_subcycles, false);
         loop_smth_h_iter.set_edges(eps_h, is_converged);
 

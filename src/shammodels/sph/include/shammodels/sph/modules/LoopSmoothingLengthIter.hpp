@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file LoopSmoothingLenghtIter.hpp
+ * @file LoopSmoothingLengthIter.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Declares the IterateSmoothingLengthDensity module for iterating smoothing length based on
  * the SPH density sum.
@@ -25,7 +25,7 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec>
-    class LoopSmoothingLenghtIter : public shamrock::solvergraph::INode {
+    class LoopSmoothingLengthIter : public shamrock::solvergraph::INode {
 
         std::shared_ptr<INode> iterate_smth_lenght_once_ptr;
 
@@ -36,7 +36,7 @@ namespace shammodels::sph::modules {
         bool print_info;
 
         public:
-        LoopSmoothingLenghtIter(
+        LoopSmoothingLengthIter(
             std::shared_ptr<INode> iterate_smth_lenght_once_ptr,
             Tscal epsilon_h,
             u32 h_iter_per_subcycles,
@@ -71,4 +71,4 @@ namespace shammodels::sph::modules {
     };
 } // namespace shammodels::sph::modules
 
-template class shammodels::sph::modules::LoopSmoothingLenghtIter<f64_3>;
+template class shammodels::sph::modules::LoopSmoothingLengthIter<f64_3>;

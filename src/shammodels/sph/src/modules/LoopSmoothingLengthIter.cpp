@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file LoopSmoothingLenghtIter.cpp
+ * @file LoopSmoothingLengthIter.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Declares the IterateSmoothingLengthDensity module for iterating smoothing length based on
  * the SPH density sum.
@@ -18,7 +18,7 @@
 #include "shamalgs/collective/are_all_rank_true.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamcomm/worldInfo.hpp"
-#include "shammodels/sph/modules/LoopSmoothingLenghtIter.hpp"
+#include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/INode.hpp"
@@ -26,7 +26,7 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec>
-    void LoopSmoothingLenghtIter<Tvec>::_impl_evaluate_internal() {
+    void LoopSmoothingLengthIter<Tvec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
 
         auto edges = get_edges();
@@ -83,7 +83,7 @@ namespace shammodels::sph::modules {
     }
 
     template<class Tvec>
-    std::string LoopSmoothingLenghtIter<Tvec>::_impl_get_tex() {
+    std::string LoopSmoothingLengthIter<Tvec>::_impl_get_tex() {
         return "TODO";
     }
 

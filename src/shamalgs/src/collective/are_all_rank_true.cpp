@@ -31,10 +31,10 @@ namespace shamalgs::collective {
             return input;
         }
 
-        int tmp = input;
-        int out = 0;
+        bool tmp = input;
+        bool out = 0;
 
-        shamcomm::mpi::Allreduce(&tmp, &out, 1, MPI_INT, MPI_LAND, comm);
+        shamcomm::mpi::Allreduce(&tmp, &out, 1, MPI_C_BOOL, MPI_LAND, comm);
 
         return out;
     }

@@ -65,7 +65,7 @@ namespace shammodels::sph::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "LoopSmoothingLenghtIter"; };
+        inline virtual std::string _impl_get_label() { return "LoopSmoothingLengthIter"; };
 
         virtual std::string _impl_get_tex();
     };

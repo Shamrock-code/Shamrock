@@ -7,6 +7,8 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
  * @file AddForceCentralGravPotential.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
@@ -14,13 +16,11 @@
  *
  */
 
-#include "shambackends/kernel_call_distrib.hpp"
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamsys/NodeInstance.hpp"
 
 namespace shammodels::common::modules {
 
@@ -63,58 +63,11 @@ namespace shammodels::common::modules {
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)};
         }
 
-        void _impl_evaluate_internal() {
-
-            [[maybe_unused]] StackEntry stack_loc{};
-
-            auto edges = get_edges();
-
-            edges.spans_positions.check_sizes(edges.sizes.indexes);
-            edges.spans_accel_ext.ensure_sizes(edges.sizes.indexes);
-
-            Tscal cmass = edges.central_mass.data;
-            Tscal G     = edges.constant_G.data;
-            Tvec cpos   = edges.central_pos.data;
-
-            sham::distributed_data_kernel_call(
-                shamsys::instance::get_compute_scheduler_ptr(),
-                sham::DDMultiRef{edges.spans_positions.get_spans()},
-                sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
-                edges.sizes.indexes,
-                [mGM = -cmass * G, cpos](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                    Tvec r_a       = xyz[gid] - cpos;
-                    Tscal abs_ra   = sycl::length(r_a);
-                    Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
-                    axyz_ext[gid] += mGM * r_a / abs_ra_3;
-                });
-        }
+        void _impl_evaluate_internal();
 
         inline virtual std::string _impl_get_label() { return "AddForceCentralGravPotential"; };
 
-        inline virtual std::string _impl_get_tex() {
-
-            auto constant_G   = get_ro_edge_base(0).get_tex_symbol();
-            auto central_mass = get_ro_edge_base(1).get_tex_symbol();
-            auto central_pos  = get_ro_edge_base(2).get_tex_symbol();
-            auto positions    = get_ro_edge_base(3).get_tex_symbol();
-            auto axyz_ext     = get_rw_edge_base(0).get_tex_symbol();
-
-            std::string tex = R"tex(
-                Add force (central gravitational potential)
-
-                \begin{align}
-                {axyz_ext}_i = -{constant_G} * {central_mass} * {central_pos}_i / {positions}_i^3
-                \end{align}
-            )tex";
-
-            shambase::replace_all(tex, "{constant_G}", constant_G);
-            shambase::replace_all(tex, "{central_mass}", central_mass);
-            shambase::replace_all(tex, "{central_pos}", central_pos);
-            shambase::replace_all(tex, "{positions}", positions);
-            shambase::replace_all(tex, "{axyz_ext}", axyz_ext);
-
-            return tex;
-        }
+        virtual std::string _impl_get_tex();
     };
 
 } // namespace shammodels::common::modules

@@ -264,11 +264,12 @@ else:
 # %%
 # On the fly analysis
 def save_rho_integ(ext, arr_rho, iplot):
-    metadata = {"extent": [-ext, ext, -ext, ext], "time": model.get_time()}
-    np.save(dump_folder + f"rho_integ_{iplot:07}.npy", arr_rho)
+    if shamrock.sys.world_rank() == 0:
+        metadata = {"extent": [-ext, ext, -ext, ext], "time": model.get_time()}
+        np.save(dump_folder + f"rho_integ_{iplot:07}.npy", arr_rho)
 
-    with open(dump_folder + f"rho_integ_{iplot:07}.json", "w") as fp:
-        json.dump(metadata, fp)
+        with open(dump_folder + f"rho_integ_{iplot:07}.json", "w") as fp:
+            json.dump(metadata, fp)
 
 
 def analysis_plot(iplot):
@@ -289,8 +290,7 @@ def analysis_plot(iplot):
         ny=ny,
     )
 
-    if shamrock.sys.world_rank() == 0:
-        save_rho_integ(ext, arr_rho2, iplot)
+    save_rho_integ(ext, arr_rho2, iplot)
 
 
 # %%
@@ -378,19 +378,17 @@ def get_list_dumps_id():
     return list_dumps_id
 
 
-analysis_files = get_list_dumps_id()
-
-
 def load_rho_integ(iplot):
     with open(dump_folder + f"rho_integ_{iplot:07}.json") as fp:
         metadata = json.load(fp)
     return np.load(dump_folder + f"rho_integ_{iplot:07}.npy"), metadata
 
 
-for iplot in analysis_files:
-    print("Rendering rho integ plot for dump", iplot)
-    arr_rho, metadata = load_rho_integ(iplot)
-    plot_rho_integ(metadata, arr_rho, iplot)
+if shamrock.sys.world_rank() == 0:
+    for iplot in get_list_dumps_id():
+        print("Rendering rho integ plot for dump", iplot)
+        arr_rho, metadata = load_rho_integ(iplot)
+        plot_rho_integ(metadata, arr_rho, iplot)
 
 
 # %%

@@ -37,9 +37,9 @@ class AddForceCentralGravPotential : public shamrock::solvergraph::INode {
         const shamrock::solvergraph::IDataEdge<Tscal> &constant_G;
         const shamrock::solvergraph::IDataEdge<Tscal> &central_mass;
         const shamrock::solvergraph::IDataEdge<Tvec> &central_pos;
-        const shamrock::solvergraph::IFieldSpan<Tvec> &positions;
+        const shamrock::solvergraph::IFieldSpan<Tvec> &spans_positions;
         const shamrock::solvergraph::Indexes<u32> &sizes;
-        shamrock::solvergraph::IFieldSpan<Tvec> &accel_ext;
+        shamrock::solvergraph::IFieldSpan<Tvec> &spans_accel_ext;
     };
 
     inline void set_edges(
@@ -64,6 +64,9 @@ class AddForceCentralGravPotential : public shamrock::solvergraph::INode {
     }
 
     void _impl_evaluate_internal() {
+
+        [[maybe_unused]] StackEntry stack_loc{};
+
         auto edges = get_edges();
 
         edges.spans_positions.check_sizes(edges.sizes.indexes);
@@ -78,7 +81,7 @@ class AddForceCentralGravPotential : public shamrock::solvergraph::INode {
             sham::DDMultiRef{edges.spans_positions.get_spans()},
             sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
             edges.sizes.indexes,
-            [mGM = -cmass * G](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
+            [mGM = -cmass * G, cpos](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
                 Tvec r_a       = xyz[gid] - cpos;
                 Tscal abs_ra   = sycl::length(r_a);
                 Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
@@ -168,7 +171,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
             Tscal cmass = ext_force->central_mass;
             Tscal G     = solver_config.get_constant_G();
 
-#if false
+#if true
             std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> constant_G
                 = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
             std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> central_mass

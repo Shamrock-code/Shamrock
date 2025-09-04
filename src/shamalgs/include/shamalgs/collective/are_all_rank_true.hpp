@@ -12,7 +12,7 @@
 /**
  * @file are_all_rank_true.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Collective boolean reduction to check if all ranks have true as input
  *
  */
 

@@ -10,14 +10,12 @@
 /**
  * @file are_all_rank_true.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implementation of the are_all_rank_true function
  *
  */
 
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
-#include "shambackends/SyclMpiTypes.hpp"
-#include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include <shamcomm/mpi.hpp>
 
@@ -25,16 +23,11 @@ namespace shamalgs::collective {
 
     bool are_all_rank_true(bool input, MPI_Comm comm) {
 
-        StackEntry stack_loc{};
+        // Shamrock profiling / stack tracing entry
+        [[maybe_unused]] StackEntry stack_loc{};
 
-        if (shamcomm::world_size() == 1) {
-            return input;
-        }
-
-        int tmp = input;
-        int out = 0;
-
-        shamcomm::mpi::Allreduce(&tmp, &out, 1, MPI_INT, MPI_LAND, comm);
+        bool out = false;
+        shamcomm::mpi::Allreduce(&input, &out, 1, MPI_C_BOOL, MPI_LAND, comm);
 
         return out;
     }

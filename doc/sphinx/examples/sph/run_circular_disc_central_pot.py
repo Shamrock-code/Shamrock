@@ -1,6 +1,6 @@
 """
-Circular disc simulation with central potential
-===============================================
+Production run: Circular disc & central potential
+=================================================
 
 This simple example shows how to run a circular disc simulation in SPH with a central potential
 """

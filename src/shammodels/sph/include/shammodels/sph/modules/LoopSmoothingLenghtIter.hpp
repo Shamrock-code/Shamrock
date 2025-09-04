@@ -16,15 +16,9 @@
  * the SPH density sum.
  */
 
-#include "shambase/memory.hpp"
-#include "shamalgs/collective/are_all_rank_true.hpp"
 #include "shambackends/vec.hpp"
-#include "shamcomm/worldInfo.hpp"
-#include "shammodels/sph/solvergraph/NeighCache.hpp"
-#include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include <memory>
 
@@ -39,14 +33,16 @@ namespace shammodels::sph::modules {
 
         Tscal epsilon_h;
         u32 h_iter_per_subcycles;
+        bool print_info;
 
         public:
         LoopSmoothingLenghtIter(
             std::shared_ptr<INode> iterate_smth_lenght_once_ptr,
             Tscal epsilon_h,
-            u32 h_iter_per_subcycles)
+            u32 h_iter_per_subcycles,
+            bool print_info)
             : iterate_smth_lenght_once_ptr(iterate_smth_lenght_once_ptr), epsilon_h(epsilon_h),
-              h_iter_per_subcycles(h_iter_per_subcycles) {}
+              h_iter_per_subcycles(h_iter_per_subcycles), print_info(print_info) {}
 
         struct Edges {
             const shamrock::solvergraph::IFieldRefs<Tscal> &eps_h;
@@ -67,54 +63,11 @@ namespace shammodels::sph::modules {
             };
         }
 
-        void _impl_evaluate_internal() {
-            StackEntry stack_loc{};
-
-            auto edges = get_edges();
-
-            auto &eps_h        = edges.eps_h;
-            auto &is_converged = edges.is_converged;
-
-            Tscal local_min_eps_h = -1;
-            Tscal local_max_eps_h = -1;
-
-            for (u32 iter_h = 0; iter_h < h_iter_per_subcycles; iter_h++) {
-
-                shambase::get_check_ref(iterate_smth_lenght_once_ptr).evaluate();
-
-                local_max_eps_h = shamrock::solvergraph::get_rank_max(eps_h);
-
-                shamcomm::logs::raw_ln(
-                    shamcomm::world_rank(),
-                    shamrock::solvergraph::get_rank_min(eps_h),
-                    shamrock::solvergraph::get_rank_max(eps_h));
-
-                shamlog_debug_ln(
-                    "Smoothinglength", "iteration :", iter_h, "epsmax", local_max_eps_h);
-
-                // either converged or require gz re-exchange
-                if (local_max_eps_h < epsilon_h) {
-                    break;
-                }
-            }
-
-            local_min_eps_h = shamrock::solvergraph::get_rank_min(eps_h);
-
-            // if a particle need a gz update eps_h is set to -1
-            bool local_should_rerun_gz = local_min_eps_h < 0;
-            bool local_is_h_below_tol  = local_max_eps_h < epsilon_h;
-
-            bool local_is_converged = local_is_h_below_tol && (!local_should_rerun_gz);
-
-            is_converged.value
-                = shamalgs::collective::are_all_rank_true(local_is_converged, MPI_COMM_WORLD);
-
-            shamcomm::logs::raw_ln(shamcomm::world_rank(), local_is_converged, is_converged.value);
-        }
+        void _impl_evaluate_internal();
 
         inline virtual std::string _impl_get_label() { return "LoopSmoothingLenghtIter"; };
 
-        inline virtual std::string _impl_get_tex() { return "todo"; }
+        virtual std::string _impl_get_tex();
     };
 } // namespace shammodels::sph::modules
 

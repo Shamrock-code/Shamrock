@@ -563,39 +563,12 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>("", "");
 
         shammodels::sph::modules::LoopSmoothingLenghtIter<Tvec> loop_smth_h_iter(
-            smth_h_iter, solver_config.epsilon_h, solver_config.h_iter_per_subcycles);
+            smth_h_iter, solver_config.epsilon_h, solver_config.h_iter_per_subcycles, false);
         loop_smth_h_iter.set_edges(eps_h, is_converged);
 
-#if false
-        u32 iter_h = 0;
-        for (; iter_h < solver_config.h_iter_per_subcycles; iter_h++) {
-            NamedStackEntry stack_loc2{"iterate smoothing length"};
-
-            smth_h_iter->evaluate();
-
-            max_eps_h = _epsilon_h.compute_rank_max();
-
-            shamcomm::logs::raw_ln(_epsilon_h.compute_rank_min(), _epsilon_h.compute_rank_max());
-
-            shamlog_debug_ln("Smoothinglength", "iteration :", iter_h, "epsmax", max_eps_h);
-
-            if (max_eps_h < solver_config.epsilon_h) {
-                logger::debug_sycl("Smoothinglength", "converged at i =", iter_h);
-                break;
-            }
-        }
-
-        // logger::info_ln("Smoothinglength", "eps max =", max_eps_h);
-
-        Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
-        if (min_eps_h == -1) {
-#else
         loop_smth_h_iter.evaluate();
-        Tscal min_eps_h = shamalgs::collective::allreduce_min(_epsilon_h.compute_rank_min());
-        u32 iter_h      = 0;
 
         if (!is_converged->value) {
-#endif
 
             Tscal largest_h = 0;
 
@@ -669,16 +642,6 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
             // });
 
             continue;
-        } else {
-            if (shamcomm::world_rank() == 0) {
-
-                std::string log = "";
-                log += "smoothing length iteration converged\n";
-                log += shambase::format(
-                    "  eps min = {}, max = {}\n  iterations = {}", min_eps_h, max_eps_h, iter_h);
-
-                logger::info_ln("Smoothinglength", log);
-            }
         }
 
         // The hpart is not valid anymore in ghost zones since we iterated it's value

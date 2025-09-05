@@ -35,7 +35,7 @@ namespace shammodels::sph::modules {
         auto &is_converged = edges.is_converged;
 
         Tscal local_min_eps_h = -1;
-        Tscal local_max_eps_h = -1;
+        Tscal local_max_eps_h = shambase::get_max<Tscal>();
 
         u32 iter_h = 0;
         for (; iter_h < h_iter_per_subcycles; iter_h++) {

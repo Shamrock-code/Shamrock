@@ -41,8 +41,9 @@ namespace shammodels::sph::modules {
             Tscal epsilon_h,
             u32 h_iter_per_subcycles,
             bool print_info)
-            : iterate_smth_length_once_ptr(std::move(iterate_smth_length_once_ptr)), epsilon_h(epsilon_h),
-              h_iter_per_subcycles(h_iter_per_subcycles), print_info(print_info) {}
+            : iterate_smth_length_once_ptr(std::move(iterate_smth_length_once_ptr)),
+              epsilon_h(epsilon_h), h_iter_per_subcycles(h_iter_per_subcycles),
+              print_info(print_info) {}
 
         struct Edges {
             const shamrock::solvergraph::IFieldRefs<Tscal> &eps_h;

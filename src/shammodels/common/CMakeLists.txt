@@ -15,6 +15,7 @@ set(Sources
     src/EOSConfig.cpp
     src/pyAMRTestModel.cpp
     src/pyAMRGrid.cpp
+    src/modules/AddForceCentralGravPotential.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

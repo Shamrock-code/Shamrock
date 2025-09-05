@@ -18,6 +18,14 @@
 #include "shambase/exception.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
+#include "shambackends/EventList.hpp"
+
+#if defined(__has_include)
+    #if __has_include(<AdaptiveCpp/algorithms/numeric.hpp>)
+        #include <AdaptiveCpp/algorithms/numeric.hpp>
+        #define ACPP_ALG_AVAILABLE
+    #endif
+#endif
 
 namespace {
 
@@ -36,6 +44,29 @@ namespace {
     }
 #endif
 
+#ifdef ACPP_ALG_AVAILABLE
+    template<class T>
+    void scan_exclusive_sum_in_place_adaptivecpp(sham::DeviceBuffer<T> &buf1, u32 len) {
+        auto &q = buf1.get_dev_scheduler_ptr()->get_queue().q;
+
+        acpp::algorithms::util::allocation_cache cache{
+            acpp::algorithms::util::allocation_type::device};
+        acpp::algorithms::util::allocation_group scratch{&cache, q.get_device()};
+
+        sham::EventList deps{};
+        T *in_out_ptr = buf1.get_write_access(deps);
+
+        shamlog_debug_ln("tmps", "before adaptivecpp scan");
+
+        sycl::event e = adaptivecpp::algorithms::exclusive_scan(
+            q, scratch, in_out_ptr, in_out_ptr + len, in_out_ptr, T{}, deps.get_events());
+
+        shamlog_debug_ln("tmps", "after adaptivecpp scan");
+
+        e.wait_and_throw();
+        buf1.complete_event_state(e);
+    }
+#endif
 } // namespace
 
 namespace shamalgs::primitives {
@@ -43,7 +74,10 @@ namespace shamalgs::primitives {
     enum class EXSCAN_IN_PLACE_IMPL : u32 {
         STD_SCAN,
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        DECOUPLED_LOOKBACK_512
+        DECOUPLED_LOOKBACK_512,
+#endif
+#ifdef ACPP_ALG_AVAILABLE
+        ADAPTIVECPP_ALG,
 #endif
     };
 
@@ -69,8 +103,13 @@ namespace shamalgs::primitives {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         } else if (impl == "decoupled_lookback_512") {
             return EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512;
-        }
 #endif
+#ifdef ACPP_ALG_AVAILABLE
+        } else if (impl == "acpp_alg") {
+            return EXSCAN_IN_PLACE_IMPL::ADAPTIVECPP_ALG;
+#endif
+        }
+
         throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
             "invalid implementation : {}, possible implementations : {}",
             impl,
@@ -84,8 +123,13 @@ namespace shamalgs::primitives {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         } else if (impl == EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512) {
             return {"decoupled_lookback_512", ""};
-        }
 #endif
+#ifdef ACPP_ALG_AVAILABLE
+        } else if (impl == EXSCAN_IN_PLACE_IMPL::ADAPTIVECPP_ALG) {
+            return {"acpp_alg", ""};
+#endif
+        }
+
         throw shambase::make_except_with_loc<std::invalid_argument>(
             shambase::format("unknow scan_exclusive_sum_in_place implementation : {}", u32(impl)));
     }
@@ -94,7 +138,10 @@ namespace shamalgs::primitives {
         return {
             {"std_scan", ""},
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-            {"decoupled_lookback_512", ""}
+            {"decoupled_lookback_512", ""},
+#endif
+#ifdef ACPP_ALG_AVAILABLE
+            {"acpp_alg", ""},
 #endif
         };
     }
@@ -130,6 +177,11 @@ namespace shamalgs::primitives {
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         case EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512:
             scan_exclusive_sum_in_place_decoupled_lookback_512(buf1, len);
+            break;
+#endif
+#ifdef ACPP_ALG_AVAILABLE
+        case EXSCAN_IN_PLACE_IMPL::ADAPTIVECPP_ALG:
+            scan_exclusive_sum_in_place_adaptivecpp(buf1, len);
             break;
 #endif
         default:

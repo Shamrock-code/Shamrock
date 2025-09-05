@@ -146,6 +146,9 @@ namespace sham {
          */
         ~EventList();
 
+        inline std::vector<sycl::event> &get_events() { return events; }
+        inline const std::vector<sycl::event> &get_events() const { return events; }
+
         private:
         std::vector<sycl::event> events = {};    ///< The list of SYCL events
         bool consumed                   = false; ///< Whether the list is considered consumed

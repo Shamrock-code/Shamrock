@@ -26,6 +26,67 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/Constants.hpp"
 
+namespace shammodels::common::modules {
+    template<class Tvec>
+    class AddForceShearingBoxInertialPart : public shamrock::solvergraph::INode {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        public:
+        AddForceShearingBoxInertialPart() = default;
+
+        struct Edges {
+            const shamrock::solvergraph::IDataEdge<Tscal> &eta;
+            const shamrock::solvergraph::IFieldSpan<Tvec> &spans_positions;
+            const shamrock::solvergraph::Indexes<u32> &sizes;
+            shamrock::solvergraph::IFieldSpan<Tvec> &spans_accel_ext;
+        };
+
+        inline void set_edges(
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_positions,
+            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_accel_ext) {
+            __internal_set_ro_edges({eta, spans_positions, sizes});
+            __internal_set_rw_edges({spans_accel_ext});
+        }
+
+        inline Edges get_edges() {
+            return Edges{
+                get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(0),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(1),
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(2),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)};
+        }
+
+        void _impl_evaluate_internal() {
+
+            [[maybe_unused]] StackEntry stack_loc{};
+
+            auto edges = get_edges();
+
+            edges.spans_positions.check_sizes(edges.sizes.indexes);
+            edges.spans_accel_ext.ensure_sizes(edges.sizes.indexes);
+
+            Tscal eta = edges.eta.data;
+
+            sham::distributed_data_kernel_call(
+                shamsys::instance::get_compute_scheduler_ptr(),
+                sham::DDMultiRef{edges.spans_positions.get_spans()},
+                sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
+                edges.sizes.indexes,
+                [two_eta = 2 * eta](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
+                    Tvec r_a = xyz[gid];
+                    axyz_ext[gid] += Tvec{r_a.x() * two_eta, 0, 0};
+                });
+        }
+
+        inline virtual std::string _impl_get_label() { return "AddForceShearingBoxInertialPart"; };
+
+        virtual std::string _impl_get_tex() { return "TODO"; }
+    };
+} // namespace shammodels::common::modules
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
 
@@ -116,9 +177,23 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 #endif
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
 
-            Tscal cmass = ext_force->central_mass;
-            Tscal G     = solver_config.get_constant_G();
+#if true
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> constant_G
+                = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> central_mass
+                = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tvec>> central_pos
+                = std::make_shared<shamrock::solvergraph::IDataEdge<Tvec>>("", "");
 
+            constant_G->data   = solver_config.get_constant_G();
+            central_mass->data = ext_force->central_mass;
+            central_pos->data  = {}; // no support for offset yet
+
+            common::modules::AddForceCentralGravPotential<Tvec> add_force_central_grav_potential;
+            add_force_central_grav_potential.set_edges(
+                constant_G, central_mass, central_pos, field_xyz, sizes, field_axyz_ext);
+            add_force_central_grav_potential.evaluate();
+#else
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
@@ -135,9 +210,20 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                         axyz_ext[gid] += mGM * r_a / abs_ra_3;
                     });
             });
+#endif
         } else if (
             EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
 
+#if true
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta
+                = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
+            eta->data = ext_force->eta;
+
+            common::modules::AddForceShearingBoxInertialPart<Tvec>
+                add_force_shearing_box_inertial_part{};
+            add_force_shearing_box_inertial_part.set_edges(eta, field_xyz, sizes, field_axyz_ext);
+            add_force_shearing_box_inertial_part.evaluate();
+#else
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
                 sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
@@ -152,6 +238,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                         axyz_ext[gid] += Tvec{r_a.x() * two_eta, 0, 0};
                     });
             });
+#endif
 
         } else {
             shambase::throw_unimplemented("this force is not handled, yet ...");

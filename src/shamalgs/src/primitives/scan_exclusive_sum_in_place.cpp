@@ -32,7 +32,8 @@ namespace {
 
 #ifdef __ACPP__
     template<class T>
-    void scan_exclusive_sum_in_place_std_scan_custom_op_acpp(sham::DeviceBuffer<T> &buf1, u32 len) {
+    void scan_exclusive_sum_in_place_std_scan_single_task_acpp(
+        sham::DeviceBuffer<T> &buf1, u32 len) {
 
         auto &q = buf1.get_dev_scheduler_ptr()->get_queue();
 
@@ -104,7 +105,7 @@ namespace shamalgs::primitives {
     enum class EXSCAN_IN_PLACE_IMPL : u32 {
         STD_SCAN,
 #ifdef __ACPP__
-        STD_SCAN_CUSTOM_OP_ACPP,
+        STD_SCAN_SINGLE_TASK_ACPP,
 #endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         DECOUPLED_LOOKBACK_512,
@@ -117,7 +118,7 @@ namespace shamalgs::primitives {
     EXSCAN_IN_PLACE_IMPL get_default_scan_exclusive_sum_in_place_impl() {
 #ifdef __MACH__     // decoupled lookback perf on mac os is awfull
     #ifdef __ACPP__ // for acpp we gain using enqueue custom operation instead of copying
-        return EXSCAN_IN_PLACE_IMPL::STD_SCAN_CUSTOM_OP_ACPP;
+        return EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP;
     #else
         return EXSCAN_IN_PLACE_IMPL::STD_SCAN;
     #endif
@@ -138,8 +139,8 @@ namespace shamalgs::primitives {
         if (impl == "std_scan") {
             return EXSCAN_IN_PLACE_IMPL::STD_SCAN;
 #ifdef __ACPP__
-        } else if (impl == "std_scan_custom_op_acpp") {
-            return EXSCAN_IN_PLACE_IMPL::STD_SCAN_CUSTOM_OP_ACPP;
+        } else if (impl == "std_scan_single_task_acpp") {
+            return EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP;
 #endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         } else if (impl == "decoupled_lookback_512") {
@@ -162,8 +163,8 @@ namespace shamalgs::primitives {
         if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN) {
             return {"std_scan", ""};
 #ifdef __ACPP__
-        } else if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN_CUSTOM_OP_ACPP) {
-            return {"std_scan_custom_op_acpp", ""};
+        } else if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP) {
+            return {"std_scan_single_task_acpp", ""};
 #endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         } else if (impl == EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512) {
@@ -183,7 +184,7 @@ namespace shamalgs::primitives {
         return {
             {"std_scan", ""},
 #ifdef __ACPP__
-            {"std_scan_custom_op_acpp", ""},
+            {"std_scan_single_task_acpp", ""},
 #endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
             {"decoupled_lookback_512", ""},
@@ -223,8 +224,8 @@ namespace shamalgs::primitives {
         switch (scan_exclusive_sum_in_place_impl) {
         case EXSCAN_IN_PLACE_IMPL::STD_SCAN: scan_exclusive_sum_in_place_fallback(buf1, len); break;
 #ifdef __ACPP__
-        case EXSCAN_IN_PLACE_IMPL::STD_SCAN_CUSTOM_OP_ACPP:
-            scan_exclusive_sum_in_place_std_scan_custom_op_acpp(buf1, len);
+        case EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP:
+            scan_exclusive_sum_in_place_std_scan_single_task_acpp(buf1, len);
             break;
 #endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION

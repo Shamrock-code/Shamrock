@@ -44,14 +44,14 @@ namespace {
 
             auto e = q.submit(deps, [&](sycl::handler &cgh) {
                 cgh.AdaptiveCpp_enqueue_custom_operation([=](sycl::interop_handle &h) {
-                    std::exclusive_scan(in_out_ptr, in_out_ptr + len, in_out_ptr, 0);
+                    std::exclusive_scan(in_out_ptr, in_out_ptr + len, in_out_ptr, T{});
                 });
             });
 
             buf1.complete_event_state(e);
         } else {
             auto acc_src = buf1.copy_to_stdvec_idx_range(0, len);
-            std::exclusive_scan(acc_src.begin(), acc_src.end(), acc_src.begin(), 0);
+            std::exclusive_scan(acc_src.begin(), acc_src.end(), acc_src.begin(), T{});
             buf1.copy_from_stdvec(acc_src, len);
         }
     }

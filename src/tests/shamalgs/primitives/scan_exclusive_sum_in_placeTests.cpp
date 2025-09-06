@@ -7,7 +7,6 @@
 //
 // -------------------------------------------------------//
 
-#include "shambase/logs/loglevels.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
@@ -24,7 +23,6 @@ TestStart(
         auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
         { // empty dataset
-            shamlog_debug_ln("tmps", "empty dataset");
             sham::DeviceBuffer<u32> buf(0, sched);
 
             shamalgs::primitives::scan_exclusive_sum_in_place(buf, 0);
@@ -33,14 +31,12 @@ TestStart(
         }
 
         { // Larger scan than buffer
-            shamlog_debug_ln("tmps", "larger scan than buffer");
             sham::DeviceBuffer<u32> buf(2, sched);
             REQUIRE_EXCEPTION_THROW(
                 shamalgs::primitives::scan_exclusive_sum_in_place(buf, 10), std::invalid_argument);
         }
 
         { // small dataset
-            shamlog_debug_ln("tmps", "small dataset");
             std::vector<u32> data = {1, 2, 3, 4, 5};
             sham::DeviceBuffer<u32> buf(data.size(), sched);
             buf.copy_from_stdvec(data);
@@ -52,40 +48,18 @@ TestStart(
         }
 
         { // large dataset
-            shamlog_debug_ln("tmps", "large dataset");
-            std::vector<u32> data = shamalgs::primitives::mock_vector<u32>(0x111, 1000000, 0, 10);
+            std::vector<u32> data = shamalgs::primitives::mock_vector<u32>(0x111, 10000000, 0, 10);
             sham::DeviceBuffer<u32> buf(data.size(), sched);
             buf.copy_from_stdvec(data);
 
             auto ref = shamalgs::numeric::scan_exclusive(sched, buf, data.size());
             shamalgs::primitives::scan_exclusive_sum_in_place(buf, data.size());
 
-            // REQUIRE_EQUAL(buf.copy_to_stdvec(), ref.copy_to_stdvec());
-            shamlog_debug_ln("tmps", "buf.copy_to_stdvec()", buf.copy_to_stdvec().size());
-            shamlog_debug_ln("tmps", "ref.copy_to_stdvec()", ref.copy_to_stdvec().size());
-
-            std::vector<u32> expected = ref.copy_to_stdvec();
-            std::vector<u32> actual   = buf.copy_to_stdvec();
-
-            if (shamalgs::primitives::impl::get_current_impl_scan_exclusive_sum_in_place().impl_name
-                == "acpp_alg") {
-                for (size_t i = 0; i < expected.size(); ++i) {
-                    // REQUIRE_EQUAL(actual[i], expected[i]);
-                    if (actual[i] != expected[i]) {
-
-                        for (size_t j = i - 10; j < i + 10; ++j) {
-                            shamlog_debug_ln("tmps", j, actual[j], expected[j]);
-                        }
-                        break;
-                    }
-                }
-            }
-            REQUIRE(buf.copy_to_stdvec() == ref.copy_to_stdvec());
+            REQUIRE_EQUAL(buf.copy_to_stdvec(), ref.copy_to_stdvec());
         }
 
         { // partial scan
-            shamlog_debug_ln("tmps", "partial scan");
-            u32 len               = 10'000;
+            u32 len               = 10'000'000;
             u32 len_scan          = len / 2;
             std::vector<u32> data = shamalgs::primitives::mock_vector<u32>(0x111, len, 0, 10);
             sham::DeviceBuffer<u32> buf(data.size(), sched);
@@ -100,8 +74,7 @@ TestStart(
                 expected.push_back(data[it]);
             }
 
-            // REQUIRE_EQUAL(buf.copy_to_stdvec(), expected);
-            REQUIRE(buf.copy_to_stdvec() == expected);
+            REQUIRE_EQUAL(buf.copy_to_stdvec(), expected);
         }
     };
 

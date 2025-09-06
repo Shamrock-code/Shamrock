@@ -89,6 +89,7 @@ namespace {
 
         sycl::event e = adaptivecpp::algorithms::exclusive_scan(
             q, scratch, in_out_ptr, in_out_ptr + len, temp_ptr, T{}, deps.get_events());
+        deps.set_consumed(true);
 
         buf1.complete_event_state(e);
         temp.complete_event_state(e);

@@ -43,7 +43,7 @@ namespace {
             T *in_out_ptr = buf1.get_write_access(deps);
 
             auto e = q.submit(deps, [&](sycl::handler &cgh) {
-                cgh.AdaptiveCpp_enqueue_custom_operation([=](sycl::interop_handle &h) {
+                cgh.single_task([=]() {
                     std::exclusive_scan(in_out_ptr, in_out_ptr + len, in_out_ptr, T{});
                 });
             });

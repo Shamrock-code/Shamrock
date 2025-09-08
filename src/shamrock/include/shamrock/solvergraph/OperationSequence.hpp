@@ -25,8 +25,8 @@ namespace shamrock::solvergraph {
         std::string name;
 
         public:
-        OperationSequence(std::string name, std::vector<std::shared_ptr<INode>> nodes)
-            : nodes(nodes), name(name) {
+        OperationSequence(std::string name, std::vector<std::shared_ptr<INode>> &&_nodes)
+            : nodes(std::forward<std::vector<std::shared_ptr<INode>>>(_nodes)), name(name) {
             if (nodes.size() == 0) {
                 shambase::throw_with_loc<std::invalid_argument>(
                     "OperationSequence must have at least one node");

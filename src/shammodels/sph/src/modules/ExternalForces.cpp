@@ -20,72 +20,14 @@
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/modules/AddForceCentralGravPotential.hpp"
+#include "shammodels/common/modules/AddForceShearingBoxInertialPart.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/NodeSetEdge.hpp"
+#include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/Constants.hpp"
-
-namespace shammodels::common::modules {
-    template<class Tvec>
-    class AddForceShearingBoxInertialPart : public shamrock::solvergraph::INode {
-
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        public:
-        AddForceShearingBoxInertialPart() = default;
-
-        struct Edges {
-            const shamrock::solvergraph::IDataEdge<Tscal> &eta;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &spans_positions;
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            shamrock::solvergraph::IFieldSpan<Tvec> &spans_accel_ext;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_positions,
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_accel_ext) {
-            __internal_set_ro_edges({eta, spans_positions, sizes});
-            __internal_set_rw_edges({spans_accel_ext});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(1),
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(2),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)};
-        }
-
-        void _impl_evaluate_internal() {
-
-            [[maybe_unused]] StackEntry stack_loc{};
-
-            auto edges = get_edges();
-
-            edges.spans_positions.check_sizes(edges.sizes.indexes);
-            edges.spans_accel_ext.ensure_sizes(edges.sizes.indexes);
-
-            Tscal eta = edges.eta.data;
-
-            sham::distributed_data_kernel_call(
-                shamsys::instance::get_compute_scheduler_ptr(),
-                sham::DDMultiRef{edges.spans_positions.get_spans()},
-                sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
-                edges.sizes.indexes,
-                [two_eta = 2 * eta](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                    Tvec r_a = xyz[gid];
-                    axyz_ext[gid] += Tvec{r_a.x() * two_eta, 0, 0};
-                });
-        }
-
-        inline virtual std::string _impl_get_label() { return "AddForceShearingBoxInertialPart"; };
-
-        virtual std::string _impl_get_tex() { return "TODO"; }
-    };
-} // namespace shammodels::common::modules
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
@@ -135,115 +77,115 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
         sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
     });
 
+    std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> constant_G
+        = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
+
+    shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>> set_constant_G(
+        [&](shamrock::solvergraph::IDataEdge<Tscal> &constant_G) {
+            constant_G.data = solver_config.get_constant_G();
+        });
+
+    set_constant_G.set_edges(constant_G);
+    set_constant_G.evaluate();
+
+    std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq;
+
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 
-            Tscal cmass = ext_force->central_mass;
-            Tscal G     = solver_config.get_constant_G();
-
-#if true
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> constant_G
-                = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
             std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> central_mass
                 = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
             std::shared_ptr<shamrock::solvergraph::IDataEdge<Tvec>> central_pos
                 = std::make_shared<shamrock::solvergraph::IDataEdge<Tvec>>("", "");
 
-            constant_G->data   = solver_config.get_constant_G();
-            central_mass->data = ext_force->central_mass;
-            central_pos->data  = {}; // no support for offset yet
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
+                set_central_mass([&](shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
+                    central_mass.data = ext_force->central_mass;
+                });
+            set_central_mass.set_edges(central_mass);
+
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
+                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = {}; // no support for offset yet
+                });
+            set_central_pos.set_edges(central_pos);
 
             common::modules::AddForceCentralGravPotential<Tvec> add_force_central_grav_potential;
             add_force_central_grav_potential.set_edges(
                 constant_G, central_mass, central_pos, field_xyz, sizes, field_axyz_ext);
-            add_force_central_grav_potential.evaluate();
-#else
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
-                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-                sham::kernel_call(
-                    q,
-                    sham::MultiRef{buf_xyz},
-                    sham::MultiRef{buf_axyz_ext},
-                    pdat.get_obj_cnt(),
-                    [mGM = -cmass * G](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                        Tvec r_a       = xyz[gid];
-                        Tscal abs_ra   = sycl::length(r_a);
-                        Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
-                        axyz_ext[gid] += mGM * r_a / abs_ra_3;
-                    });
-            });
-#endif
+            add_ext_forces_seq.push_back(
+                std::make_shared<shamrock::solvergraph::OperationSequence>(
+                    "Point mass",
+                    std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
+                        std::make_shared<decltype(set_central_pos)>(std::move(set_central_pos)),
+                        std::make_shared<decltype(set_central_mass)>(std::move(set_central_mass)),
+                        std::make_shared<decltype(add_force_central_grav_potential)>(
+                            std::move(add_force_central_grav_potential))}));
+
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
 
-#if true
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> constant_G
-                = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
             std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> central_mass
                 = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
             std::shared_ptr<shamrock::solvergraph::IDataEdge<Tvec>> central_pos
                 = std::make_shared<shamrock::solvergraph::IDataEdge<Tvec>>("", "");
 
-            constant_G->data   = solver_config.get_constant_G();
-            central_mass->data = ext_force->central_mass;
-            central_pos->data  = {}; // no support for offset yet
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
+                set_central_mass([&](shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
+                    central_mass.data = ext_force->central_mass;
+                });
+            set_central_mass.set_edges(central_mass);
+
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
+                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = {}; // no support for offset yet
+                });
+            set_central_pos.set_edges(central_pos);
 
             common::modules::AddForceCentralGravPotential<Tvec> add_force_central_grav_potential;
             add_force_central_grav_potential.set_edges(
                 constant_G, central_mass, central_pos, field_xyz, sizes, field_axyz_ext);
-            add_force_central_grav_potential.evaluate();
-#else
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
-                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-                sham::kernel_call(
-                    q,
-                    sham::MultiRef{buf_xyz},
-                    sham::MultiRef{buf_axyz_ext},
-                    pdat.get_obj_cnt(),
-                    [mGM = -cmass * G](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                        Tvec r_a       = xyz[gid];
-                        Tscal abs_ra   = sycl::length(r_a);
-                        Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
-                        axyz_ext[gid] += mGM * r_a / abs_ra_3;
-                    });
-            });
-#endif
+            add_ext_forces_seq.push_back(
+                std::make_shared<shamrock::solvergraph::OperationSequence>(
+                    "Point mass",
+                    std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
+                        std::make_shared<decltype(set_central_pos)>(std::move(set_central_pos)),
+                        std::make_shared<decltype(set_central_mass)>(std::move(set_central_mass)),
+                        std::make_shared<decltype(add_force_central_grav_potential)>(
+                            std::move(add_force_central_grav_potential))}));
+
         } else if (
             EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
 
-#if true
             std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta
                 = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
-            eta->data = ext_force->eta;
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>> set_eta(
+                [&](shamrock::solvergraph::IDataEdge<Tscal> &eta) {
+                    eta.data = ext_force->eta;
+                });
+            set_eta.set_edges(eta);
 
             common::modules::AddForceShearingBoxInertialPart<Tvec>
                 add_force_shearing_box_inertial_part{};
             add_force_shearing_box_inertial_part.set_edges(eta, field_xyz, sizes, field_axyz_ext);
-            add_force_shearing_box_inertial_part.evaluate();
-#else
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
-                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-                sham::kernel_call(
-                    q,
-                    sham::MultiRef{buf_xyz},
-                    sham::MultiRef{buf_axyz_ext},
-                    pdat.get_obj_cnt(),
-                    [two_eta = 2 * ext_force->eta](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                        Tvec r_a = xyz[gid];
-                        axyz_ext[gid] += Tvec{r_a.x() * two_eta, 0, 0};
-                    });
-            });
-#endif
+            add_ext_forces_seq.push_back(
+                std::make_shared<shamrock::solvergraph::OperationSequence>(
+                    "Shearing box force",
+                    std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
+                        std::make_shared<decltype(set_eta)>(std::move(set_eta)),
+                        std::make_shared<decltype(add_force_shearing_box_inertial_part)>(
+                            std::move(add_force_shearing_box_inertial_part))}));
 
         } else {
             shambase::throw_unimplemented("this force is not handled, yet ...");
         }
     }
+
+    shamrock::solvergraph::OperationSequence seq(
+        "Add external forces", std::move(add_ext_forces_seq));
+    seq.evaluate();
 }
 
 template<class Tvec, template<class> class SPHKernel>

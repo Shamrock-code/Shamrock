@@ -19,6 +19,21 @@ This example is the accumulation of 3 files in a single one to showcase the comp
 - The actual run script (runscript.py)
 - Plot generation (make_plots.py)
 - Animation from the plots (plot_to_gif.py)
+
+On a cluster or laptop, one can run the code as follows:
+
+.. code-block:: bash
+
+    mpirun <your parameters> ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript runscript.py
+
+
+then after the run is done (or while it is running), one can run the following to generate the plots:
+
+.. code-block:: bash
+
+    python make_plots.py
+
+
 """
 
 # %%

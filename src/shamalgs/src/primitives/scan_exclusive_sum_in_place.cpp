@@ -18,8 +18,45 @@
 #include "shambase/exception.hpp"
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/EventList.hpp"
+
+#if defined(__has_include)
+    #if __has_include(<AdaptiveCpp/algorithms/numeric.hpp>)
+        #include <AdaptiveCpp/algorithms/numeric.hpp>
+        #define ACPP_ALG_AVAILABLE
+    #endif
+#endif
 
 namespace {
+
+#ifdef __ACPP__
+    template<class T>
+    void scan_exclusive_sum_in_place_std_scan_single_task_acpp(
+        sham::DeviceBuffer<T> &buf1, u32 len) {
+
+        auto &q = buf1.get_dev_scheduler_ptr()->get_queue();
+
+        sycl::queue &q_s = q.q;
+
+        if (q_s.is_host()) {
+            sham::EventList deps{};
+            T *in_out_ptr = buf1.get_write_access(deps);
+
+            auto e = q.submit(deps, [&](sycl::handler &cgh) {
+                cgh.single_task([=]() {
+                    std::exclusive_scan(in_out_ptr, in_out_ptr + len, in_out_ptr, T{});
+                });
+            });
+
+            buf1.complete_event_state(e);
+        } else {
+            auto acc_src = buf1.copy_to_stdvec_idx_range(0, len);
+            std::exclusive_scan(acc_src.begin(), acc_src.end(), acc_src.begin(), T{});
+            buf1.copy_from_stdvec(acc_src, len);
+        }
+    }
+#endif
 
     template<class T>
     void scan_exclusive_sum_in_place_fallback(sham::DeviceBuffer<T> &buf1, u32 len) {
@@ -36,20 +73,55 @@ namespace {
     }
 #endif
 
+#ifdef ACPP_ALG_AVAILABLE
+    template<class T>
+    void scan_exclusive_sum_in_place_adaptivecpp(sham::DeviceBuffer<T> &buf1, u32 len) {
+        auto &q = buf1.get_dev_scheduler_ptr()->get_queue().q;
+
+        acpp::algorithms::util::allocation_cache cache{
+            acpp::algorithms::util::allocation_type::device};
+        acpp::algorithms::util::allocation_group scratch{&cache, q.get_device()};
+
+        sham::DeviceBuffer<T> temp(len, buf1.get_dev_scheduler_ptr());
+
+        sham::EventList deps{};
+        const T *in_out_ptr = buf1.get_read_access(deps);
+        T *temp_ptr         = temp.get_write_access(deps);
+
+        sycl::event e = adaptivecpp::algorithms::exclusive_scan(
+            q, scratch, in_out_ptr, in_out_ptr + len, temp_ptr, T{}, deps.get_events());
+        deps.set_consumed(true);
+
+        buf1.complete_event_state(e);
+        temp.complete_event_state(e);
+
+        buf1.copy_from(temp, len);
+    }
+#endif
 } // namespace
 
 namespace shamalgs::primitives {
 
     enum class EXSCAN_IN_PLACE_IMPL : u32 {
         STD_SCAN,
+#ifdef __ACPP__
+        STD_SCAN_SINGLE_TASK_ACPP,
+#endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        DECOUPLED_LOOKBACK_512
+        DECOUPLED_LOOKBACK_512,
+#endif
+#ifdef ACPP_ALG_AVAILABLE
+        ADAPTIVECPP_ALG,
 #endif
     };
 
     EXSCAN_IN_PLACE_IMPL get_default_scan_exclusive_sum_in_place_impl() {
-#ifdef __MACH__ // decoupled lookback perf on mac os is awfull
+#ifdef __MACH__     // decoupled lookback perf on mac os is awfull
+    #ifdef __ACPP__ // for acpp we gain using enqueue custom operation instead of copying
+        return EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP;
+    #else
         return EXSCAN_IN_PLACE_IMPL::STD_SCAN;
+    #endif
 #else
     #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         return EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512;
@@ -66,11 +138,20 @@ namespace shamalgs::primitives {
         const std::string &impl) {
         if (impl == "std_scan") {
             return EXSCAN_IN_PLACE_IMPL::STD_SCAN;
+#ifdef __ACPP__
+        } else if (impl == "std_scan_single_task_acpp") {
+            return EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP;
+#endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         } else if (impl == "decoupled_lookback_512") {
             return EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512;
-        }
 #endif
+#ifdef ACPP_ALG_AVAILABLE
+        } else if (impl == "acpp_alg") {
+            return EXSCAN_IN_PLACE_IMPL::ADAPTIVECPP_ALG;
+#endif
+        }
+
         throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
             "invalid implementation : {}, possible implementations : {}",
             impl,
@@ -81,11 +162,20 @@ namespace shamalgs::primitives {
         const EXSCAN_IN_PLACE_IMPL &impl) {
         if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN) {
             return {"std_scan", ""};
+#ifdef __ACPP__
+        } else if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP) {
+            return {"std_scan_single_task_acpp", ""};
+#endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         } else if (impl == EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512) {
             return {"decoupled_lookback_512", ""};
-        }
 #endif
+#ifdef ACPP_ALG_AVAILABLE
+        } else if (impl == EXSCAN_IN_PLACE_IMPL::ADAPTIVECPP_ALG) {
+            return {"acpp_alg", ""};
+#endif
+        }
+
         throw shambase::make_except_with_loc<std::invalid_argument>(
             shambase::format("unknow scan_exclusive_sum_in_place implementation : {}", u32(impl)));
     }
@@ -93,8 +183,14 @@ namespace shamalgs::primitives {
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_scan_exclusive_sum_in_place() {
         return {
             {"std_scan", ""},
+#ifdef __ACPP__
+            {"std_scan_single_task_acpp", ""},
+#endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-            {"decoupled_lookback_512", ""}
+            {"decoupled_lookback_512", ""},
+#endif
+#ifdef ACPP_ALG_AVAILABLE
+            {"acpp_alg", ""},
 #endif
         };
     }
@@ -127,9 +223,19 @@ namespace shamalgs::primitives {
 
         switch (scan_exclusive_sum_in_place_impl) {
         case EXSCAN_IN_PLACE_IMPL::STD_SCAN: scan_exclusive_sum_in_place_fallback(buf1, len); break;
+#ifdef __ACPP__
+        case EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP:
+            scan_exclusive_sum_in_place_std_scan_single_task_acpp(buf1, len);
+            break;
+#endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         case EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512:
             scan_exclusive_sum_in_place_decoupled_lookback_512(buf1, len);
+            break;
+#endif
+#ifdef ACPP_ALG_AVAILABLE
+        case EXSCAN_IN_PLACE_IMPL::ADAPTIVECPP_ALG:
+            scan_exclusive_sum_in_place_adaptivecpp(buf1, len);
             break;
 #endif
         default:

@@ -6,21 +6,41 @@ This example demonstrates how to run a smoothed particle hydrodynamics (SPH)
 simulation of a circular disc orbiting around a central point mass potential.
 
 The simulation models:
+
 - A central star with a given mass and accretion radius
 - A gaseous disc with specified mass, inner/outer radii, and vertical structure
 - Artificial viscosity for angular momentum transport
 - Locally isothermal equation of state
 
-Summary:
-- Simulation parameters
-- Init context & attach a SPH model to it
-- Reload from last dump if available or setup from scratch
-- Main simulation loop with on-the-fly analysis (dumped to numpy arrays and json files)
-- Generate plots (from numpy arrays & json files) -> pngs
-- Generate animation (from png files) -> gif
+Also this simulation feature rolling dumps (see `purge_old_dumps` function) to save disk space.
+
+This example is the accumulation of 3 files in a single one to showcase the complete workflow.
+
+- The actual run script (runscript.py)
+- Plot generation (make_plots.py)
+- Animation from the plots (plot_to_gif.py)
+
+On a cluster or laptop, one can run the code as follows:
+
+.. code-block:: bash
+
+    mpirun <your parameters> ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript runscript.py
+
+
+then after the run is done (or while it is running), one can run the following to generate the plots:
+
+.. code-block:: bash
+
+    python make_plots.py
+
+
 """
 
-# sphinx_gallery_multi_image = "single"
+# %%
+# Runscript (runscript.py)
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# The runscript is the actual simulation with on the fly analysis & rolling dumps
+
 
 import glob
 import json
@@ -93,7 +113,7 @@ C_cour = 0.3
 C_force = 0.25
 
 
-dump_folder = "_to_trash/circular_disc_central_pot_" + str(Npart) + "/"
+dump_folder = f"_to_trash/circular_disc_central_pot_{Npart}/"
 dump_prefix = dump_folder + "dump_"
 
 
@@ -176,7 +196,6 @@ def get_ph_dump_name(idump):
 def get_last_dump():
     res = glob.glob(dump_prefix + "*.sham")
 
-    f_max = ""
     num_max = -1
 
     for f in res:
@@ -185,7 +204,7 @@ def get_last_dump():
             if dump_num > num_max:
                 f_max = f
                 num_max = dump_num
-        except:
+        except ValueError:
             pass
 
     if num_max == -1:
@@ -199,16 +218,17 @@ def purge_old_dumps():
         res = glob.glob(dump_prefix + "*.sham")
         res.sort()
 
-        torem = res[1:-3]
-        # print(res,torem)
+        # The list of dumps to remove (keep the first and last 3 dumps)
+        to_remove = res[1:-3]
 
-        for f in torem:
+        for f in to_remove:
             os.remove(f)
 
 
 idump_last_dump = get_last_dump()
 
-print("Last dump:", idump_last_dump)
+if shamrock.sys.world_rank() == 0:
+    print("Last dump:", idump_last_dump)
 
 # %%
 # Load the last dump if it exists, setup otherwise
@@ -289,8 +309,6 @@ def save_rho_integ(ext, arr_rho, iplot):
 
 def analysis_plot(iplot):
 
-    x1, y1, z1 = (0, 0, 0)  # central star pos
-
     ext = rout * 1.5
     nx = 1024
     ny = 1024
@@ -317,7 +335,7 @@ iplot = 0
 istop = 0
 for ttarg in t_stop:
 
-    if ttarg >= t_start:
+    if ttarg > t_start:
         model.evolve_until(ttarg)
 
         if istop % dump_freq_stop == 0:
@@ -341,7 +359,7 @@ for ttarg in t_stop:
     istop += 1
 
 # %%
-# Generate the plots from the on-the-fly analysis
+# Plot generation (make_plots.py)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # Load the on-the-fly analysis after the run to make the plots
 # (everything in this section can be in another file)
@@ -364,7 +382,7 @@ def plot_rho_integ(metadata, arr_rho, iplot):
     plt.figure(num=1, clear=True, dpi=dpi)
     import copy
 
-    my_cmap = copy.copy(matplotlib.colormaps.get_cmap("gist_heat"))  # copy the default cmap
+    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
     my_cmap.set_bad(color="black")
 
     res = plt.imshow(
@@ -407,13 +425,16 @@ if shamrock.sys.world_rank() == 0:
 
 
 # %%
-# Make gifs for the foc
+# Make gif for the doc (plot_to_gif.py)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # Convert PNG sequence to Image sequence in mpl
+
+# sphinx_gallery_multi_image = "single"
+
 import matplotlib.animation as animation
 
 
-def show_image_sequence(glob_str):
+def show_image_sequence(glob_str, render_gif):
 
     if render_gif and shamrock.sys.world_rank() == 0:
 
@@ -467,7 +488,7 @@ render_gif = True
 glob_str = os.path.join(dump_folder, "plot_rho_integ_*.png")
 
 # If the animation is not returned only a static image will be shown in the doc
-ani = show_image_sequence(glob_str)
+ani = show_image_sequence(glob_str, render_gif)
 
 if render_gif and shamrock.sys.world_rank() == 0:
     # To save the animation using Pillow as a gif

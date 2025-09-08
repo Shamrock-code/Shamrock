@@ -177,6 +177,7 @@ Register_pymod(shamalgslibinit) {
                 shambase::Timer timer;
                 timer.start();
                 shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
+                buf.synchronize();
                 timer.end();
                 return timer.elasped_sec();
             });

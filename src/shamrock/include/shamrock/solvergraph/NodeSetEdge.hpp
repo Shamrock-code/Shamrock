@@ -51,7 +51,7 @@ namespace shamrock::solvergraph {
          *
          * @param set_edge The function to apply to the connected edge during evaluation
          */
-        NodeSetEdge(std::function<void(Tnode &)> set_edge) : set_edge(set_edge) {}
+        NodeSetEdge(std::function<void(Tnode &)> set_edge) : set_edge(std::move(set_edge)) {}
 
         /**
          * @brief Set the edges of the node

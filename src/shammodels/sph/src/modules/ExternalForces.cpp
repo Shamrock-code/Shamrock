@@ -62,25 +62,44 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
     sink_update.compute_sph_forces();
 
     auto field_xyz = shamrock::solvergraph::FieldRefs<Tvec>::make_shared("", "");
-    shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_xyz_refs = {};
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        auto &field = pdat.get_field<Tvec>(0);
-        field_xyz_refs.add_obj(p.id_patch, std::ref(field));
-    });
-    field_xyz->set_refs(field_xyz_refs);
+
+    shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tvec>> set_field_xyz(
+        [&](shamrock::solvergraph::FieldRefs<Tvec> &field_xyz_edge) {
+            shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_xyz_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                auto &field = pdat.get_field<Tvec>(0);
+                field_xyz_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            field_xyz_edge.set_refs(field_xyz_refs);
+        });
+    set_field_xyz.set_edges(field_xyz);
+    set_field_xyz.evaluate();
 
     auto field_axyz_ext = shamrock::solvergraph::FieldRefs<Tvec>::make_shared("", "");
-    shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_axyz_ext_refs = {};
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        auto &field = pdat.get_field<Tvec>(iaxyz_ext);
-        field_axyz_ext_refs.add_obj(p.id_patch, std::ref(field));
-    });
-    field_axyz_ext->set_refs(field_axyz_ext_refs);
+
+    shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tvec>> set_field_axyz_ext(
+        [&](shamrock::solvergraph::FieldRefs<Tvec> &field_axyz_ext_edge) {
+            shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_axyz_ext_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                auto &field = pdat.get_field<Tvec>(iaxyz_ext);
+                field_axyz_ext_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            field_axyz_ext_edge.set_refs(field_axyz_ext_refs);
+        });
+    set_field_axyz_ext.set_edges(field_axyz_ext);
+    set_field_axyz_ext.evaluate();
 
     auto sizes = shamrock::solvergraph::Indexes<u32>::make_shared("", "");
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
-    });
+
+    shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::Indexes<u32>> set_sizes(
+        [&](shamrock::solvergraph::Indexes<u32> &sizes) {
+            sizes.indexes = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                sizes.indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
+            });
+        });
+    set_sizes.set_edges(sizes);
+    set_sizes.evaluate();
 
     auto constant_G = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
 
@@ -90,7 +109,6 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
         });
 
     set_constant_G.set_edges(constant_G);
-    set_constant_G.evaluate();
 
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq{};
 
@@ -179,9 +197,13 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
         }
     }
 
-    shamrock::solvergraph::OperationSequence seq(
-        "Add external forces", std::move(add_ext_forces_seq));
-    seq.evaluate();
+    set_constant_G.evaluate();
+
+    if (add_ext_forces_seq.size() > 0) {
+        shamrock::solvergraph::OperationSequence seq(
+            "Add external forces", std::move(add_ext_forces_seq));
+        seq.evaluate();
+    }
 }
 
 template<class Tvec, template<class> class SPHKernel>

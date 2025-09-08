@@ -6,6 +6,7 @@ This example demonstrates how to run a smoothed particle hydrodynamics (SPH)
 simulation of a circular disc orbiting around a central point mass potential.
 
 The simulation models:
+
 - A central star with a given mass and accretion radius
 - A gaseous disc with specified mass, inner/outer radii, and vertical structure
 - Artificial viscosity for angular momentum transport
@@ -13,16 +14,18 @@ The simulation models:
 
 Also this simulation feature rolling dumps (see `purge_old_dumps` function) to save disk space.
 
-Summary:
-- Simulation parameters
-- Init context & attach a SPH model to it
-- Reload from last dump if available or setup from scratch
-- Main simulation loop with on-the-fly analysis (dumped to numpy arrays and json files)
-- Generate plots (from numpy arrays & json files) -> pngs
-- Generate animation (from png files) -> gif
+This example is the accumulation of 3 files in a single one to showcase the complete workflow.
+
+- The actual run script (runscript.py)
+- Plot generation (make_plots.py)
+- Animation from the plots (plot_to_gif.py)
 """
 
-# sphinx_gallery_multi_image = "single"
+# %%
+# Runscript (runscript.py)
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# The runscript is the actual simulation with on the fly analysis & rolling dumps
+
 
 import glob
 import json
@@ -341,7 +344,7 @@ for ttarg in t_stop:
     istop += 1
 
 # %%
-# Generate the plots from the on-the-fly analysis
+# Plot generation (make_plots.py)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # Load the on-the-fly analysis after the run to make the plots
 # (everything in this section can be in another file)
@@ -407,9 +410,12 @@ if shamrock.sys.world_rank() == 0:
 
 
 # %%
-# Make gifs for the foc
+# Make gif for the doc (plot_to_gif.py)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # Convert PNG sequence to Image sequence in mpl
+
+# sphinx_gallery_multi_image = "single"
+
 import matplotlib.animation as animation
 
 

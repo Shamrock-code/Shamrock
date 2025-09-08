@@ -46,6 +46,16 @@ namespace shamrock::solvergraph {
             edges.insert({name, edge});
         }
 
+        template<class T, class... Targs>
+        inline void register_new_node(std::string name, Targs... args) {
+            nodes.insert({name, std::make_shared<T>(args...)});
+        }
+
+        template<class T, class... Targs>
+        inline void register_new_edge(std::string name, Targs... args) {
+            edges.insert({name, std::make_shared<T>(args...)});
+        }
+
         // generic getters
 
         inline INode &get_node_ref(std::string name) {

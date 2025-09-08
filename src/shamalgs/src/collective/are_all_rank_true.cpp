@@ -23,8 +23,7 @@ namespace shamalgs::collective {
 
     bool are_all_rank_true(bool input, MPI_Comm comm) {
 
-        // Shamrock profiling / stack tracing entry
-        [[maybe_unused]] StackEntry stack_loc{};
+        __shamrock_stack_entry();
 
         bool out = false;
         shamcomm::mpi::Allreduce(&input, &out, 1, MPI_C_BOOL, MPI_LAND, comm);

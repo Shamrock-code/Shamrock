@@ -12,7 +12,7 @@
 /**
  * @file NodeSetEdge.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Field variant object to instanciate a variant on the patch types
+ * @brief Node that applies a custom function to modify connected edges
  * @date 2023-07-31
  */
 
@@ -23,10 +23,22 @@
 namespace shamrock::solvergraph {
 
     /**
-     * @brief A node that simply frees the allocation of the connected node
+     * @brief A node that applies a custom function to modify connected edges
      *
-     * This node is useful to free the memory allocated by a node
-     * that is no longer needed.
+     * This node executes a user-defined function on a connected edge,
+     * allowing for custom modifications or operations on the edge data.
+     * The function is applied during node evaluation.
+     *
+     * @tparam Tnode The type of the edge that this node operates on
+     *
+     * @code{.cpp}
+     * // Example: Create a node that sets values in an edge
+     * auto setter_function = [](MyEdgeType& edge) {
+     *     edge.set_value(42);
+     * };
+     * auto set_node = std::make_shared<NodeSetEdge<MyEdgeType>>(setter_function);
+     * set_node->set_edges(my_edge);
+     * @endcode
      */
     template<class Tnode>
     class NodeSetEdge : public INode {
@@ -34,27 +46,47 @@ namespace shamrock::solvergraph {
         std::function<void(Tnode &)> set_edge;
 
         public:
-        NodeSetEdge(std::function<void(Tnode &)> set_edge) : set_edge(set_edge) {}
+        /**
+         * @brief Construct a new NodeSetEdge object
+         *
+         * @param set_edge The function to apply to the connected edge during evaluation
+         */
+        NodeSetEdge(std::function<void(Tnode &)> set_edge) : set_edge(std::move(set_edge)) {}
 
         /**
          * @brief Set the edges of the node
          *
-         * Set the edge that will be freed by this node
+         * Configures the edge that will be modified by this node.
+         * The edge is set as a read-write edge, allowing the custom
+         * function to modify its contents during evaluation.
          *
-         * @param to_free The node to free
+         * @param to_set The edge to be modified by the custom function
          */
         inline void set_edges(std::shared_ptr<IEdge> to_set) {
             __internal_set_ro_edges({});
             __internal_set_rw_edges({to_set});
         }
 
-        /// Evaluate the node
+        /**
+         * @brief Evaluate the node
+         *
+         * Applies the custom function to the connected read-write edge.
+         * This is where the actual modification of the edge takes place.
+         */
         inline void _impl_evaluate_internal() { set_edge(get_rw_edge<Tnode>(0)); }
 
-        /// Get the label of the node
+        /**
+         * @brief Get the label of the node
+         *
+         * @return std::string The node label "SetEdge"
+         */
         inline virtual std::string _impl_get_label() { return "SetEdge"; };
 
-        /// Get the TeX representation of the node
+        /**
+         * @brief Get the TeX representation of the node
+         *
+         * @return std::string A TeX string describing the node operation
+         */
         inline virtual std::string _impl_get_tex() {
 
             auto to_set = get_rw_edge_base(0).get_tex_symbol();

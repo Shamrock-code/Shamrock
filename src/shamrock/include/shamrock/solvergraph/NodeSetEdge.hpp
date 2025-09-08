@@ -29,7 +29,7 @@ namespace shamrock::solvergraph {
      * allowing for custom modifications or operations on the edge data.
      * The function is applied during node evaluation.
      *
-     * @tparam Tnode The type of the node that the edge connects to
+     * @tparam Tnode The type of the edge that this node operates on
      *
      * @code{.cpp}
      * // Example: Create a node that sets values in an edge

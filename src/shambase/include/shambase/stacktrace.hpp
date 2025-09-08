@@ -204,3 +204,24 @@ using StackEntry = shambase::details::BasicStackEntry;
  * This alias is used to simplify the use of the NamedBasicStackEntry class.
  */
 using NamedStackEntry = shambase::details::NamedBasicStackEntry;
+
+/// Utility to concatenate two tokens
+#define internal_macro_shamrock_CONCAT2(a, b) a##b
+/// Utility to expand a macro with two tokens
+#define internal_macro_shamrock_EXPAND2(a, b) internal_macro_shamrock_CONCAT2(a, b)
+
+/**
+ * @fn __shamrock_stack_entry
+ * @brief Macro to create a stack entry.
+ *
+ * This macro defines a `StackEntry` variable with a unique name, either using
+ * `__COUNTER__` or `__LINE__` to ensure uniqueness.
+ */
+
+#ifdef __COUNTER__
+    #define __shamrock_stack_entry()                                                               \
+        [[maybe_unused]] StackEntry internal_macro_shamrock_EXPAND2(stack_loc_, __COUNTER__) {}
+#else
+    #define __shamrock_stack_entry()                                                               \
+        [[maybe_unused]] StackEntry internal_macro_shamrock_EXPAND2(stack_loc_, __LINE__) {}
+#endif

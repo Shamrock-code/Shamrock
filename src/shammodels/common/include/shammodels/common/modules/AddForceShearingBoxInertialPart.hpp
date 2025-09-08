@@ -17,7 +17,9 @@
  *
  */
 
+#include "shambase/SourceLocation.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
@@ -59,7 +61,7 @@ namespace shammodels::common::modules {
 
         void _impl_evaluate_internal() {
 
-            [[maybe_unused]] StackEntry stack_loc{};
+            __shamrock_stack_entry();
 
             auto edges = get_edges();
 

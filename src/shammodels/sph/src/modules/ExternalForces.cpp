@@ -29,6 +29,14 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/Constants.hpp"
 
+namespace shambase {
+
+    template<class T>
+    std::shared_ptr<T> to_shared(T &&t) {
+        return std::make_shared<T>(std::forward<T>(t));
+    }
+} // namespace shambase
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
 
@@ -53,8 +61,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 
     sink_update.compute_sph_forces();
 
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> field_xyz
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
+    auto field_xyz = shamrock::solvergraph::FieldRefs<Tvec>::make_shared("", "");
     shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_xyz_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         auto &field = pdat.get_field<Tvec>(0);
@@ -62,8 +69,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
     });
     field_xyz->set_refs(field_xyz_refs);
 
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> field_axyz_ext
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
+    auto field_axyz_ext = shamrock::solvergraph::FieldRefs<Tvec>::make_shared("", "");
     shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_axyz_ext_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         auto &field = pdat.get_field<Tvec>(iaxyz_ext);
@@ -71,14 +77,12 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
     });
     field_axyz_ext->set_refs(field_axyz_ext_refs);
 
-    std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes
-        = std::make_shared<shamrock::solvergraph::Indexes<u32>>("", "");
+    auto sizes = shamrock::solvergraph::Indexes<u32>::make_shared("", "");
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
     });
 
-    std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> constant_G
-        = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
+    auto constant_G = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
 
     shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>> set_constant_G(
         [&](shamrock::solvergraph::IDataEdge<Tscal> &constant_G) {
@@ -88,15 +92,13 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
     set_constant_G.set_edges(constant_G);
     set_constant_G.evaluate();
 
-    std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq;
+    std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq{};
 
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> central_mass
-                = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tvec>> central_pos
-                = std::make_shared<shamrock::solvergraph::IDataEdge<Tvec>>("", "");
+            auto central_mass = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+            auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
                 set_central_mass([&](shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
@@ -118,17 +120,14 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                 std::make_shared<shamrock::solvergraph::OperationSequence>(
                     "Point mass",
                     std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
-                        std::make_shared<decltype(set_central_pos)>(std::move(set_central_pos)),
-                        std::make_shared<decltype(set_central_mass)>(std::move(set_central_mass)),
-                        std::make_shared<decltype(add_force_central_grav_potential)>(
-                            std::move(add_force_central_grav_potential))}));
+                        shambase::to_shared(std::move(set_central_pos)),
+                        shambase::to_shared(std::move(set_central_mass)),
+                        shambase::to_shared(std::move(add_force_central_grav_potential))}));
 
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
 
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> central_mass
-                = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tvec>> central_pos
-                = std::make_shared<shamrock::solvergraph::IDataEdge<Tvec>>("", "");
+            auto central_mass = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+            auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
 
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
                 set_central_mass([&](shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
@@ -150,16 +149,14 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                 std::make_shared<shamrock::solvergraph::OperationSequence>(
                     "Point mass",
                     std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
-                        std::make_shared<decltype(set_central_pos)>(std::move(set_central_pos)),
-                        std::make_shared<decltype(set_central_mass)>(std::move(set_central_mass)),
-                        std::make_shared<decltype(add_force_central_grav_potential)>(
-                            std::move(add_force_central_grav_potential))}));
+                        shambase::to_shared(std::move(set_central_pos)),
+                        shambase::to_shared(std::move(set_central_mass)),
+                        shambase::to_shared(std::move(add_force_central_grav_potential))}));
 
         } else if (
             EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
 
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta
-                = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("", "");
+            auto eta = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
             shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>> set_eta(
                 [&](shamrock::solvergraph::IDataEdge<Tscal> &eta) {
                     eta.data = ext_force->eta;
@@ -174,9 +171,8 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                 std::make_shared<shamrock::solvergraph::OperationSequence>(
                     "Shearing box force",
                     std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
-                        std::make_shared<decltype(set_eta)>(std::move(set_eta)),
-                        std::make_shared<decltype(add_force_shearing_box_inertial_part)>(
-                            std::move(add_force_shearing_box_inertial_part))}));
+                        shambase::to_shared(std::move(set_eta)),
+                        shambase::to_shared(std::move(add_force_shearing_box_inertial_part))}));
 
         } else {
             shambase::throw_unimplemented("this force is not handled, yet ...");

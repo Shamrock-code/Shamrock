@@ -87,5 +87,9 @@ namespace shamrock::solvergraph {
         }
 
         inline virtual void free_alloc() { set_refs({}); }
+
+        static std::shared_ptr<FieldRefs<T>> make_shared(std::string name, std::string texsymbol) {
+            return std::make_shared<FieldRefs<T>>(name, texsymbol);
+        }
     };
 } // namespace shamrock::solvergraph

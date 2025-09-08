@@ -24,7 +24,7 @@ namespace shammodels::common::modules {
     template<class Tvec>
     void AddForceCentralGravPotential<Tvec>::_impl_evaluate_internal() {
 
-        [[maybe_unused]] StackEntry stack_loc{};
+        __shamrock_stack_entry();
 
         auto edges = get_edges();
 

@@ -17,6 +17,7 @@
  */
 
 #include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include <memory>
 #include <string>
 #include <utility>
 
@@ -33,6 +34,10 @@ namespace shamrock::solvergraph {
         inline virtual void free_alloc() { data = {}; }
 
         virtual ~IDataEdge() {}
+
+        static std::shared_ptr<IDataEdge<T>> make_shared(std::string name, std::string texsymbol) {
+            return std::make_shared<IDataEdge<T>>(name, texsymbol);
+        }
     };
 
 } // namespace shamrock::solvergraph

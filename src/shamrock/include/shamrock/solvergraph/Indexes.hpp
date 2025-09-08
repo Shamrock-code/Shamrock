@@ -18,6 +18,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include <memory>
 
 namespace shamrock::solvergraph {
 
@@ -28,6 +29,10 @@ namespace shamrock::solvergraph {
         shambase::DistributedData<Tint> indexes;
 
         inline virtual void free_alloc() { indexes = {}; }
+
+        static std::shared_ptr<Indexes<Tint>> make_shared(std::string name, std::string texsymbol) {
+            return std::make_shared<Indexes<Tint>>(name, texsymbol);
+        }
     };
 
 } // namespace shamrock::solvergraph

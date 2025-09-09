@@ -99,7 +99,7 @@ namespace shamrock::solvergraph {
          * @brief Retrieve a node by name as a shared pointer to the base interface.
          *
          * @param name Unique identifier for the node
-         * @return Const reference to shared pointer to the node
+         * @return Reference to shared pointer to the node
          * @throws std::invalid_argument if no node with the given name exists
          */
         inline std::shared_ptr<INode> &get_node_ptr_base(const std::string &name) {
@@ -125,7 +125,7 @@ namespace shamrock::solvergraph {
          * @brief Retrieve an edge by name as a shared pointer to the base interface.
          *
          * @param name Unique identifier for the edge
-         * @return Const reference to shared pointer to the edge
+         * @return Reference to shared pointer to the edge
          * @throws std::invalid_argument if no edge with the given name exists
          */
         inline std::shared_ptr<IEdge> &get_edge_ptr_base(const std::string &name) {
@@ -201,6 +201,7 @@ namespace shamrock::solvergraph {
          */
         template<class T>
         inline void register_node(const std::string &name, T &&node) {
+            static_assert(std::is_base_of<INode, T>::value, "T must derive from INode");
             register_node_ptr_base(name, std::make_shared<T>(std::forward<T>(node)));
         }
 
@@ -218,6 +219,7 @@ namespace shamrock::solvergraph {
          */
         template<class T>
         inline void register_edge(const std::string &name, T &&edge) {
+            static_assert(std::is_base_of<IEdge, T>::value, "T must derive from IEdge");
             register_edge_ptr_base(name, std::make_shared<T>(std::forward<T>(edge)));
         }
 
@@ -230,7 +232,7 @@ namespace shamrock::solvergraph {
          * @tparam T Type of the node to retrieve
          * @param name Unique identifier for the node
          * @return Shared pointer to the typed node, or throw an exception if cast fails
-         * @throws std::invalid_argument if no node with the given name exists
+         * @throws std::invalid_argument if no node with the given name exists or cast fails
          */
         template<class T>
         inline std::shared_ptr<T> get_node_ptr(const std::string &name) const {
@@ -251,7 +253,7 @@ namespace shamrock::solvergraph {
          * @tparam T Type of the edge to retrieve
          * @param name Unique identifier for the edge
          * @return Shared pointer to the typed edge, or throw an exception if cast fails
-         * @throws std::invalid_argument if no edge with the given name exists
+         * @throws std::invalid_argument if no edge with the given name exists or cast fails
          */
         template<class T>
         inline std::shared_ptr<T> get_edge_ptr(const std::string &name) const {
@@ -279,6 +281,12 @@ namespace shamrock::solvergraph {
             return shambase::get_check_ref(get_node_ptr<T>(name));
         }
 
+        /// const variant
+        template<class T>
+        inline const T &get_node_ref(const std::string &name) const {
+            return shambase::get_check_ref(get_node_ptr<T>(name));
+        }
+
         /**
          * @brief Get a typed reference to an edge by name.
          *
@@ -292,6 +300,12 @@ namespace shamrock::solvergraph {
          */
         template<class T>
         inline T &get_edge_ref(const std::string &name) {
+            return shambase::get_check_ref(get_edge_ptr<T>(name));
+        }
+
+        /// const variant
+        template<class T>
+        inline const T &get_edge_ref(const std::string &name) const {
             return shambase::get_check_ref(get_edge_ptr<T>(name));
         }
     };

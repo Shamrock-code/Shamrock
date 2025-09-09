@@ -55,12 +55,10 @@ namespace shamrock::solvergraph {
      */
     class SolverGraph {
         /// Registry of nodes by name
-        std::unordered_map<std::string, std::shared_ptr<INode>>
-            nodes; 
+        std::unordered_map<std::string, std::shared_ptr<INode>> nodes;
 
-            /// Registry of edges by name
-        std::unordered_map<std::string, std::shared_ptr<IEdge>>
-            edges; 
+        /// Registry of edges by name
+        std::unordered_map<std::string, std::shared_ptr<IEdge>> edges;
 
         public:
         ///////////////////////////////////////
@@ -104,6 +102,16 @@ namespace shamrock::solvergraph {
          * @return Const reference to shared pointer to the node
          * @throws std::invalid_argument if no node with the given name exists
          */
+        inline std::shared_ptr<INode> &get_node_ptr_base(const std::string &name) {
+            auto it = nodes.find(name);
+            if (it == nodes.end()) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    shambase::format("Node does not exist: {}", name));
+            }
+            return it->second;
+        }
+
+        /// const variant
         inline const std::shared_ptr<INode> &get_node_ptr_base(const std::string &name) const {
             auto it = nodes.find(name);
             if (it == nodes.end()) {
@@ -120,6 +128,16 @@ namespace shamrock::solvergraph {
          * @return Const reference to shared pointer to the edge
          * @throws std::invalid_argument if no edge with the given name exists
          */
+        inline std::shared_ptr<IEdge> &get_edge_ptr_base(const std::string &name) {
+            auto it = edges.find(name);
+            if (it == edges.end()) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    shambase::format("Edge does not exist: {}", name));
+            }
+            return it->second;
+        }
+
+        /// const variant
         inline const std::shared_ptr<IEdge> &get_edge_ptr_base(const std::string &name) const {
             auto it = edges.find(name);
             if (it == edges.end()) {
@@ -140,7 +158,7 @@ namespace shamrock::solvergraph {
          * @return Reference to the node through the base interface
          * @throws std::invalid_argument if no node with the given name exists
          */
-        inline  INode &get_node_ref_base(const std::string &name)  {
+        inline INode &get_node_ref_base(const std::string &name) {
             return shambase::get_check_ref(get_node_ptr_base(name));
         }
 
@@ -156,7 +174,7 @@ namespace shamrock::solvergraph {
          * @return Reference to the edge through the base interface
          * @throws std::invalid_argument if no edge with the given name exists
          */
-        inline  IEdge &get_edge_ref_base(const std::string &name)  {
+        inline IEdge &get_edge_ref_base(const std::string &name) {
             return shambase::get_check_ref(get_edge_ptr_base(name));
         }
 
@@ -215,7 +233,7 @@ namespace shamrock::solvergraph {
          * @throws std::invalid_argument if no node with the given name exists
          */
         template<class T>
-        inline std::shared_ptr<T> get_node_ptr(const std::string &name)const {
+        inline std::shared_ptr<T> get_node_ptr(const std::string &name) const {
             auto tmp = std::dynamic_pointer_cast<T>(get_node_ptr_base(name));
             if (!bool(tmp)) {
                 shambase::throw_with_loc<std::invalid_argument>(
@@ -236,7 +254,7 @@ namespace shamrock::solvergraph {
          * @throws std::invalid_argument if no edge with the given name exists
          */
         template<class T>
-        inline std::shared_ptr<T> get_edge_ptr(const std::string &name)const {
+        inline std::shared_ptr<T> get_edge_ptr(const std::string &name) const {
             auto tmp = std::dynamic_pointer_cast<T>(get_edge_ptr_base(name));
             if (!bool(tmp)) {
                 shambase::throw_with_loc<std::invalid_argument>(
@@ -276,7 +294,6 @@ namespace shamrock::solvergraph {
         inline T &get_edge_ref(const std::string &name) {
             return shambase::get_check_ref(get_edge_ptr<T>(name));
         }
-
     };
 
 } // namespace shamrock::solvergraph

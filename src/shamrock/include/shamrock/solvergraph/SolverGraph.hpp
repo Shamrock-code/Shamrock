@@ -12,7 +12,7 @@
 /**
  * @file SolverGraph.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Declare a class to register and retrieve nodes and edges from a unique container.
  *
  */
 
@@ -235,6 +235,17 @@ namespace shamrock::solvergraph {
          * @throws std::invalid_argument if no node with the given name exists or cast fails
          */
         template<class T>
+        inline std::shared_ptr<T> get_node_ptr(const std::string &name) {
+            auto tmp = std::dynamic_pointer_cast<T>(get_node_ptr_base(name));
+            if (!bool(tmp)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    shambase::format("Node exists but is not from the requested type: {}", name));
+            }
+            return tmp;
+        }
+
+        /// const variant
+        template<class T>
         inline std::shared_ptr<T> get_node_ptr(const std::string &name) const {
             auto tmp = std::dynamic_pointer_cast<T>(get_node_ptr_base(name));
             if (!bool(tmp)) {
@@ -255,6 +266,17 @@ namespace shamrock::solvergraph {
          * @return Shared pointer to the typed edge, or throw an exception if cast fails
          * @throws std::invalid_argument if no edge with the given name exists or cast fails
          */
+        template<class T>
+        inline std::shared_ptr<T> get_edge_ptr(const std::string &name) {
+            auto tmp = std::dynamic_pointer_cast<T>(get_edge_ptr_base(name));
+            if (!bool(tmp)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    shambase::format("Edge exists but is not from the requested type: {}", name));
+            }
+            return tmp;
+        }
+
+        /// const variant
         template<class T>
         inline std::shared_ptr<T> get_edge_ptr(const std::string &name) const {
             auto tmp = std::dynamic_pointer_cast<T>(get_edge_ptr_base(name));

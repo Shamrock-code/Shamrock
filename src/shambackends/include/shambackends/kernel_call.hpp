@@ -158,7 +158,7 @@ namespace sham {
          * empty.
          */
         auto get_read_access(sham::EventList &depends_list) {
-            StackEntry stack_loc{};
+            __shamrock_stack_entry();
             return std::apply(
                 [&](auto &...__a) {
                     return std::tuple(details::read_access_optional(__a, depends_list)...);
@@ -175,7 +175,7 @@ namespace sham {
          * empty.
          */
         auto get_write_access(sham::EventList &depends_list) {
-            StackEntry stack_loc{};
+            __shamrock_stack_entry();
             return std::apply(
                 [&](auto &...__a) {
                     return std::tuple(details::write_access_optional(__a, depends_list)...);
@@ -191,7 +191,7 @@ namespace sham {
          * @param e The SYCL event to register in the buffers.
          */
         void complete_event_state(sycl::event e) {
-            StackEntry stack_loc{};
+            __shamrock_stack_entry();
             std::apply(
                 [&](auto &...__in) {
                     ((details::complete_state_optional(e, __in)), ...);
@@ -244,7 +244,7 @@ namespace sham {
         /// Get a tuple of pointers to the data of the buffers, for reading. Register also the
         /// depedancies in depends_list.
         auto get_read_access(sham::EventList &depends_list) {
-            StackEntry stack_loc{};
+            __shamrock_stack_entry();
             return std::apply(
                 [&](auto &...__a) {
                     return std::tuple(details::get_read_access(__a, depends_list)...);
@@ -255,7 +255,7 @@ namespace sham {
         /// Get a tuple of pointers to the data of the buffers, for writing. Register also the
         /// depedancies in depends_list.
         auto get_write_access(sham::EventList &depends_list) {
-            StackEntry stack_loc{};
+            __shamrock_stack_entry();
             return std::apply(
                 [&](auto &...__a) {
                     return std::tuple(details::get_write_access(__a, depends_list)...);
@@ -266,7 +266,7 @@ namespace sham {
         /// Complete the event state of the buffers.
         /// @param e The SYCL event to register in the buffers.
         void complete_event_state(sycl::event e) {
-            StackEntry stack_loc{};
+            __shamrock_stack_entry();
             std::apply(
                 [&](auto &...__in) {
                     ((details::complete_event_state(__in, e)), ...);
@@ -291,7 +291,7 @@ namespace sham {
                 shambase::throw_with_loc<std::runtime_error>("kernel call with : n == 0");
             }
 
-            StackEntry stack_loc{};
+            __shamrock_stack_entry();
             sham::EventList depends_list;
 
             auto acc_in     = in.get_read_access(depends_list);

@@ -734,4 +734,54 @@ namespace shamalgs::numeric {
         return binned_average_mpi(sched, bin_edges, nbins, values, keys, len, bin_counts);
     }
 
+    /**
+     * @brief Compute the histogram and bin properties (center, width) for a set of values and bin
+     * edges.
+     *
+     * This function returns the histogram counts, the center of each bin, and the width of each
+     * bin.
+     *
+     * @tparam T The data type of the values and bin edges.
+     * @param sched The device scheduler to run on.
+     * @param bin_edges The edges of the bins (length == nbins + 1).
+     * @param nbins The number of bins.
+     * @param values The values to compute the histogram on.
+     * @param len The length of the values array.
+     * @return histogram_result<T> Structure containing counts, bin centers, and bin widths.
+     */
+    template<class T>
+    histogram_result<T> device_histogram_full_mpi(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<T> &bin_edges,
+        u64 nbins,
+        const sham::DeviceBuffer<T> &values,
+        u32 len) {
+
+        SHAM_ASSERT(nbins > 1); // at least a sup and a inf
+        SHAM_ASSERT(bin_edges.get_size() == nbins + 1);
+
+        auto &q = shambase::get_check_ref(sched).get_queue();
+
+        sham::DeviceBuffer<u64> counts
+            = device_histogram_u64_mpi(sched, bin_edges, nbins, values, len);
+
+        sham::DeviceBuffer<T> bins_center(nbins, sched);
+        sham::DeviceBuffer<T> bins_width(nbins, sched);
+
+        sham::kernel_call(
+            q,
+            sham::MultiRef{bin_edges},
+            sham::MultiRef{bins_center, bins_width},
+            nbins,
+            [](u32 i,
+               const T *__restrict bin_edges,
+               T *__restrict bins_center,
+               T *__restrict bins_width) {
+                bins_center[i] = (bin_edges[i] + bin_edges[i + 1]) / 2;
+                bins_width[i]  = bin_edges[i + 1] - bin_edges[i];
+            });
+
+        return {std::move(counts), std::move(bins_center), std::move(bins_width)};
+    }
+
 } // namespace shamalgs::numeric

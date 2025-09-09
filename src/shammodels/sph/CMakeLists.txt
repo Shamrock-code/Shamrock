@@ -41,6 +41,7 @@ set(Sources
     src/modules/NeighbourCache.cpp
     src/modules/ParticleReordering.cpp
     src/modules/AnalysisSodTube.cpp
+    src/modules/AnalysisDisc.cpp
     src/modules/SPHSetup.cpp
     src/modules/KillParticles.cpp
     src/modules/GetParticlesOutsideSphere.cpp

@@ -29,7 +29,7 @@ namespace shamrock::solvergraph {
      * allowing for custom modifications or operations on the edge data.
      * The function is applied during node evaluation.
      *
-     * @tparam Tnode The type of the edge that this node operates on
+     * @tparam Tedge The type of the edge that this node operates on
      *
      * @code{.cpp}
      * // Example: Create a node that sets values in an edge
@@ -40,10 +40,10 @@ namespace shamrock::solvergraph {
      * set_node->set_edges(my_edge);
      * @endcode
      */
-    template<class Tnode>
+    template<class Tedge>
     class NodeSetEdge : public INode {
 
-        std::function<void(Tnode &)> set_edge;
+        std::function<void(Tedge &)> set_edge;
 
         public:
         /**
@@ -51,7 +51,7 @@ namespace shamrock::solvergraph {
          *
          * @param set_edge The function to apply to the connected edge during evaluation
          */
-        NodeSetEdge(std::function<void(Tnode &)> set_edge) : set_edge(std::move(set_edge)) {}
+        NodeSetEdge(std::function<void(Tedge &)> set_edge) : set_edge(std::move(set_edge)) {}
 
         /**
          * @brief Set the edges of the node
@@ -73,7 +73,7 @@ namespace shamrock::solvergraph {
          * Applies the custom function to the connected read-write edge.
          * This is where the actual modification of the edge takes place.
          */
-        inline void _impl_evaluate_internal() { set_edge(get_rw_edge<Tnode>(0)); }
+        inline void _impl_evaluate_internal() { set_edge(get_rw_edge<Tedge>(0)); }
 
         /**
          * @brief Get the label of the node

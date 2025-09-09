@@ -455,7 +455,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     ////////////////////////////////////////////////////////////////////////////////
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> solver_sequence;
 
-    solver_sequence.push_back(graph.get_node_ptr("set_sptree"));
+    solver_sequence.push_back(graph.get_node_ptr_base("set_sptree"));
 
     { // Ghost zone finder
 

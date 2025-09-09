@@ -219,7 +219,7 @@ namespace shamrock::solvergraph {
             auto tmp = std::dynamic_pointer_cast<T>(get_node_ptr_base(name));
             if (!bool(tmp)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Node exist but is not from the requested type: {}", name));
+                    shambase::format("Node exists but is not from the requested type: {}", name));
             }
             return tmp;
         }

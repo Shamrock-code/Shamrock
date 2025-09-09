@@ -240,7 +240,7 @@ namespace shamrock::solvergraph {
             auto tmp = std::dynamic_pointer_cast<T>(get_edge_ptr_base(name));
             if (!bool(tmp)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Edge exist but is not from the requested type: {}", name));
+                    shambase::format("Edge exists but is not from the requested type: {}", name));
             }
             return tmp;
         }

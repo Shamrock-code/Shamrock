@@ -55,6 +55,7 @@
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include <memory>
 
 template<class Tvec, class TgridVec>
@@ -101,8 +102,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     /// Edges
     ////////////////////////////////////////////////////////////////////////////////
 
-    storage.sptree_edge
-        = std::make_shared<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>>("", "");
+    using namespace shamrock::solvergraph;
+
+    SolverGraph &graph = storage.solver_graph;
+
+    graph.register_edge("sptree", SerialPatchTreeRefEdge<TgridVec>("", ""));
+
+    storage.sptree_edge = graph.get_edge_ptr<SerialPatchTreeRefEdge<TgridVec>>("sptree");
 
     storage.global_patch_boxes_edge
         = std::make_shared<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(
@@ -451,7 +457,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         find_ghost_layer_candidates.set_edges(
             storage.local_patch_ids,
             storage.sim_box_edge,
-            storage.sptree_edge,
+            graph.get_edge_ptr<SerialPatchTreeRefEdge<TgridVec>>("sptree"),
             storage.global_patch_boxes_edge,
             storage.ghost_layers_candidates_edge);
         solver_sequence.push_back(

@@ -28,7 +28,7 @@ namespace shamrock::solvergraph {
         std::unordered_map<std::string, std::shared_ptr<INode>> nodes;
         std::unordered_map<std::string, std::shared_ptr<IEdge>> edges;
 
-        inline void register_node(std::string name, std::shared_ptr<INode> node) {
+        inline void register_node_ptr(std::string name, std::shared_ptr<INode> node) {
             // check if node already exists
             if (nodes.find(name) != nodes.end()) {
                 shambase::throw_with_loc<std::invalid_argument>(
@@ -37,7 +37,7 @@ namespace shamrock::solvergraph {
             nodes.insert({name, node});
         }
 
-        inline void register_edge(std::string name, std::shared_ptr<IEdge> edge) {
+        inline void register_edge_ptr(std::string name, std::shared_ptr<IEdge> edge) {
             // check if edge already exists
             if (edges.find(name) != edges.end()) {
                 shambase::throw_with_loc<std::invalid_argument>(
@@ -46,14 +46,14 @@ namespace shamrock::solvergraph {
             edges.insert({name, edge});
         }
 
-        template<class T, class... Targs>
-        inline void register_new_node(std::string name, Targs... args) {
-            nodes.insert({name, std::make_shared<T>(args...)});
+        template<class T>
+        inline void register_node(std::string name, T &&node) {
+            register_node_ptr(name, std::make_shared<T>(std::forward<T>(node)));
         }
 
-        template<class T, class... Targs>
-        inline void register_new_edge(std::string name, Targs... args) {
-            edges.insert({name, std::make_shared<T>(args...)});
+        template<class T>
+        inline void register_edge(std::string name, T &&edge) {
+            register_edge_ptr(name, std::make_shared<T>(std::forward<T>(edge)));
         }
 
         // generic getters

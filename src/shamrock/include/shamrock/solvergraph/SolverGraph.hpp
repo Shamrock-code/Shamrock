@@ -54,10 +54,13 @@ namespace shamrock::solvergraph {
      * @endcode
      */
     class SolverGraph {
+        /// Registry of nodes by name
         std::unordered_map<std::string, std::shared_ptr<INode>>
-            nodes; ///< Registry of nodes by name
+            nodes; 
+
+            /// Registry of edges by name
         std::unordered_map<std::string, std::shared_ptr<IEdge>>
-            edges; ///< Registry of edges by name
+            edges; 
 
         public:
         ///////////////////////////////////////
@@ -72,11 +75,11 @@ namespace shamrock::solvergraph {
          * @throws std::invalid_argument if a node with the same name already exists
          */
         inline void register_node_ptr_base(const std::string &name, std::shared_ptr<INode> node) {
-            if (nodes.find(name) != nodes.end()) {
+            const auto [it, inserted] = nodes.try_emplace(name, std::move(node));
+            if (!inserted) {
                 shambase::throw_with_loc<std::invalid_argument>(
                     shambase::format("Node already exists: {}", name));
             }
-            nodes.insert({name, node});
         }
 
         /**
@@ -87,11 +90,11 @@ namespace shamrock::solvergraph {
          * @throws std::invalid_argument if an edge with the same name already exists
          */
         inline void register_edge_ptr_base(const std::string &name, std::shared_ptr<IEdge> edge) {
-            if (edges.find(name) != edges.end()) {
+            const auto [it, inserted] = edges.try_emplace(name, std::move(edge));
+            if (!inserted) {
                 shambase::throw_with_loc<std::invalid_argument>(
                     shambase::format("Edge already exists: {}", name));
             }
-            edges.insert({name, edge});
         }
 
         /**

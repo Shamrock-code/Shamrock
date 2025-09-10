@@ -12,7 +12,7 @@
 /**
  * @file AddForceCentralGravPotential.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Adds the acceleration from a central gravitational potential (point mass).
  *
  */
 

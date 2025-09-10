@@ -42,6 +42,7 @@
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
@@ -62,9 +63,8 @@ namespace shammodels::basegodunov {
 
         using RTree = RadixTree<Tmorton, TgridVec>;
 
-        std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>> sptree_edge;
-        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
-            global_patch_boxes_edge;
+        shamrock::solvergraph::SolverGraph solver_graph;
+
         std::shared_ptr<shamrock::solvergraph::IDataEdge<std::vector<u64>>> local_patch_ids;
 
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;

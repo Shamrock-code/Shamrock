@@ -50,11 +50,13 @@
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/GetFieldRefFromLayer.hpp"
 #include "shamrock/solvergraph/NodeFreeAlloc.hpp"
+#include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include <memory>
 
 template<class Tvec, class TgridVec>
@@ -101,12 +103,24 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     /// Edges
     ////////////////////////////////////////////////////////////////////////////////
 
-    storage.sptree_edge
-        = std::make_shared<shamrock::solvergraph::SerialPatchTreeRefEdge<TgridVec>>("", "");
+    using namespace shamrock::solvergraph;
 
-    storage.global_patch_boxes_edge
-        = std::make_shared<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(
-            "global_patch_boxes", "global_patch_boxes");
+    SolverGraph &graph = storage.solver_graph;
+
+    graph.register_edge("sptree", SerialPatchTreeRefEdge<TgridVec>("sptree", "sptree"));
+
+    graph.register_edge(
+        "global_patch_boxes",
+        ScalarsEdge<shammath::AABB<TgridVec>>("global_patch_boxes", "global_patch_boxes"));
+
+    graph.register_node(
+        "set_sptree",
+        NodeSetEdge<SerialPatchTreeRefEdge<TgridVec>>([&](SerialPatchTreeRefEdge<TgridVec> &edge) {
+            edge.patch_tree = std::ref(storage.serial_patch_tree.get());
+        }));
+
+    graph.get_node_ref<NodeSetEdge<SerialPatchTreeRefEdge<TgridVec>>>("set_sptree")
+        .set_edges(graph.get_edge_ptr<SerialPatchTreeRefEdge<TgridVec>>("sptree"));
 
     storage.local_patch_ids
         = std::make_shared<shamrock::solvergraph::IDataEdge<std::vector<u64>>>("", "");
@@ -441,6 +455,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     ////////////////////////////////////////////////////////////////////////////////
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> solver_sequence;
 
+    solver_sequence.push_back(graph.get_node_ptr_base("set_sptree"));
+
     { // Ghost zone finder
 
         modules::FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
@@ -451,8 +467,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         find_ghost_layer_candidates.set_edges(
             storage.local_patch_ids,
             storage.sim_box_edge,
-            storage.sptree_edge,
-            storage.global_patch_boxes_edge,
+            graph.get_edge_ptr<SerialPatchTreeRefEdge<TgridVec>>("sptree"),
+            graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
             storage.ghost_layers_candidates_edge);
         solver_sequence.push_back(
             std::make_shared<decltype(find_ghost_layer_candidates)>(
@@ -467,7 +483,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.sim_box_edge,
             storage.source_patches,
             storage.ghost_layers_candidates_edge,
-            storage.global_patch_boxes_edge,
+            graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
             storage.idx_in_ghost);
         solver_sequence.push_back(
             std::make_shared<decltype(find_ghost_layer_indices)>(
@@ -1182,14 +1198,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     /// Edges init for ghost zones
     ////////////////////////////////////////////////////////////////////////////////
 
-    shambase::get_check_ref(storage.sptree_edge).patch_tree
-        = std::ref(storage.serial_patch_tree.get());
-
     {
         auto &sim_box = scheduler().get_sim_box();
         auto transf   = sim_box.template get_patch_transform<TgridVec>();
 
-        auto &global_patch_boxes_edge = shambase::get_check_ref(storage.global_patch_boxes_edge);
+        auto &global_patch_boxes_edge
+            = shambase::get_check_ref(storage.solver_graph.template get_edge_ptr<
+                                      shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(
+                "global_patch_boxes"));
 
         global_patch_boxes_edge.values = {};
 

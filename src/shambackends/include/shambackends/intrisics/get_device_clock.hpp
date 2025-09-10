@@ -42,6 +42,46 @@ namespace sham {
     }
 } // namespace sham
 
+#elif defined(_IS_ACPP_SSCP)
+    #define SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
+
+namespace sham {
+    inline u64 get_device_clock() {
+        u64 ret_val = -1;
+
+        namespace jit = sycl::AdaptiveCpp_jit;
+
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::compiler_backend>()
+                    == jit::compiler_backend::host,
+                [&]() {
+                    ret_val = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+                }););
+
+    #if __has_builtin(__nvvm_read_ptx_sreg_globaltimer)
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::target_vendor_id>() == jit::vendor_id::nvidia,
+                [&]() {
+                    ret_val = __nvvm_read_ptx_sreg_globaltimer();
+                }););
+
+    #else
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::target_vendor_id>() == jit::vendor_id::nvidia,
+                [&]() {
+                    u64 clock;
+                    asm("mov.u64 %0, %%globaltimer;" : "=l"(clock));
+                    ret_val = clock;
+                }););
+    #endif
+
+        return ret_val;
+    }
+} // namespace sham
+
 #elif defined(_IS_ACPP_SMCP_HOST)
     #define SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
 

@@ -56,7 +56,8 @@ plot_test_sph_kernel(q, f_M8, df_M8, w3d_M8, dW3d_M8, "M8", axs)
 
 axs[0].legend()
 axs[1].legend()
-plt.xlabel(r"$q$")
+axs[0].set_xlabel(r"$q$")
+axs[1].set_xlabel(r"$q$")
 plt.show()
 
 
@@ -85,7 +86,8 @@ plot_test_sph_kernel(q, f_C6, df_C6, w3d_C6, dW3d_C6, "C6", axs)
 
 axs[0].legend()
 axs[1].legend()
-plt.xlabel(r"$q$")
+axs[0].set_xlabel(r"$q$")
+axs[1].set_xlabel(r"$q$")
 plt.show()
 
 
@@ -120,7 +122,8 @@ plot_test_sph_kernel(q, f_M4DH7, df_M4DH7, w3d_M4DH7, dW3d_M4DH7, "M4DH7", axs)
 
 axs[0].legend()
 axs[1].legend()
-plt.xlabel(r"$q$")
+axs[0].set_xlabel(r"$q$")
+axs[1].set_xlabel(r"$q$")
 plt.show()
 
 
@@ -155,5 +158,6 @@ plot_test_sph_kernel(q, f_M4Shift16, df_M4Shift16, w3d_M4Shift16, dW3d_M4Shift16
 
 axs[0].legend()
 axs[1].legend()
-plt.xlabel(r"$q$")
+axs[0].set_xlabel(r"$q$")
+axs[1].set_xlabel(r"$q$")
 plt.show()

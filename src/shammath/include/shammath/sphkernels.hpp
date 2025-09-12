@@ -762,7 +762,9 @@ namespace shammath::details {
         /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 1. / 4.864708624169304;
 
-        inline static Tscal f(Tscal q) { return KernelDefM4<Tscal>::f(q) * sham::pow_constexpr<5>(q); }
+        inline static Tscal f(Tscal q) {
+            return KernelDefM4<Tscal>::f(q) * sham::pow_constexpr<5>(q);
+        }
 
         inline static Tscal df(Tscal q) {
             return KernelDefM4<Tscal>::df(q) * sham::pow_constexpr<5>(q)

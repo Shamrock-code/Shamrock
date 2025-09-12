@@ -1105,20 +1105,51 @@ namespace shammath {
     template<class flt_type>
     using M4DH5 = SPHKernelGen<flt_type, details::KernelDefM4DoubleHump5<flt_type>>;
 
+    /**
+     * @brief The M4DoubleHump7 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
     template<class flt_type>
     using M4DH7 = SPHKernelGen<flt_type, details::KernelDefM4DoubleHump7<flt_type>>;
 
+    /**
+     * @brief The M4Shift2 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
     template<class flt_type>
     using M4Shift2 = SPHKernelGen<flt_type, details::KernelDefM4Shift2<flt_type>>;
 
+    /**
+     * @brief The M4Shift4 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
     template<class flt_type>
     using M4Shift4 = SPHKernelGen<flt_type, details::KernelDefM4Shift4<flt_type>>;
 
+    /**
+     * @brief The M4Shift8 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
     template<class flt_type>
     using M4Shift8 = SPHKernelGen<flt_type, details::KernelDefM4Shift8<flt_type>>;
 
+    /**
+     * @brief The M4Shift16 SPH kernel
+     * \todo add graph
+     *
+     * @tparam flt_type the flating point representation to use
+     */
     template<class flt_type>
     using M4Shift16 = SPHKernelGen<flt_type, details::KernelDefM4Shift16<flt_type>>;
+
 } // namespace shammath
 
 namespace shambase {

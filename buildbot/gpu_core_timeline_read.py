@@ -14,7 +14,7 @@ with open(args.filename) as f:
     data = json.load(f)
 
 # Create a figure and axis
-fig, ax = plt.subplots(dpi=200)
+fig, ax = plt.subplots(figsize=(10, 5), dpi=200)
 
 
 lane_count = 0
@@ -42,9 +42,23 @@ base_width = 0.8
 ker_per_sm = args.block_per_sm
 width = base_width / ker_per_sm
 
+# get the min time of all events
+min_time = min(d["start"] for d in data)
+print("Min time: ", min_time)
+
+# offset all times by the min time
+for d in data:
+    d["start"] -= min_time
+    d["first_end"] -= min_time
+    d["last_end"] -= min_time
 
 # Iterate over the array and plot bars
 for index, item in enumerate(data):
+
+    if args.max_lane is not None:
+        if item["lane"] > args.max_lane:
+            continue
+
     loc_lane_id_offset = lane_loc_id[item["lane"]] % ker_per_sm
 
     ax.bar(
@@ -54,6 +68,7 @@ for index, item in enumerate(data):
         width=width,
         color="blue",
         edgecolor="black",
+        linewidth=0.5,
     )
     ax.bar(
         item["lane"] + (width) * (loc_lane_id_offset) - base_width / 2,
@@ -62,6 +77,7 @@ for index, item in enumerate(data):
         width=width / 1.5,
         color="red",
         edgecolor="black",
+        linewidth=0.5,
     )
 
     lane_loc_id[item["lane"]] += 1
@@ -72,10 +88,12 @@ ax.set_xlabel("Lane")
 if args.max_lane is not None:
     ax.set_xlim(-1, args.max_lane + 1)
 
+# ax.set_ylim(0,0.035)
+
 # Set the y-axis label
 ax.set_ylabel("Time (s)")
 
-ax.set_title("GPU Core Timeline (Update derivs)")
+ax.set_title("GPU Core Timeline (M4 hard lim)")
 
 plt.savefig("update_derivs.png")
 
@@ -90,4 +108,5 @@ print(
 )
 
 # Show the plot
+plt.savefig("update_derivs_m4hardlim.png")
 plt.show()

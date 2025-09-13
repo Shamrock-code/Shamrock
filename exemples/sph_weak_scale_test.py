@@ -9,7 +9,7 @@ target_tot_u = 1
 bmin = (-0.6, -0.6, -0.6)
 bmax = (0.6, 0.6, 0.6)
 
-N_target_base = 32e6
+N_target_base = 100000
 compute_multiplier = shamrock.sys.world_size()
 # compute_multiplier = 12
 scheduler_split_val = int(2e7)

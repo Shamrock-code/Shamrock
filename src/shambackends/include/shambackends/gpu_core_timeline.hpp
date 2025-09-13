@@ -83,8 +83,8 @@ namespace sham {
 
         public:
         /// CTOR
-        gpu_core_timeline_profilier(sham::DeviceScheduler_ptr dev_sched, u32 max_event_count)
-            : dev_sched(dev_sched), frame_start_clock(sham::DeviceBuffer<u64>(1, dev_sched)),
+        inline gpu_core_timeline_profilier(sham::DeviceScheduler_ptr dev_sched, u32 max_event_count)
+            : dev_sched(dev_sched), frame_start_clock(1, dev_sched),
               events(max_event_count, dev_sched), event_count(1, dev_sched) {
             event_count.set_val_at_idx(0, 0);
             is_available_on_device();
@@ -139,7 +139,7 @@ namespace sham {
         /**
          * @brief Recover the current device time in the frame_start_clock buffer
          */
-        void setFrameStartClock() {
+        inline void setFrameStartClock() {
             sham::kernel_call(
                 dev_sched->get_queue(),
                 sham::MultiRef{},
@@ -147,11 +147,12 @@ namespace sham {
                 1,
                 [](u32 i, u64 *clock) {
 #ifdef SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
-                    *clock = sham::get_device_clock();
+                    clock[0] = sham::get_device_clock();
 #else
-                    *clock = 0;
+                    clock[0] = 0;
 #endif
                 });
+            frame_start_clock.synchronize();
         }
 
         inline u64 get_base_clock_value() { return frame_start_clock.get_val_at_idx(0); }

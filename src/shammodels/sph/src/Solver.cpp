@@ -49,6 +49,8 @@
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthNumDensity.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
@@ -340,7 +342,9 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
     SPHUtils sph_utils(scheduler());
 
     storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
-        storage.ghost_handler.get(), storage.serial_patch_tree.get(), solver_config.htol_up_tol));
+        storage.ghost_handler.get(),
+        storage.serial_patch_tree.get(),
+        solver_config.htol_up_coarse_cycle));
 
     // storage.ghost_handler.get().gen_debug_patch_ghost(storage.ghost_patch_cache.get());
 }
@@ -556,14 +560,41 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         std::shared_ptr<shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>
             smth_h_iter = std::make_shared<
                 shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>(
-                solver_config.gpart_mass, solver_config.htol_up_tol, solver_config.htol_up_iter);
+                solver_config.gpart_mass,
+                solver_config.htol_up_coarse_cycle,
+                solver_config.htol_up_fine_cycle);
         smth_h_iter->set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
+
+        std::shared_ptr<
+            shammodels::sph::modules::IterateSmoothingLengthDensityNeighLim<Tvec, Kernel>>
+            smth_h_iter_neigh_lim = std::make_shared<
+                shammodels::sph::modules::IterateSmoothingLengthDensityNeighLim<Tvec, Kernel>>(
+                solver_config.gpart_mass,
+                solver_config.htol_up_coarse_cycle,
+                solver_config.htol_up_fine_cycle,
+                500);
+        smth_h_iter_neigh_lim->set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
+
+        std::shared_ptr<shammodels::sph::modules::IterateSmoothingLengthNumDensity<Tvec, Kernel>>
+            smth_h_iter_num = std::make_shared<
+                shammodels::sph::modules::IterateSmoothingLengthNumDensity<Tvec, Kernel>>(
+                solver_config.gpart_mass,
+                solver_config.htol_up_coarse_cycle,
+                solver_config.htol_up_fine_cycle);
+        smth_h_iter_num->set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
+
+        std::shared_ptr<shamrock::solvergraph::INode> smth_h_iter_ptr;
+
+        // select the mode
+        // smth_h_iter_ptr = smth_h_iter;
+        smth_h_iter_ptr = smth_h_iter_neigh_lim;
+        //  smth_h_iter_ptr = smth_h_iter_num;
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged
             = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>("", "");
 
         shammodels::sph::modules::LoopSmoothingLengthIter<Tvec> loop_smth_h_iter(
-            smth_h_iter, solver_config.epsilon_h, solver_config.h_iter_per_subcycles, false);
+            smth_h_iter_ptr, solver_config.epsilon_h, solver_config.h_iter_per_subcycles, false);
         loop_smth_h_iter.set_edges(eps_h, is_converged);
 
         loop_smth_h_iter.evaluate();
@@ -700,7 +731,7 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
                     sham::MultiRef{},
                     sham::MultiRef{ret.buf_field},
                     ret.buf_field.get_size(),
-                    [htol = solver_config.htol_up_tol](u32 i, Tscal *h_tree) {
+                    [htol = solver_config.htol_up_coarse_cycle](u32 i, Tscal *h_tree) {
                         h_tree[i] *= htol;
                     });
 

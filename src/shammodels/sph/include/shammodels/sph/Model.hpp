@@ -733,7 +733,15 @@ namespace shammodels::sph {
 
         inline f64 solver_logs_last_rate() { return solver.solve_logs.get_last_rate(); }
         inline u64 solver_logs_last_obj_count() { return solver.solve_logs.get_last_obj_count(); }
-        inline void change_htolerance(Tscal in) { solver.solver_config.htol_up_tol = in; }
+
+        inline void change_htolerances(Tscal in_coarse, Tscal in_fine) {
+            if (in_coarse < in_fine) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "in_coarse ({}) must be greater than in_fine ({})", in_coarse, in_fine));
+            }
+            solver.solver_config.htol_up_coarse_cycle = in_coarse;
+            solver.solver_config.htol_up_fine_cycle   = in_fine;
+        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         /////// analysis utilities

@@ -350,9 +350,9 @@ struct shammodels::sph::SolverConfig {
     bool combined_dtdiv_divcurlv_compute = false; ///< Use the combined dtdivv and divcurlv compute
     /// Factor applied to the smoothing length for neighbors search (and ghost zone size)
     /// @note This value must be larger or equal to htol_up_iter
-    Tscal htol_up_tol = 1.1;
+    Tscal htol_up_coarse_cycle = 1.1;
     /// Maximum factor of the smoothing length evolution per subcycles
-    Tscal htol_up_iter        = 1.1;
+    Tscal htol_up_fine_cycle  = 1.1;
     Tscal epsilon_h           = 1e-6; ///< Convergence criteria for the smoothing length
     u32 h_iter_per_subcycles  = 50;   ///< Maximum number of iterations per subcycle
     u32 h_max_subcycles_count = 100;  ///< Maximum number of subcycles before solver crash
@@ -849,8 +849,8 @@ namespace shammodels::sph {
             {"use_two_stage_search", p.use_two_stage_search},
             // solver behavior config
             {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
-            {"htol_up_tol", p.htol_up_tol},
-            {"htol_up_iter", p.htol_up_iter},
+            {"htol_up_tol", p.htol_up_coarse_cycle},
+            {"htol_up_iter", p.htol_up_fine_cycle},
             {"epsilon_h", p.epsilon_h},
             {"h_iter_per_subcycles", p.h_iter_per_subcycles},
             {"h_max_subcycles_count", p.h_max_subcycles_count},
@@ -917,8 +917,8 @@ namespace shammodels::sph {
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
 
         j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
-        j.at("htol_up_tol").get_to(p.htol_up_tol);
-        j.at("htol_up_iter").get_to(p.htol_up_iter);
+        j.at("htol_up_tol").get_to(p.htol_up_coarse_cycle);
+        j.at("htol_up_iter").get_to(p.htol_up_fine_cycle);
         j.at("epsilon_h").get_to(p.epsilon_h);
         j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
         j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);

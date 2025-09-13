@@ -60,7 +60,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
 
         sycl::range range_npart{obj_cnt};
 
-        Tscal h_tolerance = solver_config.htol_up_tol;
+        Tscal h_tolerance = solver_config.htol_up_coarse_cycle;
 
         NamedStackEntry stack_loc1{"init cache"};
 
@@ -260,7 +260,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
         sycl::range range_nobj{obj_cnt};
         using namespace shamrock;
 
-        Tscal h_tolerance = solver_config.htol_up_tol;
+        Tscal h_tolerance = solver_config.htol_up_coarse_cycle;
 
         NamedStackEntry stack_loc1{"init cache"};
 

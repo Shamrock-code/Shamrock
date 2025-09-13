@@ -340,7 +340,9 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
     SPHUtils sph_utils(scheduler());
 
     storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
-        storage.ghost_handler.get(), storage.serial_patch_tree.get(), solver_config.htol_up_tol));
+        storage.ghost_handler.get(),
+        storage.serial_patch_tree.get(),
+        solver_config.htol_up_coarse_cycle));
 
     // storage.ghost_handler.get().gen_debug_patch_ghost(storage.ghost_patch_cache.get());
 }
@@ -556,7 +558,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         std::shared_ptr<shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>
             smth_h_iter = std::make_shared<
                 shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>(
-                solver_config.gpart_mass, solver_config.htol_up_tol, solver_config.htol_up_iter);
+                solver_config.gpart_mass,
+                solver_config.htol_up_coarse_cycle,
+                solver_config.htol_up_fine_cycle);
         smth_h_iter->set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged
@@ -700,7 +704,7 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_presteps_rint() {
                     sham::MultiRef{},
                     sham::MultiRef{ret.buf_field},
                     ret.buf_field.get_size(),
-                    [htol = solver_config.htol_up_tol](u32 i, Tscal *h_tree) {
+                    [htol = solver_config.htol_up_coarse_cycle](u32 i, Tscal *h_tree) {
                         h_tree[i] *= htol;
                     });
 

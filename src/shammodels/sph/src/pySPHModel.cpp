@@ -804,7 +804,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self, Tscal cstiff) {
                 return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
             })
-        .def("change_htolerance", &T::change_htolerance)
+        .def(
+            "change_htolerance",
+            [](T &self, Tscal in) {
+                self.change_htolerances(in, 1.1);
+            })
+        .def(
+            "change_htolerances",
+            [](T &self, Tscal coarse, Tscal fine) {
+                self.change_htolerances(coarse, fine);
+            },
+            py::kw_only(),
+            py::arg("coarse"),
+            py::arg("fine"))
         .def(
             "make_analysis_sodtube",
             [](T &self,

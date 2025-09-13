@@ -15,7 +15,11 @@ import shamrock
 
 
 def compute_integ_3d(q, W):
-    return np.trapezoid(4 * np.pi * q**2 * W, q)
+    if hasattr(np, "trapezoid"):
+        integrate_func = getattr(np, "trapezoid")
+    else:
+        integrate_func = getattr(np, "trapz")
+    return integrate_func(4 * np.pi * q**2 * W, q)
 
 
 def plot_test_sph_kernel(q, f, df, W, dW, title, ax):

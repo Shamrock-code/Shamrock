@@ -58,40 +58,26 @@ inline void validate_kernel_3d(
     REQUIRE_EQUAL(gen_norm3d * Ker::df(Ker::Rkern / 4) / 16, Ker::dW_3d(2 * Ker::Rkern / 4, 2));
 
     // is integral of W == 1 (1d)
-    REQUIRE_FLOAT_EQUAL(
-        1,
-        shammath::integ_riemann_sum<Tscal>(
-            0,
-            Ker::Rkern,
-            dx_int,
-            [](Tscal x) {
-                return 2 * Ker::W_1d(x, 1);
-            }),
-        tol);
+    Tscal integ_1d = shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, dx_int, [](Tscal x) {
+        return 2 * Ker::W_1d(x, 1);
+    });
+
+    REQUIRE_FLOAT_EQUAL(integ_1d, 1., tol);
 
     // is integral of W == 1 (2d)
-    REQUIRE_FLOAT_EQUAL(
-        1,
-        shammath::integ_riemann_sum<Tscal>(
-            0,
-            Ker::Rkern,
-            dx_int,
-            [](Tscal x) {
-                return 2 * pi<Tscal> * x * Ker::W_2d(x, 1);
-            }),
-        tol);
+
+    Tscal integ_2d = shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, dx_int, [](Tscal x) {
+        return 2 * pi<Tscal> * x * Ker::W_2d(x, 1);
+    });
+
+    REQUIRE_FLOAT_EQUAL(integ_2d, 1., tol);
 
     // is integral of W == 1 (3d)
-    REQUIRE_FLOAT_EQUAL(
-        1,
-        shammath::integ_riemann_sum<Tscal>(
-            0,
-            Ker::Rkern,
-            dx_int,
-            [](Tscal x) {
-                return 4 * pi<Tscal> * x * x * Ker::W_3d(x, 1);
-            }),
-        tol);
+
+    Tscal integ_3d = shammath::integ_riemann_sum<Tscal>(0, Ker::Rkern, dx_int, [](Tscal x) {
+        return 4 * pi<Tscal> * x * x * Ker::W_3d(x, 1);
+    });
+    REQUIRE_FLOAT_EQUAL(integ_3d, 1., tol);
 
     // is df = f' ?
     Tscal L2_sum = 0;
@@ -109,6 +95,46 @@ inline void validate_kernel_3d(
 TestStart(Unittest, "shammath/sphkernels/M4", validateM4kernel, 1) {
     validate_kernel_3d<shammath::M4<f32>>(1e-3, 1e-4, 1e-3);
     validate_kernel_3d<shammath::M4<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/M4DH", validateM4DHkernel, 1) {
+    validate_kernel_3d<shammath::M4DH<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M4DH<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/M4DH3", validateM4DH3kernel, 1) {
+    validate_kernel_3d<shammath::M4DH3<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M4DH3<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/M4DH5", validateM4DH5kernel, 1) {
+    validate_kernel_3d<shammath::M4DH5<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M4DH5<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/M4DH7", validateM4DH7kernel, 1) {
+    validate_kernel_3d<shammath::M4DH7<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M4DH7<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/M4Shift2", validateM4Shift2kernel, 1) {
+    validate_kernel_3d<shammath::M4Shift2<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M4Shift2<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/M4Shift4", validateM4Shift4kernel, 1) {
+    validate_kernel_3d<shammath::M4Shift4<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M4Shift4<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/M4Shift8", validateM4Shift8kernel, 1) {
+    validate_kernel_3d<shammath::M4Shift8<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M4Shift8<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/M4Shift16", validateM4Shift16kernel, 1) {
+    validate_kernel_3d<shammath::M4Shift16<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::M4Shift16<f64>>(1e-5, 1e-5, 1e-5);
 }
 
 TestStart(Unittest, "shammath/sphkernels/M5", validateM5kernel, 1) {

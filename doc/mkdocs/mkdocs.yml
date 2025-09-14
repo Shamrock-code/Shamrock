@@ -42,6 +42,7 @@ nav:
   - 'Physical models' :
     - 'SPH' :
       - 'Scalling test' : 'models/sph/scalling.md'
+      - 'Smoothing length tolerance' : 'models/sph/smoothing_length_tolerance.md'
 
   - 'Develloper Doc' :
     - 'Git guide' : 'devdoc/git_guide.md'

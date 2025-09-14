@@ -849,8 +849,8 @@ namespace shammodels::sph {
             {"use_two_stage_search", p.use_two_stage_search},
             // solver behavior config
             {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
-            {"htol_up_tol", p.htol_up_coarse_cycle},
-            {"htol_up_iter", p.htol_up_fine_cycle},
+            {"htol_up_coarse_cycle", p.htol_up_coarse_cycle},
+            {"htol_up_fine_cycle", p.htol_up_fine_cycle},
             {"epsilon_h", p.epsilon_h},
             {"h_iter_per_subcycles", p.h_iter_per_subcycles},
             {"h_max_subcycles_count", p.h_max_subcycles_count},
@@ -917,8 +917,20 @@ namespace shammodels::sph {
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
 
         j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
-        j.at("htol_up_tol").get_to(p.htol_up_coarse_cycle);
-        j.at("htol_up_iter").get_to(p.htol_up_fine_cycle);
+
+        // Try new names first, fall back to old names for backward compatibility
+        if (j.contains("htol_up_coarse_cycle")) {
+            j.at("htol_up_coarse_cycle").get_to(p.htol_up_coarse_cycle);
+        } else {
+            j.at("htol_up_tol").get_to(p.htol_up_coarse_cycle);
+        }
+
+        if (j.contains("htol_up_fine_cycle")) {
+            j.at("htol_up_fine_cycle").get_to(p.htol_up_fine_cycle);
+        } else {
+            j.at("htol_up_iter").get_to(p.htol_up_fine_cycle);
+        }
+
         j.at("epsilon_h").get_to(p.epsilon_h);
         j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
         j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);

@@ -807,14 +807,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "change_htolerance",
             [](T &self, Tscal in) {
-                ON_RANK_0(
-                    shamlog_warn_ln(
-                        "SPH",
-                        ".change_htolerance(val) is deprecated,\n"
-                        "    -> calling this is replaced internally by "
-                        ".change_htolerances(val, min(val, 1.1))");
-                );
-                self.change_htolerances(in, std::min(in, (Tscal)1.1));
+                ON_RANK_0(shamlog_warn_ln(
+                              "SPH",
+                              ".change_htolerance(val) is deprecated,\n"
+                              "    -> calling this is replaced internally by "
+                              ".change_htolerances(val, min(val, 1.1))"););
+                self.change_htolerances(in, std::min(in, (Tscal) 1.1));
             })
         .def(
             "change_htolerances",

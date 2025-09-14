@@ -31,3 +31,8 @@ Warning: smoothing length is not converged, rerunning the iterator ...          
      largest h = 0.8310577409570404 unconverged cnt = 99994
 ```
 in the logs. If this happens, you can try increasing the tolerance to something like `1.15` or `1.2`, which should solve the issue at the cost of a slight performance slowdown.
+
+The tolerance can be set in the runscript using
+```py
+model.change_htolerances(coarse=1.1, fine=1.05)
+```

@@ -349,7 +349,7 @@ struct shammodels::sph::SolverConfig {
 
     bool combined_dtdiv_divcurlv_compute = false; ///< Use the combined dtdivv and divcurlv compute
     /// Factor applied to the smoothing length for neighbors search (and ghost zone size)
-    /// @note This value must be larger or equal to htol_up_iter
+    /// @note This value must be larger or equal to htol_up_fine_cycle
     Tscal htol_up_coarse_cycle = 1.1;
     /// Maximum factor of the smoothing length evolution per subcycles
     Tscal htol_up_fine_cycle  = 1.1;

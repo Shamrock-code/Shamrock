@@ -923,8 +923,7 @@ namespace shammodels::sph {
         if (j.contains("show_neigh_stats")) {
             j.at("show_neigh_stats").get_to(p.show_neigh_stats);
         } else {
-            // from default value
-            p.show_neigh_stats = SolverConfig<Tvec, SPHKernel>{}.show_neigh_stats;
+            // Already set to default value
             ON_RANK_0(shamlog_warn_ln(
                 "SPHConfig",
                 "show_neigh_stats not found when deserializing, defaulting to ",

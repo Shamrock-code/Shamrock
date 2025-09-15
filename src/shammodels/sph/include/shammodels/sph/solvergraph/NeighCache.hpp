@@ -29,6 +29,7 @@ namespace shammodels::sph::solvergraph {
         shambase::DistributedData<shamrock::tree::ObjectCache> neigh_cache;
 
         shamrock::tree::ObjectCache &get_cache(u64 id) { return neigh_cache.get(id); }
+        const shamrock::tree::ObjectCache &get_cache(u64 id) const { return neigh_cache.get(id); }
 
         inline void check_sizes(const shambase::DistributedData<u32> &sizes) const {
             on_distributeddata_diff(

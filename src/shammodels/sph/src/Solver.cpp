@@ -42,6 +42,7 @@
 #include "shammodels/sph/modules/BuildTrees.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
+#include "shammodels/sph/modules/ComputeNeighStats.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
@@ -727,6 +728,18 @@ void shammodels::sph::Solver<Tvec, Kern>::start_neighbors_cache() {
         shammodels::sph::modules::NeighbourCache<Tvec, u_morton, Kern>(
             context, solver_config, storage)
             .start_neighbors_cache();
+    }
+
+    if (true) {
+        auto &pos_merged        = storage.positions_with_ghosts;
+        auto &neigh_cache       = storage.neigh_cache;
+        auto &hpart_with_ghosts = storage.hpart_with_ghosts;
+        auto &part_counts       = storage.part_counts;
+
+        modules::ComputeNeighStats<Tvec> compute_neigh_stats(Kernel::Rkern);
+
+        compute_neigh_stats.set_edges(part_counts, neigh_cache, pos_merged, hpart_with_ghosts);
+        compute_neigh_stats.evaluate();
     }
 }
 

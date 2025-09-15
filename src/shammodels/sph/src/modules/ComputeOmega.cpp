@@ -16,8 +16,10 @@
  */
 
 #include "shammodels/sph/modules/ComputeOmega.hpp"
+#include "shambackends/kernel_call_distrib.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamrock/solvergraph/IFieldSpan.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
@@ -43,25 +45,57 @@ void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
 
     omega.ensure_sizes(original_part_count);
 
-    // ComputeField<Tscal> omega = utility.make_compute_field<Tscal>("omega", 1);
-
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew_edge
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+    shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        shamlog_debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "compute omega");
-
-        sham::DeviceBuffer<Tscal> &omega_h = omega.get_buf(p.id_patch);
-
-        sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
-        sham::DeviceBuffer<Tvec> &merged_r
-            = storage.merged_xyzh.get().get(p.id_patch).template get_field_buf_ref<Tvec>(0);
-
-        sycl::range range_npart{pdat.get_obj_cnt()};
-
-        tree::ObjectCache &neigh_cache
-            = shambase::get_check_ref(storage.neigh_cache).get_cache(p.id_patch);
-
-        sph_utils.compute_omega(
-            merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);
+        auto &field = pdat.get_field<Tscal>(ihpart);
+        hnew_refs.add_obj(p.id_patch, std::ref(field));
     });
+    hnew_edge->set_refs(hnew_refs);
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::distributed_data_kernel_call(
+        dev_sched,
+        sham::DDMultiRef{
+            shambase::get_check_ref(storage.positions_with_ghosts).get_spans(),
+            shambase::get_check_ref(hnew_edge).get_spans(),
+            shambase::get_check_ref(storage.neigh_cache).neigh_cache},
+        sham::DDMultiRef{omega.get_spans()},
+        original_part_count,
+        [part_mass = solver_config.gpart_mass, Rkern = Kernel::Rkern](
+            u32 id_a, const Tvec *r, const Tscal *hpart, const auto ploop_ptrs, Tscal *omega) {
+            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+            Tvec xyz_a = r[id_a]; // could be recovered from lambda
+
+            Tscal h_a  = hpart[id_a];
+            Tscal dint = h_a * h_a * Rkern * Rkern;
+
+            Tscal rho_sum        = 0;
+            Tscal part_omega_sum = 0;
+
+            particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                Tvec dr    = xyz_a - r[id_b];
+                Tscal rab2 = sycl::dot(dr, dr);
+
+                if (rab2 > dint) {
+                    return;
+                }
+
+                Tscal rab = sycl::sqrt(rab2);
+
+                rho_sum += part_mass * Kernel::W_3d(rab, h_a);
+                part_omega_sum += part_mass * Kernel::dhW_3d(rab, h_a);
+            });
+
+            using namespace shamrock::sph;
+
+            Tscal rho_ha  = rho_h(part_mass, h_a, Kernel::hfactd);
+            Tscal omega_a = 1 + (h_a / (3 * rho_ha)) * part_omega_sum;
+            omega[id_a]   = omega_a;
+        });
 
     // storage.omega.set(std::move(omega));
 }

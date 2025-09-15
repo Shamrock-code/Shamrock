@@ -20,7 +20,7 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec>
-     void ComputeNeighStats<Tvec>::_impl_evaluate_internal() {
+    void ComputeNeighStats<Tvec>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
         const shambase::DistributedData<u32> &counts = edges.part_counts.indexes;
@@ -116,7 +116,7 @@ namespace shammodels::sph::modules {
     }
 
     template<class Tvec>
-     std::string ComputeNeighStats<Tvec>::_impl_get_tex() {
+    std::string ComputeNeighStats<Tvec>::_impl_get_tex() {
         return "TODO";
     }
 

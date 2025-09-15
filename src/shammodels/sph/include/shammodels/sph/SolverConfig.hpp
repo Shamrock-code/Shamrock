@@ -24,6 +24,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/type_traits.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
@@ -339,6 +340,8 @@ struct shammodels::sph::SolverConfig {
     /// Setter for the two stage search
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
 
+    bool show_neigh_stats = false;
+    inline void set_show_neigh_stats(bool enable) { show_neigh_stats = enable; }
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -847,6 +850,7 @@ namespace shammodels::sph {
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
+            {"show_neigh_stats", p.show_neigh_stats},
             // solver behavior config
             {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
             {"htol_up_coarse_cycle", p.htol_up_coarse_cycle},
@@ -915,6 +919,17 @@ namespace shammodels::sph {
 
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
+
+        if (j.contains("show_neigh_stats")) {
+            j.at("show_neigh_stats").get_to(p.show_neigh_stats);
+        } else {
+            // from default value
+            p.show_neigh_stats = SolverConfig<Tvec, SPHKernel>{}.show_neigh_stats;
+            ON_RANK_0(shamlog_warn_ln(
+                "SPHConfig",
+                "show_neigh_stats not found when deserializing, defaulting to ",
+                p.show_neigh_stats));
+        }
 
         j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
 

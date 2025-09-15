@@ -16,6 +16,8 @@
 
 #include "shammodels/sph/modules/ComputeNeighStats.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/patch/PatchDataFieldSpan.hpp"
 
 namespace shammodels::sph::modules {
 

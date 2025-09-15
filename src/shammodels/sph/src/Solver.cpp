@@ -730,7 +730,7 @@ void shammodels::sph::Solver<Tvec, Kern>::start_neighbors_cache() {
             .start_neighbors_cache();
     }
 
-    if (true) {
+    if (solver_config.show_neigh_stats) {
         auto &pos_merged        = storage.positions_with_ghosts;
         auto &neigh_cache       = storage.neigh_cache;
         auto &hpart_with_ghosts = storage.hpart_with_ghosts;

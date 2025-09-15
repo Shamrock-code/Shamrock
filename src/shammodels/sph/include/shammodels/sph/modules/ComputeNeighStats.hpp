@@ -12,7 +12,7 @@
 /**
  * @file ComputeNeighStats.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief A module to compute and display statistics on neighbor counts for SPH particles.
  *
  */
 

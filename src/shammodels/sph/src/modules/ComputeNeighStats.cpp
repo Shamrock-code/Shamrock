@@ -10,7 +10,7 @@
 /**
  * @file ComputeNeighStats.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implementation of the ComputeNeighStats module for analyzing neighbor counts.
  *
  */
 

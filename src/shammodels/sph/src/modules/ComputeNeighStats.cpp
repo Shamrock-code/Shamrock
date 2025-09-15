@@ -77,7 +77,7 @@ namespace shammodels::sph::modules {
                     neigh_count_true[id_a] = cnt_true;
                 });
 
-            { // tmp debug print max, min, mean, stddev
+            {
                 std::vector<u32> neigh_cnt_vec = neigh_count_true.copy_to_stdvec();
 
                 double max  = *std::max_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
@@ -96,7 +96,7 @@ namespace shammodels::sph::modules {
                 logger::raw_ln("(true) max, min, mean, stddev =", max, min, mean, stddev);
             }
 
-            { // tmp debug print max, min, mean, stddev
+            {
                 std::vector<u32> neigh_cnt_vec = neigh_count_all.copy_to_stdvec();
 
                 double max  = *std::max_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());

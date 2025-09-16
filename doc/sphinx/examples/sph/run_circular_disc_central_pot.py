@@ -73,7 +73,7 @@ G = ucte.G()
 # List parameters
 
 # Resolution
-Npart = 1000000
+Npart = 100000
 
 # Domain decomposition parameters
 scheduler_split_val = int(1.0e7)  # split patches with more than 1e7 particles

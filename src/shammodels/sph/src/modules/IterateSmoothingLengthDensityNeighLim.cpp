@@ -137,14 +137,13 @@ void IterateSmoothingLengthDensityNeighLim<Tvec, SPHKernel>::_impl_evaluate_inte
                 Tscal ha_0 = h_old[id_a];
 
                 if (new_h < ha_0 * h_max_tot_max_evol) {
-                    h_new[id_a]       = new_h;
-                    eps[id_a]         = sycl::fabs(new_h - h_a) / ha_0;
-                    was_limited[id_a] = 0;
+                    h_new[id_a] = new_h;
+                    eps[id_a]   = sycl::fabs(new_h - h_a) / ha_0;
                 } else {
-                    h_new[id_a]       = ha_0 * h_max_tot_max_evol;
-                    eps[id_a]         = -1;
-                    was_limited[id_a] = 0;
+                    h_new[id_a] = ha_0 * h_max_tot_max_evol;
+                    eps[id_a]   = -1;
                 }
+                was_limited[id_a] = 0;
             }
         });
 }

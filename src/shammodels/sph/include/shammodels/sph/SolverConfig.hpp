@@ -360,6 +360,35 @@ struct shammodels::sph::SolverConfig {
     u32 h_iter_per_subcycles  = 50;   ///< Maximum number of iterations per subcycle
     u32 h_max_subcycles_count = 100;  ///< Maximum number of subcycles before solver crash
 
+    struct SmoothingLengthConfig {
+        struct DensityBased {};
+        struct DensityBasedNeighLim {
+            u32 max_neigh_count = 500;
+        };
+
+        using mode = std::variant<DensityBased, DensityBasedNeighLim>;
+
+        mode config = DensityBased{};
+
+        void set_density_based() { config = DensityBased{}; }
+        void set_density_based_neigh_lim(u32 max_neigh_count) {
+            config = DensityBasedNeighLim{max_neigh_count};
+        }
+
+        bool is_density_based_neigh_lim() {
+            return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
+    };
+
+    SmoothingLengthConfig smoothing_length_config;
+
+    inline void set_smoothing_length_density_based() {
+        smoothing_length_config.set_density_based();
+    }
+    inline void set_smoothing_length_density_based_neigh_lim(u32 max_neigh_count) {
+        smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////

@@ -24,12 +24,12 @@
 
 namespace shammodels::sph::modules {
 
-    template<class Tvec, class SPHKernel>
+    template<class Tvec, template<class> class SPHKernel>
     class NodeComputeOmega : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
-        static constexpr Tscal kernel_radius = SPHKernel::Rkern;
+        static constexpr Tscal kernel_radius = SPHKernel<Tscal>::Rkern;
         Tscal part_mass;
 
         public:
@@ -70,27 +70,41 @@ namespace shammodels::sph::modules {
         virtual std::string _impl_get_tex();
     };
 
-    template<class Tvec, template<class> class SPHKernel>
-    class ComputeOmega {
+    template<class T>
+    class SetWhenMask : public shamrock::solvergraph::INode {
+
+        T val_to_set;
+
         public:
-        using Tscal              = shambase::VecComponent<Tvec>;
-        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
-        using Kernel             = SPHKernel<Tscal>;
+        SetWhenMask(T val_to_set) : val_to_set(val_to_set) {}
 
-        using Config  = SolverConfig<Tvec, SPHKernel>;
-        using Storage = SolverStorage<Tvec, u32>;
+        struct Edges {
+            const shamrock::solvergraph::Indexes<u32> &part_counts;
+            const shamrock::solvergraph::IFieldSpan<u32> &mask;
+            shamrock::solvergraph::IFieldSpan<T> &field_to_set;
+        };
 
-        ShamrockCtx &context;
-        Config &solver_config;
-        Storage &storage;
+        inline void set_edges(
+            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<u32>> mask,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> field_to_set) {
+            __internal_set_ro_edges({part_counts, mask});
+            __internal_set_rw_edges({field_to_set});
+        }
 
-        ComputeOmega(ShamrockCtx &context, Config &solver_config, Storage &storage)
-            : context(context), solver_config(solver_config), storage(storage) {}
+        inline Edges get_edges() {
+            return Edges{
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<u32>>(1),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<T>>(0),
+            };
+        }
 
-        void compute_omega();
+        void _impl_evaluate_internal();
 
-        private:
-        inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+        inline virtual std::string _impl_get_label() { return "SetWhenMask"; };
+
+        virtual std::string _impl_get_tex();
     };
 
 } // namespace shammodels::sph::modules

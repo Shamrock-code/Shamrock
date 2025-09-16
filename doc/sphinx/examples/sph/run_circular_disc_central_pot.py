@@ -250,6 +250,10 @@ else:
     cfg.set_cfl_cour(C_cour)
     cfg.set_cfl_force(C_force)
 
+    cfg.set_show_neigh_stats(True)
+    cfg.set_smoothing_length_density_based()
+    cfg.set_smoothing_length_density_based_neigh_lim(500)
+
     # Set the solver config to be the one stored in cfg
     model.set_solver_config(cfg)
 

@@ -22,7 +22,7 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 
-template<class Tvec, class SPHKernel>
+template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_evaluate_internal() {
 
     __shamrock_stack_entry();
@@ -61,58 +61,58 @@ void shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_evaluate
 
                 Tscal rab = sycl::sqrt(rab2);
 
-                rho_sum += part_mass * SPHKernel::W_3d(rab, h_a);
-                part_omega_sum += part_mass * SPHKernel::dhW_3d(rab, h_a);
+                rho_sum += part_mass * SPHKernel<Tscal>::W_3d(rab, h_a);
+                part_omega_sum += part_mass * SPHKernel<Tscal>::dhW_3d(rab, h_a);
             });
 
             using namespace shamrock::sph;
 
-            Tscal rho_ha  = rho_h(part_mass, h_a, SPHKernel::hfactd);
+            Tscal rho_ha  = rho_h(part_mass, h_a, SPHKernel<Tscal>::hfactd);
             Tscal omega_a = 1 + (h_a / (3 * rho_ha)) * part_omega_sum;
             omega[id_a]   = omega_a;
         });
 }
 
-template<class Tvec, class SPHKernel>
+template<class Tvec, template<class> class SPHKernel>
 std::string shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_get_tex() {
     return "TODO";
 }
 
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
-
+template<class T>
+void shammodels::sph::modules::SetWhenMask<T>::_impl_evaluate_internal() {
     __shamrock_stack_entry();
 
-    using namespace shamrock;
-    using namespace shamrock::patch;
+    auto edges = get_edges();
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
-    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew_edge
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
-    shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        auto &field = pdat.get_field<Tscal>(ihpart);
-        hnew_refs.add_obj(p.id_patch, std::ref(field));
-    });
-    hnew_edge->set_refs(hnew_refs);
+    edges.mask.check_sizes(edges.part_counts.indexes);
+    edges.field_to_set.ensure_sizes(edges.part_counts.indexes);
 
-    NodeComputeOmega<Tvec, SPHKernel<Tscal>> compute_omega{solver_config.gpart_mass};
-    compute_omega.set_edges(
-        storage.part_counts,
-        storage.neigh_cache,
-        storage.positions_with_ghosts,
-        hnew_edge,
-        storage.omega);
-    compute_omega.evaluate();
+    sham::distributed_data_kernel_call(
+        dev_sched,
+        sham::DDMultiRef{edges.mask.get_spans()},
+        sham::DDMultiRef{edges.field_to_set.get_spans()},
+        edges.part_counts.indexes,
+        [val_to_set = this->val_to_set](u32 id, const u32 *mask, T *field_to_set) {
+            if (mask[id] == 1) {
+                field_to_set[id] = val_to_set;
+            }
+        });
 }
 
-using namespace shammath;
-template class shammodels::sph::modules::ComputeOmega<f64_3, M4>;
-template class shammodels::sph::modules::ComputeOmega<f64_3, M6>;
-template class shammodels::sph::modules::ComputeOmega<f64_3, M8>;
+template<class T>
+std::string shammodels::sph::modules::SetWhenMask<T>::_impl_get_tex() {
+    return "TODO";
+}
 
-template class shammodels::sph::modules::ComputeOmega<f64_3, C2>;
-template class shammodels::sph::modules::ComputeOmega<f64_3, C4>;
-template class shammodels::sph::modules::ComputeOmega<f64_3, C6>;
+template class shammodels::sph::modules::SetWhenMask<f64>;
+
+using namespace shammath;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, M4>;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, M6>;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, M8>;
+
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, C2>;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, C4>;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, C6>;

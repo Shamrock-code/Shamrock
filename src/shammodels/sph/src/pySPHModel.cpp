@@ -65,6 +65,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                               "    -> calling this is a no-op,\n"
                               "    -> you can remove the call to that function"););
             })
+        .def("set_smoothing_length_density_based", &TConfig::set_smoothing_length_density_based)
+        .def(
+            "set_smoothing_length_density_based_neigh_lim",
+            &TConfig::set_smoothing_length_density_based_neigh_lim)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)

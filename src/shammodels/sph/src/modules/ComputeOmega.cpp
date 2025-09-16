@@ -15,14 +15,17 @@
  *
  */
 
-#include "shammodels/sph/modules/ComputeOmega.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
+#include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 
 template<class Tvec, class SPHKernel>
 void shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_evaluate_internal() {
+
+    __shamrock_stack_entry();
 
     auto edges = get_edges();
 
@@ -78,11 +81,7 @@ std::string shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_g
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
 
-    NamedStackEntry stack_loc{"compute omega"};
-
-    shamrock::SchedulerUtility utility(scheduler());
-    using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
-    SPHUtils sph_utils(scheduler());
+    __shamrock_stack_entry();
 
     using namespace shamrock;
     using namespace shamrock::patch;

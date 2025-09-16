@@ -73,7 +73,7 @@ G = ucte.G()
 # List parameters
 
 # Resolution
-Npart = 100000
+Npart = 1000000
 
 # Domain decomposition parameters
 scheduler_split_val = int(1.0e7)  # split patches with more than 1e7 particles
@@ -250,9 +250,16 @@ else:
     cfg.set_cfl_cour(C_cour)
     cfg.set_cfl_force(C_force)
 
-    cfg.set_show_neigh_stats(True)
+    # Enable this to debug the neighbor counts
+    # cfg.set_show_neigh_stats(True)
+
+    # Standard way to set the smoothing length (e.g. Price et al. 2018)
     cfg.set_smoothing_length_density_based()
-    cfg.set_smoothing_length_density_based_neigh_lim(500)
+
+    # Standard density based smoothing lenght but with a neighbor count limit
+    # Use it if you have large slowdowns due to giant particles
+    # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
+    # cfg.set_smoothing_length_density_based_neigh_lim(500)
 
     # Set the solver config to be the one stored in cfg
     model.set_solver_config(cfg)
@@ -292,12 +299,12 @@ else:
     # Smoothing length iterations, increasing it affect the performance negatively but increse the
     # convergence rate of the smoothing length
     # this is why we increase it temporely to 1.3 before lowering it back to 1.1 (default value)
-    # Note that both ``change_htolerance`` can be removed and it will work the same but would converge
+    # Note that both ``change_htolerances`` can be removed and it will work the same but would converge
     # more slowly at the first timestep
 
-    model.change_htolerance(1.3)
+    model.change_htolerances(coarse=1.3, fine=1.1)
     model.timestep()
-    model.change_htolerance(1.1)
+    model.change_htolerances(coarse=1.1, fine=1.1)
 
 
 # %%

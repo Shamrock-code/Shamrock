@@ -710,6 +710,9 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     compute_omega.evaluate();
 
     if (solver_config.smoothing_length_config.is_density_based_neigh_lim()) {
+        // if the h limiter is triggered, omega does not hold it's sense of dh/dr anymore
+        // so we set it to 1, this effectively is equivalent of disabling the energy correction
+        // term corresponding to dh/dr
         modules::SetWhenMask<Tscal> set_omega_mask{1};
         set_omega_mask.set_edges(storage.part_counts, should_set_omega_mask, storage.omega);
         set_omega_mask.evaluate();

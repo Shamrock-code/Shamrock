@@ -1,5 +1,5 @@
 """
-Production run: Circular disc & central potential
+Production run: Circumbinary disc & polar binary orbit
 =================================================
 
 This example demonstrates how to run a smoothed particle hydrodynamics (SPH)
@@ -7,10 +7,8 @@ simulation of a circular disc orbiting around a central point mass potential.
 
 The simulation models:
 
-- A central star with a given mass and accretion radius
+- A binary star in polar orbit
 - A gaseous disc with specified mass, inner/outer radii, and vertical structure
-- Artificial viscosity for angular momentum transport
-- Locally isothermal equation of state
 
 Also this simulation feature rolling dumps (see `purge_old_dumps` function) to save disk space.
 
@@ -73,7 +71,7 @@ G = ucte.G()
 # List parameters
 
 # Resolution
-Npart = 100000
+Npart = 1000000
 
 # Domain decomposition parameters
 scheduler_split_val = int(1.0e7)  # split patches with more than 1e7 particles
@@ -83,44 +81,59 @@ scheduler_merge_val = scheduler_split_val // 16
 dump_freq_stop = 2
 plot_freq_stop = 1
 
-dt_stop = 0.01
-nstop = 100
+dt_stop = 5
+nstop = 50
 
 # The list of times at which the simulation will pause for analysis / dumping
 t_stop = [i * dt_stop for i in range(nstop + 1)]
 
 
-# Sink parameters
-center_mass = 1.0
-center_racc = 0.1
+# central star params
+center_mass = 2.5
+center_racc = 1
 
 # Disc parameter
-disc_mass = 0.01  # sol mass
-rout = 10.0  # au
-rin = 1.0  # au
-H_r_0 = 0.05
-q = 0.5
-p = 3.0 / 2.0
-r0 = 1.0
+disc_mass = 0.001  # sol mass
+rout = 350  # au
+rin = 90  # au
 
-# Viscosity parameter
-alpha_AV = 1.0e-3 / 0.08
-alpha_u = 1.0
-beta_AV = 2.0
+H_r_in = 0.05
+
+q = 0.15
+p = 1.0
+
+# alpha_ss ~ alpha_AV * 0.08
+alpha_AV = 0.01
+alpha_u = 1
+beta_AV = 2
 
 # Integrator parameters
 C_cour = 0.3
 C_force = 0.25
+C_mult_stiffness = 10
 
 
-dump_folder = f"_to_trash/circular_disc_central_pot_{Npart}/"
+dump_folder = f"_to_trash/circumbinary_disc_polar_hlim500_hcoarse1.2_{Npart}/"
 dump_prefix = dump_folder + "dump_"
+
+
+# hierarichle split
+split_list = [
+    {
+        "index": 0,
+        "mass_ratio": 0.5 / 2,
+        "a": 40,
+        "e": 0.5,
+        "euler_angle": (np.radians(90), 0.0, 0.0),
+    },
+    # {"index" : 0, "mass_ratio" : 0.5, "a": 0.33333333, "e":0., "euler_angle" :(0,0,0)}
+]
 
 
 # Disc profiles
 def sigma_profile(r):
-    sigma_0 = 1.0  # We do not care as it will be renormalized
-    return sigma_0 * (r / r0) ** (-p)
+    sigma_0 = 1
+    return sigma_0 * (r / rin) ** (-p)
 
 
 def kep_profile(r):
@@ -132,8 +145,8 @@ def omega_k(r):
 
 
 def cs_profile(r):
-    cs_in = (H_r_0 * r0) * omega_k(r0)
-    return ((r / r0) ** (-q)) * cs_in
+    cs_in = (H_r_in * rin) * omega_k(rin)
+    return ((r / rin) ** (-q)) * cs_in
 
 
 # %%
@@ -151,18 +164,62 @@ bsize = rout * 2
 bmin = (-bsize, -bsize, -bsize)
 bmax = (bsize, bsize, bsize)
 
-cs0 = cs_profile(r0)
+cs0 = cs_profile(rin)
 
 
 def rot_profile(r):
+    # return kep_profile(r)
+
+    # subkeplerian correction
     return ((kep_profile(r) ** 2) - (2 * p + q) * cs_profile(r) ** 2) ** 0.5
 
 
 def H_profile(r):
     H = cs_profile(r) / omega_k(r)
-    # fact = (2.**0.5) * 3. # factor taken from phantom, to fasten thermalizing
-    fact = 1.0
-    return fact * H
+    # fact = (2.**0.5) * 3.
+    fact = 1
+    return fact * H  # factor taken from phantom, to fasten thermalizing
+
+
+# %%
+# Split as binary
+def split_as_binary(sink, m1, m2, a, e, euler_angles=(0.0, 0.0, 0.0)):
+    roll, pitch, yaw = euler_angles
+
+    m1 = float(m1)
+    m2 = float(m2)
+    a = float(a)
+    e = float(e)
+    roll = float(roll)
+    pitch = float(pitch)
+    yaw = float(yaw)
+
+    r1, r2, v1, v2 = shamrock.phys.get_binary_rotated(
+        m1=m1, m2=m2, a=a, e=e, nu=float(np.radians(0.0)), G=G, roll=roll, pitch=pitch, yaw=yaw
+    )
+
+    s1 = {
+        "mass": m1,
+        "racc": sink["racc"],
+        "pos": (sink["pos"][0] + r1[0], sink["pos"][1] + r1[1], sink["pos"][2] + r1[2]),
+        "vel": (sink["vel"][0] + v1[0], sink["vel"][1] + v1[1], sink["vel"][2] + v1[2]),
+    }
+
+    s2 = {
+        "mass": m2,
+        "racc": sink["racc"],
+        "pos": (sink["pos"][0] + r2[0], sink["pos"][1] + r2[1], sink["pos"][2] + r2[2]),
+        "vel": (sink["vel"][0] + v2[0], sink["vel"][1] + v2[1], sink["vel"][2] + v2[2]),
+    }
+
+    print("-------------")
+    print(sink)
+    print(s1)
+    print(s2)
+    print(r1, r2, v1, v2)
+    print("-------------")
+
+    return s1, s2
 
 
 # %%
@@ -239,9 +296,9 @@ else:
     # Generate the default config
     cfg = model.gen_default_config()
     cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
-    cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
+    cfg.set_eos_locally_isothermalFA2014(h_over_r=H_r_in)
 
-    cfg.add_ext_force_point_mass(center_mass, center_racc)
+    # cfg.add_ext_force_point_mass(center_mass, center_racc)
     cfg.add_kill_sphere(center=(0, 0, 0), radius=bsize)  # kill particles outside the simulation box
 
     cfg.set_units(codeu)
@@ -249,6 +306,7 @@ else:
     # Set the CFL
     cfg.set_cfl_cour(C_cour)
     cfg.set_cfl_force(C_force)
+    cfg.set_cfl_mult_stiffness(C_mult_stiffness)
 
     # Set the solver config to be the one stored in cfg
     model.set_solver_config(cfg)
@@ -262,8 +320,77 @@ else:
     # Set the simulation box size
     model.resize_simulation_box(bmin, bmax)
 
-    # Create the setup
+    sink_list = [
+        {"mass": center_mass, "racc": center_racc, "pos": (0, 0, 0), "vel": (0, 0, 0)},
+    ]
 
+    print(f"sink_list = {sink_list}")
+
+    for split in split_list:
+        index_split = split["index"]
+        mass_ratio = split["mass_ratio"]
+        asplit = split["a"]
+        esplit = split["e"]
+        euler_angle_split = split["euler_angle"]
+
+        print(f"splitting sink {split}")
+
+        new_sink_list = []
+
+        for i in range(len(sink_list)):
+            if i == index_split:
+                smass = sink_list[i]["mass"]
+
+                s1, s2 = split_as_binary(
+                    sink_list[i],
+                    smass * mass_ratio,
+                    smass * (1 - mass_ratio),
+                    asplit,
+                    esplit,
+                    euler_angle_split,
+                )
+
+                new_sink_list.append(s1)
+                new_sink_list.append(s2)
+            else:
+                new_sink_list.append(sink_list[i])
+
+        sink_list = new_sink_list
+        print(f"sink_list = {sink_list}")
+
+    sum_mass = sum(s["mass"] for s in sink_list)
+    vel_bary = (
+        sum(s["mass"] * s["vel"][0] for s in sink_list) / sum_mass,
+        sum(s["mass"] * s["vel"][1] for s in sink_list) / sum_mass,
+        sum(s["mass"] * s["vel"][2] for s in sink_list) / sum_mass,
+    )
+    pos_bary = (
+        sum(s["mass"] * s["pos"][0] for s in sink_list) / sum_mass,
+        sum(s["mass"] * s["pos"][1] for s in sink_list) / sum_mass,
+        sum(s["mass"] * s["pos"][2] for s in sink_list) / sum_mass,
+    )
+    print("sinks baryenceter : velocity {} position {}".format(vel_bary, pos_bary))
+
+    for s in sink_list:
+        mass = s["mass"]
+        x, y, z = s["pos"]
+        vx, vy, vz = s["vel"]
+        racc = s["racc"]
+
+        x -= pos_bary[0]
+        y -= pos_bary[1]
+        z -= pos_bary[2]
+
+        vx -= vel_bary[0]
+        vy -= vel_bary[1]
+        vz -= vel_bary[2]
+
+        print(
+            "add sink : mass {} pos {} vel {} racc {}".format(mass, (x, y, z), (vx, vy, vz), racc)
+        )
+        model.add_sink(mass, (x, y, z), (vx, vy, vz), racc)
+
+    # Create the setup
     setup = model.get_setup()
     gen_disc = setup.make_generator_disc_mc(
         part_mass=pmass,
@@ -278,21 +405,11 @@ else:
         init_h_factor=0.1,
     )
 
-    # add a hcp box above the disc
-    dr = 0.1
-    fact = 1.0
-    center_box = (0, 0, rout * 0.5)
-    bmin_box = (center_box[0] - dr * fact, center_box[1] - dr * fact, center_box[2] - dr * fact)
-    bmax_box = (center_box[0] + dr * fact, center_box[1] + dr * fact, center_box[2] + dr * fact)
-    gen_hcp = setup.make_generator_lattice_hcp(dr, bmin_box, bmax_box)
-
-    comb = setup.make_combiner_add(gen_disc, gen_hcp)
-
     # Print the dot graph of the setup
-    print(comb.get_dot())
+    print(gen_disc.get_dot())
 
     # Apply the setup
-    setup.apply_setup(comb)
+    setup.apply_setup(gen_disc, insert_step=int(scheduler_split_val / 4))
 
     # Run a single step to init the integrator and smoothing length of the particles
     # Here the htolerance is the maximum factor of evolution of the smoothing length in each
@@ -302,22 +419,18 @@ else:
     # Note that both ``change_htolerance`` can be removed and it will work the same but would converge
     # more slowly at the first timestep
 
-    model.change_htolerance(1.3)
+    model.change_htolerances(coarse=1.3, fine=1.1)
     model.timestep()
-    model.change_htolerance(1.1)
+    model.change_htolerances(coarse=1.1, fine=1.05)
 
     model.do_vtk_dump("init.vtk", True)
-
-    model.timestep()
-
-    exit()
 
 
 # %%
 # On the fly analysis
-def save_rho_integ(ext, arr_rho, iplot):
+def save_rho_integ(ext, sinks, arr_rho, iplot):
     if shamrock.sys.world_rank() == 0:
-        metadata = {"extent": [-ext, ext, -ext, ext], "time": model.get_time()}
+        metadata = {"extent": [-ext, ext, -ext, ext], "sinks": sinks, "time": model.get_time()}
         np.save(dump_folder + f"rho_integ_{iplot:07}.npy", arr_rho)
 
         with open(dump_folder + f"rho_integ_{iplot:07}.json", "w") as fp:
@@ -325,6 +438,7 @@ def save_rho_integ(ext, arr_rho, iplot):
 
 
 def analysis_plot(iplot):
+    sinks = model.get_sinks()
 
     ext = rout * 1.5
     nx = 1024
@@ -340,7 +454,7 @@ def analysis_plot(iplot):
         ny=ny,
     )
 
-    save_rho_integ(ext, arr_rho2, iplot)
+    save_rho_integ(ext, sinks, arr_rho2, iplot)
 
 
 # %%
@@ -392,6 +506,7 @@ import matplotlib.pyplot as plt
 def plot_rho_integ(metadata, arr_rho, iplot):
 
     ext = metadata["extent"]
+    sinks = metadata["sinks"]
 
     dpi = 200
 
@@ -403,8 +518,21 @@ def plot_rho_integ(metadata, arr_rho, iplot):
     my_cmap.set_bad(color="black")
 
     res = plt.imshow(
-        arr_rho, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-8, vmax=1e-4
+        arr_rho, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-10, vmax=1e-7
     )
+
+    ax = plt.gca()
+
+    output_list = []
+    for s in sinks:
+        print(s)
+        x, y, z = s["pos"]
+        print(x, y, z)
+        output_list.append(
+            plt.Circle((x, y), s["accretion_radius"] * 5, linewidth=0.5, color="blue", fill=False)
+        )
+    for circle in output_list:
+        ax.add_artist(circle)
 
     plt.xlabel("x")
     plt.ylabel("y")

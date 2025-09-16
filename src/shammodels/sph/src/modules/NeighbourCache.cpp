@@ -25,6 +25,7 @@
 #include "shamtree/TreeTraversal.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
 #include "shamunits/Constants.hpp"
+#include <vector>
 
 template<class Tvec, class Tmorton, template<class> class SPHKernel>
 void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_neighbors_cache() {
@@ -524,6 +525,91 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
             pleaf_cache.complete_event_state(e);
             neigh_count.complete_event_state(e);
             obj_it.cell_iterator.complete_event_state(e);
+        }
+
+        {
+
+            sham::DeviceBuffer<u32> neigh_count_true(
+                obj_cnt, shamsys::instance::get_compute_scheduler_ptr());
+
+            {
+                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+                sham::EventList depends_list;
+
+                auto xyz                   = buf_xyz.get_read_access(depends_list);
+                auto hpart                 = buf_hpart.get_read_access(depends_list);
+                auto acc_neigh_leaf_looper = pleaf_cache.get_read_access(depends_list);
+                auto neigh_cnt             = neigh_count_true.get_write_access(depends_list);
+                auto particle_looper       = obj_it.cell_iterator.get_read_access(depends_list);
+
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                    tree::ObjectCacheIterator neigh_leaf_looper(acc_neigh_leaf_looper);
+
+                    sycl::accessor leaf_owner{leaf_part_id, cgh, sycl::read_only};
+
+                    u32 offset_leaf = intnode_cnt;
+                    // sycl::stream out {4096,1024,cgh};
+
+                    constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+                    shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+                        u32 id_a = (u32) gid;
+
+                        Tscal tol = 1;
+
+                        Tscal rint_a = hpart[id_a] * tol;
+
+                        Tvec xyz_a = xyz[id_a];
+
+                        u32 cnt = 0;
+
+                        u32 leaf_own_a = leaf_owner[id_a];
+
+                        neigh_leaf_looper.for_each_object(leaf_own_a, [&](u32 leaf_b) {
+                            SHAM_ASSERT(leaf_b >= offset_leaf);
+
+                            particle_looper.for_each_in_leaf_cell(
+                                leaf_b - offset_leaf, [&](u32 id_b) {
+                                    Tvec dr      = xyz_a - xyz[id_b];
+                                    Tscal rab2   = sycl::dot(dr, dr);
+                                    Tscal rint_b = hpart[id_b] * tol;
+
+                                    bool no_interact = rab2 > rint_a * rint_a * Rker2
+                                                       && rab2 > rint_b * rint_b * Rker2;
+
+                                    cnt += (no_interact) ? 0 : 1;
+                                });
+                        });
+
+                        neigh_cnt[id_a] = cnt;
+                    });
+                });
+
+                buf_xyz.complete_event_state(e);
+                buf_hpart.complete_event_state(e);
+                pleaf_cache.complete_event_state(e);
+                neigh_count_true.complete_event_state(e);
+                obj_it.cell_iterator.complete_event_state(e);
+            }
+
+            { // tmp debug print max, min, mean, stddev
+                std::vector<u32> neigh_cnt_vec = neigh_count_true.copy_to_stdvec();
+
+                double max  = *std::max_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
+                double min  = *std::min_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
+                double mean = std::accumulate(neigh_cnt_vec.begin(), neigh_cnt_vec.end(), 0.0)
+                              / neigh_cnt_vec.size();
+                double stddev = std::sqrt(
+                    std::accumulate(
+                        neigh_cnt_vec.begin(),
+                        neigh_cnt_vec.end(),
+                        0.0,
+                        [mean](double acc, double x) {
+                            return acc + (x - mean) * (x - mean);
+                        })
+                    / neigh_cnt_vec.size());
+                logger::raw_ln("max, min, mean, stddev =", max, min, mean, stddev);
+            }
         }
 
         tree::ObjectCache pcache = tree::prepare_object_cache(std::move(neigh_count), obj_cnt);

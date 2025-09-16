@@ -148,9 +148,9 @@ namespace sham {
                 1,
                 [](u32 i, u64 *clock) {
 #ifdef SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
-                    *clock = sham::get_device_clock();
+                    clock[0] = sham::get_device_clock();
 #else
-                    *clock = 0;
+                    clock[0] = 0;
 #endif
                 });
         }

@@ -30,35 +30,35 @@ TestStart(
         shamsys::instance::get_compute_scheduler_ptr(), 1000000);
     profiler.setFrameStartClock();
 
-    sham::EventList deps;
-    auto ptr            = buf.get_write_access(deps);
-    auto gpu_core_timer = profiler.get_write_access(deps);
+    sham::kernel_call_hndl(
+        q,
+        sham::MultiRef{},
+        sham::MultiRef{buf, profiler},
+        sz,
+        [](u32 sz, auto ptr, auto gpu_core_timer) {
+            return [=](sycl::handler &cgh) {
+                sham::gpu_core_timeline_profilier::local_access_t gpu_core_timer_data(cgh);
 
-    auto e = q.submit(deps, [&](sycl::handler &cgh) {
-        sham::gpu_core_timeline_profilier::local_access_t gpu_core_timer_data(cgh);
+                u64 group_size = 64;
+                cgh.parallel_for(shambase::make_range(sz, group_size), [=](sycl::nd_item<1> id) {
+                    u64 gid = id.get_global_linear_id();
+                    if (gid >= sz)
+                        return;
 
-        u64 group_size = 64;
-        cgh.parallel_for(shambase::make_range(sz, group_size), [=](sycl::nd_item<1> id) {
-            u64 gid = id.get_global_linear_id();
-            if (gid >= sz)
-                return;
+                    gpu_core_timer.init_timeline_event(id, gpu_core_timer_data);
 
-            gpu_core_timer.init_timeline_event(id, gpu_core_timer_data);
+                    gpu_core_timer.start_timeline_event(gpu_core_timer_data);
+                    u32 id_a = (u32) gid;
 
-            gpu_core_timer.start_timeline_event(gpu_core_timer_data);
-            u32 id_a = (u32) gid;
+                    // force something very unbalanced
+                    for (u32 i = 0; i < 8 * (id_a % (group_size * 2)); i++) {
+                        ptr[gid] = static_cast<T>(sycl::sqrt(f64(ptr[gid])));
+                    }
 
-            // force something very unbalanced
-            for (u32 i = 0; i < 8 * (id_a % (group_size * 2)); i++) {
-                ptr[gid] = static_cast<T>(sycl::sqrt(f64(ptr[gid])));
-            }
-
-            gpu_core_timer.end_timeline_event(gpu_core_timer_data);
+                    gpu_core_timer.end_timeline_event(gpu_core_timer_data);
+                });
+            };
         });
-    });
-
-    buf.complete_event_state(e);
-    profiler.complete_event_state(e);
 
     profiler.dump_to_file("gpu_core_timeline_profilier_test.json");
     // profiler.open_file("gpu_core_timeline_profilier_test.json");

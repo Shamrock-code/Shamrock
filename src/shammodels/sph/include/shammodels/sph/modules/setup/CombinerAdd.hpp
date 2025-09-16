@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shammath/AABB.hpp"
 #include "shammath/crystalLattice.hpp"
@@ -43,6 +44,8 @@ namespace shammodels::sph::modules {
         bool is_done() { return parent1->is_done() && parent2->is_done(); }
 
         shamrock::patch::PatchDataLayer next_n(u32 nmax) {
+
+            __shamrock_stack_entry();
 
             u32 cnt1 = (parent1->is_done()) ? 0 : (nmax / 2);
             u32 cnt2 = nmax - cnt1;

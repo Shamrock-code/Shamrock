@@ -46,6 +46,8 @@ set(Sources
     src/modules/KillParticles.cpp
     src/modules/GetParticlesOutsideSphere.cpp
     src/modules/IterateSmoothingLengthDensity.cpp
+    src/modules/IterateSmoothingLengthNumDensity.cpp
+    src/modules/IterateSmoothingLengthDensityNeighLim.cpp
     src/modules/LoopSmoothingLengthIter.cpp
     src/modules/ComputeNeighStats.cpp
     src/modules/setup/GeneratorMCDisc.cpp

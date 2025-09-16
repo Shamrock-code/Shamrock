@@ -22,7 +22,7 @@ if(SHAMROCK_EXTERNAL_JSON)
 else()
     set(JSON_BuildTests OFF CACHE INTERNAL "")
 
-    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/nlohmann_json 55f93686c)
+    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/nlohmann_json 55f93686c01528224f448c19128836e7df245f72)
 
     add_subdirectory(external/nlohmann_json)
 endif()

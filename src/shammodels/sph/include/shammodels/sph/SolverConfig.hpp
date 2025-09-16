@@ -375,7 +375,7 @@ struct shammodels::sph::SolverConfig {
             config = DensityBasedNeighLim{max_neigh_count};
         }
 
-        bool is_density_based_neigh_lim() {
+        bool is_density_based_neigh_lim() const {
             return std::holds_alternative<DensityBasedNeighLim>(config);
         }
     };

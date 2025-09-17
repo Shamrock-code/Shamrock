@@ -15,6 +15,7 @@
 
 #include "shamtree/MortonCodeSortedSet.hpp"
 #include "shamalgs/details/algorithm/algorithm.hpp"
+#include "shamalgs/primitives/gen_buffer_index.hpp"
 #include <utility>
 
 namespace shamtree {
@@ -33,8 +34,7 @@ namespace shamtree {
         auto map_morton_id_to_obj_id
             = std::forward<sham::DeviceBuffer<u32>>(cached_map_morton_id_to_obj_id);
 
-        shamalgs::algorithm::fill_buffer_index_usm(
-            dev_sched, morton_count, map_morton_id_to_obj_id);
+        shamalgs::primitives::fill_buffer_index(map_morton_id_to_obj_id, morton_count);
 
         shamalgs::algorithm::sort_by_key(
             dev_sched, morton_codes_to_sort, map_morton_id_to_obj_id, morton_count);

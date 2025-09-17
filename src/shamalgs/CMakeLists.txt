@@ -38,6 +38,7 @@ set(Sources
         src/primitives/mock_value.cpp
         src/primitives/reduction.cpp
         src/primitives/scan_exclusive_sum_in_place.cpp
+        src/primitives/dot_sum.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

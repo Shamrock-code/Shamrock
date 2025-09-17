@@ -10,7 +10,7 @@
 /**
  * @file gen_buffer_index.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implements functions to generate and fill buffers with sequential indices.
  *
  */
 

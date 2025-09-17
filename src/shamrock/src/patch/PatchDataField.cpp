@@ -19,6 +19,7 @@
 #include "shambase/string.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/primitives/dot_sum.hpp"
 #include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/primitives/mock_value.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
@@ -519,10 +520,7 @@ shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::dot_sum(
-        shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
+    return shamalgs::primitives::dot_sum(buf, 0, obj_cnt * nvar);
 }
 
 template<class T>

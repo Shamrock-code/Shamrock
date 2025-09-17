@@ -561,8 +561,8 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
         std::shared_ptr<shamrock::solvergraph::INode> smth_h_iter_ptr;
 
-        using h_conf_density_based  = typename SmoothingLengthConfig::DensityBased;
-        using h_conf_neigh_lim      = typename SmoothingLengthConfig::DensityBasedNeighLim;
+        using h_conf_density_based = typename SmoothingLengthConfig::DensityBased;
+        using h_conf_neigh_lim     = typename SmoothingLengthConfig::DensityBasedNeighLim;
 
         if (h_conf_density_based *conf
             = std::get_if<h_conf_density_based>(&solver_config.smoothing_length_config.config)) {

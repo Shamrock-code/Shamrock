@@ -1015,8 +1015,7 @@ namespace shammodels::sph {
             logger::warn_ln(
                 "SPHConfig",
                 "smoothing_length_config not found when deserializing, defaulting to ",
-                nlohmann::json{p.smoothing_length_config}.dump(4)
-            );
+                nlohmann::json{p.smoothing_length_config}.dump(4));
         }
 
         j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);

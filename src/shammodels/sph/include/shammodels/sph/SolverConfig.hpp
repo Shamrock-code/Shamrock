@@ -158,6 +158,26 @@ namespace shammodels::sph {
         }
     };
 
+    struct SmoothingLengthConfig {
+        struct DensityBased {};
+        struct DensityBasedNeighLim {
+            u32 max_neigh_count = 500;
+        };
+
+        using mode = std::variant<DensityBased, DensityBasedNeighLim>;
+
+        mode config = DensityBased{};
+
+        void set_density_based() { config = DensityBased{}; }
+        void set_density_based_neigh_lim(u32 max_neigh_count) {
+            config = DensityBasedNeighLim{max_neigh_count};
+        }
+
+        bool is_density_based_neigh_lim() const {
+            return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
+    };
+
 } // namespace shammodels::sph
 
 template<class Tvec>
@@ -359,26 +379,6 @@ struct shammodels::sph::SolverConfig {
     Tscal epsilon_h           = 1e-6; ///< Convergence criteria for the smoothing length
     u32 h_iter_per_subcycles  = 50;   ///< Maximum number of iterations per subcycle
     u32 h_max_subcycles_count = 100;  ///< Maximum number of subcycles before solver crash
-
-    struct SmoothingLengthConfig {
-        struct DensityBased {};
-        struct DensityBasedNeighLim {
-            u32 max_neigh_count = 500;
-        };
-
-        using mode = std::variant<DensityBased, DensityBasedNeighLim>;
-
-        mode config = DensityBased{};
-
-        void set_density_based() { config = DensityBased{}; }
-        void set_density_based_neigh_lim(u32 max_neigh_count) {
-            config = DensityBasedNeighLim{max_neigh_count};
-        }
-
-        bool is_density_based_neigh_lim() const {
-            return std::holds_alternative<DensityBasedNeighLim>(config);
-        }
-    };
 
     SmoothingLengthConfig smoothing_length_config;
 
@@ -848,6 +848,38 @@ namespace shammodels::sph {
         }
     }
 
+    // JSON serialization for SmoothingLengthConfig
+    inline void to_json(nlohmann::json &j, const SmoothingLengthConfig &p) {
+        if (const SmoothingLengthConfig::DensityBased *conf
+            = std::get_if<SmoothingLengthConfig::DensityBased>(&p.config)) {
+            j = {
+                {"type", "density_based"},
+            };
+
+        } else if (
+            const SmoothingLengthConfig::DensityBasedNeighLim *conf
+            = std::get_if<SmoothingLengthConfig::DensityBasedNeighLim>(&p.config)) {
+
+            j = {
+                {"type", "density_based_neigh_lim"},
+                {"max_neigh_count", conf->max_neigh_count},
+            };
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    inline void from_json(const nlohmann::json &j, SmoothingLengthConfig &p) {
+        if (j.at("type").get<std::string>() == "density_based") {
+            p.config = SmoothingLengthConfig::DensityBased{};
+        } else if (j.at("type").get<std::string>() == "density_based_neigh_lim") {
+            p.config
+                = SmoothingLengthConfig::DensityBasedNeighLim{j.at("max_neigh_count").get<u32>()};
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -885,6 +917,7 @@ namespace shammodels::sph {
             {"htol_up_coarse_cycle", p.htol_up_coarse_cycle},
             {"htol_up_fine_cycle", p.htol_up_fine_cycle},
             {"epsilon_h", p.epsilon_h},
+            {"smoothing_length_config", p.smoothing_length_config},
             {"h_iter_per_subcycles", p.h_iter_per_subcycles},
             {"h_max_subcycles_count", p.h_max_subcycles_count},
 
@@ -975,6 +1008,17 @@ namespace shammodels::sph {
         }
 
         j.at("epsilon_h").get_to(p.epsilon_h);
+
+        if (j.contains("smoothing_length_config")) {
+            j.at("smoothing_length_config").get_to(p.smoothing_length_config);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "smoothing_length_config not found when deserializing, defaulting to ",
+                nlohmann::json{p.smoothing_length_config}.dump(4)
+            );
+        }
+
         j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
         j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
 

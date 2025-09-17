@@ -12,7 +12,7 @@
 /**
  * @file gen_buffer_index.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Provides functions to generate and fill buffers with sequential indices.
  *
  */
 

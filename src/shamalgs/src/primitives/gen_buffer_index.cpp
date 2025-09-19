@@ -14,13 +14,17 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
 
 namespace shamalgs::primitives {
 
     void fill_buffer_index(sham::DeviceBuffer<u32> &buf, u32 len) {
-        buf.resize(len);
+        if (buf.get_size() < len) {
+            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                "buf.get_size() < len\n  buf.get_size() = {},\n  len = {}", buf.get_size(), len));
+        }
 
         sham::kernel_call(
             buf.get_queue(), sham::MultiRef{}, sham::MultiRef{buf}, len, [](u32 i, u32 *idx) {

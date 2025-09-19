@@ -501,7 +501,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         merge_position_ghost();
         build_merged_pos_trees();
         compute_presteps_rint();
-        start_neighbors_cache();
+        start_neighbors_cache(time_val);
 
         _epsilon_h = utility.make_compute_field<Tscal>("epsilon_h", 1, Tscal(100));
         _h_old     = utility.save_field<Tscal>(ihpart, "h_old");
@@ -772,7 +772,7 @@ void shammodels::sph::Solver<Tvec, Kern>::reset_presteps_rint() {
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::start_neighbors_cache() {
+void shammodels::sph::Solver<Tvec, Kern>::start_neighbors_cache(f64 t) {
     if (solver_config.use_two_stage_search) {
         shammodels::sph::modules::NeighbourCache<Tvec, u_morton, Kern>(
             context, solver_config, storage)
@@ -789,9 +789,15 @@ void shammodels::sph::Solver<Tvec, Kern>::start_neighbors_cache() {
         auto &hpart_with_ghosts = storage.hpart_with_ghosts;
         auto &part_counts       = storage.part_counts;
 
-        modules::ComputeNeighStats<Tvec> compute_neigh_stats(Kernel::Rkern);
+        std::shared_ptr<shamrock::solvergraph::IDataEdge<f64>> sim_time
+            = std::make_shared<shamrock::solvergraph::IDataEdge<f64>>("sim_time", "sim_time");
+        sim_time->data = t;
 
-        compute_neigh_stats.set_edges(part_counts, neigh_cache, pos_merged, hpart_with_ghosts);
+        modules::ComputeNeighStats<Tvec> compute_neigh_stats(
+            Kernel::Rkern, solver_config.neigh_stats_filename);
+
+        compute_neigh_stats.set_edges(
+            sim_time, part_counts, neigh_cache, pos_merged, hpart_with_ghosts);
         compute_neigh_stats.evaluate();
     }
 }
@@ -1281,7 +1287,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
-    if (false) {
+    if (solver_config.enable_particle_reordering
+        && solve_logs.step_count % solver_config.particle_reordering_step_freq == 0) {
+        logger::info_ln("SPH", "Reordering particles at step ", solve_logs.step_count);
         modules::ParticleReordering<Tvec, u_morton, Kern>(context, solver_config, storage)
             .reorder_particles();
     }
